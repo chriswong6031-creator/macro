@@ -1371,6 +1371,50 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
            "universe": len(enriched)}
     if disp_regime:                                  # selection-regime gross dial (board context)
         out["dispersion_regime"] = disp_regime
+    # ---- WASHOUT WATCH (additive, fail-open) — ignition organ for the stock-board revamp.
+    # Operates on the FULL enriched list so cycle-blocked/DECLINE names (excluded by _entry_ok)
+    # are visible.  Survives eligible:0 (risk-off blackout).  The existing board dict is
+    # UNCHANGED when this block errors — the try/except is the only guard needed.
+    try:
+        from engine import hk_washout_watch as _ww
+        # Collect organ snapshots fail-open; each missing organ → that signal absent.
+        _ww_organs: dict = {"southbound": southbound}   # already computed above
+        try:
+            from engine import hk_adr_bridge as _adr
+            _ww_organs["adr_bridge"] = _adr.snapshot()
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: adr_bridge unavailable (%s)", _ex)
+        try:
+            from engine import hk_cbbc as _cbbc
+            _cbbc_snap = _cbbc.run()
+            _ww_organs["cbbc"] = _cbbc_snap
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: cbbc unavailable (%s)", _ex)
+        try:
+            from engine import hk_filing_bus as _filing
+            _ww_organs["filing_bus"] = _filing.run()
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: filing_bus unavailable (%s)", _ex)
+        try:
+            from engine import hk_narrative as _narrative
+            _ww_organs["narrative"] = _narrative.snapshot()
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: narrative unavailable (%s)", _ex)
+        try:
+            from engine import hk_catalyst_calendar as _cat
+            _ww_organs["catalyst_calendar"] = {"events": _cat.catalyst_events(asof=(
+                __import__("datetime").date.fromisoformat(str(as_of)) if as_of else None))}
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: catalyst_calendar unavailable (%s)", _ex)
+        _ww_result = _ww.compute(
+            enriched, _ww_organs,
+            risk_state=risk_state, as_of=str(as_of) if as_of else None)
+        out["washout_watch"] = _ww_result.get("washout_watch", [])
+        log.info("hk washout_watch: %d candidates (eligible=%d, risk_state=%s)",
+                 len(out["washout_watch"]), out["eligible"], risk_state)
+    except Exception as _ww_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
+        log.warning("hk washout_watch compute failed (%s) — existing board intact", _ww_ex)
+        out["washout_watch"] = []
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"
