@@ -20,26 +20,31 @@ BUDGET ENFORCEMENT (R-CI5)
 --------------------------
 The script REFUSES to run (GovernorRefusal exit 1) if a declared budget row
 for fdr_family='context_scan' is absent from the trial ledger.
-register_budget() ships the row idempotently as the FIRST action; once written
-it persists across runs.
+register_budget() is OPERATOR-ONLY via --register-budget-only.
+run() calls _assert_budget() FIRST and refuses when no declared-budget row
+pre-exists — it never auto-registers.
 
 TEMPLATES (v1, FROZEN)
 -----------------------
 T1  Composition drift — board/fire composition by archetype cell vs universe
     share, tracked vs its own trailing 60d baseline.  Candidate threshold:
     within-window null percentile >= 99 AND cell n >= 50.
+    Observed and null use the SAME functional: recent-window mean (last 5
+    snapshots) vs block-resampled same-length-window means from baseline.
 T2  Outcome heterogeneity — graded spine rows with personality_basis='pit_labels'
     split by archetype × quad_hard_label cell; per-cell hit-rate delta vs
-    engine marginal, printed as percentile vs label-permutation null
-    (DT-R14, calendar-block preserving).  Nearly all cells will be
+    engine marginal, printed as percentile vs time-block-preserving
+    MEMBERSHIP null (DT-R14): draw cell-sized subset from ENGINE-MARGINAL pool
+    preserving calendar-block composition.  Nearly all cells will be
     insufficient_n today — printed honestly.
 T3  Co-occurrence / mode-transition shift — production aggregate label
     co-occurrence + mode-share vs trailing 20-snapshot baseline; candidate
-    at null-percentile >= 99.
+    at null-percentile >= 99.  Observed and null use the SAME functional:
+    recent-window mean vs block-resampled same-length-window means.
 
 ANTI-MINING HYGIENE (R-CI5)
 ----------------------------
-- Within-window nulls via contiguous-block resample (>= 200 draws).
+- Same observed/null functional (window mean, not point-vs-mean).
 - Calendar-time controls in all primary template axes (DT-R14).
 - Sample floor n >= 50; insufficient_n printed, never hidden.
 - Respin cap: 2 (candidates are printed once and refreshed, not respun
@@ -47,13 +52,16 @@ ANTI-MINING HYGIENE (R-CI5)
 - Dedupe in fixed order: oracle compounds → species registry →
   machine_registry.jsonl → trial-ledger family strings →
   context_candidates.jsonl (incl. decayed rows).
-- adjacent_falsified REQUIRED on every emitted candidate.
+  Structured matching: BOTH the candidate's cell-key tokens AND the stat-
+  family word must appear in the registry string (no raw substring sweep).
+- adjacent_falsified REQUIRED on every emitted candidate; consulted from
+  species registry for matching archetype/cell tokens.
 
 Usage
 -----
   python -m scripts.build_context_candidates                # full run
   python -m scripts.build_context_candidates --dry-run      # print counts, no writes
-  python -m scripts.build_context_candidates --register-budget-only  # just write ledger row
+  python -m scripts.build_context_candidates --register-budget-only  # operator: write ledger row
 """
 from __future__ import annotations
 
@@ -80,11 +88,13 @@ _NULL_DRAWS = 200          # contiguous-block resample minimum (R-CI5)
 _CANDIDATE_PCTILE = 99     # threshold for emitting a candidate
 _CELL_N_FLOOR = 50         # R-CI5 sample floor; below this = insufficient_n
 _T3_SNAPSHOT_WINDOW = 20   # trailing snapshot baseline for T3
+_T1_RECENT_WINDOW = 5      # recent-window size for T1 observed mean
+_T3_RECENT_WINDOW = 5      # recent-window size for T3 observed mean
 _TOP_K_CORTEX_CAP = 20     # R-CI11
 
-# v1 template cell counts — itemized basis for declared budget
-# T1: archetype × engine buckets; conservative upper-bound estimate 15 cells
-# T2: archetype (9 labels) × quad (4 quads) × engine (3) = 108 cells (estimate)
+# v1 template cell counts — estimated basis (basis='estimated')
+# T1: archetype × engine buckets; conservative upper-bound ~15 cells
+# T2: archetype (9 labels) × quad (4 quads) × engine (3) ≈ 108 cells
 # T3: co-occurrence pairs (quad × vol_regime) max ~12 cells
 _BUDGET_T1_CELLS = 15
 _BUDGET_T2_CELLS = 108
@@ -92,10 +102,10 @@ _BUDGET_T3_CELLS = 12
 _BUDGET_TOTAL = _BUDGET_T1_CELLS + _BUDGET_T2_CELLS + _BUDGET_T3_CELLS  # 135
 
 _BUDGET_REASON = (
-    f"v1 template grid: T1 composition-drift ~{_BUDGET_T1_CELLS} cells, "
+    f"v1 template grid: T1 composition-drift ~{_BUDGET_T1_CELLS} cells (estimated), "
     f"T2 outcome-heterogeneity ~{_BUDGET_T2_CELLS} cells "
-    f"(archetype×quad×engine), T3 co-occurrence ~{_BUDGET_T3_CELLS} cells. "
-    "itemized per R-CI5."
+    f"(archetype×quad×engine, estimated), T3 co-occurrence ~{_BUDGET_T3_CELLS} cells "
+    f"(estimated). basis=estimated (frozen vocabulary tallied at runtime)."
 )
 
 _SCHEMA_VERSION = "context_candidates.v1"
@@ -122,6 +132,9 @@ def register_budget(root: Path, ledger_path: Path | None = None, *, dry_run: boo
 
     Idempotent (register-once semantics): returns True if newly written,
     False if already present.  Does NOT write in dry_run mode.
+
+    This function is OPERATOR-ONLY — called via --register-budget-only.
+    run() does NOT call it.
     """
     from engine.trial_ledger import TrialLedger  # noqa: PLC0415
     path = ledger_path if ledger_path is not None else _ledger_path(root)
@@ -141,7 +154,10 @@ def register_budget(root: Path, ledger_path: Path | None = None, *, dry_run: boo
 
 
 def _assert_budget(root: Path, ledger_path: Path | None = None) -> None:
-    """Raise GovernorRefusal if declared budget is absent from the ledger."""
+    """Raise GovernorRefusal if declared budget is absent from the ledger.
+
+    This MUST be the FIRST call in run() — run() never auto-registers.
+    """
     from engine.trial_ledger import TrialLedger  # noqa: PLC0415
     path = ledger_path if ledger_path is not None else _ledger_path(root)
     led = TrialLedger(path=path, family=_FAMILY)
@@ -191,14 +207,29 @@ def _load_existing_candidates(path: Path) -> dict[str, dict]:
     return existing
 
 
-def _load_dedup_strings(root: Path) -> set[str]:
-    """Collect string tokens from oracle compounds, species, machine_registry,
-    and trial-ledger family strings for dedupe matching.
+def _load_dedup_corpus(root: Path) -> list[dict]:
+    """Collect structured dedup entries from oracle compounds, species, machine_registry,
+    and trial-ledger family strings.
 
-    Returns a set of lowercased natural-language strings to fuzzy-match against
-    the candidate's cell/stat description.
+    Each entry is a dict with:
+      - 'source': which registry (oracle/species/machine/ledger)
+      - 'id': the id/family/slug string
+      - 'family_words': frozenset of stat-family words extracted from the id/description
+        (e.g. 'composition', 'hit-rate', 'co-occurrence', 'drift')
+      - 'archetype_tokens': frozenset of archetype-like tokens from the id/description
     """
-    tokens: set[str] = set()
+    corpus: list[dict] = []
+
+    def _extract_tokens(s: str) -> frozenset[str]:
+        """Lowercased space/underscore/dash split tokens."""
+        import re
+        return frozenset(t for t in re.split(r"[\s_\-/|=]+", s.lower()) if t)
+
+    _STAT_FAMILY_WORDS = frozenset([
+        "composition", "drift", "hit", "rate", "delta", "cooccurrence",
+        "co-occurrence", "co_occurrence", "mode", "share", "shift",
+        "heterogeneity", "transition",
+    ])
 
     # Oracle compound registry (data/oracle/compounds/registry.jsonl)
     oracle_reg = root / "data" / "oracle" / "compounds" / "registry.jsonl"
@@ -214,7 +245,13 @@ def _load_dedup_strings(root: Path) -> set[str]:
                         for k in ("id", "name", "family"):
                             v = row.get(k)
                             if v:
-                                tokens.add(str(v).lower())
+                                s = str(v).lower()
+                                corpus.append({
+                                    "source": "oracle",
+                                    "id": s,
+                                    "tokens": _extract_tokens(s),
+                                    "family_words": _STAT_FAMILY_WORDS & _extract_tokens(s),
+                                })
                     except Exception:  # noqa: BLE001
                         pass
         except OSError:
@@ -226,9 +263,18 @@ def _load_dedup_strings(root: Path) -> set[str]:
         try:
             sr = json.loads(species_reg.read_text(encoding="utf-8"))
             for sp in sr.get("species", []):
-                sid = sp.get("id") or sp.get("name") or sp.get("slug")
-                if sid:
-                    tokens.add(str(sid).lower())
+                for field in ("species_id", "id", "name", "slug"):
+                    v = sp.get(field)
+                    if v:
+                        s = str(v).lower()
+                        corpus.append({
+                            "source": "species",
+                            "id": s,
+                            "tokens": _extract_tokens(s),
+                            "family_words": _STAT_FAMILY_WORDS & _extract_tokens(s),
+                            "raw": sp,
+                        })
+                        break
         except Exception:  # noqa: BLE001
             pass
 
@@ -245,10 +291,22 @@ def _load_dedup_strings(root: Path) -> set[str]:
                         row = json.loads(line)
                         h = row.get("hypothesis", "")
                         if h:
-                            tokens.add(str(h).lower())
+                            s = str(h).lower()
+                            corpus.append({
+                                "source": "machine",
+                                "id": s,
+                                "tokens": _extract_tokens(s),
+                                "family_words": _STAT_FAMILY_WORDS & _extract_tokens(s),
+                            })
                         fam = row.get("fdr_family", "")
                         if fam:
-                            tokens.add(str(fam).lower())
+                            s = str(fam).lower()
+                            corpus.append({
+                                "source": "machine",
+                                "id": s,
+                                "tokens": _extract_tokens(s),
+                                "family_words": _STAT_FAMILY_WORDS & _extract_tokens(s),
+                            })
                     except Exception:  # noqa: BLE001
                         pass
         except OSError:
@@ -267,27 +325,109 @@ def _load_dedup_strings(root: Path) -> set[str]:
                         row = json.loads(line)
                         fam = row.get("family", "")
                         if fam:
-                            tokens.add(str(fam).lower())
+                            s = str(fam).lower()
+                            corpus.append({
+                                "source": "ledger",
+                                "id": s,
+                                "tokens": _extract_tokens(s),
+                                "family_words": _STAT_FAMILY_WORDS & _extract_tokens(s),
+                            })
                     except Exception:  # noqa: BLE001
                         pass
         except OSError:
             pass
 
-    return tokens
+    return corpus
 
 
-def _is_dedup_match(candidate_desc: str, dedup_tokens: set[str]) -> str | None:
-    """Return the matching token if candidate_desc overlaps with dedup corpus.
+def _is_dedup_match(
+    cell_key_tokens: frozenset[str],
+    stat_family_tokens: frozenset[str],
+    corpus: list[dict],
+) -> str | None:
+    """Return the matching id if the candidate matches against the dedup corpus.
 
-    Matching rule: any dedup token of length > 8 that appears verbatim in the
-    lowercase candidate description.  Short tokens are excluded to avoid false
-    positives on generic words.
+    Structured matching (F6 fix): a match requires BOTH:
+      1. At least one of the candidate's cell-key tokens appears in the
+         corpus entry's token set (archetype/cell match), AND
+      2. At least one of the candidate's stat-family words appears in the
+         corpus entry's token set (stat family match), OR an exact
+         family-string match (entry id == one of the stat_family_tokens).
+
+    This prevents false-positive dedup where a species entry merely mentions
+    the same archetype without being semantically comparable.
     """
-    desc_lower = candidate_desc.lower()
-    for tok in dedup_tokens:
-        if len(tok) > 8 and tok in desc_lower:
-            return tok
+    for entry in corpus:
+        entry_tokens = entry.get("tokens", frozenset())
+        # Condition 1: archetype/cell overlap
+        cell_overlap = cell_key_tokens & entry_tokens
+        if not cell_overlap:
+            continue
+        # Condition 2: stat-family overlap OR exact id match
+        family_overlap = stat_family_tokens & entry_tokens
+        exact_match = entry["id"] in stat_family_tokens
+        if family_overlap or exact_match:
+            return entry["id"]
     return None
+
+
+# ---------------------------------------------------------------------------
+# Species adjacent_falsified lookup (F8)
+# ---------------------------------------------------------------------------
+
+def _lookup_adjacent_falsified(
+    root: Path,
+    archetype_tokens: frozenset[str],
+    cell_tokens: frozenset[str],
+) -> str:
+    """Consult species registry for adjacent_falsified entries matching candidate.
+
+    Checks species entries' adjacent_falsified list and archetype_scope.hostile
+    for entries mentioning the candidate's archetype/cell tokens.  Returns the
+    first matching species_id:idea string, or 'none_known' if no match.
+    """
+    species_reg = root / "data" / "species" / "registry.json"
+    if not species_reg.exists():
+        return "none_known"
+
+    try:
+        sr = json.loads(species_reg.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return "none_known"
+
+    import re
+    def _tok(s: str) -> frozenset[str]:
+        return frozenset(t for t in re.split(r"[\s_\-/|=]+", s.lower()) if t)
+
+    combined_tokens = archetype_tokens | cell_tokens
+
+    for sp in sr.get("species", []):
+        sp_id = sp.get("species_id") or sp.get("id") or sp.get("name", "")
+
+        # Check archetype_scope.hostile
+        hostile = sp.get("archetype_scope", {}).get("hostile", [])
+        if isinstance(hostile, list):
+            for h in hostile:
+                h_tokens = _tok(str(h))
+                if combined_tokens & h_tokens:
+                    return f"{sp_id}:hostile_scope"
+
+        # Check adjacent_falsified entries
+        adj = sp.get("adjacent_falsified", [])
+        if isinstance(adj, list):
+            for entry in adj:
+                if isinstance(entry, dict):
+                    idea = entry.get("idea", "")
+                    source = entry.get("source", "")
+                    idea_tokens = _tok(idea)
+                    if combined_tokens & idea_tokens:
+                        return f"{sp_id}:{source or idea[:40]}"
+                elif isinstance(entry, str):
+                    entry_tokens = _tok(entry)
+                    if combined_tokens & entry_tokens:
+                        return f"{sp_id}:{entry[:40]}"
+
+    return "none_known"
 
 
 # ---------------------------------------------------------------------------
@@ -345,8 +485,10 @@ def _run_t1(root: Path, dry_run: bool) -> dict[str, Any]:
     board buy-lane members vs the universe-wide archetype distribution.
 
     Drift is computed as the ratio (board_share / universe_share) per cell,
-    tracked vs its 60d trailing baseline (all available snapshots).  A
-    candidate emits when null-percentile >= 99 AND cell n >= 50.
+    tracked vs its 60d trailing baseline.  Observed = recent-window mean
+    (last _T1_RECENT_WINDOW snapshots).  Null = block-resampled same-length
+    window means from the baseline window (same functional, F3 fix).
+    A candidate emits when null-percentile >= 99 AND cell n >= 50.
     """
     counts = {
         "cells_examined": 0,
@@ -425,14 +567,19 @@ def _run_t1(root: Path, dry_run: bool) -> dict[str, Any]:
     # Per-snapshot board composition ratios
     snapshots = board_buy.groupby("as_of")
     all_dates = sorted(snapshots.groups.keys())
-    # Require at least 10 snapshots for any trailing analysis
-    if len(all_dates) < 10:
-        log.info("T1: only %d snapshots — need >=10 for baseline; printing counts", len(all_dates))
+    # Require at least _CELL_N_FLOOR snapshots for null distribution
+    if len(all_dates) < _CELL_N_FLOOR:
+        log.info("T1: only %d snapshots — need >=%d for null; printing counts",
+                 len(all_dates), _CELL_N_FLOOR)
         counts["cells_examined"] = len(archetypes)
         counts["cells_insufficient_n"] = len(archetypes)
         return {"counts": counts, "candidates": candidates}
 
-    # For each archetype, build drift time series: board_share / universe_share
+    # Load species corpus for adjacent_falsified lookup
+    import re  # noqa: PLC0415
+    def _tok(s: str) -> frozenset[str]:
+        return frozenset(t for t in re.split(r"[\s_\-/|=]+", s.lower()) if t)
+
     for arch in archetypes:
         counts["cells_examined"] += 1
         u_share = univ_share.get(arch, 0)
@@ -447,37 +594,83 @@ def _run_t1(root: Path, dry_run: bool) -> dict[str, Any]:
             b_share = arch_board / total_board if total_board > 0 else 0.0
             drift_series.append(b_share / u_share)
 
-        if len(drift_series) < _CELL_N_FLOOR:
+        # Use baseline window (all but last _T1_RECENT_WINDOW) for the null
+        if len(drift_series) < _CELL_N_FLOOR + _T1_RECENT_WINDOW:
             counts["cells_insufficient_n"] += 1
             log.debug("T1: cell=%s insufficient_n=%d", arch, len(drift_series))
             continue
 
         counts["cells_testable"] += 1
 
-        # Most recent drift value
-        observed = drift_series[-1]
+        # F3 fix: observed = mean of the last _T1_RECENT_WINDOW snapshots
+        recent_window = drift_series[-_T1_RECENT_WINDOW:]
+        observed = sum(recent_window) / len(recent_window)
 
-        # Within-window null: contiguous-block resample on trailing 60d window
-        window = drift_series[-60:] if len(drift_series) >= 60 else drift_series
-        null_dist = _contiguous_block_resample(window, n_draws=_NULL_DRAWS)
+        # Baseline window: trailing 60d (excluding the recent window used as observed)
+        baseline_end = len(drift_series) - _T1_RECENT_WINDOW
+        baseline_start = max(0, baseline_end - 60)
+        baseline = drift_series[baseline_start:baseline_end]
+        if len(baseline) < _T1_RECENT_WINDOW:
+            counts["cells_insufficient_n"] += 1
+            continue
+
+        # Null: block-resample baseline; each draw produces a _T1_RECENT_WINDOW-sized
+        # sub-window mean — same functional as observed (window mean)
+        null_dist = _null_draw_window_means(
+            baseline, window_size=_T1_RECENT_WINDOW, n_draws=_NULL_DRAWS
+        )
         pctile = _null_percentile(observed, null_dist)
 
-        log.debug("T1: cell=%s observed=%.4f null_pctile=%.1f n=%d",
-                  arch, observed, pctile, len(window))
+        log.debug("T1: cell=%s observed_mean=%.4f null_pctile=%.1f n_baseline=%d",
+                  arch, observed, pctile, len(baseline))
 
         if pctile >= _CANDIDATE_PCTILE:
             counts["candidates"] += 1
             if not dry_run:
+                arch_tokens = _tok(arch)
+                adj_falsified = _lookup_adjacent_falsified(root, arch_tokens, arch_tokens)
                 candidates.append({
                     "template": "T1",
                     "cell": arch,
-                    "stat": f"composition_drift_ratio={observed:.4f}",
+                    "stat": f"composition_drift_mean={observed:.4f}",
                     "null_pctile": round(pctile, 2),
-                    "n": len(window),
-                    "adjacent_falsified": "none_known",
+                    "n": len(baseline),
+                    "adjacent_falsified": adj_falsified,
                 })
 
     return {"counts": counts, "candidates": candidates}
+
+
+def _null_draw_window_means(
+    baseline: list[float],
+    window_size: int,
+    n_draws: int = _NULL_DRAWS,
+    seed: int = 42,
+) -> list[float]:
+    """Draw n_draws window means from the baseline via block resampling.
+
+    For each draw:
+    1. Block-resample the baseline to length >= len(baseline).
+    2. Take the last window_size values and compute their mean.
+
+    This produces a null distribution of window means — same functional as
+    the observed (mean of the last window_size snapshots in the live series).
+    """
+    rng = random.Random(seed)
+    n = len(baseline)
+    block_size = 5
+    results: list[float] = []
+    for _ in range(n_draws):
+        sample: list[float] = []
+        while len(sample) < n:
+            start = rng.randint(0, n - 1)
+            end = min(start + block_size, n)
+            sample.extend(baseline[start:end])
+        sample = sample[:n]
+        # Take last window_size values as the "recent window" in the resample
+        w = sample[-window_size:]
+        results.append(sum(w) / len(w) if w else 0.0)
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -487,13 +680,16 @@ def _run_t1(root: Path, dry_run: bool) -> dict[str, Any]:
 def _run_t2(root: Path, dry_run: bool) -> dict[str, Any]:
     """T2: graded spine rows with personality_basis='pit_labels' split by
     archetype × quad_hard_label cell; per-cell hit-rate delta vs engine
-    marginal, printed as percentile vs label-permutation null (DT-R14).
+    marginal, printed as percentile vs time-block-preserving MEMBERSHIP null
+    (DT-R14, F2 fix).
+
+    NULL (F2 fix): for each of _NULL_DRAWS draws, resample a cell-sized
+    subset from the ENGINE-MARGINAL pool preserving calendar-block
+    composition (same number of rows per month-block as the cell has in
+    that block, from the marginal pool's rows of that block), compute the
+    draw's hit-rate delta vs marginal.
 
     EXPECTS insufficient_n nearly everywhere today — printed honestly.
-
-    Note: if spine_index.parquet lacks 'personality_basis' (pre-W2 nightly)
-    the column is absent and all cells are marked insufficient_n.  The scan
-    still prints honest counts and exits cleanly.
     """
     counts = {
         "cells_examined": 0,
@@ -517,16 +713,9 @@ def _run_t2(root: Path, dry_run: bool) -> dict[str, Any]:
         return {"counts": counts, "candidates": candidates}
 
     try:
-        cols = ["engine", "outcome_graded", "archetype", "quad_hard_label",
-                "as_of", "outcome_excess"]
-        # personality_basis may be absent (pre-W2 nightly)
-        try:
-            df = pd.read_parquet(spine_path)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("T2: spine read failed (%s) — skipping", exc)
-            return {"counts": counts, "candidates": candidates}
+        df = pd.read_parquet(spine_path)
     except Exception as exc:  # noqa: BLE001
-        log.warning("T2: spine load error (%s) — skipping", exc)
+        log.warning("T2: spine read failed (%s) — skipping", exc)
         return {"counts": counts, "candidates": candidates}
 
     # Filter to graded rows only
@@ -545,7 +734,6 @@ def _run_t2(root: Path, dry_run: bool) -> dict[str, Any]:
         # Enumerate theoretical cells for honest reporting
         archetypes = graded["archetype"].dropna().unique().tolist() if "archetype" in graded.columns else []
         quads = graded["quad_hard_label"].dropna().unique().tolist() if "quad_hard_label" in graded.columns else []
-        engines = graded["engine"].dropna().unique().tolist() if "engine" in graded.columns else []
         counts["cells_examined"] = max(len(archetypes) * len(quads), 1)
         counts["cells_insufficient_n"] = counts["cells_examined"]
         return {"counts": counts, "candidates": candidates}
@@ -572,8 +760,13 @@ def _run_t2(root: Path, dry_run: bool) -> dict[str, Any]:
         return {"counts": counts, "candidates": candidates}
 
     # Compute engine-level marginal hit rate (positive excess return = hit)
+    pit_graded = pit_graded.copy()
     pit_graded["hit"] = (pit_graded["outcome_excess"] > 0).astype(int)
     engine_marginal = pit_graded.groupby("engine")["hit"].mean().to_dict()
+
+    import re  # noqa: PLC0415
+    def _tok(s: str) -> frozenset[str]:
+        return frozenset(t for t in re.split(r"[\s_\-/|=]+", s.lower()) if t)
 
     # Per (archetype × quad) cell: compute hit-rate delta vs engine marginal
     cells = pit_graded.groupby(["archetype", "quad_hard_label", "engine"])
@@ -592,28 +785,51 @@ def _run_t2(root: Path, dry_run: bool) -> dict[str, Any]:
         marg_hr = engine_marginal.get(eng, cell_hr)
         observed_delta = cell_hr - marg_hr
 
-        # Label-permutation null (time-preserving DT-R14): shuffle labels within
-        # calendar-quarter blocks, recompute delta _NULL_DRAWS times
-        hits = grp["hit"].tolist()
-        as_ofs = grp["as_of"].tolist() if "as_of" in grp.columns else [None] * n
+        # F2 fix: time-block-preserving MEMBERSHIP null
+        # For each draw, resample a cell-sized subset from the engine-marginal pool
+        # preserving calendar-block composition.
+        #
+        # Engine-marginal pool = all pit_graded rows for this engine
+        eng_pool = pit_graded[pit_graded["engine"] == eng].copy()
 
-        # Build calendar-quarter block map
-        quarter_blocks: dict[str, list[int]] = {}
-        for i, asof in enumerate(as_ofs):
+        # Build month-block map for the CELL rows
+        as_ofs = grp["as_of"].tolist() if "as_of" in grp.columns else [None] * n
+        cell_block_counts: dict[str, int] = {}
+        for asof in as_ofs:
             q_key = str(asof)[:7] if asof else "unknown"  # YYYY-MM
-            quarter_blocks.setdefault(q_key, []).append(i)
+            cell_block_counts[q_key] = cell_block_counts.get(q_key, 0) + 1
+
+        # Build month-block index for the engine-marginal pool
+        eng_block_hits: dict[str, list[int]] = {}
+        for idx, row_asof in zip(eng_pool.index, eng_pool["as_of"].tolist() if "as_of" in eng_pool.columns else [None] * len(eng_pool)):
+            q_key = str(row_asof)[:7] if row_asof else "unknown"
+            eng_block_hits.setdefault(q_key, []).append(eng_pool.loc[idx, "hit"])
 
         rng = random.Random(42)
         null_deltas: list[float] = []
         for _ in range(_NULL_DRAWS):
-            perm_hits = hits[:]
-            for idxs in quarter_blocks.values():
-                vals = [hits[i] for i in idxs]
-                rng.shuffle(vals)
-                for j, i in enumerate(idxs):
-                    perm_hits[i] = vals[j]
-            perm_mean = sum(perm_hits) / len(perm_hits) if perm_hits else 0.0
-            null_deltas.append(perm_mean - marg_hr)
+            draw_hits: list[int] = []
+            for q_key, count_needed in cell_block_counts.items():
+                pool_hits = eng_block_hits.get(q_key, [])
+                if not pool_hits:
+                    # Fall back to global pool for this block
+                    pool_hits = [v for vlist in eng_block_hits.values() for v in vlist]
+                if not pool_hits:
+                    # No marginal data at all — skip this draw
+                    break
+                # Sample with replacement from the pool's block
+                sample = [rng.choice(pool_hits) for _ in range(count_needed)]
+                draw_hits.extend(sample)
+            else:
+                if draw_hits:
+                    draw_hr = sum(draw_hits) / len(draw_hits)
+                    null_deltas.append(draw_hr - marg_hr)
+
+        if not null_deltas:
+            counts["cells_insufficient_n"] += 1
+            log.debug("T2: cell=(%s,%s,%s) null_deltas empty — no marginal pool data",
+                      arch, quad, eng)
+            continue
 
         pctile = _null_percentile(observed_delta, null_deltas)
         log.debug("T2: cell=(%s,%s,%s) delta=%.4f pctile=%.1f n=%d",
@@ -622,13 +838,16 @@ def _run_t2(root: Path, dry_run: bool) -> dict[str, Any]:
         if pctile >= _CANDIDATE_PCTILE:
             counts["candidates"] += 1
             if not dry_run:
+                arch_tokens = _tok(arch)
+                cell_tokens = _tok(f"quad={quad}|engine={eng}")
+                adj_falsified = _lookup_adjacent_falsified(root, arch_tokens, cell_tokens)
                 candidates.append({
                     "template": "T2",
                     "cell": f"archetype={arch}|quad={quad}|engine={eng}",
                     "stat": f"hit_rate_delta={observed_delta:.4f}|cell_hr={cell_hr:.4f}|marginal_hr={marg_hr:.4f}",
                     "null_pctile": round(pctile, 2),
                     "n": n,
-                    "adjacent_falsified": "none_known",
+                    "adjacent_falsified": adj_falsified,
                 })
 
     return {"counts": counts, "candidates": candidates}
@@ -646,6 +865,10 @@ def _run_t3(root: Path, dry_run: bool) -> dict[str, Any]:
     (buy-lane composition per as_of) and looks for shifts in the
     joint (quad_hard_label × vol_regime) mode distribution compared
     to the trailing 20-snapshot baseline.  Candidate at null-pctile >= 99.
+
+    F3 fix: observed = mean of last _T3_RECENT_WINDOW snapshots;
+    null = block-resampled same-length window means from baseline
+    (same functional as observed).
     """
     counts = {
         "cells_examined": 0,
@@ -690,9 +913,11 @@ def _run_t3(root: Path, dry_run: bool) -> dict[str, Any]:
     snap_groups = df.groupby("as_of")
     all_dates = sorted(snap_groups.groups.keys())
 
-    if len(all_dates) < _T3_SNAPSHOT_WINDOW + 2:
-        log.info("T3: only %d snapshots — need >=%d for baseline; printing counts",
-                 len(all_dates), _T3_SNAPSHOT_WINDOW + 2)
+    # Need at least _CELL_N_FLOOR + _T3_RECENT_WINDOW snapshots total
+    min_snapshots = _CELL_N_FLOOR + _T3_RECENT_WINDOW
+    if len(all_dates) < min_snapshots:
+        log.info("T3: only %d snapshots — need >=%d for null; printing counts",
+                 len(all_dates), min_snapshots)
         counts["cells_examined"] = 1
         counts["cells_insufficient_n"] = 1
         return {"counts": counts, "candidates": candidates}
@@ -711,6 +936,10 @@ def _run_t3(root: Path, dry_run: bool) -> dict[str, Any]:
         counts["cells_insufficient_n"] = 1
         return {"counts": counts, "candidates": candidates}
 
+    import re  # noqa: PLC0415
+    def _tok(s: str) -> frozenset[str]:
+        return frozenset(t for t in re.split(r"[\s_\-/|=]+", s.lower()) if t)
+
     # For each joint cell, build mode-share time series
     for _, cell_row in joint_cells.iterrows():
         quad = cell_row["quad_hard_label"]
@@ -725,42 +954,50 @@ def _run_t3(root: Path, dry_run: bool) -> dict[str, Any]:
             cell_count = ((grp["quad_hard_label"] == quad) & (grp["vol_regime"] == vol)).sum()
             share_series.append(cell_count / total if total > 0 else 0.0)
 
-        if len(share_series) < _CELL_N_FLOOR:
+        if len(share_series) < _CELL_N_FLOOR + _T3_RECENT_WINDOW:
             counts["cells_insufficient_n"] += 1
             continue
 
         counts["cells_testable"] += 1
 
-        # Most recent vs baseline window
-        current = share_series[-1]
-        baseline = share_series[-(1 + _T3_SNAPSHOT_WINDOW):-1]
-        if not baseline:
+        # F3 fix: observed = mean of last _T3_RECENT_WINDOW snapshots
+        recent_window = share_series[-_T3_RECENT_WINDOW:]
+        observed_mean = sum(recent_window) / len(recent_window)
+
+        # Baseline window: exclude the recent window
+        baseline_end = len(share_series) - _T3_RECENT_WINDOW
+        baseline_start = max(0, baseline_end - _T3_SNAPSHOT_WINDOW)
+        baseline = share_series[baseline_start:baseline_end]
+        if len(baseline) < _T3_RECENT_WINDOW:
             counts["cells_insufficient_n"] += 1
             continue
 
+        # Null: block-resample baseline to get window means — same functional as observed
+        null_window_means = _null_draw_window_means(
+            baseline, window_size=_T3_RECENT_WINDOW, n_draws=_NULL_DRAWS
+        )
+        # Shift relative to baseline mean
         baseline_mean = sum(baseline) / len(baseline)
-        observed_shift = current - baseline_mean
+        observed_shift = observed_mean - baseline_mean
+        null_shifts = [v - baseline_mean for v in null_window_means]
 
-        # Contiguous-block null on baseline window
-        null_dist = _contiguous_block_resample(baseline, n_draws=_NULL_DRAWS)
-        # Null is the distribution of baseline_mean values under resampling
-        null_shifts = [v - baseline_mean for v in null_dist]
-        pctile = _null_percentile(abs(observed_shift),
-                                   [abs(v) for v in null_shifts])
+        pctile = _null_percentile(abs(observed_shift), [abs(v) for v in null_shifts])
 
-        log.debug("T3: cell=(%s,%s) shift=%.4f pctile=%.1f n=%d",
+        log.debug("T3: cell=(%s,%s) shift=%.4f pctile=%.1f n_baseline=%d",
                   quad, vol, observed_shift, pctile, len(baseline))
 
         if pctile >= _CANDIDATE_PCTILE:
             counts["candidates"] += 1
             if not dry_run:
+                cell_tokens = _tok(f"quad={quad}|vol_regime={vol}")
+                adj_falsified = _lookup_adjacent_falsified(root, frozenset(), cell_tokens)
                 candidates.append({
                     "template": "T3",
                     "cell": f"quad={quad}|vol_regime={vol}",
-                    "stat": f"mode_share_shift={observed_shift:.4f}|current={current:.4f}|baseline_mean={baseline_mean:.4f}",
+                    "stat": f"mode_share_shift={observed_shift:.4f}|observed_mean={observed_mean:.4f}|baseline_mean={baseline_mean:.4f}",
                     "null_pctile": round(pctile, 2),
                     "n": len(baseline),
-                    "adjacent_falsified": "none_known",
+                    "adjacent_falsified": adj_falsified,
                 })
 
     return {"counts": counts, "candidates": candidates}
@@ -773,15 +1010,19 @@ def _run_t3(root: Path, dry_run: bool) -> dict[str, Any]:
 def _emit_candidates(
     new_candidates: list[dict],
     output_path: Path,
-    dedup_tokens: set[str],
+    dedup_corpus: list[dict] | set[str],
     dry_run: bool,
 ) -> tuple[int, int, int]:
     """Write non-duplicate candidates to output_path.
 
     Returns (emitted, refreshed, deduped).
     - emitted: new records written
-    - refreshed: existing records with last_refreshed updated
+    - refreshed: existing active records with last_refreshed updated
     - deduped: skipped as duplicates
+
+    ``dedup_corpus`` accepts either the structured list[dict] from
+    _load_dedup_corpus() (preferred) or a bare set[str] of tokens
+    (legacy / test compatibility).
     """
     existing = _load_existing_candidates(output_path)
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -790,6 +1031,32 @@ def _emit_candidates(
     refreshed = 0
     deduped = 0
     updated_existing: dict[str, dict] = dict(existing)
+
+    import re  # noqa: PLC0415
+    def _tok(s: str) -> frozenset[str]:
+        return frozenset(t for t in re.split(r"[\s_\-/|=]+", s.lower()) if t)
+
+    _STAT_FAMILY_WORDS = frozenset([
+        "composition", "drift", "hit", "rate", "delta", "cooccurrence",
+        "co-occurrence", "co_occurrence", "mode", "share", "shift",
+        "heterogeneity", "transition",
+    ])
+
+    # Normalise dedup_corpus for legacy callers that pass a set[str]
+    if isinstance(dedup_corpus, set):
+        # Convert bare string set to structured corpus (for test back-compat)
+        _corpus: list[dict] = []
+        for tok in dedup_corpus:
+            s = tok.lower()
+            _corpus.append({
+                "source": "legacy",
+                "id": s,
+                "tokens": _tok(s),
+                "family_words": _STAT_FAMILY_WORDS & _tok(s),
+            })
+        corpus = _corpus
+    else:
+        corpus = dedup_corpus
 
     for cand in new_candidates:
         template = cand["template"]
@@ -807,28 +1074,36 @@ def _emit_candidates(
             )
 
         cid = _candidate_id(template, cell, stat.split("|")[0].split("=")[0])
-        candidate_desc = f"{template} {cell} {stat}"
 
-        # Dedupe against external registries (oracle, species, machine, trial-ledger)
-        dedup_match = _is_dedup_match(candidate_desc, dedup_tokens)
+        # Structured dedup (F6 fix): require cell-key AND stat-family overlap
+        cell_key_tokens = _tok(cell)
+        stat_key = stat.split("|")[0].split("=")[0]
+        stat_family_tokens = _tok(stat_key) & _STAT_FAMILY_WORDS
+        dedup_match = _is_dedup_match(cell_key_tokens, stat_family_tokens, corpus)
         if dedup_match:
             log.info("DEDUP: candidate %s matches existing registry token '%s'",
-                     cid, dedup_match[:40])
+                     cid, str(dedup_match)[:40])
             deduped += 1
             continue
 
         if cid in existing:
-            # Refresh last_refreshed rather than re-emitting
+            # Refresh or update based on decay status
             existing_row = existing[cid]
-            existing_row["last_refreshed"] = now
-            existing_row["null_pctile"] = null_pctile
-            existing_row["n"] = n
-            # Re-check decay status: if it was decayed, it revives but keeps seen-before
-            # The row stays in file — dead-stays-dead means it won't get a NEW candidate_id
-            # This refresh just updates the timestamp so decay clock resets
+            if existing_row.get("status") == "decayed":
+                # F7 fix: do NOT bump last_refreshed on decayed rows
+                # Record last_seen_while_decayed instead
+                existing_row["last_seen_while_decayed"] = now
+                existing_row["null_pctile"] = null_pctile
+                existing_row["n"] = n
+            else:
+                # Active candidate: refresh timestamps
+                existing_row["last_refreshed"] = now
+                existing_row["null_pctile"] = null_pctile
+                existing_row["n"] = n
             updated_existing[cid] = existing_row
             refreshed += 1
-            log.debug("REFRESH: candidate %s (template=%s cell=%s)", cid, template, cell)
+            log.debug("REFRESH: candidate %s (template=%s cell=%s status=%s)",
+                      cid, template, cell, existing_row.get("status", "candidate"))
             continue
 
         # New candidate
@@ -885,27 +1160,20 @@ def run(
     dry_run: bool = False,
     ledger_path: Path | None = None,
 ) -> int:
-    """Run all three templates.  Returns exit code (0 on success)."""
+    """Run all three templates.  Returns exit code (0 on success).
+
+    IMPORTANT: run() NEVER auto-registers the budget.  It calls _assert_budget()
+    FIRST — if no declared-budget row pre-exists, it raises GovernorRefusal
+    (non-zero exit, zero screening).  Use --register-budget-only to register.
+    """
     if root is None:
         root = Path(__file__).resolve().parent.parent
 
-    # --- STEP 1: Register budget (idempotent) ---
-    newly_registered = register_budget(root, ledger_path=ledger_path, dry_run=dry_run)
-    if newly_registered:
-        log.info("Budget row registered for fdr_family=%s n=%d", _FAMILY, _BUDGET_TOTAL)
+    # --- STEP 1: Assert budget present (FIRST — no auto-register) ---
+    # GovernorRefusal if absent; run() is operator-gated.
+    _assert_budget(root, ledger_path=ledger_path)
 
-    # --- STEP 2: Assert budget present (GovernorRefusal if absent) ---
-    if not dry_run:
-        _assert_budget(root, ledger_path=ledger_path)
-    else:
-        # In dry-run, check the ledger but don't refuse — just log
-        from engine.trial_ledger import TrialLedger  # noqa: PLC0415
-        lp = ledger_path if ledger_path is not None else _ledger_path(root)
-        led = TrialLedger(path=lp, family=_FAMILY)
-        db = led.declared_budget(_FAMILY)
-        log.info("[dry-run] budget check: declared_n=%d (family=%s)", db, _FAMILY)
-
-    # --- STEP 3: Run templates ---
+    # --- STEP 2: Run templates ---
     log.info("Running T1 (composition drift)...")
     t1_result = _run_t1(root, dry_run)
 
@@ -922,7 +1190,7 @@ def run(
         + t3_result["candidates"]
     )
 
-    # --- STEP 4: Print per-template counts ---
+    # --- STEP 3: Print per-template counts ---
     for name, result in [("T1", t1_result), ("T2", t2_result), ("T3", t3_result)]:
         c = result["counts"]
         print(
@@ -935,14 +1203,14 @@ def run(
 
     print(f"Total candidates before dedupe: {len(all_candidates)}")
 
-    # --- STEP 5: Dedupe against external registries ---
-    dedup_tokens = _load_dedup_strings(root)
-    log.info("Loaded %d dedup tokens from external registries", len(dedup_tokens))
+    # --- STEP 4: Dedupe against external registries ---
+    dedup_corpus = _load_dedup_corpus(root)
+    log.info("Loaded %d dedup corpus entries from external registries", len(dedup_corpus))
 
-    # --- STEP 6: Emit / refresh / decay ---
+    # --- STEP 5: Emit / refresh / decay ---
     output_path = root / _OUTPUT_PATH
     emitted, refreshed, deduped = _emit_candidates(
-        all_candidates, output_path, dedup_tokens, dry_run
+        all_candidates, output_path, dedup_corpus, dry_run
     )
 
     action = "[dry-run] would emit" if dry_run else "emitted"
@@ -976,7 +1244,7 @@ def _cli() -> None:
     p.add_argument(
         "--register-budget-only",
         action="store_true",
-        help="Only write the declared budget row to the trial ledger, then exit",
+        help="OPERATOR: write the declared budget row to the trial ledger, then exit",
     )
     p.add_argument(
         "--ledger-path",
