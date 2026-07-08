@@ -24,8 +24,8 @@ Six checks against `lib.hk_calendar.expected_last_session()`:
 
 State thresholds:
     lag <= 2 cal days -> "fresh"
-    lag <= 5 cal days -> "slow" (weekend gaps, missed session)
-    lag > 5 cal days  -> "stale"
+    lag <= 4 cal days -> "slow" (weekend gaps, missed session)
+    lag >= 5 cal days -> "stale"
     missing           -> "dead"
 
 Page-level verdict: ok | degraded | stale
@@ -330,7 +330,12 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
             stale_parts_zh.append(
                 f"快照不一致 — 精选个股 {s_asof} vs 周期判断 {r_date}")
 
+        # De-dup: when coherence fires it already names standouts and regime inline;
+        # skip those two in the per-store loop so each store appears at most once.
+        skip_in_store_loop: set[str] = {"standouts", "regime"} if coherence_bad else set()
         for k in ("bellwether", "standouts", "regime"):
+            if k in skip_in_store_loop:
+                continue
             info = checks.get(k, {})
             if info.get("state") in ("stale", "dead", "error"):
                 lag = info.get("lag_days")

@@ -137,13 +137,33 @@ def _holidays_cached(year: int) -> frozenset[date]:
             if d.weekday() == 6:
                 hs.add(d + timedelta(days=1))
 
-    # Ching Ming Festival — 4th or 5th April (solar term; approximated as April 5
-    # in leap years, April 4 otherwise; exact date from HK observatory each year)
-    # Use a simple rule: April 4 in leap years when March had 29 days, else April 5.
-    # (Accurate enough for 2014-2030 for freshness checking)
-    ching_ming_day = 4 if (year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)) else 5
-    ching_ming = date(year, 4, ching_ming_day)
-    hs.add(_observed_hk(ching_ming))
+    # Ching Ming Festival — solar term (around 4-5 April); exact date from HK
+    # Observatory / HKEX holiday schedule each year. Do NOT use the leap-year rule
+    # (April 4 in leap years, else April 5) — it is wrong (e.g. 2025 actual = Apr 4
+    # but the rule yields Apr 5). Use a per-year lookup table (same approach as the
+    # other lunar holidays in this file). Source: HKEX holiday notice each year.
+    # Sunday→Monday observance applied via _observed_hk consistently with other holidays.
+    CHING_MING: dict[int, date] = {
+        2014: date(2014, 4, 5),   # Saturday -> Monday Apr 7 (observed)
+        2015: date(2015, 4, 5),   # Sunday -> Monday Apr 6 (observed)
+        2016: date(2016, 4, 4),   # Monday
+        2017: date(2017, 4, 4),   # Tuesday
+        2018: date(2018, 4, 5),   # Thursday
+        2019: date(2019, 4, 5),   # Friday
+        2020: date(2020, 4, 4),   # Saturday -> Monday Apr 6 (observed)
+        2021: date(2021, 4, 5),   # Monday
+        2022: date(2022, 4, 5),   # Tuesday
+        2023: date(2023, 4, 5),   # Wednesday
+        2024: date(2024, 4, 4),   # Thursday
+        2025: date(2025, 4, 4),   # Friday (actual HKEX closure; rule would have given Apr 5)
+        2026: date(2026, 4, 5),   # Sunday -> Monday Apr 6 (observed)
+        2027: date(2027, 4, 5),   # Monday
+        2028: date(2028, 4, 4),   # Tuesday
+        2029: date(2029, 4, 4),   # Wednesday
+        2030: date(2030, 4, 5),   # Friday
+    }
+    if year in CHING_MING:
+        hs.add(_observed_hk(CHING_MING[year]))
 
     # Good Friday + Saturday before Easter + Easter Monday
     easter = _easter(year)

@@ -293,11 +293,19 @@ class TestHKFreshnessSentinel:
         assert result["verdict"] == "stale"
 
     def test_result_is_always_a_dict(self, tmp_path):
-        """Sentinel never raises; always returns a dict."""
+        """Sentinel never raises; always returns a dict.
+
+        Paths are redirected to tmp_path so no git-tracked files are mutated.
+        """
         from engine.hk_freshness import hk_freshness_sentinel
         now = datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc)
-        # Even with no patches (so paths won't exist) it should return a dict
-        result = hk_freshness_sentinel(now=now)
+        data_root = tmp_path / "data"
+        site_root = tmp_path / "site"
+        with (patch("lib.config.data_dir", return_value=data_root),
+              patch("lib.config.load",
+                    return_value={"storage": {"site_dir": str(site_root)}}),
+              patch("lib.config.ROOT", tmp_path)):
+            result = hk_freshness_sentinel(now=now)
         assert isinstance(result, dict)
         assert "verdict" in result
 
@@ -321,10 +329,17 @@ class TestHKFreshnessSentinel:
 class TestRunSentinelSafe:
     """Test that run_sentinel (the public wrapper) never crashes."""
 
-    def test_run_sentinel_returns_dict(self):
+    def test_run_sentinel_returns_dict(self, tmp_path):
+        """Paths are redirected to tmp_path so no git-tracked files are mutated."""
         from engine.hk_freshness import run_sentinel
         now = datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc)
-        result = run_sentinel(now=now)
+        data_root = tmp_path / "data"
+        site_root = tmp_path / "site"
+        with (patch("lib.config.data_dir", return_value=data_root),
+              patch("lib.config.load",
+                    return_value={"storage": {"site_dir": str(site_root)}}),
+              patch("lib.config.ROOT", tmp_path)):
+            result = run_sentinel(now=now)
         assert isinstance(result, dict)
         assert "verdict" in result
         assert result["verdict"] in ("ok", "degraded", "stale")
