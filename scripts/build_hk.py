@@ -825,6 +825,25 @@ def main() -> int:
                      len(vm["catalyst_strip"]))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk catalyst calendar failed (%s); skipping", e)
+
+        # CBBC / Warrant Leverage Map — display-tier microstructure organ (W1 data-plane).
+        # Surfaces bull/bear positioning froth + issuer-hedge magnet zones. DISPLAY-ONLY.
+        # Stamps a forward ledger (CN_LANE=asia gate). Mandatory call price not yet sourced
+        # (requires SLD PDFs — W1 honest caveat); outstanding qty + bull/bear classification live.
+        try:
+            from engine import hk_cbbc as _cbbc
+            _cbbc_snap = _cbbc.run()
+            vm["cbbc_map"] = _cbbc_snap
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_cbbc.json").write_text(
+                json.dumps(_cbbc_snap, indent=2, default=str))
+            log.info("hk cbbc map: freshness=%s bellwethers=%d",
+                     _cbbc_snap.get("freshness"),
+                     len(_cbbc_snap.get("bellwethers", [])))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk cbbc map failed (%s); skipping", e)
+            vm["cbbc_map"] = None
             vm["catalyst_strip"] = []
             vm["catalyst_imminent"] = None
 
