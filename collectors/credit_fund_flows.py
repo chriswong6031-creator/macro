@@ -26,10 +26,12 @@ Rung (c) Fallback proxy: HYG weekly dollar-volume z-score
     VERDICT: ADEQUATE — HYG weekly dollar-volume z qualifies as rung-c proxy.
 
 What is stored (data/credit_flows/):
-    hyg_weekly.parquet  — weekly HYG close, dollar_volume, dollar_vol_z52,
-                          hy_oas, oas_chg10d, oas_z52 (aligned weekly index).
-                          dollar_vol_z52 = z-score of dollar_vol vs trailing
-                          52-week mean/std (calendar-collapsed, NO look-ahead).
+    hyg_weekly.parquet  — 7 columns: close_price, dollar_vol, hy_oas,
+                          oas_chg10d, dollar_vol_z52, oas_z52, oas_chg10d_z52
+                          (aligned weekly index, 2007-04-15 to present).
+                          All z-scores: trailing 52-week mean/std,
+                          calendar-collapsed, NO look-ahead (shift(1) inside
+                          _trailing_z).
 
 This module only ASSEMBLES from existing stores (data/yahoo/ and data/fred/).
 No external network calls are made at collect time, so it can run offline.
@@ -119,6 +121,10 @@ def build_weekly() -> pd.DataFrame:
     # Trailing z-scores (no look-ahead: shift inside _trailing_z)
     combined["dollar_vol_z52"] = _trailing_z(combined["dollar_vol"], FLOW_Z_WINDOW)
     combined["oas_z52"] = _trailing_z(combined["hy_oas"], OAS_Z_WINDOW)
+    # oas_chg10d_z52: z-score of the 10-day OAS change vs trailing 52-week window.
+    # Central to divergence-state definitions (Section 2) and the orthogonality
+    # residualize-on list in the Step-2 study script.
+    combined["oas_chg10d_z52"] = _trailing_z(combined["oas_chg10d"], OAS_Z_WINDOW)
 
     return combined
 
