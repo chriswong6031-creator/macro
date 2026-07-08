@@ -203,32 +203,70 @@ def _era_wr(metrics: pd.DataFrame, era_split: str) -> tuple[float | None, float 
 
 
 # ---------------------------------------------------------------------------
-# Screener: compute per-ticker signal states + scores
+# Combined single-pass build — screener + lab in one tc.compute pass
 # ---------------------------------------------------------------------------
 
-def build_screener_data(
+def build_all(
     universe: dict[str, pd.DataFrame],
     tc: Any,
     tech_score: Any,
+    tech_stars: Any,
+    df_spx: pd.DataFrame,
     name_map: dict[str, str],
-) -> dict[str, Any]:
-    """Build the tech_screener.json payload."""
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Single-pass over (ticker × signal): compute each series ONCE and feed
+    BOTH the screener state and the lab fire-accumulation.
+
+    Returns (screener_payload, lab_payload).
+    """
     all_sigs = tc.list_signals()
     n_sigs = len(all_sigs)
     tickers = list(universe.keys())
     n_tickers = len(tickers)
 
-    log.info("Screener: %d tickers × %d signals", n_tickers, n_sigs)
+    log.info("Single-pass: %d tickers × %d signals", n_tickers, n_sigs)
 
-    # Initialise per-signal firing lists
+    # Compute SPX 200d-MA for regime split (above-tape = up-tape)
+    from engine.strategy_signals import sma  # noqa: PLC0415
+    spx_close = df_spx["close"]
+    spx_ma200 = sma(spx_close, 200)
+    above_ma = (spx_close > spx_ma200).rename("above_ma")
+
+    # -----------------------------------------------------------------------
+    # Per-signal lab accumulators (keyed by signal_id)
+    # -----------------------------------------------------------------------
+    # These mirror what build_lab_data collected inside its signal→ticker loop.
+    lab_acc: dict[str, dict[str, Any]] = {}
+    for sig in all_sigs:
+        sid = sig["signal_id"]
+        family = sig.get("family", "")
+        kind = sig.get("kind", "event")
+        lab_acc[sid] = {
+            "sig": sig,
+            "lab_exempt": (family in ("fundamental_valuation", "insider")),  # snapshot families: constant cross-sectional score, no dated per-bar fires -> null lab profile
+            "kind": kind,
+            "all_metrics": [],           # list[pd.DataFrame]
+            "all_fire_dates": [],        # list[pd.Timestamp]
+            "all_lag_pcts": [],          # list[float]
+            "all_days_since": [],        # list[float]
+        }
+
+    # -----------------------------------------------------------------------
+    # Per-signal screener accumulators
+    # -----------------------------------------------------------------------
     sig_firing: dict[str, list[dict[str, Any]]] = {s["signal_id"]: [] for s in all_sigs}
 
-    # Per-ticker output
+    # -----------------------------------------------------------------------
+    # Per-ticker screener output
+    # -----------------------------------------------------------------------
     stocks_out: dict[str, dict[str, Any]] = {}
 
+    # -----------------------------------------------------------------------
+    # SINGLE PASS: outer = ticker, inner = signal
+    # -----------------------------------------------------------------------
     for i, ticker in enumerate(tickers):
         if (i + 1) % 50 == 0:
-            log.info("  screener: %d/%d tickers done", i + 1, n_tickers)
+            log.info("  pass: %d/%d tickers done", i + 1, n_tickers)
 
         df = universe[ticker]
         df.attrs["ticker"] = ticker
@@ -236,17 +274,15 @@ def build_screener_data(
         close_series = df["close"]
         price = round(float(close_series.iloc[-1]), 4)
 
-        # Composite score
+        # Composite score (screener)
         try:
             score_result = tech_score.score(df)
             score = round(score_result.score, 4)
             band = score_result.band
-            # active_buy = direction == +1 and raw_value > 0
             active_buy = sum(
                 1 for c in score_result.contributors
                 if c.direction == 1 and c.raw_value > 0
             )
-            # active_total = any direction, raw_value > 0 (truthy)
             active_total = sum(
                 1 for c in score_result.contributors if c.raw_value > 0
             )
@@ -254,20 +290,23 @@ def build_screener_data(
             log.debug("score failed for %s: %s", ticker, exc)
             score, band, active_buy, active_total = 0.0, "Hold", 0, 0
 
-        # Performance
+        # Performance (screener)
         perf_7d = _perf(close_series, _PERF_7D)
         perf_30d = _perf(close_series, _PERF_30D)
         perf_12m = _perf(close_series, _PERF_12M)
 
-        # Per-signal latest-bar state
+        # Per-signal inner loop
         sig_entries: list[dict[str, Any]] = []
+
         for sig in all_sigs:
             sid = sig["signal_id"]
             direction = int(sig.get("direction", 0))
             display_en = sig.get("display", {}).get("en", sid)
             glyph = sig.get("glyph", "")
             kind = sig.get("kind", "event")
+            acc = lab_acc[sid]
 
+            # --- ONE compute call ---
             try:
                 series = tc.compute(sid, df)
             except Exception:
@@ -276,21 +315,19 @@ def build_screener_data(
             if series.empty:
                 continue
 
+            # ---- SCREENER side ----
             latest_val = series.iloc[-1]
             state = 0 if pd.isna(latest_val) or latest_val == 0 else 1
 
-            # age_days: for event signals = bars since last fire; for state signals = 0 if firing
             if kind == "event":
-                fires = series[series > 0]
-                if len(fires) > 0:
-                    last_fire_date = fires.index[-1]
+                fires_s = series[series > 0]
+                if len(fires_s) > 0:
+                    last_fire_date = fires_s.index[-1]
                     last_bar = df.index[-1]
-                    # calendar days
                     age_days = (last_bar - last_fire_date).days
                 else:
                     age_days = None
             else:
-                # state signal
                 age_days = 0 if state == 1 else None
 
             sig_entries.append({
@@ -302,7 +339,6 @@ def build_screener_data(
                 "age_days": age_days,
             })
 
-            # record into per-signal firing list (only if firing on latest bar)
             if state == 1:
                 sig_firing[sid].append({
                     "ticker": ticker,
@@ -311,6 +347,38 @@ def build_screener_data(
                     "score": score,
                     "band": band,
                 })
+
+            # ---- LAB side (skip snapshot-family signals: fundamental + insider) ----
+            if acc["lab_exempt"]:
+                continue
+
+            # For state signals: use rising-edge transitions as fires
+            if kind == "state":
+                pos_shifted = series.shift(1, fill_value=0.0)
+                event_pos = ((series > 0) & (pos_shifted == 0)).astype(float)
+            else:
+                event_pos = series
+
+            lab_fires = event_pos[event_pos > 0]
+            if lab_fires.empty:
+                continue
+
+            acc["all_fire_dates"].extend(lab_fires.index.tolist())
+
+            # Lag metric
+            lag_pct, days_low = _lag_metrics(df, lab_fires.index)
+            if lag_pct is not None:
+                acc["all_lag_pcts"].append(lag_pct)
+            if days_low is not None:
+                acc["all_days_since"].append(days_low)
+
+            # Per-fire forward metrics
+            try:
+                m = tech_stars.compute_fire_metrics(df, event_pos, horizon=_HORIZON)
+                if not m.empty:
+                    acc["all_metrics"].append(m)
+            except Exception:
+                continue
 
         stocks_out[ticker] = {
             "name": name_map.get(ticker, ticker),
@@ -325,8 +393,10 @@ def build_screener_data(
             "signals": sig_entries,
         }
 
-    # Build signals section
-    signals_out: dict[str, dict[str, Any]] = {}
+    # -----------------------------------------------------------------------
+    # Build screener output (same as old build_screener_data post-loop)
+    # -----------------------------------------------------------------------
+    signals_screener: dict[str, dict[str, Any]] = {}
     for sig in all_sigs:
         sid = sig["signal_id"]
         display_en = sig.get("display", {}).get("en", sid)
@@ -335,7 +405,7 @@ def build_screener_data(
         direction = int(sig.get("direction", 0))
         glyph = sig.get("glyph", "")
         firing_tickers = sig_firing[sid]
-        signals_out[sid] = {
+        signals_screener[sid] = {
             "display_en": display_en,
             "display_zh": display_zh,
             "family": family,
@@ -345,38 +415,40 @@ def build_screener_data(
             "tickers": firing_tickers,
         }
 
-    return {
+    screener_payload = {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "universe_n": n_tickers,
-        "signals": signals_out,
+        "signals": signals_screener,
         "stocks": stocks_out,
     }
 
+    # -----------------------------------------------------------------------
+    # Build lab output (aggregate per-signal accumulators)
+    # Same aggregation logic as old build_lab_data post-inner-loop
+    # -----------------------------------------------------------------------
+    signals_lab: dict[str, dict[str, Any]] = {}
 
-# ---------------------------------------------------------------------------
-# Lab: per-signal descriptive fire-metric profiles
-# ---------------------------------------------------------------------------
-
-def build_lab_data(
-    universe: dict[str, pd.DataFrame],
-    tc: Any,
-    tech_stars: Any,
-    df_spx: pd.DataFrame,
-) -> dict[str, Any]:
-    """Build the tech_lab.json payload (descriptive; no placebo/bootstrap)."""
-    all_sigs = tc.list_signals()
-    tickers = list(universe.keys())
-    n_tickers = len(tickers)
-
-    log.info("Lab: pooling fires across %d tickers × %d signals", n_tickers, len(all_sigs))
-
-    # Compute SPX 200d-MA for regime split (above-tape = up-tape)
-    from engine.strategy_signals import sma  # noqa: PLC0415
-    spx_close = df_spx["close"]
-    spx_ma200 = sma(spx_close, 200)
-    above_ma = (spx_close > spx_ma200).rename("above_ma")
-
-    signals_out: dict[str, dict[str, Any]] = {}
+    _null_lab_entry = lambda sig, kind: {  # noqa: E731
+        "display_en": sig.get("display", {}).get("en", sig["signal_id"]),
+        "family": sig.get("family", ""),
+        "direction": int(sig.get("direction", 0)),
+        "n_fires": 0,
+        "n_months": 0,
+        "wr_21d": None,
+        "mean_21d": None,
+        "base_wr": None,
+        "base_mean": None,
+        "edge_wr": None,
+        "edge_mean": None,
+        "mfe_mae_med": None,
+        "durable_rate": None,
+        "median_lag_pct": None,
+        "days_since_low_med": None,
+        "up_tape_pct": None,
+        "wr_pre2010": None,
+        "wr_post2010": None,
+        "kind": kind,
+    }
 
     for sig_idx, sig in enumerate(all_sigs):
         sid = sig["signal_id"]
@@ -384,106 +456,21 @@ def build_lab_data(
         direction = int(sig.get("direction", 0))
         display_en = sig.get("display", {}).get("en", sid)
         kind = sig.get("kind", "event")
+        acc = lab_acc[sid]
 
-        # Pure-state signals (no discrete fires) → null profile
-        is_fundamental = (family == "fundamental_valuation")
+        log.debug("Lab aggregate %d/%d: %s", sig_idx + 1, n_sigs, sid)
 
-        if is_fundamental:
-            signals_out[sid] = {
-                "display_en": display_en,
-                "family": family,
-                "direction": direction,
-                "n_fires": 0,
-                "n_months": 0,
-                "wr_21d": None,
-                "mean_21d": None,
-                "base_wr": None,
-                "base_mean": None,
-                "edge_wr": None,
-                "edge_mean": None,
-                "mfe_mae_med": None,
-                "durable_rate": None,
-                "median_lag_pct": None,
-                "days_since_low_med": None,
-                "up_tape_pct": None,
-                "wr_pre2010": None,
-                "wr_post2010": None,
-                "kind": kind,
-            }
+        if acc["lab_exempt"]:
+            signals_lab[sid] = _null_lab_entry(sig, kind)
             continue
 
-        log.debug("Lab signal %d/%d: %s", sig_idx + 1, len(all_sigs), sid)
+        all_metrics = acc["all_metrics"]
+        all_fire_dates_for_regime = acc["all_fire_dates"]
+        all_lag_pcts = acc["all_lag_pcts"]
+        all_days_since = acc["all_days_since"]
 
-        # Pool fires across the universe
-        all_metrics: list[pd.DataFrame] = []
-        all_fire_dates_for_regime: list[pd.Timestamp] = []
-        all_lag_pcts: list[float] = []
-        all_days_since: list[float] = []
-
-        for ticker in tickers:
-            df = universe[ticker]
-            df.attrs["ticker"] = ticker
-
-            try:
-                pos = tc.compute(sid, df)
-            except Exception:
-                continue
-
-            if pos.empty:
-                continue
-
-            # For state signals with no discrete fires: use transitions 0→1 as "fires"
-            if kind == "state":
-                # fire on rising edge (transition from 0 to 1)
-                pos_shifted = pos.shift(1, fill_value=0.0)
-                event_pos = ((pos > 0) & (pos_shifted == 0)).astype(float)
-            else:
-                event_pos = pos
-
-            fires = event_pos[event_pos > 0]
-            if fires.empty:
-                continue
-
-            all_fire_dates_for_regime.extend(fires.index.tolist())
-
-            # Lag metric
-            lag_pct, days_low = _lag_metrics(df, fires.index)
-            if lag_pct is not None:
-                all_lag_pcts.append(lag_pct)
-            if days_low is not None:
-                all_days_since.append(days_low)
-
-            # Per-fire forward metrics
-            try:
-                m = tech_stars.compute_fire_metrics(df, event_pos, horizon=_HORIZON)
-                if not m.empty:
-                    all_metrics.append(m)
-            except Exception:
-                continue
-
-        # --- aggregate -------------------------------------------------------
         if not all_metrics:
-            signals_out[sid] = {
-                "display_en": display_en,
-                "family": family,
-                "direction": direction,
-                "n_fires": 0,
-                "n_months": 0,
-                "wr_21d": None,
-                "mean_21d": None,
-                "base_wr": None,
-                "base_mean": None,
-                "edge_wr": None,
-                "edge_mean": None,
-                "mfe_mae_med": None,
-                "durable_rate": None,
-                "median_lag_pct": None,
-                "days_since_low_med": None,
-                "up_tape_pct": None,
-                "wr_pre2010": None,
-                "wr_post2010": None,
-                "kind": kind,
-            }
+            signals_lab[sid] = _null_lab_entry(sig, kind)
             continue
 
         pooled = pd.concat(all_metrics, axis=0).sort_index()
@@ -497,7 +484,6 @@ def build_lab_data(
             pooled = pooled.iloc[-_FIRE_CAP:]
 
         n_fires = len(pooled)
-        # n_months: span in months
         if n_fires > 0:
             span_days = (pooled.index[-1] - pooled.index[0]).days
             n_months = max(1, round(span_days / 30))
@@ -510,11 +496,10 @@ def build_lab_data(
         mfe_mae_med = float(mfe_mae_vals.median()) if len(mfe_mae_vals) > 0 else None
         durable_rate = float(pooled["durable"].mean()) if n_fires > 0 else None
 
-        # Lag metrics (aggregated from per-ticker lists)
         med_lag = float(np.median(all_lag_pcts)) if all_lag_pcts else None
         med_days = float(np.median(all_days_since)) if all_days_since else None
 
-        # Up-tape pct: fraction of fires where SPX was above 200d MA
+        # Up-tape pct
         fire_dates_idx = pd.DatetimeIndex(all_fire_dates_for_regime[:_FIRE_CAP])
         if len(fire_dates_idx) > 0 and not above_ma.empty:
             aligned = above_ma.reindex(fire_dates_idx, method="ffill")
@@ -525,9 +510,7 @@ def build_lab_data(
         # Era split
         wr_pre2010, wr_post2010 = _era_wr(pooled, _ERA_SPLIT)
 
-        # Base rate: random ticker-day sampling (approximate)
-        # We estimate: draw n_fires random bars from a sample of tickers
-        # and compute fwd_ret win rate — a rough "any day" null
+        # Base rate: random ticker-day sampling (same logic as before, seeded identically)
         rng = np.random.default_rng(42)
         sample_rets: list[float] = []
         for ticker in rng.choice(tickers, size=min(20, len(tickers)), replace=False):
@@ -535,7 +518,6 @@ def build_lab_data(
             close = df["close"]
             if len(close) < _HORIZON + 5:
                 continue
-            # random bars (not near end)
             max_idx = len(close) - _HORIZON - 2
             if max_idx < 5:
                 continue
@@ -551,7 +533,7 @@ def build_lab_data(
         edge_wr = (round(wr_21d - base_wr, 6) if wr_21d is not None and base_wr is not None else None)
         edge_mean = (round(mean_21d - base_mean, 6) if mean_21d is not None and base_mean is not None else None)
 
-        signals_out[sid] = {
+        signals_lab[sid] = {
             "display_en": display_en,
             "family": family,
             "direction": direction,
@@ -573,16 +555,17 @@ def build_lab_data(
             "kind": kind,
         }
 
-    # Count total fires
-    total_fires = sum(v["n_fires"] for v in signals_out.values())
+    total_fires = sum(v["n_fires"] for v in signals_lab.values())
 
-    return {
+    lab_payload = {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "universe_n": n_tickers,
         "universe_caveat": "survivor mega-caps; descriptive not §5.9 verdict",
-        "signals": signals_out,
+        "signals": signals_lab,
         "_meta": {"total_fires": total_fires},
     }
+
+    return screener_payload, lab_payload
 
 
 # ---------------------------------------------------------------------------
@@ -637,19 +620,19 @@ def main(argv: list[str] | None = None) -> None:
     else:
         df_spx = pd.DataFrame({"close": spx_series})
 
-    # --- Screener -----------------------------------------------------------
-    log.info("Building screener data …")
-    screener_payload = build_screener_data(universe, tc, tech_score, name_map)
+    # --- Single pass (screener + lab) ---------------------------------------
+    log.info("Running single-pass build …")
+    screener_payload, lab_payload = build_all(
+        universe, tc, tech_score, tech_stars, df_spx, name_map,
+    )
 
+    # --- Write screener -----------------------------------------------------
     screener_path = output_dir / _SCREENER_FILE
     with open(screener_path, "w") as fh:
         json.dump(screener_payload, fh, separators=(",", ":"))
     log.info("Wrote %s (%.1f KB)", screener_path, screener_path.stat().st_size / 1024)
 
-    # --- Lab ----------------------------------------------------------------
-    log.info("Building lab data …")
-    lab_payload = build_lab_data(universe, tc, tech_stars, df_spx)
-
+    # --- Write lab ----------------------------------------------------------
     lab_path = output_dir / _LAB_FILE
     with open(lab_path, "w") as fh:
         json.dump(lab_payload, fh, separators=(",", ":"))

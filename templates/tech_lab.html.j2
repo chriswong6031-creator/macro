@@ -206,7 +206,8 @@
     <span class="h-note" id="tl-screener-count"></span>
   </h2>
   <div id="tl-screener-body">
-    <table class="tl" id="tl-screener-table">
+    <p class="tl-empty" id="tl-screener-loading" style="padding:14px 0">{{ t('Loading…', '加载中…') }}</p>
+    <table class="tl" id="tl-screener-table" style="display:none">
       <thead><tr>
         <th>#</th>
         <th>{{ t('Ticker', '标的') }}</th>
@@ -217,7 +218,6 @@
         <th>{{ t('Action', '操作') }}</th>
       </tr></thead>
       <tbody id="tl-screener-tbody">
-        {# Populated by JS on page load #}
       </tbody>
     </table>
   </div>
@@ -230,8 +230,8 @@
     <span class="h-note">— {{ t('descriptive · survivor universe · not a §5.9 verdict', '描述性 · 幸存者宇宙 · 非§5.9认证结论') }}</span>
   </h2>
   <div id="tl-lab-body">
-    <div class="tl-lab-grid" id="tl-lab-grid">
-      {# Populated by JS #}
+    <p class="tl-empty" id="tl-lab-loading" style="padding:14px 0">{{ t('Loading…', '加载中…') }}</p>
+    <div class="tl-lab-grid" id="tl-lab-grid" style="display:none">
     </div>
     <p class="tl-lab-caveat" id="tl-lab-caveat">
       {{ universe_caveat or t(
@@ -271,19 +271,15 @@
   </p>
 </div>
 
-{# ── Embedded data for JS ── #}
-<script id="tl-data" type="application/json">{{ embedded_data_json | safe }}</script>
-
 {% endblock %}
 
 {% block body_scripts %}
 <script>
 (function() {
-  // ── load embedded data ──
-  var _d = {};
-  try { _d = JSON.parse(document.getElementById('tl-data').textContent); } catch(e) {}
-  var SIGS = _d.signals || {};
-  var STKS = _d.stocks  || {};
+  // ── runtime state ──
+  var SIGS = {};
+  var STKS = {};
+  var _loaded = false;
 
   // current state
   var _mode   = 'screener';
@@ -486,12 +482,76 @@
 
   // ── top-level render ──
   function _render() {
+    if (!_loaded) return;
     if (_mode === 'screener') _renderScreener();
     else _renderLab();
   }
 
-  // ── init ──
-  _render();
+  // ── show error state ──
+  function _showError(msg) {
+    var loadingS = document.getElementById('tl-screener-loading');
+    var loadingL = document.getElementById('tl-lab-loading');
+    if (loadingS) loadingS.textContent = msg;
+    if (loadingL) loadingL.textContent = msg;
+  }
+
+  // ── hide loading indicators, show table ──
+  function _showReady() {
+    var loadingS = document.getElementById('tl-screener-loading');
+    var tableEl  = document.getElementById('tl-screener-table');
+    var loadingL = document.getElementById('tl-lab-loading');
+    var gridEl   = document.getElementById('tl-lab-grid');
+    if (loadingS) loadingS.style.display = 'none';
+    if (tableEl)  tableEl.style.display  = '';
+    if (loadingL) loadingL.style.display = 'none';
+    if (gridEl)   gridEl.style.display   = '';
+  }
+
+  // ── async data load: fetch both JSONs, merge client-side ──
+  Promise.all(
+    ['factordata/tech_screener.json', 'factordata/tech_lab.json']
+      .map(function(url) { return fetch(url).then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' loading ' + url);
+        return r.json();
+      }); })
+  ).then(function(results) {
+    var screener = results[0];
+    var lab      = results[1];
+
+    var screenerSignals = screener.signals || {};
+    var labSignals      = lab.signals      || {};
+    var merged = {};
+
+    // Attach each lab profile onto its matching screener signal
+    Object.keys(screenerSignals).forEach(function(sid) {
+      merged[sid] = Object.assign({}, screenerSignals[sid], { lab: labSignals[sid] || null });
+    });
+    // Lab-only signals (no screener tickers yet)
+    Object.keys(labSignals).forEach(function(sid) {
+      if (!merged[sid]) {
+        var s = labSignals[sid];
+        merged[sid] = {
+          display_en: s.display_en || sid,
+          display_zh: s.display_en || sid,
+          family: s.family || 'other',
+          direction: s.direction || 0,
+          glyph: '○',
+          n_firing: 0,
+          tickers: [],
+          lab: s,
+        };
+      }
+    });
+
+    SIGS = merged;
+    STKS = screener.stocks || {};
+    _loaded = true;
+    _showReady();
+    _render();
+  }).catch(function(err) {
+    _showError('Data unavailable — ' + (err && err.message ? err.message : String(err)));
+  });
+
 })();
 </script>
 {% endblock %}

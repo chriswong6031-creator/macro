@@ -229,50 +229,28 @@ def main() -> int:
 
         is_sample = screener.get("_sample") or lab.get("_sample")
 
-        # Merge signal metadata: lab profile keyed on same signal IDs as screener
+        # Build signal_groups for the <select> dropdown (server-side, lightweight)
+        # Merge screener + lab signal IDs so every known signal appears in the dropdown.
         screener_signals = screener.get("signals") or {}
         lab_signals = lab.get("signals") or {}
-        stocks = screener.get("stocks") or {}
 
-        # Merge: for each signal in screener, attach lab profile if available
-        merged_signals: dict[str, dict] = {}
+        merged_signals_meta: dict[str, dict] = {}
         for sig_id, sig in screener_signals.items():
-            merged_signals[sig_id] = {**sig, "lab": lab_signals.get(sig_id)}
-
-        # Also include lab-only signals (no screener tickers)
+            merged_signals_meta[sig_id] = {
+                "display_en": sig.get("display_en", sig_id),
+                "display_zh": sig.get("display_zh", sig.get("display_en", sig_id)),
+                "family": sig.get("family", "other"),
+            }
         for sig_id, sig in lab_signals.items():
-            if sig_id not in merged_signals:
-                merged_signals[sig_id] = {
+            if sig_id not in merged_signals_meta:
+                merged_signals_meta[sig_id] = {
                     "display_en": sig.get("display_en", sig_id),
                     "display_zh": sig.get("display_en", sig_id),
                     "family": sig.get("family", "other"),
-                    "direction": sig.get("direction", 0),
-                    "glyph": "○",
-                    "n_firing": 0,
-                    "tickers": [],
-                    "lab": sig,
                 }
 
-        signal_groups = _group_signals(merged_signals)
-
-        # Build a JSON blob to embed in the page for client-side filtering
-        # Only include what the JS needs; keep it compact
-        embedded_data = {
-            "signals": {
-                sig_id: {
-                    "display_en": s.get("display_en", sig_id),
-                    "display_zh": s.get("display_zh", s.get("display_en", sig_id)),
-                    "family": s.get("family", "other"),
-                    "direction": s.get("direction", 0),
-                    "glyph": s.get("glyph", "○"),
-                    "n_firing": s.get("n_firing", 0),
-                    "tickers": s.get("tickers", []),
-                    "lab": s.get("lab"),
-                }
-                for sig_id, s in merged_signals.items()
-            },
-            "stocks": stocks,
-        }
+        # Build grouped list for Jinja dropdown (reuse _group_signals helper)
+        signal_groups = _group_signals(merged_signals_meta)
 
         built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -281,13 +259,10 @@ def main() -> int:
                 generated_utc=built,
                 is_sample=is_sample,
                 signal_groups=signal_groups,
-                screener=screener,
-                lab=lab,
-                embedded_data_json=json.dumps(embedded_data).replace("</", "<\\/"),
                 universe_caveat=lab.get("universe_caveat", ""),
                 universe_n_screener=screener.get("universe_n", 0),
                 universe_n_lab=lab.get("universe_n", 0),
-                n_signals=len(merged_signals),
+                n_signals=len(merged_signals_meta),
                 band_class=_band_class,
                 wr_fmt=_wr_fmt,
                 pct_fmt=_pct_fmt,
@@ -303,7 +278,7 @@ def main() -> int:
         write_page(site / "tech_lab.html", html)
         log.info(
             "wrote site/tech_lab.html (%d signals, sample=%s, %d KB)",
-            len(merged_signals), is_sample, len(html) // 1024,
+            len(merged_signals_meta), is_sample, len(html) // 1024,
         )
         return 0
 
