@@ -1682,6 +1682,17 @@ jobs:
       # metabolism weekly budget (3/ISO-week) can't absorb a batch, so the step
       # retries nightly until a week with budget. Runs BEFORE cortex deliberation
       # so operator batches claim budget ahead of cortex-proposed hypotheses.
+      - name: build context risk lens (nw-context-intelligence W3, R-CI7, display-only)
+        # Personality risk lens: board/universe archetype exposure profile x regime matrices.
+        # All inputs git-tracked (us_standouts, stock_personality, regime_timeline).
+        # Outputs: data/neuralweb/context_risk.json + site/neuralwebdata/context_risk.json.
+        # Covered by the narrow git add block in 'commit cortex outputs' below. Always exits 0.
+        run: |
+          set +e
+          python -m scripts.build_context_risk > /tmp/context_risk.log 2>&1; rc=$?
+          cat /tmp/context_risk.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_context_risk::rc=$rc (non-fatal)"
+          exit 0
       - name: register factor hypotheses (P2 — idempotent, budget-deferred)
         run: |
           set +e
@@ -1764,6 +1775,9 @@ jobs:
           git add data/neuralweb/daily_brief.json 2>/dev/null || true
           git add site/neuralwebdata/daily_brief.json 2>/dev/null || true
           git add data/neuralweb/daily_brief_history.jsonl 2>/dev/null || true
+          # R-CI7: nw-context-intelligence W3 personality risk lens (display-only)
+          git add data/neuralweb/context_risk.json 2>/dev/null || true
+          git add site/neuralwebdata/context_risk.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
           git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
           # Retry-rebase push loop (stock_briefs pattern)

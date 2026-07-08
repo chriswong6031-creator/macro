@@ -464,6 +464,21 @@ lanes:
   - workflow: .github/workflows/daily.yml
     job: cortex
     steps:
+      - id: build_context_risk
+        module: scripts.build_context_risk
+        note: >
+          nw-context-intelligence W3 (R-CI7) — Personality risk lens (display-only).
+          Reads git-tracked inputs: site/factordata/us_standouts.json,
+          site/factordata/stock_personality.json, site/regime_timeline.json.
+          Computes board/universe archetype composition ratios, weighted risk profile
+          from field-guide fingerprints (context_risk_constants.py), regime-conditional
+          21d P10 tail (current quad x liquidity; cells below n=887 floor print
+          insufficient_n). Always exits 0 (fail-open per cortex-job law).
+          inputs: [site/factordata/us_standouts.json,
+                   site/factordata/stock_personality.json,
+                   site/regime_timeline.json]
+          outputs: [data/neuralweb/context_risk.json,
+                    site/neuralwebdata/context_risk.json]
       - id: register_factor_hypotheses
         module: scripts.register_factor_hypotheses
         note: >

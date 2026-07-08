@@ -7567,3 +7567,54 @@ artifacts:
       n_transitions_14d, headline_en, headline_zh. Written by scripts/build_macro_context.py
       after rendering site/macro_context.html. Display/context tier; display-only disclaimer
       on page. No scored surfaces.
+
+  # ── nw-context-intelligence program (W3 — personality risk lens) ──────────
+
+  context-risk:
+    path: data/neuralweb/context_risk.json
+    format: json
+    producer: scripts/build_context_risk.py
+    known_extra_writers: []
+    owner_program: nw-context-intelligence
+    cadence: nightly-cortex
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.context_risk.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R-CI7 W3 — Personality risk lens (display-only). Board/universe archetype
+      composition ratios vs universe, weighted risk profile from field-guide
+      fingerprints, regime-conditional P10 tail (current quad x liquidity cell,
+      cells with n < 887 print insufficient_n), tinderbox/neg-gamma/event-window
+      flags. All numbers carry n and survivorship watermark. This artifact ANNOTATES
+      and may never rank, size, gate, or raise attention floors (Article 2, R-CI1).
+      Reads: site/factordata/us_standouts.json, site/factordata/stock_personality.json,
+      site/regime_timeline.json. Constants transcribed from STOCK_PERSONALITY_FIELD_GUIDE.md.
+
+  site-context-risk:
+    path: site/neuralwebdata/context_risk.json
+    format: json
+    producer: scripts/build_context_risk.py
+    known_extra_writers: []
+    owner_program: nw-context-intelligence
+    cadence: nightly-cortex
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.context_risk.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Site mirror of data/neuralweb/context_risk.json. Same content, atomic
+      temp+rename write. Display-only; no scored surfaces.

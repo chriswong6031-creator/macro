@@ -642,6 +642,85 @@ def _compose_stock_personality_summary(
         return dict(_null)
 
 
+def _compose_context_risk(
+    root: "Path | str | None" = None,
+) -> dict:
+    """Compose the context_risk sub-block for world_state (R-CI7, nw-context-intelligence W3).
+
+    Follows the _compose_stock_personality_summary fail-open discipline exactly:
+    - All data loading is internal to this function (reads the pre-built artifact).
+    - Never crashes; never blocks cortex.
+    - display_only=True always.
+    - Absent artifact ⇒ {"available": False}.
+
+    Reads data/neuralweb/context_risk.json (produced by scripts/build_context_risk.py,
+    nightly-cortex cadence). The artifact carries the full personality risk lens:
+    composition ratios, weighted risk profile, regime-conditional P10 tail read.
+
+    Returns
+    -------
+    dict with keys:
+        available:                bool
+        as_of:                    str | None
+        board_top_overweights:    list of top-3 overweighted archetypes with ratios
+        weighted_p10_21d:         float | None (weighted P10 21d tail from constants)
+        weighted_median_21d:      float | None
+        regime_context:           dict (quad + liq)
+        insufficient_note:        str | None (when regime cell n < adequate)
+        display_only:             True (always)
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "neuralweb" / "context_risk.json"
+
+    _null = {
+        "available": False,
+        "display_only": True,
+    }
+
+    if not path.exists():
+        log.info("context_risk: artifact absent (%s) — null block", path)
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            log.warning("context_risk: artifact not a dict — null block")
+            return dict(_null)
+
+        if not raw.get("available", False):
+            return {
+                "available": False,
+                "as_of": _clean(raw.get("as_of")),
+                "missing_inputs": _clean(raw.get("missing_inputs")),
+                "display_only": True,
+            }
+
+        board = raw.get("board_buy_lane") or {}
+        rr = board.get("regime_conditional") or {}
+        regime_ctx = raw.get("regime_context") or {}
+
+        # Insufficient note — when no regime cells had adequate n
+        insufficient_note = None
+        if rr.get("n_insufficient_cells", 0) > 0 and not rr.get("available", True):
+            insufficient_note = rr.get("note")
+
+        return {
+            "available": True,
+            "as_of": _clean(raw.get("as_of")),
+            "board_top_overweights": _clean(board.get("top_overweights") or []),
+            "weighted_p10_21d": _clean(rr.get("weighted_p10_21d")),
+            "weighted_median_21d": _clean(rr.get("weighted_median_21d")),
+            "n_board": _clean(board.get("n_members")),
+            "regime_context": _clean(regime_ctx),
+            "insufficient_note": _clean(insufficient_note),
+            "survivorship_watermark": "223-name survivorship-biased deep corpus (display-only)",
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("context_risk: compose failed — %s", exc)
+        return dict(_null)
+
+
 def _compose_factor_weather(
     root: "Path | str | None" = None,
     prefer_artifact: bool = True,
@@ -1713,6 +1792,14 @@ def build_world_state(
         gaps.append(f"stock_personality_summary: {exc}")
         stock_personality_summary_block = {"available": False, "display_only": True}
 
+    # ── 6e. context_risk (R-CI7, nw-context-intelligence W3) — fail-open ──
+    try:
+        context_risk_block: dict = _compose_context_risk(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: context_risk lobe failed — %s", exc)
+        gaps.append(f"context_risk: {exc}")
+        context_risk_block = {"available": False, "display_only": True}
+
     # ── 6c. R5 macro-context lobes (PR-B §5.3) ───────────────────────────────
     # Each lobe is try/except-wrapped at the wiring site; failures produce a
     # null-shaped fallback + gap entry per the _compose_factor_weather pattern.
@@ -1907,6 +1994,7 @@ def build_world_state(
         "cross_asset_flows": cross_asset_flows_block,  # R6 NW Cross-Asset Depth (display-only)
         "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
         "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
+        "context_risk": context_risk_block,  # R-CI7 nw-context-intelligence W3 wiring line
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "
