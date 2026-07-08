@@ -205,6 +205,16 @@ jobs:
           # stray tracked write collect leaves outside data/+site/qledger/ (e.g.
           # reports/*.md graders), not just the qledger paths we happen to stage here.
           git add data/ site/qledger/
+          # W0b (2026-07-08 stale-HK incident): US collect job must NOT commit asia-owned
+          # data that it never produced. The GHA cache restore steps above may lay stale
+          # data/hk_stocks (restore-keys: hk-stocks-ohlc-) and breadth caches on top of
+          # the fresh files asia-close already committed.  After the broad `git add data/`
+          # above, unstage every asia-close-owned path so -X theirs on the rebase-push
+          # cannot clobber asia's fresh commit with this job's stale copy.
+          # Derived from asia-close.yml: collect --group asia = adapters starting with
+          # `china` or `hk` (scripts/collect.py group_members), so excludes cover all
+          # data/china*, data/hk*, and data/hkma (adapter key `hkma` starts with `hk`).
+          git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
           # best-effort push: losing a race with a concurrent push must NOT fail the
@@ -1326,6 +1336,21 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ site/ reports/
+          # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
+          # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
+          # The GHA cache restore above (data/hk_stocks, restore-keys: hk-stocks-ohlc-)
+          # can overlay stale parquets on top of what asia-close committed; combined with
+          # -X theirs on the rebase-push, the US job would overwrite fresh HK data with
+          # its stale checkout-time copy.  Unstage all asia-owned paths immediately after
+          # the broad git add so they are never included in the engine commit.
+          # Path derivation: asia group = adapters starting with `china` or `hk`
+          # (scripts/collect.py group_members); data/hkma adapter key `hkma` also starts
+          # with `hk`.  US fallback builders (build_vector: baskets_china/hk idempotent
+          # by as_of) write data/ only when asia lane skipped — those writes ride inside
+          # data/china_* / data/hk_* so they are protected by asia-close on normal runs
+          # and correctly excluded here on a fallback run (no double-commit hazard since
+          # asia-close won't push a commit for those paths on a fallback day).
+          git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
           # W6b per-lane push dedup ledgers: covered by 'git add data/' above since
           # data/alert_triage/ is under data/. Explicit add as staging-law documentation:
           # basket_freeze lane (single-writer: engine/basket_freeze.py),
