@@ -825,6 +825,8 @@ def main() -> int:
                      len(vm["catalyst_strip"]))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk catalyst calendar failed (%s); skipping", e)
+            vm["catalyst_strip"] = []
+            vm["catalyst_imminent"] = None
 
         # CBBC / Warrant Leverage Map — display-tier microstructure organ (W1 data-plane).
         # Surfaces bull/bear positioning froth + issuer-hedge magnet zones. DISPLAY-ONLY.
@@ -844,8 +846,6 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk cbbc map failed (%s); skipping", e)
             vm["cbbc_map"] = None
-            vm["catalyst_strip"] = []
-            vm["catalyst_imminent"] = None
 
         # HK residential-property panel (Centaline CCL) — display/regime context, None-safe
         try:

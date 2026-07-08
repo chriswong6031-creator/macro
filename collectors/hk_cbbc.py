@@ -140,6 +140,37 @@ _COLUMNS = [
 ]
 
 # ---------------------------------------------------------------------------
+# Date helpers
+# ---------------------------------------------------------------------------
+
+def _parse_trade_date_key(trade_date_str: str) -> date:
+    """Convert a trade_date string (DDMMYYYY or YYYYMMDD) to a real date for sorting.
+
+    Used instead of lexicographic string max/compare, which gives wrong results
+    across month boundaries (e.g. "30062026" > "01082026" lexicographically but
+    2026-06-30 < 2026-08-01 chronologically).
+
+    Returns date.min on parse failure so corrupt values sort last (fail-safe).
+    """
+    s = str(trade_date_str or "").strip()
+    # Zero-pad 7-digit dates from Excel (e.g. "8072026" → "08072026")
+    if re.match(r"^\d{7}$", s):
+        s = "0" + s
+    if re.match(r"^\d{8}$", s):
+        # Try DDMMYYYY first (primary format from HKEX servlet)
+        try:
+            return datetime.strptime(s, "%d%m%Y").date()
+        except ValueError:
+            pass
+        # Fallback: try YYYYMMDD (canonical format, may appear in stored data)
+        try:
+            return datetime.strptime(s, "%Y%m%d").date()
+        except ValueError:
+            pass
+    return date.min  # sentinel: sorts before any real date
+
+
+# ---------------------------------------------------------------------------
 # Name-parsing helpers
 # ---------------------------------------------------------------------------
 
@@ -175,18 +206,30 @@ def parse_call_put_dw(short_name: str) -> str:
 def parse_underlying_code(short_name: str, product_type: str) -> str:
     """Best-effort extraction of the underlying code from the short name.
 
-    CBBC: 'CT#HSI  RC2709C' → 'HSI'   |  'CT#HKEX RC2610A' → 'HKEX'
-    DW:   'MBLININ@EC2702A' → 'ININ'   |  'MB-AIA @EC2705A' → 'AIA'
+    CBBC: 'CT#HSI  RC2709C'  → 'HSI'    |  'CT#HKEX RC2610A' → 'HKEX'
+          'CT#CNOOC RC2611A' → 'CNOOC'  |  'CT#CCB  RC2712A' → 'CCB'
+          'CT#CKH  RC2801A'  → 'CKH'    |  'CT#CRRC RC2609A' → 'CRRC'
+          'CT#SMIC  RC2705A' → 'SMIC'
+    DW:   'MBLININ@EC2702A'  → 'ININ'   |  'MB-AIA @EC2705A' → 'AIA'
 
-    Stripped to 4 chars max; may be wrong for unusual issuers. Returns empty
-    string on parse failure — downstream handles via honest null.
+    Returns empty string on parse failure — downstream handles via honest null.
+
+    NOTE: we must NOT split on the characters 'R' or 'C' themselves, as many
+    underlying codes start with C (CNOOC, CCB, CKH, CRRC) or contain C/R
+    internally (SMIC). Split only on whitespace and '@', then strip the
+    trailing structured-product type token (RC/RP/EC/EP + expiry) with a
+    separate anchored regex.
     """
     n = str(short_name or "")
     # CBBC convention: ISSUER#UNDERLYING TYPEEXPIRY_SERIES
     if "#" in n:
         after = n.split("#", 1)[1].strip()
-        # Take first non-space segment (up to first space / RC / RP)
-        code = re.split(r"[\s@RC]+", after)[0]
+        # Split only on whitespace/@ — do NOT include R or C as delimiters
+        parts = re.split(r"[\s@]+", after)
+        raw = parts[0] if parts else ""
+        # Strip any trailing structured-product type token: RC/RP/EC/EP/RCxxxx etc.
+        # Pattern: optional trailing [R|E][C|P] followed by digits+letters (expiry+series)
+        code = re.sub(r"[RE][CP]\d+[A-Z]*$", "", raw, flags=re.I)
         return code[:8].strip()
     # DW convention: ISSUER-UNDERLYING@TYPEEXPIRY_SERIES
     if "@" in n:
@@ -247,19 +290,28 @@ def parse_dts_xlsx(raw_bytes: bytes, issuer_name: str,
             cell = str(row.iloc[0] or "").strip().lower()
             if "trade date" in cell and int(i) < header_row_idx:
                 val = str(row.iloc[1] or "").strip()
+                # DW files from Excel may drop the leading zero → 7 digits (e.g. "8072026")
+                # Normalise to 8 digits before accepting
+                if re.match(r"^\d{7}$", val):
+                    val = "0" + val
                 if re.match(r"^\d{8}$", val):
                     trade_date = val
                     break
 
     # Parse data rows (skip header + separator)
     session_date: date | None = None
-    if re.match(r"^\d{8}$", str(trade_date)):
+    # Normalise 7-digit dates (Excel-dropped leading zero) to 8 digits
+    _td_str = str(trade_date or "").strip()
+    if re.match(r"^\d{7}$", _td_str):
+        _td_str = "0" + _td_str
+        trade_date = _td_str
+    if re.match(r"^\d{8}$", _td_str):
         try:
-            session_date = datetime.strptime(str(trade_date), "%d%m%Y").date()
+            session_date = datetime.strptime(_td_str, "%d%m%Y").date()
         except ValueError:
             # Try YYYYMMDD
             try:
-                session_date = datetime.strptime(str(trade_date), "%Y%m%d").date()
+                session_date = datetime.strptime(_td_str, "%Y%m%d").date()
             except ValueError:
                 pass
 
@@ -302,7 +354,7 @@ def parse_dts_xlsx(raw_bytes: bytes, issuer_name: str,
 
         rows.append({
             "date": session_date,
-            "trade_date": str(trade_date),
+            "trade_date": _td_str,
             "product_type": product_type,
             "short_name": short_name,
             "stock_code": stock_code,
@@ -561,8 +613,9 @@ def fetch_hk_cbbc(full_history: bool = False,
         # Save per-day raw snapshots
         for td_val, grp in cbbc_df.groupby("trade_date"):
             _save_raw(grp.reset_index(drop=True), str(td_val), "cbbc", data_root)
-        # Save latest
-        latest_td = cbbc_df["trade_date"].max()
+        # Save latest — compare as real dates (trade_date is DDMMYYYY string;
+        # lexicographic max is WRONG across month boundaries, e.g. "30062026" > "01082026")
+        latest_td = max(cbbc_df["trade_date"].unique(), key=_parse_trade_date_key)
         latest_date = str(latest_td)
         latest_cbbc = cbbc_df[cbbc_df["trade_date"] == latest_td].copy()
         _save_latest(latest_cbbc.reset_index(drop=True), "cbbc", data_root)
@@ -573,8 +626,9 @@ def fetch_hk_cbbc(full_history: bool = False,
             subset=["trade_date", "stock_code", "issuer"], keep="last")
         for td_val, grp in dw_df.groupby("trade_date"):
             _save_raw(grp.reset_index(drop=True), str(td_val), "dw", data_root)
-        latest_td_dw = dw_df["trade_date"].max()
-        if not latest_date or latest_td_dw > latest_date:
+        latest_td_dw = max(dw_df["trade_date"].unique(), key=_parse_trade_date_key)
+        # Compare as real dates (not strings) to correctly determine which is later
+        if not latest_date or _parse_trade_date_key(latest_td_dw) > _parse_trade_date_key(latest_date):
             latest_date = str(latest_td_dw)
         latest_dw = dw_df[dw_df["trade_date"] == latest_td_dw].copy()
         _save_latest(latest_dw.reset_index(drop=True), "dw", data_root)

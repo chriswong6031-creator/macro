@@ -154,9 +154,24 @@ def _leverage_state(bull: int, bear: int) -> str:
 # ---------------------------------------------------------------------------
 
 def _underlying_matches(underlying_code: str, code_list: list[str]) -> bool:
-    """True if the underlying_code from the XLSX matches any target code."""
+    """True if the underlying_code from the XLSX matches any target code.
+
+    Requires exact-match OR that the XLSX code starts with a target code
+    (handles minor suffix variants from different issuers).
+
+    We do NOT allow c.startswith(uc) (the reverse arm) because it causes
+    short fragments to match multiple bellwethers — e.g. "B" would match
+    both "BABA" (Alibaba 9988.HK) and "BAIDU" (Baidu 9888.HK), summing
+    unrelated warrants into the wrong bellwether totals.
+
+    Minimum token length guard: codes shorter than 2 chars are rejected to
+    prevent single-letter fragments from sweeping large fractions of the
+    universe.
+    """
     uc = str(underlying_code or "").upper().strip()
-    return any(uc.startswith(c) or c.startswith(uc) for c in code_list if c)
+    if len(uc) < 2:
+        return False
+    return any(uc == c or uc.startswith(c) for c in code_list if c)
 
 
 def _aggregate_for_ticker(cbbc_df: pd.DataFrame,

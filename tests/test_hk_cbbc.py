@@ -183,6 +183,159 @@ class TestParseUnderlyingCode:
 
 
 # ---------------------------------------------------------------------------
+# FIX 3: C-prefix underlying code extraction (regression suite)
+# ---------------------------------------------------------------------------
+
+class TestParseUnderlyingCodeCPrefix:
+    """Regression: C-prefix underlyings must not be destroyed by the split.
+
+    Old code used re.split(r'[\\s@RC]+', ...) which treated R and C as
+    delimiters, turning 'CT#CNOOC RC2611A' → '' and 'CT#SMIC RC2705A' → 'SMI'.
+    Fixed: split only on whitespace/@, then strip the trailing type token.
+    """
+
+    @pytest.mark.parametrize("short_name,expected", [
+        ("CT#CNOOC RC2611A", "CNOOC"),   # starts with C — was destroyed
+        ("CT#CCB  RC2712A", "CCB"),       # starts with C
+        ("CT#CKH  RC2801A", "CKH"),       # starts with C
+        ("CT#CRRC RC2609A", "CRRC"),      # starts with C, also contains R
+        ("CT#SMIC  RC2705A", "SMIC"),     # contains internal C — was truncated to "SMI"
+        ("CT#HSI  RC2709C", "HSI"),       # control: standard non-C code still works
+        ("CT#HKEX RC2610A", "HKEX"),     # control: contains E,X — unaffected
+        ("CT#ALIBABA RC2611A", "ALIBABA"), # long name — still correct
+    ])
+    def test_c_prefix_extracts_correctly(self, short_name, expected):
+        from collectors.hk_cbbc import parse_underlying_code
+        result = parse_underlying_code(short_name, "cbbc")
+        assert result.upper() == expected.upper(), (
+            f"parse_underlying_code({short_name!r}) = {result!r}; "
+            f"expected {expected!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# FIX 4: _underlying_matches must not collapse Alibaba and Baidu via "B"
+# ---------------------------------------------------------------------------
+
+class TestUnderlyingMatchesNoOvermatch:
+    """Regression: bidirectional startswith c.startswith(uc) over-matches.
+
+    Old code: 'B'.startswith('BABA') → False, but 'BABA'.startswith('B') → True,
+    so a garbled 'B' fragment matched BABA. Worse, 'B'.startswith('BAIDU') → False
+    but 'BAIDU'.startswith('B') → True, so 'B' would match BOTH Alibaba codes
+    ('BABA') AND Baidu codes ('BAIDU'/'BIDU'), mixing their warrant counts.
+
+    Fix: drop c.startswith(uc); require uc.startswith(c) or exact match only;
+    minimum token length = 2.
+    """
+
+    def test_single_letter_b_does_not_match_baba(self):
+        """'B' must not match the BABA code list (Alibaba 9988.HK)."""
+        from engine.hk_cbbc import _underlying_matches, _TICKER_TO_CODES
+        baba_codes = _TICKER_TO_CODES.get("9988.HK", [])
+        assert not _underlying_matches("B", baba_codes), (
+            f"'B' should not match Alibaba codes {baba_codes!r}"
+        )
+
+    def test_single_letter_b_does_not_match_baidu(self):
+        """'B' must not match the BAIDU code list (Baidu 9888.HK)."""
+        from engine.hk_cbbc import _underlying_matches, _TICKER_TO_CODES
+        baidu_codes = _TICKER_TO_CODES.get("9888.HK", [])
+        assert not _underlying_matches("B", baidu_codes), (
+            f"'B' should not match Baidu codes {baidu_codes!r}"
+        )
+
+    def test_baba_matches_alibaba(self):
+        """'BABA' must match Alibaba's code list (positive control)."""
+        from engine.hk_cbbc import _underlying_matches, _TICKER_TO_CODES
+        baba_codes = _TICKER_TO_CODES.get("9988.HK", [])
+        assert _underlying_matches("BABA", baba_codes), (
+            f"'BABA' should match Alibaba codes {baba_codes!r}"
+        )
+
+    def test_baidu_matches_baidu(self):
+        """'BAIDU' must match Baidu's code list (positive control)."""
+        from engine.hk_cbbc import _underlying_matches, _TICKER_TO_CODES
+        baidu_codes = _TICKER_TO_CODES.get("9888.HK", [])
+        assert _underlying_matches("BAIDU", baidu_codes), (
+            f"'BAIDU' should match Baidu codes {baidu_codes!r}"
+        )
+
+    def test_baba_does_not_match_baidu(self):
+        """'BABA' must not match Baidu's code list (no cross-contamination)."""
+        from engine.hk_cbbc import _underlying_matches, _TICKER_TO_CODES
+        baidu_codes = _TICKER_TO_CODES.get("9888.HK", [])
+        assert not _underlying_matches("BABA", baidu_codes), (
+            f"'BABA' should not match Baidu codes {baidu_codes!r}"
+        )
+
+    def test_empty_code_no_match(self):
+        """Empty/blank underlying codes must not match anything."""
+        from engine.hk_cbbc import _underlying_matches, _TICKER_TO_CODES
+        hsi_codes = _TICKER_TO_CODES.get("^HSI", [])
+        assert not _underlying_matches("", hsi_codes)
+        assert not _underlying_matches("  ", hsi_codes)
+
+
+# ---------------------------------------------------------------------------
+# FIX 2: date comparison uses real dates not lexicographic string order
+# ---------------------------------------------------------------------------
+
+class TestTradeDateComparison:
+    """Regression: _parse_trade_date_key must sort DDMMYYYY correctly.
+
+    Lexicographic comparison of DDMMYYYY strings gives wrong results at month
+    boundaries: '30062026' > '01082026' lexicographically but 2026-06-30 <
+    2026-08-01 chronologically. The fix replaces .max() with key=_parse_trade_date_key.
+    """
+
+    def test_aug_beats_jun_across_month_boundary(self):
+        """01082026 (Aug 1) must sort after 30062026 (Jun 30)."""
+        from collectors.hk_cbbc import _parse_trade_date_key
+        from datetime import date
+        jun30 = _parse_trade_date_key("30062026")
+        aug01 = _parse_trade_date_key("01082026")
+        assert aug01 > jun30, (
+            f"01082026 should be after 30062026 but got {aug01} <= {jun30}"
+        )
+
+    def test_max_picks_aug_not_jun(self):
+        """max(..., key=_parse_trade_date_key) picks Aug 1 over Jun 30."""
+        from collectors.hk_cbbc import _parse_trade_date_key
+        dates = ["30062026", "01082026", "15072026"]
+        latest = max(dates, key=_parse_trade_date_key)
+        assert latest == "01082026", (
+            f"Expected '01082026' but max() returned {latest!r} — "
+            "lexicographic sort is wrong"
+        )
+
+    def test_same_month_ordering(self):
+        """Within the same month, dates sort correctly."""
+        from collectors.hk_cbbc import _parse_trade_date_key
+        dates = ["01072026", "15072026", "08072026"]
+        latest = max(dates, key=_parse_trade_date_key)
+        assert latest == "15072026"
+
+    def test_seven_digit_date_is_normalized(self):
+        """7-digit dates (Excel-dropped leading zero) parse correctly."""
+        from collectors.hk_cbbc import _parse_trade_date_key
+        from datetime import date
+        # "8072026" should be treated as "08072026" = 2026-07-08
+        result = _parse_trade_date_key("8072026")
+        assert result == date(2026, 7, 8), (
+            f"Expected 2026-07-08 from '8072026' but got {result}"
+        )
+
+    def test_corrupt_date_returns_date_min(self):
+        """Corrupt date strings return date.min (fail-safe, sorts last)."""
+        from collectors.hk_cbbc import _parse_trade_date_key
+        from datetime import date
+        assert _parse_trade_date_key("") == date.min
+        assert _parse_trade_date_key("notadate") == date.min
+        assert _parse_trade_date_key("99992026") == date.min  # invalid DDMM
+
+
+# ---------------------------------------------------------------------------
 # Engine: leverage_state logic
 # ---------------------------------------------------------------------------
 
