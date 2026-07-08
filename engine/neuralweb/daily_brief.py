@@ -802,6 +802,73 @@ def _enrich_stale_with_support_impact(
     return enriched
 
 
+# ---- China market-state block (CN-SYS W7, display-only) ----------------------
+
+def _build_china_market_state_block(root: Path) -> dict:
+    """Build the compact China market-state block for the NW daily brief (CN-SYS W7).
+
+    Reads site/chinastatedata/market_state.json (asia-close cadence, SLA 30h).
+    Returns a compact block with:
+        available:          bool
+        as_of:              str | None
+        phase:              str | None  (phase label)
+        who_controls:       str | None
+        policy_impulse:     str | None
+        top_contradiction:  dict | None (first contradiction entry)
+        data_gaps_count:    int | None
+        note:               str   (honest placeholder when absent)
+        display_only:       True
+
+    Fail-open: missing/unreadable artifact → {"available": False, "note": ...}.
+    No trading verbs, no scores, no origination.
+    CN-SYS-R1/R13/R14.
+    """
+    path = root / "site" / "chinastatedata" / "market_state.json"
+    if not path.exists():
+        return {
+            "available": False,
+            "note": "site/chinastatedata/market_state.json not yet built (CN-SYS W6 pending)",
+            "display_only": True,
+        }
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("daily_brief: china_market_state read failed — %s", exc)
+        return {"available": False, "note": f"read error: {exc}", "display_only": True}
+
+    if not isinstance(raw, dict):
+        return {"available": False, "note": "artifact not a dict", "display_only": True}
+
+    phase_raw = raw.get("phase") or {}
+    participation_raw = raw.get("participation") or {}
+    policy_raw = raw.get("policy") or {}
+
+    # Contradictions — top-level list or participation list
+    contra_list = raw.get("contradictions") or participation_raw.get("contradictions") or []
+    top_contra: dict | None = None
+    if isinstance(contra_list, list) and contra_list:
+        c = contra_list[0]
+        if isinstance(c, dict):
+            top_contra = {
+                "a": c.get("a"),
+                "b": c.get("b"),
+            }
+
+    gaps_list = raw.get("data_gaps") or []
+
+    return {
+        "available": True,
+        "as_of": raw.get("as_of"),
+        "phase": phase_raw.get("phase"),
+        "phase_confidence": phase_raw.get("confidence"),
+        "who_controls": participation_raw.get("who_controls"),
+        "policy_impulse": policy_raw.get("policy_impulse"),
+        "top_contradiction": top_contra,
+        "data_gaps_count": len(gaps_list) if isinstance(gaps_list, list) else None,
+        "display_only": True,
+    }
+
+
 # ---- main build function ------------------------------------------------------
 
 def build(root: Path | None = None, phase: str = "engine") -> dict:
@@ -931,6 +998,16 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
     # ---- stale enrichment with support_impact (W3, W2 embed) ----
     stale_lobes = _enrich_stale_with_support_impact(stale_lobes, health)
 
+    # ---- China market-state block (CN-SYS W7) ----
+    # Compact summary of site/chinastatedata/market_state.json.
+    # Fail-open: absent artifact → {"available": False} with honest note.
+    china_market_state = _build_china_market_state_block(root)
+    if not china_market_state.get("available"):
+        gaps_noted.append(
+            "china_market_state: site/chinastatedata/market_state.json absent or unreadable "
+            "(CN-SYS W6 not yet merged or asia-close step not run)"
+        )
+
     return {
         "schema": SCHEMA,
         "produced_at": now,
@@ -945,6 +1022,7 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
         "operator_attention": operator_attention,
         "candidate_watch": candidate_watch,
         "evidence_clock": evidence_clock,
+        "china_market_state": china_market_state,  # CN-SYS W7 wiring line
         "caveats": _CAVEATS,
         "_gaps": gaps_noted,
     }

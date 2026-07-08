@@ -57,6 +57,7 @@ _BUDGET_CONTRADICTS = 5
 _BUDGET_REGIME = 3
 _BUDGET_FACTOR = 6
 _BUDGET_OPTIONS = 6
+_BUDGET_CHINA = 5   # CN-SYS W7: China/A-share scope questions
 _BUDGET_GENERAL = 8
 _BUDGET_MAX_HARD_CAP = 8
 
@@ -87,6 +88,40 @@ _FACTOR_TRIGGER_TERMS = re.compile(
     r"factor\s+contradiction|factor\s+leader|factor\s+model|"
     r"ic\s+score|scorecard|factor\s+percentile|block[.-]a|block[.-]b)\b",
     re.I,
+)
+
+# China/A-share scope trigger terms (CN-SYS W7) — deterministic keyword + ticker detection.
+# Checked BEFORE generic regime/macro branches so China questions route to the China lobe.
+# Ticker patterns: A-share format (6XXXXX — 6-digit numeric starting with 6, 0, or 3),
+#   HK H-shares (XXXXX.HK suffix), and common China market tickers/indices.
+# Keyword list is conservative: only unambiguous China market / A-share terms.
+_CHINA_TRIGGER_TERMS = re.compile(
+    # ASCII keyword triggers with word-boundary anchors
+    r"(?i)\b("
+    r"a[- ]share|"
+    r"csi\s*300|csi\s*500|csi\s*1000|sse\s*50|"
+    r"shcomp|szcomp|chinext|star\s*market|"
+    r"china\s*(market|regime|phase|cycle|policy|stock|equity|sector|mainland)|"
+    r"mainland\s*(china|market|equity|stock)|"
+    r"pboc|csrc|northbound|southbound|"
+    r"margin\s*(balance|froth|debt)|"
+    r"limit.?(up|down)|"
+    r"who.?controls|policy.?impulse|"
+    r"qvix|zt.breadth|china.*phase|phase.*china|"
+    r"china.*policy|policy.*china|"
+    r"a.share.*(phase|cycle|regime)|"
+    r"yuan|renminbi|rmb|usdcnh|cnh|"
+    r"lianban"
+    r")\b"
+    # Chinese character terms — no \b (word boundaries don't work for CJK)
+    r"|(?:a股|上证|深证|沪深|创业板|科创板|北交所|主板|北向|南向|"
+    r"陆股通|港股通|沪港通|深港通|"
+    r"融资|融券|涨停|跌停|连板|板|回调|底部)"
+    # 6-digit A-share ticker patterns (600xxx, 000xxx, 300xxx, 688xxx, 83xxxx)
+    r"|\b(6[0-9]{5}|0[0-9]{5}|3[0-9]{5}|83[0-9]{4})\b"
+    # HK-listed Chinese shares (e.g. 0700.HK, 9988.HK)
+    r"|\b\d{4}\.HK\b",
+    re.IGNORECASE,
 )
 
 # Options-question trigger terms (RO-7) — checked after factor, before generic branches.
@@ -302,6 +337,13 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
         if re.search(r"\b(contradict\w*|conflict\w*|tension\w*|borrowed\s+strength)\b", q):
             seeds.append("list_factor_contradictions")
         return _BUDGET_FACTOR, seeds
+    # China / A-share path (CN-SYS W7) — checked after factor but before options and generic
+    # branches.  Keyword + ticker detection is deterministic (no LLM judgment in routing).
+    # The seed tool is read_world_state (reads china_market_state sub-block in world_state).
+    # No per-name China tools exist yet; the lobe packet covers market-phase context.
+    if _CHINA_TRIGGER_TERMS.search(question):
+        return _BUDGET_CHINA, ["read_world_state"]
+
     # Options path (RO-7) — checked after factor, before generic contradictions/regime
     # so "options contradictions" and "skew" questions don't bleed into generic branches
     if _OPTIONS_TRIGGER_TERMS.search(question):
@@ -339,6 +381,161 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
         return _BUDGET_REGIME, ["read_world_state"]
     # default
     return _BUDGET_GENERAL, ["read_world_state"]
+
+
+# ---------------------------------------------------------------------------
+# China decision packet assembler (CN-SYS W7, Codex §11.2 shape)
+# ---------------------------------------------------------------------------
+
+def assemble_china_decision_packet(root: "Path | None" = None) -> dict:
+    """Assemble a china_decision_packet.v1 FROM ARTIFACTS ONLY (CN-SYS W7).
+
+    Shape per Codex §11.2:
+        market_phase          — from phase lobe
+        policy_liquidity      — from policy lobe
+        participation         — from participation lobe
+        sector_theme          — from rotation lobe (top sector leaders / hot baskets)
+        execution_constraints — from microstructure lobe (chase veto, fillability)
+        action_context        — summary prose (no trade verbs)
+        falsifiers            — from phase falsifiers
+        authority             — fixed: originates_signal=false, can_de_escalate=false,
+                               validated_components=[]
+
+    CN-SYS-R1:  context_only — no rank/size/gate/origination.
+    CN-SYS-R13: no fused score.
+    CN-SYS-R14: LLM layer may phrase the action_context string at presentation time,
+                but NEVER modify the structured fields from this packet.
+
+    The packet is computed deterministically from committed artifacts.
+    Returns {"available": False, "note": ...} when the source artifact is absent/stale.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    ms_path = root / "site" / "chinastatedata" / "market_state.json"
+    if not ms_path.exists():
+        return {
+            "available": False,
+            "schema": "china_decision_packet.v1",
+            "note": "site/chinastatedata/market_state.json absent — packet unavailable",
+            "authority": {
+                "originates_signal": False,
+                "can_de_escalate": False,
+                "validated_components": [],
+                "tier": "context_only",
+            },
+        }
+
+    try:
+        raw = json.loads(ms_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "available": False,
+            "schema": "china_decision_packet.v1",
+            "note": f"read error: {exc}",
+            "authority": {
+                "originates_signal": False,
+                "can_de_escalate": False,
+                "validated_components": [],
+                "tier": "context_only",
+            },
+        }
+
+    phase_raw = raw.get("phase") or {}
+    policy_raw = raw.get("policy") or {}
+    part_raw = raw.get("participation") or {}
+    micro_raw = raw.get("microstructure") or {}
+    rot_raw = raw.get("rotation") or {}
+
+    # market_phase
+    market_phase = {
+        "label": phase_raw.get("phase"),
+        "confidence": phase_raw.get("confidence"),
+        "as_of": phase_raw.get("as_of"),
+        "evidence": (phase_raw.get("evidence") or [])[:5],
+    }
+
+    # policy_liquidity
+    policy_liquidity = {
+        "impulse": policy_raw.get("policy_impulse"),
+        "channels": policy_raw.get("transmission_channel"),
+        "as_of": policy_raw.get("as_of"),
+        "staleness": policy_raw.get("staleness"),
+    }
+
+    # participation
+    participation = {
+        "regime": part_raw.get("regime"),
+        "who_controls": part_raw.get("who_controls"),
+        "risk": part_raw.get("risk"),
+        "as_of": part_raw.get("as_of"),
+        # CN-SYS-R4: northbound dead post-2024-08, noted honestly
+        "northbound_note": "DEAD post-2024-08-16 (SLF-050) — never read as live zero",
+    }
+
+    # sector_theme — from rotation
+    leaders = rot_raw.get("sector_leaders") or []
+    hot_baskets = [
+        b.get("id") for b in (rot_raw.get("ths_heat") or {}).get("hot_baskets") or []
+        if isinstance(b, dict) and b.get("id")
+    ]
+    sector_theme = {
+        "sector_leaders": leaders[:3],
+        "hot_baskets": hot_baskets[:3],
+        "as_of": rot_raw.get("as_of"),
+    }
+
+    # execution_constraints — from microstructure (CN-SYS-R3: limit-up context/veto only)
+    agg = (micro_raw.get("aggregate") or {})
+    name_summary = (micro_raw.get("name_summary") or {})
+    chase_veto_count = name_summary.get("chase_veto_count") or 0
+    fillable_count = name_summary.get("fillable_count") or 0
+    execution_constraints = {
+        "chase_veto_count": chase_veto_count,
+        "fillable_count": fillable_count,
+        "limit_up_count": agg.get("limit_up_count"),
+        "limit_down_count": agg.get("limit_down_count"),
+        "lianban_max": agg.get("lianban_max"),
+        "note": (
+            "CN-SYS-R3: limit-up data is market-structure/breadth context and "
+            "chase-veto input only — BUY-direction use is forbidden (standing kill)."
+        ),
+        "as_of": micro_raw.get("as_of"),
+    }
+
+    # action_context — factual phrase built from structured fields, no trade verbs
+    phase_label = phase_raw.get("phase") or "unknown"
+    who_controls = part_raw.get("who_controls") or "unknown"
+    impulse = policy_raw.get("policy_impulse") or "unknown"
+    action_context = (
+        f"China A-shares: phase={phase_label}, who_controls={who_controls}, "
+        f"policy_impulse={impulse}. Context/display tier only — "
+        "no signal rank, no position sizing, no origination."
+    )
+
+    # falsifiers — from phase lobe
+    falsifiers = phase_raw.get("falsifiers") or []
+
+    return {
+        "available": True,
+        "schema": "china_decision_packet.v1",
+        "as_of": raw.get("as_of"),
+        "market_phase": market_phase,
+        "policy_liquidity": policy_liquidity,
+        "participation": participation,
+        "sector_theme": sector_theme,
+        "execution_constraints": execution_constraints,
+        "action_context": action_context,
+        "falsifiers": falsifiers[:5],
+        "authority": {
+            "originates_signal": False,
+            "can_de_escalate": False,
+            "validated_components": [],
+            "tier": "context_only",
+        },
+    }
 
 
 # ---------------------------------------------------------------------------

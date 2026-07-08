@@ -490,6 +490,34 @@ def _make_crossasset(root: Path) -> dict:
     return d
 
 
+def _make_china_market_state(root: Path) -> dict:
+    """Write a minimal synthetic site/chinastatedata/market_state.json for CN-SYS W7."""
+    d: dict = {
+        "schema": "china_market_state.v1",
+        "as_of": "2026-07-08",
+        "generated_utc": "2026-07-08T10:00:00Z",
+        "authority": {"tier": "context_only"},
+        "phase": {"phase": "POLICY_PUT", "confidence": 0.75, "evidence": []},
+        "participation": {"regime": "unclear", "who_controls": "offshore", "risk": "normal"},
+        "microstructure": {
+            "as_of": "2026-07-07",
+            "aggregate": {"limit_up_count": 9.0, "limit_down_count": 5.0,
+                          "sealed_up_close": 5.0, "failed_up_seal_count": 4.0,
+                          "lianban_max": 1.0},
+            "name_summary": {"n_packets": 10, "chase_veto_count": 2, "fillable_count": 10},
+        },
+        "policy": {"as_of": "2026-07-08", "policy_impulse": "targeted_support",
+                   "transmission_channel": ["liquidity"]},
+        "rotation": {},
+        "contradictions": [],
+        "data_gaps": [],
+    }
+    p = root / "site" / "chinastatedata"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "market_state.json").write_text(json.dumps(d))
+    return d
+
+
 def _full_tree(root: Path) -> tuple[dict, dict, dict, dict, dict]:
     """Build all synthetic source files; return the raw dicts for assertions.
 
@@ -499,6 +527,9 @@ def _full_tree(root: Path) -> tuple[dict, dict, dict, dict, dict]:
 
     Extended for R6: writes data/crossasset/latest.json with a flows block so
     the cross_asset_flows lobe gap is suppressed.
+
+    Extended for CN-SYS W7: writes site/chinastatedata/market_state.json so the
+    china_market_state lobe gap is suppressed.
     """
     _seed_synapse(root)
     ms = _make_market_state(root)
@@ -520,6 +551,8 @@ def _full_tree(root: Path) -> tuple[dict, dict, dict, dict, dict]:
     _make_transitions_jsonl(root)
     # R6 cross-asset source
     _make_crossasset(root)
+    # CN-SYS W7 China spine
+    _make_china_market_state(root)
     return ms, reg, oracle, rs, at
 
 
@@ -541,7 +574,9 @@ def test_full_composition_shape(tmp_path):
                  "global_regimes", "commodity_context", "intelligence",
                  "macro_deltas",
                  # R6 cross-asset lobe
-                 "cross_asset_flows"):
+                 "cross_asset_flows",
+                 # CN-SYS W7 China market-state lobe
+                 "china_market_state"):
         assert key in payload, f"missing top-level key: {key!r}"
 
     # All R5+R6 lobes carry display_only=True
@@ -551,6 +586,14 @@ def test_full_composition_shape(tmp_path):
         assert payload[lobe_key].get("display_only") is True, (
             f"{lobe_key!r} missing display_only=True"
         )
+
+    # CN-SYS W7: china_market_state lobe present and display_only
+    cn_lobe = payload["china_market_state"]
+    assert isinstance(cn_lobe, dict), "china_market_state must be a dict"
+    assert cn_lobe.get("display_only") is True, "china_market_state missing display_only=True"
+    assert cn_lobe.get("authority") == "context_only", (
+        "china_market_state authority must be 'context_only'"
+    )
 
     # Envelope keys
     from engine.neuralweb.envelope import ENVELOPE_KEYS

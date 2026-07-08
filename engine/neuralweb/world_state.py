@@ -1648,6 +1648,169 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# China market-state lobe (W7 NW adapter — CN-SYS-R1/R13/R14)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Staleness threshold for china_market_state artifact (asia-close cadence, SLA 30h)
+_CHINA_STATE_STALENESS_HOURS = 30.0
+
+_CHINA_MARKET_STATE_NULL: dict = {
+    "available": False,
+    "authority": "context_only",
+    "note": (
+        "china_market_state: artifact absent or stale — "
+        "site/chinastatedata/market_state.json not yet written "
+        "or exceeds 30h freshness SLA. Degrade-don't-crash."
+    ),
+    "display_only": True,
+}
+
+
+def _compose_china_market_state(root: "Path | str | None" = None) -> dict:
+    """Compose the china_market_state sub-block for world_state (CN-SYS W7).
+
+    Reads site/chinastatedata/market_state.json (schema china_market_state.v1,
+    produced by scripts/build_china_market_state.py at asia-close cadence).
+
+    Exposes:
+        phase:           {label, confidence}
+        participation:   {regime, who_controls, risk}
+        policy_impulse:  str (easing/neutral/tightening/targeted_support/market_rescue)
+        microstructure:  {limit_up_count, limit_down_count, sealed_up_close,
+                          failed_up_seal_count, lianban_max, chase_veto_count,
+                          fillable_count}
+        contradictions_count:    int
+        top_contradiction:       dict | None  (first entry of contradictions list)
+        data_gaps_count:         int
+        top_data_gap:            str | None
+        as_of:                   str | None
+        authority:               "context_only"
+        display_only:            True (always)
+
+    Degrade convention (follows cross_asset_flows precedent):
+        - missing artifact   → null block with available=False
+        - stale artifact     → null block with available=False, note="stale"
+        - compose exception  → null block with available=False, note=error str
+
+    CN-SYS-R1:  context_only, no rank/size/gate/origination.
+    CN-SYS-R13: no fused score — per-lobe fields only.
+    CN-SYS-R14: LLM surfaces never feed the spine.
+    """
+    repo = _repo_root(root)
+    path = repo / "site" / "chinastatedata" / "market_state.json"
+
+    if not path.exists():
+        log.info("china_market_state: artifact absent (%s) — null lobe", path)
+        return dict(_CHINA_MARKET_STATE_NULL)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("china_market_state: cannot read %s — %s", path, exc)
+        return {"available": False, "authority": "context_only",
+                "note": f"read error: {exc}", "display_only": True}
+
+    if not isinstance(raw, dict):
+        log.warning("china_market_state: artifact is not a dict — null lobe")
+        return dict(_CHINA_MARKET_STATE_NULL)
+
+    # Staleness gate — matches _is_stale() in mastermind_context (SLA 30h)
+    as_of = raw.get("as_of") or raw.get("generated_utc")
+    if as_of:
+        try:
+            asof_str = str(as_of)[:10]
+            asof_dt = datetime.fromisoformat(asof_str)
+            age_hours = (datetime.now(timezone.utc).replace(tzinfo=None) - asof_dt).total_seconds() / 3600
+            if age_hours > _CHINA_STATE_STALENESS_HOURS:
+                log.warning(
+                    "china_market_state: artifact as_of=%r is %.1fh stale (SLA %.0fh) — null lobe",
+                    as_of, age_hours, _CHINA_STATE_STALENESS_HOURS,
+                )
+                return {
+                    "available": False,
+                    "authority": "context_only",
+                    "note": f"stale: {age_hours:.1f}h > {_CHINA_STATE_STALENESS_HOURS}h SLA",
+                    "as_of": _clean(as_of),
+                    "display_only": True,
+                }
+        except Exception:  # noqa: BLE001
+            pass  # unparseable as_of — proceed without staleness gate
+
+    try:
+        phase_raw = raw.get("phase") or {}
+        participation_raw = raw.get("participation") or {}
+        microstructure_raw = raw.get("microstructure") or {}
+        policy_raw = raw.get("policy") or {}
+
+        phase_block = {
+            "label": _clean(phase_raw.get("phase")),
+            "confidence": _clean(phase_raw.get("confidence")),
+        }
+
+        participation_block = {
+            "regime": _clean(participation_raw.get("regime")),
+            "who_controls": _clean(participation_raw.get("who_controls")),
+            "risk": _clean(participation_raw.get("risk")),
+        }
+
+        agg = (microstructure_raw.get("aggregate") or {})
+        name_summary = (microstructure_raw.get("name_summary") or {})
+        micro_block = {
+            "limit_up_count": _clean(agg.get("limit_up_count")),
+            "limit_down_count": _clean(agg.get("limit_down_count")),
+            "sealed_up_close": _clean(agg.get("sealed_up_close")),
+            "failed_up_seal_count": _clean(agg.get("failed_up_seal_count")),
+            "lianban_max": _clean(agg.get("lianban_max")),
+            "chase_veto_count": _clean(name_summary.get("chase_veto_count")),
+            "fillable_count": _clean(name_summary.get("fillable_count")),
+        }
+
+        # Contradictions — list at top level or in participation
+        contra_list = raw.get("contradictions") or participation_raw.get("contradictions") or []
+        n_contra = len(contra_list) if isinstance(contra_list, list) else 0
+        top_contra: dict | None = None
+        if isinstance(contra_list, list) and contra_list:
+            top_raw = contra_list[0]
+            if isinstance(top_raw, dict):
+                top_contra = {
+                    "a": _clean(top_raw.get("a")),
+                    "b": _clean(top_raw.get("b")),
+                    "detail": _clean(top_raw.get("detail")),
+                }
+
+        # Data gaps
+        gaps_list = raw.get("data_gaps") or []
+        n_gaps = len(gaps_list) if isinstance(gaps_list, list) else 0
+        top_gap: str | None = None
+        if isinstance(gaps_list, list) and gaps_list:
+            top_gap = _clean(str(gaps_list[0])[:200])
+
+        return {
+            "available": True,
+            "as_of": _clean(as_of),
+            "schema": _clean(raw.get("schema")),
+            "phase": phase_block,
+            "participation": participation_block,
+            "policy_impulse": _clean(policy_raw.get("policy_impulse")),
+            "microstructure": micro_block,
+            "contradictions_count": n_contra,
+            "top_contradiction": top_contra,
+            "data_gaps_count": n_gaps,
+            "top_data_gap": top_gap,
+            "authority": "context_only",
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("china_market_state: compose failed — %s", exc)
+        return {
+            "available": False,
+            "authority": "context_only",
+            "note": f"compose error: {exc}",
+            "display_only": True,
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1812,6 +1975,24 @@ def build_world_state(
         log.warning("world_state: context_risk lobe failed — %s", exc)
         gaps.append(f"context_risk: {exc}")
         context_risk_block = {"available": False, "display_only": True}
+
+    # ── 6f. china_market_state (CN-SYS W7 NW adapter) — fail-open ──────────
+    # Reads site/chinastatedata/market_state.json (asia-close cadence).
+    # Degrades to null block when artifact is missing or stale (SLA 30h).
+    # CN-SYS-R1/R13/R14: context_only, no fused score, no LLM origination.
+    _china_ms_path = site_dir / "chinastatedata" / "market_state.json"
+    try:
+        china_market_state_block: dict = _compose_china_market_state(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: china_market_state lobe failed — %s", exc)
+        gaps.append(f"china_market_state: {exc}")
+        china_market_state_block = dict(_CHINA_MARKET_STATE_NULL)
+    sources[str(_china_ms_path.relative_to(repo))] = (
+        china_market_state_block.get("as_of")
+        if china_market_state_block.get("available") else None
+    )
+    if not _china_ms_path.exists():
+        gaps.append("site/chinastatedata/market_state.json: missing or not yet built (CN-SYS W6)")
 
     # ── 6c. R5 macro-context lobes (PR-B §5.3) ───────────────────────────────
     # Each lobe is try/except-wrapped at the wiring site; failures produce a
@@ -2008,6 +2189,7 @@ def build_world_state(
         "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
         "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
         "context_risk": context_risk_block,  # R-CI7 nw-context-intelligence W3 wiring line
+        "china_market_state": china_market_state_block,  # CN-SYS W7 NW adapter wiring line
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "

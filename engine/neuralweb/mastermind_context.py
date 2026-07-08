@@ -498,11 +498,42 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
         n_contra = contra_ws.get("n") or 0
         contradiction_note = f"{n_contra} contradiction pairs active" if n_contra else "no contradictions"
 
+        # ── China spine labels (CN-SYS W7 NW adapter) ────────────────────────
+        # Read site/chinastatedata/market_state.json for sovereign spine fields.
+        # Labels-only per the FB counts-only privacy contract (no raw series).
+        # CN-SYS-R1/R13/R14: context_only, no fused score, no LLM origination.
+        china_spine_path = repo / "site" / "chinastatedata" / "market_state.json"
+        china_spine_block: dict = {
+            "china_quad": china_labels.get("china_quad"),
+            "phase_label": None,
+            "who_controls": None,
+            "policy_impulse": None,
+            "source": "site/chinastatedata/market_state.json",
+        }
+        _cn_spine_gap: str | None = None
+        if china_spine_path.exists():
+            try:
+                _cn_raw = json.loads(china_spine_path.read_text(encoding="utf-8"))
+                if isinstance(_cn_raw, dict):
+                    _ph = _cn_raw.get("phase") or {}
+                    _part = _cn_raw.get("participation") or {}
+                    _pol = _cn_raw.get("policy") or {}
+                    china_spine_block["phase_label"] = _ph.get("phase")
+                    china_spine_block["who_controls"] = _part.get("who_controls")
+                    china_spine_block["policy_impulse"] = _pol.get("policy_impulse")
+                    china_spine_block["as_of"] = _cn_raw.get("as_of")
+            except Exception as _exc:  # noqa: BLE001
+                _cn_spine_gap = f"china_market_state: read error ({_exc})"
+                log.warning("mastermind_context: china spine labels read failed — %s", _exc)
+        else:
+            _cn_spine_gap = "china_market_state: site/chinastatedata/market_state.json absent (CN-SYS W6 pending)"
+
         lobe: dict = {
             "asof": asof,
             "macro_context_id": macro_context_id,
             "us_quad": us_labels.get("us_quad"),
             "china_quad": china_labels.get("china_quad"),
+            "china": china_spine_block,  # CN-SYS W7: sovereign China spine labels
             "hk_quad": hk_labels.get("hk_quad"),
             "canada_quad": canada_labels.get("canada_quad"),
             "fx": fx_block,
@@ -514,6 +545,8 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
             "contradiction_note": contradiction_note,
             "display_only": True,
         }
+        if _cn_spine_gap:
+            lobe["_gap_china_spine"] = _cn_spine_gap
 
         return lobe, None
 
