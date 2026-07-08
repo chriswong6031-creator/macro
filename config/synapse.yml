@@ -2443,6 +2443,69 @@ artifacts:
     notes: "Producer: engine/china_intel_hub.py build(). Per-ticker fusion of 5 China desks ranked by edge-remaining × opportunity (anti-echo-chamber, INTELLIGENCE_HUB_V2 rulings). Discovery lanes: LHB first-seat, margin velocity (EXPERIMENTAL), southbound delta, THS concepts. Snapshot ledger data/china_hub/signal_snapshots.jsonl appends daily under CN_LANE=asia. china-intel W4 added site-china-intel-command = 180->181"
     qual_ladder_ref: china_intel.news_dir
 
+  # --- China alt-data desk emits (registration gap fix 2026-07-08; producer
+  # scripts/build_china_altdata.py shipped in PR #365 but its three JSON emits
+  # were never registered) ---
+  site-china-altdata-mastermind:
+    path: site/chinaaltdata/mastermind.json
+    format: json
+    producer: scripts/build_china_altdata.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: china_altdata.mastermind.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_intel_analysis.py
+      - engine/china_intel_bus.py
+    external_consumers: []
+    notes: "Producer: scripts/build_china_altdata.py build() via engine/china_altdata.py mastermind() — compact context lens over the convergence kernel (names + conviction + reasons, never a size; is_context_only=true). Read by the intel bus (china_intel_bus.py) + analysis rollup; intended reader for a future China Mastermind. Both consumers read via site-dir-relative literal 'chinaaltdata/mastermind.json' (no 'site/' prefix), so the check_synapse_reads literal scan does not see them — declared here for honesty."
+
+  site-china-altdata-by-ticker:
+    path: site/chinaaltdata/by_ticker.json
+    format: json
+    producer: scripts/build_china_altdata.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: china_altdata.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_intel_hub.py
+    external_consumers: []
+    notes: "Producer: scripts/build_china_altdata.py build() via engine/china_altdata.py by_ticker() — per-ticker smart-money convergence kernel (sell-side consensus × valuation band × margin trend) + crowding flags. DISPLAY/CONTEXT-ONLY, explicitly never a sizer (A-share cross-sectional value Sharpe negative; research/CHINA_HK_STOCK_SIGNALS.md). china_intel_hub.py reads top/bottom/triple lists for the hub's alt-data lane."
+
+  site-china-altdata-feed:
+    path: site/chinaaltdata/feed.json
+    format: json
+    producer: scripts/build_china_altdata.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: generated_utc
+    freshness_sla_hours: 30
+    schema: china_signal_lab.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Producer: scripts/build_china_altdata.py build() via engine/china_signal_lab.py build_china_scorecard() — honest signal-lab scorecard (tiered signal inventory + validation-family stats). No in-repo machine consumers: the scorecard is rendered directly into site/china_altdata.html at build time; the JSON emit is a machine-readable mirror for external/manual inspection."
+
   # --- 3 consumers ---
   site-artifact-manifest:
     path: site/factordata/contracts/artifact_manifest.json

@@ -12,7 +12,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | active-build-map | 1 |
 | btc-vector | 5 |
-| china-alpha | 7 |
+| china-alpha | 10 |
 | china-intel-hub | 2 |
 | codex-b5 | 1 |
 | codex-docket-b6 | 3 |
@@ -51,7 +51,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 149 |
+| display | 152 |
 | infrastructure | 71 |
 | scored | 4 |
 | shadow | 40 |
@@ -60,7 +60,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 252 |
+| git | 255 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -90,9 +90,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-china-standouts | `site/factordata/china_standouts.json` | json | asia-close | display | 3 | 1 |
 | name-score-calls | `data/name_score/us_calls.parquet` | parquet | daily-engine | shadow | 3 | 0 |
 | china-board-ledger | `data/china_standout_track/board.parquet` | parquet | asia-close | shadow | 2 | 0 |
+| site-china-altdata-mastermind | `site/chinaaltdata/mastermind.json` | json | asia-close | display | 2 | 0 |
 | site-china-intel-briefing | `site/china_intel/briefing.json` | json | asia-close | display | 1 | 1 |
 | china-radar-ledger | `data/china_radar/ledger.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | cn-reversal-sleeve-ledger | `data/cn_reversal_sleeve_track/sleeve.parquet` | parquet | asia-close | shadow | 1 | 0 |
+| site-china-altdata-by-ticker | `site/chinaaltdata/by_ticker.json` | json | asia-close | display | 1 | 0 |
+| site-china-altdata-feed | `site/chinaaltdata/feed.json` | json | asia-close | display | 0 | 0 |
 
 ### china-intel-hub
 
