@@ -189,6 +189,112 @@ def test_fixture_coverage_flags_present_on_cpi():
         assert key in cf, f"coverage_flags missing key: {key}"
 
 
+def test_fixture_cpi_champion_components_propagated():
+    """CPI headline item carries champion components (4 ridge blocks) at item level.
+
+    MRI-R26 rework-ui: _build_upcoming_block must propagate proj['components']
+    so the modal 'Component attribution' section can read them directly.
+    """
+    d = _fixture()
+    cpi = next((i for i in d["upcoming"] if i.get("release_type") == "cpi_headline"), None)
+    assert cpi is not None, "No cpi_headline in fixture"
+    champ = cpi.get("components")
+    assert champ is not None, "item.components is None — champion fields not propagated (Fix 1 missing)"
+    assert isinstance(champ, list) and len(champ) >= 1, "item.components must be a non-empty list"
+    champ_names = {c.get("name") for c in champ}
+    expected_champ_names = {"energy", "shelter", "core_persistence", "pipeline"}
+    assert expected_champ_names.issubset(champ_names), (
+        f"Champion components missing expected blocks. Got names: {champ_names}"
+    )
+
+
+def test_fixture_champion_and_bridge_components_are_distinct():
+    """Champion components (item.components) and bridge waterfall (shadows.cpi_bridge.components)
+    use DIFFERENT block names and must NOT be identical.
+
+    MRI-R26 rework-ui: the two sections must display distinct data.
+    - Champion: energy/shelter/core_persistence/pipeline (name field, contrib_pp)
+    - Bridge:   energy_gasoline/energy_electricity/shelter/food_at_home/... (block field, contribution_pp)
+    """
+    d = _fixture()
+    cpi = next((i for i in d["upcoming"] if i.get("release_type") == "cpi_headline"), None)
+    assert cpi is not None
+    champ = cpi.get("components") or []
+    bridge_comps = ((cpi.get("shadows") or {}).get("cpi_bridge") or {}).get("components") or []
+    assert champ, "Champion components missing"
+    assert bridge_comps, "Bridge components missing from shadows.cpi_bridge"
+
+    champ_names = {c.get("name") for c in champ if c.get("name")}
+    bridge_names = {c.get("block") for c in bridge_comps if c.get("block")}
+
+    # Champion uses 4-block names (name field); bridge uses granular block names
+    assert "core_persistence" in champ_names, "Champion should have core_persistence block"
+    assert "pipeline" in champ_names, "Champion should have pipeline block"
+    assert "energy_gasoline" in bridge_names, "Bridge should have energy_gasoline block"
+    assert "core_services_ex_shelter" in bridge_names or "unmodelled_residual" in bridge_names, (
+        "Bridge should have granular block names"
+    )
+    # The two name-sets are NOT equal — they are distinct
+    assert champ_names != bridge_names, (
+        "Champion and bridge component name-sets are identical — sections would show same data"
+    )
+
+
+def test_fixture_cpi_champion_confidence_v2_propagated():
+    """CPI headline item carries confidence_v2 and confidence_components_v2 at item level.
+
+    MRI-R26 rework-ui: confidence composition section should read champion's own
+    richer breakdown rather than the coverage_flags proxy.
+    """
+    d = _fixture()
+    cpi = next((i for i in d["upcoming"] if i.get("release_type") == "cpi_headline"), None)
+    assert cpi is not None
+    cv2 = cpi.get("confidence_v2")
+    cv2comps = cpi.get("confidence_components_v2")
+    assert cv2 is not None, "confidence_v2 not propagated to item (Fix 1 missing)"
+    assert isinstance(cv2, float) and 0 <= cv2 <= 1, f"confidence_v2 out of range: {cv2}"
+    assert cv2comps is not None, "confidence_components_v2 not propagated to item"
+    for key in ("w_known", "w_proxy", "w_residual"):
+        assert key in cv2comps, f"confidence_components_v2 missing key: {key}"
+
+
+def test_fixture_revision_risk_field_present_on_items():
+    """All upcoming items carry a revision_risk key (NFP non-None, others None).
+
+    MRI-R26 rework-ui: revision_risk propagated unconditionally from champion projection.
+    """
+    d = _fixture()
+    for item in d["upcoming"]:
+        assert "revision_risk" in item, (
+            f"revision_risk key missing from item {item.get('release_type')}"
+        )
+
+
+def test_template_source_champion_attribution_not_bridge_fallback():
+    """Section 4 (Component attribution) must read item.components, NOT bridge.components.
+
+    MRI-R26 rework-ui: the old code used bridge.components as priority source for
+    section 4, making it identical to section 5. The fix sources champComponents
+    from item.components ONLY and hides section 4 when null.
+    """
+    src = _rr_section_src()
+    rm_start = src.find("function renderModal(")
+    rm_end = src.find("\n    /* ---- modal open", rm_start) if rm_start >= 0 else -1
+    modal_body = src[rm_start:rm_end] if rm_end > rm_start else src[rm_start:rm_start + 12000]
+    # New code must reference item.components for champion attribution
+    assert "item.components" in modal_body, (
+        "renderModal must source champion attribution from item.components (not bridge fallback)"
+    )
+    # The old bridge-priority pattern must be gone
+    assert "bridge ? bridge.components" not in modal_body, (
+        "Old bridge-priority fallback pattern still present — Fix 2 not applied"
+    )
+    # champComponents variable must be used
+    assert "champComponents" in modal_body, (
+        "champComponents variable missing — champion attribution section not refactored"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Template source: MRI-R24 new helpers defined
 # ---------------------------------------------------------------------------

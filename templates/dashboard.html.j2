@@ -2960,16 +2960,20 @@
         html += '<div class="rr-modal-section">'+benchStrip(item.benchmark_set, rel)+'</div>';
       }
 
-      /* 4. Component attribution (cpi_bridge.components takes priority if present) */
-      var compSource = bridge ? bridge.components : (item.components || null);
-      if (!isBenchmarkOnly && !isNoData && compSource){
+      /* 4. Component attribution — champion 4-block ridge (energy/shelter/core_persistence/pipeline).
+             DISTINCT from bridge waterfall: reads item.components ONLY (champion projection output).
+             Hidden when null/empty — does NOT fall back to bridge data (MRI-R26 rework-ui). */
+      var champComponents = (item.components && Array.isArray(item.components) && item.components.length) ? item.components : null;
+      if (!isBenchmarkOnly && !isNoData && champComponents){
         html += '<div class="rr-modal-section">'
           +'<div class="rr-modal-section-label"><span class="l-en">Component attribution</span><span class="l-zh">组件归因</span></div>'
-          +componentsBar(compSource, rel)
+          +componentsBar(champComponents, rel)
           +'</div>';
       }
 
-      /* 5. CPI bridge waterfall */
+      /* 5. CPI bridge waterfall — reads shadows.cpi_bridge.components (6-7 block waterfall:
+             gasoline/electricity/shelter/food_at_home/core_goods/core_services/unmodelled_residual).
+             DISTINCT from champion attribution above. Only rendered when cpi_bridge shadow exists. */
       if (!isBenchmarkOnly && !isNoData && bridge){
         html += '<div class="rr-modal-section">'
           +'<div class="rr-modal-section-label"><span class="l-en">CPI bridge waterfall</span><span class="l-zh">CPI桥接瀑布</span></div>'
@@ -2977,17 +2981,24 @@
           +'</div>';
       }
 
-      /* 6. Confidence composition (using coverage_flags as proxy) */
-      if (!isBenchmarkOnly && !isNoData && conf != null && cf && cf.weight_coverage > 0){
-        /* build pseudo cv2comps from coverage_flags */
-        var wc = Number(cf.weight_coverage||0);
-        var fp = Number(cf.fresh_proxy_coverage||0);
-        var nv = Number(cf.non_vintaged_share||0);
-        var cv2comps = { w_known: wc*(1-nv), w_proxy: wc*nv + (1-wc)*fp, w_residual: Math.max(0,1-wc*(1-nv)-wc*nv-(1-wc)*fp) };
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">Confidence composition</span><span class="l-zh">置信度构成</span></div>'
-          +confidenceBar(conf, cv2comps)
-          +'</div>';
+      /* 6. Confidence composition — prefer confidence_v2 + confidence_components_v2 when present
+             (champion's own richer breakdown); fall back to pseudo-cv2 built from coverage_flags. */
+      var cv2 = item.confidence_v2 != null ? item.confidence_v2 : conf;
+      var cv2comps = item.confidence_components_v2 || null;
+      if (!isBenchmarkOnly && !isNoData && cv2 != null){
+        if (!cv2comps && cf && cf.weight_coverage > 0){
+          /* build pseudo cv2comps from coverage_flags as fallback */
+          var wc = Number(cf.weight_coverage||0);
+          var fp = Number(cf.fresh_proxy_coverage||0);
+          var nv = Number(cf.non_vintaged_share||0);
+          cv2comps = { w_known: wc*(1-nv), w_proxy: wc*nv + (1-wc)*fp, w_residual: Math.max(0,1-wc*(1-nv)-wc*nv-(1-wc)*fp) };
+        }
+        if (cv2comps){
+          html += '<div class="rr-modal-section">'
+            +'<div class="rr-modal-section-label"><span class="l-en">Confidence composition</span><span class="l-zh">置信度构成</span></div>'
+            +confidenceBar(cv2, cv2comps)
+            +'</div>';
+        }
       }
 
       /* 7. Surprise distribution gauge */

@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-07-08T15:32:02Z",
+  "asof": "2026-07-08T16:20:46Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -56,6 +56,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -164,6 +168,37 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": [
+        {
+          "name": "energy",
+          "contrib_pp": -0.316144,
+          "confidence": 1.0
+        },
+        {
+          "name": "shelter",
+          "contrib_pp": -0.014083,
+          "confidence": 0.6
+        },
+        {
+          "name": "core_persistence",
+          "contrib_pp": 0.173847,
+          "confidence": 0.0
+        },
+        {
+          "name": "pipeline",
+          "contrib_pp": -0.001435,
+          "confidence": 0.6
+        }
+      ],
+      "confidence_v2": 0.6438,
+      "confidence_components_v2": {
+        "w_known": 0.6254,
+        "w_proxy": 0.0307,
+        "w_residual": 0.3439,
+        "c_raw": 0.6438,
+        "input_completeness": 1.0
+      },
+      "revision_risk": null,
       "surprise_distribution": {
         "p_hot": 0.0,
         "p_cold": 1.0,
@@ -369,6 +404,32 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": [
+        {
+          "name": "shelter",
+          "contrib_pp": -0.01177,
+          "confidence": 0.6
+        },
+        {
+          "name": "core_persistence",
+          "contrib_pp": -0.037467,
+          "confidence": 0.0
+        },
+        {
+          "name": "pipeline",
+          "contrib_pp": 0.024999,
+          "confidence": 0.6
+        }
+      ],
+      "confidence_v2": 0.2972,
+      "confidence_components_v2": {
+        "w_known": 0.0,
+        "w_proxy": 0.4953,
+        "w_residual": 0.5047,
+        "c_raw": 0.2972,
+        "input_completeness": 1.0
+      },
+      "revision_risk": null,
       "surprise_distribution": {
         "p_hot": 0.31,
         "p_cold": 0.35,
@@ -480,6 +541,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": {
         "p_hot": 0.02,
         "p_cold": 0.74,
@@ -535,6 +600,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -586,6 +655,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -664,6 +737,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": {
         "p_hot": 0.0,
         "p_cold": 0.25,
@@ -743,6 +820,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": {
         "p_hot": 0.0,
         "p_cold": 0.09,
@@ -798,6 +879,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -849,6 +934,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -931,6 +1020,23 @@
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
+      },
+      "components": {
+        "private_trend": null,
+        "government_trend": null,
+        "birth_death_residual_prior": null,
+        "residual": null,
+        "confidence_map": {},
+        "method_notes": {
+          "reason": "model_point_none"
+        }
+      },
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": {
+        "mean_k": 0.0,
+        "pct_upward": 0.0,
+        "n_periods": 25
       },
       "surprise_distribution": null,
       "market_implied": null,
@@ -1062,6 +1168,37 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": [
+        {
+          "name": "energy",
+          "contrib_pp": -0.225429,
+          "confidence": 1.0
+        },
+        {
+          "name": "shelter",
+          "contrib_pp": -0.015278,
+          "confidence": 0.6
+        },
+        {
+          "name": "core_persistence",
+          "contrib_pp": 0.173847,
+          "confidence": 0.0
+        },
+        {
+          "name": "pipeline",
+          "contrib_pp": -0.001435,
+          "confidence": 0.6
+        }
+      ],
+      "confidence_v2": 0.566,
+      "confidence_components_v2": {
+        "w_known": 0.5419,
+        "w_proxy": 0.0402,
+        "w_residual": 0.4179,
+        "c_raw": 0.566,
+        "input_completeness": 1.0
+      },
+      "revision_risk": null,
       "surprise_distribution": {
         "p_hot": 0.0,
         "p_cold": 1.0,
@@ -1267,6 +1404,32 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": [
+        {
+          "name": "shelter",
+          "contrib_pp": -0.012769,
+          "confidence": 0.6
+        },
+        {
+          "name": "core_persistence",
+          "contrib_pp": -0.037467,
+          "confidence": 0.0
+        },
+        {
+          "name": "pipeline",
+          "contrib_pp": 0.024999,
+          "confidence": 0.6
+        }
+      ],
+      "confidence_v2": 0.3012,
+      "confidence_components_v2": {
+        "w_known": 0.0,
+        "w_proxy": 0.502,
+        "w_residual": 0.498,
+        "c_raw": 0.3012,
+        "input_completeness": 1.0
+      },
+      "revision_risk": null,
       "surprise_distribution": {
         "p_hot": 0.31,
         "p_cold": 0.35,
@@ -1378,6 +1541,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": {
         "p_hot": 0.12,
         "p_cold": 0.64,
@@ -1433,6 +1600,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,
@@ -1494,6 +1665,10 @@
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
+      "components": null,
+      "confidence_v2": null,
+      "confidence_components_v2": null,
+      "revision_risk": null,
       "surprise_distribution": null,
       "market_implied": null,
       "expectation_read": null,

@@ -559,6 +559,15 @@ def _build_upcoming_block(
             "input_manifest": proj.get("input_manifest") or {},
             "regime_axis": ev["regime_axis"],
             "policy_backdrop": policy_backdrop,
+            # Champion attribution (4 ridge blocks: energy/shelter/core_persistence/pipeline).
+            # Null for benchmark_only mode. Used by UI "Component attribution" section distinct
+            # from the cpi_bridge waterfall shadow (MRI-R26 rework-ui).
+            "components": proj.get("components") if not _is_bmo else None,
+            # Confidence v2 — richer breakdown than scalar confidence.
+            "confidence_v2": proj.get("confidence_v2"),
+            "confidence_components_v2": proj.get("confidence_components_v2"),
+            # NFP revision risk (None for all non-NFP release types).
+            "revision_risk": proj.get("revision_risk"),
         }
         out.append(row)
 
