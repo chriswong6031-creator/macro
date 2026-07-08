@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 269, (
-        f"Expected 269 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 270, (
+        f"Expected 270 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (CN-SYS W6 spine added site-china-cycle-phase, site-china-market-state = 267->269;"
         " china-alpha registration gap fix added site-china-altdata-mastermind,"
@@ -170,7 +170,8 @@ def test_all_artifact_ids_present():
         " nw-macro-rail R5 added forex-latest, transmission-latest, bond-health, commodity-latest,"
         " china-regime-latest, hk-regime-latest, canada-regime-latest, site-intelligence-briefing,"
         " site-factor-series, site-alerts-triage, macro-snapshots-latest, macro-snapshots-ledger,"
-        " macro-transitions, macro-context-latest = 246->260)"
+        " macro-transitions, macro-context-latest = 246->260;"
+        " nw-context analyst feed added analyst-targets (yfinance targets/ratings context) = 269->270)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

@@ -5540,6 +5540,39 @@ artifacts:
       visibility sub-blocks, projection-only/display).
       See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
 
+  # --- NW Context Build 3: Analyst Price Targets (free yfinance, display-only) ---
+  analyst-targets:
+    path: data/analyst/targets.parquet
+    format: parquet
+    producer: collectors/yf_analyst.py
+    known_extra_writers: []
+    owner_program: nw-mastermind-bridge
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 72
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers: []
+    notes: >
+      US analyst price-target + rating PIT snapshot for the NW candidate universe
+      (~250 names from standouts ∪ altdata ∪ radar). Source: free yfinance .info
+      (no paid data). Columns: ticker, target_mean, target_high, target_low,
+      implied_upside_pct (pre-computed upstream), target_dispersion (pre-computed
+      upstream), recommendation, num_analysts, current_price, as_of,
+      provenance_note='yfinance_info_pit_snapshot'. DISPLAY/CONTEXT ONLY —
+      allowed_behavior: annotate_only; may NOT feed board_rank, eq_score,
+      position_sizing, or any scored surface. Honest-null on missing/rate-limited
+      tickers. Collector: collectors/yf_analyst.py (workers≤2, 1-3s jitter,
+      incremental via --stale-days, graceful 401/429 tolerance). Builder reads
+      parquet read-only via engine/neuralweb/mastermind_context.py. Scheduling
+      is standalone (not wired into daily.yml engine lane — see PR notes).
+
   # --- Mastermind Feedback Contract W2 (FB-R7/R8/R14) ---
   # Reverse bridge: Mastermind → NW counts-only feedback reader.
   # Source artifact (externally produced by Mastermind, pushed twice daily):
