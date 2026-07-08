@@ -272,40 +272,247 @@ def _sanitize_thesis_text(text: str) -> str:
 
 def _build_thesis(ticker: str, b: dict) -> str:
     """
-    OURS: Build a deterministic thesis string from candidate fields.
-    Machine-generated; no predictive claims.
+    OURS: Build a 2-3 sentence deterministic thesis woven from the candidate's
+    actual drivers, cautions, and technical flags (above200, weekly_bull, coiled,
+    washout_ctx, dc phase).  Mechanical, specific, no predictive claims, no
+    "validated".  Display-only.
     """
-    state = b.get("state", "")
     conv = b.get("conviction") or {}
     es = b.get("entry_signal") or {}
-    drivers = conv.get("drivers", [])
-    cautions = conv.get("cautions", [])
+    hold = b.get("hold") or {}
+    drivers = conv.get("drivers", []) or []
+    cautions = conv.get("cautions", []) or []
     score = conv.get("score", "N/A")
     band = conv.get("band", "N/A")
 
-    parts = [
-        f"{ticker} [{state}] — conviction {score}/100 ({band}).",
-    ]
+    # ── Sentence 1: technical setup summary ──────────────────────────────────
+    tech_flags: list[str] = []
+    if es.get("above200"):
+        tech_flags.append("above 200-day moving average")
+    if es.get("weekly_bull"):
+        tech_flags.append("weekly structure bullish")
+    if es.get("coiled"):
+        tech_flags.append("coiled compression setup")
+    washout = es.get("washout_ctx") or hold.get("washout_ctx")
+    if washout:
+        tech_flags.append("post-washout recovery context")
+    dc_phase = hold.get("dc_phase") or es.get("dc_phase")
+    if dc_phase:
+        tech_flags.append(f"Donchian phase: {dc_phase}")
+
+    entry_grade = es.get("entry_grade") or ""
+    archetype = b.get("archetype") or b.get("setup_type") or ""
+
+    s1_parts = [f"{ticker} — conviction {score}/100 ({band})"]
+    if tech_flags:
+        s1_parts.append(f"Technical context: {'; '.join(tech_flags[:3])}.")
+    elif entry_grade:
+        s1_parts.append(f"Entry grade: {entry_grade}.")
+    if archetype:
+        s1_parts.append(f"Setup type: {archetype}.")
+    sentence1 = " ".join(s1_parts).strip()
+
+    # ── Sentence 2: conviction drivers (actual strings from the engine) ───────
+    sentence2 = ""
     if drivers:
         sanitized = [_sanitize_thesis_text(str(d)) for d in drivers[:3]]
-        parts.append(f"Drivers: {'; '.join(sanitized)}.")
+        sentence2 = f"Drivers: {'; '.join(sanitized)}."
+
+    # ── Sentence 3: cautions and trust tier ──────────────────────────────────
+    sentence3_parts: list[str] = []
     if cautions:
-        sanitized = [_sanitize_thesis_text(str(c)) for c in cautions[:2]]
-        parts.append(f"Cautions: {'; '.join(sanitized)}.")
-
-    entry_grade = es.get("entry_grade", "")
-    if entry_grade:
-        parts.append(f"Entry grade: {entry_grade}.")
-
+        sanitized_c = [_sanitize_thesis_text(str(c)) for c in cautions[:2]]
+        sentence3_parts.append(f"Cautions: {'; '.join(sanitized_c)}.")
     trust = (conv.get("trust_tier") or {}).get("en", "")
     if trust:
-        parts.append(f"Trust tier: {trust}.")
+        sentence3_parts.append(f"Trust tier: {trust}.")
+    sentence3 = " ".join(sentence3_parts)
 
+    # ── Assemble + honesty footer ─────────────────────────────────────────────
+    parts = [sentence1]
+    if sentence2:
+        parts.append(sentence2)
+    if sentence3:
+        parts.append(sentence3)
     parts.append(
         "DISPLAY-ONLY: machine-generated from factor scores; no forward return"
-        " guarantee; no validated signal; display-tier artifact."
+        " guarantee; display-tier artifact."
     )
     return " ".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Content blocks: what_to_do_now, profit_plan
+# (deterministic templates — NO LLM — keyed to phase + price levels)
+# ---------------------------------------------------------------------------
+
+def _fmt_price(price: float | None) -> str:
+    """Format a price for display, or return '—' if None."""
+    if price is None:
+        return "—"
+    return f"${price:.2f}"
+
+
+def _build_what_to_do_now(
+    phase: str,
+    entry: float | None,
+    trigger: float | None,
+    invalidation: float | None,
+    t1: float | None,
+    t2: float | None,
+    tranche: int = 1,
+) -> list[str]:
+    """
+    OURS: Build 2-3 numbered actionable lines keyed to lifecycle phase.
+    Phase-dependent templates with price levels interpolated from plan fields.
+    Display-only — no predictive claims.
+
+    Returns a list of strings (one per numbered bullet).
+    """
+    trigger_str = _fmt_price(trigger)
+    t1_str = _fmt_price(t1)
+    t2_str = _fmt_price(t2)
+    inval_str = _fmt_price(invalidation)
+
+    if phase == "pre_trigger":
+        lines = [
+            f"Watch for price to reach the trigger level ({trigger_str}) before"
+            f" entering. No position until trigger is confirmed.",
+            f"Keep size small on initial entry; the buy zone extends from trigger"
+            f" up to {t1_str} (T1). There is no need to rush.",
+        ]
+        if t2 is not None:
+            lines.append(
+                f"If trigger confirms, scale in gradually. Invalidation is"
+                f" {inval_str}; exit on a close below that level."
+            )
+        return lines
+
+    if phase in ("triggered_pre_t1", "triggered_pre_t1"):
+        lines = [
+            f"Trigger is confirmed. Hold the current position and let the trade"
+            f" advance toward T1 ({t1_str}).",
+            f"Add to the position on short-term pullbacks as long as price remains"
+            f" above {inval_str} (invalidation level).",
+        ]
+        if t2 is not None:
+            lines.append(
+                f"Continue building as the move confirms. Full position size"
+                f" targets T2 at {t2_str}. Do not chase — add into weakness."
+            )
+        return lines
+
+    if phase in ("at_t1", "between_t1_t2"):
+        lines = [
+            f"T1 ({t1_str}) has been reached. Scale out approximately 40% of the"
+            f" position here and trail stop to entry ({_fmt_price(entry)}).",
+        ]
+        if t2 is not None:
+            lines.append(
+                f"Hold the remaining position for T2 ({t2_str}). Trail stop"
+                f" to breakeven to protect against a reversal."
+            )
+        lines.append(
+            f"T2 at {t2_str} — let remaining position run unless price closes"
+            f" back below {t1_str}."
+            if t2 is not None else
+            f"No T2 defined. Consider closing fully or trailing stop closely."
+        )
+        return lines[:3]
+
+    if phase == "post_t1_failed_hold":
+        return [
+            f"Trade gave back gains after T1. Reduce exposure — trim to a smaller"
+            f" position or exit if price closes below entry ({_fmt_price(entry)}).",
+            f"Invalidation is {inval_str}. A close below that level is a full exit"
+            f" signal.",
+            f"Do not add here. Re-assess if price reclaims {t1_str} (T1) on volume.",
+        ]
+
+    if phase in ("at_t2", "post_t2"):
+        lines = [
+            f"T2 ({t2_str}) has been reached. Close the majority of the position"
+            f" (approximately 60–80%).",
+            f"Trail stop on any remaining shares to protect profits. Consider"
+            f" a hard stop at T1 ({t1_str}) for the residual position.",
+        ]
+        return lines
+
+    if phase == "overtime":
+        return [
+            f"Trade has exceeded its intended horizon without reaching T1 ({t1_str})."
+            f" Reassess thesis strength.",
+            f"Trim position to reduce time-decay risk. A close below"
+            f" {inval_str} (invalidation) is a full exit signal.",
+            f"Do not add to the position in overtime. Either T1 is reached soon"
+            f" or the setup is deferred.",
+        ]
+
+    if phase == "invalidated":
+        return [
+            f"Invalidation level ({inval_str}) has been breached."
+            f" Exit the full position.",
+            f"This plan is no longer active. Do not hold through invalidation.",
+        ]
+
+    # Fallback for unknown phases
+    return [
+        f"Monitor price relative to trigger ({trigger_str}) and T1 ({t1_str}).",
+        f"Exit on a close below invalidation ({inval_str}).",
+    ]
+
+
+def _build_profit_plan(
+    phase: str,
+    entry: float | None,
+    t1: float | None,
+    t2: float | None,
+    p1: float | None = None,
+    p2: float | None = None,
+) -> list[dict]:
+    """
+    OURS: Build profit-taking plan rows.
+
+    Each row: {level: float|None, label: str, action: str, status: str}
+    status ∈ ACTIVE | PENDING | DONE
+    Derived from geometry/phase.  Display-only.
+    """
+    rows: list[dict] = []
+
+    # T1 row
+    t1_status: str
+    if phase in ("at_t1", "between_t1_t2", "post_t1_failed_hold", "at_t2", "post_t2"):
+        t1_status = "DONE"
+    elif phase == "invalidated":
+        t1_status = "DONE"  # plan terminated
+    else:
+        t1_status = "ACTIVE"  # awaiting T1
+
+    rows.append({
+        "level": t1,
+        "label": "T1",
+        "action": "Scale out 40%, trail stop to entry",
+        "status": t1_status,
+    })
+
+    # T2 row (only if T2 is defined)
+    if t2 is not None:
+        t2_status: str
+        if phase in ("at_t2", "post_t2"):
+            t2_status = "DONE"
+        elif phase in ("at_t1", "between_t1_t2"):
+            # T1 done, T2 next
+            t2_status = "ACTIVE"
+        else:
+            t2_status = "PENDING"
+        rows.append({
+            "level": t2,
+            "label": "T2",
+            "action": "Close remaining 60%, exit full position",
+            "status": t2_status,
+        })
+
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -592,6 +799,31 @@ def originate_plans(
             asof=standouts_asof,
         )
 
+        # ── Content blocks (deterministic, NO LLM) ─────────────────────────
+        # Origination phase is always pre_trigger; content blocks are keyed
+        # to phase so they can be regenerated by the management engine later.
+        init_phase = "pre_trigger"
+        t1_price = geo["t1"]
+        t2_price = geo["t2"]
+
+        what_to_do_now = _build_what_to_do_now(
+            phase=init_phase,
+            entry=entry,
+            trigger=trigger,
+            invalidation=geo["invalidation"],
+            t1=t1_price,
+            t2=t2_price,
+            tranche=1,
+        )
+        profit_plan = _build_profit_plan(
+            phase=init_phase,
+            entry=entry,
+            t1=t1_price,
+            t2=t2_price,
+            p1=0.0,
+            p2=0.0 if t2_price is not None else None,
+        )
+
         # Build the plan dict
         plan: dict[str, Any] = {
             "schema": "prophet.trade_plan/v1",
@@ -605,7 +837,7 @@ def originate_plans(
             "entry": round(entry, 4),
             "invalidation": geo["invalidation"],
             "targets": [
-                t for t in [geo["t1"], geo["t2"]] if t is not None
+                t for t in [t1_price, t2_price] if t is not None
             ],
             "horizon_days": HORIZON_DAYS_DEFAULT,
             "min_hold_days": MIN_HOLD_DAYS_DEFAULT,
@@ -627,6 +859,11 @@ def originate_plans(
             # signal_date is the issuance anchor read by compute_management_state
             # (plan.get('signal_date')).  The underscore alias is kept for display.
             "signal_date": signal_date,
+            # ── Content blocks (optional; graceful fallback on absence) ───────
+            # These are regenerated by the management engine on each nightly run
+            # with the current phase.  display-only artifact.
+            "what_to_do_now": what_to_do_now,   # list[str] — numbered bullets
+            "profit_plan": profit_plan,           # list[{level, label, action, status}]
             # Extra metadata (display)
             "_signal_date": signal_date,
             "_conviction_score": conv.get("score"),
