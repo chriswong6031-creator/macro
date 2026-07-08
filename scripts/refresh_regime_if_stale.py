@@ -67,17 +67,30 @@ def _regime_asof() -> str | None:
 
 
 def _market_reference_date() -> str | None:
-    """The last session the price store SHOULD reflect — read from the massive US whole-market
-    store's manifest (keyless, already on disk, advanced by its own collector). When yahoo/SPY is
-    behind THIS, the STORE is behind the MARKET, not just the engine behind the store — the failure
-    the regime-vs-store check below cannot see on its own. Best-effort: absent/unreadable -> None
-    (the store re-pull is simply skipped and behaviour is exactly as before)."""
+    """The last session the price store SHOULD reflect — the max of two references:
+    (a) the massive US whole-market store's manifest (keyless, already on disk, advanced by
+        its own collector), and
+    (b) the NYSE-calendar expected last completed session (lib.nyse_calendar — pure rule
+        arithmetic, no data dependency).
+    (a) alone went blind in the 2026-07-07 incident: the WHOLE nightly collection push died
+    (pre-#1823 unstaged-changes rebase bug), so massive froze on the same stale date as
+    yahoo/SPY and the store-behind-market check saw agreement — while the calendar knew the
+    07-06 session was missing. Best-effort: each leg degrades independently; both absent ->
+    None (the store re-pull is simply skipped and behaviour is exactly as before)."""
+    refs: list[str] = []
     try:
         m = json.loads((config.data_dir() / "massive_stock_day" / "_manifest.json").read_text())
         d = m.get("latest_date")
-        return str(d) if d else None
+        if d:
+            refs.append(str(d))
     except Exception:  # noqa: BLE001 — reference is advisory; never let it break the self-heal
-        return None
+        pass
+    try:
+        from lib import nyse_calendar
+        refs.append(str(nyse_calendar.expected_last_session()))
+    except Exception:  # noqa: BLE001 — calendar leg is advisory too
+        pass
+    return max(refs) if refs else None
 
 
 def _repull_yahoo() -> str | None:

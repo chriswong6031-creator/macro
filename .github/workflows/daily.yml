@@ -304,6 +304,19 @@ jobs:
           path: data/intraday
           key: intraday-engine-${{ github.run_id }}
           restore-keys: intraday-
+      - name: price-store freshness gate (last SPY bar vs expected NYSE session; keyless self-heal)
+        # 2026-07-07 incident: collect fetched Monday's bars but its non-fatal push died 5x
+        # (pre-#1823 unstaged-changes rebase bug) and went GREEN with a ::warning:: — this job
+        # then fresh-checked-out a store frozen at 07-02 and persisted a faithful-but-stale
+        # RISK_OFF as the canonical market_state, which the live feed carried all session.
+        # Every committed store froze in the SAME dead push, so only the exchange calendar
+        # (lib/nyse_calendar — zero data dependencies) can see the missing session. --heal
+        # re-pulls the yahoo group (keyless, ~16s) so the regime engine below reads real bars
+        # and "commit engine outputs" carries them to main. continue-on-error: a red gate must
+        # not kill the cached-data dashboard (this job's if:always() philosophy) — it shows RED
+        # on the run page while engine.market_state.persist stamps the snapshot freshness.stale.
+        continue-on-error: true
+        run: python -m scripts.check_price_store_freshness --heal
       - name: MTF buy-filter signals + §7 contract gate (build_signal_quality → validate_signals)
         # Compute the per-ticker chart markers (site/signals/<T>.json) + the brain leaf
         # (data/signal_archive/mtf_signals_latest.json), THEN validate both against
