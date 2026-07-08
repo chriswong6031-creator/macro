@@ -588,6 +588,21 @@
 
 <div class="grid">
 
+  {# FRESHNESS SENTINEL BANNER — shown at page top in BOTH modes when HK data is stale
+     or degraded. The sentinel is a fail-open gate: it renders WITH a loud banner rather
+     than blocking. "—" is used for null/missing values (never blank). #}
+  {% if freshness and freshness.verdict in ('stale', 'degraded') and freshness.banner_message %}
+  {% set _fv = freshness.verdict %}
+  {% set _fb = freshness.banner_message %}
+  <div class="panel span12 health-banner" id="hk-freshness-banner" style="{% if _fv == 'stale' %}border-color:color-mix(in srgb,var(--down) 50%,var(--line));background:color-mix(in srgb,var(--down) 7%,var(--panel));{% endif %}">
+    <p class="hb-h">{% if _fv == 'stale' %}&#9888; {{ t('HK data STALE — do not act on displayed values', '港股数据已过期 — 请勿依据当前数值操作') }}{% else %}&#9888; {{ t('HK data degraded — some stores behind', '港股数据降级 — 部分数据来源落后') }}{% endif %}</p>
+    <ul class="hb-list">
+      <li class="hb-item"><span class="l-en">{{ _fb.en }}</span><span class="l-zh">{{ _fb.zh }}</span></li>
+      {% if freshness.expected_session %}<li class="hb-item" style="color:var(--muted)"><span class="l-en">Expected session: {{ freshness.expected_session }}</span><span class="l-zh">预期交易日：{{ freshness.expected_session }}</span></li>{% endif %}
+    </ul>
+  </div>
+  {% endif %}
+
   {% if mode == 'stocks' %}
   <!-- ===================== HK STOCK DESK — command-center hero ===================== -->
   {% set RS = (hk_scoreboard.risk_state if hk_scoreboard else (gv.state if gv else 'unknown')) %}
