@@ -27,12 +27,22 @@ Storage layout
 
 Shard schema
 ------------
-  date        : str  "YYYY-MM-DD"
-  order_idx   : int  broadcast order (0 = 联播头条 / lead item)
-  title       : str
-  content     : str
-  fetch_status: str  "ok" | "empty" | "stub" | "error"
-  fetched_at  : str  ISO-8601 UTC
+  date         : str  "YYYY-MM-DD"
+  order_idx    : int  broadcast order (0 = 联播头条 / lead item)
+  title        : str
+  content      : str
+  fetch_status : str  "ok" | "empty" | "stub" | "error"
+  fetched_at   : str  ISO-8601 UTC
+  listing_title: str  real item title from the day's listing page, recorded on
+                      stub/error rows ("" elsewhere / when the listing fetch
+                      fails). When the fetched row count matches the listing,
+                      each row carries its own aligned title; otherwise (e.g. a
+                      single-row whole-day stub) each stub/error row carries the
+                      FULL newline-joined listing. Stub rows' own title/content
+                      hold CCTV's error text, so this column is what lets
+                      downstream day-level provability checks (see
+                      _archive_day_items in backfill_china_communiques.py) test
+                      real titles on stubbed days.
 
 Stub detection
 --------------
@@ -40,6 +50,13 @@ Stub detection
   "对不起，可能是网络原因或无此页面" for old dates with page rot.
   These are stored (order survives) with fetch_status="stub" so they
   can be retried with --repair later.
+
+Hang protection
+---------------
+  ak.news_cctv has no timeout and was measured live (2026-07-06) hanging
+  indefinitely mid-run. Every call runs under a daemon-thread hard timeout
+  (CCTV_FETCH_TIMEOUT_S); a timed-out day is stored as an error row without
+  retry (a hung URL hangs again — --repair retries it later).
 """
 from __future__ import annotations
 
@@ -69,7 +86,49 @@ STUB_SIGNATURES = (
     "页面不存在",
 )
 
+# Hard ceiling on one day's full-transcript fetch. Measured live 2026-07-06: an
+# akshare news_cctv call with no timeout hung the gapfill lane indefinitely
+# (log ended mid-tqdm; the process sat idle for days). Same value as
+# backfill_china_communiques.CCTV_FETCH_TIMEOUT_S (#1858).
+CCTV_FETCH_TIMEOUT_S = 300
+
+# Xinwen Lianbo per-day listing page — used only to recover real item titles
+# for stub/error rows (1 request per stub/error day).
+CCTV_LISTING_URL = "https://tv.cctv.com/lm/xwlb/day/{ds}.shtml"
+_BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+_HEADERS = {"User-Agent": _BROWSER_UA, "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"}
+
 log = logging.getLogger("backfill_cctv")
+
+
+def _call_with_timeout(fn, timeout_s: float, *args, **kwargs):
+    """Run fn(*args, **kwargs) in a daemon thread with a hard timeout.
+
+    Raises TimeoutError on expiry; re-raises fn's exception otherwise. A daemon
+    thread (not ThreadPoolExecutor) is required: a hung worker must not block
+    interpreter exit via concurrent.futures' atexit join.
+    """
+    import threading
+    result: list = []
+    error: list = []
+
+    def _target() -> None:
+        try:
+            result.append(fn(*args, **kwargs))
+        except Exception as exc:  # noqa: BLE001 — re-raised in caller thread
+            error.append(exc)
+
+    t = threading.Thread(target=_target, daemon=True)
+    t.start()
+    t.join(timeout_s)
+    if t.is_alive():
+        raise TimeoutError(f"timed out after {timeout_s}s")
+    if error:
+        raise error[0]
+    return result[0]
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +148,7 @@ def _load_shard(path: Path) -> pd.DataFrame:
     if path.exists():
         return pd.read_parquet(path)
     return pd.DataFrame(columns=["date", "order_idx", "title", "content",
-                                  "fetch_status", "fetched_at"])
+                                  "fetch_status", "fetched_at", "listing_title"])
 
 
 def _save_shard(df: pd.DataFrame, path: Path) -> None:
@@ -126,6 +185,9 @@ def _upsert_day(archive_dir: Path, dt: date, rows: list[dict]) -> None:
     existing = existing[existing["date"] != ds]
     new_df = pd.DataFrame(rows)
     combined = pd.concat([existing, new_df], ignore_index=True)
+    # Shards written before the listing_title column existed leave NaN here
+    if "listing_title" in combined.columns:
+        combined["listing_title"] = combined["listing_title"].fillna("")
     combined = combined.sort_values(["date", "order_idx"]).reset_index(drop=True)
     _save_shard(combined, shard)
 
@@ -144,11 +206,75 @@ def _log_line(archive_dir: Path, msg: str) -> None:
 # Core fetch
 # ---------------------------------------------------------------------------
 
+def _fetch_listing_titles(ds: str) -> list[str]:
+    """Fetch the day's Xinwen Lianbo listing page → item titles in broadcast order.
+
+    Best-effort: returns [] on any fetch/parse failure — listing-title recording
+    must never fail the day. Only real article links (…VIDE….shtml) count; a
+    throttle/soft-error page still renders nav <li><a> items and those must not
+    be mistaken for the day's listing (same guard as
+    backfill_china_communiques._cctv_listing_titles).
+    """
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        time.sleep(random.uniform(0.5, 1.5))
+        resp = requests.get(CCTV_LISTING_URL.format(ds=ds), headers=_HEADERS, timeout=20)
+        resp.raise_for_status()
+        resp.encoding = "utf-8"
+        soup = BeautifulSoup(resp.text, "html.parser")
+        titles: list[str] = []
+        for li in soup.find_all("li"):
+            a = li.find("a")
+            if not a:
+                continue
+            title = a.get_text(strip=True)
+            href = a.get("href", "")
+            if title and "VIDE" in href:
+                titles.append(title)
+        return titles
+    except Exception as exc:  # noqa: BLE001
+        log.debug("  listing fetch failed for %s: %s", ds, exc)
+        return []
+
+
+def _annotate_listing_titles(rows: list[dict], ds: str) -> None:
+    """Record real listing-page titles on stub/error rows (mutates rows).
+
+    Stub/error rows carry CCTV's error text in title/content, losing the real
+    item identity — which forces downstream day-level provability checks
+    (_archive_day_items in backfill_china_communiques.py) to fall back to the
+    network for the whole day. When the fetched row count matches the listing,
+    every row gets its aligned listing_title; when counts differ (e.g. a
+    single-row whole-day stub vs a 16-item listing) each stub/error row carries
+    the FULL newline-joined listing so downstream checks can still test every
+    real title. Rows keep listing_title="" when the listing fetch fails.
+    """
+    if not any(r["fetch_status"] in ("stub", "error") for r in rows):
+        return
+    titles = _fetch_listing_titles(ds)
+    if not titles:
+        return
+    if len(titles) == len(rows):
+        for r, title in zip(rows, titles):
+            r["listing_title"] = title
+    else:
+        joined = "\n".join(titles)
+        for r in rows:
+            if r["fetch_status"] in ("stub", "error"):
+                r["listing_title"] = joined
+
+
 def fetch_day(dt: date, retries: int = 3) -> tuple[list[dict], str]:
     """Fetch one day from akshare, return (rows, fetch_status).
 
     fetch_status: "ok" | "empty" | "stub" | "error"
     rows is always a list — empty on empty/error.
+
+    Every news_cctv call runs under a daemon-thread hard timeout
+    (CCTV_FETCH_TIMEOUT_S). A timeout is NOT retried — measured live 2026-07-06
+    a hung URL hangs again, so the day lands as an error row immediately and is
+    retried later via --repair.
     """
     try:
         import akshare as ak
@@ -159,9 +285,16 @@ def fetch_day(dt: date, retries: int = 3) -> tuple[list[dict], str]:
     fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     last_exc: Exception | None = None
 
+    _unset = object()
+    raw = _unset
     for attempt in range(1, retries + 1):
         try:
-            raw = ak.news_cctv(date=ds)
+            raw = _call_with_timeout(ak.news_cctv, CCTV_FETCH_TIMEOUT_S, date=ds)
+            break
+        except TimeoutError as exc:
+            last_exc = exc
+            log.warning("  %s hung >%ds — stored as error row, no retry (--repair later)",
+                        ds, CCTV_FETCH_TIMEOUT_S)
             break
         except Exception as exc:  # noqa: BLE001
             last_exc = exc
@@ -169,8 +302,9 @@ def fetch_day(dt: date, retries: int = 3) -> tuple[list[dict], str]:
                 wait = 2 ** attempt + random.uniform(0, 1)
                 log.debug("  retry %d/%d for %s after %.1fs (%s)", attempt, retries, ds, wait, exc)
                 time.sleep(wait)
-    else:
-        # All retries exhausted
+
+    if raw is _unset:
+        # Retries exhausted or hung call timed out
         err_row = {
             "date": dt.strftime("%Y-%m-%d"),
             "order_idx": 0,
@@ -178,13 +312,16 @@ def fetch_day(dt: date, retries: int = 3) -> tuple[list[dict], str]:
             "content": f"FETCH_ERROR: {last_exc}",
             "fetch_status": "error",
             "fetched_at": fetched_at,
+            "listing_title": "",
         }
-        return [err_row], "error"
+        rows = [err_row]
+        _annotate_listing_titles(rows, ds)
+        return rows, "error"
 
     if raw is None or len(raw) == 0:
         return [], "empty"
 
-    rows: list[dict] = []
+    rows = []
     all_stub = True
     for idx, row in enumerate(raw.itertuples(index=False)):
         title = str(getattr(row, "title", "") or "")
@@ -200,8 +337,10 @@ def fetch_day(dt: date, retries: int = 3) -> tuple[list[dict], str]:
             "content": content,
             "fetch_status": "stub" if is_stub else "ok",
             "fetched_at": fetched_at,
+            "listing_title": "",
         })
 
+    _annotate_listing_titles(rows, ds)
     if all_stub and rows:
         return rows, "stub"
     return rows, "ok"
@@ -257,6 +396,7 @@ def run_backfill(archive_dir: Path, repair: bool = False, pace_min: float = 2.0,
                 "content": "",
                 "fetch_status": "empty",
                 "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "listing_title": "",
             }]
 
         _upsert_day(archive_dir, dt, rows)
@@ -307,6 +447,7 @@ def run_single_date(archive_dir: Path, ds: str) -> None:
             "content": "",
             "fetch_status": "empty",
             "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "listing_title": "",
         }]
     _upsert_day(archive_dir, dt, rows)
     _log_line(archive_dir, f"  {dt} -> {status}, {len(rows)} rows")
@@ -384,6 +525,7 @@ def run_sample_year(archive_dir: Path, year: int, pace_min: float = 2.0,
                 "content": "",
                 "fetch_status": "empty",
                 "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "listing_title": "",
             }]
         _upsert_day(archive_dir, dt, rows)
         done += 1
