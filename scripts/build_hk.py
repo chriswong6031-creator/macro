@@ -680,6 +680,18 @@ def _hk_track_record_vm() -> dict | None:
 
 
 def main() -> int:
+    # Run the freshness sentinel FIRST so the banner can be set before any data is read.
+    # Fail-open: sentinel crashes are caught inside run_sentinel; a degraded result still
+    # allows the page to render — it just shows a banner. Never blocks the build.
+    freshness = None
+    try:
+        from engine.hk_freshness import run_sentinel as _hk_sentinel
+        freshness = _hk_sentinel()
+        log.info("hk freshness sentinel: %s (expected %s)",
+                 freshness.get("verdict"), freshness.get("expected_session"))
+    except Exception as e:  # noqa: BLE001 — sentinel must never block the build
+        log.error("hk freshness sentinel import/call failed (%s); continuing without it", e)
+
     try:
         from engine.hk_run import run
         latest = run()
@@ -693,6 +705,7 @@ def main() -> int:
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "sectors": sectors,
+            "freshness": freshness,          # sentinel result for the page-top banner
             "actions": _action_board(sectors),   # "what to act on now" sector board (stocks page)
             "breadth": _breadth(),
             "full_breadth": _full_breadth(),     # full main-board adv/dec (fragile; None when blocked)
