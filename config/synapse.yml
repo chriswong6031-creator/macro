@@ -7233,6 +7233,7 @@ artifacts:
     consumers:
       - engine/neuralweb/cortex.py
       - engine/neuralweb/ask_brain.py
+      - scripts/build_stock_library.py
     notes: >
       RUL-NW10 — append-only per-fire panel coordinates, keyed (as_of, ticker).
       PIT by construction: panel row at exactly the standouts as_of date. Fields:
@@ -7403,6 +7404,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/world_state.py
+      - scripts/build_site.py
     external_consumers: []
     notes: >
       R5 macro context rail — factor return series and rotation data.

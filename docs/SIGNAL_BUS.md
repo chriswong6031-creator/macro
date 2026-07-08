@@ -235,8 +235,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | forex-latest | `data/forex/latest.json` | json | daily-engine | display | 5 | 0 |
+| transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 3 | 0 |
 | commodity-latest | `data/commodity/latest.json` | json | daily-engine | display | 2 | 0 |
-| transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 2 | 0 |
+| site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 2 | 0 |
 | bond-health | `data/bonds/bond_health.json` | json | daily-engine | display | 1 | 0 |
 | canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 1 | 0 |
 | china-regime-latest | `data/china_regime/latest.json` | json | asia-close | display | 1 | 0 |
@@ -245,7 +246,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | macro-transitions | `data/macro_snapshots/transitions.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | site-alerts-triage | `site/factordata/alerts_triage.json` | json | daily-engine | display | 1 | 0 |
-| site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 1 | 0 |
 | site-intelligence-briefing | `site/intelligence/briefing.json` | json | daily-engine | display | 1 | 0 |
 | macro-context-latest | `data/macro_context/latest.json` | json | daily-engine | display | 0 | 0 |
 
