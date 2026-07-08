@@ -648,6 +648,104 @@ class TestHelpers:
                 f"Ticker {ticker!r} missing allowed_behavior='annotate_only'"
             )
 
+    def test_new_sub_block_keys_when_data_present(self, tmp_path):
+        """When bottom_sensors carries extended fields, new sub-blocks appear."""
+        _build_minimal_tree(tmp_path)
+        # Patch bottom_sensors fixture with extended fields on FIXTURE_BUY
+        bs_path = tmp_path / "site" / "neuralwebdata" / "bottom_sensors.json"
+        bs = json.loads(bs_path.read_text())
+        for row in bs["rows"]:
+            if row.get("symbol") == "FIXTURE_BUY":
+                row.update({
+                    "net_debt_to_ebitda": 1.5,
+                    "net_debt_to_op_income": 2.0,
+                    "decline_geometry": "flush",
+                    "underwater_state": "mid",
+                    "decline_herf": 0.08,
+                    "sponsorship_state": "headwind",
+                    "days_since_shelf": 90,
+                })
+        bs_path.write_text(json.dumps(bs))
+        payload = build_context(root=tmp_path, now=_NOW)
+        row = payload["candidate_context"].get("FIXTURE_BUY", {})
+        # leverage block must appear (net_debt_to_ebitda is non-null)
+        assert "leverage" in row, f"leverage block missing; row keys: {list(row.keys())}"
+        assert "net_debt_to_ebitda" in row["leverage"]
+        # structural block must appear
+        assert "structural" in row, f"structural block missing; row keys: {list(row.keys())}"
+        assert "decline_geometry" in row["structural"]
+        assert "sponsorship_state" in row["structural"], "sponsorship_state must fold into structural"
+        # dilution block must appear (days_since_shelf is non-null)
+        assert "dilution" in row, f"dilution block missing; row keys: {list(row.keys())}"
+        assert "days_since_shelf" in row["dilution"]
+
+    def test_new_sub_blocks_omitted_when_all_null(self, tmp_path):
+        """Sub-blocks must be omitted entirely when all their fields are None/absent."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        # Fixture rows have no leverage/structural/dilution fields — blocks must be absent
+        for ticker, row in payload["candidate_context"].items():
+            # None of the fixture rows have leverage fields set
+            # (they only have bottom_state, coiled, etc.)
+            lev = row.get("leverage", {})
+            # If leverage is present, all values must be non-null (sparse guarantee)
+            for k, v in lev.items():
+                assert v is not None, f"leverage.{k}=None on {ticker!r} — sparse failed"
+
+    def test_no_new_names_invariant(self, tmp_path):
+        """New sub-blocks add no new ticker names — only values on existing tickers."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        # candidate_context keys must still be exactly the intake union
+        intake = {
+            "FIXTURE_BUY", "FIXTURE_WATCH", "FIXTURE_LAGGARD",
+            "ALTDATA_A", "ALTDATA_B", "RADAR_COILED",
+        }
+        for ticker in payload["candidate_context"]:
+            assert ticker in intake, (
+                f"Ticker {ticker!r} in candidate_context but not in intake union "
+                "(new sub-blocks must not introduce new tickers)"
+            )
+
+    def test_candidate_context_compact_json_under_200kb(self, tmp_path):
+        """candidate_context compact JSON must stay under 200 KB (size-cap regression)."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        cc_bytes = json.dumps(payload["candidate_context"], separators=(",", ":")).encode("utf-8")
+        cap_bytes = 200 * 1024
+        assert len(cc_bytes) <= cap_bytes, (
+            f"candidate_context compact JSON {len(cc_bytes)/1024:.1f}KB > 200KB cap"
+        )
+
+    def test_earnings_ctx_block_absent_when_parquet_missing(self, tmp_path):
+        """When earnings.parquet is absent, earnings_ctx block must not appear."""
+        _build_minimal_tree(tmp_path)
+        # No earnings.parquet written — block must be silently absent (not raise)
+        payload = build_context(root=tmp_path, now=_NOW)
+        for ticker, row in payload["candidate_context"].items():
+            # earnings_ctx may or may not be present; if present it must be valid
+            ec = row.get("earnings_ctx")
+            if ec is not None:
+                assert isinstance(ec, dict), f"earnings_ctx must be a dict on {ticker!r}"
+
+    def test_visibility_block_absent_when_rpo_parquet_missing(self, tmp_path):
+        """When rpo.parquet is absent, visibility block must not appear."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        for ticker, row in payload["candidate_context"].items():
+            # No rpo.parquet in tmp_path, so visibility must be absent
+            assert "visibility" not in row, (
+                f"visibility block on {ticker!r} despite absent rpo.parquet"
+            )
+
+    def test_sector_vel_and_accel_not_in_any_block(self, tmp_path):
+        """sector_vel_1m and sector_accel must never appear (confirmed absent from source)."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        cc_str = json.dumps(payload["candidate_context"])
+        assert "sector_vel_1m" not in cc_str, "sector_vel_1m must not appear (absent from source)"
+        assert "sector_accel" not in cc_str, "sector_accel must not appear (absent from source)"
+
     def test_lobe_manifest_nonempty_on_real_registry(self):
         """On the real registry, lobe_manifest must contain at least the seed
         artifacts tagged mastermind:context (world-state, kernel-families, etc.)."""

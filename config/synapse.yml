@@ -5498,7 +5498,17 @@ artifacts:
       mastermind:context tags) + registered summarizers (market/reliability/
       contradictions/bottom_sensors/options_entry/cortex). Candidate universe:
       us_standouts ∪ altdata/mastermind ∪ radar_ticker (filtered to actionable).
-      Hard cap 250 rows. Envelope sibling-stamped. See NW_MASTERMIND_BRIDGE_PROGRAM.md.
+      Hard cap 250 rows. Envelope sibling-stamped.
+      Per-ticker candidate_context row schema (Build 1 consolidated context layer,
+      projection-only/display): bottom (core bottom_sensors fields) | valuation
+      (ev_sales/ev_ebit/p_fcf/pe) | leverage (interest_coverage/net_debt_to_ebitda/
+      net_debt_to_op_income) | structural (decline_geometry/underwater_state/
+      decline_herf/sponsorship_state) | dilution (days_since_shelf/days_since_takedown/
+      dilution_events_365d) | earnings_ctx (next_date/days_to_earnings/is_blackout/
+      shareholder_yield from bottom_sensors if present) | visibility (rpo/rpo_rev_ratio/
+      rpo_yoy_pct from edgar/rpo.parquet) | options | graph_conflicts | kernel.
+      All sub-blocks omitted when empty; no field originates scores or rankings.
+      See NW_MASTERMIND_BRIDGE_PROGRAM.md.
 
   site-neuralweb-mastermind-context:
     path: site/neuralwebdata/mastermind_context.json
@@ -5524,7 +5534,11 @@ artifacts:
       neuralweb-mastermind-context canonical). Transport: Mastermind bot's existing
       macro_refresh.refresh() sparse checkout of site/ materializes this file at
       vendor/macro_src/site/neuralwebdata/mastermind_context.json with zero new sync
-      plumbing (site/ is in the sparse set). See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
+      plumbing (site/ is in the sparse set).
+      Per-ticker candidate_context row schema: same as neuralweb-mastermind-context
+      (Build 1 consolidated context layer — leverage/structural/dilution/earnings_ctx/
+      visibility sub-blocks, projection-only/display).
+      See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
 
   # --- Mastermind Feedback Contract W2 (FB-R7/R8/R14) ---
   # Reverse bridge: Mastermind → NW counts-only feedback reader.
