@@ -1,0 +1,32 @@
+{
+  "date": "2026-07-07",
+  "authority": {
+    "tier": "context_only"
+  },
+  "turnover_z20": null,
+  "turnover_z60": null,
+  "margin_balance": null,
+  "margin_chg_5d": null,
+  "margin_to_mcap": null,
+  "southbound_net": 497.23,
+  "southbound_z": -0.15981589826224915,
+  "etf_share_chg": -0.5353498945330173,
+  "zt_breadth": 58.93,
+  "failed_seal_ratio": null,
+  "qvix": 22.29,
+  "qvix_z": 1.675729830204436,
+  "broker_rs": -0.061709973435463056,
+  "regime": "unclear",
+  "who_controls": "mixed",
+  "risk": "normal",
+  "evidence": [
+    "zt_breadth=58.9% (elevated)",
+    "qvix_z=1.68 (inverted-semantics: high=stress)"
+  ],
+  "contradictions_raw": "[]",
+  "data_gaps": [
+    "turnover_z20:null on 2026-07-07",
+    "northbound:DEAD post-2024-08-16 SLF-050"
+  ],
+  "backfill": true
+}
