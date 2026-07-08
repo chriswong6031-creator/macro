@@ -33,6 +33,10 @@ SIX CONFLUENCE ORGANS (each fail-open — missing organ = signal absent)
    (* bear_skew or bear_skew_froth = bears crowded, squeeze risk)
 3. hk_filing_bus    recent buyback_flag         → BUYBACK      +1
                     recent dilution_flag        → DILUTION_VETO (blocks ignition)
+   Coverage: veto reads both the bellwether summaries AND the full filing tape, so
+   any non-bellwether ticker present in the collector universe can be vetoed.
+   RESIDUAL LIMIT: tickers absent from the filing store entirely (outside collector
+   universe) cannot be vetoed — this is a data-coverage gap, not a design choice.
 4. hk_narrative     attention_shock_z elevated + tone turning up → NARRATIVE +1
 5. hk_southbound_stocks  accum_z turning positive               → SB_ACCUM  +1
 6. price            RSI oversold AND turning up (reclaim)       → RSI_RECLAIM +1
@@ -260,11 +264,25 @@ def _read_cbbc_signals(organ_signals: dict) -> dict[str, str]:
 def _read_filing_signals(organ_signals: dict) -> dict[str, dict]:
     """Extract buyback_flag / dilution_flag per ticker from filing_bus snapshot.
 
+    Scans BOTH the bellwether summaries (pre-aggregated per-ticker flags) and the
+    full filing tape so that any ticker covered by the tape gets a dilution veto —
+    not only the fixed bellwether roster.  Bellwether entries take precedence when
+    present; tape rows for non-bellwether tickers are OR-folded (any dilutive filing
+    in the tape window → dilution: True).
+
+    RESIDUAL COVERAGE LIMIT: tickers for which the filing store holds NO rows (i.e.,
+    names outside the collector universe entirely) receive no filing signal and cannot
+    be dilution-vetoed by this organ.  This is a data-coverage gap, not a design
+    choice.  The universe covered by hk_filing_bus collector should be consulted
+    before concluding that a washout candidate has no active dilution.
+
     Returns {ticker: {buyback: bool, dilution: bool}}.
     """
     out: dict[str, dict] = {}
     try:
         filing_snap = organ_signals.get("filing_bus") or {}
+        # Pass 1: bellwether pre-aggregated summaries (most reliable — has_buyback/has_dilution
+        # are built from the full window by _ticker_summary).
         for bw in filing_snap.get("bellwethers", []):
             tk = bw.get("ticker")
             if not tk:
@@ -273,6 +291,18 @@ def _read_filing_signals(organ_signals: dict) -> dict[str, dict]:
                 "buyback":  bool(bw.get("has_buyback", False)),
                 "dilution": bool(bw.get("has_dilution", False)),
             }
+        # Pass 2: raw tape rows — covers non-bellwether tickers present in the filing store.
+        # OR-fold: any dilutive/buyback row in the window activates the flag.
+        for row in filing_snap.get("tape", []):
+            tk = row.get("ticker")
+            if not tk or tk in out:
+                continue  # already covered by bellwether summary
+            if tk not in out:
+                out[tk] = {"buyback": False, "dilution": False}
+            if row.get("dilution_flag"):
+                out[tk]["dilution"] = True
+            if row.get("buyback_flag"):
+                out[tk]["buyback"] = True
     except Exception as e:  # noqa: BLE001
         log.debug("hk_washout_watch: filing_bus read failed (%s)", e)
     return out

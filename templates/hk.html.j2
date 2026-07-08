@@ -1427,7 +1427,7 @@
       <p class="ww-sub"><span class="l-en">Context only — NOT a buy signal. Accruing a forward ledger to earn promotion later.</span><span class="l-zh">仅背景参考 — 非买入信号。持续积累记录，待后续晋级评估。</span></p>
       {% if _ww %}
       {# Macro helpers — chip renderers for each confluence signal #}
-      {% macro _ww_chip(sig) %}{% if sig == 'ADR_GAP_UP' %}<span class="ww-chip wc-adr" title="ADR implied gap up / ADR暗示跳空高开">ADR↑</span>{% elif sig == 'BEAR_EXHAUST' %}<span class="ww-chip wc-bear" title="CBBC bear skew exhaustion / CBBC空头挤仓">CBBC熊挤仓</span>{% elif sig == 'BUYBACK' %}<span class="ww-chip wc-buy" title="Recent corporate buyback / 近期公司回购">回购</span>{% elif sig == 'NARRATIVE' %}<span class="ww-chip wc-narr" title="Attention spike + tone turning up / 关注度突增且情绪转正">舆情</span>{% elif sig == 'SB_ACCUM' %}<span class="ww-chip wc-sb" title="Southbound accumulating / 南向资金加仓">南向↑</span>{% elif sig == 'RSI_RECLAIM' %}<span class="ww-chip wc-rsi" title="RSI oversold reclaim — turning up / RSI超卖反抽">RSI反抽</span>{% elif sig == 'CATALYST_CONTEXT' %}<span class="ww-chip wc-cat" title="Imminent scheduled catalyst / 临近有计划催化剂">催化</span>{% endif %}{% endmacro %}
+      {% macro _ww_chip(sig) %}{% if sig == 'ADR_GAP_UP' %}<span class="ww-chip wc-adr" title="ADR implied gap up">ADR↑</span>{% elif sig == 'BEAR_EXHAUST' %}<span class="ww-chip wc-bear" title="CBBC bear skew exhaustion">CBBC熊挤仓</span>{% elif sig == 'BUYBACK' %}<span class="ww-chip wc-buy" title="Recent corporate buyback">回购</span>{% elif sig == 'NARRATIVE' %}<span class="ww-chip wc-narr" title="Attention spike + tone turning up">舆情</span>{% elif sig == 'SB_ACCUM' %}<span class="ww-chip wc-sb" title="Southbound accumulating">南向↑</span>{% elif sig == 'RSI_RECLAIM' %}<span class="ww-chip wc-rsi" title="RSI oversold reclaim — turning up">RSI反抽</span>{% elif sig == 'CATALYST_CONTEXT' %}<span class="ww-chip wc-cat" title="Imminent scheduled catalyst">催化</span>{% endif %}{% endmacro %}
       <div class="ww-grid">
         {% for w in _ww %}
         {% set _wst = w.state %}
@@ -1439,7 +1439,7 @@
           <span class="ww-state {{ _stcls }}">{% if _wst == 'ignition_watch' %}<span class="l-en">igniting</span><span class="l-zh">点火中</span>{% elif _wst == 'pullback_entry_watch' %}<span class="l-en">pullback watch</span><span class="l-zh">回调观察</span>{% elif _wst == 'chase_risk' %}<span class="l-en">chase risk</span><span class="l-zh">追涨风险</span>{% else %}<span class="l-en">washout watch</span><span class="l-zh">洗盘观察</span>{% endif %}</span>
           <div class="ww-chips">
             {% for sig in w.confluence_signals %}{{ _ww_chip(sig) }}{% endfor %}
-            {% if w.knife_risk %}<span class="ww-chip wc-knife" title="Deepest 3M loser — falling knife risk / 3个月最大跌幅，下刀风险">🔻刀锋</span>{% endif %}
+            {% if w.knife_risk %}<span class="ww-chip wc-knife" title="Deepest 3M loser — falling knife risk">🔻刀锋</span>{% endif %}
           </div>
           {% if w.entry_hint %}
           <div class="ww-hint"><span class="l-en">{{ w.entry_hint.en }}</span><span class="l-zh">{{ w.entry_hint.zh }}</span></div>

@@ -875,14 +875,23 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         except Exception:  # noqa: BLE001
             continue
         tech = rec.get("tech") or {}
+        _price = tech.get("price") if tech.get("price") is not None else r.get("price")
+        _ma200 = tech.get("ma200")
+        _dist_200dma: float | None = None
+        try:
+            if _price and _ma200 and float(_ma200) > 0:
+                _dist_200dma = round(float(_price) / float(_ma200) - 1.0, 4)
+        except Exception:  # noqa: BLE001
+            pass
         enriched.append({
             "ticker": t,
             "name": r.get("name") or rec.get("name"),
             "sector": r.get("sector") or rec.get("sector"),
             "sector_zh": r.get("sector_zh"),
-            "price": tech.get("price") if tech.get("price") is not None else r.get("price"),
+            "price": _price,
             "off_high": tech.get("off_52w_high_pct"),
             "rsi": tech.get("rsi14"),
+            "dist_200dma": _dist_200dma,  # pre-computed so washout engine reads top-level field
             "label": r.get("cycle"), "label_zh": r.get("cycle_zh"),
             "dir": r.get("cycle_dir") or "flat",
             "beta": r.get("beta"), "role": r.get("role"), "tilt": r.get("tilt"),
