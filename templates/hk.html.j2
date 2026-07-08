@@ -603,6 +603,90 @@
   </div>
   {% endif %}
 
+  {# ===================== ADR OVERNIGHT BRIDGE — display-only context organ =====================
+     Shows what US-listed ADRs/ETFs did AFTER the HK close, implying next HK session open.
+     CONTEXT, NOT A SIGNAL / 参考，非买卖信号. Rendered in BOTH macro and stocks modes.
+     Gracefully absent (no render) when adr_bridge is None or names list is empty. #}
+  {% if adr_bridge and adr_bridge.names %}
+  {% set _ab = adr_bridge %}
+  {% set _comp = _ab.composite if _ab.composite else {} %}
+  {% set _adr_fresh = _ab.freshness_verdict if _ab.freshness_verdict else 'unknown' %}
+  <div class="panel span12" id="adr-bridge-panel">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;">
+      <h2 style="margin:0;font-size:13px;">
+        <span class="l-en">Offshore / ADR Bridge</span>
+        <span class="l-zh">离岸 / ADR 桥</span>
+      </h2>
+      {% if _comp.bellwether_implied_open_pct is not none %}
+      {% set _gc = _comp.gap_context if _comp.gap_context else 'flat' %}
+      {% set _gcls = 'c-up' if _gc in ('strong_up','up') else ('c-down' if _gc in ('strong_down','down') else 'c-muted') %}
+      <span class="chip {{ _gcls }}" style="font-size:13px;">
+        <span class="l-en">Composite implied open</span><span class="l-zh">综合隐含跳空</span>
+        {{ '+' if _comp.bellwether_implied_open_pct > 0 else '' }}{{ '%.1f'|format(_comp.bellwether_implied_open_pct) }}%
+      </span>
+      {% else %}
+      <span class="chip c-muted">
+        <span class="l-en">Composite —</span><span class="l-zh">综合 —</span>
+      </span>
+      {% endif %}
+      <span style="font-size:11px;color:var(--muted);">
+        <span class="l-en">ADR date {{ _ab.adr_date if _ab.adr_date else '—' }}</span>
+        <span class="l-zh">ADR 日期 {{ _ab.adr_date if _ab.adr_date else '—' }}</span>
+      </span>
+      {% if _adr_fresh in ('stale','degraded') %}
+      <span class="chip c-warn" style="font-size:11px;">
+        <span class="l-en">data {{ _adr_fresh }}</span><span class="l-zh">数据{{ '落后' if _adr_fresh == 'stale' else '降级' }}</span>
+      </span>
+      {% endif %}
+      <span style="font-size:11px;color:var(--muted);margin-left:auto;">
+        <span class="l-en">context, not a signal</span>
+        <span class="l-zh">参考，非买卖信号</span>
+      </span>
+    </div>
+    {# Per-bellwether chips — direct pairs first, then proxy pairs #}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      {% for entry in _ab.names %}
+      {% set _pct = entry.implied_open_gap_pct %}
+      {% set _gc2 = entry.gap_context if entry.gap_context else 'unknown' %}
+      {% set _gcls2 = 'c-up' if _gc2 in ('strong_up','up') else ('c-down' if _gc2 in ('strong_down','down') else 'c-muted') %}
+      <span class="chip {{ _gcls2 if _pct is not none else 'c-muted' }}"
+            style="font-size:12px;"
+            title="{{ entry.adr_ticker }}{% if entry.proxy_note %} ({{ entry.proxy_note }}){% endif %}">
+        <span class="l-en">{{ entry.hk_name_en }}</span>
+        <span class="l-zh">{{ entry.hk_name_zh }}</span>
+        {{ entry.hk_ticker }} ·
+        <span class="l-en">ADR implied</span><span class="l-zh">隐含</span>
+        {% if _pct is not none %}
+          {{ '+' if _pct > 0 else '' }}{{ '%.1f'|format(_pct) }}%
+        {% else %}
+          —
+        {% endif %}
+        {% if entry.adr_source == 'proxy' %}<span style="font-size:10px;opacity:.7;">(proxy)</span>{% endif %}
+        {% if entry.disconnect_flag %}<span style="font-size:10px;color:var(--warn);" title="ADR and last HK move in opposite directions">⚡</span>{% endif %}
+      </span>
+      {% endfor %}
+    </div>
+    {# ETF sub-composite #}
+    {% if _comp.etf_composite_pct is not none %}
+    <div style="margin-top:8px;font-size:11.5px;color:var(--muted);">
+      <span class="l-en">China ETF composite (KWEB+FXI)</span>
+      <span class="l-zh">中国 ETF 综合（KWEB+FXI）</span>:
+      {% set _etfc = _comp.etf_composite_pct %}
+      <b style="color:{{ 'var(--up)' if _etfc > 0 else ('var(--down)' if _etfc < 0 else 'var(--muted)') }}">
+        {{ '+' if _etfc > 0 else '' }}{{ '%.1f'|format(_etfc) }}%
+      </b>
+    </div>
+    {% endif %}
+    {# ADR bridge banner (stale/missing data) #}
+    {% if _ab.banner %}
+    <div style="margin-top:8px;font-size:11.5px;color:var(--warn);opacity:.88;">
+      <span class="l-en">{{ _ab.banner.en }}</span>
+      <span class="l-zh">{{ _ab.banner.zh }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}{# end adr_bridge panel #}
+
   {% if mode == 'stocks' %}
   <!-- ===================== HK STOCK DESK — command-center hero ===================== -->
   {% set RS = (hk_scoreboard.risk_state if hk_scoreboard else (gv.state if gv else 'unknown')) %}
