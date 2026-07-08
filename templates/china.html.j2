@@ -522,6 +522,20 @@
     </div>
     <p class="note" style="margin:8px 0 0;text-transform:none">{{ t('A-share entry watchlist: washed-out names with a fresh 3D/2D turn. Rank means buy-readiness, not advice.', 'A股入场观察表：洗盘后出现3日/2日新转向的个股。排序表示买入就绪度，非建议。') }}
       <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a></p>
+    {# W5b EDGE-1 — CN drawdown radar sleeve-size chip. Source: engine/risk_radar_intl.py
+       cn_sleeve_chip(). Wired into setups.sleeve_chip by build_china_library.main().
+       Degrades: hidden when setups.sleeve_chip absent or radar_state is None.
+       CN-SYS-R7: display context only — never board-sort input. #}
+    {% set _sc = setups.sleeve_chip if setups else none %}
+    {% if _sc and _sc.radar_state and _sc.radar_state != 'None' %}
+    {% set _sc_col = 'var(--down)' if _sc.radar_state in ('elevated','risk-off') else ('var(--warn)' if _sc.radar_state == 'caution' else 'var(--up)') %}
+    <div style="margin:8px 0 0;padding:6px 10px;border-radius:8px;font-size:11.5px;line-height:1.5;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;border:1px solid var(--line);border-left:3px solid {{ _sc_col }};background:color-mix(in srgb,{{ _sc_col }} 6%,var(--panel))">
+      <span style="color:{{ _sc_col }};font-weight:700"><span class="l-en">{{ _sc.label_en }}</span><span class="l-zh">{{ _sc.label_zh }}</span></span>
+      {% if _sc.dominant_driver_en %}<span class="muted" style="font-size:10.5px">· <span class="l-en">{{ _sc.dominant_driver_en }}</span><span class="l-zh">{{ _sc.dominant_driver_zh or _sc.dominant_driver_en }}</span></span>{% endif %}
+      {% if _sc.radar_as_of %}<span class="muted" style="font-size:10px">· {{ t('as of', '截至') }} {{ _sc.radar_as_of }}</span>{% endif %}
+      {{ help('CN drawdown radar: measures external-driver risk (US rate shocks, USD/CNH, US–China yield gap, breadth). Sizes the sleeve — context only, never vetoes names or changes board rank (CN-SYS-R7).', 'CN回撤雷达：衡量外部驱动风险（美债利率冲击、美元/人民币、中美利差、市场广度）。用于确定仓位规模——仅供背景参考，不排除个股或改变看板排名（CN-SYS-R7）。') }}
+    </div>
+    {% endif %}
   </div>
 
   <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
