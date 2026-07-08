@@ -116,6 +116,15 @@ jobs:
           path: data/intraday
           key: intraday-engine-${{ github.run_id }}
           restore-keys: intraday-
+      - name: price-store freshness check (last SPY bar vs expected NYSE session; check-only)
+        # Same calendar assertion as daily.yml's engine gate, WITHOUT --heal: this lane is
+        # deliberately network-free, so a stale committed store is annotated loudly (red step,
+        # continue-on-error) rather than re-pulled. The regime recompute below then proceeds on
+        # cached bars — engine.market_state.persist stamps the snapshot freshness.stale, and the
+        # intraday fast-path's refresh_regime_if_stale self-heal (which IS allowed network) is
+        # the healing lane. 2026-07-07 incident guard (see scripts/check_price_store_freshness).
+        continue-on-error: true
+        run: python -m scripts.check_price_store_freshness
       - name: recompute signals + regime from committed data (no collect / no LLM / no network)
         # The ENGINE half of the lane. Pure functions of committed data on disk: regenerate the
         # MTF signal leaf (engine.run loads it into latest["mtf_signals"]), then run engine.run.

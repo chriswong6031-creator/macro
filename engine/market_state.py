@@ -789,12 +789,43 @@ def _store_path(root=None):
     return base / "market_state" / "latest.json"
 
 
-def persist(snap: dict | None, root=None) -> None:
-    """Write the canonical market-state snapshot to data/market_state/latest.json."""
+def persist(snap: dict | None, root=None, now=None) -> None:
+    """Write the canonical market-state snapshot to data/market_state/latest.json.
+
+    Freshness contract (2026-07-07 stale-regime incident):
+    - NO-REGRESS: refuse to overwrite a persisted snapshot whose asof is NEWER than the
+      incoming one. Two lanes raced that day (a stale scheduled engine run + a manually
+      re-dispatched fresh one); ordering luck decided which verdict the site carried.
+      Equal asof always overwrites (same-session recomputes are routine).
+    - SELF-DECLARING STALENESS: stamp snap["freshness"] against the NYSE calendar
+      (lib.nyse_calendar — independent of every price store, so it still fires when the
+      whole collection push dies and all stores agree on the stale date), so downstream
+      consumers (build_risk_state's nightly backbone, macro.html) can see a stale read
+      without cross-referencing the store. Both legs degrade-never-raise."""
     if not snap:
         return
     try:
         p = _store_path(root)
+        incoming = str(snap.get("asof") or "")
+        try:
+            if incoming and p.exists():
+                existing = str((json.loads(p.read_text()) or {}).get("asof") or "")
+                if existing and incoming < existing:
+                    log.warning("market_state persist REFUSED: incoming asof %s < persisted %s "
+                                "(no-regress guard)", incoming, existing)
+                    return
+        except Exception as e:  # noqa: BLE001 — an unreadable existing file never blocks
+            log.warning("market_state no-regress check skipped: %s", e)
+        try:
+            from lib import nyse_calendar
+            expected = str(nyse_calendar.expected_last_session(now))
+            snap["freshness"] = {
+                "data_asof": incoming or None,
+                "expected_asof": expected,
+                "stale": bool(incoming) and incoming < expected,
+            }
+        except Exception as e:  # noqa: BLE001 — the stamp is additive, never the gate
+            log.warning("market_state freshness stamp skipped: %s", e)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps(snap, ensure_ascii=False, default=str))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
