@@ -847,6 +847,26 @@ def main() -> int:
             log.error("hk cbbc map failed (%s); skipping", e)
             vm["cbbc_map"] = None
 
+        # HKEXnews Company-Catalyst Filing Bus — display-tier event tape (W1 data-plane).
+        # Surfaces recent corporate catalysts (buyback / results / mandate / shareholder)
+        # per bellwether name. DISPLAY-ONLY; deterministic classification; no scoring.
+        # Stamps a forward ledger (CN_LANE=asia gate).
+        try:
+            from engine import hk_filing_bus as _fbus
+            _fbus_snap = _fbus.run()
+            vm["filing_bus"] = _fbus_snap
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_filing_bus.json").write_text(
+                json.dumps(_fbus_snap, indent=2, default=str))
+            log.info("hk filing bus: freshness=%s tape=%d bellwethers=%d",
+                     _fbus_snap.get("freshness"),
+                     len(_fbus_snap.get("tape", [])),
+                     len(_fbus_snap.get("bellwethers", [])))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk filing bus failed (%s); skipping", e)
+            vm["filing_bus"] = None
+
         # HK residential-property panel (Centaline CCL) — display/regime context, None-safe
         try:
             vm["property"] = _hk_property_vm()
