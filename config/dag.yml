@@ -670,6 +670,51 @@ lanes:
         module: scripts.build_baskets_hk
       - id: build_cn_reversal_sleeve
         module: scripts.build_cn_reversal_sleeve
+      # ── CN-SYS W5a Scope 2: intel sub-builders (extracted from build_china.py) ──
+      - id: build_china_validation
+        module: scripts.build_china_validation
+        note: non-fatal; china predictive-validation scorecard (validate_all)
+      - id: build_china_news
+        module: scripts.build_china_news
+        note: non-fatal; china news powerhouse
+      - id: build_china_policy_watch
+        module: scripts.build_china_policy_watch
+        note: non-fatal; china policy watch surface
+      - id: build_china_altdata
+        module: scripts.build_china_altdata
+        note: non-fatal; china alt-data desk
+      - id: build_china_radar
+        module: scripts.build_china_radar
+        note: non-fatal; china divergence radar
+      - id: build_china_synthesis
+        module: scripts.build_china_synthesis
+        note: non-fatal; china central-intelligence synthesis (intel_analysis)
+      - id: build_china_analogs
+        module: scripts.build_china_analogs
+        note: non-fatal; china historical regime analog finder
+      - id: build_china_special_situations
+        module: scripts.build_china_special_situations
+        note: non-fatal; china special-sits desk
+      - id: build_china_intel_hub
+        module: scripts.build_china_intel_hub
+        note: non-fatal; china intel hub command apparatus
+      - id: build_china_intel
+        module: scripts.build_china_intel
+        note: non-fatal; china intel bus / mastermind fan-in
+      # ── CN-SYS W5a Scope 3: Batch-1 lobe wiring (W1/W2/W4) ──────────────────
+      - id: build_china_microstructure
+        module: scripts.build_china_microstructure
+        note: non-fatal; ~2 min; W1 microstructure lobe + limit tape (CN-SYS-R11)
+      - id: build_china_participation
+        module: scripts.build_china_participation
+        note: non-fatal; ~2 min; W2 participation lobe + tape (CN-SYS-R11)
+      - id: build_china_policy_transmission
+        module: scripts.build_china_policy_transmission
+        note: non-fatal; ~2 min; W4 policy transmission unifier (CN-SYS-R11)
+      - id: build_baskets_china_ths_snapshot
+        module: scripts.build_baskets_china_ths
+        args: [--snapshot]
+        note: non-fatal; ~2 min; W1 THS PIT membership snapshot side-car (CN-SYS-R11)
       - id: inject_data_base
         module: scripts.inject_data_base
       - id: publish_r2_asia

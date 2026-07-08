@@ -50,12 +50,23 @@ jobs:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-${{ github.run_id }}
           restore-keys: hk-breadth-closes-
-      - name: restore china per-name OHLC store
+      - name: save china per-name OHLC store (post-collect snapshot for daily engine job)
+        # Scope-1 lag fix (CN-SYS W5a): the prior step used restore-keys to restore the
+        # most-recent cache here. That caused a regression loop: a stale cache was restored
+        # BEFORE collect ran, the collect overwrote it in-tree, but daily.yml's later
+        # cache-restore pulled the stale save and then committed it via "git add data/" —
+        # re-introducing the staleness that the asia-close collect just fixed. Removing
+        # restore-keys means no restore happens (primary key always misses on unique run_id),
+        # but the SAVE at job end still captures the freshly-collected parquets so daily.yml's
+        # engine job cache-restore always gets today's fresh data.
+        # All 1599 parquets are now committed to git; the cache is only needed so daily.yml's
+        # ENGINE job (a separate GHA job with its own checkout) can read the per-name OHLC
+        # without re-running collect. The asia-close collect step itself doesn't need the
+        # prior cache — it fetches fresh data and store.upsert merges it into the checkout.
         uses: actions/cache@v4
         with:
           path: data/china_stocks
           key: china-stocks-ohlc-${{ github.run_id }}
-          restore-keys: china-stocks-ohlc-
       - name: restore hk per-name OHLC store
         uses: actions/cache@v4
         with:
@@ -130,6 +141,29 @@ jobs:
           # china_search plane + risk_radar_intl chip are fresh; asia lane so the forward
           # ledger persists (lane-gated). Failure-isolated: the script always exits 0.
           CN_SLEEVE_LANE=asia run_py "cn reversal sleeve (build_cn_reversal_sleeve)" scripts.build_cn_reversal_sleeve
+          # ── CN-SYS W5a Scope 2: intel sub-builders extracted from build_china.py ────────
+          # Behavior-preserving extraction of the importlib chain at the end of build_china
+          # main(). Order is preserved: validation → news → policy_watch → altdata → radar →
+          # synthesis (intel_analysis) → analogs → special_sits → intel_hub → intel_bus.
+          # Each step is non-fatal (matching the try/except semantics from build_china.py).
+          run_py "china validation scorecard (build_china_validation)"             scripts.build_china_validation
+          run_py "china news powerhouse (build_china_news)"                        scripts.build_china_news
+          run_py "china policy watch (build_china_policy_watch)"                   scripts.build_china_policy_watch
+          run_py "china alt-data desk (build_china_altdata)"                       scripts.build_china_altdata
+          run_py "china divergence radar (build_china_radar)"                      scripts.build_china_radar
+          run_py "china central analysis (build_china_synthesis)"                  scripts.build_china_synthesis
+          run_py "china historical analogs (build_china_analogs)"                  scripts.build_china_analogs
+          run_py "china special situations (build_china_special_situations)"       scripts.build_china_special_situations
+          run_py "china intel hub command apparatus (build_china_intel_hub)"       scripts.build_china_intel_hub
+          run_py "china intel bus / mastermind fan-in (build_china_intel)"         scripts.build_china_intel
+          # ── CN-SYS W5a Scope 3: Batch-1 lobes wiring ────────────────────────────────────
+          # W1 / W2 / W4 parallel builds land at merge time; wired here by module name.
+          # All non-fatal (~2 min each; CN-SYS-R11). Run after reversal_sleeve so the
+          # china_search plane + risk_radar_intl chip are fresh for these lobes.
+          run_py "china microstructure lobe (build_china_microstructure)"          scripts.build_china_microstructure   # ~2m W1
+          run_py "china participation lobe (build_china_participation)"            scripts.build_china_participation    # ~2m W2
+          run_py "china policy transmission lobe (build_china_policy_transmission)" scripts.build_china_policy_transmission  # ~2m W4
+          run_py "china THS snapshot side-car (build_baskets_china_ths --snapshot)" scripts.build_baskets_china_ths --snapshot  # ~2m W1 PIT
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         run: |
