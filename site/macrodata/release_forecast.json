@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-07-08T15:32:02Z",
+  "asof": "2026-07-08T14:40:27Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -14,8 +14,7 @@
     "quirk_flags",
     "expectation_read",
     "coverage_flags",
-    "input_snapshot_ref",
-    "shadows"
+    "input_snapshot_ref"
   ],
   "upcoming": [
     {
@@ -47,7 +46,6 @@
         "authority": false,
         "note": "frozen trivial spec: IC4WSA point, expanding IC4WSA\u2192ICSA residuals"
       },
-      "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -117,15 +115,6 @@
         "revision_optimistic_legs": [
           "shelter_nowcast"
         ],
-        "vintaged_legs": [
-          "cpi_hl_mom_lag1",
-          "cpi_hl_mom_lag2",
-          "cpi_hl_mom_lag3",
-          "sticky_mom_lag1",
-          "median_mom_lag1",
-          "flex_mom_lag1",
-          "ppi_mom_lag1"
-        ],
         "unrevised_legs": [
           "gasoline_mom"
         ],
@@ -144,17 +133,6 @@
         },
         "n_train": 352,
         "n_features_used": 9
-      },
-      "input_manifest": {
-        "cpi_hl_mom_lag1": 0.47291422864139676,
-        "cpi_hl_mom_lag2": 0.6400377846336402,
-        "cpi_hl_mom_lag3": 0.8651438343614481,
-        "sticky_mom_lag1": -36.68319746395559,
-        "median_mom_lag1": -25.677891952081122,
-        "flex_mom_lag1": -18.765262074225873,
-        "ppi_mom_lag1": 0.7431499846641376,
-        "gasoline_mom": -9.592007590556461,
-        "shelter_nowcast": 0.2612615652103259
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
@@ -200,88 +178,9 @@
       "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-06_first_2026-07-08_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.7777777777777778,
-        "non_vintaged_share": 0.2222222222222222,
+        "fresh_proxy_coverage": 0.0,
+        "non_vintaged_share": 1.0,
         "model_maturity": 0
-      },
-      "shadows": {
-        "v3_factor": {
-          "display_only": true,
-          "point": 0.143,
-          "p10": -0.1681,
-          "p25": -0.0008,
-          "p50": 0.1698,
-          "p75": 0.3325,
-          "p90": 0.502,
-          "confidence": null,
-          "input_completeness": 0.9091
-        },
-        "cpi_bridge": {
-          "display_only": true,
-          "point": 0.0278,
-          "components": [
-            {
-              "block": "energy_gasoline",
-              "mom_est": -9.592,
-              "weight": 2.895,
-              "contribution_pp": -0.277689,
-              "confidence": 1.0,
-              "prior_only": false
-            },
-            {
-              "block": "energy_electricity",
-              "mom_est": 1.0309,
-              "weight": 2.375,
-              "contribution_pp": 0.024485,
-              "confidence": 0.8,
-              "prior_only": false
-            },
-            {
-              "block": "shelter",
-              "mom_est": 0.2613,
-              "weight": 35.625,
-              "contribution_pp": 0.093074,
-              "confidence": 0.6,
-              "prior_only": false
-            },
-            {
-              "block": "food_at_home",
-              "mom_est": 0.076,
-              "weight": 8.325,
-              "contribution_pp": 0.006325,
-              "confidence": 0.4,
-              "prior_only": false
-            },
-            {
-              "block": "core_goods_pipeline",
-              "mom_est": 0.4011,
-              "weight": 19.176,
-              "contribution_pp": 0.076917,
-              "confidence": 0.6,
-              "prior_only": false
-            },
-            {
-              "block": "core_services_ex_shelter",
-              "mom_est": 0.2947,
-              "weight": 25.118,
-              "contribution_pp": 0.074024,
-              "confidence": 0.4,
-              "prior_only": false
-            },
-            {
-              "block": "unmodelled_residual",
-              "mom_est": 0.4729,
-              "weight": 6.486,
-              "contribution_pp": 0.030673,
-              "confidence": 0.0,
-              "prior_only": true
-            }
-          ],
-          "prior_driven_share": 0.06486,
-          "coverage_residual_pp": 0.0,
-          "weight_coverage": 0.9351,
-          "confidence": 0.7302
-        }
       }
     },
     {
@@ -325,15 +224,6 @@
         "revision_optimistic_legs": [
           "shelter_nowcast"
         ],
-        "vintaged_legs": [
-          "cpi_core_mom_lag1",
-          "cpi_core_mom_lag2",
-          "cpi_core_mom_lag3",
-          "sticky_mom_lag1",
-          "median_mom_lag1",
-          "flex_mom_lag1",
-          "ppi_mom_lag1"
-        ],
         "unrevised_legs": [],
         "absent_legs": [],
         "display_only": true,
@@ -350,16 +240,6 @@
         },
         "n_train": 352,
         "n_features_used": 8
-      },
-      "input_manifest": {
-        "cpi_core_mom_lag1": 0.20809544962627768,
-        "cpi_core_mom_lag2": 0.376460730477457,
-        "cpi_core_mom_lag3": 0.19579505385114437,
-        "sticky_mom_lag1": -36.68319746395559,
-        "median_mom_lag1": -25.677891952081122,
-        "flex_mom_lag1": -18.765262074225873,
-        "ppi_mom_lag1": 0.7431499846641376,
-        "shelter_nowcast": 0.2612615652103259
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
@@ -405,22 +285,9 @@
       "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-06_first_2026-07-08_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.875,
-        "non_vintaged_share": 0.125,
+        "fresh_proxy_coverage": 0.0,
+        "non_vintaged_share": 1.0,
         "model_maturity": 0
-      },
-      "shadows": {
-        "v3_factor": {
-          "display_only": true,
-          "point": 0.2008,
-          "p10": 0.0618,
-          "p25": 0.1326,
-          "p50": 0.1999,
-          "p75": 0.2793,
-          "p90": 0.335,
-          "confidence": null,
-          "input_completeness": 0.9
-        }
       }
     },
     {
@@ -465,13 +332,6 @@
         "n_train": 147,
         "n_features_used": 5
       },
-      "input_manifest": {
-        "ppi_hl_mom_lag1": 0.7431499846641376,
-        "ppi_hl_mom_lag2": 1.6168201238912827,
-        "ppi_hl_mom_lag3": 0.505772330664156,
-        "gasoline_mom": -9.592007590556461,
-        "ppifes_mom_lag1": 0.05906942929843062
-      },
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -492,8 +352,8 @@
       "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-06_first_2026-07-08_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.8,
-        "non_vintaged_share": 0.2,
+        "fresh_proxy_coverage": 0.0,
+        "non_vintaged_share": 1.0,
         "model_maturity": 0
       }
     },
@@ -526,7 +386,6 @@
         "authority": false,
         "note": "frozen trivial spec: IC4WSA point, expanding IC4WSA\u2192ICSA residuals"
       },
-      "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -577,7 +436,6 @@
         "authority": false,
         "note": "frozen trivial spec: IC4WSA point, expanding IC4WSA\u2192ICSA residuals"
       },
-      "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -646,16 +504,6 @@
         "n_train": 310,
         "n_features_used": 8
       },
-      "input_manifest": {
-        "pce_hl_mom_lag1": 0.47745641777818815,
-        "pce_hl_mom_lag2": 0.4280979561774867,
-        "pce_hl_mom_lag3": 0.691391976763045,
-        "sticky_mom_lag1": -36.68319746395559,
-        "median_mom_lag1": -25.677891952081122,
-        "flex_mom_lag1": -18.765262074225873,
-        "ppifis_mom_lag1": 0.7431499846641376,
-        "gasoline_mom": -9.592007590556461
-      },
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -676,8 +524,8 @@
       "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-06_first_2026-07-08_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.875,
-        "non_vintaged_share": 0.125,
+        "fresh_proxy_coverage": 0.0,
+        "non_vintaged_share": 1.0,
         "model_maturity": 0
       }
     },
@@ -726,15 +574,6 @@
         "n_train": 310,
         "n_features_used": 7
       },
-      "input_manifest": {
-        "pce_core_mom_lag1": 0.34868471804365697,
-        "pce_core_mom_lag2": 0.2715058130090764,
-        "pce_core_mom_lag3": 0.32593765278325915,
-        "sticky_mom_lag1": -36.68319746395559,
-        "median_mom_lag1": -25.677891952081122,
-        "flex_mom_lag1": -18.765262074225873,
-        "ppifes_mom_lag1": 0.05906942929843062
-      },
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -754,8 +593,8 @@
       "quirk_flags": [],
       "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-06_first_2026-07-08_v1.json",
       "coverage_flags": {
-        "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 1.0,
+        "weight_coverage": 0.0,
+        "fresh_proxy_coverage": 0.0,
         "non_vintaged_share": 0.0,
         "model_maturity": 0
       }
@@ -789,7 +628,6 @@
         "authority": false,
         "note": "frozen trivial spec: IC4WSA point, expanding IC4WSA\u2192ICSA residuals"
       },
-      "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -840,7 +678,6 @@
         "authority": false,
         "note": "frozen trivial spec: IC4WSA point, expanding IC4WSA\u2192ICSA residuals"
       },
-      "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -897,13 +734,6 @@
           "awhman_mom",
           "adp_change"
         ],
-        "vintaged_legs": [
-          "nfp_change_lag1",
-          "nfp_change_lag2",
-          "nfp_change_lag3",
-          "claims_survey_week_icsa",
-          "claims_survey_week_ccsa"
-        ],
         "unrevised_legs": [
           "withheld_tax_yoy"
         ],
@@ -913,16 +743,6 @@
         "withheld_tax_start": "2023-02-14",
         "n_train": 353,
         "n_features_used": 7
-      },
-      "input_manifest": {
-        "nfp_change_lag1": 265.0,
-        "nfp_change_lag2": 99.0,
-        "nfp_change_lag3": 171.0,
-        "claims_survey_week_icsa": 18000.0,
-        "claims_survey_week_ccsa": 28000.0,
-        "withheld_tax_yoy": 3.3088630790974127,
-        "awhman_mom": 0.0,
-        "adp_change": 98.0
       },
       "regime_axis": "growth",
       "policy_backdrop": {
@@ -955,23 +775,9 @@
       "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-07_first_2026-07-08_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.625,
-        "non_vintaged_share": 0.375,
+        "fresh_proxy_coverage": 0.0,
+        "non_vintaged_share": 1.0,
         "model_maturity": 0
-      },
-      "shadows": {
-        "v3_factor": {
-          "display_only": true,
-          "point": null,
-          "p10": -263.0219,
-          "p25": -110.0,
-          "p50": 9.6471,
-          "p75": 119.0,
-          "p90": 276.507,
-          "confidence": null,
-          "input_completeness": 1.0,
-          "warning": "trails champion; sub-naive on full-window backtest (2010+ MAE v3=527.9 vs naive=459.8), catastrophic 2020-recovery error \u2014 do not read as an improvement (MRI-R21 shadow, champion keeps the card)"
-        }
       }
     },
     {
@@ -1015,15 +821,6 @@
         "revision_optimistic_legs": [
           "shelter_nowcast"
         ],
-        "vintaged_legs": [
-          "cpi_hl_mom_lag1",
-          "cpi_hl_mom_lag2",
-          "cpi_hl_mom_lag3",
-          "sticky_mom_lag1",
-          "median_mom_lag1",
-          "flex_mom_lag1",
-          "ppi_mom_lag1"
-        ],
         "unrevised_legs": [
           "gasoline_mom"
         ],
@@ -1042,17 +839,6 @@
         },
         "n_train": 352,
         "n_features_used": 9
-      },
-      "input_manifest": {
-        "cpi_hl_mom_lag1": 0.47291422864139676,
-        "cpi_hl_mom_lag2": 0.6400377846336402,
-        "cpi_hl_mom_lag3": 0.8651438343614481,
-        "sticky_mom_lag1": -36.68319746395559,
-        "median_mom_lag1": -25.677891952081122,
-        "flex_mom_lag1": -18.765262074225873,
-        "ppi_mom_lag1": 0.7431499846641376,
-        "gasoline_mom": -6.731529039905171,
-        "shelter_nowcast": 0.255131183131693
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
@@ -1098,88 +884,9 @@
       "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-07_first_2026-07-08_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.7777777777777778,
-        "non_vintaged_share": 0.2222222222222222,
+        "fresh_proxy_coverage": 0.0,
+        "non_vintaged_share": 1.0,
         "model_maturity": 0
-      },
-      "shadows": {
-        "v3_factor": {
-          "display_only": true,
-          "point": 0.1691,
-          "p10": -0.142,
-          "p25": 0.0253,
-          "p50": 0.1959,
-          "p75": 0.3586,
-          "p90": 0.5281,
-          "confidence": null,
-          "input_completeness": 0.9091
-        },
-        "cpi_bridge": {
-          "display_only": true,
-          "point": 0.1084,
-          "components": [
-            {
-              "block": "energy_gasoline",
-              "mom_est": -6.7315,
-              "weight": 2.895,
-              "contribution_pp": -0.194878,
-              "confidence": 1.0,
-              "prior_only": false
-            },
-            {
-              "block": "energy_electricity",
-              "mom_est": 1.0309,
-              "weight": 2.375,
-              "contribution_pp": 0.024485,
-              "confidence": 0.8,
-              "prior_only": false
-            },
-            {
-              "block": "shelter",
-              "mom_est": 0.2551,
-              "weight": 35.625,
-              "contribution_pp": 0.09089,
-              "confidence": 0.6,
-              "prior_only": false
-            },
-            {
-              "block": "food_at_home",
-              "mom_est": 0.076,
-              "weight": 8.325,
-              "contribution_pp": 0.006325,
-              "confidence": 0.4,
-              "prior_only": false
-            },
-            {
-              "block": "core_goods_pipeline",
-              "mom_est": 0.4011,
-              "weight": 19.176,
-              "contribution_pp": 0.076917,
-              "confidence": 0.6,
-              "prior_only": false
-            },
-            {
-              "block": "core_services_ex_shelter",
-              "mom_est": 0.2947,
-              "weight": 25.118,
-              "contribution_pp": 0.074024,
-              "confidence": 0.4,
-              "prior_only": false
-            },
-            {
-              "block": "unmodelled_residual",
-              "mom_est": 0.4729,
-              "weight": 6.486,
-              "contribution_pp": 0.030673,
-              "confidence": 0.0,
-              "prior_only": true
-            }
-          ],
-          "prior_driven_share": 0.06486,
-          "coverage_residual_pp": 0.0,
-          "weight_coverage": 0.9351,
-          "confidence": 0.6947
-        }
       }
     },
     {
@@ -1223,15 +930,6 @@
         "revision_optimistic_legs": [
           "shelter_nowcast"
         ],
-        "vintaged_legs": [
-          "cpi_core_mom_lag1",
-          "cpi_core_mom_lag2",
-          "cpi_core_mom_lag3",
-          "sticky_mom_lag1",
-          "median_mom_lag1",
-          "flex_mom_lag1",
-          "ppi_mom_lag1"
-        ],
         "unrevised_legs": [],
         "absent_legs": [],
         "display_only": true,
@@ -1248,16 +946,6 @@
         },
         "n_train": 352,
         "n_features_used": 8
-      },
-      "input_manifest": {
-        "cpi_core_mom_lag1": 0.20809544962627768,
-        "cpi_core_mom_lag2": 0.376460730477457,
-        "cpi_core_mom_lag3": 0.19579505385114437,
-        "sticky_mom_lag1": -36.68319746395559,
-        "median_mom_lag1": -25.677891952081122,
-        "flex_mom_lag1": -18.765262074225873,
-        "ppi_mom_lag1": 0.7431499846641376,
-        "shelter_nowcast": 0.255131183131693
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
@@ -1303,22 +991,9 @@
       "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-07_first_2026-07-08_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.875,
-        "non_vintaged_share": 0.125,
+        "fresh_proxy_coverage": 0.0,
+        "non_vintaged_share": 1.0,
         "model_maturity": 0
-      },
-      "shadows": {
-        "v3_factor": {
-          "display_only": true,
-          "point": 0.2006,
-          "p10": 0.0616,
-          "p25": 0.1324,
-          "p50": 0.1998,
-          "p75": 0.2791,
-          "p90": 0.3349,
-          "confidence": null,
-          "input_completeness": 0.9
-        }
       }
     },
     {
@@ -1363,13 +1038,6 @@
         "n_train": 147,
         "n_features_used": 5
       },
-      "input_manifest": {
-        "ppi_hl_mom_lag1": 0.7431499846641376,
-        "ppi_hl_mom_lag2": 1.6168201238912827,
-        "ppi_hl_mom_lag3": 0.505772330664156,
-        "gasoline_mom": -6.731529039905171,
-        "ppifes_mom_lag1": 0.05906942929843062
-      },
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -1390,8 +1058,8 @@
       "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-07_first_2026-07-08_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.8,
-        "non_vintaged_share": 0.2,
+        "fresh_proxy_coverage": 0.0,
+        "non_vintaged_share": 1.0,
         "model_maturity": 0
       }
     },
@@ -1424,7 +1092,6 @@
         "authority": false,
         "note": "frozen trivial spec: IC4WSA point, expanding IC4WSA\u2192ICSA residuals"
       },
-      "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
@@ -1485,7 +1152,6 @@
         "reason": "no_data_rsafs_absent",
         "note": "RSAFS data not yet on disk. Attempt clock (#1 of 2) has not started. Machinery ships so projection emits benchmark_only/no_data until series accrues."
       },
-      "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
