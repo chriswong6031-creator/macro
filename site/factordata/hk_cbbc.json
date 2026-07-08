@@ -1,10 +1,143 @@
 {
-  "as_of_trade_date": "",
+  "as_of_trade_date": null,
   "freshness": "dead",
-  "bellwethers": [],
+  "bellwethers": [
+    {
+      "ticker": "^HSI",
+      "name_en": "HSI",
+      "name_zh": "\u6052\u751f\u6307\u6570",
+      "is_index": true,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "^HSTECH",
+      "name_en": "HSTECH",
+      "name_zh": "\u6052\u751f\u79d1\u6280",
+      "is_index": true,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "0700.HK",
+      "name_en": "Tencent",
+      "name_zh": "\u817e\u8baf",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "9988.HK",
+      "name_en": "Alibaba",
+      "name_zh": "\u963f\u91cc\u5df4\u5df4",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "9618.HK",
+      "name_en": "JD.com",
+      "name_zh": "\u4eac\u4e1c",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "3690.HK",
+      "name_en": "Meituan",
+      "name_zh": "\u7f8e\u56e2",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "1810.HK",
+      "name_en": "Xiaomi",
+      "name_zh": "\u5c0f\u7c73",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "9888.HK",
+      "name_en": "Baidu",
+      "name_zh": "\u767e\u5ea6",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "1024.HK",
+      "name_en": "Kuaishou",
+      "name_zh": "\u5feb\u624b",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "0981.HK",
+      "name_en": "SMIC",
+      "name_zh": "\u4e2d\u82af\u56fd\u9645",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    },
+    {
+      "ticker": "0388.HK",
+      "name_en": "HKEx",
+      "name_zh": "\u6e2f\u4ea4\u6240",
+      "is_index": false,
+      "bull_outstanding": null,
+      "bear_outstanding": null,
+      "total_outstanding": null,
+      "bull_bear_ratio": null,
+      "leverage_state": "no_data",
+      "data_note": "store empty"
+    }
+  ],
   "banner": {
-    "en": "CBBC data not yet collected \u2014 run collectors/hk_cbbc.py",
-    "zh": "\u725b\u718a\u8bc1\u6570\u636e\u5c1a\u672a\u91c7\u96c6 \u2014 \u8bf7\u8fd0\u884c collectors/hk_cbbc.py"
+    "en": "CBBC data dead \u2014 leverage map unavailable",
+    "zh": "\u725b\u718a\u8bc1\u6570\u636e\u7f3a\u5931\uff0c\u6760\u6746\u56fe\u4e0d\u53ef\u7528"
   },
   "cbbc_total_contracts": 0,
   "dw_total_contracts": 0,

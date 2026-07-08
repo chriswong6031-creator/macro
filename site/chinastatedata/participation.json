@@ -36,8 +36,8 @@
     "zt_breadth:null on 2026-07-06",
     "etf_share_chg:null on 2026-07-06",
     "northbound:DEAD post-2024-08-16 SLF-050",
-    "snapshot_staleness:published row 2026-07-06 is 1d behind tape tail 2026-07-07; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "snapshot_staleness:published row 2026-07-06 is 2d behind tape tail 2026-07-08; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
   ],
   "backfill": true,
-  "snapshot_note": "core legs null on 2026-07-07; publishing last fully-populated row (2026-07-06)"
+  "snapshot_note": "core legs null on 2026-07-08; publishing last fully-populated row (2026-07-06)"
 }
