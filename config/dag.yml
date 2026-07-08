@@ -79,6 +79,10 @@ lanes:
           SLF-048 attention store restore (#1677) — build_site.build_attention_data
           reads data/attention/*.parquet (gitignored, R2-hosted). Non-fatal: absent
           store = attention chip silently absent this render.
+      # price-store freshness gate (2026-07-07 incident guard) — precedes the serial spine
+      - id: check_price_store_freshness
+        module: scripts.check_price_store_freshness
+        args: [--heal]
       # serial spine (pre-band)
       - id: build_signal_quality
         module: scripts.build_signal_quality
@@ -691,6 +695,9 @@ lanes:
         note: >
           SLF-048 attention store restore (#1677) — pre-render, non-fatal
           (absent store = attention chip silently absent this render).
+      # price-store freshness check (2026-07-07 incident guard) — precedes the recompute
+      - id: check_price_store_freshness
+        module: scripts.check_price_store_freshness
       # regime recompute (serial, pre-render)
       - id: build_signal_quality
         module: scripts.build_signal_quality

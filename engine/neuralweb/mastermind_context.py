@@ -828,6 +828,15 @@ def _build_candidate_context(repo: Path, gap_notes: list[str]) -> dict:
             br_full = bottom_map[ticker]
             br = {k: br_full[k] for k in _BOTTOM_CONTEXT_COLS if k in br_full}
             row["bottom"] = _sparse(br)
+            # Valuation context slice — display/annotate only; no origination.
+            # Pulled from the SAME bottom_sensors row (no new source) so size budget
+            # and null hygiene are maintained.  Whole key omitted when all values
+            # are None/missing (so the cortex never reads absence as "fairly valued").
+            _VALUATION_CONTEXT_COLS = ("ev_sales", "ev_ebit", "p_fcf", "pe")
+            val_raw = {k: br_full.get(k) for k in _VALUATION_CONTEXT_COLS if br_full.get(k) is not None}
+            val_sparse = _sparse(val_raw)
+            if val_sparse:
+                row["valuation"] = val_sparse
 
         # Options row (sparse, numpy-coerced)
         if ticker in options_map:

@@ -156,8 +156,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | archetypes-history | `data/archetypes/history.parquet` | parquet | on-demand | display | 3 | 0 |
 | market-state-forward-log | `data/market_state/forward_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 | regime-base-effect-fwd | `data/regime/base_effect_fwd.jsonl` | jsonl | daily-engine | display | 3 | 0 |
+| site-factors | `site/factordata/factors.json` | json | daily-engine | display | 3 | 0 |
 | site-allocation | `site/allocationdata/allocation.json` | json | daily-engine | display | 1 | 1 |
-| site-factors | `site/factordata/factors.json` | json | daily-engine | display | 2 | 0 |
 | site-regime-prior-js | `site/regimedata/regime_prior.js` | js | daily-engine | display | 2 | 0 |
 | site-macro-signals | `site/macrodata/macro_signals.json` | json | daily-engine | display | 0 | 1 |
 
