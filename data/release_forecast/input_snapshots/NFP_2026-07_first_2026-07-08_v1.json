@@ -1,0 +1,15 @@
+{
+  "prediction_id": "NFP:2026-07:first:2026-07-08:v1",
+  "asof": "2026-07-08",
+  "features": {
+    "adp_change": null,
+    "awhman_mom": null,
+    "withheld_tax_yoy": null
+  },
+  "legs": {
+    "adp_change": "revision_optimistic",
+    "awhman_mom": "revision_optimistic",
+    "withheld_tax_yoy": "unrevised"
+  },
+  "inputs_hash": ""
+}

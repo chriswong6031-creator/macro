@@ -1,0 +1,13 @@
+{
+  "prediction_id": "CPI:2026-06:first:2026-07-08:v1",
+  "asof": "2026-07-08",
+  "features": {
+    "shelter_nowcast": null,
+    "gasoline_mom": null
+  },
+  "legs": {
+    "gasoline_mom": "unrevised",
+    "shelter_nowcast": "revision_optimistic"
+  },
+  "inputs_hash": ""
+}
