@@ -256,13 +256,14 @@ def build_block_clusters(
     """
     # Sort tape by date
     tape = tape.copy()
-    tape = tape[tape["avg_premium_pct"] <= threshold_pct].copy()
+    # threshold_pct is in raw-ratio units (e.g. -0.08 for -8%).
+    # avg_premium_pct is premium_ratio*100 (percent units).
+    # Multiply threshold by 100 so both sides share the same unit.
+    tape = tape[tape["avg_premium_pct"] <= threshold_pct * 100.0].copy()
     tape = tape[tape["date"] >= pd.Timestamp(STUDY_START)].copy()
 
     # Get all unique trading dates from the full tape (not just discounts)
-    # for the session window
-    all_tape = pd.read_parquet.__self__ if False else None  # placeholder
-    # Reload full tape for session-window counting
+    # for the session window — reload full tape for session-window counting
     full_dfs = []
     for yr in range(2013, 2027):
         p = BLOCK_TAPE_DIR / f"mrtj_{yr}.parquet"
@@ -373,6 +374,55 @@ def fwd_return(price_panel: pd.DataFrame, ticker: str, signal_date: pd.Timestamp
     return (exit_price - entry_price) / entry_price
 
 
+def compute_group_unconditional_means(
+    group_members: dict[str, set[str]],
+    price_panel: pd.DataFrame,
+    horizons: list[int],
+) -> dict[tuple[str, int], float]:
+    """
+    Compute the unconditional equal-weight forward-return mean for each (group, horizon)
+    pair across ALL available dates in the price panel (not conditioned on any event).
+
+    This is baseline (b) required by the spec: own-group unconditional mean return.
+    By netting event-period peer returns against this baseline, we remove the persistent
+    size/composition drift that inflates excess-vs-CSI300 (which is cap-weighted large-cap).
+
+    Returns {(group_name, horizon): unconditional_mean_return}.
+    """
+    # Build vectorized return matrices: for each horizon, compute h-day forward returns
+    # for every (ticker, date) in the panel.
+    all_tickers = set()
+    for members in group_members.values():
+        all_tickers.update(members)
+    # Restrict to tickers actually in price panel
+    all_tickers = all_tickers & set(price_panel.columns)
+    if not all_tickers:
+        return {}
+
+    results: dict[tuple[str, int], float] = {}
+
+    for h in horizons:
+        # Vectorized: fwd_ret[t] = (price[t+h] / price[t]) - 1 for each ticker
+        sub = price_panel[sorted(all_tickers)].copy()
+        # Shift by h positions (trading days, not calendar)
+        fwd = sub.shift(-h) / sub - 1.0
+        # fwd has NaN at last h rows — that's correct
+
+        for gname, members in group_members.items():
+            gtickers = sorted(members & set(price_panel.columns))
+            if not gtickers:
+                continue
+            g_fwd = fwd[gtickers]
+            # EW mean across tickers at each date (skipna), then mean across dates
+            daily_ew = g_fwd.mean(axis=1, skipna=True)
+            daily_ew = daily_ew.dropna()
+            if len(daily_ew) == 0:
+                continue
+            results[(gname, h)] = float(daily_ew.mean())
+
+    return results
+
+
 def compute_events_returns(
     events: pd.DataFrame,
     baskets: dict[str, list[dict]],
@@ -384,7 +434,8 @@ def compute_events_returns(
     """
     For each event, compute:
       - peer returns (non-blocked, in same group, h=21 and h=63)
-      - market excess returns
+      - market excess returns vs CSI 300 (AM-1)
+      - own-group excess returns vs unconditional peer EW mean (spec baseline b)
     """
     # Invert sw_map: 6-digit-code -> sw_code already; we need sw_code -> set of 6-digit codes
     sw_code_to_prefixes: dict[str, set[str]] = defaultdict(set)
@@ -394,6 +445,26 @@ def compute_events_returns(
     # Build ticker->prefix6 lookup
     def ticker_to_prefix6(tk: str) -> str:
         return tk[:6]
+
+    # Pre-compute own-group unconditional means for baseline (b)
+    # (spec OUTCOME requires excess vs own-group unconditional, not just vs CSI300)
+    if group_type == "basket":
+        # Use 2021-06-15 roster (all members, ignoring removed dates for unconditional baseline
+        # — we want the full static roster's drift, consistent with AM-4)
+        grp_members_for_uncond: dict[str, set[str]] = {
+            bname: {m["ticker"] for m in members}
+            for bname, members in baskets.items()
+        }
+    else:
+        # SW: all tickers in price panel whose prefix maps to each SW code
+        grp_members_for_uncond = {}
+        for prefix6, sw_code in sw_map.items():
+            grp_members_for_uncond.setdefault(sw_code, set())
+            for tk in price_panel.columns:
+                if tk[:6] == prefix6:
+                    grp_members_for_uncond[sw_code].add(tk)
+
+    uncond_means = compute_group_unconditional_means(grp_members_for_uncond, price_panel, HORIZONS)
 
     records = []
     ev_sub = events[events["group_type"] == group_type].copy()
@@ -444,6 +515,10 @@ def compute_events_returns(
             peer_mean = np.mean(valid)
             mkt_ret = mkt_returns[h]
             excess = (peer_mean - mkt_ret) if mkt_ret is not None else None
+            # Own-group unconditional baseline (spec OUTCOME baseline b):
+            # net out persistent size/composition drift vs CSI300.
+            uncond = uncond_means.get((group_name, h))
+            excess_vs_owngroup = (peer_mean - uncond) if uncond is not None else None
             records.append({
                 "event_date": ed,
                 "signal_date": signal_date,
@@ -455,6 +530,8 @@ def compute_events_returns(
                 "peer_return": peer_mean,
                 "mkt_return": mkt_ret,
                 "excess_return": excess,
+                "excess_vs_owngroup": excess_vs_owngroup,
+                "owngroup_uncond": uncond,
             })
 
     return pd.DataFrame(records)
@@ -502,14 +579,17 @@ def bh_correction(p_values: list[float]) -> list[float]:
     return q.clip(0, 1).tolist()
 
 
-def date_collapse(df: pd.DataFrame, horizon: int) -> pd.Series:
+def date_collapse(df: pd.DataFrame, horizon: int, col: str = "excess_return") -> pd.Series:
     """
     AM-6 overlap correction: collapse to one obs per event_date by
     equal-weighting all active events on that date.
-    Returns series of daily excess_return (date-indexed).
+    Returns series of daily returns (date-indexed).
+    col: which return column to collapse (default: excess_return vs market proxy).
     """
     sub = df[df["horizon"] == horizon].copy()
-    daily = sub.groupby("event_date")["excess_return"].mean()
+    if col not in sub.columns:
+        return pd.Series(dtype=float)
+    daily = sub.groupby("event_date")[col].mean()
     return daily
 
 
@@ -702,17 +782,24 @@ def main():
     print("\n[f501] Scoring cells...")
     cells: dict[str, dict] = {}
 
-    def score_variant(ret_df: pd.DataFrame, prefix: str, full_df: pd.DataFrame | None = None):
+    def score_variant(ret_df: pd.DataFrame, prefix: str):
         for h in HORIZONS:
             cell_id = f"{prefix}-{h}d"
+            og_cell_id = f"{prefix}-OG-{h}d"
             if len(ret_df) == 0:
-                cells[cell_id] = {"label": cell_id, "n_dates": 0, "mean_excess": np.nan,
+                for cid in (cell_id, og_cell_id):
+                    cells[cid] = {"label": cid, "n_dates": 0, "mean_excess": np.nan,
                                   "t_hac": np.nan, "p_hac": np.nan, "direction_neg": False,
                                   "t_lt_neg2": False}
                 continue
-            daily = date_collapse(ret_df, h)
+            # Market-excess cell (vs CSI 300 AM-1)
+            daily = date_collapse(ret_df, h, col="excess_return")
             cells[cell_id] = score_cell(daily, cell_id)
             cells[cell_id]["daily"] = daily  # keep for gate checks
+            # Own-group excess cell (vs unconditional EW peer baseline, spec OUTCOME baseline b)
+            daily_og = date_collapse(ret_df, h, col="excess_vs_owngroup")
+            cells[og_cell_id] = score_cell(daily_og, og_cell_id)
+            cells[og_cell_id]["daily"] = daily_og
 
     score_variant(ret_v1_basket, "B-V1")
     score_variant(ret_v1_sw, "SW-V1")
@@ -968,7 +1055,7 @@ def _write_report(
         f"",
         f"---",
         f"",
-        f"## Results: gated cells",
+        f"## Results: gated cells (excess vs CSI 300 ETF, AM-1 market proxy)",
         f"",
         f"| Cell | N dates | Mean excess | t_HAC | p | BH q | Dir<0 | Gate |",
         f"|------|---------|------------|-------|---|------|-------|------|",
@@ -981,6 +1068,28 @@ def _write_report(
         f"",
         f"*N dates = calendar-time collapsed observations (one per event date).",
         f"Stats law: NW HAC, lag = min(4, sqrt(N)). BH correction across 6 gated cells.*",
+        f"",
+        f"**Note on market proxy bias:** CSI 300 is cap-weighted large-cap; peer baskets are",
+        f"equal-weight small/mid-cap. The positive excess above is substantially a benchmark-mismatch",
+        f"artifact (persistent size drift). The own-group baseline below nets this out.",
+        f"",
+        f"### Results: own-group unconditional baseline (spec OUTCOME baseline b)",
+        f"",
+        f"Excess vs the unconditional equal-weight mean return of the same peer group",
+        f"across ALL available dates (non-event and event). This baseline captures the",
+        f"persistent size/composition drift that inflates the CSI-300-excess above.",
+        f"",
+        f"| Cell | N dates | Mean vs own-group | t_HAC | p | Dir<0 |",
+        f"|------|---------|------------------|-------|---|-------|",
+        cell_row("B-V1-OG-21d"),
+        cell_row("B-V1-OG-63d"),
+        cell_row("B-V2-OG-21d"),
+        cell_row("B-V2-OG-63d"),
+        cell_row("SW-V1-OG-21d"),
+        cell_row("SW-V1-OG-63d"),
+        f"",
+        f"*OG = own-group unconditional baseline. BH correction not applied to informational rows;",
+        f"gate verdict is G1 on CSI-300-excess cells (the primary pre-registered control).*",
         f"",
         f"---",
         f"",
@@ -1016,7 +1125,9 @@ def _write_report(
         f"",
         f"## PIT laws and amendments",
         f"",
-        f"- **AM-1 (market proxy):** {mkt_note} (CSI 300 ETF, covers 2012-05+)",
+        f"- **AM-1 (market proxy):** {mkt_note}. NOTE: docstring said 'CN-A market EW'; amendment",
+        f"  AM-1 filed before computing to use CSI 300 ETF (510300.SS) instead. CSI 300 is",
+        f"  cap-weighted large-cap; see own-group baseline above for the size-drift-corrected view.",
         f"- **AM-2 (minimum peers):** events with <{MIN_PEERS} non-blocked peers with valid price data excluded",
         f"- **AM-3 (session window):** 10 trailing block-tape sessions (not calendar days)",
         f"- **AM-4 (PIT basket membership):** basket 'added' date used; removed date excludes tickers",
