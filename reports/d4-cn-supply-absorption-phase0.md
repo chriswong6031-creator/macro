@@ -30,6 +30,13 @@
 > `research/SIGNAL_LAB_FRONTIER_DAY4_FABLE_ADJUDICATION_2026-07-08.md` §"D4-01
 > reassessment". The "momentum-costume RESOLVED" reading of the anti-hypothesis line is
 > correspondingly downgraded to unresolved.
+>
+> **RE-ENTRY EXECUTED (2026-07-08, later same day): family CLOSED.** The D4-01b Stage-0
+> falsifier ran against the canonical tape and is dead in both 减持新规 regimes at the
+> frozen ruler (EW +1.08/+1.14pp per 21d, t_NW 1.91/1.77 < 2; close-call POSITIVE null
+> written honestly, overlap-lag sensitivity confirms). Stage 1 not run per the staged
+> budget. See `reports/d4-cn-supply-absorption-d401b-stage0.md` and the
+> `research/DO_NOT_REBUILD.md` registry row.
 
 **Verdict: G1 FAIL — path-matched neutralization succeeds in absorbing the raw signal.**
 The raw absorbed-vs-not split shows +2.42 pp at 21d (t_iid=13.28) and +10.85 pp at 63d, but after matching on the [t,t+10] return path, vol tercile, and size tercile the clustered HAC t-statistic collapses to 1.29 at 21d and 1.85 at 63d — well below the |t|>=2 + BH q<=0.10 decisive gate. G2 and G3 pass (descriptively same-sign), and G4 (non-gated) finds a 2.5 pp partial effect after drift-factor residualization (t=8.57, p=0.0000) — which informs why the raw signal looks positive before matching.
