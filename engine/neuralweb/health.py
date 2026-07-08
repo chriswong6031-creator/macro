@@ -474,6 +474,146 @@ def _embed_support_impact(lobes: list[dict], root: Path) -> None:
             lobe["support_impact"] = {"available": False, "note": f"error: {exc}"}
 
 
+# ---- context accrual heartbeat (R-CI12) ---------------------------------------
+
+def _context_accrual_heartbeat(root: Path) -> dict:
+    """R-CI12: verify accrual plumbing for personality + fire_coordinates.
+
+    Fail-open: every sub-block catches its own exceptions and returns honest
+    absent markers.  Never raises.  Returns a dict embedded in health.json
+    under 'context_accrual'.
+
+    Checks:
+      personality_forward_ledger: data/stock_personality/forward_ledger.parquet
+        exists, n_rows, last_append date.
+      fire_coordinates: data/factordata/fire_coordinates.jsonl
+        exists, n_rows, last_as_of, dna_nonnull_pct (% rows where dna_class != null).
+      panel_partitions: data/factordata/panel/*/panel.parquet
+        latest partition month, n_partitions.
+      stamper_gap: true when track_record has buy/rebuy fires on a date
+        where the personality forward_ledger has NO row that date.
+    """
+    result: dict[str, Any] = {}
+
+    # --- personality_forward_ledger ---
+    fl_path = root / "data" / "stock_personality" / "forward_ledger.parquet"
+    try:
+        fl_exists = fl_path.exists()
+        fl_rows: int | None = None
+        fl_last_append: str | None = None
+        if fl_exists:
+            fl_rows = _row_count(fl_path, "parquet")
+            try:
+                import pyarrow.parquet as pq  # noqa: PLC0415
+                pf = pq.ParquetFile(str(fl_path))
+                # read only date/as_of columns
+                schema_names = list(pf.schema_arrow.names)
+                date_cols = [c for c in schema_names if c in ("as_of", "date", "fire_date", "asof")]
+                if date_cols:
+                    tbl = pf.read(columns=date_cols[:1])
+                    col = tbl.column(0).to_pylist()
+                    non_null = [str(v) for v in col if v is not None]
+                    fl_last_append = max(non_null) if non_null else None
+            except Exception:  # noqa: BLE001
+                pass
+        result["personality_forward_ledger"] = {
+            "exists": fl_exists,
+            "rows": fl_rows,
+            "last_append": fl_last_append,
+        }
+    except Exception as exc:  # noqa: BLE001
+        result["personality_forward_ledger"] = {"exists": None, "rows": None,
+                                                  "last_append": None, "error": str(exc)}
+
+    # --- fire_coordinates ---
+    fc_path = root / "data" / "factordata" / "fire_coordinates.jsonl"
+    try:
+        fc_exists = fc_path.exists()
+        fc_rows: int | None = None
+        fc_last_asof: str | None = None
+        fc_dna_nonnull_pct: float | None = None
+        if fc_exists:
+            rows_parsed: list[dict] = []
+            try:
+                with fc_path.open("r", encoding="utf-8", errors="replace") as fh:
+                    for line in fh:
+                        line = line.strip()
+                        if line:
+                            try:
+                                rows_parsed.append(json.loads(line))
+                            except Exception:  # noqa: BLE001
+                                pass
+            except Exception:  # noqa: BLE001
+                pass
+            fc_rows = len(rows_parsed)
+            if rows_parsed:
+                asofs = [r.get("as_of") for r in rows_parsed if r.get("as_of")]
+                fc_last_asof = max(str(a) for a in asofs) if asofs else None
+                n_dna = sum(1 for r in rows_parsed if r.get("dna_class") is not None)
+                fc_dna_nonnull_pct = round(100 * n_dna / fc_rows, 1) if fc_rows else None
+        result["fire_coordinates"] = {
+            "exists": fc_exists,
+            "rows": fc_rows,
+            "last_asof": fc_last_asof,
+            "dna_nonnull_pct": fc_dna_nonnull_pct,
+        }
+    except Exception as exc:  # noqa: BLE001
+        result["fire_coordinates"] = {"exists": None, "rows": None,
+                                       "last_asof": None, "dna_nonnull_pct": None,
+                                       "error": str(exc)}
+
+    # --- panel_partitions ---
+    panel_dir = root / "data" / "factordata" / "panel"
+    try:
+        parts = sorted(panel_dir.glob("*/panel.parquet")) if panel_dir.exists() else []
+        result["panel_partitions"] = {
+            "latest": parts[-1].parent.name if parts else None,
+            "n": len(parts),
+        }
+    except Exception as exc:  # noqa: BLE001
+        result["panel_partitions"] = {"latest": None, "n": None, "error": str(exc)}
+
+    # --- stamper_gap: track_record buy/rebuy fires on dates with no forward-ledger append ---
+    try:
+        stamper_gap = False
+        gap_dates: list[str] = []
+        tr_path = root / "data" / "signal_archive" / "track_record.parquet"
+        if tr_path.exists() and fl_path.exists():
+            try:
+                import pyarrow.parquet as pq  # noqa: PLC0415
+                import pandas as _pd  # noqa: PLC0415
+                # buy/rebuy fire dates from track_record
+                tr_pf = pq.ParquetFile(str(tr_path))
+                tr_schema = list(tr_pf.schema_arrow.names)
+                tr_cols = [c for c in tr_schema if c in ("date", "type", "first_seen_asof")]
+                if "date" in tr_cols and "type" in tr_cols:
+                    tr_tbl = tr_pf.read(columns=["date", "type"])
+                    tr_df = tr_tbl.to_pandas()
+                    buy_dates = set(
+                        str(d) for d in tr_df.loc[tr_df["type"].isin(["buy", "rebuy"]), "date"].dropna().unique()
+                    )
+                    # forward_ledger dates
+                    fl_pf = pq.ParquetFile(str(fl_path))
+                    fl_schema_names = list(fl_pf.schema_arrow.names)
+                    fl_date_cols = [c for c in fl_schema_names if c in ("as_of", "date", "fire_date", "asof")]
+                    if fl_date_cols:
+                        fl_tbl = fl_pf.read(columns=fl_date_cols[:1])
+                        fl_dates = set(str(v) for v in fl_tbl.column(0).to_pylist() if v is not None)
+                        gap_dates = sorted(buy_dates - fl_dates)[-5:]  # show last 5
+                        if gap_dates:
+                            stamper_gap = True
+            except Exception:  # noqa: BLE001
+                pass
+        result["stamper_gap"] = stamper_gap
+        if gap_dates:
+            result["stamper_gap_dates_sample"] = gap_dates
+    except Exception as exc:  # noqa: BLE001
+        result["stamper_gap"] = None
+        result["stamper_gap_error"] = str(exc)
+
+    return result
+
+
 # ---- main build function -----------------------------------------------------
 
 def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict:
@@ -545,6 +685,13 @@ def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict
     overall = _overall_status(lobes, cortex)
     counts = _summary_counts(lobes, cortex)
 
+    # R-CI12: context accrual heartbeat (fail-open)
+    try:
+        context_accrual = _context_accrual_heartbeat(root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("health: context_accrual_heartbeat failed: %s", exc)
+        context_accrual = {"error": str(exc)}
+
     # Conservative as_of: oldest fresh data timestamp across lobes
     fresh_times = [
         r["as_of"] for r in lobes
@@ -563,6 +710,7 @@ def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict
         "cortex": cortex,
         "workflow_conformance_misses": conformance_misses,
         "summary_counts": counts,
+        "context_accrual": context_accrual,
     }
 
 

@@ -418,18 +418,27 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
 
     Fill-null-only (keep-FIRST): an existing non-null value is never altered.
     Atomic rewrite, and only when at least one row gained a stamp. Returns
-    {n_claims, n_backfilled, n_unstamped} — the nightly runner prints the
-    residual unstamped count (§3.4 requires it visible).
+    {n_claims, n_backfilled, n_unstamped, n_precoverage} — the nightly runner
+    prints the residual unstamped count (§3.4 requires it visible).
+
+    R-CI3 provenance law: every backfilled row receives
+      regime_stamp_basis='recomputed_history'
+    This MUST NOT be overwritten to 'pit_live' by query.py (the
+    query.py:1094-1102 clobber guard checks _no_basis = basis is None, so
+    pre-existing 'recomputed_history' values survive unchanged).
+    Claims whose asof predates regime_vector.parquet coverage stay
+    vector_asof=None and are counted in n_precoverage.
     """
     root = _root(root)
     p = root.joinpath(*_CLAIMS_FILE)
     claims = _read_jsonl(p)
     if not claims:
-        return {"n_claims": 0, "n_backfilled": 0, "n_unstamped": 0}
+        return {"n_claims": 0, "n_backfilled": 0, "n_unstamped": 0, "n_precoverage": 0}
 
     # Guard: A-share and HK symbols must not receive US regime_vector rich stamps.
     _SKIP_SUFFIXES = (".SS", ".SZ", ".HK")
     n_skipped = 0
+    n_precoverage = 0
 
     n_backfilled = 0
     for c in claims:
@@ -443,10 +452,22 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
                 for k, v in stamp.items():
                     if c.get(k) is None:
                         c[k] = v
+                # R-CI3: mark as recomputed from history, never pit_live
+                # Only set if not already present (keep-FIRST rule).
+                if c.get("regime_stamp_basis") is None:
+                    c["regime_stamp_basis"] = "recomputed_history"
                 n_backfilled += 1
+            else:
+                # asof predates regime_vector.parquet coverage — stays null
+                n_precoverage += 1
 
     if n_skipped:
         log.info("backfill_regime_stamps: skipped %d A-share/HK claim(s) (.SS/.SZ/.HK)", n_skipped)
+    if n_precoverage:
+        log.info(
+            "backfill_regime_stamps: %d claim(s) predate regime_vector coverage — vector_asof stays null",
+            n_precoverage,
+        )
 
     n_unstamped = sum(1 for c in claims if c.get("vector_asof") is None)
     if n_backfilled:
@@ -455,8 +476,12 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
             for c in claims:
                 fh.write(json.dumps(c, ensure_ascii=False, default=_json_default) + "\n")
         tmp.replace(p)
-    return {"n_claims": len(claims), "n_backfilled": n_backfilled,
-            "n_unstamped": n_unstamped}
+    return {
+        "n_claims": len(claims),
+        "n_backfilled": n_backfilled,
+        "n_unstamped": n_unstamped,
+        "n_precoverage": n_precoverage,
+    }
 
 
 def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,

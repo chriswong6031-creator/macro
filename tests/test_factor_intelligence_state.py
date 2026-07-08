@@ -12,6 +12,11 @@ b) synthetic panel + ledgers + standouts → digest values correct, history row
 c) same-day rerun → no duplicate history/fire rows
 d) allowed_actions always has may_rank=false, may_originate=false, authority_source present
 e) site mirror byte-identical to data copy
+f) (W1) contrib prefix fix: REAL production column names (contrib_mkt_20d etc.) produce
+   non-empty top_contrib_streams
+g) (W1) personality enrichment: snapshot_fresh basis on fire_coordinates rows when
+   stock_personality.json present
+h) (W1) carry-forward date matching: panel date lags board as_of → rows still found
 """
 from __future__ import annotations
 
@@ -73,9 +78,10 @@ def _make_synthetic_panel(root: Path, as_of: str) -> None:
                 "twin_bleed_flag": t == "MSFT",
                 "twin_rel_20d": -0.02 if t == "MSFT" else 0.01,
                 "alpha_z_house": 1.2,
-                "contrib_20d_momentum": 0.05,
-                "contrib_20d_quality": 0.03,
-                "contrib_20d_value": -0.01,
+                # R-CI2a: REAL production column names (contrib_<stream>_20d)
+                "contrib_mkt_20d": 0.05,
+                "contrib_sector_20d": 0.03,
+                "contrib_growth_20d": -0.01,
             })
     df = pd.DataFrame(rows)
     df.to_parquet(part_dir / "panel.parquet", index=False)
@@ -241,13 +247,24 @@ def test_synthetic_panel_digest_and_coords(tmp_path: Path, monkeypatch: pytest.M
         assert fr["as_of"] == _AS_OF
         assert fr["tier"] == "T1"
         assert "top_contrib_streams" in fr
-        # Should have at least 1 contrib stream from our synthetic panel
+        # R-CI2a: REAL column names (contrib_mkt_20d etc.) must produce non-empty list
         assert isinstance(fr["top_contrib_streams"], list)
-        # All entries are stream names (strings)
+        assert len(fr["top_contrib_streams"]) >= 1, (
+            f"top_contrib_streams empty — contrib prefix fix may have regressed: {fr}"
+        )
+        # All entries are stream names (strings) extracted from between 'contrib_' and '_20d'
         for s in fr["top_contrib_streams"]:
             assert isinstance(s, str)
-        # dna_class is present
+            # stream names must not contain the prefix/suffix artifacts
+            assert not s.startswith("contrib_"), f"stream key still has 'contrib_' prefix: {s}"
+            assert not s.endswith("_20d"), f"stream key still has '_20d' suffix: {s}"
+        # dna_class is present (from synthetic panel)
         assert fr["dna_class"] == "quality_growth"
+        # v2 schema fields present
+        assert "fire_coord_schema" in fr, "v2 schema field missing"
+        assert fr["fire_coord_schema"] == "fire_coordinates.v2"
+        # personality_basis field present
+        assert "personality_basis" in fr, "personality_basis field missing from v2 schema"
         # No disallowed fields
         for bad in ("rank", "score", "recommendation", "buy", "sell", "hold"):
             assert bad not in fr
@@ -449,7 +466,8 @@ def test_b2_null_tier_entry_in_board_not_in_fire(
             "style_regime_pending": None, "dna_class": "value_deep",
             "alibi_share_20d": 0.3, "twin_bleed_flag": False,
             "twin_rel_20d": 0.0, "alpha_z_house": 0.5,
-            "contrib_20d_momentum": 0.01, "contrib_20d_quality": 0.02, "contrib_20d_value": 0.03,
+            # R-CI2a: REAL production column names
+            "contrib_mkt_20d": 0.01, "contrib_sector_20d": 0.02, "contrib_growth_20d": 0.03,
         }
         for d in dates
     ]
@@ -482,4 +500,200 @@ def test_b2_null_tier_entry_in_board_not_in_fire(
     null_tier_gaps = [g for g in state["gaps"] if "null" in g.lower() or "held" in g.lower() or "skipped" in g.lower()]
     assert null_tier_gaps, (
         f"B2: expected a gap note about null-tier skipped entries, gaps were: {state['gaps']}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# W1 Test (f): contrib prefix fix — REAL production column names
+# ---------------------------------------------------------------------------
+
+def test_w1_contrib_prefix_fix_real_column_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """W1 R-CI2a: REAL production column names (contrib_mkt_20d, contrib_sector_20d,
+    contrib_growth_20d) produce non-empty top_contrib_streams.
+
+    This is the regression test for the _CONTRIB_PREFIX bug: the old code used
+    'contrib_20d_' as a startswith prefix, which matches NOTHING because real
+    columns are contrib_<stream>_20d not contrib_20d_<stream>.
+    The fix uses _CONTRIB_PATTERN = re.compile(r'^contrib_([a-z_]+)_20d$').
+    """
+    _make_synthetic_panel(tmp_path, _AS_OF)
+    _make_standouts(tmp_path, _AS_OF, ["AAPL", "MSFT", "GOOGL"])
+    _patch_world_state(monkeypatch)
+
+    state = build_factor_intelligence_state(root=tmp_path, as_of_date=_AS_OF)
+
+    fire_path = tmp_path / "data" / "factordata" / "fire_coordinates.jsonl"
+    assert fire_path.exists(), "fire_coordinates.jsonl not written"
+    fire_rows = [json.loads(l) for l in fire_path.read_text().splitlines() if l.strip()]
+    assert len(fire_rows) == 3, f"expected 3 fire rows, got {len(fire_rows)}"
+
+    for fr in fire_rows:
+        streams = fr["top_contrib_streams"]
+        assert isinstance(streams, list), "top_contrib_streams must be list"
+        assert len(streams) >= 1, (
+            f"R-CI2a regression: top_contrib_streams is empty for {fr['ticker']}. "
+            f"Contrib prefix fix may not have landed. Full row: {fr}"
+        )
+        # Verify stream names are bare names (mkt, sector, growth) not full column names
+        for s in streams:
+            assert s in ("mkt", "sector", "size", "growth", "rates", "dollar",
+                         "ai_theme", "china"), (
+                f"stream name '{s}' is not a known stream key — "
+                f"possible prefix/suffix leak from column name"
+            )
+        # Verify ordering is by descending |value|
+        # contrib_mkt_20d=0.05 > contrib_sector_20d=0.03 > contrib_growth_20d=0.01
+        assert streams[0] == "mkt", (
+            f"expected 'mkt' as top stream (value 0.05), got '{streams[0]}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# W1 Test (g): personality enrichment — snapshot_fresh basis
+# ---------------------------------------------------------------------------
+
+def _make_personality_json(root: Path, tickers: list[str]) -> None:
+    """Write a minimal stock_personality.json for the given tickers."""
+    per_ticker = {
+        t: {
+            "arch": "momentum_leader",
+            "dna": "quality_growth",
+            "chart": ["clean_uptrend", "mean_reversion_rubber_band"],
+            "own": ["passive_index_magnet"],
+            "micro": ["tight_spread_absorber"],
+            "modes": ["normal"],
+        }
+        for t in tickers
+    }
+    p = root / "site" / "factordata" / "stock_personality.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({
+        "schema": "stock_personality.v1",
+        "as_of": _AS_OF,
+        "n_tickers": len(tickers),
+        "per_ticker": per_ticker,
+    }), encoding="utf-8")
+
+
+def test_w1_personality_enrichment_snapshot_fresh(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """W1 R-CI3: personality coordinates added to fire_coordinates rows with
+    personality_basis='snapshot_fresh' when stock_personality.json is present.
+    Tickers absent from the snapshot get personality_basis='absent'.
+    """
+    _make_synthetic_panel(tmp_path, _AS_OF)
+    # AAPL has personality, MSFT does NOT
+    _make_personality_json(tmp_path, ["AAPL"])
+    _make_standouts(tmp_path, _AS_OF, ["AAPL", "MSFT"])
+    _patch_world_state(monkeypatch)
+
+    state = build_factor_intelligence_state(root=tmp_path, as_of_date=_AS_OF)
+
+    fire_path = tmp_path / "data" / "factordata" / "fire_coordinates.jsonl"
+    assert fire_path.exists()
+    fire_rows = {
+        r["ticker"]: r
+        for r in (json.loads(l) for l in fire_path.read_text().splitlines() if l.strip())
+    }
+
+    # AAPL: personality_basis='snapshot_fresh', archetype present
+    aapl = fire_rows["AAPL"]
+    assert aapl["personality_basis"] == "snapshot_fresh", (
+        f"expected snapshot_fresh for AAPL, got {aapl['personality_basis']}"
+    )
+    assert aapl["archetype"] == "momentum_leader"
+    assert "clean_uptrend" in aapl["chart_primary"]
+    assert aapl["modes"] == ["normal"]
+    # v2 schema
+    assert aapl["fire_coord_schema"] == "fire_coordinates.v2"
+
+    # MSFT: personality_basis='absent', archetype=None
+    msft = fire_rows["MSFT"]
+    assert msft["personality_basis"] == "absent", (
+        f"expected absent for MSFT (not in snapshot), got {msft['personality_basis']}"
+    )
+    assert msft["archetype"] is None
+
+    # Regime keys present (may be None if no regime_vector in tmp_path — that's ok)
+    for regime_key in ("quad_hard_label", "vol_regime", "risk_radar_state"):
+        assert regime_key in aapl, f"v2 regime key '{regime_key}' missing from fire row"
+
+
+# ---------------------------------------------------------------------------
+# W1 Test (h): carry-forward date matching — panel lags behind board as_of
+# ---------------------------------------------------------------------------
+
+def _make_synthetic_panel_lagged(root: Path, panel_as_of: str, board_as_of: str) -> None:
+    """Create panel where latest date = panel_as_of, but standouts board as_of > panel_as_of."""
+    panel_dir = root / "data" / "factordata" / "panel"
+    month = panel_as_of[:7]
+    part_dir = panel_dir / month
+    part_dir.mkdir(parents=True, exist_ok=True)
+
+    import pandas as _pd
+    dates = _pd.bdate_range(end=panel_as_of, periods=65).strftime("%Y-%m-%d").tolist()
+    rows = []
+    for d in dates:
+        for t in ["AAPL"]:
+            rows.append({
+                "date": d, "ticker": t,
+                "style_regime": "growth", "style_regime_pending": None,
+                "dna_class": "quality_growth",
+                "alibi_share_20d": 0.45, "twin_bleed_flag": False,
+                "twin_rel_20d": 0.01, "alpha_z_house": 1.2,
+                "contrib_mkt_20d": 0.07, "contrib_sector_20d": 0.02,
+            })
+    pd.DataFrame(rows).to_parquet(part_dir / "panel.parquet", index=False)
+
+    # standouts board as_of is 3 days AHEAD of panel latest date
+    _write_json(root / "site" / "factordata" / "us_standouts.json", {
+        "as_of": board_as_of,
+        "buy": [{"ticker": "AAPL", "signal": {"tier_cascade": "T1"}}],
+        "reduce": [],
+    })
+
+
+def test_w1_carry_forward_date_matching(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """W1 R-CI2b: when panel latest date lags behind standouts board as_of,
+    fire_coordinates still finds the ticker by carry-forward (date <= board_as_of).
+
+    Before the fix, the code used exact-date match panel["date"] == board_as_of,
+    which returns zero rows when the panel is behind.
+    """
+    panel_as_of = "2026-07-02"
+    board_as_of = "2026-07-06"  # 4 trading days ahead of panel
+    _make_synthetic_panel_lagged(tmp_path, panel_as_of, board_as_of)
+    _patch_world_state(monkeypatch)
+
+    state = build_factor_intelligence_state(root=tmp_path, as_of_date=board_as_of)
+
+    fire_path = tmp_path / "data" / "factordata" / "fire_coordinates.jsonl"
+    assert fire_path.exists(), "fire_coordinates.jsonl not written"
+    fire_rows = [json.loads(l) for l in fire_path.read_text().splitlines() if l.strip()]
+
+    assert len(fire_rows) == 1, (
+        f"R-CI2b regression: expected 1 fire row but got {len(fire_rows)}. "
+        f"Carry-forward date matching may not have landed. "
+        f"Gaps: {state['gaps']}"
+    )
+    fr = fire_rows[0]
+    assert fr["ticker"] == "AAPL"
+    assert fr["as_of"] == board_as_of
+    # panel_date should be the latest available (panel_as_of), not board_as_of
+    assert fr["panel_date"] == panel_as_of, (
+        f"expected panel_date={panel_as_of}, got {fr.get('panel_date')}"
+    )
+    # contrib streams should be non-empty (carry-forward row has contrib columns)
+    assert len(fr["top_contrib_streams"]) >= 1, (
+        f"expected non-empty top_contrib_streams, got {fr['top_contrib_streams']}"
+    )
+    # No agg_gaps note for AAPL
+    agg_gap_notes = [g for g in state["gaps"] if "had no panel row" in g]
+    assert not agg_gap_notes, (
+        f"Carry-forward fix failure: unexpected 'no panel row' gap: {agg_gap_notes}"
     )
