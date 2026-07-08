@@ -1226,6 +1226,63 @@ def test_routing_contradicts_branch_still_fires():
     assert "read_contradictions" in seeds
 
 
+# R6 cross-asset routing extension tests
+def test_routing_cross_asset_term():
+    """'cross-asset' → macro branch (R6 extension)."""
+    budget, seeds = ab._classify_question("What is the cross-asset backdrop?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_cross_asset_no_hyphen():
+    """'cross asset' (no hyphen) → macro branch."""
+    budget, seeds = ab._classify_question("Explain the cross asset correlation regime", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_correlation_term():
+    """'correlation' → macro branch."""
+    budget, seeds = ab._classify_question("How concentrated is cross-market correlation?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_absorption_term():
+    """'absorption' → macro branch."""
+    budget, seeds = ab._classify_question("What is the absorption pctile today?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_intermarket_term():
+    """'intermarket' → macro branch."""
+    budget, seeds = ab._classify_question("Show me the intermarket ratios", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_carry_term():
+    """'carry' → macro branch."""
+    budget, seeds = ab._classify_question("What is the carry environment saying?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_leadlag_term():
+    """'lead-lag' → macro branch."""
+    budget, seeds = ab._classify_question("Is there a lead-lag relationship in markets?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_breadth_term():
+    """'breadth' → macro branch (R6 adds this term)."""
+    budget, seeds = ab._classify_question("What is the cross-asset trend breadth?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
 def test_routing_why_fired_branch_still_fires():
     """'why did' question still routes to why_fired branch (unchanged)."""
     budget, seeds = ab._classify_question("Why did NVDA fire a buy signal?", context_ticker="NVDA")

@@ -9,5 +9,141 @@
     "copper",
     "dollar"
   ],
-  "correlation": "concentrated"
+  "correlation": "concentrated",
+  "asof": "2026-07-07",
+  "flows": {
+    "schema": "crossasset_flows.v1",
+    "display_only": true,
+    "correlation": {
+      "verdict": "concentrated",
+      "absorption_pctile": 1.0,
+      "n_markets": 6
+    },
+    "breadth": 0.4,
+    "trend_top": [
+      {
+        "asset": "equity_us",
+        "trend": "up",
+        "z": 1.0
+      },
+      {
+        "asset": "equity_sm",
+        "trend": "up",
+        "z": 1.0
+      },
+      {
+        "asset": "credit_hy",
+        "trend": "up",
+        "z": 1.0
+      },
+      {
+        "asset": "copper",
+        "trend": "up",
+        "z": 1.0
+      },
+      {
+        "asset": "dollar",
+        "trend": "up",
+        "z": 1.0
+      },
+      {
+        "asset": "oil",
+        "trend": "mixed",
+        "z": 0.33
+      }
+    ],
+    "intermarket": [
+      {
+        "pair": "copper_gold",
+        "ratio": 0.001,
+        "trend": "mid"
+      },
+      {
+        "pair": "gold_silver",
+        "ratio": 67.65,
+        "trend": "mid"
+      },
+      {
+        "pair": "oil_gold",
+        "ratio": 0.017,
+        "trend": "mid"
+      },
+      {
+        "pair": "stocks_gold",
+        "ratio": 0.181,
+        "trend": "mid"
+      }
+    ],
+    "carry": {
+      "rows": [
+        {
+          "key": "rates_term",
+          "label_en": "Rates term-spread (10y-3m)",
+          "label_zh": "\u5229\u7387\u671f\u9650\u5229\u5dee (10\u5e74-3\u6708)",
+          "value": 0.8,
+          "unit": "%",
+          "state": "positive carry"
+        }
+      ],
+      "note": "Current-state carry context only. Rates term-spread has deep history; commodity roll-yield is reconstructed from dated futures with <2y of history, so it is NOT backtested as a factor. Context, not a buy list."
+    },
+    "leadlag": {
+      "verdict": "weak_lead",
+      "links": [
+        {
+          "leader": "US",
+          "follower": "HK",
+          "lag": 1,
+          "r": 0.358,
+          "t": 5.109,
+          "q": 0.0
+        },
+        {
+          "leader": "Crypto",
+          "follower": "HK",
+          "lag": 1,
+          "r": 0.302,
+          "t": 4.494,
+          "q": 0.0
+        },
+        {
+          "leader": "Dollar",
+          "follower": "HK",
+          "lag": 1,
+          "r": 0.273,
+          "t": 4.081,
+          "q": 0.0
+        },
+        {
+          "leader": "US",
+          "follower": "China",
+          "lag": 1,
+          "r": 0.277,
+          "t": 4.049,
+          "q": 0.0038
+        },
+        {
+          "leader": "Crypto",
+          "follower": "China",
+          "lag": 1,
+          "r": 0.222,
+          "t": 3.221,
+          "q": 0.039
+        }
+      ]
+    },
+    "global_liquidity": {
+      "asof": "2026-06-05",
+      "state": "contracting",
+      "accel": "steady",
+      "total_usd_tn": 17.85
+    },
+    "funding_stress": {
+      "asof": "2026-07-02",
+      "state": "calm",
+      "score": 36.0,
+      "spread_bp": 1.0
+    },
+    "note": "display-only regime read; TSMOM fails DSR (cross-asset-phase0), lead/lag=lag-1 timezone (cross-asset-leadlag-phase0) \u2014 not a strategy/hedge-ratio"
+  }
 }

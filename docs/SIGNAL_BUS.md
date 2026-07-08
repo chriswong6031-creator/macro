@@ -25,7 +25,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 28 |
-| macro-context-rail | 14 |
+| macro-context-rail | 15 |
 | macro-release-intel | 6 |
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
@@ -50,7 +50,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 145 |
+| display | 146 |
 | infrastructure | 71 |
 | scored | 4 |
 | shadow | 40 |
@@ -59,7 +59,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 248 |
+| git | 249 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -237,6 +237,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | forex-latest | `data/forex/latest.json` | json | daily-engine | display | 5 | 0 |
 | transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 3 | 0 |
 | commodity-latest | `data/commodity/latest.json` | json | daily-engine | display | 2 | 0 |
+| crossasset-latest | `data/crossasset/latest.json` | json | daily-engine | display | 2 | 0 |
 | site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 2 | 0 |
 | bond-health | `data/bonds/bond_health.json` | json | daily-engine | display | 1 | 0 |
 | canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 1 | 0 |

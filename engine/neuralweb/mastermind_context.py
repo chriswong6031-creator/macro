@@ -471,6 +471,19 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
             "favored": cc_ws.get("favored"),
         }
 
+        # ── Cross-asset block from cross_asset_flows (R6) ─────────────────────
+        ca_ws = ws.get("cross_asset_flows") or {}
+        ca_corr = ca_ws.get("correlation") or {}
+        ca_im_raw = ca_ws.get("intermarket") or []
+        ca_block = {
+            "regime": ca_ws.get("regime"),
+            "correlation_concentration": ca_corr.get("verdict") if isinstance(ca_corr, dict) else None,
+            "absorption_pctile": ca_corr.get("absorption_pctile") if isinstance(ca_corr, dict) else None,
+            "intermarket_top": ca_im_raw[:3] if isinstance(ca_im_raw, list) else [],
+            "breadth": ca_ws.get("breadth"),
+            "leadlag_verdict": (ca_ws.get("leadlag") or {}).get("verdict"),
+        }
+
         # ── Label deltas from macro_deltas ────────────────────────────────────
         md_ws = ws.get("macro_deltas") or {}
         deltas_raw = md_ws.get("transitions") or []
@@ -492,6 +505,7 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
             "rates": rates_block,
             "credit": credit_block,
             "commodity": commodity_block,
+            "cross_asset": ca_block,
             "deltas_14d": deltas_14d,
             "contradiction_note": contradiction_note,
             "display_only": True,
