@@ -63,6 +63,13 @@ def build_nfp_features(
         # adp_change: revision_optimistic (ADP does revise its estimates; we lack ALFRED vintages
         # → asof-blind read, same limitation as awhman_mom; acceptable for Track-M challenger).
         "revision_optimistic_legs": ["awhman_mom", "adp_change"],
+        # vintaged_legs: ALFRED first-print legs actually used — PAYEMS own lags + survey-week
+        # claims. Enumerated here so compute_coverage_flags sees the full declared-leg set
+        # (MRI-R26 honesty, rework-2a fix). Claims (ICSA/CCSA) are ALFRED-vintaged weekly.
+        "vintaged_legs": [
+            "nfp_change_lag1", "nfp_change_lag2", "nfp_change_lag3",
+            "claims_survey_week_icsa", "claims_survey_week_ccsa",
+        ],
         "unrevised_legs": ["withheld_tax_yoy"],
         "absent_legs": [],
         "display_only": True,

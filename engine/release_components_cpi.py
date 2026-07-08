@@ -411,8 +411,24 @@ def build_cpi_features(
     provenance_dict: {revision_optimistic_legs, unrevised_legs, absent_legs, ...}
     """
     absent_legs: list[str] = []
+    # vintaged_legs: ALFRED first-print legs actually used — own lags + sticky/median/flex + PPI.
+    # These are the legs that DO have ALFRED vintages and are enumerated here so that
+    # compute_coverage_flags sees the full declared-leg set (MRI-R26 honesty, rework-2a fix).
+    if release_type == "cpi_headline":
+        _vintaged_legs = [
+            "cpi_hl_mom_lag1", "cpi_hl_mom_lag2", "cpi_hl_mom_lag3",
+            "sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1",
+            "ppi_mom_lag1",
+        ]
+    else:
+        _vintaged_legs = [
+            "cpi_core_mom_lag1", "cpi_core_mom_lag2", "cpi_core_mom_lag3",
+            "sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1",
+            "ppi_mom_lag1",
+        ]
     prov: dict[str, Any] = {
         "revision_optimistic_legs": ["shelter_nowcast"],  # CUSR0000SAH1 + ZORI both revision-optimistic
+        "vintaged_legs": _vintaged_legs,
         "unrevised_legs": [],
         "absent_legs": [],
         "display_only": True,

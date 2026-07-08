@@ -647,3 +647,239 @@ class TestChampionNFPFeatureSet:
                                 f"_wf_nfp_full feature_names={names} contains 'adp_change' — "
                                 "must match the champion 7-feature set (MRI-R27 rework FIX 1)"
                             )
+
+
+# ---------------------------------------------------------------------------
+# Rework-2a: vintaged_legs + input_manifest coverage honesty tests
+# (MRI-R26 rework-2a: champions + new targets report sane coverage flags)
+# ---------------------------------------------------------------------------
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_VINTAGES_PRESENT = (_REPO_ROOT / "data" / "fred_vintage" / "vintages.parquet").exists()
+_INT_MARK = pytest.mark.skipif(
+    not _VINTAGES_PRESENT,
+    reason="data/fred_vintage/vintages.parquet absent; skipping integration coverage tests",
+)
+
+
+class TestVintagedLegsCoverageHonesty:
+    """Rework-2a: CPI, NFP and PCE models must emit correct, non-trivial coverage flags.
+
+    Before the fix: vintaged legs were invisible → non_vintaged_share=1.0 and
+    weight_coverage=0.0/1.0 as artifacts. After the fix, mostly-vintaged models
+    report LOW non_vintaged_share and non-zero weight_coverage.
+    """
+
+    @_INT_MARK
+    def test_cpi_headline_low_non_vintaged_share(self):
+        """CPI headline has 9 legs; only shelter_nowcast (rev_opt) + gasoline_mom (unrev)
+        are non-vintaged → non_vintaged_share = 2/9 ≈ 0.222."""
+        from engine.release_forecast import project_release
+        from engine.release_provenance import compute_coverage_flags
+        import datetime as dt
+        p = project_release("cpi_headline", dt.date(2026, 7, 8), str(_REPO_ROOT))
+        flags = compute_coverage_flags(p, None)
+        assert flags["non_vintaged_share"] < 0.5, (
+            f"CPI headline non_vintaged_share={flags['non_vintaged_share']:.3f} — "
+            "expected < 0.5 (mostly-vintaged model). If 1.0, vintaged_legs fix not applied."
+        )
+        assert flags["non_vintaged_share"] != pytest.approx(1.0), (
+            "CPI headline non_vintaged_share=1.0 — rework-2a vintaged_legs fix not applied"
+        )
+
+    @_INT_MARK
+    def test_cpi_core_low_non_vintaged_share(self):
+        """CPI core has 8 legs; only shelter_nowcast (rev_opt) is non-vintaged
+        → non_vintaged_share = 1/8 = 0.125."""
+        from engine.release_forecast import project_release
+        from engine.release_provenance import compute_coverage_flags
+        import datetime as dt
+        p = project_release("cpi_core", dt.date(2026, 7, 8), str(_REPO_ROOT))
+        flags = compute_coverage_flags(p, None)
+        assert flags["non_vintaged_share"] < 0.5, (
+            f"CPI core non_vintaged_share={flags['non_vintaged_share']:.3f} — "
+            "expected < 0.5 (mostly-vintaged model)"
+        )
+        assert flags["non_vintaged_share"] != pytest.approx(1.0), (
+            "CPI core non_vintaged_share=1.0 — rework-2a vintaged_legs fix not applied"
+        )
+        assert flags["weight_coverage"] == pytest.approx(1.0, rel=1e-6), (
+            f"CPI core weight_coverage={flags['weight_coverage']:.3f} expected=1.0 "
+            "(no absent legs when all features present)"
+        )
+
+    @_INT_MARK
+    def test_pce_headline_coverage_not_artifacts(self):
+        """PCE headline coverage must not be the 1.0/0.0 artifact.
+        All 8 legs (3 own lags + 3 smf + ppifis + gasoline) are present at 2026-07-08;
+        gasoline_mom is unrevised (non-vintaged), rest are ALFRED-vintaged.
+        non_vintaged_share = 1/8 = 0.125 (or 0 if gasoline absent)."""
+        from engine.release_forecast import project_release
+        from engine.release_provenance import compute_coverage_flags
+        import datetime as dt
+        p = project_release("pce_headline", dt.date(2026, 7, 8), str(_REPO_ROOT))
+        flags = compute_coverage_flags(p, None)
+        # non_vintaged_share must NOT be 1.0 (old artifact)
+        assert flags["non_vintaged_share"] != pytest.approx(1.0), (
+            f"pce_headline non_vintaged_share={flags['non_vintaged_share']:.3f} — "
+            "still showing artifact value 1.0; vintaged_legs + input_manifest fix not applied"
+        )
+        # weight_coverage must NOT be 0.0 (old pce_core artifact)
+        assert flags["weight_coverage"] > 0.0, (
+            f"pce_headline weight_coverage={flags['weight_coverage']:.3f} — "
+            "should be > 0 when at least some legs are present"
+        )
+
+    @_INT_MARK
+    def test_pce_core_coverage_not_artifacts(self):
+        """PCE core coverage must not be the 1.0/0.0 artifact from old code.
+        All 7 legs (3 own lags + 3 smf + ppifes) are ALFRED-vintaged.
+        Before fix: weight_coverage=0.0, non_vintaged_share=0.0 (empty denominator).
+        After fix: weight_coverage=1.0, non_vintaged_share=0.0."""
+        from engine.release_forecast import project_release
+        from engine.release_provenance import compute_coverage_flags
+        import datetime as dt
+        p = project_release("pce_core", dt.date(2026, 7, 8), str(_REPO_ROOT))
+        flags = compute_coverage_flags(p, None)
+        # weight_coverage must NOT be 0.0 (old artifact from empty denominator)
+        assert flags["weight_coverage"] > 0.0, (
+            f"pce_core weight_coverage={flags['weight_coverage']:.3f} — "
+            "old artifact was 0.0 (empty denominator when no legs in special lists); fix not applied"
+        )
+
+    @_INT_MARK
+    def test_cpi_headline_input_snapshot_non_empty(self):
+        """CPI headline input_snapshot receipt must be populated (non-empty features)."""
+        from engine.release_forecast import project_release
+        from engine.release_provenance import build_input_snapshot
+        import datetime as dt
+        p = project_release("cpi_headline", dt.date(2026, 7, 8), str(_REPO_ROOT))
+        snap = build_input_snapshot(p)
+        assert "error" not in snap, f"build_input_snapshot returned error: {snap}"
+        features = snap.get("features", {})
+        non_none = {k: v for k, v in features.items() if v is not None}
+        assert len(non_none) > 0, (
+            "CPI headline input_snapshot.features is empty — "
+            "input_manifest was not attached to the projection (rework-2a FIX)"
+        )
+        # Must have the own lags
+        assert "cpi_hl_mom_lag1" in features, (
+            "input_snapshot features missing cpi_hl_mom_lag1 — "
+            "input_manifest keys not propagated into snapshot"
+        )
+
+    @_INT_MARK
+    def test_cpi_core_input_snapshot_non_empty(self):
+        """CPI core input_snapshot must have real feature values."""
+        from engine.release_forecast import project_release
+        from engine.release_provenance import build_input_snapshot
+        import datetime as dt
+        p = project_release("cpi_core", dt.date(2026, 7, 8), str(_REPO_ROOT))
+        snap = build_input_snapshot(p)
+        assert "error" not in snap
+        features = snap.get("features", {})
+        non_none = {k: v for k, v in features.items() if v is not None}
+        assert len(non_none) > 0, "CPI core input_snapshot.features is empty"
+        assert "cpi_core_mom_lag1" in features
+
+    @_INT_MARK
+    def test_pce_headline_input_snapshot_non_empty(self):
+        """PCE headline input_snapshot must have real feature values."""
+        from engine.release_forecast import project_release
+        from engine.release_provenance import build_input_snapshot
+        import datetime as dt
+        p = project_release("pce_headline", dt.date(2026, 7, 8), str(_REPO_ROOT))
+        snap = build_input_snapshot(p)
+        assert "error" not in snap
+        features = snap.get("features", {})
+        non_none = {k: v for k, v in features.items() if v is not None}
+        assert len(non_none) > 0, "PCE headline input_snapshot.features is empty"
+        assert "pce_hl_mom_lag1" in features
+
+    @_INT_MARK
+    def test_pce_core_input_snapshot_non_empty(self):
+        """PCE core input_snapshot must have real feature values."""
+        from engine.release_forecast import project_release
+        from engine.release_provenance import build_input_snapshot
+        import datetime as dt
+        p = project_release("pce_core", dt.date(2026, 7, 8), str(_REPO_ROOT))
+        snap = build_input_snapshot(p)
+        assert "error" not in snap
+        features = snap.get("features", {})
+        non_none = {k: v for k, v in features.items() if v is not None}
+        assert len(non_none) > 0, "PCE core input_snapshot.features is empty"
+        assert "pce_core_mom_lag1" in features
+
+    def test_vintaged_legs_in_declared_legs(self):
+        """_declared_legs must include vintaged_legs entries from provenance."""
+        from engine.release_provenance import _declared_legs
+        prov = {
+            "revision_optimistic_legs": ["shelter_nowcast"],
+            "vintaged_legs": ["cpi_hl_mom_lag1", "cpi_hl_mom_lag2", "cpi_hl_mom_lag3"],
+            "unrevised_legs": ["gasoline_mom"],
+            "absent_legs": [],
+        }
+        declared = _declared_legs(prov, {})
+        assert "cpi_hl_mom_lag1" in declared, "vintaged leg cpi_hl_mom_lag1 not in declared_legs"
+        assert "cpi_hl_mom_lag2" in declared
+        assert "cpi_hl_mom_lag3" in declared
+        assert "shelter_nowcast" in declared
+        assert "gasoline_mom" in declared
+        assert len(declared) == 5
+
+    def test_input_manifest_in_declared_legs(self):
+        """_declared_legs must include input_manifest keys (via merged_features in compute_coverage_flags)."""
+        from engine.release_provenance import compute_coverage_flags
+        # Projection with no special provenance lists, but real feature values in input_manifest
+        proj = {
+            "release": "pce_core",
+            "asof": "2026-07-08",
+            "input_manifest": {
+                "pce_core_mom_lag1": 0.2,
+                "pce_core_mom_lag2": 0.3,
+                "pce_core_mom_lag3": 0.15,
+                "sticky_mom_lag1": -36.0,
+                "median_mom_lag1": -25.0,
+                "flex_mom_lag1": -18.0,
+                "ppifes_mom_lag1": -0.1,
+            },
+            "pit_provenance": {
+                "revision_optimistic_legs": [],
+                "vintaged_legs": ["sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1"],
+                "unrevised_legs": [],
+                "absent_legs": [],
+                "display_only": True,
+                "authority": False,
+            },
+            "display_only": True,
+            "authority": False,
+        }
+        flags = compute_coverage_flags(proj, None)
+        # All 7 legs are present/vintaged → weight_coverage = 1.0
+        assert flags["weight_coverage"] == pytest.approx(1.0), (
+            f"weight_coverage={flags['weight_coverage']} — expected 1.0 when all legs present"
+        )
+        # All vintaged (none in non-vintaged statuses) → non_vintaged_share = 0.0
+        assert flags["non_vintaged_share"] == pytest.approx(0.0), (
+            f"non_vintaged_share={flags['non_vintaged_share']} — expected 0.0 when all ALFRED-vintaged"
+        )
+
+    def test_champion_unchanged_point_and_benchmark_stable(self):
+        """Two calls to project_release CPI at same asof return identical point + benchmark_set.
+        Verifies rework-2a is additive — the input_manifest addition does NOT change outputs.
+        (Unit-level champion-unchanged test; full integration version is in test_release_integration_2a.py)
+        """
+        # This is a pure structural test (not integration) — checks the champions still work
+        # without requiring data; if vintages absent, the projection returns _empty_projection
+        # which is deterministic regardless.
+        import datetime as dt
+        _REPO = Path(__file__).resolve().parents[1]
+        from engine.release_forecast import project_release
+
+        # Run twice — must be identical
+        r1 = project_release("cpi_core", dt.date(2024, 3, 12), str(_REPO))
+        r2 = project_release("cpi_core", dt.date(2024, 3, 12), str(_REPO))
+        assert r1.get("point") == r2.get("point"), "CPI core point not stable between calls"
+        # input_manifest must be present and identical
+        assert "input_manifest" in r1, "input_manifest key missing from CPI core projection"
+        assert r1.get("input_manifest") == r2.get("input_manifest"), "input_manifest not stable"

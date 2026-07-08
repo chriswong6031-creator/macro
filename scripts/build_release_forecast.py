@@ -541,6 +541,9 @@ def _build_upcoming_block(
             "benchmark_set": proj.get("benchmark_set", {}),
             "surprise_skew": proj.get("surprise_skew", {}) if not _is_bmo else {},
             "pit": proj.get("pit_provenance", {}),
+            # input_manifest: feature values from projection — passed to _attach_provenance
+            # so compute_coverage_flags sees real feature names in its denominator (MRI-R26 rework-2a).
+            "input_manifest": proj.get("input_manifest") or {},
             "regime_axis": ev["regime_axis"],
             "policy_backdrop": policy_backdrop,
         }
@@ -638,12 +641,15 @@ def _attach_provenance(
             pass
 
         # Build a minimal projection dict for the provenance module.
-        # The provenance module reads pit_provenance and optionally _features.
+        # The provenance module reads pit_provenance, input_manifest, and optionally _features.
+        # input_manifest: real feature values stored on the item row (rework-2a MRI-R26 fix);
+        # these are used by _declared_legs to count vintaged legs in the denominator.
         proj_for_prov: dict = {
             "release": rt,
             "asof": _asof_night_str,
             "pit_provenance": pit,
             "inputs_hash": pit.get("inputs_hash") or "",
+            "input_manifest": item.get("input_manifest") or {},
             "display_only": True,
             "authority": False,
             "prediction_id": _pred_id_for_snap,
