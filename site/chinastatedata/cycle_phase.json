@@ -1,0 +1,512 @@
+{
+  "schema": "china_cycle_phase.v1",
+  "authority": {
+    "tier": "context_only"
+  },
+  "built": "2026-07-08T10:27:21.669663+00:00",
+  "asof": "2026-07-07",
+  "phase": "REPAIR",
+  "confidence": 0.667,
+  "evidence": [
+    "[",
+    "\"",
+    "t",
+    "u",
+    "r",
+    "n",
+    "o",
+    "v",
+    "e",
+    "r",
+    "_",
+    "z",
+    "2",
+    "0",
+    "_",
+    "n",
+    "u",
+    "l",
+    "l",
+    "\"",
+    ",",
+    " ",
+    "\"",
+    "q",
+    "v",
+    "i",
+    "x",
+    "_",
+    "z",
+    "_",
+    "e",
+    "l",
+    "e",
+    "v",
+    "a",
+    "t",
+    "e",
+    "d",
+    " ",
+    "(",
+    "1",
+    ".",
+    "6",
+    "8",
+    ")",
+    "\"",
+    "]"
+  ],
+  "contradictions": [
+    "[",
+    "]"
+  ],
+  "falsifiers": [
+    "[",
+    "{",
+    "\"",
+    "i",
+    "d",
+    "\"",
+    ":",
+    " ",
+    "\"",
+    "R",
+    "E",
+    "P",
+    "A",
+    "_",
+    "R",
+    "P",
+    "_",
+    "L",
+    "D",
+    "N",
+    "_",
+    "L",
+    "O",
+    "W",
+    "\"",
+    ",",
+    " ",
+    "\"",
+    "e",
+    "x",
+    "p",
+    "r",
+    "\"",
+    ":",
+    " ",
+    "\"",
+    "l",
+    "d",
+    "n",
+    "5",
+    " ",
+    "<",
+    " ",
+    "1",
+    ".",
+    "0",
+    "\"",
+    ",",
+    " ",
+    "\"",
+    "h",
+    "o",
+    "r",
+    "i",
+    "z",
+    "o",
+    "n",
+    "_",
+    "d",
+    "\"",
+    ":",
+    " ",
+    "1",
+    "0",
+    "}",
+    ",",
+    " ",
+    "{",
+    "\"",
+    "i",
+    "d",
+    "\"",
+    ":",
+    " ",
+    "\"",
+    "R",
+    "E",
+    "P",
+    "A",
+    "_",
+    "R",
+    "P",
+    "_",
+    "L",
+    "U",
+    "P",
+    "_",
+    "L",
+    "O",
+    "W",
+    "\"",
+    ",",
+    " ",
+    "\"",
+    "e",
+    "x",
+    "p",
+    "r",
+    "\"",
+    ":",
+    " ",
+    "\"",
+    "l",
+    "u",
+    "p",
+    "5",
+    " ",
+    "<",
+    " ",
+    "2",
+    ".",
+    "0",
+    "\"",
+    ",",
+    " ",
+    "\"",
+    "h",
+    "o",
+    "r",
+    "i",
+    "z",
+    "o",
+    "n",
+    "_",
+    "d",
+    "\"",
+    ":",
+    " ",
+    "1",
+    "0",
+    "}",
+    ",",
+    " ",
+    "{",
+    "\"",
+    "i",
+    "d",
+    "\"",
+    ":",
+    " ",
+    "\"",
+    "R",
+    "E",
+    "P",
+    "A",
+    "_",
+    "R",
+    "P",
+    "_",
+    "T",
+    "O",
+    "Z",
+    "_",
+    "S",
+    "T",
+    "A",
+    "B",
+    "L",
+    "E",
+    "\"",
+    ",",
+    " ",
+    "\"",
+    "e",
+    "x",
+    "p",
+    "r",
+    "\"",
+    ":",
+    " ",
+    "\"",
+    "t",
+    "u",
+    "r",
+    "n",
+    "o",
+    "v",
+    "e",
+    "r",
+    "_",
+    "z",
+    "2",
+    "0",
+    " ",
+    ">",
+    " ",
+    "-",
+    "1",
+    ".",
+    "5",
+    "\"",
+    ",",
+    " ",
+    "\"",
+    "h",
+    "o",
+    "r",
+    "i",
+    "z",
+    "o",
+    "n",
+    "_",
+    "d",
+    "\"",
+    ":",
+    " ",
+    "1",
+    "0",
+    "}",
+    "]"
+  ],
+  "allowed_actions": [
+    "watch_for_base",
+    "reversal_only"
+  ],
+  "data_gaps": [],
+  "era_table": [
+    {
+      "era": "2005_reform_bottom",
+      "start": "2005-06-01",
+      "end": "2005-12-31",
+      "phases": [
+        "CAPITULATION",
+        "REPAIR"
+      ],
+      "note": "Split-share structure reform; market bottomed Jun-2005"
+    },
+    {
+      "era": "2006_2007_bull",
+      "start": "2006-01-01",
+      "end": "2007-10-31",
+      "phases": [
+        "LIQUIDITY_IGNITION",
+        "BROADENING",
+        "THEME_LEADERSHIP",
+        "EUPHORIA"
+      ],
+      "note": "Structural bull; Shanghai Composite 1000\u21926124; retail FOMO 2007-H2"
+    },
+    {
+      "era": "2007_2008_bust",
+      "start": "2007-11-01",
+      "end": "2008-10-31",
+      "phases": [
+        "DISTRIBUTION",
+        "DELEVERAGING",
+        "CAPITULATION"
+      ],
+      "note": "Global GFC + overvaluation unwind; market -70%"
+    },
+    {
+      "era": "2008_policy_rescue",
+      "start": "2008-11-01",
+      "end": "2009-08-31",
+      "phases": [
+        "POLICY_PUT",
+        "LIQUIDITY_IGNITION",
+        "BROADENING"
+      ],
+      "note": "4-trillion RMB stimulus; rapid V-shape recovery"
+    },
+    {
+      "era": "2009_2012_grind",
+      "start": "2009-09-01",
+      "end": "2012-12-31",
+      "phases": [
+        "DISTRIBUTION",
+        "GRINDING_BEAR",
+        "REPAIR"
+      ],
+      "note": "Post-stimulus hangover; property tightening; 3-year bear"
+    },
+    {
+      "era": "2013_thematic_bull",
+      "start": "2013-01-01",
+      "end": "2014-12-31",
+      "phases": [
+        "THEME_LEADERSHIP",
+        "REPAIR"
+      ],
+      "note": "ChiNext / TMT thematics; SOE reform; big-caps flat"
+    },
+    {
+      "era": "2014h2_2015h1_mania",
+      "start": "2014-11-01",
+      "end": "2015-06-12",
+      "phases": [
+        "LIQUIDITY_IGNITION",
+        "BROADENING",
+        "EUPHORIA"
+      ],
+      "note": "RRR cuts + margin surge; SHCOMP 2000\u21925178; peak retail mania"
+    },
+    {
+      "era": "2015h2_crash",
+      "start": "2015-06-13",
+      "end": "2015-09-30",
+      "phases": [
+        "DISTRIBUTION",
+        "DELEVERAGING",
+        "CAPITULATION"
+      ],
+      "note": "Margin unwind cascade; circuit-breaker; -45% from peak"
+    },
+    {
+      "era": "2015q4_2016_repair",
+      "start": "2015-10-01",
+      "end": "2016-12-31",
+      "phases": [
+        "REPAIR",
+        "POLICY_PUT",
+        "GRINDING_BEAR"
+      ],
+      "note": "Circuit-breaker incident (Jan-2016); slow repair"
+    },
+    {
+      "era": "2017_blue_chip",
+      "start": "2017-01-01",
+      "end": "2017-12-31",
+      "phases": [
+        "THEME_LEADERSHIP",
+        "BROADENING"
+      ],
+      "note": "White-horse / blue-chip rally; Mao index diverges from ChiNext"
+    },
+    {
+      "era": "2018_deleveraging",
+      "start": "2018-01-01",
+      "end": "2018-12-31",
+      "phases": [
+        "GRINDING_BEAR",
+        "DELEVERAGING"
+      ],
+      "note": "Trade war + regulatory deleveraging; -30% A-shares"
+    },
+    {
+      "era": "2019_policy_recovery",
+      "start": "2019-01-01",
+      "end": "2019-04-30",
+      "phases": [
+        "POLICY_PUT",
+        "LIQUIDITY_IGNITION"
+      ],
+      "note": "PBOC easing; market rallied 30% Q1-2019"
+    },
+    {
+      "era": "2019_2020_range",
+      "start": "2019-05-01",
+      "end": "2020-01-31",
+      "phases": [
+        "THEME_LEADERSHIP",
+        "GRINDING_BEAR"
+      ],
+      "note": "Trade-war uncertainty + selective themes"
+    },
+    {
+      "era": "2020_covid_crash",
+      "start": "2020-02-01",
+      "end": "2020-03-31",
+      "phases": [
+        "CAPITULATION",
+        "POLICY_PUT"
+      ],
+      "note": "COVID shock; PBOC rapid easing; A-shares recovered faster than global"
+    },
+    {
+      "era": "2020_2021_bull",
+      "start": "2020-04-01",
+      "end": "2021-02-28",
+      "phases": [
+        "LIQUIDITY_IGNITION",
+        "BROADENING",
+        "THEME_LEADERSHIP",
+        "EUPHORIA"
+      ],
+      "note": "Post-COVID liquidity surge; semiconductor/EV themes; peak Feb-2021"
+    },
+    {
+      "era": "2021_2022_grind",
+      "start": "2021-03-01",
+      "end": "2022-10-31",
+      "phases": [
+        "DISTRIBUTION",
+        "DELEVERAGING",
+        "GRINDING_BEAR"
+      ],
+      "note": "Regulatory crackdowns (edu/platform/property); Ukraine risk; -40% peak-trough"
+    },
+    {
+      "era": "2022q4_2023_repair",
+      "start": "2022-11-01",
+      "end": "2023-08-31",
+      "phases": [
+        "POLICY_PUT",
+        "REPAIR",
+        "THEME_LEADERSHIP"
+      ],
+      "note": "COVID reopening bounce; AI-theme (ChatGPT wave)"
+    },
+    {
+      "era": "2023_2024_grind",
+      "start": "2023-09-01",
+      "end": "2024-09-23",
+      "phases": [
+        "GRINDING_BEAR",
+        "REPAIR"
+      ],
+      "note": "Persistent deflationary pressure; property crisis; policy half-measures"
+    },
+    {
+      "era": "2024q3_ignition",
+      "start": "2024-09-24",
+      "end": "2024-11-30",
+      "phases": [
+        "POLICY_PUT",
+        "LIQUIDITY_IGNITION"
+      ],
+      "note": "Politburo Sep-24 stimulus surprise; SHCOMP +30% in 2 weeks"
+    },
+    {
+      "era": "2025_theme_phase",
+      "start": "2024-12-01",
+      "end": "2025-12-31",
+      "phases": [
+        "THEME_LEADERSHIP",
+        "BROADENING",
+        "REPAIR"
+      ],
+      "note": "DeepSeek AI wave Q1-2025; selective technology themes"
+    },
+    {
+      "era": "2026_current",
+      "start": "2026-01-01",
+      "end": "2026-12-31",
+      "phases": [
+        "GRINDING_BEAR",
+        "REPAIR"
+      ],
+      "note": "Ongoing assessment \u2014 accruing"
+    }
+  ],
+  "ledger_summary": {
+    "total_graded": 22689,
+    "held": 5034,
+    "fired": 648,
+    "indeterminate": 17007
+  },
+  "caveat": "regime_history is a current-best-estimate non-PIT series; policy_transmission is current-state broadcast to all backfill rows; all outputs are context_only (CN-SYS-R1)"
+}
