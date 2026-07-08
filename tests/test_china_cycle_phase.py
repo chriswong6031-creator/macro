@@ -634,9 +634,12 @@ def test_grade_falsifiers_not_due_yet():
 
 
 def test_grade_falsifiers_due_rows_graded():
-    """Falsifiers with horizon past grading_date should be graded."""
-    tape = _make_phase_tape(n=5, phase="REPAIR")
-    # Use a grading date well after the tape period (horizon=5d, tape starts 2024-01-01)
+    """Falsifiers with horizon past grading_date should be graded.
+    horizon_d=5 means 5 MARKET SESSIONS forward — so the tape must have at
+    least 6 rows to allow the 0th row's falsifier to resolve at position 5.
+    """
+    tape = _make_phase_tape(n=20, phase="REPAIR")
+    # Use a grading date well after the tape period
     grading_date = pd.Timestamp("2024-06-01")
     ledger = grade_falsifiers(tape, grading_date)
     check("due_falsifiers_graded", len(ledger) > 0, "expected graded rows")
@@ -773,6 +776,176 @@ def test_era_table_2024_ignition():
         check("era_2024_has_ignition",
               "LIQUIDITY_IGNITION" in ignition[0]["phases"],
               str(ignition[0]))
+
+
+# ---------------------------------------------------------------------------
+# 14. BLOCKER regression: build_cycle_phase_json must not char-split list cols
+#     when tape was round-tripped through parquet (JSON-string list columns)
+# ---------------------------------------------------------------------------
+
+def test_json_evidence_not_char_split():
+    """After parquet round-trip list cols are JSON strings; json must decode them."""
+    tape = _make_phase_tape(n=3, phase="REPAIR")
+    # Simulate parquet round-trip: encode list columns as JSON strings
+    tape = tape.copy()
+    tape["evidence"]       = tape["evidence"].apply(json.dumps)
+    tape["contradictions"] = tape["contradictions"].apply(json.dumps)
+    tape["falsifiers"]     = tape["falsifiers"].apply(json.dumps)
+    ledger = pd.DataFrame(columns=[
+        "printed_date", "falsifier_id", "expr", "due_date", "outcome", "graded_date"
+    ])
+    payload = build_cycle_phase_json(tape, ledger, [])
+    ev = payload.get("evidence", [])
+    check("evidence_is_list",        isinstance(ev, list),        f"type={type(ev)}")
+    check("evidence_no_char_split",  all(isinstance(x, str) and len(x) > 1 for x in ev) if ev else True,
+          f"evidence={ev!r}")
+    # The falsifiers field should be a list of dicts (or empty list), not chars
+    fal = payload.get("falsifiers", [])
+    check("falsifiers_is_list",      isinstance(fal, list),       f"type={type(fal)}")
+    if fal:
+        check("falsifiers_items_are_dicts",
+              all(isinstance(f, dict) for f in fal),
+              f"items={fal!r}")
+
+
+# ---------------------------------------------------------------------------
+# 15. MAJOR regression: falsifier grading uses market-session horizon, not calendar days
+# ---------------------------------------------------------------------------
+
+def test_grade_falsifiers_market_session_horizon():
+    """A horizon-5 falsifier printed on a Wednesday should grade against the 5th
+    market session forward, not 5 calendar days (which might be a weekend)."""
+    # Build a 10-session index starting on a Wednesday (2024-01-03 = Wednesday)
+    idx = pd.date_range("2024-01-03", periods=10, freq="B")
+    tape = pd.DataFrame({
+        "phase":          ["REPAIR"] * 10,
+        "confidence":     [0.7] * 10,
+        "evidence":       [["test_ev"]] * 10,
+        "contradictions": [[]] * 10,
+        # One falsifier with horizon=5 on the first row; lup5=0.5 < 2.0 → "fired"
+        "falsifiers":     [[{"id": "TST_hor", "expr": "lup5 > 2.0", "horizon_d": 5}]]
+                          + [[]] * 9,
+        "backfill":       [True] * 10,
+        "_data_gaps":     [[]] * 10,
+        "lup5":           [0.5] * 10,  # all below 2.0 → falsifier fires
+        "ldn5":           [0.2] * 10,
+        "lban5":          [1.0] * 10,
+        "turnover_z20":   [-0.2] * 10,
+        "margin_chg_5d":  [0.0] * 10,
+        "qvix_z":         [0.1] * 10,
+        "sec_wash":       [0.2] * 10,
+    }, index=idx)
+
+    # Grading date = last session (well past horizon-5)
+    grading_date = idx[-1]
+    ledger = grade_falsifiers(tape, grading_date)
+    # Should have graded at least one row (market-session horizon lands on a valid index date)
+    check("market_session_horizon_graded", len(ledger) > 0,
+          f"ledger rows={len(ledger)}")
+    if not ledger.empty:
+        outcomes = set(ledger["outcome"].tolist())
+        # None should be indeterminate solely due to off-index (calendar) weekend landing
+        # (they may still be indeterminate if metrics are null, but not from off-index)
+        check("outcome_not_all_indeterminate",
+              outcomes != {"indeterminate"},
+              f"outcomes={outcomes}")
+
+
+# ---------------------------------------------------------------------------
+# 16. MAJOR regression: hysteresis seeded increment absorbs single-night spike
+# ---------------------------------------------------------------------------
+
+def test_apply_hysteresis_seeded_absorbs_spike():
+    """A 1-day raw spike after a long stable run must be absorbed when seeded."""
+    # Simulate: prior tape had 5 REPAIR days → stable phase = REPAIR, dwell=5
+    # New 3-row slice: [DELEVERAGING, REPAIR, REPAIR]
+    # Without seeding, DELEVERAGING might appear. With seeding, it should be absorbed.
+    idx = pd.date_range("2024-02-05", periods=3, freq="B")
+    tape = pd.DataFrame({
+        "phase":          ["DELEVERAGING", "REPAIR", "REPAIR"],
+        "confidence":     [0.7, 0.7, 0.7],
+        "evidence":       [[], [], []],
+        "contradictions": [[], [], []],
+        "falsifiers":     [[], [], []],
+        "backfill":       [False, False, False],
+        "_data_gaps":     [[], [], []],
+    }, index=idx)
+    smoothed = _apply_hysteresis(tape, seed_phase="REPAIR", seed_dwell=5)
+    check("seeded_hysteresis_absorbs_spike",
+          smoothed["phase"].iloc[0] == "REPAIR",
+          f"phases={smoothed['phase'].tolist()}")
+
+
+def test_apply_hysteresis_seeded_allows_real_transition():
+    """After MIN_DWELL_SESSIONS new-phase rows, transition is accepted even with seeded prior."""
+    dwell = MIN_DWELL_SESSIONS
+    idx = pd.date_range("2024-02-05", periods=dwell + 2, freq="B")
+    phases = ["DELEVERAGING"] * dwell + ["REPAIR"] * 2
+    tape = pd.DataFrame({
+        "phase":          phases,
+        "confidence":     [0.7] * (dwell + 2),
+        "evidence":       [[]] * (dwell + 2),
+        "contradictions": [[]] * (dwell + 2),
+        "falsifiers":     [[]] * (dwell + 2),
+        "backfill":       [False] * (dwell + 2),
+        "_data_gaps":     [[]] * (dwell + 2),
+    }, index=idx)
+    # Prior tape was REPAIR — after dwell new DELEVERAGING rows, should flip
+    smoothed = _apply_hysteresis(tape, seed_phase="REPAIR", seed_dwell=5)
+    check("seeded_hysteresis_allows_dwell_transition",
+          "DELEVERAGING" in smoothed["phase"].values,
+          f"phases={smoothed['phase'].tolist()}")
+
+
+# ---------------------------------------------------------------------------
+# 17. MAJOR regression: POLICY_PUT fires with targeted_support
+# ---------------------------------------------------------------------------
+
+def test_policy_put_fires_targeted_support():
+    """POLICY_PUT must fire when policy_impulse='targeted_support' (current live value)."""
+    r = _row(
+        policy_impulse="targeted_support",
+        ldn5=0.3,
+        lup5=0.4,
+        turnover_z20=-1.2,
+        par_regime="dormant",
+        sec_wash=0.6,
+    )
+    result = _classify_row(r)
+    check("policy_put_fires_targeted_support",
+          result.phase == "POLICY_PUT",
+          f"got phase={result.phase}")
+
+
+def test_policy_put_fires_easing():
+    """POLICY_PUT must still fire with policy_impulse='easing'."""
+    r = _row(
+        policy_impulse="easing",
+        ldn5=0.3,
+        lup5=0.4,
+        turnover_z20=-1.2,
+        par_regime="dormant",
+        sec_wash=0.6,
+    )
+    result = _classify_row(r)
+    check("policy_put_fires_easing",
+          result.phase == "POLICY_PUT",
+          f"got phase={result.phase}")
+
+
+def test_grinding_bear_blocked_by_targeted_support():
+    """GRINDING_BEAR must NOT fire when policy_impulse='targeted_support'."""
+    r = _row(
+        policy_impulse="targeted_support",
+        turnover_z20=-1.2,
+        lup5=0.3,
+        ldn5=0.4,
+        lban5=0.5,
+    )
+    result = _classify_row(r)
+    check("grinding_bear_blocked_by_support",
+          result.phase != "GRINDING_BEAR",
+          f"got phase={result.phase}")
 
 
 # ---------------------------------------------------------------------------

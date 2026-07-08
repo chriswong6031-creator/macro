@@ -725,10 +725,17 @@ def _classify_row(row: pd.Series) -> _PhaseResult:
         conditions_total = cap_conds_total
 
     # 2. POLICY_PUT — floor formed, policy acting, selling exhausted
-    # Trigger: policy easing AND turnover quiet/recovering AND limit-down fading
-    elif policy_easy and not ldn_stress and not lup_ignite:
+    # Trigger: policy easing/support AND turnover quiet/recovering AND limit-down fading.
+    # "targeted_support" is included because: (a) it is the current live broadcast
+    # and structurally causes POLICY_PUT to be unreachable without it; (b) the
+    # boundary between "market_rescue" and "targeted_support" is definitional, and
+    # the phase's behavioural hallmarks (low turnover, fading limit-down, sector
+    # washout) are the stronger discriminators anyway.
+    # CAVEAT: policy_impulse is a current-state scalar broadcast to all backfill
+    # rows; see the "caveat" field in cycle_phase.json for disclosure.
+    elif policy_ease_or_support and not ldn_stress and not lup_ignite:
         put_conds = [
-            policy_easy,
+            policy_ease_or_support,
             not ldn_stress,
             toz_cold or par_dormant,
             sec_washed,  # broad sector washout = exhaustion
@@ -791,9 +798,9 @@ def _classify_row(row: pd.Series) -> _PhaseResult:
         conditions_total = 4
 
     # 9. GRINDING_BEAR — slow attrition
-    # Trigger: cold turnover + no extreme breadth + no policy easing
-    elif toz_cold and lup_quiet and not ldn_panic and not policy_easy:
-        gb_conds = [toz_cold, lup_quiet, not ldn_panic, not policy_easy, sec_washed]
+    # Trigger: cold turnover + no extreme breadth + no policy easing/support
+    elif toz_cold and lup_quiet and not ldn_panic and not policy_ease_or_support:
+        gb_conds = [toz_cold, lup_quiet, not ldn_panic, not policy_ease_or_support, sec_washed]
         phase = "GRINDING_BEAR"
         conditions_met = sum(1 for c in gb_conds if c)
         conditions_total = 5
@@ -881,19 +888,54 @@ def classify_history(
     return tape
 
 
-def _apply_hysteresis(tape: pd.DataFrame) -> pd.DataFrame:
+def _apply_hysteresis(
+    tape: pd.DataFrame,
+    seed_phase: str | None = None,
+    seed_dwell: int = 0,
+) -> pd.DataFrame:
     """Smooth phase series so each phase must dwell MIN_DWELL_SESSIONS days.
 
     Algorithm: forward-pass; a transition to a new phase is accepted only after
     that phase has been the 'raw' phase for MIN_DWELL_SESSIONS consecutive rows.
     Otherwise the previous stable phase is kept.
+
+    Parameters
+    ----------
+    seed_phase : str | None
+        The last stable phase from a prior tape segment.  When supplied (nightly
+        increment path), the algorithm starts from this phase rather than the
+        first row's raw phase, giving continuity across night boundaries.
+    seed_dwell : int
+        How many consecutive sessions the prior tape segment has already dwelled
+        in seed_phase.  Combined with this slice's leading rows, the total dwell
+        is counted correctly so a multi-night ramp accumulates properly.
     """
     phases = tape["phase"].tolist()
     n = len(phases)
-    stable = [phases[0]]
-    current_phase = phases[0]
-    candidate = phases[0]
-    candidate_count = 1
+
+    if seed_phase is not None:
+        # Seed from the prior tape's last stable phase + its running dwell count.
+        current_phase = seed_phase
+        # If first row matches the seed, carry the existing dwell count forward.
+        if phases[0] == seed_phase:
+            candidate = seed_phase
+            candidate_count = seed_dwell + 1
+        else:
+            candidate = phases[0]
+            candidate_count = 1
+    else:
+        current_phase = phases[0]
+        candidate = phases[0]
+        candidate_count = 1
+
+    stable = []
+    # Emit the first row's stable value
+    if candidate == current_phase or candidate_count >= MIN_DWELL_SESSIONS:
+        if candidate_count >= MIN_DWELL_SESSIONS:
+            current_phase = candidate
+        stable.append(current_phase)
+    else:
+        stable.append(current_phase)
 
     for i in range(1, n):
         p = phases[i]
@@ -952,6 +994,16 @@ def grade_falsifiers(
 
     new_rows: list[dict[str, Any]] = []
 
+    # Build a sorted integer-position index for market-session horizon lookup.
+    # horizon_d is interpreted as N MARKET SESSIONS (not calendar days): we find
+    # the position of printed_dt in the tape index and advance by horizon_d
+    # positions.  This prevents 40% of due_dates from landing on weekends/
+    # holidays and being forced to "indeterminate" (MAJOR found in review).
+    tape_index_sorted = phase_tape.index.sort_values()
+    tape_pos_map: dict[pd.Timestamp, int] = {
+        ts: i for i, ts in enumerate(tape_index_sorted)
+    }
+
     for printed_dt, row in phase_tape.iterrows():
         falsifiers_raw = row.get("falsifiers") or []
         if not isinstance(falsifiers_raw, list):
@@ -965,7 +1017,15 @@ def grade_falsifiers(
             fid  = fal.get("id", "")
             expr = fal.get("expr", "")
             horiz = int(fal.get("horizon_d", 10))
-            due_dt = pd.Timestamp(printed_dt) + pd.Timedelta(days=horiz)
+
+            # Resolve due_date as N market sessions forward (not calendar days).
+            printed_pos = tape_pos_map.get(pd.Timestamp(printed_dt))
+            if printed_pos is None:
+                continue
+            due_pos = printed_pos + horiz
+            if due_pos >= len(tape_index_sorted):
+                continue  # beyond tape tail — not gradeable yet
+            due_dt = tape_index_sorted[due_pos]
 
             if due_dt > grading_date:
                 continue  # not due yet
@@ -1041,6 +1101,24 @@ def build_cycle_phase_json(
     latest = phase_tape.iloc[-1]
     asof = str(phase_tape.index[-1].date())
 
+    # Decode list columns that may have been round-tripped through parquet as
+    # JSON strings (see _save_tape in the builder).  Without this, list(str)
+    # splits the string into individual characters, corrupting evidence/
+    # contradictions/falsifiers in the JSON artifact (BLOCKER found in review).
+    def _as_list(val: Any) -> list:
+        if val is None:
+            return []
+        if isinstance(val, str):
+            try:
+                decoded = json.loads(val)
+                return list(decoded) if isinstance(decoded, list) else []
+            except Exception:
+                return []
+        try:
+            return list(val)
+        except Exception:
+            return []
+
     # Falsifier ledger summary
     ledger_summary: dict[str, Any] = {}
     if not falsifier_ledger.empty:
@@ -1074,16 +1152,18 @@ def build_cycle_phase_json(
         "asof":          asof,
         "phase":         phase_str,
         "confidence":    float(latest.get("confidence") or 0.0),
-        "evidence":      list(latest.get("evidence") or []),
-        "contradictions":list(latest.get("contradictions") or []),
-        "falsifiers":    list(latest.get("falsifiers") or []),
+        "evidence":      _as_list(latest.get("evidence")),
+        "contradictions":_as_list(latest.get("contradictions")),
+        "falsifiers":    _as_list(latest.get("falsifiers")),
         "allowed_actions": allowed_actions_map.get(phase_str, ["monitor_only"]),
         "data_gaps":     list(data_gaps),
         "era_table":     ERA_TABLE,
         "ledger_summary":ledger_summary,
         "caveat": (
             "regime_history is a current-best-estimate non-PIT series; "
-            "policy_transmission is current-state broadcast to all backfill rows; "
+            "policy_impulse is a CURRENT-STATE scalar broadcast to all backfill rows "
+            "(not a per-date historical series) — POLICY_PUT backfill counts reflect "
+            "today's policy stance, not the historical stance at each date; "
             "all outputs are context_only (CN-SYS-R1)"
         ),
     }

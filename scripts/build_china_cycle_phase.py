@@ -158,7 +158,17 @@ def _sanity_check(tape: pd.DataFrame) -> None:
             flag = " ← EXPECTED" if phase in expected_phases else ""
             print(f"    {phase:<22} {cnt:>4} ({100*cnt/len(subset):4.0f}%){flag}")
         if found_expected:
-            print(f"  STATUS: PLAUSIBLE — found expected phases {found_expected}")
+            # Check whether the dominant phase is actually in the expected set
+            dominant_is_expected = dominant in expected_phases
+            if dominant_is_expected:
+                print(f"  STATUS: PLAUSIBLE — expected phase dominates: {dominant} ({dominant_pct:.0f}%)")
+            else:
+                print(
+                    f"  STATUS: PLAUSIBLE (partial) — expected phases found {found_expected} but "
+                    f"DOMINANT={dominant} ({dominant_pct:.0f}%) is NOT in expected set {expected_phases}. "
+                    f"Documenting honestly — this may reflect data gaps, policy broadcast anachronism, "
+                    f"or threshold sensitivity."
+                )
         else:
             print(
                 f"  STATUS: WARNING — none of {expected_phases} are the dominant phases "
@@ -216,12 +226,55 @@ def _run_increment(existing_tape: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFr
         return existing_tape, _empty_ledger(), data_gaps
 
     log.info("New rows to classify: %d (from %s)", len(new_rows), new_rows.index.min().date())
-    new_tape = classify_history(new_rows, data_gaps, apply_hysteresis=False)
+
+    # Re-classify a trailing window (MIN_DWELL_SESSIONS prior rows + new rows) with
+    # hysteresis enabled, seeding the prior tape's last stable phase and its running
+    # dwell count.  This prevents nightly flip-flop and ensures live/backfill
+    # reproducibility for the overlap window (MAJOR found in review).
+    from engine.china_cycle_phase import MIN_DWELL_SESSIONS, _apply_hysteresis
+    trail_n = MIN_DWELL_SESSIONS
+    trail_rows = feature_df[
+        (feature_df.index > last_date - pd.Timedelta(days=trail_n * 2))
+        & (feature_df.index <= last_date)
+    ].tail(trail_n)
+    classify_window = pd.concat([trail_rows, new_rows])
+
+    # Run classifier without internal hysteresis; we'll apply it with seeded state below.
+    window_tape = classify_history(classify_window, data_gaps, apply_hysteresis=False)
+
+    # Determine seed from the prior tape's tail.
+    if not existing_tape.empty:
+        prior_tail = existing_tape.tail(trail_n)
+        seed_phase = str(existing_tape["phase"].iloc[-1])
+        # Count the running dwell: how many consecutive rows at the tail equal the last phase
+        seed_dwell = 0
+        for p in reversed(prior_tail["phase"].tolist()):
+            if p == seed_phase:
+                seed_dwell += 1
+            else:
+                break
+    else:
+        seed_phase = None
+        seed_dwell = 0
+
+    window_tape = _apply_hysteresis(window_tape, seed_phase=seed_phase, seed_dwell=seed_dwell)
+
+    # Keep only the truly new rows from the smoothed window; update trailing rows in place
+    # (their phase may have been corrected by the seeded smooth pass).
+    new_tape = window_tape[window_tape.index > last_date].copy()
+    trail_tape_corrected = window_tape[window_tape.index <= last_date].copy()
 
     # Mark incremental rows as not backfill
     new_tape["backfill"] = False
 
     combined = pd.concat([existing_tape, new_tape])
+    # Overwrite any trailing rows where the smoothed window changed the phase
+    if not trail_tape_corrected.empty:
+        combined = pd.concat([
+            existing_tape[~existing_tape.index.isin(trail_tape_corrected.index)],
+            trail_tape_corrected,
+            new_tape,
+        ])
     combined = combined[~combined.index.duplicated(keep="last")]
     combined.sort_index(inplace=True)
 
@@ -272,13 +325,14 @@ def main() -> int:
         ledger = _empty_ledger()
     _save_ledger(ledger)
 
-    # Build and save JSON
-    read_tape = _load_existing_tape()  # re-read to get the saved-and-reloaded version
-    if read_tape is None:
-        read_tape = pd.DataFrame()
-
+    # Build and save JSON — use the in-memory tape (list columns intact) rather
+    # than re-reading the parquet, which round-trips list columns as JSON strings
+    # and corrupts evidence/contradictions/falsifiers in build_cycle_phase_json
+    # (BLOCKER: parquet round-trip turns lists into JSON strings; engine now has
+    # _as_list() to decode them, but using in-memory tape is cleaner + faster).
+    json_tape = tape if (tape is not None and not tape.empty) else pd.DataFrame()
     json_payload = build_cycle_phase_json(
-        phase_tape=read_tape,
+        phase_tape=json_tape,
         falsifier_ledger=ledger,
         data_gaps=data_gaps,
         built_at=datetime.now(timezone.utc).isoformat(),
