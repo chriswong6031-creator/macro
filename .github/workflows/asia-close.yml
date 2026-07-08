@@ -172,6 +172,17 @@ jobs:
           run_py "china cycle phase lobe (build_china_cycle_phase)"               scripts.build_china_cycle_phase      # ~2m W3
           run_py "china market state spine (build_china_market_state)"            scripts.build_china_market_state     # ~2m W6
           run_py "china mechanics cockpit (build_china_mechanics)"              scripts.build_china_mechanics        # W8 cockpit — reads spine artifacts
+          # ── CN-SYS W9: lane unification ──────────────────────────────────────────────────
+          # china_masterminds / china_strategies / subsector_rotation_china were previously
+          # built in the US-evening lane (build_vector.py / build_site.py), making them
+          # ~19.5h stale vs the settled Asia close. Moved here so all CN surfaces share one
+          # session. build_vector.py and build_site.py retain idempotent fallback hooks that
+          # skip when as_of/built already matches today's UTC date (asia lane ran first).
+          # Order: masterminds BEFORE strategies (strategies imports mastermind card builder).
+          run_py "china mastermind flagships (build_china_masterminds)"            scripts.build_china_masterminds            # W9 lane unification
+          run_py "china strategy scorecards (build_china_strategies)"              scripts.build_china_strategies             # W9 lane unification
+          run_py "china subsector rotation data (build_subsector_rotation_china)"  scripts.build_subsector_rotation_china     # W9 lane unification
+          run_py "china subsector rotation pages (build_subsector_rotation_china_pages)"  scripts.build_subsector_rotation_china_pages  # W9 lane unification
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         run: |

@@ -278,3 +278,42 @@ control; era splits across the 2010 break; T+1 fills; locked-limit exclusion; ef
 - THS membership snapshots sufficient for first PIT theme study: **~2027-01** (6 months).
 - Limit-tape × lifecycle-board confluence candidates (detection print, no verdicts): **2026-09-15**.
 - china_alpha W6 rank recalibration (their clock, unblocked by W5a): ~2026-07-29.
+
+## 9. Execution record (2026-07-08)
+
+### Wave → PR map
+
+| Wave | Description | PR |
+|---|---|---|
+| W0 | Census + adjudication + masterplan skeleton | #1935 |
+| W1 | Microstructure lobe + limit tape + THS PIT snapshot side-car | #1938 |
+| W2 | Participation lobe + tape | #1939 |
+| W4 | Policy transmission unifier | #1940 |
+| W5b | Validated-edge wiring (CN_PROFILE + AI-semis→CPO chips) | #1941 |
+| W5a | Repairs/ops: adjusted-store lag fix + intel sub-builder extraction + Batch-1 lobe wiring | #1942 |
+| W3 | Cycle phase lobe + phase tape + falsifier ledger | #1947 |
+| W6 | Spine — china_market_state.v1 | #1948 |
+| W7 | NW adapter (world_state china sub-block + lobe packets + decision packet + ask-brain routing) | #1954 |
+| W8 | UI — china.html hero strip + china_mechanics.html cockpit + lifecycle-board microstructure chips | #1955 |
+| W9 | Ops close-out — CN lane unification + accrual clocks + program record (this PR) | this PR |
+
+### Open questions carried forward
+
+- **`query.py` `cycles_* → region` routing**: `cycles_china` spine rows carry `region=None` (documented `_derive_market` bug); routing them to CN surfaces ungraded projection rows into region-filtered queries. Decision requires NW/R5 spine owner ruling — do NOT slip in as a "fix" (CN-SYS W7 scope, §6 W7 note).
+- **Per-date `policy_impulse` reconstruction for pre-series dates**: the policy_transmission lobe can reconstruct impulse only from the `events.jsonl` coverage date; pre-series dates are stamped `null` (honest). A backfill requiring archival PBOC/CSRC records is a future CYCLES-adjacent task.
+- **DXY store absent**: the `external` lobe block in the spine reads USDCNH + DXY; DXY is available via the yahoo cross-asset series but no dedicated store exists. Currently degraded gracefully (DXY `null` in external block). Flag for a follow-up store-add.
+- **`china_setups.json` written before sleeve_chip assignment**: W5b's CN_PROFILE + AI-semis→CPO chips are per-name context chips; the setup JSON is written by the board builder before sleeve assignments are resolved. Chip display depends on the render-layer join, not the JSON write order. Verify the join is correct in the cockpit (build_china_mechanics) and flag for a follow-up if the chip appears blank on any lifecycle shelf.
+- **W8 deferred**: committed pages re-render tonight with the new template (china.html hero strip + china_mechanics.html). The board builder (china_alpha) runs on the US-evening lane and is not blocked.
+
+### Accrual clocks
+
+All four clocks registered in `data/experiments/registry_seed.json` (W9, 2026-07-08):
+
+| Clock | Date | Registry id |
+|---|---|---|
+| Falsifier-ledger first calibration read | 2026-10-08 | `cn-sys-falsifier-ledger` |
+| Participation-tape first descriptive review | 2026-10-08 | `cn-sys-participation-tape` |
+| THS PIT membership sufficient for first look-ahead-safe theme study | 2027-01-08 | `cn-sys-ths-pit-membership` |
+| Limit-tape × lifecycle-board confluence detection print (no verdicts) | 2026-09-15 | `cn-sys-limit-lifecycle-confluence` |
+
+All clocks are display/context framing; no promotion authority at these reads.

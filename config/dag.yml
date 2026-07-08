@@ -725,6 +725,19 @@ lanes:
       - id: build_china_mechanics
         module: scripts.build_china_mechanics
         note: non-fatal; W8 mechanics cockpit — reads spine artifacts (CN-SYS-R1 R13)
+      # ── CN-SYS W9: lane unification ──────────────────────────────────────────
+      - id: build_china_masterminds
+        module: scripts.build_china_masterminds
+        note: non-fatal; W9 lane unification — CN GTAA flagship pages (was build_vector fallback)
+      - id: build_china_strategies
+        module: scripts.build_china_strategies
+        note: non-fatal; W9 lane unification — CN strategy scorecard hub + detail pages (was build_vector fallback)
+      - id: build_subsector_rotation_china
+        module: scripts.build_subsector_rotation_china
+        note: non-fatal; W9 lane unification — CN subsector rotation JSON (was build_site fallback)
+      - id: build_subsector_rotation_china_pages
+        module: scripts.build_subsector_rotation_china_pages
+        note: non-fatal; W9 lane unification — per-subsector CN detail pages
       - id: inject_data_base
         module: scripts.inject_data_base
       - id: publish_r2_asia

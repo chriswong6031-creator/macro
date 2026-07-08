@@ -3085,19 +3085,48 @@ def main() -> int:
         _build_ipo()
     except Exception as e:  # noqa: BLE001
         log.error("ipo radar page (via build_vector) failed (%s)", e)
-    try:  # China Mastermind GTAA flagships — detail pages + snapshot. MUST run BEFORE
-          # build_china_strategies so strategy_cnmm_*.html exist when the pinned hero links to them.
-          # (PAT lacks workflow scope → piggyback on build_vector; promote to a daily.yml step later.)
-        from scripts.build_china_masterminds import build as _build_china_masterminds
-        _build_china_masterminds()
-    except Exception as e:  # noqa: BLE001
-        log.error("china mastermind flagship pages (via build_vector) failed (%s)", e)
-    try:  # China Strategy Scorecards hub + detail pages (same hook rationale as the US hub;
-          # the China Income Vector card pulls from build_china_allocation, so this runs after it).
-        from scripts.build_china_strategies import build as _build_china_strategies
-        _build_china_strategies()
-    except Exception as e:  # noqa: BLE001
-        log.error("china strategies pages (via build_vector) failed (%s)", e)
+    # W9-CN lane unification: china_masterminds + china_strategies are now PRIMARILY built
+    # in asia-close.yml (after the china builds, sharing one CN session). These hooks are the
+    # FALLBACK for the nightly 02:00 UTC lane (daily.yml via build_vector) — they run only if
+    # the asia lane did not already build today's version (idempotent by as_of/built date).
+    # Note: _today_utc / _dt imported once below (W6-CN Fix 4 block) — define it here too
+    # so the guard can check before that block runs.
+    import datetime as _dt
+    _today_utc = str(_dt.date.today())
+
+    def _cn_snap_already_built(json_path: str, date_key: str) -> bool:
+        """Return True if the committed JSON has today's date in the given key."""
+        try:
+            import json as _json_mod
+            p = config.ROOT / "data" / "china_regime" / json_path
+            if not p.exists():
+                return False
+            d = _json_mod.loads(p.read_text())
+            return str(d.get(date_key, "")).startswith(_today_utc)
+        except Exception:  # noqa: BLE001
+            return False
+
+    if _cn_snap_already_built("china_masterminds_latest.json", "asof"):
+        log.info("build_vector: china masterminds already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # China Mastermind GTAA flagships — detail pages + snapshot. MUST run BEFORE
+              # build_china_strategies so strategy_cnmm_*.html exist when the pinned hero links to them.
+              # Promoted to asia-close.yml (W9-CN lane unification); this is the nightly fallback.
+            from scripts.build_china_masterminds import build as _build_china_masterminds
+            _build_china_masterminds()
+        except Exception as e:  # noqa: BLE001
+            log.error("china mastermind flagship pages (via build_vector) failed (%s)", e)
+
+    if _cn_snap_already_built("china_strategies_latest.json", "built"):
+        log.info("build_vector: china strategies already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # China Strategy Scorecards hub + detail pages (same hook rationale as the US hub;
+              # the China Income Vector card pulls from build_china_allocation, so this runs after it).
+              # Promoted to asia-close.yml (W9-CN lane unification); this is the nightly fallback.
+            from scripts.build_china_strategies import build as _build_china_strategies
+            _build_china_strategies()
+        except Exception as e:  # noqa: BLE001
+            log.error("china strategies pages (via build_vector) failed (%s)", e)
     try:  # Commodity Strategy Scorecards (per-commodity toggle grid) + detail pages.
         from scripts.build_commodity_strategies import build as _build_commodity_strategies
         _build_commodity_strategies()
@@ -3124,8 +3153,7 @@ def main() -> int:
     # the asia lane did not already build today's version (idempotent by as_of date).
     # Idempotent guard: read the as_of from the committed chinabasketdata/baskets.json;
     # if it matches today's UTC date, the asia lane already ran and we skip.
-    import datetime as _dt
-    _today_utc = str(_dt.date.today())
+    # (_dt and _today_utc already defined above in the W9-CN masterminds/strategies block.)
 
     def _asia_already_built(json_path: str) -> bool:
         """Return True if the committed basket JSON has today's as_of (asia lane ran first)."""
