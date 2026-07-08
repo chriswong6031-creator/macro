@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-07T12:32:27.156413+00:00",
-  "as_of": "2026-07-07",
+  "generated_at": "2026-07-08T06:12:50.097745+00:00",
+  "as_of": "2026-07-08",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
@@ -9,9 +9,9 @@
     "features": [
       {
         "feature": "iv30",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "iv_rank_252",
@@ -27,21 +27,21 @@
       },
       {
         "feature": "ivspread_rel",
-        "n_nonnull": 355,
+        "n_nonnull": 373,
         "n_total": 403,
-        "share_nonnull": 0.8809
+        "share_nonnull": 0.9256
       },
       {
         "feature": "ivspread_5d_chg",
-        "n_nonnull": 307,
+        "n_nonnull": 316,
         "n_total": 403,
-        "share_nonnull": 0.7618
+        "share_nonnull": 0.7841
       },
       {
         "feature": "skew",
-        "n_nonnull": 386,
+        "n_nonnull": 401,
         "n_total": 403,
-        "share_nonnull": 0.9578
+        "share_nonnull": 0.995
       },
       {
         "feature": "skew_5d_chg",
@@ -81,9 +81,9 @@
       },
       {
         "feature": "gamma_regime",
-        "n_nonnull": 385,
+        "n_nonnull": 400,
         "n_total": 403,
-        "share_nonnull": 0.9553
+        "share_nonnull": 0.9926
       },
       {
         "feature": "gamma_regime_structurally_constant",
@@ -93,27 +93,27 @@
       },
       {
         "feature": "dist_to_flip_pct",
-        "n_nonnull": 264,
+        "n_nonnull": 303,
         "n_total": 403,
-        "share_nonnull": 0.6551
+        "share_nonnull": 0.7519
       },
       {
         "feature": "wall_up_dist_pct",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "wall_down_dist_pct",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "max_pain_dist_pct",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "opex_days",
@@ -129,9 +129,9 @@
       },
       {
         "feature": "gex_confirm_verdict",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "evidence_quality",
@@ -141,21 +141,21 @@
       },
       {
         "feature": "src_gex_asof",
-        "n_nonnull": 388,
+        "n_nonnull": 403,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 1.0
       },
       {
         "feature": "src_skew_asof",
-        "n_nonnull": 386,
+        "n_nonnull": 401,
         "n_total": 403,
-        "share_nonnull": 0.9578
+        "share_nonnull": 0.995
       },
       {
         "feature": "src_ivspread_asof",
-        "n_nonnull": 355,
+        "n_nonnull": 373,
         "n_total": 403,
-        "share_nonnull": 0.8809
+        "share_nonnull": 0.9256
       },
       {
         "feature": "src_flow_asof",
@@ -168,8 +168,8 @@
       "n_tickers": 403,
       "n_rows": 403,
       "n_tickers_ge75pct_features": 345,
-      "n_tickers_50to74pct_features": 30,
-      "n_tickers_lt50pct_features": 28
+      "n_tickers_50to74pct_features": 44,
+      "n_tickers_lt50pct_features": 14
     }
   },
   "family_stamp_coverage": [
@@ -342,7 +342,7 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 8,
+      "current_opex_days": 7,
       "next_opex_date": "2026-07-17",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
@@ -369,27 +369,27 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-06",
+          "latest_as_of": "2026-07-07",
           "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-07 08:53 UTC",
-          "age_days_from_today": 0,
+          "latest_as_of": "2026-07-07 15:17 UTC",
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-06-24",
-          "age_days_from_today": 13,
+          "age_days_from_today": 14,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-07T12:32:27.120985+00:00",
+      "generated_at": "2026-07-08T06:12:50.063980+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -399,8 +399,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-07T12:32:27.156406+00:00",
-    "as_of": "2026-07-07",
+    "generated_at_utc": "2026-07-08T06:12:50.097736+00:00",
+    "as_of": "2026-07-08",
     "absent_stores": []
   }
 }
