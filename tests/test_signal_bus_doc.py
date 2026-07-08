@@ -73,10 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 261, (
-        f"Expected 261 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 264, (
+        f"Expected 264 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (R6 NW Cross-Asset Depth added crossasset-latest = 260->261;"
+        " (nw-context-intelligence W4 added context-candidates = 263->264;"
+        " nw-context-intelligence W3 added context-risk, site-context-risk = 261->263;"
+        " R6 NW Cross-Asset Depth added crossasset-latest = 260->261;"
         " MRI PR-K added kalshi-releases-store = 245->246;"
         " B6 watchlist sentinel added watchlist-alerts-jsonl, watchlist-sentinel-states,"
         " watchlist-sentinel-cooldown = 223->226;"
