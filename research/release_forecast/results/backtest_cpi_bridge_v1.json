@@ -1,0 +1,153 @@
+{
+  "run_date": "2026-07-08",
+  "cpi_headline": {
+    "release": "cpi_headline",
+    "model": "cpi_bridge",
+    "n_bridge_steps": 352,
+    "n_champ_steps": 292,
+    "n_aligned": 292,
+    "weight_coverage_pct": 103.1,
+    "era_stats": {
+      "full": {
+        "n": 282,
+        "mae_bridge": 0.16385514954345923,
+        "rmse_bridge": 0.21463894539650147,
+        "mae_naive": 0.2591375591353437,
+        "rmse_naive": 0.3386039576602189,
+        "mae_trailing3m": 0.2563160745975044,
+        "rmse_trailing3m": 0.3489003235494527,
+        "mae_champ": 0.15925665301017636,
+        "rmse_champ": 0.20646251984744868
+      },
+      "pre_2010": {
+        "n": 96,
+        "mae_bridge": 0.17601667939996032,
+        "rmse_bridge": 0.23408919489587998,
+        "mae_naive": 0.33403405377787804,
+        "rmse_naive": 0.4155859057801024,
+        "mae_trailing3m": 0.3407741544927016,
+        "rmse_trailing3m": 0.4558180448880279,
+        "mae_champ": 0.14152174231003525,
+        "rmse_champ": 0.19574714698320647
+      },
+      "2010_2020": {
+        "n": 122,
+        "mae_bridge": 0.13730005315358113,
+        "rmse_bridge": 0.1733125438185275,
+        "mae_naive": 0.20806120664448022,
+        "rmse_naive": 0.26426905048070376,
+        "mae_trailing3m": 0.20716948855856146,
+        "rmse_trailing3m": 0.2683137945350316,
+        "mae_champ": 0.1658941985976897,
+        "rmse_champ": 0.21051212527232943
+      },
+      "2021_plus": {
+        "n": 64,
+        "mae_bridge": 0.19623350725191263,
+        "rmse_bridge": 0.25207198101795975,
+        "mae_naive": 0.24415711410725044,
+        "rmse_naive": 0.33614251547141505,
+        "mae_trailing3m": 0.2233146343914437,
+        "rmse_trailing3m": 0.2957848821984887,
+        "mae_champ": 0.17320619778419052,
+        "rmse_champ": 0.21417901622837374
+      },
+      "covid_separate": {
+        "n": 4,
+        "mae_bridge": 0.2284671915464495,
+        "rmse_bridge": 0.2712950107272117,
+        "mae_naive": 0.5611082806400935,
+        "rmse_naive": 0.577460921714007,
+        "mae_trailing3m": 0.6512893021873837,
+        "rmse_trailing3m": 0.6946578897778634,
+        "mae_champ": 0.24788460197269654,
+        "rmse_champ": 0.2642986513404903
+      }
+    },
+    "kill_rule": {
+      "triggered": false,
+      "kill_full": false,
+      "kill_2021": false,
+      "bridge_mae_full": 0.1639,
+      "naive_mae_full": 0.2591,
+      "bridge_mae_2021": 0.1962,
+      "naive_mae_2021": 0.2442
+    },
+    "verdict": "SHADOW-ELIGIBLE \u2014 bridge beats naive in at least one required slice."
+  },
+  "cpi_core": {
+    "release": "cpi_core",
+    "model": "cpi_bridge",
+    "n_bridge_steps": 352,
+    "n_champ_steps": 292,
+    "n_aligned": 292,
+    "weight_coverage_pct": 97.8,
+    "era_stats": {
+      "full": {
+        "n": 282,
+        "mae_bridge": 0.11172751306985997,
+        "rmse_bridge": 0.15113519389597632,
+        "mae_naive": 0.09306159310782466,
+        "rmse_naive": 0.12528359313812587,
+        "mae_trailing3m": 0.09247790722913288,
+        "rmse_trailing3m": 0.128250325109499,
+        "mae_champ": 0.09095948938723497,
+        "rmse_champ": 0.12424818994953804
+      },
+      "pre_2010": {
+        "n": 96,
+        "mae_bridge": 0.11052097174081028,
+        "rmse_bridge": 0.14155688720700513,
+        "mae_naive": 0.09354670095946284,
+        "rmse_naive": 0.11869163302944033,
+        "mae_trailing3m": 0.08655801281838332,
+        "rmse_trailing3m": 0.10713944509422135,
+        "mae_champ": 0.08322894339885448,
+        "rmse_champ": 0.10307886438039954
+      },
+      "2010_2020": {
+        "n": 122,
+        "mae_bridge": 0.08462861644557575,
+        "rmse_bridge": 0.10590723810248052,
+        "mae_naive": 0.07346163063254818,
+        "rmse_naive": 0.09593725929476815,
+        "mae_trailing3m": 0.07216544334874855,
+        "rmse_trailing3m": 0.08997147281532063,
+        "mae_champ": 0.07206081775009822,
+        "rmse_champ": 0.09314025419406581
+      },
+      "2021_plus": {
+        "n": 64,
+        "mae_bridge": 0.16519459675347628,
+        "rmse_bridge": 0.22182922516563797,
+        "mae_naive": 0.12969635979886324,
+        "rmse_naive": 0.17459612297167265,
+        "mae_trailing3m": 0.14007838311723986,
+        "rmse_trailing3m": 0.19956330731663155,
+        "mae_champ": 0.13858090117809768,
+        "rmse_champ": 0.18853959779245175
+      },
+      "covid_separate": {
+        "n": 4,
+        "mae_bridge": 0.2598109086521832,
+        "rmse_bridge": 0.30115906228532235,
+        "mae_naive": 0.33826477920686493,
+        "rmse_naive": 0.33990195624608105,
+        "mae_trailing3m": 0.3323297092490971,
+        "rmse_trailing3m": 0.38280863683196653,
+        "mae_champ": 0.22467118981496065,
+        "rmse_champ": 0.32285164886805623
+      }
+    },
+    "kill_rule": {
+      "triggered": true,
+      "kill_full": true,
+      "kill_2021": true,
+      "bridge_mae_full": 0.1117,
+      "naive_mae_full": 0.0931,
+      "bridge_mae_2021": 0.1652,
+      "naive_mae_2021": 0.1297
+    },
+    "verdict": "NULL \u2014 kill rule triggered (MAE >= naive in BOTH full AND 2021+). NOT SHADOWED."
+  }
+}
