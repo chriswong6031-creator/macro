@@ -1133,7 +1133,7 @@ rulings:
     fdr_family: null
     precedence_rank: 1
     source_doc: "CLAUDE.md"
-    source_quote: "display-only until gauntleted; pre-registered gates; nulls are printed, not hidden. The word \"validated\" in user-facing text is CI-enforced (`scripts/check_validated_claims.py`). LLMs may only de-escalate calibrated keys — never originate signals, scores, or escalations."
+    source_quote: "display-only until gauntleted; pre-registered gates; nulls printed, not hidden. The word \"validated\" in user-facing text is CI-enforced (`scripts/check_validated_claims.py`). LLMs may only de-escalate calibrated keys — never originate signals, scores, or escalations."
     source_pr: 1241
     supersedes: []
     superseded_by: []
