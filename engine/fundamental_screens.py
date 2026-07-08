@@ -119,6 +119,20 @@ def _get_universe() -> tuple[pd.DataFrame, dict]:
     return _universe_cache
 
 
+# Cached COMPUTED valuation frame for the default (production) path. Without this,
+# every (ticker, signal, pass) call rebuilt the universe-wide _context_frame — the
+# ~28-min-at-scale hot path. Tests that pass explicit fund=/table= bypass the cache.
+_valframe_cache: pd.DataFrame | None = None
+
+
+def _default_valframe() -> pd.DataFrame:
+    """Build once and cache the full-universe valuation frame for signal calls."""
+    global _valframe_cache
+    if _valframe_cache is None:
+        _valframe_cache = valuation_frame()
+    return _valframe_cache
+
+
 # ---------------------------------------------------------------------------
 # Core computation: context frame + composite cheapness
 # ---------------------------------------------------------------------------
@@ -322,7 +336,12 @@ def _get_ticker_pctile(
     """Return composite_cheap percentile for a ticker, or NaN if not found."""
     if not ticker:
         return float("nan")
-    M = valuation_frame(fund=fund, table=table)
+    # Default (production) path uses the cached full-universe frame; explicit
+    # fund/table (tests) bypass the cache for isolation.
+    if fund is None and table is None:
+        M = _default_valframe()
+    else:
+        M = valuation_frame(fund=fund, table=table)
     if M.empty or ticker not in M.index:
         return float("nan")
     v = M.loc[ticker, "composite_cheap"]

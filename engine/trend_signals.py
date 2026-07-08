@@ -64,20 +64,44 @@ STRONG_MOVE_THRESH: float = 0.03  # |1d return| >= 3%
 # ---------------------------------------------------------------------------
 
 def _rolling_r2(s: pd.Series, window: int) -> pd.Series:
-    """Trailing R² of price series against linear time over `window` bars.
+    """Trailing R² of the price series against linear time over `window` bars.
 
-    R² = (corr(y, t))^2 over the window, which equals the fraction of variance
-    explained by the trend.  PIT-clean (trailing window only).
+    R² = corr(y, t)² = fraction of variance explained by the linear trend.
+    PIT-clean (trailing window only).
+
+    Vectorized via rolling sums: correlation is invariant to affine shifts of the
+    time axis, so a global (mean-centered) time index yields identical R² to a
+    per-window 0..window-1 index — while replacing ~O(bars) numpy.corrcoef calls
+    with a handful of vectorized rolling ops (this was ~40% of the data-gen
+    runtime under cProfile).
     """
-    t = np.arange(window, dtype=float)
+    y = s.astype(float)
+    n = int(window)
+    if n < 2 or len(y) < n:
+        return pd.Series(np.nan, index=y.index, name=s.name)
 
-    def _r2(y: np.ndarray) -> float:
-        if np.isnan(y).any():
-            return np.nan
-        corr = float(np.corrcoef(y, t)[0, 1])
-        return corr ** 2
+    # global, mean-centered time index — centering curbs float cancellation
+    t = pd.Series(np.arange(len(y), dtype=float) - (len(y) - 1) / 2.0, index=y.index)
 
-    return s.rolling(window, min_periods=window).apply(_r2, raw=True)
+    def _rsum(x: pd.Series) -> pd.Series:
+        # min_periods=n → any NaN in the window drops the count below n → NaN,
+        # matching the original "NaN if the window has any NaN" behavior.
+        return x.rolling(n, min_periods=n).sum()
+
+    Sy, Syy = _rsum(y), _rsum(y * y)
+    St, Stt = _rsum(t), _rsum(t * t)
+    Sty = _rsum(t * y)
+
+    cov = n * Sty - St * Sy
+    var_t = n * Stt - St * St
+    var_y = n * Syy - Sy * Sy
+    vv = var_t * var_y
+
+    r2 = (cov * cov) / vv
+    r2 = r2.where(vv > 0)      # constant y / degenerate window → NaN
+    r2 = r2.clip(upper=1.0)    # guard tiny float overshoot
+    r2.name = s.name
+    return r2
 
 
 # ---------------------------------------------------------------------------
