@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-07-08T12:25:00Z",
+  "generated_at": "2026-07-08T22:25:00Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -12,7 +12,7 @@
       "manager": "engine",
       "benchmark": "SPY",
       "as_of": "2026-07-08",
-      "market_status": "closed",
+      "market_status": "open",
       "gross": 0.1205,
       "cash": 0.8795,
       "regime": {
@@ -82,7 +82,7 @@
           "thesis_id": "2026-07-08-XLV-conv",
           "time_stop_by": "2026-10-02",
           "confluence": 0.0,
-          "entry_price": 161.96,
+          "entry_price": 163.415,
           "research": {
             "summary": "Broad healthcare — the liquid, diversified expression of the strategist's cleanest confirmed leadership (managed care, breadth 1.00) plus defensive ballast. Preferred over single spec small-caps because a de-grossing tape (gold -2%, BTC -1.9% = sell-what's-liquid) hits thin-float names hardest. Defensive-cyclical that fits the broadening/cooling-inflation tape while protecting against the growth scare.",
             "confirmed": true
@@ -112,11 +112,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLV receives 1.7% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
             "confluence": 0.0,
             "prob_correct": 0.55
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 164.44,
-          "fill_after": "2026-07-08"
+          }
         },
         {
           "ticker": "XLP",
@@ -128,7 +124,7 @@
           "thesis_id": "2026-07-08-XLP-conv",
           "time_stop_by": "2026-10-02",
           "confluence": 0.0,
-          "entry_price": 84.1,
+          "entry_price": 85.17,
           "research": {
             "summary": "Consumer staples — classic low-beta risk-off defensive for a stressed open. Not rate-sensitive the way utilities are, which matters because 10Y yields are UP +0.98% overnight (arguing against XLU despite it being in the defensive benchmark). A straightforward downside-cushion sleeve while I keep the bulk of NAV in cash.",
             "confirmed": true
@@ -160,11 +156,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLP receives 1.3% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
             "confluence": 0.0,
             "prob_correct": 0.55
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 84.86,
-          "fill_after": "2026-07-08"
+          }
         },
         {
           "ticker": "XLE",
@@ -176,7 +168,7 @@
           "thesis_id": "2026-07-08-XLE-conv",
           "time_stop_by": "2026-10-05",
           "confluence": -1.0,
-          "entry_price": 53.13,
+          "entry_price": 55.455,
           "research": {
             "summary": "Energy is the only strength on the tape — WTI +5.48% overnight on what looks like a supply/geopolitical impulse, with yields up alongside it (inflation overlay). Small, deliberately un-chased position as a hedge against exactly the scenario that hurts my other defensives (rising rates + energy shock). Cross_asset plane flags commodity concentration, so I keep it to 2.5% rather than sizing into a gap-up.",
             "confirmed": true
@@ -209,11 +201,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLE receives 2.5% (confluence -1.00, capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-05.",
             "confluence": -1.0,
             "prob_correct": 0.5
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 54.64,
-          "fill_after": "2026-07-08"
+          }
         },
         {
           "ticker": "DD",
@@ -463,92 +451,7 @@
           "raw_prob_correct": 0.42
         }
       ],
-      "pending_orders": [
-        {
-          "id": "2026-07-08-AME-sell",
-          "ticker": "AME",
-          "side": "sell",
-          "shares": 21.021104,
-          "est_price": 238.68,
-          "est_value": 5017.32,
-          "weight": 0.0,
-          "placed_asof": "2026-07-08",
-          "fill_after": "2026-07-08",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-08-CHRW-sell",
-          "ticker": "CHRW",
-          "side": "sell",
-          "shares": 21.648544,
-          "est_price": 185.04,
-          "est_value": 4005.85,
-          "weight": 0.0,
-          "placed_asof": "2026-07-08",
-          "fill_after": "2026-07-08",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-08-EXPD-sell",
-          "ticker": "EXPD",
-          "side": "sell",
-          "shares": 59.50905,
-          "est_price": 162.79,
-          "est_value": 9687.48,
-          "weight": 0.0,
-          "placed_asof": "2026-07-08",
-          "fill_after": "2026-07-08",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-08-ACIW-sell",
-          "ticker": "ACIW",
-          "side": "sell",
-          "shares": 232.629624,
-          "est_price": 47.3945,
-          "est_value": 11025.37,
-          "weight": 0.0,
-          "placed_asof": "2026-07-08",
-          "fill_after": "2026-07-08",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-08-XLV-buy",
-          "ticker": "XLV",
-          "side": "buy",
-          "shares": 102.0,
-          "est_price": 164.44,
-          "est_value": 16772.88,
-          "weight": 0.0174,
-          "placed_asof": "2026-07-08",
-          "fill_after": "2026-07-08",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-08-XLP-buy",
-          "ticker": "XLP",
-          "side": "buy",
-          "shares": 149.0,
-          "est_price": 84.86,
-          "est_value": 12644.14,
-          "weight": 0.0131,
-          "placed_asof": "2026-07-08",
-          "fill_after": "2026-07-08",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-08-XLE-buy",
-          "ticker": "XLE",
-          "side": "buy",
-          "shares": 443.0,
-          "est_price": 54.64,
-          "est_value": 24205.52,
-          "weight": 0.025,
-          "placed_asof": "2026-07-08",
-          "fill_after": "2026-07-08",
-          "status": "pending"
-        }
-      ],
+      "pending_orders": [],
       "research_held": [
         {
           "ticker": "SCHW",
@@ -850,14 +753,14 @@
       "performance": {
         "inception_date": "2026-06-19",
         "starting_nav": 1000000.0,
-        "current_nav": 970302.5,
-        "cash": 884854.26,
-        "invested": 85448.24,
-        "total_return_pct": -2.9698,
-        "vs_spy_pct": -3.8807,
+        "current_nav": 971824.41,
+        "cash": 862600.22,
+        "invested": 109224.19,
+        "total_return_pct": -2.8176,
+        "vs_spy_pct": -3.0173,
         "benchmark": "SPY",
-        "day_change_pct": -0.1998,
-        "max_drawdown_pct": -3.5278,
+        "day_change_pct": -0.0432,
+        "max_drawdown_pct": -3.3765,
         "realized_since": "2026-06-19",
         "series": [
           {
@@ -2110,16 +2013,16 @@
       "benchmark": "SPY",
       "as_of": "2026-07-08",
       "market_status": {
-        "open": false,
-        "asof_et": "2026-07-08T07:22:23.601037-04:00",
+        "open": true,
+        "asof_et": "2026-07-08T11:00:11.111016-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-08T09:30:00-04:00",
-        "next_open_day": "2026-07-08",
+        "next_open": "2026-07-09T09:30:00-04:00",
+        "next_open_day": "2026-07-09",
         "prev_trading_day": "2026-07-07"
       },
-      "gross": 0.4892,
-      "cash": 0.5108,
+      "gross": 0.3973,
+      "cash": 0.6027,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -2128,19 +2031,61 @@
       "sleeves": null,
       "positions": [
         {
+          "ticker": "MCY",
+          "sleeve": "brain",
+          "weight": 0.0649,
+          "verdict": "hold",
+          "conviction": "high",
+          "rationale": "Mercury General — P&C insurer, my top defensive and the name this tape most favors. The 10Y +0.98% to 4.53% is a direct reinvestment-yield tailwind; Insurance & Brokers is a top-5 leadership theme and XLF is cycle-favored for ENTRY. Structurally immune to the AI/semi de-rating and up ~5% on cost. In a stressed overnight I lift it to the top weight as the anchor of the defensive core.",
+          "opened_at": "2026-06-21T14:26:56.050465+00:00",
+          "held_days": 17,
+          "cost_basis": 105.1111,
+          "current_price": 110.985,
+          "market_value": 62869.45,
+          "unrealized_pnl": 3327.4,
+          "unrealized_pct": 5.59,
+          "thesis_full": {
+            "summary": "Mercury General — P&C insurer, my top defensive and the name this tape most favors. The 10Y +0.98% to 4.53% is a direct reinvestment-yield tailwind; Insurance & Brokers is a top-5 leadership theme and XLF is cycle-favored for ENTRY. Structurally immune to the AI/semi de-rating and up ~5% on cost. In a stressed overnight I lift it to the top weight as the anchor of the defensive core.",
+            "why_now": "Mercury General — P&C insurer, my top defensive and the name this tape most favors. The 10Y +0.98% to 4.53% is a direct reinvestment-yield tailwind; Insurance & Brokers is a top-5 leadership theme and XLF is cycle-favored for ENTRY. Structurally immune to the AI/semi de-rating and up ~5% on cost. In a stressed overnight I lift it to the top weight as the anchor of the defensive core.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
+          "ticker": "HWM",
+          "sleeve": "brain",
+          "weight": 0.0648,
+          "verdict": "hold",
+          "conviction": "high",
+          "rationale": "Howmet — aerospace/engineered structures, quality late-cycle industrial with durable aero-build demand and pricing power, sitting in cyclical-value rather than the narrowing tech top. The holding most insulated from the semis/AI de-rating and froth-unwind; roughly flat on cost and steady through prior overnights. I keep it as a near-top-weight ballast but trim modestly from 8% to reflect the broad risk-off futures.",
+          "opened_at": "2026-06-21T14:26:56.050465+00:00",
+          "held_days": 17,
+          "cost_basis": 276.1437,
+          "current_price": 271.67,
+          "market_value": 62774.2,
+          "unrealized_pnl": -1033.72,
+          "unrealized_pct": -1.62,
+          "thesis_full": {
+            "summary": "Howmet — aerospace/engineered structures, quality late-cycle industrial with durable aero-build demand and pricing power, sitting in cyclical-value rather than the narrowing tech top. The holding most insulated from the semis/AI de-rating and froth-unwind; roughly flat on cost and steady through prior overnights. I keep it as a near-top-weight ballast but trim modestly from 8% to reflect the broad risk-off futures.",
+            "why_now": "Howmet — aerospace/engineered structures, quality late-cycle industrial with durable aero-build demand and pricing power, sitting in cyclical-value rather than the narrowing tech top. The holding most insulated from the semis/AI de-rating and froth-unwind; roughly flat on cost and steady through prior overnights. I keep it as a near-top-weight ballast but trim modestly from 8% to reflect the broad risk-off futures.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
           "ticker": "URI",
           "sleeve": "brain",
-          "weight": 0.0833,
+          "weight": 0.0553,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "United Rentals — equipment-rental proxy on US non-residential/infrastructure construction; XLI and cycle-favored for ENTRY. Structurally the industrial cohort that kept confirming while tech de-rated. But my prior 'held well overnight, RTY only -0.25%' premise is now stale: small-caps are down with RTY -1.21% tonight, so I trim from 8.3% to 5.5% — keep the cycle-ENTRY exposure, cut the size added on false stabilization.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 16,
+          "held_days": 17,
           "cost_basis": 1089.166,
-          "current_price": 1056.02,
-          "market_value": 80762.91,
-          "unrealized_pnl": -2534.96,
-          "unrealized_pct": -3.04,
+          "current_price": 1056.53,
+          "market_value": 53585.73,
+          "unrealized_pnl": -1655.25,
+          "unrealized_pct": -3.0,
           "thesis_full": {
             "summary": "United Rentals — equipment-rental proxy on US non-residential/infrastructure construction; XLI and cycle-favored for ENTRY. Structurally the industrial cohort that kept confirming while tech de-rated. But my prior 'held well overnight, RTY only -0.25%' premise is now stale: small-caps are down with RTY -1.21% tonight, so I trim from 8.3% to 5.5% — keep the cycle-ENTRY exposure, cut the size added on false stabilization.",
             "why_now": "United Rentals — equipment-rental proxy on US non-residential/infrastructure construction; XLI and cycle-favored for ENTRY. Structurally the industrial cohort that kept confirming while tech de-rated. But my prior 'held well overnight, RTY only -0.25%' premise is now stale: small-caps are down with RTY -1.21% tonight, so I trim from 8.3% to 5.5% — keep the cycle-ENTRY exposure, cut the size added on false stabilization.",
@@ -2151,17 +2096,17 @@
         {
           "ticker": "APH",
           "sleeve": "brain",
-          "weight": 0.0812,
+          "weight": 0.0498,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Amphenol — rides AI-infra/electrification but XLI-diversified, carrying far less late-cycle-XLK stigma than pure semis. I had added it back toward 8% on 'US futures now flat'; that premise is falsified (NQ -1.33%), so I reverse the add and hold ~5%. Diversified-industrial thesis intact, but I will not carry a full offensive weight into a stressed tape with froth_fragility live.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 16,
+          "held_days": 17,
           "cost_basis": 165.768,
-          "current_price": 158.61,
-          "market_value": 78716.08,
-          "unrealized_pnl": -3552.4,
-          "unrealized_pct": -4.32,
+          "current_price": 154.88,
+          "market_value": 48264.78,
+          "unrealized_pnl": -3392.98,
+          "unrealized_pct": -6.57,
           "thesis_full": {
             "summary": "Amphenol — rides AI-infra/electrification but XLI-diversified, carrying far less late-cycle-XLK stigma than pure semis. I had added it back toward 8% on 'US futures now flat'; that premise is falsified (NQ -1.33%), so I reverse the add and hold ~5%. Diversified-industrial thesis intact, but I will not carry a full offensive weight into a stressed tape with froth_fragility live.",
             "why_now": "Amphenol — rides AI-infra/electrification but XLI-diversified, carrying far less late-cycle-XLK stigma than pure semis. I had added it back toward 8% on 'US futures now flat'; that premise is falsified (NQ -1.33%), so I reverse the add and hold ~5%. Diversified-industrial thesis intact, but I will not carry a full offensive weight into a stressed tape with froth_fragility live.",
@@ -2170,64 +2115,22 @@
           }
         },
         {
-          "ticker": "HWM",
+          "ticker": "ANET",
           "sleeve": "brain",
-          "weight": 0.0807,
+          "weight": 0.0418,
           "verdict": "hold",
-          "conviction": "high",
-          "rationale": "Howmet — aerospace/engineered structures, quality late-cycle industrial with durable aero-build demand and pricing power, sitting in cyclical-value rather than the narrowing tech top. The holding most insulated from the semis/AI de-rating and froth-unwind; roughly flat on cost and steady through prior overnights. I keep it as a near-top-weight ballast but trim modestly from 8% to reflect the broad risk-off futures.",
+          "conviction": "low",
+          "rationale": "Arista — datacenter networking / AI-infra, my best-working tech name on cost but sharing the narrowing-top froth risk. With froth_fragility flagged (euphoric leaders distributing) and Asia semis selling off, I keep it minimal at 3% rather than rebuild. Hold on name quality; I would only add once AI-infra reclaims leadership and the froth/vol caution clears — neither is true tonight.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 16,
-          "cost_basis": 276.1437,
-          "current_price": 275.43,
-          "market_value": 78288.71,
-          "unrealized_pnl": -202.86,
-          "unrealized_pct": -0.26,
+          "held_days": 17,
+          "cost_basis": 169.424,
+          "current_price": 174.975,
+          "market_value": 40438.2,
+          "unrealized_pnl": 1282.9,
+          "unrealized_pct": 3.28,
           "thesis_full": {
-            "summary": "Howmet — aerospace/engineered structures, quality late-cycle industrial with durable aero-build demand and pricing power, sitting in cyclical-value rather than the narrowing tech top. The holding most insulated from the semis/AI de-rating and froth-unwind; roughly flat on cost and steady through prior overnights. I keep it as a near-top-weight ballast but trim modestly from 8% to reflect the broad risk-off futures.",
-            "why_now": "Howmet — aerospace/engineered structures, quality late-cycle industrial with durable aero-build demand and pricing power, sitting in cyclical-value rather than the narrowing tech top. The holding most insulated from the semis/AI de-rating and froth-unwind; roughly flat on cost and steady through prior overnights. I keep it as a near-top-weight ballast but trim modestly from 8% to reflect the broad risk-off futures.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
-          "ticker": "EME",
-          "sleeve": "brain",
-          "weight": 0.079,
-          "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "EMCOR — electrical/mechanical contractor levered to data-center/electrification capex; XLI entry favorite but the most direct AI-datacenter-capex correlation in my book. That correlation is exactly the froth-unwind tail, and my 'correlated tail stabilized' rationale is now dead (NQ -1.33%, KOSPI -5.35%). I cut it hardest among the industrials, from 7.9% to 4%, keeping only structural buildout exposure while it is down ~8% on cost.",
-          "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 16,
-          "cost_basis": 839.0062,
-          "current_price": 768.38,
-          "market_value": 76619.28,
-          "unrealized_pnl": -7042.51,
-          "unrealized_pct": -8.42,
-          "thesis_full": {
-            "summary": "EMCOR — electrical/mechanical contractor levered to data-center/electrification capex; XLI entry favorite but the most direct AI-datacenter-capex correlation in my book. That correlation is exactly the froth-unwind tail, and my 'correlated tail stabilized' rationale is now dead (NQ -1.33%, KOSPI -5.35%). I cut it hardest among the industrials, from 7.9% to 4%, keeping only structural buildout exposure while it is down ~8% on cost.",
-            "why_now": "EMCOR — electrical/mechanical contractor levered to data-center/electrification capex; XLI entry favorite but the most direct AI-datacenter-capex correlation in my book. That correlation is exactly the froth-unwind tail, and my 'correlated tail stabilized' rationale is now dead (NQ -1.33%, KOSPI -5.35%). I cut it hardest among the industrials, from 7.9% to 4%, keeping only structural buildout exposure while it is down ~8% on cost.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
-          "ticker": "MCY",
-          "sleeve": "brain",
-          "weight": 0.0647,
-          "verdict": "hold",
-          "conviction": "high",
-          "rationale": "Mercury General — P&C insurer, my top defensive and the name this tape most favors. The 10Y +0.98% to 4.53% is a direct reinvestment-yield tailwind; Insurance & Brokers is a top-5 leadership theme and XLF is cycle-favored for ENTRY. Structurally immune to the AI/semi de-rating and up ~5% on cost. In a stressed overnight I lift it to the top weight as the anchor of the defensive core.",
-          "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 16,
-          "cost_basis": 105.1111,
-          "current_price": 110.84,
-          "market_value": 62787.31,
-          "unrealized_pnl": 3245.26,
-          "unrealized_pct": 5.45,
-          "thesis_full": {
-            "summary": "Mercury General — P&C insurer, my top defensive and the name this tape most favors. The 10Y +0.98% to 4.53% is a direct reinvestment-yield tailwind; Insurance & Brokers is a top-5 leadership theme and XLF is cycle-favored for ENTRY. Structurally immune to the AI/semi de-rating and up ~5% on cost. In a stressed overnight I lift it to the top weight as the anchor of the defensive core.",
-            "why_now": "Mercury General — P&C insurer, my top defensive and the name this tape most favors. The 10Y +0.98% to 4.53% is a direct reinvestment-yield tailwind; Insurance & Brokers is a top-5 leadership theme and XLF is cycle-favored for ENTRY. Structurally immune to the AI/semi de-rating and up ~5% on cost. In a stressed overnight I lift it to the top weight as the anchor of the defensive core.",
+            "summary": "Arista — datacenter networking / AI-infra, my best-working tech name on cost but sharing the narrowing-top froth risk. With froth_fragility flagged (euphoric leaders distributing) and Asia semis selling off, I keep it minimal at 3% rather than rebuild. Hold on name quality; I would only add once AI-infra reclaims leadership and the froth/vol caution clears — neither is true tonight.",
+            "why_now": "Arista — datacenter networking / AI-infra, my best-working tech name on cost but sharing the narrowing-top froth risk. With froth_fragility flagged (euphoric leaders distributing) and Asia semis selling off, I keep it minimal at 3% rather than rebuild. Hold on name quality; I would only add once AI-infra reclaims leadership and the froth/vol caution clears — neither is true tonight.",
             "bull": [],
             "bear": []
           }
@@ -2235,17 +2138,17 @@
         {
           "ticker": "SMH",
           "sleeve": "brain",
-          "weight": 0.0606,
+          "weight": 0.0405,
           "verdict": "hold",
           "conviction": "low",
           "rationale": "Semiconductor ETF — kept deliberately LIGHT and trimmed further tonight. Still the #1-RS secular sector on 60d momentum so I hold a real toehold rather than whipsaw fully out, but KOSPI -5.35% and Nikkei -2.11% show semis-heavy Asia bleeding hard, its decision matrix is cycle-BLOCKED and extended (+41% vs 200dma), and the bubble caution is live. 4% is a structural-leader toehold, not a conviction position, into a stressed open.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 16,
+          "held_days": 17,
           "cost_basis": 638.2775,
-          "current_price": 581.45,
-          "market_value": 58765.19,
-          "unrealized_pnl": -5743.36,
-          "unrealized_pct": -8.9,
+          "current_price": 585.09,
+          "market_value": 39246.56,
+          "unrealized_pnl": -3567.7,
+          "unrealized_pct": -8.33,
           "thesis_full": {
             "summary": "Semiconductor ETF — kept deliberately LIGHT and trimmed further tonight. Still the #1-RS secular sector on 60d momentum so I hold a real toehold rather than whipsaw fully out, but KOSPI -5.35% and Nikkei -2.11% show semis-heavy Asia bleeding hard, its decision matrix is cycle-BLOCKED and extended (+41% vs 200dma), and the bubble caution is live. 4% is a structural-leader toehold, not a conviction position, into a stressed open.",
             "why_now": "Semiconductor ETF — kept deliberately LIGHT and trimmed further tonight. Still the #1-RS secular sector on 60d momentum so I hold a real toehold rather than whipsaw fully out, but KOSPI -5.35% and Nikkei -2.11% show semis-heavy Asia bleeding hard, its decision matrix is cycle-BLOCKED and extended (+41% vs 200dma), and the bubble caution is live. 4% is a structural-leader toehold, not a conviction position, into a stressed open.",
@@ -2254,22 +2157,43 @@
           }
         },
         {
-          "ticker": "ANET",
+          "ticker": "EME",
           "sleeve": "brain",
-          "weight": 0.0397,
+          "weight": 0.0402,
           "verdict": "hold",
-          "conviction": "low",
-          "rationale": "Arista — datacenter networking / AI-infra, my best-working tech name on cost but sharing the narrowing-top froth risk. With froth_fragility flagged (euphoric leaders distributing) and Asia semis selling off, I keep it minimal at 3% rather than rebuild. Hold on name quality; I would only add once AI-infra reclaims leadership and the froth/vol caution clears — neither is true tonight.",
+          "conviction": "medium",
+          "rationale": "EMCOR — electrical/mechanical contractor levered to data-center/electrification capex; XLI entry favorite but the most direct AI-datacenter-capex correlation in my book. That correlation is exactly the froth-unwind tail, and my 'correlated tail stabilized' rationale is now dead (NQ -1.33%, KOSPI -5.35%). I cut it hardest among the industrials, from 7.9% to 4%, keeping only structural buildout exposure while it is down ~8% on cost.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 16,
-          "cost_basis": 169.424,
-          "current_price": 166.46,
-          "market_value": 38470.31,
-          "unrealized_pnl": -684.99,
-          "unrealized_pct": -1.75,
+          "held_days": 17,
+          "cost_basis": 839.0062,
+          "current_price": 764.04,
+          "market_value": 38894.26,
+          "unrealized_pnl": -3816.23,
+          "unrealized_pct": -8.94,
           "thesis_full": {
-            "summary": "Arista — datacenter networking / AI-infra, my best-working tech name on cost but sharing the narrowing-top froth risk. With froth_fragility flagged (euphoric leaders distributing) and Asia semis selling off, I keep it minimal at 3% rather than rebuild. Hold on name quality; I would only add once AI-infra reclaims leadership and the froth/vol caution clears — neither is true tonight.",
-            "why_now": "Arista — datacenter networking / AI-infra, my best-working tech name on cost but sharing the narrowing-top froth risk. With froth_fragility flagged (euphoric leaders distributing) and Asia semis selling off, I keep it minimal at 3% rather than rebuild. Hold on name quality; I would only add once AI-infra reclaims leadership and the froth/vol caution clears — neither is true tonight.",
+            "summary": "EMCOR — electrical/mechanical contractor levered to data-center/electrification capex; XLI entry favorite but the most direct AI-datacenter-capex correlation in my book. That correlation is exactly the froth-unwind tail, and my 'correlated tail stabilized' rationale is now dead (NQ -1.33%, KOSPI -5.35%). I cut it hardest among the industrials, from 7.9% to 4%, keeping only structural buildout exposure while it is down ~8% on cost.",
+            "why_now": "EMCOR — electrical/mechanical contractor levered to data-center/electrification capex; XLI entry favorite but the most direct AI-datacenter-capex correlation in my book. That correlation is exactly the froth-unwind tail, and my 'correlated tail stabilized' rationale is now dead (NQ -1.33%, KOSPI -5.35%). I cut it hardest among the industrials, from 7.9% to 4%, keeping only structural buildout exposure while it is down ~8% on cost.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
+          "ticker": "XLE",
+          "sleeve": "brain",
+          "weight": 0.04,
+          "verdict": "hold",
+          "conviction": "medium",
+          "rationale": "Energy sector SPDR — the one modest ADD, as an oil-shock / inflation hedge. Live WTI is +5.37% overnight and the cycle engine independently favors XLE for ENTRY, so two planes agree (Charter P1 satisfied). Energy is the sector that benefits from exactly the shock hitting the tape (oil spike, rising 10Y) and is uncorrelated to the AI/semi de-rating driving the froth-unwind, making it a genuine diversifier rather than added beta into a stressed open. Sized small at 4%.",
+          "opened_at": "2026-07-08T15:00:07.424551+00:00",
+          "held_days": 0,
+          "cost_basis": 55.455,
+          "current_price": 55.74,
+          "market_value": 38739.3,
+          "unrealized_pnl": 198.08,
+          "unrealized_pct": 0.51,
+          "thesis_full": {
+            "summary": "Energy sector SPDR — the one modest ADD, as an oil-shock / inflation hedge. Live WTI is +5.37% overnight and the cycle engine independently favors XLE for ENTRY, so two planes agree (Charter P1 satisfied). Energy is the sector that benefits from exactly the shock hitting the tape (oil spike, rising 10Y) and is uncorrelated to the AI/semi de-rating driving the froth-unwind, making it a genuine diversifier rather than added beta into a stressed open. Sized small at 4%.",
+            "why_now": "Energy sector SPDR — the one modest ADD, as an oil-shock / inflation hedge. Live WTI is +5.37% overnight and the cycle engine independently favors XLE for ENTRY, so two planes agree (Charter P1 satisfied). Energy is the sector that benefits from exactly the shock hitting the tape (oil spike, rising 10Y) and is uncorrelated to the AI/semi de-rating driving the froth-unwind, making it a genuine diversifier rather than added beta into a stressed open. Sized small at 4%.",
             "bull": [],
             "bear": []
           }
@@ -2280,7 +2204,7 @@
           "subject": "Autonomous book",
           "lean": "Overnight de-risk into a STRESSED tape (settles at open). Since my last decision the overnight cross-asset tape reversed from \"stabilizing\" back to broad risk-off: US futures ES -0.88% / NQ -1.33% / YM -1.07% / RTY -1.21%, VIX +12.5%, Europe -1.4% to -2.1%, Nikkei -2.11%, KOSPI -5.35% (semis-heavy Asia crashing), 10Y +0.98% to 4.53%, WTI +5.37% (oil/inflation shock), gold -2.0%. risk_state=stressed. My queued rationales that added AI/semi-correlated industrials \"back toward 8% because futures stabilized\" are now falsified, so I reverse them and raise cash from ~49% invested to ~60%. Two-plane discipline (Charter P1): the live tape's risk-off AND the doctrine's own froth_fragility / bubble-unwind caution / shadow ROTATE_DEFENSIVE posture agree — this is not sizing off the low-confidence (0.187) Goldilocks label. I keep a defensive/insulated core (MCY, HWM), a trimmed cycle-ENTRY industrial sleeve (URI, APH, EME), a light structural-leader semis toehold (SMH, ANET), and add a modest XLE hedge — cycle engine favors XLE for ENTRY AND live oil +5.37% agrees, satisfying the second-plane rule for the only add.",
           "thesis": "No full exits. Reversed the 'futures stabilized, add back toward 8%' adds across the AI/electrification-correlated industrials (EME 7.9%->4%, APH 8.1%->5%, URI 8.3%->5.5%) and trimmed HWM 8.1%->6.5% and SMH 6.1%->4% to raise cash from ~49% to ~60% invested-wise. Added XLE 4% as an oil-shock hedge. Net effect: lower gross, defensive tilt toward MCY/HWM/XLE, offense budget respected under shadow ROTATE_DEFENSIVE.",
-          "logged_at": "2026-07-08T11:22:23.596176+00:00"
+          "logged_at": "2026-07-08T15:00:11.107493+00:00"
         }
       ],
       "pending_orders": [],
@@ -2295,14 +2219,14 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 970000.78,
-        "cash": 495590.99,
-        "invested": 474409.79,
-        "total_return_pct": -2.9999,
-        "vs_spy_pct": -3.1298,
+        "current_nav": 964797.06,
+        "cash": 583574.76,
+        "invested": 381222.3,
+        "total_return_pct": -3.5203,
+        "vs_spy_pct": -3.0409,
         "benchmark": "SPY",
-        "day_change_pct": 0.0,
-        "max_drawdown_pct": -3.9925,
+        "day_change_pct": -0.5365,
+        "max_drawdown_pct": -4.5076,
         "realized_since": "2026-06-21",
         "series": [
           {
@@ -2864,16 +2788,16 @@
       "benchmark": "SPY",
       "as_of": "2026-07-08",
       "market_status": {
-        "open": false,
-        "asof_et": "2026-07-08T07:24:39.975140-04:00",
+        "open": true,
+        "asof_et": "2026-07-08T11:00:12.359811-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-08T09:30:00-04:00",
-        "next_open_day": "2026-07-08",
+        "next_open": "2026-07-09T09:30:00-04:00",
+        "next_open_day": "2026-07-09",
         "prev_trading_day": "2026-07-07"
       },
-      "gross": 0.4575,
-      "cash": 0.5425,
+      "gross": 0.3499,
+      "cash": 0.6501,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -2882,42 +2806,20 @@
       "sleeves": null,
       "positions": [
         {
-          "ticker": "SPY",
-          "sleeve": "brain",
-          "group": "core_index",
-          "weight": 0.1001,
-          "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Trim core beta from 10% to 8%. SPY still sits above 50d/200d (+8.2% vs 200d) in an intact Goldilocks/mid-cycle uptrend, so I keep a core toe rather than dump it — but ES futures are -0.88% overnight and SPY carries the mega-cap concentration the board flags as the dominant fragility driver. A measured trim de-grosses without abandoning the structural trend.",
-          "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 15,
-          "cost_basis": 743.1258,
-          "current_price": 747.71,
-          "market_value": 97589.57,
-          "unrealized_pnl": 598.33,
-          "unrealized_pct": 0.62,
-          "thesis_full": {
-            "summary": "Trim core beta from 10% to 8%. SPY still sits above 50d/200d (+8.2% vs 200d) in an intact Goldilocks/mid-cycle uptrend, so I keep a core toe rather than dump it — but ES futures are -0.88% overnight and SPY carries the mega-cap concentration the board flags as the dominant fragility driver. A measured trim de-grosses without abandoning the structural trend.",
-            "why_now": "Trim core beta from 10% to 8%. SPY still sits above 50d/200d (+8.2% vs 200d) in an intact Goldilocks/mid-cycle uptrend, so I keep a core toe rather than dump it — but ES futures are -0.88% overnight and SPY carries the mega-cap concentration the board flags as the dominant fragility driver. A measured trim de-grosses without abandoning the structural trend.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
           "ticker": "SGOV",
           "sleeve": "brain",
           "group": "cash",
-          "weight": 0.0999,
+          "weight": 0.1002,
           "verdict": "hold",
           "conviction": "high",
           "rationale": "Raise the T-bill buffer from ~10% to 18% — the decisive de-risk. This is the only haven working tonight: the 10Y yield is RISING (+0.98% to 4.53%) so duration is not bid, and gold is DOWN 2.04% (liquidation, not flight-to-safety), leaving bills as the sole functioning safe asset. Fed is hawkish and TLT/IEF sit below their 200d, so I take safety in cash, not duration. Combined with the pure-cash remainder this keeps ~57% dry powder to redeploy on either a real capitulation or a confirmed re-stabilization.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 15,
           "cost_basis": 100.6186,
-          "current_price": 100.46,
-          "market_value": 97413.27,
-          "unrealized_pnl": -153.82,
-          "unrealized_pct": -0.16,
+          "current_price": 100.47,
+          "market_value": 97422.97,
+          "unrealized_pnl": -144.12,
+          "unrealized_pct": -0.15,
           "thesis_full": {
             "summary": "Raise the T-bill buffer from ~10% to 18% — the decisive de-risk. This is the only haven working tonight: the 10Y yield is RISING (+0.98% to 4.53%) so duration is not bid, and gold is DOWN 2.04% (liquidation, not flight-to-safety), leaving bills as the sole functioning safe asset. Fed is hawkish and TLT/IEF sit below their 200d, so I take safety in cash, not duration. Combined with the pure-cash remainder this keeps ~57% dry powder to redeploy on either a real capitulation or a confirmed re-stabilization.",
             "why_now": "Raise the T-bill buffer from ~10% to 18% — the decisive de-risk. This is the only haven working tonight: the 10Y yield is RISING (+0.98% to 4.53%) so duration is not bid, and gold is DOWN 2.04% (liquidation, not flight-to-safety), leaving bills as the sole functioning safe asset. Fed is hawkish and TLT/IEF sit below their 200d, so I take safety in cash, not duration. Combined with the pure-cash remainder this keeps ~57% dry powder to redeploy on either a real capitulation or a confirmed re-stabilization.",
@@ -2926,20 +2828,64 @@
           }
         },
         {
+          "ticker": "SPY",
+          "sleeve": "brain",
+          "group": "core_index",
+          "weight": 0.08,
+          "verdict": "hold",
+          "conviction": "medium",
+          "rationale": "Trim core beta from 10% to 8%. SPY still sits above 50d/200d (+8.2% vs 200d) in an intact Goldilocks/mid-cycle uptrend, so I keep a core toe rather than dump it — but ES futures are -0.88% overnight and SPY carries the mega-cap concentration the board flags as the dominant fragility driver. A measured trim de-grosses without abandoning the structural trend.",
+          "opened_at": "2026-06-23T01:19:49.774519+00:00",
+          "held_days": 15,
+          "cost_basis": 743.1258,
+          "current_price": 741.74,
+          "market_value": 77766.95,
+          "unrealized_pnl": -145.29,
+          "unrealized_pct": -0.19,
+          "thesis_full": {
+            "summary": "Trim core beta from 10% to 8%. SPY still sits above 50d/200d (+8.2% vs 200d) in an intact Goldilocks/mid-cycle uptrend, so I keep a core toe rather than dump it — but ES futures are -0.88% overnight and SPY carries the mega-cap concentration the board flags as the dominant fragility driver. A measured trim de-grosses without abandoning the structural trend.",
+            "why_now": "Trim core beta from 10% to 8%. SPY still sits above 50d/200d (+8.2% vs 200d) in an intact Goldilocks/mid-cycle uptrend, so I keep a core toe rather than dump it — but ES futures are -0.88% overnight and SPY carries the mega-cap concentration the board flags as the dominant fragility driver. A measured trim de-grosses without abandoning the structural trend.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
+          "ticker": "RSP",
+          "sleeve": "brain",
+          "group": "core_index",
+          "weight": 0.0497,
+          "verdict": "hold",
+          "conviction": "medium",
+          "rationale": "Hold equal-weight S&P at 5% — the direct antidote to the single lit fragility (cross-asset/mega-cap concentration, top ~1% of its 5y range). It lets me retain broad equity exposure WITHOUT the crowded mega-cap trade that is leading the tape down (NQ -1.33% vs ES -0.88%). Above 50d/200d (+9.3%). No change; this is the leg I least want to cut in a concentration-driven air-pocket.",
+          "opened_at": "2026-07-02T15:00:04.450824+00:00",
+          "held_days": 6,
+          "cost_basis": 214.58,
+          "current_price": 211.755,
+          "market_value": 48280.14,
+          "unrealized_pnl": -644.1,
+          "unrealized_pct": -1.32,
+          "thesis_full": {
+            "summary": "Hold equal-weight S&P at 5% — the direct antidote to the single lit fragility (cross-asset/mega-cap concentration, top ~1% of its 5y range). It lets me retain broad equity exposure WITHOUT the crowded mega-cap trade that is leading the tape down (NQ -1.33% vs ES -0.88%). Above 50d/200d (+9.3%). No change; this is the leg I least want to cut in a concentration-driven air-pocket.",
+            "why_now": "Hold equal-weight S&P at 5% — the direct antidote to the single lit fragility (cross-asset/mega-cap concentration, top ~1% of its 5y range). It lets me retain broad equity exposure WITHOUT the crowded mega-cap trade that is leading the tape down (NQ -1.33% vs ES -0.88%). Above 50d/200d (+9.3%). No change; this is the leg I least want to cut in a concentration-driven air-pocket.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
           "ticker": "XLI",
           "sleeve": "brain",
           "group": "sectors",
-          "weight": 0.0646,
+          "weight": 0.045,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Trim industrials from ~6.5% to 4.5%. It remains the strongest non-tech cyclical leg (20d +3.3%, above 50d/200d +11.0%), but Dow futures are -1.07% and a +5.4% oil spike layered onto a broad growth-scare pressures cyclicals. I keep a modest non-AI cyclical toe consistent with mid-cycle Goldilocks, but reduce gross in line with the stressed tape.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 15,
           "cost_basis": 182.5034,
-          "current_price": 182.38,
-          "market_value": 63026.19,
-          "unrealized_pnl": -42.65,
-          "unrealized_pct": -0.07,
+          "current_price": 179.85,
+          "market_value": 43743.91,
+          "unrealized_pnl": -645.37,
+          "unrealized_pct": -1.45,
           "thesis_full": {
             "summary": "Trim industrials from ~6.5% to 4.5%. It remains the strongest non-tech cyclical leg (20d +3.3%, above 50d/200d +11.0%), but Dow futures are -1.07% and a +5.4% oil spike layered onto a broad growth-scare pressures cyclicals. I keep a modest non-AI cyclical toe consistent with mid-cycle Goldilocks, but reduce gross in line with the stressed tape.",
             "why_now": "Trim industrials from ~6.5% to 4.5%. It remains the strongest non-tech cyclical leg (20d +3.3%, above 50d/200d +11.0%), but Dow futures are -1.07% and a +5.4% oil spike layered onto a broad growth-scare pressures cyclicals. I keep a modest non-AI cyclical toe consistent with mid-cycle Goldilocks, but reduce gross in line with the stressed tape.",
@@ -2951,17 +2897,17 @@
           "ticker": "IWM",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.0546,
+          "weight": 0.035,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Trim small-caps from ~5.5% to 3.5%. IWM is the freshest non-tech breadth leadership (rank-4 RS, above 200d +13.6%), but small-caps are high-beta into a broad risk-off and RTY futures are -1.21% — among the weaker legs tonight. I keep a breadth toe rather than exit, but reduce the beta into the selloff.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 15,
           "cost_basis": 298.2754,
-          "current_price": 296.19,
-          "market_value": 53251.98,
-          "unrealized_pnl": -374.93,
-          "unrealized_pct": -0.7,
+          "current_price": 292.21,
+          "market_value": 34023.04,
+          "unrealized_pnl": -706.22,
+          "unrealized_pct": -2.03,
           "thesis_full": {
             "summary": "Trim small-caps from ~5.5% to 3.5%. IWM is the freshest non-tech breadth leadership (rank-4 RS, above 200d +13.6%), but small-caps are high-beta into a broad risk-off and RTY futures are -1.21% — among the weaker legs tonight. I keep a breadth toe rather than exit, but reduce the beta into the selloff.",
             "why_now": "Trim small-caps from ~5.5% to 3.5%. IWM is the freshest non-tech breadth leadership (rank-4 RS, above 200d +13.6%), but small-caps are high-beta into a broad risk-off and RTY futures are -1.21% — among the weaker legs tonight. I keep a breadth toe rather than exit, but reduce the beta into the selloff.",
@@ -2970,23 +2916,23 @@
           }
         },
         {
-          "ticker": "RSP",
+          "ticker": "QQQ",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.0502,
+          "weight": 0.02,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Hold equal-weight S&P at 5% — the direct antidote to the single lit fragility (cross-asset/mega-cap concentration, top ~1% of its 5y range). It lets me retain broad equity exposure WITHOUT the crowded mega-cap trade that is leading the tape down (NQ -1.33% vs ES -0.88%). Above 50d/200d (+9.3%). No change; this is the leg I least want to cut in a concentration-driven air-pocket.",
-          "opened_at": "2026-07-02T15:00:04.450824+00:00",
-          "held_days": 5,
-          "cost_basis": 214.58,
-          "current_price": 214.73,
-          "market_value": 48958.44,
-          "unrealized_pnl": 34.2,
-          "unrealized_pct": 0.07,
+          "conviction": "low",
+          "rationale": "Cut the Nasdaq sleeve from ~4% to 2%. QQQ IS the AI/semis mega-cap concentration the fragility gauge flags as the dominant unwind driver, and it is leading the tape down (NQ-100 futures -1.33%, the worst of the US complex). With risk_state stressed and ROTATE_DEFENSIVE posture, I de-gross the crowded trade hard but keep a token toe rather than round-trip fully, since the structural uptrend (QQQ above 200d +11.7%) is not yet broken.",
+          "opened_at": "2026-06-23T01:19:49.774519+00:00",
+          "held_days": 15,
+          "cost_basis": 737.95,
+          "current_price": 705.155,
+          "market_value": 19441.74,
+          "unrealized_pnl": -904.19,
+          "unrealized_pct": -4.44,
           "thesis_full": {
-            "summary": "Hold equal-weight S&P at 5% — the direct antidote to the single lit fragility (cross-asset/mega-cap concentration, top ~1% of its 5y range). It lets me retain broad equity exposure WITHOUT the crowded mega-cap trade that is leading the tape down (NQ -1.33% vs ES -0.88%). Above 50d/200d (+9.3%). No change; this is the leg I least want to cut in a concentration-driven air-pocket.",
-            "why_now": "Hold equal-weight S&P at 5% — the direct antidote to the single lit fragility (cross-asset/mega-cap concentration, top ~1% of its 5y range). It lets me retain broad equity exposure WITHOUT the crowded mega-cap trade that is leading the tape down (NQ -1.33% vs ES -0.88%). Above 50d/200d (+9.3%). No change; this is the leg I least want to cut in a concentration-driven air-pocket.",
+            "summary": "Cut the Nasdaq sleeve from ~4% to 2%. QQQ IS the AI/semis mega-cap concentration the fragility gauge flags as the dominant unwind driver, and it is leading the tape down (NQ-100 futures -1.33%, the worst of the US complex). With risk_state stressed and ROTATE_DEFENSIVE posture, I de-gross the crowded trade hard but keep a token toe rather than round-trip fully, since the structural uptrend (QQQ above 200d +11.7%) is not yet broken.",
+            "why_now": "Cut the Nasdaq sleeve from ~4% to 2%. QQQ IS the AI/semis mega-cap concentration the fragility gauge flags as the dominant unwind driver, and it is leading the tape down (NQ-100 futures -1.33%, the worst of the US complex). With risk_state stressed and ROTATE_DEFENSIVE posture, I de-gross the crowded trade hard but keep a token toe rather than round-trip fully, since the structural uptrend (QQQ above 200d +11.7%) is not yet broken.",
             "bull": [],
             "bear": []
           }
@@ -2995,42 +2941,20 @@
           "ticker": "MTUM",
           "sleeve": "brain",
           "group": "factors",
-          "weight": 0.0475,
+          "weight": 0.02,
           "verdict": "hold",
           "conviction": "low",
           "rationale": "Cut momentum from ~4.75% to 2%. MTUM shares QQQ's mega-cap/semis crowding and historically unwinds fastest in liquidity air-pockets — exactly the setup lit tonight (VIX +12.5%, concentration fragility leading). Still rank-3 RS and above 50d/200d, so I hold a token toe, but the factor most exposed to a crowded-trade unwind gets cut hardest in a de-gross.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 15,
           "cost_basis": 345.22,
-          "current_price": 312.44,
-          "market_value": 46370.53,
-          "unrealized_pnl": -4865.02,
-          "unrealized_pct": -9.5,
+          "current_price": 312.92,
+          "market_value": 19441.74,
+          "unrealized_pnl": -2006.8,
+          "unrealized_pct": -9.36,
           "thesis_full": {
             "summary": "Cut momentum from ~4.75% to 2%. MTUM shares QQQ's mega-cap/semis crowding and historically unwinds fastest in liquidity air-pockets — exactly the setup lit tonight (VIX +12.5%, concentration fragility leading). Still rank-3 RS and above 50d/200d, so I hold a token toe, but the factor most exposed to a crowded-trade unwind gets cut hardest in a de-gross.",
             "why_now": "Cut momentum from ~4.75% to 2%. MTUM shares QQQ's mega-cap/semis crowding and historically unwinds fastest in liquidity air-pockets — exactly the setup lit tonight (VIX +12.5%, concentration fragility leading). Still rank-3 RS and above 50d/200d, so I hold a token toe, but the factor most exposed to a crowded-trade unwind gets cut hardest in a de-gross.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
-          "ticker": "QQQ",
-          "sleeve": "brain",
-          "group": "core_index",
-          "weight": 0.0406,
-          "verdict": "hold",
-          "conviction": "low",
-          "rationale": "Cut the Nasdaq sleeve from ~4% to 2%. QQQ IS the AI/semis mega-cap concentration the fragility gauge flags as the dominant unwind driver, and it is leading the tape down (NQ-100 futures -1.33%, the worst of the US complex). With risk_state stressed and ROTATE_DEFENSIVE posture, I de-gross the crowded trade hard but keep a token toe rather than round-trip fully, since the structural uptrend (QQQ above 200d +11.7%) is not yet broken.",
-          "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 15,
-          "cost_basis": 737.95,
-          "current_price": 709.43,
-          "market_value": 39579.27,
-          "unrealized_pnl": -1591.14,
-          "unrealized_pct": -3.86,
-          "thesis_full": {
-            "summary": "Cut the Nasdaq sleeve from ~4% to 2%. QQQ IS the AI/semis mega-cap concentration the fragility gauge flags as the dominant unwind driver, and it is leading the tape down (NQ-100 futures -1.33%, the worst of the US complex). With risk_state stressed and ROTATE_DEFENSIVE posture, I de-gross the crowded trade hard but keep a token toe rather than round-trip fully, since the structural uptrend (QQQ above 200d +11.7%) is not yet broken.",
-            "why_now": "Cut the Nasdaq sleeve from ~4% to 2%. QQQ IS the AI/semis mega-cap concentration the fragility gauge flags as the dominant unwind driver, and it is leading the tape down (NQ-100 futures -1.33%, the worst of the US complex). With risk_state stressed and ROTATE_DEFENSIVE posture, I de-gross the crowded trade hard but keep a token toe rather than round-trip fully, since the structural uptrend (QQQ above 200d +11.7%) is not yet broken.",
             "bull": [],
             "bear": []
           }
@@ -3041,7 +2965,7 @@
           "subject": "ETF book",
           "lean": "Overnight de-risk. My queued book assumed the flush was averted (futures flat); the live tape has since turned decisively stressed — ES -0.88%, NQ -1.33%, RTY -1.21%, KOSPI -5.35%, VIX +12.5%, with NO haven working (10Y yield +0.98%, gold -2.04%) and a +5.4% oil spike adding an inflation/geopolitical tint. This is the air-pocket the board's LEADING concentration/AI-semis fragility was front-running, now confirmed by the coincident tape. With ROTATE_DEFENSIVE posture and zero graded picks (no edge to lever), I de-gross the crowded mega-cap/semis legs hardest (QQQ 4→2, MTUM 4.75→2), trim broad and cyclical beta (SPY 10→8, IWM 5.5→3.5, XLI 6.5→4.5), hold the equal-weight de-concentration leg (RSP 5), and lift the T-bill buffer to 18% (SGOV 10→18). Total offense drops from ~36% to ~25%; dry powder (cash+bills) rises to ~75%. Disciplined de-gross into safety, not a panic liquidation — the Goldilocks/mid-cycle uptrend is structurally intact (SPY>200d, low drawdown band), so every leg keeps a toe and ample cash stands ready to redeploy on capitulation or confirmed stabilization.",
           "thesis": "",
-          "logged_at": "2026-07-08T11:24:39.964408+00:00"
+          "logged_at": "2026-07-08T15:00:12.349479+00:00"
         }
       ],
       "pending_orders": [],
@@ -3056,14 +2980,14 @@
       "performance": {
         "inception_date": "2026-06-22",
         "starting_nav": 1000000.0,
-        "current_nav": 975291.87,
-        "cash": 529102.62,
-        "invested": 446189.25,
-        "total_return_pct": -2.4708,
-        "vs_spy_pct": -2.9168,
+        "current_nav": 972086.94,
+        "cash": 631966.44,
+        "invested": 340120.5,
+        "total_return_pct": -2.7913,
+        "vs_spy_pct": -2.4353,
         "benchmark": "SPY",
-        "day_change_pct": 0.0,
-        "max_drawdown_pct": -2.6396,
+        "day_change_pct": -0.3286,
+        "max_drawdown_pct": -2.7913,
         "realized_since": "2026-06-22",
         "series": [
           {
@@ -3627,13 +3551,13 @@
       "market_status": {
         "open": false,
         "venue": "A-share (Shanghai/Shenzhen)",
-        "asof": "2026-07-08T16:02:26.971791+08:00",
-        "asof_cst": "2026-07-08T16:02:26.971791+08:00",
+        "asof": "2026-07-09T04:22:20.362753+08:00",
+        "asof_cst": "2026-07-09T04:22:20.362753+08:00",
         "trading_day": true,
         "holiday": false,
         "next_open": "2026-07-09T09:30:00+08:00",
         "next_open_day": "2026-07-09",
-        "prev_trading_day": "2026-07-07"
+        "prev_trading_day": "2026-07-08"
       },
       "gross": 0.5588,
       "cash": 0.4412,
@@ -3652,7 +3576,7 @@
           "weight": 0.1482,
           "verdict": "hold",
           "conviction": "high",
-          "rationale": "振德医疗 (603301.SS) stays the anchor and top weight — a corroborated A-share alpha leader (intake resid α 2.62) in medical consumables, structurally decoupled from the semis/optics complex the desk warns is extended. Green for me (+3.6% at CNY89.79) with the setup intact; this is confirmed defensive alpha that is working, and in a divergent/low-confidence regime I keep the thing that's earning, not chase the crowded tape.",
+          "rationale": "振德医疗 (603301.SS) stays the anchor and top weight — a corroborated A-share alpha leader in medical consumables, structurally decoupled from the semis/optics/biotech complex, and the book's working defensive (+3.6% at CNY89.79). Overnight the risk-off broadened INTO China (Shanghai -1.26%, no longer a haven), but this is precisely the domestic, tech-decoupled ballast that holds up when the selling is driven by global tech/vol (VIX +3.97%, KOSPI -4.91%). It carries no global-contagion beta and it is earning. I hold it at ~14.5% — the ballast, not the risk.",
           "opened_at": "2026-06-23T01:36:10.615687+00:00",
           "held_days": 15,
           "cost_basis": 86.6706,
@@ -3661,8 +3585,8 @@
           "unrealized_pnl": 5043.49,
           "unrealized_pct": 3.6,
           "thesis_full": {
-            "summary": "振德医疗 (603301.SS) stays the anchor and top weight — a corroborated A-share alpha leader (intake resid α 2.62) in medical consumables, structurally decoupled from the semis/optics complex the desk warns is extended. Green for me (+3.6% at CNY89.79) with the setup intact; this is confirmed defensive alpha that is working, and in a divergent/low-confidence regime I keep the thing that's earning, not chase the crowded tape.",
-            "why_now": "振德医疗 (603301.SS) stays the anchor and top weight — a corroborated A-share alpha leader (intake resid α 2.62) in medical consumables, structurally decoupled from the semis/optics complex the desk warns is extended. Green for me (+3.6% at CNY89.79) with the setup intact; this is confirmed defensive alpha that is working, and in a divergent/low-confidence regime I keep the thing that's earning, not chase the crowded tape.",
+            "summary": "振德医疗 (603301.SS) stays the anchor and top weight — a corroborated A-share alpha leader in medical consumables, structurally decoupled from the semis/optics/biotech complex, and the book's working defensive (+3.6% at CNY89.79). Overnight the risk-off broadened INTO China (Shanghai -1.26%, no longer a haven), but this is precisely the domestic, tech-decoupled ballast that holds up when the selling is driven by global tech/vol (VIX +3.97%, KOSPI -4.91%). It carries no global-contagion beta and it is earning. I hold it at ~14.5% — the ballast, not the risk.",
+            "why_now": "振德医疗 (603301.SS) stays the anchor and top weight — a corroborated A-share alpha leader in medical consumables, structurally decoupled from the semis/optics/biotech complex, and the book's working defensive (+3.6% at CNY89.79). Overnight the risk-off broadened INTO China (Shanghai -1.26%, no longer a haven), but this is precisely the domestic, tech-decoupled ballast that holds up when the selling is driven by global tech/vol (VIX +3.97%, KOSPI -4.91%). It carries no global-contagion beta and it is earning. I hold it at ~14.5% — the ballast, not the risk.",
             "bull": [],
             "bear": []
           }
@@ -3675,7 +3599,7 @@
           "weight": 0.1161,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure — buy-board UPTREND, full entry, alpha 0.43, and Innovative Drugs the one healthcare pocket with a +15.4% 20d bounce. It carries the most global/biotech beta in the book, so I keep it at the reduced ~10% I already trimmed to rather than add into strength; the 20d momentum turn is intact but I decline to press duration risk while the dollar is firm.",
+          "rationale": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure (Innovative Drugs the one healthcare pocket with a +15.2% 20d bounce) but it carries the MOST global/biotech beta in the book — and that is exactly the beta I want less of tonight. The prior justification (A-shares as haven) broke: Shanghai is now -1.26% and joining the selloff while VIX +3.97% and KOSPI -4.91%. I execute the de-risk and cut it from ~11.6% to ~7% — keeping the intact 20d momentum turn while materially reducing the single name most exposed to global-risk-off spillover into A-shares at tomorrow's open. This trim is the main source of the cash raise.",
           "opened_at": "2026-07-01T01:35:03.767703+00:00",
           "held_days": 7,
           "cost_basis": 36.7084,
@@ -3684,8 +3608,8 @@
           "unrealized_pnl": -3507.09,
           "unrealized_pct": -2.99,
           "thesis_full": {
-            "summary": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure — buy-board UPTREND, full entry, alpha 0.43, and Innovative Drugs the one healthcare pocket with a +15.4% 20d bounce. It carries the most global/biotech beta in the book, so I keep it at the reduced ~10% I already trimmed to rather than add into strength; the 20d momentum turn is intact but I decline to press duration risk while the dollar is firm.",
-            "why_now": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure — buy-board UPTREND, full entry, alpha 0.43, and Innovative Drugs the one healthcare pocket with a +15.4% 20d bounce. It carries the most global/biotech beta in the book, so I keep it at the reduced ~10% I already trimmed to rather than add into strength; the 20d momentum turn is intact but I decline to press duration risk while the dollar is firm.",
+            "summary": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure (Innovative Drugs the one healthcare pocket with a +15.2% 20d bounce) but it carries the MOST global/biotech beta in the book — and that is exactly the beta I want less of tonight. The prior justification (A-shares as haven) broke: Shanghai is now -1.26% and joining the selloff while VIX +3.97% and KOSPI -4.91%. I execute the de-risk and cut it from ~11.6% to ~7% — keeping the intact 20d momentum turn while materially reducing the single name most exposed to global-risk-off spillover into A-shares at tomorrow's open. This trim is the main source of the cash raise.",
+            "why_now": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure (Innovative Drugs the one healthcare pocket with a +15.2% 20d bounce) but it carries the MOST global/biotech beta in the book — and that is exactly the beta I want less of tonight. The prior justification (A-shares as haven) broke: Shanghai is now -1.26% and joining the selloff while VIX +3.97% and KOSPI -4.91%. I execute the de-risk and cut it from ~11.6% to ~7% — keeping the intact 20d momentum turn while materially reducing the single name most exposed to global-risk-off spillover into A-shares at tomorrow's open. This trim is the main source of the cash raise.",
             "bull": [],
             "bear": []
           }
@@ -3698,7 +3622,7 @@
           "weight": 0.1039,
           "verdict": "hold",
           "conviction": "high",
-          "rationale": "京新药业 (002020.SZ) is the book's clearest winner (+8.1% at CNY14.15) and ballast of the generics/API pharma tilt. Low-confidence Stagflation with collapsing inflation (disinflation, per the brief) is precisely where defensive pharma with zero tech-complex beta earns its keep. Confirmation over prediction: nothing in the desk read argues to take a working trend off, so I let the winner run near 11% with the time-stop intact.",
+          "rationale": "京新药业 (002020.SZ) is the book's clearest winner (+8.05% at CNY14.15) and the core of the generics/API-pharma tilt. The brief's key contradiction — Stagflation quad but the inflation basket collapsing (-18.9% 20d, i.e. disinflation) — is exactly where defensive pharma with zero tech-complex beta earns its keep, and it has negligible sensitivity to tonight's global tape. Confirmation over prediction: I let the winner run near 10% with the time-stop intact; nothing in the overnight tape argues to touch a green, domestic, contagion-free name.",
           "opened_at": "2026-07-01T01:35:03.767703+00:00",
           "held_days": 7,
           "cost_basis": 13.0961,
@@ -3707,8 +3631,8 @@
           "unrealized_pnl": 7581.54,
           "unrealized_pct": 8.05,
           "thesis_full": {
-            "summary": "京新药业 (002020.SZ) is the book's clearest winner (+8.1% at CNY14.15) and ballast of the generics/API pharma tilt. Low-confidence Stagflation with collapsing inflation (disinflation, per the brief) is precisely where defensive pharma with zero tech-complex beta earns its keep. Confirmation over prediction: nothing in the desk read argues to take a working trend off, so I let the winner run near 11% with the time-stop intact.",
-            "why_now": "京新药业 (002020.SZ) is the book's clearest winner (+8.1% at CNY14.15) and ballast of the generics/API pharma tilt. Low-confidence Stagflation with collapsing inflation (disinflation, per the brief) is precisely where defensive pharma with zero tech-complex beta earns its keep. Confirmation over prediction: nothing in the desk read argues to take a working trend off, so I let the winner run near 11% with the time-stop intact.",
+            "summary": "京新药业 (002020.SZ) is the book's clearest winner (+8.05% at CNY14.15) and the core of the generics/API-pharma tilt. The brief's key contradiction — Stagflation quad but the inflation basket collapsing (-18.9% 20d, i.e. disinflation) — is exactly where defensive pharma with zero tech-complex beta earns its keep, and it has negligible sensitivity to tonight's global tape. Confirmation over prediction: I let the winner run near 10% with the time-stop intact; nothing in the overnight tape argues to touch a green, domestic, contagion-free name.",
+            "why_now": "京新药业 (002020.SZ) is the book's clearest winner (+8.05% at CNY14.15) and the core of the generics/API-pharma tilt. The brief's key contradiction — Stagflation quad but the inflation basket collapsing (-18.9% 20d, i.e. disinflation) — is exactly where defensive pharma with zero tech-complex beta earns its keep, and it has negligible sensitivity to tonight's global tape. Confirmation over prediction: I let the winner run near 10% with the time-stop intact; nothing in the overnight tape argues to touch a green, domestic, contagion-free name.",
             "bull": [],
             "bear": []
           }
@@ -3721,7 +3645,7 @@
           "weight": 0.078,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "三七互娱 (002555.SZ) is a confirmed non-pharma diversifier — mobile gaming, cash-generative, flagged BOTTOMING with conviction 68 and alpha 0.85 intact. Media/Comm-services is the weakest sector RS, which is exactly where the desk's mean-reversion edge lives: a confirmed base in a crushed sleeve, not a momentum chase. I hold near 8% for real diversification away from the pharma concentration without leaning in hard.",
+          "rationale": "三七互娱 (002555.SZ) is my confirmed non-pharma diversifier — mobile gaming, cash-generative, flagged BOTTOMING with conviction ~68. Media is the weakest sector RS (mom_60d -23.9%), which is where the desk's mean-reversion edge lives: a confirmed base in a crushed, domestic-demand sleeve with negligible sensitivity to tonight's global tape. It diversifies away from the pharma concentration and its return driver is domestic, not the global vol shock. I hold near 7.5%.",
           "opened_at": "2026-07-06T01:35:06.122811+00:00",
           "held_days": 2,
           "cost_basis": 19.41,
@@ -3730,8 +3654,8 @@
           "unrealized_pnl": -3070.5,
           "unrealized_pct": -3.86,
           "thesis_full": {
-            "summary": "三七互娱 (002555.SZ) is a confirmed non-pharma diversifier — mobile gaming, cash-generative, flagged BOTTOMING with conviction 68 and alpha 0.85 intact. Media/Comm-services is the weakest sector RS, which is exactly where the desk's mean-reversion edge lives: a confirmed base in a crushed sleeve, not a momentum chase. I hold near 8% for real diversification away from the pharma concentration without leaning in hard.",
-            "why_now": "三七互娱 (002555.SZ) is a confirmed non-pharma diversifier — mobile gaming, cash-generative, flagged BOTTOMING with conviction 68 and alpha 0.85 intact. Media/Comm-services is the weakest sector RS, which is exactly where the desk's mean-reversion edge lives: a confirmed base in a crushed sleeve, not a momentum chase. I hold near 8% for real diversification away from the pharma concentration without leaning in hard.",
+            "summary": "三七互娱 (002555.SZ) is my confirmed non-pharma diversifier — mobile gaming, cash-generative, flagged BOTTOMING with conviction ~68. Media is the weakest sector RS (mom_60d -23.9%), which is where the desk's mean-reversion edge lives: a confirmed base in a crushed, domestic-demand sleeve with negligible sensitivity to tonight's global tape. It diversifies away from the pharma concentration and its return driver is domestic, not the global vol shock. I hold near 7.5%.",
+            "why_now": "三七互娱 (002555.SZ) is my confirmed non-pharma diversifier — mobile gaming, cash-generative, flagged BOTTOMING with conviction ~68. Media is the weakest sector RS (mom_60d -23.9%), which is where the desk's mean-reversion edge lives: a confirmed base in a crushed, domestic-demand sleeve with negligible sensitivity to tonight's global tape. It diversifies away from the pharma concentration and its return driver is domestic, not the global vol shock. I hold near 7.5%.",
             "bull": [],
             "bear": []
           }
@@ -3744,7 +3668,7 @@
           "weight": 0.0606,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, alpha 0.75, roughly flat for me at CNY10.48. Still early in the base, so I hold near 7% as measured defensive exposure rather than press; I let further cycle confirmation earn any additional size.",
+          "rationale": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, roughly flat for me at CNY10.48. Still early in the base, so on a night where risk-off has broadened into A-shares I hold near 6% as measured defensive exposure rather than press — I let further cycle confirmation, not a leveraged bet into a shaky global tape, earn any additional size.",
           "opened_at": "2026-07-06T01:35:06.122811+00:00",
           "held_days": 2,
           "cost_basis": 10.53,
@@ -3753,8 +3677,8 @@
           "unrealized_pnl": -283.0,
           "unrealized_pct": -0.47,
           "thesis_full": {
-            "summary": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, alpha 0.75, roughly flat for me at CNY10.48. Still early in the base, so I hold near 7% as measured defensive exposure rather than press; I let further cycle confirmation earn any additional size.",
-            "why_now": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, alpha 0.75, roughly flat for me at CNY10.48. Still early in the base, so I hold near 7% as measured defensive exposure rather than press; I let further cycle confirmation earn any additional size.",
+            "summary": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, roughly flat for me at CNY10.48. Still early in the base, so on a night where risk-off has broadened into A-shares I hold near 6% as measured defensive exposure rather than press — I let further cycle confirmation, not a leveraged bet into a shaky global tape, earn any additional size.",
+            "why_now": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, roughly flat for me at CNY10.48. Still early in the base, so on a night where risk-off has broadened into A-shares I hold near 6% as measured defensive exposure rather than press — I let further cycle confirmation, not a leveraged bet into a shaky global tape, earn any additional size.",
             "bull": [],
             "bear": []
           }
@@ -3766,8 +3690,8 @@
           "venue": "A-share",
           "weight": 0.052,
           "verdict": "hold",
-          "conviction": "high",
-          "rationale": "一品红 (300723.SZ) is the highest-conviction confirmed name on the board — BOTTOMING with 'imminent' urgency, conviction 76 (HIGH band), alpha 0.68, entry intact half. Down for me (CNY37.69) but BOTTOMING means the base isn't expected green yet and the gate is open, so I add modestly (from ~5% to ~8%) into a still-intact entry on the single best-corroborated healthcare setup — letting cycle confirmation, not a Western tape, earn the size.",
+          "conviction": "medium",
+          "rationale": "一品红 (300723.SZ) remains a well-corroborated healthcare setup — BOTTOMING, high conviction, entry intact — but it is my worst mark (-6.94%). My earlier plan to add from ~5% to ~8% stays CANCELLED: leaning into a bottoming name the same night global vol spikes and A-shares themselves turn lower (Shanghai -1.26%) is the wrong reflex. I keep the ~5% position, decline the size, and let it prove the base before I add.",
           "opened_at": "2026-07-07T01:35:00.490332+00:00",
           "held_days": 1,
           "cost_basis": 40.5,
@@ -3776,8 +3700,8 @@
           "unrealized_pnl": -3796.31,
           "unrealized_pct": -6.94,
           "thesis_full": {
-            "summary": "一品红 (300723.SZ) is the highest-conviction confirmed name on the board — BOTTOMING with 'imminent' urgency, conviction 76 (HIGH band), alpha 0.68, entry intact half. Down for me (CNY37.69) but BOTTOMING means the base isn't expected green yet and the gate is open, so I add modestly (from ~5% to ~8%) into a still-intact entry on the single best-corroborated healthcare setup — letting cycle confirmation, not a Western tape, earn the size.",
-            "why_now": "一品红 (300723.SZ) is the highest-conviction confirmed name on the board — BOTTOMING with 'imminent' urgency, conviction 76 (HIGH band), alpha 0.68, entry intact half. Down for me (CNY37.69) but BOTTOMING means the base isn't expected green yet and the gate is open, so I add modestly (from ~5% to ~8%) into a still-intact entry on the single best-corroborated healthcare setup — letting cycle confirmation, not a Western tape, earn the size.",
+            "summary": "一品红 (300723.SZ) remains a well-corroborated healthcare setup — BOTTOMING, high conviction, entry intact — but it is my worst mark (-6.94%). My earlier plan to add from ~5% to ~8% stays CANCELLED: leaning into a bottoming name the same night global vol spikes and A-shares themselves turn lower (Shanghai -1.26%) is the wrong reflex. I keep the ~5% position, decline the size, and let it prove the base before I add.",
+            "why_now": "一品红 (300723.SZ) remains a well-corroborated healthcare setup — BOTTOMING, high conviction, entry intact — but it is my worst mark (-6.94%). My earlier plan to add from ~5% to ~8% stays CANCELLED: leaning into a bottoming name the same night global vol spikes and A-shares themselves turn lower (Shanghai -1.26%) is the wrong reflex. I keep the ~5% position, decline the size, and let it prove the base before I add.",
             "bull": [],
             "bear": []
           }
@@ -3786,9 +3710,9 @@
       "decisions": [
         {
           "subject": "China book",
-          "lean": "China book runs a confirmed, tech-decoupled defensive posture into a low-confidence, divergent regime (Q3 Stagflation conf 0.185, pending Q2; RoRo no-consensus; Fear-Euphoria neutral). The desk's robust prior is mean-reversion — the semis/tech RS leaders (+61% 60d) are extended and to be avoided, and the inflation basket's -18.9% collapse says disinflation, not stagflation. So I keep the working defensive alpha core — 振德医疗 (603301.SS, 14%) and 京新药业 (002020.SS, 11%) as green anchors, 药石科技 (300725.SZ, 10%) as trimmed CXO exposure, plus the confirmed-but-early BOTTOMING pharma 一品红 (300723.SZ, 8%, highest conviction 76, topped up) and 海正药业 (600267.SS, 7%). For diversification away from pharma concentration I hold 三七互娱 (002555.SZ, 8%) and open a starter in 中国电影 (600977.SS, 7%), the board's highest-alpha BOTTOMING name — both confirmed mean-reversion setups in the crushed Media sleeve where the desk's edge is strongest. ~65% invested, ~35% cash held as optionality into Wed's CPI/PPI (Jul 9) and credit/TSF (Jul 10), which will confirm or deny the stagflation-vs-disinflation call and the PBoC easing transmission.",
-          "thesis": "No outright exits — every prior holding was a confirmed setup with an intact thesis. Net deployment of ~9 points of cash: topped 一品红 (300723.SZ) from ~5% to ~8% on its HIGH-conviction intact entry, and opened a ~7% starter in 中国电影 (600977.SS). Cash cut from ~44% to ~35%.",
-          "logged_at": "2026-07-08T08:02:26.971087+00:00"
+          "lean": "Overnight review for 2026-07-08. The single decisive change: the risk-off that was global-ex-China last read has broadened INTO A-shares tonight — Shanghai -1.26% (was -0.49%), Hang Seng -0.51% — against a severe global tape (KOSPI -4.91%, Nikkei -2.12%, DAX -2.23%, Euro Stoxx -1.82%, FTSE -1.66%, VIX +3.97%, Dow fut -1.12%, Russell fut -0.95%). So the 'A-shares are the haven' premise that justified my prior weights is broken. Two mitigants stop me from over-reacting: the US Dollar is soft (-0.16%), which relieves the CNY-outflow contagion channel the desk brief names as the primary A-share transmission route, and Shanghai's decline is orderly, not a gap-crash. Book response, consistent with the ROTATE_DEFENSIVE shadow posture (offense budget 0.43): a TARGETED de-risk, not a rewrite. I already sit ~44% cash in overwhelmingly tech-decoupled, domestic-demand defensives, so the structure is right for this tape. I cut 药石科技 (300725.SZ) — my highest global/biotech-beta name — from ~11.6% to ~7%, raising cash to ~49.5%; I hold the defensive winners 振德医疗 (603301.SS, +3.6%) and 京新药业 (002020.SZ, +8.05%); I hold the domestic diversifier 三七互娱 (002555.SZ) and the bottoming defensives 海正药业 (600267.SS) and 一品红 (300723.SS); and I keep the previously-cancelled add to 一品红 (300723.SZ) cancelled. Net gross ~50.5%, cash ~49.5% — leaning modestly more defensive by cutting the one name that would bleed most on a VIX-spike, KOSPI-crash open. Settles at the open, not now.",
+          "thesis": "No full exits. Single material trim: 药石科技 (300725.SZ) reduced from ~11.6% to ~7% — the book's highest global/biotech-beta name, cut into a VIX-spike + KOSPI-crash overnight where A-shares themselves have turned lower (Shanghai -1.26%). Proceeds raise cash from ~44% to ~49.5%. Previously-flagged add to 一品红 (300723.SZ, ~5%→8%) remains cancelled.",
+          "logged_at": "2026-07-08T20:22:20.362073+00:00"
         }
       ],
       "pending_orders": [],
@@ -3807,7 +3731,7 @@
         "cash": 432024.13,
         "invested": 547301.34,
         "total_return_pct": -2.0675,
-        "vs_spy_pct": 0.1008,
+        "vs_spy_pct": -2.7598,
         "benchmark": "FXI",
         "day_change_pct": -1.4444,
         "max_drawdown_pct": -3.2056,
@@ -4374,16 +4298,16 @@
       "market_status": {
         "open": false,
         "venue": "A-share (Shanghai/Shenzhen)",
-        "asof": "2026-07-08T17:02:36.428516+08:00",
-        "asof_cst": "2026-07-08T17:02:36.428516+08:00",
+        "asof": "2026-07-09T04:31:31.168955+08:00",
+        "asof_cst": "2026-07-09T04:31:31.168955+08:00",
         "trading_day": true,
         "holiday": false,
         "next_open": "2026-07-09T09:30:00+08:00",
         "next_open_day": "2026-07-09",
-        "prev_trading_day": "2026-07-07"
+        "prev_trading_day": "2026-07-08"
       },
-      "gross": 0.3895,
-      "cash": 0.6105,
+      "gross": 0.383,
+      "cash": 0.617,
       "regime": {
         "quad": "Q3",
         "quad_name": "Stagflation",
@@ -4396,20 +4320,20 @@
           "name": "China Life",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1408,
+          "weight": 0.1386,
           "verdict": "hold",
-          "conviction": "high",
-          "rationale": "China Life (2628.HK) stays my largest position and ballast — a rate-sensitive insurer sitting in the confirmed HK Financials RS-leader group (~92.9th percentile) and directly geared to the building PBoC easing impulse, with a defensive dividend and zero exposure to the US-tech/USD-strength channel. I trim it modestly from ~14.1% to 13% only to make room for a broader financials sleeve, not because conviction fell. This is precisely the decoupled HK-financials strength the desk flags, held near full defensive size.",
+          "conviction": "medium",
+          "rationale": "China Life (2628.HK) stays my largest position and ballast. It is a rate-sensitive insurer inside the HK-Financials RS-leadership group (~92.9th percentile), geared to the building (if not-yet-transmitted) PBoC easing impulse, with defensive dividend support and zero exposure to the US-tech/USD channel driving tonight's risk-off. It is on the desk HK buy board tonight (BOTTOMING, constructive). On a night when Hang Seng is the most resilient major (-0.51%) and HK financials lead, this is the cleanest decoupled HK-China beta to hold; I keep it at ~14%.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 15,
+          "held_days": 16,
           "cost_basis": 27.9125,
-          "current_price": 29.06,
-          "market_value": 138438.33,
-          "unrealized_pnl": 5466.77,
-          "unrealized_pct": 4.11,
+          "current_price": 28.3,
+          "market_value": 134817.78,
+          "unrealized_pnl": 1846.22,
+          "unrealized_pct": 1.39,
           "thesis_full": {
-            "summary": "China Life (2628.HK) stays my largest position and ballast — a rate-sensitive insurer sitting in the confirmed HK Financials RS-leader group (~92.9th percentile) and directly geared to the building PBoC easing impulse, with a defensive dividend and zero exposure to the US-tech/USD-strength channel. I trim it modestly from ~14.1% to 13% only to make room for a broader financials sleeve, not because conviction fell. This is precisely the decoupled HK-financials strength the desk flags, held near full defensive size.",
-            "why_now": "China Life (2628.HK) stays my largest position and ballast — a rate-sensitive insurer sitting in the confirmed HK Financials RS-leader group (~92.9th percentile) and directly geared to the building PBoC easing impulse, with a defensive dividend and zero exposure to the US-tech/USD-strength channel. I trim it modestly from ~14.1% to 13% only to make room for a broader financials sleeve, not because conviction fell. This is precisely the decoupled HK-financials strength the desk flags, held near full defensive size.",
+            "summary": "China Life (2628.HK) stays my largest position and ballast. It is a rate-sensitive insurer inside the HK-Financials RS-leadership group (~92.9th percentile), geared to the building (if not-yet-transmitted) PBoC easing impulse, with defensive dividend support and zero exposure to the US-tech/USD channel driving tonight's risk-off. It is on the desk HK buy board tonight (BOTTOMING, constructive). On a night when Hang Seng is the most resilient major (-0.51%) and HK financials lead, this is the cleanest decoupled HK-China beta to hold; I keep it at ~14%.",
+            "why_now": "China Life (2628.HK) stays my largest position and ballast. It is a rate-sensitive insurer inside the HK-Financials RS-leadership group (~92.9th percentile), geared to the building (if not-yet-transmitted) PBoC easing impulse, with defensive dividend support and zero exposure to the US-tech/USD channel driving tonight's risk-off. It is on the desk HK buy board tonight (BOTTOMING, constructive). On a night when Hang Seng is the most resilient major (-0.51%) and HK financials lead, this is the cleanest decoupled HK-China beta to hold; I keep it at ~14%.",
             "bull": [],
             "bear": []
           }
@@ -4419,20 +4343,20 @@
           "name": "Tencent",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0976,
+          "weight": 0.095,
           "verdict": "hold",
-          "conviction": "high",
-          "rationale": "Tencent (0700.HK) is my quality-tech offense anchor and the top FXI constituent, so being underweight it is pure tracking-error risk against my benchmark. With the acute tech-led risk-off night now behind us, I bump it back from ~9.8% to 12% — a franchise name I hold through drawdowns and the cleanest way to participate in any stabilization of the global tech/USD impulse. It carries the most beta of my book, which is why it is sized as an anchor rather than a maximum bet.",
+          "conviction": "medium",
+          "rationale": "Tencent (0700.HK) remains my quality-tech offense anchor and the top FXI constituent, so I hold it for tracking-error control — but it carries the most beta in the book, and with VIX +4.96%, a global risk-off in force and the 10Y backing up, I trim it from ~9.5% to 8% to shave beta into a red open. Nasdaq futures are actually flat (+0.04%), so tech is not the epicenter and I do not want to abandon the FXI anchor; this is a measured shave, not a de-risk to zero.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 15,
+          "held_days": 16,
           "cost_basis": 436.493,
-          "current_price": 478.8,
-          "market_value": 95967.68,
-          "unrealized_pnl": 8479.75,
-          "unrealized_pct": 9.69,
+          "current_price": 461.2,
+          "market_value": 92440.05,
+          "unrealized_pnl": 4952.12,
+          "unrealized_pct": 5.66,
           "thesis_full": {
-            "summary": "Tencent (0700.HK) is my quality-tech offense anchor and the top FXI constituent, so being underweight it is pure tracking-error risk against my benchmark. With the acute tech-led risk-off night now behind us, I bump it back from ~9.8% to 12% — a franchise name I hold through drawdowns and the cleanest way to participate in any stabilization of the global tech/USD impulse. It carries the most beta of my book, which is why it is sized as an anchor rather than a maximum bet.",
-            "why_now": "Tencent (0700.HK) is my quality-tech offense anchor and the top FXI constituent, so being underweight it is pure tracking-error risk against my benchmark. With the acute tech-led risk-off night now behind us, I bump it back from ~9.8% to 12% — a franchise name I hold through drawdowns and the cleanest way to participate in any stabilization of the global tech/USD impulse. It carries the most beta of my book, which is why it is sized as an anchor rather than a maximum bet.",
+            "summary": "Tencent (0700.HK) remains my quality-tech offense anchor and the top FXI constituent, so I hold it for tracking-error control — but it carries the most beta in the book, and with VIX +4.96%, a global risk-off in force and the 10Y backing up, I trim it from ~9.5% to 8% to shave beta into a red open. Nasdaq futures are actually flat (+0.04%), so tech is not the epicenter and I do not want to abandon the FXI anchor; this is a measured shave, not a de-risk to zero.",
+            "why_now": "Tencent (0700.HK) remains my quality-tech offense anchor and the top FXI constituent, so I hold it for tracking-error control — but it carries the most beta in the book, and with VIX +4.96%, a global risk-off in force and the 10Y backing up, I trim it from ~9.5% to 8% to shave beta into a red open. Nasdaq futures are actually flat (+0.04%), so tech is not the epicenter and I do not want to abandon the FXI anchor; this is a measured shave, not a de-risk to zero.",
             "bull": [],
             "bear": []
           }
@@ -4442,20 +4366,20 @@
           "name": "CSPC Pharmaceutical",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0545,
+          "weight": 0.0553,
           "verdict": "hold",
-          "conviction": "high",
-          "rationale": "CSPC Pharmaceutical (1093.HK) is my best-performing holding (+12%+ unrealized), riding the innovative-drugs momentum theme. Healthcare/pharma is a defensive-growth pocket with low correlation to the global tech-led risk-off and no exposure to the HKD-peg/USD channel. I let the winner run near current size — adding conviction weight but not chasing into strength during a low-confidence, risk-off tape.",
+          "conviction": "medium",
+          "rationale": "CSPC Pharmaceutical (1093.HK) is my best performer (+12.9% unrealized) on the innovative-drugs theme. Healthcare/pharma is a defensive-growth pocket with low correlation to tonight's tech/cyclical-led global risk-off and no HKD-peg/USD sensitivity. I hold it near current size (~5.5%) — letting a decorrelated winner run without chasing it into a stressed tape.",
           "opened_at": "2026-07-01T01:35:06.770648+00:00",
           "held_days": 7,
           "cost_basis": 6.97,
-          "current_price": 7.84,
-          "market_value": 53578.56,
-          "unrealized_pnl": 5945.58,
-          "unrealized_pct": 12.48,
+          "current_price": 7.87,
+          "market_value": 53783.58,
+          "unrealized_pnl": 6150.6,
+          "unrealized_pct": 12.91,
           "thesis_full": {
-            "summary": "CSPC Pharmaceutical (1093.HK) is my best-performing holding (+12%+ unrealized), riding the innovative-drugs momentum theme. Healthcare/pharma is a defensive-growth pocket with low correlation to the global tech-led risk-off and no exposure to the HKD-peg/USD channel. I let the winner run near current size — adding conviction weight but not chasing into strength during a low-confidence, risk-off tape.",
-            "why_now": "CSPC Pharmaceutical (1093.HK) is my best-performing holding (+12%+ unrealized), riding the innovative-drugs momentum theme. Healthcare/pharma is a defensive-growth pocket with low correlation to the global tech-led risk-off and no exposure to the HKD-peg/USD channel. I let the winner run near current size — adding conviction weight but not chasing into strength during a low-confidence, risk-off tape.",
+            "summary": "CSPC Pharmaceutical (1093.HK) is my best performer (+12.9% unrealized) on the innovative-drugs theme. Healthcare/pharma is a defensive-growth pocket with low correlation to tonight's tech/cyclical-led global risk-off and no HKD-peg/USD sensitivity. I hold it near current size (~5.5%) — letting a decorrelated winner run without chasing it into a stressed tape.",
+            "why_now": "CSPC Pharmaceutical (1093.HK) is my best performer (+12.9% unrealized) on the innovative-drugs theme. Healthcare/pharma is a defensive-growth pocket with low correlation to tonight's tech/cyclical-led global risk-off and no HKD-peg/USD sensitivity. I hold it near current size (~5.5%) — letting a decorrelated winner run without chasing it into a stressed tape.",
             "bull": [],
             "bear": []
           }
@@ -4465,20 +4389,20 @@
           "name": "ICBC",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0363,
+          "weight": 0.0349,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "ICBC (1398.HK) is the second leg of the SOE-bank dividend-defense sleeve alongside CCB. Mainland bank RS is weak and it has been roughly flat/underwater, but mega-cap SOE banks provide high defensive dividend yield in a risk-off, sit within the HK-financials leadership the desk favors, and it is an FXI constituent. Held at a modest 6% as defensive dividend carry.",
+          "conviction": "low",
+          "rationale": "ICBC (1398.HK) is the first leg of the SOE-bank dividend-defense sleeve. Mainland bank RS is weak, but mega-cap SOE banks provide high, stable dividend carry in a risk-off, sit within the HK-Financials leadership the desk favors, and are FXI constituents that reduce benchmark tracking error. Held at ~3.5% as defensive carry.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 15,
+          "held_days": 16,
           "cost_basis": 6.85,
-          "current_price": 6.82,
-          "market_value": 35735.6,
-          "unrealized_pnl": -157.19,
-          "unrealized_pct": -0.44,
+          "current_price": 6.49,
+          "market_value": 34006.46,
+          "unrealized_pnl": -1886.34,
+          "unrealized_pct": -5.26,
           "thesis_full": {
-            "summary": "ICBC (1398.HK) is the second leg of the SOE-bank dividend-defense sleeve alongside CCB. Mainland bank RS is weak and it has been roughly flat/underwater, but mega-cap SOE banks provide high defensive dividend yield in a risk-off, sit within the HK-financials leadership the desk favors, and it is an FXI constituent. Held at a modest 6% as defensive dividend carry.",
-            "why_now": "ICBC (1398.HK) is the second leg of the SOE-bank dividend-defense sleeve alongside CCB. Mainland bank RS is weak and it has been roughly flat/underwater, but mega-cap SOE banks provide high defensive dividend yield in a risk-off, sit within the HK-financials leadership the desk favors, and it is an FXI constituent. Held at a modest 6% as defensive dividend carry.",
+            "summary": "ICBC (1398.HK) is the first leg of the SOE-bank dividend-defense sleeve. Mainland bank RS is weak, but mega-cap SOE banks provide high, stable dividend carry in a risk-off, sit within the HK-Financials leadership the desk favors, and are FXI constituents that reduce benchmark tracking error. Held at ~3.5% as defensive carry.",
+            "why_now": "ICBC (1398.HK) is the first leg of the SOE-bank dividend-defense sleeve. Mainland bank RS is weak, but mega-cap SOE banks provide high, stable dividend carry in a risk-off, sit within the HK-Financials leadership the desk favors, and are FXI constituents that reduce benchmark tracking error. Held at ~3.5% as defensive carry.",
             "bull": [],
             "bear": []
           }
@@ -4488,38 +4412,43 @@
           "name": "Bank of China",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.031,
+          "weight": 0.0297,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "low",
+          "rationale": "Bank of China (3988.HK) is the second leg of the SOE-bank dividend-defense sleeve alongside ICBC. Modestly underwater, but the thesis is unchanged: high, stable dividend yield in a risk-off, membership in the HK-Financials leadership group, and FXI-constituent tracking-error reduction. Held at ~3% as defensive carry through the drawdown.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 15,
+          "held_days": 16,
           "cost_basis": 5.23,
-          "current_price": 5.09,
-          "market_value": 30512.49,
-          "unrealized_pnl": -839.24,
-          "unrealized_pct": -2.68,
-          "thesis_full": null
+          "current_price": 4.82,
+          "market_value": 28893.95,
+          "unrealized_pnl": -2457.78,
+          "unrealized_pct": -7.84,
+          "thesis_full": {
+            "summary": "Bank of China (3988.HK) is the second leg of the SOE-bank dividend-defense sleeve alongside ICBC. Modestly underwater, but the thesis is unchanged: high, stable dividend yield in a risk-off, membership in the HK-Financials leadership group, and FXI-constituent tracking-error reduction. Held at ~3% as defensive carry through the drawdown.",
+            "why_now": "Bank of China (3988.HK) is the second leg of the SOE-bank dividend-defense sleeve alongside ICBC. Modestly underwater, but the thesis is unchanged: high, stable dividend yield in a risk-off, membership in the HK-Financials leadership group, and FXI-constituent tracking-error reduction. Held at ~3% as defensive carry through the drawdown.",
+            "bull": [],
+            "bear": []
+          }
         },
         {
           "ticker": "0006.HK",
           "name": "Power Assets",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0293,
+          "weight": 0.0295,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Power Assets (0006.HK) is the single HK name still on the desk buy board ('nearing a low') — a low-beta, high-dividend utility that is exactly the ballast to hold with the USD firm and the tape risk-off. It is insulated from both the tech selloff and peg pressure. Held at 5% as defensive, low-beta core, sized up slightly as I redeploy cash into a fuller book.",
+          "conviction": "low",
+          "rationale": "Power Assets (0006.HK) is a low-beta, high-dividend HK utility — precisely the ballast to hold with global vol rising (VIX +4.96%) and Europe/Japan/Korea tape deeply red. It is insulated from the global tech/cyclical selloff and from HKD-peg pressure (the USD is soft tonight in any case). A rising 10Y is a mild valuation headwind, but its domestic, defensive cashflow profile keeps it as the anchor of the book's defensive base. Held at ~3%.",
           "opened_at": "2026-07-03T01:35:00.962739+00:00",
           "held_days": 5,
           "cost_basis": 56.55,
-          "current_price": 56.7,
-          "market_value": 28860.3,
-          "unrealized_pnl": 76.35,
-          "unrealized_pct": 0.27,
+          "current_price": 56.3,
+          "market_value": 28656.7,
+          "unrealized_pnl": -127.25,
+          "unrealized_pct": -0.44,
           "thesis_full": {
-            "summary": "Power Assets (0006.HK) is the single HK name still on the desk buy board ('nearing a low') — a low-beta, high-dividend utility that is exactly the ballast to hold with the USD firm and the tape risk-off. It is insulated from both the tech selloff and peg pressure. Held at 5% as defensive, low-beta core, sized up slightly as I redeploy cash into a fuller book.",
-            "why_now": "Power Assets (0006.HK) is the single HK name still on the desk buy board ('nearing a low') — a low-beta, high-dividend utility that is exactly the ballast to hold with the USD firm and the tape risk-off. It is insulated from both the tech selloff and peg pressure. Held at 5% as defensive, low-beta core, sized up slightly as I redeploy cash into a fuller book.",
+            "summary": "Power Assets (0006.HK) is a low-beta, high-dividend HK utility — precisely the ballast to hold with global vol rising (VIX +4.96%) and Europe/Japan/Korea tape deeply red. It is insulated from the global tech/cyclical selloff and from HKD-peg pressure (the USD is soft tonight in any case). A rising 10Y is a mild valuation headwind, but its domestic, defensive cashflow profile keeps it as the anchor of the book's defensive base. Held at ~3%.",
+            "why_now": "Power Assets (0006.HK) is a low-beta, high-dividend HK utility — precisely the ballast to hold with global vol rising (VIX +4.96%) and Europe/Japan/Korea tape deeply red. It is insulated from the global tech/cyclical selloff and from HKD-peg pressure (the USD is soft tonight in any case). A rising 10Y is a mild valuation headwind, but its domestic, defensive cashflow profile keeps it as the anchor of the book's defensive base. Held at ~3%.",
             "bull": [],
             "bear": []
           }
@@ -4528,9 +4457,9 @@
       "decisions": [
         {
           "subject": "China book",
-          "lean": "Today's decision corrects a structural flaw: the book was 61% cash against an FXI benchmark — a massive uncompensated passive short-equity bet left over from one tech-led risk-off night that has since passed. I redeploy dry powder to cut cash to ~22%, keeping a real defensive buffer because China-regime confidence is genuinely low (0.185) and the backdrop is growth-scare/risk-off with a USD headwind. The book leans into the one thing the desk actually confirms — HK Financials as the RS leader (~92.9th pctile), geared to the building PBoC easing impulse and the pending Q3→Q2 regime shift toward recovery: China Life (2628.HK), Ping An (2318.HK), China Construction Bank (0939.HK) and ICBC (1398.HK) form a ~36% financials sleeve. I add the FXI-core names I was glaringly missing to kill tracking error — Alibaba (9988.HK) for tech breadth and China Mobile (0941.HK) as high-dividend, low-beta risk-off ballast — while Tencent (0700.HK) is bumped back to a 12% quality-tech anchor. Defensive ballast is rounded out by my innovative-drugs winner CSPC (1093.HK) and utility Power Assets (0006.HK). I exited Bank of China (3988.HK), my worst and lowest-conviction holding, consolidating SOE-bank quality into CCB. Net: a diversified, FXI-aware book tilted to confirmed financials leadership with measured tech participation and ~22% dry powder.",
-          "thesis": "Fully exited Bank of China (3988.HK) — my worst-performing, lowest-conviction holding — consolidating the SOE-bank dividend sleeve into the higher-quality China Construction Bank (0939.HK). Trimmed China Life (2628.HK) slightly (~14.1%→13%) to make room for a broader financials sleeve. Deployed roughly 39% of NAV out of cash (61%→~22%) into FXI-core financials, telecom and tech to reduce a large passive benchmark underweight.",
-          "logged_at": "2026-07-08T09:02:36.427893+00:00"
+          "lean": "OVERNIGHT REVIEW hold-with-minor-de-risk. The live tape is a broad global risk-off led by Korea (KOSPI -4.91%), Europe (DAX -2.23%, Euro Stoxx -1.82%, FTSE -1.66%) and Japan (Nikkei -2.12%), with VIX +4.96% and the US 10Y +0.88% — but the epicenter is NOT China: Hang Seng is the most resilient major at -0.51%, Shanghai -1.26%, and the US Dollar is soft (-0.13%), removing the USD-squeeze that would normally hurt HK. My book already sits ~61% cash with a defensive spine (insurer + SOE-bank dividend carry + utility + decorrelated pharma) and one HK-listed tech anchor, so it is structurally built for this tape. Rather than lurch to an even more extreme underweight vs FXI on a night when China is the relative haven, I honor the ROTATE_DEFENSIVE posture by shaving my highest-beta name (Tencent 0006—Tencent 0700.HK) into the open and holding the defensive ballast unchanged. Net invested drops ~39%→~37%; the large cash buffer remains the primary shock absorber.",
+          "thesis": "No outright exits. Only trimmed Tencent (0700.HK) from ~9.5% to 8% to shave the book's highest-beta exposure into a risk-off open; the ~1.5pt released goes to cash. All defensive holdings held at prior sizes.",
+          "logged_at": "2026-07-08T20:31:31.168346+00:00"
         }
       ],
       "pending_orders": [],
@@ -4545,13 +4474,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 983547.64,
+        "current_nav": 973053.19,
         "cash": 600454.67,
-        "invested": 383092.97,
-        "total_return_pct": -1.6452,
-        "vs_spy_pct": 0.7872,
+        "invested": 372598.52,
+        "total_return_pct": -2.6947,
+        "vs_spy_pct": -3.1151,
         "benchmark": "FXI",
-        "day_change_pct": 1.0785,
+        "day_change_pct": 0.0,
         "max_drawdown_pct": -5.9056,
         "realized_since": "2026-06-21",
         "series": [
