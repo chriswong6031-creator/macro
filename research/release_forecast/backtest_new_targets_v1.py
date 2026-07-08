@@ -498,7 +498,7 @@ def _write_results_md(summary: dict) -> None:
     lines.append("")
     lines.append("- All outputs are display_only=True, authority=False.")
     lines.append("- Nulls are printed, not hidden (MRI-R19).")
-    lines.append("- Non-vintaged legs (sticky/median/flex, GASREGW) declared as revision_optimistic or unrevised in provenance.")
+    lines.append("- sticky/median/flex CPI sourced from ALFRED first-prints (PIT fix 2026-07-08); GASREGW declared unrevised in provenance.")
     lines.append("- PPI thin history: kill rule applied as written; no relaxation for thin history.")
     lines.append("- Round 2 will wire surviving targets into engine/release_forecast.py dispatch.")
     lines.append("")

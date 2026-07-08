@@ -88,12 +88,19 @@ via `_last_n_mom_lags`)
 ### 1.5 Sticky / Median / Flexible CPI (Atlanta/Cleveland Fed series)
 
 **Series:** STICKCPIM157SFRBATL, MEDCPIM158SFRBCLE, FLEXCPIM157SFRBATL
-**Source:** `data/fred/STICKCPIM157SFRBATL.parquet`, `MEDCPIM158SFRBCLE.parquet`,
-            `FLEXCPIM157SFRBATL.parquet`
-**Coverage:** 1967+ (sticky, flex), 1983+ (median)
-**Revision status:** NOT ALFRED-vintaged; sourced from latest-revised FRED parquet.
-Declared `revision_optimistic_legs` for all three series.
-**Usage:** momentum lags for pce_headline and pce_core (shared with CPI champion)
+**Source:** ALFRED vintages at `data/fred_vintage/vintages.parquet` (same parquet as own-series)
+**Coverage in vintages:** 2014-02 onward (148–149 rows as of 2026-07-08)
+**Revision status:** ALFRED-vintaged; initial prints used via `knowable_series` PIT filter.
+This is the same path the CPI champion uses in `build_cpi_features` via the injected
+`last_n_mom_lags_fn`. Walk-forward steps before 2014-02 will receive None for these features
+(correct: the series did not exist / was not published then).
+
+**AMENDMENT (2026-07-08, PIT fix — Opus review):** The original implementation read from
+`data/fred/*.parquet` (latest-revised values). This was a data-source correctness error: the
+CPI champion sourced these same series from ALFRED vintages. The fix moves all three to
+`knowable_series` / `_last_n_mom_lags` on the vintages parquet. This is a bug fix, not a
+new spec attempt; the feature set and lambda are unchanged.
+**Usage:** momentum lag-1 for pce_headline and pce_core (identical series to CPI champion)
 
 ### 1.6 PPIFIS momentum (via vintages)
 
@@ -139,9 +146,9 @@ model can be specified and run.
 pce_hl_mom_lag1        — own MoM lag 1 (PCEPI initial prints via knowable_series)
 pce_hl_mom_lag2        — own MoM lag 2
 pce_hl_mom_lag3        — own MoM lag 3
-sticky_mom_lag1        — Sticky CPI MoM lag 1 (STICKCPIM157SFRBATL, revision_optimistic)
-median_mom_lag1        — Median CPI MoM lag 1 (MEDCPIM158SFRBCLE, revision_optimistic)
-flex_mom_lag1          — Flexible CPI MoM lag 1 (FLEXCPIM157SFRBATL, revision_optimistic)
+sticky_mom_lag1        — Sticky CPI MoM lag 1 (STICKCPIM157SFRBATL, ALFRED-vintaged, first-print)
+median_mom_lag1        — Median CPI MoM lag 1 (MEDCPIM158SFRBCLE, ALFRED-vintaged, first-print)
+flex_mom_lag1          — Flexible CPI MoM lag 1 (FLEXCPIM157SFRBATL, ALFRED-vintaged, first-print)
 ppifis_mom_lag1        — PPI Final Demand MoM lag 1 (PPIFIS vintages, PIT-safe)
 gasoline_mom           — Gasoline reference-month average MoM (GASREGW, unrevised)
 ```
@@ -160,9 +167,9 @@ gasoline_mom           — Gasoline reference-month average MoM (GASREGW, unrevi
 pce_core_mom_lag1      — own MoM lag 1 (PCEPILFE initial prints via knowable_series)
 pce_core_mom_lag2      — own MoM lag 2
 pce_core_mom_lag3      — own MoM lag 3
-sticky_mom_lag1        — Sticky CPI MoM lag 1 (revision_optimistic)
-median_mom_lag1        — Median CPI MoM lag 1 (revision_optimistic)
-flex_mom_lag1          — Flexible CPI MoM lag 1 (revision_optimistic)
+sticky_mom_lag1        — Sticky CPI MoM lag 1 (STICKCPIM157SFRBATL, ALFRED-vintaged, first-print)
+median_mom_lag1        — Median CPI MoM lag 1 (MEDCPIM158SFRBCLE, ALFRED-vintaged, first-print)
+flex_mom_lag1          — Flexible CPI MoM lag 1 (FLEXCPIM157SFRBATL, ALFRED-vintaged, first-print)
 ppifes_mom_lag1        — PPI Final Demand ex Food & Energy MoM lag 1 (PPIFES vintages, PIT-safe)
 ```
 
@@ -211,9 +218,11 @@ For each target, the walk-forward proceeds as:
 2. For each record row at index i (representing the actual target print for period P_i):
    - `step_asof` = day before `realtime_start` of that print (PIT decision date)
    - Build features using only data knowable at `step_asof`
-   - ALFRED-vintaged features: use `knowable_series(vintages, series, step_asof)` PIT filter
-   - Non-vintaged features (GASREGW, sticky/median/flex): take latest values up to
-     `step_asof` from the FRED parquets; declared as revision_optimistic or unrevised
+   - ALFRED-vintaged features: use `knowable_series(vintages, series, step_asof)` PIT filter;
+     includes sticky/median/flex (STICKCPIM157SFRBATL, MEDCPIM158SFRBCLE, FLEXCPIM157SFRBATL)
+     which are present in vintages.parquet from 2014-02 onward (PIT fix 2026-07-08)
+   - Non-vintaged features (GASREGW only): take latest values up to
+     `step_asof` from the FRED parquet; declared as unrevised
 3. Walk-forward: train on records 0..i-1, predict record i, once i >= MIN_TRAIN_OBS.
 4. Residuals: `actual - predicted` accumulated in order.
 5. Quantile intervals: empirical quantiles of residuals from strictly prior predictions

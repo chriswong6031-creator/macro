@@ -113,43 +113,29 @@ def _gasoline_mom(
         return None
 
 
-def _sticky_median_flex_lags(
-    root: Path,
+def _sticky_median_flex_lags_alfred(
+    vintages: pd.DataFrame,
     asof: date,
 ) -> dict[str, float | None]:
-    """Read latest-knowable sticky/median/flex CPI MoM lags from FRED parquets.
+    """Read sticky/median/flex CPI MoM lag-1 from ALFRED vintage initial prints (PIT-safe).
 
-    These series are NOT ALFRED-vintaged (revision_optimistic). Uses latest value
-    strictly <= asof date from each parquet.
+    Uses the same `_last_n_mom_lags` / `knowable_series` path as the CPI champion
+    (engine/release_components_cpi.py build_cpi_features).  STICKCPIM157SFRBATL,
+    MEDCPIM158SFRBCLE, and FLEXCPIM157SFRBATL are present in vintages.parquet from
+    2014-02 onward; prior steps return None (same as the old FRED-parquet path).
+
+    PIT fix (Opus review): prior implementation read the latest-revised FRED parquets
+    instead of ALFRED first-prints, leaking mild revisions into the walk-forward
+    features for steps after 2014-02.
     """
-    result: dict[str, float | None] = {
-        "sticky_mom_lag1": None,
-        "median_mom_lag1": None,
-        "flex_mom_lag1": None,
+    sticky_lags = _last_n_mom_lags(vintages, "STICKCPIM157SFRBATL", asof, n=1)
+    median_lags = _last_n_mom_lags(vintages, "MEDCPIM158SFRBCLE", asof, n=1)
+    flex_lags = _last_n_mom_lags(vintages, "FLEXCPIM157SFRBATL", asof, n=1)
+    return {
+        "sticky_mom_lag1": sticky_lags[0],
+        "median_mom_lag1": median_lags[0],
+        "flex_mom_lag1": flex_lags[0],
     }
-    specs = {
-        "sticky_mom_lag1": ("STICKCPIM157SFRBATL", "sticky_cpi"),
-        "median_mom_lag1": ("MEDCPIM158SFRBCLE", "median_cpi"),
-        "flex_mom_lag1": ("FLEXCPIM157SFRBATL", "flex_cpi"),
-    }
-    asof_ts = pd.Timestamp(asof)
-    for feat, (fname, col) in specs.items():
-        path = root / "data" / "fred" / f"{fname}.parquet"
-        if not path.exists():
-            continue
-        try:
-            df = pd.read_parquet(path)
-            df.index = pd.to_datetime(df.index)
-            known = df[df.index <= asof_ts].sort_index()
-            if len(known) < 2:
-                continue
-            mom_series = known[col].pct_change() * 100.0
-            mom_series = mom_series.dropna()
-            if not mom_series.empty:
-                result[feat] = float(mom_series.iloc[-1])
-        except Exception as e:
-            log.debug("%s read failed: %s", fname, e)
-    return result
 
 
 # ---------------------------------------------------------------------------
@@ -168,21 +154,30 @@ def build_pce_headline_features(
       pce_hl_mom_lag1  — own MoM lag 1 (PCEPI, ALFRED-vintaged)
       pce_hl_mom_lag2  — own MoM lag 2
       pce_hl_mom_lag3  — own MoM lag 3
-      sticky_mom_lag1  — Sticky CPI MoM lag 1 (revision_optimistic)
-      median_mom_lag1  — Median CPI MoM lag 1 (revision_optimistic)
-      flex_mom_lag1    — Flexible CPI MoM lag 1 (revision_optimistic)
+      sticky_mom_lag1  — Sticky CPI MoM lag 1 (ALFRED-vintaged, first-print)
+      median_mom_lag1  — Median CPI MoM lag 1 (ALFRED-vintaged, first-print)
+      flex_mom_lag1    — Flexible CPI MoM lag 1 (ALFRED-vintaged, first-print)
       ppifis_mom_lag1  — PPI Final Demand MoM lag 1 (PPIFIS, ALFRED-vintaged)
       gasoline_mom     — Gasoline ref-month MoM (GASREGW, unrevised)
+
+    PIT fix (Opus review 2026-07-08): sticky/median/flex now sourced from ALFRED
+    vintage initial prints via knowable_series (same path as CPI champion), NOT
+    from latest-revised FRED parquets.
 
     Returns (features_dict, provenance_dict).
     """
     absent_legs: list[str] = []
     prov: dict[str, Any] = {
-        "revision_optimistic_legs": ["sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1"],
+        "revision_optimistic_legs": [],
+        "vintaged_legs": ["sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1"],
         "unrevised_legs": ["gasoline_mom"],
         "absent_legs": [],
         "display_only": True,
         "authority": False,
+        "pit_note": (
+            "sticky/median/flex sourced from ALFRED first-prints via knowable_series "
+            "(same path as CPI champion); series available from 2014-02 in vintages.parquet."
+        ),
     }
 
     # Own lags — PCEPI, ALFRED-vintaged, PIT-safe
@@ -193,8 +188,8 @@ def build_pce_headline_features(
         "pce_hl_mom_lag3": own_lags[2],
     }
 
-    # Sticky / median / flex CPI (revision_optimistic)
-    smf = _sticky_median_flex_lags(root, asof)
+    # Sticky / median / flex CPI — ALFRED-vintaged, first-print (PIT fix)
+    smf = _sticky_median_flex_lags_alfred(vintages, asof)
     features.update(smf)
     for k, v in smf.items():
         if v is None:
@@ -234,20 +229,29 @@ def build_pce_core_features(
       pce_core_mom_lag1 — own MoM lag 1 (PCEPILFE, ALFRED-vintaged)
       pce_core_mom_lag2 — own MoM lag 2
       pce_core_mom_lag3 — own MoM lag 3
-      sticky_mom_lag1   — Sticky CPI MoM lag 1 (revision_optimistic)
-      median_mom_lag1   — Median CPI MoM lag 1 (revision_optimistic)
-      flex_mom_lag1     — Flexible CPI MoM lag 1 (revision_optimistic)
+      sticky_mom_lag1   — Sticky CPI MoM lag 1 (ALFRED-vintaged, first-print)
+      median_mom_lag1   — Median CPI MoM lag 1 (ALFRED-vintaged, first-print)
+      flex_mom_lag1     — Flexible CPI MoM lag 1 (ALFRED-vintaged, first-print)
       ppifes_mom_lag1   — PPI ex Food & Energy MoM lag 1 (PPIFES, ALFRED-vintaged)
+
+    PIT fix (Opus review 2026-07-08): sticky/median/flex now sourced from ALFRED
+    vintage initial prints via knowable_series (same path as CPI champion), NOT
+    from latest-revised FRED parquets.
 
     Returns (features_dict, provenance_dict).
     """
     absent_legs: list[str] = []
     prov: dict[str, Any] = {
-        "revision_optimistic_legs": ["sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1"],
+        "revision_optimistic_legs": [],
+        "vintaged_legs": ["sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1"],
         "unrevised_legs": [],
         "absent_legs": [],
         "display_only": True,
         "authority": False,
+        "pit_note": (
+            "sticky/median/flex sourced from ALFRED first-prints via knowable_series "
+            "(same path as CPI champion); series available from 2014-02 in vintages.parquet."
+        ),
     }
 
     # Own lags — PCEPILFE, ALFRED-vintaged, PIT-safe
@@ -258,8 +262,8 @@ def build_pce_core_features(
         "pce_core_mom_lag3": own_lags[2],
     }
 
-    # Sticky / median / flex CPI (revision_optimistic)
-    smf = _sticky_median_flex_lags(root, asof)
+    # Sticky / median / flex CPI — ALFRED-vintaged, first-print (PIT fix)
+    smf = _sticky_median_flex_lags_alfred(vintages, asof)
     features.update(smf)
     for k, v in smf.items():
         if v is None:
