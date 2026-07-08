@@ -52,8 +52,15 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 # ---------------------------------------------------------------------------
 def _make_turnover(n: int = 200, start: str = "2014-02-11") -> pd.DataFrame:
     idx = pd.date_range(start, periods=n, freq="B")
+    rng = np.random.default_rng(42)
+    margin_trade_amt = rng.uniform(3000, 8000, n)
+    # trade_amt_ratio: margin_trade_amt as % of total turnover (typically 8-12%)
+    trade_amt_ratio = rng.uniform(8.0, 12.0, n)
     return pd.DataFrame(
-        {"margin_trade_amt": np.random.default_rng(42).uniform(3000, 8000, n)},
+        {
+            "margin_trade_amt": margin_trade_amt,
+            "trade_amt_ratio": trade_amt_ratio,
+        },
         index=idx,
     )
 
@@ -412,17 +419,41 @@ def test_northbound_dead_in_gaps():
 
 def test_etf_flows_uses_z_not_raw_sum():
     """ETF flow loader uses per-fund z-scores, not raw sum across funds."""
-    # Create ETF data where raw sum would be huge but z-score is moderate
+    # Build ETF fixture inline so we can compare against raw sum directly
+    etf_fixture = _make_etf_shares()
+    raw_sum = etf_fixture.diff().sum(axis=1)
+
     with _FakeDataDir() as fdd:
         from engine.china_participation import _load_etf_flows
         result, gaps = _load_etf_flows()
 
-    check("etf_share_chg is not raw unit sum", True,
-          "by construction: per-fund z-scores (0-mean) are unit-free and bounded")
-    # The result should be z-scores, so values should mostly be in [-5, 5]
-    if not result.empty and not result.isna().all():
-        extreme = (result.abs() > 50).sum()
-        check("etf z-scores not extreme (< 50 abs)", extreme == 0, f"extreme count={extreme}")
+    # Raw cross-fund daily share-change sums would be on the order of 1e8 (fixture data).
+    # z-scores must be bounded near zero.  Assert magnitudes are in z-scale.
+    check(
+        "etf_share_chg result is non-empty",
+        not result.empty,
+        "expected non-empty result with full fixture data",
+    )
+    non_null = result.dropna()
+    check(
+        "etf z-scores have non-empty non-null values",
+        len(non_null) > 0,
+        f"all-null result; gaps={gaps}",
+    )
+    if len(non_null) > 0:
+        max_abs = non_null.abs().max()
+        check(
+            "etf z-scores are z-scale (max abs < 10), not raw cross-fund sum",
+            max_abs < 10,
+            f"max abs={max_abs:.2f} — if this is >>10 the loader returned raw sums",
+        )
+        # Verify result is NOT equal to a naive raw sum — raw sum should be >> z-scores
+        raw_mean_abs = raw_sum.abs().mean()
+        check(
+            "etf raw sum has much larger magnitude than z-scores (different series)",
+            raw_mean_abs > 1e4,
+            f"raw_sum mean_abs={raw_mean_abs:.0f} (expected >>1e4 for fixture data)",
+        )
 
 
 def test_etf_flows_gap_noted():
@@ -494,8 +525,8 @@ def test_degrade_on_missing_southbound():
               f"gaps: {gaps}")
 
 
-def test_degrade_missing_microstructure_falls_back_to_flows():
-    """When W1 limit_tape absent, falls back to china_flows/limit_breadth.parquet."""
+def test_degrade_missing_microstructure_degrades_to_null():
+    """When W1 limit_tape absent, zt_breadth degrades to null (seal_rate incompatible units)."""
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         # Write china_flows/limit_breadth but NO china_microstructure dir
@@ -504,31 +535,42 @@ def test_degrade_missing_microstructure_falls_back_to_flows():
         with mock.patch("engine.china_participation._ROOT", tmp):
             import engine.china_participation as cp
             result, gaps = cp._load_limit_breadth()
-        # Should fall back to flows
-        check("fallback to flows limit_breadth",
-              not result.empty or any("absent" in g.lower() for g in gaps),
-              f"result empty={result.empty}, gaps={gaps}")
-        check("fallback noted in gaps",
-              any("fallback" in g.lower() or "limit_tape absent" in g.lower() or "W1" in g for g in gaps),
+        # Breadth leg must degrade to null — seal_rate has incompatible units
+        check("zt_breadth degrades to null when W1 limit_tape absent",
+              result.empty,
+              f"result non-empty (seal_rate wrongly mapped); len={len(result)}, sample={result.head(3)}")
+        check("incompatible-units reason noted in gaps",
+              any("incompatible" in g.lower() or "units" in g.lower() or "W1" in g for g in gaps),
               f"gaps: {gaps}")
+        # Ensure seal_rate values (56-85 range) are NOT appearing in result
+        if not result.empty:
+            check("no seal_rate-scale values in zt_breadth",
+                  result.dropna().empty or result.dropna().max() < 10,
+                  f"max={result.dropna().max():.1f} (seal_rate range is 56-85)")
 
 
 def test_latest_snapshot_shape():
-    """latest_snapshot returns required keys."""
+    """latest_snapshot returns required keys with correct types (§5 contract)."""
     with _FakeDataDir() as fdd:
         from engine.china_participation import build_tape, latest_snapshot
         tape = build_tape(backfill=True)
         snap = latest_snapshot(tape)
 
     required_keys = ["date", "regime", "who_controls", "risk",
-                     "evidence", "data_gaps", "authority", "backfill"]
+                     "evidence", "contradictions", "data_gaps", "authority", "backfill"]
     for k in required_keys:
         check(f"latest_snapshot has key '{k}'", k in snap, f"keys: {list(snap.keys())}")
 
     check("authority.tier == context_only",
           snap.get("authority", {}).get("tier") == "context_only")
     check("evidence is a list", isinstance(snap["evidence"], list))
+    check("contradictions is a list (not Python repr str)", isinstance(snap["contradictions"], list),
+          f"type={type(snap.get('contradictions'))}, value={str(snap.get('contradictions'))[:80]}")
     check("data_gaps is a list", isinstance(snap["data_gaps"], list))
+    # Verify the old contradictions_raw key is gone (§5 contract requires contradictions as list)
+    check("contradictions_raw key absent (superseded by contradictions list)",
+          "contradictions_raw" not in snap,
+          f"keys: {list(snap.keys())}")
 
 
 def test_tape_not_empty_with_full_fixtures():

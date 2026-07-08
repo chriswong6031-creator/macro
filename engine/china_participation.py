@@ -8,11 +8,16 @@ All inputs degrade to null + a named data_gaps entry on missing stores (CN-SYS-R
 
 Turnover
 --------
-Primary: ``data/china_margin/daily_trade.parquet`` column ``margin_trade_amt`` (2014-02→).
-  This is total SSE+SZSE market turnover as collected via the margin daily-trade API
-  (unit: 亿 CNY per day).  It is the best available daily market-level total-turnover
-  series in the store group: the breadth store has count-based adv/dec (no amount),
-  sector files carry double-counted sub-segment amounts, and the tushare run_log is empty.
+Primary: ``data/china_margin/daily_trade.parquet`` columns ``margin_trade_amt`` and
+  ``trade_amt_ratio`` (2014-02→).
+  ``margin_trade_amt`` is the margin financing BUY amount (融资买入额), NOT total market
+  turnover.  ``trade_amt_ratio`` is margin_trade_amt as % of total A-share turnover.
+  True total turnover is recovered as: margin_trade_amt / (trade_amt_ratio / 100).
+  On 2026-07-06 this gives ~31,100 亿 vs 2,828 亿 raw margin_trade_amt.
+  The derivation requires both columns to be non-null; rows where trade_amt_ratio is zero
+  or null degrade to null + gap entry.  Breadth store has count-based adv/dec (no amount);
+  sector files double-count sub-segment; tushare run_log is empty — derived turnover is
+  the best available daily market-level series.
   z-scores computed over 20d and 60d rolling windows (min_periods 10/30).
 
 Margin
@@ -25,10 +30,13 @@ Margin
 
 Limit breadth
 -------------
-Preferred: ``data/china_microstructure/limit_tape.parquet`` (W1 parallel build).
-Fallback when absent: ``data/china_flows/limit_breadth.parquet`` columns ``zt`` (ZT count)
-  and ``seal_rate`` (% seals held at close).  Window is ~30 days; backfilled rows use null
-  for this leg and record the gap.
+Preferred: ``data/china_microstructure/limit_tape.parquet`` (W1 parallel build) column
+  ``limit_up_breadth_pct`` (% of ~5000-name universe at limit-up).
+Fallback: ``data/china_flows/limit_breadth.parquet`` ``seal_rate`` (56-85 range) is NOT
+  mapped into zt_breadth — seal_rate is the % of ZT names that held their seal and has
+  incompatible units to the _ZT_BREADTH_* thresholds (which expect % of universe).
+  When W1 tape is absent the breadth leg degrades to null + a named gap entry.
+  The classifier handles zt_missing explicitly (margin-only paths fire when zt absent).
 
 Southbound (Hong Kong → mainland)
 ----------------------------------
@@ -163,18 +171,42 @@ def _data_path(*parts: str) -> str:
 
 
 def _load_turnover() -> tuple[pd.Series, list[str]]:
-    """Return daily turnover series (亿 CNY) + any gap labels."""
+    """Return daily total A-share turnover (亿 CNY) + any gap labels.
+
+    Derived from china_margin/daily_trade.parquet:
+        true_turnover = margin_trade_amt / (trade_amt_ratio / 100)
+
+    ``margin_trade_amt`` is the margin financing BUY amount (融资买入额), NOT total
+    turnover.  ``trade_amt_ratio`` is margin_trade_amt as % of total turnover, so
+    dividing recovers total market turnover.  Rows where trade_amt_ratio is zero or
+    null (or either column is missing) degrade to null for that row.
+    """
     gaps: list[str] = []
     path = _data_path("china_margin", "daily_trade.parquet")
     if not os.path.exists(path):
         gaps.append("turnover:china_margin/daily_trade.parquet absent")
         return pd.Series(dtype=float, name="turnover_total"), gaps
     df = pd.read_parquet(path)
-    if "margin_trade_amt" not in df.columns or df["margin_trade_amt"].isna().all():
-        gaps.append("turnover:margin_trade_amt column missing or all-null")
+    df.index = pd.to_datetime(df.index)
+    if "margin_trade_amt" not in df.columns:
+        gaps.append("turnover:margin_trade_amt column missing")
         return pd.Series(dtype=float, name="turnover_total"), gaps
-    s = df["margin_trade_amt"].rename("turnover_total").copy()
-    s.index = pd.to_datetime(s.index)
+    if "trade_amt_ratio" not in df.columns:
+        gaps.append(
+            "turnover:trade_amt_ratio column missing — cannot derive true turnover "
+            "(margin_trade_amt alone is NOT total A-share turnover)"
+        )
+        return pd.Series(dtype=float, name="turnover_total"), gaps
+    ratio = df["trade_amt_ratio"].replace(0, np.nan)
+    s = (df["margin_trade_amt"] / (ratio / 100.0)).rename("turnover_total")
+    null_count = s.isna().sum()
+    if null_count > 0:
+        gaps.append(
+            f"turnover:{null_count} rows null (trade_amt_ratio zero or either column null)"
+        )
+    if s.isna().all():
+        gaps.append("turnover:all rows null after derivation")
+        return pd.Series(dtype=float, name="turnover_total"), gaps
     return s, gaps
 
 
@@ -226,26 +258,22 @@ def _load_limit_breadth() -> tuple[pd.Series, list[str]]:
             return s, gaps
         gaps.append("limit_breadth:limit_tape.parquet present but limit_up_breadth_pct missing")
 
-    # Fallback: china_flows/limit_breadth.parquet
+    # Fallback: china_flows/limit_breadth.parquet is present but seal_rate (56-85 range)
+    # is NOT compatible with _ZT_BREADTH_* thresholds (which expect % of ~5000 universe).
+    # Mapping seal_rate into zt_breadth trivially fires zt_hot on every row (seal_rate >> 5).
+    # Per CN-SYS-R4 degrade-honesty: use null + gap, not a wrong-units proxy.
     fb_path = _data_path("china_flows", "limit_breadth.parquet")
     if os.path.exists(fb_path):
-        df = pd.read_parquet(fb_path)
-        df.index = pd.to_datetime(df.index)
-        if "zt" in df.columns and "seal_rate" in df.columns:
-            # Approximate breadth: zt_count is raw count; we don't have universe_n here.
-            # Use seal_rate as a proxy for zt breadth (% of ZT names that held seal).
-            # We record this as zt_breadth (seal_rate, %) and flag the approximation.
-            gaps.append(
-                "limit_breadth:W1 limit_tape absent; using china_flows/limit_breadth.parquet "
-                "seal_rate as zt_breadth proxy (~30d window only); backfilled rows use null"
-            )
-            s = df["seal_rate"].rename("zt_breadth")
-            return s, gaps
-
-    gaps.append(
-        "limit_breadth:neither china_microstructure/limit_tape.parquet "
-        "nor china_flows/limit_breadth.parquet present"
-    )
+        gaps.append(
+            "limit_breadth:W1 limit_tape absent; china_flows/limit_breadth.parquet "
+            "seal_rate has incompatible units (56-85% vs universe-breadth thresholds); "
+            "zt_breadth degraded to null until W1 limit_tape lands"
+        )
+    else:
+        gaps.append(
+            "limit_breadth:neither china_microstructure/limit_tape.parquet "
+            "nor china_flows/limit_breadth.parquet present"
+        )
     return pd.Series(dtype=float, name="zt_breadth"), gaps
 
 
@@ -778,17 +806,58 @@ def build_tape(backfill: bool = False) -> pd.DataFrame:
 def latest_snapshot(tape: pd.DataFrame) -> dict:
     """Return the latest-row dict for site JSON output.
 
-    Includes evidence[], contradictions[], data_gaps[] as proper lists.
+    Includes evidence[], contradictions[], data_gaps[] as proper JSON lists (§5 contract).
+
+    Published row is the latest row where the two core legs (turnover_z20 and
+    margin_chg_5d) are both non-null.  If the absolute latest row is missing those
+    legs (union-index freshness lag), we publish the last fully-populated row and
+    note the staleness in data_gaps.  If no fully-populated row exists, we publish
+    the absolute latest row with a staleness note.
     """
     if tape.empty:
         return {"error": "empty tape", "authority": {"tier": "context_only"}}
-    row = tape.iloc[-1].copy()
-    date_str = tape.index[-1].strftime("%Y-%m-%d") if hasattr(tape.index[-1], "strftime") else str(tape.index[-1])
+
+    core_legs = ["turnover_z20", "margin_chg_5d"]
+    fully_populated = tape[tape[core_legs].notna().all(axis=1)]
+    latest_date = tape.index[-1]
+
+    if not fully_populated.empty:
+        row = fully_populated.iloc[-1].copy()
+        row_date = fully_populated.index[-1]
+    else:
+        row = tape.iloc[-1].copy()
+        row_date = latest_date
+
+    date_str = row_date.strftime("%Y-%m-%d") if hasattr(row_date, "strftime") else str(row_date)
 
     # Deserialize pipe-delimited fields
     def _split(v: Any) -> list:
         if isinstance(v, str) and v:
             return v.split("|")
+        return []
+
+    # Deserialize contradictions: stored as str(list-of-dicts) — parse to proper list
+    import json as _json
+    import ast as _ast
+
+    def _parse_contradictions(v: Any) -> list:
+        if isinstance(v, list):
+            return v
+        if not isinstance(v, str) or not v or v in ("[]", ""):
+            return []
+        # Try JSON first, then ast.literal_eval (handles single-quoted Python reprs)
+        try:
+            parsed = _json.loads(v)
+            if isinstance(parsed, list):
+                return parsed
+        except (ValueError, TypeError):
+            pass
+        try:
+            parsed = _ast.literal_eval(v)
+            if isinstance(parsed, list):
+                return parsed
+        except (ValueError, SyntaxError):
+            pass
         return []
 
     snap: dict = {"date": date_str, "authority": {"tier": "context_only"}}
@@ -805,7 +874,21 @@ def latest_snapshot(tape: pd.DataFrame) -> dict:
             snap[col] = v
 
     snap["evidence"] = _split(row.get("evidence", ""))
-    snap["contradictions_raw"] = row.get("contradictions", "")  # keep raw str
+    snap["contradictions"] = _parse_contradictions(row.get("contradictions", ""))
     snap["data_gaps"] = _split(row.get("data_gaps", ""))
     snap["backfill"] = bool(row.get("backfill", False))
+
+    # Staleness note: if we are publishing an earlier row than the tape tail
+    if row_date < latest_date:
+        lag_days = (latest_date - row_date).days
+        snap["data_gaps"] = snap["data_gaps"] + [
+            f"snapshot_staleness:published row {date_str} is {lag_days}d behind tape tail "
+            f"{latest_date.strftime('%Y-%m-%d')}; tail row missing core legs "
+            f"({', '.join(core_legs)}) — union-index freshness lag"
+        ]
+        snap["snapshot_note"] = (
+            f"core legs null on {latest_date.strftime('%Y-%m-%d')}; "
+            f"publishing last fully-populated row ({date_str})"
+        )
+
     return snap

@@ -116,7 +116,6 @@ def _sanity_print(tape: pd.DataFrame) -> None:
         print("  TAPE EMPTY — no rows to show")
         return
 
-    yr2015 = tape.loc["2015-01":"2015-12"] if "2015-01-01" in tape.index.astype(str).tolist() or True else pd.DataFrame()
     try:
         yr2015 = tape.loc["2015-01-01":"2015-12-31"]
     except Exception:
