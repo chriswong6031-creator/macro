@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-07-07",
-  "generated_utc": "2026-07-07T19:35:11.790349+00:00",
+  "as_of": "2026-07-08",
+  "generated_utc": "2026-07-08T00:07:51.206818+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": null,
   "brain_present": false,
@@ -21,7 +21,7 @@
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
   "n_signals": 97,
-  "n_broken": 20,
+  "n_broken": 21,
   "signals": [
     {
       "ticker": "AAPL",
@@ -382,6 +382,35 @@
         }
       ],
       "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "F",
+      "signal_score": 48,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.45,
+      "convergence_score": 2,
+      "channels": [
+        "activist_13d",
+        "gov_contract_accel"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 3.8,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -20.7,
+      "ret_20d": -9.8,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -996,35 +1025,6 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
-    },
-    {
-      "ticker": "KNOP",
-      "signal_score": 32,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.0,
-      "convergence_score": 2,
-      "channels": [
-        "insider_buy",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": null,
-      "no_price_data": true,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": null,
-      "ret_20d": null,
-      "above_50dma": null,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
     }
   ],
   "broken_signals": [
@@ -1127,6 +1127,47 @@
         },
         {
           "actor": "Bill Ackman",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "PLTR",
+      "signal_score": 48,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.55,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "gov_contract_accel",
+        "retail_buzz"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -17.0,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -36.0,
+      "ret_20d": -6.5,
+      "above_50dma": false,
+      "entry_tier": "T1",
+      "affiliations": [
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Cathie Wood",
           "rel": "AFFILIATES_WITH",
           "kind": "fund"
         }
@@ -1260,35 +1301,6 @@
       "clamped": null
     },
     {
-      "ticker": "CIFR",
-      "signal_score": 40,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.95,
-      "convergence_score": 2,
-      "channels": [
-        "material_8k",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 29.8,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -25.5,
-      "ret_20d": -15.0,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "LUMN",
       "signal_score": 35,
       "conviction": "medium",
@@ -1312,47 +1324,6 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "PLTR",
-      "signal_score": 34,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.1,
-      "convergence_score": 3,
-      "channels": [
-        "affiliation",
-        "gov_contract",
-        "retail_buzz"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -17.0,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -36.0,
-      "ret_20d": -6.5,
-      "above_50dma": false,
-      "entry_tier": "T1",
-      "affiliations": [
-        {
-          "actor": "Marjorie Taylor Greene",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Cathie Wood",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 2,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1407,6 +1378,35 @@
       "rolling_over": true,
       "off_high_252": -60.6,
       "ret_20d": -30.6,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "RDW",
+      "signal_score": 33,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.95,
+      "convergence_score": 2,
+      "channels": [
+        "material_8k",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 7.1,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -56.1,
+      "ret_20d": -47.0,
       "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],
@@ -1628,6 +1628,35 @@
       "rolling_over": true,
       "off_high_252": -40.5,
       "ret_20d": -25.6,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "SMCI",
+      "signal_score": 24,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.7,
+      "convergence_score": 2,
+      "channels": [
+        "material_8k",
+        "retail_buzz"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 5.2,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -55.2,
+      "ret_20d": -42.0,
       "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],

@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-07T19:35:02.256822+00:00",
-  "as_of": "2026-07-07",
+  "generated_utc": "2026-07-08T00:07:41.463062+00:00",
+  "as_of": "2026-07-08",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6014,6 +6014,15 @@
           "parties": "Democratic"
         },
         {
+          "ticker": "T",
+          "net": 8,
+          "buys": 12,
+          "sells": 4,
+          "members": 4,
+          "est_usd": 303506.0,
+          "parties": "Democratic/R"
+        },
+        {
           "ticker": "BWXT",
           "net": 8,
           "buys": 8,
@@ -6039,15 +6048,6 @@
           "members": 2,
           "est_usd": 105004.0,
           "parties": "Democratic/R"
-        },
-        {
-          "ticker": "ST",
-          "net": 7,
-          "buys": 8,
-          "sells": 1,
-          "members": 2,
-          "est_usd": 64004.0,
-          "parties": "D/Republican"
         }
       ],
       "sells": [
@@ -6070,15 +6070,6 @@
           "parties": "D/Democratic"
         },
         {
-          "ticker": "TSCO",
-          "net": -13,
-          "buys": 3,
-          "sells": 16,
-          "members": 3,
-          "est_usd": 24002.0,
-          "parties": "D/Democratic"
-        },
-        {
           "ticker": "SCI",
           "net": -12,
           "buys": 0,
@@ -6086,6 +6077,15 @@
           "members": 1,
           "est_usd": 0.0,
           "parties": "D"
+        },
+        {
+          "ticker": "TSCO",
+          "net": -11,
+          "buys": 3,
+          "sells": 14,
+          "members": 2,
+          "est_usd": 24002.0,
+          "parties": "D/Democratic"
         },
         {
           "ticker": "MU",
@@ -6133,15 +6133,6 @@
           "parties": "D"
         },
         {
-          "ticker": "INTC",
-          "net": -7,
-          "buys": 3,
-          "sells": 10,
-          "members": 6,
-          "est_usd": 3040502.0,
-          "parties": "D/Democratic/R/Republican"
-        },
-        {
           "ticker": "CMCSA",
           "net": -7,
           "buys": 4,
@@ -6185,6 +6176,15 @@
           "members": 5,
           "est_usd": 24002.0,
           "parties": "D/Democratic/R/Republican"
+        },
+        {
+          "ticker": "PWR",
+          "net": -6,
+          "buys": 0,
+          "sells": 6,
+          "members": 2,
+          "est_usd": 0.0,
+          "parties": "D"
         }
       ]
     },
@@ -6199,26 +6199,18 @@
       },
       {
         "ticker": "MDLN",
-        "total_usd": 84981107.0,
-        "contracts": 25,
+        "total_usd": 84516107.0,
+        "contracts": 19,
         "agencies": 2,
-        "accel_x": 0.98,
+        "accel_x": 0.97,
         "top_agency": "Department of Veterans Affairs"
       },
       {
         "ticker": "PLTR",
-        "total_usd": 84744630.0,
-        "contracts": 4,
-        "agencies": 4,
-        "accel_x": null,
-        "top_agency": "Department of Homeland Security"
-      },
-      {
-        "ticker": "TPC",
-        "total_usd": 81833273.0,
-        "contracts": 1,
-        "agencies": 1,
-        "accel_x": 0.57,
+        "total_usd": 80516443.0,
+        "contracts": 3,
+        "agencies": 3,
+        "accel_x": 19.04,
         "top_agency": "Department of Homeland Security"
       },
       {
@@ -6247,10 +6239,10 @@
       },
       {
         "ticker": "LUMN",
-        "total_usd": 21254696.0,
-        "contracts": 13,
+        "total_usd": 21010884.0,
+        "contracts": 7,
         "agencies": 5,
-        "accel_x": 278.46,
+        "accel_x": 67.69,
         "top_agency": "Department of Homeland Security"
       },
       {
@@ -6294,20 +6286,28 @@
         "top_agency": "National Aeronautics and Space Administration"
       },
       {
+        "ticker": "CDW",
+        "total_usd": 10898229.0,
+        "contracts": 37,
+        "agencies": 6,
+        "accel_x": 0.58,
+        "top_agency": "Department of Transportation"
+      },
+      {
         "ticker": "AXON",
-        "total_usd": 11362686.0,
-        "contracts": 9,
+        "total_usd": 10713250.0,
+        "contracts": 8,
         "agencies": 3,
-        "accel_x": 2.64,
+        "accel_x": 2.18,
         "top_agency": "Department of Homeland Security"
       },
       {
-        "ticker": "CDW",
-        "total_usd": 11288880.0,
-        "contracts": 41,
-        "agencies": 6,
-        "accel_x": 0.61,
-        "top_agency": "Department of Transportation"
+        "ticker": "F",
+        "total_usd": 9762847.0,
+        "contracts": 199,
+        "agencies": 1,
+        "accel_x": 4.48,
+        "top_agency": "General Services Administration"
       }
     ],
     "gov_grants": [
@@ -6475,11 +6475,6 @@
         "items": "8.01"
       },
       {
-        "ticker": "MSTR",
-        "count": 7,
-        "items": "5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "SPCX",
         "count": 6,
         "items": "1.01, 5.02, 7.01, 8.01"
@@ -6488,6 +6483,11 @@
         "ticker": "APLD",
         "count": 5,
         "items": "1.01, 2.03, 7.01, 8.01"
+      },
+      {
+        "ticker": "MSTR",
+        "count": 5,
+        "items": "5.02, 7.01, 8.01"
       },
       {
         "ticker": "PSKY",
@@ -6540,21 +6540,6 @@
         "items": "7.01, 8.01"
       },
       {
-        "ticker": "CASY",
-        "count": 3,
-        "items": "5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "CIFR",
-        "count": 3,
-        "items": "1.01, 2.03, 7.01, 8.01"
-      },
-      {
-        "ticker": "COF",
-        "count": 3,
-        "items": "7.01, 8.01"
-      },
-      {
         "ticker": "DLR",
         "count": 3,
         "items": "7.01, 8.01"
@@ -6563,11 +6548,6 @@
         "ticker": "HOOD",
         "count": 3,
         "items": "1.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "INCY",
-        "count": 3,
-        "items": "8.01"
       },
       {
         "ticker": "JPM",
@@ -6593,6 +6573,26 @@
         "ticker": "QBTS",
         "count": 3,
         "items": "7.01"
+      },
+      {
+        "ticker": "RDW",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
+      },
+      {
+        "ticker": "SMCI",
+        "count": 3,
+        "items": "1.01, 7.01, 8.01"
+      },
+      {
+        "ticker": "VTRS",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
+      },
+      {
+        "ticker": "WRB",
+        "count": 3,
+        "items": "1.01, 2.03, 5.02, 8.01"
       }
     ],
     "special_situations": [
@@ -43892,7 +43892,7 @@
       {
         "ticker": "PFE",
         "phase3_starts": 10,
-        "halts": 3,
+        "halts": 2,
         "hot": true,
         "sample": "Study to Learn About Safety, Tolerability, and Immune Response of a Catch-up Pneumococcal Vaccine in Children and Adolescents"
       },
@@ -43906,7 +43906,7 @@
       {
         "ticker": "LLY",
         "phase3_starts": 7,
-        "halts": 2,
+        "halts": 0,
         "hot": true,
         "sample": "A Study of Orforglipron (LY3502970) Compared With Dulaglutide in Pediatric Participants With Type 2 Diabetes"
       },
@@ -47643,6 +47643,16 @@
         "why": "clinical_phase3_start: 15 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: TRUQAP \u00b7 special_situation: Delistings"
       },
       {
+        "ticker": "F",
+        "score": 2,
+        "weighted_score": 1.45,
+        "channel_list": [
+          "activist_13d",
+          "gov_contract_accel"
+        ],
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $9,762,847, 4.5x accel"
+      },
+      {
         "ticker": "N/A",
         "score": 2,
         "weighted_score": 1.4,
@@ -47723,7 +47733,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $21,254,696, 278.5x accel \u00b7 special_situation: Restructuring"
+        "why": "gov_contract_accel: $21,010,884, 67.7x accel \u00b7 special_situation: Restructuring"
       },
       {
         "ticker": "IBM",
@@ -47737,6 +47747,16 @@
         "why": "github_momentum: +0.28% stars \u00b7 hf_model_momentum: +14.2% model downloads \u00b7 patent_cluster: 192 grants, 33 IPC classes"
       },
       {
+        "ticker": "PLTR",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "gov_contract_accel",
+          "retail_buzz"
+        ],
+        "why": "gov_contract_accel: $80,516,443, 19.0x accel \u00b7 retail_buzz: 91 WSB mentions"
+      },
+      {
         "ticker": "PFE",
         "score": 2,
         "weighted_score": 1.05,
@@ -47744,7 +47764,7 @@
           "clinical_phase3_start",
           "fda_label_expansion"
         ],
-        "why": "clinical_phase3_start: 10 new Phase-3, 3 halt(s) \u00b7 fda_label_expansion: IBRANCE"
+        "why": "clinical_phase3_start: 10 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: IBRANCE"
       },
       {
         "ticker": "ABBV",
@@ -47765,26 +47785,6 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 3 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: PERJETA"
-      },
-      {
-        "ticker": "BMY",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 1 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: ONUREG"
-      },
-      {
-        "ticker": "ORLY",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "special_situation",
-          "unusual_options"
-        ],
-        "why": "special_situation: Capital Returns \u00b7 unusual_options: 4.22\u00d7 vol/OI, call-skew"
       }
     ]
   }

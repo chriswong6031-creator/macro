@@ -11,6 +11,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Rate & Inflation Transmission — 2026-07-06</title>
+
+<meta name="description" content="How interest rates and inflation drive every asset class — headwinds, tailwinds, and regime-aware transmission reads.">
+<link rel="canonical" href="https://mastermind-x.com/transmission.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Rate &amp; Inflation Transmission | Mastermind">
+<meta property="og:description" content="How interest rates and inflation drive every asset class — headwinds, tailwinds, and regime-aware transmission reads.">
+<meta property="og:url" content="https://mastermind-x.com/transmission.html">
+<meta property="og:image" content="https://mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Rate &amp; Inflation Transmission | Mastermind">
+<meta name="twitter:description" content="How interest rates and inflation drive every asset class — headwinds, tailwinds, and regime-aware transmission reads.">
+<meta name="twitter:image" content="https://mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{
   --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
@@ -563,6 +579,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
             <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
             <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
@@ -1162,7 +1179,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="note" style="margin-top:12px">
       <p>• <span class="l-en">Display-only — never scored. The repricing of rates/inflation is REACTIVE; the curve moves after the data and the Fed, it does not lead them.</span><span class="l-zh">仅供展示，从不计入评分。利率/通胀的重新定价是被动的；曲线在数据与美联储之后变动，而非领先。</span></p><p>• <span class="l-en">Rate-of-change beats level: the SPEED of a real-yield move breaks equities more than its level. Coefficients are the measured forward IC, not a promise.</span><span class="l-zh">变动速度比水平更重要：实际收益率移动的速度比其水平更能冲击股票。系数为已测得的前瞻IC，并非承诺。</span></p><p>• <span class="l-en">Scenario moves apply a historical beta to a hypothetical shock — they are regime-dependent illustrations, not predictions, and assume the shock persists one quarter.</span><span class="l-zh">情景中的涨跌幅是将历史beta应用于假设冲击——属于依赖状态的示意而非预测，且假设冲击持续一个季度。</span></p><p>• <span class="l-en">The real / nominal / breakeven 63d-change drivers are mechanically collinear (real = nominal − breakeven); do not treat them as independent confirmations.</span><span class="l-zh">实际／名义／盈亏平衡的63日变动驱动在机制上共线（实际＝名义−盈亏平衡）；不应视为相互独立的印证。</span></p>
       <p><b><span class="l-en">Data.</span><span class="l-zh">数据。</span></b> <span class="l-en">Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline &amp; core CPI, headline &amp; core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter &amp; core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests.</span><span class="l-zh">免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。</span></p>
-      <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1971-01-04 → 2026-07-06 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-07 20:21 UTC</p>
+      <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1971-01-04 → 2026-07-06 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-08 00:53 UTC</p>
     </div>
   </div>
 </div>
