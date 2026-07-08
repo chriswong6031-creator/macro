@@ -32,10 +32,10 @@ log = logging.getLogger(__name__)
 
 # ============================================================================
 # IMMINENT threshold — sessions within this many CALENDAR days trigger the flag.
-# 5 calendar days ≈ 3-4 HK trading sessions (absorbs bank holidays).
-# The brief said "≤5 sessions" — we use ≤7 calendar days to be safe without
-# a full HK-session counter (which lib/hk_calendar provides but adds complexity
-# for a display-only flag; tests check both ends).
+# The brief called for "≤5 sessions"; we use ≤7 calendar days (5 sessions +
+# one weekend buffer) so a Monday effective flagged on the prior Wednesday still
+# shows. lib/hk_calendar provides a session counter but session-counting adds
+# complexity for a display-only flag.
 # ============================================================================
 IMMINENT_DAYS = 7
 
@@ -43,31 +43,76 @@ IMMINENT_DAYS = 7
 # ============================================================================
 # CATALYST TABLE  CY2024-2027
 #
-# Sources:
-#   HSI/HS-TECH: Hang Seng Indexes Company announces ~2 weeks before effective.
-#     Effective date = first HK trading day after the third Friday of Mar/Jun/Sep/Dec.
-#     Third Friday of Mar = 3rd Fri of month; if that Fri is a holiday, moves to Mon.
-#     Reference: https://www.hsi.com.hk/eng/indexes/all-series/hsi  (official cadence)
+# Sources and verified dates (session 2026-07-08):
 #
-#   Stock Connect eligibility: CSRC/HKEx adjustments are semi-annual, effective on
-#     the first Monday following the effective implementation date (declared by SSE/SZSE).
-#     Standard cadence: late June and late December (post HSI/HSCEI review).
-#     Exact dates require SSE/SZSE notices — all entries below are PROVISIONAL unless
-#     source_note says "announced".
+#   HSI / HS-TECH:
+#     Hang Seng Indexes publishes quarterly review results ~2 weeks before
+#     effective.  Historically effective = 2nd Monday of Mar/Jun/Sep/Dec.
+#     VERIFIED from official press releases:
+#       2025-03-10 — Q4-2024 review (announced 2025-02-21)
+#         https://www.hsi.com.hk/static/uploads/contents/en/news/pressRelease/20250221T174505.pdf
+#       2025-09-08 — Q3-2025 review date announced 2025-07-02
+#         https://www.hsi.com.hk/static/uploads/contents/en/news/indexChgNotice/20250702T163005.pdf
+#       2026-06-08 — Q2-2026 review (announced 2026-05-22, effective after
+#         close of June 5, 2026 / start of June 8, 2026)
+#         https://www.hsi.com.hk/static/uploads/contents/en/news/pressRelease/20260522T174500.pdf
+#     All other HSI dates: rule-computed (2nd Monday of review month),
+#     provisional=True.
 #
-#   MSCI: Standard quarterly reviews — announced ~4 weeks prior; effective after
-#     close of last business day of Feb/May/Aug/Nov (quarterly), with Feb/Aug being
-#     semi-annual (larger). Source: msci.com index methodology.
+#   Stock Connect eligibility: CSRC/HKEx adjustments are semi-annual; exact
+#     dates come from SSE/SZSE notices — all entries are PROVISIONAL.
 #
-#   FTSE Russell: Standard quarterly reviews — effective after close of third
-#     Friday of Mar/Jun/Sep/Dec. Source: ftserussell.com.
+#   MSCI: Quarterly reviews effective on the last business day of
+#     Feb/May/Aug/Nov.  VERIFIED 2025 dates from msci.com:
+#       2025-02-28 (Feb semi-annual, announced 2025-02-11)
+#         https://app2.msci.com/webapp/index_ann/DocGet?pub_key=nZnpr0ioyUo%3D&lang=en&format=html
+#       2025-05-30 (May quarterly, announced 2025-05-13)
+#         https://www.msci.com/documents/10199/4152f640-34b6-b35e-0ccc-a2711696d95a
+#       2025-08-27 (Aug semi-annual, announced 2025-08-07; moved earlier per
+#         MSCI feedback process)
+#         https://app2.msci.com/webapp/index_ann/DocGet?pub_key=iVkAtYHOgSA%3D&lang=en&format=html
+#       2025-11-25 (Nov quarterly, per MSCI update)
+#         https://app2.msci.com/webapp/index_ann/DocGet?pub_key=dJ1N3ASUmHE%3D&lang=en&format=html
+#     All other MSCI dates: rule-computed (last business day of review month),
+#     provisional=True.
 #
-# PROVISIONAL POLICY:
-#   - Dates computable from a fixed rule (third Friday + offset) and that haven't
-#     been officially announced: provisional=True, source_note="rule-computed"
-#   - Dates from official publications or announcements: provisional=False
-#   - CY2027 dates are always provisional (not yet announced as of 2026-07-08)
+#   FTSE Russell: Quarterly reviews effective after close of third Friday of
+#     Mar/Jun/Sep/Dec; we report the Monday after (start of next session).
+#     VERIFIED: 2025-09-22 (Sep Q3-2025)
+#       https://www.lseg.com/en/media-centre/press-releases/ftse-russell/2025/ftse-china-index-series-quarterly-review-q3-2025
+#     Rule matches methodology; FTSE publishes its schedule in advance.
+#
+# PROVISIONAL POLICY (house epistemics — "uncertainty is printed, not hidden"):
+#   provisional=False ONLY for dates verified against an official published
+#   notice in this session (listed above). Everything else is provisional=True,
+#   displayed with a "~" caveat in the UI. CY2027 is always provisional.
 # ============================================================================
+
+# ---------------------------------------------------------------------------
+# Verified effective dates — (year, review_month) → effective_date
+# These are the ONLY entries that may carry provisional=False.
+# ---------------------------------------------------------------------------
+
+_HSI_VERIFIED: dict[tuple[int, int], date] = {
+    # Q4-2024 review → Mar-2025 effective
+    (2025, 3): date(2025, 3, 10),
+    # Q3-2025 review → Sep-2025 effective
+    (2025, 9): date(2025, 9, 8),
+    # Q2-2026 review → Jun-2026 effective
+    (2026, 6): date(2026, 6, 8),
+}
+
+_MSCI_VERIFIED: dict[tuple[int, int], date] = {
+    (2025, 2):  date(2025, 2, 28),
+    (2025, 5):  date(2025, 5, 30),
+    (2025, 8):  date(2025, 8, 27),
+    (2025, 11): date(2025, 11, 25),
+}
+
+_FTSE_VERIFIED: dict[tuple[int, int], date] = {
+    (2025, 9): date(2025, 9, 22),
+}
+
 
 def _third_friday(y: int, m: int) -> date:
     """Third Friday of (y, m)."""
@@ -78,33 +123,41 @@ def _third_friday(y: int, m: int) -> date:
     return d + timedelta(weeks=2)    # third Friday
 
 
-def _next_hk_session_after(d: date) -> date:
-    """First Monday-Friday after `d` (ignores one-off closures for simplicity;
-    good enough for a display-only countdown strip)."""
-    from lib.hk_calendar import is_session
-    nxt = d + timedelta(days=1)
-    for _ in range(14):
-        if is_session(nxt):
-            return nxt
-        nxt += timedelta(days=1)
-    return nxt   # fallback — should never hit
+def _second_monday(y: int, m: int) -> date:
+    """Second Monday of (y, m).  Rule-of-thumb for HSI effective dates."""
+    d = date(y, m, 1)
+    offset = (0 - d.weekday()) % 7   # 0 = Monday
+    first_mon = d + timedelta(days=offset)
+    return first_mon + timedelta(weeks=1)
 
 
-def _hsi_review_dates(y: int, m: int) -> tuple[date, date]:
-    """Returns (announce_date, effective_date) for the HSI/HS-TECH quarterly review
-    in month m of year y. The announce is ~2 weeks before effective; effective is
-    the first HK trading day after the third Friday of the review month."""
-    tf = _third_friday(y, m)
-    effective = _next_hk_session_after(tf)
+def _hsi_review_dates(y: int, m: int) -> tuple[date, date, bool]:
+    """Returns (announce_date, effective_date, provisional) for the
+    HSI/HS-TECH quarterly review in month m of year y.
+
+    Effective date: 2nd Monday of the review month (rule), overridden by
+    a verified date where available.  Announce is ~2 weeks before effective.
+    """
+    if (y, m) in _HSI_VERIFIED:
+        effective = _HSI_VERIFIED[(y, m)]
+        provisional = False
+    else:
+        effective = _second_monday(y, m)
+        provisional = True
     announce = effective - timedelta(days=14)
-    return announce, effective
+    return announce, effective, provisional
 
 
-def _msci_effective(y: int, m: int) -> date:
-    """MSCI effective date: close of last business day of the month.
-    For display we use the first business day of the FOLLOWING month
-    (changes take effect at market open the next session after month-end close)."""
-    # Last day of month
+def _msci_effective(y: int, m: int) -> tuple[date, bool]:
+    """MSCI effective date: last business day of the review month.
+    Returns (effective_date, provisional).
+
+    MSCI confirms changes 'effective as of the close of [last biz day] of
+    [month]'.  The verified 2025 dates are hardcoded; others are rule-computed.
+    """
+    if (y, m) in _MSCI_VERIFIED:
+        return _MSCI_VERIFIED[(y, m)], False
+    # Rule: last business day of month
     if m == 12:
         next_month = date(y + 1, 1, 1)
     else:
@@ -112,21 +165,25 @@ def _msci_effective(y: int, m: int) -> date:
     last_biz = next_month - timedelta(days=1)
     while last_biz.weekday() >= 5:
         last_biz -= timedelta(days=1)
-    # effective = day AFTER last business day (open of next session)
-    eff = last_biz + timedelta(days=1)
-    while eff.weekday() >= 5:
-        eff += timedelta(days=1)
-    return eff
+    return last_biz, True
 
 
-def _ftse_effective(y: int, m: int) -> date:
+def _ftse_effective(y: int, m: int) -> tuple[date, bool]:
     """FTSE Russell effective date: after close of third Friday of Mar/Jun/Sep/Dec.
-    We report the MONDAY after the third Friday (open of next session)."""
+    We report the MONDAY after the third Friday (open of next session).
+    Returns (effective_date, provisional).
+
+    The 3rd-Friday rule is FTSE's documented methodology.  Sep-2025 is verified;
+    others are rule-computed (rule is correct per FTSE methodology, provisional
+    only because no official advance notice was checked per entry).
+    """
+    if (y, m) in _FTSE_VERIFIED:
+        return _FTSE_VERIFIED[(y, m)], False
     tf = _third_friday(y, m)
     eff = tf + timedelta(days=3)   # Monday after third Friday
     while eff.weekday() >= 5:      # skip any bank holiday Mondays
         eff += timedelta(days=1)
-    return eff
+    return eff, True
 
 
 # ---------------------------------------------------------------------------
@@ -139,13 +196,22 @@ def _build_catalog() -> list[dict]:
     cats: list[dict] = []
 
     # ── HSI / HS-TECH QUARTERLY INDEX REVIEW ──────────────────────────────
-    # Effective after the third Friday of Mar/Jun/Sep/Dec
+    # Effective on the 2nd Monday of Mar/Jun/Sep/Dec (verified for select
+    # quarters; rule-computed / provisional for others).
     hsi_review_months = [3, 6, 9, 12]
     for y in range(2024, 2028):
         for m in hsi_review_months:
-            ann, eff = _hsi_review_dates(y, m)
-            # CY2024 Q1/Q2 are in the past; still include for completeness
-            provisional = (y >= 2027)
+            ann, eff, provisional = _hsi_review_dates(y, m)
+            if y >= 2027:
+                provisional = True  # CY2027 not yet announced
+            source = (
+                f"verified: hsi.com.hk press release — effective {eff}"
+                if not provisional
+                else (
+                    "rule-computed: 2nd Monday of "
+                    f"{date(y,m,1).strftime('%b')} {y}; verify at hsi.com.hk"
+                )
+            )
             cats.append({
                 "type": "HSI_REVIEW",
                 "name_en": f"HSI / HS-TECH Index Review ({y}-Q{hsi_review_months.index(m)+1})",
@@ -153,8 +219,7 @@ def _build_catalog() -> list[dict]:
                 "announce_date": ann.isoformat(),
                 "effective_date": eff.isoformat(),
                 "scope": "HSI · HS-TECH",
-                "source_note": ("rule-computed: 1st HK session after 3rd Friday of "
-                                f"{date(y,m,1).strftime('%b')}; announce ~2w prior"),
+                "source_note": source,
                 "provisional": provisional,
                 "display_only": True,
             })
@@ -162,8 +227,7 @@ def _build_catalog() -> list[dict]:
     # ── STOCK CONNECT SEMI-ANNUAL ELIGIBILITY REVIEW ──────────────────────
     # SSE/SZSE publish eligible share lists semi-annually; effective ~late Jun / ~late Dec.
     # Exact dates come from SSE/SZSE notices; all are provisional here.
-    # Standard pattern: effective day is the first Monday after HSI Dec/Jun review effective.
-    # Using approximate dates derived from historical pattern (provisional).
+    # Approximate dates derived from historical pattern (provisional).
     stock_connect_dates = [
         # (announce_date, effective_date, year, label)
         # CY2024
@@ -197,15 +261,25 @@ def _build_catalog() -> list[dict]:
 
     # ── MSCI INDEX REVIEWS ─────────────────────────────────────────────────
     # Quarterly: Feb/May/Aug/Nov. Feb+Aug = semi-annual (major); May+Nov = quarterly (minor).
-    # Announce ~4 weeks prior; effective after close of last business day of review month.
+    # Announce ~4 weeks prior; effective = last business day of review month
+    # (per MSCI methodology; MSCI may move dates earlier — see _MSCI_VERIFIED).
     msci_review_months = [2, 5, 8, 11]
     msci_labels = {2: "Feb semi-annual", 5: "May quarterly", 8: "Aug semi-annual", 11: "Nov quarterly"}
     for y in range(2024, 2028):
         for m in msci_review_months:
-            eff = _msci_effective(y, m)
+            eff, provisional = _msci_effective(y, m)
+            if y >= 2027:
+                provisional = True  # CY2027 not yet announced
             ann = eff - timedelta(days=28)   # ~4 weeks announce lead time
-            provisional = (y >= 2027)
             scale = "semi-annual" if m in (2, 8) else "quarterly"
+            source = (
+                f"verified: msci.com announcement — effective {eff}"
+                if not provisional
+                else (
+                    "rule-computed: effective = last business day of "
+                    f"{date(y,m,1).strftime('%b')} {y}; verify at msci.com"
+                )
+            )
             cats.append({
                 "type": "MSCI_REVIEW",
                 "name_en": f"MSCI Index Review — {msci_labels[m]} {y}",
@@ -213,22 +287,30 @@ def _build_catalog() -> list[dict]:
                 "announce_date": ann.isoformat(),
                 "effective_date": eff.isoformat(),
                 "scope": "MSCI EM / China A-Inclusion / HK indexes",
-                "source_note": ("rule-computed: effective = 1st session of month following "
-                                f"end of {date(y,m,1).strftime('%b')} {y}; "
-                                "announce ~4w prior; verify at msci.com"),
+                "source_note": source,
                 "provisional": provisional,
                 "display_only": True,
             })
 
     # ── FTSE RUSSELL REVIEWS ───────────────────────────────────────────────
     # Quarterly: effective after close of third Friday of Mar/Jun/Sep/Dec.
-    # Results announced ~2 weeks prior.
+    # Results announced ~2 weeks prior.  Rule matches FTSE methodology.
+    # Sep-2025 (2025-09-22) is verified; others are rule-computed.
     ftse_review_months = [3, 6, 9, 12]
     for y in range(2024, 2028):
         for m in ftse_review_months:
-            eff = _ftse_effective(y, m)
+            eff, provisional = _ftse_effective(y, m)
+            if y >= 2027:
+                provisional = True  # CY2027 not yet announced
             ann = eff - timedelta(days=14)
-            provisional = (y >= 2027)
+            source = (
+                f"verified: ftserussell.com press release — effective {eff}"
+                if not provisional
+                else (
+                    "rule-computed: effective = Monday after 3rd Friday of "
+                    f"{date(y,m,1).strftime('%b')} {y}; verify at ftserussell.com"
+                )
+            )
             cats.append({
                 "type": "FTSE_REVIEW",
                 "name_en": f"FTSE Russell Index Review — {date(y,m,1).strftime('%b')} {y}",
@@ -236,8 +318,7 @@ def _build_catalog() -> list[dict]:
                 "announce_date": ann.isoformat(),
                 "effective_date": eff.isoformat(),
                 "scope": "FTSE China 50 / FTSE Emerging Markets",
-                "source_note": ("rule-computed: effective = Monday after 3rd Friday of "
-                                f"{date(y,m,1).strftime('%b')} {y}; verify at ftserussell.com"),
+                "source_note": source,
                 "provisional": provisional,
                 "display_only": True,
             })

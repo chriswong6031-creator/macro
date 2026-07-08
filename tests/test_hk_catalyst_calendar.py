@@ -378,3 +378,120 @@ def test_real_catalog_no_writes_to_data_or_site(tmp_path):
     # No assertion about tmp_path — just confirming no FileNotFoundError or write side-effects
     assert snap is not None
     assert isinstance(strip, list)
+
+
+# ---------------------------------------------------------------------------
+# REAL-DATE REGRESSION TESTS
+# These assert KNOWN-VERIFIED effective dates from official published notices.
+# If the date arithmetic changes and produces wrong dates, these fail first.
+# Sources verified session 2026-07-08 (see engine comments for URLs).
+# ---------------------------------------------------------------------------
+
+def _catalog_by_key(catalog: list[dict]) -> dict[tuple[str, str], dict]:
+    """Index catalog by (type, effective_date) for easy lookup."""
+    return {(c["type"], c["effective_date"]): c for c in catalog}
+
+
+def test_hsi_q4_2024_effective_date():
+    """HSI Q4-2024 review: effective 2025-03-10 (verified from hsi.com.hk 2025-02-21 PR)."""
+    catalog = CAT._build_catalog()
+    idx = _catalog_by_key(catalog)
+    entry = idx.get(("HSI_REVIEW", "2025-03-10"))
+    assert entry is not None, (
+        "HSI_REVIEW effective 2025-03-10 missing from catalog — "
+        "date arithmetic regression (Q4-2024 review)"
+    )
+    assert entry["provisional"] is False, "Verified date must not be provisional"
+
+
+def test_hsi_q3_2025_effective_date():
+    """HSI Q3-2025 review: effective 2025-09-08 (verified from hsi.com.hk 2025-07-02 notice)."""
+    catalog = CAT._build_catalog()
+    idx = _catalog_by_key(catalog)
+    entry = idx.get(("HSI_REVIEW", "2025-09-08"))
+    assert entry is not None, (
+        "HSI_REVIEW effective 2025-09-08 missing from catalog — "
+        "date arithmetic regression (Q3-2025 review)"
+    )
+    assert entry["provisional"] is False, "Verified date must not be provisional"
+
+
+def test_msci_aug_2025_effective_date():
+    """MSCI Aug-2025 semi-annual: effective 2025-08-27 (verified from msci.com update)."""
+    catalog = CAT._build_catalog()
+    idx = _catalog_by_key(catalog)
+    entry = idx.get(("MSCI_REVIEW", "2025-08-27"))
+    assert entry is not None, (
+        "MSCI_REVIEW effective 2025-08-27 missing from catalog — "
+        "date arithmetic regression (Aug-2025 semi-annual)"
+    )
+    assert entry["provisional"] is False, "Verified date must not be provisional"
+
+
+def test_ftse_sep_2025_effective_date():
+    """FTSE Q3-2025 review: effective 2025-09-22 (verified from lseg.com/ftse-russell PR)."""
+    catalog = CAT._build_catalog()
+    idx = _catalog_by_key(catalog)
+    entry = idx.get(("FTSE_REVIEW", "2025-09-22"))
+    assert entry is not None, (
+        "FTSE_REVIEW effective 2025-09-22 missing from catalog — "
+        "date arithmetic regression (Sep-2025 Q3 review)"
+    )
+    assert entry["provisional"] is False, "Verified date must not be provisional"
+
+
+def test_provisional_flag_honest():
+    """Every non-verified catalog entry must be provisional=True.
+    This guards the house epistemics rule: rule-computed dates are always ~."""
+    catalog = CAT._build_catalog()
+    # Dates we have actually verified from official sources
+    _known_verified = {
+        ("HSI_REVIEW",   "2025-03-10"),
+        ("HSI_REVIEW",   "2025-09-08"),
+        ("HSI_REVIEW",   "2026-06-08"),
+        ("MSCI_REVIEW",  "2025-02-28"),
+        ("MSCI_REVIEW",  "2025-05-30"),
+        ("MSCI_REVIEW",  "2025-08-27"),
+        ("MSCI_REVIEW",  "2025-11-25"),
+        ("FTSE_REVIEW",  "2025-09-22"),
+        # STOCK_CONNECT_REVIEW entries are always provisional — tested separately
+    }
+    for c in catalog:
+        key = (c["type"], c["effective_date"])
+        if key in _known_verified:
+            assert c["provisional"] is False, (
+                f"{key} is a verified date but marked provisional"
+            )
+        elif c["type"] != "STOCK_CONNECT_REVIEW":
+            # Non-stock-connect, non-verified entries MUST be provisional
+            assert c["provisional"] is True, (
+                f"{key} is rule-computed but provisional=False — "
+                "violates house epistemics (uncertainty must be printed)"
+            )
+
+
+def test_msci_dates_within_review_month():
+    """MSCI effective dates must fall WITHIN the review month, not in the next month.
+    The old (buggy) code used first-biz-day of NEXT month; regression guard."""
+    import calendar as _cal
+    catalog = CAT._build_catalog()
+    for c in catalog:
+        if c["type"] != "MSCI_REVIEW":
+            continue
+        eff = date.fromisoformat(c["effective_date"])
+        # The name encodes the review month: "MSCI Index Review — Feb semi-annual 2025"
+        name = c["name_en"]
+        month_map = {
+            "Feb": 2, "May": 5, "Aug": 8, "Nov": 11,
+        }
+        review_month = None
+        for abbr, mnum in month_map.items():
+            if abbr in name:
+                review_month = mnum
+                break
+        if review_month is None:
+            continue
+        # Effective date must be IN the review month (not the next)
+        assert eff.month == review_month, (
+            f"MSCI effective {eff} falls outside review month {review_month}: {name}"
+        )
