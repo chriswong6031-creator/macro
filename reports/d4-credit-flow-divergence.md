@@ -71,6 +71,8 @@ The flow residual is NOT spanned by OAS level + change at either horizon. The or
 
 _Independent verification (calendar-day drawdowns): 63d partial r = +0.1063, p = 0.0009 — consistent. 21d partial r = +0.0442, p = 0.168 — borderline (fails at the 5% bar in the calendar-day computation). This discrepancy is noted and documented but does not change the AUC gate outcome._
 
+**Overlap / autocorrelation caveat (methodological disclosure):** The p-values above are raw Pearson p-values computed on N=978 weekly observations. The forward labels span 3-week (21d) and 9-week (63d) windows, introducing heavy label autocorrelation. Effective N after overlap correction is approximately 978/3 ≈ 326 for the 21d horizon and 978/9 ≈ 109 for the 63d horizon. Under a Newey-West or block-bootstrap correction at these effective sample sizes, the 21d p-value (0.0479) would not survive the 5% bar; the 63d p-value (0.0007) is robust enough to survive at either effective-N estimate. The gate verdict — the study proceeds to AUC — is conservative: the 63d partial r is real. However, the 21d "SURVIVES" phrasing overstates significance; a Newey-West 21d corrected result would read as borderline/failing. Since the AUC gate ultimately fails at both horizons regardless, this does not affect the final STOP disposition, but the uncorrected p-values should not be cited as standalone evidence of 21d forecasting ability.
+
 ---
 
 ## 5. AUC comparison — decisive gate
