@@ -31,7 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
-| neural-web | 41 |
+| neural-web | 42 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 3 |
@@ -55,13 +55,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 155 |
 | infrastructure | 71 |
 | scored | 4 |
-| shadow | 40 |
+| shadow | 41 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 258 |
+| git | 259 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -311,6 +311,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 2 | 1 |
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 2 | 1 |
+| liquidity-plumbing | `data/neuralweb/liquidity_plumbing.json` | json | daily-engine | shadow | 3 | 0 |
 | machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 3 | 0 |
 | neuralweb-health | `data/neuralweb/health.json` | json | daily-engine | infrastructure | 3 | 0 |
 | rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 3 | 0 |

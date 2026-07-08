@@ -576,7 +576,9 @@ def test_full_composition_shape(tmp_path):
                  # R6 cross-asset lobe
                  "cross_asset_flows",
                  # CN-SYS W7 China market-state lobe
-                 "china_market_state"):
+                 "china_market_state",
+                 # liquidity_plumbing wiring line (backward-compat: "liquidity" key preserved)
+                 "liquidity_plumbing"):
         assert key in payload, f"missing top-level key: {key!r}"
 
     # All R5+R6 lobes carry display_only=True
@@ -586,6 +588,16 @@ def test_full_composition_shape(tmp_path):
         assert payload[lobe_key].get("display_only") is True, (
             f"{lobe_key!r} missing display_only=True"
         )
+
+    # liquidity_plumbing lobe present and display_only (backward-compat: "liquidity" key untouched)
+    lp_lobe = payload["liquidity_plumbing"]
+    assert isinstance(lp_lobe, dict), "liquidity_plumbing must be a dict"
+    assert lp_lobe.get("display_only") is True, "liquidity_plumbing missing display_only=True"
+    # Backward-compat: legacy "liquidity" key must still be present and unchanged
+    assert "liquidity" in payload, "backward-compat: existing 'liquidity' key must be preserved"
+    assert payload["liquidity"].get("liquidity_overlay") is not None or payload["liquidity"] is not None, (
+        "legacy 'liquidity' key content must be preserved"
+    )
 
     # CN-SYS W7: china_market_state lobe present and display_only
     cn_lobe = payload["china_market_state"]
@@ -603,9 +615,15 @@ def test_full_composition_shape(tmp_path):
     # (R5 factor_weather rotation enrichment was withdrawn at rebase — it collided
     # with the factor-intel program's RUL-NW2 canonical-artifact ruling, #1589.)
 
-    # No gaps from a full tree (contradictions gaps are expected for optional inputs
-    # not included in this fixture — filter them as they are W4 display-only)
-    non_contra_gaps = [g for g in payload["gaps"] if not g.startswith("contradictions/")]
+    # No gaps from a full tree.  Two categories of expected absences are filtered:
+    # 1. contradictions/ gaps — W4 display-only optional inputs not in this fixture.
+    # 2. liquidity_plumbing gap — artifact produced by scripts/build_liquidity_plumbing.py
+    #    (ENGINE builder lane); not present in the minimal fixture tree by design.
+    non_contra_gaps = [
+        g for g in payload["gaps"]
+        if not g.startswith("contradictions/")
+        and "liquidity_plumbing" not in g
+    ]
     assert non_contra_gaps == [], f"unexpected non-contradictions gaps: {non_contra_gaps}"
 
 

@@ -6342,6 +6342,40 @@ artifacts:
       (data/cycle_pattern/truths.jsonl); FT-3 may only be registered under that
       truth's reopening conditions.
 
+  liquidity-plumbing:
+    path: data/neuralweb/liquidity_plumbing.json
+    format: json
+    producer: scripts/build_liquidity_plumbing.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: neuralweb.liquidity_plumbing.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/ask_brain.py
+      - engine/neuralweb/contradictions.py
+    external_consumers: []
+    notes: >
+      DISPLAY/DE-ESCALATION ONLY — no score raise, no ranking authority.
+      Phase 0+1 aggregation lobe: quantity (fed_net_liquidity.parquet),
+      quality + overlay + fed_stance + conditions (regime/latest.json),
+      treasury (net_issuance.parquet, tga.parquet), auction context
+      (treasury_auctions/auctions.parquet). Funding scarcity spreads and
+      H.4.1 swap/FIMA blocks are NULL with honest gaps[] entries pending
+      Phases 3 and 5. Fed/Treasury posture language: "condition/steer"
+      not "control markets"; swap-line usage = stress backstop not
+      risk-on. LLM authority: explain, attend, de-escalate only.
+      The sole entry tailwind is the already-measured cycle-ladder 21d
+      nudge (engine/cycles.py untouched); this lobe exposes its context
+      and quality, not a new one.
+
   # --- PR-A3: Operator-tape outcome resolution ---
   oracle-operator-tape-outcomes:
     path: data/oracle/operator_tape_outcomes.jsonl

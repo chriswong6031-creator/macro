@@ -302,6 +302,20 @@ lanes:
                    data/treasury/tga.parquet]
           outputs: [data/macro/fed_net_liquidity.parquet,
                     data/macro/fed_net_liquidity_meta.json]
+      - id: build_liquidity_plumbing
+        module: scripts.build_liquidity_plumbing
+        note: >
+          non-fatal; Neural Web liquidity-plumbing lobe (neuralweb.liquidity_plumbing.v1)
+          — pure aggregation, no network calls. Runs AFTER build_netliq_daily (consumes
+          data/macro/fed_net_liquidity.parquet) and AFTER the regime/treasury/auction
+          artifacts are present. Shadow-tier, display/de-escalation only, no score raise.
+          inputs: [data/macro/fed_net_liquidity.parquet,
+                   data/macro/fed_net_liquidity_meta.json,
+                   data/regime/latest.json,
+                   data/treasury/net_issuance.parquet,
+                   data/treasury/tga.parquet,
+                   data/treasury_auctions/auctions.parquet]
+          outputs: [data/neuralweb/liquidity_plumbing.json]
       - id: build_release_forecast
         module: scripts.build_release_forecast
         note: >

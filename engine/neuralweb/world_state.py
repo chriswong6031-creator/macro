@@ -1811,6 +1811,114 @@ def _compose_china_market_state(root: "Path | str | None" = None) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Liquidity Plumbing lobe (neuralweb.liquidity_plumbing.v1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compose_liquidity_plumbing(root: "Path | str | None" = None) -> dict:
+    """Compose the liquidity_plumbing sub-block for world_state.
+
+    Reads data/neuralweb/liquidity_plumbing.json (produced by
+    scripts/build_liquidity_plumbing.py, nightly cadence).
+
+    Follows the _compose_factor_weather / _compose_context_risk fail-open
+    discipline exactly:
+    - all data loading is internal to this function
+    - _clean() on every value
+    - strip_envelope() before reading fields
+    - display_only=True always
+    - absent artifact → {"available": False}
+
+    Authority: shadow tier, context/entry-quality only. DE-ESCALATION authority
+    solely. No score raise, no hard gate. Backward-compat: does NOT touch or
+    replace the existing "liquidity" key (which carries liquidity_overlay from
+    regime).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "neuralweb" / "liquidity_plumbing.json"
+
+    _null: dict = {
+        "available": False,
+        "display_only": True,
+    }
+
+    if not path.exists():
+        log.info("liquidity_plumbing: artifact absent (%s) — null block", path)
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            log.warning("liquidity_plumbing: artifact not a dict — null block")
+            return dict(_null)
+
+        # Strip envelope keys before reading payload fields
+        try:
+            from engine.neuralweb.envelope import strip_envelope  # noqa: PLC0415
+            payload = strip_envelope(raw)
+        except Exception:  # noqa: BLE001
+            payload = raw
+
+        # Extract top-level fields per schema neuralweb.liquidity_plumbing.v1
+        headline = payload.get("headline") or {}
+        quantity = payload.get("quantity") or {}
+        quality = payload.get("quality") or {}
+        rrp = payload.get("rrp") or {}
+        fed = payload.get("fed") or {}
+        treasury = payload.get("treasury") or {}
+        entry_effect = payload.get("entry_effect") or {}
+        authority = payload.get("authority") or {}
+
+        return {
+            "available": True,
+            "asof": _clean(payload.get("asof")),
+            "schema": _clean(payload.get("schema")),
+            # headline: state label + quality-caveated summary
+            "state": _clean(headline.get("state")),
+            "summary": _clean(headline.get("summary")),
+            # quantity: key levels and overlay
+            "netliq_bn": _clean(quantity.get("netliq_bn")),
+            "netliq_chg_20d_bn": _clean(quantity.get("netliq_chg_20d_bn")),
+            "netliq_chg_65d_bn": _clean(quantity.get("netliq_chg_65d_bn")),
+            "netliq_pctile_expanding": _clean(quantity.get("netliq_pctile_expanding")),
+            "overlay": _clean(quantity.get("overlay")),
+            # quality: composition and stress flags
+            "quality_label": _clean(quality.get("label")),
+            "fed_share": _clean(quality.get("fed_share")),
+            "mechanical": _clean(quality.get("mechanical")),
+            "stress_confirming": _clean(quality.get("stress_confirming")),
+            # RRP buffer state
+            "rrp_bn": _clean(rrp.get("rrp_bn")),
+            "rrp_chg_20d_bn": _clean(rrp.get("rrp_chg_20d_bn")),
+            "rrp_buffer_state": _clean(rrp.get("buffer_state")),
+            # Fed
+            "fed_assets_bn": _clean(fed.get("assets_bn")),
+            "fed_assets_chg_20d_bn": _clean(fed.get("assets_chg_20d_bn")),
+            "fed_policy_stance": _clean(fed.get("policy_stance")),
+            "fed_asof": _clean(fed.get("asof")),
+            # Treasury
+            "tga_bn": _clean(treasury.get("tga_bn")),
+            "tga_chg_20d_bn": _clean(treasury.get("tga_chg_20d_bn")),
+            "net_issuance_20d_bn": _clean(treasury.get("net_issuance_20d_bn")),
+            "treasury_asof": _clean(treasury.get("asof")),
+            # Entry effect (context/entry-quality authority only)
+            "entry_effect_direction": _clean(entry_effect.get("direction")),
+            "entry_effect_quality": _clean(entry_effect.get("quality")),
+            "entry_effect_basis": _clean(entry_effect.get("measured_basis")),
+            "entry_effect_use": _clean(entry_effect.get("use")),
+            # Authority block (constants — never raises a score)
+            "authority_entry_tailwind": _clean(authority.get("entry_tailwind")),
+            "authority_score_raise": False,  # house-law constant
+            # Gaps and degraded flag
+            "gaps": _clean(payload.get("gaps") or []),
+            "degraded": _clean(payload.get("degraded")),
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("liquidity_plumbing: compose failed — %s", exc)
+        return dict(_null)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1975,6 +2083,26 @@ def build_world_state(
         log.warning("world_state: context_risk lobe failed — %s", exc)
         gaps.append(f"context_risk: {exc}")
         context_risk_block = {"available": False, "display_only": True}
+
+    # ── 6f-lp. liquidity_plumbing (neuralweb.liquidity_plumbing.v1) — fail-open
+    # Reads data/neuralweb/liquidity_plumbing.json (nightly).
+    # Preserves existing "liquidity" key (backward-compat — different block).
+    _lp_path = data_dir / "neuralweb" / "liquidity_plumbing.json"
+    try:
+        liquidity_plumbing_block: dict = _compose_liquidity_plumbing(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: liquidity_plumbing lobe failed — %s", exc)
+        gaps.append(f"liquidity_plumbing: {exc}")
+        liquidity_plumbing_block = {"available": False, "display_only": True}
+    sources[str(_lp_path.relative_to(repo))] = (
+        liquidity_plumbing_block.get("asof")
+        if liquidity_plumbing_block.get("available") else None
+    )
+    if not _lp_path.exists():
+        gaps.append(
+            "data/neuralweb/liquidity_plumbing.json: absent "
+            "(run scripts/build_liquidity_plumbing.py to populate)"
+        )
 
     # ── 6f. china_market_state (CN-SYS W7 NW adapter) — fail-open ──────────
     # Reads site/chinastatedata/market_state.json (asia-close cadence).
@@ -2150,10 +2278,13 @@ def build_world_state(
             "gaps": contra_gaps,
             "display_only": True,
             "note": (
-                "W4 contradiction detector: 6 typed pairs "
+                "W4 contradiction detector: 9 typed pairs "
                 "(regime-vs-market_state, regime_vector-vs-risk_radar, "
                 "oracle-vs-sector_central, vol_regime-vs-market_state, "
-                "briefing-divergences, cross_asset_confirm-diverge).  "
+                "briefing-divergences, cross_asset_confirm-diverge, "
+                "oracle-out-vs-entry-buy, "
+                "liquidity_overlay_expanding-vs-quality_stress, "
+                "benign_liquidity_tailwind-vs-freshness_degraded).  "
                 "Display-only; no gate, no rank raise."
             ),
         }
@@ -2189,6 +2320,7 @@ def build_world_state(
         "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
         "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
         "context_risk": context_risk_block,  # R-CI7 nw-context-intelligence W3 wiring line
+        "liquidity_plumbing": liquidity_plumbing_block,  # neuralweb.liquidity_plumbing.v1 wiring line
         "china_market_state": china_market_state_block,  # CN-SYS W7 NW adapter wiring line
         "qi": None,
         "qi_note": (
