@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-08 15:11:43 UTC",
+  "built": "2026-07-08 16:55:14 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-08 11:11 EDT"
+    "local_time": "2026-07-08 12:55 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -18,29 +18,25 @@
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": -0.72
+      "chg_pct": -0.6
     },
     {
       "sym": "QQQ",
-      "chg_pct": -0.44
+      "chg_pct": -0.31
     },
     {
       "sym": "VIX",
-      "chg_pct": 10.6
+      "chg_pct": 8.25
     }
   ],
   "display": {
-    "verdict": "MIXED",
-    "label_en": "Mixed",
-    "label_zh": "\u6df7\u5408",
-    "color": "yellow",
+    "verdict": "RISK_OFF",
+    "label_en": "Risk-off",
+    "label_zh": "\u907f\u9669",
+    "color": "red",
     "score": 40,
-    "band_changed": false,
-    "pending": {
-      "verdict": "RISK_OFF",
-      "ticks": 1,
-      "needs": 2
-    }
+    "band_changed": true,
+    "pending": null
   },
   "live": {
     "verdict": "RISK_OFF",
@@ -54,7 +50,7 @@
     "radar": {
       "state": "caution",
       "state_ungated": "risk-off",
-      "top_score": 81,
+      "top_score": 79,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": {
@@ -106,7 +102,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 85,
+      "score": 82,
       "basis": "live",
       "asof": "live"
     },
