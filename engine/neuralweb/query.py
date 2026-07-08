@@ -123,6 +123,8 @@ __all__ = [
     "write_index",
     "load_index",
     "query",
+    "_stamp_personality",   # NW-CI W2: exported for tests
+    "_CI_NEW_COLS",         # NW-CI W2: exported for tests
 ]
 
 # ---------------------------------------------------------------------------
@@ -185,6 +187,10 @@ COLUMNS: list[str] = [
     # macro_context_id provenance is guaranteed separately by the max-asof
     # join-key law.  A row with a live macro_context_id whose quad was filled
     # from history is correctly 'recomputed_history'.
+    # NW-CI W2 — personality coordinates (additive; None defaults; R-CI3 provenance)
+    "chart_primary",     # primary chart label from PIT parquet or production JSON
+    "micro_primary",     # primary micro-structure label
+    "personality_basis", # pit_labels | snapshot_fresh | absent
 ]
 
 # Conservative defaults for role flag columns in _ensure_columns / load_index.
@@ -205,6 +211,14 @@ _R5_NEW_COLS: tuple[str, ...] = (
     "market",
     "own_market_quad",
     "regime_stamp_basis",
+)
+
+# NW-CI W2 new columns — None defaults; personality coordinates.
+# personality_basis ∈ {pit_labels, snapshot_fresh, absent} per R-CI3.
+_CI_NEW_COLS: tuple[str, ...] = (
+    "chart_primary",
+    "micro_primary",
+    "personality_basis",
 )
 
 # Ledgers whose rows are reconstructed from history, not registered at live time.
@@ -298,7 +312,7 @@ def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     for c in COLUMNS:
         if c not in df.columns:
-            if c in _R5_NEW_COLS:
+            if c in _R5_NEW_COLS or c in _CI_NEW_COLS:
                 df[c] = None
             else:
                 # Use conservative default for flag cols; NaN for everything else
@@ -1121,6 +1135,12 @@ def build_index(
     # This is display-only family metadata, not PIT-sensitive.
     combined = _stamp_family_half_life(combined, root)
 
+    # NW-CI W2 — personality coordinates: chart_primary, micro_primary, personality_basis.
+    # PIT parquet join for the 223 deep names; production JSON only for rows whose
+    # as_of is within 5 trading days of the JSON's as_of (R-CI3 provenance law).
+    # Fail-open: absent PIT parquet → all rows basis='absent'.
+    combined = _stamp_personality(combined, root)
+
     return combined, gaps
 
 
@@ -1173,6 +1193,173 @@ def _stamp_family_half_life(df: pd.DataFrame, root: Path | str | None) -> pd.Dat
 
     except Exception as e:  # noqa: BLE001
         log.warning("_stamp_family_half_life: failed (half_life stays NaN): %s", e)
+
+    return df
+
+
+def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.DataFrame:
+    """Stamp chart_primary, micro_primary, personality_basis onto spine rows.
+
+    R-CI3 provenance law (HARD BOUNDARY — do NOT weaken):
+      pit_labels   : row's (symbol, as_of) sourced from data/research/personality_pit_labels.parquet
+                     (the 223 deep names, daily PIT labels).  Applied at each row's as_of.
+      snapshot_fresh: row's as_of is within 5 trading days of the production JSON's as_of AND
+                     the ticker is in the production JSON per_ticker dict.  Applied ONLY for
+                     non-deep-name tickers when PIT parquet misses.  Today's snapshot is
+                     NEVER applied to rows older than 5 trading days — this is the leak
+                     boundary.
+      absent       : no PIT data available for this (ticker, as_of) combination.
+
+    Mirror of _stamp_historical_quads pattern: deterministic, build-time, fail-open.
+    PIT parquet read is lazy and cached within this call (no cross-call cache contamination).
+    If the PIT parquet is absent, all rows get personality_basis='absent'.
+
+    Non-destructive: rows that already carry a non-null personality_basis are not overwritten.
+    """
+    if df.empty:
+        return df
+
+    # Ensure columns exist (additive — _ensure_columns adds them as None)
+    for col in ("chart_primary", "micro_primary", "personality_basis"):
+        if col not in df.columns:
+            df[col] = None
+
+    data_p = _data_dir(root) if root is not None else _data_dir(None)
+
+    # ---------------------------------------------------------------------------
+    # 1. Load PIT parquet (lazy, local cache for this call)
+    # ---------------------------------------------------------------------------
+    pit_labels: pd.DataFrame | None = None
+    pit_tickers: frozenset[str] = frozenset()
+    pit_path = data_p / "research" / "personality_pit_labels.parquet"
+    if pit_path.exists():
+        try:
+            pit_labels = pd.read_parquet(pit_path)
+            if "ticker" in pit_labels.columns:
+                pit_tickers = frozenset(pit_labels["ticker"].dropna().unique())
+            else:
+                pit_labels = None
+                log.warning("_stamp_personality: personality_pit_labels.parquet missing 'ticker' column")
+        except Exception as e:  # noqa: BLE001
+            log.warning("_stamp_personality: cannot read personality_pit_labels.parquet (%s)", e)
+            pit_labels = None
+
+    if pit_labels is not None and not pit_labels.empty:
+        # Pre-process PIT parquet: ensure date column is datetime
+        pit_labels = pit_labels.copy()
+        if "date" in pit_labels.columns:
+            pit_labels["_dt"] = pd.to_datetime(pit_labels["date"], errors="coerce")
+        else:
+            pit_labels = None  # cannot proceed without a date column
+            log.warning("_stamp_personality: personality_pit_labels.parquet missing 'date' column")
+
+    # ---------------------------------------------------------------------------
+    # 2. Load production JSON (for snapshot_fresh fallback)
+    # ---------------------------------------------------------------------------
+    prod_per_ticker: dict = {}
+    prod_asof_ts: pd.Timestamp | None = None
+
+    if root is not None:
+        root_p = Path(root)
+    else:
+        # Walk up from this file
+        root_p = Path(__file__).resolve().parent.parent.parent
+
+    prod_json_path = root_p / "site" / "factordata" / "stock_personality.json"
+    if prod_json_path.exists():
+        try:
+            raw = json.loads(prod_json_path.read_text(encoding="utf-8"))
+            prod_per_ticker = raw.get("per_ticker") or {}
+            as_of_str = raw.get("as_of")
+            if as_of_str:
+                try:
+                    prod_asof_ts = pd.Timestamp(as_of_str).normalize()
+                except Exception:  # noqa: BLE001
+                    prod_asof_ts = None
+        except Exception as e:  # noqa: BLE001
+            log.warning("_stamp_personality: cannot read stock_personality.json (%s)", e)
+
+    # ---------------------------------------------------------------------------
+    # 3. Stamp rows: first PIT parquet, then snapshot_fresh fallback
+    # ---------------------------------------------------------------------------
+    # Only process rows with null personality_basis (non-destructive)
+    needs_stamp = df["personality_basis"].isna()
+    if not needs_stamp.any():
+        return df
+
+    work = df.loc[needs_stamp, ["symbol", "as_of"]].copy()
+    work["_as_of_dt"] = pd.to_datetime(work["as_of"], errors="coerce")
+
+    # --- Pass A: PIT parquet join for deep names ---
+    if pit_labels is not None and not pit_labels.empty:
+        deep_mask = work["symbol"].isin(pit_tickers)
+        if deep_mask.any():
+            deep_work = work[deep_mask].copy().sort_values("_as_of_dt")
+
+            # For each unique ticker in deep_mask, do backward merge_asof
+            for ticker_val, ticker_group in deep_work.groupby("symbol"):
+                ticker_pit = pit_labels[pit_labels["ticker"] == ticker_val].copy()
+                if ticker_pit.empty or "_dt" not in ticker_pit.columns:
+                    continue
+                ticker_pit_sorted = ticker_pit.dropna(subset=["_dt"]).sort_values("_dt")
+
+                merged = pd.merge_asof(
+                    ticker_group.sort_values("_as_of_dt"),
+                    ticker_pit_sorted[["_dt", "chart_primary", "micro_primary"]],
+                    left_on="_as_of_dt",
+                    right_on="_dt",
+                    direction="backward",
+                )
+                merged.index = ticker_group.index
+
+                # Apply to main df for rows where a match was found (chart_primary not null)
+                matched = merged.index[merged["chart_primary"].notna()]
+                if len(matched) > 0:
+                    df.loc[matched, "chart_primary"] = merged.loc[matched, "chart_primary"].values
+                    # micro_primary: null is valid (some rows lack micro labels)
+                    df.loc[matched, "micro_primary"] = merged.loc[matched, "micro_primary"].values
+                    df.loc[matched, "personality_basis"] = "pit_labels"
+
+    # --- Pass B: snapshot_fresh fallback for non-deep names within 5 trading days ---
+    if prod_per_ticker and prod_asof_ts is not None:
+        still_needs = df["personality_basis"].isna()
+        if still_needs.any():
+            work2 = df.loc[still_needs, ["symbol", "as_of"]].copy()
+            work2["_as_of_dt"] = pd.to_datetime(work2["as_of"], errors="coerce")
+
+            # Only apply to rows where as_of is within 5 trading days of prod_asof_ts
+            for idx, row in work2.iterrows():
+                row_dt = row["_as_of_dt"]
+                if pd.isna(row_dt):
+                    df.at[idx, "personality_basis"] = "absent"
+                    continue
+                # Use bdate_range length as trading-day gap
+                try:
+                    d0 = min(row_dt, prod_asof_ts)
+                    d1 = max(row_dt, prod_asof_ts)
+                    gap = len(pd.bdate_range(d0, d1))
+                except Exception:  # noqa: BLE001
+                    gap = 999
+
+                if gap <= 5:
+                    ticker_val = row["symbol"]
+                    rec = prod_per_ticker.get(str(ticker_val)) if ticker_val is not None else None
+                    if isinstance(rec, dict):
+                        charts = [c for c in (rec.get("chart") or []) if isinstance(c, str)]
+                        micros = [m for m in (rec.get("micro") or []) if isinstance(m, str)]
+                        df.at[idx, "chart_primary"] = charts[0] if charts else None
+                        df.at[idx, "micro_primary"] = micros[0] if micros else None
+                        df.at[idx, "personality_basis"] = "snapshot_fresh"
+                    else:
+                        df.at[idx, "personality_basis"] = "absent"
+                else:
+                    # Date too far from production snapshot — R-CI3 leak boundary
+                    df.at[idx, "personality_basis"] = "absent"
+
+    # Any remaining null → absent
+    still_null = df["personality_basis"].isna()
+    if still_null.any():
+        df.loc[still_null, "personality_basis"] = "absent"
 
     return df
 
