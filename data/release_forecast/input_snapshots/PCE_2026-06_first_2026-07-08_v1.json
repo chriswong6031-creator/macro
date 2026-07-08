@@ -1,0 +1,11 @@
+{
+  "prediction_id": "PCE:2026-06:first:2026-07-08:v1",
+  "asof": "2026-07-08",
+  "features": {
+    "gasoline_mom": null
+  },
+  "legs": {
+    "gasoline_mom": "unrevised"
+  },
+  "inputs_hash": ""
+}

@@ -607,6 +607,8 @@ def _project_target(
         "release": release,
         "asof": asof.isoformat(),
         "inputs_hash": compute_inputs_hash(feats),
+        # input_manifest: feature values used for this projection (MRI-R26 honesty, rework-2a).
+        "input_manifest": {k: v for k, v in feats.items()},
         "point": round(point, 4) if point is not None else None,
         "p10": quantiles["p10"],
         "p25": quantiles["p25"],

@@ -70,12 +70,17 @@ def _extract_provenance(projection: dict) -> dict[str, Any]:
 def _declared_legs(prov: dict[str, Any], features: dict[str, Any]) -> list[str]:
     """Infer the full declared-leg list from provenance lists + feature keys.
 
-    The provenance dict stores partial lists; the union of all three lists plus
-    all feature keys (excluding None-absent ones when possible) gives the
-    full declared set.
+    The provenance dict stores partial lists; the union of ALL leg lists
+    (revision_optimistic_legs, vintaged_legs, unrevised_legs, absent_legs)
+    plus all input_manifest / feature keys gives the full declared set.
+
+    vintaged_legs: ALFRED first-print legs that are present and reliable; these
+    were previously invisible to coverage computation (MRI-R26 rework-2a fix).
+    input_manifest: per-feature values keyed by feature name; all keys are declared
+    even when the value is None.
     """
     declared: set[str] = set()
-    for key in ("revision_optimistic_legs", "unrevised_legs", "absent_legs"):
+    for key in ("revision_optimistic_legs", "vintaged_legs", "unrevised_legs", "absent_legs"):
         val = prov.get(key)
         if isinstance(val, list):
             declared.update(val)
@@ -106,29 +111,38 @@ def build_input_snapshot(projection: dict) -> dict:
     try:
         prov = _extract_provenance(projection)
         rev_opt = prov.get("revision_optimistic_legs") or []
+        vintaged = prov.get("vintaged_legs") or []
         unrev = prov.get("unrevised_legs") or []
         absent = prov.get("absent_legs") or []
 
         # Reconstruct the features sub-dict.
-        # The projection dict does not store raw feature values directly (they
-        # are not surfaced in the output dict; see engine/release_forecast.py).
-        # We expose what is available: the provenance leg lists serve as feature
-        # proxies. The snapshot captures status per declared leg.
+        # Priority order for feature values:
+        #   1. input_manifest (real values from the projection, rework-2a addition)
+        #   2. _features / features fallback (call-site synthetic keys)
+        #   3. provenance leg lists (status markers; value=None for status-only legs)
         features: dict[str, Any] = {}
-        all_legs = set(rev_opt) | set(unrev) | set(absent)
+        all_legs_from_prov = set(rev_opt) | set(vintaged) | set(unrev) | set(absent)
+
+        # Harvest input_manifest (real feature values attached by projection, rework-2a)
+        input_manifest = projection.get("input_manifest") or {}
+        if isinstance(input_manifest, dict):
+            features.update({str(k): v for k, v in input_manifest.items()})
 
         # Also harvest any _features key if present (some call sites attach it)
         raw_features = projection.get("_features") or projection.get("features") or {}
         if isinstance(raw_features, dict):
-            features.update({str(k): v for k, v in raw_features.items()})
+            for k, v in raw_features.items():
+                k_str = str(k)
+                if k_str not in features:
+                    features[k_str] = v
 
-        # Legs from provenance that aren't already in raw_features get None value
-        for leg in all_legs:
+        # Legs from provenance that aren't already in features get None value
+        for leg in all_legs_from_prov:
             if leg not in features:
                 features[leg] = None
 
         legs: dict[str, str] = {}
-        for leg in sorted(all_legs | set(features.keys())):
+        for leg in sorted(all_legs_from_prov | set(features.keys())):
             legs[leg] = _classify_leg(leg, rev_opt, unrev, absent)
 
         # inputs_hash: reuse from projection; fall back to empty string
@@ -200,16 +214,25 @@ def compute_coverage_flags(
         unrev: list[str] = prov.get("unrevised_legs") or []
         absent: list[str] = prov.get("absent_legs") or []
 
-        # FIX (MRI-R27 rework): use _declared_legs to include present/vintaged legs in the
-        # denominator. Without this, legs in _features (not in any provenance list) are
-        # silently excluded → non_vintaged_share=1.0 and fresh_proxy_coverage=0.0 for
-        # mostly-vintaged NFP models. _declared_legs unions provenance lists + feature keys.
+        # FIX (MRI-R26 rework-2a): use _declared_legs to include present/vintaged legs in the
+        # denominator. _declared_legs unions:
+        #   revision_optimistic_legs | vintaged_legs | unrevised_legs | absent_legs
+        #   | input_manifest keys | _features keys
+        # This ensures that mostly-vintaged models (CPI, NFP) report LOW non_vintaged_share
+        # rather than 1.0 (which was the artifact when vintaged legs were invisible).
+        # Priority for feature values: input_manifest > _features.
+        input_manifest: dict[str, Any] = projection.get("input_manifest") or {}
+        if not isinstance(input_manifest, dict):
+            input_manifest = {}
         raw_features: dict[str, Any] = (
             projection.get("_features") or projection.get("features") or {}
         )
         if not isinstance(raw_features, dict):
             raw_features = {}
-        all_legs = _declared_legs(prov, raw_features)
+        # Merge: input_manifest takes precedence over _features
+        merged_features: dict[str, Any] = dict(raw_features)
+        merged_features.update(input_manifest)
+        all_legs = _declared_legs(prov, merged_features)
         n_total = len(all_legs)
 
         # ------------------------------------------------------------------ #
