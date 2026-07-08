@@ -140,14 +140,41 @@ def _median_iv(ivs: list[float]) -> float:
 
 
 def _dte(expiry_str: str, asof_date: str) -> float:
-    """Calendar days from asof_date to expiry_str. Returns 0.5 when expiry is same day."""
+    """Calendar days from asof_date to expiry_str.
+
+    Returns:
+      - Positive float for future expiries.
+      - 0.5 for same-day expiry (intraday contracts; still live on asof).
+      - Negative float for already-expired contracts (expiry < asof).
+
+    Callers that need a positive floor for T_years (e.g. BS gamma) must
+    apply max(dte, 0.001) themselves; _in_window excludes negatives so that
+    expired contracts never enter the cell map.
+    """
     try:
         exp_dt = pd.Timestamp(expiry_str)
         as_dt  = pd.Timestamp(asof_date)
         days = (exp_dt - as_dt).days
-        return max(days, 0.5)
+        if days > 0:
+            return float(days)
+        elif days == 0:
+            return 0.5   # same-day expiry sentinel
+        else:
+            return float(days)   # negative — expired
     except Exception:  # noqa: BLE001
         return 0.5
+
+
+def _to_iso_date(val) -> str:
+    """Normalize an expiration value to plain ISO date string 'YYYY-MM-DD'.
+
+    Handles pandas Timestamps ('2026-07-06 00:00:00'), date objects, and
+    strings already in ISO format.
+    """
+    try:
+        return pd.Timestamp(val).strftime("%Y-%m-%d")
+    except Exception:  # noqa: BLE001
+        return str(val)
 
 
 # ============================================================================ #
@@ -328,6 +355,11 @@ def _heat_seeker(
         expiry = c.get("expiry", "")
         dte_val = c.get("_dte", 1.0)
 
+        # Exclude already-expired contracts — DTE must be > 0
+        # (same-day sentinel 0.5 is retained; negative means past expiry)
+        if dte_val < 0:
+            continue
+
         # exclude nearest-to-spot strike (prism_spec §5 excludeSpotRow)
         if nearest_strike is not None and abs(strike - nearest_strike) < 1e-6:
             continue
@@ -491,8 +523,13 @@ def build_matrix(
         df = df[(df["strike"] >= low_k) & (df["strike"] <= high_k)]
         if "expiration" in df.columns:
             df = df[df["expiration"].notna()]
-            df["_dte"] = df["expiration"].astype(str).apply(lambda e: _dte(e, asof))
-            df = df[df["_dte"] <= _MAX_DTE]
+            # Normalize to plain ISO date ("YYYY-MM-DD") — parquets may store
+            # pandas Timestamps which stringify as "2026-07-06 00:00:00".
+            df["expiration"] = df["expiration"].apply(_to_iso_date)
+            df["_dte"] = df["expiration"].apply(lambda e: _dte(e, asof))
+            # Exclude already-expired contracts: DTE window is [0, +90], never negative.
+            # Same-day expiries are retained (DTE == 0.5 sentinel) per prism_spec §5.
+            df = df[(df["_dte"] > 0) & (df["_dte"] <= _MAX_DTE)]
         return df
 
     oi_t1_w  = _in_window(oi_t1)
@@ -535,7 +572,7 @@ def build_matrix(
     # ── OI[t-1] accumulation with GEX ────────────────────────────────────────
     for _, row in oi_t1_w.iterrows():
         k   = float(row["strike"])
-        exp = str(row.get("expiration", ""))
+        exp = _to_iso_date(row.get("expiration", ""))
         oi  = float(row.get("open_interest", 0) or 0)
         right = str(row.get("right", "")).upper()[:1]
 
@@ -561,7 +598,7 @@ def build_matrix(
     if not oi_t2_w.empty:
         for _, row in oi_t2_w.iterrows():
             k   = float(row["strike"])
-            exp = str(row.get("expiration", ""))
+            exp = _to_iso_date(row.get("expiration", ""))
             oi  = float(row.get("open_interest", 0) or 0)
             right = str(row.get("right", "")).upper()[:1]
             if not exp:
@@ -576,7 +613,7 @@ def build_matrix(
     if not eod_w.empty and "volume" in eod_w.columns:
         for _, row in eod_w.iterrows():
             k   = float(row.get("strike", 0))
-            exp = str(row.get("expiration", ""))
+            exp = _to_iso_date(row.get("expiration", ""))
             vol = float(row.get("volume", 0) or 0)
             right = str(row.get("right", "")).upper()[:1]
             if not exp or k < low_k or k > high_k:
@@ -746,12 +783,15 @@ def _extract_spot(greeks_df: pd.DataFrame, eod_df: pd.DataFrame) -> float | None
 
 
 def _lookup_iv(greeks_df: pd.DataFrame, strike: float, expiry: str, right: str) -> float:
-    """Return IV for (strike, expiry, right) from greeks, or 0.0 if not found."""
+    """Return IV for (strike, expiry, right) from greeks, or 0.0 if not found.
+
+    Both sides normalized to plain ISO date to match regardless of parquet storage type.
+    """
     if greeks_df.empty or "implied_vol" not in greeks_df.columns:
         return 0.0
     mask = (
         (greeks_df["strike"].astype(float) == strike) &
-        (greeks_df["expiration"].astype(str) == expiry) &
+        (greeks_df["expiration"].apply(_to_iso_date) == expiry) &
         (greeks_df["right"].astype(str).str.upper().str[:1] == right[:1])
     )
     sub = greeks_df[mask]["implied_vol"].dropna()
