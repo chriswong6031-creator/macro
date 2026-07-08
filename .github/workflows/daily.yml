@@ -1703,6 +1703,16 @@ jobs:
             echo "::warning title=register_factor_hypotheses::rc=($rc1,$rc2) (non-fatal)"
           fi
           exit 0
+      - name: build context candidates (W4 — nightly context scanner, CORTEX JOB)
+        # R-CI5: three FROZEN v1 template families (T1/T2/T3) with declared budget.
+        # Refuses to run without budget row (GovernorRefusal); budget is idempotently
+        # registered on first run.  Output is display/context tier only (R-CI6).
+        run: |
+          set +e
+          python -m scripts.build_context_candidates > /tmp/context_candidates.log 2>&1; rc=$?
+          cat /tmp/context_candidates.log
+          [ "$rc" -ne 0 ] && echo "::warning title=context_candidates::rc=$rc (non-fatal — last committed context_candidates.jsonl remains valid)"
+          exit 0
       - name: cortex deliberation (Opus-class tool loop — attention queue, memo, hypothesis metabolism)
         run: |
           set +e
@@ -1778,6 +1788,8 @@ jobs:
           # R-CI7: nw-context-intelligence W3 personality risk lens (display-only)
           git add data/neuralweb/context_risk.json 2>/dev/null || true
           git add site/neuralwebdata/context_risk.json 2>/dev/null || true
+          # W4 context scanner: narrow git-add of context_candidates.jsonl only (R-CI6)
+          git add data/neuralweb/context_candidates.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
           git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
           # Retry-rebase push loop (stock_briefs pattern)

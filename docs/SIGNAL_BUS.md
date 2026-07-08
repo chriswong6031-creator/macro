@@ -32,7 +32,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nasdaq-internals | 1 |
 | neural-web | 41 |
 | next3 | 3 |
-| nw-context-intelligence | 2 |
+| nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 7 |
 | options-alpha | 7 |
@@ -51,7 +51,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 148 |
+| display | 149 |
 | infrastructure | 71 |
 | scored | 4 |
 | shadow | 40 |
@@ -60,7 +60,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 251 |
+| git | 252 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -346,6 +346,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| context-candidates | `data/neuralweb/context_candidates.jsonl` | jsonl | nightly-cortex | display | 1 | 0 |
 | context-risk | `data/neuralweb/context_risk.json` | json | nightly-cortex | display | 1 | 0 |
 | site-context-risk | `site/neuralwebdata/context_risk.json` | json | nightly-cortex | display | 0 | 0 |
 

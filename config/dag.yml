@@ -496,6 +496,22 @@ lanes:
           outputs: [data/neuralweb/machine_registry.jsonl,
                     data/neuralweb/governance.jsonl,
                     data/trial_ledger.jsonl]
+      - id: build_context_candidates
+        module: scripts.build_context_candidates
+        note: >
+          W4 nw-context-intelligence — context scanner (CORTEX JOB). Runs three
+          FROZEN v1 templates (T1 composition drift, T2 outcome heterogeneity,
+          T3 co-occurrence shift) against pre-declared budget fdr_family=context_scan.
+          Refuses to run without budget row (GovernorRefusal). Display/context tier
+          only (R-CI6, Article 2). Dedupe against oracle/species/machine/trial-ledger
+          + own archive (dead-stays-dead). Decay after 60 days unrefreshed.
+          Non-fatal (always exits 0 in the workflow step).
+          inputs: [data/neuralweb/spine_index.parquet,
+                   data/us_board_ledger/retro_grades.parquet,
+                   data/neuralweb/context_candidates.jsonl,
+                   data/trial_ledger.jsonl]
+          outputs: [data/neuralweb/context_candidates.jsonl,
+                    data/trial_ledger.jsonl]
       - id: cortex_deliberation
         module: engine.neuralweb.cortex
         note: >
@@ -1624,3 +1640,29 @@ modules:
       Incremental nightly factor panel build (bounded 10-day window).
       data/factordata/panel/ is gitignored (R2 data plane). Also produces
       site/factordata/dna_class.json (DNA class reference; stock-personality program).
+
+  # --- nw-context-intelligence W4: context scanner (CORTEX JOB) ---
+  - module: scripts.build_context_candidates
+    reads:
+      - data/neuralweb/spine_index.parquet
+      - data/us_board_ledger/retro_grades.parquet
+      - data/us_board_ledger/snapshots.jsonl
+      - data/oracle/compounds/registry.jsonl
+      - data/species/registry.json
+      - data/neuralweb/machine_registry.jsonl
+      - data/trial_ledger.jsonl
+      - data/neuralweb/context_candidates.jsonl
+    writes:
+      - data/neuralweb/context_candidates.jsonl
+      - data/trial_ledger.jsonl
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      W4 context scanner (CORTEX JOB, nwci-w4). Runs three FROZEN v1 templates
+      (T1 composition drift, T2 outcome heterogeneity, T3 co-occurrence shift)
+      against pre-declared budget fdr_family='context_scan'. Refuses to run
+      without a declared budget row (GovernorRefusal). Outputs are display/context
+      tier only (horizon_role=context); candidates NEVER rank or score anything
+      (R-CI5, R-CI6, Article 2). Dedupe against oracle/species/machine/trial-ledger
+      + own archive (dead-stays-dead). Decay after 60 days.

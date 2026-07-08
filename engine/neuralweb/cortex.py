@@ -106,6 +106,8 @@ _READ_TOOLS = frozenset({
     "read_cycle_pattern_state",
     # W3 MPC consumer: read-only mechanism pathway artifact
     "read_mechanism_pathways",
+    # W4 context scanner: read-only context candidates + risk lens
+    "read_context_candidates",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -976,6 +978,100 @@ def _tool_explain_factor_context(root: Path, params: dict) -> dict:
     return context
 
 
+def _tool_read_context_candidates(root: Path, params: dict) -> dict:
+    """Read data/neuralweb/context_candidates.jsonl — W4 context scanner output.
+
+    Returns top-K (<=20) non-decayed candidates and the risk-lens summary if
+    data/neuralweb/context_risk.json exists (fail-open when absent).
+
+    R-CI11: bounded top-K, no per-ticker dumps.  is_context_only always true.
+    DISPLAY ONLY — candidates are never signals, never ranked, never scored.
+    All three legal exits for a candidate are: (a) cortex stakes hypothesis via
+    metabolism; (b) human charters pre-reg study; (c) candidate decays.
+    """
+    _MAX_CANDIDATES = 20
+
+    result: dict = {
+        "is_context_only": True,
+        "display_only": True,
+        "mandate": (
+            "context candidates are NEVER signals; exits: (a) stake_hypothesis via "
+            "metabolism; (b) human pre-reg study; (c) decay. Article 1 enforced."
+        ),
+        "candidates": [],
+        "total_non_decayed": 0,
+        "risk_lens": None,
+        "gaps": [],
+    }
+
+    # Load candidates
+    cand_path = _data(root, "neuralweb", "context_candidates.jsonl")
+    if not cand_path.exists():
+        result["gaps"].append(
+            "data/neuralweb/context_candidates.jsonl: absent — "
+            "build_context_candidates has not run yet"
+        )
+    else:
+        try:
+            rows: list[dict] = []
+            with cand_path.open(encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                        if row.get("status") != "decayed":
+                            rows.append(row)
+                    except Exception:  # noqa: BLE001
+                        pass
+
+            result["total_non_decayed"] = len(rows)
+
+            # Apply optional template filter
+            template_filter = str(params.get("template") or "").upper()
+            if template_filter:
+                rows = [r for r in rows if r.get("template", "").upper() == template_filter]
+
+            # Sort by null_pctile descending, cap at _MAX_CANDIDATES
+            rows.sort(key=lambda r: r.get("null_pctile", 0), reverse=True)
+            top_k = params.get("top_k")
+            try:
+                cap = min(int(top_k), _MAX_CANDIDATES) if top_k else _MAX_CANDIDATES
+            except (TypeError, ValueError):
+                cap = _MAX_CANDIDATES
+            result["candidates"] = rows[:cap]
+
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(
+                f"data/neuralweb/context_candidates.jsonl: unreadable — {exc}"
+            )
+
+    # Load risk lens (fail-open)
+    risk_path = _data(root, "neuralweb", "context_risk.json")
+    if not risk_path.exists():
+        result["gaps"].append(
+            "data/neuralweb/context_risk.json: absent — "
+            "build_context_risk has not run yet (W3 pending)"
+        )
+    else:
+        try:
+            risk_doc = json.loads(risk_path.read_text(encoding="utf-8"))
+            # Return summary sub-block only (not full per-ticker detail — R-CI11)
+            result["risk_lens"] = {
+                "as_of": risk_doc.get("as_of"),
+                "board_composition_summary": risk_doc.get("board_composition_summary"),
+                "regime_cell": risk_doc.get("regime_cell"),
+                "display_only": True,
+            }
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(
+                f"data/neuralweb/context_risk.json: unreadable — {exc}"
+            )
+
+    return result
+
+
 def dispatch_tool(
     tool_name: str,
     tool_params: dict,
@@ -1024,6 +1120,8 @@ def dispatch_tool(
         return _tool_read_cycle_pattern_state(root, tool_params)
     elif tool_name == "read_mechanism_pathways":
         return _tool_read_mechanism_pathways(root, tool_params)
+    elif tool_name == "read_context_candidates":
+        return _tool_read_context_candidates(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1235,6 +1333,38 @@ def _tool_schemas() -> list[dict]:
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
+        # --- W4 context scanner: context candidates + risk lens (R-CI11) ---
+        {
+            "name": "read_context_candidates",
+            "description": (
+                "Read data/neuralweb/context_candidates.jsonl — W4 context scanner "
+                "output: top-K (<=20) non-decayed cross-sectional pattern candidates "
+                "(T1 composition drift, T2 outcome heterogeneity, T3 co-occurrence "
+                "shift) plus the risk-lens summary from context_risk.json when present. "
+                "DISPLAY-ONLY ceiling (R-CI6): candidates are NEVER signals; they are "
+                "pattern observations awaiting one of three legal exits: "
+                "(a) stake_hypothesis via metabolism; (b) human pre-reg study; "
+                "(c) decay after 60 days unrefreshed. "
+                "Forbidden: treating candidates as escalations, scores, or ranks. "
+                "is_context_only: true. Fails open with structured gaps when absent. "
+                "Optional params: template (T1/T2/T3 filter), top_k (max 20)."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "template": {
+                        "type": "string",
+                        "description": "Optional: filter by template (T1, T2, or T3)",
+                        "enum": ["T1", "T2", "T3"],
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "description": "Max candidates to return (default 20, max 20)",
+                    },
+                },
+                "required": [],
+            },
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -1338,12 +1468,13 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (16): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (17): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
            read_factor_state, list_factor_contradictions, explain_factor_context,
-           read_cycle_pattern_state, read_mechanism_pathways
+           read_cycle_pattern_state, read_mechanism_pathways,
+           read_context_candidates
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CYCLE-PATTERN CEILING: read_cycle_pattern_state is display/context only. Cite turn-hazard
