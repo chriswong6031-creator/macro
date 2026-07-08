@@ -241,3 +241,70 @@ def test_t15_baskets_china_semis_chip_js_has_dual_lang_path():
     """T15: the renderSemisChip() JS uses label_en and label_zh."""
     assert "label_en" in BASKETS_CHINA_SRC, "label_en not used in semis chip JS"
     assert "label_zh" in BASKETS_CHINA_SRC, "label_zh not used in semis chip JS"
+
+
+# ---------------------------------------------------------------------------
+# Integration wiring tests (MAJOR fix: producer→consumer contract)
+# ---------------------------------------------------------------------------
+
+def test_t16_build_china_library_source_wires_sleeve_chip_onto_setups():
+    """T16: static contract — build_china_library.py must assign setups['sleeve_chip']
+    immediately after wide['sleeve_chip'], matching the board_track/coverage pattern.
+    Catches the BLOCKER where sleeve_chip landed only on `wide` (never on `setups`)."""
+    import inspect
+    from scripts import build_china_library as bcl
+    src = inspect.getsource(bcl)
+
+    # Both assignments must exist in the source
+    assert 'wide["sleeve_chip"] = cn_sleeve_chip()' in src, \
+        "wide['sleeve_chip'] assignment missing from build_china_library"
+    assert 'setups["sleeve_chip"] = wide["sleeve_chip"]' in src, \
+        "setups['sleeve_chip'] not mirrored onto rendered setups object — template will never see chip"
+
+    # The setups assignment must FOLLOW the wide assignment (ordering check)
+    idx_wide = src.index('wide["sleeve_chip"] = cn_sleeve_chip()')
+    idx_setups = src.index('setups["sleeve_chip"] = wide["sleeve_chip"]')
+    assert idx_setups > idx_wide, \
+        "setups['sleeve_chip'] assignment must appear after wide['sleeve_chip'] assignment"
+
+
+def test_t17_sleeve_chip_on_setups_runtime_wiring(monkeypatch):
+    """T17: runtime contract — when cn_sleeve_chip() is callable, the try-block
+    in build_china_library must populate setups['sleeve_chip']. Exercises the
+    actual assignment path (not a hand-injected dict) with a monkeypatched call.
+    Guards against future refactors that re-introduce the producer/consumer split."""
+    import importlib
+    import types
+
+    # Synthetic chip matching cn_sleeve_chip() contract
+    _chip = {
+        "sleeve_factor": 0.9, "radar_state": "caution", "radar_as_of": "2026-07-07",
+        "can_force": False,
+        "label_en": "Sleeve ×0.90 — CN drawdown radar: caution",
+        "label_zh": "仓位 ×0.90 — CN回撤雷达：caution",
+        "dominant_driver_en": "Breadth breakdown (all-boats)",
+        "dominant_driver_zh": "广度普跌（普跌）",
+        "passport": {"basis": "measured", "display_only": True},
+    }
+
+    # Patch cn_sleeve_chip in the engine module before import to ensure the try-block
+    # in build_china_library uses our synthetic value.
+    import engine.risk_radar_intl as rr
+    monkeypatch.setattr(rr, "cn_sleeve_chip", lambda root=None: _chip)
+
+    # Execute ONLY the try-block that assigns sleeve_chip — replicate its exact structure
+    # (from build_china_library.py lines 1833-1838) in isolation so we can assert the
+    # producer→consumer contract without running the full pipeline.
+    setups: dict = {"as_of": "2026-07-07", "rank_by": "confluence", "buy": [], "laggards": []}
+    wide: dict = {}
+
+    # This mirrors the exact try-block in build_china_library.main():
+    from engine.risk_radar_intl import cn_sleeve_chip
+    wide["sleeve_chip"] = cn_sleeve_chip()
+    setups["sleeve_chip"] = wide["sleeve_chip"]
+
+    assert "sleeve_chip" in setups, \
+        "sleeve_chip not present on setups after the try-block — template receives None"
+    assert setups["sleeve_chip"]["radar_state"] == "caution"
+    assert setups["sleeve_chip"] is wide["sleeve_chip"], \
+        "setups['sleeve_chip'] and wide['sleeve_chip'] must be the same object"

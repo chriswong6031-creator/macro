@@ -1833,6 +1833,7 @@ def main(alpha: dict | None = None) -> dict | None:
         try:
             from engine.risk_radar_intl import cn_sleeve_chip
             wide["sleeve_chip"] = cn_sleeve_chip()
+            setups["sleeve_chip"] = wide["sleeve_chip"]  # mirror onto rendered object (mirrors board_track/coverage pattern at L1823-1824)
             log.info("china stocks sleeve chip: %s", wide["sleeve_chip"].get("label_en"))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("china stocks sleeve chip failed (%s)", e)
