@@ -22,10 +22,12 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts.collect_ffiec_y9c import _quarter_dates, TICKER_CERT_MAP  # noqa: E402
+from scripts.collect_ffiec_y9c import (  # noqa: E402
+    _quarter_dates, TICKER_CERT_MAP, FAILED_TICKER_CERT_MAP,
+)
 from scripts.w3_bank_callreport_stress_phase0 import (  # noqa: E402
     _build_signals, _cross_section_ic, _ic_summary, _bootstrap_ic_ci,
-    FAMILY,
+    FAMILY, FAILED_BANKS,
 )
 from engine.validation import benjamini_hochberg  # noqa: E402
 
@@ -74,6 +76,40 @@ class TestTickerMap:
             assert cert > 0, f"{t}: CERT must be positive"
             assert rssd > 0, f"{t}: RSSDHCR must be positive"
             assert len(name) > 3, f"{t}: BHC name too short"
+
+
+class TestFailedBankMap:
+    """Survivorship-correction map (FRC/SIVB-era rule). CERTs verified
+    against the live FDIC institutions API 2026-07-08; SBNY/FRC were
+    standalone banks with no holding company (RSSDHCR None)."""
+
+    def test_three_failed_banks(self):
+        assert set(FAILED_TICKER_CERT_MAP) == {"SIVB", "SBNY", "FRC"}
+
+    def test_verified_certs(self):
+        assert FAILED_TICKER_CERT_MAP["SIVB"][0] == 24735   # Silicon Valley Bank
+        assert FAILED_TICKER_CERT_MAP["SBNY"][0] == 57053   # Signature Bank
+        assert FAILED_TICKER_CERT_MAP["FRC"][0] == 59017    # First Republic Bank
+
+    def test_no_overlap_with_survivors(self):
+        assert not set(FAILED_TICKER_CERT_MAP) & set(TICKER_CERT_MAP)
+
+    def test_matches_phase0_failed_banks(self):
+        """Collector map must stay in lockstep with the study's FAILED_BANKS
+        so store-sourced and live-fetched rows are equivalent."""
+        assert set(FAILED_TICKER_CERT_MAP) == set(FAILED_BANKS)
+        for t, (cert, rssdhcr, name, fail, last) in FAILED_TICKER_CERT_MAP.items():
+            p_cert, p_rssdhcr, p_name, p_fail, p_last = FAILED_BANKS[t]
+            assert (cert, name, fail, last) == (p_cert, p_name, p_fail, p_last), t
+
+    def test_end_dates_truncate_expected_quarters(self):
+        """Missing quarters after the operational end date are expected:
+        SIVB/SBNY report through 2022-Q4 (20 quarters), FRC through
+        2023-Q1 (21 quarters) on the 2018-Q1..2026-Q1 span."""
+        quarters = _quarter_dates("2018-Q1", "2026-Q1")
+        expected = {t: len([q for q in quarters if q <= last])
+                    for t, (_c, _r, _n, _f, last) in FAILED_TICKER_CERT_MAP.items()}
+        assert expected == {"SIVB": 20, "SBNY": 20, "FRC": 21}
 
 
 # ---------------------------------------------------------------------------

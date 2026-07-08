@@ -303,10 +303,21 @@ def _load_panel() -> pd.DataFrame:
         df["is_failed_bank"] = False
     if "fail_date" not in df.columns:
         df["fail_date"] = None
+    # Mark by ticker membership too (covers store copies that carry failed
+    # banks but predate the is_failed_bank column)
+    df.loc[df["ticker"].isin(FAILED_BANKS), "is_failed_bank"] = True
 
-    # Fetch failed-bank FDIC data
+    # Failed-bank rows: store-first. The canonical collector backfills
+    # SIVB/SBNY/FRC into bhc_panel.parquet (FAILED_TICKER_CERT_MAP, since
+    # 2026-07-08); the live FDIC fetch remains as fallback for older copies.
+    present = set(df["ticker"].unique())
     failed_rows = []
     for ticker, (cert, rssdhcr, bhc_name, fail_date, last_repdte) in FAILED_BANKS.items():
+        if ticker in present:
+            n_store = int((df["ticker"] == ticker).sum())
+            print(f"  {ticker}: {n_store} quarters sourced from store panel — "
+                  f"skipping live FDIC fetch")
+            continue
         print(f"  Fetching FDIC panel for {ticker} (CERT {cert}, failed {fail_date})...")
         fdic_rows = _fetch_failed_bank_fdic(cert, bhc_name)
         if fdic_rows:
@@ -328,6 +339,12 @@ def _load_panel() -> pd.DataFrame:
         df = pd.concat([df, failed_df[df.columns.tolist()]], ignore_index=True)
         print(f"  Added {len(failed_rows)} failed-bank rows "
               f"({[t for t in FAILED_BANKS]} — survivorship bias corrected)")
+
+    # PIT: failed-bank signal dates are enforced at PIT_LAG_DAYS regardless
+    # of source — the store panel carries the collector's 45d convention.
+    fmask = df["is_failed_bank"].fillna(False).astype(bool)
+    df.loc[fmask, "signal_date"] = (df.loc[fmask, "report_date"]
+                                    + pd.Timedelta(days=PIT_LAG_DAYS))
 
     df = df.sort_values(["ticker", "report_date"]).reset_index(drop=True)
     return df
@@ -958,6 +975,11 @@ def run_study() -> str:
         f"  coverage starts 2021-07-06); failed banks drop from IC cross-section for",
         f"  signal dates before that date — correct PIT behavior.",
         f"",
+        f"  Store-backed since 2026-07-08: the three failed banks are backfilled into",
+        f"  `data/ffiec_y9c/bhc_panel.parquet` by `scripts/collect_ffiec_y9c.py`",
+        f"  (`FAILED_TICKER_CERT_MAP`). This study reads them from the store and only",
+        f"  falls back to a live FDIC fetch when the store copy predates the backfill.",
+        f"",
         f"**Design-substitution disclosure (FR Y-9C vs FDIC call reports):**",
         f"  Frozen spec (§1) specifies FR Y-9C as primary, FDIC as authorized fallback",
         f"  'if Y-9C bulk proves too heavy.' Assessment:",
@@ -1194,9 +1216,11 @@ def run_study() -> str:
         f"```",
         f"",
         f"No `scripts/collect.py` or `engine/signal_lab.py` edits required.",
-        f"The failed-bank FDIC data is fetched live from the FDIC API within",
-        f"`w3_bank_callreport_stress_phase0.py` at run time (no separate collection step",
-        f"needed — failed banks have frozen historical data that does not change).",
+        f"Failed-bank (SIVB/SBNY/FRC) rows are part of the canonical store panel:",
+        f"the collector backfills them per-CERT via `FAILED_TICKER_CERT_MAP` (frozen",
+        f"historical data; missing quarters after each bank's failure date are",
+        f"expected). A live FDIC fetch inside `w3_bank_callreport_stress_phase0.py`",
+        f"remains as fallback for store copies that predate the backfill.",
         f"",
         f"---",
         f"",

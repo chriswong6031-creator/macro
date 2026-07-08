@@ -63,8 +63,12 @@ Fields used (from FDIC /api/financials, all verified against live API):
   SC        total securities ($K)
   RSSDHCR   parent HC RSSD ID (aggregation key)
 
-Universe: 20 regional_banks basket tickers, 2018-Q1 to 2026-Q1.
-          Span covers ~32 quarters including the Mar-2023 stress episode.
+Universe: 20 surviving regional_banks basket tickers + 3 failed banks
+          (SIVB, SBNY, FRC — retained for survivorship-bias correction per
+          the FRC/SIVB-era rule), 2018-Q1 to 2026-Q1. Span covers 33 quarters
+          including the Mar-2023 stress episode. Failed banks stop reporting
+          after their operational end date; missing quarters after
+          last_repdte are expected, not collection errors.
 
 Run (standalone):
   python3 -m scripts.collect_ffiec_y9c [--start 2018-Q1] [--end 2026-Q1]
@@ -139,6 +143,23 @@ TICKER_CERT_MAP: dict[str, tuple[int, int, str]] = {
     "FCNCA": (11063,  1075612, "FIRST CITIZENS BANCSHARES INC"),
 }
 
+# Failed banks retained for survivorship-bias correction (FRC/SIVB-era rule).
+# All three failed in 2023 and stop reporting after their last quarter —
+# missing quarters after last_repdte are EXPECTED, not collection errors.
+# CERTs verified against the live FDIC institutions API 2026-07-08:
+#   SIVB -> Silicon Valley Bank, CERT 24735, RSSDHCR 1031449 (SVB FINANCIAL GROUP)
+#   SBNY -> Signature Bank,      CERT 57053, no holding company (RSSDHCR empty)
+#   FRC  -> First Republic Bank, CERT 59017, no holding company (RSSDHCR empty)
+# Fetched per-CERT (each was effectively a single-charter BHC) rather than via
+# the RSSDHCR sweep — SBNY/FRC have no RSSDHCR to filter on.
+# Ticker -> (primary CERT, RSSDHCR or None, name, fail/delisting date,
+#            last FDIC report quarter)
+FAILED_TICKER_CERT_MAP: dict[str, tuple[int, int | None, str, str, str]] = {
+    "SIVB": (24735, 1031449, "SVB FINANCIAL GROUP",  "2023-03-10", "20221231"),
+    "SBNY": (57053, None,    "SIGNATURE BANK NY",    "2023-03-12", "20221231"),
+    "FRC":  (59017, None,    "FIRST REPUBLIC BANK",  "2023-05-01", "20230331"),
+}
+
 # Quarter-end dates to fetch (2018-Q1 to 2026-Q1)
 def _quarter_dates(start_yq: str = "2018-Q1", end_yq: str = "2026-Q1") -> list[str]:
     """Return list of YYYYMMDD quarter-end dates."""
@@ -197,6 +218,57 @@ def _fetch_quarter(repdte: str, rssd_ids: list[int]) -> list[dict]:
             break
         time.sleep(RATE_LIMIT_SEC)
     return all_rows
+
+
+def _fetch_failed_bank(cert: int, start_repdte: str, last_repdte: str) -> list[dict]:
+    """Fetch all quarters for a single failed bank by CERT in one request.
+    Failed banks have frozen historical data and (for SBNY/FRC) no RSSDHCR,
+    so the survivor RSSDHCR sweep cannot reach them."""
+    params = {
+        "filters": f"CERT:{cert} AND REPDTE:[{start_repdte} TO {last_repdte}]",
+        "fields": ",".join(FIELDS),
+        "limit": 200,
+        "sort_by": "REPDTE",
+        "sort_order": "ASC",
+    }
+    data = _fdic_get("financials", params)
+    return [r["data"] for r in data.get("data", [])]
+
+
+def _failed_bank_rows(ticker: str, name: str, fail_date: str,
+                      raw_rows: list[dict]) -> list[dict]:
+    """Build panel rows for a single-charter failed bank. Mirrors
+    _aggregate_to_bhc for n_charters=1 (verified equivalent construction to
+    w3_bank_callreport_stress_phase0._build_failed_bank_rows), plus failure
+    metadata columns."""
+    numeric = [c for c in FIELDS if c not in ("CERT", "REPDTE", "NAME", "NAMEHCR", "RSSDHCR")]
+    out = []
+    for d in raw_rows:
+        row: dict = {
+            "ticker": ticker,
+            "repdte": str(d.get("REPDTE")),
+            "n_charters": 1,
+            "namehcr": name,
+            "is_failed_bank": True,
+            "fail_date": fail_date,
+        }
+        for col in numeric:
+            v = pd.to_numeric(d.get(col), errors="coerce")
+            row[col.lower()] = 0.0 if pd.isna(v) else float(v)
+        if row.get("asset", 0) > 0:
+            row["unins_dep_share"] = row.get("depunins", 0) / row["asset"]
+            row["brkd_dep_share"] = (row.get("lnndepc", 0) / row["dep"]
+                                     if row.get("dep", 0) > 0 else float("nan"))
+            row["cre_total"] = (row.get("lnrecons", 0) +
+                                row.get("lnrenres", 0) +
+                                row.get("lnremult", 0))
+            row["cre_to_equity"] = row["cre_total"] / max(row.get("eq", 1), 1)
+            row["cre_to_asset"] = row["cre_total"] / row["asset"]
+            row["nonfarm_nres_cre"] = row.get("lnrenres", 0)
+            row["cnd_cre"] = row.get("lnrecons", 0)
+        row["ncrenrer_wavg"] = row.get("ncrenrer", 0.0)
+        out.append(row)
+    return out
 
 
 def _resolve_rssd_ids(tickers: list[str]) -> dict[str, int]:
@@ -304,6 +376,14 @@ def collect(
         map_rows.append({
             "ticker": t, "bhc_name": name,
             "primary_cert": cert, "rssdhcr": rssd,
+            "fail_date": "",
+        })
+    for t, (cert, rssdhcr, name, fail_date, _last) in FAILED_TICKER_CERT_MAP.items():
+        map_rows.append({
+            "ticker": t, "bhc_name": name,
+            "primary_cert": cert,
+            "rssdhcr": rssdhcr if rssdhcr is not None else "",
+            "fail_date": fail_date,
         })
     map_df = pd.DataFrame(map_rows)
     map_df.to_csv(map_path, index=False)
@@ -338,6 +418,34 @@ def collect(
             log.error("    FAILED %s: %s", repdte, e)
         time.sleep(RATE_LIMIT_SEC)
 
+    # Step 3b: failed-bank backfill (per-CERT — outside the RSSDHCR sweep).
+    # Resume is per (ticker, quarter): only quarters up to each bank's
+    # last_repdte are expected; later quarters are missing by construction.
+    existing_pairs: set[tuple[str, str]] = set()
+    if existing is not None and {"ticker", "repdte"} <= set(existing.columns):
+        existing_pairs = set(zip(existing["ticker"], existing["repdte"].astype(str)))
+    for ticker, (cert, _rssdhcr, name, fail_date, last_repdte) in FAILED_TICKER_CERT_MAP.items():
+        expected_q = [q for q in quarters if q <= last_repdte]
+        if not expected_q:
+            continue
+        missing_q = [q for q in expected_q if (ticker, q) not in existing_pairs]
+        if not missing_q:
+            log.info("  SKIP %s (all %d pre-failure quarters already in panel)",
+                     ticker, len(expected_q))
+            continue
+        log.info("  fetching failed bank %s (CERT %d, failed %s): %d missing quarters",
+                 ticker, cert, fail_date, len(missing_q))
+        try:
+            raw = _fetch_failed_bank(cert, quarters[0], last_repdte)
+            rows = [r for r in _failed_bank_rows(ticker, name, fail_date, raw)
+                    if r["repdte"] in missing_q]
+            all_bhc_rows.extend(rows)
+            log.info("    -> %d rows (reporting ends %s; later quarters expected missing)",
+                     len(rows), last_repdte)
+        except Exception as e:
+            log.error("    FAILED %s: %s", ticker, e)
+        time.sleep(RATE_LIMIT_SEC)
+
     # Step 4: combine with existing and save
     new_df = pd.DataFrame(all_bhc_rows) if all_bhc_rows else pd.DataFrame()
     if existing is not None and not new_df.empty:
@@ -354,6 +462,13 @@ def collect(
     # Parse and add PIT-enforced signal date
     panel["report_date"] = pd.to_datetime(panel["repdte"], format="%Y%m%d")
     panel["signal_date"] = panel["report_date"] + pd.Timedelta(days=PIT_LAG_DAYS)
+    # Failure metadata (False/None for survivors, incl. pre-backfill panels)
+    if "is_failed_bank" not in panel.columns:
+        panel["is_failed_bank"] = False
+    panel["is_failed_bank"] = panel["is_failed_bank"].fillna(False).astype(bool)
+    if "fail_date" not in panel.columns:
+        panel["fail_date"] = None
+    panel["fail_date"] = panel["fail_date"].where(panel["fail_date"].notna(), None)
     panel = panel.sort_values(["ticker", "report_date"]).reset_index(drop=True)
     # Deduplicate
     panel = panel.drop_duplicates(subset=["ticker", "repdte"]).reset_index(drop=True)
@@ -363,12 +478,20 @@ def collect(
              panel_path, len(panel),
              panel["repdte"].nunique(), panel["ticker"].nunique())
 
-    # Coverage report
+    # Coverage report — expected-quarter aware: failed banks stop reporting
+    # after their operational end date, so their expected count is truncated.
     cov = panel.groupby("ticker")["repdte"].count()
     log.info("Per-ticker quarter coverage:\n%s", cov.to_string())
-    missing = [t for t in tickers if t not in cov.index]
-    if missing:
-        log.warning("MISSING tickers (no data found): %s", missing)
+    expected_by_ticker = {t: len(quarters) for t in tickers}
+    for t, (_c, _r, _n, fail_date, last_repdte) in FAILED_TICKER_CERT_MAP.items():
+        expected_by_ticker[t] = len([q for q in quarters if q <= last_repdte])
+        log.info("  %s: failed %s — expects %d/%d quarters (reporting ends %s)",
+                 t, fail_date, expected_by_ticker[t], len(quarters), last_repdte)
+    short = {t: (int(cov.get(t, 0)), n_exp)
+             for t, n_exp in expected_by_ticker.items()
+             if int(cov.get(t, 0)) < n_exp}
+    if short:
+        log.warning("UNDER-COVERED tickers (have/expected): %s", short)
 
     return panel
 

@@ -62,6 +62,11 @@ Family ACCRUES per pre-registered expectation (n=1 crisis episode in sample).
   coverage starts 2021-07-06); failed banks drop from IC cross-section for
   signal dates before that date — correct PIT behavior.
 
+  Store-backed since 2026-07-08: the three failed banks are backfilled into
+  `data/ffiec_y9c/bhc_panel.parquet` by `scripts/collect_ffiec_y9c.py`
+  (`FAILED_TICKER_CERT_MAP`). This study reads them from the store and only
+  falls back to a live FDIC fetch when the store copy predates the backfill.
+
 **Design-substitution disclosure (FR Y-9C vs FDIC call reports):**
   Frozen spec (§1) specifies FR Y-9C as primary, FDIC as authorized fallback
   'if Y-9C bulk proves too heavy.' Assessment:
@@ -264,9 +269,11 @@ Add to `daily.yml` as a pre-analysis step:
 ```
 
 No `scripts/collect.py` or `engine/signal_lab.py` edits required.
-The failed-bank FDIC data is fetched live from the FDIC API within
-`w3_bank_callreport_stress_phase0.py` at run time (no separate collection step
-needed — failed banks have frozen historical data that does not change).
+Failed-bank (SIVB/SBNY/FRC) rows are part of the canonical store panel:
+the collector backfills them per-CERT via `FAILED_TICKER_CERT_MAP` (frozen
+historical data; missing quarters after each bank's failure date are
+expected). A live FDIC fetch inside `w3_bank_callreport_stress_phase0.py`
+remains as fallback for store copies that predate the backfill.
 
 ---
 
