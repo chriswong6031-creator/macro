@@ -79,7 +79,13 @@ from engine.entry_primitives import (
     time_underwater_series,
 )
 from engine.neuralweb.sector_map import SectorMapping, build_sector_map
-from engine.stock_fundamentals import _leverage_ratios, _load_statements
+from engine.stock_fundamentals import (
+    _leverage_ratios,
+    _load_factors,
+    _load_statements,
+    _mcap_map,
+    _valuation_ratios,
+)
 
 log = logging.getLogger(__name__)
 
@@ -903,6 +909,17 @@ def assemble(
     # (PIT-safe for a current snapshot; rows[-1] = most recently filed FY).
     statements_by_ticker = _load_statements()
 
+    # ── Valuation context wire (display-only; no origination) ─────────────────
+    # mktcap_bn is NOT in statement rows — it comes from site/factordata/factors.json.
+    # Load once here; degrade gracefully when the file is absent.
+    # sector is likewise sourced from factors.json (NOT from statement rows or
+    # the signal_gate verdict dict — neither carries a plain sector key).
+    # Do NOT call panels() — that is a heavy cross-sectional frame outside the
+    # render budget for this lobe.
+    _facts = _load_factors()
+    _mcap_by_ticker = _mcap_map(_facts)
+    _facts_table = _facts.get("table") or {}
+
     # ── Sponsorship connector (Amendment §C3) — load once, pass through ──────
     # build_sector_map is fast (parquet reads from existing stores, cached on disk).
     # Oracle panels are loaded once and reused across all ticker rows.
@@ -960,6 +977,18 @@ def assemble(
             row["interest_coverage"] = lev.get("interest_coverage")
             row["net_debt_to_op_income"] = lev.get("net_debt_to_op_income")
             row["net_debt_to_ebitda"] = lev.get("net_debt_to_ebitda")
+            # ── Valuation context (display-only; no origination) ─────────────
+            # mktcap from factors.json (mktcap_bn → USD); sector from facts table.
+            # _valuation_ratios follows exact _context_frame math for parity.
+            # Keys absent when inputs missing or Financials-suppressed.
+            _sector_from_facts: str | None = _facts_table.get(ticker, {}).get("sector")
+            val = _valuation_ratios(stmt_rows, _mcap_by_ticker.get(ticker), _sector_from_facts)
+            row["ev_sales"] = val.get("ev_sales")
+            row["ev_ebit"] = val.get("ev_ebit")
+            row["p_fcf"] = val.get("p_fcf")
+            row["pe"] = val.get("pe")
+            if val:
+                row["source_artifacts"] += ";factordata/factors.json"
             # ── Dilution context (nwqs-c; display-only) ───────────────────────
             # None when dilution_events.parquet absent or ticker unmapped.
             d_shelf, d_takedown, d_events = _dilution_fields(

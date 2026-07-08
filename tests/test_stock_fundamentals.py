@@ -129,11 +129,13 @@ def test_panels_smoke():
     # W2 PR-J adds thesis_clock; W2 PR-K adds moat_falsifiers + great_company_trap;
     # LT-3a adds capital_allocation; LT-2c adds expectation_state;
     # LT-4 adds thesis_funnel (AND-gate survival funnel shadow; hold_thesis; display-only)
+    # event_windows added by codex-docket event-landmine program
     assert set(sample).issubset({"profile", "valuation", "financials",
                                  "factors", "positioning", "analyst", "earnings",
                                  "accounting_quality", "leverage_ratios",
                                  "thesis_clock", "moat_falsifiers", "great_company_trap",
-                                 "capital_allocation", "expectation_state", "thesis_funnel"})
+                                 "capital_allocation", "expectation_state", "thesis_funnel",
+                                 "event_windows"})
     for rec in list(p.values())[:200]:
         arch = (rec.get("profile") or {}).get("archetype")
         if arch:
@@ -1282,6 +1284,161 @@ def test_leverage_tier1_json_safe():
     lev = SF._leverage_ratios(rows, sector="Information Technology")
     s = json.dumps(lev)
     assert "NaN" not in s and "Infinity" not in s
+
+
+# ---------------------------------------------------------------------------
+# _valuation_ratios() — parity test vs _context_frame math
+# ---------------------------------------------------------------------------
+
+def test_valuation_ratios_normal_case():
+    """Normal industrial name: all four EV/price multiples computable.
+    Math mirrors _context_frame exactly:
+      ev = mktcap + net_debt = mktcap + (debt_lt + debt_cur - cash)
+      ev_sales = ev / revenue  (2dp)
+      ev_ebit  = ev / op_income  (1dp)
+      p_fcf    = mktcap / (cfo - capex)  (1dp)
+      pe       = mktcap / ni  (1dp)
+    """
+    rows = [{
+        "debt_lt": 200.0, "debt_cur": 50.0, "cash": 80.0,  # net_debt = 170
+        "revenue": 500.0, "op_income": 100.0,
+        "cfo": 150.0, "capex": 50.0,                       # fcf = 100
+        "ni": 80.0,
+    }]
+    mktcap = 1_000.0
+    val = SF._valuation_ratios(rows, mktcap, sector="Industrials")
+    ev = mktcap + 170.0  # 1170
+    assert val["ev_sales"] == round(1170 / 500, 2), val
+    assert val["ev_ebit"]  == round(1170 / 100, 1), val
+    assert val["p_fcf"]    == round(1000 / 100, 1), val
+    assert val["pe"]       == round(1000 / 80, 1), val
+
+
+def test_valuation_ratios_financials_suppress_ev():
+    """Financials sector: ev_sales / ev_ebit / p_fcf suppressed; pe may stay."""
+    rows = [{
+        "debt_lt": 200.0, "debt_cur": 50.0, "cash": 80.0,
+        "revenue": 500.0, "op_income": 100.0,
+        "cfo": 150.0, "capex": 50.0,
+        "ni": 80.0,
+    }]
+    val = SF._valuation_ratios(rows, 1_000.0, sector="Financials")
+    assert "ev_sales" not in val, val
+    assert "ev_ebit" not in val, val
+    assert "p_fcf" not in val, val
+    # pe is NOT suppressed for Financials
+    assert val["pe"] == round(1000 / 80, 1), val
+
+
+def test_valuation_ratios_missing_mktcap():
+    """mktcap=None → empty dict (no fabricated values)."""
+    rows = [{"debt_lt": 100.0, "revenue": 500.0, "op_income": 100.0,
+             "cfo": 150.0, "capex": 50.0, "ni": 80.0}]
+    assert SF._valuation_ratios(rows, None) == {}
+
+
+def test_valuation_ratios_empty_rows():
+    """Empty rows list → empty dict."""
+    assert SF._valuation_ratios([], 1_000.0) == {}
+
+
+def test_valuation_ratios_negative_op_income_omits_ev_ebit():
+    """op_income <= 0 → ev_ebit absent (denominator guard)."""
+    rows = [{
+        "debt_lt": 200.0, "debt_cur": 0.0, "cash": 50.0,
+        "revenue": 500.0, "op_income": -10.0,
+        "cfo": 150.0, "capex": 50.0, "ni": 80.0,
+    }]
+    val = SF._valuation_ratios(rows, 1_000.0, sector="Industrials")
+    assert "ev_ebit" not in val, val
+    assert "ev_sales" in val, val   # revenue > 0, still computable
+
+
+def test_valuation_ratios_negative_fcf_omits_p_fcf():
+    """cfo - capex <= 0 → p_fcf absent."""
+    rows = [{
+        "debt_lt": 200.0, "debt_cur": 0.0, "cash": 50.0,
+        "revenue": 500.0, "op_income": 100.0,
+        "cfo": 40.0, "capex": 100.0,  # fcf = -60 → omit
+        "ni": 80.0,
+    }]
+    val = SF._valuation_ratios(rows, 1_000.0, sector="Industrials")
+    assert "p_fcf" not in val, val
+
+
+def test_valuation_ratios_uses_latest_row():
+    """Multi-row input: only rows[-1] used (same PIT contract as _leverage_ratios)."""
+    rows = [
+        {"debt_lt": 999.0, "debt_cur": 0.0, "cash": 0.0,
+         "revenue": 1.0, "op_income": 1.0, "cfo": 1.0, "capex": 0.0, "ni": 1.0},
+        {"debt_lt": 200.0, "debt_cur": 50.0, "cash": 80.0,
+         "revenue": 500.0, "op_income": 100.0, "cfo": 150.0, "capex": 50.0, "ni": 80.0},
+    ]
+    val = SF._valuation_ratios(rows, 1_000.0, sector="Industrials")
+    # ev from rows[-1]: net_debt = 170, ev = 1170
+    assert val["ev_sales"] == round(1170 / 500, 2), val
+
+
+def test_valuation_ratios_json_safe():
+    """All outputs JSON-serializable (no NaN/Infinity)."""
+    rows = [{
+        "debt_lt": 200.0, "debt_cur": 50.0, "cash": 80.0,
+        "revenue": 500.0, "op_income": 100.0,
+        "cfo": 150.0, "capex": 50.0, "ni": 80.0,
+    }]
+    val = SF._valuation_ratios(rows, 1_000.0, sector="Industrials")
+    s = json.dumps(val)
+    assert "NaN" not in s and "Infinity" not in s
+
+
+def test_valuation_ratios_parity_with_context_frame():
+    """Parity test: _valuation_ratios must agree with _context_frame for the same
+    statement row + mktcap.  This is the canonical guard that the two code paths
+    compute identical values (the review identified this as the key check).
+
+    _context_frame computes:
+      ev_sales = ev / rev_s if (ev not None and rev_s > 0 and not is_fin)
+      ev_ebit  = ev / op_income if (ev not None and op_income > 0 and not is_fin)
+      p_fcf    = mktcap / fcf if (mcap and fcf > 0 and not is_fin)
+      pe       = mktcap / ni  if (mcap and ni and ni > 0)
+    where ev = mktcap + net_debt, fcf = cfo_s - capex.
+    """
+    import numpy as np
+
+    stmt = {
+        "debt_lt": 300.0, "debt_cur": 100.0, "cash": 120.0,   # net_debt = 280
+        "revenue": 800.0, "op_income": 160.0,
+        "cfo": 200.0, "capex": 80.0,                            # fcf = 120
+        "ni": 140.0,
+        "depreciation": None,
+    }
+    mktcap = 2_000.0
+    sector = "Information Technology"
+
+    # --- _valuation_ratios path ---
+    val = SF._valuation_ratios([stmt], mktcap, sector=sector)
+
+    # --- _context_frame reference path (manual inline of _context_frame's math) ---
+    nd = SF._net_debt(stmt)           # 300 + 100 - 120 = 280
+    ev = mktcap + nd                  # 2280
+    rev_s = SF._num(stmt["revenue"])  # 800
+    op_income = SF._num(stmt["op_income"])  # 160
+    cfo_s = SF._num(stmt["cfo"])      # 200
+    capex = SF._num(stmt["capex"])    # 80
+    fcf = cfo_s - capex               # 120
+    ni = SF._num(stmt["ni"])          # 140
+
+    is_fin = sector in SF._FINANCIAL_SECTORS  # False
+
+    ref_ev_sales = round(ev / rev_s, 2)  if (not is_fin and rev_s and rev_s > 0) else None
+    ref_ev_ebit  = round(ev / op_income, 1) if (not is_fin and op_income and op_income > 0) else None
+    ref_p_fcf    = round(mktcap / fcf, 1)  if (not is_fin and fcf > 0) else None
+    ref_pe       = round(mktcap / ni, 1)   if (ni and ni > 0) else None
+
+    assert val.get("ev_sales") == ref_ev_sales, f"ev_sales: {val.get('ev_sales')} != {ref_ev_sales}"
+    assert val.get("ev_ebit")  == ref_ev_ebit,  f"ev_ebit: {val.get('ev_ebit')} != {ref_ev_ebit}"
+    assert val.get("p_fcf")    == ref_p_fcf,    f"p_fcf: {val.get('p_fcf')} != {ref_p_fcf}"
+    assert val.get("pe")       == ref_pe,       f"pe: {val.get('pe')} != {ref_pe}"
 
 
 def _run():
