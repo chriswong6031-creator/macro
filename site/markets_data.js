@@ -6,7 +6,7 @@
 (function(){
   "use strict";
   window.MARKET_META = {
-  "asOf": "2026-07-07",
+  "asOf": "2026-07-08",
   "today": 2026.48,
   "xDomain": [
     2000,
@@ -388,11 +388,11 @@
       }
     ],
     "now": {
-      "level": 58.06,
-      "asOf": "2026-07-06",
+      "level": 58.36,
+      "asOf": "2026-07-07",
       "ath": 59.18,
       "athDate": "2026-06",
-      "pctFromATH": -1.9,
+      "pctFromATH": -1.4,
       "ytd": 9.9,
       "ret1y": 22.5,
       "pos": 82,
@@ -541,11 +541,11 @@
       }
     ],
     "now": {
-      "level": 10688.53,
+      "level": 10665.9,
       "asOf": "2026-07-07",
       "ath": 10910.6,
       "athDate": "2026-02",
-      "pctFromATH": -2.0,
+      "pctFromATH": -2.2,
       "ytd": 6,
       "ret1y": 20.5,
       "pos": 68,
@@ -736,11 +736,11 @@
       }
     ],
     "now": {
-      "level": 649.72,
+      "level": 646.29,
       "asOf": "2026-07-07",
       "ath": 652.77,
       "athDate": "2026-07",
-      "pctFromATH": -0.5,
+      "pctFromATH": -1.0,
       "ytd": 7.4,
       "ret1y": 13,
       "pos": 78,
@@ -891,11 +891,11 @@
       }
     ],
     "now": {
-      "level": 68256.96,
-      "asOf": "2026-07-07",
+      "level": 67663.17,
+      "asOf": "2026-07-08",
       "ath": 72366.34,
       "athDate": "2026-06",
-      "pctFromATH": -5.7,
+      "pctFromATH": -6.5,
       "ytd": 43.8,
       "ret1y": 85,
       "pos": 93,
@@ -1033,8 +1033,8 @@
       }
     ],
     "now": {
-      "level": 45479.11,
-      "asOf": "2026-07-07",
+      "level": 45521.37,
+      "asOf": "2026-07-08",
       "ath": 47741.51,
       "athDate": "2026-06",
       "pctFromATH": -4.7,
@@ -1224,11 +1224,11 @@
       }
     ],
     "now": {
-      "level": 24398.7,
-      "asOf": "2026-07-07",
+      "level": 24283.65,
+      "asOf": "2026-07-08",
       "ath": 26328.55,
       "athDate": "2026-01",
-      "pctFromATH": -7.3,
+      "pctFromATH": -7.8,
       "ytd": -7.9,
       "ret1y": -4.4,
       "pos": 48,
@@ -1388,11 +1388,11 @@
       }
     ],
     "now": {
-      "level": 21.23,
-      "asOf": "2026-07-06",
+      "level": 21.07,
+      "asOf": "2026-07-07",
       "ath": 24.16,
       "athDate": "2026-05",
-      "pctFromATH": -12.1,
+      "pctFromATH": -12.8,
       "ytd": -6.9,
       "ret1y": 4,
       "pos": 44,
