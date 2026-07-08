@@ -4051,7 +4051,7 @@
       <div class="board-outcomes" id="board-track-record" hidden>
         <div class="board-outcomes-hdr">
           <span class="board-outcomes-title">{{ t('Track record — names that recently left the buy board', '往绩 — 近期离开买入榜的标的') }}</span>
-          <span class="board-outcomes-sub">{{ t('names that left the buy board in the last 21 sessions', '21个交易日内离开买入榜的标的') }} · {{ t('as of', '截至') }} {{ _oc.get('as_of','') }}{% if _sm.get('n_running') is not none %} · <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span> · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% endif %}{% if _sm.get('n_skipped_no_price') %} · ({{ _sm.get('n_skipped_no_price') }} {{ t('names excluded: no price / delisted', '个标的被排除：无价格/已退市') }}){% endif %}</span>
+          <span class="board-outcomes-sub">{{ t('names that left the buy board in the last 21 sessions', '21个交易日内离开买入榜的标的') }} · {{ t('as of', '截至') }} {{ _oc.get('as_of','') }}{% if _sm.get('n_running') is not none %} · <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span> · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% if _sm.get('n_flat') %} · {{ _sm.get('n_flat') }} {{ t('flat', '持平') }}{% endif %}{% endif %}{% if _sm.get('n_total') and _sm.get('n_shown') and _sm.get('n_shown') < _sm.get('n_total') %} · {{ t('showing', '显示') }} {{ _sm.get('n_shown') }}/{{ _sm.get('n_total') }}{% endif %}{% if _sm.get('n_skipped_no_price') %} · ({{ _sm.get('n_skipped_no_price') }} {{ t('names excluded: no price / delisted', '个标的被排除：无价格/已退市') }}){% endif %}</span>
         </div>
         <table class="outcomes-tbl">
           <thead><tr>
@@ -4066,9 +4066,12 @@
           <tr>
             <td><a href="stock.html#{{ oc.ticker }}" style="font-weight:700;text-decoration:none">{{ oc.ticker }}</a></td>
             <td class="muted" style="font-size:10.5px">{{ td(oc.get('sector','')) }}</td>
-            <td class="muted" style="font-size:10.5px">{{ oc.get('first_surfaced','') }}</td>
-            <td class="r"><span class="oc-pct {{ 'az-up' if oc.pct_since > 0 else ('az-dn' if oc.pct_since < 0 else 'muted') }}">{{ '%+.1f'|format(oc.pct_since) }}%</span></td>
-            <td><span class="oc-dot {{ oc.get('status','flat') }}"></span></td>
+            {# data-sort keys: tablesort.js parses "2026-06-30" as parseFloat→2026 (all
+               dates tie → no sort), and the Status dot cell has no text to sort on. Give
+               both an explicit numeric key: YYYYMMDD for Surfaced, running>flat>stopped rank. #}
+            <td class="muted" style="font-size:10.5px" data-sort="{{ oc.get('first_surfaced','')|replace('-','') }}">{{ oc.get('first_surfaced','') }}</td>
+            <td class="r" data-sort="{{ oc.pct_since }}"><span class="oc-pct {{ 'az-up' if oc.pct_since > 0 else ('az-dn' if oc.pct_since < 0 else 'muted') }}">{{ '%+.1f'|format(oc.pct_since) }}%</span></td>
+            <td data-sort="{{ {'running':2,'flat':1,'stopped':0}.get(oc.get('status','flat'),1) }}"><span class="oc-dot {{ oc.get('status','flat') }}"></span></td>
           </tr>
           {% endfor %}
           </tbody>

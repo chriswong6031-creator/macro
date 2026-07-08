@@ -101,6 +101,11 @@ OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
 
 # Number of board dates (not calendar days) to look back for the outcomes strip.
 OUTCOMES_LOOKBACK_BOARDS = 21
+# How many exited names to render in the track-record table. The summary counts
+# (n_running / n_stopped / win_rate) are ALWAYS computed over the full exited set,
+# not this display slice — so the header never reads "0 stopped" just because the
+# biggest movers in the cap happen to be winners.
+OUTCOMES_DISPLAY_CAP = 60
 
 HORIZONS = [5, 10, 21, 63]  # W0.1 B-b: 63d lane added per §5.1 sub-task 2
 LANES = ["buy", "watch", "laggards", "laggard"]
@@ -1275,22 +1280,24 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             "skipped_no_price": sorted(skipped_no_price)[:15],
         }
 
-    # Compute full-set metrics BEFORE sort/cap (win_rate, avg_pct over all rows)
-    _all_nr = sum(1 for r in rows_out if r["status"] == "running")
-    _all_ns = sum(1 for r in rows_out if r["status"] == "stopped")
-    _all_denom = _all_nr + _all_ns
-    win_rate = round(_all_nr / _all_denom, 3) if _all_denom > 0 else None
-    _all_pcts = [r["pct_since"] for r in rows_out]
-    avg_pct = round(sum(_all_pcts) / len(_all_pcts), 1) if _all_pcts else None
-
-    # Sort by |pct_since| desc, cap at 15
-    rows_out.sort(key=lambda r: abs(r["pct_since"]), reverse=True)
-    rows_out = rows_out[:15]
-
-    pcts = [r["pct_since"] for r in rows_out]
+    # Full-set metrics over EVERY exited name, computed BEFORE the display cap. These
+    # feed the header + sub-line so the win/loss mix reflects the whole record, not the
+    # handful of biggest movers that survive the cap. (Pre-fix, n_running / n_stopped
+    # were computed post-cap and read "0 stopped" whenever the top movers were all
+    # winners — contradicting win_rate on the same strip.)
     n_running = sum(1 for r in rows_out if r["status"] == "running")
     n_stopped = sum(1 for r in rows_out if r["status"] == "stopped")
-    median_pct = float(sorted(pcts)[len(pcts) // 2]) if pcts else 0.0
+    n_flat = sum(1 for r in rows_out if r["status"] == "flat")
+    _denom = n_running + n_stopped
+    win_rate = round(n_running / _denom, 3) if _denom > 0 else None
+    _all_pcts = [r["pct_since"] for r in rows_out]
+    avg_pct = round(sum(_all_pcts) / len(_all_pcts), 1) if _all_pcts else None
+    median_pct = float(sorted(_all_pcts)[len(_all_pcts) // 2]) if _all_pcts else 0.0
+    n_total = len(rows_out)
+
+    # Sort by |pct_since| desc, cap the DISPLAY only (summary above is full-set).
+    rows_out.sort(key=lambda r: abs(r["pct_since"]), reverse=True)
+    rows_out = rows_out[:OUTCOMES_DISPLAY_CAP]
 
     return {
         "as_of": current_as_of,
@@ -1298,13 +1305,18 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
         "summary": {
             "n_running": n_running,
             "n_stopped": n_stopped,
+            "n_flat": n_flat,
+            # total exited names vs how many the display cap shows — lets the strip
+            # disclose "showing N of M" when the record is longer than the cap.
+            "n_total": n_total,
+            "n_shown": len(rows_out),
             "median_pct": round(median_pct, 1),
             # names excluded for lack of any usable price path (see loop above) —
             # rendered as "(N names excluded: no price / delisted)" in the strip
             # header so the mix never silently reads as survivor-complete.
             "n_skipped_no_price": len(skipped_no_price),
             "skipped_no_price": sorted(skipped_no_price)[:15],
-            # full-set metrics (over all exited rows before the cap-15 display cut)
+            # full-set metrics (over all exited rows, before the display cut)
             "win_rate": win_rate,
             "avg_pct": avg_pct,
         },
