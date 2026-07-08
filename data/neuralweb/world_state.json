@@ -5151,7 +5151,7 @@
   },
   "alerts": {
     "asof": "2026-07-06",
-    "generated_utc": "2026-07-07 13:31",
+    "generated_utc": "2026-07-07 19:35",
     "total": 60,
     "critical": 2,
     "major": 58,
@@ -5183,6 +5183,427 @@
     "share_pin_risk": null,
     "opex_days": 10,
     "note": "sector-ETF/index options weather (raw aggregates; no composite — RO-2). Gamma-regime evidence is vol-conditioning with era-dependent sign (W-E1); never directional.",
+    "display_only": true
+  },
+  "rates_transmission": {
+    "asof": "2026-07-06",
+    "scored_status": {
+      "en": "Display-only. Scored-leg gate: NO rate/inflation leg passed the forward-drawdown bar with purged-CV robustness (see reports/rate-inflation-transmission-calibration.md).",
+      "zh": "仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。"
+    },
+    "calibrated": true,
+    "state": {
+      "rates": {
+        "real_10y": 2.26,
+        "real_10y_pctile": 0.97,
+        "real_10y_chg_63d_bp": 30.0,
+        "nominal_10y": 4.49,
+        "curve_2s10s": 0.35,
+        "curve_tp_adj": 0.35,
+        "policy_gap": 0.51,
+        "regime": "restrictive",
+        "direction": "rising",
+        "label": {
+          "en": "Real 10y 2.26% (restrictive, rising)",
+          "zh": "实际10年期 2.26%（偏紧）"
+        }
+      },
+      "inflation": {
+        "core_pce_yoy": 3.41,
+        "core_cpi_yoy": 2.96,
+        "headline_cpi_yoy": 4.27,
+        "core_pce_3m_ann": 3.52,
+        "ppi_core_yoy": 4.9,
+        "eci_comp_yoy": 3.43,
+        "vs_target_pp": 1.41,
+        "regime": "above target",
+        "direction": "steady",
+        "label": {
+          "en": "Core PCE 3.4% (above target, steady)",
+          "zh": "核心PCE 3.4%（高于目标）"
+        }
+      },
+      "expectations": {
+        "breakeven_10y": 2.24,
+        "breakeven_5y5y": 2.21,
+        "model_5y": 2.54,
+        "survey_1y": 4.8,
+        "market_minus_model_bp": -33.0,
+        "anchoring": "drifting down",
+        "label": {
+          "en": "5y5y breakeven 2.21% vs model 2.54% (drifting down)",
+          "zh": "5年5年盈亏平衡 2.21% vs 模型 2.54%（下行）"
+        }
+      }
+    },
+    "headwinds": [
+      {
+        "asset": "XLV",
+        "verdict": "headwind",
+        "net": -0.359
+      },
+      {
+        "asset": "XLB",
+        "verdict": "headwind",
+        "net": -0.348
+      },
+      {
+        "asset": "QQQ",
+        "verdict": "headwind",
+        "net": -0.347
+      },
+      {
+        "asset": "XLK",
+        "verdict": "headwind",
+        "net": -0.345
+      },
+      {
+        "asset": "IWM",
+        "verdict": "headwind",
+        "net": -0.304
+      },
+      {
+        "asset": "XLP",
+        "verdict": "headwind",
+        "net": -0.271
+      }
+    ],
+    "tailwinds": [
+      {
+        "asset": "GC=F",
+        "verdict": "tailwind",
+        "net": 0.193
+      },
+      {
+        "asset": "FXI",
+        "verdict": "tailwind",
+        "net": 0.131
+      }
+    ],
+    "yield_curve": {
+      "regime": {
+        "key": "bull_flattener",
+        "label": {
+          "en": "Bull flattener",
+          "zh": "牛市平坦"
+        }
+      },
+      "recession": {
+        "risk": "low",
+        "ntfs": 0.68
+      },
+      "shape": {
+        "slope_2s10s": {
+          "value": 0.35,
+          "pctile": 0.63,
+          "chg_63d": -15.0
+        }
+      }
+    },
+    "yield_curve_source": "transmission",
+    "display_only": true
+  },
+  "fx_dollar": {
+    "asof": "2026-07-07",
+    "regime": "US growth premium",
+    "risk": "risk-on",
+    "favored": [
+      "USD"
+    ],
+    "dollar_desk": {
+      "lean": "mixed backdrop",
+      "real_rate_regime": "Restrictive real yields",
+      "usd_valuation": "fair",
+      "trend": "up",
+      "fed_path_lean": "steady",
+      "liquidity_dir": "soft"
+    },
+    "transmission": {
+      "usd_dir": "flat",
+      "headwind_for": [
+        "US equities",
+        "EM equities",
+        "Gold",
+        "Copper",
+        "10y Treasury",
+        "Bitcoin"
+      ],
+      "tailwind_for": [
+        "Oil (WTI)"
+      ],
+      "unstable": []
+    },
+    "regime_radar": {
+      "dominant": null,
+      "active": []
+    },
+    "display_only": true
+  },
+  "rates_credit": {
+    "as_of": "2026-07-06",
+    "health_score": 89,
+    "health_label": "healthy",
+    "cycle_phase": "late",
+    "recession_risk": 0.1542857142857143,
+    "drawdown_risk": 12.218536034446249,
+    "alarms": [],
+    "verdict_en": "Bond health healthy (89/100), late-cycle. Curve positively sloped. Credit tight. Rates-vol calm.",
+    "fed_path": {
+      "policy_rate": 3.63,
+      "implied_bp_12m": 37,
+      "implied_cuts_12m": -1
+    },
+    "bond_compass": {
+      "duration": {
+        "lean": 0.67,
+        "bucket": "lean_long",
+        "conviction": 0.67,
+        "agreement": 0.8,
+        "n_legs": 5,
+        "legs": [
+          {
+            "key": "trend",
+            "label_en": "Trend (TSMOM)",
+            "label_zh": "趋势（时序动量）",
+            "value": 1.0,
+            "weight": 1.0,
+            "state": "bullish",
+            "note_en": "Long-Treasury price momentum across 3/6/12-month horizons.",
+            "note_zh": "长期国债价格在3/6/12个月窗口的时序动量。"
+          },
+          {
+            "key": "carry",
+            "label_en": "Carry & roll (10y−3m)",
+            "label_zh": "套息与滚动（10年−3月）",
+            "value": 0.56,
+            "weight": 0.7,
+            "state": "bullish",
+            "note_en": "A steep curve pays positive carry + roll-down to hold duration; inverted = negative carry.",
+            "note_zh": "陡峭曲线为持有久期提供正套息+滚动收益；倒挂则为负套息。"
+          },
+          {
+            "key": "value",
+            "label_en": "Value (real-10y rich/cheap)",
+            "label_zh": "价值（10年实际利率高/低）",
+            "value": 0.93,
+            "weight": 1.0,
+            "state": "bullish",
+            "note_en": "High real yield = cheap bonds (good entry); negative real yield = expensive (the 2022 regime).",
+            "note_zh": "实际利率高=债券便宜（入场良机）；负实际利率=昂贵（2022年情形）。"
+          },
+          {
+            "key": "term_premium",
+            "label_en": "Term premium",
+            "label_zh": "期限溢价",
+            "value": 0.89,
+            "weight": 0.5,
+            "state": "bullish",
+            "note_en": "A high term premium means you're paid to bear duration risk; a negative one is not.",
+            "note_zh": "期限溢价高意味着持有久期风险有补偿；为负则没有。"
+          },
+          {
+            "key": "macro",
+            "label_en": "Macro impulse (reflation)",
+            "label_zh": "宏观动能（再通胀）",
+            "value": -0.58,
+            "weight": 0.5,
+            "state": "bearish",
+            "note_en": "Rising copper/gold + breakevens = reflation = a duration headwind.",
+            "note_zh": "铜/金比与盈亏平衡通胀上行=再通胀=久期逆风。"
+          }
+        ]
+      },
+      "curve_trade": {
+        "lean": "steepener",
+        "rationale_en": "Reflation plus a positive curve points to long-end pressure.",
+        "rationale_zh": "再通胀叠加正向曲线，指向长端压力。",
+        "slope_10y3m": 0.61,
+        "ntfs": 0.68
+      }
+    },
+    "bond_cross_asset": {
+      "verdict_en": "Real-10y 2.26% (+30bp/3m), curve 0.61pp, HY OAS 2.74%. 5 markets with a bond tailwind, 6 with a headwind right now."
+    },
+    "drivers_for": {
+      "forex": {
+        "note_en": "Rate differentials drive FX — the US 2y policy-path and the real-10y are the carry and value anchors; a US-favorable widening vs foreign rates is a USD tailwind.",
+        "real_10y": 2.26,
+        "term_premium": null
+      },
+      "commodities": {
+        "note_en": "Real-10y is gold's discount rate (inverse); breakevens track oil/energy; curve slope proxies the growth impulse for copper/oil.",
+        "real_10y": 2.26,
+        "breakeven_10y": 2.24
+      },
+      "bitcoin": {
+        "note_en": "BTC is a long-duration, real-rate-sensitive liquidity asset — falling real-10y + easing plumbing is a tailwind; widening credit / rising MOVE is a risk-off gate.",
+        "real_10y": 2.26,
+        "risk_off_gate": false
+      },
+      "equities": {
+        "note_en": "Discount-rate channel (real-10y, term premium) compresses long-duration multiples; credit (HY OAS) is the canary that leads equity drawdowns; the SPEED of yield moves (MOVE) matters more than the level.",
+        "hy_oas": 2.74,
+        "credit_canary": false,
+        "stock_bond_corr": 0.5627100905661654
+      }
+    },
+    "display_only": true
+  },
+  "global_regimes": {
+    "us": {
+      "market": "us",
+      "date": "2026-07-06",
+      "quad": "Q1",
+      "quad_name": "Goldilocks",
+      "cycle_tag": "mid",
+      "liquidity_overlay": "expanding",
+      "confidence": 0.275,
+      "pending_quad": null,
+      "stale": false
+    },
+    "china": {
+      "market": "china",
+      "date": "2026-07-07",
+      "quad": "Q3",
+      "quad_name": "Stagflation",
+      "cycle_tag": "mid",
+      "liquidity_overlay": "neutral",
+      "pending_quad": "Q2",
+      "confidence": 0.185,
+      "stale": false
+    },
+    "hk": {
+      "market": "hk",
+      "date": "2026-07-07",
+      "quad": "Q4",
+      "quad_name": "Growth-scare",
+      "cycle_tag": "mid",
+      "liquidity_overlay": "neutral",
+      "pending_quad": null,
+      "confidence": 0.2,
+      "stale": false,
+      "risk_state": "Risk-off",
+      "peg_state": "weak-side (outflow)"
+    },
+    "canada": {
+      "market": "canada",
+      "date": "2026-07-06",
+      "quad": "Q1",
+      "quad_name": "Goldilocks",
+      "cycle_tag": "late",
+      "liquidity_overlay": "neutral",
+      "pending_quad": "Q4",
+      "confidence": 0.396,
+      "stale": false
+    },
+    "dispersion_note": "3 distinct quads across US/China/HK/Canada",
+    "display_only": true
+  },
+  "commodity_context": {
+    "asof": "2026-07-07",
+    "regime": "Goldilocks",
+    "favored": [
+      "Gold",
+      "Copper"
+    ],
+    "assets": [
+      {
+        "label": "Gold",
+        "trend": "up",
+        "action": "HOLD",
+        "conviction": -6.2
+      },
+      {
+        "label": "Silver",
+        "trend": "up",
+        "action": "SELL",
+        "conviction": -10.4
+      },
+      {
+        "label": "Copper",
+        "trend": "up",
+        "action": "HOLD",
+        "conviction": -0.9
+      },
+      {
+        "label": "Oil · WTI",
+        "trend": "up",
+        "action": "SELL",
+        "conviction": -14.0
+      }
+    ],
+    "display_only": true
+  },
+  "intelligence": {
+    "as_of": "2026-07-07",
+    "n_universe": 4866,
+    "n_priority": 25,
+    "n_actionable": 7,
+    "n_divergences": 13,
+    "macro_context": {
+      "regime": "Goldilocks",
+      "posture": "Goldilocks — growth improving while inflation cools. Posture: NEUTRAL — no edge either way; core holdings only, no new conviction bets.",
+      "fed_stance": "Hawkish"
+    },
+    "top_actionable": [
+      {
+        "ticker": "TXN",
+        "priority": 0.42,
+        "lean": -1,
+        "read": "fading"
+      },
+      {
+        "ticker": "HON",
+        "priority": 0.413,
+        "lean": -1,
+        "read": "fading"
+      },
+      {
+        "ticker": "PPTA",
+        "priority": 0.394,
+        "lean": -1,
+        "read": "fading"
+      },
+      {
+        "ticker": "AMD",
+        "priority": 0.39,
+        "lean": -1,
+        "read": "fading"
+      },
+      {
+        "ticker": "ROST",
+        "priority": 0.381,
+        "lean": 1,
+        "read": "early_edge"
+      }
+    ],
+    "display_only": true
+  },
+  "macro_deltas": {
+    "transitions": [
+      {
+        "asof": "2026-07-06",
+        "domain": "us",
+        "field": "us_rate_pressure",
+        "from": null,
+        "to": "pressure"
+      },
+      {
+        "asof": "2026-07-06",
+        "domain": "us",
+        "field": "cross_asset_verdict",
+        "from": "diverge",
+        "to": "mixed"
+      },
+      {
+        "asof": "2026-07-07",
+        "domain": "market",
+        "field": "market_state_verdict",
+        "from": "RISK_OFF",
+        "to": "MIXED"
+      }
+    ],
+    "n_transitions_14d": 3,
     "display_only": true
   },
   "cycle_pattern": {
@@ -5277,15 +5698,12 @@
     "stale": false
   },
   "contradictions": {
-    "n": 4,
+    "n": 2,
     "by_severity": {
-      "note": 3,
-      "tension": 1
+      "note": 2
     },
     "top_pair_ids": [
-      "regime-vs-market_state",
       "regime_vector-vs-risk_radar",
-      "vol_regime-vs-market_state",
       "briefing-divergences"
     ],
     "gaps": [],
@@ -5299,11 +5717,19 @@
     "data/breadth/breadth.parquet": "2026-07-06",
     "site/basketdata/oracle_state.json": "2026-07-07",
     "data/run_status.json": "2026-07-07T12:23:01.763867+00:00",
-    "site/factordata/alerts_triage.json": "2026-07-06"
+    "site/factordata/alerts_triage.json": "2026-07-06",
+    "data/transmission/latest.json": "2026-07-06",
+    "data/forex/latest.json": "2026-07-07",
+    "data/bonds/bond_health.json": "2026-07-06",
+    "data/china_regime/latest.json": "2026-07-07",
+    "data/hk_regime/latest.json": "2026-07-07",
+    "data/canada_regime/latest.json": "2026-07-06",
+    "data/commodity/latest.json": "2026-07-07",
+    "site/intelligence/briefing.json": "2026-07-07"
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-07-07T15:22:25Z",
-  "inputs_hash": "sha256:59ce971afa4ebadbaa59b178f3bffb731be11d26c61d46ac316f47ecea624861",
+  "produced_at": "2026-07-07T23:34:03Z",
+  "inputs_hash": "sha256:bbf2ad8894c2080a1cea62c086a7f29ed43c33366804467814c8c8837868795e",
   "tier": "infrastructure"
 }

@@ -282,8 +282,192 @@ def _make_alerts_triage(root: Path) -> dict:
     return at
 
 
+def _make_transmission(root: Path) -> dict:
+    tx = {
+        "asof": "2026-07-01",
+        "state": {"rates": {"regime": "restrictive"}},
+        "scored_status": {"en": "Display-only."},
+        "calibrated": True,
+        "headwinds": [{"asset": "XLU", "verdict": "headwind", "net": -0.4}],
+        "tailwinds": [{"asset": "XLK", "verdict": "tailwind", "net": 0.3}],
+        "yield_curve": {
+            "regime": {"key": "bear_flattener", "label": "Bear Flattener"},
+            "recession": {"risk": "low", "ntfs": "no signal"},
+            "shape": {"slope_2s10s": 0.31},
+        },
+    }
+    _write_json(root / "data" / "transmission" / "latest.json", tx)
+    return tx
+
+
+def _make_forex(root: Path) -> dict:
+    fx = {
+        "date": "Jul 01, 2026",
+        "regime": "dollar_bull",
+        "risk": "risk_on",
+        "favored": ["EUR", "JPY"],
+        "dollar_desk": {
+            "lean": "neutral",
+            "real_rate_regime": "positive",
+            "usd_valuation": "overvalued",
+            "trend": "declining",
+            "fed_path_lean": "hawkish",
+            "liquidity_dir": "tightening",
+        },
+        "transmission": {
+            "usd_dir": "down",
+            "headwind_for": ["EM", "Gold"],
+            "tailwind_for": ["USD assets"],
+            "unstable": False,
+        },
+        "regime_radar": {
+            "as_of": "2026-07-01",
+            "dominant": "dollar_bull",
+            "active": ["dollar_bull"],
+        },
+    }
+    _write_json(root / "data" / "forex" / "latest.json", fx)
+    return fx
+
+
+def _make_bond_health(root: Path) -> dict:
+    bh = {
+        "as_of": "2026-07-01",
+        "health_score": 85,
+        "health_label": "healthy",
+        "cycle_phase": "late",
+        "recession_risk": 3.9,
+        "drawdown_risk": 15.1,
+        "alarms": [],
+        "verdict_en": "Bond health healthy.",
+        "drivers_for": {},
+        "fed_path": {
+            "policy_rate": 5.25,
+            "implied_bp_12m": -75.0,
+            "implied_cuts_12m": 3,
+        },
+        "bond_compass": {"duration": "short", "curve_trade": "steepener"},
+        "bond_cross_asset": {"verdict_en": "Rates supportive."},
+    }
+    _write_json(root / "data" / "bonds" / "bond_health.json", bh)
+    return bh
+
+
+def _make_china_regime(root: Path) -> dict:
+    cr = {
+        "date": "2026-07-01",
+        "quad": "Q3",
+        "quad_name": "Stagflation",
+        "cycle_tag": "mid",
+        "confidence": 0.185,
+        "liquidity_overlay": "neutral",
+        "pending_quad": "Q2",
+    }
+    _write_json(root / "data" / "china_regime" / "latest.json", cr)
+    return cr
+
+
+def _make_hk_regime(root: Path) -> dict:
+    hkr = {
+        "date": "2026-07-01",
+        "quad": "Q4",
+        "quad_name": "Growth-scare",
+        "cycle_tag": "mid",
+        "confidence": 0.083,
+        "liquidity_overlay": "neutral",
+        "pending_quad": "Q3",
+        "risk_state": "Neutral",
+        "peg_state": "weak-side",
+    }
+    _write_json(root / "data" / "hk_regime" / "latest.json", hkr)
+    return hkr
+
+
+def _make_canada_regime(root: Path) -> dict:
+    car = {
+        "date": "2026-07-01",
+        "quad": "Q1",
+        "quad_name": "Goldilocks",
+        "cycle_tag": "late",
+        "confidence": 0.305,
+        "liquidity_overlay": "neutral",
+        "pending_quad": "Q4",
+    }
+    _write_json(root / "data" / "canada_regime" / "latest.json", car)
+    return car
+
+
+def _make_commodity(root: Path) -> dict:
+    cm = {
+        "date": "Jul 01, 2026",
+        "regime": "Goldilocks",
+        "favored": ["Gold", "Copper"],
+        "assets": {
+            "gold": {"label": "Gold", "trend": "up", "action": "hold", "conviction": "high"},
+            "copper": {"label": "Copper", "trend": "up", "action": "hold", "conviction": "medium"},
+        },
+    }
+    _write_json(root / "data" / "commodity" / "latest.json", cm)
+    return cm
+
+
+def _make_briefing(root: Path) -> dict:
+    br = {
+        "schema": "briefing.v1",
+        "as_of": "2026-07-04",
+        "n_universe": 4725,
+        "n_priority": 25,
+        "n_actionable": 9,
+        "n_divergences": 51,
+        "macro_context": {
+            "regime": "Q1",
+            "posture": "neutral",
+            "fed_stance": "hawkish",
+        },
+        "priority_queue": [
+            {"ticker": "AAPL", "priority": 1, "lean": "long", "read": "Breakout."},
+            {"ticker": "MSFT", "priority": 2, "lean": "long", "read": "Momentum."},
+        ],
+    }
+    _write_json(root / "site" / "intelligence" / "briefing.json", br)
+    return br
+
+
+def _make_factor_series(root: Path) -> dict:
+    fs = {
+        "as_of": "2026-07-04",
+        "rotation": {
+            "leader": "quality",
+            "leader_label": "Quality",
+            "leader_ret20_pct": 2.1,
+            "leader_held_days": 25,
+            "recent_flips": [
+                {"date": "2026-03-17", "to": "quality", "label": "Quality"},
+            ],
+        },
+        "horizons": {
+            "value": {"long_only": {"d1": 0.01, "d5": 0.02, "d20": 0.05}},
+            "quality": {"long_only": {"d1": 0.02, "d5": 0.03, "d20": 0.07}},
+        },
+    }
+    _write_json(root / "site" / "factordata" / "factor_series.json", fs)
+    return fs
+
+
+def _make_transitions_jsonl(root: Path) -> None:
+    """Write a valid (empty) transitions.jsonl so macro_deltas gap is not raised."""
+    p = root / "data" / "macro_snapshots" / "transitions.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("", encoding="utf-8")
+
+
 def _full_tree(root: Path) -> tuple[dict, dict, dict, dict, dict]:
-    """Build all synthetic source files; return the raw dicts for assertions."""
+    """Build all synthetic source files; return the raw dicts for assertions.
+
+    Extended for PR-B: writes the six new R5 macro source files plus an empty
+    transitions.jsonl so test_full_composition_shape's non_contra_gaps == []
+    assertion stays green.
+    """
     _seed_synapse(root)
     ms = _make_market_state(root)
     reg = _make_regime(root)
@@ -291,6 +475,17 @@ def _full_tree(root: Path) -> tuple[dict, dict, dict, dict, dict]:
     oracle = _make_oracle_state(root)
     rs = _make_run_status(root)
     at = _make_alerts_triage(root)
+    # R5 macro sources (PR-B)
+    _make_transmission(root)
+    _make_forex(root)
+    _make_bond_health(root)
+    _make_china_regime(root)
+    _make_hk_regime(root)
+    _make_canada_regime(root)
+    _make_commodity(root)
+    _make_briefing(root)
+    _make_factor_series(root)
+    _make_transitions_jsonl(root)
     return ms, reg, oracle, rs, at
 
 
@@ -306,13 +501,28 @@ def test_full_composition_shape(tmp_path):
     # Top-level required keys
     for key in ("verdict", "radar", "risk_radar_raw", "regime", "vol",
                  "breadth", "rotation", "liquidity", "data_health",
-                 "alerts", "qi", "qi_note", "live_overlay", "gaps", "sources"):
+                 "alerts", "qi", "qi_note", "live_overlay", "gaps", "sources",
+                 # R5 macro lobes (PR-B)
+                 "rates_transmission", "fx_dollar", "rates_credit",
+                 "global_regimes", "commodity_context", "intelligence",
+                 "macro_deltas"):
         assert key in payload, f"missing top-level key: {key!r}"
+
+    # All R5 lobes carry display_only=True
+    for lobe_key in ("rates_transmission", "fx_dollar", "rates_credit",
+                     "global_regimes", "commodity_context", "intelligence",
+                     "macro_deltas"):
+        assert payload[lobe_key].get("display_only") is True, (
+            f"{lobe_key!r} missing display_only=True"
+        )
 
     # Envelope keys
     from engine.neuralweb.envelope import ENVELOPE_KEYS
     for k in ENVELOPE_KEYS:
         assert k in payload, f"missing envelope key: {k!r}"
+
+    # (R5 factor_weather rotation enrichment was withdrawn at rebase — it collided
+    # with the factor-intel program's RUL-NW2 canonical-artifact ruling, #1589.)
 
     # No gaps from a full tree (contradictions gaps are expected for optional inputs
     # not included in this fixture — filter them as they are W4 display-only)

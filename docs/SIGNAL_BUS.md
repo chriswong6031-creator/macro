@@ -25,6 +25,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 28 |
+| macro-context-rail | 14 |
 | macro-release-intel | 6 |
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
@@ -49,8 +50,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 132 |
-| infrastructure | 70 |
+| display | 145 |
+| infrastructure | 71 |
 | scored | 4 |
 | shadow | 40 |
 
@@ -58,7 +59,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 234 |
+| git | 248 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -228,6 +229,25 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | breakaway-watch-history | `data/research/breakaway_watch_history.parquet` | parquet | daily-engine | display | 0 | 0 |
 | winner-autopsy-manifest | `data/research/winner_autopsy_manifest.json` | json | daily-engine | display | 0 | 0 |
 | winner-episodes-manifest | `data/research/winner_episodes_manifest.json` | json | on-demand | display | 0 | 0 |
+
+### macro-context-rail
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| forex-latest | `data/forex/latest.json` | json | daily-engine | display | 5 | 0 |
+| transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 3 | 0 |
+| commodity-latest | `data/commodity/latest.json` | json | daily-engine | display | 2 | 0 |
+| site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 2 | 0 |
+| bond-health | `data/bonds/bond_health.json` | json | daily-engine | display | 1 | 0 |
+| canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 1 | 0 |
+| china-regime-latest | `data/china_regime/latest.json` | json | asia-close | display | 1 | 0 |
+| hk-regime-latest | `data/hk_regime/latest.json` | json | asia-close | display | 1 | 0 |
+| macro-snapshots-latest | `data/macro_snapshots/latest.json` | json | daily-engine | display | 1 | 0 |
+| macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| macro-transitions | `data/macro_snapshots/transitions.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| site-alerts-triage | `site/factordata/alerts_triage.json` | json | daily-engine | display | 1 | 0 |
+| site-intelligence-briefing | `site/intelligence/briefing.json` | json | daily-engine | display | 1 | 0 |
+| macro-context-latest | `data/macro_context/latest.json` | json | daily-engine | display | 0 | 0 |
 
 ### macro-release-intel
 
@@ -702,6 +722,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/board_ledger.py`
 - **extra writers:**
   - engine/hk_run.py — calls board_ledger via lane='HK'; store_df.to_parquet L44
+
+### canada-regime-latest
+
+- **path:** `data/canada_regime/latest.json`
+- **declared producer:** `engine/canada_run.py`
+- **extra writers:**
+  - scripts/build_vector.py — invokes build_canada.main() as a side-effect hook (build_canada is called from build_vector; see scripts/build_vector.py:3116-3117)
 
 ### capital-allocation-delta
 

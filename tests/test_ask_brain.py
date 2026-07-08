@@ -1077,6 +1077,173 @@ def test_explain_factor_context_absent_data_returns_structured_gap(tmp_path):
         # Should have a gaps list
         assert "gaps" in result
         assert isinstance(result["gaps"], list)
+# 14. Macro/FX/rates/commodity classifier branch (PR-D)
+# ---------------------------------------------------------------------------
+
+def test_routing_dollar_term_seeds_world_state():
+    """'dollar' term → read_world_state seeds, budget 3 (BUDGET_REGIME)."""
+    budget, seeds = ab._classify_question("what is the dollar backdrop for QQQ", None)
+    assert budget == ab._BUDGET_REGIME, (
+        f"Expected BUDGET_REGIME ({ab._BUDGET_REGIME}) for dollar question; got {budget}"
+    )
+    assert "read_world_state" in seeds, (
+        f"Expected read_world_state in seeds; got {seeds}"
+    )
+
+
+def test_routing_usd_term():
+    """'usd' → macro branch, BUDGET_REGIME, read_world_state seeds."""
+    budget, seeds = ab._classify_question("How is USD trending vs EM currencies?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_fx_term():
+    """'fx' → macro branch."""
+    budget, seeds = ab._classify_question("What is the FX regime right now?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_forex_term():
+    """'forex' → macro branch."""
+    budget, seeds = ab._classify_question("Tell me the forex outlook", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_yield_curve_term():
+    """'yield curve' → macro branch."""
+    budget, seeds = ab._classify_question("What does the yield curve say about rates?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_real_rates_term():
+    """'real rates' → macro branch."""
+    budget, seeds = ab._classify_question("Are real rates rising or falling?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_bonds_term():
+    """'bonds' → macro branch."""
+    budget, seeds = ab._classify_question("What is the bond market signalling?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_credit_term():
+    """'credit' → macro branch."""
+    budget, seeds = ab._classify_question("How does credit health look?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_treasuries_term():
+    """'treasuries' -> macro branch (matches treasur-wildcard)."""
+    budget, seeds = ab._classify_question("What are treasuries saying about growth?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_gold_term():
+    """'gold' → macro branch."""
+    budget, seeds = ab._classify_question("What is gold doing in this environment?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_copper_term():
+    """'copper' → macro branch."""
+    budget, seeds = ab._classify_question("Is copper in a bullish or bearish trend?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_oil_term():
+    """'oil' → macro branch."""
+    budget, seeds = ab._classify_question("Where is oil in the commodity cycle?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_commodities_term():
+    """'commodities' -> macro branch (matches commodit-wildcard)."""
+    budget, seeds = ab._classify_question("What is the commodities regime?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_transmission_term():
+    """'transmission' → macro branch."""
+    budget, seeds = ab._classify_question("Explain the rates transmission to sectors", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_headwind_term():
+    """'headwind' → macro branch."""
+    budget, seeds = ab._classify_question("What are the headwinds for tech right now?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_tailwind_term():
+    """'tailwind' → macro branch."""
+    budget, seeds = ab._classify_question("What tailwinds exist for utilities?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_bare_regime_unchanged():
+    """Bare 'regime' question still routes to regime branch (unchanged behavior)."""
+    budget, seeds = ab._classify_question("What is the current macro regime?", None)
+    # Bare 'macro' and 'regime' do NOT match the new macro-terms branch
+    # (those words are in the existing regime branch); budget + seeds identical
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_bare_macro_unchanged():
+    """Bare 'macro' still routes via regime branch (unchanged behavior)."""
+    budget, seeds = ab._classify_question("Explain the macro environment", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_bare_quad_unchanged():
+    """Bare 'quad' still routes via regime branch (unchanged behavior)."""
+    budget, seeds = ab._classify_question("Which quad are we in?", None)
+    assert budget == ab._BUDGET_REGIME
+    assert "read_world_state" in seeds
+
+
+def test_routing_contradicts_branch_still_fires():
+    """'contradicts' question still routes to contradicts branch (unchanged)."""
+    budget, seeds = ab._classify_question("What contradicts the oracle signal?", None)
+    assert budget == ab._BUDGET_CONTRADICTS
+    assert "read_contradictions" in seeds
+
+
+def test_routing_why_fired_branch_still_fires():
+    """'why did' question still routes to why_fired branch (unchanged)."""
+    budget, seeds = ab._classify_question("Why did NVDA fire a buy signal?", context_ticker="NVDA")
+    assert budget == ab._BUDGET_WHY_FIRED
+    assert "query_spine" in seeds
+
+
+def test_advice_post_filter_macro_routing_not_affected():
+    """Dollar/FX question answer passes post-filter if no advice language present."""
+    factual = (
+        "The dollar is in a downtrend per the FX lobe. "
+        "USD regime: risk-off. Real rates are negative. "
+        "is_context_only: true — all signals are display-tier pending FDR."
+    )
+    filtered, was_filtered = ab._post_filter_advice(factual, [])
+    assert was_filtered is False, (
+        f"Factual macro answer should pass post-filter; got filtered={was_filtered}"
+    )
 
 
 # ---------------------------------------------------------------------------

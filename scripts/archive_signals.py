@@ -50,6 +50,8 @@ MANIFEST: list[tuple[str, str, str | None]] = [
     ("baskets_china",  "baskets_china/latest.json",  "as_of"),
     ("baskets_canada", "baskets_canada/latest.json", "as_of"),
     ("baskets_intl",   "baskets_intl/latest.json",   "as_of"),
+    ("transmission",   "transmission/latest.json",   "asof"),    # PR-E nw-macro-rail R5
+    ("market_state",   "market_state/latest.json",   "asof"),    # PR-E nw-macro-rail R5
 ]
 
 

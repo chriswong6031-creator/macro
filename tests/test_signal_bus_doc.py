@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 246, (
-        f"Expected 246 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 260, (
+        f"Expected 260 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (MRI PR-K added kalshi-releases-store = 245->246;"
         " B6 watchlist sentinel added watchlist-alerts-jsonl, watchlist-sentinel-states,"
@@ -159,7 +159,12 @@ def test_all_artifact_ids_present():
         " momoedge Package E strike-expiry matrix landed in a racing merge = 237->239;"
         " Winner Autopsy Lab (long-hold top-down department) added winner-episodes,"
         " winner-episodes-manifest, breakaway-watch-states, breakaway-watch-history,"
-        " winner-autopsy-panel, winner-autopsy-manifest = 239->245)"
+        " winner-autopsy-panel, winner-autopsy-manifest = 239->245;"
+        " MRI PR-K added kalshi-releases-store = 245->246;"
+        " nw-macro-rail R5 added forex-latest, transmission-latest, bond-health, commodity-latest,"
+        " china-regime-latest, hk-regime-latest, canada-regime-latest, site-intelligence-briefing,"
+        " site-factor-series, site-alerts-triage, macro-snapshots-latest, macro-snapshots-ledger,"
+        " macro-transitions, macro-context-latest = 246->260)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

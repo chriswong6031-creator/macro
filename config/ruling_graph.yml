@@ -82,6 +82,7 @@ meta:
     - esx_washout_x_turn
     - leadlag
     - long_hold
+    - macro_context
     - macro_tx
     - operator
     - ota_qual

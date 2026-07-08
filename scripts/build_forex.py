@@ -613,7 +613,9 @@ def main() -> int:
     # hub latest.json (consumed by build_vector's hub card; build_forex runs before it)
     outdir = config.data_dir() / "forex"
     outdir.mkdir(parents=True, exist_ok=True)
-    latest = {"date": as_of, "regime": dollar["regime"], "favored": dollar["favored"],
+    _asof_raw = max((results[p].index.max() for p in order), default=dol.index.max())
+    latest = {"date": as_of, "asof": _asof_raw.strftime("%Y-%m-%d"),
+              "regime": dollar["regime"], "favored": dollar["favored"],
               "risk": dollar["risk_word"],
               "pairs": {p["key"]: {"label": p["label"], "quote": p["quote"], "chg": p["chg"],
                                    "action": (p.get("conviction") or {}).get("action"),

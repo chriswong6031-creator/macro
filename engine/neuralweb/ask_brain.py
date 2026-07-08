@@ -319,6 +319,17 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     # "what contradicts / contradictions / disagreement" — generic graph contradictions
     if re.search(r"\b(contradict\w*|disagree\w*|conflict\w*|tension\w*|opposing\w*)\b", q):
         return _BUDGET_CONTRADICTS, ["read_contradictions", "read_graph"]
+    # FX / rates / credit / commodity terms — macro lobes in world_state (PR-D).
+    # Scoped to terms the regime branch does NOT already catch (macro/quad/regime
+    # are deliberately left to the regime branch below).
+    # NOTE: tested against q (already lowercased); re.IGNORECASE applied for safety.
+    if re.search(
+        r"\b(dollar|usd|fx|forex|yield\s+curve|real\s+rates?|bonds?|credit|"
+        r"treasur\w+|commodit\w+|gold|copper|oil|transmission|headwinds?|tailwinds?)\b",
+        q,
+        re.IGNORECASE,
+    ):
+        return _BUDGET_REGIME, ["read_world_state"]
     # "macro regime / market state / risk / outlook" — generic macro state
     if re.search(r"\b(regime|macro|risk[.\s-]off|risk[.\s-]on|market\s+state|outlook|quad)\b", q):
         return _BUDGET_REGIME, ["read_world_state"]
