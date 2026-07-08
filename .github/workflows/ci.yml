@@ -13,6 +13,11 @@ on:
       - "scripts/check_nav_gap.py"
       - "scripts/check_nav_mega.py"
       - "scripts/check_board_contradictions.py"
+      # ms-board coherence guard: a rendered Market State board must be single-snapshot
+      # coherent (2026-07-07 -X theirs hybrid incident, commit 5bf116a3b3).
+      - "scripts/check_ms_board_coherence.py"
+      - "tests/test_check_ms_board_coherence.py"
+      - "engine/market_state.py"
       # title-i18n guard: bilingual/CJK text must never sit in a title= attribute.
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
@@ -276,6 +281,28 @@ jobs:
             exit 0
           fi
           python3 scripts/check_board_contradictions.py site/factordata/us_standouts.json
+
+  ms-board-coherence:
+    # 2026-07-07 incident: render commit 5bf116a3b3 shipped a hybrid Market State board
+    # (score 56 / "Mixed" verdict beside a "Risk Radar forces Risk-off." note + Risk-off
+    # thesis) — stitched by the render lane's `git pull --rebase -X theirs` racing the
+    # 07:10 engine-render. engine/market_state.py can never emit that pair from one
+    # snapshot (the "forces" note requires ceiling < 42, then score = min(score, ceiling)).
+    # This job fails RED on any committed board whose verdict/score/thesis/notes/flip
+    # cannot come from a single snapshot; the render lanes carry a self-healing twin.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: market-state boards must be single-snapshot coherent
+        run: python3 scripts/check_ms_board_coherence.py
+      - name: guard selftest (synthetic fixtures incl. the 5bf116a3b3 hybrid)
+        run: python3 scripts/check_ms_board_coherence.py --selftest
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps (engine cross-check imports market_state)
+        run: pip install pytest pandas numpy
+      - name: guard constants must match engine/market_state.py
+        run: python -m pytest tests/test_check_ms_board_coherence.py -q
 
   conflict-markers:
     # 2026-07-03 incident: a merge commit shipped literal git conflict markers

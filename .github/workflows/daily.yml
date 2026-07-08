@@ -1354,8 +1354,16 @@ jobs:
               # site-side de-escalation in sector_cycles.js this way). templates/ is now
               # fresh post-rebase main — re-copy and fold any delta into a follow-up commit.
               python -m scripts.check_template_site_sync --fix || true
+              # ms-board coherence guard (ui.ms_board_coherence): -X theirs resolves whole
+              # conflict REGIONS toward this run's replayed render, so racing a mid-nightly
+              # render can stitch a hybrid Market State board (2026-07-07: commit 5bf116a3b3
+              # baked upstream's score 56/"Mixed" beside a stale "Risk Radar forces
+              # Risk-off." note). Restore any incoherent page WHOLESALE from post-rebase
+              # origin/main (coherent, at most one render old).
+              python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
+                || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
               if ! git diff --quiet -- site/; then
-                git add site/ && git commit -m "render-sync: re-copy template assets post-rebase (site==templates guard)" \
+                git add site/ && git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
               if git push; then echo "pushed engine outputs on attempt $i"; exit 0; fi
