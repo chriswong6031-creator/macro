@@ -3092,7 +3092,7 @@ def main() -> int:
     # Note: _today_utc / _dt imported once below (W6-CN Fix 4 block) — define it here too
     # so the guard can check before that block runs.
     import datetime as _dt
-    _today_utc = str(_dt.date.today())
+    _today_utc = str(_dt.datetime.now(_dt.timezone.utc).date())
 
     def _cn_snap_already_built(json_path: str, date_key: str) -> bool:
         """Return True if the committed JSON has today's date in the given key."""
