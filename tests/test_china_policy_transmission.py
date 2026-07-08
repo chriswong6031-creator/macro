@@ -109,14 +109,40 @@ def _make_lpr_df():
 
 
 def _make_fr007_df():
-    """Minimal FR007 DataFrame."""
+    """Minimal FR007 DataFrame with no z-score exceedances.
+
+    Uses a perfectly constant 2.0 baseline so the rolling std is zero before
+    warmup completes.  After 30 bars the series stays flat — z-scores are all
+    exactly 0.  No OMO events should be emitted.
+    """
     import pandas as pd
-    import numpy as np
+
     dates = pd.date_range("2023-01-01", periods=200, freq="B")
     dates.name = "date"
-    # mostly ~2.0, with a recent dip
-    vals = [2.0 + 0.1 * np.sin(i / 10) for i in range(200)]
-    vals[-1] = 1.1  # low — z will be negative
+    vals = [2.0] * 200
+    df = pd.DataFrame({"FR001": vals, "FR007": vals, "FR014": vals}, index=dates)
+    return df
+
+
+def _make_fr007_df_with_spikes():
+    """FR007 DataFrame with exactly two isolated single-day spikes.
+
+    A constant 2.0 baseline (rolling std ~0 after warmup) with two large
+    isolated spikes well after the 30-bar warmup and more than 3 calendar days
+    apart guarantees exactly 2 exceedance episodes — one drain and one injection.
+
+    The episode-collapse window (3 calendar days) will not merge them.
+    """
+    import pandas as pd
+
+    n = 300
+    dates = pd.date_range("2022-01-01", periods=n, freq="B")
+    dates.name = "date"
+    vals = [2.0] * n
+    # Episode 1 at index 150 (well past 30-bar warmup): drain spike
+    vals[150] = 10.0
+    # Episode 2 at index 250 (100 bars later, >> 3 calendar days): injection spike
+    vals[250] = 0.1
     df = pd.DataFrame({"FR001": vals, "FR007": vals, "FR014": vals}, index=dates)
     return df
 
@@ -223,6 +249,40 @@ class TestClassifyImpulse:
                                    lpr_cut_90d=None, recent_comm_text="")
         assert result == "neutral"
 
+    def test_market_rescue_with_neutral_stance(self):
+        """market_rescue must fire even when pboc_stance=='neutral'.
+
+        A forced-easing / liquidity-crisis regime may have not yet scored ±2 on
+        the stance model, so the stance gate would suppress the label that was
+        specifically designed to catch it.  The documented rule has NO stance
+        precondition.
+        """
+        result = _classify_impulse(
+            "neutral",
+            fr007_z=-2.0,
+            rrr_cut_90d=0.50,
+            lpr_cut_90d=0.0,
+            recent_comm_text="",
+        )
+        assert result == "market_rescue", (
+            f"Expected 'market_rescue' with neutral stance + rrr_cut≥0.50 + fr007_z≤−1.5, "
+            f"got '{result}'"
+        )
+
+    def test_market_rescue_with_none_stance(self):
+        """market_rescue must fire with stance==None (data absent)."""
+        result = _classify_impulse(
+            None,
+            fr007_z=-1.6,
+            rrr_cut_90d=0.0,
+            lpr_cut_90d=0.25,
+            recent_comm_text="",
+        )
+        assert result == "market_rescue", (
+            f"Expected 'market_rescue' with None stance + lpr_cut≥0.25 + fr007_z≤−1.5, "
+            f"got '{result}'"
+        )
+
 
 class TestDeriveChannels:
     def test_easing_channels(self):
@@ -237,6 +297,42 @@ class TestDeriveChannels:
     def test_targeted_support_fiscal(self):
         ch = _derive_channels("targeted_support", "neutral")
         assert "fiscal_or_structural" in ch
+
+    def test_targeted_support_no_liquidity_without_evidence(self):
+        """Pure rhetoric with neutral stance and no rate/OMO evidence must NOT add liquidity."""
+        ch = _derive_channels(
+            "targeted_support",
+            pboc_stance="neutral",
+            fr007_z=-0.3,
+            rrr_cut_90d=None,
+            lpr_cut_90d=None,
+        )
+        assert "fiscal_or_structural" in ch
+        assert "liquidity" not in ch, (
+            f"No liquidity evidence present; got channels={ch}"
+        )
+
+    def test_targeted_support_liquidity_with_lpr_cut(self):
+        """targeted_support with a recent LPR cut should get liquidity channel."""
+        ch = _derive_channels(
+            "targeted_support",
+            pboc_stance="neutral",
+            fr007_z=-0.3,
+            rrr_cut_90d=None,
+            lpr_cut_90d=0.10,
+        )
+        assert "liquidity" in ch
+
+    def test_targeted_support_liquidity_with_low_fr007z(self):
+        """targeted_support with fr007_z <= -0.5 should get liquidity channel."""
+        ch = _derive_channels(
+            "targeted_support",
+            pboc_stance="neutral",
+            fr007_z=-0.6,
+            rrr_cut_90d=None,
+            lpr_cut_90d=None,
+        )
+        assert "liquidity" in ch
 
     def test_no_duplicates(self):
         ch = _derive_channels("easing", "easing")
@@ -315,13 +411,37 @@ class TestSeedLprEvents:
 
 
 class TestSeedOmoMlfEvents:
-    def test_only_emits_exceedances(self):
+    def test_no_exceedances_in_flat_data(self):
+        """Flat FR007 data (small sin oscillation) produces no z>1.5 events."""
         with patch("lib.store.read", return_value=_make_fr007_df()):
             from engine.china_policy_transmission import _seed_omo_mlf_events
             events = _seed_omo_mlf_events(z_threshold=1.5)
-        # No exceedances expected in synthetic data (small variation around 2.0)
-        # Just check no crash
         assert isinstance(events, list)
+        assert len(events) == 0, (
+            f"Expected 0 events for flat FR007 data, got {len(events)}"
+        )
+
+    def test_emits_events_on_exceedance(self):
+        """FR007 spikes above threshold must produce at least one event per episode."""
+        with patch("lib.store.read", return_value=_make_fr007_df_with_spikes()):
+            from engine.china_policy_transmission import _seed_omo_mlf_events
+            events = _seed_omo_mlf_events(z_threshold=1.5)
+        assert len(events) >= 2, (
+            f"Expected >=2 episode events from spike fixture, got {len(events)}"
+        )
+        assert all(e["kind"] == "omo_mlf" for e in events)
+        assert all(e["source"] == "pboc" for e in events)
+
+    def test_episode_collapse_one_event_per_episode(self):
+        """Consecutive spike days within 3d must collapse to a single episode onset."""
+        with patch("lib.store.read", return_value=_make_fr007_df_with_spikes()):
+            from engine.china_policy_transmission import _seed_omo_mlf_events
+            events = _seed_omo_mlf_events(z_threshold=1.5)
+        # Two episodes of 5 days each — should collapse to exactly 2 onset events
+        assert len(events) == 2, (
+            f"Expected exactly 2 collapsed episode events, got {len(events)}: "
+            f"{[e['ts'] for e in events]}"
+        )
 
     def test_empty_on_missing_store(self):
         with patch("lib.store.read", return_value=None):

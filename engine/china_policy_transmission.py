@@ -228,9 +228,10 @@ def _classify_impulse(
                         industrial sectors (in 120d), and NOT easing/tightening
       neutral        : all others
     """
-    if pboc_stance in ("easing", "tightening") and (
-        (rrr_cut_90d or 0) >= 0.50 or (lpr_cut_90d or 0) >= 0.25
-    ) and (fr007_z is not None and fr007_z <= -1.5):
+    if (
+        ((rrr_cut_90d or 0) >= 0.50 or (lpr_cut_90d or 0) >= 0.25)
+        and (fr007_z is not None and fr007_z <= -1.5)
+    ):
         return "market_rescue"
 
     if pboc_stance == "easing":
@@ -246,8 +247,24 @@ def _classify_impulse(
     return "neutral"
 
 
-def _derive_channels(impulse: str, pboc_stance: str | None) -> list[str]:
-    """Derive the transmission_channel list from impulse + stance."""
+def _derive_channels(
+    impulse: str,
+    pboc_stance: str | None,
+    fr007_z: float | None = None,
+    rrr_cut_90d: float | None = None,
+    lpr_cut_90d: float | None = None,
+) -> list[str]:
+    """Derive the transmission_channel list from impulse + stance + liquidity evidence.
+
+    'liquidity' is only appended when there is actual liquidity evidence:
+      - impulse is easing or market_rescue (rate + OMO action implied), OR
+      - pboc_stance == "easing" (rate cycle ongoing), OR
+      - fr007_z is notably low (≤ −0.5, i.e. the repo rate has eased meaningfully), OR
+      - a RRR or LPR cut occurred in the trailing 90 days.
+
+    A pure rhetoric/targeted_support print with pboc_stance=='neutral' and no
+    rate/OMO evidence does NOT assert a liquidity channel.
+    """
     channels: list[str] = []
     if impulse in ("easing", "market_rescue"):
         channels.extend(["rate", "liquidity"])
@@ -255,8 +272,14 @@ def _derive_channels(impulse: str, pboc_stance: str | None) -> list[str]:
         channels.append("stabilization")
     if impulse == "targeted_support":
         channels.append("fiscal_or_structural")
-    if pboc_stance in ("easing", "neutral") and impulse not in ("tightening",):
-        if "liquidity" not in channels:
+        # Only add liquidity when there is supporting evidence
+        has_liquidity_evidence = (
+            pboc_stance == "easing"
+            or (fr007_z is not None and fr007_z <= -0.5)
+            or (rrr_cut_90d or 0) > 0
+            or (lpr_cut_90d or 0) > 0
+        )
+        if has_liquidity_evidence and "liquidity" not in channels:
             channels.append("liquidity")
     if impulse == "tightening":
         channels.append("rate")
@@ -521,7 +544,8 @@ def snapshot() -> dict | None:
             return None
 
         impulse = _classify_impulse(stance, fr007_z, rrr_cut_90d, lpr_cut_90d, recent_text)
-        channels = _derive_channels(impulse, stance)
+        channels = _derive_channels(impulse, stance, fr007_z=fr007_z,
+                                    rrr_cut_90d=rrr_cut_90d, lpr_cut_90d=lpr_cut_90d)
 
         # Recent events: last 10 from ledger (or freshly seeded if ledger absent)
         events = seed_events()
