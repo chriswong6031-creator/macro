@@ -1812,6 +1812,13 @@ def main(alpha: dict | None = None) -> dict | None:
             _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
             _bt = china_standout_track.grade()
             if _bt.get("available"):
+                # Interim (unrealized) mark-to-latest-close read — shown while the forward ledger
+                # is still pre-maturity so the panel isn't a black box until ~07-29. Labeled
+                # INTERIM in the template; graduates to the 21d grade once maturities land.
+                try:
+                    _bt["interim"] = china_standout_track.interim_grade()
+                except Exception as _ie:  # noqa: BLE001 — telemetry, never fatal
+                    log.warning("china interim board-track read failed (%s)", _ie)
                 wide["board_track"] = _bt
                 setups["board_track"] = _bt
             setups["coverage"] = wide["coverage"]
