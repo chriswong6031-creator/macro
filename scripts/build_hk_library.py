@@ -875,14 +875,23 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         except Exception:  # noqa: BLE001
             continue
         tech = rec.get("tech") or {}
+        _price = tech.get("price") if tech.get("price") is not None else r.get("price")
+        _ma200 = tech.get("ma200")
+        _dist_200dma: float | None = None
+        try:
+            if _price and _ma200 and float(_ma200) > 0:
+                _dist_200dma = round(float(_price) / float(_ma200) - 1.0, 4)
+        except Exception:  # noqa: BLE001
+            pass
         enriched.append({
             "ticker": t,
             "name": r.get("name") or rec.get("name"),
             "sector": r.get("sector") or rec.get("sector"),
             "sector_zh": r.get("sector_zh"),
-            "price": tech.get("price") if tech.get("price") is not None else r.get("price"),
+            "price": _price,
             "off_high": tech.get("off_52w_high_pct"),
             "rsi": tech.get("rsi14"),
+            "dist_200dma": _dist_200dma,  # pre-computed so washout engine reads top-level field
             "label": r.get("cycle"), "label_zh": r.get("cycle_zh"),
             "dir": r.get("cycle_dir") or "flat",
             "beta": r.get("beta"), "role": r.get("role"), "tilt": r.get("tilt"),
@@ -1371,6 +1380,50 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
            "universe": len(enriched)}
     if disp_regime:                                  # selection-regime gross dial (board context)
         out["dispersion_regime"] = disp_regime
+    # ---- WASHOUT WATCH (additive, fail-open) — ignition organ for the stock-board revamp.
+    # Operates on the FULL enriched list so cycle-blocked/DECLINE names (excluded by _entry_ok)
+    # are visible.  Survives eligible:0 (risk-off blackout).  The existing board dict is
+    # UNCHANGED when this block errors — the try/except is the only guard needed.
+    try:
+        from engine import hk_washout_watch as _ww
+        # Collect organ snapshots fail-open; each missing organ → that signal absent.
+        _ww_organs: dict = {"southbound": southbound}   # already computed above
+        try:
+            from engine import hk_adr_bridge as _adr
+            _ww_organs["adr_bridge"] = _adr.snapshot()
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: adr_bridge unavailable (%s)", _ex)
+        try:
+            from engine import hk_cbbc as _cbbc
+            _cbbc_snap = _cbbc.run()
+            _ww_organs["cbbc"] = _cbbc_snap
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: cbbc unavailable (%s)", _ex)
+        try:
+            from engine import hk_filing_bus as _filing
+            _ww_organs["filing_bus"] = _filing.run()
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: filing_bus unavailable (%s)", _ex)
+        try:
+            from engine import hk_narrative as _narrative
+            _ww_organs["narrative"] = _narrative.snapshot()
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: narrative unavailable (%s)", _ex)
+        try:
+            from engine import hk_catalyst_calendar as _cat
+            _ww_organs["catalyst_calendar"] = {"events": _cat.catalyst_events(asof=(
+                __import__("datetime").date.fromisoformat(str(as_of)) if as_of else None))}
+        except Exception as _ex:  # noqa: BLE001
+            log.debug("hk_washout_watch wiring: catalyst_calendar unavailable (%s)", _ex)
+        _ww_result = _ww.compute(
+            enriched, _ww_organs,
+            risk_state=risk_state, as_of=str(as_of) if as_of else None)
+        out["washout_watch"] = _ww_result.get("washout_watch", [])
+        log.info("hk washout_watch: %d candidates (eligible=%d, risk_state=%s)",
+                 len(out["washout_watch"]), out["eligible"], risk_state)
+    except Exception as _ww_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
+        log.warning("hk washout_watch compute failed (%s) — existing board intact", _ww_ex)
+        out["washout_watch"] = []
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"
