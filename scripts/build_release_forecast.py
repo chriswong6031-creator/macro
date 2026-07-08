@@ -48,12 +48,16 @@ _SITE_RELPATH = "site/macrodata/release_forecast.json"
 # Ledger key fields (idempotency guard)
 _LEDGER_KEY = ("release", "period", "row_type", "asof_night")
 
-# Releases tracked by MRI v1+v2
+# Releases tracked by MRI v1+v2 (Round 2a: PCE/PPI/retail added MRI-R23)
 _TRACKED_RELEASES = [
-    ("cpi_headline", "cpi", "inflation"),
-    ("cpi_core",     "cpi", "inflation"),
-    ("nfp",          "nfp", "growth"),
-    ("claims",       "claims", "growth"),
+    ("cpi_headline",    "cpi",    "inflation"),
+    ("cpi_core",        "cpi",    "inflation"),
+    ("nfp",             "nfp",    "growth"),
+    ("claims",          "claims", "growth"),
+    ("pce_headline",    "pce",    "inflation"),
+    ("pce_core",        "pce",    "inflation"),
+    ("ppi_finaldemand", "ppi",    "inflation"),
+    ("retail_sales",    "retail", "growth"),
 ]
 
 # MRI-R22: expectation-read band threshold (must match engine/release_market_context.py)
@@ -185,6 +189,37 @@ def _find_upcoming_releases(today: date, horizon_days: int = 40) -> list[dict]:
                 "period": period_str,
                 "regime_axis": "growth",
             })
+        elif etype == "PCE":
+            # PCE release covers the prior month (same offset as CPI)
+            ref_month = date(ev_date.year, ev_date.month, 1)
+            ref_m1 = (pd.Timestamp(ref_month) - pd.offsets.MonthBegin(1)).date()
+            period_str = f"{ref_m1.year}-{ref_m1.month:02d}"
+            upcoming.append({
+                "release_type": "pce_headline",
+                "release": "pce",
+                "release_date": ev_date.isoformat(),
+                "period": period_str,
+                "regime_axis": "inflation",
+            })
+            upcoming.append({
+                "release_type": "pce_core",
+                "release": "pce",
+                "release_date": ev_date.isoformat(),
+                "period": period_str,
+                "regime_axis": "inflation",
+            })
+        elif etype == "PPI":
+            # PPI release covers the prior month
+            ref_month = date(ev_date.year, ev_date.month, 1)
+            ref_m1 = (pd.Timestamp(ref_month) - pd.offsets.MonthBegin(1)).date()
+            period_str = f"{ref_m1.year}-{ref_m1.month:02d}"
+            upcoming.append({
+                "release_type": "ppi_finaldemand",
+                "release": "ppi",
+                "release_date": ev_date.isoformat(),
+                "period": period_str,
+                "regime_axis": "inflation",
+            })
 
     # Synthesize next-Thursday claims if event_calendar doesn't emit CLAIMS events
     # (CLAIMS events may not be in the static CY2026 fallback)
@@ -193,6 +228,19 @@ def _find_upcoming_releases(today: date, horizon_days: int = 40) -> list[dict]:
         # Next Thursday within horizon
         upcoming_claims = _next_thursday_claims(today, horizon_days)
         upcoming.extend(upcoming_claims)
+
+    # MRI-R23: retail_sales scaffold — no calendar entry; emit no_data stub always.
+    # Attempt clock (#1 of 2) has NOT started; RSAFS parquet absent (2026-07-08).
+    # The stub ships the machinery so provenance/coverage flows through without a date.
+    upcoming.append({
+        "release_type": "retail_sales",
+        "release": "retail",
+        "release_date": None,  # unknown until RSAFS calendar wired
+        "period": None,        # unknown
+        "regime_axis": "growth",
+        "no_data": True,
+        "no_data_reason": "no_data_rsafs_absent",
+    })
 
     return upcoming
 
@@ -361,6 +409,19 @@ def _run_projection(
                 release_type, asof, root,
                 period=period_str, release_date=release_date,
             )
+        elif release_type in ("pce_headline", "pce_core", "ppi_finaldemand"):
+            # MRI-R23: new inflation targets — route to release_targets_v11 via project_release
+            ref_month = date.fromisoformat(period_str + "-01") if period_str else None
+            return project_release(
+                release_type, asof, root, ref_month=ref_month,
+                period=period_str, release_date=release_date,
+            )
+        elif release_type == "retail_sales":
+            # MRI-R23: retail scaffold — no_data until RSAFS on disk
+            return project_release(
+                release_type, asof, root,
+                period=period_str, release_date=release_date,
+            )
         else:
             return project_release(release_type, asof, root)
     except Exception as e:
@@ -440,8 +501,10 @@ def _build_upcoming_block(
         # market_implied stays null (come-back C-2)
 
         # Determine target (for display)
-        if rt in ("cpi_headline", "cpi_core"):
+        if rt in ("cpi_headline", "cpi_core", "pce_headline", "pce_core", "ppi_finaldemand"):
             target = "mom_sa_pct"
+        elif rt in ("retail_sales",):
+            target = "mom_sa_pct"  # once RSAFS accrues; no_data for now
         else:
             target = "change_thousands"
 
