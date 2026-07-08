@@ -369,3 +369,69 @@ section reconciles the second lane's remainder into canonical numbering.
   favor of this file's PR-F..PR-K wave names; its Kalshi collector is PR-I
   groundwork.
 - **MRI-R20 port (quirk flags).** Five deterministic calendar quirk flags (engine/release_quirks.py) were ported verbatim from closed PR #1884 (already adversarially reviewed) onto the Package I/K structure in this PR; the double-build collision that produced #1884 was resolved in favor of #1883's enrichment idiom, so quirk_flags now attach in _enrich_upcoming_block alongside surprise_distribution / market_implied / reaction_sensitivity, with quirk_flag_codes frozen on the projection ledger row and bilingual warning chips rendered on the Release Radar card.
+
+## 10. Third wave — v3 challenger track, new targets, expectation reads, UI simplification (2026-07-08, operator-directed program-level adjudication)
+
+Trigger: operator directive to strengthen Release Radar modeling ("extensive
+multifactoral analysis"), extend rigor to all economic releases, make the
+over/under-expectation read first-class, and simplify the UI. §9's spec-attempt
+ledger froze CPI targets at 2/2 attempts with "no v3 without a program-level
+adjudication" — this section IS that adjudication. Discipline is unchanged:
+one frozen spec per new track, champion keeps the card, forward ledger judges.
+
+- **MRI-R21 (v3 challenger charter).** One multifactor CHALLENGER per release
+  family, model class frozen before backtest: a walk-forward ragged-edge
+  factor model — z-scored mixed feature panel (energy, inflation-expectation
+  breakevens [EXPINF* excluded: whole-history re-reviser], pipeline PPI,
+  core persistence, shelter, labor/demand, dollar blocks), complete-case,
+  PCA top-3 factors (pure numpy SVD), ridge (lambda=1.0) on [factors +
+  naive anchor]. The CHAMPION (frozen v2) keeps the card and the ledger's
+  primary rows. The challenger: backtest first (same era tables, same
+  naive-kill rule — if it can't beat naive it is not even shadowed), then
+  SHADOW projection rows on the forward ledger (model tag 'v3_factor',
+  frozen nightly like the champion, scored identically). Promotion to the
+  card requires a NEW program-level adjudication citing forward evidence
+  (guideline: n≥6 scored prints AND challenger MAE ≤ champion MAE), never a
+  backtest alone. No weight/feature iteration post-results. The Codex §4.4
+  committee/ensemble stays DEFERRED per MRI-R14 (frozen-weight blending is
+  revisited only at ledger maturity).
+- **MRI-R22 (expectation-read semantics).** Two DISTINCT reads, both
+  deterministic, published on every card:
+  (a) trend-surprise lean (existing skew tag + surprise_distribution) —
+      our point vs the TREND benchmark median (naive/trailing/AR) in
+      walk-forward-σ units; copy: hotter/inline/cooler.
+  (b) expectation read (NEW) — our point vs the EXPECTATION SET median =
+      {cleveland_nowcast (CPI family), kalshi implied_median (any target,
+      when a ladder trades)}: overexpectation / underexpectation / aligned
+      with the same ±0.35·σ_scale band; copy: "above expectations 高于预期 /
+      below expectations 低于预期 / aligned 符合预期". Empty expectation set →
+      read is null and the card falls back to (a) only, labeled. The word
+      consensus (共识) stays banned; 预期 refers to the published nowcast/
+      market set, with sources listed in the modal.
+- **MRI-R23 (new-target charter).** PCE headline MoM, PCE core MoM, PPI
+  final-demand MoM, retail sales MoM enter as v1-class targets, attempt #1
+  of 2 each, own frozen ridge specs (PCE rides CPI-family features + own
+  lags; PPI: own lags + energy block; retail: own lags + gasoline +
+  claims momentum). Vintages: PCEPI/PCEPILFE 2000→ and PPIFIS 2014→ exist
+  on disk; RSAFS accrues from the 2026-07-08 nightly (machinery ships with
+  honest no_data until then, AHE pattern). Same kill rules, era tables,
+  ledger/scoreboard flow, release dates from engine/event_calendar (PCE
+  id=54, PPI id=46 already wired there).
+- **MRI-R24 (UI simplification law).** Release Radar becomes SIMPLE CARDS +
+  on-click DETAIL MODAL. Card shows ONLY: release name + countdown, OUR
+  projection (headline number), the two chips from MRI-R22 (expectation
+  read + trend lean), and confidence. Everything else (interval cone,
+  benchmark strip, components, composition bar, surprise gauge, reaction
+  sensitivity, quirk chips [#1887], revision risk, policy backdrop, track
+  record) moves into the modal, organized in that order. A bug-fix pass is
+  part of the wave; per the wave-2 lesson, render tests must include
+  live-path integration tests against a realistic full artifact fixture,
+  not synthetic-only units. Display-only footnote stays on both card and
+  modal.
+
+Waves: **PR-L** (this PR) §10 + expectation_read fields + tests. **PR-M**
+v3 challenger (prereg → backtest → shadow wiring, adversarial review).
+**PR-N** new targets (prereg → backtest → producer/UI plumbing, adversarial
+review). **PR-O** UI card+modal + bug fixes. Come-back C-8: committee blend
+at ledger maturity. C-9: challenger promotion adjudication at n≥6 forward
+prints.
