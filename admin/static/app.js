@@ -133,11 +133,12 @@ const ICONS = {
   features:    NAV_ICO('<circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="M11 8h9M4 16h9"/>'),
   brief:       NAV_ICO('<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>'),
   vector:      NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M9.5 7.5h4.2a2.2 2 0 0 1 0 4H9.5m0 0h4.6a2.2 2 0 0 1 0 4.4H9.5m0-8.4V5.5m0 13v-2m2.4-11v2m0 7.4v2"/>'),
-  long_hold:   NAV_ICO('<polyline points="3 18 8 10 13 14 18 6"/><line x1="3" y1="21" x2="21" y2="21"/>'),
+  long_hold:     NAV_ICO('<polyline points="3 18 8 10 13 14 18 6"/><line x1="3" y1="21" x2="21" y2="21"/>'),
+  context_lobe:  NAV_ICO('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -1618,6 +1619,146 @@ RENDER.long_hold = async () => {
     <div class="card">${tfHtml}</div>
     <div class="section">Label Distribution</div>
     <div class="card">${lbHtml}</div>`;
+};
+
+/* ---- Context Lobe ------------------------------------------------------- */
+RENDER.context_lobe = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted" style="margin-bottom:8px">Loading…</div>`;
+  const d = await api("/api/context_lobe");
+
+  // always ok=true; error note signals artifact is absent
+  const freshStr = d.freshness
+    ? `produced ${esc(String(d.freshness).slice(0, 16).replace("T", " "))} UTC · ${fmtAge(d.age_hours)} old`
+    : "artifact not yet written (runs on Mac host nightly)";
+
+  // ---- display-only / annotate-only banner ----
+  const banner = `<div class="banner show" style="margin-bottom:12px;padding:8px 12px;border-radius:6px;background:var(--surface2,#1e2030);border:1px solid var(--border,#334)">
+    <span style="font-weight:600">Display-only · annotate_only</span>
+    <span class="sub" style="margin-left:8px">Neural Web context layer — no signals, no escalations, no scores may originate here</span>
+  </div>`;
+
+  // ---- error / absent ----
+  if (d.error) {
+    v.innerHTML = banner + card("Context Lobe", `<div class="sub muted">${esc(d.error)}</div>`);
+    return;
+  }
+
+  // ---- gap notes ----
+  const gapHtml = (d.gap_notes && d.gap_notes.length)
+    ? `<div class="section">Gap Notes</div><div class="card">${d.gap_notes.map(n => `<div class="note">${esc(n)}</div>`).join("")}</div>`
+    : "";
+
+  // ---- lobes summary ----
+  const lobes = d.lobes || {};
+  const lobeNames = Object.keys(lobes);
+  let lobesHtml = "";
+  if (lobeNames.length === 0) {
+    lobesHtml = `<div class="sub muted">no lobe data</div>`;
+  } else {
+    lobesHtml = lobeNames.map(name => {
+      const lobe = lobes[name] || {};
+      if (!lobe.available) {
+        return `<div class="kv"><span class="mono">${esc(name)}</span><b class="muted">—</b></div>`;
+      }
+      let detail = "";
+      if (name === "market") {
+        detail = `${esc(lobe.verdict || "—")} · score ${lobe.score != null ? lobe.score : "—"} · radar ${esc(lobe.radar_state || "—")}`;
+      } else if (name === "macro_weather") {
+        detail = `US ${esc(lobe.us_quad || "—")} · CN ${esc(lobe.china_quad || "—")} · HK ${esc(lobe.hk_quad || "—")}`;
+      } else if (name === "bottom_sensors") {
+        const counts = lobe.counts || {};
+        const countStr = Object.entries(counts).map(([k, n]) => `${esc(k)} ${n}`).join(" · ") || "—";
+        detail = `n=${lobe.n_rows != null ? lobe.n_rows : "—"} · ${countStr}`;
+      } else if (name === "options_entry") {
+        const gate = lobe.gate || {};
+        detail = Object.entries(gate).map(([k, v2]) => `${esc(k)}=${esc(String(v2))}`).join(" · ") || "—";
+      } else if (name === "cortex") {
+        detail = `probation=${lobe.probation ? "yes" : "no"} · active_signals=${lobe.active_signals != null ? lobe.active_signals : "—"}`;
+      } else if (name === "contradictions") {
+        detail = `${lobe.n_records != null ? lobe.n_records : "—"} records`;
+      } else if (name === "cycle_pattern") {
+        detail = `gate=${esc(lobe.gate_status || "—")} · entities=${lobe.n_entities != null ? lobe.n_entities : "—"} · hazards=${lobe.n_with_hazard != null ? lobe.n_with_hazard : "—"}`;
+      } else if (lobe.standing_law) {
+        detail = esc(String(lobe.standing_law).slice(0, 80));
+      } else {
+        detail = lobe.as_of ? `as of ${esc(lobe.as_of)}` : "—";
+      }
+      const asof = lobe.as_of ? ` <span class="sub muted">· ${esc(lobe.as_of)}</span>` : "";
+      return `<div class="kv"><span class="mono">${esc(name.replace(/_/g, " "))}</span><b>${detail}${asof}</b></div>`;
+    }).join("");
+  }
+
+  // ---- lobe_manifest ----
+  let manifestHtml = "";
+  const manifest = d.lobe_manifest || [];
+  if (manifest.length === 0) {
+    manifestHtml = `<div class="sub muted">no manifest entries</div>`;
+  } else {
+    const mRows = manifest.map(e =>
+      `<tr>
+        <td class="mono">${esc(e.artifact_id || "—")}</td>
+        <td class="sub" style="max-width:240px">${esc(e.path || "—")}</td>
+        <td>${esc(e.tier || "—")}</td>
+        <td>${esc(e.horizon_role || "—")}</td>
+        <td><span class="statpill ${e.stale ? "s-warn" : "s-ok"}">${e.stale ? "stale" : "fresh"}</span></td>
+        <td>${esc(e.asof || "—")}</td>
+      </tr>`
+    ).join("");
+    manifestHtml = `<table><thead><tr><th>Artifact</th><th>Path</th><th>Tier</th><th>Horizon role</th><th>Freshness</th><th>As-of</th></tr></thead>
+      <tbody>${mRows}</tbody></table>`;
+  }
+
+  // ---- candidate_context table ----
+  const candidates = d.candidates || [];
+  let candidatesHtml = "";
+  if (candidates.length === 0) {
+    candidatesHtml = `<div class="sub muted">no candidate context rows</div>`;
+  } else {
+    const cRows = candidates.map(row => {
+      const nullDash = (v2) => v2 != null ? esc(String(v2)) : "—";
+      const fmtF = (v2, dp) => v2 != null ? Number(v2).toFixed(dp != null ? dp : 2) : "—";
+      const boolStr = (v2) => v2 == null ? "—" : (v2 ? "yes" : "no");
+      return `<tr>
+        <td><b>${esc(row.ticker || "—")}</b></td>
+        <td><span class="statpill">${nullDash(row.bottom_state)}</span></td>
+        <td class="r mono">${row.trigger_age_ticks != null ? fmtF(row.trigger_age_ticks, 0) : "—"}</td>
+        <td>${boolStr(row.coiled)}</td>
+        <td>${boolStr(row.star)}</td>
+        <td>${nullDash(row.gex_confirm_verdict)}</td>
+        <td class="r mono">${row.iv30 != null ? (row.iv30 * 100).toFixed(1) + "%" : "—"}</td>
+        <td>${row.interest_coverage != null ? fmtF(row.interest_coverage, 1) : "—"}</td>
+        <td>${row.ev_ebit != null ? fmtF(row.ev_ebit, 1) : "—"}</td>
+        <td>${row.pe != null ? fmtF(row.pe, 1) : "—"}</td>
+        <td>${nullDash(row.underwater_state)}</td>
+        <td class="r">${row.earnings_days_to != null ? fmtF(row.earnings_days_to, 0) + "d" : "—"}</td>
+        <td class="r">${row.n_graph_conflicts != null ? row.n_graph_conflicts : "—"}</td>
+        <td class="sub">${nullDash(row.bottom_as_of)}</td>
+      </tr>`;
+    }).join("");
+    candidatesHtml = `
+      <div class="note muted" style="margin-bottom:6px">Showing ${d.n_candidates_shown} of ${d.n_candidates_total} tickers · sorted by sub-block richness · display-only context</div>
+      <table><thead><tr>
+        <th>Ticker</th><th>Bottom state</th><th class="r">Trig age</th>
+        <th>Coiled</th><th>Star</th>
+        <th>GEX verdict</th><th class="r">IV30</th>
+        <th>Int cov</th><th>EV/EBIT</th><th>P/E</th>
+        <th>Underwater</th><th class="r">Earn days</th>
+        <th>Conflicts</th><th>As-of</th>
+      </tr></thead>
+      <tbody>${cRows}</tbody></table>`;
+  }
+
+  v.innerHTML = `
+    ${banner}
+    <div class="sub muted" style="margin-bottom:8px">${esc(freshStr)}</div>
+    ${gapHtml}
+    <div class="section">Lobes</div>
+    <div class="card">${lobesHtml}</div>
+    <div class="section">Lobe Manifest <span class="cnt">${manifest.length}</span></div>
+    <div class="card">${manifestHtml}</div>
+    <div class="section">Candidate Context <span class="cnt">${d.n_candidates_total || 0}</span></div>
+    <div class="card">${candidatesHtml}</div>`;
 };
 
 /* ---- boot --------------------------------------------------------------- */
