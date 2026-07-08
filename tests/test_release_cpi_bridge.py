@@ -29,11 +29,16 @@ sys.path.insert(0, str(_REPO))
 from engine.release_cpi_bridge import (
     _ALL_ITEMS_W,
     _CORE_GOODS_W,
+    _CORE_ITEMS_W,
     _CORE_SVC_XS_W,
     _ENERGY_ELEC_W,
     _ENERGY_GASOLINE_W,
     _FOOD_AT_HOME_W,
+    _MODELLED_W_CORE,
+    _MODELLED_W_HEADLINE,
     _SHELTER_W,
+    _UNMODELLED_RESIDUAL_W_CORE,
+    _UNMODELLED_RESIDUAL_W_HEADLINE,
     _compute_energy_electricity,
     _compute_energy_gasoline,
     _compute_food_at_home,
@@ -56,7 +61,7 @@ MODELLED_WEIGHTS = {
     "shelter": _SHELTER_W,                         # 35.625
     "food_at_home": _FOOD_AT_HOME_W,               # 8.325
     "core_goods_pipeline": _CORE_GOODS_W,          # 19.176
-    "core_services_ex_shelter": _CORE_SVC_XS_W,    # 44.294
+    "core_services_ex_shelter": _CORE_SVC_XS_W,    # 25.118 (corrected from 44.294)
 }
 
 PRIOR_ONLY_WEIGHTS = {
@@ -157,6 +162,34 @@ class TestWeightReconciliation:
         assert abs(_SHELTER_W - 35.625) < 0.001, f"Shelter weight: {_SHELTER_W}"
         assert abs(_FOOD_AT_HOME_W - 8.325) < 0.001, f"FAH weight: {_FOOD_AT_HOME_W}"
         assert abs(_CORE_GOODS_W - 19.176) < 0.001, f"Core goods weight: {_CORE_GOODS_W}"
+        # Corrected weight: 79.919 - 35.625 - 19.176 = 25.118
+        assert abs(_CORE_SVC_XS_W - 25.118) < 0.001, (
+            f"Core svc xs shelter weight: {_CORE_SVC_XS_W} (expected 25.118)"
+        )
+
+    def test_headline_weights_partition_to_100(self):
+        """Modelled headline weights + unmodelled residual must equal 100.0."""
+        total = _MODELLED_W_HEADLINE + _UNMODELLED_RESIDUAL_W_HEADLINE
+        assert abs(total - 100.0) < 0.001, (
+            f"Headline partition: {_MODELLED_W_HEADLINE} + {_UNMODELLED_RESIDUAL_W_HEADLINE} "
+            f"= {total} (expected 100.0)"
+        )
+
+    def test_core_weights_partition_to_core_basket(self):
+        """Modelled core weights + unmodelled residual must equal 79.919 (core basket)."""
+        total = _MODELLED_W_CORE + _UNMODELLED_RESIDUAL_W_CORE
+        assert abs(total - _CORE_ITEMS_W) < 0.001, (
+            f"Core partition: {_MODELLED_W_CORE} + {_UNMODELLED_RESIDUAL_W_CORE} "
+            f"= {total} (expected {_CORE_ITEMS_W})"
+        )
+
+    def test_core_svc_xs_correct_partition(self):
+        """core_svc_xs_shelter = core_basket - shelter - core_goods (no double-count)."""
+        expected = _CORE_ITEMS_W - _SHELTER_W - _CORE_GOODS_W
+        assert abs(_CORE_SVC_XS_W - expected) < 0.001, (
+            f"core_svc_xs: {_CORE_SVC_XS_W}, expected {expected} "
+            f"(= {_CORE_ITEMS_W} - {_SHELTER_W} - {_CORE_GOODS_W})"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -165,21 +198,28 @@ class TestWeightReconciliation:
 
 class TestContributionReconciliation:
 
-    def test_residual_is_zero_by_construction(self):
-        """Residual = headline - (modelled_sum + prior_sum) must be ~0 (floating-point only)."""
-        # Build a simple bridge result dict manually
-        components = [
-            {"block": "energy_gasoline", "contribution_pp": 0.05, "prior_only": False},
-            {"block": "shelter", "contribution_pp": 0.12, "prior_only": False},
-            {"block": "food_at_home", "contribution_pp": -0.02, "prior_only": False},
-            {"block": "core_goods_pipeline", "contribution_pp": 0.01, "prior_only": False},
-            {"block": "core_services_ex_shelter", "contribution_pp": 0.08, "prior_only": False},
-        ]
-        modelled_sum = sum(c["contribution_pp"] for c in components if not c["prior_only"])
-        prior_sum = sum(c["contribution_pp"] for c in components if c["prior_only"])
-        headline = modelled_sum + prior_sum
-        residual = headline - (modelled_sum + prior_sum)
-        assert abs(residual) < 1e-10, f"Residual should be ~0, got {residual}"
+    def test_coverage_residual_near_zero_when_partition_complete(self):
+        """coverage_residual_pp must be ~0 when all weights sum to 100 (partition complete)."""
+        # Simulate a complete partition: modelled + unmodelled_residual covers 100pp
+        modelled_weight_sum = _MODELLED_W_HEADLINE
+        residual_weight = _UNMODELLED_RESIDUAL_W_HEADLINE
+        total_applied = modelled_weight_sum + residual_weight
+        coverage_residual = 100.0 - total_applied
+        assert abs(coverage_residual) < 0.01, (
+            f"coverage_residual_pp should be ~0, got {coverage_residual}"
+        )
+
+    def test_prior_driven_share_computed(self):
+        """prior_driven_share = Σ(prior block weights) / 100; must be in [0, 1]."""
+        # For headline: unmodelled_residual_w = 6.486pp
+        prior_driven = _UNMODELLED_RESIDUAL_W_HEADLINE / _ALL_ITEMS_W
+        assert 0.0 <= prior_driven <= 1.0, (
+            f"prior_driven_share out of range: {prior_driven}"
+        )
+        # Approx check: unmodelled residual is ~6.5% of basket
+        assert 0.05 < prior_driven < 0.15, (
+            f"Unexpected prior_driven_share: {prior_driven} (expected ~0.065)"
+        )
 
     def test_contribution_formula(self):
         """contribution_pp = mom_est/100 × weight, check basic math."""
@@ -189,15 +229,16 @@ class TestContributionReconciliation:
         assert abs(expected - 0.20) < 1e-10
 
     def test_headline_from_contributions(self):
-        """sum(contribution_pp for all blocks) gives headline estimate."""
-        # headline_est = Σ (block_mom / 100 × block_weight)
-        # For a uniform 2% MoM across all blocks:
-        # This doesn't sum to 2% because weights sum to more than 100 (overlap),
-        # but the formula is still additive
+        """sum(contribution_pp for all blocks, including unmodelled_residual) = point estimate."""
         mom = 2.0
-        total_contrib = sum((mom / 100.0) * w for w in MODELLED_WEIGHTS.values())
-        # With overlap, total > 2.0
-        assert total_contrib > 0, "Expected positive contributions from uniform positive MoM"
+        # Corrected weights partition cleanly, total should be ≤ 100 (no double-count)
+        total_modelled_contrib = sum((mom / 100.0) * w for w in MODELLED_WEIGHTS.values())
+        # With corrected weights, total headline modelled coverage = 93.514pp
+        assert total_modelled_contrib > 0, "Expected positive contributions from uniform positive MoM"
+        # Modelled weights should sum to < 100 (unmodelled_residual fills the gap)
+        assert sum(MODELLED_WEIGHTS.values()) < 100.0, (
+            "Modelled weights alone should not sum to 100 (unmodelled_residual fills the gap)"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -511,30 +552,8 @@ class TestCoreVsHeadline:
                 f"Expected energy_electricity in headline components: {block_names}"
             )
 
-    def test_residual_defined_when_components_computed(self):
-        """When the bridge computes components (not an empty-bridge early-return),
-        residual_pp must be a float. Test this by constructing a valid synthetic case."""
-        # Build synthetic components list and verify residual formula holds
-        # (white-box test of the reconciliation math)
-        components = [
-            {"block": "energy_gasoline", "contribution_pp": 0.04, "prior_only": False},
-            {"block": "energy_electricity", "contribution_pp": 0.02, "prior_only": False},
-            {"block": "shelter", "contribution_pp": 0.10, "prior_only": False},
-            {"block": "food_at_home", "contribution_pp": 0.03, "prior_only": False},
-            {"block": "core_goods_pipeline", "contribution_pp": 0.01, "prior_only": False},
-            {"block": "core_services_ex_shelter", "contribution_pp": 0.08, "prior_only": False},
-        ]
-        modelled_sum = sum(c["contribution_pp"] for c in components if not c["prior_only"])
-        prior_sum = sum(c["contribution_pp"] for c in components if c["prior_only"])
-        headline_est = modelled_sum + prior_sum
-        residual = headline_est - (modelled_sum + prior_sum)
-        # Residual is always 0 by construction (headline_est = modelled_sum + prior_sum)
-        assert isinstance(residual, float)
-        assert abs(residual) < 1e-10
-
-    def test_empty_bridge_residual_is_none(self, tmp_path):
-        """When no own series knowable, bridge returns _empty_bridge path where residual=None.
-        This is acceptable — residual_pp is only meaningful when components are computed."""
+    def test_coverage_residual_field_in_result(self, tmp_path):
+        """compute_cpi_bridge returns coverage_residual_pp (real gap), not tautological residual."""
         (tmp_path / "data" / "fred_vintage").mkdir(parents=True)
         (tmp_path / "data" / "fred").mkdir(parents=True)
         (tmp_path / "data" / "zori").mkdir(parents=True)
@@ -559,5 +578,43 @@ class TestCoreVsHeadline:
         # Empty-bridge case: all None is acceptable; display_only still holds
         assert result["display_only"] is True
         assert result["authority"] is False
-        # residual_pp may be None when components are None (early-return path)
-        # This is by design; callers check components is not None before reading residual_pp
+        # New honesty fields must be present in the output (may be None in empty-bridge path)
+        assert "coverage_residual_pp" in result, "coverage_residual_pp field missing from result"
+        assert "prior_driven_share" in result, "prior_driven_share field missing from result"
+        # The old tautological field must be gone
+        assert "residual_pp" not in result, (
+            "residual_pp (tautological) must not appear in output — replaced by coverage_residual_pp"
+        )
+
+    def test_food_at_home_absent_from_core_contributions(self, tmp_path):
+        """Core bridge must not include food_at_home as a modelled block (food excluded from core)."""
+        (tmp_path / "data" / "fred_vintage").mkdir(parents=True)
+        (tmp_path / "data" / "fred").mkdir(parents=True)
+        (tmp_path / "data" / "zori").mkdir(parents=True)
+
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+
+        empty_table = pa.table({
+            "series": pa.array([], type=pa.string()),
+            "period": pa.array([], type=pa.timestamp("ns")),
+            "value": pa.array([], type=pa.float64()),
+            "realtime_start": pa.array([], type=pa.timestamp("ns")),
+            "realtime_end": pa.array([], type=pa.timestamp("ns")),
+        })
+        pq.write_table(empty_table, tmp_path / "data" / "fred_vintage" / "vintages.parquet")
+
+        result = compute_cpi_bridge(
+            asof=date(2025, 6, 11),
+            root=tmp_path,
+            release="cpi_core",
+        )
+        if result.get("components"):
+            modelled_blocks = [c["block"] for c in result["components"] if not c["prior_only"]]
+            assert "food_at_home" not in modelled_blocks, (
+                f"food_at_home must not appear as modelled block in core: {modelled_blocks}"
+            )
+            all_blocks = [c["block"] for c in result["components"]]
+            assert "food_at_home" not in all_blocks, (
+                f"food_at_home must not appear at all in core components: {all_blocks}"
+            )

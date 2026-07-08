@@ -6,12 +6,12 @@
     "n_bridge_steps": 352,
     "n_champ_steps": 292,
     "n_aligned": 292,
-    "weight_coverage_pct": 103.1,
+    "weight_coverage_pct": 83.9,
     "era_stats": {
       "full": {
         "n": 282,
-        "mae_bridge": 0.16385514954345923,
-        "rmse_bridge": 0.21463894539650147,
+        "mae_bridge": 0.15415096318310081,
+        "rmse_bridge": 0.20037917912175143,
         "mae_naive": 0.2591375591353437,
         "rmse_naive": 0.3386039576602189,
         "mae_trailing3m": 0.2563160745975044,
@@ -21,8 +21,8 @@
       },
       "pre_2010": {
         "n": 96,
-        "mae_bridge": 0.17601667939996032,
-        "rmse_bridge": 0.23408919489587998,
+        "mae_bridge": 0.16543746441494422,
+        "rmse_bridge": 0.22117052861152753,
         "mae_naive": 0.33403405377787804,
         "rmse_naive": 0.4155859057801024,
         "mae_trailing3m": 0.3407741544927016,
@@ -32,8 +32,8 @@
       },
       "2010_2020": {
         "n": 122,
-        "mae_bridge": 0.13730005315358113,
-        "rmse_bridge": 0.1733125438185275,
+        "mae_bridge": 0.1317844811903708,
+        "rmse_bridge": 0.16305286663366486,
         "mae_naive": 0.20806120664448022,
         "rmse_naive": 0.26426905048070376,
         "mae_trailing3m": 0.20716948855856146,
@@ -43,8 +43,8 @@
       },
       "2021_plus": {
         "n": 64,
-        "mae_bridge": 0.19623350725191263,
-        "rmse_bridge": 0.25207198101795975,
+        "mae_bridge": 0.17985731763397717,
+        "rmse_bridge": 0.22992241679050418,
         "mae_naive": 0.24415711410725044,
         "rmse_naive": 0.33614251547141505,
         "mae_trailing3m": 0.2233146343914437,
@@ -54,8 +54,8 @@
       },
       "covid_separate": {
         "n": 4,
-        "mae_bridge": 0.2284671915464495,
-        "rmse_bridge": 0.2712950107272117,
+        "mae_bridge": 0.20976719154644952,
+        "rmse_bridge": 0.2509545412269629,
         "mae_naive": 0.5611082806400935,
         "rmse_naive": 0.577460921714007,
         "mae_trailing3m": 0.6512893021873837,
@@ -68,9 +68,9 @@
       "triggered": false,
       "kill_full": false,
       "kill_2021": false,
-      "bridge_mae_full": 0.1639,
+      "bridge_mae_full": 0.1542,
       "naive_mae_full": 0.2591,
-      "bridge_mae_2021": 0.1962,
+      "bridge_mae_2021": 0.1799,
       "naive_mae_2021": 0.2442
     },
     "verdict": "SHADOW-ELIGIBLE \u2014 bridge beats naive in at least one required slice."
@@ -81,12 +81,12 @@
     "n_bridge_steps": 352,
     "n_champ_steps": 292,
     "n_aligned": 292,
-    "weight_coverage_pct": 97.8,
+    "weight_coverage_pct": 70.3,
     "era_stats": {
       "full": {
         "n": 282,
-        "mae_bridge": 0.11172751306985997,
-        "rmse_bridge": 0.15113519389597632,
+        "mae_bridge": 0.09709086310578008,
+        "rmse_bridge": 0.13014506993795608,
         "mae_naive": 0.09306159310782466,
         "rmse_naive": 0.12528359313812587,
         "mae_trailing3m": 0.09247790722913288,
@@ -96,8 +96,8 @@
       },
       "pre_2010": {
         "n": 96,
-        "mae_bridge": 0.11052097174081028,
-        "rmse_bridge": 0.14155688720700513,
+        "mae_bridge": 0.09546971717044633,
+        "rmse_bridge": 0.12005675317710995,
         "mae_naive": 0.09354670095946284,
         "rmse_naive": 0.11869163302944033,
         "mae_trailing3m": 0.08655801281838332,
@@ -107,8 +107,8 @@
       },
       "2010_2020": {
         "n": 122,
-        "mae_bridge": 0.08462861644557575,
-        "rmse_bridge": 0.10590723810248052,
+        "mae_bridge": 0.07471079260478895,
+        "rmse_bridge": 0.09394960003422637,
         "mae_naive": 0.07346163063254818,
         "rmse_naive": 0.09593725929476815,
         "mae_trailing3m": 0.07216544334874855,
@@ -118,8 +118,8 @@
       },
       "2021_plus": {
         "n": 64,
-        "mae_bridge": 0.16519459675347628,
-        "rmse_bridge": 0.22182922516563797,
+        "mae_bridge": 0.14218459140129497,
+        "rmse_bridge": 0.19022594394267772,
         "mae_naive": 0.12969635979886324,
         "rmse_naive": 0.17459612297167265,
         "mae_trailing3m": 0.14007838311723986,
@@ -129,8 +129,8 @@
       },
       "covid_separate": {
         "n": 4,
-        "mae_bridge": 0.2598109086521832,
-        "rmse_bridge": 0.30115906228532235,
+        "mae_bridge": 0.2851359086521832,
+        "rmse_bridge": 0.30365351284712766,
         "mae_naive": 0.33826477920686493,
         "rmse_naive": 0.33990195624608105,
         "mae_trailing3m": 0.3323297092490971,
@@ -143,9 +143,9 @@
       "triggered": true,
       "kill_full": true,
       "kill_2021": true,
-      "bridge_mae_full": 0.1117,
+      "bridge_mae_full": 0.0971,
       "naive_mae_full": 0.0931,
-      "bridge_mae_2021": 0.1652,
+      "bridge_mae_2021": 0.1422,
       "naive_mae_2021": 0.1297
     },
     "verdict": "NULL \u2014 kill rule triggered (MAE >= naive in BOTH full AND 2021+). NOT SHADOWED."

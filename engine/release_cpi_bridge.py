@@ -5,14 +5,21 @@ LEAF · DISPLAY-ONLY. Pure numpy/pandas only.
 A BLS relative-importance weighted component bridge for CPI headline & core.
 Each block computes a MoM estimate from its PIT-safe proxy series, multiplied by
 the BLS Dec-2025 relative-importance weight → contribution in percentage-points.
-Headline estimate = Σ contributions. Residual (floating-point rounding only) is printed.
+
+The bridge is a TRUE partition to 100pp: all 13 prior-only blocks carry their own prior
+MoM × RI weight in the point estimate, so Σ(applied weights) = 100 (headline) / 79.919
+(core). Printed honesty fields per MRI-R19:
+  coverage_residual_pp = 100 − Σ(applied weights)  (real coverage gap, ~0 when complete)
+  prior_driven_share   = Σ(weights of confidence-0 blocks) / 100  (extrapolation fraction)
 
 NOT a regression. Weights come from BLS, not from data fitting.
 
-SPECIFICATION: research/release_forecast/PREREG_CPI_BRIDGE_V1.md (frozen 2026-07-08)
+SPECIFICATION: research/release_forecast/PREREG_CPI_BRIDGE_V1.md (amended 2026-07-08,
+corrected attempt #1 per Opus review; corrections are BLS-partition-derived, not result-tuned)
 RULING: MRI-R25 (research/MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md §11)
 
-Anti-mining: spec frozen before any backtest results observed.
+Anti-mining: spec frozen before backtest results observed; this rework committed AFTER
+prereg amendment (separate earlier commit).
 
 PIT LAW: same as engine/release_components_cpi.py. Non-vintaged series declared
 revision_optimistic per leg. PPIFIS/PPIFES use knowable_series for ALFRED-PIT.
@@ -44,10 +51,41 @@ _ENERGY_ELEC_W = 2.375        # Electricity (APU000072610)
 _SHELTER_W = 35.625           # Shelter (full basket: OER + rent + lodging)
 _FOOD_AT_HOME_W = 8.325       # Food at home
 _CORE_GOODS_W = 19.176        # Commodities less food and energy
-_CORE_SVC_XS_W = 44.294       # Approx: all items less food+energy (79.919) - shelter (35.625)
+_CORE_SVC_XS_W = 25.118       # all items less food+energy (79.919) - shelter (35.625) - core_goods (19.176)
+# Corrected from original 44.294: the original forgot to subtract core_goods, double-counting 19.176pp.
 
 # All-items denominator
 _ALL_ITEMS_W = 100.000
+
+# Core CPI denominator: all items less food and energy
+_CORE_ITEMS_W = 79.919
+
+# --- Partition accounting ---
+# The modelled blocks use exclusive BLS sub-basket weights (no overlap after correction):
+#   Headline: gasoline(2.895)+elec(2.375)+shelter(35.625)+food_at_home(8.325)
+#             +core_goods(19.176)+core_svc_xs(25.118) = 93.514pp
+#   Core: shelter(35.625)+core_goods(19.176)+core_svc_xs(25.118) = 79.919pp (full core basket)
+#
+# One "unmodelled_residual" block absorbs the remaining basket share:
+#   Headline residual: 100.000 − 93.514 = 6.486pp
+#   Core residual: 79.919 − 79.919 = 0.000pp (core is fully partitioned)
+#
+# The residual block carries the prior own-series MoM × residual weight (confidence=0.0).
+
+_MODELLED_W_HEADLINE = (
+    _ENERGY_GASOLINE_W + _ENERGY_ELEC_W + _SHELTER_W
+    + _FOOD_AT_HOME_W + _CORE_GOODS_W + _CORE_SVC_XS_W
+)
+# = 2.895 + 2.375 + 35.625 + 8.325 + 19.176 + 25.118 = 93.514
+
+_MODELLED_W_CORE = _SHELTER_W + _CORE_GOODS_W + _CORE_SVC_XS_W
+# = 35.625 + 19.176 + 25.118 = 79.919 (exactly _CORE_ITEMS_W)
+
+_UNMODELLED_RESIDUAL_W_HEADLINE = round(_ALL_ITEMS_W - _MODELLED_W_HEADLINE, 6)
+# = 6.486
+
+_UNMODELLED_RESIDUAL_W_CORE = round(_CORE_ITEMS_W - _MODELLED_W_CORE, 6)
+# = 0.000 (no residual for core)
 
 # Per-block confidence (per PREREG_CPI_BRIDGE_V1.md §3)
 _BLOCK_CONFIDENCE: dict[str, float] = {
@@ -568,30 +606,37 @@ def compute_cpi_bridge(
             "prior_only": True,
         })
 
-    # Block 3: food at home
-    fah_mom, fah_prov = _compute_food_at_home(root, asof)
-    all_prov["food_at_home"] = fah_prov
-    revision_optimistic_legs.extend(["WPU01", "CUSR0000SAF11"])
-    if fah_mom is not None:
-        contribution = (fah_mom / 100.0) * _FOOD_AT_HOME_W
-        components.append({
-            "block": "food_at_home",
-            "mom_est": round(fah_mom, 4),
-            "weight": _FOOD_AT_HOME_W,
-            "contribution_pp": round(contribution, 6),
-            "confidence": _BLOCK_CONFIDENCE["food_at_home"],
-            "prior_only": False,
-        })
-    else:
-        absent_legs.append("food_at_home")
-        components.append({
-            "block": "food_at_home",
-            "mom_est": None,
-            "weight": _FOOD_AT_HOME_W,
-            "contribution_pp": 0.0,
-            "confidence": 0.0,
-            "prior_only": True,
-        })
+    # Block 3: food at home (HEADLINE ONLY — food excluded from core CPI by definition)
+    if not is_core:
+        fah_mom, fah_prov = _compute_food_at_home(root, asof)
+        all_prov["food_at_home"] = fah_prov
+        revision_optimistic_legs.extend(["WPU01", "CUSR0000SAF11"])
+        if fah_mom is not None:
+            contribution = (fah_mom / 100.0) * _FOOD_AT_HOME_W
+            components.append({
+                "block": "food_at_home",
+                "mom_est": round(fah_mom, 4),
+                "weight": _FOOD_AT_HOME_W,
+                "contribution_pp": round(contribution, 6),
+                "confidence": _BLOCK_CONFIDENCE["food_at_home"],
+                "prior_only": False,
+            })
+        else:
+            absent_legs.append("food_at_home")
+            # Fall to prior for this sub-block
+            prior_mom_fah = _compute_prior_mom_from_own_series(vintages, own_series, asof)
+            fah_fallback = (
+                0.0 if prior_mom_fah is None
+                else (prior_mom_fah / 100.0) * _FOOD_AT_HOME_W
+            )
+            components.append({
+                "block": "food_at_home",
+                "mom_est": None,
+                "weight": _FOOD_AT_HOME_W,
+                "contribution_pp": round(fah_fallback, 6),
+                "confidence": 0.0,
+                "prior_only": True,
+            })
 
     # Block 4: core goods pipeline
     pipeline_mom, pipeline_prov = _compute_core_goods_pipeline(vintages, asof)
@@ -642,37 +687,50 @@ def compute_cpi_bridge(
             "prior_only": True,
         })
 
-    # ---- Reconciliation: sum contributions → headline estimate ---------------
-    # NOTE: block weights DO NOT sum to 100 because of overlap between
-    # core_goods (19.176) and core_services_ex_shelter (44.294 = 79.919 - 35.625).
-    # The bridge uses each block's contribution directly; the headline estimate
-    # is not a weighted-average of blocks but a sum of (MoM/100 × weight) terms.
-    # This will NOT equal the actual CPI headline because:
-    #   (a) prior-only blocks contribute their own prior MoM × weight
-    #   (b) the weight overlap introduces double-counting
-    # The residual_pp captures this discrepancy and is printed, never hidden.
+    # ---- Unmodelled residual block: TRUE 100pp partition --------------------------
+    # Add one aggregate "unmodelled_residual" block to absorb the basket share not
+    # covered by the 5-6 modelled blocks. This ensures Σ(applied weights) = 100
+    # (headline) / 79.919 (core). Confidence = 0.0 (prior-only, no fresh proxy).
+    unmodelled_w = _UNMODELLED_RESIDUAL_W_HEADLINE if not is_core else _UNMODELLED_RESIDUAL_W_CORE
+    if unmodelled_w > 1e-6:
+        prior_mom_residual = _compute_prior_mom_from_own_series(vintages, own_series, asof)
+        residual_contrib = (
+            0.0 if prior_mom_residual is None
+            else (prior_mom_residual / 100.0) * unmodelled_w
+        )
+        components.append({
+            "block": "unmodelled_residual",
+            "mom_est": round(prior_mom_residual, 4) if prior_mom_residual is not None else None,
+            "weight": unmodelled_w,
+            "contribution_pp": round(float(residual_contrib), 6),
+            "confidence": 0.0,
+            "prior_only": True,
+        })
 
+    # ---- Reconciliation: sum contributions → point estimate --------------------
     modelled_contribs = [c["contribution_pp"] for c in components if not c["prior_only"]]
     prior_contribs = [c["contribution_pp"] for c in components if c["prior_only"]]
     modelled_sum = float(sum(modelled_contribs))
     prior_sum = float(sum(prior_contribs))
-    headline_est = modelled_sum + prior_sum
+    point_est = modelled_sum + prior_sum
 
     # Weight coverage: share of basket backed by modelled (non-prior) blocks
-    modelled_weights = [c["weight"] for c in components if not c["prior_only"]]
-    # Note: weights can overlap; we take the unique blocks' weights
     modelled_block_names = [c["block"] for c in components if not c["prior_only"]]
-    # Use raw sum divided by all-items to report the "effective" coverage
-    # This may exceed 1.0 due to overlap — that is printed as a warning
-    weight_coverage_raw = sum(modelled_weights) / _ALL_ITEMS_W
+    modelled_weights_sum = sum(c["weight"] for c in components if not c["prior_only"])
+    weight_coverage_raw = modelled_weights_sum / _ALL_ITEMS_W
     weight_coverage_clipped = min(weight_coverage_raw, 1.0)
 
-    # Reconciliation residual (floating-point only; not a real economic gap
-    # since weights don't sum to 100)
-    residual_pp = round(headline_est - (modelled_sum + prior_sum), 10)
+    # coverage_residual_pp: REAL coverage gap = total_basket − Σ(applied weights)
+    # ~0 when partition is complete; >0 only if a basket share is genuinely excluded.
+    applied_weights_sum = sum(c["weight"] for c in components)
+    basket_denominator = _ALL_ITEMS_W if not is_core else _CORE_ITEMS_W
+    coverage_residual_pp = round(basket_denominator - applied_weights_sum, 6)
 
-    # Compute bridge confidence: weighted average of block confidences
-    # weighted by abs(contribution_pp) for modelled blocks only
+    # prior_driven_share: fraction of the estimate driven by extrapolation (confidence=0)
+    prior_weight_sum = sum(c["weight"] for c in components if c["prior_only"])
+    prior_driven_share = round(prior_weight_sum / _ALL_ITEMS_W, 6)
+
+    # Bridge confidence: weighted average of block confidences for modelled blocks
     total_abs_modelled = sum(abs(c["contribution_pp"]) for c in components if not c["prior_only"])
     bridge_confidence: float | None = None
     if total_abs_modelled > 0:
@@ -682,7 +740,7 @@ def compute_cpi_bridge(
         )
         bridge_confidence = round(float(c_raw) * weight_coverage_clipped, 4)
 
-    point: float | None = round(headline_est, 4) if abs(headline_est) < 50 else None
+    point: float | None = round(point_est, 4) if abs(point_est) < 50 else None
 
     return {
         "release": release,
@@ -704,7 +762,8 @@ def compute_cpi_bridge(
         "weight_coverage": round(weight_coverage_raw, 4),
         "modelled_sum_pp": round(modelled_sum, 6),
         "prior_sum_pp": round(prior_sum, 6),
-        "residual_pp": residual_pp,
+        "coverage_residual_pp": coverage_residual_pp,
+        "prior_driven_share": prior_driven_share,
         "benchmark_set": {
             "naive_prior": round(naive_prior, 4) if naive_prior is not None else None,
             "trailing_3m": round(trailing_3m, 4) if trailing_3m is not None else None,
@@ -831,7 +890,8 @@ def _empty_bridge(release: str, asof: date, reason: str) -> dict:
         "weight_coverage": 0.0,
         "modelled_sum_pp": None,
         "prior_sum_pp": None,
-        "residual_pp": None,
+        "coverage_residual_pp": None,
+        "prior_driven_share": None,
         "benchmark_set": {"naive_prior": None, "trailing_3m": None},
         "pit_provenance": {
             "revision_optimistic_legs": [],
