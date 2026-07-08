@@ -3,7 +3,7 @@
 Coverage:
   (1)  personality dimension — PIT parquet hit (deep name, historical date)
   (2)  personality dimension — absent (non-deep name, old date, JSON exists)
-  (3)  personality dimension — snapshot_fresh (non-deep name, date within 5 trading days)
+  (3)  personality dimension — snapshot_not_pit (non-deep name, date within 5 trading days)
   (4)  archetype dimension — pit_labels basis with backward merge
   (5)  archetype dimension — absent when parquet missing
   (6)  regime dimension — recomputed_history from regime_history.parquet
@@ -20,7 +20,7 @@ Coverage:
   (17) [CRITICAL] PIT leak boundary: spine row 30 days ago for non-deep name
        must get personality_basis='absent' even when production JSON exists.
   (18) _stamp_personality — deep name historical → pit_labels
-  (19) _stamp_personality — fresh row + prod JSON → snapshot_fresh
+  (19) _stamp_personality — fresh row + prod JSON → snapshot_not_pit
   (20) _stamp_personality — old non-deep row → absent
   (21) _stamp_personality — absent PIT parquet → all rows absent (no crash)
   (22) context_frame — vectorised result, correct column names
@@ -45,6 +45,7 @@ from engine.neuralweb.context_api import (
     _insider_dim,
     _spine_dim,
     _trading_days_between,
+    _signed_trading_days,
 )
 from engine.neuralweb.query import _stamp_personality, _CI_NEW_COLS
 
@@ -177,11 +178,16 @@ def test_personality_absent_old_date_non_deep(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# (3) Personality — snapshot_fresh for non-deep name within 5 trading days
+# (3) Personality — snapshot_not_pit for non-deep name within 5 trading days
 # ---------------------------------------------------------------------------
 
-def test_personality_snapshot_fresh(tmp_path):
-    """Non-deep name with date within 5 trading days of JSON as_of → snapshot_fresh."""
+def test_personality_snapshot_not_pit(tmp_path):
+    """Non-deep name with date AFTER JSON as_of by ≤5 trading days → snapshot_not_pit.
+
+    R-CI3 directional law: prod_asof <= row_date is required.  A date 2 days AFTER
+    prod_asof passes the window; a date 2 days BEFORE prod_asof must return absent
+    (tested separately in test_personality_snapshot_not_pit_before_asof).
+    """
     root = _make_root(tmp_path)
     # No PIT labels for MSFT
     _write_pit_labels(root, [
@@ -190,9 +196,9 @@ def test_personality_snapshot_fresh(tmp_path):
          "chart_labels": "mixed_chart", "micro_labels": None,
          "archetype": None, "archetype_asof": None, "archetype_fy": None},
     ])
-    # Production JSON is recent (2 trading days ago)
-    prod_asof = pd.Timestamp.today().normalize()
-    query_date = prod_asof - pd.Timedelta(days=2)  # within 5 trading days
+    # Production JSON as_of is 3 days ago; query date is 2 days ago (after prod_asof)
+    prod_asof = pd.Timestamp.today().normalize() - pd.Timedelta(days=3)
+    query_date = prod_asof + pd.Timedelta(days=2)  # 2 days AFTER prod_asof → within window
     _write_prod_json(root, str(prod_asof.date()), {
         "MSFT": {"arch": "quality_compounder", "chart": ["smooth_compounder_grind"],
                  "micro": ["tight_spread_absorber"], "modes": ["normal"]},
@@ -200,8 +206,8 @@ def test_personality_snapshot_fresh(tmp_path):
 
     result = context_snapshot("MSFT", date=str(query_date.date()), root=root)
     dim = result["dimensions"]["personality"]
-    assert dim.get("absent") is not True, f"Expected snapshot_fresh, got: {dim}"
-    assert dim["basis"] == "snapshot_fresh"
+    assert dim.get("absent") is not True, f"Expected snapshot_not_pit, got: {dim}"
+    assert dim["basis"] == "snapshot_not_pit"
     assert dim["value"]["chart_primary"] == "smooth_compounder_grind"
 
 
@@ -455,7 +461,7 @@ def test_pit_leak_boundary_non_deep_30_days_ago(tmp_path):
     """CRITICAL: spine row 30 days ago for non-deep name must get personality_basis='absent'
     even when the production JSON exists (R-CI3 provenance law).
 
-    This is the key leak boundary: the snapshot_fresh path must NOT apply
+    This is the key leak boundary: the snapshot_not_pit path must NOT apply
     when the row's as_of is more than 5 trading days before the JSON's as_of.
     """
     root = _make_root(tmp_path)
@@ -530,11 +536,15 @@ def test_stamp_personality_deep_name_historical(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# (19) _stamp_personality — non-deep row within 5 trading days → snapshot_fresh
+# (19) _stamp_personality — non-deep row within 5 trading days → snapshot_not_pit
 # ---------------------------------------------------------------------------
 
-def test_stamp_personality_snapshot_fresh(tmp_path):
-    """Non-deep name with as_of within 5 trading days of JSON → snapshot_fresh."""
+def test_stamp_personality_snapshot_not_pit(tmp_path):
+    """Non-deep name with as_of AFTER JSON as_of by ≤5 trading days → snapshot_not_pit.
+
+    R-CI3 directional law: prod_asof <= row_asof is required.  Use prod_asof 3 days ago
+    and row as_of 2 days ago so signed_gap = +2 (within window).
+    """
     root = _make_root(tmp_path)
     _write_pit_labels(root, [
         {"ticker": "AAPL", "date": pd.Timestamp("2020-01-01"),
@@ -542,14 +552,15 @@ def test_stamp_personality_snapshot_fresh(tmp_path):
          "chart_labels": "mixed_chart", "micro_labels": None,
          "archetype": None, "archetype_asof": None, "archetype_fy": None},
     ])
-    prod_asof = pd.Timestamp.today().normalize()
+    # prod_asof is 3 days ago; as_of is 2 days ago → signed_gap ≈ +1 (within window)
+    prod_asof = pd.Timestamp.today().normalize() - pd.Timedelta(days=3)
     _write_prod_json(root, str(prod_asof.date()), {
         "MSFT": {"arch": "quality_compounder", "chart": ["smooth_compounder_grind"],
                  "micro": ["tight_spread_absorber"], "modes": ["normal"]},
     })
 
-    # as_of 2 calendar days ago — within 5 trading days
-    recent_date = prod_asof - pd.Timedelta(days=2)
+    # as_of 2 days ago = 1 day after prod_asof → within directional window
+    recent_date = prod_asof + pd.Timedelta(days=2)
     rows = [
         {"symbol": "MSFT", "as_of": str(recent_date.date()),
          "signal_id": "spine:msft:21", "engine": "us_board",
@@ -560,7 +571,7 @@ def test_stamp_personality_snapshot_fresh(tmp_path):
     stamped = _stamp_personality(df.copy(), root=root)
 
     row = stamped[stamped["symbol"] == "MSFT"].iloc[0]
-    assert row["personality_basis"] == "snapshot_fresh"
+    assert row["personality_basis"] == "snapshot_not_pit"
     assert row["chart_primary"] == "smooth_compounder_grind"
 
 
@@ -685,6 +696,108 @@ def test_ci_new_cols_defined():
 def test_trading_days_between_same_day():
     d = pd.Timestamp("2026-01-05")  # Monday
     assert _trading_days_between(d, d) == 1  # bdate_range includes both endpoints
+
+
+# ---------------------------------------------------------------------------
+# Directional gap helper tests
+# ---------------------------------------------------------------------------
+
+def test_signed_trading_days_positive():
+    """row_asof after prod_asof → positive signed gap."""
+    prod = pd.Timestamp("2026-01-05")  # Monday
+    row  = pd.Timestamp("2026-01-08")  # Thursday (+3 business days)
+    assert _signed_trading_days(row, prod) == 3
+
+
+def test_signed_trading_days_negative():
+    """row_asof before prod_asof → negative signed gap (PIT leak direction)."""
+    prod = pd.Timestamp("2026-01-08")  # Thursday
+    row  = pd.Timestamp("2026-01-05")  # Monday (−3 business days)
+    assert _signed_trading_days(row, prod) == -3
+
+
+def test_signed_trading_days_same_day():
+    """Same day → signed gap of 0."""
+    d = pd.Timestamp("2026-01-05")
+    assert _signed_trading_days(d, d) == 0
+
+
+# ---------------------------------------------------------------------------
+# [NEW] R-CI3 directional tests — row BEFORE snapshot as_of must be absent
+# These tests FAIL on pre-fix code (which used abs() gap, so 2 days before
+# passed the ≤5 window).  Post-fix code enforces signed_gap >= 0.
+# ---------------------------------------------------------------------------
+
+def test_personality_directional_before_asof_returns_absent_context_api(tmp_path):
+    """[R-CI3 DIRECTIONAL] Non-deep name queried 2 trading days BEFORE prod_asof must
+    return absent, NOT snapshot_not_pit.
+
+    Pre-fix behaviour: _trading_days_between swapped d0/d1 → |gap|=2 → passed the
+    ≤5 window → returned snapshot_not_pit (PIT leak).
+    Post-fix: _signed_trading_days(row, prod) = −2 < 0 → absent.
+    """
+    root = _make_root(tmp_path)
+    _write_pit_labels(root, [
+        {"ticker": "AAPL", "date": pd.Timestamp("2020-01-01"),
+         "chart_primary": "x", "micro_primary": None,
+         "chart_labels": "x", "micro_labels": None,
+         "archetype": None, "archetype_asof": None, "archetype_fy": None},
+    ])
+    prod_asof = pd.Timestamp("2026-07-07").normalize()
+    # query_date is 3 calendar days before prod_asof (≈2 trading days before Mon 07-07)
+    query_date = pd.Timestamp("2026-07-04").normalize()  # Friday 07-04 = 3 trading days before
+    _write_prod_json(root, str(prod_asof.date()), {
+        "MSFT": {"arch": "quality_compounder", "chart": ["smooth_compounder_grind"],
+                 "micro": ["tight_spread_absorber"], "modes": ["normal"]},
+    })
+
+    result = context_snapshot("MSFT", date=str(query_date.date()), root=root)
+    dim = result["dimensions"]["personality"]
+    assert dim.get("absent") is True, (
+        f"[R-CI3 DIRECTIONAL FAIL] MSFT queried {query_date.date()} (BEFORE prod_asof "
+        f"{prod_asof.date()}) returned basis={dim.get('basis')!r} instead of absent. "
+        f"Pre-fix code used abs() gap and leaked the snapshot backwards."
+    )
+
+
+def test_stamp_personality_directional_before_asof_returns_absent(tmp_path):
+    """[R-CI3 DIRECTIONAL] _stamp_personality: row as_of 2 trading days BEFORE prod_asof
+    must get personality_basis='absent'.
+
+    Pre-fix behaviour: iterrows loop used min/max(d0, d1) → absolute gap ≤ 5 →
+    returned snapshot_not_pit (PIT leak).
+    Post-fix: np.busday_count(prod_date, row_date) < 0 → out_window → absent.
+    """
+    root = _make_root(tmp_path)
+    _write_pit_labels(root, [
+        {"ticker": "AAPL", "date": pd.Timestamp("2020-01-01"),
+         "chart_primary": "x", "micro_primary": None,
+         "chart_labels": "x", "micro_labels": None,
+         "archetype": None, "archetype_asof": None, "archetype_fy": None},
+    ])
+    prod_asof = pd.Timestamp("2026-07-07").normalize()
+    # row as_of = 2026-07-04 (Friday before Monday 07-07) → 3 business days before
+    row_asof = pd.Timestamp("2026-07-04").normalize()
+    _write_prod_json(root, str(prod_asof.date()), {
+        "MSFT": {"arch": "quality_compounder", "chart": ["smooth_compounder_grind"],
+                 "micro": ["tight_spread_absorber"], "modes": ["normal"]},
+    })
+
+    rows = [
+        {"symbol": "MSFT", "as_of": str(row_asof.date()),
+         "signal_id": "spine:msft:21", "engine": "us_board",
+         "ledger": "spine", "personality_basis": None,
+         "chart_primary": None, "micro_primary": None},
+    ]
+    df = pd.DataFrame(rows)
+    stamped = _stamp_personality(df.copy(), root=root)
+
+    basis = stamped[stamped["symbol"] == "MSFT"]["personality_basis"].iloc[0]
+    assert basis == "absent", (
+        f"[R-CI3 DIRECTIONAL FAIL] MSFT as_of {row_asof.date()} (BEFORE prod_asof "
+        f"{prod_asof.date()}) got basis={basis!r} instead of absent. "
+        f"Pre-fix code leaked the snapshot backwards."
+    )
 
 
 def test_trading_days_between_5_days():

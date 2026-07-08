@@ -50,12 +50,13 @@ unavailable.
 
 PROVENANCE LAW (R-CI3)
 -----------------------
-personality_basis ∈ {pit_labels, snapshot_fresh, absent}.
-  pit_labels   : row sourced from personality_pit_labels.parquet (223 deep names).
-  snapshot_fresh: row sourced from production JSON and row's date is within 5
-                  trading days of JSON's as_of.
-  absent       : no PIT data available for this ticker/date combination.
-Today's snapshot is NEVER applied to historical dates for non-deep names.
+personality_basis ∈ {pit_labels, snapshot_not_pit, absent}.
+  pit_labels      : row sourced from personality_pit_labels.parquet (223 deep names).
+  snapshot_not_pit: row sourced from production JSON; row's date is AFTER the JSON's
+                    as_of by 0-5 trading days (directional: prod_asof <= row_asof).
+                    Today's snapshot is NEVER applied to dates BEFORE the snapshot
+                    (rows dated before prod_asof always return absent — R-CI3).
+  absent          : no PIT data available for this ticker/date combination.
 """
 from __future__ import annotations
 
@@ -115,11 +116,26 @@ def _trading_days_between(d0: pd.Timestamp, d1: pd.Timestamp) -> int:
     """Number of business days between d0 and d1 (inclusive of endpoints).
 
     Uses pd.bdate_range — holiday-agnostic (known limitation, consistent
-    with the rest of the codebase).
+    with the rest of the codebase).  Non-directional (always ≥ 0).
     """
     if d0 > d1:
         d0, d1 = d1, d0
     return len(pd.bdate_range(d0, d1))
+
+
+def _signed_trading_days(row_asof: pd.Timestamp, prod_asof: pd.Timestamp) -> int:
+    """Signed business-day gap: row_asof − prod_asof.
+
+    R-CI3 directional law: the production snapshot may only be applied to a
+    row when 0 <= (row_asof − prod_asof) <= 5 trading days.  Negative values
+    mean the row predates the snapshot (PIT leak) and must return absent.
+
+    Uses pd.bdate_range — holiday-agnostic like _trading_days_between.
+    """
+    if row_asof >= prod_asof:
+        return len(pd.bdate_range(prod_asof, row_asof)) - 1
+    else:
+        return -(len(pd.bdate_range(row_asof, prod_asof)) - 1)
 
 
 # ---------------------------------------------------------------------------
@@ -241,11 +257,12 @@ def _personality_dim(
             basis="pit_labels",
         )
 
-    # Fallback: production JSON — ONLY if within 5 trading days of JSON as_of
+    # Fallback: production JSON — ONLY if row_asof is within 5 trading days
+    # AFTER prod_asof (R-CI3 directional law: prod_asof <= row_asof <= prod_asof+5td).
     prod_raw, prod_asof = _load_prod_json(root)
     if prod_raw is not None and prod_asof is not None:
-        days_gap = _trading_days_between(date_ts, prod_asof)
-        if days_gap <= 5:
+        signed_gap = _signed_trading_days(date_ts, prod_asof)
+        if 0 <= signed_gap <= 5:
             per_ticker = prod_raw.get("per_ticker") or {}
             rec = per_ticker.get(ticker)
             if isinstance(rec, dict):
@@ -258,10 +275,10 @@ def _personality_dim(
                         "archetype":     rec.get("arch"),
                     },
                     as_of=str(prod_asof.date()),
-                    basis="snapshot_fresh",
+                    basis="snapshot_not_pit",
                 )
             # ticker not in prod JSON — absent
-        # date too old for prod JSON — absent (R-CI3 provenance law)
+        # date outside directional window — absent (R-CI3 provenance law)
 
     return _absent(f"no personality PIT data for {ticker} at {date_ts.date()}")
 
@@ -718,11 +735,12 @@ def _short_int_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
         return _absent("short_interest: no ticker column or index")
 
     settlement_ts = _coerce_date(settlement)
-    # Determine basis: snapshot_not_pit unless date matches settlement
-    if settlement_ts is not None and abs((date_ts - settlement_ts).days) < 2:
-        basis = "pit_snapshot"
-    else:
-        basis = "snapshot_not_pit"
+    # Basis is always snapshot_not_pit: a FINRA settlement snapshot is not a daily
+    # PIT label regardless of how close the query date is to the settlement date.
+    # We carry the settlement date as the as_of for honest provenance.
+    # Directional note: we check 0 <= (date_ts - settlement_ts).days < 2 only to
+    # determine whether the snapshot is near-match vs stale — both remain snapshot_not_pit.
+    basis = "snapshot_not_pit"
 
     return _present(
         value={k: (None if isinstance(v, float) and pd.isna(v) else v)

@@ -2703,10 +2703,13 @@ artifacts:
       track_record) = PR2.
       NW-CI W2 additive columns (personality coordinates, R-CI3 provenance law):
       chart_primary (primary chart label), micro_primary (primary micro-structure label),
-      personality_basis ∈ {pit_labels, snapshot_fresh, absent}.
+      personality_basis ∈ {pit_labels, snapshot_not_pit, absent}.
+        pit_labels: 223 deep names from personality_pit_labels.parquet (daily PIT).
+        snapshot_not_pit: production JSON used when prod_asof <= row_asof <= prod_asof+5td
+          (R-CI3 directional law: rows before prod_asof always get absent).
       Sources: data/research/personality_pit_labels.parquet (223 deep names, PIT daily)
-      and site/factordata/stock_personality.json (snapshot_fresh, within 5 trading days
-      of JSON as_of only). Consumer: engine/neuralweb/context_api.py (R-CI4 substrate).
+      and site/factordata/stock_personality.json (snapshot_not_pit, within 5 business days
+      AFTER JSON as_of only). Consumer: engine/neuralweb/context_api.py (R-CI4 substrate).
 
   # --- Neural Web W3: reliability kernel estimates ---
   kernel-estimates:

@@ -190,7 +190,7 @@ COLUMNS: list[str] = [
     # NW-CI W2 — personality coordinates (additive; None defaults; R-CI3 provenance)
     "chart_primary",     # primary chart label from PIT parquet or production JSON
     "micro_primary",     # primary micro-structure label
-    "personality_basis", # pit_labels | snapshot_fresh | absent
+    "personality_basis", # pit_labels | snapshot_not_pit | absent
 ]
 
 # Conservative defaults for role flag columns in _ensure_columns / load_index.
@@ -214,7 +214,7 @@ _R5_NEW_COLS: tuple[str, ...] = (
 )
 
 # NW-CI W2 new columns — None defaults; personality coordinates.
-# personality_basis ∈ {pit_labels, snapshot_fresh, absent} per R-CI3.
+# personality_basis ∈ {pit_labels, snapshot_not_pit, absent} per R-CI3.
 _CI_NEW_COLS: tuple[str, ...] = (
     "chart_primary",
     "micro_primary",
@@ -1203,11 +1203,11 @@ def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.D
     R-CI3 provenance law (HARD BOUNDARY — do NOT weaken):
       pit_labels   : row's (symbol, as_of) sourced from data/research/personality_pit_labels.parquet
                      (the 223 deep names, daily PIT labels).  Applied at each row's as_of.
-      snapshot_fresh: row's as_of is within 5 trading days of the production JSON's as_of AND
-                     the ticker is in the production JSON per_ticker dict.  Applied ONLY for
-                     non-deep-name tickers when PIT parquet misses.  Today's snapshot is
-                     NEVER applied to rows older than 5 trading days — this is the leak
-                     boundary.
+      snapshot_not_pit: row's as_of is AFTER prod_asof by 0-5 business days (directional:
+                     prod_asof <= row_asof) AND the ticker is in the production JSON per_ticker
+                     dict.  Applied ONLY for non-deep-name tickers when PIT parquet misses.
+                     R-CI3 DIRECTIONAL LAW: rows dated BEFORE prod_asof get absent — today's
+                     snapshot is NEVER applied to historical dates (this is the leak boundary).
       absent       : no PIT data available for this (ticker, as_of) combination.
 
     Mirror of _stamp_historical_quads pattern: deterministic, build-time, fail-open.
@@ -1254,7 +1254,7 @@ def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.D
             log.warning("_stamp_personality: personality_pit_labels.parquet missing 'date' column")
 
     # ---------------------------------------------------------------------------
-    # 2. Load production JSON (for snapshot_fresh fallback)
+    # 2. Load production JSON (for snapshot_not_pit fallback)
     # ---------------------------------------------------------------------------
     prod_per_ticker: dict = {}
     prod_asof_ts: pd.Timestamp | None = None
@@ -1280,7 +1280,7 @@ def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.D
             log.warning("_stamp_personality: cannot read stock_personality.json (%s)", e)
 
     # ---------------------------------------------------------------------------
-    # 3. Stamp rows: first PIT parquet, then snapshot_fresh fallback
+    # 3. Stamp rows: first PIT parquet, then snapshot_not_pit fallback
     # ---------------------------------------------------------------------------
     # Only process rows with null personality_basis (non-destructive)
     needs_stamp = df["personality_basis"].isna()
@@ -1320,41 +1320,74 @@ def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.D
                     df.loc[matched, "micro_primary"] = merged.loc[matched, "micro_primary"].values
                     df.loc[matched, "personality_basis"] = "pit_labels"
 
-    # --- Pass B: snapshot_fresh fallback for non-deep names within 5 trading days ---
+    # --- Pass B: snapshot_not_pit fallback for non-deep names within 5 trading days ---
+    # Vectorized: compute signed business-day gaps for all still_needs rows at once.
+    # Gap = (row_as_of - prod_asof) in business days (np.busday_count; holiday-agnostic
+    # like the previous bdate_range — consistent approximation per codebase convention).
+    # R-CI3 DIRECTIONAL LAW: only apply when 0 <= signed_gap <= 5; rows dated BEFORE
+    # the snapshot (signed_gap < 0) must return absent — today's snapshot never applies
+    # to yesterday's events.
     if prod_per_ticker and prod_asof_ts is not None:
         still_needs = df["personality_basis"].isna()
         if still_needs.any():
             work2 = df.loc[still_needs, ["symbol", "as_of"]].copy()
             work2["_as_of_dt"] = pd.to_datetime(work2["as_of"], errors="coerce")
 
-            # Only apply to rows where as_of is within 5 trading days of prod_asof_ts
-            for idx, row in work2.iterrows():
-                row_dt = row["_as_of_dt"]
-                if pd.isna(row_dt):
-                    df.at[idx, "personality_basis"] = "absent"
-                    continue
-                # Use bdate_range length as trading-day gap
+            # Compute signed gaps for all unique as_of values at once
+            unique_dts = work2["_as_of_dt"].dropna().unique()
+            prod_date = prod_asof_ts.date()
+            gap_map: dict = {}
+            for udt in unique_dts:
                 try:
-                    d0 = min(row_dt, prod_asof_ts)
-                    d1 = max(row_dt, prod_asof_ts)
-                    gap = len(pd.bdate_range(d0, d1))
+                    row_date = pd.Timestamp(udt).date()
+                    # np.busday_count(d0, d1) returns d1 - d0 in business days (exclusive of d0)
+                    # so count from prod to row gives signed gap (row >= prod → positive)
+                    signed_gap = int(np.busday_count(prod_date, row_date))
                 except Exception:  # noqa: BLE001
-                    gap = 999
+                    signed_gap = -9999
+                gap_map[udt] = signed_gap
 
-                if gap <= 5:
-                    ticker_val = row["symbol"]
-                    rec = prod_per_ticker.get(str(ticker_val)) if ticker_val is not None else None
+            work2["_signed_gap"] = work2["_as_of_dt"].map(gap_map)
+
+            # NaT rows → absent
+            nat_mask = work2["_as_of_dt"].isna()
+            df.loc[work2.index[nat_mask], "personality_basis"] = "absent"
+
+            # Directional window: prod_asof <= row_asof <= prod_asof + 5 business days
+            in_window = (~nat_mask) & (work2["_signed_gap"] >= 0) & (work2["_signed_gap"] <= 5)
+            out_window = (~nat_mask) & ~in_window
+
+            # Out-of-window (including rows before prod_asof) → absent
+            df.loc[work2.index[out_window], "personality_basis"] = "absent"
+
+            # In-window: vectorised per-ticker label map (no per-row Python loop).
+            # Build lookup Series keyed by ticker string once, then .map onto symbols.
+            if in_window.any():
+                in_idx = work2.index[in_window]
+                in_symbols = work2.loc[in_idx, "symbol"].astype(str)
+
+                # Build chart/micro/basis lookup dicts keyed by ticker (unique tickers only)
+                unique_tickers = in_symbols.unique()
+                chart_lookup: dict[str, object] = {}
+                micro_lookup: dict[str, object] = {}
+                basis_lookup: dict[str, str] = {}
+                for t in unique_tickers:
+                    rec = prod_per_ticker.get(t)
                     if isinstance(rec, dict):
                         charts = [c for c in (rec.get("chart") or []) if isinstance(c, str)]
                         micros = [m for m in (rec.get("micro") or []) if isinstance(m, str)]
-                        df.at[idx, "chart_primary"] = charts[0] if charts else None
-                        df.at[idx, "micro_primary"] = micros[0] if micros else None
-                        df.at[idx, "personality_basis"] = "snapshot_fresh"
+                        chart_lookup[t] = charts[0] if charts else None
+                        micro_lookup[t] = micros[0] if micros else None
+                        basis_lookup[t] = "snapshot_not_pit"
                     else:
-                        df.at[idx, "personality_basis"] = "absent"
-                else:
-                    # Date too far from production snapshot — R-CI3 leak boundary
-                    df.at[idx, "personality_basis"] = "absent"
+                        chart_lookup[t] = None
+                        micro_lookup[t] = None
+                        basis_lookup[t] = "absent"
+
+                # .map applies the lookup to all in-window rows at once
+                df.loc[in_idx, "personality_basis"] = in_symbols.map(basis_lookup).values
+                df.loc[in_idx, "chart_primary"]     = in_symbols.map(chart_lookup).values
+                df.loc[in_idx, "micro_primary"]     = in_symbols.map(micro_lookup).values
 
     # Any remaining null → absent
     still_null = df["personality_basis"].isna()
