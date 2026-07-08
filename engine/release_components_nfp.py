@@ -166,17 +166,29 @@ def build_nfp_features(
         features["awhman_mom"] = None
         absent_legs.append("awhman_mom")
 
-    # ADP (fail-open if absent)
-    adp_path = root / "data" / "fred" / "ADPNFRPRIVSA.parquet"
+    # ADP month-over-month change in thousands (revision_optimistic; no ALFRED vintage).
+    # MRI-R27 latent-bug fix: the store holds ADPMNUSNERSA (total-private SA, LEVEL in
+    # PERSONS, ~132,000,000). adp_change must be the month-over-month CHANGE expressed in
+    # THOUSANDS to match the nfp_change_lag* target scale (PAYEMS diff / 1000).
+    # Diff the level series: adp_change = (level[M-1] - level[M-2]) / 1000.
+    # Uses M-1 (one lag) because ADP releases ~2d before BLS NFP; at decision date asof
+    # the ref_month M-1 level is typically available, M the target. Fail-open if absent.
+    adp_path = root / "data" / "fred" / "ADPMNUSNERSA.parquet"
     if adp_path.exists():
         try:
             adp = pd.read_parquet(adp_path)
             adp.index = pd.to_datetime(adp.index)
             adp_col = adp.columns[0]
+            adp_monthly = adp[adp_col].resample("MS").last()
             ref_m = pd.Timestamp(ref_month)
-            adp_val = adp[adp_col].get(ref_m)
-            if adp_val is not None and not np.isnan(adp_val):
-                features["adp_change"] = float(adp_val)
+            m_minus_1 = (ref_m.to_period("M") - 1).to_timestamp()
+            m_minus_2 = (ref_m.to_period("M") - 2).to_timestamp()
+            v1 = adp_monthly.get(m_minus_1)
+            v2 = adp_monthly.get(m_minus_2)
+            if (v1 is not None and v2 is not None
+                    and not np.isnan(float(v1)) and not np.isnan(float(v2))):
+                # level diff in persons → divide by 1000 for thousands (matches nfp_change scale)
+                features["adp_change"] = float(v1 - v2) / 1000.0
             else:
                 features["adp_change"] = None
                 absent_legs.append("adp_change")
