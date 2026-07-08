@@ -689,19 +689,151 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Candidate context sub-block helpers (pure projections — no scoring)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _earnings_ctx_for_ticker(
+    ticker: str,
+    earnings_map: dict[str, Any],
+    asof: datetime,
+    br_full: dict,
+) -> dict:
+    """Compute earnings_ctx sub-block for one ticker.
+
+    Pure projection: reads next_date from earnings_map (pre-loaded once).
+    days_to_earnings = (next_date - asof).days; is_blackout = 0 < days <= 30.
+    shareholder_yield surfaced from bottom_map if present (no recompute).
+    Returns {} when no earnings row exists.
+    """
+    row: dict = {}
+    rec = earnings_map.get(ticker)
+    if rec is not None:
+        next_date_raw = rec.get("next_date")
+        if next_date_raw is not None:
+            try:
+                from datetime import date as _date  # noqa: PLC0415
+                if hasattr(next_date_raw, "date"):
+                    nd = next_date_raw.date()
+                elif isinstance(next_date_raw, str):
+                    nd = _date.fromisoformat(str(next_date_raw)[:10])
+                else:
+                    nd = _date.fromisoformat(str(next_date_raw)[:10])
+                asof_date = asof.date() if hasattr(asof, "date") else asof
+                days_to = (nd - asof_date).days
+                # next_date is already in bottom.earnings_next_date — omit here to
+                # avoid duplication and keep payload within 200KB cap.
+                row["days_to_earnings"] = days_to
+                row["is_blackout"] = bool(0 < days_to <= 30)
+            except Exception:  # noqa: BLE001
+                pass
+    sy = br_full.get("shareholder_yield")
+    if sy is not None:
+        row["shareholder_yield"] = sy
+    return _sparse(row)
+
+
+def _load_earnings_map(repo: Path, gap_notes: list[str]) -> dict[str, dict]:
+    """Load data/earnings/earnings.parquet once; return {ticker: {next_date, ...}}.
+
+    Honest-null on absence (per nwqs-c graceful pattern).
+    """
+    earnings_map: dict[str, dict] = {}
+    ep = repo / "data" / "earnings" / "earnings.parquet"
+    if not ep.exists():
+        gap_notes.append("candidate_context.earnings_ctx: earnings.parquet absent — block omitted")
+        return earnings_map
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(ep, columns=["next_date"])
+        for ticker, row in df.iterrows():
+            earnings_map[str(ticker)] = {"next_date": row["next_date"]}
+    except Exception as exc:  # noqa: BLE001
+        gap_notes.append(f"candidate_context.earnings_ctx: earnings.parquet read failed — {exc}")
+    return earnings_map
+
+
+def _rpo_ctx_for_ticker(ticker: str, rpo_map: dict[str, dict]) -> dict:
+    """Compute visibility sub-block for one ticker from pre-loaded RPO map.
+
+    rpo_rev_ratio = rpo / revenue (guarded: revenue > 0).
+    rpo_yoy_pct computed if prior-year RPO exists; else omitted.
+    Returns {} when ticker absent from rpo_map.
+    """
+    rec = rpo_map.get(ticker)
+    if rec is None:
+        return {}
+    row: dict = {}
+    rpo = rec.get("rpo")
+    revenue = rec.get("revenue")
+    prior_rpo = rec.get("prior_rpo")
+    # rpo_rev_ratio and rpo_yoy_pct are the display-useful derived values; raw rpo
+    # is a large absolute float (e.g. 2.25e+10) and is omitted to keep payload compact.
+    if rpo is not None and revenue is not None and isinstance(revenue, (int, float)) and revenue > 0:
+        row["rpo_rev_ratio"] = round(rpo / revenue, 4)
+    if rpo is not None and prior_rpo is not None and isinstance(prior_rpo, (int, float)) and prior_rpo > 0:
+        row["rpo_yoy_pct"] = round((rpo - prior_rpo) / prior_rpo * 100, 2)
+    return _sparse(row)
+
+
+def _load_rpo_map(repo: Path, gap_notes: list[str]) -> dict[str, dict]:
+    """Load data/edgar/rpo.parquet once; return {ticker: {rpo, revenue, prior_rpo}}.
+
+    Takes the latest fiscal year per ticker; prior_rpo is the immediately
+    preceding year's value (for yoy pct). Honest-null on absence.
+    """
+    rpo_map: dict[str, dict] = {}
+    rp = repo / "data" / "edgar" / "rpo.parquet"
+    if not rp.exists():
+        gap_notes.append("candidate_context.visibility: rpo.parquet absent — block omitted")
+        return rpo_map
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(rp, columns=["ticker", "fy", "rpo", "revenue"])
+        df = df.sort_values(["ticker", "fy"])
+        for ticker, grp in df.groupby("ticker"):
+            rows = grp.reset_index(drop=True)
+            latest = rows.iloc[-1]
+            rec: dict = {
+                "rpo": _coerce_numpy(latest["rpo"]),
+                "revenue": _coerce_numpy(latest["revenue"]),
+            }
+            if len(rows) >= 2:
+                rec["prior_rpo"] = _coerce_numpy(rows.iloc[-2]["rpo"])
+            rpo_map[str(ticker)] = rec
+    except Exception as exc:  # noqa: BLE001
+        gap_notes.append(f"candidate_context.visibility: rpo.parquet read failed — {exc}")
+    return rpo_map
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Candidate context builder
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_candidate_context(repo: Path, gap_notes: list[str]) -> dict:
+def _build_candidate_context(
+    repo: Path,
+    gap_notes: list[str],
+    now: datetime | None = None,
+) -> dict:
     """Build per-ticker candidate_context following the scope rule (ruling §3.1).
 
     Universe = standouts (buy/watch/laggards) ∪ altdata signals/broken_signals
                ∪ radar_ticker tickers where actionable NW context exists.
 
     Per-row: bottom (from bottom_sensors), options (from state.parquet),
+             leverage/structural/dilution (from bottom_sensors extended fields),
+             earnings_ctx (from earnings.parquet + bottom_sensors),
+             visibility (from edgar/rpo.parquet),
              graph_conflicts (contradiction records mentioning ticker/sector),
              kernel caveat, allowed_behavior='annotate_only'.
+
+    All sub-blocks are pure projections — no arithmetic combining fields into
+    a composite/score; no field may gate, rank, or size any board surface.
     """
+    asof = now or datetime.now(timezone.utc)
+
+    # --- One-shot data loads (outside per-ticker loop) ---
+    earnings_map = _load_earnings_map(repo, gap_notes)
+    rpo_map = _load_rpo_map(repo, gap_notes)
     # --- Standouts tickers ---
     standouts_path = repo / "site" / "factordata" / "us_standouts.json"
     standouts_tickers: set[str] = set()
@@ -837,6 +969,46 @@ def _build_candidate_context(repo: Path, gap_notes: list[str]) -> dict:
             val_sparse = _sparse(val_raw)
             if val_sparse:
                 row["valuation"] = val_sparse
+
+            # --- leverage block (pure allowlist from bottom_sensors; no arithmetic) ---
+            _LEVERAGE_COLS = ("interest_coverage", "net_debt_to_ebitda", "net_debt_to_op_income")
+            lev_raw = {k: br_full.get(k) for k in _LEVERAGE_COLS if br_full.get(k) is not None}
+            lev_sparse = _sparse(lev_raw)
+            if lev_sparse:
+                row["leverage"] = lev_sparse
+
+            # --- structural block (decline geometry + underwater state + sponsorship) ---
+            # sponsorship_state folded here — do NOT create a separate sponsorship block.
+            _STRUCTURAL_COLS = (
+                "decline_geometry", "underwater_state",
+                "decline_herf", "sponsorship_state",
+            )
+            struct_raw = {k: br_full.get(k) for k in _STRUCTURAL_COLS if br_full.get(k) is not None}
+            struct_sparse = _sparse(struct_raw)
+            if struct_sparse:
+                row["structural"] = struct_sparse
+
+            # --- dilution block (shelf / takedown / dilution events) ---
+            _DILUTION_COLS = ("days_since_shelf", "days_since_takedown", "dilution_events_365d")
+            dil_raw = {k: br_full.get(k) for k in _DILUTION_COLS if br_full.get(k) is not None}
+            dil_sparse = _sparse(dil_raw)
+            if dil_sparse:
+                row["dilution"] = dil_sparse
+
+            # --- earnings_ctx block (earnings proximity + optional shareholder_yield) ---
+            ec = _earnings_ctx_for_ticker(ticker, earnings_map, asof, br_full)
+            if ec:
+                row["earnings_ctx"] = ec
+        else:
+            # No bottom_map row — still attempt earnings_ctx from earnings.parquet only
+            ec = _earnings_ctx_for_ticker(ticker, earnings_map, asof, {})
+            if ec:
+                row["earnings_ctx"] = ec
+
+        # --- visibility block (RPO / revenue visibility from edgar) ---
+        vis = _rpo_ctx_for_ticker(ticker, rpo_map)
+        if vis:
+            row["visibility"] = vis
 
         # Options row (sparse, numpy-coerced)
         if ticker in options_map:
@@ -1064,10 +1236,12 @@ def build_context(
         "site/factordata/us_standouts.json",
         "site/altdata/mastermind.json",
         "site/basketdata/radar_ticker.json",
+        "data/earnings/earnings.parquet",
+        "data/edgar/rpo.parquet",
     ]
 
     # ── Candidate context ─────────────────────────────────────────────────────
-    candidate_context = _build_candidate_context(repo, gap_notes)
+    candidate_context = _build_candidate_context(repo, gap_notes, now=now)
 
     # ── Freshness index ───────────────────────────────────────────────────────
     freshness = _build_freshness(lobes, lobe_manifest)

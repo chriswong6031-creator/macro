@@ -141,6 +141,10 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     # ETM registry (#1794): emits allowed_actions as a descriptive authority
     # mirror on registry rows (ETM-C2 display_only law); never a behavior wire.
     "engine/neuralweb/entity_thesis_mechanism_registry.py",
+    # CN cycle phase state builder (CN-SYS-R1): emits allowed_actions as a
+    # context_only display-framing map (phase → monitor_only/no_new_positions);
+    # never reads the field to switch behavior. Same RUL-NW9 category.
+    "engine/china_cycle_phase.py",
     "docs/research/",
 ]
 
