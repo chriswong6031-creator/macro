@@ -1,11 +1,223 @@
 {
   "display_only": true,
-  "note": "Built at render time by scripts/build_hk.py via engine/hk_adr_bridge.run(). This stub is overwritten on every nightly build.",
-  "freshness_verdict": "dead",
-  "names": [],
-  "composite": {},
-  "banner": {
-    "en": "ADR bridge not yet built — run build_hk.py",
-    "zh": "ADR 桥尚未构建 — 请运行 build_hk.py"
-  }
+  "hk_session_date": "2026-07-08",
+  "adr_date": "2026-07-08",
+  "expected_hk_session": "2026-07-08",
+  "freshness_verdict": "ok",
+  "adr_freshness": {
+    "JD": {
+      "asof": "2026-07-07",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "KWEB": {
+      "asof": "2026-07-07",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "PDD": {
+      "asof": "2026-07-07",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "BABA": {
+      "asof": "2026-07-07",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "FXI": {
+      "asof": "2026-07-07",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "BIDU": {
+      "asof": "2026-07-07",
+      "lag_days": 1,
+      "state": "fresh"
+    }
+  },
+  "names": [
+    {
+      "hk_ticker": "9988.HK",
+      "hk_name_en": "Alibaba",
+      "hk_name_zh": "\u963f\u91cc\u5df4\u5df4",
+      "adr_ticker": "BABA",
+      "adr_source": "direct",
+      "proxy_note": "",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": 1.78,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR BABA bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    },
+    {
+      "hk_ticker": "9888.HK",
+      "hk_name_en": "Baidu",
+      "hk_name_zh": "\u767e\u5ea6",
+      "adr_ticker": "BIDU",
+      "adr_source": "direct",
+      "proxy_note": "",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": 0.36,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR BIDU bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    },
+    {
+      "hk_ticker": "9618.HK",
+      "hk_name_en": "JD.com",
+      "hk_name_zh": "\u4eac\u4e1c",
+      "adr_ticker": "JD",
+      "adr_source": "direct",
+      "proxy_note": "",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": 3.58,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR JD bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    },
+    {
+      "hk_ticker": "9961.HK",
+      "hk_name_en": "PDD",
+      "hk_name_zh": "\u62fc\u591a\u591a",
+      "adr_ticker": "PDD",
+      "adr_source": "direct",
+      "proxy_note": "",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": 1.86,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR PDD bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    },
+    {
+      "hk_ticker": "0700.HK",
+      "hk_name_en": "Tencent",
+      "hk_name_zh": "\u817e\u8baf",
+      "adr_ticker": "KWEB",
+      "adr_source": "proxy",
+      "proxy_note": "proxy, no direct ADR; Tencent OTC (TCEHY) too thin",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": 0.09,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR KWEB bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    },
+    {
+      "hk_ticker": "3690.HK",
+      "hk_name_en": "Meituan",
+      "hk_name_zh": "\u7f8e\u56e2",
+      "adr_ticker": "KWEB",
+      "adr_source": "proxy",
+      "proxy_note": "proxy, no direct ADR",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": 3.43,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR KWEB bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    },
+    {
+      "hk_ticker": "1810.HK",
+      "hk_name_en": "Xiaomi",
+      "hk_name_zh": "\u5c0f\u7c73",
+      "adr_ticker": "KWEB",
+      "adr_source": "proxy",
+      "proxy_note": "proxy, no direct ADR",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": 4.44,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR KWEB bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    },
+    {
+      "hk_ticker": "1024.HK",
+      "hk_name_en": "Kuaishou",
+      "hk_name_zh": "\u5feb\u624b",
+      "adr_ticker": "KWEB",
+      "adr_source": "proxy",
+      "proxy_note": "proxy, no direct ADR",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": 2.5,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR KWEB bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    },
+    {
+      "hk_ticker": "0981.HK",
+      "hk_name_en": "SMIC",
+      "hk_name_zh": "\u4e2d\u82af\u56fd\u9645",
+      "adr_ticker": "FXI",
+      "adr_source": "proxy",
+      "proxy_note": "proxy, no direct ADR; ADR delisted",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": -10.07,
+      "gap_context": "unknown",
+      "disconnect_flag": false,
+      "missing_reason": "ADR FXI bar missing for 2026-07-08",
+      "freshness": {
+        "asof": "2026-07-07",
+        "lag_days": 1,
+        "state": "fresh"
+      }
+    }
+  ],
+  "composite": {
+    "bellwether_implied_open_pct": null,
+    "gap_context": "unknown",
+    "composite_source": "none",
+    "n_direct": 0,
+    "n_proxy": 0,
+    "etf_composite_pct": null,
+    "etf_gap_context": "unknown"
+  },
+  "banner": null,
+  "note": "context, not a signal / \u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7"
 }
