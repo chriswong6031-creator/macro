@@ -574,6 +574,31 @@ def main() -> None:
         _write_json(PLANS_DIR / f"{plan_id}.json", plan)
         _write_json(STATES_DIR / f"{plan_id}.json", state)
 
+        # Rebuild what_to_do_now and profit_plan with the phase resolved by the
+        # management engine (phase may differ from what originate_plans stored).
+        # Thesis is already in the plan dict if originated by new code; leave it
+        # as-is for pre-existing plans that lack it.
+        from engine.prophet_bridge import (  # noqa: PLC0415
+            _build_what_to_do_now,
+            _build_profit_plan,
+        )
+        resolved_phase = state.get("phase") or plan.get("phase", "pre_trigger")
+        t1 = plan["targets"][0] if plan.get("targets") else None
+        t2 = plan["targets"][1] if plan.get("targets") and len(plan["targets"]) > 1 else None
+        what_to_do_now = _build_what_to_do_now(
+            phase=resolved_phase,
+            entry=plan.get("entry"),
+            trigger=plan.get("trigger"),
+            invalidation=plan.get("invalidation"),
+            t1=t1,
+            t2=t2,
+        )
+        profit_plan = _build_profit_plan(
+            phase=resolved_phase,
+            entry=plan.get("entry"),
+            t1=t1,
+            t2=t2,
+        )
         active_entries.append({
             "id": plan_id,
             "asset": plan.get("asset"),
@@ -586,9 +611,13 @@ def main() -> None:
             "_r_unit": plan.get("_r_unit"),
             "_conviction_score": plan.get("_conviction_score"),
             "_signal_date": plan.get("_signal_date"),
-            "phase": state.get("phase"),
+            "phase": resolved_phase,
             "management_confidence": state.get("management_confidence"),
             "recommended_action": state.get("recommended_action"),
+            # ── Content blocks (W2 — deterministic, no LLM) ───────────────────
+            "what_to_do_now": what_to_do_now,
+            "profit_plan": profit_plan,
+            "thesis": plan.get("thesis") or "",  # originated by prophet_bridge.py
         })
 
     # ── 3b. Advance ledger (nightly-only — idempotent close-event writer) ────────
