@@ -2660,6 +2660,7 @@ artifacts:
     consumers:
       - engine/stock_fundamentals.py
       - scripts/build_site.py
+      - engine/neuralweb/bottom_sensors.py
     external_consumers: []
     notes: "Producer: scripts/build_site.py:1961 write_text. Intra-build read-back pattern (build_site writes then reads back)."
 

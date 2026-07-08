@@ -625,11 +625,14 @@ def _valuation_ratios(rows: list[dict], mktcap: float | None, sector: str | None
     """Per-stock trailing EV/price multiples for the bottom-sensors context wire.
 
     Exact math mirrors ``_context_frame`` (the parity source) so the bottom-sensors
-    lobe and the cross-sectional valuation panel agree to the cent:
+    lobe and the cross-sectional valuation panel agree on the EV multiples
+    (ev_sales / ev_ebit / p_fcf). ``pe`` can differ slightly: it uses the latest
+    statement-row ni, whereas _context_frame uses the factors-table ni — same
+    formula, different NI vintage (harmless for a display annotation). Formulas:
       ev_sales  = (mktcap + net_debt) / revenue       — rounded to 2 dp
       ev_ebit   = (mktcap + net_debt) / op_income     — rounded to 1 dp
       p_fcf     = mktcap / (cfo − capex)              — rounded to 1 dp
-      pe        = mktcap / ni                          — rounded to 1 dp (ni from factors.json)
+      pe        = mktcap / ni                          — rounded to 1 dp (ni from the latest statement row)
 
     EV multiples (ev_sales / ev_ebit / p_fcf) are suppressed for Financials-sector
     names (``sector in _FINANCIAL_SECTORS``); pe may stay.
@@ -659,7 +662,9 @@ def _valuation_ratios(rows: list[dict], mktcap: float | None, sector: str | None
     if not is_fin and nd is not None:
         ev = mktcap + nd
 
-        # ev_sales = EV / revenue (prefer statement revenue)
+        # ev_sales = EV / revenue. Statement-row revenue ONLY — intentionally no
+        # cross-sectional fallback (unlike _context_frame), to keep this helper free
+        # of any cross-sectional dependency on the render path. Do not "restore parity".
         rev_s = _num(latest.get("revenue"))
         if rev_s is not None and rev_s > 0:
             out["ev_sales"] = round(ev / rev_s, 2)
@@ -678,11 +683,10 @@ def _valuation_ratios(rows: list[dict], mktcap: float | None, sector: str | None
                 out["p_fcf"] = round(mktcap / fcf, 1)
 
     # ── pe = mktcap / ni (trailing; not Financials-suppressed) ───────────────
-    # ni is NOT in statement rows; it comes from the factors table (factors.json).
-    # The caller (bottom_sensors.py) must pass it via the mktcap argument dict or
-    # handle ni separately.  Here we only compute pe when ni is embedded in latest
-    # (not expected in statement rows) OR when the caller pre-injected it as
-    # latest["ni"].  If absent, pe is silently omitted.
+    # ni IS a statement-row column (the same column _piotroski/_altman read), so pe
+    # populates directly from the latest filed statement. This is the EDGAR annual
+    # NI, which can differ in vintage from the factors-table NI that _context_frame's
+    # pe uses — same formula, harmless for a display annotation. Omitted if absent.
     ni = _num(latest.get("ni"))
     if mktcap is not None and ni is not None and ni > 0:
         out["pe"] = round(mktcap / ni, 1)
