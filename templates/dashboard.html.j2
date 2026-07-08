@@ -571,13 +571,32 @@
                  color: var(--muted); border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
                  border-radius: 0; }
   .nb-more-btn:hover { color: var(--ink); }
-  /* expander container — collapsed at rest, revealed when .nb-open is on the card */
+  /* Per-card detail — anchored dropdown POPOVER (was an inline expand-in-place).
+     At rest the content is DOM-present but hidden (contract: server-rendered-but-collapsed).
+     When the card is open, .nb-more becomes a FIXED floating panel whose top/left the toggle
+     JS computes from the button rect (flip-up / clamp-to-edge). position:fixed is deliberate:
+     it escapes the card's overflow:hidden clip AND the hover-transform containing-block trap. */
   .nb-more { display: none; margin-top: 4px; }
-  .nbcard.nb-open .nb-more { display: contents; }
-  /* on mobile, expanded card breaks out to full grid width */
-  @media (max-width:680px) {
-    .nbcard.nb-open { grid-column: 1 / -1; overflow: visible; }
+  .nbcard.nb-open { transform: none; }   /* kill hover lift so fixed coords stay viewport-true */
+  .nbcard.nb-open .nb-more {
+    display: block; margin: 0; position: fixed; z-index: 200;
+    width: min(360px, calc(100vw - 20px));
+    max-height: min(72vh, 560px); overflow-y: auto; overscroll-behavior: contain;
+    padding: 12px 13px 13px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.10), 0 18px 46px -12px rgba(0,0,0,.55),
+                0 0 0 1px color-mix(in srgb, var(--link) 12%, transparent);
+    animation: nbMorePop .13s ease-out;
   }
+  @keyframes nbMorePop { from { opacity: 0; transform: translateY(-7px) scale(.985); }
+                         to   { opacity: 1; transform: translateY(0) scale(1); } }
+  /* sticky close (×), pinned to the popover's top-right even while its body scrolls */
+  .nb-more-x { position: sticky; top: -2px; float: right; z-index: 1;
+               margin: -4px -5px 2px 8px; width: 26px; height: 26px;
+               display: flex; align-items: center; justify-content: center;
+               border: none; border-radius: 7px; background: var(--panel); color: var(--muted);
+               font-size: 18px; line-height: 1; cursor: pointer; }
+  .nb-more-x:hover { color: var(--text); background: color-mix(in srgb, var(--line) 55%, transparent); }
   .nbcard.nb-up { border-left-color: var(--up); }
   .nbcard.nb-down { border-left-color: var(--down); }
   .nbcard.nb-caution { border-left-color: var(--warn); }
@@ -3729,7 +3748,7 @@
              role="button" + aria-expanded per spec §6. l-en/l-zh spans, no CJK in title=.
              HOISTED out of {% if c %}: button always present so layout is consistent. #}
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
-                  aria-label="Show details">
+                  aria-haspopup="dialog" aria-label="Show details">
             <span class="l-en">▾ details</span><span class="l-zh">▾ 详情</span>
           </button>
           {# --- Expander content (server-rendered, CSS-collapsed). All demoted elements here.
@@ -3739,7 +3758,8 @@
              Contract ruling (P2.4 §4.2, adjudicated): "server-rendered-but-collapsed" DOM-present
              satisfies contract for ext_z and 200DMA± chips (contracts.md finding #3).
              HOISTED out of {% if c %}. Inner sections that need c are wrapped in {% if c %}. #}
-          <div class="nb-more">
+          <div class="nb-more" role="dialog" aria-label="Standout detail">
+          <button type="button" class="nb-more-x" aria-label="Close details">&times;</button>
           {% if c %}
           {% set al = c.alignment %}
           {% if al and al.line %}
@@ -4578,23 +4598,56 @@ window.__CHART_SWAP__ = {
 })();
 </script>
 <script>
-/* Per-card expander (.nb-more-btn toggles .nb-open on the .nbcard parent).
-   Delegated on document so it works regardless of showmore reveal order.
-   Pattern mirrors .nb-cau-btn (L3749-style: stopPropagation + tap-toggle).
-   On expand the aria-expanded is set; CSS handles the display. */
+/* Per-card detail as an ANCHORED DROPDOWN POPOVER (.nb-more-btn opens a fixed floating
+   .nb-more panel; JS positions it from the button rect and flips up / clamps to the edge —
+   mirrors the .nb-cau placePop idiom). Only one open at a time; closes on ×, outside click,
+   or Esc; repositions on scroll/resize. Delegated on document so it works regardless of
+   showmore reveal order. */
 (function(){
+  var openCard = null;
+  var LBL_OPEN  = '<span class="l-en">▴ less</span><span class="l-zh">▴ 收起</span>';
+  var LBL_SHUT  = '<span class="l-en">▾ details</span><span class="l-zh">▾ 详情</span>';
+  function closePop(){
+    if (!openCard) return;
+    openCard.classList.remove('nb-open');
+    var b = openCard.querySelector('.nb-more-btn');
+    if (b){ b.setAttribute('aria-expanded','false'); b.innerHTML = LBL_SHUT; }
+    openCard = null;
+  }
+  function place(card){
+    var pop = card.querySelector('.nb-more'), btn = card.querySelector('.nb-more-btn');
+    if (!pop || !btn) return;
+    var r = btn.getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight, m = 10;
+    var pw = pop.offsetWidth, ph = pop.offsetHeight;
+    // horizontal: align the popover's left edge under the button, clamp to viewport
+    var left = Math.min(Math.max(m, r.left), Math.max(m, vw - pw - m));
+    // vertical: drop below the button; if it would overflow, flip above; else pin near bottom
+    var top = r.bottom + 6;
+    if (top + ph > vh - m){ var above = r.top - 6 - ph; top = (above >= m) ? above : Math.max(m, vh - ph - m); }
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  }
   document.addEventListener('click', function(e){
+    if (e.target.closest && e.target.closest('.nb-more-x')){ e.preventDefault(); e.stopPropagation(); closePop(); return; }
     var btn = e.target.closest && e.target.closest('.nb-more-btn');
-    if (!btn) return;
-    e.preventDefault(); e.stopPropagation();
-    var card = btn.closest('.nbcard');
-    if (!card) return;
-    var open = card.classList.toggle('nb-open');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    btn.innerHTML = open
-      ? '<span class="l-en">▴ less</span><span class="l-zh">▴ 收起</span>'
-      : '<span class="l-en">▾ details</span><span class="l-zh">▾ 详情</span>';
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
+      var card = btn.closest('.nbcard'); if (!card) return;
+      var wasOpen = (card === openCard);
+      closePop();
+      if (!wasOpen){
+        card.classList.add('nb-open');
+        btn.setAttribute('aria-expanded','true'); btn.innerHTML = LBL_OPEN;
+        openCard = card;
+        place(card);   // .nb-more is display:block now → measurable
+      }
+      return;
+    }
+    if (openCard && !(e.target.closest && e.target.closest('.nb-more'))) closePop();
   }, true);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePop(); });
+  window.addEventListener('scroll', function(){ if (openCard) place(openCard); }, true);
+  window.addEventListener('resize', function(){ if (openCard) place(openCard); });
 })();
 
 /* Card-body delegated click handler: clicking the .nbcard div (outside the head anchor,
