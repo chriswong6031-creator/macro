@@ -65,6 +65,7 @@ meta:
   # Run date: 2026-07-06. dedupe+sort applied; partial prefix "leadlag_" normalized to leadlag.
   known_fdr_families:
     - alpha_grammar_confluence_v1
+    - context_scan
     - cortex
     - cycle_pattern_analog
     - cycle_pattern_ft
