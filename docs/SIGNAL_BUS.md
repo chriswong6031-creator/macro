@@ -143,8 +143,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 31 | 3 |
-| regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 18 | 0 |
+| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 32 | 3 |
+| regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 19 | 0 |
 | breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 17 | 0 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
 | market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 7 | 0 |
@@ -152,9 +152,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 5 | 0 |
 | regime-vector | `data/regime/regime_vector.parquet` | parquet | daily-engine | infrastructure | 4 | 0 |
 | site-regime-timeline | `site/regime_timeline.json` | json | daily-engine | display | 2 | 2 |
+| archetypes-history | `data/archetypes/history.parquet` | parquet | on-demand | display | 3 | 0 |
 | market-state-forward-log | `data/market_state/forward_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 | regime-base-effect-fwd | `data/regime/base_effect_fwd.jsonl` | jsonl | daily-engine | display | 3 | 0 |
-| archetypes-history | `data/archetypes/history.parquet` | parquet | on-demand | display | 2 | 0 |
 | site-allocation | `site/allocationdata/allocation.json` | json | daily-engine | display | 1 | 1 |
 | site-factors | `site/factordata/factors.json` | json | daily-engine | display | 2 | 0 |
 | site-regime-prior-js | `site/regimedata/regime_prior.js` | js | daily-engine | display | 2 | 0 |
@@ -292,8 +292,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 9 | 1 |
+| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 5 | 0 |
 | mechanism-pathways | `data/neuralweb/mechanism_pathways.json` | json | daily-engine | display | 4 | 0 |
-| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 4 | 0 |
 | confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 2 | 1 |
 | cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 2 | 1 |
 | cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 2 | 1 |
@@ -367,10 +367,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | polygon-gex-summaries | `data/polygon_gex/summary_*.parquet` | parquet | collect | display | 4 | 0 |
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
 | gex-state-history | `data/index_gex_history/*.parquet` | parquet | weekly | display | 2 | 0 |
+| options-skew-snapshots | `data/options_skew/snapshots.parquet` | parquet | collect | display | 2 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 | options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |
-| options-skew-snapshots | `data/options_skew/snapshots.parquet` | parquet | collect | display | 1 | 0 |
 
 ### options-nw-entry-intelligence
 
@@ -488,7 +488,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-stock-personality | `site/factordata/stock_personality.json` | json | daily-engine | display | 3 | 0 |
+| site-stock-personality | `site/factordata/stock_personality.json` | json | daily-engine | display | 4 | 0 |
 | dna-class-ref | `site/factordata/dna_class.json` | json | nightly-factor-panel | infrastructure | 1 | 0 |
 | stock-personality-panel | `data/stock_personality/panel/YYYY-MM/panel.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | stock-personality-block | `embedded: personality block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 0 | 0 |
@@ -513,13 +513,13 @@ flowchart LR
     C_engine_briefing_py["engine/briefing.py"]
     C_engine_china_intel_analysis_py["engine/china_intel_analysis.py"]
     C_engine_china_intel_bus_py["engine/china_intel_bus.py"]
-    OVF_regime_latest["...+30 more"]
+    OVF_regime_latest["...+31 more"]
     A_regime_history["regime-history"]
     C_engine_alerts_py["engine/alerts.py"]
     C_engine_board_ledger_py["engine/board_ledger.py"]
+    C_engine_neuralweb_context_api_py["engine/neuralweb/context_api.py"]
     C_engine_neuralweb_lagging_py["engine/neuralweb/lagging.py"]
-    C_engine_regime_hmm_py["engine/regime_hmm.py"]
-    OVF_regime_history["...+14 more"]
+    OVF_regime_history["...+15 more"]
     P_collectors_breadth_py(("collectors/breadth.py"))
     A_breadth_breadth["breadth-breadth"]
     C_engine_anticipation_py["engine/anticipation.py"]
@@ -609,8 +609,8 @@ flowchart LR
     P_engine_run_py --> A_regime_history
     A_regime_history --> C_engine_alerts_py
     A_regime_history --> C_engine_board_ledger_py
+    A_regime_history --> C_engine_neuralweb_context_api_py
     A_regime_history --> C_engine_neuralweb_lagging_py
-    A_regime_history --> C_engine_regime_hmm_py
     A_regime_history --> OVF_regime_history
     P_collectors_breadth_py --> A_breadth_breadth
     A_breadth_breadth --> C_engine_anticipation_py

@@ -51,6 +51,8 @@ _SPINE_COLS = [
     # R5 macro context rail: snapshot stamp + market routing + stamp basis
     "macro_context_id", "macro_context_asof", "market", "own_market_quad",
     "regime_stamp_basis",
+    # NW-CI W2 — personality coordinates (R-CI3 provenance)
+    "chart_primary", "micro_primary", "personality_basis",
 ]
 
 

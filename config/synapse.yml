@@ -89,6 +89,7 @@ artifacts:
       - scripts/build_stock_library.py
       - scripts/notify.py
       - scripts/refresh_regime_if_stale.py
+      - engine/neuralweb/context_api.py
       - engine/neuralweb/cortex.py
       - engine/neuralweb/covariance_spine.py
     external_consumers:
@@ -96,7 +97,7 @@ artifacts:
       - mastermind:vendored
       - terminal:pull_macro_intel
     qual_ladder_ref: null
-    notes: "Highest-consumer artifact in the bus (28 Python modules + 3 external). census confirmed 27 unique module files at W7a; cortex.py added as declared consumer at W7b (reads data/regime/latest.json via read_artifact tool). Producer: engine/run.py:705 json.dump."
+    notes: "Highest-consumer artifact in the bus (28 Python modules + 3 external). census confirmed 27 unique module files at W7a; cortex.py added as declared consumer at W7b (reads data/regime/latest.json via read_artifact tool). NW-CI W2: context_api.py reads latest.json for current-date regime (pit_live basis). Producer: engine/run.py:705 json.dump."
 
   # --- 16 consumers ---
   baskets-membership:
@@ -157,6 +158,7 @@ artifacts:
     consumers:
       - engine/alerts.py
       - engine/board_ledger.py
+      - engine/neuralweb/context_api.py
       - engine/neuralweb/lagging.py
       - engine/regime_hmm.py
       - engine/regime_one.py
@@ -1025,6 +1027,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - engine/neuralweb/context_api.py
       - engine/stock_fundamentals.py
       - scripts/build_archetype_history.py
     external_consumers: []
@@ -2682,6 +2685,7 @@ artifacts:
       - engine/neuralweb/decay.py
       - engine/neuralweb/lagging.py
       - engine/neuralweb/covariance_spine.py
+      - engine/neuralweb/context_api.py
     external_consumers: []
     notes: >
       Read-side derived index: unions spine (data/spine/predictions.parquet),
@@ -2697,6 +2701,15 @@ artifacts:
       is correct. Envelope sidecar written alongside the parquet. Registration sweep for
       the 21 currently-unregistered source ledgers (board_ledger, china_standout_track,
       track_record) = PR2.
+      NW-CI W2 additive columns (personality coordinates, R-CI3 provenance law):
+      chart_primary (primary chart label), micro_primary (primary micro-structure label),
+      personality_basis ∈ {pit_labels, snapshot_not_pit, absent}.
+        pit_labels: 223 deep names from personality_pit_labels.parquet (daily PIT).
+        snapshot_not_pit: production JSON used when prod_asof <= row_asof <= prod_asof+5td
+          (R-CI3 directional law: rows before prod_asof always get absent).
+      Sources: data/research/personality_pit_labels.parquet (223 deep names, PIT daily)
+      and site/factordata/stock_personality.json (snapshot_not_pit, within 5 business days
+      AFTER JSON as_of only). Consumer: engine/neuralweb/context_api.py (R-CI4 substrate).
 
   # --- Neural Web W3: reliability kernel estimates ---
   kernel-estimates:
@@ -3581,6 +3594,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - engine/neuralweb/context_api.py
       - engine/options_entry_state.py
     external_consumers: []
     notes: >
@@ -6362,6 +6376,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/oracle_nightly.py
+      - engine/neuralweb/context_api.py
       - engine/neuralweb/world_state.py
       - engine/neuralweb/query.py
     external_consumers: []
