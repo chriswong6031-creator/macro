@@ -1317,44 +1317,6 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
   };
   var _GENERIC_SEGS = /^(latest|state|current|index|calls|data|summary|snapshot)$/i;
 
-    // Filter to meaningful nodes (engines, sectors, regimes; skip most thesis/episode)
-    var TYPE_PRIORITY = { engine: 0, regime: 1, sector: 2, thesis: 3, episode: 4 };
-    var SHOW_TYPES = { engine: true, regime: true, sector: true, macro: true };
-    var displayNodes = nodes.filter(function (n) { return SHOW_TYPES[n.type]; });
-    // Also include thesis/episode nodes that appear in confirms/contradicts/headwind/tailwind edges
-    var edgeNodes = new Set();
-    edges.forEach(function (e) {
-      if (e.edge_type === 'confirms' || e.edge_type === 'contradicts' ||
-          e.edge_type === 'headwind' || e.edge_type === 'tailwind') {
-        edgeNodes.add(e.src); edgeNodes.add(e.dst);
-      }
-    });
-    var nodeMap = {};
-    nodes.forEach(function (n) { nodeMap[n.id] = n; });
-    edgeNodes.forEach(function (id) {
-      if (!nodeMap[id]) return;
-      var n = nodeMap[id];
-      if (!SHOW_TYPES[n.type]) displayNodes.push(n);
-    });
-    // Deduplicate
-    var seen = new Set();
-    displayNodes = displayNodes.filter(function (n) {
-      if (seen.has(n.id)) return false;
-      seen.add(n.id); return true;
-    });
-
-    // Subset note: N displayed of M total (engines, sectors, regimes, macro, and theses/episodes
-    // participating in confirms/contradicts/headwind/tailwind edges; structural feeds edges hidden)
-    var subsetEl = document.getElementById('graph_subset_note');
-    if (subsetEl) {
-      var N_shown = displayNodes.length;
-      var M_total = nodes.length;
-      var isZh = document.documentElement.lang === 'zh' || (navigator.language || '').startsWith('zh');
-      if (isZh) {
-        subsetEl.textContent = '显示 ' + N_shown + '（共 ' + M_total + ' 个）节点（引擎、板块、周期、宏观，以及参与确认/矛盾/顺风/逆风边的论点/事件）；结构性馈入边已隐藏。';
-      } else {
-        subsetEl.textContent = 'Showing ' + N_shown + ' of ' + M_total + ' nodes (engines, sectors, regimes, macro, and the theses/episodes participating in confirms/contradicts/headwind/tailwind edges); structural feeds edges hidden.';
-      }
   // Cleaned (delimiters→spaces), UNTRUNCATED segment for an artifact/module id.
   // Shared by the EN labeler (which titleCases + truncates) and the ZH labeler
   // (which translates then caps) so zh never sees a mid-word "…" fragment.
@@ -2709,13 +2671,6 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       });
       ctx.globalAlpha = 1;
 
-      // Draw nodes
-      nodeIds.forEach(function (id) {
-        var p = positions[id];
-        var n = p.node;
-        var r = n.type === 'engine' ? 12 : n.type === 'regime' ? 9 : n.type === 'macro' ? 8 : 7;
-        var COL_MACRO = '#a78bfa'; // violet-400, muted
-        var fillCol = n.type === 'engine' ? COL_LINK : n.type === 'regime' ? alphaColor(COL_LINK, 0.55) : n.type === 'macro' ? alphaColor(COL_MACRO, 0.65) : alphaColor(COL_MUTED, 0.45);
       // ── LAYER 3: Graded edges (confirms / contradicts) ─────────────────
       allEdges.forEach(function(e){
         var isConf = e.edge_type === 'confirms';
