@@ -64,7 +64,11 @@ ALIASES = {
 
 # ETF proxies a basket's reference cross-check points at but the rest of the site does not
 # already cache (members go in extras.parquet; proxies go in the yahoo store like SPY).
-PROXIES = ["IBIT"]          # spot-BTC ETF — the crypto basket's "what is it beta to" anchor
+PROXIES = [
+    "IBIT",   # spot-BTC ETF — the crypto basket's "what is it beta to" anchor
+    "KWEB",   # KraneShares CSI China Internet — proxy for 0700/3690/1810/1024 in hk_adr_bridge
+    "FXI",    # iShares China Large-Cap — proxy for 0981 (SMIC) in hk_adr_bridge + intl/cycle scripts
+]
 
 
 def _deep_cache_columns() -> set[str]:

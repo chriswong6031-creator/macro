@@ -7,14 +7,22 @@ Tests:
   (c) %-move ratio-agnosticism — scaling ADR level by any constant leaves gap unchanged
   (d) Fail-open when ADR parquet missing/stale (freshness-gated, no crash)
   (e) Ledger stamp + grade roundtrip
+  (f) Gap context labeling
+  (g) Composite computation
+  (h) Disconnect flag
+  (i) Real store coverage — every ADR ticker is loadable from the actual data root
+  (j) Production timezone path — snapshot(hk_session_date=None, now=<known time>)
+  (k) Ledger lane guard — stamp/grade no-op outside asia-close lane
 
 All writes are isolated to tmp_path. No writes to data/ or site/.
 """
 from __future__ import annotations
 
 import json
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 import pandas as pd
 import pytest
@@ -24,6 +32,10 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import engine.hk_adr_bridge as BRIDGE
+
+# Real data root (the committed repo data directory)
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_REAL_DATA_ROOT = _REPO_ROOT / "data"
 
 
 # ---------------------------------------------------------------------------
@@ -384,6 +396,11 @@ class TestFailOpen:
 # ---------------------------------------------------------------------------
 
 class TestLedgerRoundtrip:
+    @pytest.fixture(autouse=True)
+    def _enable_ledger_lane(self, monkeypatch):
+        """Enable ledger advance for all roundtrip tests by setting CN_LANE=asia."""
+        monkeypatch.setenv("CN_LANE", "asia")
+
     def _make_full_stub(self, tmp_path: Path,
                          adr_date: str = "2026-07-07",
                          prev_date: str = "2026-07-06",
@@ -647,3 +664,176 @@ class TestDisconnectFlag:
         )
         baba_entry = next(n for n in snap["names"] if n["hk_ticker"] == "9988.HK")
         assert baba_entry["disconnect_flag"] is False
+
+
+# ---------------------------------------------------------------------------
+# (i) Real store coverage — FIX 2
+# Every mapped ADR ticker must be loadable via _load_adr from the REAL data root
+# (yahoo primary, massive_stock_day fallback). This test would FAIL if KWEB were
+# absent from both stores (the production pathology the reviewer found), and PASSES
+# after FIX 1 (massive_stock_day fallback) or FIX 1b (KWEB in PROXIES so it gets
+# seeded into yahoo/).
+# ---------------------------------------------------------------------------
+
+class TestRealStoreCoverage:
+    @pytest.mark.skipif(
+        not _REAL_DATA_ROOT.exists(),
+        reason="real data root not present (CI environment without committed data)",
+    )
+    def test_all_adr_tickers_loadable_from_real_store(self):
+        """Every ADR ticker in the mapping must be loadable (yahoo OR massive_stock_day).
+
+        This test uses the REAL data root — NOT tmp_path stubs — so it catches
+        production pathologies (e.g. KWEB absent from both stores) that fixture-only
+        tests paper over.
+        """
+        all_tickers = {p.adr_ticker for p in BRIDGE.ALL_PAIRS}
+        failures: list[str] = []
+        for ticker in sorted(all_tickers):
+            series = BRIDGE._load_adr(ticker, _REAL_DATA_ROOT)
+            if series is None or len(series) == 0:
+                failures.append(f"{ticker}: None/empty from both yahoo/ and massive_stock_day/")
+        assert not failures, (
+            "ADR tickers not loadable from real store — hk_adr_bridge will return "
+            "dead gaps for these names:\n" + "\n".join(failures)
+        )
+
+    @pytest.mark.skipif(
+        not _REAL_DATA_ROOT.exists(),
+        reason="real data root not present",
+    )
+    def test_kweb_loadable_with_close_column(self):
+        """KWEB must be loadable with a usable 'close' column from the real store.
+        This is the specific ticker the reviewer identified as missing/broken."""
+        series = BRIDGE._load_adr("KWEB", _REAL_DATA_ROOT)
+        assert series is not None, "KWEB not loadable from real data root (yahoo/ or massive_stock_day/)"
+        assert len(series) > 0, "KWEB series is empty"
+        assert series.name == "close" or hasattr(series, "iloc"), "KWEB series has no numeric values"
+
+
+# ---------------------------------------------------------------------------
+# (j) Production timezone path — FIX 3
+# Tests snapshot(hk_session_date=None, now=<known time>) — the path production
+# actually uses. Prior tests bypassed this by passing hk_session_date explicitly.
+# ---------------------------------------------------------------------------
+
+class TestProductionTimezonePath:
+    def test_snapshot_resolves_session_from_now_at_asia_close(self, tmp_path):
+        """
+        With now = 08:30 UTC on 2026-07-08 (just after HK cash close for session
+        2026-07-07, which closes at 08:00 UTC = 16:00 HKT), snapshot(hk_session_date=None)
+        must resolve the last COMPLETED HK session.
+
+        expected_last_session requires the settle buffer (17:30 HKT) to pass before
+        returning today's session. At 08:30 UTC = 16:30 HKT on 2026-07-08, the 2026-07-08
+        settle buffer has NOT passed yet, so expected_last_session returns 2026-07-07.
+        The asia-close.yml cron (08:30 UTC) always resolves to the PRIOR session date.
+
+        We use now=08:30 UTC on 2026-07-08 so hk_session_date resolves to 2026-07-07,
+        and adr_date must also be 2026-07-07.
+        """
+        # Stub with the ADR bar on 2026-07-07 (the resolved session date)
+        _stub_all_adrs(tmp_path, base_date="2026-07-07")
+        _stub_all_hk(tmp_path)
+
+        # 08:30 UTC on 2026-07-08 = 16:30 HKT on 2026-07-08 (settle buffer not yet passed)
+        # → expected_last_session resolves to 2026-07-07
+        now_at_asia_close = datetime(2026, 7, 8, 8, 30, tzinfo=timezone.utc)
+        snap = BRIDGE.snapshot(
+            hk_session_date=None,   # production path: resolved from `now`
+            data_root=tmp_path,
+            now=now_at_asia_close,
+        )
+        assert snap["hk_session_date"] == snap["adr_date"], (
+            "hk_session_date and adr_date must match (same calendar date)"
+        )
+        assert snap["hk_session_date"], "hk_session_date must be non-empty"
+        # At 08:30 UTC on 2026-07-08, expected_last_session = 2026-07-07
+        assert snap["hk_session_date"] == "2026-07-07", (
+            f"Expected resolved hk_session_date=2026-07-07 at 08:30 UTC on 2026-07-08, "
+            f"got {snap['hk_session_date']!r}"
+        )
+        assert snap["adr_date"] == "2026-07-07", (
+            f"Expected adr_date=2026-07-07, got {snap['adr_date']!r}"
+        )
+
+    def test_snapshot_none_session_is_not_tautology(self, tmp_path):
+        """
+        Verify the resolved session is discriminating — the production path
+        (hk_session_date=None) resolves the SAME date as an explicit pass of
+        the expected session, not some fixed or arbitrary date.
+
+        now=08:30 UTC on 2026-07-08 → expected_last_session = 2026-07-07.
+        snapshot(None, now=...) must equal snapshot(date(2026,7,7), now=...).
+        """
+        _stub_all_adrs(tmp_path, base_date="2026-07-07")
+        _stub_all_hk(tmp_path)
+
+        now = datetime(2026, 7, 8, 8, 30, tzinfo=timezone.utc)
+        snap_auto = BRIDGE.snapshot(hk_session_date=None, data_root=tmp_path, now=now)
+        snap_explicit = BRIDGE.snapshot(
+            hk_session_date=date(2026, 7, 7), data_root=tmp_path, now=now
+        )
+        assert snap_auto["hk_session_date"] == snap_explicit["hk_session_date"], (
+            "Auto-resolved session must match explicit 2026-07-07 when now=08:30 UTC on 2026-07-08"
+        )
+
+
+# ---------------------------------------------------------------------------
+# (k) Ledger lane guard — FIX 4
+# stamp() and grade() must not advance the ledger outside the asia-close lane.
+# ---------------------------------------------------------------------------
+
+class TestLedgerLaneGuard:
+    def _make_full_stub(self, tmp_path: Path) -> dict:
+        for pair in BRIDGE._DIRECT_PAIRS + BRIDGE._PROXY_PAIRS:
+            _make_adr_parquet(tmp_path, pair.adr_ticker, {
+                "2026-07-06": 100.0,
+                "2026-07-07": 105.0,
+            })
+        _stub_all_hk(tmp_path)
+        return BRIDGE.snapshot(
+            hk_session_date=date(2026, 7, 7),
+            data_root=tmp_path,
+            now=datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc),
+        )
+
+    def test_stamp_no_op_outside_asia_lane(self, tmp_path):
+        """stamp() must return 0 and write NO ledger file when CN_LANE != asia."""
+        snap = self._make_full_stub(tmp_path)
+        with mock.patch.dict(os.environ, {}, clear=False):
+            # Ensure CN_LANE is NOT set (or set to something other than 'asia')
+            os.environ.pop("CN_LANE", None)
+            n = BRIDGE.stamp(snap, data_root=tmp_path)
+        assert n == 0, f"stamp() should return 0 outside asia lane, got {n}"
+        ledger_path = BRIDGE._ledger_path(tmp_path)
+        assert not ledger_path.exists(), (
+            "stamp() must not create ledger file outside asia-close lane"
+        )
+
+    def test_stamp_advances_ledger_in_asia_lane(self, tmp_path):
+        """stamp() must append rows when CN_LANE=asia."""
+        snap = self._make_full_stub(tmp_path)
+        with mock.patch.dict(os.environ, {"CN_LANE": "asia"}):
+            n = BRIDGE.stamp(snap, data_root=tmp_path)
+        assert n >= 1, "stamp() should append rows when CN_LANE=asia"
+        ledger_path = BRIDGE._ledger_path(tmp_path)
+        assert ledger_path.exists(), "ledger file must exist after stamp() in asia lane"
+
+    def test_grade_no_op_outside_asia_lane(self, tmp_path):
+        """grade() must not write when CN_LANE != asia."""
+        snap = self._make_full_stub(tmp_path)
+        # First stamp in asia lane so there are rows to grade
+        with mock.patch.dict(os.environ, {"CN_LANE": "asia"}):
+            BRIDGE.stamp(snap, data_root=tmp_path)
+        ledger_before = BRIDGE._ledger_path(tmp_path).read_text()
+
+        # Now call grade() outside the lane — must not modify ledger
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CN_LANE", None)
+            result = BRIDGE.grade(data_root=tmp_path)
+        assert result.get("ok") is True
+        ledger_after = BRIDGE._ledger_path(tmp_path).read_text()
+        assert ledger_before == ledger_after, (
+            "grade() must not modify ledger outside asia-close lane"
+        )

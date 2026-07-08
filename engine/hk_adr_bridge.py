@@ -42,6 +42,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import NamedTuple
@@ -52,6 +54,23 @@ from lib import config
 from lib.hk_calendar import expected_last_session, is_session, last_session_on_or_before
 
 log = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Lane guard — only advance the ledger in the asia-close nightly lane.
+# House law: "nightly is the sole advancer of forward ledgers."
+# The asia-close.yml step sets CN_LANE=asia; weekly.yml does not.
+# ---------------------------------------------------------------------------
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the asia-close nightly lane.
+
+    Controlled by env var CN_LANE=asia (set in .github/workflows/asia-close.yml,
+    absent in weekly.yml). Snapshot/display JSON may be produced in any lane;
+    only the ledger APPEND (stamp/grade) is gated here.
+    Later organs that share this lane convention can reuse this helper.
+    """
+    return os.environ.get("CN_LANE", "").lower() == "asia"
 
 # ---------------------------------------------------------------------------
 # ADR → HK mapping
@@ -119,20 +138,45 @@ def _gap_context(pct: float | None) -> str:
 # ---------------------------------------------------------------------------
 
 def _load_adr(ticker: str, data_root: Path) -> pd.Series | None:
-    """Load a daily close series for a US ADR/ETF from data/yahoo/<ticker>.parquet.
-    Returns None on any error (fail-open design)."""
-    try:
-        p = data_root / "yahoo" / f"{ticker}.parquet"
-        if not p.exists():
-            log.warning("hk_adr_bridge: ADR parquet missing: %s", p)
-            return None
-        df = pd.read_parquet(p, columns=["close"])
-        df.index = pd.to_datetime(df.index).normalize()
-        df = df.sort_index()
-        return df["close"].dropna()
-    except Exception as e:  # noqa: BLE001
-        log.warning("hk_adr_bridge: failed to load ADR %s: %s", ticker, e)
-        return None
+    """Load a daily close series for a US ADR/ETF.
+
+    Primary source: data/yahoo/<ticker>.parquet (preferred; written by the nightly
+    yahoo adapter + seeded by fetch_basket_extras.PROXIES).
+    Fallback: data/massive_stock_day/<ticker>.parquet — used when the yahoo store
+    lacks the ticker (e.g. KWEB before it was added to PROXIES). Column layout may
+    differ; we search for 'close' or 'Close'.
+    The same freshness gate applies to both sources: a stale fallback is visible as
+    a degraded badge rather than silently wrong.
+    Returns None on any error (fail-open design).
+    """
+    primary = data_root / "yahoo" / f"{ticker}.parquet"
+    fallback = data_root / "massive_stock_day" / f"{ticker}.parquet"
+
+    for path, source_label in [(primary, "yahoo"), (fallback, "massive_stock_day")]:
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_parquet(path)
+            # Normalise MultiIndex column header (yfinance bulk downloads)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            # Resolve close column: prefer lowercase 'close', accept 'Close'
+            if "close" not in df.columns and "Close" in df.columns:
+                df = df.rename(columns={"Close": "close"})
+            if "close" not in df.columns:
+                log.warning("hk_adr_bridge: no close column in %s for %s", source_label, ticker)
+                continue
+            df.index = pd.to_datetime(df.index).normalize()
+            df = df.sort_index()
+            if source_label == "massive_stock_day":
+                log.info("hk_adr_bridge: %s loaded from fallback massive_stock_day (not in yahoo/)", ticker)
+            return df["close"].dropna()
+        except Exception as e:  # noqa: BLE001
+            log.warning("hk_adr_bridge: failed to load ADR %s from %s: %s", ticker, source_label, e)
+            continue
+
+    log.warning("hk_adr_bridge: ADR parquet missing from both yahoo/ and massive_stock_day/: %s", ticker)
+    return None
 
 
 def _load_hk(ticker: str, data_root: Path) -> pd.Series | None:
@@ -281,15 +325,26 @@ def snapshot(
             if adr_pct is None and missing_reason is None:
                 missing_reason = f"ADR {pair.adr_ticker} bar missing for {adr_date}"
 
-        # Disconnect flag: last HK move vs ADR move diverge in sign
+        # Disconnect flag: HK move AT/BEFORE adr_date vs ADR move on adr_date.
+        # Use the HK bar at or before adr_date so historical snapshots compare
+        # apples-to-apples (not latest-HK vs past-ADR, which would be a look-ahead
+        # for any hk_session_date != today).
         disconnect_flag = False
         hk_last_pct: float | None = None
         try:
             hk_s = _load_hk(pair.hk_ticker, data_root)
             if hk_s is not None and len(hk_s) >= 2:
-                hk_last_pct = float(hk_s.iloc[-1] / hk_s.iloc[-2] - 1.0) * 100.0
-                if hk_last_pct is not None and adr_pct is not None:
-                    disconnect_flag = (hk_last_pct * adr_pct < 0)  # opposite signs
+                adr_ts = pd.Timestamp(adr_date)
+                # Find the HK bar at or before adr_date
+                idx = hk_s.index
+                valid = idx[idx <= adr_ts]
+                if len(valid) >= 2:
+                    curr_val = float(hk_s[valid[-1]])
+                    prev_val = float(hk_s[valid[-2]])
+                    if prev_val > 0:
+                        hk_last_pct = (curr_val / prev_val - 1.0) * 100.0
+                        if adr_pct is not None:
+                            disconnect_flag = (hk_last_pct * adr_pct < 0)  # opposite signs
         except Exception as e:  # noqa: BLE001
             log.debug("hk_adr_bridge: HK last pct failed for %s: %s", pair.hk_ticker, e)
 
@@ -419,9 +474,21 @@ def load_ledger(data_root: Path | None = None) -> list[dict]:
 
 
 def _write_ledger(rows: list[dict], data_root: Path | None = None) -> None:
+    """Write ledger atomically via temp-file + os.replace to avoid truncation on crash."""
     p = _ledger_path(data_root)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text("\n".join(json.dumps(r) for r in rows) + ("\n" if rows else ""))
+    content = "\n".join(json.dumps(r) for r in rows) + ("\n" if rows else "")
+    fd, tmp_path = tempfile.mkstemp(dir=p.parent, prefix=".ledger_tmp_")
+    try:
+        with os.fdopen(fd, "w") as fh:
+            fh.write(content)
+        os.replace(tmp_path, p)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def _fire_id(hk_session_date: str, name: str) -> str:
@@ -430,7 +497,16 @@ def _fire_id(hk_session_date: str, name: str) -> str:
 
 def stamp(snap: dict, data_root: Path | None = None) -> int:
     """Append one row per (hk_session, name) for fires in this snapshot.
-    Idempotent on fire_id. Returns number of rows appended. Never raises."""
+    Idempotent on fire_id. Returns number of rows appended. Never raises.
+
+    Only executes the ledger append when _ledger_advance_enabled() is True
+    (CN_LANE=asia env var, set by asia-close.yml only). The snapshot/display
+    JSON may be produced in any lane; this guard keeps weekly.yml from
+    accidentally appending duplicate ledger rows (house law: nightly sole advancer).
+    """
+    if not _ledger_advance_enabled():
+        log.debug("hk_adr_bridge.stamp: ledger advance skipped (CN_LANE != asia)")
+        return 0
     try:
         hk_session_date = snap.get("hk_session_date", "")
         adr_date = snap.get("adr_date", "")
@@ -494,7 +570,13 @@ def grade(data_root: Path | None = None) -> dict:
 
     For HK session date T, the actual open of T+1 is HK stock open on the NEXT session.
     followed = True when sign(actual_open_gap) == sign(implied_open_gap).
-    Never raises."""
+    Never raises.
+
+    Like stamp(), only writes to the ledger in the asia-close lane (CN_LANE=asia).
+    """
+    if not _ledger_advance_enabled():
+        log.debug("hk_adr_bridge.grade: ledger advance skipped (CN_LANE != asia)")
+        return {"ok": True, "graded": 0, "note": "ledger advance disabled (not asia-close lane)"}
     try:
         rows = load_ledger(data_root)
         if not rows:
