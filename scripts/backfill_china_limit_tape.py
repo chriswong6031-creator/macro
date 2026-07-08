@@ -4,10 +4,18 @@ Reads data/china_stocks_raw/*.parquet (1,587 names, raw nominal OHLCV) and produ
   data/china_microstructure/limit_tape.parquet   — market-day aggregates (full depth 2011→)
   data/china_microstructure/limit_events.parquet — event rows (2015→ if >60MB, else full depth)
 
+Start-date floor
+----------------
+The §5 frozen contract mandates "2011→" data.  Regardless of --start, no bars before
+2011-01-01 enter detection or aggregation.  This prevents fabricated limit-events from the
+pre-1997 no-limit regime (China's ±10% daily price limit was introduced in Dec-1996; applying
+the rule to 1990-1996 data produces structural artefacts, not real events).
+
 Sanity gates (must PASS or the script aborts with a non-zero exit):
   1. 2015-06..07 shows elevated limit-down/sealed_down clusters vs adjacent months.
   2. 2014-11..12 shows elevated sealed_up counts vs adjacent months.
   3. Nonzero events in every year 2012→.
+  4. min(tape.date) >= 2011-01-01 (no pre-floor rows).
 
 Usage
 -----
@@ -53,9 +61,21 @@ def run_backfill(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Run the full backfill and return (tape_df, events_df).  Write to disk unless dry_run."""
     from engine.china_microstructure import (
+        LIMIT_TAPE_START_DATE,
         _load_st_set,
         _detect_limit_events,
     )
+
+    # Hard floor: §5 contract mandates 2011→; pre-1997 data lacks the 10% limit regime entirely
+    floor = LIMIT_TAPE_START_DATE
+    if start_date is None or start_date < floor:
+        if start_date is not None and start_date < floor:
+            log.warning(
+                "--start %s is before the 2011-01-01 floor; advancing to floor",
+                start_date.date(),
+            )
+        start_date = floor
+    log.info("Backfill start floor: %s", start_date.date())
 
     st_set = _load_st_set(ROOT / "data")
     log.info("ST set size: %d tickers", len(st_set))
@@ -249,6 +269,19 @@ def _run_sanity_gates(tape_df: pd.DataFrame, events_df: pd.DataFrame) -> None:
         errors.append(f"GATE 3 FAIL: zero events in years {missing_years}")
     else:
         log.info("GATE 3 PASS: nonzero events in every year 2012→%d", latest_year)
+
+    # --- Gate 4: no pre-2011 rows in tape (start-floor enforcement) ---
+    min_tape_date = pd.to_datetime(tape["date"]).min()
+    FLOOR = pd.Timestamp("2011-01-01")
+    log.info("GATE 4 — min(tape.date): %s  (floor: %s)", min_tape_date.date(), FLOOR.date())
+
+    if min_tape_date < FLOOR:
+        errors.append(
+            f"GATE 4 FAIL: tape contains rows before 2011-01-01 (min={min_tape_date.date()}); "
+            "pre-limit-regime fabricated events must not enter the store"
+        )
+    else:
+        log.info("GATE 4 PASS: min(tape.date) >= 2011-01-01 (%s)", min_tape_date.date())
 
     log.info("=== SANITY GATES COMPLETE ===")
 

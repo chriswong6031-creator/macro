@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.china_microstructure import (
     CHINEXT_WIDE_DATE,
+    LIMIT_TAPE_START_DATE,
     ST_STORE_COVERAGE_DATE,
     _board_from_ticker,
     _detect_limit_events,
@@ -160,7 +161,8 @@ class TestDetectSealedDown:
         events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
         sd = [e for e in events if e["event"] == "sealed_down"]
         assert len(sd) == 1
-        assert sd[0]["close_off_limit_pct"] is None
+        # close_off_limit_pct is now populated for down-side events as a fraction
+        assert sd[0]["close_off_limit_pct"] is not None
 
     def test_failed_down_seal_detected(self):
         # Low touches limit_down but close does not
@@ -468,6 +470,114 @@ class TestNamePacket:
         pkt = name_packet("000001.SZ", df, frozenset())
         # latest day is sealed_up (12.10 == round(11.0*1.10,2)); previous was also sealed_up
         assert pkt["t_plus_one_risk"] == "high_lianban"
+
+
+# ── LIMIT_TAPE_START_DATE floor ───────────────────────────────────────────────
+
+class TestLimitTapeStartDate:
+    def test_floor_is_2011(self):
+        import pandas as pd
+        assert LIMIT_TAPE_START_DATE == pd.Timestamp("2011-01-01")
+
+    def test_detect_ignores_pre2011_when_start_date_applied(self):
+        """_detect_limit_events with start_date=LIMIT_TAPE_START_DATE skips pre-floor bars."""
+        # Build a df starting in 2010 that would seal on 2010-01-05
+        # When start_date=2011-01-01 is applied, 0 events should be returned
+        closes = [10.0, 10.0, 11.0]  # bar 2 seals at 10% limit
+        highs  = [10.0, 10.0, 11.1]
+        df     = _ohlcv(closes=closes, highs=highs, start="2010-01-04")
+        events, _, _ = _detect_limit_events(
+            "000001.SZ", df, "main", frozenset(), start_date=LIMIT_TAPE_START_DATE
+        )
+        assert events == []
+
+
+# ── close_off_limit_pct formula ───────────────────────────────────────────────
+
+class TestCloseOffLimitPct:
+    def test_sealed_up_fraction_not_percent(self):
+        """close_off_limit_pct for sealed_up must be a fraction (abs < 1), not a percent (0-100)."""
+        # prev close = 10.0; lim_up = 11.0; close = 11.0 → fraction = (11.0-11.0)/11.0 = 0.0
+        closes = [10.0, 10.0, 11.0]
+        highs  = [10.0, 10.0, 11.0]
+        df     = _ohlcv(closes=closes, highs=highs)
+        events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
+        su = [e for e in events if e["event"] == "sealed_up"]
+        assert len(su) == 1
+        v = su[0]["close_off_limit_pct"]
+        assert v is not None
+        assert abs(v) < 1.0, f"Expected fraction < 1.0, got {v} (likely percent × 100 bug)"
+
+    def test_failed_up_seal_fraction_positive(self):
+        """failed_up_seal: close is below limit, so (lim_up - close)/lim_up > 0 as fraction."""
+        # prev_close = 10.0; lim_up = 11.0; close = 10.5 → fraction = (11.0 - 10.5)/11.0 ≈ 0.0454
+        closes = [10.0, 10.0, 10.5]
+        highs  = [10.0, 10.0, 11.0]
+        df     = _ohlcv(closes=closes, highs=highs)
+        events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
+        fu = [e for e in events if e["event"] == "failed_up_seal"]
+        assert len(fu) == 1
+        v = fu[0]["close_off_limit_pct"]
+        assert v is not None and 0 < v < 1.0, f"Expected 0 < fraction < 1.0, got {v}"
+        # Approximately (11.0 - 10.5) / 11.0 = 0.04545...
+        assert abs(v - 0.04545) < 0.001
+
+    def test_sealed_down_close_off_populated(self):
+        """sealed_down must have close_off_limit_pct populated (down-side fraction), not None."""
+        # prev_close = 10.0; lim_down = 9.0; close = 9.0 → fraction = (9.0 - 9.0)/9.0 = 0.0
+        closes = [10.0, 10.0, 9.0]
+        lows   = [10.0, 10.0, 8.9]
+        df     = _ohlcv(closes=closes, lows=lows)
+        events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
+        sd = [e for e in events if e["event"] == "sealed_down"]
+        assert len(sd) == 1
+        v = sd[0]["close_off_limit_pct"]
+        assert v is not None, "sealed_down close_off_limit_pct must not be None"
+        assert abs(v) < 1.0, f"Expected fraction < 1.0, got {v}"
+
+    def test_failed_down_seal_close_off_populated(self):
+        """failed_down_seal must have close_off_limit_pct populated (down-side fraction)."""
+        # prev_close = 10.0; lim_down = 9.0; low = 9.0 but close = 9.5
+        # fraction = (9.5 - 9.0) / 9.0 ≈ 0.0556
+        closes = [10.0, 10.0, 9.5]
+        lows   = [10.0, 10.0, 9.0]
+        df     = _ohlcv(closes=closes, lows=lows)
+        events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
+        fd = [e for e in events if e["event"] == "failed_down_seal"]
+        assert len(fd) == 1
+        v = fd[0]["close_off_limit_pct"]
+        assert v is not None, "failed_down_seal close_off_limit_pct must not be None"
+        assert 0 < v < 1.0, f"Expected 0 < fraction < 1.0, got {v}"
+
+
+# ── board_type parity with china_signals ──────────────────────────────────────
+
+class TestBoardFromTickerParity:
+    """Pin _board_from_ticker results against expected values that match china_signals.board_type().
+
+    If china_signals.board_type() is updated, this test must be updated alongside
+    _board_from_ticker() to keep them in sync.
+    """
+
+    CASES = [
+        ("688981.SS", "star"),
+        ("689009.SS", "star"),
+        ("300750.SZ", "chinext"),
+        ("301020.SZ", "chinext"),
+        ("600519.SS", "main"),
+        ("000001.SZ", "main"),
+        ("601318.SS", "main"),
+        ("603129.SS", "main"),
+        ("605138.SS", "main"),
+    ]
+
+    def test_parity_cases(self):
+        for ticker, expected in self.CASES:
+            result = _board_from_ticker(ticker)
+            assert result == expected, (
+                f"_board_from_ticker({ticker!r}) = {result!r}, "
+                f"expected {expected!r} (parity with china_signals.board_type)"
+            )
 
 
 # ── degrade-don't-crash ───────────────────────────────────────────────────────

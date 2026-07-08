@@ -49,6 +49,23 @@ limit_events.parquet (event rows):
   date, ticker, board, limit_width, event, lianban_count, close_off_limit_pct
   event ∈ {sealed_up, failed_up_seal, sealed_down, failed_down_seal, touched_up, touched_down}
 
+  Enum subset note: this producer intentionally emits {sealed_up, failed_up_seal, sealed_down,
+  failed_down_seal}.  The §5 schema lists touched_up / touched_down as valid values for future
+  producers; they are NOT emitted here because touched-but-unsealed is captured by failed_*_seal.
+
+  close_off_limit_pct is stored as a FRACTION (not percent):
+    up-side:   (lim_up  - close) / lim_up   for sealed_up / failed_up_seal
+    down-side: (close   - lim_down) / lim_down for sealed_down / failed_down_seal
+  0.0 = closed exactly at the limit; positive = closed inside (away from the limit).
+
+Lianban undercount caveat (nightly increments only)
+-----------------------------------------------------
+The nightly build_increment uses a ~20-session lookback window.  A lianban streak that began
+before the window will be undercounted in the appended rows (e.g. a genuine 3rd consecutive
+board is reported as lianban_count=1).  Backfill rows are unaffected.  Downstream aggregates
+lianban_2plus / lianban_max for those specific dates may be mildly understated.  Risk is
+bounded by NIGHTLY_LOOKBACK; widening that constant reduces (but does not eliminate) the gap.
+
 microstructure.json (site/chinastatedata/):
   latest aggregates + per-name packet for standout tickers:
     board, limit_width, limit_state, fillable, t_plus_one_risk, chase_veto{flag, reason}
@@ -75,13 +92,28 @@ IPO_PRE2014_DATE  = pd.Timestamp("2014-01-01")   # pre-2014 = 44% cap on day 1
 CHINEXT_STAR_IPO_WINDOW = 5                       # first N sessions excluded for STAR/ChiNext
 PRE2014_IPO_WINDOW      = 1                       # first session excluded for pre-2014 listings
 
+# Earliest date for which this module produces valid limit data.  The A-share ±10% daily price
+# limit was introduced 1996-12; before that date, applying a 10% rule generates fabricated
+# artefacts.  The §5 frozen contract specifies "2011→" as the data floor; this constant enforces
+# it in backfill and nightly builders alike.
+LIMIT_TAPE_START_DATE = pd.Timestamp("2011-01-01")
+
 ST_STORE_COVERAGE_DATE = pd.Timestamp("2026-07-06")  # first date st_history covers
 
 
 # ── board classification ───────────────────────────────────────────────────────
 
 def _board_from_ticker(ticker: str) -> str:
-    """Return board name from ticker string.  Mirrors china_signals.board_type() logic."""
+    """Return board name from ticker string.
+
+    Logic mirrors engine.china_signals.board_type() prefix rules.  Intentionally kept as a
+    local copy so this module has no import-time dependency on china_signals; a pinning test
+    in tests/test_china_microstructure.py guards parity with board_type().  If board_type()
+    changes its prefix logic, update here and the test simultaneously.
+
+    Note: this function deliberately ignores board_type()'s era-aware ChiNext 20% width; the
+    width is resolved separately in limit_width_for_date().
+    """
     t = (ticker or "").upper()
     code = t.split(".")[0]
     if code.startswith(("688", "689")):
@@ -238,9 +270,13 @@ def _detect_limit_events(
         else:
             lianban_streak = 0
 
-        # close_off_limit_pct: (lim_up - close) / lim_up; negative means closed above (impossible
-        # in theory but rounding can cause this; clamp)
-        close_off_pct = round((lim_up - close_val) / lim_up * 100, 4)
+        # close_off_limit_pct: stored as a FRACTION (not percent), matching the §5 contract:
+        #   up-side:   (lim_up - close) / lim_up   — 0.0 when sealed exactly, positive when below
+        #   down-side: (close - lim_down) / lim_down — 0.0 when sealed exactly, positive when above
+        # Negative values are theoretically impossible but can occur due to rounding; consumers
+        # should treat values <= 0 as "at or inside the limit".
+        close_off_up   = round((lim_up - close_val) / lim_up, 6)
+        close_off_down = round((close_val - lim_down) / lim_down, 6) if lim_down > 0 else None
 
         # Emit events
         date_str = trade_date.strftime("%Y-%m-%d")
@@ -254,7 +290,7 @@ def _detect_limit_events(
                 "limit_width": round(width * 100, 1),
                 "event": "sealed_up",
                 "lianban_count": lianban_streak,
-                "close_off_limit_pct": round(close_off_pct, 4),
+                "close_off_limit_pct": close_off_up,
             })
         elif touched_up:
             events.append({
@@ -264,7 +300,7 @@ def _detect_limit_events(
                 "limit_width": round(width * 100, 1),
                 "event": "failed_up_seal",
                 "lianban_count": 0,
-                "close_off_limit_pct": round(close_off_pct, 4),
+                "close_off_limit_pct": close_off_up,
             })
 
         # Emit down-side events (independent of up-side; a name can touch up AND down is separate)
@@ -276,7 +312,7 @@ def _detect_limit_events(
                 "limit_width": round(width * 100, 1),
                 "event": "sealed_down",
                 "lianban_count": 0,
-                "close_off_limit_pct": None,
+                "close_off_limit_pct": close_off_down,
             })
         elif touched_down:
             events.append({
@@ -286,137 +322,7 @@ def _detect_limit_events(
                 "limit_width": round(width * 100, 1),
                 "event": "failed_down_seal",
                 "lianban_count": 0,
-                "close_off_limit_pct": None,
-            })
-
-    return events, ipo_excluded, exdiv_excluded
-
-
-# ── touched-only detection (separate pass, currently unused for limit_events but emitted) ──
-
-def _emit_touched_events(
-    ticker: str,
-    df: pd.DataFrame,
-    board: str,
-    st_set: frozenset[str],
-    start_date: Optional[pd.Timestamp] = None,
-    end_date: Optional[pd.Timestamp] = None,
-) -> tuple[list[dict], int, int]:
-    """Extended detection that also emits touched_up / touched_down rows (not sealed).
-
-    The main function above only emits seal and failed_seal rows; this includes touched-only.
-    """
-    if df.empty or len(df) < 2:
-        return [], 0, 0
-
-    df = df.copy()
-    df.index = pd.to_datetime(df.index)
-
-    if start_date is not None:
-        df = df[df.index >= start_date]
-    if end_date is not None:
-        df = df[df.index <= end_date]
-    if df.empty:
-        return [], 0, 0
-
-    first_bar_global = pd.to_datetime(df.index.min())
-    ipo_window = 0
-    if board in ("star", "chinext"):
-        ipo_window = CHINEXT_STAR_IPO_WINDOW
-    elif first_bar_global < IPO_PRE2014_DATE:
-        ipo_window = PRE2014_IPO_WINDOW
-
-    is_st_current = (ticker in st_set)
-
-    closes     = df["close"].astype(float)
-    highs      = df["high"].astype(float)
-    lows       = df["low"].astype(float)
-    opens_     = df["open"].astype(float)
-    prev_close = closes.shift(1)
-
-    events: list[dict] = []
-    ipo_excluded   = 0
-    exdiv_excluded = 0
-    lianban_streak = 0
-
-    for i, (ts, row) in enumerate(df.iterrows()):
-        trade_date = pd.Timestamp(ts)
-
-        if i < ipo_window:
-            ipo_excluded += 1
-            lianban_streak = 0
-            continue
-
-        pc = prev_close.iloc[i]
-        if pd.isna(pc) or pc <= 0:
-            lianban_streak = 0
-            continue
-
-        is_st = (
-            board == "main"
-            and is_st_current
-            and trade_date >= ST_STORE_COVERAGE_DATE
-        )
-        width = limit_width_for_date(board, trade_date, is_st=is_st)
-
-        open_move = abs(float(opens_.iloc[i]) - pc) / pc
-        if open_move > width * 1.5:
-            exdiv_excluded += 1
-            lianban_streak = 0
-            continue
-
-        lim_up   = round(pc * (1 + width), 2)
-        lim_down = round(pc * (1 - width), 2)
-
-        high_val  = float(highs.iloc[i])
-        low_val   = float(lows.iloc[i])
-        close_val = float(closes.iloc[i])
-
-        touched_up   = high_val  >= lim_up
-        touched_down = low_val   <= lim_down
-        sealed_up    = close_val >= lim_up
-        sealed_down  = close_val <= lim_down
-
-        if sealed_up:
-            lianban_streak += 1
-        else:
-            lianban_streak = 0
-
-        close_off_pct = round((lim_up - close_val) / lim_up * 100, 4)
-        date_str = trade_date.strftime("%Y-%m-%d")
-
-        if sealed_up:
-            events.append({
-                "date": date_str, "ticker": ticker, "board": board,
-                "limit_width": round(width * 100, 1),
-                "event": "sealed_up",
-                "lianban_count": lianban_streak,
-                "close_off_limit_pct": round(close_off_pct, 4),
-            })
-        elif touched_up:
-            events.append({
-                "date": date_str, "ticker": ticker, "board": board,
-                "limit_width": round(width * 100, 1),
-                "event": "failed_up_seal",
-                "lianban_count": 0,
-                "close_off_limit_pct": round(close_off_pct, 4),
-            })
-
-        if sealed_down:
-            events.append({
-                "date": date_str, "ticker": ticker, "board": board,
-                "limit_width": round(width * 100, 1),
-                "event": "sealed_down",
-                "lianban_count": 0,
-                "close_off_limit_pct": None,
-            })
-        elif touched_down:
-            events.append({
-                "date": date_str, "ticker": ticker, "board": board,
-                "limit_width": round(width * 100, 1),
-                "event": "failed_down_seal",
-                "lianban_count": 0,
-                "close_off_limit_pct": None,
+                "close_off_limit_pct": close_off_down,
             })
 
     return events, ipo_excluded, exdiv_excluded
