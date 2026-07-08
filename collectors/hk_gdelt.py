@@ -64,6 +64,7 @@ from typing import NamedTuple
 import pandas as pd
 import requests
 
+from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -329,6 +330,39 @@ def store_status(data_root: Path | None = None) -> dict:
         }
         for entity in ENTITIES
     }
+
+
+# ---------------------------------------------------------------------------
+# Adapter (mirrors HkCbbcAdapter / HkHkexnewsAdapter pattern)
+# ---------------------------------------------------------------------------
+
+_STALE_DAYS = 3   # daily collect; flag stale if >3 days old
+
+
+class HkGdeltAdapter(Adapter):
+    """Plugs the GDELT DOC 2.0 narrative collector into the scripts/collect.py pipeline.
+
+    Network I/O only in the collect lane (asia-close). The render lane reads
+    back via load_store() / store_status() — pure parquet/JSON reads, no network.
+    CN_LANE=asia is set at the workflow-job level; it is not derived from this group.
+    """
+
+    name = "hk_gdelt"
+    group = "hk_gdelt"
+    stale_after_days = _STALE_DAYS
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        # full_history is a no-op: GDELT timespan is fixed at 90d per call
+        results = collect()
+        cov = load_coverage()
+        today = date.today().isoformat()
+        n_ok = sum(1 for v in results.values() if v in ("ok", "cached"))
+        # Return a summary frame so run_adapter's staleness check works
+        summary = pd.DataFrame(
+            {"entities_ok": [n_ok], "entities_total": [len(ENTITIES)]},
+            index=[pd.Timestamp(today)],
+        )
+        return {"gdelt__summary": summary}
 
 
 if __name__ == "__main__":

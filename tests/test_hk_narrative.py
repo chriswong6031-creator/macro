@@ -518,3 +518,110 @@ class TestTonePercentile:
         result = NARRATIVE._compute_entity(slug, tmp_path)
         # State should be tone_negative_shift (not attention_spike, since vol is baseline-level)
         assert result["narrative_state"] == "tone_negative_shift"
+
+
+# ---------------------------------------------------------------------------
+# 8. Adapter registration (FIX 1)
+# ---------------------------------------------------------------------------
+
+class TestAdapterRegistration:
+    """HkGdeltAdapter must exist with the right attributes and be in all_adapters()."""
+
+    def test_adapter_class_exists_with_correct_group(self):
+        """HkGdeltAdapter must subclass Adapter and have group='hk_gdelt'."""
+        from collectors.base import Adapter
+        from collectors.hk_gdelt import HkGdeltAdapter
+        assert issubclass(HkGdeltAdapter, Adapter)
+        assert HkGdeltAdapter.group == "hk_gdelt"
+        assert HkGdeltAdapter.name == "hk_gdelt"
+
+    def test_adapter_is_in_registry(self):
+        """all_adapters() must include hk_gdelt mapped to HkGdeltAdapter."""
+        from scripts.collect import all_adapters
+        reg = all_adapters()
+        assert "hk_gdelt" in reg, "hk_gdelt missing from scripts/collect.py all_adapters()"
+        assert reg["hk_gdelt"].__name__ == "HkGdeltAdapter"
+
+
+# ---------------------------------------------------------------------------
+# 9. BASELINE_WINDOW bounding (FIX 3)
+# ---------------------------------------------------------------------------
+
+class TestBaselineWindow:
+    """When a parquet has more rows than BASELINE_WINDOW, only the tail is used
+    for z-score and percentile — the result must match a bounded computation."""
+
+    def test_extra_rows_do_not_shift_baseline(self, tmp_path):
+        """A parquet with 2×BASELINE_WINDOW rows must produce the same z-score
+        as one with exactly BASELINE_WINDOW rows when the tails are identical.
+
+        We build two parquets for the same entity:
+          - 'short': exactly BASELINE_WINDOW rows, last row is a spike.
+          - 'long': 2×BASELINE_WINDOW rows, same trailing BASELINE_WINDOW tail.
+        The z-scores from both must agree to 3 decimal places.
+        """
+        BW = NARRATIVE.BASELINE_WINDOW  # 90
+
+        rng = np.random.default_rng(42)
+        tail_baseline = list(rng.uniform(0.008, 0.012, BW - 1))
+        spike = [0.20]
+        tail_vol = tail_baseline + spike
+        tail_tone = [0.5] * BW
+
+        # Short parquet: exactly BW rows
+        _make_vol_tone_parquet(
+            tmp_path, "alibaba", n_rows=BW,
+            vol_values=tail_vol,
+            tone_values=tail_tone,
+        )
+        result_short = NARRATIVE._compute_entity("alibaba", tmp_path)
+        z_short = result_short["attention_shock_z"]
+        assert z_short is not None
+
+        # Long parquet: 2×BW rows — the extra rows have a very different vol level
+        # (0.5) but should NOT pollute the z-score because BASELINE_WINDOW is applied.
+        prefix_vol  = [0.5] * BW  # deliberately different from tail
+        prefix_tone = [10.0] * BW  # deliberately different from tail
+        long_vol  = prefix_vol  + tail_vol
+        long_tone = prefix_tone + tail_tone
+
+        _make_vol_tone_parquet(
+            tmp_path, "alibaba", n_rows=2 * BW,
+            vol_values=long_vol,
+            tone_values=long_tone,
+        )
+        result_long = NARRATIVE._compute_entity("alibaba", tmp_path)
+        z_long = result_long["attention_shock_z"]
+        assert z_long is not None
+
+        assert abs(z_short - z_long) < 0.001, (
+            f"BASELINE_WINDOW not applied: z_short={z_short}, z_long={z_long}; "
+            f"old rows are polluting the baseline."
+        )
+
+    def test_tone_pctile_bounded_by_window(self, tmp_path):
+        """Long parquet: tone pctile must reflect only the trailing BASELINE_WINDOW rows."""
+        BW = NARRATIVE.BASELINE_WINDOW
+
+        # Tail: BW-1 rows of tone=2.0, last row tone=-5.0 → pctile = 0 in tail
+        tail_tone = [2.0] * (BW - 1) + [-5.0]
+        tail_vol  = list(np.random.default_rng(77).uniform(0.008, 0.012, BW - 1)) + [0.01]
+
+        # Prefix: BW rows of very negative tone — if prefix is included,
+        # pctile would be non-zero (many rows below -5.0)
+        prefix_tone = [-50.0] * BW
+        prefix_vol  = [0.01] * BW
+
+        _make_vol_tone_parquet(
+            tmp_path, "tencent", n_rows=2 * BW,
+            vol_values=prefix_vol  + tail_vol,
+            tone_values=prefix_tone + tail_tone,
+        )
+        result = NARRATIVE._compute_entity("tencent", tmp_path)
+        pctile = result["tone_pctile"]
+        assert pctile is not None
+        # Within the tail window, -5.0 is below all 2.0 baseline rows → pctile = 0
+        assert pctile == 0.0, (
+            f"Expected tone_pctile=0.0 (tail-only window), got {pctile}; "
+            f"prefix rows may be polluting the baseline."
+        )

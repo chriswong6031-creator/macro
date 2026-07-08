@@ -203,6 +203,7 @@ def all_adapters() -> dict:
         ("hk_placements", "collectors.hk_placements", "HkPlacementsAdapter"),  # H-PLC (§3, W1c): HKEX placing/rights/open-offer headline events (2007->) — ripe-list dilution risk gate + post-placement drift accrual
         ("hk_cbbc", "collectors.hk_cbbc", "HkCbbcAdapter"),  # H-CBB (W1 data-plane): HKEX CBBC+DW daily outstanding — leverage-map + magnet-zone context organ (display-only, accrues forward ledger)
         ("hk_hkexnews", "collectors.hk_hkexnews", "HkHkexnewsAdapter"),  # H-FBus (W1 data-plane): HKEXnews headline-category filing bus — buyback/results/mandate/shareholder event tape (display-only, accrues forward ledger)
+        ("hk_gdelt", "collectors.hk_gdelt", "HkGdeltAdapter"),          # H-NAR (W1 data-plane): GDELT DOC 2.0 vol+tone for HK platform-tech bellwethers — narrative/attention-shock context organ (display-only, accrues forward ledger)
         ("massive_stock_day", "collectors.massive_stock_day", "MassiveStockDayAdapter"),  # whole-market US daily OHLCV nightly incremental (R2: data/massive_stock_day/) — Setup-Species §7 W0.6a
         # Canada / S&P/TSX dashboard — keyless: yfinance prices + BoC VALET / StatsCan WDS / FRED macro
         ("canada_prices", "collectors.canada_prices", "CanadaPriceAdapter"),

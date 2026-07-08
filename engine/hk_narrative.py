@@ -29,8 +29,10 @@ returned with a young=True flag — identical to fear_greed young_tiles logic.
 
 FRESHNESS
 ---------
-Delegates to engine/hk_freshness for freshness gate (same pattern as other HK
-organs). Missing or stale store degrades to no-data per entity (fail-open).
+Reads collectors/hk_gdelt coverage.json directly via load_coverage() — the
+same sibling idiom used by hk_cbbc and hk_hkexnews. An entity is counted
+fresh when its coverage entry has today's date and status == "ok". Missing
+or stale store degrades to no-data per entity (fail-open).
 
 OUTPUT
 ------
@@ -148,9 +150,13 @@ def _compute_entity(slug: str, data_root: Path) -> dict:
                 "n_obs": n_obs, "as_of_date": as_of_date,
                 "no_data_reason": f"young series: {n_obs} < {MIN_BASELINE_OBS} obs"}
 
-    # Baseline = all observations except the most recent one (trailing N-1 days)
-    baseline_vol  = vol_s.iloc[:-1]
-    latest_vol    = float(vol_s.iloc[-1])
+    # Baseline = the trailing BASELINE_WINDOW observations, excluding the most recent one.
+    # Taking .tail(BASELINE_WINDOW) before slicing off the last row ensures the window
+    # is bounded: a parquet that accumulates beyond 90 rows won't silently drift the
+    # z-score / percentile baseline.
+    windowed_vol  = vol_s.tail(BASELINE_WINDOW)
+    baseline_vol  = windowed_vol.iloc[:-1]
+    latest_vol    = float(windowed_vol.iloc[-1])
 
     if len(baseline_vol) < 2:
         return {**base,
@@ -167,13 +173,14 @@ def _compute_entity(slug: str, data_root: Path) -> dict:
     else:
         attention_z = round((latest_vol - mu) / std, 3)
 
-    # Tone percentile vs own history
+    # Tone percentile vs own history (window-bounded, same as vol baseline)
     tone_pctile: float | None = None
     if not tone_s.empty and len(tone_s) >= 2:
         try:
             # percentile_rank: fraction of history that is below today's tone
-            latest_tone = float(tone_s.iloc[-1])
-            baseline_tone = tone_s.iloc[:-1]
+            windowed_tone = tone_s.tail(BASELINE_WINDOW)
+            latest_tone   = float(windowed_tone.iloc[-1])
+            baseline_tone = windowed_tone.iloc[:-1]
             tone_pctile = round(
                 float((baseline_tone < latest_tone).mean()) * 100.0, 1
             )
