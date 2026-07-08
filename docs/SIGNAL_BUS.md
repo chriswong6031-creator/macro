@@ -14,6 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-vector | 5 |
 | china-alpha | 10 |
 | china-intel-hub | 2 |
+| china-system | 2 |
 | codex-b5 | 1 |
 | codex-docket-b6 | 3 |
 | cycle-intelligence | 14 |
@@ -51,7 +52,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 152 |
+| display | 154 |
 | infrastructure | 71 |
 | scored | 4 |
 | shadow | 40 |
@@ -60,7 +61,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 255 |
+| git | 257 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -103,6 +104,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-china-special-sits | `site/chinaspecialdata/special.json` | json | asia-close | display | 2 | 0 |
 | site-china-intel-command | `site/china_intel/command.json` | json | asia-close | display | 1 | 0 |
+
+### china-system
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-china-cycle-phase | `site/chinastatedata/cycle_phase.json` | json | asia-close | display | 1 | 0 |
+| site-china-market-state | `site/chinastatedata/market_state.json` | json | asia-close | display | 0 | 0 |
 
 ### codex-b5
 

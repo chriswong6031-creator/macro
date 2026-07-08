@@ -2506,6 +2506,46 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_china_altdata.py build() via engine/china_signal_lab.py build_china_scorecard() — honest signal-lab scorecard (tiered signal inventory + validation-family stats). No in-repo machine consumers: the scorecard is rendered directly into site/china_altdata.html at build time; the JSON emit is a machine-readable mirror for external/manual inspection."
 
+  # --- CN-SYS Batch-2 (W3 + W6) registrations ---
+  site-china-cycle-phase:
+    path: site/chinastatedata/cycle_phase.json
+    format: json
+    producer: scripts/build_china_cycle_phase.py
+    known_extra_writers: []
+    owner_program: china-system
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: china_cycle_phase.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_market_state.py
+    external_consumers: []
+    notes: "Producer: scripts/build_china_cycle_phase.py (W3 — parallel PR; file does not yet exist in this tree). Phase tape + falsifier ledger. Nullable until W3 PR merges; spine degrades gracefully on absence. data/china_cycle_phase/ stores the tape and falsifier_ledger.parquet. CN-SYS-R1/R5."
+
+  site-china-market-state:
+    path: site/chinastatedata/market_state.json
+    format: json
+    producer: scripts/build_china_market_state.py
+    known_extra_writers: []
+    owner_program: china-system
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: china_market_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Producer: scripts/build_china_market_state.py (W6 sovereign spine). Assembles W1-W4 lobe artifacts into china_market_state.v1 — phase, participation, microstructure, policy, rotation, macro, external, allocation. No fused score (CN-SYS-R13). Authority=context_only (CN-SYS-R1). Also writes data/china_state/market_state.json. W7 NW adapter will consume this artifact."
+
   # --- 3 consumers ---
   site-artifact-manifest:
     path: site/factordata/contracts/artifact_manifest.json
