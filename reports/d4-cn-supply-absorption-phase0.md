@@ -34,6 +34,13 @@
 **Verdict: G1 FAIL — path-matched neutralization succeeds in absorbing the raw signal.**
 The raw absorbed-vs-not split shows +2.42 pp at 21d (t_iid=13.28) and +10.85 pp at 63d, but after matching on the [t,t+10] return path, vol tercile, and size tercile the clustered HAC t-statistic collapses to 1.29 at 21d and 1.85 at 63d — well below the |t|>=2 + BH q<=0.10 decisive gate. G2 and G3 pass (descriptively same-sign), and G4 (non-gated) finds a 2.5 pp partial effect after drift-factor residualization (t=8.57, p=0.0000) — which informs why the raw signal looks positive before matching.
 
+> **AMENDED 2026-07-08 — E2 re-entry (corrected path):** the E2 "registered null"
+> below was a MIS-PATH artifact, not a data gap — the spec's `data/china_block_tape`
+> archive existed at merge time. The E2 leg was re-run against the correct store
+> under the frozen design and **fails G1** (21d t_HAC=-0.34, 63d t_HAC=0.71; no BH
+> reject across the re-computed 4-cell panel). **Family verdict UNCHANGED: FAIL.**
+> See the *E2 re-entry (corrected path)* section at the end of this report.
+
 ---
 
 ## 1. Context: wave-5 / Day-2 closures
@@ -68,6 +75,12 @@ Availability: `window_open + 1 trading day` (PIT-correct; cninfo crawl-bounded p
 Day-2 pre-registration).
 
 ### E2 — Deep-discount block day, avg_premium_pct <= −15 (HISTORICAL TAPE NOT AVAILABLE — registered gap)
+
+> **SUPERSEDED 2026-07-08:** the block below is wrong about the tape's existence.
+> `data/china_block_tape` (mrtj yearly partitions, 2005–2026) existed at merge
+> time; it is a runner-local/untracked store, so the lane's worktree did not carry
+> it and the lane concluded non-existence. The original text is preserved as the
+> record of the mis-path. See *E2 re-entry (corrected path)* at the end.
 
 **SOURCE-PATH MISMATCH vs spec (explicitly flagged):**
 - **Spec named**: `data/china_block_tape mrtj 2013+`
@@ -215,12 +228,15 @@ distinguishable increment over the path information in the price itself.
 
 1. **E2 historical tape not available**: `china_block_trades` is a current-state
    snapshot (461 rows, single asof=2026-07-07). F5-01 archiver must accumulate multi-year tape. E2 re-enters when tape covers >= 3 years.
+   *(SUPERSEDED 2026-07-08: the tape already existed — see E2 re-entry section.)*
 
 2. **E2 SOURCE-PATH MISMATCH vs spec**: Spec named `data/china_block_tape mrtj 2013+`
    which does not exist. Substitute: `data/china_block_trades/detail.parquet` used.
    Interpretation: 'china_block_tape mrtj' is a forward reference to the tape
    commissioned by the F5-01 archiver, not a typo. Path mismatch is structural —
    the tape does not yet exist.
+   *(SUPERSEDED 2026-07-08: wrong — `data/china_block_tape` existed at merge time
+   as a runner-local/untracked store; the E2 re-entry section holds the corrected run.)*
 
 3. **38,951 vs 38,988 rows**: 37-row delta in windows.parquet vs spec. Minor,
    pre-registered as data-refresh timing difference. No impact on analysis.
@@ -239,7 +255,7 @@ distinguishable increment over the path information in the price itself.
 | G2 split-half | PASS | Both halves positive; H1 near-zero |
 | G3 LOCO | PASS | All 6 crisis-exclusions positive |
 | G4 (non-gated) | — | +2.47% partial @ 21d, t=8.57 (i.i.d.) |
-| E2 | Registered null | Historical tape does not exist (F5-01 archiver required) |
+| E2 | **FAIL** (re-entered 2026-07-08) | Corrected-path re-run: t_HAC = -0.34 @ 21d, 0.71 @ 63d; no BH reject (4-cell) |
 
 **Overall VERDICT: FAIL (G1 decisive). The absorption filter as specified does not deliver path-neutralized alpha. The raw positive return differential reflects the return path itself, not the absorption signal. Family `cn_supply_absorption` does not advance to production.**
 
@@ -255,3 +271,123 @@ test isolating the H2 (2020+) window under a pre-registered design.
 *`data/china_block_trades/detail.parquet`, `data/china_stocks_raw/*.parquet`,*
 *`data/baskets_china/membership.json`. Repro: `python -m scripts.d4_cn_supply_absorption_phase0`*
 *in the `feat/d4-cn-supply-absorption` worktree. No 'validated' language used per CI guard.*
+
+---
+
+---
+
+## E2 re-entry (corrected path)
+
+*Amended 2026-07-08 by `scripts/d4_cn_supply_absorption_e2_rerun.py` — E2 leg only;
+E1 cells frozen from the merged run (PR #1932).*
+
+### Correction of the record
+
+The merged run registered E2 as a data-gap null, stating `data/china_block_tape`
+"does not exist anywhere in the worktree." That was a MIS-PATH, not a data gap:
+the F5-01 archiver's historical tape exists at `data/china_block_tape` (mrtj yearly
+partitions, 2005-2026; runner-local/untracked, so a fresh worktree does not carry
+it). The lane substituted `data/china_block_trades/detail.parquet` — a single-date
+rolling snapshot — leaving E2 with 61 rows and no event tape. This section re-runs
+ONLY the E2 leg against the correct store under the frozen design. The §2/§7 claims
+that the tape does not exist are superseded.
+
+### Event set (verification-law prints)
+
+| Check | Value |
+|---|---|
+| mrtj tape rows (all years) | 175,509 |
+| Usable rows (2013+, per spec) | 165,025 |
+| Unit assertion | `premium_ratio` is a RAW ratio (identity vs `cross_price/close - 1` verified; 0 rows <= -15 in raw units — the field is NOT percent); derived `avg_premium_pct = premium_ratio x 100` |
+| avg_premium_pct (percent, derived) | min -91.70 / median -3.68 / max 50.58 |
+| Deep-discount filter (<= -15) pass rate | 13,836 / 165,025 = 8.38% (F5-01 audit expectation ~8% — consistent) |
+| Ticker join coverage (.SH->.SS) | 4,750 / 13,836 events = 34.3% (expected ~30%) |
+| Events after universe + path validity | 4,712 (38 dropped for thin universe) |
+| Absorbed ([t,t+10] own return >= per-date universe median) | 2,301 / 4,712 = 48.8% |
+
+Implementation amendments AM-E2-1..3, registered in the script docstring before
+results: path quintile binned against the per-date UNIVERSE [t,t+10] return
+distribution (a per-date qcut across same-date E2 events is degenerate at ~4
+events/date and would silently delete the path control); >= 30 covered tickers
+required per event date; trailing vol/size reuse the merged helpers verbatim.
+
+### G1 — gated cells (entry t+10+1, registered convention)
+
+Matching, clustering and thresholds are the merged design unchanged: up to 3
+non-absorbed controls per absorbed event matched on (path quintile, vol tercile,
+size tercile) with path-quintile-only relaxation; calendar-quarter collapse +
+Newey-West; gate |t_HAC| >= 2 AND BH q <= 0.10, BH re-computed across the
+now-4 gated cells (two frozen E1 cells + two E2 cells from this run):
+
+| Cell | n pairs | n quarters | diff (abs - ctrl) | t_iid | t_HAC | p_HAC | BH q (4-cell) | Gate |
+|---|---|---|---|---|---|---|---|---|
+| E1_x_21d (frozen) | 13,023 | 68 | +2.42% | 13.28 | -1.292 | 0.196 | 0.392 | **FAIL** |
+| E1_x_63d (frozen) | 12,885 | 68 | +10.85% | 30.83 | 1.855 | 0.064 | 0.256 | **FAIL** |
+| E2_x_21d | 1,182 | 47 | +0.68% | 1.10 | -0.344 | 0.731 | 0.731 | **FAIL** |
+| E2_x_63d | 1,164 | 46 | +0.89% | 0.78 | 0.711 | 0.477 | 0.636 | **FAIL** |
+
+**AM-2 exclusion rate (reported per the amendment):** absorbed events with zero
+same-path-quintile controls are excluded — 1,870/2,264 (82.6%)
+at 21d, 1,828/2,216 (82.5%) at 63d. The rate is
+structurally high by construction, not a data defect: absorption is DEFINED as
+path >= per-date universe median, so absorbed events occupy universe path
+quintiles 2-4 while the non-absorbed control pool occupies 0-2. The only region
+where both classes coexist is the median-straddling quintile, so G1 is identified
+off boundary events — which is precisely the red-team neutralization question
+(does absorption add anything beyond the path itself, holding the path fixed?).
+The merged E1 leg shares this structure.
+
+**ENTRY-CONVENTION DISCREPANCY FLAG:** the registered design (and the merged
+report's §4 table) specifies entry = t+10+1, but the merged E1 *code* measured
+forward returns from t itself, overlapping the absorption window. The gated E2
+cells above implement the registered entry. For an apples-to-apples read against
+the E1 numbers, the merged-code convention is reported below as a NON-GATED
+sensitivity (logged to the trial ledger; not part of the gate panel):
+
+| Sensitivity cell (entry t, overlaps absorption window) | n pairs | n quarters | diff | t_iid | t_HAC | p_HAC |
+|---|---|---|---|---|---|---|
+| E2_x_21d entry-t | 1,185 | 47 | +5.22% | 11.27 | 3.535 | 0.000 |
+| E2_x_63d entry-t | 1,167 | 46 | +3.77% | 3.29 | 2.064 | 0.039 |
+
+Read the sensitivity with care: under the entry-at-t convention the forward
+window CONTAINS the absorption window, and within a matched path quintile the
+absorbed events sit above the quintile's own median path by construction. Much of
+the sensitivity diff is therefore the residual within-quintile path gap itself,
+not post-window alpha — the same contamination channel the merged report's G4
+discussion identified. The clean post-window increment is what the gated cells
+measure, and it is small and statistically indistinguishable from zero. No entry
+convention changes the family outcome: under the merged-code convention the E1
+cells themselves remain failed (t_HAC -1.29 / +1.86).
+
+### G2 / G3 (descriptive, per the merged family design)
+
+| Split at 2020-09-23 | 21d diff | 63d diff |
+|---|---|---|
+| H1 (pre) | -0.33% | +0.78% |
+| H2 (post) | +0.84% | +0.91% |
+
+| Crisis excluded | 21d diff | 63d diff |
+|---|---|---|
+| Excl 2015_crash | +0.59% | +0.73% |
+| Excl 2018_bear | +0.85% | +1.05% |
+| Excl 2024_stim | +0.66% | +1.09% |
+
+Split halves same-sign: NO at 21d, yes at 63d — the 21d effect flips sign in the early half, so G2 would fail descriptively for E2.
+
+### Gate outcome and family verdict
+
+**E2 G1: FAIL.** The E2 cells do not clear |t_HAC| >= 2 with BH q <= 0.10 under the 4-cell panel.
+
+**FAMILY VERDICT: UNCHANGED — FAIL.** The pre-registered rule flips the family verdict only if E2 passes G1 under the re-computed 4-cell BH; it does not. The well-powered E1 legs already failed G1 in the merged run, and the corrected-path E2 leg does not rescue the family.
+
+The E2 'registered null' in §7 is retired: the null was a mis-path artifact, not a
+data gap. The F5-01 archiver re-entry condition (>= 3 years of tape) was already
+satisfied at merge time.
+
+*Store: `data/china_block_tape` (mrtj partitions; runner-local/untracked — set
+CHINA_BLOCK_TAPE_STORE when the worktree does not carry it).
+Prices: `data/china_stocks_raw` with .SH->.SS normalization. Repro:
+`python -m scripts.d4_cn_supply_absorption_e2_rerun`. Trial-ledger rows for this
+run were logged then restored per the intraday data/-discard law; the delta is
+reported in the PR body. Numbers above are display-tier study output, not a
+production signal.*
