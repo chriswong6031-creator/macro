@@ -488,6 +488,7 @@
       background: var(--panel); border: 1px solid var(--line); }
   .ev-chip b { color: var(--text); } .ev-chip .ev-d { font-weight: 800; color: var(--warn); font-variant-numeric: tabular-nums; }
   .ev-chip .ev-rg { font-size: 9px; font-weight: 700; padding: 0 5px; border-radius: 6px; color: var(--muted); background: var(--panel2, color-mix(in srgb,var(--muted) 12%,var(--panel))); }
+  .cat-imminent { background: color-mix(in srgb, var(--warn) 8%, var(--panel)); }
 
   /* ===== W6 UX overhaul (§7) — ONE desk manifest, track-record panel, tier-driven chrome ===== */
   /* (A) desk manifest: the single "what this desk is / isn't" block that replaces the ~6×
@@ -1496,6 +1497,82 @@
     <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Scheduling context only — never scored, no event-risk dampener, no news API.', '仅日程背景 — 从不评分、无事件风险衰减、无新闻接口。') }}</p>
   </div>
   {% endif %}
+
+  <!-- ===================== SCHEDULED-CATALYST CALENDAR (display-only) ===================== -->
+  {# Structural, deterministic, dated catalysts: index reviews, Stock Connect eligibility,
+     MSCI / FTSE rebalances. Forward 45-day window. Display context only; never scored. #}
+  <div class="panel span12" id="hk-catalyst-calendar">
+    <h2>📋 <span class="l-en">Scheduled Catalysts · next 45d</span><span class="l-zh">日程催化 · 未来45天</span>
+      <span class="note" style="text-transform:none">· <span class="l-en">Index reviews · Stock Connect · MSCI / FTSE</span><span class="l-zh">指数检讨 · 沪深港通 · MSCI / 富时</span></span>
+      {{ help("Deterministic, dated structural catalysts known in advance: HSI/HS-TECH index reviews, Stock Connect eligibility updates, MSCI and FTSE rebalances. Display context only — not a signal, not scored.", "可提前知晓的日程性结构催化剂：恒指/恒科季度检讨、沪深港通标的更新、MSCI与富时再平衡。仅展示背景，不构成信号，不计入评分。") }}
+    </h2>
+    {% if catalyst_imminent %}
+    <p class="note" style="margin:0 0 8px;text-transform:none">
+      <b>{{ t('Imminent', '临近') }}:</b>
+      <span class="l-en">{{ catalyst_imminent.en }}</span>
+      <span class="l-zh">{{ catalyst_imminent.zh }}</span>
+    </p>
+    {% endif %}
+    {% if catalyst_strip %}
+    <div class="evbanner" style="flex-wrap:wrap;gap:6px 8px">
+      <span class="ev-h">🗓 <span class="l-en">Upcoming</span><span class="l-zh">即将发生</span></span>
+      <span class="ev-list" style="flex-wrap:wrap">
+        {% for c in catalyst_strip[:6] %}
+        <span class="ev-chip {% if c.imminent %}cat-imminent{% endif %}"
+              style="{% if c.imminent %}border:1px solid color-mix(in srgb,var(--warn) 55%,transparent);{% endif %}"
+              title="{{ c.effective_date }} · {{ c.scope }}{% if c.provisional %} [provisional]{% endif %}">
+          <span class="l-en">{{ c.name_en | truncate(42, True, '…') }}</span>
+          <span class="l-zh">{{ c.name_zh | truncate(20, True, '…') }}</span>
+          <span class="ev-rg">{{ c.type | replace('_REVIEW','') | replace('STOCK_CONNECT','SC') }}</span>
+          <span class="ev-d">
+            {% if c.days_until <= 0 %}{{ t('today','今日') }}{% else %}+{{ c.days_until }}{{ t('d','天') }}{% endif %}
+          </span>
+          {% if c.provisional %}<span class="ev-rg" style="opacity:.7">~</span>{% endif %}
+        </span>
+        {% endfor %}
+      </span>
+    </div>
+    {% if catalyst_strip | length > 6 %}
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">
+      +{{ catalyst_strip | length - 6 }} {{ t('more in 45-day window', '项（45天窗口内）') }}
+    </p>
+    {% endif %}
+    <table style="margin-top:10px">
+      <thead>
+        <tr>
+          <th class="l"><span class="l-en">Type</span><span class="l-zh">类型</span></th>
+          <th class="l"><span class="l-en">Catalyst</span><span class="l-zh">催化事件</span></th>
+          <th class="l"><span class="l-en">Announce</span><span class="l-zh">公告日</span></th>
+          <th class="l"><span class="l-en">Effective</span><span class="l-zh">生效日</span></th>
+          <th class="l"><span class="l-en">In</span><span class="l-zh">距今</span></th>
+          <th class="l"><span class="l-en">Scope</span><span class="l-zh">范围</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in catalyst_strip %}
+        <tr {% if c.imminent %}style="background:color-mix(in srgb,var(--warn) 6%,transparent)"{% endif %}>
+          <td class="l"><span class="chip c-muted" style="font-size:10px">{{ c.type | replace('_REVIEW','') | replace('STOCK_CONNECT','SC') }}</span></td>
+          <td class="l">
+            <span class="l-en">{{ c.name_en }}</span>
+            <span class="l-zh">{{ c.name_zh }}</span>
+            {% if c.provisional %}<span class="note" style="font-size:10px"> ~</span>{% endif %}
+          </td>
+          <td class="l note">{{ c.announce_date }}</td>
+          <td class="l">{{ c.effective_date }}</td>
+          <td class="l note">+{{ c.days_until }}{{ t('d','天') }}</td>
+          <td class="l note" style="font-size:11px">{{ c.scope }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="note" style="text-transform:none">— <span class="l-en">No scheduled catalysts in the next 45 days.</span><span class="l-zh">未来45天内无已知日程催化剂。</span></p>
+    {% endif %}
+    <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">
+      <span class="l-en">Display context only — never scored. ~ = date is provisional (rule-computed; verify against official release).</span>
+      <span class="l-zh">仅展示背景，从不评分。~ = 日期为预估（规则推算；请以官方公告为准）。</span>
+    </p>
+  </div>
 
   <!-- ===================== HK PROPERTY (Centaline CCL) ===================== -->
   {% if property %}

@@ -809,6 +809,25 @@ def main() -> int:
             log.error("hk adr bridge failed (%s); skipping", e)
             vm["adr_bridge"] = None
 
+        # HK Scheduled-Catalyst Calendar — display-tier forward-looking organ.
+        # Surfaces DATED structural catalysts (index reviews, Stock Connect eligibility,
+        # MSCI/FTSE reviews). DISPLAY-ONLY; no scoring; no LLM origination.
+        try:
+            from engine import hk_catalyst_calendar as _hcc
+            _cat_snap = _hcc.build_snapshot(horizon_days=45)
+            vm["catalyst_strip"] = _cat_snap.get("upcoming", [])
+            vm["catalyst_imminent"] = _cat_snap.get("imminent")
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_catalyst_calendar.json").write_text(
+                json.dumps(_cat_snap, indent=2, default=str))
+            log.info("hk catalyst calendar: %d upcoming catalysts in 45d window",
+                     len(vm["catalyst_strip"]))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk catalyst calendar failed (%s); skipping", e)
+            vm["catalyst_strip"] = []
+            vm["catalyst_imminent"] = None
+
         # HK residential-property panel (Centaline CCL) — display/regime context, None-safe
         try:
             vm["property"] = _hk_property_vm()
