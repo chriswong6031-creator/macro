@@ -109,8 +109,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-china-cycle-phase | `site/chinastatedata/cycle_phase.json` | json | asia-close | display | 1 | 0 |
-| site-china-market-state | `site/chinastatedata/market_state.json` | json | asia-close | display | 0 | 0 |
+| site-china-market-state | `site/chinastatedata/market_state.json` | json | asia-close | display | 4 | 1 |
+| site-china-cycle-phase | `site/chinastatedata/cycle_phase.json` | json | asia-close | display | 1 | 1 |
 
 ### codex-b5
 

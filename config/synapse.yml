@@ -2524,8 +2524,9 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/china_market_state.py
-    external_consumers: []
-    notes: "Producer: scripts/build_china_cycle_phase.py (W3 — parallel PR; file does not yet exist in this tree). Phase tape + falsifier ledger. Nullable until W3 PR merges; spine degrades gracefully on absence. data/china_cycle_phase/ stores the tape and falsifier_ledger.parquet. CN-SYS-R1/R5."
+    external_consumers:
+      - "mastermind:context"
+    notes: "Producer: scripts/build_china_cycle_phase.py (W3 — parallel PR; file does not yet exist in this tree). Phase tape + falsifier ledger. Nullable until W3 PR merges; spine degrades gracefully on absence. data/china_cycle_phase/ stores the tape and falsifier_ledger.parquet. CN-SYS-R1/R5. W7: mastermind:context reader added (admin observatory)."
 
   site-china-market-state:
     path: site/chinastatedata/market_state.json
@@ -2542,9 +2543,14 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
-    external_consumers: []
-    notes: "Producer: scripts/build_china_market_state.py (W6 sovereign spine). Assembles W1-W4 lobe artifacts into china_market_state.v1 — phase, participation, microstructure, policy, rotation, macro, external, allocation. No fused score (CN-SYS-R13). Authority=context_only (CN-SYS-R1). Also writes data/china_state/market_state.json. W7 NW adapter will consume this artifact."
+    consumers:
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/daily_brief.py
+      - engine/neuralweb/ask_brain.py
+    external_consumers:
+      - "mastermind:context"
+    notes: "Producer: scripts/build_china_market_state.py (W6 sovereign spine). Assembles W1-W4 lobe artifacts into china_market_state.v1 — phase, participation, microstructure, policy, rotation, macro, external, allocation. No fused score (CN-SYS-R13). Authority=context_only (CN-SYS-R1). W7 NW adapter: world_state china_market_state lobe, mastermind_context macro_weather.china labels, daily_brief china_market_state block, ask_brain China router + decision packet."
 
   # --- 3 consumers ---
   site-artifact-manifest:
