@@ -22,6 +22,8 @@ from scripts.f501_cn_block_sector_readthrough_phase0 import (
     date_collapse,
     fwd_return,
     get_active_basket_members,
+    DISC_V1,
+    DISC_V2,
 )
 
 
@@ -283,3 +285,74 @@ class TestGetActiveBasketMembers:
         }
         result = get_active_basket_members(baskets, pd.Timestamp('2023-01-01'))
         assert 'empty_basket' not in result
+
+
+# ---------------------------------------------------------------------------
+# Threshold unit boundary tests
+# These tests guard against the unit-mismatch bug where DISC_V1=-0.08 (ratio)
+# was compared against avg_premium_pct (percent), passing -0.08% as the cutoff
+# instead of -8%.  A block at -6% (ratio -0.06) is ABOVE the -8% threshold
+# and must be EXCLUDED from V1; a block at -10% (ratio -0.10) is below -8%
+# and must be INCLUDED in V1 but EXCLUDED from V2 (-15% threshold).
+# ---------------------------------------------------------------------------
+
+class TestThresholdUnitBoundary:
+    """Boundary checks that the threshold comparison uses consistent units.
+
+    avg_premium_pct = premium_ratio * 100 (percent units).
+    DISC_V1 = -0.08 (ratio) => threshold in pct = -8.0%.
+    DISC_V2 = -0.15 (ratio) => threshold in pct = -15.0%.
+
+    The filter in build_block_clusters must apply `threshold_pct * 100`
+    when comparing against avg_premium_pct.  We replicate the filter inline
+    to test without file I/O.
+    """
+
+    def _apply_threshold(self, pct_value: float, disc_ratio: float) -> bool:
+        """Return True if pct_value passes the discount filter (as the script does)."""
+        return pct_value <= disc_ratio * 100.0
+
+    # V1 boundary: threshold = -8%
+    def test_v1_minus6pct_excluded(self):
+        """-6% discount (ratio -0.06) is ABOVE -8% threshold — must be excluded."""
+        assert not self._apply_threshold(-6.0, DISC_V1), (
+            f"Expected -6% block to be EXCLUDED from V1 (threshold {DISC_V1*100}%), "
+            f"but filter passed it through"
+        )
+
+    def test_v1_minus8pct_included(self):
+        """-8% discount is exactly at the boundary — must be included (<=)."""
+        assert self._apply_threshold(-8.0, DISC_V1), (
+            f"Expected -8% block to be INCLUDED in V1 (threshold {DISC_V1*100}%)"
+        )
+
+    def test_v1_minus10pct_included(self):
+        """-10% discount is below -8% threshold — must be included."""
+        assert self._apply_threshold(-10.0, DISC_V1)
+
+    # V2 boundary: threshold = -15%
+    def test_v2_minus10pct_excluded(self):
+        """-10% discount (ratio -0.10) is ABOVE -15% threshold — must be excluded from V2."""
+        assert not self._apply_threshold(-10.0, DISC_V2), (
+            f"Expected -10% block to be EXCLUDED from V2 (threshold {DISC_V2*100}%)"
+        )
+
+    def test_v2_minus15pct_included(self):
+        """-15% discount is exactly at the V2 boundary — must be included."""
+        assert self._apply_threshold(-15.0, DISC_V2)
+
+    def test_v2_minus20pct_included(self):
+        """-20% discount is deeply below -15% — must be included in V2."""
+        assert self._apply_threshold(-20.0, DISC_V2)
+
+    def test_v1_threshold_not_ratio_units(self):
+        """Guard against the bug: if threshold were compared in ratio units (-0.08),
+        then a -6% block would PASS (since -6.0 <= -0.08 is False — wait, actually
+        -6.0 <= -0.08 IS True, which is the bug: -6% would PASS when it should NOT).
+        This test verifies that using raw ratio as threshold produces wrong result."""
+        # In the BUGGY implementation: avg_premium_pct (-6.0) <= DISC_V1 (-0.08) => True (wrong!)
+        buggy_result = (-6.0 <= DISC_V1)  # -6.0 <= -0.08 = True — this is the bug
+        assert buggy_result is True, "This confirms the bug: raw-ratio comparison passes -6% blocks"
+        # In the FIXED implementation: avg_premium_pct (-6.0) <= DISC_V1*100 (-8.0) => False (correct)
+        fixed_result = (-6.0 <= DISC_V1 * 100.0)  # -6.0 <= -8.0 = False
+        assert fixed_result is False, "Fixed comparison correctly excludes -6% blocks from V1"

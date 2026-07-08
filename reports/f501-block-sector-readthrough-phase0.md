@@ -88,73 +88,89 @@ verified live 2026-07-07. SW grouping is a robustness check only.
 
 | Variant | Group type | Cluster events | Unique event dates |
 |---------|------------|---------------|-------------------|
-| V1 (≤−8%) | basket | 8,253 | 2,833 |
-| V1 (≤−8%) | SW-L1 | 14,338 | 3,253 |
-| V2 (≤−15%) | basket | 8,160 | 2,830 |
+| V1 (≤−8%) | basket | 2,920 | 1,773 |
+| V1 (≤−8%) | SW-L1 | 12,045 | 3,229 |
+| V2 (≤−15%) | basket | 594 | 472 |
 
 **V1 basket clusters per year:**
 
 ```
-  2013: 275
-  2014: 315
-  2015: 379
-  2016: 454
-  2017: 610
-  2018: 379
-  2019: 389
-  2020: 927
-  2021: 1081
-  2022: 809
-  2023: 942
-  2024: 718
-  2025: 586
-  2026: 389
+  2013: 33
+  2014: 52
+  2015: 90
+  2016: 161
+  2017: 131
+  2018: 113
+  2019: 193
+  2020: 381
+  2021: 433
+  2022: 278
+  2023: 367
+  2024: 293
+  2025: 255
+  2026: 140
 ```
 
 **V2 basket clusters per year:**
 
 ```
-  2013: 275
-  2014: 315
-  2015: 372
-  2016: 439
-  2017: 607
-  2018: 369
-  2019: 389
-  2020: 927
-  2021: 1073
-  2022: 787
-  2023: 923
-  2024: 717
-  2025: 586
-  2026: 381
+  2019: 4
+  2020: 10
+  2021: 100
+  2022: 111
+  2023: 144
+  2024: 145
+  2025: 60
+  2026: 20
 ```
 
 **Top 5 most-event baskets (V1, 21d):**
 ```
 group_name
-cn_consumer_elec    1640
-cn_battery          1372
-cn_med_devices       732
-cn_software          722
-cn_ai_compute        641
+cn_consumer_elec    609
+cn_battery          582
+cn_software         370
+cn_med_devices      312
+cn_ai_compute       291
 ```
 
 ---
 
-## Results: gated cells
+## Results: gated cells (excess vs CSI 300 ETF, AM-1 market proxy)
 
 | Cell | N dates | Mean excess | t_HAC | p | BH q | Dir<0 | Gate |
 |------|---------|------------|-------|---|------|-------|------|
-| B-V1-21d | 2810 | 0.1012 | 13.794 | 0.0000 | 0.0000 | N | FAIL |
-| B-V1-63d | 2768 | 0.1153 | 14.496 | 0.0000 | 0.0000 | N | FAIL |
-| B-V2-21d | 2807 | 0.1017 | 13.810 | 0.0000 | 0.0000 | N | FAIL |
-| B-V2-63d | 2765 | 0.1154 | 14.451 | 0.0000 | 0.0000 | N | FAIL |
-| SW-V1-21d | 3230 | 0.1061 | 21.605 | 0.0000 | 0.0000 | N | FAIL |
-| SW-V1-63d | 3188 | 0.1259 | 23.861 | 0.0000 | 0.0000 | N | FAIL |
+| B-V1-21d | 1754 | 0.0526 | 8.476 | 0.0000 | 0.0000 | N | FAIL |
+| B-V1-63d | 1721 | 0.0710 | 8.727 | 0.0000 | 0.0000 | N | FAIL |
+| B-V2-21d | 462 | 0.0147 | 1.544 | 0.1232 | 0.1232 | N | FAIL |
+| B-V2-63d | 458 | 0.0437 | 2.720 | 0.0068 | 0.0081 | N | FAIL |
+| SW-V1-21d | 3206 | 0.1117 | 21.182 | 0.0000 | 0.0000 | N | FAIL |
+| SW-V1-63d | 3164 | 0.1332 | 23.514 | 0.0000 | 0.0000 | N | FAIL |
 
 *N dates = calendar-time collapsed observations (one per event date).
 Stats law: NW HAC, lag = min(4, sqrt(N)). BH correction across 6 gated cells.*
+
+**Note on market proxy bias:** CSI 300 is cap-weighted large-cap; peer baskets are
+equal-weight small/mid-cap. The positive excess above is substantially a benchmark-mismatch
+artifact (persistent size drift). The own-group baseline below nets this out.
+
+### Results: own-group unconditional baseline (spec OUTCOME baseline b)
+
+Excess vs the unconditional equal-weight mean return of the same peer group
+across ALL available dates (non-event and event). This baseline captures the
+persistent size/composition drift that inflates the CSI-300-excess above.
+
+| Cell | N dates | Mean vs own-group | t_HAC | p | Dir<0 |
+|------|---------|------------------|-------|---|-------|
+| B-V1-OG-21d | 1754 | 0.0364 | 5.084 | 0.0000 | — | N | FAIL |
+| B-V1-OG-63d | 1721 | 0.0119 | 1.225 | 0.2206 | — | N | FAIL |
+| B-V2-OG-21d | 462 | -0.0092 | -0.704 | 0.4819 | — | Y | FAIL |
+| B-V2-OG-63d | 458 | -0.0400 | -1.929 | 0.0544 | — | Y | FAIL |
+| SW-V1-OG-21d | 3206 | 0.0996 | 17.745 | 0.0000 | — | N | FAIL |
+| SW-V1-OG-63d | 3164 | 0.0962 | 14.804 | 0.0000 | — | N | FAIL |
+
+*OG = own-group unconditional baseline. BH correction not applied to informational rows;
+gate verdict is G1 on CSI-300-excess cells (the primary pre-registered control).*
 
 ---
 
@@ -171,13 +187,15 @@ Stats law: NW HAC, lag = min(4, sqrt(N)). BH correction across 6 gated cells.*
 
 **VERDICT: NULL**
 
-G4 details: excluded 'cn_consumer_elec' (1640 cluster events); remaining mean excess = 0.1093; N dates after = 2540.
+G4 details: excluded 'cn_consumer_elec' (609 cluster events); remaining mean excess = 0.0605; N dates after = 1504.
 
 ---
 
 ## PIT laws and amendments
 
-- **AM-1 (market proxy):** CSI 300 ETF (510300.SS) (CSI 300 ETF, covers 2012-05+)
+- **AM-1 (market proxy):** CSI 300 ETF (510300.SS). NOTE: docstring said 'CN-A market EW'; amendment
+  AM-1 filed before computing to use CSI 300 ETF (510300.SS) instead. CSI 300 is
+  cap-weighted large-cap; see own-group baseline above for the size-drift-corrected view.
 - **AM-2 (minimum peers):** events with <2 non-blocked peers with valid price data excluded
 - **AM-3 (session window):** 10 trailing block-tape sessions (not calendar days)
 - **AM-4 (PIT basket membership):** basket 'added' date used; removed date excludes tickers
@@ -209,7 +227,7 @@ V3 is the red-team preferred variant — V1/V2 are the available-now approximati
 
 ## Null accounting
 
-- V1 basket events with <2 peers (excluded per AM-2): 23 of 2833 unique event dates
+- V1 basket events with <2 peers (excluded per AM-2): 19 of 1773 unique event dates
 - SW-L1 coverage limited to 5/31 codes — robustness cells are honest partial coverage
 - V3 (unlock-driven variant) not gated — forward-accrual registered above
 - Pre-2013 block tape excluded (< 15 names/day, insufficient cross-section)
