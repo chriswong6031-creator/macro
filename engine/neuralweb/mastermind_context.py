@@ -76,6 +76,10 @@ SITE_ARTIFACT_ID = "site-neuralweb-mastermind-context"
 # Hard row cap for candidate_context (ruling §3.1)
 CANDIDATE_ROW_CAP = 250
 
+# Size cap raised from 200KB→300KB (Build 3: analyst block adds rows; prior
+# headroom was only ~1.7KB per Build-1 review).
+CONTEXT_SIZE_CAP_BYTES = 300 * 1024  # 300 KB
+
 # Freshness threshold in hours for lobe stale determination
 LOBE_FRESHNESS_SLA_HOURS = 30.0
 
@@ -689,6 +693,74 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Analyst targets loader (Build 3 — data/analyst/targets.parquet)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Columns projected from the parquet into each candidate row.
+# Upstream (collector) pre-computes implied_upside_pct + target_dispersion.
+# The builder is a pure projection — no arithmetic here.
+_ANALYST_CONTEXT_COLS = (
+    "target_mean",
+    "implied_upside_pct",
+    "target_dispersion",
+    "recommendation",
+    "num_analysts",
+)
+
+
+def _load_analyst_map(repo: Path, gap_notes: list[str]) -> dict[str, dict]:
+    """Load data/analyst/targets.parquet into a {ticker: {...}} index.
+
+    Fail-open: absent or unreadable parquet → empty dict + gap_note (honest-null).
+    The builder treats a missing analyst block the same as absent data — the
+    candidate row is unaffected and no downstream surface is gated on this.
+
+    DISPLAY/CONTEXT only: fields carry allowed_behavior='annotate_only' in the
+    candidate row and may never feed any scored surface.
+    """
+    path = repo / "data" / "analyst" / "targets.parquet"
+    if not path.exists():
+        gap_notes.append(
+            "candidate_context.analyst: data/analyst/targets.parquet absent "
+            "(run collectors/yf_analyst.py to populate)"
+        )
+        return {}
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(path)
+        if "ticker" not in df.columns:
+            gap_notes.append(
+                "candidate_context.analyst: targets.parquet missing 'ticker' column"
+            )
+            return {}
+        out: dict[str, dict] = {}
+        cols = [c for c in _ANALYST_CONTEXT_COLS if c in df.columns]
+        for _, row in df[["ticker"] + cols].iterrows():
+            ticker = row["ticker"]
+            if not ticker:
+                continue
+            entry = {c: row[c] for c in cols if c in row.index}
+            # Coerce numpy scalars (pandas returns numpy dtypes from parquet)
+            entry = _coerce_numpy(entry)
+            # Remove None / NaN values — _sparse contract
+            clean: dict = {}
+            for k, v in entry.items():
+                if v is None:
+                    continue
+                if isinstance(v, float) and math.isnan(v):
+                    continue
+                clean[k] = v
+            if clean:
+                out[str(ticker)] = clean
+        return out
+    except Exception as exc:  # noqa: BLE001
+        gap_notes.append(
+            f"candidate_context.analyst: targets.parquet read failed — {exc}"
+        )
+        return {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Candidate context sub-block helpers (pure projections — no scoring)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -834,6 +906,8 @@ def _build_candidate_context(
     # --- One-shot data loads (outside per-ticker loop) ---
     earnings_map = _load_earnings_map(repo, gap_notes)
     rpo_map = _load_rpo_map(repo, gap_notes)
+    # Analyst targets (Build 3 — free yfinance, display/context only, PIT snapshot)
+    analyst_map = _load_analyst_map(repo, gap_notes)
     # --- Standouts tickers ---
     standouts_path = repo / "site" / "factordata" / "us_standouts.json"
     standouts_tickers: set[str] = set()
@@ -1009,6 +1083,22 @@ def _build_candidate_context(
         vis = _rpo_ctx_for_ticker(ticker, rpo_map)
         if vis:
             row["visibility"] = vis
+
+        # Analyst context block (Build 3 — display/context only, PIT snapshot).
+        # Fields are pre-computed upstream by collectors/yf_analyst.py; the builder
+        # is a pure projection (no arithmetic here). Omit the whole block when
+        # analyst_map has no entry for this ticker (honest-null contract).
+        if ticker in analyst_map:
+            analyst_entry = analyst_map[ticker]
+            analyst_sparse = _sparse({
+                "target_mean":          analyst_entry.get("target_mean"),
+                "implied_upside_pct":   analyst_entry.get("implied_upside_pct"),
+                "target_dispersion":    analyst_entry.get("target_dispersion"),
+                "recommendation":       analyst_entry.get("recommendation"),
+                "num_analysts":         analyst_entry.get("num_analysts"),
+            })
+            if analyst_sparse:
+                row["analyst"] = analyst_sparse
 
         # Options row (sparse, numpy-coerced)
         if ticker in options_map:
@@ -1238,6 +1328,7 @@ def build_context(
         "site/basketdata/radar_ticker.json",
         "data/earnings/earnings.parquet",
         "data/edgar/rpo.parquet",
+        "data/analyst/targets.parquet",
     ]
 
     # ── Candidate context ─────────────────────────────────────────────────────

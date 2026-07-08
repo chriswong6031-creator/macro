@@ -34,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | neural-web | 41 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
-| nw-mastermind-bridge | 2 |
+| nw-mastermind-bridge | 3 |
 | nw-rails | 7 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
@@ -52,7 +52,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 154 |
+| display | 155 |
 | infrastructure | 71 |
 | scored | 4 |
 | shadow | 40 |
@@ -61,7 +61,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 257 |
+| git | 258 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -366,6 +366,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | neuralweb-mastermind-context | `data/neuralweb/mastermind_context.json` | json | daily-engine | display | 1 | 1 |
+| analyst-targets | `data/analyst/targets.parquet` | parquet | collect | display | 1 | 0 |
 | site-neuralweb-mastermind-context | `site/neuralwebdata/mastermind_context.json` | json | daily-engine | display | 0 | 1 |
 
 ### nw-rails
