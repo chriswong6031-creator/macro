@@ -2510,7 +2510,7 @@ artifacts:
   site-china-cycle-phase:
     path: site/chinastatedata/cycle_phase.json
     format: json
-    producer: <W_PENDING> scripts/build_china_cycle_phase.py
+    producer: scripts/build_china_cycle_phase.py
     known_extra_writers: []
     owner_program: china-system
     cadence: asia-close
