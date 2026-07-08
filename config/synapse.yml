@@ -7618,3 +7618,35 @@ artifacts:
     notes: >
       Site mirror of data/neuralweb/context_risk.json. Same content, atomic
       temp+rename write. Display-only; no scored surfaces.
+
+  # --- nw-context-intelligence W4 ---
+  context-candidates:
+    path: data/neuralweb/context_candidates.jsonl
+    format: jsonl
+    producer: scripts/build_context_candidates.py
+    known_extra_writers: []
+    owner_program: nw-context-intelligence
+    cadence: nightly-cortex
+    storage: git
+    asof_field: last_refreshed
+    freshness_sla_hours: 36
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/cortex.py
+    external_consumers: []
+    notes: >
+      W4 context scanner output (nwci-w4). Three FROZEN v1 template families
+      (T1 composition drift, T2 outcome heterogeneity, T3 co-occurrence shift)
+      screened nightly in the CORTEX JOB against fdr_family='context_scan' declared
+      budget. Schema: {candidate_id (sha1[:16]), template, cell, stat, null_pctile,
+      n, first_seen, last_refreshed, adjacent_falsified, status: candidate|decayed}.
+      DISPLAY/CONTEXT tier only (R-CI6, Article 2, Signal-Commons R3). Candidates
+      NEVER rank, score, fuse, or gate any money-path surface. Three legal exits:
+      (a) cortex stakes via metabolism (fdr_family='cortex'); (b) human charters
+      pre-reg study; (c) decay after 60 days unrefreshed (decayed rows kept in
+      file — dead-stays-dead, blocks re-emission as novel). Consumed by cortex
+      read_context_candidates tool (R-CI11, top-K<=20, no per-ticker dumps).
