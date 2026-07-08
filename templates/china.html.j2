@@ -1502,6 +1502,7 @@
         {{ help("Forward ledger for the board order. Matured picks are graded vs CSI300 from a realistic T+1 entry.", "榜单排序的前瞻账本。成熟样本按相对沪深300、可成交T+1入场打分。") }}
       </div>
       {% set h21 = bt.by_horizon['21d'] %}
+      {% set itm = bt.interim %}
       {% if h21 and h21.n and h21.n >= 8 %}
       <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:12px">
         <span><b>{{ t('Hit vs CSI300', '跑赢沪深300') }}</b> (21d): <span class="{{ 'pos' if h21.hit_vs_csi300 >= 0.5 else 'neg' }}"><b>{{ '%.0f'|format(h21.hit_vs_csi300 * 100) }}%</b></span>{% if h21.hit_ci %} <span class="note">CI {{ '%.0f'|format(h21.hit_ci[0]*100) }}–{{ '%.0f'|format(h21.hit_ci[1]*100) }}%</span>{% endif %}</span>
@@ -1512,6 +1513,17 @@
       {% if h21.extended_fwd is not none and h21.not_extended_fwd is not none %}
       <div style="font-size:11.5px;margin-top:4px" class="note">{{ t('Extended-tagged picks', '已大涨标记') }}: <span class="{{ 'pos' if h21.extended_fwd >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.extended_fwd*100) }}%</span> {{ t('vs not-extended', '对比未大涨') }} <span class="{{ 'pos' if h21.not_extended_fwd >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.not_extended_fwd*100) }}%</span> {{ t('(21d, CSI300-relative)', '（21日，相对沪深300）') }}</div>
       {% endif %}
+      {% elif itm and itm.available and itm.n and itm.n >= 8 %}
+      {# INTERIM read: the 21d forward grade hasn't matured (first ~2026-07-29), so show an honest,
+         explicitly UNREALIZED mark-to-latest-close read instead of a black box. Very early — median
+         hold is only a session or two — so it is framed as "so far", never as a validated edge. #}
+      <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:12px">
+        <span class="note" style="text-transform:none;font-weight:700;color:var(--warn)">⏳ {{ t('Interim — unrealized, marked to latest close', '临时 —— 未实现，按最新收盘价标记') }}</span>
+        <span><b>{{ t('Beating CSI300 so far', '暂时跑赢沪深300') }}</b>: <span class="{{ 'pos' if itm.hit_vs_csi300 >= 0.5 else 'neg' }}"><b>{{ '%.0f'|format(itm.hit_vs_csi300 * 100) }}%</b></span>{% if itm.hit_ci %} <span class="note">CI {{ '%.0f'|format(itm.hit_ci[0]*100) }}–{{ '%.0f'|format(itm.hit_ci[1]*100) }}%</span>{% endif %}</span>
+        {% if itm.median_excess is not none %}<span><b>{{ t('Median excess', '超额中位数') }}</b>: <span class="{{ 'pos' if itm.median_excess >= 0 else 'neg' }}">{{ '%+.1f'|format(itm.median_excess * 100) }}%</span></span>{% endif %}
+        <span class="note">n={{ itm.n }}</span>
+      </div>
+      <div style="font-size:11px;margin-top:4px" class="note">{{ t('This is NOT the matured grade — median', '这不是成熟评分 —— 中位持有') }} {{ itm.median_days_held }} {{ t('session(s) held so far (max', '个交易日（最长') }} {{ itm.max_days_held }}{{ t('); far too early to read as an edge. First matured 21-day grades ~2026-07-29.', '）；过早，不能视作优势。首批21日成熟评分约在 2026-07-29。') }}{% if bt.dates %} <span class="l-en">Logging since {{ bt.dates[0] }} ({{ bt.n_rows }} rows).</span><span class="l-zh">自 {{ bt.dates[0] }} 起记录（{{ bt.n_rows }} 条）。</span>{% endif %}</div>
       {% else %}
       <div style="font-size:12px" class="note">{{ t('Accruing — no picks have matured yet. First 21-day maturities ~2026-07-29.', '累积中 —— 尚无成熟样本。首批21日成熟约在 2026-07-29。') }}{% if bt.dates %} <span class="l-en">Logging since {{ bt.dates[0] }} ({{ bt.n_rows }} rows).</span><span class="l-zh">自 {{ bt.dates[0] }} 起记录（{{ bt.n_rows }} 条）。</span>{% endif %}</div>
       {% endif %}

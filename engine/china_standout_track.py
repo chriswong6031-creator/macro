@@ -910,6 +910,94 @@ def grade() -> dict:
     return out
 
 
+def _interim_excess(
+    ticker: str, d0: pd.Timestamp, bench: pd.Series | None
+) -> tuple[float | None, bool, int | None]:
+    """UNREALIZED, open-ended cousin of ``_fwd_excess``: mark the T+1 fill to the LATEST close
+    (not a fixed +h horizon), CSI300-relative. Returns (excess_or_None, pinned, sessions_held).
+
+    None when the name doesn't resolve, T+1 is locked-limit, or no forward bar exists yet (a name
+    that surfaced today has nothing to mark). Same fill/anchor discipline as the forward grade —
+    never marker-dated — it is simply measured to ``iloc[-1]`` instead of ``iloc[h]``."""
+    df = _price_frame(ticker)
+    if df is None:
+        return None, False, None
+    fill, locked, pinned = _t1_fill(df, d0)
+    if fill is None or locked:                            # unfillable → exclude, don't fabricate
+        return None, pinned, None
+    close = pd.to_numeric(df["close"], errors="coerce").dropna()
+    fwd = close[close.index > d0]                         # sessions after the board date
+    if len(fwd) < 1:                                      # surfaced with no forward bar yet
+        return None, pinned, None
+    if bench is None:                                     # degrade to absolute if the ETF is missing
+        return float(fwd.iloc[-1] / fill - 1.0), pinned, int(len(fwd))
+    bslice = bench[bench.index > d0]
+    if len(bslice) < 1:
+        return None, pinned, None
+    # Align the mark to a COMMON end date so a name with a staler price store isn't compared over a
+    # longer CSI300 window (window mismatch would bias the excess). Mark both to the last session
+    # present in BOTH series at or before their shared latest bar.
+    common_last = min(fwd.index[-1], bslice.index[-1])
+    fwd_c = fwd[fwd.index <= common_last]
+    bsl_c = bslice[bslice.index <= common_last]
+    if len(fwd_c) < 1 or len(bsl_c) < 1:
+        return None, pinned, None
+    name_ret = float(fwd_c.iloc[-1] / fill - 1.0)         # buy at T+1 fill, mark to common latest close
+    bench_ret = float(bsl_c.iloc[-1] / bsl_c.iloc[0] - 1.0)
+    days = int(len(fwd_c))                                # aligned forward sessions held so far
+    return name_ret - bench_ret, pinned, days            # CSI300-relative, unrealized
+
+
+def interim_grade() -> dict:
+    """INTERIM (unrealized) mark-to-latest-close read over every logged pick, CSI300-relative.
+
+    The forward ledger (``grade``) only reports at the pre-registered 21d/63d horizons, so the panel
+    is a black box until the first maturities land (~21 sessions after the ledger's first date). This
+    gives an honest early read in the meantime: each pick's return since its T+1 fill, marked to the
+    latest close, minus CSI300 over the same window. It is explicitly UNREALISED and NOT the matured
+    grade — the template must label it so, and it graduates to ``grade`` once 21d picks mature.
+    Display-only telemetry; reads the ledger, never advances it."""
+    store_path = _store_path()
+    if not store_path.exists():
+        return {"available": False}
+    try:
+        df = pd.read_parquet(store_path)
+    except Exception as e:  # noqa: BLE001 — telemetry, never fatal
+        return {"available": False, "note": f"unreadable: {e}"}
+    if df.empty:
+        return {"available": False, "note": "empty"}
+    bench = _bench_close()
+    exc: list[float] = []
+    held: list[int] = []
+    n_pinned = 0
+    for _i, row in df.iterrows():
+        ex, pinned, days = _interim_excess(row["ticker"], pd.Timestamp(row["date"]), bench)
+        if pinned:
+            n_pinned += 1
+        if ex is None or days is None:
+            continue
+        exc.append(ex)
+        held.append(days)
+    n = len(exc)
+    if n < _MIN_GRADED:
+        return {"available": True, "n": n, "note": "accruing"}
+    arr = pd.Series(exc, dtype=float)
+    lo, hi = _wilson_ci(int((arr > 0).sum()), n)
+    return {
+        "available": True,
+        "n": n,
+        "unrealized": True,
+        "hit_vs_csi300": round(float((arr > 0).mean()), 4),
+        "hit_ci": [round(lo, 4), round(hi, 4)],
+        "median_excess": round(float(arr.median()), 4),
+        "mean_excess": round(float(arr.mean()), 4),
+        "median_days_held": int(pd.Series(held, dtype=float).median()),
+        "max_days_held": int(max(held)),
+        "n_pinned": n_pinned,
+        "bench_available": bench is not None,
+    }
+
+
 def _slice_table(df: pd.DataFrame, by: str, col: str = "fwd") -> dict:
     """Stratify a grade DataFrame by one column, returning per-stratum hit-stats.
 

@@ -185,6 +185,54 @@ def test_grade_end_to_end_publishes_conventions(cn_store):
 
 
 # ---------------------------------------------------------------------------
+# Interim (unrealized) mark-to-latest-close read — shown before 21d maturities land
+# ---------------------------------------------------------------------------
+
+def test_interim_excess_marks_to_latest_and_aligns_window(cn_store):
+    """_interim_excess marks the T+1 fill to the LATEST close (open-ended, not a fixed horizon),
+    CSI300-relative — and when the name's store is STALER than the bench it aligns BOTH to the
+    name's last bar so the excess isn't measured over mismatched windows."""
+    tmp_path, dates = cn_store
+    store.upsert("china", t._BENCH, _mk_ohlc(dates, 10.0 * (1.005 ** np.arange(len(dates))))[["close", "volume"]])
+    n_sess = 5                                                # name store ends far before the bench's
+    store.upsert("china_stocks", "600100.SS", _mk_ohlc(dates[:n_sess], 10.0 * (1.03 ** np.arange(n_sess))))
+    d0 = dates[0]
+    ex, pinned, days = t._interim_excess("600100.SS", d0, t._bench_close())
+    # manual math, aligned to the name's LAST bar (not the bench's later last)
+    df = t._price_frame("600100.SS")
+    t1 = df.index[df.index > d0][0]
+    fill = (df.loc[t1, "high"] + df.loc[t1, "low"]) / 2.0
+    common_last = df.index[-1]
+    name_ret = df["close"].loc[common_last] / fill - 1.0
+    bsl = t._bench_close(); bsl = bsl[(bsl.index > d0) & (bsl.index <= common_last)]
+    bench_ret = bsl.iloc[-1] / bsl.iloc[0] - 1.0
+    assert ex == pytest.approx(name_ret - bench_ret, abs=1e-9)
+    assert days == n_sess - 1                                 # forward sessions after d0 so far
+    assert ex > 0                                             # the faster name is ahead of CSI300
+
+
+def test_interim_grade_publishes_unrealized_else_accruing(cn_store):
+    """interim_grade aggregates the unrealized read: once >= _MIN_GRADED names resolve it publishes
+    a Wilson-CI hit rate carrying the explicit unrealized flag; below that it stays 'accruing'."""
+    tmp_path, dates = cn_store
+    store.upsert("china", t._BENCH, _mk_ohlc(dates, 10.0 * (1.002 ** np.arange(len(dates))))[["close", "volume"]])
+    rows = []
+    for i in range(12):
+        tk = f"60{i:04d}.SS"
+        drift = 1.0 + (0.02 if i < 8 else 0.001)             # 8 beat CSI300, 4 lag
+        store.upsert("china_stocks", tk, _mk_ohlc(dates[:6], 10.0 * (drift ** np.arange(6))))  # 6-session stores
+        rows.append({"ticker": tk, "price": 10.0, "signal": {"tier_cascade": "T2"},
+                     "setup": "reversal", "extension": {"extended": False}, "washout_2w": False})
+    t.append_board(rows, asof=str(dates[0].date()))
+    ig = t.interim_grade()
+    assert ig["available"] and ig["unrealized"] is True
+    assert ig["n"] >= t._MIN_GRADED
+    assert 0.0 <= ig["hit_vs_csi300"] <= 1.0
+    assert ig["hit_ci"][0] <= ig["hit_vs_csi300"] <= ig["hit_ci"][1]
+    assert ig["max_days_held"] >= ig["median_days_held"] >= 1
+
+
+# ---------------------------------------------------------------------------
 # W0.2a — new append_board fields + grade() stratification tests
 # ---------------------------------------------------------------------------
 
