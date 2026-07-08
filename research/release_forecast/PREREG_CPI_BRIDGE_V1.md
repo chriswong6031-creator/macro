@@ -4,7 +4,38 @@
 **Program:** Macro Release Intelligence (MRI), Wave 10, Track CB
 **Ruling:** MRI-R25 (component-bridge challenger charter)
 **Branch:** claude/mri-w10-track-cb
-**Status:** FROZEN — no model spec, block, weight, or method changes after this commit
+**Status:** AMENDED 2026-07-08 — corrected attempt #1 per Opus review (BLS-partition-derived
+corrections, not result-tuned). Engine/test fixes follow in a separate commit AFTER this
+pre-registration amendment is committed. See §10 for amendment details.
+
+---
+
+## AMENDMENT NOTICE (2026-07-08) — Corrected Attempt #1
+
+This amendment is committed BEFORE running the corrected backtest, per anti-mining law §6.
+The corrections are mechanically forced by the BLS partition structure and were identified by
+Opus review of the original attempt. They are NOT result-driven.
+
+**Corrections applied:**
+1. `core_services_ex_shelter` weight corrected to **25.118** = 79.919 − shelter(35.625) −
+   core_goods(19.176). Original attempt used 44.294 which forgot to subtract core_goods,
+   creating double-count of the full core_goods weight (19.176pp).
+2. `food_at_home` is EXCLUDED from the core path (food is excluded from core CPI by
+   definition). Original attempt included it in both headline and core.
+3. Partition is now a TRUE 100pp sum: all 13 prior-only blocks carry prior MoM × RI weight
+   in `point`, so the grand-total basket weight = 100 (headline) / 79.919 (core). Prior blocks
+   keep confidence=0.0 but contribute their prior-driven mass. This makes `point` a complete
+   estimate, not a partial-coverage artifact.
+4. `coverage_residual_pp` replaces the tautological `residual_pp`. Definition:
+   `coverage_residual_pp` = 100 − Σ(applied weights). This is ~0 when partition is complete,
+   >0 only when a basket share is genuinely uncovered.
+5. `prior_driven_share` added: Σ(weights of confidence-0 prior blocks) / 100 — the fraction of
+   the estimate that is extrapolation, not fresh proxy. Both fields are printed on the projection
+   per MRI-R19 (honesty).
+
+**Outcome declared in advance (per anti-mining law):** If corrected-core STILL fails the kill
+rule → core = NULL and the family closes (2-attempt cap). The result is reported honestly
+regardless of direction.
 
 ---
 
@@ -144,14 +175,16 @@ core_goods_contribution_pp = (pipeline_mom_est/100) × core_goods_weight
 
 **RI weight target:** CUSR0000SASLE is "All items less energy, shelter, and food". Its RI
 complement is derived as:
-- `csxs_weight` ≈ All items less food and energy (79.919) − shelter (35.625) = 44.294
-- However, core-services-ex-shelter is better scoped to services only, not including core goods.
-- Use the BLS "Other services" aggregate: 9.845 (this is services less rent of shelter less
-  transportation services; the broadest available services-ex-shelter-ex-medical aggregate)
-- Note: CUSR0000SASLE tracks "All items less food, energy, shelter" (commodities + services),
-  so RI weight is approximated as 44.294 (full complement) for the bridge estimate.
-- Gap: this weight DOUBLE-COUNTS core goods. The bridge is conservative here — core-goods
-  and core-services-ex-shelter are modelled with overlapping weights. The residual reconciles.
+- `csxs_weight` = All items less food and energy (79.919) − shelter (35.625) − core_goods (19.176) = **25.118**
+- This is the correct BLS partition: the three modelled core blocks (shelter 35.625,
+  core_goods 19.176, core_svc_xs_shelter 25.118) sum to exactly 79.919 (= all items less
+  food and energy). No overlap, no double-count.
+- **CORRECTED from original attempt:** Original used 44.294 = 79.919 − 35.625 (forgot to
+  subtract core_goods), creating double-count of 19.176pp.
+
+**NOTE (Block 3 / food_at_home):** Food is EXCLUDED from core CPI by definition.
+The `food_at_home` block (RI weight 8.325) is included in the HEADLINE path only.
+For the CORE path, food_at_home is gated out (same gate as energy blocks).
 
 **Method:** Persistence — CUSR0000SASLE lag-1 MoM applied as estimate for upcoming month.
 - Source: `data/fred/CUSR0000SASLE.parquet` (non-vintaged, revision_optimistic)
@@ -191,29 +224,39 @@ No free PIT proxy exists for these; modelling them would be false precision.
 
 ---
 
-## 5. Bridge Math (frozen per MRI-R19 / MRI-R25)
+## 5. Bridge Math (CORRECTED per amendment 2026-07-08; frozen per MRI-R19 / MRI-R25)
+
+The bridge is a TRUE partition to 100. All 13 prior-only blocks carry prior MoM × RI weight
+in `point`, so the sum of applied weights = 100.0 (headline) / 79.919 (core). No weight is
+dropped; no basket share is excluded from the estimate.
 
 ```
-headline_est = Σ_i contribution_pp[i]    (ALL blocks, modelled and prior)
-residual = 0  (by construction when all blocks included)
+# Modelled blocks (fresh proxy):
+modelled_sum = Σ_i (block_mom_est / 100) × block_weight   where prior_only == False
+
+# Prior-only blocks (13 blocks, confidence=0.0, carry own prior MoM):
+prior_sum = Σ_i (prior_mom / 100) × block_weight          where prior_only == True
+
+# Grand total estimate (= true 100pp partition when all blocks present):
+point = modelled_sum + prior_sum
 ```
 
-For reconciliation tracking purposes:
+Honesty fields (both PRINTED per MRI-R19, never hidden):
 ```
-modelled_sum = Σ_i contribution_pp[i] where block.prior_only == False
-prior_sum = Σ_i contribution_pp[i] where block.prior_only == True
-headline_est = modelled_sum + prior_sum
+coverage_residual_pp = 100 - Σ(applied weights)
+    # ~0 when partition complete; >0 only for genuinely uncovered basket share
+
+prior_driven_share = Σ(weights of confidence-0 prior blocks) / 100
+    # fraction of the estimate driven by extrapolation rather than fresh proxy
 ```
 
-The "residual" reported in provenance is the difference caused by floating-point precision:
-```
-residual = headline_est - (modelled_sum + prior_sum)  # should be ≈ 0 within 1e-10
-```
+The old `residual_pp = headline_est - (modelled_sum + prior_sum)` was tautologically 0 by
+construction and has been replaced by `coverage_residual_pp` (the real coverage gap).
 
-Core estimate uses the same blocks but excludes energy components (gasoline, electricity).
-Weight reconciliation: Σ all block weights must equal approximately 100.0.
+Core estimate uses same blocks but excludes energy (gasoline, electricity) AND food_at_home.
+Core weight reconciliation: Σ all core block weights = 79.919 (all items less food+energy).
 
-**weight_coverage** = sum of RI weights for modelled blocks / 100.0
+**weight_coverage** = sum of RI weights for modelled (non-prior) blocks / 100.0
 
 ---
 
@@ -223,9 +266,11 @@ Returns a dict matching the champion's `release_forecast.v2` schema, tagged:
 - `model = 'cpi_bridge'`
 - `display_only = True`
 - `authority = False`
-- `components`: list of `{block, contribution_pp, weight, confidence, prior_only}`
-- `weight_coverage`: share of the CPI basket backed by modelled legs (float, 0–1)
-- `residual_pp`: reconciliation residual (should be ~0)
+- `components`: list of `{block, contribution_pp, weight, confidence, prior_only}` — includes
+  ALL blocks (both modelled and prior-only) for full transparency
+- `weight_coverage`: share of the CPI basket backed by modelled (non-prior) blocks (float, 0–1)
+- `coverage_residual_pp`: 100 − Σ(applied weights); real coverage gap (~0 when partition complete)
+- `prior_driven_share`: Σ(weights of confidence-0 prior blocks) / 100 — extrapolation fraction
 - `revision_optimistic_legs`: list of non-ALFRED-vintaged series used
 
 ---
@@ -265,3 +310,30 @@ Same as champion:
 - Not scored or authority-bearing. display_only=True, authority=False enforced in engine.
 - Not the champion. The champion (v2 ridge) keeps the card. This is a shadow challenger.
 - Not iterated. No block/weight/method changes after results are observed (this freeze).
+
+---
+
+## 10. Prior-Only Block Weights (complete list for partition verification)
+
+The 13 prior-only blocks below complete the 100pp partition. Each carries own prior-series MoM × weight.
+confidence=0.0 for all. Headline grand-total Σ = 100.0; core grand-total Σ = 79.919.
+
+| Block | RI Weight | Own Prior Series | Core? |
+|---|---|---|---|
+| food_away_from_home | 5.373 | CPIAUCSL (headline proxy) | No (food excluded from core) |
+| food_at_home (prior fallback) | 8.325 | CUSR0000SAF11 | No (food excluded from core) |
+| alcoholic_beverages | 0.840 | CPIAUCSL (headline proxy) | No (food-family excluded) |
+| new_vehicles | 3.838 | CPIAUCSL (headline proxy) | Yes |
+| used_vehicles | 2.759 | CPIAUCSL (headline proxy) | Yes |
+| airline_fares | 0.881 | CPIAUCSL (headline proxy) | Yes |
+| lodging_away_from_home | 1.289 | CPIAUCSL (headline proxy) | Yes (shelter sub-item already modelled separately) |
+| medical_care | 8.423 | CPIAUCSL (headline proxy) | Yes |
+| apparel | 2.368 | CPIAUCSL (headline proxy) | Yes |
+| recreation | 5.137 | CPIAUCSL (headline proxy) | Yes |
+| education_and_communication | 5.846 | CPIAUCSL (headline proxy) | Yes |
+| other_goods_and_services | 2.902 | CPIAUCSL (headline proxy) | Yes |
+| motor_vehicle_insurance | 2.754 | CPIAUCSL (headline proxy) | Yes |
+
+Note: "own prior series" = last knowable MoM of the headline own-series (CPIAUCSL for headline,
+CPILFESL for core) used as the fallback prior MoM for unlisted sub-items. This is the most
+conservative proxy: it assumes prior-only blocks track the aggregate at the prior MoM rate.
