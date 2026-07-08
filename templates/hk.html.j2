@@ -936,6 +936,123 @@
   </div>
   {% endif %}{# end filing-bus panel #}
 
+  {# ── GDELT Narrative Pulse / 舆情脉搏 ─────────────────────────────────────
+     Display-only context organ. No signal, no edge. Weakest evidence tier.
+     Gracefully absent when hk_narrative is None or entities is empty. #}
+  {% if hk_narrative and hk_narrative.entities %}
+  {% set _hn = hk_narrative %}
+  {% set _hn_fresh = _hn.freshness if _hn.freshness else 'unknown' %}
+
+  {# Helper macro: narrative state chip #}
+  {% macro _state_chip(state) %}
+    {% if state == 'attention_spike' %}
+      <span class="chip c-warn" style="font-size:11px;">
+        <span class="l-en">Attention Spike</span><span class="l-zh">关注度激增</span>
+      </span>
+    {% elif state == 'tone_positive_shift' %}
+      <span class="chip c-up" style="font-size:11px;">
+        <span class="l-en">Tone +</span><span class="l-zh">舆情偏正</span>
+      </span>
+    {% elif state == 'tone_negative_shift' %}
+      <span class="chip c-down" style="font-size:11px;">
+        <span class="l-en">Tone −</span><span class="l-zh">舆情偏负</span>
+      </span>
+    {% elif state == 'quiet' %}
+      <span class="chip" style="--c:var(--muted);font-size:11px;">
+        <span class="l-en">Quiet</span><span class="l-zh">平静</span>
+      </span>
+    {% else %}
+      <span style="font-size:11px;color:var(--muted);">—</span>
+    {% endif %}
+  {% endmacro %}
+
+  <div class="panel span12" id="narrative-pulse-panel">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;">
+      <h2 style="margin:0;font-size:13px;">
+        <span class="l-en">Narrative Pulse</span>
+        <span class="l-zh">舆情脉搏</span>
+      </h2>
+      <span class="chip" style="--c:var(--muted);font-size:10px;opacity:.75;">
+        <span class="l-en">weakest evidence tier — context only</span>
+        <span class="l-zh">最弱证据层，仅供参考</span>
+      </span>
+      <span class="chip" style="--c:var(--{% if _hn_fresh == 'ok' %}up{% elif _hn_fresh == 'degraded' %}warn{% else %}down{% endif %});font-size:10px;">
+        {{ _hn_fresh }}
+      </span>
+    </div>
+
+    {# Weakest-evidence caveat bar #}
+    <div style="font-size:11px;color:var(--muted);background:rgba(255,200,0,.06);
+                border-left:3px solid rgba(255,200,0,.3);padding:6px 10px;
+                border-radius:2px;margin-bottom:12px;line-height:1.5;">
+      <span class="l-en">{{ _hn.caveat_en }}</span>
+      <span class="l-zh">{{ _hn.caveat_zh }}</span>
+    </div>
+
+    {# Per-bellwether attention/tone chips grid #}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+      {% for ent in _hn.entities %}
+      <div style="background:rgba(128,138,160,.07);border-radius:6px;padding:8px 10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+          <div>
+            <span style="font-size:12.5px;font-weight:700;">{{ ent.name_en }}</span>
+            <span style="font-size:10.5px;color:var(--muted);margin-left:5px;">{{ ent.name_zh }}</span>
+          </div>
+          <span style="font-size:10px;color:var(--muted);">{{ ent.ticker }}</span>
+        </div>
+
+        {% if ent.young or ent.narrative_state is none %}
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">—</div>
+          {% if ent.no_data_reason %}
+          <div style="font-size:10px;color:var(--muted);opacity:.7;">{{ ent.no_data_reason }}</div>
+          {% endif %}
+        {% else %}
+          {# State chip #}
+          <div style="margin-bottom:5px;">
+            {{ _state_chip(ent.narrative_state) }}
+          </div>
+          {# Metrics row #}
+          <div style="display:flex;gap:12px;font-size:11px;color:var(--muted);">
+            {% if ent.attention_shock_z is not none %}
+            <span title="Attention z-score vs trailing baseline">
+              <span class="l-en">attn z:</span><span class="l-zh">关注z：</span>
+              <strong style="color:{% if ent.attention_shock_z | abs > 2 %}var(--warn){% else %}var(--muted){% endif %};">
+                {% if ent.attention_shock_z > 0 %}+{% endif %}{{ "%.2f"|format(ent.attention_shock_z) }}
+              </strong>
+            </span>
+            {% else %}
+            <span style="color:var(--muted);">attn z: —</span>
+            {% endif %}
+            {% if ent.tone_pctile is not none %}
+            <span title="Tone percentile vs own history">
+              <span class="l-en">tone:</span><span class="l-zh">语调：</span>
+              <strong style="color:{% if ent.tone_pctile >= 70 %}var(--up){% elif ent.tone_pctile <= 30 %}var(--down){% else %}var(--muted){% endif %};">
+                {{ "%.0f"|format(ent.tone_pctile) }}p
+              </strong>
+            </span>
+            {% else %}
+            <span style="color:var(--muted);">tone: —</span>
+            {% endif %}
+          </div>
+          {% if ent.n_obs is not none %}
+          <div style="font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;">
+            <span class="l-en">{{ ent.n_obs }} obs</span>
+            <span class="l-zh">{{ ent.n_obs }} 条数据</span>
+            {% if ent.as_of_date %}<span style="margin-left:4px;">asof {{ ent.as_of_date }}</span>{% endif %}
+          </div>
+          {% endif %}
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);">
+      <span class="l-en">Source: GDELT DOC 2.0 API (keyless). English-language news only; entity resolution imprecise. Deterministic metrics only; no LLM-originated score.</span>
+      <span class="l-zh">来源：GDELT DOC 2.0 API（无需密钥）。仅统计英文报道；实体识别精度有限。全部指标为确定性计算，无大模型评分。</span>
+    </div>
+  </div>
+  {% endif %}{# end narrative-pulse panel #}
+
   {% if mode == 'stocks' %}
   <!-- ===================== HK STOCK DESK — command-center hero ===================== -->
   {% set RS = (hk_scoreboard.risk_state if hk_scoreboard else (gv.state if gv else 'unknown')) %}
