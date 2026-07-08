@@ -200,7 +200,16 @@ def compute_coverage_flags(
         unrev: list[str] = prov.get("unrevised_legs") or []
         absent: list[str] = prov.get("absent_legs") or []
 
-        all_legs = sorted(set(rev_opt) | set(unrev) | set(absent))
+        # FIX (MRI-R27 rework): use _declared_legs to include present/vintaged legs in the
+        # denominator. Without this, legs in _features (not in any provenance list) are
+        # silently excluded → non_vintaged_share=1.0 and fresh_proxy_coverage=0.0 for
+        # mostly-vintaged NFP models. _declared_legs unions provenance lists + feature keys.
+        raw_features: dict[str, Any] = (
+            projection.get("_features") or projection.get("features") or {}
+        )
+        if not isinstance(raw_features, dict):
+            raw_features = {}
+        all_legs = _declared_legs(prov, raw_features)
         n_total = len(all_legs)
 
         # ------------------------------------------------------------------ #

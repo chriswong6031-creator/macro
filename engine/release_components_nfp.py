@@ -60,8 +60,10 @@ def build_nfp_features(
     """
     absent_legs: list[str] = []
     prov: dict[str, Any] = {
-        "revision_optimistic_legs": ["awhman_mom"],
-        "unrevised_legs": ["withheld_tax_yoy", "adp_change"],
+        # adp_change: revision_optimistic (ADP does revise its estimates; we lack ALFRED vintages
+        # → asof-blind read, same limitation as awhman_mom; acceptable for Track-M challenger).
+        "revision_optimistic_legs": ["awhman_mom", "adp_change"],
+        "unrevised_legs": ["withheld_tax_yoy"],
         "absent_legs": [],
         "display_only": True,
         "authority": False,
@@ -166,13 +168,18 @@ def build_nfp_features(
         features["awhman_mom"] = None
         absent_legs.append("awhman_mom")
 
-    # ADP month-over-month change in thousands (revision_optimistic; no ALFRED vintage).
-    # MRI-R27 latent-bug fix: the store holds ADPMNUSNERSA (total-private SA, LEVEL in
-    # PERSONS, ~132,000,000). adp_change must be the month-over-month CHANGE expressed in
-    # THOUSANDS to match the nfp_change_lag* target scale (PAYEMS diff / 1000).
-    # Diff the level series: adp_change = (level[M-1] - level[M-2]) / 1000.
-    # Uses M-1 (one lag) because ADP releases ~2d before BLS NFP; at decision date asof
-    # the ref_month M-1 level is typically available, M the target. Fail-open if absent.
+    # ADP contemporaneous same-month change in thousands (revision_optimistic; no ALFRED vintage).
+    # Series: ADPMNUSNERSA (ADP Total Nonfarm Private Payroll Employment, SA level in PERSONS,
+    # ~132,000,000). Seasonality check (pre-COVID + post-recovery, 2000-2022): calendar-month
+    # spread = 120k (thousands), confirming SA (a truly NSA payroll series would swing millions).
+    # Alternative SA series ADPNFRPRIVSA returns HTTP 404 on FRED; NPPTTL ends 2022-05 and also
+    # shows seasonal distortions from COVID. ADPMNUSNERSA is kept as best available SA proxy.
+    # Definition (PREREG_V1 §4.3 "same-month"): contemporaneous adp_change = level[M] - level[M-1].
+    # ADP-M releases ~2 days before BLS NFP-M → knowable at the decision date for target month M.
+    # Level diff in persons → divide by 1000 for thousands (matches nfp_change_lag* scale).
+    # Revision status: revision_optimistic (ADP does revise; we lack ALFRED vintages → asof-blind).
+    # This feature is computed-but-unused by the champion (Track-M challenger will select it later).
+    # Fail-open if absent.
     adp_path = root / "data" / "fred" / "ADPMNUSNERSA.parquet"
     if adp_path.exists():
         try:
@@ -181,14 +188,15 @@ def build_nfp_features(
             adp_col = adp.columns[0]
             adp_monthly = adp[adp_col].resample("MS").last()
             ref_m = pd.Timestamp(ref_month)
+            # Contemporaneous: same-month level[M] - level[M-1] (ADP-M knowable at NFP-M date)
+            m_0 = ref_m.to_period("M").to_timestamp()
             m_minus_1 = (ref_m.to_period("M") - 1).to_timestamp()
-            m_minus_2 = (ref_m.to_period("M") - 2).to_timestamp()
+            v0 = adp_monthly.get(m_0)
             v1 = adp_monthly.get(m_minus_1)
-            v2 = adp_monthly.get(m_minus_2)
-            if (v1 is not None and v2 is not None
-                    and not np.isnan(float(v1)) and not np.isnan(float(v2))):
+            if (v0 is not None and v1 is not None
+                    and not np.isnan(float(v0)) and not np.isnan(float(v1))):
                 # level diff in persons → divide by 1000 for thousands (matches nfp_change scale)
-                features["adp_change"] = float(v1 - v2) / 1000.0
+                features["adp_change"] = float(v0 - v1) / 1000.0
             else:
                 features["adp_change"] = None
                 absent_legs.append("adp_change")

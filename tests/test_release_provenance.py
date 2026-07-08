@@ -251,8 +251,8 @@ class TestComputeCoverageFlags:
 
     def test_non_vintaged_share_mixed(self):
         from engine.release_provenance import compute_coverage_flags
-        # compute_coverage_flags uses only pit_provenance lists, not _features.
-        # 1 rev_opt leg (non-vintaged) + 0 absent + 0 unrev = 1 total leg
+        # _declared_legs unions provenance lists + _features keys (none here).
+        # 1 rev_opt leg (non-vintaged) + 0 absent + 0 unrev + 0 _features = 1 total leg
         # → non_vintaged_share = 1/1 = 1.0
         proj = _make_projection(rev_opt=["leg_b"])
         result = compute_coverage_flags(proj, None)
@@ -473,3 +473,177 @@ class TestEdgeCases:
         proj = _make_projection(asof="2026-07-01", rev_opt=["gasoline_mom"])
         result = build_input_snapshot(proj)
         assert result["asof"] == "2026-07-01"
+
+
+# ---------------------------------------------------------------------------
+# FIX 4 regression guard — coverage-flag denominator includes present legs
+# ---------------------------------------------------------------------------
+
+class TestCoverageFlagDenominatorFix:
+    """MRI-R27 rework: _declared_legs must be used as the denominator so that
+    vintaged/present legs (from _features) are included.
+
+    NFP-shaped test case (8 total legs):
+      - 5 vintaged present legs (nfp_change_lag1..3, claims_survey_week_icsa, claims_survey_week_ccsa)
+        in _features, NOT in any provenance list → classified as 'present'
+      - 1 revision_optimistic leg (awhman_mom) in prov → non-vintaged
+      - 1 unrevised leg (withheld_tax_yoy) in prov → non-vintaged
+      - 1 absent leg (adp_change) in prov (Track-M reserved) → non-vintaged
+
+    Total: 8 legs. Non-vintaged: 3 (awhman_mom, withheld_tax_yoy, adp_change).
+    non_vintaged_share = 3/8 = 0.375.
+
+    Before the fix: denominator was only 3 (rev_opt | unrev | absent) → non_vintaged_share=1.0.
+    After the fix: denominator is 8 (_declared_legs includes _features keys) → 0.375.
+    """
+
+    def _make_nfp_shaped_projection(self) -> dict:
+        """Build an NFP-shaped projection with 5 present + 1 rev_opt + 1 unrev + 1 absent."""
+        prov = {
+            "revision_optimistic_legs": ["awhman_mom"],
+            "unrevised_legs": ["withheld_tax_yoy"],
+            "absent_legs": ["adp_change"],
+            "display_only": True,
+            "authority": False,
+        }
+        # 5 present (vintaged) legs carried in _features
+        features = {
+            "nfp_change_lag1": 150.0,
+            "nfp_change_lag2": 130.0,
+            "nfp_change_lag3": 120.0,
+            "claims_survey_week_icsa": -5000.0,
+            "claims_survey_week_ccsa": -3000.0,
+            # awhman_mom is revision_optimistic — listed in prov, also in features
+            "awhman_mom": 0.1,
+            # withheld_tax_yoy is unrevised — listed in prov, also in features
+            "withheld_tax_yoy": 2.5,
+            # adp_change is absent — listed in prov (None value)
+            "adp_change": None,
+        }
+        return {
+            "release": "nfp",
+            "asof": "2026-07-07",
+            "inputs_hash": "nfp_test_hash",
+            "pit_provenance": prov,
+            "_features": features,
+            "point": 150.0,
+            "p10": 80.0,
+            "p25": 110.0,
+            "p50": 150.0,
+            "p75": 190.0,
+            "p90": 220.0,
+            "confidence": 0.6,
+            "display_only": True,
+            "authority": False,
+        }
+
+    def test_non_vintaged_share_includes_present_legs(self):
+        """After FIX 4: non_vintaged_share = 3/8 (not 1.0) for NFP-shaped projection."""
+        from engine.release_provenance import compute_coverage_flags
+        proj = self._make_nfp_shaped_projection()
+        result = compute_coverage_flags(proj, ledger_path=None)
+        # 3 non-vintaged (awhman_mom rev-opt, withheld_tax_yoy unrev, adp_change absent)
+        # out of 8 total declared legs → 3/8 = 0.375
+        assert result["non_vintaged_share"] == pytest.approx(0.375, rel=1e-6), (
+            f"non_vintaged_share={result['non_vintaged_share']} expected≈0.375 (3/8). "
+            "If 1.0, the denominator bug (present legs excluded) was not fixed."
+        )
+
+    def test_non_vintaged_share_not_one_for_nfp_model(self):
+        """Regression guard: non_vintaged_share must NOT be 1.0 for an NFP model."""
+        from engine.release_provenance import compute_coverage_flags
+        proj = self._make_nfp_shaped_projection()
+        result = compute_coverage_flags(proj, ledger_path=None)
+        assert result["non_vintaged_share"] != pytest.approx(1.0), (
+            "non_vintaged_share=1.0 for NFP model — present/vintaged legs excluded from denominator (FIX 4 regression)"
+        )
+
+    def test_fresh_proxy_coverage_not_zero_for_nfp_model(self):
+        """After FIX 4: fresh_proxy_coverage > 0 because present legs count as fresh proxy."""
+        from engine.release_provenance import compute_coverage_flags
+        proj = self._make_nfp_shaped_projection()
+        result = compute_coverage_flags(proj, ledger_path=None)
+        # 5 present legs out of 8 total → fresh_proxy_coverage = 5/8 = 0.625
+        assert result["fresh_proxy_coverage"] > 0.0, (
+            f"fresh_proxy_coverage={result['fresh_proxy_coverage']} expected>0. "
+            "If 0.0, the denominator fix is not applied correctly."
+        )
+        assert result["fresh_proxy_coverage"] == pytest.approx(5 / 8, rel=1e-6)
+
+    def test_weight_coverage_includes_present_legs(self):
+        """weight_coverage must count present legs as covered."""
+        from engine.release_provenance import compute_coverage_flags
+        proj = self._make_nfp_shaped_projection()
+        result = compute_coverage_flags(proj, ledger_path=None)
+        # 7 covered legs (all except adp_change absent) out of 8 → 7/8 = 0.875
+        assert result["weight_coverage"] == pytest.approx(7 / 8, rel=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# FIX 1 regression guard — champion NFP feature set does not include adp_change
+# ---------------------------------------------------------------------------
+
+class TestChampionNFPFeatureSet:
+    """MRI-R27 rework FIX 1: adp_change must NOT be in the champion NFP feature_names.
+    The champion was effectively a 7-feature model (adp_change always NaN-dropped because
+    the file path was dead). Removing it makes the champion provably unchanged (RESULTS_V2 frozen).
+    """
+
+    def test_champion_feature_names_excludes_adp_change(self):
+        """_project_nfp feature_names must not contain 'adp_change'."""
+        import inspect
+        import sys
+        _REPO = Path(__file__).resolve().parents[1]
+        sys.path.insert(0, str(_REPO))
+        import engine.release_forecast as rf
+        src = inspect.getsource(rf._project_nfp)
+        # Extract the feature_names list from the source
+        # We look for the definition inside _project_nfp
+        assert "adp_change" not in src or "adp_change reserved" in src, (
+            "adp_change appears in _project_nfp feature_names — "
+            "this would silently change the champion vs RESULTS_V2 (MRI-R27 rework FIX 1)"
+        )
+        # More direct: parse the actual feature_names list value
+        import ast
+        # Find the feature_names assignment
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id == "feature_names":
+                        if isinstance(node.value, ast.List):
+                            names = [
+                                elt.value for elt in node.value.elts
+                                if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+                            ]
+                            assert "adp_change" not in names, (
+                                f"Champion feature_names={names} contains 'adp_change' — "
+                                "must be excluded to keep RESULTS_V2 frozen (MRI-R27 rework FIX 1)"
+                            )
+                            assert len(names) == 7, (
+                                f"Champion should have 7 features (3 lags + 2 claims + withheld + awhman), got {len(names)}: {names}"
+                            )
+
+    def test_wf_nfp_full_feature_names_excludes_adp_change(self):
+        """_wf_nfp_full feature_names (walk-forward backtest) must also exclude adp_change."""
+        import inspect
+        import sys
+        _REPO = Path(__file__).resolve().parents[1]
+        sys.path.insert(0, str(_REPO))
+        import engine.release_forecast as rf
+        src = inspect.getsource(rf._wf_nfp_full)
+        import ast
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id == "feature_names":
+                        if isinstance(node.value, ast.List):
+                            names = [
+                                elt.value for elt in node.value.elts
+                                if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+                            ]
+                            assert "adp_change" not in names, (
+                                f"_wf_nfp_full feature_names={names} contains 'adp_change' — "
+                                "must match the champion 7-feature set (MRI-R27 rework FIX 1)"
+                            )

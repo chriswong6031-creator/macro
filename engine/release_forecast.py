@@ -890,7 +890,8 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
     feature_names = [
         "nfp_change_lag1", "nfp_change_lag2", "nfp_change_lag3",
         "claims_survey_week_icsa", "claims_survey_week_ccsa",
-        "withheld_tax_yoy", "awhman_mom", "adp_change",
+        "withheld_tax_yoy", "awhman_mom",
+        # adp_change reserved for the Track-M challenger (MRI-R21/R27); excluded from champion to keep RESULTS_V2 frozen
     ]
 
     # All initial PAYEMS prints knowable at asof
@@ -1344,7 +1345,8 @@ def _wf_nfp_full(vintages: pd.DataFrame, root: Path) -> dict:
     feature_names = [
         "nfp_change_lag1", "nfp_change_lag2", "nfp_change_lag3",
         "claims_survey_week_icsa", "claims_survey_week_ccsa",
-        "withheld_tax_yoy", "awhman_mom", "adp_change",
+        "withheld_tax_yoy", "awhman_mom",
+        # adp_change reserved for the Track-M challenger (MRI-R21/R27); excluded from champion to keep RESULTS_V2 frozen
     ]
 
     all_series = knowable_series(vintages, "PAYEMS", date(2099, 1, 1))
