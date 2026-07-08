@@ -1220,6 +1220,136 @@ class TestArchiveMode:
 
 
 # ---------------------------------------------------------------------------
+# 20a2. listing_title provable-absence on stubbed days (PR #1913)
+# ---------------------------------------------------------------------------
+
+_ARCHIVE_COLS_LT = ["date", "order_idx", "title", "content", "fetch_status",
+                    "fetched_at", "listing_title"]
+
+
+def _archive_row_lt(day: str, title: str, content: str, status: str = "ok",
+                    listing_title: str = "") -> dict:
+    """Archive row WITH the listing_title column (post-PR #1913 shard shape)."""
+    return {"date": day, "order_idx": 0, "title": title, "content": content,
+            "fetch_status": status, "fetched_at": "2026-07-06T00:00:00Z",
+            "listing_title": listing_title}
+
+
+class TestArchiveListingTitleProvableAbsence:
+    """PR #1913 records the real listing titles on stub/error rows. A stubbed day
+    whose listing titles ALL fail the permissive prescreen proves absence and is
+    answered locally; a listing title that passes still forces the network fetch
+    (the body is needed); an empty/absent listing_title keeps the conservative
+    network fallback. Strictly opt-in per row.
+    """
+
+    def _write_month(self, dirpath: Path, month: str, rows: list[dict]) -> None:
+        pd.DataFrame(rows, columns=_ARCHIVE_COLS_LT).to_parquet(dirpath / f"{month}.parquet")
+
+    _STUB_TITLE = "对不起，可能是网络原因或无此页面，请稍后尝试。"
+
+    def test_stub_nonmatching_listing_titles_returns_intact_rows(self, tmp_path: Path) -> None:
+        """Stub row carries the full listing; no title is a CEWC readout →
+        absence provable → intact (ok) rows returned instead of None."""
+        listing = "\n".join(["国内联播快讯", "天气预报", "国际时讯"])
+        self._write_month(tmp_path, "2024-12", [
+            _archive_row_lt("2024-12-12", "国内联播快讯", "无关内容。"),
+            _archive_row_lt("2024-12-12", self._STUB_TITLE, "", status="stub",
+                            listing_title=listing),
+        ])
+        items = _archive_day_items(tmp_path, date(2024, 12, 12), _is_cewc,
+                                   prefetch_fn=_listing_may_be_cewc)
+        assert items == [{"title": "国内联播快讯", "content": "无关内容。"}]
+
+    def test_stub_matching_listing_title_returns_none(self, tmp_path: Path) -> None:
+        """A stub row's listing title IS a CEWC readout headline → the body is
+        needed → None (network fallback)."""
+        listing = "\n".join(["国内联播快讯", "中央经济工作会议在北京举行 习近平出席"])
+        self._write_month(tmp_path, "2024-12", [
+            _archive_row_lt("2024-12-12", "国内联播快讯", "无关内容。"),
+            _archive_row_lt("2024-12-12", self._STUB_TITLE, "", status="stub",
+                            listing_title=listing),
+        ])
+        items = _archive_day_items(tmp_path, date(2024, 12, 12), _is_cewc,
+                                   prefetch_fn=_listing_may_be_cewc)
+        assert items is None
+
+    def test_stub_empty_listing_title_returns_none(self, tmp_path: Path) -> None:
+        """A stub row with an empty listing_title (listing fetch failed) keeps the
+        conservative network fallback — the readout might be hidden in the stub."""
+        self._write_month(tmp_path, "2024-12", [
+            _archive_row_lt("2024-12-12", "国内联播快讯", "无关内容。"),
+            _archive_row_lt("2024-12-12", self._STUB_TITLE, "", status="stub",
+                            listing_title=""),
+        ])
+        items = _archive_day_items(tmp_path, date(2024, 12, 12), _is_cewc,
+                                   prefetch_fn=_listing_may_be_cewc)
+        assert items is None
+
+    def test_partial_empty_listing_title_returns_none(self, tmp_path: Path) -> None:
+        """Opt-in is PER ROW: one stub with a title + one stub with an empty
+        listing_title → conservative None (cannot prove absence for the empty one)."""
+        self._write_month(tmp_path, "2024-12", [
+            _archive_row_lt("2024-12-12", "国内联播快讯", "无关内容。"),
+            _archive_row_lt("2024-12-12", self._STUB_TITLE, "", status="stub",
+                            listing_title="国内联播快讯"),
+            _archive_row_lt("2024-12-12", self._STUB_TITLE, "", status="error",
+                            listing_title=""),
+        ])
+        items = _archive_day_items(tmp_path, date(2024, 12, 12), _is_cewc,
+                                   prefetch_fn=_listing_may_be_cewc)
+        assert items is None
+
+    def test_aligned_per_row_listing_title_matches(self, tmp_path: Path) -> None:
+        """Aligned case (row count == listing count): each stub row's single
+        listing_title is tested; a matching one forces the network."""
+        self._write_month(tmp_path, "2024-12", [
+            _archive_row_lt("2024-12-12", self._STUB_TITLE, "", status="stub",
+                            listing_title="中央经济工作会议在北京举行 习近平出席"),
+            _archive_row_lt("2024-12-12", "国内联播快讯", "无关内容。"),
+        ])
+        items = _archive_day_items(tmp_path, date(2024, 12, 12), _is_cewc,
+                                   prefetch_fn=_listing_may_be_cewc)
+        assert items is None
+
+    def test_whole_day_stub_absence_answered_locally(self, tmp_path: Path) -> None:
+        """A whole-day stub (zero intact rows) whose full joined listing has no
+        readout title proves absence → answered locally (empty list), no network."""
+        listing = "\n".join(["国内联播快讯", "天气预报", "国际时讯"])
+        self._write_month(tmp_path, "2024-12", [
+            _archive_row_lt("2024-12-14", self._STUB_TITLE, "", status="stub",
+                            listing_title=listing),
+        ])
+        items = _archive_day_items(tmp_path, date(2024, 12, 14), _is_cewc,
+                                   prefetch_fn=_listing_may_be_cewc)
+        assert items == []
+
+    def test_default_prefetch_used_when_none(self, tmp_path: Path) -> None:
+        """With no prefetch_fn, the prescreen defaults to filter_fn(title, "").
+        A short-form politburo listing title (econ keyword only in the body) is
+        passed by the permissive prescreen but NOT by filter_fn(title, "") —
+        proving the two differ and that _archive_day_items uses the permissive
+        one when supplied."""
+        short_title = "中共中央政治局召开会议 习近平主持"
+        self._write_month(tmp_path, "2024-04", [
+            _archive_row_lt("2024-04-30", self._STUB_TITLE, "", status="stub",
+                            listing_title=short_title),
+            _archive_row_lt("2024-04-30", "国内联播快讯", "无关内容。"),
+        ])
+        # Permissive prescreen passes the short title → network fetch (None).
+        with_prefetch = _archive_day_items(
+            tmp_path, date(2024, 4, 30), _is_politburo_econ,
+            prefetch_fn=_listing_may_be_politburo_econ)
+        assert with_prefetch is None
+        # Strict default filter_fn(title, "") fails the short title → the day
+        # would be (wrongly) proven absent; this documents WHY the prefetch is
+        # threaded through rather than defaulted.
+        default_only = _archive_day_items(
+            tmp_path, date(2024, 4, 30), _is_politburo_econ)
+        assert default_only == [{"title": "国内联播快讯", "content": "无关内容。"}]
+
+
+# ---------------------------------------------------------------------------
 # 20b. Listing honesty + resumability
 # ---------------------------------------------------------------------------
 

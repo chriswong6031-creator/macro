@@ -776,6 +776,11 @@ def _archive_month_df(archive_dir_str: str, month: str) -> pd.DataFrame | None:
     """Load one YYYY-MM.parquet from the local CCTV archive (None if absent).
 
     Cached on (dir, month) so a 28-day probe window reads its month file once.
+
+    listing_title (PR #1913) is read when the shard carries it and tolerated
+    when absent: only the 2016-02→2019-03 backfill and future repairs populate
+    it, so legacy shards lack the column entirely. The parquet schema is probed
+    first so a legacy shard is read once, not read-fail-reread.
     """
     key = (archive_dir_str, month)
     if key in _ARCHIVE_MONTH_CACHE:
@@ -783,7 +788,14 @@ def _archive_month_df(archive_dir_str: str, month: str) -> pd.DataFrame | None:
     path = Path(archive_dir_str) / f"{month}.parquet"
     df = None
     if path.exists():
-        df = pd.read_parquet(path, columns=["date", "title", "content", "fetch_status"])
+        cols = ["date", "title", "content", "fetch_status"]
+        try:
+            import pyarrow.parquet as pq
+            if "listing_title" in pq.ParquetFile(path).schema.names:
+                cols = cols + ["listing_title"]
+        except Exception:  # noqa: BLE001 — schema probe is best-effort
+            pass
+        df = pd.read_parquet(path, columns=cols)
     _ARCHIVE_MONTH_CACHE.clear()  # keep at most one month resident
     _ARCHIVE_MONTH_CACHE[key] = df
     return df
@@ -792,7 +804,8 @@ def _archive_month_df(archive_dir_str: str, month: str) -> pd.DataFrame | None:
 _ARCHIVE_MONTH_CACHE: dict[tuple[str, str], pd.DataFrame | None] = {}
 
 
-def _archive_day_items(archive_dir: Path, dt: date, filter_fn) -> list[dict] | None:
+def _archive_day_items(archive_dir: Path, dt: date, filter_fn,
+                       prefetch_fn=None) -> list[dict] | None:
     """Return the day's transcript items from the local archive, or None when
     the day must go to the network instead.
 
@@ -800,11 +813,25 @@ def _archive_day_items(archive_dir: Path, dt: date, filter_fn) -> list[dict] | N
       - an intact (fetch_status=ok) row passes the strict filter_fn → presence
         proven, return the intact rows; or
       - the day has intact rows and ZERO stub rows → absence provable, return
-        the intact rows (the scanner will find no match).
-    Anything else → None (network fallback): stub rows lose even their titles
-    (they carry the CCTV error text), so a stubbed day can silently hide the
-    readout — measured live 2026-07-07: the 2019/2022/2024 CEWC readouts were
-    all stub rows and a title-based stub check missed every one.
+        the intact rows (the scanner will find no match); or
+      - the day HAS stub rows but every stub row carries a non-empty
+        listing_title (PR #1913) and NONE of those real titles pass the
+        permissive listing prescreen → absence provable from the listing alone,
+        return the intact rows.
+    Anything else → None (network fallback): a title-less stub row (legacy
+    shard, or listing fetch failed) can silently hide the readout — measured
+    live 2026-07-07: the 2019/2022/2024 CEWC readouts were all stub rows and a
+    title-based stub check missed every one.
+
+    prefetch_fn (title -> bool): the permissive Phase-1 listing prescreen used
+    to test the stub rows' recorded listing titles. filter_fn(title, "") is too
+    strict for short-form listing titles (the economic keyword lives only in the
+    body), so we mirror _cctv_scan_dates: default to filter_fn(title, "") only
+    when no prefetch_fn is supplied.
+
+    The listing_title path is strictly opt-in per row: a stub row with an empty
+    or absent listing_title (every legacy shard, and any day whose listing fetch
+    failed) keeps the conservative network fallback.
     """
     df = _archive_month_df(str(archive_dir), dt.strftime("%Y-%m"))
     if df is None:
@@ -817,6 +844,24 @@ def _archive_day_items(archive_dir: Path, dt: date, filter_fn) -> list[dict] | N
     if any(filter_fn(str(it["title"]), str(it["content"])) for it in items):
         return items
     if len(ok) < len(day):
+        # Day has stub/error rows. Try to prove absence from the recorded
+        # listing titles before conceding the whole day to the network.
+        stubs = day[day["fetch_status"] != "ok"]
+        listing_titles = (
+            stubs["listing_title"].fillna("").astype(str).tolist()
+            if "listing_title" in day.columns else []
+        )
+        # Opt-in per row: EVERY stub row must carry a non-empty listing_title.
+        if listing_titles and all(listing_titles):
+            prescreen = prefetch_fn if prefetch_fn is not None else (
+                lambda t: filter_fn(t, "")
+            )
+            candidates = {
+                t for lt in listing_titles for t in lt.split("\n") if t
+            }
+            if any(prescreen(t) for t in candidates):
+                return None  # a real title may be the readout → fetch the body
+            return items  # no listing title matches → absence proven, answer locally
         return None
     return items if items else None
 
@@ -931,7 +976,7 @@ def _cctv_scan_dates(session: Any, known_ids: set[str],
         # Archive fast path: read the day locally when covered — zero network.
         items = None
         if archive_dir is not None:
-            items = _archive_day_items(archive_dir, dt, filter_fn)
+            items = _archive_day_items(archive_dir, dt, filter_fn, prefetch_fn=prefetch)
             if items is not None:
                 checked += 1
                 archive_days += 1
