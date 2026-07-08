@@ -709,13 +709,13 @@
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           {# who_controls chip #}
           <span class="chip {{ 'c-info' if _who == 'offshore' else ('c-warn' if _who in ('retail','margin') else ('c-up' if _who == 'institutional' else 'c-muted')) }}">
-            {{ t('controls: ' + _who.replace('_',' '), '控盘：' + _who.replace('_',' ')) }}</span>
+            {{ t('controls: ' + _who.replace('_',' '), '控盘：' + tr(_who.replace('_',' '))) }}</span>
           {# policy_impulse chip #}
           <span class="chip {{ 'c-up' if _impulse in ('easing','market_rescue') else ('c-info' if _impulse == 'targeted_support' else ('c-down' if _impulse == 'tightening' else 'c-muted')) }}">
-            {{ t('policy: ' + _impulse.replace('_',' '), '政策：' + _impulse.replace('_',' ')) }}</span>
+            {{ t('policy: ' + _impulse.replace('_',' '), '政策：' + tr(_impulse.replace('_',' '))) }}</span>
           {# risk chip #}
           <span class="chip {{ 'c-down' if _risk in ('frothy','fire_sale') else ('c-warn' if _risk == 'normal' else 'c-muted') }}">
-            {{ t('risk: ' + _risk, '风险：' + _risk) }}</span>
+            {{ t('risk: ' + _risk, '风险：' + tr(_risk)) }}</span>
         </div>
         {# top contradiction line #}
         {% if _contradictions %}

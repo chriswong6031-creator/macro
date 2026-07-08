@@ -190,9 +190,9 @@
     {% set regime = lpl.get('regime') or '—' %}
     {% set who = lpl.get('who_controls') or '—' %}
     {% set risk = lpl.get('risk') or '—' %}
-    <span class="chip {{ 'c-up' if regime in ('retail_ignition','margin_acceleration','broad_mania') else ('c-down' if regime in ('forced_deleveraging','distribution') else ('c-warn' if regime == 'unclear' else 'c-muted')) }}">{{ t(regime.replace('_',' ').title(), regime.replace('_',' ')) }}</span>
-    <span class="chip c-info">{{ t('who controls: ' + who, '控盘方：' + who) }}</span>
-    <span class="chip {{ 'c-down' if risk in ('frothy','fire_sale') else ('c-warn' if risk == 'normal' else 'c-up') }}">{{ t('risk: ' + risk, '风险：' + risk) }}</span>
+    <span class="chip {{ 'c-up' if regime in ('retail_ignition','margin_acceleration','broad_mania') else ('c-down' if regime in ('forced_deleveraging','distribution') else ('c-warn' if regime == 'unclear' else 'c-muted')) }}">{{ t(regime.replace('_',' ').title(), tr(regime.replace('_',' ').title())) }}</span>
+    <span class="chip c-info">{{ t('who controls: ' + who, '控盘方：' + tr(who.replace('_',' '))) }}</span>
+    <span class="chip {{ 'c-down' if risk in ('frothy','fire_sale') else ('c-warn' if risk == 'normal' else 'c-up') }}">{{ t('risk: ' + risk, '风险：' + tr(risk)) }}</span>
     {% if lpl.get('as_of') or lp.get('as_of') %}<span style="font-size:11px;color:var(--muted)">{{ t('as of', '截至') }} {{ lpl.get('as_of') or lp.get('as_of') }}</span>{% endif %}
   </div>
 
