@@ -21,9 +21,13 @@ Defaults:
     --publish : disabled unless flag is passed
 
 SCHEDULING NOTE:
-    This script is NOT wired into any nightly schedule. Scheduling follows once the
-    flow-ops lane settles and the PRISM tab in the Terminal is ready to consume the
-    artifact. See research/momoedge/MASTER_BUILD_DOCKET.md for the wiring plan.
+    Wired as a launchd lane (NOT daily.yml — the GH runner cannot see the theta store).
+    ops/launchd/com.macro.optionsmatrix.plist fires weekdays at 19:00 local via
+    ops/launchd/run_with_env.sh + /Users/chriswong/flow-ops-wt/.env.
+    The runner ops/launchd/run_options_matrix.sh gates on SPY EOD store freshness
+    (expected_last_session per lib/nyse_calendar) with bounded retry (20-min sleep,
+    max 6 attempts = 2h window) before invoking this script with --publish.
+    Set MATRIX_FRESHNESS_BYPASS=1 to skip the wait (one-shot smoke / CI).
 
 INERT per-root: each root failure logs + skips; never aborts the run.
 DISPLAY-TIER: no ranking, scoring, or money-path interaction.
