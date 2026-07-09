@@ -352,15 +352,19 @@ class TestQuarterDetection:
 # ---------------------------------------------------------------------------
 
 class TestStoreAbsent:
-    def test_store_absent_returns_none(self, tmp_path):
-        """_find_store returns None when store doesn't exist and env not set."""
-        from collectors.dol_labor_certs import _find_store
+    def test_store_absent_returns_none(self, tmp_path, monkeypatch):
+        """_find_store returns None when store doesn't exist and env not set.
 
-        # Clear env
+        Hermetic: the real main-checkout store may exist on this machine (it
+        does since the 2026-07-09 first ingest), so the fallback constant is
+        patched to a nonexistent path."""
+        import collectors.dol_labor_certs as d
+
+        monkeypatch.setattr(d, "_MAIN_CHECKOUT_STORE", tmp_path / "nope" / "certs.parquet")
         with mock.patch.dict(os.environ, {}, clear=True):
             if "DOL_CERTS_STORE" in os.environ:
                 del os.environ["DOL_CERTS_STORE"]
-            result = _find_store(tmp_path)
+            result = d._find_store(tmp_path)
 
         assert result is None
 
@@ -377,20 +381,24 @@ class TestStoreAbsent:
 
         assert result == store_path
 
-    def test_env_override_missing_path_warns_and_continues(self, tmp_path, caplog):
-        """DOL_CERTS_STORE pointing to nonexistent path → warning, not crash."""
-        from collectors.dol_labor_certs import _find_store
+    def test_env_override_missing_path_warns_and_continues(self, tmp_path, caplog, monkeypatch):
+        """DOL_CERTS_STORE pointing to nonexistent path → warning, not crash.
+
+        Hermetic: main-checkout fallback patched out (real store exists on
+        this machine since the 2026-07-09 first ingest)."""
+        import collectors.dol_labor_certs as d
         import logging
 
+        monkeypatch.setattr(d, "_MAIN_CHECKOUT_STORE", tmp_path / "nope" / "certs.parquet")
         bad_path = tmp_path / "doesnt_exist" / "certs.parquet"
 
         with mock.patch.dict(os.environ, {"DOL_CERTS_STORE": str(bad_path)}):
             with caplog.at_level(logging.WARNING):
-                result = _find_store(tmp_path)
+                result = d._find_store(tmp_path)
 
         # Should not find the store (path doesn't exist)
         assert result is None
-        # Warning should mention the bad path
+        # Warning should mention the store path problem
         assert "DOL_CERTS_STORE" in caplog.text
 
 
@@ -509,3 +517,28 @@ class TestPermFy2026Layout:
         })
         out = _normalize_df(raw, "perm", _PERM_COLS, "2026-07-09")
         assert len(out) == 0
+
+
+class TestStoreEnvSemantics:
+    """Regression: DOL_CERTS_STORE names the store DIRECTORY (THETADATA_STORE
+    convention); a directory value must never resolve one level up (2026-07-09
+    incident wrote data/certs.parquet into git-swept territory)."""
+
+    def test_env_directory_value(self, tmp_path, monkeypatch):
+        from collectors.dol_labor_certs import _store_dir, _env_store_file
+        store_dir = tmp_path / "dol_certs"
+        monkeypatch.setenv("DOL_CERTS_STORE", str(store_dir))
+        assert _store_dir(tmp_path) == store_dir
+        assert _env_store_file(tmp_path) == store_dir / "certs.parquet"
+
+    def test_env_file_value_backcompat(self, tmp_path, monkeypatch):
+        from collectors.dol_labor_certs import _store_dir, _env_store_file
+        f = tmp_path / "custom" / "my_certs.parquet"
+        monkeypatch.setenv("DOL_CERTS_STORE", str(f))
+        assert _env_store_file(tmp_path) == f
+        assert _store_dir(tmp_path) == f.parent
+
+    def test_no_env_defaults(self, tmp_path, monkeypatch):
+        from collectors.dol_labor_certs import _store_dir
+        monkeypatch.delenv("DOL_CERTS_STORE", raising=False)
+        assert _store_dir(tmp_path) == tmp_path / "data" / "dol_certs"
