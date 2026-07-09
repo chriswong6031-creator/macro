@@ -51,6 +51,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | short-side | 1 |
 | signal-commons | 8 |
 | stock-personality | 5 |
+| tech-internals | 1 |
 | thematic-intelligence | 12 |
 | us-stocks-prebreakout | 2 |
 
@@ -58,7 +59,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 177 |
+| display | 178 |
 | infrastructure | 77 |
 | scored | 4 |
 | shadow | 46 |
@@ -67,7 +68,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 292 |
+| git | 293 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -567,6 +568,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | stock-personality-panel | `data/stock_personality/panel/YYYY-MM/panel.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | stock-personality-block | `embedded: personality block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 0 | 0 |
 | stock-personality-forward-ledger | `data/stock_personality/forward_ledger.parquet` | parquet | daily-engine | shadow | 0 | 0 |
+
+### tech-internals
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-factordata-tech-lab | `site/factordata/tech_lab.json` | json | daily-engine | display | 1 | 0 |
 
 ### thematic-intelligence
 
