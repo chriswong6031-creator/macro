@@ -768,6 +768,185 @@
   </section>
 </div>
 
+<!-- ── TAPE-ONSET (unconfirmed) display tier (FTR W7) ─────────────────────── -->
+<!-- Registration: research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md            -->
+<!-- DISPLAY-ONLY — feeds no score, gate, or ordering surface                 -->
+<div class="wrap">
+  <section class="tpo-section" id="tpo-section" aria-label="Tape-Onset Display">
+<style>
+  .tpo-section { margin:44px 2px 0; }
+  .tpo-section h2 { font-size:19px; font-weight:800; letter-spacing:-.015em; margin:0 0 5px; }
+  .tpo-sub { color:var(--muted); font-size:12.5px; margin-bottom:14px; max-width:82ch; line-height:1.55; }
+  .tpo-quiet { color:var(--muted); font-size:13px; padding:18px 0; }
+  .tpo-grid { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .tpo-node-card { flex:1 1 220px; min-width:180px; border-radius:11px; border:1px solid var(--line);
+    background:var(--panel); padding:11px 14px; }
+  .tpo-node-name { font-weight:800; font-size:13px; margin-bottom:4px; }
+  .tpo-flag-badge { display:inline-block; font-size:9.5px; font-weight:700; text-transform:uppercase;
+    padding:2px 7px; border-radius:6px; margin-left:5px; vertical-align:middle;
+    background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn); }
+  .tpo-rates { font-size:10.5px; color:var(--muted); margin-top:4px; line-height:1.5; }
+  .tpo-rates b { color:var(--text); }
+  .tpo-caveats { margin-top:14px; padding:11px 14px; border-radius:10px;
+    background:color-mix(in srgb,var(--muted) 6%,transparent); border:1px solid var(--line);
+    font-size:11.5px; color:var(--muted); line-height:1.6; }
+  .tpo-caveats strong { color:var(--text); }
+  .tpo-unconfirmed-note { margin-top:6px; font-size:10.5px; color:var(--warn); font-style:italic; }
+  @media (max-width:520px){ .tpo-grid { flex-direction:column; } }
+</style>
+
+    <h2>📡 <span class="l-en">TAPE-ONSET (unconfirmed)</span><span class="l-zh">TAPE-ONSET（未确认）</span></h2>
+    <p class="tpo-sub"><span class="l-en">Raw acceleration spike detected (accel_z ≥ 1.0, unsmoothed) with short-term velocity above long-term velocity and no active confirmed rotation episode — the earliest possible detection signal, with its measured noise rate printed beside each flag. DISPLAY-ONLY — unconfirmed qualifier always shown; feeds no score, gate, or ordering surface. Registration: research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md.</span><span class="l-zh">检测到原始加速度峰值（accel_z ≥ 1.0，未平滑），短期速度高于长期速度且无活跃已确认轮动情节——这是最早期的探测信号，旁边显示其实测噪声率。仅供展示——始终显示"未确认"限定词；不驱动任何评分、门控或排序。登记：research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md。</span></p>
+
+    <div id="tpo-content">
+      <p class="tpo-quiet">
+        <span class="l-en">Loading…</span><span class="l-zh">加载中…</span>
+      </p>
+    </div>
+
+    <script>
+    (function(){
+    'use strict';
+    function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+    function t(en,zh){return isZh()&&zh?zh:en;}
+    function pct(v){ return v!=null ? (v*100).toFixed(1)+'%' : '—'; }
+
+    var ARTIFACT = 'basketdata/oracle_tape_onset.json';
+
+    // ETF → sector name map (mirrors TM_SEC_NAMES above; duplicated here so the
+    // section script is self-contained per the inline-JS safety rule)
+    var _SECTOR_NAMES = {
+      XLB:{en:'Materials',zh:'材料'},          XLC:{en:'Comm Services',zh:'通信'},
+      XLE:{en:'Energy',zh:'能源'},              XLF:{en:'Financials',zh:'金融'},
+      XLI:{en:'Industrials',zh:'工业'},         XLK:{en:'Technology',zh:'科技'},
+      XLP:{en:'Cons Staples',zh:'必需消费'},    XLRE:{en:'Real Estate',zh:'房地产'},
+      XLU:{en:'Utilities',zh:'公用事业'},        XLV:{en:'Health Care',zh:'医疗保健'},
+      XLY:{en:'Cons Discretionary',zh:'可选消费'}
+    };
+    function _nodeName(nodeId){
+      var m = _SECTOR_NAMES[nodeId];
+      if(m) return isZh() ? m.zh : m.en;
+      return nodeId;
+    }
+
+    function render(d){
+      var el = document.getElementById('tpo-content');
+      if(!el) return;
+      var nodes = d.nodes || {};
+      var asof  = d.asof || '';
+      var flagged = [];
+      var unflagged = [];
+      Object.keys(nodes).sort().forEach(function(nid){
+        var v = nodes[nid];
+        if(v.tape_onset_unconfirmed) flagged.push(nid);
+        else unflagged.push(nid);
+      });
+
+      if(!flagged.length){
+        el.innerHTML = '<p class="tpo-quiet">'
+          + t('No nodes currently flagged — quiet tape state is a valid state. (as-of: ','当前无节点标记——安静磁带状态是有效状态。（截至：')
+          + esc(asof) + ')</p>'
+          + _caveatsHtml(asof);
+        return;
+      }
+
+      var gridHtml = '<div class="tpo-grid">';
+      flagged.forEach(function(nid){
+        var v = nodes[nid];
+        var st = v.tape_onset_stats || {};
+        var p5 = pct(st.p_onset_5d);
+        var fp5 = pct(st.false_positive_5d);
+        var p10 = pct(st.p_confirmed_10d);
+        var wStart = st.window_start || '—';
+        var wEnd   = st.window_end   || '—';
+        var nf = st.n_flags != null ? st.n_flags : '—';
+
+        // Tooltip content: rates + window (registration §3 copy)
+        var tipEn = nf+' historical flags ('+wStart+'→'+wEnd+'): '
+          +p5+' reach smoothed onset in 5d; '
+          +fp5+' noise rate (5d); '
+          +p10+' reach confirmed episode in 10d. Not a forecast.';
+        var tipZh = nf+'次历史标记（'+wStart+'→'+wEnd+'）：'
+          +p5+'在5日内达到平滑启动；'
+          +fp5+'噪声率（5日）；'
+          +p10+'在10日内达到确认情节。非预测。';
+
+        gridHtml += '<div class="tpo-node-card" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
+          + '<div class="tpo-node-name">'
+          + esc(_nodeName(nid))
+          + '<span class="tpo-flag-badge">'
+          + t('TAPE-ONSET (unconfirmed)', 'TAPE-ONSET（未确认）')
+          + '</span>'
+          + '</div>'
+          + '<div class="tpo-rates">'
+          + '<b>' + t('5d onset rate: ', '5日启动率：') + '</b>' + p5
+          + ' &nbsp;|&nbsp; '
+          + '<b>' + t('noise: ', '噪声率：') + '</b>' + fp5
+          + '<br><b>' + t('10d confirmed: ', '10日确认率：') + '</b>' + p10
+          + '<br><span style="font-size:10px">' + t('measured ', '实测 ') + esc(wStart) + ' → ' + esc(wEnd) + '</span>'
+          + '</div>'
+          + '<p class="tpo-unconfirmed-note">'
+          + t('Unconfirmed — raw signal, not an episode.', '未确认——原始信号，非情节。')
+          + '</p>'
+          + '</div>';
+      });
+      gridHtml += '</div>';
+
+      el.innerHTML = gridHtml + _caveatsHtml(asof);
+    }
+
+    function _caveatsHtml(asof){
+      return '<div class="tpo-caveats">'
+        + '<strong>'
+        + t('TAPE-ONSET (unconfirmed) — display tier, registered 2026-07-09.',
+            'TAPE-ONSET（未确认）——展示层级，登记日期2026-07-09。')
+        + '</strong><br>'
+        + t(
+          'Raw accel_z ≥ 1.0 (unsmoothed) AND vel_1w > vel_3m AND no active episode — '
+          +'same threshold as episode onset, unsmoothed so fires on day 1. '
+          +'Rates printed from data, never hardcoded. Evaluation clock: 2026-10-09. '
+          +'Authority: display/context only — no consumer may rank, gate, size, or escalate on this flag.',
+          '原始加速度z值≥1.0（未平滑）且短期速度>长期速度且无活跃情节——'
+          +'与情节启动阈值相同，未平滑故第1天即可触发。'
+          +'发生率来自数据计算，从不硬编码。评估时钟：2026-10-09。'
+          +'权限：仅展示/上下文——任何消费方不得在此标记基础上排名、设门控、调仓位或升级。'
+        )
+        + '<br><em style="font-size:10.5px">'
+        + t('as-of: ','截至：') + esc(asof)
+        + ' &nbsp;|&nbsp; '
+        + t('Not a forecast.', '非预测。')
+        + '</em></div>';
+    }
+
+    fetch(ARTIFACT, {cache:'no-cache'})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if(!d){ throw new Error('no data'); }
+        render(d);
+      })
+      .catch(function(){
+        var el = document.getElementById('tpo-content');
+        if(el) el.innerHTML = '<p class="tpo-quiet">'
+          + '<span class="l-en">TAPE-ONSET data unavailable.</span>'
+          + '<span class="l-zh">TAPE-ONSET数据暂不可用。</span>'
+          + '</p>';
+      });
+
+    // Re-render on lang/theme change
+    var _tpoObs = new MutationObserver(function(){
+      fetch(ARTIFACT, {cache:'no-cache'})
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){ if(d) render(d); })
+        .catch(function(){});
+    });
+    _tpoObs.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang','data-theme']});
+    })();
+    </script>
+
+  </section>
+</div>
+
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
