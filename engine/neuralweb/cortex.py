@@ -118,6 +118,12 @@ _READ_TOOLS = frozenset({
     "read_context_candidates",
     # TIL W5 NW citizenship: thematic state read tools (display/context only)
     "read_theme_state",
+    "read_theme_thesis",
+    "read_theme_pathways",
+    # Cortex-schema parity fix (2026-07-09): these two rode in _ASK_READ_TOOLS
+    # without cortex schemas (pre-existing red on test_ask_whitelist_schema_consistency)
+    "read_liquidity_plumbing",
+    "read_china_decision_packet",
     # CHF W5: read-only causal mechanism cards + screened edges + null count
     "read_causal_candidates",
 })
@@ -871,6 +877,38 @@ def _tool_read_theme_state(root: Path, params: dict) -> dict:
     return _ask_brain_read(root, params)
 
 
+def _tool_read_theme_thesis(root: Path, params: dict) -> dict:
+    """Read site/neuralwebdata/theme_thesis.json — TIL thesis ledger projection.
+
+    Optional param: theme_id. Delegates to ask_brain handler (single source).
+    DISPLAY-ONLY ceiling; no write path; is_context_only always true.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_theme_thesis as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
+def _tool_read_theme_pathways(root: Path, params: dict) -> dict:
+    """Read site/neuralwebdata/theme_pathways.json — TIL beneficiary/loser graph.
+
+    Optional param: theme_id. Delegates to ask_brain handler (single source).
+    TI-R5 fence: context only, never a rotation call. No write path.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_theme_pathways as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
+def _tool_read_liquidity_plumbing_cx(root: Path, params: dict) -> dict:
+    """Read the liquidity-plumbing organ summary (delegates to ask_brain)."""
+    from engine.neuralweb.ask_brain import _tool_read_liquidity_plumbing as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
+def _tool_read_china_decision_packet_cx(root: Path, params: dict) -> dict:
+    """Read the China decision packet summary (delegates to ask_brain)."""
+    from engine.neuralweb.ask_brain import _tool_read_china_decision_packet as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
 def _tool_list_factor_contradictions(root: Path, params: dict) -> dict:
     """Read data/neuralweb/factor_contradictions.jsonl (RUL-NW3).
 
@@ -1295,6 +1333,14 @@ def dispatch_tool(
     elif tool_name == "read_theme_state":
         # TIL W5 NW citizenship: thematic-state compact read (display/context only)
         return _tool_read_theme_state(root, tool_params)
+    elif tool_name == "read_theme_thesis":
+        return _tool_read_theme_thesis(root, tool_params)
+    elif tool_name == "read_theme_pathways":
+        return _tool_read_theme_pathways(root, tool_params)
+    elif tool_name == "read_liquidity_plumbing":
+        return _tool_read_liquidity_plumbing_cx(root, tool_params)
+    elif tool_name == "read_china_decision_packet":
+        return _tool_read_china_decision_packet_cx(root, tool_params)
     elif tool_name == "read_causal_candidates":
         # CHF W5: read causal mechanism cards + screened edges + null count
         return _tool_read_causal_candidates(root, tool_params)
@@ -1539,6 +1585,58 @@ def _tool_schemas() -> list[dict]:
                 },
                 "required": [],
             },
+        },
+        {
+            "name": "read_theme_thesis",
+            "description": (
+                "Read the TIL theme thesis ledger projection: per-theme thesis "
+                "(variant perception, mechanism, winner/loser classes) with "
+                "machine-evaluated falsifier statuses (ARMED/FIRED/DATA_MISSING/"
+                "QUALITATIVE). Optional param theme_id. DISPLAY-ONLY ceiling: "
+                "context or de-escalation only; never originate/score/escalate. "
+                "Fails open with structured null when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "theme_id": {"type": "string", "description": "Optional theme filter"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_theme_pathways",
+            "description": (
+                "Read the TIL beneficiary/loser pathway graph: driver→bottleneck→"
+                "beneficiary/implementer chains + loser (AVOID-shaped) legs + "
+                "cross-theme node-collision map. TI-R5 fence: structural context "
+                "only — NEVER a rotation call, board ordering, or escalation. "
+                "Optional param theme_id. Fails open when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "theme_id": {"type": "string", "description": "Optional theme filter"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_liquidity_plumbing",
+            "description": (
+                "Read the liquidity-plumbing organ summary (Fed/Treasury plumbing, "
+                "netliq context). Shadow tier, de-escalation-only by charter. "
+                "Fails open when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "read_china_decision_packet",
+            "description": (
+                "Read the China decision-packet summary (context/display only). "
+                "Fails open when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
         },
         # --- W4 context scanner: context candidates + risk lens (R-CI11) ---
         {
