@@ -1035,3 +1035,190 @@ def test_grid_sweep_regime_persistence_zero_fp():
         f"out of {len(drifts)*len(betas)*len(phis)*len(seeds)} total. "
         f"FP configs: {fp_configs}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Review fix tests (invariance-tested gate + mask alignment)
+# ---------------------------------------------------------------------------
+
+
+def test_missing_mask_caps_at_insufficient_power_with_concern():
+    """
+    When a declared split has NO mask provided (environment_masks is empty),
+    the verdict must be capped at insufficient_power — NEVER screened_candidate.
+    The concerns list must be non-empty and contain 'invariance_untested' OR
+    'no mask provided'.
+
+    This covers the 'mirage door' finding: the old code returned
+    screened_candidate with splits_tested=0 and empty concerns when
+    environment_masks was empty for all declared splits.
+    """
+    rng = np.random.default_rng(7001)
+    n = N_OBS_WEEKLY
+    dates = _make_dates(n)
+
+    cause_vals = rng.standard_normal(n)
+    target_vals = np.zeros(n)
+    lag = 1
+    for t in range(lag, n):
+        target_vals[t] = 0.9 * cause_vals[t - lag] + rng.standard_normal() * 0.1
+    cause = pd.Series(cause_vals, index=dates)
+    target = pd.Series(target_vals, index=dates)
+
+    # Declare 2 environment splits but provide NO masks
+    env_splits = [
+        EnvironmentSplit("high_vol", "High vol regime"),
+        EnvironmentSplit("low_vol", "Low vol regime"),
+    ]
+    spec = _make_spec(lags=[lag], horizon_d=1, env_splits=env_splits)
+
+    result = run_battery(
+        spec, cause, target,
+        priors={},
+        environment_masks={},   # empty — no masks provided
+        hermetic=True,
+    )
+
+    assert result.verdict != "screened_candidate", (
+        f"screened_candidate MUST NOT be returned when declared splits "
+        f"have no masks: splits_declared={result.splits_declared}, "
+        f"splits_tested={result.splits_tested}, concerns={result.concerns}"
+    )
+    assert result.concerns, (
+        f"concerns list must be non-empty when splits are untested: "
+        f"verdict={result.verdict!r}"
+    )
+    # splits_tested must be 0 when no masks were provided
+    assert result.splits_tested == 0, (
+        f"splits_tested should be 0 when no masks provided, got {result.splits_tested}"
+    )
+    # Must have a concern mentioning the missing mask
+    mask_concerns = [
+        c for c in result.concerns
+        if "no mask" in c.lower() or "invariance_untested" in c.lower()
+    ]
+    assert mask_concerns, (
+        f"Expected concern about missing mask or invariance_untested; "
+        f"got concerns={result.concerns}"
+    )
+
+
+def test_all_splits_tested_allows_screened_candidate():
+    """
+    When all declared splits are tested cleanly (masks provided, sufficient n),
+    the verdict CAN be screened_candidate if placebos pass.
+
+    This is the positive case: splits_tested == splits_declared AND the
+    effect is genuinely present in both splits.
+    """
+    rng = np.random.default_rng(7002)
+    n = N_OBS_WEEKLY
+    dates = _make_dates(n)
+
+    # Strong planted effect (iid cause so neg-lag stays quiet)
+    cause_vals = rng.standard_normal(n)
+    target_vals = np.zeros(n)
+    lag = 1
+    for t in range(lag, n):
+        target_vals[t] = 0.85 * cause_vals[t - lag] + rng.standard_normal() * 0.1
+    cause = pd.Series(cause_vals, index=dates)
+    target = pd.Series(target_vals, index=dates)
+
+    # Declare one environment split with a clean 50/50 mask
+    half = n // 2
+    split_mask = np.zeros(n, dtype=bool)
+    split_mask[:half] = True
+    env_splits = [
+        EnvironmentSplit("first_half", "First half of sample"),
+    ]
+    spec = _make_spec(lags=[lag], horizon_d=1, env_splits=env_splits)
+
+    result = run_battery(
+        spec, cause, target,
+        priors={},
+        environment_masks={"first_half": split_mask},
+        hermetic=True,
+    )
+
+    # With a strong planted effect and a clean mask, verdict should be
+    # screened_candidate (or era_specific if era divergence fires, but
+    # NOT insufficient_power due to untested splits).
+    assert result.splits_tested == result.splits_declared, (
+        f"splits_tested={result.splits_tested} != "
+        f"splits_declared={result.splits_declared}"
+    )
+    assert result.verdict in ("screened_candidate", "era_specific", "unstable"), (
+        f"Expected screened_candidate/era_specific/unstable with clean masks; "
+        f"got {result.verdict!r}, concerns={result.concerns}"
+    )
+    # Must NOT be insufficient_power from the invariance gate
+    if result.verdict == "insufficient_power":
+        pytest.fail(
+            f"insufficient_power fired despite all splits being tested: "
+            f"splits_declared={result.splits_declared}, "
+            f"splits_tested={result.splits_tested}, concerns={result.concerns}"
+        )
+
+
+def test_mask_alignment_by_date_not_length():
+    """
+    Runner mask-alignment fixture: target dates are a strict subset of
+    regime dates with an offset — mask must align by DATE JOIN, not by
+    length slicing.
+
+    Setup:
+      - regime_dates: 500 weekly dates from 2003-01 (includes pre-target dates)
+      - target_dates: 400 weekly dates from 2005-01 (subset of regime_dates,
+        offset by ~100 periods)
+      - cause_dates: same as target_dates
+      - regime mask marks first 300 dates of regime_dates as True (high-vol)
+
+    With naive length-slicing (mask[:len(tgt_dates)] = mask[:400]):
+      the mask captures regime[0:400] which includes the offset pre-target
+      dates — the boolean values assigned to each target date are WRONG.
+
+    With date-aligned construction via _build_env_masks(regime_history, aligned_dates):
+      only the 400 target dates are looked up in the regime index, so the
+      resulting mask correctly reflects the regime state on THOSE dates.
+
+    We verify this property directly: construct a mask via the date-aligned
+    approach and verify the assignment is consistent with the regime state
+    at each aligned date.
+    """
+    import numpy as np  # noqa: F811  (already imported at module level)
+
+    # Build "regime history" as a DataFrame with transition_state column
+    regime_start = pd.date_range(start="2003-01-06", periods=500, freq="W")
+    # Mark first 300 regime dates as WARNING (high-vol), rest as STABLE
+    states = ["WARNING"] * 300 + ["STABLE"] * 200
+    regime_df = pd.DataFrame(
+        {"transition_state": states},
+        index=regime_start,
+    )
+    regime_df.index = pd.DatetimeIndex(regime_df.index)
+
+    # Target + cause dates: 400-week window starting 2005-01 (offset from regime)
+    target_dates = pd.date_range(start="2005-01-03", periods=400, freq="W")
+
+    # Build masks using the _build_env_masks function from build_causal_edges
+    from scripts.build_causal_edges import _build_env_masks
+
+    masks = _build_env_masks(regime_df, pd.DatetimeIndex(target_dates))
+    high_vol_mask = masks["high_vol_regime"]
+
+    assert len(high_vol_mask) == len(target_dates), (
+        f"mask length {len(high_vol_mask)} != target_dates length {len(target_dates)}"
+    )
+
+    # Verify correctness: for each target date, look up what state the regime
+    # was in at that date (forward-fill from regime history) and compare.
+    # The last WARNING regime date is regime_start[299]; target dates that fall
+    # AFTER regime_start[299] should be STABLE (high_vol=False).
+    last_warning_date = regime_start[299]
+    for d, hv in zip(target_dates, high_vol_mask):
+        expected_hv = (d <= last_warning_date)
+        assert hv == expected_hv, (
+            f"Date {d}: expected high_vol={expected_hv}, got {hv}. "
+            f"Last WARNING regime date={last_warning_date}. "
+            "Mask was constructed by naive length-slicing instead of date join."
+        )

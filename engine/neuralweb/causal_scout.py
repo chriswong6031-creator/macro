@@ -878,7 +878,18 @@ def _run_market_series_battery(
                 continue
             mask_aligned = mask[lag:] if lag > 0 else mask
             if len(mask_aligned) != len(y_shifted):
-                mask_aligned = mask_aligned[:len(y_shifted)]
+                # Mask length mismatch indicates a date-alignment problem in the
+                # caller (mask must be aligned to the SAME date index as the
+                # aligned cause/target series, not naively sliced to target length).
+                # Emit a mandatory concern; the bare truncation is a protocol
+                # violation that must surface.
+                concerns.append(_sanitize_text(
+                    f"lag={lag}, split={env_split.split_id}: "
+                    f"invariance_untested:{env_split.split_id} "
+                    f"(mask length {len(mask_aligned)} != aligned series length "
+                    f"{len(y_shifted)} — date-alignment mismatch; fix caller)"
+                ))
+                continue
             bool_mask = mask_aligned.astype(bool)
             bool_mask_complement = ~bool_mask
 
@@ -888,7 +899,15 @@ def _run_market_series_battery(
             yi_comp = y_shifted[bool_mask_complement]
 
             if len(xi_env) < MIN_N or len(xi_comp) < MIN_N:
-                # Not enough data in one or both splits for comparison
+                # Insufficient per-split observations — cap is enforced via
+                # splits_tested < splits_declared → insufficient_power in
+                # _synthesize_verdict.  Emit a mandatory concern (never empty).
+                concerns.append(_sanitize_text(
+                    f"lag={lag}, split={env_split.split_id}: "
+                    f"invariance_untested:{env_split.split_id} "
+                    f"(insufficient per-split n: in={len(xi_env)}, "
+                    f"complement={len(xi_comp)}, floor={MIN_N})"
+                ))
                 continue
 
             # Effect estimate in each split
@@ -1002,10 +1021,13 @@ def _run_market_series_battery(
 
     # Verdict synthesis — splits_tested uses the exact count of unique split keys
     splits_tested = len(splits_tested_set)
+    splits_declared = len(spec.environment_splits)
     verdict = _synthesize_verdict(
         screened_lags=screened_lags,
         concerns=concerns,
         era_specific_stamp=era_specific_stamp,
+        splits_declared=splits_declared,
+        splits_tested=splits_tested,
     )
 
     support = _compute_support(
@@ -1020,7 +1042,7 @@ def _run_market_series_battery(
         causal_support=support,
         concerns=[_sanitize_text(c) for c in concerns],
         stats=stats,
-        splits_declared=len(spec.environment_splits),
+        splits_declared=splits_declared,
         splits_tested=splits_tested,
         cells_logged=cells_logged,
         asof=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -1316,6 +1338,13 @@ def _run_ticker_panel_battery(
             ])
 
             if len(in_effect) < MIN_N or len(out_effect) < MIN_N:
+                # Insufficient per-split date-months — emit mandatory concern.
+                concerns.append(_sanitize_text(
+                    f"lag={lag}, split={env_split.split_id}: "
+                    f"invariance_untested:{env_split.split_id} "
+                    f"(insufficient per-split date-months: in={len(in_effect)}, "
+                    f"out={len(out_effect)}, floor={MIN_N})"
+                ))
                 continue
 
             mean_in = float(np.mean(in_effect))
@@ -1382,10 +1411,13 @@ def _run_ticker_panel_battery(
     stats["eff_n_months"] = eff_n_months
 
     splits_tested = len(splits_tested_set)
+    splits_declared = len(spec.environment_splits)
     verdict = _synthesize_verdict(
         screened_lags=screened_lags,
         concerns=concerns,
         era_specific_stamp=era_specific_stamp,
+        splits_declared=splits_declared,
+        splits_tested=splits_tested,
     )
     support = _compute_support(
         lag_stats=lag_stats,
@@ -1399,7 +1431,7 @@ def _run_ticker_panel_battery(
         causal_support=support,
         concerns=[_sanitize_text(c) for c in concerns],
         stats=stats,
-        splits_declared=len(spec.environment_splits),
+        splits_declared=splits_declared,
         splits_tested=splits_tested,
         cells_logged=cells_logged,
         asof=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -1442,8 +1474,18 @@ def _synthesize_verdict(
     screened_lags: list[int],
     concerns: list[str],
     era_specific_stamp: bool,
+    splits_declared: int = 0,
+    splits_tested: int = 0,
 ) -> str:
-    """CHF-R5 verdict vocabulary synthesis."""
+    """CHF-R5 verdict vocabulary synthesis.
+
+    Invariance-tested gate (review fix): screened_candidate REQUIRES
+    splits_tested == splits_declared when splits_declared > 0.  If any
+    declared split was untestable (mask missing, insufficient per-split n,
+    etc.) the verdict is capped at insufficient_power.  Every untested
+    split must have contributed an invariance_untested concern before this
+    function is called — the gate enforces the law, not the concern text.
+    """
     has_instability = any(
         "unstable" in c or "spans zero" in c or "invariance failure" in c
         for c in concerns
@@ -1469,7 +1511,13 @@ def _synthesize_verdict(
     if era_specific_stamp:
         return "era_specific"
 
-    # All placebos passed for the screened lags
+    # Invariance-tested gate: screened_candidate requires ALL declared splits
+    # were genuinely tested (splits_tested == splits_declared > 0).
+    # If any declared split was untestable, cap to insufficient_power.
+    if splits_declared > 0 and splits_tested < splits_declared:
+        return "insufficient_power"
+
+    # All placebos passed and all declared splits tested
     return "screened_candidate"
 
 

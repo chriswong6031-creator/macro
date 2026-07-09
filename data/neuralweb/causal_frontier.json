@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_frontier.v1",
-  "asof": "2026-07-09T07:45:26Z",
+  "asof": "2026-07-09T19:04:07Z",
   "cells": [
     {
       "cause_family": "breadth",
@@ -57,23 +57,6 @@
       "cause_family": "breadth",
       "cause_feature_id": "breadth__market_breadth",
       "target_family": "regime_risk",
-      "environment": "full",
-      "state": "unexplored",
-      "value_score": 19.0,
-      "era_coverage": [
-        "pre-2000",
-        "2000-08",
-        "2009-16",
-        "2017-20",
-        "2021+",
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "breadth",
-      "cause_feature_id": "breadth__market_breadth",
-      "target_family": "regime_risk",
       "environment": "high_vol_regime",
       "state": "unexplored",
       "value_score": 19.0,
@@ -616,16 +599,34 @@
       "state": "unexplored",
       "value_score": 16.0,
       "era_coverage": [
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "breadth",
+      "cause_feature_id": "breadth__market_breadth",
+      "target_family": "regime_risk",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -11.0,
+      "era_coverage": [
+        "pre-2000",
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
         "2022-07+"
       ],
       "data_present": true
     }
   ],
   "state_summary": {
-    "unexplored": 42
+    "unexplored": 41,
+    "null_basin": 1
   },
   "total_cells": 42,
-  "cumulative_causal_scan_width": 1,
+  "cumulative_causal_scan_width": 24,
   "value_heuristic_formula": "score = UNEXPLORED_BONUS(10 if unexplored) + DATA_PRESENT_BONUS(5 if present) + ERA_BREADTH_BONUS(min(era_coverage_len, 4) * 1.0) - NULL_BASIN_PENALTY(20 if null_basin) - KILLED_PENALTY(100 if killed)",
   "target_families": [
     "regime_risk",

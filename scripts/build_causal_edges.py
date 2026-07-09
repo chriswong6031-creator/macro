@@ -390,10 +390,6 @@ def run_batch(
                 cells_skipped += 1
                 continue
 
-            # Build environment masks aligned to the target dates
-            tgt_dates = pd.DatetimeIndex(target_series.index)
-            env_masks = _build_env_masks(regime_history, tgt_dates)
-
             # Determine era policy
             era_policy = "require_break_2010"
             if target_family == "entry_quality":
@@ -412,13 +408,38 @@ def run_batch(
                 era_policy=era_policy,
             )
 
+            # Build environment masks aligned to the INTERSECTION of cause and
+            # target dates — NOT naively to tgt_dates length (review fix: the
+            # battery aligns cause+target via pd.concat.dropna() producing an
+            # intersection index; the mask must match that intersection so that
+            # mask[lag:] in the battery aligns correctly with y_shifted).
+            cause_dates = pd.DatetimeIndex(cause_series.index)
+            tgt_dates = pd.DatetimeIndex(target_series.index)
+            aligned_dates = cause_dates.intersection(tgt_dates).sort_values()
+            env_masks = _build_env_masks(regime_history, aligned_dates)
+
             # Build environment_masks for the spec's declared splits
             spec_env_masks = {}
             for env_split in spec.environment_splits:
-                mask = env_masks.get(env_split.split_id)
-                if mask is not None:
-                    # Align to target series length
-                    aligned_mask = mask[:len(tgt_dates)]
+                aligned_mask = env_masks.get(env_split.split_id)
+                if aligned_mask is not None:
+                    n_aligned = len(aligned_dates)
+                    n_mask = len(aligned_mask)
+                    log.debug(
+                        "build_causal_edges: %s split=%s mask_coverage=%d/%d",
+                        edge_id, env_split.split_id,
+                        int(aligned_mask.sum()) if hasattr(aligned_mask, 'sum') else -1,
+                        n_aligned,
+                    )
+                    if n_mask != n_aligned:
+                        # Should never happen since _build_env_masks returns
+                        # same length as its `dates` argument — log and skip.
+                        log.warning(
+                            "build_causal_edges: %s split=%s mask length %d "
+                            "!= aligned_dates length %d — skipping split",
+                            edge_id, env_split.split_id, n_mask, n_aligned,
+                        )
+                        continue
                     spec_env_masks[env_split.split_id] = aligned_mask
 
             cells_run += 1

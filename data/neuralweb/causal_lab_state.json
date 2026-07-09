@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-07-09T07:45:27Z",
+  "asof": "2026-07-09T19:04:08Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -8,20 +8,24 @@
     "description": "Causal Hypothesis Factory \u2014 deterministic edge scout, null library, frontier coverage map, and surprise queue. All artifacts are display-tier; no authority surfaces."
   },
   "funnel": {
-    "edges_by_verdict": {},
-    "total_edges": 0,
-    "nulls_count": 0,
+    "edges_by_verdict": {
+      "insufficient_power": 3,
+      "null": 1
+    },
+    "total_edges": 4,
+    "nulls_count": 4,
     "mechanisms_by_status": {},
     "total_mechanisms": 0
   },
   "causal_scan": {
-    "cumulative_width": 1,
+    "cumulative_width": 24,
     "description": "Cumulative distinct cells logged to the causal_scan TrialLedger family. Printed on every surface per CHF-R3 launder-proof multiplicity law."
   },
   "frontier": {
     "total_cells": 42,
     "cells_by_state": {
-      "unexplored": 42
+      "unexplored": 41,
+      "null_basin": 1
     },
     "target_families": [
       "regime_risk",
