@@ -212,6 +212,26 @@ jobs:
             echo "::error title=build_china_pick_lab failed (rc=$rc)::$(tail -n 2 /tmp/cnlab.log | tr '\n' ' ' | tail -c 500)"
           fi
           exit 0
+      - name: HK Pick Lab — fire books + grade + render (HKPL-R8 asia lane, ≤2 min)
+        # Runs AFTER build_hk_library (above) so tonight's HK snapshot is on disk.
+        # CN_LANE=asia is the ledger-write gate (HKPL-R8); the step always exits 0
+        # (never-break contract). Artifacts committed in the "commit engine outputs"
+        # step below via 'git add data/ site/' which covers:
+        #   data/hk_pick_lab/  (snapshots/, fires.jsonl, grades.jsonl)
+        #   site/labdata/hk_pick_lab.json
+        #   site/hk_stocks_lab.html
+        #   site/factordata/hk_1d_velocity_desk.json  (enriched second pass)
+        env:
+          CN_LANE: asia
+        run: |
+          echo "::group::HK Pick Lab (build_hk_pick_lab)"
+          python -m scripts.build_hk_pick_lab > /tmp/hklab.log 2>&1; rc=$?
+          cat /tmp/hklab.log
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=build_hk_pick_lab failed (rc=$rc)::$(tail -n 2 /tmp/hklab.log | tr '\n' ' ' | tail -c 500)"
+          fi
+          exit 0
       - name: inject data-base shim into CN/HK pages (site-wide, no-op while DATA_BASE empty)
         run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit engine outputs

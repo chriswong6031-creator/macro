@@ -807,6 +807,19 @@ lanes:
           + THS baskets, runs 20 books + flagship2_mirror, grades via (H+L)/2 fills,
           writes site/labdata/china_pick_lab.json + site/china_stocks_lab.html.
           CN_LANE=asia required for all ledger/data writes.
+      # ── HK Pick Lab (HKPL-R8): runs AFTER build_hk_library (library step) ──
+      # build_hk_library produces the HK snapshot; build_hk_pick_lab reads it.
+      # Wired here for conformance documentation; step runs in asia-close.yml.
+      - id: build_hk_pick_lab
+        module: scripts.build_hk_pick_lab
+        note: >
+          non-fatal; ≤2 min; HK Pick Lab asia-lane runner (HKPL-R8). Reads HK
+          snapshot from data/hk_pick_lab/snapshots/, enriches with organ artifacts
+          (ADR bridge, CBBC, filing bus, narrative, catalyst calendar, standouts),
+          runs 20 books + flagship2_mirror, grades via next-HK-session close with
+          halt law, writes site/labdata/hk_pick_lab.json + site/hk_stocks_lab.html
+          + enriched site/factordata/hk_1d_velocity_desk.json.
+          CN_LANE=asia required for all ledger/data writes.
       - id: inject_data_base
         module: scripts.inject_data_base
       - id: publish_r2_asia

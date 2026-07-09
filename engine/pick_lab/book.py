@@ -298,7 +298,15 @@ def scoreboard(
         profile.avoid_engine_id if profile is not None else AVOID_ENGINE_ID
     )
     is_lh = (horizon_role == LH_HORIZON_ROLE)
-    is_avoid = (engine_id == _avoid_id)
+    # is_avoid: primary check = avoid_engine_id (or set of ids on the profile);
+    # secondary check = ruler suffix "_avoid_accuracy" (catches books like
+    # hklab_knife_avoid that share the inverse grading contract but are not
+    # the single profile.avoid_engine_id string — HKPL-R3 / spec §3 book 10).
+    _avoid_ids = (
+        set(_avoid_id) if isinstance(_avoid_id, (set, frozenset, list, tuple))
+        else {_avoid_id}
+    )
+    is_avoid = (engine_id in _avoid_ids) or ruler.endswith("_avoid_accuracy")
     horizons = LH_HORIZONS if is_lh else ENTRY_HORIZONS
 
     my_fires = _filter(fires, engine_id)

@@ -1,16 +1,18 @@
-"""Pick Lab market profile — parameterises US vs CN execution conventions.
+"""Pick Lab market profile — parameterises US vs CN vs HK execution conventions.
 
 A MarketProfile dataclass captures every market-specific constant so that
 ledger.py, grade.py, snapshot.py, and book.py can operate identically for
-both markets with defaults that preserve the existing US behaviour.
+all markets with defaults that preserve the existing US behaviour.
 
 US profile == exact current hard-coded constants (US tests stay green).
 CN profile == A-share execution law (CNPL-R3/R4/R8/R9).
+HK profile == HK execution law (HKPL-R3/R4/R5/R6/R7).
 
 Public API
 ----------
 US_PROFILE  : MarketProfile  — singleton for the US market (default everywhere)
 CN_PROFILE  : MarketProfile  — singleton for the CN A-share market
+HK_PROFILE  : MarketProfile  — singleton for the HK market
 """
 from __future__ import annotations
 
@@ -211,6 +213,24 @@ US_PROFILE = MarketProfile(
 )
 
 
+def _hk_benchmark_loader() -> Optional[pd.Series]:
+    """Load ^HSI closes from the canonical hk store group.
+
+    Returns a pd.Series indexed by DatetimeIndex, or None on failure.
+    Lazy import so the function only runs on the HK runner (not in US/CN tests).
+    """
+    try:
+        from engine.data_store import store  # type: ignore[import]
+        df = store.read("hk", "^HSI")
+        if df is None or df.empty:
+            return None
+        close = df["close"] if "close" in df.columns else df.iloc[:, 0]
+        close.index = pd.DatetimeIndex(close.index)
+        return close.sort_index()
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _cn_benchmark_loader() -> Optional[pd.Series]:
     """Load CSI 300 (510300.SS) closes from the canonical china store.
 
@@ -272,4 +292,49 @@ CN_PROFILE = MarketProfile(
     default_ruler="21d_csi300_excess",
     excess_label="ret_excess_spy",         # grade.py writes under this name;
                                            # benchmark_ticker stamp = 510300.SS
+)
+
+
+# --------------------------------------------------------------------------- #
+# HK singleton
+# --------------------------------------------------------------------------- #
+
+HK_PROFILE = MarketProfile(
+    market_id="HK",
+    fires_path=Path("data/hk_pick_lab/fires.jsonl"),
+    grades_path=Path("data/hk_pick_lab/grades.jsonl"),
+    lh_fires_path=Path("data/hk_pick_lab/lh_fires.jsonl"),   # reserved; HKPL-R9: no LH in v1
+    lh_grades_path=Path("data/hk_pick_lab/lh_grades.jsonl"), # reserved
+    snapshot_dir=Path("data/hk_pick_lab/snapshots"),
+    benchmark_ticker="^HSI",
+    benchmark_loader=_hk_benchmark_loader,
+    fill_basis="close",                     # HKPL-R4: exec = next HK session close; no price limits
+    raw_store_path_template="",             # no raw OHLC store for HK (close fill)
+    sealed_up_col=None,                     # no daily price limits in HK (HKPL-R4)
+    fillable_col=None,                      # suspension guard handled in hk.py by snapshot filter
+    entry_horizons=(5, 10, 21, 63),
+    lh_horizons=(126, 252),
+    primary_horizon=21,                     # HKPL-R3: 21-session HSI-excess is primary ruler
+    mfe_mae_sessions=25,                    # HKPL-R3: MFE/MAE descriptive window
+    random_ctrl_id="hklab_random_ctrl",
+    avoid_engine_id="hklab_chase_avoid",    # inverse book flagged as avoid (HKPL-R10)
+    refire_lockout_sessions=21,             # HKPL-R6: 21-session refire lockout
+    liq_close_min=0.0,                      # HK: no close-price floor (HK$ denominated, ADV gates)
+    liq_turnover_min=20e6,                  # HKPL-R3 defaults: 63d ADV ≥ HK$20M
+    max_picks_default=8,                    # HKPL-R6: max 8 picks/day
+    extra_fire_stamp_cols=(
+        "risk_state",
+        "peg_state",
+        "washout_state",
+        "adr_gap_pct",
+        "beta_role",
+        "vhsi_pctile",
+        "halted",
+        "halt_voided",
+    ),
+    skipped_unfillable_col=False,           # HK: no sealed-up concept
+    data_gap_col=True,                      # organ-dependent books flag disabled_stale
+    st_exclude_col=None,                    # no ST concept in HK
+    default_ruler="21d_hsi_excess",
+    excess_label="ret_excess_spy",          # grade.py column name (benchmark_ticker=^HSI stamps it)
 )

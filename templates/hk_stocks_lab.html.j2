@@ -1,0 +1,652 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{#
+  HK Pick Lab — HK candidate pick engine evaluation (display_only, ACCRUING).
+  Spec: research/HK_PICK_LAB_MASTERPLAN_BY_FABLE.md §7.
+  Data: site/labdata/hk_pick_lab.json (built nightly in asia-close lane).
+  Authority: display_only (HKPL-R1). No Long-Hold tab (HKPL-R9).
+  Ruler: 21-session ^HSI excess (HKPL-R3). Next HK session fill (HKPL-R4).
+  Halt law: halt_voided counter visible; never silent ffill (HKPL-R4).
+  The word "validated" never appears (CI-guarded).
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>HK Pick Lab — Mastermind</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.5}
+  a{text-decoration:none;color:inherit}
+  .pl-wrap{max-width:1360px;margin:0 auto;padding:0 20px 70px}
+
+  /* ── page header ── */
+  .pl-hd{padding:18px 0 10px}
+  .pl-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+  .pl-title{font-size:clamp(22px,3vw,32px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+  .pl-sub{color:var(--muted);font-size:13px;max-width:88ch}
+  .pl-asof{color:var(--muted);font-size:12px;margin-top:4px}
+  .pl-back{font-size:12.5px;color:var(--link);margin-top:6px;display:inline-block}
+
+  /* ── tabs ── */
+  .pl-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 16px}
+  .tabbtn{padding:9px 18px;font:inherit;font-size:13.5px;font-weight:700;border:1.5px solid var(--line);
+    background:var(--panel);color:var(--muted);border-radius:10px;cursor:pointer;transition:.15s}
+  .tabbtn.on{background:var(--panel2,var(--panel));color:var(--text);border-color:var(--muted)}
+
+  /* ── scoreboard tab ── */
+  .sb-note{font-size:12px;color:var(--muted);margin:0 0 12px;padding:10px 13px;
+    border:1px solid var(--line);border-left:3px solid var(--link);border-radius:10px;background:var(--panel)}
+  .sb-note b{color:var(--text)}
+  .sb-halt{font-size:12px;color:var(--muted);margin:0 0 10px;padding:8px 12px;
+    border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:9px;background:var(--panel)}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.sb-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.sb-tbl th{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);
+    color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.sb-tbl td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.sb-tbl th:first-child,table.sb-tbl td:first-child{text-align:left}
+  table.sb-tbl th.l,table.sb-tbl td.l{text-align:left}
+  table.sb-tbl tr.row-random{background:color-mix(in srgb,var(--muted) 7%,transparent);border-top:2px solid var(--line)}
+  table.sb-tbl tr.row-random td{color:var(--muted);font-style:italic}
+  table.sb-tbl tr.row-inverse td.name-cell{color:var(--warn)}
+  .pos{color:var(--up)} .neg{color:var(--down)} .neu{color:var(--muted)}
+  .family-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;
+    border:1px solid var(--line);color:var(--muted);margin-right:4px}
+  .badge-accruing{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
+    color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+  .badge-active{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--up) 50%,var(--line));
+    color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
+  .badge-stale{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));
+    color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+  .sb-yardstick-label{font-size:10px;color:var(--muted);margin-left:4px}
+  .avoid-label{font-size:10px;font-weight:700;color:var(--warn);margin-left:4px}
+
+  /* ── empty state ── */
+  .pl-empty{text-align:center;padding:60px 20px 80px;color:var(--muted)}
+  .pl-empty-icon{font-size:48px;margin-bottom:14px}
+  .pl-empty h2{font-size:20px;font-weight:700;color:var(--text);margin:0 0 8px}
+  .pl-empty p{max-width:52ch;margin:0 auto;font-size:14px;line-height:1.6}
+
+  /* ── pick cards ── */
+  .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:13px;margin-top:10px}
+  .pick-card{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--panel);
+    border-left:3px solid var(--info,#4c8bf5)}
+  .pick-card.avoid-card{border-left-color:var(--down)}
+  .pick-card:hover{border-color:var(--muted);background:var(--panel2,var(--panel))}
+  .pick-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .pick-rank{font-size:11px;color:var(--muted);font-weight:600;min-width:22px}
+  .pick-tk{font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .pick-close{font-size:13px;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .pick-sector{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .pick-why{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0}
+  .why-chip{font-size:11px;padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted);background:transparent}
+  .why-chip.accent{color:var(--text);border-color:var(--muted)}
+  .pick-feats{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .pick-feats span b{color:var(--text)}
+
+  /* ── book section header ── */
+  .book-section{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+  .book-section:first-child{border-top:none;padding-top:0;margin-top:0}
+  .book-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .book-name{font-size:16px;font-weight:750}
+  .book-sb{font-size:12px;color:var(--muted)}
+  .no-picks{font-size:13px;color:var(--muted);padding:14px 0;font-style:italic}
+  .stale-banner{font-size:12px;color:var(--warn);padding:9px 13px;margin-top:8px;
+    border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
+    border-left:3px solid var(--warn);border-radius:9px;background:color-mix(in srgb,var(--warn) 6%,var(--panel))}
+
+  /* ── avoid book warning ── */
+  .avoid-banner{font-size:12.5px;padding:10px 13px;margin-bottom:10px;
+    border:1.5px solid color-mix(in srgb,var(--down) 50%,var(--line));
+    border-radius:10px;background:color-mix(in srgb,var(--down) 8%,var(--panel));color:var(--down)}
+  .avoid-banner b{color:var(--down)}
+
+  /* ── recent fires table ── */
+  .fires-hd{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+  table.fires-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  table.fires-tbl th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.fires-tbl td{padding:5px 8px;border-bottom:1px solid var(--line)}
+  table.fires-tbl tr:last-child td{border-bottom:none}
+  .halt-chip{font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;
+    border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
+    color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent);margin-left:4px}
+
+  /* ── stale-cross diagnostic (1D tab) ── */
+  .stale-cross-box{border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    background:var(--panel);margin-top:20px}
+  .stale-cross-box h3{font-size:14px;font-weight:700;margin:0 0 6px}
+  .stale-cross-note{font-size:12.5px;color:var(--muted);margin:0 0 10px;line-height:1.5}
+  .stale-cross-empty{font-size:12.5px;color:var(--muted);font-style:italic}
+  .diag-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px}
+  @media(max-width:700px){.diag-grid{grid-template-columns:1fr}}
+  .diag-col{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel2,var(--panel))}
+  .diag-col h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 8px}
+
+  /* ── all-books chip selector ── */
+  .book-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .book-chip{font-size:12.5px;padding:6px 13px;border:1.5px solid var(--line);border-radius:9px;
+    background:transparent;color:var(--muted);cursor:pointer;font-weight:600;transition:.13s}
+  .book-chip.on{background:var(--panel2,var(--panel));color:var(--text);border-color:var(--muted)}
+  .book-chip .fam{font-size:10px;font-weight:700;color:var(--muted);margin-left:4px}
+  .book-chip.chip-avoid{border-color:color-mix(in srgb,var(--down) 40%,var(--line));color:var(--down)}
+
+  /* ── method tab ── */
+  .method-body{max-width:78ch;line-height:1.7}
+  .method-body h3{font-size:14.5px;font-weight:720;margin:20px 0 6px;color:var(--text)}
+  .method-body p{color:var(--muted);font-size:13.5px;margin:0 0 10px}
+  .method-body ul{color:var(--muted);font-size:13px;padding-left:18px;margin:0 0 10px}
+  .method-body ul li{margin:4px 0}
+  .method-body .law{border-left:3px solid var(--link);padding:10px 14px;
+    background:color-mix(in srgb,var(--link) 7%,var(--panel));border-radius:0 9px 9px 0;
+    margin:12px 0;font-size:13px;color:var(--muted)}
+  .method-body .law b{color:var(--text)}
+  .method-body .kill-law{border-left:3px solid var(--down);padding:10px 14px;
+    background:color-mix(in srgb,var(--down) 6%,var(--panel));border-radius:0 9px 9px 0;
+    margin:12px 0;font-size:13px;color:var(--muted)}
+  .method-body .kill-law b{color:var(--down)}
+
+  /* ── responsive ── */
+  @media(max-width:700px){
+    .pl-wrap{padding:0 12px 60px}
+    table.sb-tbl{font-size:11.5px}
+  }
+</style>
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+<div class="pl-wrap">
+
+  <!-- ── Page header ── -->
+  <div class="pl-hd">
+    <p class="pl-eyebrow">{{ t('HK Pick Lab · Display-only · ACCRUING', 'HK选股实验室 · 仅展示 · 累积中') }}</p>
+    <h1 class="pl-title">🧪 {{ t('HK Candidate Pick Engines', '港股候选选股引擎') }}</h1>
+    <p class="pl-sub">{{ t('20 shadow books running on forward ledgers — measured against a random-control yardstick and the Hang Seng Index. Ruler: 21-session ^HSI excess (next HK session fill, close basis). All data is display-only; nothing here drives live selection or gating.', '20个影子书在前向账本上运行 — 与随机控制基准和恒生指数对比衡量。标尺：21节恒生超额（下一港股交易日入场，收盘价基准）。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。') }}</p>
+    {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
+    <a class="pl-back" href="hk_stocks.html">← {{ t('Back to HK Stock Desk', '返回港股研判台') }}</a>
+  </div>
+
+  <!-- ── Tab buttons ── -->
+  <div class="pl-tabs" role="tablist">
+    <button class="tabbtn on" data-tab="scoreboard" role="tab">{{ t('Scoreboard', '记分板') }}</button>
+    <button class="tabbtn" data-tab="velocity" role="tab">{{ t('1D Velocity HK', '1日速度港股') }}</button>
+    <button class="tabbtn" data-tab="allbooks" role="tab">{{ t('All Books', '全部书本') }}</button>
+    <button class="tabbtn" data-tab="method" role="tab">{{ t('Method', '方法') }}</button>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- TAB 1: SCOREBOARD                                                 -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="scoreboard" style="display:block">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">🧪</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('The HK lab runs in the asia-close lane nightly. The scoreboard will appear here after the first snapshot is taken and the first picks are fired.', 'HK实验室在亚盘收市通道每晚运行。首次快照拍摄并触发第一批选择后，记分板将出现在这里。') }}</p>
+    </div>
+    {% else %}
+    {% if total_halt_voided is not none %}
+    <div class="sb-halt">
+      ⚠ {{ t('Halt-voided fires this session', '本期因停牌撤销触发') }}:
+      <b>{{ total_halt_voided }}</b>
+      {{ t('(exec session halted ≥5 consecutive sessions → fire voided per HKPL-R4 halt law; never silent ffill)', '（执行节停牌≥5连续交易节 → 触发撤销，见HKPL-R4停牌法则；绝不静默填充）') }}
+    </div>
+    {% endif %}
+    <div class="sb-note">
+      <b>{{ t('How to read this table:', '如何阅读此表：') }}</b>
+      {{ t('All 20 HK entry books measured against the Random Control yardstick (pinned at bottom) and ^HSI. ACCRUING = fewer than 25 fires across 3 months — do not act on these numbers yet. STALE = organ data staler than 2 HK sessions; book disabled for that night (HKPL-R7 fail-closed). Knife Avoid and Chase Avoid are INVERSE books — expected negative excess. Do not treat their picks as buy signals.', '所有20本HK入场书均与随机控制基准（固定在底部）和恒生指数对比。ACCRUING = 3个月内少于25次触发 — 暂不据此行动。STALE = 器官数据超过2个港股交易节；该书当夜停用（HKPL-R7故障关闭）。刀口规避和追涨规避是反向书 — 预期负超额。切勿将其选择视为买入信号。') }}
+    </div>
+    <div class="tbl-scroll">
+      <table class="sb-tbl" aria-label="HK Scoreboard">
+        <thead>
+          <tr>
+            <th class="l">{{ t('Book', '书本') }}</th>
+            <th>{{ t('Fam', '族') }}</th>
+            <th>{{ t('Status', '状态') }}</th>
+            <th>{{ t('N fires', 'N触发') }}</th>
+            <th>{{ t('Halt ✗', '停牌撤') }}</th>
+            <th>{{ t('Stale nts', '停用夜') }}</th>
+            <th>{{ t('N open', 'N开放') }}</th>
+            <th>{{ t('Dates', '日期') }}</th>
+            <th>{{ t('Mo span', '月跨') }}</th>
+            <th>{{ t('WR21 abs', 'WR21绝对') }}</th>
+            <th>{{ t('WR21 HSI exc', 'WR21恒生超额') }}</th>
+            <th>{{ t('Med exc21', '中位超额21') }}</th>
+            <th>{{ t('MFE med', 'MFE中位') }}</th>
+            <th>{{ t('MAE med', 'MAE中位') }}</th>
+            <th>{{ t('Asym', '非对称') }}</th>
+            <th>{{ t('NAV exc cum', 'NAV累积超额') }}</th>
+            <th>{{ t('Max DD', '最大回撤') }}</th>
+            <th>{{ t('vs Rand', '对比随机') }}</th>
+            <th>{{ t('vs Univ', '对比全市场') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in scoreboard %}
+          <tr class="{{ 'row-random' if row.is_random else ('row-inverse' if row.is_inverse else '') }}">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">{{ row.family }}</span>
+              <span class="l-en">{{ row.name_en }}</span>
+              <span class="l-zh">{{ row.name_zh }}</span>
+              {% if row.is_random %}<span class="sb-yardstick-label">{{ t('(yardstick)', '(基准)') }}</span>{% endif %}
+              {% if row.is_inverse %}<span class="avoid-label">{{ t('NOT BUY — AVOID', '非买入 — 规避') }}</span>{% endif %}
+            </td>
+            <td>{{ row.family }}</td>
+            <td>
+              <span class="{{ row.status_badge.css }}">
+                <span class="l-en">{{ row.status_badge.label_en }}</span>
+                <span class="l-zh">{{ row.status_badge.label_zh }}</span>
+              </span>
+            </td>
+            <td>{{ row.n_fires_fmt }}</td>
+            <td class="neu">{{ row.halt_voided_fmt }}</td>
+            <td class="neu">{{ row.disabled_stale_nights_fmt }}</td>
+            <td>{{ row.n_open_fmt }}</td>
+            <td>{{ row.n_dates_fmt }}</td>
+            <td>{{ row.months_span_fmt }}</td>
+            <td class="{{ 'pos' if row.wr21_abs is not none and row.wr21_abs >= 0.5 else '' }}">{{ row.wr21_abs_fmt }}</td>
+            <td class="{{ 'pos' if row.wr21_excess is not none and row.wr21_excess > 0 else ('neg' if row.wr21_excess is not none and row.wr21_excess < 0 else '') }}">{{ row.wr21_excess_fmt }}</td>
+            <td class="{{ 'pos' if row.med_excess21 is not none and row.med_excess21 > 0 else ('neg' if row.med_excess21 is not none and row.med_excess21 < 0 else '') }}">{{ row.med_excess21_fmt }}</td>
+            <td>{{ row.mfe_med_fmt }}</td>
+            <td>{{ row.mae_med_fmt }}</td>
+            <td>{{ row.asym_fmt }}</td>
+            <td class="{{ 'pos' if row.nav_excess_cum is not none and row.nav_excess_cum > 0 else ('neg' if row.nav_excess_cum is not none and row.nav_excess_cum < 0 else '') }}">{{ row.nav_excess_cum_fmt }}</td>
+            <td class="neg">{{ row.max_dd_fmt }}</td>
+            <td class="{{ 'pos' if row.vs_random_lift is not none and row.vs_random_lift > 0 else ('neg' if row.vs_random_lift is not none and row.vs_random_lift < 0 else '') }}">{{ row.vs_random_lift_fmt }}</td>
+            <td class="{{ 'pos' if row.vs_universe_lift is not none and row.vs_universe_lift > 0 else ('neg' if row.vs_universe_lift is not none and row.vs_universe_lift < 0 else '') }}">{{ row.vs_universe_lift_fmt }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 2: 1D VELOCITY HK                                             -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="velocity" style="display:none">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">⚡</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('1D velocity picks will appear here after the first nightly build completes.', '首次夜间构建完成后，1日动能选择将出现在这里。') }}</p>
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--muted);margin:0 0 16px;max-width:88ch">
+      {{ t('Family A (books 1–5) — 1D oscillator-based entry timing on the HK tape. The hypothesis: HK has no daily price limits, so a name that prints a 1D confluence and immediately runs is showing real demand. A name that crossed on 2D/3D but did NOT blast off may have something wrong. First operator read: 2026-08-20. Ruler: 21-session ^HSI excess.', 'A族（书1–5）— 基于1日振荡器的港股入场时机。假设：港股没有涨跌停限制，因此打印1日汇流后立即上涨的个股显示真实需求。在2D/3D上穿但未立即爆发的个股可能有问题。第一次操作员读取：2026-08-20。标尺：21节恒生超额。') }}
+    </p>
+
+    {% for book in velocity_books %}
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">{{ book.name_en }}</span>
+          <span class="l-zh">{{ book.name_zh }}</span>
+        </span>
+        {% if book.disabled_stale %}
+        <span class="badge-stale">
+          <span class="l-en">STALE{% if book.stale_organ %} ({{ book.stale_organ }}){% endif %}</span>
+          <span class="l-zh">停用{% if book.stale_organ %}（{{ book.stale_organ }}）{% endif %}</span>
+        </span>
+        {% elif book.sb %}
+        <span class="book-sb">
+          {{ t('N', 'N') }}={{ book.sb.n_fires_fmt }}
+          · {{ t('WR21 HSI exc', 'WR21恒生超额') }} {{ book.sb.wr21_excess_fmt }}
+          · <span class="{{ book.sb.status_badge.css }}">
+              <span class="l-en">{{ book.sb.status_badge.label_en }}</span>
+              <span class="l-zh">{{ book.sb.status_badge.label_zh }}</span>
+            </span>
+        </span>
+        {% endif %}
+      </div>
+      {% if book.disabled_stale %}
+      <div class="stale-banner">
+        <span class="l-en">Organ data staler than 2 HK sessions — book disabled for tonight (HKPL-R7 fail-closed). No picks emitted.</span>
+        <span class="l-zh">器官数据超过2个港股交易节 — 今夜停用（HKPL-R7故障关闭）。未触发选择。</span>
+      </div>
+      {% elif book.picks_today %}
+      <div class="pick-grid">
+        {% for p in book.picks_today %}
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}<span class="why-chip accent">{{ chip }}</span>{% endfor %}
+          </div>
+          {% endif %}
+          {% if p.features %}
+          <div class="pick-feats">
+            {% for k, v in p.features.items() %}<span><b>{{ k }}</b> {{ v }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No picks today for this book.', '今日此书无选择。') }}</p>
+      {% endif %}
+
+      {% if book.recent_fires %}
+      <p class="fires-hd">{{ t('Recent graded fires', '近期已评级触发') }}</p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th>{{ t('Ticker', '代码') }}</th>
+          <th>{{ t('Fire date', '触发日期') }}</th>
+          <th>{{ t('Fill basis', '入场基准') }}</th>
+          <th>{{ t('21d HSI exc', '21日恒生超额') }}</th>
+          <th>{{ t('Status', '状态') }}</th>
+        </tr></thead>
+        <tbody>
+          {% for f in book.recent_fires %}
+          <tr>
+            <td>{{ f.ticker }}{% if f.halt_chip_en %}<span class="halt-chip"><span class="l-en">{{ f.halt_chip_en }}</span><span class="l-zh">{{ f.halt_chip_zh }}</span></span>{% endif %}</td>
+            <td>{{ f.fire_date }}</td>
+            <td class="neu">{{ f.fill_basis_label }}</td>
+            <td class="{{ 'pos' if f.ret21_excess is not none and f.ret21_excess > 0 else ('neg' if f.ret21_excess is not none and f.ret21_excess < 0 else '') }}">{{ f.ret21_excess_fmt }}</td>
+            <td>{{ f.matured_label }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    {# ── Stale-cross diagnostic (spec §3, HKPL-R10) ── #}
+    <div class="stale-cross-box">
+      <h3>{{ t('1D Blastoff vs Stale-Cross Diagnostic', '1日起飞 vs 迟滞交叉诊断') }}</h3>
+      <p class="stale-cross-note">
+        {{ t('The operator hypothesis: names that crossed 1D momentum and immediately ran (the blastoff cohort) should out-perform names that crossed 2D/3D but "based" for ≥5 sessions without running (|return since cross| < 3%). This side-by-side shows forward 21d HSI-excess for both cohorts from the same scoreboard data. Accruing — first read 2026-08-20.', '操作员假设：1日动量交叉后立即上涨（起飞群组）应优于2D/3D交叉后"盘整"≥5节未上涨（|交叉后回报|<3%）的个股。此对比显示两个群组的前向21日恒生超额（来自相同记分板数据）。累积中 — 首次读取2026-08-20。') }}
+      </p>
+      {% if stale_cross %}
+      <div class="diag-grid">
+        <div class="diag-col">
+          <h4>⚡ {{ t('1D Blastoff cohort', '1日起飞群组') }} (hklab_1d_blastoff)</h4>
+          {% set _bl = stale_cross.get('blastoff') if stale_cross else none %}
+          {% if _bl %}
+          <p style="font-size:12.5px;color:var(--muted);margin:0">
+            {{ t('N fires', 'N触发') }}: <b>{{ _bl.get('n_fires', '—') }}</b> ·
+            {{ t('Median 21d HSI exc', '中位21日恒生超额') }}: <b class="{{ 'pos' if _bl.get('med_excess21') and _bl.get('med_excess21') > 0 else ('neg' if _bl.get('med_excess21') and _bl.get('med_excess21') < 0 else '') }}">{{ '%+.1f%%'|format(_bl.get('med_excess21', 0) * 100) if _bl.get('med_excess21') is not none else '—' }}</b>
+          </p>
+          {% else %}
+          <p class="stale-cross-empty">{{ t('No data yet — accruing.', '暂无数据 — 累积中。') }}</p>
+          {% endif %}
+        </div>
+        <div class="diag-col">
+          <h4>⏱ {{ t('Stale-cross cohort', '迟滞交叉群组') }} (2D/3D ≥5 sess, |ret|&lt;3%)</h4>
+          {% set _sc = stale_cross.get('stale_cross') if stale_cross else none %}
+          {% if _sc %}
+          <p style="font-size:12.5px;color:var(--muted);margin:0">
+            {{ t('N fires', 'N触发') }}: <b>{{ _sc.get('n_fires', '—') }}</b> ·
+            {{ t('Median 21d HSI exc', '中位21日恒生超额') }}: <b class="{{ 'pos' if _sc.get('med_excess21') and _sc.get('med_excess21') > 0 else ('neg' if _sc.get('med_excess21') and _sc.get('med_excess21') < 0 else '') }}">{{ '%+.1f%%'|format(_sc.get('med_excess21', 0) * 100) if _sc.get('med_excess21') is not none else '—' }}</b>
+          </p>
+          {% else %}
+          <p class="stale-cross-empty">{{ t('No data yet — accruing.', '暂无数据 — 累积中。') }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <p class="stale-cross-empty">{{ t('Diagnostic data not yet available — will populate after the first nightly run.', '诊断数据尚不可用 — 首次夜间运行后填充。') }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 3: ALL BOOKS                                                  -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="allbooks" style="display:none">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">📚</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('All 20 HK entry books will appear here after the first nightly build.', '首次夜间构建后，所有20本HK入场书将出现在这里。') }}</p>
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
+      {{ t('Select a book to view today\'s picks and recently graded fires. Knife Avoid (Family B) and Chase Avoid (Family E) are INVERSE books — expected negative excess. STALE = organ-dependent book whose input data was staler than 2 HK sessions tonight (HKPL-R7 fail-closed).', '选择一本书查看今日选择和最近评级触发。刀口规避（B族）和追涨规避（E族）是反向书 — 预期负超额。STALE = 器官依存书，今夜输入数据超过2个港股交易节（HKPL-R7故障关闭）。') }}
+    </p>
+    <!-- book chip selector -->
+    <div class="book-chips" id="ab-chips">
+      {% for book in all_books %}
+      <button class="book-chip {{ 'on' if loop.first else '' }}{{ ' chip-avoid' if book.is_inverse else '' }}" data-ab="{{ book.engine_id }}">
+        <span class="l-en">{{ book.name_en }}</span>
+        <span class="l-zh">{{ book.name_zh }}</span>
+        <span class="fam">{{ book.family }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <!-- per-book panels -->
+    {% for book in all_books %}
+    <div class="ab-panel" id="ab-{{ book.engine_id }}" style="display:{{ 'block' if loop.first else 'none' }}">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">{{ book.family }}</span>
+          <span class="l-en">{{ book.name_en }}</span>
+          <span class="l-zh">{{ book.name_zh }}</span>
+        </span>
+        {% if book.disabled_stale %}
+        <span class="badge-stale">
+          <span class="l-en">STALE{% if book.stale_organ %} ({{ book.stale_organ }}){% endif %}</span>
+          <span class="l-zh">停用{% if book.stale_organ %}（{{ book.stale_organ }}）{% endif %}</span>
+        </span>
+        {% elif book.sb %}
+        <span class="book-sb">
+          {{ t('N fires', 'N触发') }}={{ book.sb.n_fires_fmt }}
+          · {{ t('WR21 HSI exc', 'WR21恒生超额') }} {{ book.sb.wr21_excess_fmt }}
+          · <span class="{{ book.sb.status_badge.css }}">
+              <span class="l-en">{{ book.sb.status_badge.label_en }}</span>
+              <span class="l-zh">{{ book.sb.status_badge.label_zh }}</span>
+            </span>
+        </span>
+        {% endif %}
+      </div>
+
+      {% if book.is_inverse %}
+      <div class="avoid-banner">
+        <b>
+          {% if book.engine_id == 'hklab_knife_avoid' %}
+          {{ t('NOT BUY — AVOID book (INVERSE, HKPL §3 Family B)', '非买入 — 规避书（反向，HKPL §3 B族）') }}
+          {% else %}
+          {{ t('NOT BUY — AVOID book (INVERSE, HKPL §3 Family E)', '非买入 — 规避书（反向，HKPL §3 E族）') }}
+          {% endif %}
+        </b><br>
+        {% if book.engine_id == 'hklab_knife_avoid' %}
+        <span class="l-en">Knife Avoid fires names where knife_risk=True — expected NEGATIVE 21-session ^HSI excess (avoid-accuracy scoring). Do NOT treat these as buy signals.</span>
+        <span class="l-zh">刀口规避触发knife_risk=True的个股 — 预期恒生超额为负（规避准确性评分）。切勿将这些视为买入信号。</span>
+        {% else %}
+        <span class="l-en">Chase Avoid fires names in chase_risk washout state (RSI≥70 gapped) — expected NEGATIVE 21-session ^HSI excess (avoid-accuracy scoring). Do NOT treat these as buy signals.</span>
+        <span class="l-zh">追涨规避触发chase_risk洗盘状态的个股（RSI≥70跳空）— 预期恒生超额为负（规避准确性评分）。切勿将这些视为买入信号。</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        {{ t('Ruler', '标尺') }}: {{ book.sb.ruler if book.sb else '—' }}
+      </p>
+
+      {% if book.disabled_stale %}
+      <div class="stale-banner">
+        <span class="l-en">Organ data staler than 2 HK sessions — book disabled for tonight (HKPL-R7 fail-closed).{% if book.stale_organ %} Stale organ: {{ book.stale_organ }}.{% endif %} No picks emitted.</span>
+        <span class="l-zh">器官数据超过2个港股交易节 — 今夜停用（HKPL-R7故障关闭）。{% if book.stale_organ %}停用器官：{{ book.stale_organ }}。{% endif %}未触发选择。</span>
+      </div>
+      {% elif book.picks_today %}
+      <div class="pick-grid">
+        {% for p in book.picks_today %}
+        <div class="pick-card{{ ' avoid-card' if book.is_inverse else '' }}">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}
+            <span class="why-chip{{ ' accent' if not book.is_inverse else '' }}">{{ chip }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if p.features %}
+          <div class="pick-feats">
+            {% for k, v in p.features.items() %}<span><b>{{ k }}</b> {{ v }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No picks today for this book.', '今日此书无选择。') }}</p>
+      {% endif %}
+
+      {% if book.recent_fires %}
+      <p class="fires-hd">{{ t('Recent graded fires', '近期已评级触发') }}</p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th>{{ t('Ticker', '代码') }}</th>
+          <th>{{ t('Fire date', '触发日期') }}</th>
+          <th>{{ t('Fill basis', '入场基准') }}</th>
+          <th>{{ t('21d HSI exc ret', '21日恒生超额回报') }}</th>
+          <th>{{ t('Status', '状态') }}</th>
+        </tr></thead>
+        <tbody>
+          {% for f in book.recent_fires %}
+          <tr>
+            <td>{{ f.ticker }}{% if f.halt_chip_en %}<span class="halt-chip"><span class="l-en">{{ f.halt_chip_en }}</span><span class="l-zh">{{ f.halt_chip_zh }}</span></span>{% endif %}</td>
+            <td>{{ f.fire_date }}</td>
+            <td class="neu">{{ f.fill_basis_label }}</td>
+            <td class="{{ 'pos' if f.ret21_excess is not none and f.ret21_excess > 0 else ('neg' if f.ret21_excess is not none and f.ret21_excess < 0 else '') }}">{{ f.ret21_excess_fmt }}</td>
+            <td>{{ f.matured_label }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="fires-hd" style="font-style:italic">{{ t('No graded fires yet for this book.', '此书尚无已评级触发。') }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 4: METHOD                                                      -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="method" style="display:none">
+    <div class="method-body">
+      <h3>{{ t('What this HK lab measures', '本HK实验室测量什么') }}</h3>
+      <p>{{ t('20 frozen HK candidate pick engines run in parallel on forward ledgers in the asia-close lane. Each book fires picks nightly; those picks are graded when the horizon elapses. Nothing here drives live selection. The purpose is evidence accrual: let the data tell us which HK constructions are worth a formal gauntlet.', '20个冻结HK候选选股引擎在亚盘通道的前向账本上并行运行。每本书每晚触发选择；当地平线经过时，这些选择被评级。这里没有任何内容驱动实时选股。目的是证据累积：让数据告诉我们哪些港股构造值得正式考验。') }}</p>
+
+      <h3>{{ t('Ruler (HKPL-R3)', '标尺（HKPL-R3）') }}</h3>
+      <div class="law">
+        <b>{{ t('Primary ruler: 21-session ^HSI excess — win rate + median excess. 5/10/63-session descriptive ladder also recorded. MFE/MAE over 25 sessions.', '主标尺：21节恒生（^HSI）超额 — 胜率+中位超额。同时记录5/10/63节描述性阶梯。25节MFE/MAE。') }}</b>
+        {{ t('Inverse books (Knife Avoid, Chase Avoid): scored as avoid-accuracy — expected negative 21-session excess.', '反向书（刀口规避、追涨规避）：评分为规避准确性 — 预期21节负超额。') }}
+      </div>
+
+      <h3>{{ t('Execution law (HKPL-R4)', '执行法则（HKPL-R4）') }}</h3>
+      <div class="law">
+        <b>{{ t('Exec = next HK session close (fill_basis="close"). No price limits — HK has no daily limit. Board lots ignored at ledger tier (noted, not modeled).', '执行 = 下一港股交易节收盘价（fill_basis="close"）。无涨跌停 — 港股无每日限制。账本层忽略手数（已注明，未建模）。') }}</b>
+        <b>{{ t('Halt law: if the exec session has no print, fill at the first traded session within 5 sessions, else the fire is voided (halt_voided counter). A name halted >5 consecutive sessions inside a grade window grades to last trade with halted=true — never silent ffill.', '停牌法则：若执行节无成交，在5节内首个有成交节入场，否则触发撤销（halt_voided计数）。评级窗口内连续停牌>5节的个股以最后成交价评级并标记halted=true — 绝不静默填充。') }}</b>
+      </div>
+
+      <h3>{{ t('Organ staleness (HKPL-R7)', '器官陈旧度（HKPL-R7）') }}</h3>
+      <div class="law">
+        <b>{{ t('A book input staler than 2 HK sessions disables that book for the night (fail-closed). The disabled_stale_nights counter on the scoreboard tracks how many nights each organ-dependent book was suppressed.', '书的输入数据超过2个港股交易节将使该书当夜停用（故障关闭）。记分板上的disabled_stale_nights计数器跟踪每本器官依存书被抑制的夜数。') }}</b>
+      </div>
+
+      <h3>{{ t('HK kill laws (spec §8)', 'HK禁止法则（规格§8）') }}</h3>
+      <div class="kill-law">
+        <b>{{ t('NO residual/selection momentum ranks. NO southbound delta-ranking (SB_ACCUM organ signal = legal). NO COILED books for HK. NO Connect-inclusion event books.', '无残差/选择动量排名。无南向资金增量排名（SB_ACCUM器官信号 = 合法）。无HK盘绕书。无互联互通纳入事件书。') }}</b>
+        {{ t('Inverse books (Knife Avoid, Chase Avoid) are AVOID books — expected negative excess. The 20 books use beta-role, organ-state, and leverage-mechanics constructions — not momentum factors.', '反向书（刀口规避、追涨规避）是规避书 — 预期负超额。20本书使用贝塔角色、器官状态和杠杆机制构造 — 而非动量因子。') }}
+      </div>
+
+      <h3>{{ t('Controls (HKPL-R5)', '控制变量（HKPL-R5）') }}</h3>
+      <p>{{ t('Every book is measured against two yardsticks: (1) the HK Random Control book (8 deterministic-random liquid names, seed = sha256(engine_id+asof)), visible in the scoreboard; and (2) the universe buy-anytime base rate. Every headline number is lift over both.', '每本书均与两个基准进行比较：（1）HK随机控制书（8个确定性随机流动名称，种子=sha256(engine_id+asof)），在记分板中可见；以及（2）全市场随时买入基准率。每个标题数字是相对于两者的提升。') }}</p>
+
+      <h3>{{ t('ACCRUING floor (HKPL-R6)', '累积下限（HKPL-R6）') }}</h3>
+      <div class="law">
+        <b>{{ t('No verdict language before n≥25 fires spanning ≥3 calendar months and ≥6 distinct fire dates. Refire lockout: 21 sessions (HKPL-R6). Max 8 picks/day (small HK universe ~160 names).', '在n≥25次触发跨越≥3个日历月和≥6个不同触发日期之前，无结论语言。重触锁定：21节（HKPL-R6）。每日最多8个选择（港股小宇宙约160只）。') }}</b>
+        {{ t('Until then, the status badge reads ACCRUING.', '在此之前，状态徽章显示ACCRUING。') }}
+      </div>
+
+      <h3>{{ t('No Long-Hold grid (HKPL-R9)', '无长持网格（HKPL-R9）') }}</h3>
+      <p>{{ t('HK long-hold grids are deliberately deferred: the H3/H2a edges are already accruing under their own programs. Revisit only with dedicated pre-registration.', 'HK长持网格被故意推迟：H3/H2a优势已在各自程序下累积。仅凭专用预注册方可重新审视。') }}</p>
+
+      <h3>{{ t('Candidate families', '候选族') }}</h3>
+      <ul>
+        <li><b>A — {{ t('1D Velocity:', '1日速度：') }}</b> {{ t('5 books — 1D MACD/StochRSI cross-up entry timing; cross×washout organ; ADR overnight confirmation; blastoff (3D gate miss); regime (Risk-on + peg ok).', '5本书 — 1日MACD/StochRSI交叉上穿入场时机；交叉×洗盘器官；ADR隔夜确认；起飞（3日门遗漏）；状态（风险偏好开启+联系汇率正常）。') }}</li>
+        <li><b>B — {{ t('Washout/Ignition (organ):', '洗盘/点火（器官）：') }}</b> {{ t('5 books — ignition_watch strongest state; washout×SB_ACCUM confluence; washout×buyback; pullback second-chance entry; Knife Avoid INVERSE (knife_risk=True).', '5本书 — ignition_watch最强状态；洗盘×南向积累汇流；洗盘×回购；回调第二次机会入场；刀口规避反向（knife_risk=True）。') }}</li>
+        <li><b>C — {{ t('HK-unique structure:', 'HK特有结构：') }}</b> {{ t('4 books — CBBC bear-skew forced-buy fuel; A/H discount value (H3 near-GO); short squeeze (SFC pressure+RSI reclaim); catalyst+narrative attention shock.', '4本书 — CBBC空头偏斜强制买入燃料；A/H折价价值（H3接近通过）；轧空（SFC压力+RSI收复）；催化剂+叙事关注冲击。') }}</li>
+        <li><b>D — {{ t('Beta/Regime:', '贝塔/状态：') }}</b> {{ t('3 books — amplifiers on Risk-on; cushions on Risk-off; HIBOR EASY liquidity + washout_2w rebound.', '3本书 — 风险偏好开启时的放大器；风险回避时的缓冲；HIBOR宽松流动性+2周洗盘反弹。') }}</li>
+        <li><b>E — {{ t('Ablations + Controls:', '消融+控制：') }}</b> {{ t('3 books — flagship no-gate ablation (edge_z, no signal-gate grouping); Chase Avoid INVERSE (chase_risk state, RSI≥70 gapped); HK Random Control yardstick.', '3本书 — 旗舰无门消融（edge_z，无信号门分组）；追涨规避反向（chase_risk状态，RSI≥70跳空）；HK随机控制基准。') }}</li>
+      </ul>
+
+      <h3>{{ t('Clocks', '时钟') }}</h3>
+      <ul>
+        <li>{{ t('2026-08-20 — first operator read; 1D-vs-stale-cross diagnostic first look; prune degenerate books.', '2026-08-20 — 第一次操作员读取；1日vs迟滞交叉诊断首次查看；修剪退化书本。') }}</li>
+        <li>{{ t('2026-10-09 — floor-eligible verdict window (n≥25/≥3mo/≥6 dates) for high-frequency books.', '2026-10-09 — 高频书的达标评判窗口（n≥25/≥3月/≥6日期）。') }}</li>
+        <li>{{ t('2027-01 — H3 come-back clock; hklab_ah_value re-baselines if H3 promotes/changes.', '2027-01 — H3回归时钟；H3晋升/变更时hklab_ah_value重新基准。') }}</li>
+      </ul>
+
+      {% if method_note %}
+      <h3>{{ t('Notes from last run', '上次运行说明') }}</h3>
+      <p>{{ method_note }}</p>
+      {% endif %}
+
+      <p style="margin-top:20px;font-size:11.5px;color:var(--muted)">
+        {{ t('Authority: display_only. All rows carry authority: "display_only" per HKPL-R1.', '授权：仅展示。所有行按照HKPL-R1携带授权："display_only"。') }}
+        · {{ t('Built', '生成时间') }} {{ built }}
+      </p>
+    </div>
+  </section>
+
+</div><!-- .pl-wrap -->
+
+<!-- ── inline tab-switch JS ── -->
+<script>
+(function () {
+  'use strict';
+  /* main tab switcher */
+  var tabs = document.querySelectorAll('.pl-tabs .tabbtn');
+  var panels = document.querySelectorAll('[data-tab-panel]');
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-tab');
+      tabs.forEach(function (b) { b.classList.remove('on'); });
+      panels.forEach(function (p) { p.style.display = 'none'; });
+      btn.classList.add('on');
+      var panel = document.querySelector('[data-tab-panel="' + id + '"]');
+      if (panel) panel.style.display = 'block';
+    });
+  });
+  /* All Books chip selector */
+  var chips = document.querySelectorAll('#ab-chips .book-chip');
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var id = chip.getAttribute('data-ab');
+      chips.forEach(function (c) { c.classList.remove('on'); });
+      document.querySelectorAll('.ab-panel').forEach(function (p) { p.style.display = 'none'; });
+      chip.classList.add('on');
+      var panel = document.getElementById('ab-' + id);
+      if (panel) panel.style.display = 'block';
+    });
+  });
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>
