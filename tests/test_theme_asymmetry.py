@@ -35,6 +35,7 @@ from engine.neuralweb.theme_asymmetry import (
     _leg_cyclical_dislocation,
     _leg_entry_cleanliness,
     _leg_falsifier_clarity,
+    _load_membership,
     _leg_orthogonality,
     _leg_stale_consensus_gap,
     _null_leg,
@@ -754,6 +755,85 @@ def test_run_stage_empty_root_no_crash(tmp_path):
     """Completely empty root: run_stage must not raise."""
     _make_minimal_crosswalk(tmp_path)
     run_stage(tmp_path)  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# 15. _load_membership: real membership.json schema (members-list-of-dicts)
+# ---------------------------------------------------------------------------
+
+def test_load_membership_real_schema(tmp_path):
+    """_load_membership must parse the canonical membership.json shape.
+
+    The file stores members as a list of dicts:
+        {"baskets": {"mag7": {"members": [{"ticker": "AAPL", ...}, ...], ...}, ...}}
+    Prior bug: code read `bdata.get("tickers", [])` which always returned [],
+    making membership_by_basket empty for every basket and silently killing
+    the per-member revision dispersion path in _leg_stale_consensus_gap.
+    """
+    membership_json = {
+        "version": "1",
+        "baskets": {
+            "test_basket_a": {
+                "name": "Basket A",
+                "members": [
+                    {"ticker": "AAPL", "added": "2023-01-01", "removed": None},
+                    {"ticker": "MSFT", "added": "2023-01-01", "removed": None},
+                ],
+            },
+            "test_basket_b": {
+                "name": "Basket B",
+                "members": [
+                    {"ticker": "NVDA", "added": "2023-06-01", "removed": None},
+                ],
+            },
+            "test_basket_empty": {
+                "name": "Empty",
+                "members": [],
+            },
+        },
+    }
+    membership_path = tmp_path / "data" / "baskets" / "membership.json"
+    membership_path.parent.mkdir(parents=True, exist_ok=True)
+    membership_path.write_text(
+        json.dumps(membership_json, ensure_ascii=False), encoding="utf-8"
+    )
+
+    result = _load_membership(tmp_path)
+
+    assert set(result.keys()) == {"test_basket_a", "test_basket_b", "test_basket_empty"}, (
+        f"Unexpected basket keys: {set(result.keys())}"
+    )
+    assert sorted(result["test_basket_a"]) == ["AAPL", "MSFT"], (
+        f"test_basket_a tickers wrong: {result['test_basket_a']}"
+    )
+    assert result["test_basket_b"] == ["NVDA"], (
+        f"test_basket_b tickers wrong: {result['test_basket_b']}"
+    )
+    assert result["test_basket_empty"] == [], (
+        "Empty members list should yield empty ticker list"
+    )
+
+
+def test_load_membership_absent_file(tmp_path):
+    """_load_membership returns {} when membership.json does not exist."""
+    result = _load_membership(tmp_path)
+    assert result == {}
+
+
+def test_load_membership_missing_members_key(tmp_path):
+    """_load_membership tolerates basket dicts that lack 'members' key."""
+    membership_json = {
+        "baskets": {
+            "no_members_key": {"name": "Legacy", "tickers_old_key": ["X", "Y"]},
+        }
+    }
+    membership_path = tmp_path / "data" / "baskets" / "membership.json"
+    membership_path.parent.mkdir(parents=True, exist_ok=True)
+    membership_path.write_text(json.dumps(membership_json), encoding="utf-8")
+
+    result = _load_membership(tmp_path)
+    # No crash; basket present but empty because 'members' key absent
+    assert result == {"no_members_key": []}
 
 
 # ---------------------------------------------------------------------------

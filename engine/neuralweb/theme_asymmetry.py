@@ -1199,7 +1199,12 @@ def _load_membership(root: Path) -> dict:
         d = json.loads(path.read_text(encoding="utf-8"))
         out: dict = {}
         for bid, bdata in d.get("baskets", {}).items():
-            out[bid] = bdata.get("tickers", []) if isinstance(bdata, dict) else []
+            if not isinstance(bdata, dict):
+                out[bid] = []
+                continue
+            # members is a list of dicts: [{"ticker": "AAPL", ...}, ...]
+            raw = bdata.get("members", [])
+            out[bid] = [m["ticker"] for m in raw if isinstance(m, dict) and m.get("ticker")]
         return out
     except Exception as exc:  # noqa: BLE001
         log.warning("membership.json read failed: %s", exc)
