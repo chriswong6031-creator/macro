@@ -484,6 +484,12 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
         conv = commodity_conviction.conviction(asset, df, drivers, extras, mtf_a,
                                                alert_tilt_val, conv_calib)
         vm["conviction"] = conv
+    # --- technical arming block (Policy-Shock W1-B, display-only) -------------
+    # Deterministic per-asset stoch + basing detector. Never feeds scoring.
+    from engine import commodity_signals as _cs
+    _arm_cfg = config.load()["commodities"]
+    vm["arming"] = _cs.technical_arming(df, _arm_cfg)
+
     # dollar sensitivity (display-only, from the forex Dollar Desk transmission)
     vm["dollar_corr"], vm["dollar_stable"] = None, None
     try:

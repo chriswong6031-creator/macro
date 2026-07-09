@@ -389,6 +389,157 @@ def residual_shock(px: pd.DataFrame, drivers: dict, asset: str, cfg: dict) -> pd
 
 
 # --------------------------------------------------------------------------- #
+# technical arming detector (policy-shock W1-B)
+# --------------------------------------------------------------------------- #
+def _stoch_kd(close: pd.Series, k_period: int = 14,
+              smooth_k: int = 3, smooth_d: int = 3) -> tuple[pd.Series, pd.Series]:
+    """Full stochastic %K and %D on raw OHLC-style close (no RSI step).
+
+    Uses close as both high and low proxy when only close is available —
+    commodity OHLC is often synthesised from close in the inputs layer.
+    Returns (K, D) each in [0, 100], NaN where insufficient history."""
+    lo = close.rolling(k_period, min_periods=k_period).min()
+    hi = close.rolling(k_period, min_periods=k_period).max()
+    raw_k = ((close - lo) / (hi - lo).replace(0, np.nan) * 100)
+    k = raw_k.rolling(smooth_k, min_periods=smooth_k).mean()
+    d = k.rolling(smooth_d, min_periods=smooth_d).mean()
+    return k, d
+
+
+def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
+    """Per-asset technical-arming block (display-tier only, context not scoring).
+
+    Returns a JSON-safe dict with v1-frozen parameters printed verbatim.
+    All booleans are True/False (never None/NaN).  Null-safe: returns a
+    partial dict with armed=False when the series is too short.
+
+    Indicators
+    ----------
+    stoch_k / stoch_d : 14-3-3 full stochastic on daily closes, 0-100.
+    stoch_curl        : %K crosses above %D AND %K < 30 on the latest bar
+                        (the cross must have happened within the last 3 bars
+                        to avoid flagging stale crosses).
+    macd_curl         : MACD histogram rising for 3 consecutive bars while
+                        below zero (histogram = MACD-line minus signal line).
+    basing            : close within `base_pct` of the `base_window`-day low
+                        for >= `base_min_days` consecutive sessions AND the
+                        `drawdown_window`-day max-drawdown <= `drawdown_min`.
+    days_in_base      : consecutive sessions meeting the basing price test
+                        (resets when price leaves the band).
+    armed             : basing AND (stoch_curl OR macd_curl).
+    """
+    acfg = cfg.get("technical_arming", {})
+    # --- v1-frozen parameters ------------------------------------------------
+    k_period       = int(acfg.get("stoch_k_period", 14))
+    smooth_k       = int(acfg.get("stoch_smooth_k", 3))
+    smooth_d       = int(acfg.get("stoch_smooth_d", 3))
+    stoch_oversold = float(acfg.get("stoch_oversold", 30.0))
+    macd_fast      = int(acfg.get("macd_fast", 12))
+    macd_slow      = int(acfg.get("macd_slow", 26))
+    macd_signal    = int(acfg.get("macd_signal", 9))
+    macd_consec    = int(acfg.get("macd_consecutive_bars", 3))
+    base_window    = int(acfg.get("base_window_d", 60))
+    base_pct       = float(acfg.get("base_pct", 0.08))
+    base_min_days  = int(acfg.get("base_min_days", 10))
+    drawdown_window = int(acfg.get("drawdown_window_d", 120))
+    drawdown_min   = float(acfg.get("drawdown_min", -0.15))
+    stoch_curl_lookback = int(acfg.get("stoch_curl_lookback", 3))
+
+    params = {
+        "stoch_k_period": k_period, "stoch_smooth_k": smooth_k,
+        "stoch_smooth_d": smooth_d, "stoch_oversold": stoch_oversold,
+        "macd_fast": macd_fast, "macd_slow": macd_slow,
+        "macd_signal": macd_signal, "macd_consecutive_bars": macd_consec,
+        "base_window_d": base_window, "base_pct": base_pct,
+        "base_min_days": base_min_days,
+        "drawdown_window_d": drawdown_window, "drawdown_min": drawdown_min,
+        "stoch_curl_lookback": stoch_curl_lookback,
+        "version": "v1",
+    }
+
+    null_result = {
+        "stoch_k": None, "stoch_d": None,
+        "stoch_curl": False, "macd_curl": False,
+        "basing": False, "days_in_base": 0,
+        "armed": False, "params": params,
+    }
+
+    close = px["close"].dropna()
+    min_bars = max(macd_slow + macd_signal + macd_consec,
+                   k_period + smooth_k + smooth_d,
+                   base_window, drawdown_window)
+    if len(close) < min_bars:
+        return null_result
+
+    # --- stochastic (14-3-3 on daily closes) ---------------------------------
+    k, d = _stoch_kd(close, k_period, smooth_k, smooth_d)
+    stoch_k_last = float(k.iloc[-1]) if pd.notna(k.iloc[-1]) else None
+    stoch_d_last = float(d.iloc[-1]) if pd.notna(d.iloc[-1]) else None
+
+    # stoch curl: %K crosses above %D within the last `stoch_curl_lookback` bars,
+    # AND %K is below `stoch_oversold` on the bar of the cross.
+    stoch_curl = False
+    look = min(stoch_curl_lookback, len(k) - 1)
+    for i in range(1, look + 1):
+        idx = -(i)         # latest = -1, one-before = -2, ...
+        k_now = k.iloc[idx] if pd.notna(k.iloc[idx]) else np.nan
+        d_now = d.iloc[idx] if pd.notna(d.iloc[idx]) else np.nan
+        k_prev = k.iloc[idx - 1] if pd.notna(k.iloc[idx - 1]) else np.nan
+        d_prev = d.iloc[idx - 1] if pd.notna(d.iloc[idx - 1]) else np.nan
+        if (np.isfinite(k_now) and np.isfinite(d_now) and
+                np.isfinite(k_prev) and np.isfinite(d_prev)):
+            if k_now > d_now and k_prev <= d_prev and k_now < stoch_oversold:
+                stoch_curl = True
+                break
+
+    # --- MACD curl: histogram rising for `macd_consec` consecutive bars while < 0 ---
+    macd_line = _ema(close, macd_fast) - _ema(close, macd_slow)
+    macd_sig = _ema(macd_line, macd_signal)
+    hist = macd_line - macd_sig
+
+    macd_curl = False
+    if len(hist.dropna()) >= macd_consec + 1:
+        tail = hist.dropna().iloc[-(macd_consec + 1):]
+        # all bars must be below zero AND each bar higher than the prior
+        if len(tail) == macd_consec + 1:
+            below_zero = (tail.iloc[1:] < 0).all()
+            rising = (tail.diff().iloc[1:] > 0).all()
+            macd_curl = bool(below_zero and rising)
+
+    # --- basing: close within `base_pct` of the `base_window`-day low
+    #     for >= `base_min_days` consecutive sessions AND 120d drawdown <= -15%
+    low_60 = close.rolling(base_window, min_periods=base_window).min()
+    in_base_band = (close <= low_60 * (1 + base_pct))
+
+    # count consecutive sessions in base band (reset on first False)
+    days_in_base = 0
+    arr = in_base_band.to_numpy()
+    for v in reversed(arr):
+        if v:
+            days_in_base += 1
+        else:
+            break
+
+    # 120d max-drawdown (peak-to-trough from 120-day rolling high)
+    dd_120 = float((close / close.rolling(drawdown_window, min_periods=drawdown_window).max() - 1).iloc[-1]) \
+        if len(close) >= drawdown_window else 0.0
+
+    basing = bool(days_in_base >= base_min_days and dd_120 <= drawdown_min)
+    armed = bool(basing and (stoch_curl or macd_curl))
+
+    return {
+        "stoch_k": round(stoch_k_last, 2) if stoch_k_last is not None else None,
+        "stoch_d": round(stoch_d_last, 2) if stoch_d_last is not None else None,
+        "stoch_curl": stoch_curl,
+        "macd_curl": macd_curl,
+        "basing": basing,
+        "days_in_base": days_in_base,
+        "armed": armed,
+        "params": params,
+    }
+
+
+# --------------------------------------------------------------------------- #
 # per-asset assembly
 # --------------------------------------------------------------------------- #
 def compute_asset(ai: dict, cfg: dict | None = None) -> pd.DataFrame:
