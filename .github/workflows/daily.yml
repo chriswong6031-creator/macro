@@ -502,9 +502,10 @@ jobs:
           [ "$rc" -ne 0 ] && echo "::warning title=backfill_regime_stamps::rc=$rc (non-fatal)"
       - name: Sector-flip confirmation lens (Policy-Shock W1-C)
         # Detects violent defensive/offense spread flips (|z| >= 2.5 vs 252d), appends the
-        # keep-first event ledger at data/flip_confirmation/events.jsonl, registers qledger
-        # claims (flip_confirmation.v1 family, SNAPSHOT_DATE embargo, display-only accrual),
-        # and emits site/flip_confirmation_data.json for the market-state card.
+        # keep-first event ledger at data/flip_confirmation/events.jsonl, registers one
+        # CRAWL_BOUNDED (gradeable) qledger claim per CONFIRMED/FADED event at horizon_d=21
+        # on the priceable XLP-vs-XLK proxy pair (chassis grades at 5d + 21d automatically;
+        # MIXED events abstain). Emits site/flip_confirmation_data.json for the market-state card.
         # AFTER engine.run (market_drivers_log.parquet must be updated for absorption_delta)
         # and AFTER backfill_regime_stamps (qledger consistency). Non-fatal.
         continue-on-error: true

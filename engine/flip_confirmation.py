@@ -25,11 +25,24 @@ event date. NIGHTLY is the sole writer. LEDGER STARTS EMPTY AT SHIP DATE
 (2026-07-09) — only events on or after SHIP_DATE are written here.
 The 2024→ historical scan is in-memory only, embedded in the site artifact.
 
-qledger family: flip_confirmation.v1
-  scope: macro, key = "def_vs_off_spread"
-  bench: XLP (defensive composite proxy; grader prices the composite leg)
-  direction: +1 when defensive wins the flip, -1 when offense wins
-  horizons: 5d + 21d (graded by qledger at both; one claim row per horizon)
+qledger family: flip_confirmation.v1 (Round-2 design, Amendment PS-A2)
+  ONE claim per event, horizon_d=21 (chassis auto-grades at 5d and 21d via
+  in_scope_horizons(21) = [5, 21] — no double-counting).
+
+  Claims are ONLY registered for CONFIRMED and FADED verdicts.
+  MIXED events abstain (weak follow-through makes no directional call).
+
+  Priceable proxy pair (D4 — macro claims must name a machine-checkable
+  observable):
+    subject (scope_key): XLP  — defensive composite proxy
+    bench:               XLK  — offense composite proxy
+  proxy_note: the true composite is EW(XLP,XLU,XLV) − EW(SMH,XLK); the
+    scorable proxy is XLP-vs-XLK (both priceable in the parquet store).
+
+  Direction semantics (grade_claim: direction=+1 → subject outperforms bench):
+    event_z > 0 (defensives won T+0) → predict XLP outperforms XLK → direction = +1
+    event_z < 0 (offense won T+0)    → predict XLP underperforms XLK → direction = -1
+
   timestamp_quality: CRAWL_BOUNDED (the z-score fires when the bar closes;
     that closing price IS the event — no look-ahead, immediately gradeable)
 
@@ -38,6 +51,8 @@ flip events with their T+1 verdicts for the UI base-rate table. This is
 labeled DESCRIPTIVE and never constitutes a registered claim.
 
 Amendment PS-A2 (2026-07-09): see research/POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md §4 W1-C.
+Round-2 (same day): claims re-registered as one 21d claim per CONFIRMED/FADED
+  event on the priceable XLP-vs-XLK proxy pair; MIXED abstains.
 """
 from __future__ import annotations
 
@@ -363,25 +378,31 @@ def append_ledger(events: list[dict], root: Path | None = None) -> int:
 # ── qledger registration ───────────────────────────────────────────────────────
 
 def register_claims(events: list[dict], root: Path | None = None) -> list[dict]:
-    """Register two qledger claims per flip event (5d + 21d horizons).
+    """Register one qledger claim per CONFIRMED or FADED flip event at horizon_d=21.
 
     Only registers events with event_date >= SHIP_DATE (forward-only accrual).
+    MIXED events abstain (weak follow-through makes no directional call).
 
-    Claim design:
-      desk    : flip_confirmation.v1
-      scope   : macro / def_vs_off_spread
-      bench   : XLP  (defensive composite proxy — the claim tests whether the
-                defensive side outperforms; XLP is the largest / most-liquid leg)
-      direction: +1 when defensive wins, -1 when offense wins
-      horizons: 5d + 21d (one claim row per horizon per event)
+    The chassis grades each 21d claim at BOTH 5d and 21d automatically via
+    in_scope_horizons(21) = [5, 21] — one claim row per event, no double-counting.
+
+    Claim design (Round-2, Amendment PS-A2):
+      desk       : flip_confirmation.v1
+      scope_type : macro
+      scope_key  : XLP   — subject leg (priceable; grade_claim uses scope.key as
+                            the ticker); XLP is the defensive composite proxy
+      bench      : XLK   — offense composite proxy (priceable)
+      proxy_note : true composite is EW(XLP,XLU,XLV) − EW(SMH,XLK); XLP-vs-XLK
+                   is the machine-gradeable proxy (D4 requirement)
+      direction  :
+        event_z > 0 (defensives won T+0) → XLP should outperform XLK → +1
+        event_z < 0 (offense won T+0)    → XLP should underperform XLK → -1
+        (grade_claim: direction=+1 → excess=subject_ret−bench_ret > 0 is a hit)
+      horizon_d  : 21 (grades at 5d + 21d automatically)
       timestamp_quality: CRAWL_BOUNDED — the z-score fires when the daily bar
                 closes; the closing price IS the event (no look-ahead, no
                 embargo needed). CRAWL_BOUNDED claims are gradeable=True so
                 the standard qledger grading machinery matures them at 5d/21d.
-
-    Macro scope REQUIRES a named bench (D4 validation rule). We use XLP as the
-    machine-checkable observable: it tracks the defensive composite, and the
-    grader can verify whether XLP outperformed XLK/SMH over the grading horizon.
     """
     from engine import qledger as q  # local import — avoids circular at module level
 
@@ -399,26 +420,41 @@ def register_claims(events: list[dict], root: Path | None = None) -> list[dict]:
         if ev_date < ship_ts:
             continue
 
+        # MIXED abstains — weak follow-through makes no directional call
+        verdict = ev.get("verdict")
+        if verdict == "MIXED":
+            continue
+        # Events with no verdict (T+1 not yet available) also abstain — no
+        # directional call possible without a verdict.
+        if verdict not in ("CONFIRMED", "FADED"):
+            continue
+
+        # direction semantics: predict the side that won T+0 keeps winning T+1
+        # grade_claim computes excess = XLP_ret - XLK_ret; +1 → excess > 0 is hit
         direction = 1 if ev.get("direction") == "defensive" else -1
+
         extra = {
             "z": ev.get("z"),
             "flip_direction": ev.get("direction"),
-            "verdict": ev.get("verdict"),
+            "verdict": verdict,
+            "proxy_note": (
+                "true composite is EW(XLP,XLU,XLV) − EW(SMH,XLK); "
+                "scorable proxy is XLP-vs-XLK (both priceable in the store)"
+            ),
         }
-        # one claim row per horizon (5d and 21d)
-        for horizon in (5, 21):
-            claims_in.append(q.make_claim(
-                desk=QLEDGER_DESK,
-                asof=asof,
-                scope_type="macro",
-                scope_key="def_vs_off_spread",
-                direction=direction,
-                horizon_d=horizon,
-                timestamp_quality="CRAWL_BOUNDED",
-                bench="XLP",        # D4 requirement: macro claims must name a bench
-                claim_family=QLEDGER_FAMILY,
-                extra=extra,
-            ))
+        # ONE claim per event at horizon_d=21; chassis grades at 5d + 21d
+        claims_in.append(q.make_claim(
+            desk=QLEDGER_DESK,
+            asof=asof,
+            scope_type="macro",
+            scope_key="XLP",          # priceable subject ticker (D4)
+            direction=direction,
+            horizon_d=21,
+            timestamp_quality="CRAWL_BOUNDED",
+            bench="XLK",              # priceable bench ticker (offense proxy, D4)
+            claim_family=QLEDGER_FAMILY,
+            extra=extra,
+        ))
     if not claims_in:
         return []
     return q.register_batch(claims_in, root=root, dedupe=True)
@@ -428,7 +464,9 @@ def register_claims(events: list[dict], root: Path | None = None) -> list[dict]:
 
 def nightly_run(root: Path | None = None) -> dict[str, Any]:
     """Nightly build step: detect events >= SHIP_DATE, append ledger, register
-    gradeable qledger claims at 5d + 21d horizons.
+    one CRAWL_BOUNDED qledger claim per CONFIRMED/FADED event at horizon_d=21
+    (chassis grades at 5d + 21d automatically via in_scope_horizons).
+    MIXED events abstain (no claim registered).
 
     The 2024→ descriptive scan is run once for the summary stats but events
     before SHIP_DATE are NEVER written to data/; they appear only in the site
