@@ -608,6 +608,53 @@
   .nbcard.ew-open-now:hover { box-shadow: 0 3px 16px color-mix(in srgb, var(--up) 20%, transparent); }
 {% include "_cmd_hero.css.j2" %}
 {% include "_market_state.css.j2" %}
+  /* ===== HK command panel — compact synthesis ===== */
+  #hk-command-panel{border-top:2px solid var(--line);padding-bottom:14px}
+  #hk-command-panel .cp-head{display:flex;flex-wrap:wrap;align-items:center;gap:9px 18px;margin-bottom:13px}
+  #hk-command-panel .cp-verdict{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap}
+  #hk-command-panel .cp-badge{font-size:13px;font-weight:800;letter-spacing:.02em;padding:4px 12px;border-radius:999px;
+    border:1px solid var(--c,var(--muted));color:var(--c,var(--muted));background:color-mix(in srgb,var(--c,var(--muted)) 13%,transparent);white-space:nowrap}
+  #hk-command-panel .cp-sub{font-size:11px;color:var(--muted)}
+  #hk-command-panel .cp-meters{display:flex;gap:16px;margin-left:auto;flex-wrap:wrap}
+  #hk-command-panel .cp-meter{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700}
+  #hk-command-panel .cp-meter .lab{white-space:nowrap}
+  #hk-command-panel .cp-bar{width:64px;height:6px;border-radius:3px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+  #hk-command-panel .cp-bar>i{display:block;height:100%;border-radius:3px;transition:width .4s ease}
+  #hk-command-panel .cp-meter .n{font-variant-numeric:tabular-nums;min-width:26px;text-align:right}
+  #hk-command-panel .cp-sec{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 7px;font-weight:700}
+  #hk-command-panel .cp-forces{display:grid;grid-template-columns:repeat(auto-fit,minmax(256px,1fr));gap:6px;margin-bottom:14px}
+  #hk-command-panel .cp-force{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;background:var(--panel2);
+    border:1px solid var(--line);border-left:3px solid var(--c,var(--muted))}
+  #hk-command-panel .cp-force .ic{font-size:13px;line-height:1;flex:0 0 auto}
+  #hk-command-panel .cp-force .nm{font-size:12px;font-weight:700;flex:0 0 auto;white-space:nowrap}
+  #hk-command-panel .cp-force .dt{font-size:11px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #hk-command-panel .cp-force .st{font-size:10px;font-weight:800;color:var(--c,var(--muted));flex:0 0 auto;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em}
+  #hk-command-panel .cp-watch{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  #hk-command-panel .cp-wcard{background:var(--panel2);border-radius:9px;padding:9px 11px}
+  #hk-command-panel .cp-wcard h4{margin:0 0 6px;font-size:11.5px;font-weight:800}
+  #hk-command-panel .cp-wrow{display:flex;align-items:center;gap:6px;font-size:12px;padding:2px 0}
+  #hk-command-panel .cp-wrow a.tk{font-weight:800;color:inherit;text-decoration:none}
+  #hk-command-panel .cp-wrow a.tk:hover{text-decoration:underline}
+  #hk-command-panel .cp-wrow .nm{flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+  #hk-command-panel .cp-tape .row{display:flex;align-items:baseline;gap:8px;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--line)}
+  #hk-command-panel .cp-tape .row .dt{flex:0 0 74px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  #hk-command-panel .cp-tape .row a.tk{font-weight:800;color:inherit;text-decoration:none}
+  #hk-command-panel .cp-tape .row a.tk:hover{text-decoration:underline}
+  @media (max-width:640px){ #hk-command-panel .cp-watch{grid-template-columns:1fr} #hk-command-panel .cp-meters{margin-left:0;width:100%} }
+  /* ===== combined Southbound & A/H section (flow + cross-listing value, each with a read) ===== */
+  #sb-ah-combined .sbah-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:11px;margin:6px 0 10px}
+  #sb-ah-combined .sbah-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  #sb-ah-combined .sbah-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+  #sb-ah-combined .sbah-t{font-size:12.5px;font-weight:800}
+  #sb-ah-combined .sbah-sig{font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;white-space:nowrap;
+    border:1px solid var(--c,var(--muted));color:var(--c,var(--muted));background:color-mix(in srgb,var(--c,var(--muted)) 13%,transparent)}
+  #sb-ah-combined .sig-in{--c:var(--up)}
+  #sb-ah-combined .sig-out{--c:var(--down)}
+  #sb-ah-combined .sig-neu{--c:var(--muted)}
+  #sb-ah-combined .sbah-read{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45}
+  #sb-ah-combined .sbah-pairs{margin-top:9px;width:100%;font-size:11px;border-collapse:collapse}
+  #sb-ah-combined .sbah-pairs td{padding:2px 0;border-bottom:1px solid var(--line)}
+  #sb-ah-combined .sbah-pairs td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -757,6 +804,80 @@
   </div>
   {% endif %}{# /mode != stocks — Market State front board #}
 
+  {% if mode != 'stocks' %}
+  <!-- ===================== HIGH-IMPACT EVENT-RISK BANNER (macro) ===================== -->
+  {% if event_strip %}
+  <div class="panel span12" style="padding:0;border:none;background:none">
+    <div class="evbanner">
+      <span class="ev-h">⏳ {{ t('Event risk · next 14d', '事件风险 · 未来14天') }}</span>
+      <span class="ev-list">
+        {% for ev in event_strip[:7] %}
+        <span class="ev-chip" title="{{ ev.date }} · {{ ev.category }}">
+          <span class="l-en">{{ ev.name_en }}</span><span class="l-zh">{{ ev.name_zh }}</span>
+          <span class="ev-rg">{{ ev.region }}</span>
+          <span class="ev-d">{% if ev.days_until <= 0 %}{{ t('today', '今日') }}{% else %}+{{ ev.days_until }}{{ t('d', '天') }}{% endif %}</span>
+        </span>
+        {% endfor %}
+      </span>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {% if mode != 'stocks' %}
+  <!-- ===================== MARKET SNAPSHOT (cross-asset tiles) ===================== -->
+  {% if market_tiles %}
+  <div class="panel span12" id="market-snapshot">
+    <h2>{{ t('Market snapshot', '市场快照') }}
+      {{ help("One-glance levels for HK: tech, peg, yuan, gold, dollar and HIBOR.", "一眼看香港关键水平：科技、联汇、人民币、黄金、美元与 HIBOR。") }}
+    </h2>
+    <div class="mtiles">
+      {% for tl in market_tiles %}
+      <div class="mtile">
+        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
+        <div class="mtile-val">{{ tl.level }}</div>
+        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} ({{ tl.pct }})</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {% if mode != 'stocks' and pb %}
+  <!-- ===================== WHERE WE ARE + WHAT'S NEXT ===================== -->
+  {% if pb.progress %}
+  <div class="panel span6">
+    <h2>{{ t('Where we are in this regime', '我们身处此周期何处') }}
+      {{ help("How old this regime is compared with past similar regimes. Context only.", "当前周期年龄与历史同类周期比较。仅背景。") }}</h2>
+    <div class="lifebar">
+      <div class="zone" style="left:0;width:{{ pb.progress.zone_early_pct }}%;background:color-mix(in srgb,var(--up) 32%,var(--panel))"></div>
+      <div class="zone" style="left:{{ pb.progress.zone_early_pct }}%;width:{{ pb.progress.zone_mid_pct - pb.progress.zone_early_pct }}%;background:color-mix(in srgb,var(--warn) 32%,var(--panel))"></div>
+      <div class="zone" style="left:{{ pb.progress.zone_mid_pct }}%;width:{{ 100 - pb.progress.zone_mid_pct }}%;background:color-mix(in srgb,var(--down) 32%,var(--panel))"></div>
+      <div class="marker" style="left:{{ pb.progress.bar_pct }}%"></div>
+    </div>
+    <div class="lifelabels"><span>{{ t('young', '年轻') }}</span><span>{{ t('mid-life', '中年') }}</span><span>{{ t('old', '年老') }}</span></div>
+    <p class="note" style="margin:10px 0 0">{{ t(
+      pb.progress.age_days|string + ' trading days in, vs a median of ' + pb.progress.median_days|string + ' across ' + pb.progress.n_history|string + ' past ' + latest.quad_name + ' periods.',
+      '已运行 ' + pb.progress.age_days|string + ' 个交易日，对比 ' + pb.progress.n_history|string + ' 段过往同象限周期的中位数 ' + pb.progress.median_days|string + ' 个交易日。') }}</p>
+  </div>
+  {% endif %}
+  {% if pb.next_list %}
+  <div class="panel span6">
+    <h2>{{ t("What's likely next", '接下来可能发生什么') }}
+      {{ help("What usually came next after similar regimes. Base rates, not forecasts.", "类似周期之后通常出现什么。基础概率，非预测。") }}</h2>
+    {% for n in pb.next_list %}
+    <div class="prob">
+      <span class="nm">{{ t(n.name, n.name_zh) }}</span>
+      <span class="bar"><i style="width:{{ n.prob_pct }}%;background:var(--q{{ n.code[1] }})"></i></span>
+      <span class="pc">{{ n.prob_pct }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% endif %}
+
   {# ===================== HK COMMAND PANEL — actionable synthesis, sits directly below the Market State front board (macro mode only) =====================
      Fuses 7 Neural Web organs into one combustibility view.
      DISPLAY-ONLY CONTEXT — NOT a buy/sell signal. Deterministic tally, no LLM score.
@@ -773,209 +894,104 @@
   {% set _cp_bottom_n = _cpv.bottom_arming_n if _cpv.bottom_arming_n is defined else 0 %}
   {% set _cp_chase_n = _cpv.chase_risk_n if _cpv.chase_risk_n is defined else 0 %}
   {% set _cp_total = _cpv.of if _cpv.of is defined else 8 %}
-  <div class="panel span12" id="hk-command-panel" style="border-top:2px solid var(--line);padding-bottom:16px;">
-    {# NOTE: Freshness banner lives at #hk-freshness-banner (top of page). No duplicate strip here. #}
-
-    {# ----- 2. COMBUSTIBILITY VERDICT CARD ----- #}
-    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px;margin-bottom:16px;">
-      <div class="cp-verdict" style="flex:0 0 auto;min-width:220px;">
-        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
-          <h2 style="margin:0;font-size:14px;">
-            <span class="l-en">{{ _cpv.label_en if _cpv.label_en else '—' }}</span>
-            <span class="l-zh">{{ _cpv.label_zh if _cpv.label_zh else '—' }}</span>
-          </h2>
-          <span class="note">
-            <span class="l-en">{{ _cp_bottom_n }}/{{ _cp_total }} forces confirming</span>
-            <span class="l-zh">{{ _cp_bottom_n }}/{{ _cp_total }} 力量共振</span>
-          </span>
-        </div>
-        <p class="note" style="margin:0 0 8px;font-size:11px;color:var(--muted);">
-          <span class="l-en">context, not a signal</span>
-          <span class="l-zh">参考，非买卖信号</span>
-        </p>
-        {# Bottom-arming meter #}
-        <div style="margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;">
-            <span style="color:var(--up);">
-              ▲ <span class="l-en">Bottom arming</span><span class="l-zh">底部酝酿</span>
-            </span>
-            <span style="font-variant-numeric:tabular-nums;color:var(--up);">{{ _cp_bottom_n }}/{{ _cp_total }}</span>
-          </div>
-          <div style="height:10px;border-radius:5px;background:var(--panel2);overflow:hidden;border:1px solid var(--line);">
-            <div style="height:100%;border-radius:5px;background:var(--up);width:{{ ((_cp_bottom_n / _cp_total) * 100)|int }}%;transition:width .4s ease;"></div>
-          </div>
-        </div>
-        {# Chase-risk meter #}
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;">
-            <span style="color:var(--down);">
-              ▼ <span class="l-en">Chase risk</span><span class="l-zh">追涨风险</span>
-            </span>
-            <span style="font-variant-numeric:tabular-nums;color:var(--down);">{{ _cp_chase_n }}/{{ _cp_total }}</span>
-          </div>
-          <div style="height:10px;border-radius:5px;background:var(--panel2);overflow:hidden;border:1px solid var(--line);">
-            <div style="height:100%;border-radius:5px;background:var(--down);width:{{ ((_cp_chase_n / _cp_total) * 100)|int }}%;transition:width .4s ease;"></div>
-          </div>
-        </div>
+  {# ----- verdict tone from the deterministic tally (bottom_n>=4 constructive · chase_n>=3 caution · bottom_n>=2 watch) ----- #}
+  {% set _cpc = 'var(--up)' if _cp_bottom_n >= 4 else ('var(--down)' if _cp_chase_n >= 3 else ('var(--warn)' if _cp_bottom_n >= 2 else 'var(--muted)')) %}
+  {% set _force_icons = {
+    'adr_bridge':'🌐','tech_impulse':'💻','narrative':'📰','southbound':'🔴',
+    'breadth':'📊','cbbc':'⚖','funding_peg':'💰','global_risk':'🌍'
+  } %}
+  <div class="panel span12" id="hk-command-panel">
+    {# ----- header strip: verdict badge + the two meters inline ----- #}
+    <div class="cp-head">
+      <div class="cp-verdict">
+        <span class="cp-badge" style="--c:{{ _cpc }}">
+          <span class="l-en">{{ _cpv.label_en if _cpv.label_en else '—' }}</span>
+          <span class="l-zh">{{ _cpv.label_zh if _cpv.label_zh else '—' }}</span>
+        </span>
+        <span class="cp-sub"><span class="l-en">context, not a signal</span><span class="l-zh">参考，非买卖信号</span></span>
       </div>
-
-      {# ----- 3. FORCE STACK — 8 rows ----- #}
-      {# Icon map keyed to force.key — small inline glyphs, no external deps #}
-      {% set _force_icons = {
-        'adr_bridge':   '🌐',
-        'tech_impulse': '💻',
-        'narrative':    '📰',
-        'southbound':   '🔴',
-        'breadth':      '📊',
-        'cbbc':         '⚖',
-        'funding_peg':  '💰',
-        'global_risk':  '🌍'
-      } %}
-      <div style="flex:1;min-width:280px;">
-        <p class="note" style="margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em;font-size:11px;">
-          <span class="l-en">Force Stack · 8 organs</span>
-          <span class="l-zh">力量堆栈 · 8 项</span>
-        </p>
-        {% if _cpforces %}
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          {% for force in _cpforces %}
-          {% set _fst = force.state if force.state else 'neutral' %}
-          {% set _fclr = 'var(--up)' if _fst == 'confirm' else ('var(--down)' if _fst == 'stress' else ('var(--warn)' if _fst == 'watch' else 'var(--muted)')) %}
-          {% set _ficon = _force_icons.get(force.key, '◆') %}
-          <div class="cp-force-row" style="display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);">
-            <span style="flex:0 0 auto;font-size:14px;line-height:1;">{{ _ficon }}</span>
-            <span style="flex:0 0 160px;font-size:12.5px;font-weight:700;min-width:0;word-break:break-word;">
-              <span class="l-en">{{ force.name_en if force.name_en else '—' }}</span>
-              <span class="l-zh">{{ force.name_zh if force.name_zh else '—' }}</span>
-            </span>
-            <span style="flex:1;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              <span class="l-en">{{ force.detail_en if force.detail_en else '—' }}</span>
-              <span class="l-zh">{{ force.detail_zh if force.detail_zh else '—' }}</span>
-            </span>
-            <span class="chip" style="font-size:11px;font-weight:700;white-space:nowrap;flex:0 0 auto;--c:{{ _fclr }};">
-              <span class="l-en">{{ _fst }}</span>
-              <span class="l-zh">{% if _fst == 'confirm' %}确认{% elif _fst == 'stress' %}承压{% elif _fst == 'watch' %}观察{% else %}中性{% endif %}</span>
-            </span>
-          </div>
-          {% endfor %}
+      <div class="cp-meters">
+        <div class="cp-meter" style="color:var(--up)">
+          <span class="lab">▲ <span class="l-en">Bottom arming</span><span class="l-zh">底部酝酿</span></span>
+          <span class="cp-bar"><i style="width:{{ ((_cp_bottom_n / _cp_total) * 100)|int }}%;background:var(--up)"></i></span>
+          <span class="n">{{ _cp_bottom_n }}/{{ _cp_total }}</span>
         </div>
-        {% else %}
-        <p class="note" style="color:var(--muted);">
-          <span class="l-en">Force stack unavailable — organs loading or empty.</span>
-          <span class="l-zh">力量堆栈不可用 — 器官正在加载或为空。</span>
-        </p>
-        {% endif %}
+        <div class="cp-meter" style="color:var(--down)">
+          <span class="lab">▼ <span class="l-en">Chase risk</span><span class="l-zh">追涨风险</span></span>
+          <span class="cp-bar"><i style="width:{{ ((_cp_chase_n / _cp_total) * 100)|int }}%;background:var(--down)"></i></span>
+          <span class="n">{{ _cp_chase_n }}/{{ _cp_total }}</span>
+        </div>
       </div>
     </div>
 
-    {# ----- 4. BOTTOM-WATCH / CHASE-WATCH SCORECARDS ----- #}
-    {% if _cpbw or _cpcw %}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-      {# Bottom Watch #}
-      <div style="background:var(--panel2);border-radius:9px;padding:10px 12px;">
-        <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:var(--up);">
-          <span class="l-en">Bottom Watch</span><span class="l-zh">底部观察</span>
-        </p>
-        {% if _cpbw %}
-        <div data-showmore="7">
-        {% for r in _cpbw %}
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;">
-          <a href="hk_lookup.html#{{ r.ticker }}"
-             title="Open {{ r.ticker }} terminal"
-             style="font-weight:800;flex:0 0 auto;color:inherit;text-decoration:none;cursor:pointer;"
-             onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ r.ticker }}</a>
-          {% if r.name %}
-          <span class="note" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            <span class="l-en">{{ r.name }}</span>
-            <span class="l-zh">{{ r.name_zh if r.name_zh else r.name }}</span>
-          </span>
-          {% endif %}
-          <span class="chip c-up" style="font-size:10px;flex:0 0 auto;">{{ r.confluence_n }}</span>
-          {% if r.knife_risk %}<span class="chip c-warn" style="font-size:10px;flex:0 0 auto;">
-            <span class="l-en">knife</span><span class="l-zh">刀锋</span>
-          </span>{% endif %}
-        </div>
-        {% endfor %}
-        </div>
-        <p class="note" style="margin:6px 0 0;font-size:10.5px;">
-          <span class="l-en">unconfirmed · high-risk · knife chip = falling knife risk</span>
-          <span class="l-zh">未确认 · 高风险 · 刀锋 = 下跌趋势中风险</span>
-        </p>
-        {% else %}
-        <p class="note" style="color:var(--muted);">
-          <span class="l-en">No bottom-watch candidates.</span>
-          <span class="l-zh">无底部观察候选股。</span>
-        </p>
-        {% endif %}
+    {# ----- force stack: 2-column auto-fit grid (was 8 stacked rows) ----- #}
+    <p class="cp-sec"><span class="l-en">Force stack · 8 organs</span><span class="l-zh">力量堆栈 · 8 项</span></p>
+    {% if _cpforces %}
+    <div class="cp-forces">
+      {% for force in _cpforces %}
+      {% set _fst = force.state if force.state else 'neutral' %}
+      {% set _fclr = 'var(--up)' if _fst == 'confirm' else ('var(--down)' if _fst == 'stress' else ('var(--warn)' if _fst == 'watch' else 'var(--muted)')) %}
+      <div class="cp-force" style="--c:{{ _fclr }}" title="{{ force.detail_en if force.detail_en else '' }}">
+        <span class="ic">{{ _force_icons.get(force.key, '◆') }}</span>
+        <span class="nm"><span class="l-en">{{ force.name_en if force.name_en else '—' }}</span><span class="l-zh">{{ force.name_zh if force.name_zh else '—' }}</span></span>
+        <span class="dt"><span class="l-en">{{ force.detail_en if force.detail_en else '' }}</span><span class="l-zh">{{ force.detail_zh if force.detail_zh else '' }}</span></span>
+        <span class="st"><span class="l-en">{{ _fst }}</span><span class="l-zh">{% if _fst == 'confirm' %}确认{% elif _fst == 'stress' %}承压{% elif _fst == 'watch' %}观察{% else %}中性{% endif %}</span></span>
       </div>
-      {# Chase Watch #}
-      <div style="background:var(--panel2);border-radius:9px;padding:10px 12px;">
-        <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:var(--down);">
-          <span class="l-en">Chase Watch</span><span class="l-zh">追涨风险观察</span>
-        </p>
-        {% if _cpcw %}
-        {% for r in _cpcw %}
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;">
-          <a href="hk_lookup.html#{{ r.ticker }}"
-             title="Open {{ r.ticker }} terminal"
-             style="font-weight:800;flex:0 0 auto;color:inherit;text-decoration:none;cursor:pointer;"
-             onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ r.ticker }}</a>
-          {% if r.name %}
-          <span class="note" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            <span class="l-en">{{ r.name }}</span>
-            <span class="l-zh">{{ r.name_zh if r.name_zh else r.name }}</span>
-          </span>
-          {% endif %}
-          <span class="chip c-down" style="font-size:10px;flex:0 0 auto;">
-            <span class="l-en">chase risk</span><span class="l-zh">追涨</span>
-          </span>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="note" style="color:var(--muted)"><span class="l-en">Force stack unavailable — organs loading or empty.</span><span class="l-zh">力量堆栈不可用 — 器官正在加载或为空。</span></p>
+    {% endif %}
+
+    {# ----- bottom-watch / chase-watch (capped at 4, show-more reveals rest) ----- #}
+    {% if _cpbw or _cpcw %}
+    <div class="cp-watch">
+      <div class="cp-wcard">
+        <h4 style="color:var(--up)">▲ <span class="l-en">Bottom Watch</span><span class="l-zh">底部观察</span></h4>
+        {% if _cpbw %}
+        <div data-showmore="4">
+          {% for r in _cpbw %}
+          <div class="cp-wrow">
+            <a class="tk" href="hk_lookup.html#{{ r.ticker }}" title="Open {{ r.ticker }} terminal">{{ r.ticker }}</a>
+            {% if r.name %}<span class="nm"><span class="l-en">{{ r.name }}</span><span class="l-zh">{{ r.name_zh if r.name_zh else r.name }}</span></span>{% endif %}
+            <span class="chip c-up" style="font-size:10px">{{ r.confluence_n }}</span>
+            {% if r.knife_risk %}<span class="chip c-warn" style="font-size:10px"><span class="l-en">knife</span><span class="l-zh">刀锋</span></span>{% endif %}
+          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
-        <p class="note" style="margin:6px 0 0;font-size:10.5px;">
-          <span class="l-en">extended — do not chase</span>
-          <span class="l-zh">过热 — 勿追涨</span>
-        </p>
-        {% else %}
-        <p class="note" style="color:var(--muted);">
-          <span class="l-en">No chase-risk names.</span>
-          <span class="l-zh">无追涨风险个股。</span>
-        </p>
-        {% endif %}
+        <p class="note" style="margin:6px 0 0;font-size:10px"><span class="l-en">unconfirmed · high-risk · knife = falling-knife risk</span><span class="l-zh">未确认 · 高风险 · 刀锋 = 下跌中风险</span></p>
+        {% else %}<p class="note" style="color:var(--muted)"><span class="l-en">No bottom-watch candidates.</span><span class="l-zh">无底部观察候选股。</span></p>{% endif %}
+      </div>
+      <div class="cp-wcard">
+        <h4 style="color:var(--down)">▼ <span class="l-en">Chase Watch</span><span class="l-zh">追涨风险观察</span></h4>
+        {% if _cpcw %}
+        <div data-showmore="4">
+          {% for r in _cpcw %}
+          <div class="cp-wrow">
+            <a class="tk" href="hk_lookup.html#{{ r.ticker }}" title="Open {{ r.ticker }} terminal">{{ r.ticker }}</a>
+            {% if r.name %}<span class="nm"><span class="l-en">{{ r.name }}</span><span class="l-zh">{{ r.name_zh if r.name_zh else r.name }}</span></span>{% endif %}
+            <span class="chip c-down" style="font-size:10px"><span class="l-en">chase</span><span class="l-zh">追涨</span></span>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="note" style="margin:6px 0 0;font-size:10px"><span class="l-en">extended — do not chase</span><span class="l-zh">过热 — 勿追涨</span></p>
+        {% else %}<p class="note" style="color:var(--muted)"><span class="l-en">No chase-risk names.</span><span class="l-zh">无追涨风险个股。</span></p>{% endif %}
       </div>
     </div>
     {% endif %}
 
-    {# ----- 5. CATALYST TAPE ----- #}
+    {# ----- catalyst tape (capped at 4) ----- #}
     {% if _cpct %}
-    <div>
-      <p class="note" style="margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em;font-size:11px;">
-        <span class="l-en">Catalyst Tape</span>
-        <span class="l-zh">催化剂追踪</span>
-      </p>
-      <div style="display:flex;flex-direction:column;gap:4px;" data-showmore="5">
+    <div class="cp-tape">
+      <p class="cp-sec"><span class="l-en">Catalyst tape</span><span class="l-zh">催化剂追踪</span></p>
+      <div data-showmore="4">
         {% for ev in _cpct %}
-        <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--line);">
-          <span style="flex:0 0 80px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;">{{ ev.date if ev.date else '—' }}</span>
-          <span class="chip c-info" style="font-size:10px;flex:0 0 auto;">
-            <span class="l-en">{{ ev.source if ev.source else '—' }}</span>
-            <span class="l-zh">{{ ev.source_zh if ev.source_zh else ev.source if ev.source else '—' }}</span>
-          </span>
-          {% if ev.ticker %}
-          <a href="hk_lookup.html#{{ ev.ticker }}"
-             title="Open {{ ev.ticker }} terminal"
-             style="font-weight:800;flex:0 0 auto;color:inherit;text-decoration:none;cursor:pointer;"
-             onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ ev.ticker }}</a>
-          {% if ev.name_en or ev.name_zh %}
-          <span class="note" style="flex:0 0 auto;font-size:11px;">
-            <span class="l-en">{{ ev.name_en if ev.name_en else '' }}</span>
-            <span class="l-zh">{{ ev.name_zh if ev.name_zh else (ev.name_en if ev.name_en else '') }}</span>
-          </span>
-          {% endif %}
-          {% endif %}
-          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            <span class="l-en">{{ ev.text_en if ev.text_en else '—' }}</span>
-            <span class="l-zh">{{ ev.text_zh if ev.text_zh else ev.text_en if ev.text_en else '—' }}</span>
-          </span>
+        <div class="row">
+          <span class="dt">{{ ev.date if ev.date else '—' }}</span>
+          <span class="chip c-info" style="font-size:10px"><span class="l-en">{{ ev.source if ev.source else '—' }}</span><span class="l-zh">{{ ev.source_zh if ev.source_zh else ev.source if ev.source else '—' }}</span></span>
+          {% if ev.ticker %}<a class="tk" href="hk_lookup.html#{{ ev.ticker }}" title="Open {{ ev.ticker }} terminal">{{ ev.ticker }}</a>
+          {% if ev.name_en or ev.name_zh %}<span class="note" style="flex:0 0 auto;font-size:11px"><span class="l-en">{{ ev.name_en if ev.name_en else '' }}</span><span class="l-zh">{{ ev.name_zh if ev.name_zh else (ev.name_en if ev.name_en else '') }}</span></span>{% endif %}{% endif %}
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="l-en">{{ ev.text_en if ev.text_en else '—' }}</span><span class="l-zh">{{ ev.text_zh if ev.text_zh else ev.text_en if ev.text_en else '—' }}</span></span>
         </div>
         {% endfor %}
       </div>
@@ -1325,7 +1341,7 @@
         <span class="l-en">Recent filings (90d tape)</span>
         <span class="l-zh">近期公告（90天记录）</span>
       </div>
-      <div data-showmore="6">
+      <div data-showmore="3">
       {% for ev in _tape_all %}
       {% set _ev_cls = 'alert-high' if ev.dilution_flag else ('alert-info' if ev.buyback_flag else ('alert-info' if ev.category == 'results' else 'alert-warn' if ev.category in ('mandate','placement') else '')) %}
       <div class="alert {{ _ev_cls }}" style="padding:7px 11px;margin:5px 0;">
@@ -1556,7 +1572,6 @@
           <b>{{ (_stress*100)|round|int }}%</b> {{ t('stress', '压力') }}
           {% if setups and setups.overlay and setups.overlay.drivers %}{% for d in setups.overlay.drivers %}<span class="ov-chip">{{ d }}</span>{% endfor %}{% endif %}
           {% if setups and setups.cohort and setups.cohort.state %} · {{ t('leadership', '领先股') }} <b>{{ setups.cohort.state }}</b>{% endif %}
-          — {{ t('a hot tape taxes a chase and caps size; it never gates the rank.', '过热行情会对追高征税并限制仓位；从不决定排名。') }}
         </div>
         {# H5 PEG-LIQUIDITY REGIME conditioner (ACCRUE — reports/h5-peg-liquidity-phase0.md).
            agg_balance-driven EASY/TIGHT label + one sizing-context sentence. Display + sizing
@@ -1599,15 +1614,7 @@
        "what this desk is / isn't" caveat; the ~6× repeated "not a buy list" lines below
        are DELETED. Per-card trust tier (nb-tier) + the §5.0 order tooltip stay. #}
     <div class="desk-manifest">
-      <div class="dm-cell dm-is">
-        <div class="dm-k">✓ {{ t('What this desk is', '本研判台是什么') }}</div>
-        <div class="dm-v">{{ t('A <b>flow-and-structure screen</b>. It ranks HK names by flow, A/H value and cleaner relative strength.', '一个<b>资金与结构筛选</b>。按资金流、A/H 价值与较干净的相对强度排序港股。') }}</div>
-      </div>
-      <div class="dm-cell dm-isnt">
-        <div class="dm-k">✕ {{ t('What it isn\'t', '它不是什么') }}</div>
-        <div class="dm-v">{{ t('<b>Not a buy list</b>. The scoreboard is still building, so treat the rank as a screen.', '<b>不是买入清单</b>。记分牌仍在积累，请把排名当作筛选。') }}</div>
-      </div>
-      <div class="dm-tierline">{{ t('<b>Trust tier: screen.</b> Cycle state and sizing are context.', '<b>信任等级：筛选。</b>周期状态与仓位仅作背景。') }}
+      <div class="dm-tierline">{{ t('A <b>flow &amp; structure screen</b> — ranked by flow, A/H value and relative strength. A research shortlist, <b>not a buy list</b>.', '一个<b>资金与结构筛选</b> — 按资金流、A/H 价值与相对强度排序。研究备选清单，<b>非买入清单</b>。') }}
         <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></div>
     </div>
   </div>
@@ -1635,11 +1642,13 @@
       {% if items %}
       <div class="act-col {{ cls }}">
         <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
+        <div data-showmore="4">
         {% for it in items %}
         <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
           <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
         </div>
         {% endfor %}
+        </div>
       </div>
       {% endif %}
       {% endmacro %}
@@ -1698,12 +1707,9 @@
         {% if n.lead %}
         <div class="nb-lead"><span class="l-en">{{ n.lead.en }}</span><span class="l-zh">{{ n.lead.zh }}</span></div>
         {% endif %}
-        {% if n.group or n.entry_window %}
+        {% if n.group %}
         <div class="nb-ripe">
-          {% if n.group %}<span class="nb-grp grp-{{ 'open' if n.group == 'entry_open' else 'set' }}">{{ t('Entry open', '入场开启') if n.group == 'entry_open' else t('Setting up', '蓄势中') }}</span>{% endif %}
-          {% if n.entry_window and n.entry_window.kind %}<span class="nb-ewin ew-{{ n.entry_window.kind }}"><span class="l-en">{{ n.entry_window.en }}</span><span class="l-zh">{{ n.entry_window.zh }}</span></span>{% endif %}
-          {% if n.washout_2w %}<span class="nb-port pt-wash" data-tip-en="Higher-timeframe oversold bounce. Context only." data-tip-zh="高周期超卖反弹。仅背景。">{{ t('2W washout', '2周超卖') }}<span class="ev-tag et-accruing">{{ t('accruing', '累积') }}</span></span>{% endif %}
-          {% if n.extended %}<span class="nb-port pt-ext" data-tip-en="Stretched above its 200-day trend. Context only." data-tip-zh="高于200日趋势。仅背景。">{{ t('extended', '过热') }}<span class="ev-tag et-context">{{ t('context', '背景') }}</span></span>{% endif %}
+          <span class="nb-grp grp-{{ 'open' if n.group == 'entry_open' else 'set' }}">{{ t('Entry open', '入场开启') if n.group == 'entry_open' else t('Setting up', '蓄势中') }}</span>
         </div>
         {% endif %}
         {% if c %}
@@ -1723,15 +1729,6 @@
           {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
         </div>
         {% endif %}
-        <div class="nb-axes">
-          {% for ax, lbl, lbl_zh in [('selection','EDGE','优势'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
-          {% set a = c.axes[ax] %}
-          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
-            <div class="axl">{{ t(lbl, lbl_zh) }}</div>
-            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
-          </div>
-          {% endfor %}
-        </div>
         {% endif %}
         {% set es = n.entry_signal %}
         {% if es and es.status %}
@@ -1748,16 +1745,7 @@
         {% endif %}
         <div class="nb-bot">
           {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
-          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Suggested size: less for volatile names, more for calmer names." data-tip-zh="建议仓位：波动大少配，波动小多配。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
         </div>
-        {% if n.alpha is not none or n.alpha_entry %}
-        <div class="nb-alpha">
-          {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha>0 else ('az-dn' if n.alpha<0 else '') }}" data-tip-en="Relative strength vs the HK universe." data-tip-zh="相对港股整体的强弱。">RS {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
-          {% if n.sector_rank %}<span class="nb-rk" data-tip-en="Rank within its sector by relative strength" data-tip-zh="按相对强度在其板块内排名">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
-          {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" data-tip-en="A leader that has cooled off (RSI≤55) — a less-stretched entry" data-tip-zh="已回落的强势股（RSI≤55）— 较不过热的入场">{{ t('pullback', '回调') }}</span>
-          {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" data-tip-en="Stretched (RSI≥70) — short-term reversal risk" data-tip-zh="过热（RSI≥70）— 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
-        </div>
-        {% endif %}
         {% if n.southbound or n.ah_value %}
         <div class="nb-flow">
           {# W6 evidence tags (§7.3): each why-now chip carries an et-validated / et-accruing / et-context
@@ -1765,17 +1753,14 @@
              → visual priority via fl-lead. SB flow decays at render lag (H1 NO-GO) → context. #}
           {% if n.southbound and n.southbound.accum_z is not none %}
           {% set sbz = n.southbound.accum_z %}
-          <span class="{{ 'fl-buy' if sbz>=0.6 else ('fl-sell' if sbz<=-0.6 else '') }}" data-tip-en="Mainland Connect is adding or trimming this name. Positioning context." data-tip-zh="内地港股通正在加仓或减仓该股。持仓背景。">🇨🇳 {{ t('SB', '南向') }} {{ '%+.1f'|format(sbz) }}{% if n.southbound.own_pct is not none %} · {{ n.southbound.own_pct }}%{% endif %}<span class="ev-tag et-context">{{ t('context', '背景') }}</span></span>
+          <span class="{{ 'fl-buy' if sbz>=0.6 else ('fl-sell' if sbz<=-0.6 else '') }}" data-tip-en="Mainland Connect is adding or trimming this name. Positioning context." data-tip-zh="内地港股通正在加仓或减仓该股。持仓背景。">🇨🇳 {{ t('SB', '南向') }} {{ '%+.1f'|format(sbz) }}{% if n.southbound.own_pct is not none %} · {{ n.southbound.own_pct }}%{% endif %}</span>
           {% endif %}
           {% if n.ah_value and n.ah_value.z is not none %}
-          <span class="fl-val{{ ' fl-lead' if n.ah_value.cheap else '' }}" data-tip-en="A/H value: H-share looks cheap or rich vs its mainland A-share twin." data-tip-zh="A/H 价值：H股相对A股孪生便宜或偏贵。">A/H {{ '%+.1f'|format(n.ah_value.z) }}{% if n.ah_value.cheap %} · {{ t('cheap H', 'H 便宜') }}{% endif %}<span class="ev-tag et-accruing">{{ t('near-GO', '临近达标') }}</span></span>
+          <span class="fl-val{{ ' fl-lead' if n.ah_value.cheap else '' }}" data-tip-en="A/H value: H-share looks cheap or rich vs its mainland A-share twin." data-tip-zh="A/H 价值：H股相对A股孪生便宜或偏贵。">A/H {{ '%+.1f'|format(n.ah_value.z) }}{% if n.ah_value.cheap %} · {{ t('cheap H', 'H 便宜') }}{% endif %}</span>
           {% endif %}
           {# SFC reportable-short CONTEXT chip (H2a — ACCRUE-labelled, reports/h2a-phase0.md).
              own-history days-to-cover percentile; correct-signed (high shorts -> softer fwd
              returns) but sub-threshold (DSR 0.32), so it is CONTEXT, never a rank input. #}
-          {% if n.sfc_short and n.sfc_short.pctile is not none %}
-          <span class="{{ 'fl-short' if n.sfc_short.pctile >= 75 else '' }}" data-tip-en="Short interest level vs this name's own history. Context only." data-tip-zh="淡仓相对该股自身历史的位置。仅背景。">🩳 {{ t('shorts', '淡仓') }} P{{ n.sfc_short.pctile }}<span class="ev-tag et-accruing">{{ t('accruing', '累积') }}</span></span>
-          {% endif %}
         </div>
         {% endif %}
         {% if c %}
@@ -1787,7 +1772,6 @@
         </div>{% endif %}
         {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
         {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
-        <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
       </a>
     {% endfor %}
@@ -1988,23 +1972,6 @@
 
   {% if mode != 'stocks' %}
 
-  <!-- ===================== HIGH-IMPACT EVENT-RISK BANNER (macro) ===================== -->
-  {% if event_strip %}
-  <div class="panel span12" style="padding:0;border:none;background:none">
-    <div class="evbanner">
-      <span class="ev-h">⏳ {{ t('Event risk · next 14d', '事件风险 · 未来14天') }}</span>
-      <span class="ev-list">
-        {% for ev in event_strip[:7] %}
-        <span class="ev-chip" title="{{ ev.date }} · {{ ev.category }}">
-          <span class="l-en">{{ ev.name_en }}</span><span class="l-zh">{{ ev.name_zh }}</span>
-          <span class="ev-rg">{{ ev.region }}</span>
-          <span class="ev-d">{% if ev.days_until <= 0 %}{{ t('today', '今日') }}{% else %}+{{ ev.days_until }}{{ t('d', '天') }}{% endif %}</span>
-        </span>
-        {% endfor %}
-      </span>
-    </div>
-  </div>
-  {% endif %}
 
   {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
      (aibrief.html). Replaces the old inline AI Master Brief panel. #}
@@ -2053,27 +2020,6 @@
   </div>
   {% endif %}
 
-  <!-- ===================== FIRED ALERTS (today) ===================== -->
-  {% set ALERTS = latest.alerts %}
-  {% if ALERTS %}
-  <div class="panel span12" id="hk-fired-alerts">
-    <h2>🚨 {{ t('Fired alerts (today)', '已触发警报（今日）') }}
-      {{ help("Alerts fire only when something important changes. Click one to jump to its panel.", "只有重要变化才触发警报。点击可跳到对应面板。") }}
-    </h2>
-    {% for a in ALERTS %}
-      <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
-        <div class="alert-head">
-          <span class="alert-ico">{{ a.icon }}</span>
-          <b><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></b>
-          {% if a.anchor %}<span class="alert-jump">{{ t('View panel ↓', '查看面板 ↓') }}</span>{% endif %}
-        </div>
-        <div class="alert-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
-        {% if a.what_en %}<div class="alert-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh or a.what_en }}</span></div>{% endif %}
-        {% if a.edge_en %}<div class="alert-edge"><b>{{ t('Conviction:', '可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
-      </a>
-    {% endfor %}
-  </div>
-  {% endif %}
 
   <!-- ===================== SIGNAL STACK — consolidated cross-subsystem read ===================== -->
   {% if signal_stack %}
@@ -2108,23 +2054,6 @@
   </div>
   {% endif %}
 
-  <!-- ===================== MARKET SNAPSHOT (cross-asset tiles) ===================== -->
-  {% if market_tiles %}
-  <div class="panel span12" id="market-snapshot">
-    <h2>{{ t('Market snapshot', '市场快照') }}
-      {{ help("One-glance levels for HK: tech, peg, yuan, gold, dollar and HIBOR.", "一眼看香港关键水平：科技、联汇、人民币、黄金、美元与 HIBOR。") }}
-    </h2>
-    <div class="mtiles">
-      {% for tl in market_tiles %}
-      <div class="mtile">
-        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
-        <div class="mtile-val">{{ tl.level }}</div>
-        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} ({{ tl.pct }})</div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
 
   <!-- ===================== DRAWDOWN & SLOWDOWN RISK (uncalibrated, display-only) ===================== -->
   {% if latest.conditions and latest.conditions.recession and latest.conditions.recession.score is not none %}
@@ -2204,7 +2133,6 @@
     </div>
     {% endif %}
     {% if MD.runner_up_label %}<p class="sub" style="margin:8px 0 0">{{ t('Runner-up', '次因') }}: {{ t(MD.runner_up_label, MD.runner_up_label_zh) }}</p>{% endif %}
-    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none"><span class="l-en">{{ MD.note }}{% if MD.invalidation %} · {{ MD.invalidation }}{% endif %}</span><span class="l-zh">确定性的香港跨资产归因 — 区制解读，而非信号；从不决定评分或象限。{% if MD.invalidation_zh %} · {{ MD.invalidation_zh }}{% endif %}</span></p>
   </div>
   {% endif %}
 
@@ -2276,7 +2204,9 @@
 
   <!-- ===================== SCHEDULED-CATALYST CALENDAR (display-only) ===================== -->
   {# Structural, deterministic, dated catalysts: index reviews, Stock Connect eligibility,
-     MSCI / FTSE rebalances. Forward 45-day window. Display context only; never scored. #}
+     MSCI / FTSE rebalances. Forward 45-day window. Display context only; never scored.
+     Item 7: hide the whole panel when there is nothing scheduled (no empty shell). #}
+  {% if catalyst_strip or catalyst_imminent %}
   <div class="panel span12" id="hk-catalyst-calendar">
     <h2>📋 <span class="l-en">Scheduled Catalysts · next 45d</span><span class="l-zh">日程催化 · 未来45天</span>
       <span class="note" style="text-transform:none">· <span class="l-en">Index reviews · Stock Connect · MSCI / FTSE</span><span class="l-zh">指数检讨 · 沪深港通 · MSCI / 富时</span></span>
@@ -2349,6 +2279,7 @@
       <span class="l-zh">仅展示背景，从不评分。~ = 日期为预估（规则推算；请以官方公告为准）。</span>
     </p>
   </div>
+  {% endif %}{# /catalyst_strip or catalyst_imminent — hide when nothing scheduled #}
 
   <!-- ===================== HK PROPERTY (Centaline CCL) ===================== -->
   {% if property %}
@@ -2483,6 +2414,7 @@
     </div>
     <p class="note sb-cap" id="sb-cap"><!-- per-mode caption injected by JS --></p>
     <table class="sb-table"><thead id="sb-head"></thead><tbody id="sb-body"></tbody></table>
+    <button type="button" id="sb-more" style="display:none;margin:10px auto 0;padding:6px 16px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;"></button>
     <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Beta to S&P 500 overnight. Descriptive exposure, not a return forecast.', '对隔夜标普500的贝塔。描述性敞口，非收益预测。') }}</p>
     <script type="application/json" id="sb-data">{{ hk_scoreboard.modes | tojson }}</script>
     <script>
@@ -2490,8 +2422,9 @@
       var DATA;
       try { DATA = JSON.parse(document.getElementById('sb-data').textContent); } catch (e) { return; }
       var head = document.getElementById('sb-head'), body = document.getElementById('sb-body'),
-          cap = document.getElementById('sb-cap'),
+          cap = document.getElementById('sb-cap'), moreBtn = document.getElementById('sb-more'),
           seg = document.querySelector('#hk-screener .sb-seg');
+      var expanded = false, CAP = 10;
       function bl(en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>'; }
       function ladDir(d) { return d === 'up' ? 'up' : (d === 'down' ? 'down' : 'flat'); }
       var TILT = { favored: ['favored', '占优'], exposed: ['exposed', '最受冲击'], lag: ['lags', '滞后'], neutral: ['—', '—'] };
@@ -2549,12 +2482,20 @@
             return sg * (va - vb);
           });
         }
-        body.innerHTML = rows.map(function (r) {
+        var shown = expanded ? rows : rows.slice(0, CAP);
+        body.innerHTML = shown.map(function (r) {
           return '<tr>' + cols.map(function (c) { return '<td class="' + (c.l ? 'l' : '') + '">' + c.cell(r) + '</td>'; }).join('') + '</tr>';
         }).join('') || '<tr><td>—</td></tr>';
+        if (moreBtn) {
+          if (rows.length > CAP) {
+            moreBtn.style.display = 'block';
+            moreBtn.innerHTML = expanded ? bl('▲ Show fewer', '▲ 收起')
+              : bl('▼ Show all ' + rows.length, '▼ 显示全部 ' + rows.length);
+          } else { moreBtn.style.display = 'none'; }
+        }
       }
       function setMode(m) {
-        cur = m;
+        cur = m; expanded = false;
         var d = MODES[cur].def;
         // default sort = the beta column (index 3), direction per mode
         sortCol = ORDER.indexOf('beta'); sortDir = d;
@@ -2574,6 +2515,7 @@
         else { sortCol = i; sortDir = 'desc'; }
         render();
       });
+      if (moreBtn) moreBtn.addEventListener('click', function () { expanded = !expanded; render(); });
       setMode('amplifiers');
     })();
     </script>
@@ -2584,37 +2526,6 @@
 
   {% if mode != 'stocks' %}
   {% if pb %}
-  <!-- ===================== WHERE WE ARE + WHAT'S NEXT ===================== -->
-  {% if pb.progress %}
-  <div class="panel span6">
-    <h2>{{ t('Where we are in this regime', '我们身处此周期何处') }}
-      {{ help("How old this regime is compared with past similar regimes. Context only.", "当前周期年龄与历史同类周期比较。仅背景。") }}</h2>
-    <div class="lifebar">
-      <div class="zone" style="left:0;width:{{ pb.progress.zone_early_pct }}%;background:color-mix(in srgb,var(--up) 32%,var(--panel))"></div>
-      <div class="zone" style="left:{{ pb.progress.zone_early_pct }}%;width:{{ pb.progress.zone_mid_pct - pb.progress.zone_early_pct }}%;background:color-mix(in srgb,var(--warn) 32%,var(--panel))"></div>
-      <div class="zone" style="left:{{ pb.progress.zone_mid_pct }}%;width:{{ 100 - pb.progress.zone_mid_pct }}%;background:color-mix(in srgb,var(--down) 32%,var(--panel))"></div>
-      <div class="marker" style="left:{{ pb.progress.bar_pct }}%"></div>
-    </div>
-    <div class="lifelabels"><span>{{ t('young', '年轻') }}</span><span>{{ t('mid-life', '中年') }}</span><span>{{ t('old', '年老') }}</span></div>
-    <p class="note" style="margin:10px 0 0">{{ t(
-      pb.progress.age_days|string + ' trading days in, vs a median of ' + pb.progress.median_days|string + ' across ' + pb.progress.n_history|string + ' past ' + latest.quad_name + ' periods.',
-      '已运行 ' + pb.progress.age_days|string + ' 个交易日，对比 ' + pb.progress.n_history|string + ' 段过往同象限周期的中位数 ' + pb.progress.median_days|string + ' 个交易日。') }}</p>
-  </div>
-  {% endif %}
-  {% if pb.next_list %}
-  <div class="panel span6">
-    <h2>{{ t("What's likely next", '接下来可能发生什么') }}
-      {{ help("What usually came next after similar regimes. Base rates, not forecasts.", "类似周期之后通常出现什么。基础概率，非预测。") }}</h2>
-    {% for n in pb.next_list %}
-    <div class="prob">
-      <span class="nm">{{ t(n.name, n.name_zh) }}</span>
-      <span class="bar"><i style="width:{{ n.prob_pct }}%;background:var(--q{{ n.code[1] }})"></i></span>
-      <span class="pc">{{ n.prob_pct }}%</span>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
   <!-- ===================== HOW TO TRADE NOW (exposure dial) ===================== -->
   <div class="panel span12">
     <h2>{{ t('How to trade the current regime', '如何交易当前周期') }}
@@ -2654,64 +2565,6 @@
     <p class="note" style="margin:10px 0 0;text-transform:none"><a href="hk_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('HK stock & exposure board — amplifiers vs cushions, sectors & flows', '港股与敞口看板 — 放大器 vs 缓冲、板块与资金流') }}</a></p>
   </div>
   {% endif %}
-
-  <!-- ===================== REGIME TIME MACHINE ===================== -->
-  {% if lifespan_rows %}
-  <div class="panel span12" id="time-machine" data-timeline="hk_regime_timeline.json">
-    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
-      {{ help("Drag to replay the HK regime through history. No look-ahead.", "拖动可回放香港周期历史。无前视。") }}
-    </h2>
-    <div class="tm-wrap">
-      <canvas id="tm-canvas" class="tm-canvas"></canvas>
-      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0" aria-label="Scrub regime history">
-    </div>
-    <div class="tm-controls">
-      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause" title="Play / pause"><span class="tm-play-ico"></span></button>
-      <span class="tm-presets">
-        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
-        <button class="tm-btn" data-tm-jump="2015-04-27">{{ t('2015 rally', '2015 行情') }}</button>
-        <button class="tm-btn" data-tm-jump="2018-01-26">{{ t('2018 peak', '2018 高点') }}</button>
-        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
-        <button class="tm-btn" data-tm-jump="2021-02-17">{{ t('2021 HS-TECH top', '2021 恒科见顶') }}</button>
-      </span>
-    </div>
-    <div class="tm-readout">
-      <div class="tm-asof">
-        <span class="tm-date" id="tm-date">—</span>
-        <span class="tm-state-tag is-live" id="tm-tag">—</span>
-      </div>
-      <div class="tm-badges">
-        <span class="badge" id="tm-quad">—</span>
-        <span class="badge" id="tm-trans">—</span>
-        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
-        <span class="kv">{{ t('cycle', '周期') }} <b id="tm-cyc">—</b></span>
-        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
-      </div>
-      <div class="tm-gauges">
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="sub" id="tm-g-v">—</span></div>
-          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
-        </div>
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="sub" id="tm-i-v">—</span></div>
-          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
-        </div>
-      </div>
-      <div class="tm-flags" id="tm-flags"></div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- honest calibration framing -->
-  <div class="panel span12">
-    <h2>{{ t('How to read this', '如何解读') }}</h2>
-    <p class="note">{{ t(
-      'Read HK as a risk-context map: China fundamentals, global risk, and HK market structure. It is not a standalone buy trigger.',
-      '将香港视为风险背景图：内地基本面、全球风险与香港市场结构。它不是独立买入触发器。') }}</p>
-    <p class="note" style="margin-top:8px">{{ t(
-      'History gives base rates, not predictions. Use the dial to size risk, then check the live drivers.',
-      '历史提供基础概率，不是预测。先用刻度盘衡量风险，再看实时驱动。') }}</p>
-  </div>
 
   {% endif %}{# /mode != stocks — macro group 2 (where/next, how-to-trade, time machine, calibration) #}
 
@@ -2788,35 +2641,64 @@
   {% endif %}{# /mode != stocks — breadth & ratios #}
 
   {% if mode != 'macro' %}
-  <!-- ===================== SOUTHBOUND FLOW (南向资金) ===================== -->
-  {% if internals and internals.southbound %}{% set sb = internals.southbound %}
-  <div class="panel span6">
-    <h2>{{ t('🇭🇰 Southbound flow', '🇭🇰 南向资金') }} <span class="note" style="text-transform:none">· {{ t('mainland → Hong Kong', '内地 → 香港') }}</span>
-      {{ help("Daily mainland money flowing into HK stocks. Key liquidity context.", "每日内地资金流入港股。关键流动性背景。") }}</h2>
-    <div class="stat-row">
-      <div><span class="v {{ 'pos' if sb.cum_20d>=0 else 'neg' }}">{{ '%+.0f'|format(sb.cum_20d) }}</span><div class="note">{{ t('20d net (¥100M)', '20日净额(亿元)') }}</div></div>
-      <div><span class="v {{ 'pos' if sb.net_z>=0 else 'neg' }}">{{ '%+.1f'|format(sb.net_z) }}σ</span><div class="note">{{ t('today vs 1y', '今日 vs 一年') }}</div></div>
-      {% if sb.hold_mktcap %}<div><span class="v">{{ '{:,}'.format(sb.hold_mktcap) }}</span><div class="note">{{ t('mainland holdings (¥100M)', '内地持仓(亿元)') }}</div></div>{% endif %}
-      <div><span class="v">{{ sb.pos_days_20 }}/20</span><div class="note">{{ t('net-buy days', '净买入天数') }}</div></div>
+  <!-- ===================== SOUTHBOUND & A/H — combined flow + cross-listing value (item 12) ===================== -->
+  {% if (internals and internals.southbound) or (internals and internals.sb_divergence) or ah %}
+  <div class="panel span12" id="sb-ah-combined">
+    <h2>{{ t('🇭🇰 Southbound &amp; A/H', '🇭🇰 南向资金与 A/H') }} <span class="note" style="text-transform:none">· {{ t('mainland flow · flow-vs-price · cross-listing value — with a read on each', '内地资金 · 资金对价格 · 跨市场估值 — 每项附带解读') }}</span>
+      {{ help("Three cross-market reads in one: daily southbound flow (mainland money into HK), whether that flow confirms or diverges from the HSI trend, and the A/H premium (how cheap HK-listed H-shares are vs their mainland A-share twins). Each carries a plain read. Display context, not a buy signal.", "三个跨市场读数合一：每日南向资金（内地资金流入港股）、该资金是否与恒指趋势一致或背离、以及 A/H 溢价（港股 H 相对 A 股孪生有多便宜）。每项附带简明解读。仅背景，非买卖信号。") }}</h2>
+    <div class="sbah-grid">
+      {# 1. Southbound flow — deterministic inflow/outflow read from 20d net + z #}
+      {% if internals and internals.southbound %}{% set sb = internals.southbound %}
+      {% set _sbsig = 'in' if (sb.net_z >= 0.4 and sb.cum_20d >= 0) else ('out' if sb.net_z <= -0.4 else 'neu') %}
+      <div class="sbah-card">
+        <div class="sbah-head">
+          <span class="sbah-t">{{ t('Southbound flow', '南向资金') }}</span>
+          <span class="sbah-sig sig-{{ _sbsig }}">{% if _sbsig=='in' %}{{ t('▲ Inflow','▲ 流入') }}{% elif _sbsig=='out' %}{{ t('▼ Outflow','▼ 流出') }}{% else %}{{ t('◦ Balanced','◦ 均衡') }}{% endif %}</span>
+        </div>
+        <div class="stat-row">
+          <div><span class="v {{ 'pos' if sb.cum_20d>=0 else 'neg' }}">{{ '%+.0f'|format(sb.cum_20d) }}</span><div class="note">{{ t('20d net (¥100M)', '20日净额(亿)') }}</div></div>
+          <div><span class="v {{ 'pos' if sb.net_z>=0 else 'neg' }}">{{ '%+.1f'|format(sb.net_z) }}σ</span><div class="note">{{ t('vs 1y', '对比一年') }}</div></div>
+          <div><span class="v">{{ sb.pos_days_20 }}/20</span><div class="note">{{ t('net-buy days', '净买入') }}</div></div>
+        </div>
+        <div class="sbah-read"><span class="l-en">{{ 'Mainland is adding — a liquidity tailwind for HK.' if _sbsig=='in' else ('Mainland is trimming — a liquidity drag.' if _sbsig=='out' else 'Flow roughly balanced — no strong tilt.') }}</span><span class="l-zh">{{ '内地在加仓 — 港股流动性顺风。' if _sbsig=='in' else ('内地在减仓 — 流动性拖累。' if _sbsig=='out' else '资金大致均衡 — 无明显倾向。') }}</span></div>
+      </div>
+      {% endif %}
+      {# 2. Flow vs price — reuse the engine's confirms/diverges state as the read #}
+      {% if internals and internals.sb_divergence and internals.sb_divergence.state != 'insufficient' %}{% set d = internals.sb_divergence %}
+      {% set _dsig = 'in' if d.state=='confirms' else ('out' if d.state=='diverges' else 'neu') %}
+      <div class="sbah-card">
+        <div class="sbah-head">
+          <span class="sbah-t">{{ t('Flow vs price', '资金 vs 价格') }}</span>
+          <span class="sbah-sig sig-{{ _dsig }}">{% if _dsig=='in' %}{{ t('✓ Confirms','✓ 同向') }}{% elif _dsig=='out' %}{{ t('⚠ Diverges','⚠ 背离') }}{% else %}{{ t('◦ Mixed','◦ 中性') }}{% endif %}</span>
+        </div>
+        <div class="stat-row">
+          <div><span class="v {{ 'pos' if d.flow_z>=0 else 'neg' }}">{{ '%+.1f'|format(d.flow_z) }}σ</span><div class="note">{{ t('flow trend', '资金趋势') }}</div></div>
+          <div><span class="v {{ 'pos' if d.px_ret_pct>=0 else 'neg' }}">{{ '%+.1f'|format(d.px_ret_pct) }}%</span><div class="note">{{ t('HSI', '恒指') }} {{ d.window_d }}{{ t('d','日') }}</div></div>
+        </div>
+        <div class="sbah-read"><span class="l-en">{{ 'Flow is backing the price trend — cleaner.' if _dsig=='in' else ('Flow and price disagree — watch for a turn.' if _dsig=='out' else 'No clear agreement between flow and price.') }}</span><span class="l-zh">{{ '资金支持价格趋势 — 更干净。' if _dsig=='in' else ('资金与价格背离 — 留意转向。' if _dsig=='out' else '资金与价格无明显一致。') }}</span></div>
+      </div>
+      {% endif %}
+      {# 3. A/H premium — percentile read (high A-over-H = H-shares cheap = value) #}
+      {% if ah %}
+      {% set _ahsig = 'in' if (ah.pctile is not none and ah.pctile >= 65) else ('out' if (ah.pctile is not none and ah.pctile <= 35) else 'neu') %}
+      <div class="sbah-card">
+        <div class="sbah-head">
+          <span class="sbah-t">{{ t('A/H premium', 'A/H 溢价') }}</span>
+          <span class="sbah-sig sig-{{ _ahsig }}">{% if _ahsig=='in' %}{{ t('H cheap','H 便宜') }}{% elif _ahsig=='out' %}{{ t('H rich','H 偏贵') }}{% else %}{{ t('◦ Fair','◦ 中性') }}{% endif %}</span>
+        </div>
+        <div class="stat-row">
+          <div><span class="v">{{ '%+.1f'|format(ah.premium_pct) }}%</span><div class="note">{{ t('A-over-H', 'A 高于 H') }} ({{ ah.n_pairs }})</div></div>
+          {% if ah.pctile is not none %}<div><span class="v">{{ ah.pctile }}%ile</span><div class="note">{{ t('vs 3y', '对比3年') }}</div></div>{% endif %}
+          {% if ah.chg_1y is not none %}<div><span class="v {{ 'neg' if ah.chg_1y<0 else 'pos' }}">{{ '%+.1f'|format(ah.chg_1y) }}pp</span><div class="note">{{ t('1y', '一年') }}</div></div>{% endif %}
+        </div>
+        <div class="sbah-read"><span class="l-en">{{ 'H-shares look cheap vs their A twins — a value tilt.' if _ahsig=='in' else ('H-shares rich vs A — value edge gone.' if _ahsig=='out' else 'A/H spread near its 3y norm.') }}</span><span class="l-zh">{{ 'H 股相对 A 股便宜 — 价值倾向。' if _ahsig=='in' else ('H 股相对 A 偏贵 — 价值优势消退。' if _ahsig=='out' else 'A/H 价差接近三年常态。') }}</span></div>
+        {% if ah.pairs %}<table class="sbah-pairs"><tbody>
+        {% for p in ah.pairs[:4] %}<tr><td class="l">{{ p.name }} <span class="note">{{ p.h }}</span></td><td>{{ '%+.1f'|format(p.premium_pct) }}%</td></tr>{% endfor %}
+        </tbody></table>{% endif %}
+      </div>
+      {% endif %}
     </div>
-    {{ sb.chart_html | safe }}
-  </div>
-  {% endif %}
-
-  <!-- ===== SOUTHBOUND vs PRICE DIVERGENCE (display-only context) ===== -->
-  {% if internals and internals.sb_divergence %}{% set d = internals.sb_divergence %}
-  <div class="panel span6">
-    <h2>{{ t('🔀 Southbound vs price', '🔀 南向 vs 价格') }} <span class="note" style="text-transform:none">· {{ t('flow trend vs HSI trend', '资金趋势 vs 恒指趋势') }}</span>
-      {{ help("Checks whether southbound flow and Hang Seng price trend agree. Context only.", "检查南向资金趋势与恒指价格趋势是否一致。仅背景。") }}</h2>
-    {% if d.state == 'insufficient' %}
-    <div class="note">{{ t('Not enough history to compare.', '历史数据不足，暂无法比较。') }}</div>
-    {% else %}
-    <div class="stat-row">
-      <div><span class="v">{{ t('Confirms','同向') if d.state=='confirms' else (t('Diverges','背离') if d.state=='diverges' else t('Mixed','中性')) }}</span><div class="note">{{ t('flow vs price', '资金 vs 价格') }} · {{ d.window_d }}{{ t('d', '日') }}</div></div>
-      <div><span class="v {{ 'pos' if d.flow_z>=0 else 'neg' }}">{{ '%+.1f'|format(d.flow_z) }}σ</span><div class="note">{{ t('southbound flow trend', '南向资金趋势') }}</div></div>
-      <div><span class="v {{ 'pos' if d.px_ret_pct>=0 else 'neg' }}">{{ '%+.1f'|format(d.px_ret_pct) }}%</span><div class="note">{{ t('HSI', '恒指') }} {{ d.window_d }}{{ t('d', '日') }}</div></div>
-    </div>
-    {% endif %}
+    {% if internals and internals.southbound and internals.southbound.chart_html %}{{ internals.southbound.chart_html | safe }}{% endif %}
   </div>
   {% endif %}
 
@@ -2840,25 +2722,6 @@
 
   {% endif %}{# /mode != stocks — HKMA peg funding #}
 
-  {% if mode != 'macro' %}
-  <!-- ===================== AH PREMIUM (computed basket) ===================== -->
-  {% if ah %}
-  <div class="panel span6">
-    <h2>{{ t('AH premium', 'AH 溢价') }} <span class="note" style="text-transform:none">· {{ t('A-share vs HK-listed H twin', 'A股 对 H股') }}</span>
-      {{ help("A-share premium vs HK-listed H-share twins. High premium means H-shares are cheaper.", "A股相对香港H股孪生的溢价。高溢价表示H股更便宜。") }}</h2>
-    <div class="stat-row">
-      <div><span class="v">{{ '%+.1f'|format(ah.premium_pct) }}%</span><div class="note">{{ t('basket A-over-H', '篮子 A 高于 H') }} ({{ ah.n_pairs }} {{ t('pairs', '对') }})</div></div>
-      {% if ah.pctile is not none %}<div><span class="v">{{ ah.pctile }}%ile</span><div class="note">{{ t('vs 3y range', '对比3年区间') }}</div></div>{% endif %}
-      {% if ah.chg_1y is not none %}<div><span class="v {{ 'neg' if ah.chg_1y<0 else 'pos' }}">{{ '%+.1f'|format(ah.chg_1y) }}pp</span><div class="note">{{ t('1y change', '一年变化') }}</div></div>{% endif %}
-    </div>
-    {{ ah.chart_html | safe }}
-    <table style="margin-top:8px"><thead><tr><th class="l">{{ t('Pair', '配对') }}</th><th>{{ t('A-over-H %', 'A 高于 H %') }}</th></tr></thead><tbody>
-    {% for p in ah.pairs[:6] %}<tr><td class="l">{{ p.name }} <span class="note">{{ p.h }}</span></td><td>{{ '%+.1f'|format(p.premium_pct) }}%</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
-  {% endif %}
-
-  {% endif %}{# /mode != macro — AH premium #}
 
   {% if mode != 'stocks' %}
   <!-- ===================== CHINA EARNINGS BACKDROP ===================== -->
@@ -2887,6 +2750,30 @@
     </div>
   </div>
 
+
+  {% if mode != 'stocks' %}{# item 1: fired alerts relocated to the bottom of the macro page #}
+  <!-- ===================== FIRED ALERTS (today) ===================== -->
+  {% set ALERTS = latest.alerts %}
+  {% if ALERTS %}
+  <div class="panel span12" id="hk-fired-alerts">
+    <h2>🚨 {{ t('Fired alerts (today)', '已触发警报（今日）') }}
+      {{ help("Alerts fire only when something important changes. Click one to jump to its panel.", "只有重要变化才触发警报。点击可跳到对应面板。") }}
+    </h2>
+    {% for a in ALERTS %}
+      <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
+        <div class="alert-head">
+          <span class="alert-ico">{{ a.icon }}</span>
+          <b><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></b>
+          {% if a.anchor %}<span class="alert-jump">{{ t('View panel ↓', '查看面板 ↓') }}</span>{% endif %}
+        </div>
+        <div class="alert-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+        {% if a.what_en %}<div class="alert-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh or a.what_en }}</span></div>{% endif %}
+        {% if a.edge_en %}<div class="alert-edge"><b>{{ t('Conviction:', '可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endif %}
   {% endif %}{# /mode != stocks — macro group 3 (China earnings backdrop, sector-leader cycle detail) #}
 
 </div>
@@ -2900,7 +2787,6 @@
 <script src="mtf.js"></script>
 <script src="charts.js"></script>
 <script src="tablesort.js"></script>
-<script src="timemachine.js"></script>
 <script>
 /* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
    Also corrects popover position (flip above/below, clamp to right edge). */
