@@ -1,0 +1,376 @@
+# config/theme_crosswalk.yml — Canonical TIL theme registry (W0 — PR-A)
+#
+# Maps 18 foresight canonical theme ids → baskets, subsector_rotation theme keys,
+# and reserves citrini_basket_ids (always [] in PR-A; populated post CITR-2).
+#
+# Rules:
+#   • Every foresight theme MUST appear exactly once as a canonical id.
+#   • basket_ids reference data/baskets/membership.json keys (46 baskets total).
+#   • subsector_keys reference site/marketdata/subsector_rotation.json themes[].theme strings.
+#   • Baskets not mapped to any canonical theme are listed in unmapped_baskets below.
+#   • citrini_basket_ids: always [] in this PR (CITR-2 deferred per §7.4 OPEN-OPERATOR).
+#   • Honest nulls: basket/subsector mappings are empty where no token overlap exists.
+#   • DO NOT add may_rank/may_gate/may_size/may_escalate overrides — display-only law.
+#
+# Derivation: programmatic token-overlap candidates, then curated by foresight rationale.
+# Version: 1 (2026-07-09, TIL W0 PR-A)
+
+version: 1
+date: "2026-07-09"
+note: >
+  Canonical theme crosswalk. All 18 foresight themes are mapped. Baskets not covered
+  by any foresight theme are listed in unmapped_baskets with reasons. Citrini column
+  is reserved (always empty) until CITR-2 access questions are resolved (§7.4).
+
+themes:
+  - id: ai_semiconductors
+    name_en: "AI Semiconductors"
+    name_zh: "AI半导体"
+    foresight_id: ai_semiconductors
+    basket_ids:
+      - ai_semiconductors
+      - ai_infra
+    subsector_keys:
+      - "Semiconductors"
+      - "Artificial Intelligence"
+    citrini_basket_ids: []
+    note: >
+      Core foresight BROADENING theme. Basket ai_semiconductors is the direct match;
+      ai_infra covers the broader capex chain beneficiaries including HPC/networking.
+
+  - id: memory_storage
+    name_en: "Memory, HBM & Storage"
+    name_zh: "存储与HBM"
+    foresight_id: memory_storage
+    basket_ids:
+      - memory_storage
+    subsector_keys:
+      - "Semiconductors"
+    citrini_basket_ids: []
+    note: >
+      WATCH stage. Basket memory_storage maps directly. Semiconductors subsector
+      covers the parent sector; no dedicated HBM subsector key exists.
+
+  - id: semicap_equipment
+    name_en: "Semiconductor Equipment (WFE)"
+    name_zh: "半导体设备（WFE）"
+    foresight_id: semicap_equipment
+    basket_ids:
+      - semicap_equipment
+    subsector_keys:
+      - "Semiconductors"
+    citrini_basket_ids: []
+    note: >
+      WATCH stage. Direct basket match. Semiconductors subsector is the parent sector.
+
+  - id: data_center_power
+    name_en: "Data Center Power & Cooling"
+    name_zh: "数据中心电力与冷却"
+    foresight_id: data_center_power
+    basket_ids:
+      - data_center_power
+      - ai_neoclouds
+    subsector_keys:
+      - "Artificial Intelligence"
+    citrini_basket_ids: []
+    note: >
+      RE-RATING stage. data_center_power basket is the direct match; ai_neoclouds
+      captures the hyperscaler demand driver. No dedicated subsector key exists —
+      "Artificial Intelligence" is the closest parent.
+
+  - id: nuclear_power
+    name_en: "Nuclear & SMR Power"
+    name_zh: "核能与小型模块堆"
+    foresight_id: nuclear_power
+    basket_ids:
+      - nuclear_power
+      - uranium_miners
+    subsector_keys:
+      - "Energy Renewable"
+    citrini_basket_ids: []
+    note: >
+      PRECIPICE stage. nuclear_power basket is direct; uranium_miners covers the
+      fuel supply chain. "Energy Renewable" subsector key used — no dedicated nuclear
+      subsector exists.
+
+  - id: grid_electrification
+    name_en: "Grid & Electrification"
+    name_zh: "电网与电气化"
+    foresight_id: grid_electrification
+    basket_ids:
+      - power_grid
+    subsector_keys:
+      - "Energy Renewable"
+    citrini_basket_ids: []
+    note: >
+      BROADENING stage. power_grid basket maps to grid buildout thesis. No dedicated
+      grid/electrification subsector key; Energy Renewable is closest.
+
+  - id: cybersecurity
+    name_en: "Cybersecurity"
+    name_zh: "网络安全"
+    foresight_id: cybersecurity
+    basket_ids:
+      - cybersecurity
+    subsector_keys:
+      - "Cybersecurity"
+    citrini_basket_ids: []
+    note: >
+      WATCH stage. Direct basket and subsector key match.
+
+  - id: defense_aerospace
+    name_en: "Defense & Aerospace"
+    name_zh: "国防与航空航天"
+    foresight_id: defense_aerospace
+    basket_ids:
+      - defense
+    subsector_keys:
+      - "Defense & Aerospace"
+    citrini_basket_ids: []
+    note: >
+      WATCH stage. Basket is named 'defense'; subsector key is 'Defense & Aerospace'.
+
+  - id: robotics_automation
+    name_en: "Robotics & Automation"
+    name_zh: "机器人与自动化"
+    foresight_id: robotics_automation
+    basket_ids:
+      - robotics_automation
+    subsector_keys:
+      - "Robotics"
+      - "Industrial Automation"
+      - "Autonomous Systems"
+    citrini_basket_ids: []
+    note: >
+      WATCH stage. Direct basket match. Three subsector keys cover the automation
+      breadth: factory robotics, industrial automation, and autonomous systems.
+
+  - id: glp1_obesity
+    name_en: "GLP-1 / Obesity"
+    name_zh: "GLP-1与肥胖"
+    foresight_id: glp1_obesity
+    basket_ids:
+      - obesity_glp1
+    subsector_keys:
+      - "Healthcare & Biotech"
+    citrini_basket_ids: []
+    note: >
+      BROADENING stage (fingerprint). Basket is 'obesity_glp1'. Subsector key
+      Healthcare & Biotech is the closest match; no dedicated GLP-1 subsector exists.
+
+  - id: fintech_payments
+    name_en: "Fintech & Payments"
+    name_zh: "金融科技与支付"
+    foresight_id: fintech_payments
+    basket_ids:
+      - payments_fintech
+    subsector_keys:
+      - "FinTech"
+    citrini_basket_ids: []
+    note: >
+      WATCH stage. Basket 'payments_fintech' maps directly. Subsector key 'FinTech'.
+
+  - id: space_satellite
+    name_en: "Space & Satellites"
+    name_zh: "太空与卫星"
+    foresight_id: space_satellite
+    basket_ids:
+      - space_economy
+    subsector_keys:
+      - "Space Tech"
+    citrini_basket_ids: []
+    note: >
+      BROADENING stage. space_economy basket covers the commercial space/satellite
+      beneficiary chain. 'Space Tech' is the subsector key.
+
+  - id: rare_earth_critical_min
+    name_en: "Rare Earth & Critical Minerals"
+    name_zh: "稀土与关键矿产"
+    foresight_id: rare_earth_critical_min
+    basket_ids:
+      - critical_minerals
+    subsector_keys:
+      - "Commodities Metals"
+    citrini_basket_ids: []
+    note: >
+      BROADENING stage. critical_minerals basket is the direct match. 'Commodities
+      Metals' is the nearest subsector key.
+
+  - id: copper_steel_electrify
+    name_en: "Copper, Steel & Electrification"
+    name_zh: "铜、钢铁与电气化"
+    foresight_id: copper_steel_electrify
+    basket_ids:
+      - reshoring
+    subsector_keys:
+      - "Commodities Metals"
+    citrini_basket_ids: []
+    note: >
+      BROADENING stage. reshoring basket is the closest match (captures the domestic
+      industrial-metals demand driver). 'Commodities Metals' subsector. No dedicated
+      copper/steel basket exists.
+
+  - id: ag_fertilizer
+    name_en: "Agriculture & Fertilizer"
+    name_zh: "农业与化肥"
+    foresight_id: ag_fertilizer
+    basket_ids: []
+    subsector_keys:
+      - "Agriculture & FoodTech"
+      - "Commodities Agriculture"
+    citrini_basket_ids: []
+    note: >
+      BROADENING stage. No dedicated basket for the ag/fertilizer supply chain —
+      the theme is covered at the foresight level only. Two subsector keys provide
+      the rotation data surface.
+
+  - id: medical_devices
+    name_en: "Medical Devices"
+    name_zh: "医疗器械"
+    foresight_id: medical_devices
+    basket_ids:
+      - managed_care
+    subsector_keys:
+      - "Healthcare & Biotech"
+    citrini_basket_ids: []
+    note: >
+      BROADENING stage (fingerprint). No dedicated medical devices basket; managed_care
+      is the closest healthcare basket. Healthcare & Biotech subsector covers the space.
+
+  - id: diagnostics_lifesci
+    name_en: "Diagnostics & Life-Science Tools"
+    name_zh: "诊断与生命科学工具"
+    foresight_id: diagnostics_lifesci
+    basket_ids: []
+    subsector_keys:
+      - "Healthcare & Biotech"
+    citrini_basket_ids: []
+    note: >
+      WATCH stage. No dedicated diagnostics/life-science basket exists. Healthcare &
+      Biotech subsector provides the rotation data surface.
+
+  - id: solar
+    name_en: "Solar"
+    name_zh: "太阳能"
+    foresight_id: solar
+    basket_ids: []
+    subsector_keys:
+      - "Energy Renewable"
+    citrini_basket_ids: []
+    note: >
+      WATCH stage. No dedicated solar basket exists. Energy Renewable subsector
+      key covers the rotation data surface.
+
+# ---------------------------------------------------------------------------
+# Baskets not mapped to any canonical theme
+# (All 46 baskets accounted for — 38 mapped above, 8 here)
+# ---------------------------------------------------------------------------
+unmapped_baskets:
+  - id: mag7
+    reason: >
+      Mega-cap tech concentration basket (AAPL/MSFT/NVDA/GOOGL/META/AMZN/TSLA).
+      Not a thematic foresight category; it is a factor/market-structure lens.
+      Covered by the us_stocks board, not TIL themes.
+
+  - id: ai_software
+    reason: >
+      AI software applications layer. Overlaps ai_semiconductors and data_center_power
+      themes but is a SEPARATE basket without a direct foresight theme mapping.
+      May be added as a sub-leg when W1 thesis objects are curated.
+
+  - id: ai_agents
+    reason: >
+      AI agents & applications basket. Adjacent to ai_semiconductors and ai_software
+      but represents a distinct product/application layer without a foresight theme.
+
+  - id: regional_banks
+    reason: >
+      Macro/rates-sensitive basket, not a thematic foresight theme. Covered by the
+      neural-web rates/credit context organs.
+
+  - id: housing
+    reason: >
+      Housing chain basket. No foresight theme covers residential construction.
+      Covered as a macro/rates context.
+
+  - id: energy_complex
+    reason: >
+      US broad energy basket (oil & gas, services, pipelines). Overlaps with
+      foresight themes at the margins but is not a direct TIL canonical theme.
+      WATCH-equivalent via sector rotation only.
+
+  - id: defensives
+    reason: >
+      Cross-sector defensive rotation sleeve (staples/healthcare/utilities).
+      Not a thematic foresight category; it is a regime/risk context construct.
+
+  - id: travel
+    reason: >
+      Travel & experiences basket. No foresight theme covers the travel sector.
+      Covered by consumer discretionary sector rotation.
+
+  - id: retail
+    reason: >
+      Retail basket. No foresight theme; covered by consumer discretionary rotation.
+      Active radar divergence flag (hidden-opportunity, 2026-07-07) noted separately.
+
+  - id: crypto
+    reason: >
+      Crypto & digital assets basket. No foresight theme; covered by macro/sentiment
+      rotation and the BTC vector program separately.
+
+  - id: crypto_rails
+    reason: >
+      Crypto & digital rails basket. Adjacent to fintech_payments but distinct.
+      No direct foresight theme mapping.
+
+  - id: non_ai_software
+    reason: >
+      Non-AI software basket. Explicitly named to track the non-AI cohort; not a
+      foresight theme. Covered by sector rotation.
+
+  - id: non_ai_tech
+    reason: >
+      Non-AI tech & hardware basket. No foresight theme. Covered by sector rotation.
+
+  - id: quantum_computing
+    reason: >
+      Quantum computing basket. No foresight theme mapped; the technology is pre-commercial
+      and does not yet have the T1/T4 data surface required for a foresight stage.
+
+  - id: insurance
+    reason: >
+      Insurance & brokers basket. No foresight theme. Financial sector rotation only.
+
+  - id: big_pharma
+    reason: >
+      Big pharma basket. Distinct from GLP-1/obesity and diagnostics themes.
+      No direct foresight theme coverage.
+
+  - id: industrial_distribution
+    reason: >
+      Industrial distribution & capital goods basket. Adjacent to reshoring/copper_steel
+      themes but not a direct foresight theme mapping.
+
+  - id: us_sector_tech
+    reason: Equal-weight sector basket (GICS Technology). Sector rotation context; not a theme.
+  - id: us_sector_financials
+    reason: Equal-weight sector basket (GICS Financials). Sector rotation context; not a theme.
+  - id: us_sector_health
+    reason: Equal-weight sector basket (GICS Health Care). Sector rotation context; not a theme.
+  - id: us_sector_discretionary
+    reason: Equal-weight sector basket (GICS Consumer Discretionary). Not a theme.
+  - id: us_sector_comm
+    reason: Equal-weight sector basket (GICS Communication Services). Not a theme.
+  - id: us_sector_industrials
+    reason: Equal-weight sector basket (GICS Industrials). Not a theme.
+  - id: us_sector_staples
+    reason: Equal-weight sector basket (GICS Consumer Staples). Not a theme.
+  - id: us_sector_energy
+    reason: Equal-weight sector basket (GICS Energy). Not a theme.
+  - id: us_sector_utilities
+    reason: Equal-weight sector basket (GICS Utilities). Not a theme.
+  - id: us_sector_realestate
+    reason: Equal-weight sector basket (GICS Real Estate). Not a theme.
+  - id: us_sector_materials
+    reason: Equal-weight sector basket (GICS Materials). Not a theme.

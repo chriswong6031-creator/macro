@@ -6105,6 +6105,77 @@ artifacts:
       by scripts/build_mechanism_pathways.py alongside the main artifact.
       Display/ops only — no authority.
 
+  theme-state:
+    path: data/neuralweb/theme_state.json
+    format: json
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W0 (PR-A) thematic state composition organ. Tolerant-read composition over
+      foresight_cascade, baskets theme_intel, radar/radar_enriched divergence flags,
+      narrative_emergence ticker overlap, subsector_rotation RRG quadrants, and
+      divergence_log latest-per-theme. Display/context only; all authority booleans
+      False. Missing input → stale_legs entry + null block; always exits 0.
+
+  site-theme-state:
+    path: site/neuralwebdata/theme_state.json
+    format: json
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Site mirror of data/neuralweb/theme_state.json for client-side consumption.
+      Exact copy written atomically alongside the data artifact by
+      scripts/build_thematic_state.py. Display/context only — no authority.
+
+  theme-phase-history:
+    path: data/neuralweb/theme_phase_history.jsonl
+    format: jsonl
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_phase_history.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_thematic_state.py
+    external_consumers: []
+    notes: >
+      TIL W0 (PR-A) PIT tape: append-only phase history for all 18 canonical themes.
+      One row per (theme_id, as_of) on state transition OR weekly heartbeat. Fields:
+      schema, as_of, ts, theme_id, foresight_stage, scoring_lifecycle, radar_lifecycle,
+      divergence_quadrant, evidence_z, prev_hash (sha256 hash-chain). Nightly is
+      sole advancer. First promotion-eligible read 2026-10-15.
+
   entity-thesis-mechanism-registry:
     path: data/neuralweb/entity_thesis_mechanism_registry.json
     format: json
