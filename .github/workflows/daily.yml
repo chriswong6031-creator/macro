@@ -2165,6 +2165,25 @@ jobs:
             echo "causal battery: skipping (not Tuesday, date +%u=$(date +%u))"
           fi
           exit 0
+      - name: run causal LLM brainstorm (CHF W5 weekly, Tuesday gate, auto_loop gate)
+        # Weekly LLM brainstorm step (CHF-R8): runs AFTER build_causal_edges.
+        # Tuesday-gated (date +%u == 2): no-op on other days.
+        # The runner checks auto_loop in config/causal_llm.yml; if false (default),
+        # degrades to pack-only mode (operator-paste workflow; no LLM calls).
+        # Requires ANTHROPIC_API_KEY service-key for scheduled LLM calls (W-AUTO identity law).
+        # Non-fatal (exits 0 even if LLM chain fails — pack-only degradation is expected).
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          if [ "$(date +%u)" = "2" ]; then
+            python -m scripts.run_causal_brainstorm --trigger scheduled > /tmp/causal_brainstorm.log 2>&1; rc=$?
+            cat /tmp/causal_brainstorm.log
+            [ "$rc" -ne 0 ] && echo "::warning title=run_causal_brainstorm::rc=$rc (non-fatal)"
+          else
+            echo "causal LLM brainstorm: skipping (not Tuesday, date +%u=$(date +%u))"
+          fi
+          exit 0
       - name: commit causal outputs (CHF-R11 narrow git-add)
         run: |
           git config user.name "dashboard-bot"
@@ -2176,6 +2195,7 @@ jobs:
           git add data/neuralweb/causal_frontier.json data/neuralweb/causal_surprise_queue.jsonl 2>/dev/null || true
           git add data/neuralweb/causal_confluence_audit.json 2>/dev/null || true
           git add data/neuralweb/causal_lab_state.json site/neuralwebdata/causal_lab_state.json 2>/dev/null || true
+          git add data/neuralweb/causal_brainstorm_runs.jsonl data/neuralweb/causal_llm_lane.json 2>/dev/null || true
           git add data/trial_ledger.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then echo "no causal output changes"; exit 0; fi
           git commit -m "causal: frontier drift + lab state $(date -u +%F)"

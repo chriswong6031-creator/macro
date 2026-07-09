@@ -1,0 +1,37 @@
+# CHF-R8 autonomy gate — the operator risk-acceptance switch.
+#
+# auto_loop may be flipped ONLY by the operator after Phase-A is satisfied
+# (see phase_a block below). This file is the SOLE gate that enables scheduled
+# autonomous LLM brainstorm runs. Flipping it requires a one-line PR; this
+# masterplan document (research/CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md
+# §6 ops + CHF-R8) is the ruling that the flip requires nothing further.
+#
+# Scheduled runs REQUIRE service-key identity (ANTHROPIC_API_KEY repo secret).
+# They NEVER use CLAUDE_CODE_OAUTH_TOKEN per the W-AUTO identity line in the
+# Research Factory charter. The runner enforces this: when trigger=scheduled,
+# only the 'anthropic' provider with ANTHROPIC_API_KEY is accepted.
+#
+# NEVER change weekly_budget_cards or model_roles without a CHF ruling amendment.
+
+schema: causal_llm.v1
+
+# Gate — must be true for scheduled runs to invoke the LLM chain.
+auto_loop: false
+
+# Phase-A completion criteria (operator fills in when gate is earned).
+# Until completed: every scheduled run degrades to pack-only mode.
+phase_a:
+  required_cards: 5           # ≥5 schema-valid cards filed from one full operator cycle
+  required_exits: 1           # ≥1 candidate through exit (a) or (b)
+  completed: false            # operator sets true in the earn-in PR
+  notes: ''                   # operator annotation at flip time
+
+# Model roles (CHF-R17: LLM chain only — no cortex model changes).
+model_roles:
+  generator: 'claude-sonnet-4-6'          # pack → JSON card array
+  skeptic: 'claude-opus-4-8'             # cards → categorical ADVISORY findings
+  compiler: 'claude-haiku-4-5-20251001'  # surviving cards → strict schema JSON
+
+# Weekly budget cap (CHF-R8 + causal_ingest_brainstorm ISO-week lock: ≤3/week).
+# This config value is advisory; the hard enforcement is in causal_ingest_brainstorm.py.
+weekly_budget_cards: 3
