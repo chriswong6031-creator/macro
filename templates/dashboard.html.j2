@@ -2151,6 +2151,170 @@
   </div>
 
 
+  {# ===================== POLICY-LEVER ARMED/QUIET CARD (Policy-Shock W2-F) =====================
+     Display-only conditions context — not a signal, not a forecast.
+     PS-R1: the word "intent" does not appear in card copy.
+     PS-R3: reads policy_lever.json (site artifact); never feeds scoring.
+     PS-R4: no probabilities anywhere in this block.
+     Jinja missing-key gotcha guard: every nested access uses the 'defined' test or
+     dict.get() notation ('d.key is defined') before accessing — NEVER 'if d.key is not none'
+     on a potentially MISSING key (crashes with UndefinedError).
+  #}
+  {% if policy_lever is defined and policy_lever %}
+  {% set PL = policy_lever %}
+  {% set _pl_state = PL.get('state') or 'QUIET' %}
+  {% set _pl_state_color = 'var(--down)' if _pl_state == 'ARMED' else ('var(--orange)' if _pl_state == 'ELEVATED' else 'var(--muted)') %}
+  <div class="panel span12" id="policy-lever-card" style="border-top:3px solid {{ _pl_state_color }};padding:16px 20px 18px">
+    <style>
+    #policy-lever-card{background:var(--panel)}
+    #policy-lever-card h2{margin:0 0 6px;font-size:15px;font-weight:700}
+    #policy-lever-card .pl-state-chip{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:.04em;background:{{ _pl_state_color }};color:#fff;margin-right:8px}
+    #policy-lever-card .pl-section{margin:10px 0 4px;font-size:13px}
+    #policy-lever-card .pl-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-right:6px}
+    #policy-lever-card .pl-framing{font-size:11.5px;color:var(--muted);margin:4px 0 10px;font-style:italic}
+    #policy-lever-card .pl-lever-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+    #policy-lever-card .pl-lever-table th{font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:3px 8px 3px 0;text-align:left;border-bottom:1px solid var(--line)}
+    #policy-lever-card .pl-lever-table td{padding:5px 8px 5px 0;vertical-align:top;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
+    #policy-lever-card .pl-arm-chip{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid}
+    #policy-lever-card .arm-true{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down);border-color:var(--down)}
+    #policy-lever-card .arm-false{background:var(--panel2);color:var(--muted);border-color:var(--line)}
+    #policy-lever-card .pl-sub{font-size:11px;color:var(--muted);margin-top:2px}
+    #policy-lever-card .pl-jaw-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;font-size:12.5px}
+    #policy-lever-card .pl-jaw-item b{color:var(--text)}
+    #policy-lever-card .pl-cal-row{font-size:12.5px;margin-top:6px}
+    @media(max-width:600px){ #policy-lever-card .pl-lever-table th:nth-child(3), #policy-lever-card .pl-lever-table td:nth-child(3){display:none} }
+    </style>
+
+    <h2>
+      <span class="pl-state-chip"><span class="l-en">{{ _pl_state }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_state, _pl_state) }}</span></span>
+      <span class="l-en">Policy-Lever Conditions</span><span class="l-zh">政策杠杆条件监测</span>
+      {{ help("Conditions that make violent overnight reversals more likely — not a forecast, not a signal. ARMED = semis drawdown deep (≤−15%) AND an oil technical curl; ELEVATED = one of the two; QUIET = neither. Display-only context (Policy-Shock W2-F). Drawdown and arming are descriptive; no probabilities.", "使剧烈隔夜反转更可能发生的条件 — 不是预测，不是信号。触发=半导体回撤深（≤−15%）且石油技术卷曲；警戒=两者之一；平静=均无。仅供展示（政策冲击 W2-F）。回撤和触发均为描述性指标，不含概率。") }}
+    </h2>
+    {% if PL.get('framing') %}
+    <div class="pl-framing"><span class="l-en">{{ PL.framing }}</span><span class="l-zh">{{ PL.get('framing_zh') or '' }}</span></div>
+    {% endif %}
+
+    {# Favored complex drawdown #}
+    {% if PL.get('favored_complex') is defined %}
+    {% set FC = PL.get('favored_complex') or {} %}
+    <div class="pl-section">
+      <span class="pl-label"><span class="l-en">Favored complex</span><span class="l-zh">偏好板块</span></span>
+      {% if FC.get('drawdown_pct') is not none %}
+        <b>{{ FC.get('basket', [])|join('/') }}</b>
+        <span style="color:{{ 'var(--down)' if (FC.drawdown_pct is defined and FC.drawdown_pct <= -15) else 'var(--text)' }}">
+          {{ '%+.1f'|format(FC.drawdown_pct) }}%
+        </span>
+        {% if FC.get('drawdown_z') is not none %}
+          <span class="muted" style="font-size:11.5px">(z {{ '%+.1f'|format(FC.drawdown_z) }})</span>
+        {% endif %}
+        <span style="font-size:11px;color:var(--muted);margin-left:4px">{{ t('from 120d peak','距120日高点') }}</span>
+      {% else %}
+        <span class="muted">{{ t('unavailable','不可用') }}</span>
+      {% endif %}
+    </div>
+    {% if FC.get('note') %}
+    <div class="pl-sub"><span class="l-en">{{ FC.note }}</span><span class="l-zh">{{ FC.get('note_zh') or FC.note }}</span></div>
+    {% endif %}
+    {% if FC.get('basket_caveat') %}
+    <div class="pl-sub" style="color:var(--orange);margin-top:3px">
+      <span class="l-en">⚠ {{ FC.basket_caveat }}</span>
+      <span class="l-zh">⚠ {{ FC.get('basket_caveat_zh') or FC.basket_caveat }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {# Lever table #}
+    {% if PL.get('levers') %}
+    <table class="pl-lever-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Lever</span><span class="l-zh">杠杆</span></th>
+          <th><span class="l-en">Arming</span><span class="l-zh">触发状态</span></th>
+          <th><span class="l-en">Context</span><span class="l-zh">背景</span></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for lv in PL.levers %}
+      {% set _arm = lv.get('arming') %}
+      <tr>
+        <td style="font-weight:600;min-width:110px">
+          <span class="l-en">{{ lv.get('name') or '' }}</span><span class="l-zh">{{ lv.get('name_zh') or lv.get('name') or '' }}</span>
+          {% if lv.get('asset') %}<br><span class="muted" style="font-size:11px">{{ lv.asset }}</span>{% endif %}
+        </td>
+        <td style="min-width:120px">
+          {% if _arm is not none %}
+            {% set _is_armed = _arm.get('armed') %}
+            <span class="pl-arm-chip {{ 'arm-true' if _is_armed else 'arm-false' }}">
+              <span class="l-en">{{ 'ARMED' if _is_armed else 'quiet' }}</span>
+              <span class="l-zh">{{ '已触发' if _is_armed else '平静' }}</span>
+            </span>
+            <div class="pl-sub" style="margin-top:3px">
+              {% if _arm.get('basing') %}<span style="color:var(--up)">● basing</span>{% endif %}
+              {% if _arm.get('stoch_curl') %}<span style="color:var(--up)">● stoch↑</span>{% endif %}
+              {% if _arm.get('macd_curl') %}<span style="color:var(--up)">● macd↑</span>{% endif %}
+              {% if _arm.get('days_in_base') is not none and _arm.days_in_base > 0 %}
+                <span>{{ _arm.days_in_base }}d</span>
+              {% endif %}
+              {% if _arm.get('flatness') is not none %}
+                <span title="flatness gate (v1.1)">flat={{ '%+.1f'|format(_arm.flatness * 100) }}%</span>
+              {% endif %}
+            </div>
+          {% else %}
+            <span class="pl-arm-chip arm-false"><span class="l-en">n/a</span><span class="l-zh">不适用</span></span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="l-en">{{ lv.get('watch') or '' }}</span>
+          <span class="l-zh">{{ lv.get('watch_zh') or lv.get('watch') or '' }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# Jawboning row #}
+    {% if PL.get('jawboning') is defined %}
+    {% set JW = PL.get('jawboning') or {} %}
+    <div class="pl-jaw-row">
+      <span class="pl-jaw-item">
+        <span class="pl-label"><span class="l-en">Jawboning</span><span class="l-zh">政策发声</span></span>
+        {% if JW.get('n_7d') is not none %}
+          <b>{{ JW.n_7d }}</b> <span class="muted">{{ t('alerts 7d','条警报（7日）') }}</span>
+          &nbsp;·&nbsp;
+          <b>{{ JW.n_30d }}</b> <span class="muted">{{ t('30d','30日') }}</span>
+        {% else %}
+          <span class="muted">{{ t('unavailable','不可用') }}</span>
+        {% endif %}
+      </span>
+      {% if JW.get('last_alert_summary') %}
+      <span class="pl-jaw-item" style="flex:1;min-width:200px">
+        <span class="pl-label">{{ t('Last','最近') }}</span>
+        <span class="l-en muted">{{ JW.last_alert_summary }}</span>
+        <span class="l-zh muted">{{ JW.get('last_alert_summary_zh') or JW.last_alert_summary }}</span>
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# Calendar row #}
+    {% if PL.get('calendar') is defined %}
+    {% set CAL = PL.get('calendar') or {} %}
+    <div class="pl-cal-row muted">
+      <span class="pl-label"><span class="l-en">Calendar</span><span class="l-zh">日历</span></span>
+      <span class="l-en">{{ CAL.get('context_note') or '' }}</span>
+      <span class="l-zh">{{ CAL.get('context_note_zh') or CAL.get('context_note') or '' }}</span>
+    </div>
+    {% endif %}
+
+    <div class="pl-sub" style="margin-top:8px">
+      <span class="l-en">Display-only conditions context — Policy-Shock program W2-F. As of {{ PL.get('as_of') or '' }}.</span>
+      <span class="l-zh">仅供展示的条件背景 — 政策冲击项目 W2-F。截至{{ PL.get('as_of') or '' }}。</span>
+    </div>
+  </div>
+  {% endif %}{# /policy_lever #}
+
+
   {# Combined "Regime — now & where it's headed": the current-regime HMM probability and the
      base-effect forward path, merged into one scorecard (were two near-identical panels). #}
   {% set be_note_en = 'Growth is point-in-time back to 1997; inflation uses latest-revision data until the core-CPI/PCE vintages backfill.' %}

@@ -39,7 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 25 |
-| policy-shock | 4 |
+| policy-shock | 5 |
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
 | sector-pulse | 3 |
@@ -54,7 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 169 |
+| display | 170 |
 | infrastructure | 74 |
 | scored | 4 |
 | shadow | 46 |
@@ -63,7 +63,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 281 |
+| git | 282 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -448,6 +448,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flip-confirmation-events | `data/flip_confirmation/events.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | flip-confirmation-snapshot | `site/flip_confirmation_data.json` | json | daily-engine | display | 1 | 0 |
 | shock-deescalation-firings | `data/reflexes/shock_deescalation/firings.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| site-policy-lever | `site/policy_lever.json` | json | daily-engine | display | 1 | 0 |
 
 ### qualitative-intelligence
 

@@ -201,6 +201,7 @@ def _base_vm() -> dict:
         fear_greed=None,
         sector_heat=None,
         dispersion_regime=None,
+        policy_lever=None,
     )
 
 

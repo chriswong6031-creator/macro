@@ -116,6 +116,9 @@ lanes:
         note: first pass (before altdata_brain)
       - id: build_smart_money
         module: scripts.build_smart_money
+      - id: build_policy_lever
+        module: scripts.build_policy_lever
+        note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
       - id: build_stock_board_v2
@@ -833,6 +836,9 @@ lanes:
         module: scripts.build_alt_data
       - id: build_smart_money
         module: scripts.build_smart_money
+      - id: build_policy_lever
+        module: scripts.build_policy_lever
+        note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
       - id: build_stock_board_v2
@@ -941,6 +947,9 @@ lanes:
         module: scripts.build_alt_data
       - id: build_smart_money
         module: scripts.build_smart_money
+      - id: build_policy_lever
+        module: scripts.build_policy_lever
+        note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
       - id: build_congress
@@ -1084,6 +1093,9 @@ lanes:
         module: engine.run
       - id: build_spvector
         module: scripts.build_spvector
+      - id: build_policy_lever
+        module: scripts.build_policy_lever
+        note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
       - id: china_fundamentals
