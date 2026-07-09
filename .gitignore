@@ -317,6 +317,10 @@ data/private/
 # The store dir (data/sec_ftd/) itself is a real tracked dir; parquets are excluded.
 # _manifest.json (freshness anchor, if created) is kept via negation.
 data/sec_ftd/*.parquet
+
+# chain-heat smoke output (--no-publish writes to CWD = repo root; must not enter git).
+# Documented smoke command in ops/launchd/com.macro.chainheat.plist and module docstring.
+chain_heat_current.json
 !data/sec_ftd/_manifest.json
 
 # W5-B Options Tape Signed Pilot (feat/w5b-options-tape-pilot).
