@@ -18,6 +18,10 @@
 
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 MODULE="scripts.build_prophet_marks"
+# Repo root — build_prophet_marks.py resolves lib/nyse_calendar via
+# Path(__file__).parent.parent; cd here before invoking so _REPO is correct
+# when the deployed script lives in flow-ops-wt (which lacks lib/nyse_calendar).
+REPO_ROOT="/Users/chriswong/Documents/Cluade/Macro Dashboard"
 INTERVAL=300   # 5 minutes in seconds
 # Cutoff hour:minute in ET (24h); we compare against 'date' output
 CUTOFF_HOUR=16
@@ -47,7 +51,7 @@ while true; do
     fi
 
     log "firing build_prophet_marks --publish"
-    "$PYTHON" -m "$MODULE" --publish
+    cd "$REPO_ROOT" && "$PYTHON" -m "$MODULE" --publish
     RC=$?
     log "build_prophet_marks exited rc=$RC"
 
