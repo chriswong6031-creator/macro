@@ -1898,17 +1898,13 @@ def _run_tool_loop(
                 continue
 
             # All providers exhausted on primary model.  Attempt fallback model once
-            # when: (a) all skips were rate-limit class, AND (b) we have not already
-            # tried the fallback.  DeepSeek stays excluded (D8 ruling).
+            # when we have not already tried the fallback.  DeepSeek stays excluded (D8 ruling).
+            # Note: we fire on ANY provider exhaustion (rate-limit OR transient), not only
+            # rate-limit class, because transient failures also leave the run without a memo.
             if not _fallback_model_attempted[0]:
                 fallback_model = cfg.get("fallback_model", _DEFAULT_FALLBACK_MODEL)
                 # Reset skipped set so we can retry the best available provider with
                 # the new (cheaper) model — rate-limit quota is per model.
-                all_rate_limited = all(
-                    a.get("error_type") == "rate_limit"
-                    for a in provider_attempts
-                    if not a["ok"]
-                ) if provider_attempts else False
                 fb_client, _, fb_pdict = next(
                     ((p["client"], p.get("model"), p) for p in providers
                      if p.get("cred") and p.get("client")),
@@ -1916,9 +1912,9 @@ def _run_tool_loop(
                 )
                 if fb_client is not None and fallback_model != effective_model:
                     log.warning(
-                        "cortex: primary model '%s' exhausted rate-limit retries on all providers "
-                        "(all_rate_limited=%s); restarting tool loop ONCE on fallback model '%s'",
-                        effective_model, all_rate_limited, fallback_model,
+                        "cortex: primary model '%s' exhausted retries on all providers; "
+                        "restarting tool loop ONCE on fallback model '%s'",
+                        effective_model, fallback_model,
                     )
                     _fallback_model_attempted[0] = True
                     _fallback_model_used[0] = fallback_model
