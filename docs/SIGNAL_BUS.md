@@ -42,7 +42,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nw-rails | 7 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
-| oracle | 25 |
+| oracle | 27 |
 | pick-lab | 3 |
 | policy-shock | 5 |
 | qualitative-intelligence | 23 |
@@ -61,16 +61,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 190 |
+| display | 191 |
 | infrastructure | 79 |
 | scored | 4 |
-| shadow | 46 |
+| shadow | 47 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 305 |
+| git | 307 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -99,9 +99,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | causal-nulls | `data/neuralweb/causal_nulls.jsonl` | jsonl | weekly | display | 2 | 0 |
 | causal-edges | `data/neuralweb/causal_edges.jsonl` | jsonl | weekly | display | 1 | 0 |
 | causal-frontier | `data/neuralweb/causal_frontier.json` | json | daily-engine | display | 1 | 0 |
-| causal-llm-lane | `data/neuralweb/causal_llm_lane.json` | json | weekly | infrastructure | 1 | 0 |
 | causal-brainstorm-runs | `data/neuralweb/causal_brainstorm_runs.jsonl` | jsonl | weekly | infrastructure | 0 | 0 |
 | causal-lab-state | `data/neuralweb/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
+| causal-llm-lane | `data/neuralweb/causal_llm_lane.json` | json | weekly | infrastructure | 0 | 0 |
 | causal-surprise-queue | `data/neuralweb/causal_surprise_queue.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | site-causal-lab-state | `site/neuralwebdata/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
 
@@ -479,6 +479,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | oracle-reversion-kill-requeue | `data/oracle/reversion_kill_requeue.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | oracle-reversion-promotion-queue | `data/oracle/reversion_promotion_queue.json` | json | daily-engine | infrastructure | 1 | 0 |
 | oracle-reversion-state | `site/basketdata/oracle_reversion_state.json` | json | daily-engine | display | 1 | 0 |
+| oracle-tape-onset | `site/basketdata/oracle_tape_onset.json` | json | daily-engine | display | 1 | 0 |
+| oracle-tape-onset-ledger | `data/oracle/tape_onset_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | oracle-turn-desk | `site/basketdata/oracle_turn_desk.json` | json | daily-engine | display | 1 | 0 |
 | oracle-turn-desk-ledger | `data/oracle/turn_desk_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
