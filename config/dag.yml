@@ -198,6 +198,8 @@ lanes:
       # serial post-band
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_polygon_universe
+        module: scripts.build_polygon_universe
       - id: mirror_flow_idx
         module: scripts.mirror_flow_idx
       - id: build_vector
