@@ -5,11 +5,19 @@ backtest study (w2044) and the nightly theme_warn engine share the same
 matching logic without circular imports.
 
 Matching contract:
-  * Case-insensitive substring match on employer_raw.
+  * Word-boundary token match on employer_raw (case-insensitive).  A pattern
+    must appear as a complete word (or phrase) in the employer string — raw
+    substring matching ("apple" in "Applebee's") is prevented by requiring the
+    match to start and end on a word boundary.
   * Longest pattern wins (specificity rule).
   * Validity-window check (valid_from / valid_to columns, inclusive ISO dates).
   * Entries whose pattern starts with '#' are comments — skipped.
   * Entries whose ticker is blank are private/exclusions — skipped.
+  * Short but specific patterns (e.g. "GM", "F", "T", "KLA", "UPS") ARE
+    matched — the map is curated with validity windows, so the false-positive
+    risk from short single-token patterns is managed by the map itself, not by
+    a length floor.  Only whole-pattern generic tokens (see _BANNED_GENERIC)
+    are blocked.
 
 The ticker map CSV has columns:
   employer_name_pattern, ticker, valid_from, valid_to, confidence, notes
@@ -24,14 +32,16 @@ from pathlib import Path
 from typing import Optional
 
 # ---------------------------------------------------------------------------
-# Minimum pattern length guard: single-word generic terms that would
-# match anything (e.g. "systems", "group", "inc") are rejected even if
-# present in the map.  Callers can lower this for unit tests.
+# Minimum pattern length guard.
+# Set to 1 — length alone is not a reliable guard (short but specific tickers
+# like "GM", "F", "T", "KLA", "UPS" are valid map entries).  Broad single-
+# token patterns are blocked via _BANNED_GENERIC instead.  Callers may still
+# pass min_pattern_len to override for tests.
 # ---------------------------------------------------------------------------
-MIN_PATTERN_LEN: int = 5
+MIN_PATTERN_LEN: int = 1
 
-# Generic words that must NOT appear as the ENTIRE pattern (even if long
-# enough) — they match too broadly across employers.
+# Generic words that must NOT appear as the ENTIRE pattern — they match too
+# broadly across employers.
 _BANNED_GENERIC = frozenset({
     "systems", "group", "inc", "corp", "co.", "company", "holdings",
     "services", "solutions", "technologies", "technology", "industries",
@@ -74,6 +84,20 @@ def load_ticker_map(map_path: Path) -> list[dict]:
     return rows
 
 
+def _word_boundary_match(pat: str, text: str) -> bool:
+    """Return True if *pat* appears in *text* at a word boundary.
+
+    Uses ``re.search`` with ``\\b`` anchors so that short but specific patterns
+    like "GM", "F", "KLA", "UPS" match "General Motors (GM)" and "Ford Motor Co"
+    but "apple" does NOT match "Applebee's Grill and Bar".
+
+    The pattern is treated as a literal string (not a regex).
+    """
+    # Escape regex metacharacters in pat, then wrap in word boundaries.
+    escaped = re.escape(pat)
+    return bool(re.search(r"\b" + escaped + r"\b", text))
+
+
 def match_ticker(
     employer_raw: str,
     ticker_rows: list[dict],
@@ -83,9 +107,10 @@ def match_ticker(
 ) -> Optional[str]:
     """Return the best ticker match for *employer_raw* at *notice_date*.
 
-    Strategy: case-insensitive substring; longest pattern wins (specificity).
-    Generic single-token patterns and patterns below *min_pattern_len* are
-    skipped to prevent false positives.
+    Strategy: word-boundary token match (case-insensitive); longest pattern
+    wins (specificity).  Generic single-token patterns and patterns below
+    *min_pattern_len* are skipped.  Short but specific patterns (e.g. "GM",
+    "F", "UPS") are retained — the curated map controls their validity windows.
 
     Parameters
     ----------
@@ -96,7 +121,7 @@ def match_ticker(
     notice_date:
         ISO date string ``YYYY-MM-DD`` of the notice (used for validity window).
     min_pattern_len:
-        Minimum length of a pattern to be considered (default 5).
+        Minimum length of a pattern to be considered (default 1).
 
     Returns
     -------
@@ -134,8 +159,10 @@ def match_ticker(
         except Exception:  # noqa: BLE001
             pass
 
-        # Substring match against either the raw or the suffix-stripped form
-        if pat not in emp and pat not in emp_clean:
+        # Word-boundary match against either the raw or the suffix-stripped form.
+        # This prevents "apple" from matching "Applebee's" while still matching
+        # "Apple Inc." and "Apple Computer".
+        if not _word_boundary_match(pat, emp) and not _word_boundary_match(pat, emp_clean):
             continue
 
         if len(pat) > best_len:

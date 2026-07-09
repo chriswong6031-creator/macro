@@ -192,6 +192,44 @@ def _robust_z(values: list[float]) -> list[float]:
     ]
 
 
+def _resolve_notices(
+    notices_df: pd.DataFrame,
+    ticker_rows: list[dict],
+) -> list[dict]:
+    """Pre-resolve every notice to a ticker in a single vectorized pass.
+
+    Returns a flat list of dicts, one per notice row, with the resolved ticker
+    (or None) already attached.  This amortises the O(notices × map_rows) cost
+    across all baskets instead of repeating it per basket.
+
+    Perf note: iterrows is used here because employer strings need per-row
+    string ops (strip, lower, suffix-strip, regex).  The key win is that this
+    loop runs ONCE regardless of how many baskets are queried.
+    """
+    resolved: list[dict] = []
+    for _, row in notices_df.iterrows():
+        nd = pd.Timestamp(row["notice_date"])
+        employer = str(row.get("employer_raw", "") or "").strip()
+        if not employer:
+            continue
+        nd_str = nd.strftime("%Y-%m-%d")
+        ticker = match_ticker(employer, ticker_rows, nd_str)
+        workers = row.get("workers")
+        try:
+            w = int(float(workers)) if workers is not None and str(workers).strip() else 0
+        except (ValueError, TypeError):
+            w = 0
+        resolved.append({
+            "employer": employer,
+            "ticker": ticker,  # may be None
+            "workers": w,
+            "state": str(row.get("state", "") or ""),
+            "notice_date": nd,
+            "notice_date_str": nd_str,
+        })
+    return resolved
+
+
 def _basket_warn_metric(
     basket_id: str,
     members: list[str],
@@ -199,8 +237,15 @@ def _basket_warn_metric(
     ticker_rows: list[dict],
     *,
     as_of: Optional[datetime] = None,
+    _resolved: Optional[list[dict]] = None,
 ) -> Optional[dict]:
     """Compute WARN velocity metric for one basket.
+
+    When *_resolved* is provided (pre-resolved notice list from
+    ``_resolve_notices``), the per-notice ticker lookup is skipped and the
+    basket simply filters by membership.  This is the fast path used by
+    ``compute_warn_activity`` — callers that use this function directly (e.g.
+    tests) can omit *_resolved* and the old O(notices × map_rows) path runs.
 
     Returns a dict with raw counts + yoy_ratio + metric (log(yoy_ratio)),
     or None when insufficient data.
@@ -214,7 +259,7 @@ def _basket_warn_metric(
     t0 = pd.Timestamp(t0)
     # Normalise to tz-naive UTC for comparison with parquet dates (which are tz-naive)
     if t0.tzinfo is not None:
-        t0 = t0.tz_localize(None) if t0.tzinfo is None else t0.tz_convert(None)
+        t0 = t0.tz_convert(None)
 
     recent_start = t0 - timedelta(days=WARN_WINDOW_DAYS)
     prior_end = t0 - timedelta(days=YOY_DAYS)
@@ -229,36 +274,65 @@ def _basket_warn_metric(
     matched_tickers: list[str] = []
     seen_employer_ticker: set[tuple] = set()
 
-    for _, row in notices_df.iterrows():
-        nd = pd.Timestamp(row["notice_date"])
-        employer = str(row.get("employer_raw", "") or "").strip()
-        if not employer:
-            continue
+    # Use pre-resolved list when available (fast path); fall back to per-row match
+    if _resolved is not None:
+        rows_iter = _resolved
+        fast_path = True
+    else:
+        rows_iter = None  # type: ignore[assignment]
+        fast_path = False
 
-        nd_str = nd.strftime("%Y-%m-%d")
-        ticker = match_ticker(employer, ticker_rows, nd_str)
-        if ticker is None or ticker not in members_set:
-            continue
+    if fast_path:
+        for rec in rows_iter:  # type: ignore[union-attr]
+            ticker = rec["ticker"]
+            if ticker is None or ticker not in members_set:
+                continue
+            nd = rec["notice_date"]
+            employer = rec["employer"]
+            w = rec["workers"]
 
-        key = (employer.lower(), ticker)
-        if key not in seen_employer_ticker:
-            matched_employers.append(employer)
-            matched_tickers.append(ticker)
-            seen_employer_ticker.add(key)
+            key = (employer.lower(), ticker)
+            if key not in seen_employer_ticker:
+                matched_employers.append(employer)
+                matched_tickers.append(ticker)
+                seen_employer_ticker.add(key)
 
-        workers = row.get("workers")
-        try:
-            w = int(float(workers)) if workers is not None and str(workers).strip() else 0
-        except (ValueError, TypeError):
-            w = 0
+            record = {"employer": employer, "ticker": ticker, "workers": w,
+                      "state": rec["state"], "notice_date": nd}
+            if recent_start <= nd <= t0:
+                matched_recent.append(record)
+            elif prior_start <= nd <= prior_end:
+                matched_prior.append(record)
+    else:
+        # Slow path — used by direct callers (e.g. tests) that don't pre-resolve
+        for _, row in notices_df.iterrows():
+            nd = pd.Timestamp(row["notice_date"])
+            employer = str(row.get("employer_raw", "") or "").strip()
+            if not employer:
+                continue
+            nd_str = nd.strftime("%Y-%m-%d")
+            ticker = match_ticker(employer, ticker_rows, nd_str)
+            if ticker is None or ticker not in members_set:
+                continue
 
-        record = {"employer": employer, "ticker": ticker, "workers": w,
-                  "state": row.get("state", ""), "notice_date": nd}
+            key = (employer.lower(), ticker)
+            if key not in seen_employer_ticker:
+                matched_employers.append(employer)
+                matched_tickers.append(ticker)
+                seen_employer_ticker.add(key)
 
-        if recent_start <= nd <= t0:
-            matched_recent.append(record)
-        elif prior_start <= nd <= prior_end:
-            matched_prior.append(record)
+            workers = row.get("workers")
+            try:
+                w = int(float(workers)) if workers is not None and str(workers).strip() else 0
+            except (ValueError, TypeError):
+                w = 0
+
+            record = {"employer": employer, "ticker": ticker, "workers": w,
+                      "state": row.get("state", ""), "notice_date": nd}
+            if recent_start <= nd <= t0:
+                matched_recent.append(record)
+            elif prior_start <= nd <= prior_end:
+                matched_prior.append(record)
 
     if not matched_recent and not matched_prior:
         return None
@@ -374,6 +448,17 @@ def compute_warn_activity(
                 }
         return empty
 
+    # --- resolve as_of: prefer explicit arg, then payload field, then now() ---
+    if as_of is None:
+        payload_asof = (baskets_payload or {}).get("as_of")
+        if payload_asof:
+            try:
+                as_of = pd.Timestamp(payload_asof).to_pydatetime()
+            except Exception:  # noqa: BLE001
+                pass
+    if as_of is None:
+        as_of = datetime.now(timezone.utc)
+
     # --- load ticker map ---
     if ticker_map_path is None:
         ticker_map_path = _find_ticker_map(root)
@@ -381,7 +466,13 @@ def compute_warn_activity(
     if not ticker_rows:
         log.info("theme_warn: ticker map absent or empty — all matches null")
 
-    # --- per-basket raw metrics ---
+    # --- pre-resolve ALL notices to tickers in a single pass ---
+    # This is the performance-critical step: O(notices × map_rows) runs ONCE
+    # here, not once per basket.  Per-basket work is then O(resolved_notices).
+    resolved = _resolve_notices(notices_df, ticker_rows)
+    log.debug("theme_warn: pre-resolved %d notices from %d rows", len(resolved), len(notices_df))
+
+    # --- per-basket raw metrics (fast path: filter pre-resolved list) ---
     raw: dict[str, dict] = {}
     for b in baskets:
         bid = b.get("id")
@@ -390,7 +481,8 @@ def compute_warn_activity(
         members = [m.get("symbol") for m in b.get("members", []) if m.get("symbol")]
         if not members:
             continue
-        m = _basket_warn_metric(bid, members, notices_df, ticker_rows, as_of=as_of)
+        m = _basket_warn_metric(bid, members, notices_df, ticker_rows,
+                                as_of=as_of, _resolved=resolved)
         if m is not None:
             raw[bid] = m
 

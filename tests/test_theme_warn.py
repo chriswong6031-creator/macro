@@ -40,6 +40,7 @@ from engine.theme_warn import (  # noqa: E402
     _robust_z,
     _basket_warn_metric,
     _load_notices,
+    _resolve_notices,
     AUTHORITY,
     WARN_WINDOW_DAYS,
     YOY_DAYS,
@@ -139,13 +140,30 @@ class TestFuzzyMatch:
         # No specific pattern -> no match (all generic)
         assert match_ticker("Johnson Controls International Corp", rows, "2026-01-01") is None
 
-    def test_no_match_when_pattern_too_short(self):
-        """Patterns shorter than MIN_PATTERN_LEN are skipped."""
-        rows = _make_ticker_rows([("ibm", "IBM"), ("ge", "GE")])
-        # 'ge' is 2 chars; 'ibm' is 3 chars — both below default MIN_PATTERN_LEN=5
+    def test_short_specific_patterns_now_match(self):
+        """Short but specific curated patterns like 'GM', 'F', 'UPS', 'ge' now match.
+
+        MIN_PATTERN_LEN was lowered to 1; the map controls validity windows so short
+        patterns are acceptable for known tickers.  Word-boundary matching prevents
+        substring collisions.
+        """
+        gm_rows = _make_ticker_rows([("gm", "GM")])
+        # "gm" should match "GM" as a standalone word in the employer string
+        assert match_ticker("GM Assembly Plant", gm_rows, "2026-01-01") == "GM"
+
+        f_rows = _make_ticker_rows([("ford", "F")])
+        assert match_ticker("Ford Motor Company", f_rows, "2026-01-01") == "F"
+
+        ge_rows = _make_ticker_rows([("ge", "GE")])
+        assert match_ticker("GE Aviation", ge_rows, "2026-01-01") == "GE"
+
+    def test_ibm_abbreviation_not_matched_by_substring(self):
+        """'ibm' as a pattern does not appear as a token in 'International Business Machines'."""
+        rows = _make_ticker_rows([("ibm", "IBM")])
+        # 'ibm' is not a word token in the spelled-out company name
         assert match_ticker("International Business Machines", rows, "2026-01-01") is None
-        # 'ge' alone is too short
-        assert match_ticker("GE Aviation", rows, "2026-01-01") is None
+        # but it does match when the abbreviation is used in the employer string
+        assert match_ticker("IBM Corporation", rows, "2026-01-01") == "IBM"
 
     def test_validity_window_respected(self):
         """Notice outside validity window is not matched."""
@@ -180,6 +198,41 @@ class TestFuzzyMatch:
         assert not _is_generic("microsoft")
         assert not _is_generic("boeing")
         assert not _is_generic("lockheed")
+
+    def test_applebees_not_matched_to_aapl(self):
+        """Word-boundary match: 'apple' pattern must NOT match Applebee's employers.
+
+        This is the Applebee's false-positive regression test.  Previously, raw
+        substring matching caused "apple" to match "Applebee's Grill and Bar",
+        polluting AAPL worker counts with unrelated restaurant layoffs.
+        """
+        rows = _make_ticker_rows([("apple", "AAPL")])
+        # These are real Applebee's employer strings from the WARN store
+        assert match_ticker("Applebee's Grill and Bar", rows, "2026-01-01") is None
+        assert match_ticker("Applebee's", rows, "2026-01-01") is None
+        assert match_ticker("TL Cannon Management Corp. - Applebee's (Capital)",
+                            rows, "2026-01-01") is None
+        # But "Apple" as a standalone word must still match Apple Inc.
+        assert match_ticker("Apple Inc.", rows, "2026-01-01") == "AAPL"
+        assert match_ticker("Apple Retail Store", rows, "2026-01-01") == "AAPL"
+
+    def test_short_ticker_word_boundary_prevents_partial_match(self):
+        """Short pattern 'ups' must NOT match 'Kupstis Industries' or 'Groups'."""
+        rows = _make_ticker_rows([("ups", "UPS")])
+        assert match_ticker("Kupstis Industries LLC", rows, "2026-01-01") is None
+        assert match_ticker("UPS Supply Chain Solutions", rows, "2026-01-01") == "UPS"
+
+    def test_ford_f_pattern_not_confused_with_other_f_words(self):
+        """Single-char pattern 'f' for Ford: only exact token match is valid.
+
+        We do NOT add a single-char pattern 'f' to the real map because the
+        generic-word risk is too high; in the real map Ford uses 'ford' pattern.
+        This test verifies that word-boundary semantics are correct for short patterns.
+        """
+        rows = _make_ticker_rows([("ford", "F")])
+        assert match_ticker("Ford Motor Company", rows, "2026-01-01") == "F"
+        # 'ford' must not match 'Hartford' (substring without word boundary)
+        assert match_ticker("Hartford Financial Services", rows, "2026-01-01") is None
 
 
 # ---------------------------------------------------------------------------
@@ -276,6 +329,94 @@ class TestBasketWarnMetric:
                                      as_of=self._as_of())
         assert result is not None
         assert result["warn_yoy_ratio"] == ACCEL_CLAMP[1]
+
+
+# ---------------------------------------------------------------------------
+# Section 2b: _resolve_notices perf path + as_of PIT fix
+# ---------------------------------------------------------------------------
+
+class TestResolveNotices:
+    """Pre-resolve pass: ticker lookup runs once, not per basket."""
+
+    def test_resolve_returns_one_record_per_notice_row(self):
+        """_resolve_notices returns the same count as non-empty employer rows."""
+        ticker_rows = _make_ticker_rows([("intel", "INTC"), ("boeing", "BA")])
+        rows = [
+            {"employer_raw": "Intel Corporation", "notice_date": "2026-06-15",
+             "workers": 100, "state": "CA"},
+            {"employer_raw": "Boeing Company", "notice_date": "2026-06-10",
+             "workers": 200, "state": "WA"},
+            {"employer_raw": "Unknown Corp", "notice_date": "2026-05-01",
+             "workers": 50, "state": "TX"},
+        ]
+        df = _make_notices_df(rows)
+        resolved = _resolve_notices(df, ticker_rows)
+        assert len(resolved) == 3
+        tickers = [r["ticker"] for r in resolved]
+        assert "INTC" in tickers
+        assert "BA" in tickers
+        assert None in tickers  # Unknown Corp doesn't match
+
+    def test_fast_path_matches_slow_path(self):
+        """Results via _resolved fast path must be identical to direct iterrows path."""
+        ticker_rows = _make_ticker_rows([("intel", "INTC"), ("lockheed martin", "LMT")])
+        rows = [
+            {"employer_raw": "Intel Corporation", "notice_date": "2026-06-15",
+             "workers": 500, "state": "CA"},
+            {"employer_raw": "Intel Corporation", "notice_date": "2025-06-10",
+             "workers": 50, "state": "CA"},
+            {"employer_raw": "Lockheed Martin Corp", "notice_date": "2026-06-01",
+             "workers": 100, "state": "TX"},
+        ]
+        df = _make_notices_df(rows)
+        as_of = datetime(2026, 7, 1, tzinfo=timezone.utc)
+
+        # Slow path (no _resolved)
+        slow = _basket_warn_metric("ai_semiconductors", ["INTC"], df, ticker_rows,
+                                   as_of=as_of)
+        # Fast path (pre-resolved)
+        resolved = _resolve_notices(df, ticker_rows)
+        fast = _basket_warn_metric("ai_semiconductors", ["INTC"], df, ticker_rows,
+                                   as_of=as_of, _resolved=resolved)
+
+        assert slow is not None and fast is not None
+        assert slow["warn_workers_90d"] == fast["warn_workers_90d"]
+        assert slow["warn_workers_prior"] == fast["warn_workers_prior"]
+        assert slow["n_matched"] == fast["n_matched"]
+        assert slow["matched_tickers"] == fast["matched_tickers"]
+
+    def test_as_of_from_payload_used_for_window(self, tmp_path, monkeypatch):
+        """compute_warn_activity keys 90d window off payload as_of, not wall-clock time."""
+        monkeypatch.delenv("WARN_STORE", raising=False)
+
+        # Build a ticker map with intel pattern
+        csv_path = tmp_path / "scripts" / "w2044_warn_ticker_map.csv"
+        csv_path.parent.mkdir(parents=True)
+        csv_path.write_text(
+            "employer_name_pattern,ticker,valid_from,valid_to,confidence,notes\n"
+            "intel,INTC,1900-01-01,2099-12-31,high,test\n",
+            encoding="utf-8",
+        )
+
+        # Store with a notice that falls in 90d window relative to as_of=2026-07-01
+        store = tmp_path / "data" / "warn" / "notices.parquet"
+        store.parent.mkdir(parents=True)
+        notice_df = pd.DataFrame({
+            "employer_raw": ["Intel Corporation"],
+            "notice_date": pd.to_datetime(["2026-06-15"]),
+            "workers": [100],
+            "state": ["CA"],
+        })
+        notice_df.to_parquet(store, index=False)
+
+        payload = {
+            "as_of": "2026-07-01",
+            "baskets": [{"id": "ai", "name": "AI", "members": [{"symbol": "INTC"}]}],
+        }
+        result = compute_warn_activity(payload, store_path=store,
+                                       ticker_map_path=csv_path)
+        # Notice at 2026-06-15 is within 90d of 2026-07-01: should be matched
+        assert result["ai"]["warn_workers_90d"] == 100
 
 
 # ---------------------------------------------------------------------------

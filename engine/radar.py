@@ -168,14 +168,17 @@ def compute_radar(baskets_payload: dict, obligations: pd.DataFrame | None = None
 
     # WARN velocity parallel leg (display/confluence only; NEVER enters fused_obs_z).
     # Tolerant — absent store / map -> all null; never blocks the radar.
+    # Pass as_of so the 90-day window is keyed off the same reference date as the
+    # rest of the radar payload, not wall-clock run time.
+    mem = _membership(root)
+    asof = asof or baskets_payload.get("as_of") or datetime.now(timezone.utc).date().isoformat()
     try:
-        warn_leg = _theme_warn.compute_warn_activity(baskets_payload, root=root)
+        warn_leg = _theme_warn.compute_warn_activity(
+            baskets_payload, root=root, as_of=pd.Timestamp(asof).to_pydatetime()
+        )
     except Exception as _warn_exc:  # noqa: BLE001
         log.debug("theme_warn: skipped (%s)", _warn_exc)
         warn_leg = {}
-
-    mem = _membership(root)
-    asof = asof or baskets_payload.get("as_of") or datetime.now(timezone.utc).date().isoformat()
 
     rows = []
     for b in baskets_payload["baskets"]:
