@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 319, (
-        f"Expected 319 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 321, (
+        f"Expected 321 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (CHF-W5 added causal-brainstorm-runs, causal-llm-lane = 317->319;"
         " TIL W7 added dol-certs-store, hiring-velocity, site-hiring-intent = 314->317;"
