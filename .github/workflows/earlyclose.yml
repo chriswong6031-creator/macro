@@ -1,0 +1,330 @@
+name: earlyclose
+# FTR W6 (PR-7) — provisional early-close render lane.
+#
+# Fires ~17:20 ET on weekdays to produce a provisional EOD state ~5 hours before the
+# nightly 02:00 UTC run.  Uses the engine-render scope=fast path (macro+baskets clusters,
+# no GEX live-fetch, no LLM brains, no EDGAR/special-sits, no collectors) — the minimal
+# set that gives a meaningful snapshot of the day's close.
+#
+# CONTRACT (FT-R5/FT-R8):
+#   • Writes site/ ONLY — data/ writes are discarded via git checkout -- . + narrow staging,
+#     exactly replicating intraday-fastpath.yml's commit guard.
+#   • The nightly daily pipeline remains the sole advancer of every data/ forward ledger.
+#   • Output is stamped "provisional close (delayed feed); nightly is canonical."
+#   • A site/live/earlyclose_stamp.json artifact records as_of + provisional: true.
+#
+# MUTEX: skip the whole run if build_options_hub_nightly is still running from the
+# 16:45 ET launchd job (RAM-freeze law; 192 GB box; the 35-min gap is intentional but
+# the job can run long on heavy evenings).
+#
+# SCHEDULE NOTE: Two cron lines cover DST:
+#   '20 21 * * 1-5'  = 21:20 UTC = 17:20 ET (EDT, UTC-4, Mar→Nov)
+#   '20 22 * * 1-5'  = 22:20 UTC = 17:20 ET (EST, UTC-5, Nov→Mar)
+# Both fire ≥17:20 ET so the skip-if-not-advanced guard (which uses a 17:00 ET settle
+# buffer via lib/nyse_calendar._CLOSE_PLUS_SETTLE) always resolves to TODAY's session.
+# GitHub runs BOTH cron lines on days they overlap (the concurrency group
+# cancel-in-progress=false means the second job waits; the first commit makes the second
+# a no-op via "no rendered-site changes to commit").  This is safe.
+#
+# FIRST-DISPATCH MEASUREMENT PLAN (masterplan §7 requirement):
+#   Before relying on the schedule, manually dispatch this workflow once via
+#   `gh workflow run earlyclose.yml` or the Actions UI and record the wall-time of the
+#   "engine-render scope=fast" step.  Budget hypothesis is 30-45 min.  The cron ships now
+#   because the mutex + skip-if-not-advanced guards make a bad slot a no-op; the schedule
+#   should be considered PROVISIONAL until the first manual dispatch runtime is recorded and
+#   within the budget.  Update the ops ledger in the masterplan after that measurement.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 21 * * 1-5"   # 21:20 UTC = 17:20 ET (EDT, UTC-4, Mar→Nov)
+    - cron: "20 22 * * 1-5"   # 22:20 UTC = 17:20 ET (EST, UTC-5, Nov→Mar)
+
+permissions:
+  contents: write
+
+concurrency:
+  # Own group — never shares with pipeline-daily, pipeline-render, or pipeline-engine-render.
+  # cancel-in-progress: false so a running earlyclose always finishes.
+  group: pipeline-earlyclose
+  cancel-in-progress: false
+
+jobs:
+  earlyclose:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 180
+    env:
+      EARLYCLOSE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+
+      # ── (a) MUTEX GUARD ──────────────────────────────────────────────────────────────────
+      # Skip the entire run if the 16:45 ET optionshub launchd job is still active.
+      # RAM contention law: the 192 GB Mac Studio freezes under concurrent heavy jobs
+      # (mac-studio-ram-freeze-and-mem-sentinel).
+      # NOTE: `exit 0` in a `run:` block only ends that step's shell — it does NOT skip
+      # downstream steps.  We write a flag to $GITHUB_OUTPUT and gate every subsequent
+      # step on `steps.mutex.outputs.skip != 'true'`.
+      - name: mutex — skip if optionshub job is still running
+        id: mutex
+        run: |
+          if pgrep -f build_options_hub_nightly > /dev/null 2>&1; then
+            echo "::notice::build_options_hub_nightly is still running — skipping earlyclose render to avoid RAM contention"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "optionshub not running — proceeding"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── python + deps (mirrors engine-render.yml) ─────────────────────────────────────
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        if: steps.mutex.outputs.skip != 'true'
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+        if: steps.mutex.outputs.skip != 'true'
+
+      # ── (b) PRICE-STORE FRESHNESS GATE WITH --heal ───────────────────────────────────
+      # Unlike engine-render (check-only, network-free), this lane IS allowed a network
+      # touch to self-heal the price store (~16s keyless fetch of today's SPY bar).
+      # The --heal flag re-pulls the last bar when the store is behind the expected NYSE
+      # session.  Non-fatal continue-on-error so a bad feed day degrades gracefully;
+      # the skip-if-not-advanced guard below provides the hard holiday/half-day safety.
+      - name: price-store freshness gate (--heal, keyless, ~16s)
+        if: steps.mutex.outputs.skip != 'true'
+        continue-on-error: true
+        run: python -m scripts.check_price_store_freshness --heal
+
+      # ── (c) SKIP-IF-NOT-ADVANCED GUARD ───────────────────────────────────────────────
+      # If the price store's last SPY bar does not match today's expected NYSE session
+      # (holiday, early close, half-day, or feed failure), skip the render entirely.
+      # check_price_store_freshness exit semantics: exit 0 = fresh, exit 3 = stale,
+      # exit 2 = crash.  Any nonzero exit = not-advanced; treat as skip.
+      # We write a flag to $GITHUB_OUTPUT and gate all render/commit steps on it.
+      # NOTE: `exit 0` in a `run:` block only ends that step's shell — it does NOT skip
+      # downstream steps.  The flag+`if:` pattern is mandatory (Actions step semantics).
+      - name: skip-if-not-advanced guard (holiday/half-day safety)
+        id: guard
+        if: steps.mutex.outputs.skip != 'true'
+        run: |
+          if python -m scripts.check_price_store_freshness; then
+            echo "price store is current — proceeding with earlyclose render"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::price store not advanced to today's expected NYSE session — skipping earlyclose render (holiday/half-day/feed-failure)"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── restore caches (mirrors engine-render.yml restore steps) ────────────────────
+      - name: restore attention store from R2
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs attention || echo "::warning::attention restore failed (non-fatal — attention chip absent/stale this render)"
+      - name: restore breadth (S&P 500) close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-earlyclose-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: restore smallcap (S&P 600) close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/smallcap_breadth/_closes_cache.parquet
+          key: smallcap-closes-earlyclose-${{ github.run_id }}
+          restore-keys: smallcap-closes-
+      - name: restore midcap (S&P 400) close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/midcap_breadth/_closes_cache.parquet
+          key: midcap-closes-earlyclose-${{ github.run_id }}
+          restore-keys: midcap-closes-
+      - name: restore china breadth close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/china_breadth/_closes_cache.parquet
+          key: china-breadth-closes-earlyclose-${{ github.run_id }}
+          restore-keys: china-breadth-closes-
+      - name: restore hk breadth close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/hk_breadth/_closes_cache.parquet
+          key: hk-breadth-closes-earlyclose-${{ github.run_id }}
+          restore-keys: hk-breadth-closes-
+      - name: restore intraday (4H) cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/intraday
+          key: intraday-earlyclose-${{ github.run_id }}
+          restore-keys: intraday-
+
+      # ── (d) ENGINE RECOMPUTE + FAST RENDER ──────────────────────────────────────────
+      # Mirrors the engine-render.yml "recompute signals + regime" step exactly,
+      # then triggers the scope=fast render cluster.
+      - name: recompute signals + regime from committed data (no collect / no LLM / no network)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: |
+          set +e
+          run_py() {
+            local label="$1"; local mod="$2"; shift 2
+            echo "::group::$label"
+            python -m "$mod" "$@" > /tmp/e.log 2>&1; local rc=$?
+            cat /tmp/e.log
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/e.log | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/e.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+          run_py "MTF signal-quality leaf (build_signal_quality)" scripts.build_signal_quality
+          run_py "§7 signal contract gate (validate_signals)"     scripts.validate_signals
+          run_py "regime engine (engine.run)"                     engine.run
+          exit 0
+      - name: build world state (neural-web W1 — express lane)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal)"
+      - name: build mastermind context (NW bridge)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal)"
+      - name: re-render pages — scope=fast (macro+baskets clusters only)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        # scope=fast: spine + baskets cluster + hub.  Explicitly excludes:
+        #   • cl_gex  (live options chain fetches — network, non-pure)
+        #   • cl_china / cl_hk / cl_markets (not driven by intraday US session)
+        #   • us_pages (briefings/intel-hub — LLM-dependent)
+        #   • libs (stock libraries — heavy, LLM-adjacent)
+        #   • special-situations / collectors (nightly-only)
+        # Steps are verbatim copies of the same functions in engine-render.yml.
+        env:
+          LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
+          RENDER_NO_DRIP: "1"
+          EARLYCLOSE: "1"
+        run: |
+          set +e
+          run_py() {
+            local label="$1"; local mod="$2"; shift 2
+            echo "::group::$label"
+            python -m "$mod" "$@" > /tmp/step.log 2>&1; local rc=$?
+            cat /tmp/step.log
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/step.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
+          # spine — verbatim from engine-render.yml scope=macro
+          run_py "S&P allocation vector (build_spvector)"        scripts.build_spvector
+          run_py "alternative data desk (build_alt_data)"        scripts.build_alt_data
+          run_py "13F smart-money tracker (build_smart_money)"   scripts.build_smart_money
+          run_py "policy-lever card (build_policy_lever)"        scripts.build_policy_lever
+          run_py "macro dashboard + US stocks (build_site)"      scripts.build_site
+          run_py "buy board 2.0 shadow (build_stock_board_v2)"   scripts.build_stock_board_v2
+          run_py "reflexivity overlay (build_reflexivity_overlay)" scripts.build_reflexivity_overlay
+          run_py "congressional trades desk (build_congress)"    scripts.build_congress
+
+          # baskets cluster — verbatim from engine-render.yml scope=baskets
+          run_py "thematic baskets (build_baskets)"     scripts.build_baskets
+          run_py "news suite (build_news)"              scripts.build_news
+          run_py "methodology page (build_methodology)" scripts.build_methodology
+          run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
+          run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
+          run_py "radar page (build_radar_page)"        scripts.build_radar_page
+
+          # hub — verbatim from engine-render.yml hub()
+          run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector
+
+          exit 0
+
+      # ── (f) PROVISIONAL STAMP ARTIFACT ──────────────────────────────────────────────
+      # Write site/live/earlyclose_stamp.json: {as_of, provisional: true}.
+      # This is a 5-line inline step — no template changes (W3 territory).
+      # The stamp lives in the commit message AND this JSON so any consumer can detect
+      # that this state was produced by the early-close lane (not the nightly).
+      - name: write provisional earlyclose stamp (site/live/earlyclose_stamp.json)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: |
+          python3 - <<'PYEOF'
+          import json, datetime, pathlib
+          stamp = {
+            "as_of": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "provisional": True,
+            "note": "provisional close (delayed feed); nightly is canonical",
+            "lane": "earlyclose"
+          }
+          p = pathlib.Path("site/live/earlyclose_stamp.json")
+          p.parent.mkdir(parents=True, exist_ok=True)
+          p.write_text(json.dumps(stamp, indent=2))
+          print(f"wrote {p}: {stamp}")
+          PYEOF
+
+      # ── guards (mirrors engine-render.yml) ──────────────────────────────────────────
+      - name: guard — inline JS must parse
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python3 scripts/check_inline_js.py site
+      - name: guard — market-state board coherence
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: |
+          python3 scripts/check_ms_board_coherence.py && exit 0
+          python3 scripts/check_ms_board_coherence.py --heal-from HEAD || true
+          exit 1
+      - name: inject data-base shim
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+
+      # ── (e) COMMIT — site/ ONLY, with fastpath-style data/ discard guard ────────────
+      # Replicates intraday-fastpath.yml lines 71-83 VERBATIM-IN-SPIRIT (FT-R5/FT-R8):
+      #   1. stage site/ FIRST (earlyclose_stamp.json is inside site/live/ — included)
+      #   2. THEN git checkout -- .  discards unstaged data/ writes (ledger appends, etc.)
+      #   3. git clean -fdq data/  removes untracked data/ files
+      #   4. rebase-push with --autostash (protects against dirty-tree refusal on race)
+      # ORDER IS CRITICAL: stage BEFORE checkout, exactly as intraday-fastpath.yml does
+      # (fastpath lines 71-77 stage, line 83 discards).  Reversing the order would cause
+      # `git checkout -- .` to revert tracked site/ pages back to HEAD, leaving nothing
+      # new staged and committing only the force-added stamp — defeating the lane entirely.
+      # The nightly daily pipeline remains the sole advancer of every data/ forward ledger.
+      - name: commit rendered site (site/ ONLY — data/ discarded; provisional earlyclose)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Stage site/ FIRST (order mirrors intraday-fastpath.yml lines 71-77).
+          git add site/
+          git add -f site/live/earlyclose_stamp.json 2>/dev/null || true
+          git add -f site/stockbrief 2>/dev/null || true
+          # THEN discard unstaged data/ writes (FT-R5) — same as fastpath lines 83-84.
+          git checkout -- . 2>/dev/null || true
+          git clean -fdq data/ 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
+          MSG="earlyclose: provisional EOD render $(date -u +%F) (scope=fast)"$'\n\n'"provisional close (delayed feed); nightly is canonical"$'\n'"EARLYCLOSE=1 lane - site/ only; data/ discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+          git commit -m "$MSG"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash -X theirs origin main; then
+              python -m scripts.check_template_site_sync --fix || true
+              python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
+                || echo "::warning::ms-board coherence heal incomplete"
+              if ! git diff --quiet -- site/; then
+                git add site/ && git commit -m "render-sync: post-rebase guards (earlyclose)" \
+                  || echo "::warning::render-sync commit failed (non-fatal)"
+              fi
+              if git push; then echo "pushed earlyclose rendered site on attempt $i"; exit 0; fi
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "earlyclose push attempt $i failed (rebase/race); re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push earlyclose rendered site after 5 attempts — nightly will re-land it"
