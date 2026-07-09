@@ -821,3 +821,50 @@ def test_detect_disagreement_end_to_end_real_artifacts():
     print(f"\n[end-to-end] semicap_equipment real reco from committed artifact: {semicap_reco!r}")
     print(f"[end-to-end] as_of={as_of}, {len(turn_watch_rows)} ledger rows, "
           f"{len(events)} disagreement event(s)")
+
+
+# ---------------------------------------------------------------------------
+# (22) register_cohort_claims — claims land at <repo>/data/qledger/claims.jsonl
+#      NOT at data_root/data/qledger/claims.jsonl (double-data/ bug, item 1 fix)
+# ---------------------------------------------------------------------------
+
+def test_register_cohort_claims_lands_at_repo_root(monkeypatch, tmp_path):
+    """Claims must be written to <repo_root>/data/qledger/claims.jsonl.
+
+    qledger.register_batch takes `root` as the REPO root and prepends data/
+    internally (_CLAIMS_FILE = ("data", "qledger", "claims.jsonl")).
+
+    Before the fix, register_cohort_claims passed `root=data_root`, causing
+    claims to land at data_root/data/qledger/claims.jsonl (double data/).
+    After the fix, root is threaded separately from data_root and passed to
+    register_batch, so claims land at repo_root/data/qledger/claims.jsonl.
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+    # Two separate directories: repo root and data root (mimicking prod layout
+    # where repo_root/data/ is the data directory, but here we keep them distinct
+    # to catch the double-path bug).
+    repo_root = tmp_path / "repo"
+    data_root = tmp_path / "data_area"
+    repo_root.mkdir()
+    data_root.mkdir()
+
+    cohorts = [{"cohort_id": _TODAY, "cohort_date": _TODAY,
+                "basket_ids": ["ai_semiconductors"], "n_baskets": 1, "legs": {}}]
+
+    # Use the REAL qledger (not mocked) so register_batch actually writes.
+    import engine.qledger as q_real
+
+    BTC.register_cohort_claims(cohorts, data_root=data_root, root=repo_root)
+
+    canonical = repo_root / "data" / "qledger" / "claims.jsonl"
+    double_data = data_root / "data" / "qledger" / "claims.jsonl"
+
+    assert canonical.exists(), (
+        f"Claims must land at <repo_root>/data/qledger/claims.jsonl but file "
+        f"does not exist at {canonical}"
+    )
+    assert not double_data.exists(), (
+        f"Claims must NOT land at data_root/data/qledger/claims.jsonl — "
+        f"this indicates the double-data/ bug is still present: {double_data}"
+    )

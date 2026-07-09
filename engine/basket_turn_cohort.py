@@ -474,6 +474,7 @@ def form_cohorts(
 def register_cohort_claims(
     cohorts: list[dict],
     data_root: Path | None = None,
+    root: Path | None = None,
 ) -> list[dict]:
     """Register one qledger claim per IGNITION-day cohort (keep-first).
 
@@ -554,7 +555,8 @@ def register_cohort_claims(
     if not claims_to_register:
         return []
 
-    registered = q.register_batch(claims_to_register, root=data_root, dedupe=True)
+    _root = root if root is not None else config.ROOT
+    registered = q.register_batch(claims_to_register, root=_root, dedupe=True)
 
     # Append cohort log for keep-first bookkeeping
     log_path = _cohort_log_path(data_root)
@@ -575,6 +577,7 @@ def register_cohort_claims(
 def nightly_run(
     data_root: Path | None = None,
     as_of: str | None = None,
+    root: Path | None = None,
 ) -> dict[str, Any]:
     """Nightly build step: read turn-watch ledger, form cohorts, register claims,
     and grade any matured cohorts (21 sessions elapsed).
@@ -616,7 +619,7 @@ def nightly_run(
                 "gate_skipped": True,
             }
 
-        registered = register_cohort_claims(cohorts, data_root=data_root)
+        registered = register_cohort_claims(cohorts, data_root=data_root, root=root)
         n_registered = len([r for r in registered if r.get("status") == "open"])
 
         # Grade matured cohorts (21 sessions elapsed)

@@ -19,8 +19,8 @@ OUTCOME TRACKING
 For each event, outcome at +10 and +21 sessions:
     slow_state_flipped   — reco moved to "enter" or "accumulate" by that session
     tape_faded           — basket EW vs SPY negative over the window
-    unresolved_censored  — neither state flipped nor tape definitively faded
-                           (or the window has not yet elapsed)
+    unresolved           — neither state flipped nor tape definitively faded
+                           (window elapsed but no strong signal; censored=False)
 
 CENSORING CONVENTION
 --------------------
@@ -96,7 +96,7 @@ AUTHORITY = {
 REGISTRATION_NOTE = (
     "tape_disagreement.v1 — disagreement-day records: basket IGNITION while "
     "slow reco NOT IN {enter, accumulate}. "
-    "Outcome tracking: slow_state_flipped / tape_faded / unresolved_censored "
+    "Outcome tracking: slow_state_flipped / tape_faded / unresolved "
     "at +10 and +21 sessions, with explicit right-censoring. "
     "Analysis convention: Kaplan-Meier survival estimation (analysis pass at "
     "2026-10-15 clock). "
@@ -478,12 +478,12 @@ def update_outcomes(
         When excess is None (price data insufficient), outcome stays None and
         censored stays True so the row re-evaluates next nightly run.  Only
         a definitive outcome (tape_faded, slow_state_flipped, or
-        unresolved_censored when excess IS available) closes the row.
+        unresolved when excess IS available) closes the row.
 
     Outcome vocabulary:
         slow_state_flipped  — reco moved to enter/accumulate (PIT ledger req'd)
         tape_faded          — basket EW vs SPY < 0 over the window
-        unresolved_censored — window elapsed, excess computed, no strong signal
+        unresolved          — window elapsed, excess computed, no strong signal
     """
     updated_rows: list[dict] = []
     for row in rows:
@@ -530,7 +530,7 @@ def update_outcomes(
                 row[outcome_key] = "tape_faded"
             else:
                 # Window elapsed, excess computed, no strong signal
-                row[outcome_key] = "unresolved_censored"
+                row[outcome_key] = "unresolved"
 
             # Record the raw return for analysis
             if excess is not None:

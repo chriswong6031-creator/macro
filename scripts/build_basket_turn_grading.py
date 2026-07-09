@@ -43,7 +43,7 @@ def main() -> int:
 
     # ── 1. basket_turn.v1 cohort claims ───────────────────────────────────────
     log.info("=== basket_turn.v1 cohort claims ===")
-    cohort_summary = btc.nightly_run(data_root=data_root)
+    cohort_summary = btc.nightly_run(data_root=data_root, root=root)
 
     if not cohort_summary.get("ok"):
         log.warning("basket_turn_cohort.nightly_run reported error: %s",
