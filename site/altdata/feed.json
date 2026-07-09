@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-08T17:13:09.419823+00:00",
-  "as_of": "2026-07-08",
+  "generated_utc": "2026-07-09T00:49:23.803195+00:00",
+  "as_of": "2026-07-09",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6202,7 +6202,7 @@
         "total_usd": 84516107.0,
         "contracts": 19,
         "agencies": 2,
-        "accel_x": 0.97,
+        "accel_x": 1.01,
         "top_agency": "Department of Veterans Affairs"
       },
       {
@@ -6226,7 +6226,7 @@
         "total_usd": 24525605.0,
         "contracts": 6,
         "agencies": 2,
-        "accel_x": 0.68,
+        "accel_x": 0.74,
         "top_agency": "Department of Commerce"
       },
       {
@@ -6290,7 +6290,7 @@
         "total_usd": 10898229.0,
         "contracts": 37,
         "agencies": 6,
-        "accel_x": 0.58,
+        "accel_x": 0.59,
         "top_agency": "Department of Transportation"
       },
       {
@@ -6303,10 +6303,10 @@
       },
       {
         "ticker": "F",
-        "total_usd": 9762847.0,
-        "contracts": 199,
+        "total_usd": 9625885.0,
+        "contracts": 196,
         "agencies": 1,
-        "accel_x": 4.48,
+        "accel_x": 5.33,
         "top_agency": "General Services Administration"
       }
     ],
@@ -6477,18 +6477,13 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 18,
         "items": "8.01"
       },
       {
         "ticker": "SPCX",
         "count": 6,
         "items": "1.01, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "APLD",
-        "count": 5,
-        "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
         "ticker": "MSTR",
@@ -6499,11 +6494,6 @@
         "ticker": "PSKY",
         "count": 5,
         "items": "7.01, 8.01"
-      },
-      {
-        "ticker": "ALGT",
-        "count": 4,
-        "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
         "ticker": "BLD",
@@ -6524,6 +6514,11 @@
         "ticker": "AES",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
+      },
+      {
+        "ticker": "ALGT",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
       },
       {
         "ticker": "ASPI",
@@ -6596,9 +6591,14 @@
         "items": "7.01"
       },
       {
-        "ticker": "RDW",
+        "ticker": "VTRS",
         "count": 3,
         "items": "1.01, 2.03, 8.01"
+      },
+      {
+        "ticker": "WRB",
+        "count": 3,
+        "items": "1.01, 2.03, 5.02, 8.01"
       }
     ],
     "special_situations": [
@@ -47658,7 +47658,7 @@
           "activist_13d",
           "gov_contract_accel"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $9,762,847, 4.5x accel"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $9,625,885, 5.3x accel"
       },
       {
         "ticker": "N/A",
