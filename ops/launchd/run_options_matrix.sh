@@ -59,7 +59,7 @@
 set -eu
 
 # ── paths ─────────────────────────────────────────────────────────────────────
-REPO="/Users/chriswong/Documents/Cluade/Macro Dashboard"
+REPO="/Users/chriswong/flow-ops-wt"
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 STORE="${THETADATA_STORE:-/Users/chriswong/theta-ops-wt/data/thetadata_eod}"
 

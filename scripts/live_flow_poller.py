@@ -523,6 +523,59 @@ def _load_baselines() -> dict:
         return {}
 
 
+def _load_unusual_baseline() -> dict:
+    """Load the 30-session volume baseline artifact (flow.unusual_baseline/v1).
+
+    Only loaded when UNUSUAL_BASELINE=1 is set in env AND the artifact is present
+    and fresh (asof within 5 NYSE sessions of today).  Returns {} otherwise (fail-open).
+
+    DEFAULT OFF: UNUSUAL_BASELINE env is NOT set in any plist — the poller lane
+    owner flips it.  When absent or stale the poller falls back to the current
+    heuristic exactly as before.
+    """
+    if os.environ.get("UNUSUAL_BASELINE") != "1":
+        return {}
+
+    p = config.data_dir() / "live_flow_out" / "unusual_baseline.json"
+    if not p.exists():
+        log.debug("poller: unusual_baseline artifact absent — falling back to heuristic")
+        return {}
+
+    try:
+        blob = json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("poller: could not load unusual_baseline: %s", e)
+        return {}
+
+    # Freshness check: asof within 5 NYSE sessions of today.
+    try:
+        from lib.nyse_calendar import last_session_on_or_before, is_session
+        from datetime import date as _date
+        asof_str = blob.get("asof", "")
+        asof_dt = _date.fromisoformat(asof_str)
+        today = _date.today()
+        # Count sessions between asof and today
+        sessions_since = 0
+        d = asof_dt + __import__("datetime").timedelta(days=1)
+        while d <= today:
+            if is_session(d):
+                sessions_since += 1
+            d += __import__("datetime").timedelta(days=1)
+        if sessions_since > 5:
+            log.info(
+                "poller: unusual_baseline stale (asof=%s, %d sessions ago > 5) — "
+                "falling back to heuristic",
+                asof_str, sessions_since,
+            )
+            return {}
+        log.info("poller: unusual_baseline loaded (asof=%s, sessions_since=%d)",
+                 asof_str, sessions_since)
+        return blob
+    except Exception as e:  # noqa: BLE001
+        log.warning("poller: unusual_baseline freshness check failed: %s — using artifact", e)
+        return blob
+
+
 # ── session date ─────────────────────────────────────────────────────────────
 
 def _session_date(override: str | None = None) -> str:
@@ -547,6 +600,7 @@ def run_cycle(
     cfg: dict,
     cycle_watermarks: dict,   # FIX 2: {root: {"ts": str, "seq": float}} — mutated in place
     forced_full_day: bool = False,  # True when --date override forces full_day regardless of probe
+    unusual_baseline: dict | None = None,  # flow.unusual_baseline/v1 artifact; None = fall back to heuristic
 ) -> tuple[dict, dict, dict, dict, dict]:
     """Run one poll cycle.  Returns (feed_data, heat_data, meta_data, updated_day_state, tide_day_state).
 
@@ -780,6 +834,32 @@ def run_cycle(
         return (abs(pz) if pz is not None else 0.0, u.get("gross_premium_today", 0.0))
     unusual_list.sort(key=_un_sort_key, reverse=True)
 
+    # ── UNUSUAL_BASELINE annotation (BEHIND FLAG — fail-open) ─────────────────
+    # When unusual_baseline artifact is loaded (UNUSUAL_BASELINE=1 + fresh artifact),
+    # annotate each unusual entry with vol_baseline fields comparing gross_premium_today
+    # against max(p95_vol_30d, 2 * mean_vol_30d).  No change to sort or existing fields.
+    # Falls back silently when artifact absent, stale, or flag unset.
+    if unusual_baseline:
+        _ub_roots = unusual_baseline.get("roots", {})
+        for un in unusual_list:
+            r = un.get("root", "")
+            rb = _ub_roots.get(r.upper())
+            if rb and rb.get("mean_vol_30d") is not None and rb.get("p95_vol_30d") is not None:
+                try:
+                    mean_v = float(rb["mean_vol_30d"])
+                    p95_v  = float(rb["p95_vol_30d"])
+                    threshold = max(p95_v, 2.0 * mean_v)
+                    gross_today = float(un.get("gross_premium_today") or 0.0)
+                    un["vol_baseline"] = {
+                        "mean_vol_30d":  mean_v,
+                        "p95_vol_30d":   p95_v,
+                        "threshold":     round(threshold, 0),
+                        "above_threshold": gross_today > threshold,
+                        "sessions_used": int(rb.get("sessions_used", 0)),
+                    }
+                except Exception:  # noqa: BLE001
+                    pass  # fail-open: skip annotation for this root
+
     cycle_sec = time.perf_counter() - cycle_t0
 
     # Build feed payload
@@ -974,6 +1054,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     n_baselines = len(baselines)
     log.info("poller: loaded %d baseline entries", n_baselines)
 
+    # Load unusual baseline (BEHIND FLAG — fail-open; default OFF)
+    unusual_baseline = _load_unusual_baseline()
+    if unusual_baseline:
+        log.info("poller: unusual_baseline loaded (%d roots)", len(unusual_baseline.get("roots", {})))
+    else:
+        log.debug("poller: unusual_baseline not active (UNUSUAL_BASELINE env not set or artifact absent/stale)")
+
     # R2 setup
     bucket = os.environ.get("R2_BUCKET", "")
     s3 = _r2_client()
@@ -1006,6 +1093,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 cfg=cfg,
                 cycle_watermarks=watermarks,
                 forced_full_day=bool(args.date),
+                unusual_baseline=unusual_baseline,
             )
         except Exception as e:  # noqa: BLE001
             log.error("poller: cycle #%d unhandled error: %s", cycle_n, e, exc_info=True)
