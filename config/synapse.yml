@@ -9154,6 +9154,19 @@ artifacts:
     freshness_sla_hours: 200
     schema: implicit
     tier: infrastructure
+  # --- FTR W7: TAPE-ONSET (unconfirmed) display tier ---
+  oracle-tape-onset:
+    path: site/basketdata/oracle_tape_onset.json
+    format: json
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: oracle_tape_onset.v1
+    tier: display
     horizon_role: context
     weights: none
     scored_path_surfaces: []
@@ -9166,4 +9179,38 @@ artifacts:
       Statuses: degraded_pack_only | awaiting_phase_a | ok. Infrastructure tier;
       never a signal. Absent until first brainstorm run (frontier falls back to
       constant awaiting_phase_a when absent).
+      - templates/subsector_rotation.html.j2
+    external_consumers: []
+    notes: >
+      FTR W7 TAPE-ONSET (unconfirmed) display sidecar — additive fields on the
+      oracle turn-desk payload (tape_onset_unconfirmed + tape_onset_stats per
+      node). Registration: research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md
+      (merged before build per Constitution §I.3). DISPLAY-ONLY under hard law:
+      no consumer may rank, gate, size, or escalate on this flag. Rates
+      (p_onset_5d, p_confirmed_10d, false_positive_5d) are printed-from-data,
+      never hardcoded, covering only full-forward-window flag instances.
+
+  oracle-tape-onset-ledger:
+    path: data/oracle/tape_onset_ledger.jsonl
+    format: jsonl
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: pit_stamp
+    freshness_sla_hours: 30
+    schema: oracle_tape_onset_ledger.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: >
+      FTR W7 trial ledger — one row per tape_onset flag event per node (keep-first
+      idempotent, nightly lane only). Accrual starts from ship date; §3 historical
+      rates are computed separately from the full panel and are display-only
+      descriptive. Registration §4 convention.
 

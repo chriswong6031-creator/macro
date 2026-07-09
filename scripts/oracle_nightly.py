@@ -1580,11 +1580,11 @@ def _step_tape_onset(
         )
         log.info("tape_onset_ledger: %d new flag rows appended (keep-first)", n_new)
 
-        return True
+        return n_new
 
     except Exception as e:  # noqa: BLE001
         _annotation(f"oracle_nightly: tape_onset FAILED: {e}")
-        return False
+        return -1
 
 
 def _write_turn_desk_ledger(
@@ -1929,8 +1929,11 @@ def main() -> int:
     # + trial ledger data/oracle/tape_onset_ledger.jsonl. DISPLAY-ONLY, no authority granted.
     # Loud-error pattern: ::error:: annotation + pipeline continues on failure.
     n_tape_onset_ledger = 0
-    if not _step_tape_onset(data_dir, site_dir, args.dry_run):
+    _tape_onset_result = _step_tape_onset(data_dir, site_dir, args.dry_run)
+    if _tape_onset_result < 0:
         failures.append("tape_onset")
+    else:
+        n_tape_onset_ledger = _tape_onset_result
 
     elapsed = time.time() - t_total
     log.info(

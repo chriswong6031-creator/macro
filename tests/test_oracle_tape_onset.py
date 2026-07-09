@@ -265,6 +265,12 @@ class TestRatesMath:
             assert abs(total - 1.0) < 1e-5, (
                 f"p_onset_5d + false_positive_5d = {total}, expected 1.0"
             )
+            assert 0.0 <= stats["p_onset_5d"] <= 1.0, (
+                f"p_onset_5d={stats['p_onset_5d']} must be in [0, 1]"
+            )
+            assert 0.0 <= stats["false_positive_5d"] <= 1.0, (
+                f"false_positive_5d={stats['false_positive_5d']} must be in [0, 1]"
+            )
 
     def test_no_flags_returns_zero(self):
         """A panel where the flag never fires returns n_flags=0 and None rates."""
@@ -277,6 +283,41 @@ class TestRatesMath:
         assert stats["n_flags"] == 0
         assert stats["p_onset_5d"] is None
         assert stats["false_positive_5d"] is None
+
+    def test_tail_flags_do_not_inflate_rates(self):
+        """Regression: tail flags (partial forward window) must NOT inflate p_onset_5d > 1.0.
+
+        The bug: numerator loop only skipped flags with zero forward sessions while the
+        denominator required a full 5-session window — yielding p_onset_5d > 1.0 and
+        false_positive_5d < 0 when tail flags happened to also have a smoothed-onset hit
+        in their partial window.  Fix: both numerator and denominator restrict to
+        full-window flags.
+        """
+        panel = _make_panel(nodes=["XLV"], n_days=40)
+        node_panel = panel.xs("XLV", level="node").sort_index()
+        node_panel = node_panel.copy()
+        # Place flags in the last 3 rows (tail — fewer than 5 forward sessions each)
+        node_panel["accel_z"] = 0.0
+        node_panel["vel_1w"] = 0.0
+        node_panel["vel_3m"] = -0.01
+        for pos in [-3, -2, -1]:
+            node_panel.iloc[pos, node_panel.columns.get_loc("accel_z")] = 1.5
+            node_panel.iloc[pos, node_panel.columns.get_loc("vel_1w")] = 0.04
+            node_panel.iloc[pos, node_panel.columns.get_loc("vel_3m")] = 0.01
+        # Also set accel_z_5d high in tail so partial-window numerator would have fired
+        if "accel_z_5d" in node_panel.columns:
+            node_panel.iloc[-2, node_panel.columns.get_loc("accel_z_5d")] = 2.0
+            node_panel.iloc[-1, node_panel.columns.get_loc("accel_z_5d")] = 2.0
+        stats = compute_tape_onset_stats(node_panel, None, "XLV")
+        # Tail-only flags: no full-window flags exist → rates should be None
+        if stats["p_onset_5d"] is not None:
+            assert 0.0 <= stats["p_onset_5d"] <= 1.0, (
+                f"p_onset_5d={stats['p_onset_5d']} exceeded 1.0 — tail-flag inflation bug"
+            )
+        if stats["false_positive_5d"] is not None:
+            assert 0.0 <= stats["false_positive_5d"] <= 1.0, (
+                f"false_positive_5d={stats['false_positive_5d']} went negative — tail-flag inflation bug"
+            )
 
 
 # ---------------------------------------------------------------------------

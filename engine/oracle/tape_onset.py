@@ -233,20 +233,20 @@ def compute_tape_onset_stats(
     # Compute printed rates (forward-looking, CAUSAL — never uses future data at flag time)
     az5_arr = accel_z_5d.to_numpy(dtype=float)
 
-    # p_onset_5d: fraction of flag days where accel_z_5d >= 1.0 within the next 5 sessions
+    # p_onset_5d: fraction of flag days where accel_z_5d >= 1.0 within the next 5 sessions.
+    # Both numerator and denominator are restricted to flags with a FULL _P_ONSET_WINDOW_SESSIONS
+    # forward window so that the fraction stays in [0, 1] and false_positive_5d stays in [0, 1].
+    # Tail flags (fewer than _P_ONSET_WINDOW_SESSIONS forward sessions) are excluded from both.
     onset_5d_hits = 0
+    flags_with_fwd = 0
     for i in flag_indices:
-        # Look at the NEXT 5 sessions after the flag (exclusive of the flag day itself)
+        # Require a FULL forward window — skip any tail flag with a partial window
+        if (i + 1 + _P_ONSET_WINDOW_SESSIONS) > len(dates):
+            continue
+        flags_with_fwd += 1
         future_slice = az5_arr[i + 1: i + 1 + _P_ONSET_WINDOW_SESSIONS]
-        if len(future_slice) == 0:
-            continue  # Skip flags at the very end of the panel (no forward data)
         if np.any(~np.isnan(future_slice) & (future_slice >= TAPE_ONSET_RAW_ACCEL_Z_THRESHOLD)):
             onset_5d_hits += 1
-
-    # Denominator: flags with at least 1 forward session of data (exclude tail flags)
-    flags_with_fwd = sum(
-        1 for i in flag_indices if (i + 1 + _P_ONSET_WINDOW_SESSIONS) <= len(dates)
-    )
 
     p_onset_5d: float | None = None
     if flags_with_fwd > 0:
