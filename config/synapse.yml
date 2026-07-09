@@ -9024,3 +9024,99 @@ artifacts:
       future CHF display surface. Display/context tier only; not_a_signal=True;
       never gates, scores, or ranks any money-path surface (CHF-R1, Article 2).
 
+  dol-certs-store:
+    path: data/dol_certs/certs.parquet
+    format: parquet
+    producer: collectors/dol_labor_certs.py
+    known_extra_writers: []
+    owner_program: til-w7-hiring-intent
+    cadence: collect
+    storage: gitignored-local
+    asof_field: decision_date
+    freshness_sla_hours: 2160
+    schema: dol_certs.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_hiring_velocity.py
+    external_consumers: []
+    notes: >
+      TIL W7 (PR-W7) DOL foreign-labor-certification compact store.
+      Runner-local (gitignored; not in R2). Quarterly ingest cadence:
+      DOL releases quarterly xlsx files 4-8 weeks after quarter-end.
+      Collector (collectors/dol_labor_certs.py) detects newest uningested
+      quarter, downloads, normalizes to compact schema
+      [program, decision_date, case_status, employer_name, job_title,
+      worksite_state, wage_annualized, file_published] and appends.
+      PIT law: keyed by DECISION_DATE (point-in-time knowable).
+      file_published = ingest date (records the PIT publication lag).
+      Programs: lca (H-1B/H-1B1/E-3) + perm (EB-2/EB-3 permanent).
+      RENDER BUDGET LAW: collect-lane CLI only; never on render path.
+      Env override: DOL_CERTS_STORE (mirrors WARN_STORE pattern).
+      URL pattern verified live 2026-07-09:
+        LCA: https://www.dol.gov/sites/dolgov/files/ETA/oflc/pdfs/LCA_Disclosure_Data_FY{YYYY}_Q{N}.xlsx
+        PERM: https://www.dol.gov/sites/dolgov/files/ETA/oflc/pdfs/PERM_Disclosure_Data_FY{YYYY}_Q{N}.xlsx
+      Column layout verified live 2026-07-09 by range-request + partial
+      decompress of xl/sharedStrings.xml from actual quarterly files.
+
+  hiring-velocity:
+    path: data/dol_certs/hiring_velocity.json
+    format: json
+    producer: scripts/build_hiring_velocity.py
+    known_extra_writers: []
+    owner_program: til-w7-hiring-intent
+    cadence: collect
+    storage: gitignored-local
+    asof_field: generated_at
+    freshness_sla_hours: 2160
+    schema: hiring_velocity.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W7 (PR-W7) per-basket DOL hiring-intent velocity provenance artifact.
+      Runner-local (gitignored). Produced by scripts/build_hiring_velocity.py
+      which calls engine/theme_hiring.compute_hiring_velocity().
+      Fields per basket: cert_velocity_z (cross-sectional robust-z of trailing-2q
+      vs prior-4q cert-count velocity), cert_count_recent, cert_count_prior,
+      ai_title_share (share of job titles matching AI_TITLE_PATTERNS_V1 lexicon),
+      median_wage_yoy, matched_employers, matched_tickers, n_matched_employers.
+      CRITICAL FENCE: cert_velocity_z is a SEPARATE display leg — never folded
+      into fused_obs_z (PIT comparability; same fence as WARN precedent).
+      Employer→ticker via lib.warn_fuzzy (shared matcher; no second matcher built).
+      Authority: all may_* false; is_context_only=true.
+
+  site-hiring-intent:
+    path: site/basketdata/hiring_intent.json
+    format: json
+    producer: scripts/build_hiring_velocity.py
+    known_extra_writers: []
+    owner_program: til-w7-hiring-intent
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 2160
+    schema: theme_hiring.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W7 (PR-W7) site projection of hiring-intent velocity.
+      Git-tracked (committed); compact per-basket rows for UI consumption.
+      Schema: {schema, as_of, authority, coverage_stats, baskets[]}.
+      Per-basket fields: basket_id, cert_velocity_z, cert_count_recent,
+      ai_title_share, median_wage_yoy, n_matched_employers,
+      coverage_note (EN), coverage_note_zh (ZH).
+      Authority: all may_* false; is_context_only=true.
+      FENCE: separate display leg — never folded into fused_obs_z.
+      Stale/absent-store honest null: when dol-certs-store is absent
+      all baskets carry cert_velocity_z=null with explanatory coverage_note.
+
