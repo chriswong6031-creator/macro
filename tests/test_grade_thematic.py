@@ -124,77 +124,30 @@ class TestLeadLag:
 
     def test_we_led(self, tmp_path):
         """Flag date 2026-04-01; news_flow crosses threshold on 2026-04-20.
-        lead_days = (2026-04-01) - (2026-04-20) = -19 ... wait, spec says:
-        POSITIVE = we flagged BEFORE crowd.
-        lead_days = flag_date - arrival_date:
-        flag=04-01, arrival=04-20 → lead = -19 (we were early — flag before arrival).
-        Actually: 04-01 < 04-20 means flag was BEFORE arrival. That is positive earliness.
-        The signed definition: lead_days = (flag_date - arrival_date).days
-        flag_date=04-01, arrival=04-20 → days = (04-01 − 04-20) = -19 → negative
-        ... but we WANT positive when we led.
 
-        Re-reading spec: "signed lead-days between our flag date and when each attention
-        leg subsequently crossed its crowding threshold (attention arrival)".
-        Standard definition: "lead" = how far we are ahead of the crowd.
-        If we flagged on day 1 and crowd arrived day 20: we led by 19 days.
-        lead_days = arrival_date - flag_date = 20 - 1 = +19 (POSITIVE = we led).
+        Spec (engine docstring): lead_days = arrival_date − flag_date.
+        POSITIVE = desk flagged BEFORE the crowd (we led).
+        NEGATIVE = crowd arrived before our flag (we were late).
 
-        The engine computes: lead_days = int((flag_ts - arrival_ts).days)
-        flag=04-01, arrival=04-20: (04-01 - 04-20).days = -19.
-        But the spec says positive means we led. So engine uses flag - arrival.
-
-        Let me re-read the engine:
-            lead_days = int((flag_ts - arrival_ts).days)
-        flag_ts = 2026-04-01, arrival_ts = 2026-04-20
-        → (2026-04-01 - 2026-04-20).days = -19
-
-        Per the engine note field: 'led' if lead_days > 0 ... but that would be
-        arrival_ts < flag_ts → arrival came BEFORE flag → we lagged.
-
-        The engine's note says 'led' when lead_days > 0, which means flag > arrival →
-        flag came AFTER arrival → WRONG for "we led".
-
-        Looking at the engine again more carefully:
-            lead_days = int((flag_ts - arrival_ts).days)
-            note = "led" if lead_days > 0 else ("concurrent" if lead_days == 0 else "lagged")
-
-        So: led = flag_date > arrival_date → we flagged AFTER arrival → we lagged.
-        That's backwards from the spec. The spec says:
-            "POSITIVE = we flagged BEFORE the crowd"
-
-        To match the spec: lead_days should = (arrival_date - flag_date).days
-        So flag on 04-01, crowd arrives 04-20 → lead = +19 → POSITIVE = we led.
-
-        The engine as written computes (flag - arrival). Let me verify the test
-        matches what the engine actually computes and check if the spec language
-        maps correctly to what the engine does.
-
-        The spec says: "signed lead-days between our flag date and when each attention
-        leg subsequently crossed its crowding threshold". This is ambiguous about sign.
-        The key truth test is the front_run_assessment check. Let me just test the
-        math as the engine computes it, and verify the 'note' field is internally
-        consistent.
+        flag=2026-04-01, arrival=2026-04-20:
+          lead_days = (04-20) - (04-01) = +19  → POSITIVE → note='led'.
         """
-        from engine.foresight_leadlag import grade_flag, _crowd_threshold, _first_crossing
+        from engine.foresight_leadlag import grade_flag
 
         theme = "test_theme"
         flag_date = "2026-04-01"
 
-        # Build a log: low values before flag date, then crosses threshold after flag date
-        # Flag on 04-01. Attention arrives 04-20 (news_flow crosses 75th pct).
+        # Historical low values, then high crossing AFTER flag date (2026-04-20).
         log_rows = []
-        base_dates = ["2026-01-01", "2026-02-01", "2026-03-01",
-                      "2026-03-15", "2026-03-25",  # historical: low values
-                      "2026-04-20", "2026-04-25",  # POST-flag: high values
-                      ]
-        for i, d in enumerate(base_dates[:5]):
+        for i, d in enumerate(["2026-01-01", "2026-02-01", "2026-03-01",
+                                "2026-03-15", "2026-03-25"]):
             log_rows.append({
                 "theme": theme, "asof": d, "ts": f"{d}T10:00:00+00:00",
                 "earliness": 0.8, "n_legs_live": 1,
                 "legs": {"news_flow": 0.1 * (i + 1), "coverage_arrival": None,
                          "ownership_breadth": None, "tape_extension": None},
             })
-        # High-value entries after flag
+        # High-value entries after flag → crowd arrives 2026-04-20
         for i, d in enumerate(["2026-04-20", "2026-04-25"]):
             log_rows.append({
                 "theme": theme, "asof": d, "ts": f"{d}T10:00:00+00:00",
@@ -205,57 +158,40 @@ class TestLeadLag:
 
         flag = self._make_flag(theme=theme, asof=flag_date, stage="PRECIPICE (text)",
                                members=["NVDA"])
-
         result = grade_flag(flag, log_rows, spy=None, root=Path("/nonexistent"))
 
-        # The leg should have an arrival_date of 2026-04-20 (first crossing after flag)
         news_leg = result["per_leg"]["news_flow"]
-        # If threshold is ~75th pct of [0.1,0.2,0.3,0.4,0.5], ~0.4; values of 10+ cross it
-        assert news_leg["arrival_date"] is not None, "news_flow should have an arrival"
-        assert news_leg["arrival_date"] == "2026-04-20"
+        assert news_leg["arrival_date"] == "2026-04-20", "crowd should arrive 04-20"
 
-        # lead_days = flag_ts - arrival_ts → (04-01) - (04-20) = -19
-        # negative because arrival was AFTER flag date (we flagged before crowd)
-        # this is the engine's convention: negative lead_days when we led
-        assert news_leg["lead_days"] is not None
-        # The note: 'lagged' when lead_days < 0 — but per the engine code
-        # led = flag_date > arrival → negative. So 'lagged' is the label for "we led".
-        # Actually this is a sign convention choice in the engine. Let's just verify
-        # lead_days is non-None and arrival is correctly identified.
-        assert isinstance(news_leg["lead_days"], int)
-        # flag 04-01 − arrival 04-20: -19 days
-        assert news_leg["lead_days"] == -19
+        # lead_days = arrival - flag = Apr-20 − Apr-01 = +19 (positive = we led)
+        assert news_leg["lead_days"] == 19, (
+            f"expected +19 (we led by 19d), got {news_leg['lead_days']}"
+        )
+        assert news_leg["note"] == "led", (
+            f"note should be 'led' when lead_days > 0, got {news_leg['note']!r}"
+        )
 
-    def test_they_led(self, tmp_path):
-        """Crowd arrived before flag date.
+    def test_we_led_small(self, tmp_path):
+        """Desk led by only 2 days: flag 05-01, crowd arrives 05-03.
 
-        The engine only looks for attention crossings AFTER the flag date
-        ('subsequently crossed'). When the crowd was already there before our
-        flag, no post-flag crossing is found → n_legs_arrived=0, lead_days=None
-        for the pre-existing-crowd leg.
-
-        To get a 'they led' scenario with a measurable lead, arrange the crowd
-        to arrive SHORTLY after our flag (1-2 days later) → lead_days negative
-        (small magnitude). Here we test a crossing that happens 2 days after
-        our flag to confirm the engine picks up a short positive gap.
+        lead_days = (05-03) - (05-01) = +2 → note='led' (within concurrent band).
+        This tests the engine picks up a short lead correctly.
         """
         from engine.foresight_leadlag import grade_flag
 
-        theme = "test_they_led"
-        # Flag on 05-01; crowd arrives on 05-03 (2 days after flag)
+        theme = "test_small_lead"
         flag_date = "2026-05-01"
         arrival_date = "2026-05-03"
 
         log_rows = []
-        early_dates = ["2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01"]
-        for i, d in enumerate(early_dates):
+        for i, d in enumerate(["2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01"]):
             log_rows.append({
                 "theme": theme, "asof": d, "ts": f"{d}T10:00:00+00:00",
                 "earliness": 0.8, "n_legs_live": 1,
                 "legs": {"news_flow": 0.1 * (i + 1), "coverage_arrival": None,
                          "ownership_breadth": None, "tape_extension": None},
             })
-        # Attention crosses 2 days AFTER our flag (2026-05-03)
+        # Crowd crosses 2 days after our flag
         log_rows.append({
             "theme": theme, "asof": "2026-05-03", "ts": "2026-05-03T10:00:00+00:00",
             "earliness": 0.1, "n_legs_live": 1,
@@ -269,11 +205,57 @@ class TestLeadLag:
 
         news_leg = result["per_leg"]["news_flow"]
         assert news_leg["arrival_date"] == arrival_date
-        # lead_days = flag_ts - arrival_ts = 05-01 - 05-03 = -2
-        # Negative lead_days = crowd arrived AFTER our flag (we led by 2 days)
-        assert news_leg["lead_days"] == -2
-        # n_legs_arrived > 0 since we found an arrival
+        # lead_days = arrival - flag = May-03 − May-01 = +2 (positive = we led)
+        assert news_leg["lead_days"] == 2, (
+            f"expected +2 (led by 2d), got {news_leg['lead_days']}"
+        )
         assert result["n_legs_arrived"] > 0
+
+    def test_desk_lagged(self, tmp_path):
+        """Crowd crossed 30d before our flag → no post-flag crossing → pending.
+
+        The engine only looks for crossings AFTER flag_date. A crowd that arrived
+        before our flag produces no arrival record → lead_days=None for that leg.
+        """
+        from engine.foresight_leadlag import grade_flag
+
+        theme = "test_lagged"
+        flag_date = "2026-05-01"
+
+        log_rows = []
+        # Crowd crossed long before flag (2026-03-01 — before flag_date)
+        for i, d in enumerate(["2026-01-01", "2026-02-01"]):
+            log_rows.append({
+                "theme": theme, "asof": d, "ts": f"{d}T10:00:00+00:00",
+                "earliness": 0.8, "n_legs_live": 1,
+                "legs": {"news_flow": 0.05 * (i + 1), "coverage_arrival": None,
+                         "ownership_breadth": None, "tape_extension": None},
+            })
+        # Big cross on 2026-03-01 — BEFORE our flag on 2026-05-01
+        log_rows.append({
+            "theme": theme, "asof": "2026-03-01", "ts": "2026-03-01T10:00:00+00:00",
+            "earliness": 0.1, "n_legs_live": 1,
+            "legs": {"news_flow": 99.0, "coverage_arrival": None,
+                     "ownership_breadth": None, "tape_extension": None},
+        })
+        # Nothing after the flag
+        log_rows.append({
+            "theme": theme, "asof": "2026-04-01", "ts": "2026-04-01T10:00:00+00:00",
+            "earliness": 0.5, "n_legs_live": 1,
+            "legs": {"news_flow": 1.0, "coverage_arrival": None,
+                     "ownership_breadth": None, "tape_extension": None},
+        })
+
+        flag = self._make_flag(theme=theme, asof=flag_date, stage="PRECIPICE (text)",
+                               members=["NVDA"])
+        result = grade_flag(flag, log_rows, spy=None, root=Path("/nonexistent"))
+
+        news_leg = result["per_leg"]["news_flow"]
+        # No crossing found after flag_date (the big cross was pre-flag)
+        assert news_leg["arrival_date"] is None, (
+            "pre-flag crowd crossing should not produce an arrival record"
+        )
+        assert news_leg["lead_days"] is None
 
     def test_never_crossed(self, tmp_path):
         """Leg never crosses threshold → leg pending, lead_days None."""
@@ -369,6 +351,106 @@ class TestLeadLag:
         result = compute_earliness_grades(tmp_path)
         text = json.dumps(result).lower()
         assert "validated" not in text, "banned word 'validated' found in output"
+
+    def test_front_run_assessment_desk_leads(self, tmp_path):
+        """Discriminating test: genuine we-led scenario produces DESK_LEADS_CROWD.
+
+        This guards against sign-convention inversions: if lead_days arithmetic
+        is inverted, a desk that actually led would produce DESK_LAGS_CROWD here.
+
+        Setup: flag on 2026-04-01, crowd arrives on 2026-04-30 → +29d lead.
+        overall_median = +29 → > 2 → front_run_assessment = DESK_LEADS_CROWD.
+        """
+        from engine.foresight_leadlag import compute_earliness_grades
+
+        theme = "ai_cap"
+        flag_date = "2026-04-01"
+
+        foresight_path = tmp_path / "data" / "foresight" / "log.jsonl"
+        _write_jsonl(foresight_path, [{
+            "theme": theme,
+            "asof": flag_date,
+            "stage": "PRECIPICE",
+            "members": [],
+            "ts": f"{flag_date}T10:00:00+00:00",
+        }])
+
+        # Earliness log: 5 historical rows (low news_flow), then crowd crosses 2026-04-30
+        earliness_path = tmp_path / "data" / "foresight" / "earliness_log.jsonl"
+        rows = []
+        for i, d in enumerate(["2026-01-10", "2026-01-20", "2026-02-10",
+                                "2026-02-20", "2026-03-10"]):
+            rows.append({
+                "theme": theme, "asof": d, "ts": f"{d}T10:00:00+00:00",
+                "earliness": 0.9, "n_legs_live": 1,
+                "legs": {"news_flow": 0.05 * (i + 1), "coverage_arrival": None,
+                         "ownership_breadth": None, "tape_extension": None},
+            })
+        # Crowd crossing 29 days after flag
+        rows.append({
+            "theme": theme, "asof": "2026-04-30", "ts": "2026-04-30T10:00:00+00:00",
+            "earliness": 0.05, "n_legs_live": 1,
+            "legs": {"news_flow": 50.0, "coverage_arrival": None,
+                     "ownership_breadth": None, "tape_extension": None},
+        })
+        _write_jsonl(earliness_path, rows)
+
+        result = compute_earliness_grades(tmp_path)
+        summary = result.get("pooled_summary", {})
+        assessment = summary.get("front_run_assessment", "")
+
+        assert "DESK_LEADS_CROWD" in assessment, (
+            f"expected DESK_LEADS_CROWD for +29d lead, got: {assessment!r}. "
+            "This catches sign-convention inversion in lead_days arithmetic."
+        )
+        # Sanity: the median should be positive
+        assert summary.get("overall_median_lead_days", 0) > 2, (
+            f"median_lead_days should be >2 for a 29d lead, got "
+            f"{summary.get('overall_median_lead_days')}"
+        )
+
+    def test_front_run_assessment_desk_lags(self, tmp_path):
+        """Discriminating test: desk that lags produces DESK_LAGS_CROWD (honest null).
+
+        Setup: crowd arrives 2026-04-30 but flag is on 2026-06-01 (flag is AFTER crowd).
+        Engine only finds crossings AFTER flag_date, so this flag will have no
+        post-flag crossing → n_pending. Confirmed: desk that arrives after the crowd
+        gets no crossing record, so assessment remains INSUFFICIENT_DATA.
+        """
+        from engine.foresight_leadlag import compute_earliness_grades
+
+        theme = "lagging_theme"
+        flag_date = "2026-06-01"  # flag AFTER crowd crossed
+
+        foresight_path = tmp_path / "data" / "foresight" / "log.jsonl"
+        _write_jsonl(foresight_path, [{
+            "theme": theme,
+            "asof": flag_date,
+            "stage": "PRECIPICE",
+            "members": [],
+            "ts": f"{flag_date}T10:00:00+00:00",
+        }])
+
+        earliness_path = tmp_path / "data" / "foresight" / "earliness_log.jsonl"
+        rows = []
+        for i, d in enumerate(["2026-01-10", "2026-02-10", "2026-03-10",
+                                "2026-04-10", "2026-04-30"]):
+            rows.append({
+                "theme": theme, "asof": d, "ts": f"{d}T10:00:00+00:00",
+                "earliness": 0.9, "n_legs_live": 1,
+                "legs": {"news_flow": (50.0 if d == "2026-04-30" else 0.1 * (i + 1)),
+                         "coverage_arrival": None,
+                         "ownership_breadth": None, "tape_extension": None},
+            })
+        _write_jsonl(earliness_path, rows)
+
+        result = compute_earliness_grades(tmp_path)
+        summary = result.get("pooled_summary", {})
+        # Crowd already crossed before flag date → no post-flag crossing → insufficient data
+        assessment = summary.get("front_run_assessment", "")
+        assert "INSUFFICIENT_DATA" in assessment or "DESK_LAGS" in assessment, (
+            f"expected INSUFFICIENT_DATA or DESK_LAGS for lagging desk, got: {assessment!r}"
+        )
 
 
 # ============================================================================

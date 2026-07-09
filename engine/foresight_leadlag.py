@@ -258,7 +258,9 @@ def grade_flag(flag: dict, theme_log_rows: list[dict], spy: pd.Series | None,
         n_arrived += 1
         flag_ts = pd.Timestamp(flag_date)
         arrival_ts = pd.Timestamp(arrival)
-        lead_days = int((flag_ts - arrival_ts).days)
+        # POSITIVE = we flagged BEFORE the crowd (we led).
+        # lead_days = arrival_date − flag_date: flag on Apr-1, crowd Apr-20 → +19 (led).
+        lead_days = int((arrival_ts - flag_ts).days)
 
         # Price excess in pre-arrival and post-arrival windows (WINDOW_DAYS each)
         pre_start = arrival_ts - pd.Timedelta(days=_WINDOW_DAYS)

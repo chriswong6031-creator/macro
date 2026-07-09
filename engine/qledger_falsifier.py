@@ -174,11 +174,10 @@ def _eval_rel_return(check: dict, asof: str, check_by: str, root: Path) -> tuple
 
     # Exit: first close at/near check_by (within 5 trading days)
     p_sub_entry = _price_at_or_after(subject_s, entry_ts, window_days=0)
-    p_sub_exit = _price_at_or_before(bench_s, check_by_ts, window_days=5)
     p_bench_entry = _price_at_or_after(bench_s, entry_ts, window_days=0)
     p_bench_exit = _price_at_or_before(bench_s, check_by_ts, window_days=5)
 
-    # Fetch subject exit price
+    # Fetch subject exit price (separate series read for PIT safety)
     sub_exit_s = _closes(subject, root)
     p_sub_exit2 = _price_at_or_before(sub_exit_s, check_by_ts, window_days=5)
 
