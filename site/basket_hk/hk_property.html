@@ -91,6 +91,37 @@
   .xm-nm { font-weight:600; max-width:24ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .xm-sc { font-weight:740; font-variant-numeric:tabular-nums; }
   .xm-ar.pos { color:var(--up); } .xm-ar.neg { color:var(--down); } .xm-ar.muted { color:var(--muted); }
+  /* ── FTR W3: live strip in basket detail header ─────────────────────── */
+  .ftr-live-strip { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 12px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:9px; margin-top:8px; font-size:12.5px; }
+  .ftr-ls-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:2px 8px; border-radius:12px; }
+  .ftr-ls-pill.live { background:rgba(35,192,138,.14); border:1px solid rgba(35,192,138,.35); color:var(--up); }
+  .ftr-ls-pill.pre  { background:rgba(79,140,255,.12); border:1px solid rgba(79,140,255,.30); color:var(--link); }
+  .ftr-ls-pill.post,.ftr-ls-pill.closed { background:rgba(139,147,167,.08); border:1px solid var(--line); color:var(--muted); }
+  .ftr-ls-chg { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .ftr-ls-chg.up { color:var(--up); } .ftr-ls-chg.dn { color:var(--down); }
+  .ftr-ls-rank { font-size:12px; color:var(--muted); }
+  /* ── FTR W8: anatomy panel ────────────────────────────────────────────── */
+  .ftr-anatomy-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:8px; }
+  .ftr-anatomy-hd { padding:13px 16px 10px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:start; }
+  .ftr-ah-why { font-size:12px; color:var(--muted); line-height:1.45; max-width:38ch; }
+  .ftr-ah-why strong { color:var(--text); }
+  .ftr-ah-score { font-size:32px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1; text-align:center; }
+  .ftr-leg-list { padding:12px 16px; display:grid; gap:8px; }
+  .ftr-leg-row { display:grid; grid-template-columns:96px 1fr 56px 52px; align-items:center; gap:9px; }
+  .ftr-leg-lbl { font-size:11px; color:var(--muted); font-weight:500; }
+  .ftr-leg-wt  { font-size:9.5px; color:var(--muted); }
+  .ftr-leg-bar { height:8px; background:rgba(40,48,66,.9); border-radius:4px; overflow:hidden; position:relative; }
+  .ftr-leg-bar-ctr { position:absolute; left:50%; top:0; bottom:0; width:1px; background:rgba(139,147,167,.28); }
+  .ftr-leg-fill { position:absolute; top:0; bottom:0; border-radius:3px; }
+  .ftr-leg-fill.pos { left:50%; background:var(--up); }
+  .ftr-leg-fill.neg { right:50%; background:var(--down); }
+  .ftr-leg-fill.crowd { left:50%; background:var(--amber,#fb923c); }
+  .ftr-leg-val { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; text-align:right; }
+  .ftr-leg-src { font-size:10.5px; color:var(--muted); text-align:right; }
+  .ftr-anatomy-ft { padding:9px 16px; border-top:1px solid var(--line); background:rgba(251,146,60,.03);
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .ftr-crowd-note { background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.30); color:var(--amber,#fb923c); padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; }
   /* ---- sector-cycle mini-chart ---- */
   .cyc-readrow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:9px; }
   .cyc-pchip { font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:7px; }
@@ -383,6 +414,7 @@
             <a class="nav-mega-item" href="../policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="../whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="../signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="../tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
             <a class="nav-mega-item" href="../macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
             <a class="nav-mega-item" href="../factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
           </div>
@@ -451,11 +483,11 @@ fetch('../policy_lever.json',{cache:'no-cache'})
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-09 20:11 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-09 21:46 UTC</span>.
 </footer>
 
 <script>
-const DETAIL = {"basket":{"id":"hk_property","name":"Property & REITs","name_zh":"\u5730\u4ea7\u4e0eREITs","category":"Property","category_zh":"\u5730\u4ea7","thesis":"HK developers, mainland landlords and Link REIT. Rate-sensitive property cycle exposure.","thesis_zh":"\u9999\u6e2f\u5730\u4ea7\u5546\u3001\u5185\u5730\u7269\u4e1a\u516c\u53f8\u548c\u9886\u5c55\u3002\u5229\u7387\u654f\u611f\u7684\u5730\u4ea7\u5468\u671f\u655e\u53e3\u3002","weighting":"equal","created":"2021-06-15","n_members":15,"members":[{"symbol":"0823.HK","name":"Link REIT","added":"2021-06-15","rationale":"Link REIT \u2014 Asia's largest REIT","last":37.48,"ret_20d":0.0224,"ret_ytd":0.1166},{"symbol":"1997.HK","name":"Wharf REIC","added":"2021-06-15","rationale":"Wharf REIC \u2014 HK investment properties","last":22.48,"ret_20d":-0.0027,"ret_ytd":-0.0587},{"symbol":"0014.HK","name":"Hysan Development","added":"2021-06-15","rationale":"Hysan Development \u2014 Causeway Bay landlord","last":17.31,"ret_20d":-0.0303,"ret_ytd":-0.0415},{"symbol":"0778.HK","name":"Fortune REIT","added":"2021-06-15","rationale":"Fortune REIT \u2014 HK suburban retail REIT","last":4.56,"ret_20d":-0.0318,"ret_ytd":-0.0348},{"symbol":"1113.HK","name":"CK Asset Holdings","added":"2021-06-15","rationale":"CK Asset \u2014 the flagship HK developer/landlord","last":44.54,"ret_20d":-0.0351,"ret_ytd":0.1636},{"symbol":"0016.HK","name":"Sun Hung Kai Properties","added":"2021-06-15","rationale":"Sun Hung Kai \u2014 the premier HK developer","last":113.0,"ret_20d":-0.0488,"ret_ytd":0.2061},{"symbol":"1109.HK","name":"China Resources Land","added":"2021-06-15","rationale":"China Resources Land \u2014 SOE landlord (H)","last":32.3,"ret_20d":-0.059,"ret_ytd":0.1875},{"symbol":"1209.HK","name":"China Resources Mixc","added":"2021-06-15","rationale":"CR Mixc \u2014 asset-light mall/property management","last":38.0,"ret_20d":-0.0745,"ret_ytd":-0.0956},{"symbol":"0101.HK","name":"Hang Lung Properties","added":"2021-06-15","rationale":"Hang Lung Properties \u2014 HK + mainland malls","last":7.18,"ret_20d":-0.0795,"ret_ytd":-0.1255},{"symbol":"0012.HK","name":"Henderson Land","added":"2021-06-15","rationale":"Henderson Land","last":25.5,"ret_20d":-0.0801,"ret_ytd":-0.0701},{"symbol":"0683.HK","name":"Kerry Properties","added":"2021-06-15","rationale":"Kerry Properties \u2014 HK/mainland developer","last":18.45,"ret_20d":-0.0821,"ret_ytd":-0.0467},{"symbol":"0083.HK","name":"Sino Land","added":"2021-06-15","rationale":"Sino Land","last":10.31,"ret_20d":-0.1104,"ret_ytd":0.0229},{"symbol":"0017.HK","name":"New World Development","added":"2021-06-15","rationale":"New World Development","last":6.56,"ret_20d":-0.1242,"ret_ytd":-0.0876},{"symbol":"0688.HK","name":"China Overseas Land","added":"2021-06-15","rationale":"China Overseas Land \u2014 SOE developer (H)","last":12.89,"ret_20d":-0.1554,"ret_ytd":0.0522},{"symbol":"0960.HK","name":"Longfor Group","added":"2021-06-15","rationale":"Longfor \u2014 quality mainland developer (H)","last":6.31,"ret_20d":-0.2103,"ret_ytd":-0.2547}],"changelog":[{"date":"2021-06-15","action":"create","note":"Seeded Property & REITs \u2014 equal-weight HK members."},{"date":"2026-06-18","action":"expand","note":"Expanded to 15 members (deep cache widened to ~157 HK names)."}],"reference":null,"missing":[],"partial":[],"perf":{"1d":{"ret":0.013531133662433525,"rel":-0.016369431638427523},"5d":{"ret":0.03658348205169726,"rel":-0.021038137668933254},"20d":{"ret":-0.07330440799697946,"rel":-0.05474584508535163},"60d":{"ret":-0.09228768114697639,"rel":-0.03198497423153335},"mtd":{"ret":0.03658348205169726,"rel":-0.021038137668933254},"ytd":{"ret":0.0025262681837248113,"rel":0.05836115021684707},"full":{"ret":-0.1411910231900293,"rel":0.007819166744326367}}},"members":[{"symbol":"0823.HK","name":"Link REIT","added":"2021-06-15","rationale":"Link REIT \u2014 Asia's largest REIT","last":37.48,"ret_20d":0.0224,"ret_ytd":0.1166,"conviction":null,"on_board":false},{"symbol":"1997.HK","name":"Wharf REIC","added":"2021-06-15","rationale":"Wharf REIC \u2014 HK investment properties","last":22.48,"ret_20d":-0.0027,"ret_ytd":-0.0587,"conviction":null,"on_board":false},{"symbol":"0014.HK","name":"Hysan Development","added":"2021-06-15","rationale":"Hysan Development \u2014 Causeway Bay landlord","last":17.31,"ret_20d":-0.0303,"ret_ytd":-0.0415,"conviction":null,"on_board":false},{"symbol":"0778.HK","name":"Fortune REIT","added":"2021-06-15","rationale":"Fortune REIT \u2014 HK suburban retail REIT","last":4.56,"ret_20d":-0.0318,"ret_ytd":-0.0348,"conviction":null,"on_board":false},{"symbol":"1113.HK","name":"CK Asset Holdings","added":"2021-06-15","rationale":"CK Asset \u2014 the flagship HK developer/landlord","last":44.54,"ret_20d":-0.0351,"ret_ytd":0.1636,"conviction":null,"on_board":false},{"symbol":"0016.HK","name":"Sun Hung Kai Properties","added":"2021-06-15","rationale":"Sun Hung Kai \u2014 the premier HK developer","last":113.0,"ret_20d":-0.0488,"ret_ytd":0.2061,"conviction":null,"on_board":false},{"symbol":"1109.HK","name":"China Resources Land","added":"2021-06-15","rationale":"China Resources Land \u2014 SOE landlord (H)","last":32.3,"ret_20d":-0.059,"ret_ytd":0.1875,"conviction":null,"on_board":false},{"symbol":"1209.HK","name":"China Resources Mixc","added":"2021-06-15","rationale":"CR Mixc \u2014 asset-light mall/property management","last":38.0,"ret_20d":-0.0745,"ret_ytd":-0.0956,"conviction":null,"on_board":false},{"symbol":"0101.HK","name":"Hang Lung Properties","added":"2021-06-15","rationale":"Hang Lung Properties \u2014 HK + mainland malls","last":7.18,"ret_20d":-0.0795,"ret_ytd":-0.1255,"conviction":null,"on_board":false},{"symbol":"0012.HK","name":"Henderson Land","added":"2021-06-15","rationale":"Henderson Land","last":25.5,"ret_20d":-0.0801,"ret_ytd":-0.0701,"conviction":null,"on_board":false},{"symbol":"0683.HK","name":"Kerry Properties","added":"2021-06-15","rationale":"Kerry Properties \u2014 HK/mainland developer","last":18.45,"ret_20d":-0.0821,"ret_ytd":-0.0467,"conviction":null,"on_board":false},{"symbol":"0083.HK","name":"Sino Land","added":"2021-06-15","rationale":"Sino Land","last":10.31,"ret_20d":-0.1104,"ret_ytd":0.0229,"conviction":null,"on_board":false},{"symbol":"0017.HK","name":"New World Development","added":"2021-06-15","rationale":"New World Development","last":6.56,"ret_20d":-0.1242,"ret_ytd":-0.0876,"conviction":null,"on_board":false},{"symbol":"0688.HK","name":"China Overseas Land","added":"2021-06-15","rationale":"China Overseas Land \u2014 SOE developer (H)","last":12.89,"ret_20d":-0.1554,"ret_ytd":0.0522,"conviction":null,"on_board":false},{"symbol":"0960.HK","name":"Longfor Group","added":"2021-06-15","rationale":"Longfor \u2014 quality mainland developer (H)","last":6.31,"ret_20d":-0.2103,"ret_ytd":-0.2547,"conviction":null,"on_board":false}],"theme":{"id":"hk_property","name":"Property & REITs","name_zh":"\u5730\u4ea7\u4e0eREITs","category":"Property","score":37,"components":{"trend":-0.231,"breadth":-0.615,"impulse":0.133,"crowding":0.0},"mtf":null,"tape":null,"label":"deteriorating","label_en":"DETERIORATING","label_zh":"\u8d70\u5f31","reco":"avoid","reco_en":"AVOID","reco_zh":"\u56de\u907f","reco_why_en":"Momentum and breadth breaking down \u2014 stand aside.","reco_why_zh":"\u52a8\u91cf\u4e0e\u5e7f\u5ea6\u540c\u6b65\u8d70\u5f31 \u2014 \u6682\u907f\u3002","regime_demoted":false,"chase_demoted":false,"reasons":["20d -5.5% vs Hang Seng"],"signal_strength":{"grade":"backtested","kind":"risk","measured":true,"metric":"fwd 21d drawdown","mean_pct":-3.61,"t_hac":-15.472,"n":3959,"en":"Backtested risk read \u2014 on 27y of clean sector history this label precedes deeper forward drawdowns (it is a risk timer, not a return forecast).","zh":"\u5df2\u56de\u6d4b\u7684\u98ce\u9669\u4fe1\u53f7 \u2014 \u572827\u5e74\u5e72\u51c0\u884c\u4e1a\u5386\u53f2\u4e0a\uff0c\u8be5\u6807\u7b7e\u9886\u5148\u4e8e\u66f4\u6df1\u7684\u524d\u5411\u56de\u64a4\uff08\u98ce\u9669\u8ba1\u65f6\u5668\uff0c\u975e\u6536\u76ca\u9884\u6d4b\uff09\u3002"},"flip_distance":{"route_a_bps":null,"route_b_pp":-5.47,"route_a_sessions_est":null,"nearest_route":null,"note_en":"Rollover guard not armed \u2014 the other guard legs (net new highs / score / 20d momentum / breadth / long trend) do not currently line up. Descriptive \u2014 a shape read, not a forecast.","note_zh":"\u56de\u843d\u62a4\u680f\u672a\u5c31\u4f4d \u2014 \u5176\u4f59\u62a4\u680f\u6761\u4ef6\uff08\u51c0\u65b0\u9ad8/\u8bc4\u5206/20\u65e5\u52a8\u91cf/\u5e7f\u5ea6/\u957f\u671f\u8d8b\u52bf\uff09\u5f53\u524d\u672a\u540c\u65f6\u6ee1\u8db3\u3002\u63cf\u8ff0\u6027 \u2014 \u5f62\u6001\u8bfb\u6570\uff0c\u975e\u9884\u6d4b\u3002"},"rs_pctile":0.571,"accel_z":0.05,"ext_abs":-1.96,"long_sign":0,"perf":{"5d":{"rel":-0.021,"ret":0.0366},"20d":{"rel":-0.0547,"ret":-0.0733},"60d":{"rel":-0.032,"ret":-0.0923},"ytd":{"rel":0.0584,"ret":0.0025}},"breadth":{"pct50":0.0,"pct200":0.2,"nh":0,"nl":0,"n":15},"impulse":{"up3":1,"down3":0,"net":1,"n":15},"leadership":{"breadth":"broad","top":[{"ticker":"0823.HK","name":"0823.HK","ret_20d":0.022,"share":0.02,"alpha":null},{"ticker":"1997.HK","name":"1997.HK","ret_20d":-0.003,"share":0.0,"alpha":null},{"ticker":"0014.HK","name":"0014.HK","ret_20d":-0.03,"share":0.03,"alpha":null}]},"n_members":15,"textures":{"bull_age":{"in_bull":false,"days":0,"approx_months":0.0,"drawdown_from_peak":-0.1913,"from_52w_high":-0.1913,"stage":"downtrend","stage_zh":"\u4e0b\u884c","directional":false},"overbought":{"rsi":38.8,"rs_pctile":0.571,"pct_extended":null,"value":0.089,"band":"neutral","band_zh":"\u4e2d\u6027","directional":false},"clean_entry":{"flag":false,"quality":0.45,"reasons":["not extended","RSI room","shallow pullback"],"directional":false},"rollover_risk":{"risk":0.942,"band":"high","band_zh":"\u9ad8","reasons":["breadth weakening","below 50d"],"directional":false},"breadth_divergence":{"risk":0.0,"band":"low","band_zh":"\u4f4e","reasons":[],"directional":false,"basket_off_high":-0.1913,"member_dd_med":-0.2207,"pct_above_50":0.0,"share_below_50":1.0,"pinned":false,"grade":"descriptive","grade_note":"Descriptive texture \u2014 no separately measured forward-drawdown edge on the proxy; a narrowing lens, never a forecast."}},"adv":12,"dec":3,"net_ad":9,"parent":"Property","tags":[],"rank":9,"rank_5d":-1,"delta_5d":-0.021,"pulse_heat":"broken","pulse_heat_grade":"backtested","pulse_rank_delta_1d":-3,"pulse_rank_delta_5d":null,"pulse_rank_delta_20d":null,"pulse_score_delta_5d":null,"weights":{"trend":0.26,"breadth":0.18,"impulse":0.07,"macro":0.18,"mtf":0.16,"volhole":0.05,"crowding":0.1}},"act_now":{"status":"theme_out_of_favour","buys":[],"note_en":"Theme is out of favour (deteriorating) \u2014 no stock buys recommended here right now.","note_zh":"\u4e3b\u9898\u6682\u4e0d\u88ab\u9752\u7750\uff08\u8d70\u5f31\uff09\u2014 \u5f53\u524d\u4e0d\u5efa\u8bae\u4e70\u5165\u8be5\u4e3b\u9898\u4e2a\u80a1\u3002"},"history":[{"date":"2026-06-18","value":27},{"date":"2026-07-03","value":47},{"date":"2026-07-07","value":38}],"timeline":[],"as_of":"2026-07-08","market_concentration":{"adv":120,"dec":32,"ad_ratio":3.75,"pct_above_50":19.2,"pct_above_200":30.1,"nh":1,"nl":0,"directional":false,"ad_3d":1.24,"ad_w":1.9,"ad_m":0.74,"verdict":"mixed","verdict_zh":"\u4e2d\u6027"},"stock_base":"../hk_lookup.html#","back":"../baskets_hk.html","region":"hk","bench_label":"Hang Seng","bench_label_zh":"\u6052\u751f\u6307\u6570"};
+const DETAIL = {"basket":{"id":"hk_property","name":"Property & REITs","name_zh":"\u5730\u4ea7\u4e0eREITs","category":"Property","category_zh":"\u5730\u4ea7","thesis":"HK developers, mainland landlords and Link REIT. Rate-sensitive property cycle exposure.","thesis_zh":"\u9999\u6e2f\u5730\u4ea7\u5546\u3001\u5185\u5730\u7269\u4e1a\u516c\u53f8\u548c\u9886\u5c55\u3002\u5229\u7387\u654f\u611f\u7684\u5730\u4ea7\u5468\u671f\u655e\u53e3\u3002","weighting":"equal","created":"2021-06-15","n_members":15,"members":[{"symbol":"0823.HK","name":"Link REIT","added":"2021-06-15","rationale":"Link REIT \u2014 Asia's largest REIT","last":37.48,"ret_20d":0.0224,"ret_ytd":0.1166},{"symbol":"1997.HK","name":"Wharf REIC","added":"2021-06-15","rationale":"Wharf REIC \u2014 HK investment properties","last":22.48,"ret_20d":-0.0027,"ret_ytd":-0.0587},{"symbol":"0014.HK","name":"Hysan Development","added":"2021-06-15","rationale":"Hysan Development \u2014 Causeway Bay landlord","last":17.31,"ret_20d":-0.0303,"ret_ytd":-0.0415},{"symbol":"0778.HK","name":"Fortune REIT","added":"2021-06-15","rationale":"Fortune REIT \u2014 HK suburban retail REIT","last":4.56,"ret_20d":-0.0318,"ret_ytd":-0.0348},{"symbol":"1113.HK","name":"CK Asset Holdings","added":"2021-06-15","rationale":"CK Asset \u2014 the flagship HK developer/landlord","last":44.54,"ret_20d":-0.0351,"ret_ytd":0.1636},{"symbol":"0016.HK","name":"Sun Hung Kai Properties","added":"2021-06-15","rationale":"Sun Hung Kai \u2014 the premier HK developer","last":113.0,"ret_20d":-0.0488,"ret_ytd":0.2061},{"symbol":"1109.HK","name":"China Resources Land","added":"2021-06-15","rationale":"China Resources Land \u2014 SOE landlord (H)","last":32.3,"ret_20d":-0.059,"ret_ytd":0.1875},{"symbol":"1209.HK","name":"China Resources Mixc","added":"2021-06-15","rationale":"CR Mixc \u2014 asset-light mall/property management","last":38.0,"ret_20d":-0.0745,"ret_ytd":-0.0956},{"symbol":"0101.HK","name":"Hang Lung Properties","added":"2021-06-15","rationale":"Hang Lung Properties \u2014 HK + mainland malls","last":7.18,"ret_20d":-0.0795,"ret_ytd":-0.1255},{"symbol":"0012.HK","name":"Henderson Land","added":"2021-06-15","rationale":"Henderson Land","last":25.5,"ret_20d":-0.0801,"ret_ytd":-0.0701},{"symbol":"0683.HK","name":"Kerry Properties","added":"2021-06-15","rationale":"Kerry Properties \u2014 HK/mainland developer","last":18.45,"ret_20d":-0.0821,"ret_ytd":-0.0467},{"symbol":"0083.HK","name":"Sino Land","added":"2021-06-15","rationale":"Sino Land","last":10.31,"ret_20d":-0.1104,"ret_ytd":0.0229},{"symbol":"0017.HK","name":"New World Development","added":"2021-06-15","rationale":"New World Development","last":6.56,"ret_20d":-0.1242,"ret_ytd":-0.0876},{"symbol":"0688.HK","name":"China Overseas Land","added":"2021-06-15","rationale":"China Overseas Land \u2014 SOE developer (H)","last":12.89,"ret_20d":-0.1554,"ret_ytd":0.0522},{"symbol":"0960.HK","name":"Longfor Group","added":"2021-06-15","rationale":"Longfor \u2014 quality mainland developer (H)","last":6.31,"ret_20d":-0.2103,"ret_ytd":-0.2547}],"changelog":[{"date":"2021-06-15","action":"create","note":"Seeded Property & REITs \u2014 equal-weight HK members."},{"date":"2026-06-18","action":"expand","note":"Expanded to 15 members (deep cache widened to ~157 HK names)."}],"reference":null,"missing":[],"partial":[],"perf":{"1d":{"ret":0.013531133662433525,"rel":-0.016369431638427523},"5d":{"ret":0.03658348205169726,"rel":-0.021038137668933254},"20d":{"ret":-0.07330440799697946,"rel":-0.05474584508535163},"60d":{"ret":-0.09228768114697639,"rel":-0.03198497423153335},"mtd":{"ret":0.03658348205169726,"rel":-0.021038137668933254},"ytd":{"ret":0.0025262681837248113,"rel":0.05836115021684707},"full":{"ret":-0.1411910231900293,"rel":0.007819166744326367}}},"members":[{"symbol":"0823.HK","name":"Link REIT","added":"2021-06-15","rationale":"Link REIT \u2014 Asia's largest REIT","last":37.48,"ret_20d":0.0224,"ret_ytd":0.1166,"conviction":{"score":8,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":false,"entry_pct":54,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":36.12,"zone_high":36.49,"zone_pct":-1.5},"signal":null,"trust":"screen","spotlight":null,"personality":null},"on_board":false},{"symbol":"1997.HK","name":"Wharf REIC","added":"2021-06-15","rationale":"Wharf REIC \u2014 HK investment properties","last":22.48,"ret_20d":-0.0027,"ret_ytd":-0.0587,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":true,"entry_pct":44,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"blocked","act_level":0,"headline":"Blocked \u2014 failed cycle","headline_zh":"\u53d7\u963b \u2014 \u5931\u8d25\u5468\u671f","zone_low":null,"zone_high":null,"zone_pct":null},"signal":null,"trust":"screen","spotlight":null,"personality":null},"on_board":false},{"symbol":"0014.HK","name":"Hysan Development","added":"2021-06-15","rationale":"Hysan Development \u2014 Causeway Bay landlord","last":17.31,"ret_20d":-0.0303,"ret_ytd":-0.0415,"conviction":null,"on_board":false},{"symbol":"0778.HK","name":"Fortune REIT","added":"2021-06-15","rationale":"Fortune REIT \u2014 HK suburban retail REIT","last":4.56,"ret_20d":-0.0318,"ret_ytd":-0.0348,"conviction":null,"on_board":false},{"symbol":"1113.HK","name":"CK Asset Holdings","added":"2021-06-15","rationale":"CK Asset \u2014 the flagship HK developer/landlord","last":44.54,"ret_20d":-0.0351,"ret_ytd":0.1636,"conviction":null,"on_board":false},{"symbol":"0016.HK","name":"Sun Hung Kai Properties","added":"2021-06-15","rationale":"Sun Hung Kai \u2014 the premier HK developer","last":113.0,"ret_20d":-0.0488,"ret_ytd":0.2061,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":37,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"blocked","act_level":0,"headline":"Blocked \u2014 failed cycle","headline_zh":"\u53d7\u963b \u2014 \u5931\u8d25\u5468\u671f","zone_low":null,"zone_high":null,"zone_pct":null},"signal":null,"trust":"screen","spotlight":null,"personality":null},"on_board":false},{"symbol":"1109.HK","name":"China Resources Land","added":"2021-06-15","rationale":"China Resources Land \u2014 SOE landlord (H)","last":32.3,"ret_20d":-0.059,"ret_ytd":0.1875,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Mainland is accumulating \u2014 flow screen","verdict_zh":"\u5357\u5411\u8d44\u91d1\u52a0\u4ed3 \u2014 \u8d44\u91d1\u7b5b\u9009","cycle_blocked":true,"entry_pct":45,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"blocked","act_level":0,"headline":"Blocked \u2014 failed cycle","headline_zh":"\u53d7\u963b \u2014 \u5931\u8d25\u5468\u671f","zone_low":null,"zone_high":null,"zone_pct":null},"signal":null,"trust":"screen","spotlight":null,"personality":null},"on_board":false},{"symbol":"1209.HK","name":"China Resources Mixc","added":"2021-06-15","rationale":"CR Mixc \u2014 asset-light mall/property management","last":38.0,"ret_20d":-0.0745,"ret_ytd":-0.0956,"conviction":null,"on_board":false},{"symbol":"0101.HK","name":"Hang Lung Properties","added":"2021-06-15","rationale":"Hang Lung Properties \u2014 HK + mainland malls","last":7.18,"ret_20d":-0.0795,"ret_ytd":-0.1255,"conviction":null,"on_board":false},{"symbol":"0012.HK","name":"Henderson Land","added":"2021-06-15","rationale":"Henderson Land","last":25.5,"ret_20d":-0.0801,"ret_ytd":-0.0701,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":37,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"blocked","act_level":0,"headline":"Blocked \u2014 failed cycle","headline_zh":"\u53d7\u963b \u2014 \u5931\u8d25\u5468\u671f","zone_low":null,"zone_high":null,"zone_pct":null},"signal":null,"trust":"screen","spotlight":null,"personality":null},"on_board":false},{"symbol":"0683.HK","name":"Kerry Properties","added":"2021-06-15","rationale":"Kerry Properties \u2014 HK/mainland developer","last":18.45,"ret_20d":-0.0821,"ret_ytd":-0.0467,"conviction":null,"on_board":false},{"symbol":"0083.HK","name":"Sino Land","added":"2021-06-15","rationale":"Sino Land","last":10.31,"ret_20d":-0.1104,"ret_ytd":0.0229,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":39,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"blocked","act_level":0,"headline":"Blocked \u2014 failed cycle","headline_zh":"\u53d7\u963b \u2014 \u5931\u8d25\u5468\u671f","zone_low":null,"zone_high":null,"zone_pct":null},"signal":null,"trust":"screen","spotlight":null,"personality":null},"on_board":false},{"symbol":"0017.HK","name":"New World Development","added":"2021-06-15","rationale":"New World Development","last":6.56,"ret_20d":-0.1242,"ret_ytd":-0.0876,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":33,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"blocked","act_level":0,"headline":"Blocked \u2014 failed cycle","headline_zh":"\u53d7\u963b \u2014 \u5931\u8d25\u5468\u671f","zone_low":null,"zone_high":null,"zone_pct":null},"signal":null,"trust":"screen","spotlight":null,"personality":null},"on_board":false},{"symbol":"0688.HK","name":"China Overseas Land","added":"2021-06-15","rationale":"China Overseas Land \u2014 SOE developer (H)","last":12.89,"ret_20d":-0.1554,"ret_ytd":0.0522,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":41,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"blocked","act_level":0,"headline":"Blocked \u2014 failed cycle","headline_zh":"\u53d7\u963b \u2014 \u5931\u8d25\u5468\u671f","zone_low":null,"zone_high":null,"zone_pct":null},"signal":null,"trust":"screen","spotlight":null,"personality":null},"on_board":false},{"symbol":"0960.HK","name":"Longfor Group","added":"2021-06-15","rationale":"Longfor \u2014 quality mainland developer (H)","last":6.31,"ret_20d":-0.2103,"ret_ytd":-0.2547,"conviction":null,"on_board":false}],"theme":{"id":"hk_property","name":"Property & REITs","name_zh":"\u5730\u4ea7\u4e0eREITs","category":"Property","score":37,"components":{"trend":-0.231,"breadth":-0.615,"impulse":0.133,"crowding":0.0},"mtf":null,"tape":null,"label":"deteriorating","label_en":"DETERIORATING","label_zh":"\u8d70\u5f31","reco":"avoid","reco_en":"AVOID","reco_zh":"\u56de\u907f","reco_why_en":"Momentum and breadth breaking down \u2014 stand aside.","reco_why_zh":"\u52a8\u91cf\u4e0e\u5e7f\u5ea6\u540c\u6b65\u8d70\u5f31 \u2014 \u6682\u907f\u3002","regime_demoted":false,"chase_demoted":false,"reasons":["20d -5.5% vs Hang Seng"],"signal_strength":{"grade":"backtested","kind":"risk","measured":true,"metric":"fwd 21d drawdown","mean_pct":-3.61,"t_hac":-15.472,"n":3959,"en":"Backtested risk read \u2014 on 27y of clean sector history this label precedes deeper forward drawdowns (it is a risk timer, not a return forecast).","zh":"\u5df2\u56de\u6d4b\u7684\u98ce\u9669\u4fe1\u53f7 \u2014 \u572827\u5e74\u5e72\u51c0\u884c\u4e1a\u5386\u53f2\u4e0a\uff0c\u8be5\u6807\u7b7e\u9886\u5148\u4e8e\u66f4\u6df1\u7684\u524d\u5411\u56de\u64a4\uff08\u98ce\u9669\u8ba1\u65f6\u5668\uff0c\u975e\u6536\u76ca\u9884\u6d4b\uff09\u3002"},"flip_distance":{"route_a_bps":null,"route_b_pp":-5.47,"route_a_sessions_est":null,"nearest_route":null,"note_en":"Rollover guard not armed \u2014 the other guard legs (net new highs / score / 20d momentum / breadth / long trend) do not currently line up. Descriptive \u2014 a shape read, not a forecast.","note_zh":"\u56de\u843d\u62a4\u680f\u672a\u5c31\u4f4d \u2014 \u5176\u4f59\u62a4\u680f\u6761\u4ef6\uff08\u51c0\u65b0\u9ad8/\u8bc4\u5206/20\u65e5\u52a8\u91cf/\u5e7f\u5ea6/\u957f\u671f\u8d8b\u52bf\uff09\u5f53\u524d\u672a\u540c\u65f6\u6ee1\u8db3\u3002\u63cf\u8ff0\u6027 \u2014 \u5f62\u6001\u8bfb\u6570\uff0c\u975e\u9884\u6d4b\u3002"},"rs_pctile":0.571,"accel_z":0.05,"ext_abs":-1.96,"long_sign":0,"perf":{"5d":{"rel":-0.021,"ret":0.0366},"20d":{"rel":-0.0547,"ret":-0.0733},"60d":{"rel":-0.032,"ret":-0.0923},"ytd":{"rel":0.0584,"ret":0.0025}},"breadth":{"pct50":0.0,"pct200":0.2,"nh":0,"nl":0,"n":15},"impulse":{"up3":1,"down3":0,"net":1,"n":15},"leadership":{"breadth":"broad","top":[{"ticker":"0823.HK","name":"0823.HK","ret_20d":0.022,"share":0.02,"alpha":null},{"ticker":"1997.HK","name":"1997.HK","ret_20d":-0.003,"share":0.0,"alpha":null},{"ticker":"0014.HK","name":"0014.HK","ret_20d":-0.03,"share":0.03,"alpha":null}]},"n_members":15,"textures":{"bull_age":{"in_bull":false,"days":0,"approx_months":0.0,"drawdown_from_peak":-0.1913,"from_52w_high":-0.1913,"stage":"downtrend","stage_zh":"\u4e0b\u884c","directional":false},"overbought":{"rsi":38.8,"rs_pctile":0.571,"pct_extended":null,"value":0.089,"band":"neutral","band_zh":"\u4e2d\u6027","directional":false},"clean_entry":{"flag":false,"quality":0.45,"reasons":["not extended","RSI room","shallow pullback"],"directional":false},"rollover_risk":{"risk":0.942,"band":"high","band_zh":"\u9ad8","reasons":["breadth weakening","below 50d"],"directional":false},"breadth_divergence":{"risk":0.0,"band":"low","band_zh":"\u4f4e","reasons":[],"directional":false,"basket_off_high":-0.1913,"member_dd_med":-0.2207,"pct_above_50":0.0,"share_below_50":1.0,"pinned":false,"grade":"descriptive","grade_note":"Descriptive texture \u2014 no separately measured forward-drawdown edge on the proxy; a narrowing lens, never a forecast."}},"adv":12,"dec":3,"net_ad":9,"parent":"Property","tags":[],"rank":9,"rank_5d":-1,"delta_5d":-0.021,"pulse_heat":"broken","pulse_heat_grade":"backtested","pulse_rank_delta_1d":-3,"pulse_rank_delta_5d":null,"pulse_rank_delta_20d":null,"pulse_score_delta_5d":null,"weights":{"trend":0.26,"breadth":0.18,"impulse":0.07,"macro":0.18,"mtf":0.16,"volhole":0.05,"crowding":0.1}},"act_now":{"status":"theme_out_of_favour","buys":[],"note_en":"Theme is out of favour (deteriorating) \u2014 no stock buys recommended here right now.","note_zh":"\u4e3b\u9898\u6682\u4e0d\u88ab\u9752\u7750\uff08\u8d70\u5f31\uff09\u2014 \u5f53\u524d\u4e0d\u5efa\u8bae\u4e70\u5165\u8be5\u4e3b\u9898\u4e2a\u80a1\u3002"},"history":[{"date":"2026-06-18","value":27},{"date":"2026-07-03","value":47},{"date":"2026-07-07","value":38}],"timeline":[],"as_of":"2026-07-08","market_concentration":{"adv":120,"dec":32,"ad_ratio":3.75,"pct_above_50":19.2,"pct_above_200":30.1,"nh":1,"nl":0,"directional":false,"ad_3d":1.24,"ad_w":1.9,"ad_m":0.74,"verdict":"mixed","verdict_zh":"\u4e2d\u6027"},"stock_base":"../hk_lookup.html#","back":"../baskets_hk.html","region":"hk","bench_label":"Hang Seng","bench_label_zh":"\u6052\u751f\u6307\u6570"};
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 const BENCH = DETAIL.bench_label || 'S&P 500';          // regional benchmark label (CSI 300 / Hang Seng / S&P-TSX)
 const BENCHZ = DETAIL.bench_label_zh || BENCH;
@@ -907,9 +939,193 @@ function boot(){
   // fetch the cross-market links once, then re-render so the "same narrative elsewhere" chip
   // appears (display-only; absent file or no cross-ref simply leaves it out).
   fetch('../crossmarketdata/links.json',{cache:'no-store'}).then(r=>r.ok?r.json():null)
-    .then(cm=>{ if(cm){ XM=cm; render(); } }).catch(()=>{});
+    .then(cm=>{ if(cm){ XM=cm; render(); if(window._ftrTryInject) window._ftrTryInject(); } }).catch(()=>{});
 }
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+
+/* ── FTR W3: live strip in basket detail header + W8 anatomy panel ──────────
+   FT-R1: no slow state mutation. FT-R2: display/de-escalation. FT-R12: stale-gated.
+   FT-R3: T+1 fade note. FT-R8: graceful absent-file (fail-silent fetch). */
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function L(en,zh){return'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>';}
+function fmtPct(v,dec){if(v==null)return'—';var d=dec||2;return(v>=0?'+':'')+v.toFixed(d)+'%';}
+function cls(v){return v==null?'muted':v>=0?'up':'dn';}
+
+var BID = (DETAIL.basket||{}).id||'';
+var WEIGHTS = {trend:0.26,breadth:0.18,impulse:0.07,macro:0.18,mtf:0.16,volhole:0.05,crowding:0.10};
+var LEG_LABELS = {
+  trend:    [L('Trend','趋势'),    '5/20/60d rets'],
+  breadth:  [L('Breadth','广度'),  '% above 50d MA'],
+  impulse:  [L('Impulse','脉冲'),  '1d accel z'],
+  macro:    [L('Macro','宏观'),    'macro prior'],
+  mtf:      [L('MTF','多周期'),    'multi-timeframe'],
+  volhole:  [L('Vol-hole','波动洞'),'gap / cluster'],
+  crowding: [L('Crowding','拥挤度'),'rs_pctile'],
+};
+var LEG_ORDER = ['trend','breadth','impulse','macro','mtf','volhole','crowding'];
+
+// ── W8: Score anatomy panel HTML ──────────────────────────────────────────
+function anatomyPanelHtml(th){
+  if(!th||th.score==null) return '';
+  var comp = th.components||{};
+  var score = th.score;
+  var rsPct = th.rs_pctile;
+  var crowdPenActive = (rsPct!=null&&rsPct>=0.85)||comp.crowding>0.3;
+
+  // Why-this-score summary
+  var posParts=[], negParts=[];
+  LEG_ORDER.filter(k=>k!=='crowding').forEach(function(k){
+    var v=comp[k];
+    if(v==null||v===0) return;
+    if(v>0) posParts.push(LEG_LABELS[k][0]);
+    else negParts.push(LEG_LABELS[k][0]);
+  });
+  var macroAbsent = comp.macro==null||comp.macro===0;
+  var whyEn='';
+  if(posParts.length) whyEn+='<strong>'+posParts.map(function(p){return p.replace(/<[^>]*>/g,'');}).join(' + ')+'</strong> fired. ';
+  if(negParts.length) whyEn+='<span style="color:var(--down)">'+negParts.map(function(p){return p.replace(/<[^>]*>/g,'');}).join(' + ')+'</span> dragging. ';
+  if(macroAbsent) whyEn+='Macro leg absent — score renormalises over available legs. ';
+  if(crowdPenActive) whyEn+='<span style="color:var(--amber,#fb923c)">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ';
+
+  var html='<div class="ftr-anatomy-card">'
+    +'<div class="ftr-anatomy-hd">'
+    +'<div><div style="font-size:13px;font-weight:700">'+L('Score Anatomy','评分解剖')+'</div>'
+    +'<div class="ftr-ah-why">'+whyEn+'</div></div>'
+    +'<div style="text-align:center"><div class="ftr-ah-score" style="color:'+(score>=66?'var(--up)':score>=40?'var(--link)':'var(--down)')+'">'+score+'</div>'
+    +'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:3px">'+L('score','评分')+'</div></div>'
+    +'</div>'
+    +'<div class="ftr-leg-list">';
+
+  // Compute total weight for renorm (exclude absent macro)
+  var availW = LEG_ORDER.filter(function(k){return k!=='crowding'&&comp[k]!=null;}).reduce(function(a,k){return a+(WEIGHTS[k]||0);},0)+(WEIGHTS.crowding||0);
+  if(availW<=0) availW=1;
+
+  LEG_ORDER.forEach(function(k){
+    var v = comp[k];
+    var w = WEIGHTS[k]||0;
+    var isCrowd = k==='crowding';
+    var absent = v==null||(k==='macro'&&macroAbsent);
+    var contrib = absent?0:((v*(w/availW))||0);
+    var ll = LEG_LABELS[k]||[k,k];
+    // Bar fill: center=0, pos goes right, neg goes left; crowding amber
+    var barFillPct = absent?0:Math.min(50,Math.abs(v)*35);
+    var barClass = isCrowd?'crowd':(v>=0?'pos':'neg');
+    var valColor = absent?'var(--muted)':isCrowd?'var(--amber,#fb923c)':(v>=0?'var(--up)':'var(--down)');
+    var crowdStyle = isCrowd?'background:rgba(251,146,60,.04);border-radius:6px;padding:4px 0;':'';
+    html+='<div class="ftr-leg-row" style="'+crowdStyle+'">'
+      +'<div><div class="ftr-leg-lbl'+(isCrowd?' " style="color:var(--amber,#fb923c)':'"')+'>'+ll[0]+'</div>'
+      +'<div class="ftr-leg-wt'+(isCrowd?' " style="color:var(--amber,#fb923c)':'"')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
+      +'<div class="ftr-leg-bar"><div class="ftr-leg-bar-ctr"></div>'
+      +(absent?'':'<div class="ftr-leg-fill '+barClass+'" style="width:'+barFillPct.toFixed(1)+'%"></div>')
+      +'</div>'
+      +'<div class="ftr-leg-val" style="color:'+valColor+'">'+(absent?L('no prior','无先验'):((v>=0&&!isCrowd?'+':'')+v.toFixed(3)))+'</div>'
+      +'<div class="ftr-leg-src">'+esc(ll[1])+'</div>'
+      +'</div>';
+  });
+
+  html+='</div>';
+  // Footer
+  var ftNotes=[];
+  if(crowdPenActive) ftNotes.push('<span class="ftr-crowd-note">'+L('Crowding penalty: rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+' ≥ 0.85 — blocks ACCUMULATE','拥挤惩罚：rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+' ≥ 0.85 — 阻止增仓')+'</span>');
+  var nAvailLegs = Object.keys(comp).filter(function(k){return k!=='crowding'&&comp[k]!=null;}).length;
+  if(macroAbsent) ftNotes.push('<span style="font-size:11px;color:var(--muted)">'+L('Macro absent: score renormalises over '+nAvailLegs+' available legs. Adding a macro prior changes the calibrated score — requires W8b pre-registration (FT-R7).','宏观缺失：评分在现有腿上重新归一化。添加宏观先验会改变校准评分 — 需W8b预注册（FT-R7）。')+'</span>');
+  if(ftNotes.length) html+='<div class="ftr-anatomy-ft">'+ftNotes.join('')+'</div>';
+  html+='</div>';
+  return html;
+}
+
+// ── W3: live strip HTML ────────────────────────────────────────────────────
+function liveStripHtml(pb, tw, totalBaskets){
+  if(!pb) return '';
+  var session = pb.session||'closed';
+  var chg = pb.live_ew_chg_pct;
+  var rank = pb.tape_rank;
+  var stale = pb.stale||chg==null;
+  var sessMap={pre:{cls:'pre',en:'PREMARKET',zh:'盘前'},rth:{cls:'live',en:'LIVE · RTH',zh:'实盘'},post:{cls:'post',en:'POST-MARKET',zh:'盘后'},closed:{cls:'closed',en:'CLOSED',zh:'休市'}};
+  var si = sessMap[session]||sessMap.closed;
+  var html='<div class="ftr-live-strip">'
+    +'<span class="ftr-ls-pill '+si.cls+'">'+L(esc(si.en),esc(si.zh))+'</span>';
+  if(!stale&&chg!=null){
+    html+='<span class="ftr-ls-chg '+(chg>=0?'up':'dn')+'">'+fmtPct(chg,2)+'</span>';
+    html+='<span class="ftr-ls-rank" style="color:var(--muted)">'+L('tape rank #'+rank+' of '+totalBaskets,'行情排名 #'+rank+' / '+totalBaskets)+'</span>';
+  } else if(stale) {
+    html+='<span class="chip" style="font-size:10.5px;background:rgba(255,92,108,.07);border-color:rgba(255,92,108,.28);color:var(--down)">'+L('STALE · live quotes not fresh','陈旧 · 实时报价不新鲜')+'</span>';
+  }
+  if(session==='closed'&&chg!=null){
+    html+='<span style="font-size:10.5px;color:var(--muted)">'+L('last session value (greyed)','上一交易时段数值（已灰显）')+'</span>';
+  }
+  if(tw&&(tw.state==='WATCH'||tw.state==='IGNITION')){
+    var isIgn=tw.state==='IGNITION';
+    html+='<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
+      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(tw.state,tw.state)+'</span>'
+      +'<span style="font-size:11px;color:var(--muted)">'+(tw.k||0)+L('/6 legs','条腿')+'</span>';
+  }
+  html+='<span style="font-size:10.5px;color:var(--muted);margin-left:auto">'+L('15-min delayed','15分钟延迟')+'</span>';
+  html+='</div>';
+  return html;
+}
+
+// ── Fetch + inject ─────────────────────────────────────────────────────────
+function injectFtrWidgets(pulse, turnWatch){
+  var pb=null, tw=null, totalBaskets=0;
+  if(pulse){
+    var baskets=pulse.baskets||[];
+    totalBaskets=baskets.filter(function(b){return b.tape_rank!=null;}).length;
+    pb=baskets.find(function(b){return b.id===BID;})||null;
+    // Override session from top-level
+    if(pb) pb.session=pulse.session||'closed';
+  }
+  if(turnWatch){
+    var twArr=turnWatch.baskets||[];
+    tw=twArr.find(function(b){return b.basket_id===BID;})||null;
+    if(tw&&tw.state!=='WATCH'&&tw.state!=='IGNITION') tw=null;
+  }
+
+  // Inject live strip after the hero panel in #app
+  var app=document.getElementById('app');
+  if(!app) return;
+  // Remove old injections to avoid duplicates
+  var oldStrip=app.querySelector('.ftr-live-strip');
+  if(oldStrip) oldStrip.remove();
+  var oldAnatomy=app.querySelector('.ftr-w8-anatomy-section');
+  if(oldAnatomy) oldAnatomy.remove();
+
+  // Insert live strip before first <h2> or at start of #app
+  var firstH2=app.querySelector('h2');
+  var stripEl=document.createElement('div');
+  stripEl.innerHTML=liveStripHtml(pb, tw, totalBaskets);
+  if(stripEl.firstChild){
+    if(firstH2) app.insertBefore(stripEl.firstChild, firstH2);
+    else app.appendChild(stripEl.firstChild);
+  }
+
+  // Insert anatomy panel after "Score composition" h2 (idx=02)
+  var h2s=app.querySelectorAll('h2');
+  var scoreH2=null;
+  h2s.forEach(function(h){if(h.textContent.indexOf('02')>-1&&(h.textContent.indexOf('Score')>-1||h.textContent.indexOf('评分')>-1)){scoreH2=h;}});
+  if(scoreH2){
+    // anatomy panel goes BEFORE the score composition section (before the h2 for idx 02)
+    var th2=(DETAIL.theme||{});
+    var anatEl=document.createElement('div');
+    anatEl.className='ftr-w8-anatomy-section';
+    anatEl.innerHTML='<h2><span class="idx">W8</span>'+L('Score Anatomy','评分解剖')+' <span class="chip" style="font-size:10px;padding:1px 6px">'+L('display-only','仅展示')+'</span></h2>'+anatomyPanelHtml(th2);
+    app.insertBefore(anatEl, scoreH2);
+  }
+}
+
+// Fetch pulse (basket_detail lives under site/basket/ so use ../ prefix)
+var _pulse=null, _tw=null;
+function tryInject(){injectFtrWidgets(_pulse,_tw);}
+// Expose so boot() can re-inject after XM re-render (Fix: XM re-render wipes #app.innerHTML)
+window._ftrTryInject = tryInject;
+fetch('../live/basket_pulse.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){_pulse=d;tryInject();}).catch(function(){});
+fetch('../basketdata/turn_watch.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){_tw=d;tryInject();}).catch(function(){});
+})();
 </script>
 <script src="../theme.js"></script>
 </body>
