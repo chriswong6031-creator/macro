@@ -1,0 +1,159 @@
+{
+  "schema": "theme_trade_flows.v1",
+  "as_of": "2026-07-09",
+  "generated_at": "2026-07-09T00:00:00+00:00",
+  "authority": {
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "is_context_only": true,
+    "framing": "physical_import_flow_context",
+    "rotation_calls": false,
+    "short_calls": false,
+    "fused_obs_z_fence": "SEPARATE_DISPLAY_LEG — never fold into fused_obs_z"
+  },
+  "honesty_header": "Physical import-flow context derived from US Census International Trade API. Display/context only. Not a scored factor. Not a buy/sell signal. Sign logic: rising_imports_confirms = more imports = theme-demand evidence; falling_imports_confirms = import decline = domestic-substitution evidence. Threshold: |YoY%| < 5% reads as neutral. No composite across themes — each theme is independent.",
+  "coverage_stats": {
+    "total_themes": 11,
+    "themes_with_data": 0,
+    "total_codes_configured": 29,
+    "codes_with_data": 0,
+    "parquet_absent": true,
+    "note": "No data yet. Requires CENSUS_API_KEY env var and initial backfill run (python -m collectors.census_trade --full-history). Key signup: https://api.census.gov/data/key_signup.html"
+  },
+  "themes": {
+    "ai_semiconductors": {
+      "theme_id": "ai_semiconductors",
+      "n_codes_configured": 3,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 3 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置3个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "copper_steel_electrify": {
+      "theme_id": "copper_steel_electrify",
+      "n_codes_configured": 3,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 3 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置3个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "defense_aerospace": {
+      "theme_id": "defense_aerospace",
+      "n_codes_configured": 2,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 2 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置2个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "diagnostics_lifesci": {
+      "theme_id": "diagnostics_lifesci",
+      "n_codes_configured": 2,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 2 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置2个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "glp1_obesity": {
+      "theme_id": "glp1_obesity",
+      "n_codes_configured": 2,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 2 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置2个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "grid_electrification": {
+      "theme_id": "grid_electrification",
+      "n_codes_configured": 4,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 4 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置4个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "medical_devices": {
+      "theme_id": "medical_devices",
+      "n_codes_configured": 1,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 1 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置1个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "nuclear_power": {
+      "theme_id": "nuclear_power",
+      "n_codes_configured": 2,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 2 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置2个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "rare_earth_critical_min": {
+      "theme_id": "rare_earth_critical_min",
+      "n_codes_configured": 4,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 4 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置4个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "semicap_equipment": {
+      "theme_id": "semicap_equipment",
+      "n_codes_configured": 3,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 3 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置3个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    },
+    "solar": {
+      "theme_id": "solar",
+      "n_codes_configured": 3,
+      "n_codes_with_data": 0,
+      "stat_month_max": null,
+      "yoy_pct": null,
+      "accel_3m_vs_12m": null,
+      "confirmation": "neutral",
+      "magnitude_band": null,
+      "coverage_note": "No data available for 3 configured HS codes. Requires CENSUS_API_KEY env var and initial backfill run.",
+      "coverage_note_zh": "已配置3个HS编码，暂无数据。需设置CENSUS_API_KEY环境变量并执行首次历史数据回填。"
+    }
+  }
+}

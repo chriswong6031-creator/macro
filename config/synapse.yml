@@ -9348,3 +9348,73 @@ artifacts:
       WATCHLIST / candidate feed only — never auto-promoted.
       Detection noisy, early-entry edge approx 0 (same honesty stance as
       theme_discovery.py). Authority: all may_* false; is_context_only=true.
+
+  # --- TIL W8 (PR-W8) — Census HS-code import-flow trace ---
+
+  neuralweb-theme-trade-flows:
+    path: data/neuralweb/theme_trade_flows.json
+    format: json
+    producer: engine/theme_trade_flows.py
+    known_extra_writers: []
+    owner_program: til-w8-trade-flows
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 2160
+    schema: theme_trade_flows.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/theme_trade_flows.py
+    external_consumers: []
+    notes: >
+      TIL W8 (PR-W8) internal NW artifact of per-theme import-flow rollups.
+      Physical-flow context leg for onshoring/substitution themes.
+      Source: Census International Trade API HS-code monthly imports (GEN_VAL_MO).
+      Schema: {schema, as_of, generated_at, authority, honesty_header,
+      coverage_stats, api_note, themes{}}.
+      Per-theme: yoy_pct, accel_3m_vs_12m, confirmation (confirms/contradicts/neutral),
+      magnitude_band, code_detail (full HS-code breakdown), coverage_note EN/ZH.
+      Sign convention: rising_imports_confirms = more imports = demand evidence;
+      falling_imports_confirms = import decline = domestic-substitution evidence.
+      No composite across themes. Not a scored factor. Display/context only.
+      Authority: all may_* false; is_context_only=true.
+      Requires CENSUS_API_KEY (NOT keyless — verified 2026-07-09). When key
+      absent: parquet absent → honest null written, all themes n_codes_with_data=0.
+      Off render path (collect-lane step or standalone CLI).
+      Data since 2018-01 backfill; Census trade data lags ~6 weeks.
+      29 HS codes across 11 themes: rare_earth_critical_min / solar /
+      ai_semiconductors / semicap_equipment / grid_electrification /
+      nuclear_power / copper_steel_electrify / glp1_obesity /
+      diagnostics_lifesci / defense_aerospace / medical_devices.
+
+  site-trade-flows:
+    path: site/basketdata/trade_flows.json
+    format: json
+    producer: engine/theme_trade_flows.py
+    known_extra_writers: []
+    owner_program: til-w8-trade-flows
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 2160
+    schema: theme_trade_flows.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W8 (PR-W8) site projection of theme import-flow rollups (compact).
+      Git-tracked; served to UI. Schema identical to neuralweb-theme-trade-flows
+      but code_detail omitted for bandwidth efficiency.
+      Schema: {schema, as_of, generated_at, authority, honesty_header,
+      coverage_stats, themes{}}.
+      Per-theme (compact): yoy_pct, accel_3m_vs_12m, confirmation, magnitude_band,
+      coverage_note EN/ZH. No code_detail in site projection.
+      Authority: all may_* false; is_context_only=true.
+      Off render path (collect-lane step or standalone CLI).
+      Honest null (all metrics null) when CENSUS_API_KEY not set.

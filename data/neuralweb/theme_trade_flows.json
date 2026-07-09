@@ -1,0 +1,27 @@
+{
+  "schema": "theme_trade_flows.v1",
+  "as_of": "2026-07-09",
+  "generated_at": "2026-07-09T00:00:00+00:00",
+  "authority": {
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "is_context_only": true,
+    "framing": "physical_import_flow_context",
+    "rotation_calls": false,
+    "short_calls": false,
+    "fused_obs_z_fence": "SEPARATE_DISPLAY_LEG — never fold into fused_obs_z"
+  },
+  "honesty_header": "Physical import-flow context derived from US Census International Trade API. Display/context only. Not a scored factor. Not a buy/sell signal. Sign logic: rising_imports_confirms = more imports = theme-demand evidence; falling_imports_confirms = import decline = domestic-substitution evidence. Threshold: |YoY%| < 5% reads as neutral. No composite across themes — each theme is independent.",
+  "coverage_stats": {
+    "total_themes": 11,
+    "themes_with_data": 0,
+    "total_codes_configured": 29,
+    "codes_with_data": 0,
+    "parquet_absent": true,
+    "note": "No data yet. Requires CENSUS_API_KEY env var and initial backfill run."
+  },
+  "api_note": "Source: Census International Trade API (api.census.gov/data/timeseries/intltrade/imports/hs). Requires CENSUS_API_KEY (NOT keyless — verified 2026-07-09). Data since 2018-01 (backfill). Census trade data lags ~6 weeks.",
+  "themes": {}
+}

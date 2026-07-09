@@ -76,6 +76,36 @@ lanes:
           FENCE: cert_velocity_z is a SEPARATE display leg — never fused
           into fused_obs_z. Employer→ticker via lib.warn_fuzzy.
           Always exits 0 (tolerant; absent store → honest null written).
+      - id: collect_census_trade
+        module: collectors.census_trade
+        note: >
+          TIL W8 (PR-W8) Census HS-code import-flow monthly ingest.
+          Off the render critical path. Fetches monthly general import value
+          (GEN_VAL_MO) and quantity (GEN_QY1_MO) from Census International
+          Trade API (api.census.gov/data/timeseries/intltrade/imports/hs)
+          for 29 curated HS-codes across 11 onshoring/substitution themes.
+          Requires CENSUS_API_KEY env var (API is NOT keyless — verified
+          2026-07-09; keyless returns 302). No-ops with honest null if key
+          absent. Backfills since 2018-01 on first run; incremental after.
+          Output: data/trade_flows/imports_monthly.parquet (git-stored, small).
+          State: data/trade_flows/census_state.json.
+          Per-code failure isolation: one bad HS code never voids others.
+          Missing-month safety: newest month 404 never stops older months.
+          Always exits 0 (tolerant).
+      - id: build_theme_trade_flows
+        module: engine.theme_trade_flows
+        note: >
+          TIL W8 (PR-W8) per-theme import-flow YoY/acceleration rollup.
+          Reads data/trade_flows/imports_monthly.parquet (git-stored).
+          Pure in-memory aggregation, no network calls.
+          Produces:
+            data/neuralweb/theme_trade_flows.json  (git-tracked)
+            site/basketdata/trade_flows.json       (git-tracked; compact)
+          Sign convention: rising_imports_confirms = more imports confirms
+          theme demand; falling_imports_confirms = import decline confirms
+          domestic-substitution (onshoring). No composite across themes.
+          FENCE: SEPARATE display leg — never fused into fused_obs_z.
+          Always exits 0 (tolerant; absent parquet → honest null written).
       - id: build_discovery_confluence
         module: scripts.build_discovery_confluence
         note: >
@@ -1452,6 +1482,22 @@ divergences:
       invoke standalone; workflow PR closes this divergence when the lane is
       activated. No new secrets required (keyless sources only).
     evidence: "engine/edgar_phrase_velocity.py:_STORE_ENV, engine/theme_adoption.py:AUTHORITY"
+
+  - lanes: [collect]
+    differs: >
+      collectors.census_trade and engine.theme_trade_flows are declared in
+      dag.yml collect lane (TIL W8 PR-W8) but are NOT yet present in the live
+      .github/workflows/daily.yml collect job.
+    reason: >
+      New collect-lane steps (TIL W8 Census HS-code import-flow trace). The
+      dag.yml entries register the intended placement (collect lane, after
+      build_hiring_velocity and before build_discovery_confluence). The
+      daily.yml wiring follows the same deferred pattern as W7/W9: invoke
+      standalone first; workflow PR closes this divergence when the key is
+      set as a repo secret (CENSUS_API_KEY). The engine step (build_theme_trade_flows)
+      is cheap (pure in-memory) and exits 0 even without a parquet — safe
+      to wire immediately once the collector secret is in place.
+    evidence: "collectors/census_trade.py:docstring API VERIFIED NOTE"
 
 # ---------------------------------------------------------------------------
 # MODULES — 25-module IO table from the W5a scout
