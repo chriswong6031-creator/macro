@@ -92,6 +92,7 @@ artifacts:
       - engine/neuralweb/context_api.py
       - engine/neuralweb/cortex.py
       - engine/neuralweb/covariance_spine.py
+      - engine/neuralweb/causal_inventory.py
     external_consumers:
       - mastermind:anchor
       - mastermind:vendored
@@ -212,6 +213,7 @@ artifacts:
       - scripts/build_site.py
       - scripts/build_stock_library.py
       - scripts/validate_timing_overlay.py
+      - engine/neuralweb/causal_inventory.py
     external_consumers: []
     notes: "Producer: collectors/breadth.py BreadthAdapter (group='breadth') via collectors/base.py:run_adapter -> store.upsert -> data/breadth/breadth.parquet."
 
@@ -3647,6 +3649,7 @@ artifacts:
     consumers:
       - engine/neuralweb/world_state.py
       - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/causal_inventory.py
     external_consumers:
       - mastermind:context
     notes: >
@@ -6141,7 +6144,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/causal_inventory.py
     external_consumers: []
     notes: >
       CPI substrate v0 — 12,519-row month-block panel of cycle state across all entities.
@@ -6317,7 +6321,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/causal_inventory.py
     external_consumers: []
     notes: >
       CPI DATA INFRASTRUCTURE — daily net Fed liquidity panel derived via
@@ -6361,6 +6366,7 @@ artifacts:
       - engine/neuralweb/world_state.py
       - engine/neuralweb/ask_brain.py
       - engine/neuralweb/contradictions.py
+      - engine/neuralweb/causal_inventory.py
     external_consumers: []
     notes: >
       DISPLAY/DE-ESCALATION ONLY — no score raise, no ranking authority.
@@ -6760,7 +6766,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/causal_inventory.py
     external_consumers: []
     notes: >
       CPI P-D5-1 (regime_v2_pit) phase 4a — the regime-vintage point-in-time spine.

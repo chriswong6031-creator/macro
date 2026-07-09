@@ -50,6 +50,7 @@ tiers:
 min_lag_days_by_cadence:
   weekly_publication: 5   # H.4.1 / breadth-weekly sources: >= 5 calendar days
   daily_engine: 1         # Daily-engine sources: >= 1 calendar day
+  monthly_grain: 21       # Monthly-grain sources: >= 21 trading-day-floor calendar days
 
 # ---------------------------------------------------------------------------
 # Forbidden causes
@@ -60,6 +61,9 @@ min_lag_days_by_cadence:
 forbidden_causes:
 
   # --- Article-2 surfaces (NW-ART2: downstream authority composites) ---
+  # CANONICAL ENUMERATION: config/synapse.yml meta.article2_surfaces.
+  # Keep these patterns in sync with that list whenever new Article-2
+  # surfaces are added there.
   - pattern: "board_rank"
     reason: >
       Downstream NW authority composite (Article-2 surface).  Using it as a
@@ -90,6 +94,34 @@ forbidden_causes:
       Article-2 surface — rendered board-level text.  Forbidden as cause.
     source_ruling: NW-ART2
 
+  - pattern: "board_ordering"
+    reason: >
+      Article-2 surface — board rank / standout ordering surfaces
+      (config/synapse.yml meta.article2_surfaces).  Circular-laundering
+      rule applies identically.
+    source_ruling: NW-ART2
+
+  - pattern: "attention_queue"
+    reason: >
+      Article-2 surface — missing-tape attention queue
+      (config/synapse.yml meta.article2_surfaces).  Downstream authority;
+      cannot be a cause.
+    source_ruling: NW-ART2
+
+  - pattern: "alert_triage"
+    reason: >
+      Article-2 surface — engine/alert_triage.py money-path
+      (config/synapse.yml meta.article2_surfaces).  Downstream authority;
+      cannot be a cause.
+    source_ruling: NW-ART2
+
+  - pattern: "push_floor"
+    reason: >
+      Article-2 surface — push-notification floor (notify.py)
+      (config/synapse.yml meta.article2_surfaces).  Downstream authority;
+      cannot be a cause.
+    source_ruling: NW-ART2
+
   # --- Forward-outcome echoes (encoder-exclusion law, panel_manifest frozen_law 2) ---
   - pattern: "outcome_excess"
     reason: >
@@ -100,8 +132,8 @@ forbidden_causes:
   - pattern: "fwd_"
     reason: >
       All fwd_* columns (fwd_ret_*, fwd_mfe_*, fwd_mdd_*, etc.) are
-      forward-realized outcomes.  Pattern prefix match.  Forbidden as causes;
-      allowed ONLY as targets.
+      forward-realized outcomes.  Pattern substring match (case-insensitive).
+      Forbidden as causes; allowed ONLY as targets.
     source_ruling: RUL-CC-2
 
   - pattern: "terminal_state_"

@@ -30,10 +30,13 @@ forbidden_future   : forward-realized outcome; ONLY valid role is target
 HARD VALIDATION RULES
 ---------------------
 1. Any feature matching forbidden_causes patterns (from causal_priors.yml)
-   may NEVER carry candidate_cause in allowed_roles.
+   may NEVER carry candidate_cause in allowed_roles.  Pattern matching is
+   case-insensitive substring match (not prefix).
 2. Any feature with 'forbidden_future' in allowed_roles must list ONLY 'target'
    in allowed_roles — no other roles permitted.
-3. min_lag_days is stamped from priors by cadence at build time.
+3. min_lag_days is stamped by time_grain first (monthly → monthly_grain floor
+   21), falling back to cadence (weekly → weekly_publication 5, else
+   daily_engine 1).  Values come from causal_priors.yml min_lag_days_by_cadence.
 
 PIT BASIS VOCABULARY (reused from panel_manifest.json, RUL-CC-8)
 -----------------------------------------------------------------
@@ -43,10 +46,8 @@ Schema: neuralweb.causal_feature_inventory.v1
 """
 from __future__ import annotations
 
-import fnmatch
 import json
 import logging
-import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -265,7 +266,7 @@ def _matches_forbidden(feature_id: str, columns: list[str], forbidden_causes: li
         if not pat:
             continue
         for candidate in candidates_to_check:
-            if pat in candidate:
+            if pat.lower() in candidate.lower():
                 return pat
     return None
 
@@ -620,11 +621,14 @@ def _build_feature_entry(
     # forbidden_future rule: if feature has forbidden_future, ONLY target allowed
     if "forbidden_future" in allowed_roles:
         allowed_roles = ["target"]
-        forbidden_roles = [r for r in VALID_ROLES if r != "target"]
+        forbidden_roles = sorted(r for r in VALID_ROLES if r != "target")
 
-    # Cadence → min_lag_days
+    # time_grain → min_lag_days  (time_grain takes priority; cadence is fallback)
     cadence = src.get("cadence", "daily-engine")
-    if cadence == "weekly":
+    time_grain = src.get("time_grain", "daily")
+    if time_grain == "monthly":
+        min_lag = min_lag_by_cadence.get("monthly_grain", 21)
+    elif cadence == "weekly" or time_grain == "weekly":
         min_lag = min_lag_by_cadence.get("weekly_publication", 5)
     else:
         min_lag = min_lag_by_cadence.get("daily_engine", 1)

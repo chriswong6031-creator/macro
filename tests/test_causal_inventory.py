@@ -62,6 +62,7 @@ _MINIMAL_VALID_PRIORS: dict = {
     "min_lag_days_by_cadence": {
         "weekly_publication": 5,
         "daily_engine": 1,
+        "monthly_grain": 21,
     },
     "forbidden_causes": [
         {"pattern": "fwd_", "reason": "forward outcome", "source_ruling": "RUL-CC-2"},
@@ -262,6 +263,111 @@ def test_min_lag_daily(tmp_path: Path):
     entry = _build_feature_entry(src, root, _MINIMAL_VALID_PRIORS, min_lag_by_cadence)
     assert entry["min_lag_days"] == 1, (
         f"Expected min_lag_days=1 for daily cadence, got {entry['min_lag_days']}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 8b. Monthly-grain feature gets min_lag_days=21 (M4 monthly_grain floor)
+# ---------------------------------------------------------------------------
+
+def test_min_lag_monthly(tmp_path: Path):
+    """Monthly time_grain (on-demand cadence) routes to monthly_grain floor=21."""
+    root = _write_priors(tmp_path, _MINIMAL_VALID_PRIORS)
+    src = {
+        "feature_id": "test_monthly_feature",
+        "family": "test",
+        "path": "data/nonexistent/monthly.parquet",
+        "columns": ["phase"],
+        "producer": "test",
+        "cadence": "on-demand",
+        "time_grain": "monthly",
+        "asof_field": "date",
+        "declared_first": "2010-01-01",
+        "pit_basis": "recomputed_history",
+        "era_coverage": ["2009-16"],
+        "tier": "sector_complex",
+        "allowed_roles": ["candidate_cause", "conditioner"],
+        "forbidden_roles": [],
+        "collider_risk": "medium",
+        "notes": "",
+    }
+    min_lag_by_cadence = _MINIMAL_VALID_PRIORS["min_lag_days_by_cadence"]
+    entry = _build_feature_entry(src, root, _MINIMAL_VALID_PRIORS, min_lag_by_cadence)
+    assert entry["min_lag_days"] == 21, (
+        f"Expected min_lag_days=21 for monthly time_grain, got {entry['min_lag_days']}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 8c. cycle_pattern__state_monthly gets min_lag_days=21 via real FEATURE_SOURCES
+# ---------------------------------------------------------------------------
+
+def test_cycle_pattern_monthly_lag(tmp_path: Path):
+    """cycle_pattern__state_monthly (time_grain=monthly) must have min_lag_days=21."""
+    root = _write_priors(tmp_path, _MINIMAL_VALID_PRIORS)
+    import engine.neuralweb.causal_inventory as inv_mod
+    cycle_src = next(
+        s for s in inv_mod.FEATURE_SOURCES
+        if s["feature_id"] == "cycle_pattern__state_monthly"
+    )
+    min_lag_by_cadence = _MINIMAL_VALID_PRIORS["min_lag_days_by_cadence"]
+    entry = _build_feature_entry(cycle_src, root, _MINIMAL_VALID_PRIORS, min_lag_by_cadence)
+    assert entry["min_lag_days"] == 21, (
+        f"cycle_pattern__state_monthly: expected min_lag_days=21, got {entry['min_lag_days']}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 8d. Determinism test — build_inventory twice produces identical output
+# ---------------------------------------------------------------------------
+
+def test_build_inventory_deterministic(tmp_path: Path):
+    """build_inventory is deterministic: two runs on identical state are equal.
+
+    The 'asof' timestamp is excluded from comparison (it is expected to differ
+    by wall-clock time between calls).
+    """
+    root = _write_priors(tmp_path, _MINIMAL_VALID_PRIORS)
+    (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
+
+    import engine.neuralweb.causal_inventory as inv_mod
+    original_sources = inv_mod.FEATURE_SOURCES
+
+    # Use a small deterministic source list for speed
+    inv_mod.FEATURE_SOURCES = [
+        {
+            "feature_id": "test_det_feature",
+            "family": "test",
+            "path": "data/nonexistent/det.parquet",
+            "columns": ["col_a", "col_b"],
+            "producer": "test",
+            "cadence": "daily-engine",
+            "time_grain": "daily",
+            "asof_field": "date",
+            "declared_first": "2020-01-01",
+            "pit_basis": "pit_live",
+            "era_coverage": ["2020-"],
+            "tier": "asset_class",
+            "allowed_roles": ["candidate_cause"],
+            "forbidden_roles": [],
+            "collider_risk": "low",
+            "notes": "determinism check",
+        }
+    ]
+
+    try:
+        run_a = build_inventory(root=root)
+        run_b = build_inventory(root=root)
+    finally:
+        inv_mod.FEATURE_SOURCES = original_sources
+
+    # Remove non-deterministic 'asof' timestamp before comparing
+    run_a.pop("asof", None)
+    run_b.pop("asof", None)
+
+    assert run_a == run_b, (
+        f"build_inventory not deterministic across two runs: "
+        f"diff keys: {set(run_a) ^ set(run_b)}"
     )
 
 
