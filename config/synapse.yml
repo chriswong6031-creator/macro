@@ -8742,3 +8742,152 @@ artifacts:
       Pick Lab ledger. authority='display_only'. Lane: asia-close
       (produced by build_hk_library; enriched by build_hk_pick_lab, both
       run in the asia lane with CN_LANE=asia).
+
+  # ── CHF W3 — Causal Hypothesis Factory artifacts (6) ─────────────────────
+
+  causal-edges:
+    path: data/neuralweb/causal_edges.jsonl
+    format: jsonl
+    producer: scripts/build_causal_edges.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: weekly
+    storage: git
+    asof_field: run_dt
+    freshness_sla_hours: 192
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/causal_frontier.py
+    external_consumers: []
+    notes: >
+      CHF W3 weekly battery results (CHF-R8). One row per screened (cause, target,
+      environment) cell with verdict, estimator stats, CHF-R5 robustness checks
+      (HAC, cross-ticker permutation, lag placebo, time-shift placebo DT-R14,
+      circular block bootstrap, era split DT-R16). Keep-first by edge_id+week.
+      Display/context tier; not_a_signal=True. Authority booleans all False.
+
+  causal-nulls:
+    path: data/neuralweb/causal_nulls.jsonl
+    format: jsonl
+    producer: scripts/build_causal_edges.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: weekly
+    storage: git
+    asof_field: run_dt
+    freshness_sla_hours: 192
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/causal_frontier.py
+      - engine/neuralweb/causal_scout.py
+    external_consumers: []
+    notes: >
+      CHF W3 null library (CHF-R3). One row per null/forbidden/insufficient-era
+      verdict with do_not_repropose_text. Runtime kill mask: causal_scout refuses
+      to re-test any edge_id already present here. Dead-stays-dead.
+      Display/context tier; not_a_signal=True.
+
+  causal-frontier:
+    path: data/neuralweb/causal_frontier.json
+    format: json
+    producer: scripts/build_causal_frontier.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_causal_edges.py
+    external_consumers: []
+    notes: >
+      CHF W3 frontier coverage map (CHF-R8). One cell per (cause_family,
+      target_family, environment) triplet with state machine
+      (unexplored/accruing/screened/null_basin/killed) and value-heuristic score
+      for weekly battery prioritisation. Deterministic; rebuilt nightly.
+      Display/context tier; not_a_signal=True.
+
+  causal-surprise-queue:
+    path: data/neuralweb/causal_surprise_queue.jsonl
+    format: jsonl
+    producer: scripts/build_causal_frontier.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: daily-engine
+    storage: git
+    asof_field: source_asof
+    freshness_sla_hours: 36
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CHF W3 surprise tickets from mechanism_pathways.json (no_attributable_driver),
+      release_forecast/forward_ledger.jsonl (big-miss graded surprises), and
+      oracle_state.json (active_episodes with failed status). Absent sources produce
+      no tickets (never fabricated). Each ticket: {ticket_id, source_artifact,
+      source_asof, stale, description, suggested_target_family}. Display/context
+      tier; not_a_signal=True; NEVER blocks or gates any scored surface.
+
+  causal-lab-state:
+    path: data/neuralweb/causal_lab_state.json
+    format: json
+    producer: scripts/build_causal_frontier.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: causal_lab_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CHF W3 lab heartbeat: schema=neuralweb.causal_lab_state.v1. Heartbeat +
+      funnel counts (total/screened/accruing/null_basin/killed/unexplored) +
+      frontier summary (top-5 cells by value score) + surprise queue summary.
+      Data copy; byte-identical to site/neuralwebdata/causal_lab_state.json.
+
+  site-causal-lab-state:
+    path: site/neuralwebdata/causal_lab_state.json
+    format: json
+    producer: scripts/build_causal_frontier.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: causal_lab_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CHF W3 lab heartbeat — site copy (byte-identical to
+      data/neuralweb/causal_lab_state.json). Served to committee.html and any
+      future CHF display surface. Display/context tier only; not_a_signal=True;
+      never gates, scores, or ranks any money-path surface (CHF-R1, Article 2).
+
