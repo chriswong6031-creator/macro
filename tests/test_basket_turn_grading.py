@@ -20,6 +20,11 @@ Covers:
   (15) update_outcomes — fills outcome when window elapsed + tape faded
   (16) basket_turn_cohort nightly_run — exit-0-always (empty ledger)
   (17) tape_disagreement nightly_run — exit-0-always (empty turn-watch ledger)
+  (18) grade_cohorts — COLLECT_LANE gate (no writes when absent)
+  (19) grade_cohorts — keep-first (already graded cohort not re-graded)
+  (20) grade_cohorts — writes cohort_grades.jsonl when 21 sessions elapsed
+  (21) detect_disagreement_events end-to-end against REAL committed artifacts
+       (skipped cleanly when artifacts absent)
 """
 from __future__ import annotations
 
@@ -84,24 +89,111 @@ def _make_watch_row(basket_id: str, date_str: str) -> dict:
     }
 
 
-def _make_baskets_json(data_root: Path, baskets: list[dict]) -> None:
-    """Write a fake site/basketdata/baskets.json under data_root (simulating site dir)."""
+def _make_baskets_json(data_root: Path, themes: list[dict]) -> None:
+    """Write a prod-shape site/basketdata/baskets.json under data_root.
+
+    Mirrors the real artifact structure:
+      data["theme_intel"]["themes"] → list of theme dicts with 'id' and 'reco'.
+    """
     site_dir = data_root / "site" / "basketdata"
     site_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "as_of": _TODAY,
+        "construction": "test",
+        "history_note": "",
+        "note": "",
+        "categories": [],
+        "story": {},
+        "baskets": [],   # basket-level list (no reco here)
+        "chart": {},
+        "theme_intel": {
+            "as_of": _TODAY,
+            "themes": themes,  # reco lives here, keyed by 'id'
+        },
+    }
     (site_dir / "baskets.json").write_text(
-        json.dumps({"baskets": baskets}), encoding="utf-8"
+        json.dumps(payload), encoding="utf-8"
     )
 
 
-# Monkey-patch config.ROOT and config.data_dir for isolation
-def _patch_config(data_root: Path):
-    """Return a context that patches config so site/ resolves under data_root."""
-    import lib.config as cfg
-    cfg_mock = MagicMock()
-    cfg_mock.ROOT = data_root
-    cfg_mock.data_dir.return_value = data_root
-    cfg_mock.load.return_value = {"storage": {"site_dir": "site"}}
-    return cfg_mock
+def _make_membership_json(data_root: Path, baskets: dict[str, dict]) -> None:
+    """Write a prod-shape data/baskets/membership.json.
+
+    Each basket value is a dict with 'members': [{'ticker': str, 'removed': None, ...}].
+    """
+    p = data_root / "baskets"
+    p.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": "1",
+        "note": "test fixture",
+        "seed_date": _TODAY,
+        "curated": _TODAY,
+        "baskets": baskets,
+    }
+    (p / "membership.json").write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _make_price_parquet(path: Path, start: str, n: int, daily_ret: float) -> None:
+    """Write a minimal price parquet with 'close' column."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    idx = pd.bdate_range(start=start, periods=n)
+    closes = [100.0]
+    for _ in range(n - 1):
+        closes.append(closes[-1] * (1 + daily_ret))
+    df = pd.DataFrame({"close": closes}, index=idx)
+    df.to_parquet(path)
+
+
+# ---------------------------------------------------------------------------
+# Real prod-shape theme fixture (from site/basketdata/baskets.json)
+# Copied from the real artifact: id, reco keys match.
+# ---------------------------------------------------------------------------
+
+_REAL_THEME_FIXTURE = {
+    "id": "semicap_equipment",
+    "name": "Semicap Equipment",
+    "name_zh": "半导体设备",
+    "category": "AI & Technology",
+    "score": 55.0,
+    "label": "hold",
+    "label_en": "Hold",
+    "label_zh": "持有",
+    "reco": "hold",          # the real reco field (theme-level)
+    "reco_en": "Hold",
+    "reco_zh": "持有",
+    "n_members": 5,
+    # additional theme fields omitted — only id and reco are load-bearing
+}
+
+# Real membership fixture (from data/baskets/membership.json)
+_REAL_MEMBERSHIP_FIXTURE = {
+    "semicap_equipment": {
+        "name": "Semicap Equipment",
+        "name_zh": "半导体设备",
+        "theme": "Semiconductor capital equipment",
+        "category": "AI & Technology",
+        "etf_proxy": "SOXX",
+        "created": "2023-05-09",
+        "curated": "2026-06-14",
+        "omitted": [],
+        "members": [
+            {"ticker": "AMAT", "added": "2023-05-09", "removed": None,
+             "rationale": "Applied Materials — dominant CVD/ALD/etch"},
+            {"ticker": "LRCX", "added": "2023-05-09", "removed": None,
+             "rationale": "Lam Research — etch/deposition"},
+            {"ticker": "KLAC", "added": "2023-05-09", "removed": None,
+             "rationale": "KLA — process control"},
+            {"ticker": "ENTG", "added": "2023-05-09", "removed": None,
+             "rationale": "Entegris — materials"},
+            {"ticker": "MKSI", "added": "2023-05-09", "removed": None,
+             "rationale": "MKS Instruments — power/gas delivery"},
+        ],
+        "weighting": "equal",
+        "changelog": [],
+        "parent": "Semiconductors",
+        "tags": ["semicap", "equipment"],
+    }
+}
 
 
 # ---------------------------------------------------------------------------
@@ -226,12 +318,14 @@ def test_register_cohort_claims_status_open(monkeypatch, tmp_path):
 
 # ---------------------------------------------------------------------------
 # (8) detect_disagreement_events — fires on IGNITION + non-aligned reco
+# Uses prod-shape baskets_map: {id: theme_dict} from theme_intel.themes
 # ---------------------------------------------------------------------------
 
 def test_detect_disagreement_fires_on_ignition_hold():
     """IGNITION + slow_reco='hold' → one disagreement event."""
-    turn_watch_rows = [_make_ignition_row("ai_semiconductors", _TODAY)]
-    baskets_map = {"ai_semiconductors": {"id": "ai_semiconductors", "reco": "hold"}}
+    turn_watch_rows = [_make_ignition_row("semicap_equipment", _TODAY)]
+    # Prod-shape: baskets_map keyed by id, reco at top level of theme dict
+    baskets_map = {"semicap_equipment": dict(_REAL_THEME_FIXTURE)}
 
     events = TD.detect_disagreement_events(
         as_of=_TODAY,
@@ -241,7 +335,7 @@ def test_detect_disagreement_fires_on_ignition_hold():
     )
     assert len(events) == 1
     ev = events[0]
-    assert ev["basket_id"] == "ai_semiconductors"
+    assert ev["basket_id"] == "semicap_equipment"
     assert ev["event_date"] == _TODAY
     assert ev["turn_watch_state"] == "IGNITION"
     assert ev["slow_reco"] == "hold"
@@ -254,7 +348,9 @@ def test_detect_disagreement_fires_on_ignition_hold():
 def test_detect_disagreement_fires_on_ignition_avoid():
     """IGNITION + slow_reco='avoid' → one disagreement event."""
     turn_watch_rows = [_make_ignition_row("semicap_equipment", _TODAY)]
-    baskets_map = {"semicap_equipment": {"id": "semicap_equipment", "reco": "avoid"}}
+    theme = dict(_REAL_THEME_FIXTURE)
+    theme["reco"] = "avoid"
+    baskets_map = {"semicap_equipment": theme}
 
     events = TD.detect_disagreement_events(
         as_of=_TODAY,
@@ -268,8 +364,10 @@ def test_detect_disagreement_fires_on_ignition_avoid():
 
 def test_detect_disagreement_fires_on_ignition_trim():
     """IGNITION + slow_reco='trim' → one disagreement event."""
-    turn_watch_rows = [_make_ignition_row("biotech", _TODAY)]
-    baskets_map = {"biotech": {"id": "biotech", "reco": "trim"}}
+    turn_watch_rows = [_make_ignition_row("semicap_equipment", _TODAY)]
+    theme = dict(_REAL_THEME_FIXTURE)
+    theme["reco"] = "trim"
+    baskets_map = {"semicap_equipment": theme}
 
     events = TD.detect_disagreement_events(
         as_of=_TODAY,
@@ -286,8 +384,10 @@ def test_detect_disagreement_fires_on_ignition_trim():
 
 def test_detect_disagreement_no_fire_on_enter():
     """IGNITION + slow_reco='enter' → NO disagreement event."""
-    turn_watch_rows = [_make_ignition_row("ai_semiconductors", _TODAY)]
-    baskets_map = {"ai_semiconductors": {"id": "ai_semiconductors", "reco": "enter"}}
+    turn_watch_rows = [_make_ignition_row("semicap_equipment", _TODAY)]
+    theme = dict(_REAL_THEME_FIXTURE)
+    theme["reco"] = "enter"
+    baskets_map = {"semicap_equipment": theme}
 
     events = TD.detect_disagreement_events(
         as_of=_TODAY,
@@ -300,8 +400,10 @@ def test_detect_disagreement_no_fire_on_enter():
 
 def test_detect_disagreement_no_fire_on_accumulate():
     """IGNITION + slow_reco='accumulate' → NO disagreement event."""
-    turn_watch_rows = [_make_ignition_row("memory_storage", _TODAY)]
-    baskets_map = {"memory_storage": {"id": "memory_storage", "reco": "accumulate"}}
+    turn_watch_rows = [_make_ignition_row("semicap_equipment", _TODAY)]
+    theme = dict(_REAL_THEME_FIXTURE)
+    theme["reco"] = "accumulate"
+    baskets_map = {"semicap_equipment": theme}
 
     events = TD.detect_disagreement_events(
         as_of=_TODAY,
@@ -318,8 +420,8 @@ def test_detect_disagreement_no_fire_on_accumulate():
 
 def test_detect_disagreement_no_fire_on_watch():
     """WATCH state (not IGNITION) → no disagreement event, regardless of reco."""
-    turn_watch_rows = [_make_watch_row("ai_semiconductors", _TODAY)]
-    baskets_map = {"ai_semiconductors": {"id": "ai_semiconductors", "reco": "hold"}}
+    turn_watch_rows = [_make_watch_row("semicap_equipment", _TODAY)]
+    baskets_map = {"semicap_equipment": dict(_REAL_THEME_FIXTURE)}
 
     events = TD.detect_disagreement_events(
         as_of=_TODAY,
@@ -336,7 +438,7 @@ def test_detect_disagreement_no_fire_on_watch():
 
 def test_detect_disagreement_fires_when_reco_none():
     """IGNITION + no slow_reco (basket not in baskets_map) → fires with reco=None."""
-    turn_watch_rows = [_make_ignition_row("ai_semiconductors", _TODAY)]
+    turn_watch_rows = [_make_ignition_row("semicap_equipment", _TODAY)]
     baskets_map = {}  # basket not present
 
     events = TD.detect_disagreement_events(
@@ -359,7 +461,7 @@ def test_tape_disagreement_gate_absent(monkeypatch, tmp_path):
     monkeypatch.delenv("US_LANE", raising=False)
 
     # Create a turn-watch ledger so the runner has something to process
-    _make_turn_watch_ledger([_make_ignition_row("ai_semiconductors", _TODAY)], tmp_path)
+    _make_turn_watch_ledger([_make_ignition_row("semicap_equipment", _TODAY)], tmp_path)
 
     with patch("engine.tape_disagreement.config") as mock_cfg:
         mock_cfg.ROOT = tmp_path
@@ -385,8 +487,9 @@ def test_tape_disagreement_keep_first_idempotency(monkeypatch, tmp_path):
     """Running nightly_run twice for the same event should not duplicate rows."""
     monkeypatch.setenv("COLLECT_LANE", "nightly")
 
-    _make_turn_watch_ledger([_make_ignition_row("ai_semiconductors", _TODAY)], tmp_path)
-    _make_baskets_json(tmp_path, [{"id": "ai_semiconductors", "reco": "hold"}])
+    _make_turn_watch_ledger([_make_ignition_row("semicap_equipment", _TODAY)], tmp_path)
+    # Prod-shape baskets.json — reco in theme_intel.themes
+    _make_baskets_json(tmp_path, [dict(_REAL_THEME_FIXTURE)])
 
     with patch("engine.tape_disagreement.config") as mock_cfg:
         mock_cfg.ROOT = tmp_path
@@ -409,11 +512,14 @@ def test_tape_disagreement_keep_first_idempotency(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_censoring_initial_state(monkeypatch, tmp_path):
-    """Newly recorded events must have outcome_10d=None, outcome_21d=None (right-censored)."""
+    """Newly recorded events must have outcome_10d=None, outcome_21d=None (right-censored).
+
+    KM convention: censored=True means event-not-yet-observed.
+    """
     monkeypatch.setenv("COLLECT_LANE", "nightly")
 
-    _make_turn_watch_ledger([_make_ignition_row("ai_semiconductors", _TODAY)], tmp_path)
-    _make_baskets_json(tmp_path, [{"id": "ai_semiconductors", "reco": "hold"}])
+    _make_turn_watch_ledger([_make_ignition_row("semicap_equipment", _TODAY)], tmp_path)
+    _make_baskets_json(tmp_path, [dict(_REAL_THEME_FIXTURE)])
 
     with patch("engine.tape_disagreement.config") as mock_cfg:
         mock_cfg.ROOT = tmp_path
@@ -428,45 +534,58 @@ def test_censoring_initial_state(monkeypatch, tmp_path):
     row = rows[0]
     assert row["outcome_10d"] is None, "outcome_10d should be None (right-censored at first write)"
     assert row["outcome_21d"] is None, "outcome_21d should be None (right-censored at first write)"
+    # KM: censored=True means event-not-yet-observed
     assert row["censored_10d"] is True
     assert row["censored_21d"] is True
 
 
 # ---------------------------------------------------------------------------
 # (15) update_outcomes — fills outcome when window elapsed + tape faded
+# Uses prod-shape SPY at data/yahoo/SPY.parquet + members from membership.json
 # ---------------------------------------------------------------------------
 
 def test_update_outcomes_tape_faded(tmp_path):
-    """update_outcomes fills 'tape_faded' when basket EW < SPY over the window."""
+    """update_outcomes fills 'tape_faded' when basket EW < SPY over the window.
+
+    SPY is in data/yahoo/ (prod path); member prices in data/stocks/.
+    Members come from membership.json (prod shape).
+    """
     event_date = "2026-05-01"  # far enough in the past that 10d + 21d have elapsed
     as_of = "2026-07-09"
 
-    # Build a minimal baskets_map with one member
-    baskets_map = {
-        "ai_semiconductors": {
-            "id": "ai_semiconductors",
-            "reco": "hold",
-            "members": ["NVDA"],
+    # Write prod-shape membership.json with one active member
+    _make_membership_json(tmp_path, {
+        "semicap_equipment": {
+            "name": "Semicap Equipment",
+            "name_zh": "半导体设备",
+            "theme": "test",
+            "category": "AI & Technology",
+            "etf_proxy": "SOXX",
+            "created": "2023-05-09",
+            "curated": "2026-06-14",
+            "omitted": [],
+            "members": [
+                {"ticker": "AMAT", "added": "2023-05-09", "removed": None,
+                 "rationale": "test member"},
+            ],
+            "weighting": "equal",
+            "changelog": [],
+            "parent": "Semiconductors",
+            "tags": [],
         }
-    }
+    })
 
-    # Write stub price data: NVDA flat, SPY up 5%
-    stocks_dir = tmp_path / "stocks"
-    stocks_dir.mkdir(parents=True, exist_ok=True)
+    # Write stub price data: AMAT flat, SPY up
+    # SPY at data/yahoo/SPY.parquet (prod path)
+    _make_price_parquet(tmp_path / "yahoo" / "SPY.parquet", event_date, 30, 0.002)
+    # AMAT flat in data/stocks/
+    _make_price_parquet(tmp_path / "stocks" / "AMAT.parquet", event_date, 30, 0.0)
 
-    def _write_prices(ticker: str, start: str, n: int, daily_ret: float) -> None:
-        idx = pd.bdate_range(start=start, periods=n)
-        closes = [100.0]
-        for _ in range(n - 1):
-            closes.append(closes[-1] * (1 + daily_ret))
-        df = pd.DataFrame({"close": closes}, index=idx)
-        df.to_parquet(stocks_dir / f"{ticker}.parquet")
-
-    _write_prices("NVDA", event_date, 30, 0.0)   # flat
-    _write_prices("SPY",  event_date, 30, 0.002)  # ~0.2%/day → ~4% over 21d → tape faded
+    # baskets_map is the theme-level map (reco only — members come from membership.json)
+    baskets_map = {"semicap_equipment": {"id": "semicap_equipment", "reco": "hold"}}
 
     rows = [{
-        "basket_id":    "ai_semiconductors",
+        "basket_id":    "semicap_equipment",
         "event_date":   event_date,
         "turn_watch_state": "IGNITION",
         "slow_reco":    "hold",
@@ -488,7 +607,7 @@ def test_update_outcomes_tape_faded(tmp_path):
     # Both windows should have elapsed (event was 2026-05-01, as_of 2026-07-09)
     assert row["censored_10d"] is False, "10d window should have elapsed"
     assert row["censored_21d"] is False, "21d window should have elapsed"
-    # SPY went up, NVDA flat → basket EW < SPY → tape_faded
+    # SPY went up, AMAT flat → basket EW < SPY → tape_faded
     assert row["outcome_10d"] == "tape_faded", f"Expected tape_faded, got {row['outcome_10d']}"
     assert row["outcome_21d"] == "tape_faded", f"Expected tape_faded, got {row['outcome_21d']}"
 
@@ -524,3 +643,181 @@ def test_tape_disagreement_exit_0_empty_ledger(monkeypatch, tmp_path):
 
     assert result["ok"] is True
     assert result["n_new_events"] == 0
+
+
+# ---------------------------------------------------------------------------
+# (18) grade_cohorts — COLLECT_LANE gate (no writes when absent)
+# ---------------------------------------------------------------------------
+
+def test_grade_cohorts_gate_absent(monkeypatch, tmp_path):
+    """grade_cohorts does not write when COLLECT_LANE is absent."""
+    monkeypatch.delenv("COLLECT_LANE", raising=False)
+    monkeypatch.delenv("US_LANE", raising=False)
+
+    cohorts = [{"cohort_id": "2026-05-01", "cohort_date": "2026-05-01",
+                "basket_ids": ["semicap_equipment"], "n_baskets": 1}]
+    result = BTC.grade_cohorts(cohorts, as_of=_TODAY, data_root=tmp_path)
+    assert result == [], "No grades should be written when COLLECT_LANE is absent"
+    grades_p = tmp_path / "basket_turn" / "cohort_grades.jsonl"
+    assert not grades_p.exists()
+
+
+# ---------------------------------------------------------------------------
+# (19) grade_cohorts — keep-first (already graded cohort not re-graded)
+# ---------------------------------------------------------------------------
+
+def test_grade_cohorts_keep_first(monkeypatch, tmp_path):
+    """A cohort already present in cohort_grades.jsonl is not re-graded."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+    cohort_date = "2026-05-01"
+    # Write membership and prices so the grade CAN be computed
+    _make_membership_json(tmp_path, {
+        "semicap_equipment": {
+            "name": "test", "name_zh": "", "theme": "", "category": "",
+            "etf_proxy": "", "created": cohort_date, "curated": cohort_date,
+            "omitted": [], "weighting": "equal", "changelog": [], "parent": "", "tags": [],
+            "members": [{"ticker": "AMAT", "added": cohort_date, "removed": None,
+                         "rationale": ""}],
+        }
+    })
+    _make_price_parquet(tmp_path / "yahoo" / "SPY.parquet", cohort_date, 30, 0.001)
+    _make_price_parquet(tmp_path / "stocks" / "AMAT.parquet", cohort_date, 30, 0.002)
+
+    cohorts = [{"cohort_id": cohort_date, "cohort_date": cohort_date,
+                "basket_ids": ["semicap_equipment"], "n_baskets": 1}]
+
+    # First run — should produce one grade
+    grades1 = BTC.grade_cohorts(cohorts, as_of=_TODAY, data_root=tmp_path)
+    # Second run — should produce zero (keep-first)
+    grades2 = BTC.grade_cohorts(cohorts, as_of=_TODAY, data_root=tmp_path)
+
+    assert len(grades1) == 1
+    assert grades2 == [], "Second run should produce no new grades (keep-first)"
+
+    # File should have exactly one row
+    p = tmp_path / "basket_turn" / "cohort_grades.jsonl"
+    rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    assert len(rows) == 1
+
+
+# ---------------------------------------------------------------------------
+# (20) grade_cohorts — writes cohort_grades.jsonl when 21 sessions elapsed
+# ---------------------------------------------------------------------------
+
+def test_grade_cohorts_writes_when_matured(monkeypatch, tmp_path):
+    """grade_cohorts writes a grade row when >= 21 sessions have elapsed."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+    cohort_date = "2026-05-01"
+    _make_membership_json(tmp_path, {
+        "semicap_equipment": {
+            "name": "test", "name_zh": "", "theme": "", "category": "",
+            "etf_proxy": "", "created": cohort_date, "curated": cohort_date,
+            "omitted": [], "weighting": "equal", "changelog": [], "parent": "", "tags": [],
+            "members": [{"ticker": "AMAT", "added": cohort_date, "removed": None,
+                         "rationale": ""}],
+        }
+    })
+    # SPY flat, AMAT up → cohort beats SPY
+    _make_price_parquet(tmp_path / "yahoo" / "SPY.parquet", cohort_date, 30, 0.0)
+    _make_price_parquet(tmp_path / "stocks" / "AMAT.parquet", cohort_date, 30, 0.003)
+
+    cohorts = [{"cohort_id": cohort_date, "cohort_date": cohort_date,
+                "basket_ids": ["semicap_equipment"], "n_baskets": 1}]
+    grades = BTC.grade_cohorts(cohorts, as_of=_TODAY, data_root=tmp_path)
+
+    assert len(grades) == 1
+    g = grades[0]
+    assert g["cohort_date"] == cohort_date
+    assert g["outcome"] == "cohort_beat_spy"
+    assert g["excess_vs_spy_21d"] > 0
+
+    p = tmp_path / "basket_turn" / "cohort_grades.jsonl"
+    assert p.exists()
+    rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    assert len(rows) == 1
+    assert rows[0]["cohort_date"] == cohort_date
+
+
+# ---------------------------------------------------------------------------
+# (21) end-to-end detect_disagreement_events against REAL committed artifacts
+#      Skips cleanly when artifacts absent (e.g. in CI without repo data)
+# ---------------------------------------------------------------------------
+
+def test_detect_disagreement_end_to_end_real_artifacts():
+    """Run detect_disagreement_events against the real committed artifacts.
+
+    Loads slices of the real:
+      - site/basketdata/baskets.json  (theme-level reco map)
+      - data/basket_turn/ledger.jsonl (turn-watch events)
+    and verifies the function runs without errors and returns a list.
+
+    Skips cleanly if artifacts are absent.
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+
+    baskets_p = repo_root / "site" / "basketdata" / "baskets.json"
+    ledger_p  = repo_root / "data" / "basket_turn" / "ledger.jsonl"
+
+    if not baskets_p.exists() or not ledger_p.exists():
+        pytest.skip(
+            "Real committed artifacts not present — skipping end-to-end test "
+            f"(missing: {'baskets.json' if not baskets_p.exists() else ''} "
+            f"{'ledger.jsonl' if not ledger_p.exists() else ''}).strip()"
+        )
+
+    # Load real baskets_map (theme-level, reco from theme_intel.themes)
+    raw = json.loads(baskets_p.read_text(encoding="utf-8"))
+    themes = raw.get("theme_intel", {}).get("themes") or []
+    baskets_map = {t["id"]: t for t in themes if t.get("id")}
+
+    # Load real turn-watch ledger
+    turn_watch_rows: list[dict] = []
+    for line in ledger_p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            try:
+                turn_watch_rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+
+    # Run detect_disagreement_events for the most recent IGNITION date in ledger
+    ignition_dates = sorted(set(
+        r.get("date") or r.get("as_of", "")
+        for r in turn_watch_rows
+        if r.get("state") == "IGNITION"
+    ))
+    if not ignition_dates:
+        pytest.skip("No IGNITION rows in committed ledger — skipping end-to-end test")
+
+    as_of = ignition_dates[-1]
+    events = TD.detect_disagreement_events(
+        as_of=as_of,
+        turn_watch_rows=turn_watch_rows,
+        baskets_map=baskets_map,
+        ship_date=BTC.SHIP_DATE,
+    )
+
+    # Verify the function returns a list (may be empty — that is valid)
+    assert isinstance(events, list), "detect_disagreement_events must return a list"
+
+    # Verify that for any fired event, slow_reco came from the real theme map
+    for ev in events:
+        bid = ev["basket_id"]
+        expected_reco = baskets_map.get(bid, {}).get("reco")
+        assert ev["slow_reco"] == expected_reco, (
+            f"Event reco mismatch for {bid}: "
+            f"got {ev['slow_reco']!r}, expected {expected_reco!r}"
+        )
+        # Real reco should NOT be an aligned state (the event should not have fired)
+        assert ev["slow_reco"] not in TD.SLOW_RECO_ALIGNED, (
+            f"Event fired for aligned reco {ev['slow_reco']!r} — logic bug"
+        )
+
+    # Verify semicap_equipment reco from the real artifact
+    semicap_reco = baskets_map.get("semicap_equipment", {}).get("reco")
+    # Print the real value for the brief's verification requirement
+    print(f"\n[end-to-end] semicap_equipment real reco from committed artifact: {semicap_reco!r}")
+    print(f"[end-to-end] as_of={as_of}, {len(turn_watch_rows)} ledger rows, "
+          f"{len(events)} disagreement event(s)")

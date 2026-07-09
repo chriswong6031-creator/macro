@@ -713,6 +713,8 @@ jobs:
         # Both families gated on COLLECT_LANE=nightly. Keep-first idempotent. Exit-0-always.
         # Runs AFTER the parallel band (cl_baskets writes the source ledger).
         continue-on-error: true
+        env:
+          COLLECT_LANE: nightly
         run: |
           set +e
           python -m scripts.build_basket_turn_grading > /tmp/basket_turn_grading.log 2>&1; rc=$?

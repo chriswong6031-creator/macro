@@ -60,6 +60,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import tempfile
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -83,6 +84,13 @@ _TURN_WATCH_LEDGER_FILE = "ledger.jsonl"
 # Path for the cohort claims state log (kept for ops visibility, NOT the claims store)
 _COHORT_LOG_DIR  = "basket_turn"
 _COHORT_LOG_FILE = "cohort_claims_log.jsonl"
+
+# Path for the nightly cohort grades (one row per cohort once 21 sessions elapsed)
+# Grades live here; qledger row remains the registration of record.
+_COHORT_GRADES_FILE = "cohort_grades.jsonl"
+
+# Horizon for cohort grading (trading sessions)
+GRADE_HORIZON_SESSIONS = 21
 
 # ── house laws ─────────────────────────────────────────────────────────────────
 AUTHORITY = {
@@ -160,6 +168,247 @@ def _load_cohort_log(data_root: Path | None = None) -> set[str]:
         except json.JSONDecodeError:
             continue
     return seen
+
+
+# ── cohort grader ─────────────────────────────────────────────────────────────
+# Nightly, COLLECT_LANE-gated pass that computes cohort EW excess vs SPY once
+# 21 trading sessions have elapsed.  Writes to data/basket_turn/cohort_grades.jsonl
+# (keep-first per cohort_date).  The qledger claim row remains the registration of
+# record; grades live in this separate file so analysis at the 2026-10-15 clock
+# requires zero manual work.
+
+def _grades_path(data_root: Path | None = None) -> Path:
+    root = data_root if data_root is not None else config.data_dir()
+    p = root / _TURN_WATCH_LEDGER_DIR
+    p.mkdir(parents=True, exist_ok=True)
+    return p / _COHORT_GRADES_FILE
+
+
+def _load_graded_cohort_ids(data_root: Path | None = None) -> set[str]:
+    """Return set of cohort_ids already in cohort_grades.jsonl (keep-first guard)."""
+    p = _grades_path(data_root)
+    seen: set[str] = set()
+    if not p.exists():
+        return seen
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+            cid = row.get("cohort_date") or row.get("cohort_id")
+            if cid:
+                seen.add(cid)
+        except json.JSONDecodeError:
+            continue
+    return seen
+
+
+def _spy_sessions_since(cohort_date: str, as_of: str, data_root: Path | None = None) -> int:
+    """Count SPY trading sessions strictly after cohort_date up through as_of.
+
+    Uses the SPY price index (data/yahoo/SPY.parquet) as the authoritative
+    session clock, not pd.bdate_range.  Returns -1 if data unavailable.
+    """
+    root = data_root if data_root is not None else config.data_dir()
+    spy_p = root / "yahoo" / "SPY.parquet"
+    if not spy_p.exists():
+        return -1
+    try:
+        spy_df = pd.read_parquet(spy_p, columns=["close"])
+        spy_df.index = pd.to_datetime(spy_df.index)
+        spy_df = spy_df.sort_index()
+        spy_df = spy_df[~spy_df.index.duplicated(keep="last")]
+        cohort_ts = pd.Timestamp(cohort_date).normalize()
+        as_of_ts = pd.Timestamp(as_of).normalize()
+        window = spy_df[(spy_df.index > cohort_ts) & (spy_df.index <= as_of_ts)]
+        return len(window)
+    except Exception:  # noqa: BLE001
+        return -1
+
+
+def _active_tickers_for_basket(basket_id: str, data_root: Path | None = None) -> list[str]:
+    """Return active (non-removed) tickers for basket_id from membership.json."""
+    root = data_root if data_root is not None else config.data_dir()
+    p = root / "baskets" / "membership.json"
+    if not p.exists():
+        return []
+    try:
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        basket = (raw.get("baskets") or {}).get(basket_id, {})
+        members = basket.get("members") or []
+        return [
+            m["ticker"]
+            for m in members
+            if m.get("removed") is None and m.get("ticker")
+        ]
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _cohort_ew_vs_spy(
+    basket_ids: list[str],
+    cohort_date: str,
+    n_sessions: int,
+    data_root: Path | None = None,
+) -> float | None:
+    """Compute cohort equal-weight basket return vs SPY over n_sessions.
+
+    All members of all baskets in the cohort are collected (deduplicated),
+    individual returns computed from data/stocks/, equal-weighted, then
+    excess vs SPY (from data/yahoo/SPY.parquet) is returned.
+
+    Returns None if price data is insufficient for any component.
+    """
+    root = data_root if data_root is not None else config.data_dir()
+    stocks_dir = root / "stocks"
+    spy_p = root / "yahoo" / "SPY.parquet"
+
+    try:
+        event_ts = pd.Timestamp(cohort_date).normalize()
+    except Exception:  # noqa: BLE001
+        return None
+
+    # Collect all unique active tickers across the cohort's baskets
+    all_tickers: list[str] = []
+    seen_tickers: set[str] = set()
+    for bid in basket_ids:
+        for tk in _active_tickers_for_basket(bid, data_root):
+            if tk not in seen_tickers:
+                all_tickers.append(tk)
+                seen_tickers.add(tk)
+
+    if not all_tickers:
+        return None
+
+    # Member returns
+    member_rets: list[float] = []
+    for ticker in all_tickers:
+        p = stocks_dir / f"{ticker}.parquet"
+        if not p.exists():
+            continue
+        try:
+            df = pd.read_parquet(p, columns=["close"])
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+            df = df[~df.index.duplicated(keep="last")]
+            df = df[df.index >= event_ts]
+            if len(df) < n_sessions + 1:
+                continue
+            entry = float(df["close"].iloc[0])
+            exit_ = float(df["close"].iloc[n_sessions])
+            if entry > 0:
+                member_rets.append(exit_ / entry - 1.0)
+        except Exception:  # noqa: BLE001
+            continue
+
+    if not member_rets:
+        return None
+
+    cohort_ew = sum(member_rets) / len(member_rets)
+
+    # SPY return
+    if not spy_p.exists():
+        return None
+    try:
+        spy_df = pd.read_parquet(spy_p, columns=["close"])
+        spy_df.index = pd.to_datetime(spy_df.index)
+        spy_df = spy_df.sort_index()
+        spy_df = spy_df[~spy_df.index.duplicated(keep="last")]
+        spy_df = spy_df[spy_df.index >= event_ts]
+        if len(spy_df) < n_sessions + 1:
+            return None
+        spy_entry = float(spy_df["close"].iloc[0])
+        spy_exit  = float(spy_df["close"].iloc[n_sessions])
+        if spy_entry <= 0:
+            return None
+        spy_ret = spy_exit / spy_entry - 1.0
+    except Exception:  # noqa: BLE001
+        return None
+
+    return round(cohort_ew - spy_ret, 6)
+
+
+def grade_cohorts(
+    cohorts: list[dict],
+    as_of: str | None = None,
+    data_root: Path | None = None,
+) -> list[dict]:
+    """Grade matured cohorts and append results to cohort_grades.jsonl (keep-first).
+
+    Gated on COLLECT_LANE=nightly (FT-R5).
+
+    A cohort matures when >= GRADE_HORIZON_SESSIONS (21) trading sessions have
+    elapsed since cohort_date, measured from the SPY parquet price index.
+
+    Grades are written to data/basket_turn/cohort_grades.jsonl with keep-first
+    semantics per cohort_date.  The qledger claim row remains the registration
+    of record.  At the 2026-10-15 read there is zero manual work to obtain
+    graded outcomes.
+
+    Returns list of newly written grade dicts.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("grade_cohorts: COLLECT_LANE gate not set — skipping")
+        return []
+
+    if not cohorts:
+        return []
+
+    if as_of is None:
+        as_of = date.today().isoformat()
+
+    already_graded = _load_graded_cohort_ids(data_root)
+    new_grades: list[dict] = []
+
+    for cohort in cohorts:
+        cohort_date = cohort.get("cohort_date") or cohort.get("cohort_id")
+        if not cohort_date:
+            continue
+        if cohort_date in already_graded:
+            continue
+
+        sessions_elapsed = _spy_sessions_since(cohort_date, as_of, data_root)
+        if sessions_elapsed < GRADE_HORIZON_SESSIONS:
+            continue  # not yet mature
+
+        basket_ids = cohort.get("basket_ids") or []
+        excess = _cohort_ew_vs_spy(
+            basket_ids, cohort_date, GRADE_HORIZON_SESSIONS, data_root
+        )
+
+        if excess is None:
+            # Price data insufficient — leave ungraded to retry next run
+            continue
+
+        grade: dict[str, Any] = {
+            "cohort_date":        cohort_date,
+            "cohort_id":          cohort.get("cohort_id", cohort_date),
+            "basket_ids":         basket_ids,
+            "n_baskets":          cohort.get("n_baskets", len(basket_ids)),
+            "sessions_elapsed":   sessions_elapsed,
+            "horizon_sessions":   GRADE_HORIZON_SESSIONS,
+            "excess_vs_spy_21d":  excess,
+            "outcome":            "cohort_beat_spy" if excess > 0 else "cohort_lagged_spy",
+            "graded_as_of":       as_of,
+            "note": (
+                "Nightly grader (FTR W9): cohort EW basket return vs SPY over "
+                f"{GRADE_HORIZON_SESSIONS} trading sessions from cohort_date. "
+                "Grades live in data/basket_turn/cohort_grades.jsonl; "
+                "qledger claim is the registration of record."
+            ),
+        }
+        new_grades.append(grade)
+        already_graded.add(cohort_date)
+
+    if new_grades:
+        p = _grades_path(data_root)
+        with p.open("a", encoding="utf-8") as fh:
+            for g in new_grades:
+                fh.write(json.dumps(g, default=str) + "\n")
+        log.info("grade_cohorts: %d new grade(s) written", len(new_grades))
+
+    return new_grades
 
 
 # ── cohort formation ───────────────────────────────────────────────────────────
@@ -323,15 +572,26 @@ def register_cohort_claims(
 
 # ── nightly entry point ────────────────────────────────────────────────────────
 
-def nightly_run(data_root: Path | None = None) -> dict[str, Any]:
-    """Nightly build step: read turn-watch ledger, form cohorts, register claims.
+def nightly_run(
+    data_root: Path | None = None,
+    as_of: str | None = None,
+) -> dict[str, Any]:
+    """Nightly build step: read turn-watch ledger, form cohorts, register claims,
+    and grade any matured cohorts (21 sessions elapsed).
 
     Gated on COLLECT_LANE=nightly (FT-R5).  Exit-0-always: any error is
     captured, a ::warning:: is emitted, and the summary dict carries ok=False.
 
+    grade_cohorts writes to data/basket_turn/cohort_grades.jsonl (keep-first
+    per cohort_date).  The qledger claim row remains the registration of record.
+    At the 2026-10-15 read there is zero manual work to obtain graded outcomes.
+
     Returns summary dict for the build log.
     """
     try:
+        if as_of is None:
+            as_of = date.today().isoformat()
+
         ledger_rows = load_turn_watch_ledger(data_root)
         if not ledger_rows:
             log.info("basket_turn_cohort: turn-watch ledger empty or absent — no claims to register")
@@ -359,12 +619,22 @@ def nightly_run(data_root: Path | None = None) -> dict[str, Any]:
         registered = register_cohort_claims(cohorts, data_root=data_root)
         n_registered = len([r for r in registered if r.get("status") == "open"])
 
+        # Grade matured cohorts (21 sessions elapsed)
+        new_grades = grade_cohorts(cohorts, as_of=as_of, data_root=data_root)
+        n_graded = len(new_grades)
+        if n_graded:
+            log.info(
+                "basket_turn_cohort: %d cohort(s) graded → cohort_grades.jsonl",
+                n_graded,
+            )
+
         return {
             "ok": True,
             "n_ledger_rows": len(ledger_rows),
             "n_ignition_rows": len(ignition_rows),
             "n_cohorts": len(cohorts),
             "n_claims_registered": n_registered,
+            "n_graded": n_graded,
         }
     except Exception as exc:  # noqa: BLE001 — exit-0-always
         import sys

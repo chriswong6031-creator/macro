@@ -185,7 +185,11 @@ def _load_turn_watch_ledger(data_root: Path | None = None) -> list[dict]:
 
 
 def _load_baskets_site_artifact(root: Path | None = None) -> dict[str, dict]:
-    """Load site/basketdata/baskets.json and return {basket_id: basket_dict}.
+    """Load site/basketdata/baskets.json and return {basket_id: theme_dict}.
+
+    The ``reco`` field is a THEME-level property, not a basket-level property.
+    It lives at ``data["theme_intel"]["themes"]`` — a list of dicts with an
+    ``id`` field that matches the basket id for scored baskets.
 
     Returns {} if absent (graceful degradation — events cannot be formed
     without the slow-reco artifact).
@@ -199,9 +203,9 @@ def _load_baskets_site_artifact(root: Path | None = None) -> dict[str, dict]:
         return {}
     try:
         raw = json.loads(p.read_text(encoding="utf-8"))
-        # baskets.json has a top-level "baskets" list of dicts with "id" field
-        baskets_list = raw.get("baskets") or []
-        return {b.get("id", ""): b for b in baskets_list if b.get("id")}
+        # reco is a theme-level property in data["theme_intel"]["themes"]
+        themes_list = raw.get("theme_intel", {}).get("themes") or []
+        return {t.get("id", ""): t for t in themes_list if t.get("id")}
     except Exception as exc:  # noqa: BLE001
         log.warning("tape_disagreement: failed to load baskets.json: %s", exc)
         return {}
@@ -286,6 +290,41 @@ def detect_disagreement_events(
 
 # ── outcome update ─────────────────────────────────────────────────────────────
 
+def _load_membership(data_root: Path | None = None) -> dict[str, dict]:
+    """Load data/baskets/membership.json and return {basket_id: basket_dict}.
+
+    This is the canonical member source (mirrors basket_turn_watch.py usage).
+    Returns {} if absent.
+    """
+    root = data_root if data_root is not None else config.data_dir()
+    p = root / "baskets" / "membership.json"
+    if not p.exists():
+        log.warning("tape_disagreement: membership.json not found at %s", p)
+        return {}
+    try:
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        return raw.get("baskets") or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("tape_disagreement: failed to load membership.json: %s", exc)
+        return {}
+
+
+def _active_tickers(basket_id: str, data_root: Path | None = None) -> list[str]:
+    """Return currently active (non-removed) member tickers for a basket.
+
+    Reads from data/baskets/membership.json (canonical member source, mirrors
+    basket_turn_watch._active_tickers).
+    """
+    membership = _load_membership(data_root)
+    basket = membership.get(basket_id, {})
+    members = basket.get("members") or []
+    return [
+        m["ticker"]
+        for m in members
+        if m.get("removed") is None and m.get("ticker")
+    ]
+
+
 def _basket_ew_vs_spy_return(
     basket_id: str,
     event_date: str,
@@ -295,12 +334,18 @@ def _basket_ew_vs_spy_return(
 ) -> float | None:
     """Compute equal-weight basket return vs SPY over n_sessions from event_date.
 
-    Returns the EW basket excess return (basket_ew_ret - spy_ret) or None if
-    price data is insufficient.  Uses the parquet store in data/stocks/.
+    Members are sourced from data/baskets/membership.json (the canonical member
+    store — basket_turn_watch uses the same source).  The ``baskets_map`` arg
+    (theme-level artifact keyed by basket id) is intentionally not used for
+    member lookup: it does not carry a member list.
+
+    SPY lives at data/yahoo/SPY.parquet (not data/stocks/).
+
+    Returns the EW basket excess return (basket_ew_ret - spy_ret), or None if
+    price data is insufficient.
     """
-    basket = baskets_map.get(basket_id, {})
-    members = basket.get("members") or basket.get("tickers") or []
-    if not members:
+    tickers = _active_tickers(basket_id, data_root)
+    if not tickers:
         return None
 
     root = data_root if data_root is not None else config.data_dir()
@@ -308,16 +353,18 @@ def _basket_ew_vs_spy_return(
 
     try:
         event_ts = pd.Timestamp(event_date)
+        event_ts = event_ts.normalize()
     except Exception:  # noqa: BLE001
         return None
 
     member_rets: list[float] = []
-    for ticker in members:
+    for ticker in tickers:
         p = stocks_dir / f"{ticker}.parquet"
         if not p.exists():
             continue
         try:
             df = pd.read_parquet(p, columns=["close"])
+            df.index = pd.to_datetime(df.index)
             df = df.sort_index()
             df = df[~df.index.duplicated(keep="last")]
             df = df[df.index >= event_ts]
@@ -335,12 +382,14 @@ def _basket_ew_vs_spy_return(
 
     basket_ew = sum(member_rets) / len(member_rets)
 
-    # SPY return over same window
-    spy_p = stocks_dir / "SPY.parquet"
+    # SPY lives at data/yahoo/SPY.parquet (not data/stocks/)
+    spy_p = root / "yahoo" / "SPY.parquet"
     if not spy_p.exists():
         return None
     try:
-        spy_df = pd.read_parquet(spy_p, columns=["close"]).sort_index()
+        spy_df = pd.read_parquet(spy_p, columns=["close"])
+        spy_df.index = pd.to_datetime(spy_df.index)
+        spy_df = spy_df.sort_index()
         spy_df = spy_df[~spy_df.index.duplicated(keep="last")]
         spy_df = spy_df[spy_df.index >= event_ts]
         if len(spy_df) < n_sessions + 1:
@@ -377,6 +426,35 @@ def _reco_flipped(
     return None
 
 
+def _spy_trading_sessions_since(
+    event_date: str,
+    as_of: str,
+    data_root: Path | None = None,
+) -> int:
+    """Count trading sessions elapsed since event_date by counting SPY parquet rows.
+
+    Uses the SPY price index (data/yahoo/SPY.parquet) as the authoritative
+    trading-session clock, not pd.bdate_range (which includes holidays).
+    Returns -1 if SPY data is unavailable.
+    """
+    root = data_root if data_root is not None else config.data_dir()
+    spy_p = root / "yahoo" / "SPY.parquet"
+    if not spy_p.exists():
+        return -1
+    try:
+        spy_df = pd.read_parquet(spy_p, columns=["close"])
+        spy_df.index = pd.to_datetime(spy_df.index)
+        spy_df = spy_df.sort_index()
+        spy_df = spy_df[~spy_df.index.duplicated(keep="last")]
+        event_ts = pd.Timestamp(event_date).normalize()
+        as_of_ts = pd.Timestamp(as_of).normalize()
+        # Count rows strictly after event_date up through as_of
+        window = spy_df[(spy_df.index > event_ts) & (spy_df.index <= as_of_ts)]
+        return len(window)
+    except Exception:  # noqa: BLE001
+        return -1
+
+
 def update_outcomes(
     rows: list[dict],
     baskets_map: dict[str, dict],
@@ -385,23 +463,28 @@ def update_outcomes(
 ) -> list[dict]:
     """Update outcome columns for rows whose observation windows have elapsed.
 
+    Maturity clock: counts rows in the SPY parquet strictly after event_date
+    (data/yahoo/SPY.parquet), NOT pd.bdate_range — holidays are excluded.
+
     For each row:
     - If +10 sessions have elapsed since event_date AND outcome_10d is None:
       compute and fill outcome_10d.  Mark censored_10d=False.
     - If +21 sessions have elapsed since event_date AND outcome_21d is None:
       compute and fill outcome_21d.  Mark censored_21d=False.
 
+    Censoring semantics (KM convention):
+        censored=True  means event-not-yet-observed (right-censored).
+        censored=False means the outcome window has elapsed.
+        When excess is None (price data insufficient), outcome stays None and
+        censored stays True so the row re-evaluates next nightly run.  Only
+        a definitive outcome (tape_faded, slow_state_flipped, or
+        unresolved_censored when excess IS available) closes the row.
+
     Outcome vocabulary:
         slow_state_flipped  — reco moved to enter/accumulate (PIT ledger req'd)
         tape_faded          — basket EW vs SPY < 0 over the window
-        unresolved_censored — window elapsed but no strong signal either way
-                              (or price data insufficient)
+        unresolved_censored — window elapsed, excess computed, no strong signal
     """
-    try:
-        as_of_ts = pd.Timestamp(as_of)
-    except Exception:  # noqa: BLE001
-        return rows
-
     updated_rows: list[dict] = []
     for row in rows:
         row = dict(row)  # shallow copy — do not mutate in place
@@ -410,29 +493,20 @@ def update_outcomes(
             updated_rows.append(row)
             continue
 
-        try:
-            event_ts = pd.Timestamp(event_date)
-        except Exception:  # noqa: BLE001
-            updated_rows.append(row)
-            continue
-
         basket_id = row.get("basket_id", "")
+        elapsed = _spy_trading_sessions_since(event_date, as_of, data_root)
 
         for n_sessions, outcome_key, censored_key in [
             (10, "outcome_10d", "censored_10d"),
             (21, "outcome_21d", "censored_21d"),
         ]:
             if row.get(outcome_key) is not None:
-                # Already filled
+                # Already filled — do not overwrite
                 continue
 
-            # Check if n_sessions business days have elapsed
-            elapsed_bd = len(pd.bdate_range(event_ts, as_of_ts)) - 1
-            if elapsed_bd < n_sessions:
-                continue  # window not yet elapsed
-
-            # Window has elapsed — record outcome
-            row[censored_key] = False
+            if elapsed < 0 or elapsed < n_sessions:
+                # Window not yet elapsed; row stays censored=True, outcome=None
+                continue
 
             # Outcome 1: slow_state_flipped (requires PIT reco history — honest null)
             flipped = _reco_flipped(basket_id, event_date, n_sessions, data_root)
@@ -441,15 +515,21 @@ def update_outcomes(
             excess = _basket_ew_vs_spy_return(
                 basket_id, event_date, n_sessions, baskets_map, data_root
             )
-            tape_faded = (excess is not None and excess < 0)
+
+            # When excess is None (price data missing), leave outcome unset so
+            # the row re-evaluates next night (KM: censored=True until observable).
+            if flipped is None and excess is None:
+                continue
+
+            # Window has elapsed with observable data — record outcome
+            row[censored_key] = False
 
             if flipped is True:
                 row[outcome_key] = "slow_state_flipped"
-            elif tape_faded:
+            elif excess is not None and excess < 0:
                 row[outcome_key] = "tape_faded"
             else:
-                # Window elapsed, no strong signal; if excess is None (price
-                # data unavailable) also lands here as unresolved
+                # Window elapsed, excess computed, no strong signal
                 row[outcome_key] = "unresolved_censored"
 
             # Record the raw return for analysis
