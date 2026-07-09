@@ -6259,7 +6259,11 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/ask_brain.py
+      - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/daily_brief.py
     external_consumers: []
     notes: >
       TIL W0 (PR-A) thematic state composition organ. Tolerant-read composition over
@@ -6333,6 +6337,8 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_thematic_state.py
+      - engine/neuralweb/ask_brain.py
+      - engine/neuralweb/mastermind_context.py
     external_consumers: []
     notes: >
       TIL W1 (PR-C) theme-level thesis ledger compiled from curated
@@ -6377,7 +6383,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       TIL W2 (PR-D) theme beneficiary/loser pathway graph compiled from curated
@@ -6422,7 +6429,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       TIL W3 (PR-E) per-leg asymmetry component panel. NO fused master number

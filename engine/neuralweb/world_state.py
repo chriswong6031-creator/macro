@@ -1811,6 +1811,127 @@ def _compose_china_market_state(root: "Path | str | None" = None) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Thematic State lobe (TIL W5 NW citizenship)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compose_thematic_state(root: "Path | str | None" = None) -> dict:
+    """Compose a COMPACT thematic-state sub-block for world_state.
+
+    Reads data/neuralweb/theme_state.json (canonical) and
+    site/neuralwebdata/theme_thesis.json (for falsifier counts).
+    Both are produced nightly by scripts/build_thematic_state.py.
+
+    Follows the _compose_liquidity_plumbing / _compose_factor_weather
+    fail-open discipline exactly:
+    - all data loading internal to this function
+    - _clean() on every value
+    - absent artifact → {"available": False, "display_only": True}
+    - display_only=True always
+
+    Payload is COMPACT (target <2KB serialized):
+    - as_of, n_themes, stage_counts
+    - n_falsifiers_fired, fired list [{theme_id, falsifier_id}]
+    - top stale_legs count
+    - per-theme one-liners ONLY for noteworthy states (falsifier fired,
+      non-WATCH stage, high bottleneck+high stale_gap co-occurrence)
+    """
+    repo = _repo_root(root)
+    state_path = repo / "data" / "neuralweb" / "theme_state.json"
+    thesis_path = repo / "site" / "neuralwebdata" / "theme_thesis.json"
+
+    _null: dict = {"available": False, "display_only": True}
+
+    if not state_path.exists():
+        log.info("thematic_state: artifact absent (%s) — null block", state_path)
+        return dict(_null)
+
+    try:
+        raw_state = json.loads(state_path.read_text(encoding="utf-8"))
+        if not isinstance(raw_state, dict):
+            log.warning("thematic_state: theme_state.json is not a dict — null block")
+            return dict(_null)
+
+        themes: list = raw_state.get("themes") or []
+        stale_legs: list = raw_state.get("stale_legs") or []
+
+        # Stage counts
+        stage_counts: dict[str, int] = {}
+        for th in themes:
+            if not isinstance(th, dict):
+                continue
+            stage = (th.get("foresight") or {}).get("stage") or "UNKNOWN"
+            # Normalize: strip text/fingerprint suffix for compact display
+            stage_key = stage.split(" ")[0]
+            stage_counts[stage_key] = stage_counts.get(stage_key, 0) + 1
+
+        # Falsifier fired list — read from theme_thesis site projection
+        fired_list: list[dict] = []
+        n_falsifiers_fired = 0
+        if thesis_path.exists():
+            try:
+                raw_thesis = json.loads(thesis_path.read_text(encoding="utf-8"))
+                if isinstance(raw_thesis, dict):
+                    n_falsifiers_fired = _clean(raw_thesis.get("n_falsifier_fired") or 0) or 0
+                    for thesis in (raw_thesis.get("theses") or []):
+                        if not isinstance(thesis, dict):
+                            continue
+                        theme_id = thesis.get("theme_id", "")
+                        for f in (thesis.get("falsifiers") or []):
+                            if isinstance(f, dict) and f.get("fired"):
+                                fired_list.append({
+                                    "theme_id": _clean(theme_id),
+                                    "falsifier_id": _clean(f.get("id")),
+                                })
+            except Exception as exc:  # noqa: BLE001
+                log.warning("thematic_state: theme_thesis.json read failed — %s", exc)
+
+        # Noteworthy per-theme one-liners (compact — no ranking)
+        noteworthy: list[dict] = []
+        fired_theme_ids = {r["theme_id"] for r in fired_list}
+        for th in themes:
+            if not isinstance(th, dict):
+                continue
+            theme_id = th.get("theme_id", "")
+            foresight = th.get("foresight") or {}
+            stage = foresight.get("stage") or "UNKNOWN"
+            stage_key = stage.split(" ")[0]
+            bottleneck = foresight.get("bottleneck_band") or ""
+            # Determine noteworthiness
+            reasons = []
+            if theme_id in fired_theme_ids:
+                reasons.append("falsifier_fired")
+            if stage_key not in ("WATCH", "UNKNOWN"):
+                reasons.append(f"stage={stage_key}")
+            # High bottleneck co-occurrence with high stale-gap from stale_legs
+            if "TIGHT" in bottleneck.upper():
+                theme_stale = any(theme_id in s for s in stale_legs)
+                if theme_stale:
+                    reasons.append("tight_bottleneck+stale")
+            if reasons:
+                noteworthy.append({
+                    "theme_id": _clean(theme_id),
+                    "reason": _clean(", ".join(reasons)),
+                    "stage": _clean(stage_key),
+                })
+
+        return {
+            "available": True,
+            "as_of": _clean(raw_state.get("as_of")),
+            "n_themes": _clean(raw_state.get("n_themes") or len(themes)),
+            "stage_counts": stage_counts,
+            "n_falsifiers_fired": _clean(n_falsifiers_fired),
+            "falsifiers_fired": fired_list,
+            "n_stale_legs": _clean(len(stale_legs)),
+            "noteworthy": noteworthy,
+            "display_only": True,
+            "is_context_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("thematic_state: compose failed — %s", exc)
+        return dict(_null)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Liquidity Plumbing lobe (neuralweb.liquidity_plumbing.v1)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -2122,6 +2243,27 @@ def build_world_state(
     if not _china_ms_path.exists():
         gaps.append("site/chinastatedata/market_state.json: missing or not yet built (CN-SYS W6)")
 
+    # ── 6g. thematic_state (TIL W5 NW citizenship) — fail-open ──────────────
+    # Reads data/neuralweb/theme_state.json + site/neuralwebdata/theme_thesis.json.
+    # Compact block only (target <2KB): counts, stage distribution, fired falsifiers,
+    # noteworthy per-theme one-liners. display_only=True always.
+    _theme_state_path = data_dir / "neuralweb" / "theme_state.json"
+    try:
+        thematic_state_block: dict = _compose_thematic_state(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: thematic_state lobe failed — %s", exc)
+        gaps.append(f"thematic_state: {exc}")
+        thematic_state_block = {"available": False, "display_only": True}
+    sources[str(_theme_state_path.relative_to(repo))] = (
+        thematic_state_block.get("as_of")
+        if thematic_state_block.get("available") else None
+    )
+    if not _theme_state_path.exists():
+        gaps.append(
+            "data/neuralweb/theme_state.json: absent "
+            "(run scripts/build_thematic_state.py to populate)"
+        )
+
     # ── 6c. R5 macro-context lobes (PR-B §5.3) ───────────────────────────────
     # Each lobe is try/except-wrapped at the wiring site; failures produce a
     # null-shaped fallback + gap entry per the _compose_factor_weather pattern.
@@ -2322,6 +2464,7 @@ def build_world_state(
         "context_risk": context_risk_block,  # R-CI7 nw-context-intelligence W3 wiring line
         "liquidity_plumbing": liquidity_plumbing_block,  # neuralweb.liquidity_plumbing.v1 wiring line
         "china_market_state": china_market_state_block,  # CN-SYS W7 NW adapter wiring line
+        "thematic_state": thematic_state_block,  # TIL W5 NW citizenship wiring line
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "

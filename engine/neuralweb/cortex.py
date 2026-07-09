@@ -116,6 +116,8 @@ _READ_TOOLS = frozenset({
     "read_mechanism_pathways",
     # W4 context scanner: read-only context candidates + risk lens
     "read_context_candidates",
+    # TIL W5 NW citizenship: thematic state read tools (display/context only)
+    "read_theme_state",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -854,6 +856,19 @@ def _tool_read_mechanism_pathways(root: Path, _params: dict) -> dict:
         }
 
 
+def _tool_read_theme_state(root: Path, params: dict) -> dict:
+    """Read data/neuralweb/theme_state.json — TIL W5 thematic-state compact summary.
+
+    Optional param: theme_id (str) — filter to a single theme.
+    Delegates to ask_brain._tool_read_theme_state to avoid duplication.
+    DISPLAY-ONLY ceiling (TIL W5): may be cited as context or to de-escalate
+    a calibrated key; may NEVER originate, score, or escalate a signal.
+    No write path. is_context_only always true.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_theme_state as _ask_brain_read  # noqa: PLC0415
+    return _ask_brain_read(root, params)
+
+
 def _tool_list_factor_contradictions(root: Path, params: dict) -> dict:
     """Read data/neuralweb/factor_contradictions.jsonl (RUL-NW3).
 
@@ -1147,6 +1162,9 @@ def dispatch_tool(
         return _tool_read_mechanism_pathways(root, tool_params)
     elif tool_name == "read_context_candidates":
         return _tool_read_context_candidates(root, tool_params)
+    elif tool_name == "read_theme_state":
+        # TIL W5 NW citizenship: thematic-state compact read (display/context only)
+        return _tool_read_theme_state(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1357,6 +1375,37 @@ def _tool_schemas() -> list[dict]:
                 "is_context_only: true. Fails open with structured gaps when absent."
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        # --- TIL W5 NW citizenship: thematic-state compact read tool ---
+        {
+            "name": "read_theme_state",
+            "description": (
+                "Read data/neuralweb/theme_state.json — the TIL W5 thematic-state "
+                "compact summary: n_themes, stage_counts (PRECIPICE/BROADENING/"
+                "RE-RATING/GLUT-RISK/WATCH distribution), n_falsifiers_fired and "
+                "fired list [{theme_id, falsifier_id}], n_stale_legs, noteworthy "
+                "per-theme one-liners (falsifier fired, non-WATCH stage, tight "
+                "bottleneck+stale co-occurrence). "
+                "Optional param: theme_id (str) — if provided, returns just that "
+                "theme's record (stage, entry_ready, bottleneck_band, basket_ids). "
+                "DISPLAY-ONLY ceiling (TIL W5): may be cited as context or to "
+                "de-escalate a calibrated key; may NEVER originate, score, or "
+                "escalate a signal. No write path. is_context_only: true. "
+                "Fails open with structured null when artifact is absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "theme_id": {
+                        "type": "string",
+                        "description": (
+                            "Optional: filter to a single theme_id "
+                            "(e.g. 'ai_semiconductors', 'nuclear_power')"
+                        ),
+                    },
+                },
+                "required": [],
+            },
         },
         # --- W4 context scanner: context candidates + risk lens (R-CI11) ---
         {

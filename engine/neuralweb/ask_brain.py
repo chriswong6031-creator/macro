@@ -199,7 +199,26 @@ _ASK_READ_TOOLS = frozenset({
     "read_china_decision_packet",
     # Liquidity plumbing packet (shadow tier, context/entry-quality only)
     "read_liquidity_plumbing",
+    # TIL W5 NW citizenship: thematic state read tools (display/context only)
+    "read_theme_state",
+    "read_theme_thesis",
+    "read_theme_pathways",
 })
+
+# Thematic Intelligence trigger terms (TIL W5 NW citizenship).
+# Checked after liquidity/options/China, before generic regime branch.
+# EN + ZH terms; no bare "theme" (too generic) — require thematic context.
+_THEME_TRIGGER_TERMS = re.compile(
+    r"(?i)\b("
+    r"thematic\s+state|state\s+of\s+themes?|theme\s+thesis|theme\s+stage|"
+    r"theme\s+pathway|theme\s+beneficiar\w*|theme\s+asymmetr\w*|"
+    r"falsifier\s+fired|thesis\s+falsifier|thematic\s+falsifier|"
+    r"beneficiar\w+\s+of\s+theme|pathway\s+of\s+theme|theme\s+logic|"
+    r"thesis\s+integrity|regime\s+thesis|macro\s+thesis"
+    r")\b"
+    r"|(?:主题|论点|受益者|路径|主题阶段|主题论文|主题不对称|主题假设)",
+    re.IGNORECASE,
+)
 
 # Customer-facing system prompt
 _CUSTOMER_SYSTEM_PROMPT = """You are the Macro Dashboard Brain — a quantitative research assistant.
@@ -373,6 +392,15 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     # Seeds: read_world_state (liquidity_plumbing sub-block) + read_liquidity_plumbing.
     if _LIQUIDITY_PLUMBING_TRIGGER_TERMS.search(q):
         return _BUDGET_REGIME, ["read_world_state", "read_liquidity_plumbing"]
+
+    # Thematic Intelligence path (TIL W5) — checked after liquidity, before options/generic.
+    # Seeds: read_theme_state (compact stage/falsifier summary) + read_theme_thesis.
+    # add read_theme_pathways when beneficiary/pathway phrasing is present.
+    if _THEME_TRIGGER_TERMS.search(question):
+        seeds: list[str] = ["read_theme_state", "read_theme_thesis"]
+        if re.search(r"\b(pathway|beneficiar\w*|路径|受益者)\b", q, re.IGNORECASE):
+            seeds.append("read_theme_pathways")
+        return _BUDGET_REGIME, seeds
 
     # Options path (RO-7) — checked after factor, before generic contradictions/regime
     # so "options contradictions" and "skew" questions don't bleed into generic branches
@@ -778,6 +806,277 @@ def _tool_read_liquidity_plumbing(root: Path, _params: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# TIL W5 NW citizenship — thematic read tool handlers
+# ---------------------------------------------------------------------------
+
+def _tool_read_theme_state(root: Path, params: dict) -> dict:
+    """Tool handler: return compact thematic-state summary.
+
+    Reads data/neuralweb/theme_state.json + site/neuralwebdata/theme_thesis.json.
+    Optional param: theme_id (str) — if provided, filters noteworthy list and
+    falsifier list to that theme only. No write path; read-only.
+
+    Authority: display/context only, TIL W5. is_context_only=True always.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    theme_id_filter: str | None = params.get("theme_id") if isinstance(params, dict) else None
+
+    state_path = root / "data" / "neuralweb" / "theme_state.json"
+    thesis_path = root / "site" / "neuralwebdata" / "theme_thesis.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": "data/neuralweb/theme_state.json absent — run scripts/build_thematic_state.py",
+    }
+
+    if not state_path.exists():
+        return dict(_null)
+
+    try:
+        raw_state = json.loads(state_path.read_text(encoding="utf-8"))
+        if not isinstance(raw_state, dict):
+            return {**_null, "note": "theme_state.json is not a dict"}
+
+        themes: list = raw_state.get("themes") or []
+        stale_legs: list = raw_state.get("stale_legs") or []
+
+        # If a theme_id filter is requested, emit just that theme's record
+        if theme_id_filter:
+            matched = [t for t in themes if isinstance(t, dict) and t.get("theme_id") == theme_id_filter]
+            if not matched:
+                return {
+                    "available": True,
+                    "theme_id": theme_id_filter,
+                    "found": False,
+                    "note": f"theme_id '{theme_id_filter}' not found in theme_state",
+                    "is_context_only": True,
+                    "display_only": True,
+                }
+            th = matched[0]
+            foresight = th.get("foresight") or {}
+            return {
+                "available": True,
+                "theme_id": theme_id_filter,
+                "found": True,
+                "name_en": th.get("name_en"),
+                "name_zh": th.get("name_zh"),
+                "stage": foresight.get("stage"),
+                "entry_ready": foresight.get("entry_ready"),
+                "bottleneck_band": foresight.get("bottleneck_band"),
+                "basket_ids": th.get("basket_ids") or [],
+                "is_context_only": True,
+                "display_only": True,
+            }
+
+        # Full summary (compact)
+        stage_counts: dict[str, int] = {}
+        for th in themes:
+            if not isinstance(th, dict):
+                continue
+            stage = (th.get("foresight") or {}).get("stage") or "UNKNOWN"
+            stage_key = stage.split(" ")[0]
+            stage_counts[stage_key] = stage_counts.get(stage_key, 0) + 1
+
+        n_falsifiers_fired = 0
+        fired_list: list[dict] = []
+        if thesis_path.exists():
+            try:
+                raw_thesis = json.loads(thesis_path.read_text(encoding="utf-8"))
+                if isinstance(raw_thesis, dict):
+                    n_falsifiers_fired = raw_thesis.get("n_falsifier_fired") or 0
+                    for thesis in (raw_thesis.get("theses") or []):
+                        if not isinstance(thesis, dict):
+                            continue
+                        tid = thesis.get("theme_id", "")
+                        for f in (thesis.get("falsifiers") or []):
+                            if isinstance(f, dict) and f.get("fired"):
+                                fired_list.append({"theme_id": tid, "falsifier_id": f.get("id")})
+            except Exception:  # noqa: BLE001
+                pass
+
+        return {
+            "available": True,
+            "as_of": raw_state.get("as_of"),
+            "n_themes": raw_state.get("n_themes") or len(themes),
+            "stage_counts": stage_counts,
+            "n_falsifiers_fired": n_falsifiers_fired,
+            "falsifiers_fired": fired_list,
+            "n_stale_legs": len(stale_legs),
+            "stale_legs": stale_legs[:5],  # cap to 5 for brevity
+            "is_context_only": True,
+            "display_only": True,
+            "note": "not advice — context only",
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
+def _tool_read_theme_thesis(root: Path, params: dict) -> dict:
+    """Tool handler: return per-theme thesis summaries (falsifiers, variant perception).
+
+    Reads site/neuralwebdata/theme_thesis.json (compact site projection).
+    Optional param: theme_id (str) — if provided, returns just that theme's thesis.
+    Read-only; no write path. is_context_only=True always.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    theme_id_filter: str | None = params.get("theme_id") if isinstance(params, dict) else None
+    thesis_path = root / "site" / "neuralwebdata" / "theme_thesis.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": "site/neuralwebdata/theme_thesis.json absent",
+    }
+
+    if not thesis_path.exists():
+        return dict(_null)
+
+    try:
+        raw = json.loads(thesis_path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {**_null, "note": "theme_thesis.json is not a dict"}
+
+        theses: list = raw.get("theses") or []
+
+        def _summarize_thesis(t: dict) -> dict:
+            fs = t.get("falsifier_summary") or {}
+            return {
+                "theme_id": t.get("theme_id"),
+                "thesis_id": t.get("thesis_id"),
+                "status": t.get("status"),
+                "falsifier_summary": {
+                    "n_fired": fs.get("n_fired", 0),
+                    "n_armed": fs.get("n_armed", 0),
+                    "any_fired": fs.get("any_fired", False),
+                },
+                "variant_perception_en": (t.get("variant_perception_en") or "")[:200],
+                "driver": t.get("driver"),
+            }
+
+        if theme_id_filter:
+            matched = [t for t in theses if isinstance(t, dict) and t.get("theme_id") == theme_id_filter]
+            if not matched:
+                return {
+                    "available": True,
+                    "theme_id": theme_id_filter,
+                    "found": False,
+                    "is_context_only": True,
+                    "display_only": True,
+                }
+            return {
+                "available": True,
+                "theme_id": theme_id_filter,
+                "found": True,
+                "thesis": _summarize_thesis(matched[0]),
+                "is_context_only": True,
+                "display_only": True,
+                "note": "not advice — context only",
+            }
+
+        return {
+            "available": True,
+            "as_of": raw.get("as_of"),
+            "n_theses": raw.get("n_theses") or len(theses),
+            "n_falsifier_fired": raw.get("n_falsifier_fired") or 0,
+            "theses": [_summarize_thesis(t) for t in theses if isinstance(t, dict)],
+            "is_context_only": True,
+            "display_only": True,
+            "note": "not advice — context only",
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
+def _tool_read_theme_pathways(root: Path, params: dict) -> dict:
+    """Tool handler: return theme beneficiary/loser pathway summaries.
+
+    Reads site/neuralwebdata/theme_pathways.json (compact site projection).
+    Optional param: theme_id (str) — if provided, returns just that theme's pathways.
+    Read-only; no write path. is_context_only=True always.
+    TI-R5 fence: pathway data is context only; loser legs are AVOID-shaped evidence,
+    never short calls; no runtime shock-to-beneficiary escalation.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    theme_id_filter: str | None = params.get("theme_id") if isinstance(params, dict) else None
+    pathways_path = root / "site" / "neuralwebdata" / "theme_pathways.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": (
+            "site/neuralwebdata/theme_pathways.json absent — "
+            "run scripts/build_thematic_state.py to populate"
+        ),
+    }
+
+    if not pathways_path.exists():
+        return dict(_null)
+
+    try:
+        raw = json.loads(pathways_path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {**_null, "note": "theme_pathways.json is not a dict"}
+
+        themes: list = raw.get("themes") or []
+
+        def _summarize_pathway(t: dict) -> dict:
+            return {
+                "theme_id": t.get("theme_id"),
+                "name_en": t.get("name_en"),
+                "winners": (t.get("winners") or [])[:4],
+                "losers": (t.get("losers") or [])[:4],
+            }
+
+        if theme_id_filter:
+            matched = [t for t in themes if isinstance(t, dict) and t.get("theme_id") == theme_id_filter]
+            if not matched:
+                return {
+                    "available": True,
+                    "theme_id": theme_id_filter,
+                    "found": False,
+                    "is_context_only": True,
+                    "display_only": True,
+                }
+            return {
+                "available": True,
+                "theme_id": theme_id_filter,
+                "found": True,
+                "pathway": _summarize_pathway(matched[0]),
+                "is_context_only": True,
+                "display_only": True,
+                "note": "not advice — context only. Loser legs are AVOID-shaped evidence, not short calls.",
+            }
+
+        return {
+            "available": True,
+            "as_of": raw.get("as_of"),
+            "n_themes": len(themes),
+            "themes": [_summarize_pathway(t) for t in themes if isinstance(t, dict)],
+            "is_context_only": True,
+            "display_only": True,
+            "note": "not advice — context only. Loser legs are AVOID-shaped evidence, not short calls.",
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
+# ---------------------------------------------------------------------------
 # Read-only tool schemas (write tools excluded structurally)
 # ---------------------------------------------------------------------------
 
@@ -1016,6 +1315,15 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
     elif tool_name == "read_liquidity_plumbing":
         # Liquidity plumbing packet (shadow tier, context/entry-quality only)
         return _tool_read_liquidity_plumbing(root, tool_params)
+    elif tool_name == "read_theme_state":
+        # TIL W5 NW citizenship: thematic-state compact summary (display/context only)
+        return _tool_read_theme_state(root, tool_params)
+    elif tool_name == "read_theme_thesis":
+        # TIL W5 NW citizenship: theme thesis summaries + falsifier status (display/context only)
+        return _tool_read_theme_thesis(root, tool_params)
+    elif tool_name == "read_theme_pathways":
+        # TIL W5 NW citizenship: theme beneficiary/loser pathway summaries (display/context only)
+        return _tool_read_theme_pathways(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 
