@@ -9166,6 +9166,41 @@ artifacts:
       Statuses: degraded_pack_only | awaiting_phase_a | ok. Infrastructure tier;
       never a signal. Absent until first brainstorm run (frontier falls back to
       constant awaiting_phase_a when absent).
+  causal-confluence-audit:
+    path: data/neuralweb/causal_confluence_audit.json
+    format: json
+    producer: scripts/build_causal_confluence_audit.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: neuralweb.causal_confluence_audit.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/confluence.py
+      - admin/causal_lab.py
+    external_consumers: []
+    notes: >
+      CHF-R10 anti-mirage auditor output (W6). Directed annotations over the
+      confluence graph: duplicate_exposure (price-derived feature siblings sharing
+      a common market-process parent, detected from causal_feature_inventory.json
+      family + notes), shared_parent_suspect (confirms edges whose endpoints sit
+      in the same R-ORTH cluster per covariance_spine.json AND share a common
+      driver family), collider_risk (mechanism cards conditioning on downstream
+      composites named in causal_priors.yml forbidden_causes). ZERO R-ORTH
+      recomputation (RUL-ORTH-9); ZERO LLM-originated annotations (RUL-ORTH-11);
+      all annotations are deterministic rule applications over committed artifacts.
+      display_only=True, annotate_only=True, not_a_signal=True unconditionally.
+      Absent inputs produce empty sections, never phantom annotations.
+      Consumers: engine/neuralweb/confluence.py stamps matching confirms edges
+      with causal_audit:{duplicate_risk|shared_parent_suspect} (additive,
+      tolerant); admin/causal_lab.py reads annotation counts for the operator
+      card. CHF-R1 authority ceiling: A1_EXPLAIN, display-tier only.
 
   oracle-tape-onset:
     path: site/basketdata/oracle_tape_onset.json

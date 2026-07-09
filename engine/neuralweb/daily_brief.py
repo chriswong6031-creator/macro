@@ -843,6 +843,74 @@ def _enrich_stale_with_support_impact(
     return enriched
 
 
+# ---- Causal Lab section (CHF W6, tolerant-absent) ----------------------------
+
+def _build_causal_lab_section(root: Path) -> dict:
+    """Build a compact causal_lab brief section (CHF W6).
+
+    Counts only — no ticker-level detail per CHF-R13.
+    Language law: no trading verbs, no banned causal-certainty words.
+    Tolerant-absent: missing artifact → available=False with honest note.
+    Reads site/neuralwebdata/causal_lab_state.json (preferred) then
+    data/neuralweb/causal_lab_state.json (fallback).
+
+    Returns:
+        available   bool
+        asof        str | None
+        new_edges_this_week_by_verdict  dict | None
+        nulls_added  int | None
+        cards_filed  int | None
+        llm_lane_status  str | None
+        note         str (honest placeholder when absent)
+        display_only True
+        not_a_signal True
+    """
+    site_path = root / "site" / "neuralwebdata" / "causal_lab_state.json"
+    data_path = root / "data" / "neuralweb" / "causal_lab_state.json"
+
+    raw: dict | None = None
+    for p in (site_path, data_path):
+        if p.exists():
+            try:
+                raw = json.loads(p.read_text(encoding="utf-8"))
+                break
+            except Exception as exc:  # noqa: BLE001
+                log.debug("causal_lab_section: could not read %s — %s", p, exc)
+
+    if raw is None:
+        return {
+            "available": False,
+            "note": (
+                "causal_lab_state.json not yet written — "
+                "runs on Mac host nightly; absent in fresh CI checkouts"
+            ),
+            "display_only": True,
+            "not_a_signal": True,
+        }
+
+    try:
+        funnel = raw.get("funnel") or {}
+        llm_lane = raw.get("llm_lane") or {}
+        return {
+            "available": True,
+            "asof": raw.get("asof"),
+            "new_edges_this_week_by_verdict": funnel.get("edges_by_verdict") or {},
+            "nulls_added": funnel.get("nulls_count"),
+            "cards_filed": funnel.get("total_mechanisms"),
+            "llm_lane_status": llm_lane.get("status"),
+            "display_only": True,
+            "not_a_signal": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("causal_lab_section: parse error — %s", exc)
+        return {
+            "available": False,
+            "note": f"causal_lab_state.json parse error: {exc}",
+            "display_only": True,
+            "not_a_signal": True,
+        }
+
+
 # ---- China market-state block (CN-SYS W7, display-only) ----------------------
 
 def _build_china_market_state_block(root: Path) -> dict:
@@ -1058,6 +1126,14 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
             "(run scripts/build_thematic_state.py to populate)"
         )
 
+    # ---- causal lab section (CHF W6, tolerant-absent) ----
+    causal_lab_brief = _build_causal_lab_section(root)
+    if not causal_lab_brief.get("available"):
+        gaps_noted.append(
+            "causal_lab: causal_lab_state.json absent "
+            "(run scripts/build_causal_frontier.py to populate)"
+        )
+
     return {
         "schema": SCHEMA,
         "produced_at": now,
@@ -1074,6 +1150,7 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
         "evidence_clock": evidence_clock,
         "china_market_state": china_market_state,  # CN-SYS W7 wiring line
         "thematic_line": thematic_line,  # TIL W5 wiring line
+        "causal_lab": causal_lab_brief,  # CHF W6 wiring line
         "caveats": _CAVEATS,
         "_gaps": gaps_noted,
     }

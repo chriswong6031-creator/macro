@@ -12,7 +12,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | active-build-map | 1 |
 | btc-vector | 5 |
-| causal-hypothesis-factory | 8 |
+| causal-hypothesis-factory | 9 |
 | china-alpha | 10 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
@@ -64,13 +64,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 191 |
 | infrastructure | 79 |
 | scored | 4 |
-| shadow | 47 |
+| shadow | 48 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 307 |
+| git | 308 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -96,6 +96,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| causal-confluence-audit | `data/neuralweb/causal_confluence_audit.json` | json | daily-engine | shadow | 2 | 0 |
 | causal-nulls | `data/neuralweb/causal_nulls.jsonl` | jsonl | weekly | display | 2 | 0 |
 | causal-edges | `data/neuralweb/causal_edges.jsonl` | jsonl | weekly | display | 1 | 0 |
 | causal-frontier | `data/neuralweb/causal_frontier.json` | json | daily-engine | display | 1 | 0 |

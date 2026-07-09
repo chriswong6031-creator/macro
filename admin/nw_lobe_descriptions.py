@@ -17,15 +17,60 @@ prose is written here. Run `--update` (no seed) after adding a lobe or editing p
 SCHEMA_VERSION = 1
 
 LOBE_DESCRIPTIONS = {
+    "attention-deterministic": {
+        "short": "",
+        "full": "",
+        "src_fp": "1485ea3a668caacc",
+    },
     "bottom-sensors-json": {
         "short": "The public-site copy of the bottom sensors data, used for display and debugging.",
         "full": "This is the public-site version of the bottom sensors data, written at the same time as the main data file. It is display and debug only — it does not add any new information beyond what the main data file contains.",
-        "src_fp": "2cb37e804e7b2dce",
+        "src_fp": "76728a9d7cf1a69d",
     },
     "bottom-sensors-parquet": {
         "short": "Daily per-stock sensor readings for the US board — shown for context only, ranks and gates nothing.",
         "full": "Each day this feed gathers sensor readings for each US stock on the board: distance from recent lows and highs, balance-sheet leverage ratios from regulatory filings, and other positioning metrics. It is display-only — it neither ranks stocks nor gates any alert or allocation. Leverage ratios need data still arriving through a weekly refresh, so many are null today. The thresholds defining sensor states are frozen; changing them needs a new record.",
-        "src_fp": "e051b15f28f894d7",
+        "src_fp": "d3b2cbe35a292ef0",
+    },
+    "causal-confluence-audit": {
+        "short": "Directed anti-mirage annotations over the confluence graph: price-derived sibling pairs, shared-parent suspects, and collider-risk warnings — display only, screened not gauntleted.",
+        "full": "The anti-mirage auditor (CHF-R10, W6) reads three committed artifacts and applies deterministic rules to produce three annotation categories. Duplicate exposure: pairs of candidate-cause features that share the same price-derived family (breadth, GEX, options entry, momentum, and similar) and may inflate apparent co-firing by sharing a common market-process parent. Shared parent suspect: confirms edges in the confluence graph whose two endpoint engines sit in the same R-ORTH independence cluster and additionally share a common driver family in the causal inventory — flagged as potential shared-parent artifacts rather than independent confirmation. Collider risk: mechanism cards that condition on downstream composites named in the forbidden-causes list (board_rank, final_verdict, and similar), which may open a collider back-door path. No R-ORTH statistics are recomputed (RUL-ORTH-9); no LLM-originated content appears (RUL-ORTH-11); all annotations are deterministic rule applications over committed artifacts. Absent inputs produce empty sections with gap notes, never phantom annotations. The confluence builder stamps matching confirms edges with an additive causal_audit field. The admin Causal Lab panel shows annotation counts and the latest five annotations.",
+        "src_fp": "de4ee9f80336560d",
+    },
+    "causal-edges": {
+        "short": "Weekly battery results: one row per screened causal edge with verdict, support, concerns, and cumulative trial-ledger width — screened, not gauntleted.",
+        "full": "Each week the causal edge scout runs a bounded battery over the top-priority frontier cells. Each record captures the cause feature, target, environment, lag set, declared environment map, and the full battery of identification tests required by the estimator law: a declared-lag effect estimate, a negative-lag placebo, a time-shift placebo, a circular block bootstrap, an overlap-corrected era split, and environment invariance over the pre-registered split set. Verdict vocabulary covers: screened candidate, era-specific, unstable, insufficient era span, insufficient power, null, and forbidden. The record also carries the cumulative scan family width at the time of scanning, per the launder-proof multiplicity law. Support fields carry weak, medium, or strong per lens alongside a concerns list. The feed never claims causality: the language sanitizer enforces this at write time. Null edges stay in the library and feed the kill mask — they are retained as confluence context, not deleted.",
+        "src_fp": "d3841fbbfbca72e2",
+    },
+    "causal-feature-inventory": {
+        "short": "Annotated catalogue of every feature that the causal scout may use as a candidate cause, target, or conditioning variable — display only, screened not gauntleted.",
+        "full": "Each night the causal inventory builder reads the causal priors config and probes every registered feature store to produce this catalogue. Each entry records the feature role vocabulary (candidate cause, target, conditioner, environment split, collider, and so on), era coverage, minimum lag constraint derived from publication cadence, PIT basis, and collider risk level. Forbidden-future features are hard-restricted to the target role; features matching the forbidden-causes pattern lose candidate-cause eligibility automatically. The inventory also runs a kill-mask sync check: if the compiled section of the priors config diverges from the current null library, the gap is flagged. All entries are display-only infrastructure. The inventory never ranks anything, never gates any alert, and never escalates any position. It is the input catalogue for the causal edge scout and for the anti-mirage auditor.",
+        "src_fp": "fa1f14e841273b38",
+    },
+    "causal-frontier": {
+        "short": "Coverage map of all cause-family by target-family by environment cells, with priority scores and exploration state — the causal scout's agenda.",
+        "full": "The frontier ledger maintains one cell for every combination of cause family, target family, and declared environment. Each cell carries an exploration state (unexplored, accruing, screened, null_basin, or killed) and a deterministic value heuristic score that drives which cells the weekly battery tackles next. The heuristic adds bonuses for unexplored cells and data-present features, penalizes null-basin and killed cells, and rewards broader era coverage. The frontier is the machine-owned agenda-setting mechanism: the operator ratifies promotions but does not have to hypothesize. The cumulative causal_scan width is printed on every frontier surface per the launder-proof multiplicity law.",
+        "src_fp": "e2610dad74b0ee7d",
+    },
+    "causal-lab-state": {
+        "short": "Nightly CHF heartbeat: funnel counts, cumulative scan width, frontier map summary, surprise queue, and LLM lane status — display only.",
+        "full": "Each nightly run of the causal frontier builder assembles this lab state snapshot. It carries the program heartbeat (wave, status), funnel counts (edges by verdict, nulls, mechanism cards by status), the cumulative scan FDR family width (printed on every surface per the launder-proof multiplicity law), a frontier map summary (total cells, cells by state, target families, environments), the surprise queue size and stalest source, and the LLM lane status (awaiting phase A until the operator completes a full triggered cycle with five valid cards and one promoted candidate). Data-absent notes are printed honestly when runner-local stores are unreachable. Nothing in this file gates, ranks, sizes, or escalates any money-path decision.",
+        "src_fp": "693255d5fa8e3a39",
+    },
+    "causal-mechanisms": {
+        "short": "Mechanism cards proposed by the LLM brainstorm lane — inert drafts with zero authority until a human or the cortex stakes them.",
+        "full": "When the LLM brainstorm chain runs (operator-triggered or behind the Phase-A autonomy gate), it files structured mechanism cards here. Each card holds a mechanism story in English and Chinese, a causal graph fragment with cause, target, mediators, confounders, and colliders to avoid, a frozen environment map hashed before any invariance test runs, two or more falsifiers, and a test specification. Cards are inert proposal material until a human operator or the cortex's own server-budgeted staking chokepoint acts on them. No card may transition to a registered or chartered state via an LLM actor — only script or human actors may change status. LLM numeric confidence is forbidden anywhere in this feed. The schema firewall deduplicates and validates every card before filing; an ISO-week idempotent lock prevents double-filing on token-flip retries. All entries are display-only with not_a_signal unconditionally true.",
+        "src_fp": "ce2d51b904566ac6",
+    },
+    "causal-nulls": {
+        "short": "Null library: every edge where the scout returned null, forbidden, or insufficient-era, kept permanently as case law and fed into the kill mask.",
+        "full": "When the causal scout returns a null, forbidden, or insufficient-era verdict for an edge, the record is appended here permanently. This library serves two roles: it populates the compiled section of the kill mask in the causal priors config (regenerated nightly, CI-synced so newly killed edges cannot silently become proposable again), and it feeds the weekly brainstorm pack so the LLM chain knows what has already been tried. Each record includes the edge, verdict, concerns, and a do-not-repropose field the scout prints when refusing to rerun a killed edge. Null edges are retained as confluence context — a standalone null does not delete the edge from consideration but prevents it from re-entering the scout queue. The cumulative width counter runs over the entire null library, not just recent additions.",
+        "src_fp": "0432a241637a062c",
+    },
+    "causal-surprise-queue": {
+        "short": "Unexplained-variance tickets from the MPC pathway miss, MRI release misses, and Oracle episode failures — seeds the causal brainstorm agenda.",
+        "full": "When the mechanism-pathways engine emits a no_attributable_driver result, or when the release forecast misses and the Oracle episodes fail to explain the move, a surprise ticket is filed here. Each ticket records the source artifact, the as-of date of that artifact (so the queue knows when a ticket is stale), and a brief description of the unexplained event. The frontier ledger and surprise queue together form the causal scout's full agenda: the frontier decides what has not been explored yet, and the surprise queue elevates specific unexplained episodes that most need a causal hypothesis. Stale tickets are not deleted — they are marked stale when their source artifact is refreshed without explaining the event.",
+        "src_fp": "c5256fcf54684fd3",
     },
     "claim-accountability": {
         "short": "A standing audit of signal-claim coverage, gradeability, and maturity across all desks.",
@@ -36,6 +81,16 @@ LOBE_DESCRIPTIONS = {
         "short": "A map of which signals tend to agree or conflict — shown for context only, never changes any decision.",
         "full": "This feed builds a map where nodes are engines, sectors, regimes, and theses, and links show how they relate: structural wiring, historical co-firing, lead-lag timing, and detected contradictions. The contradiction detector currently watches six specific signal pairs. Every link is display-only — this map never gates alerts, raises priorities, or changes rankings. Promoting any link to decision use requires its own separately registered validation study.",
         "src_fp": "2e87b9de964df238",
+    },
+    "context-candidates": {
+        "short": "",
+        "full": "",
+        "src_fp": "df77fb74704493da",
+    },
+    "context-risk": {
+        "short": "",
+        "full": "",
+        "src_fp": "7d32806c54260d63",
     },
     "cortex-attention-firings": {
         "short": "Log of the AI reviewer's attention claims, tracked to build a performance record before it earns any authority.",
@@ -60,17 +115,37 @@ LOBE_DESCRIPTIONS = {
     "covariance-spine": {
         "short": "",
         "full": "",
-        "src_fp": "12ea04f0aca72f8f",
+        "src_fp": "4c384a9319ffafee",
     },
     "covariance-spine-history": {
         "short": "",
         "full": "",
         "src_fp": "cde97c269bfed318",
     },
+    "cycle-pattern-state": {
+        "short": "",
+        "full": "",
+        "src_fp": "76104926fef20113",
+    },
     "dt-contra-state": {
         "short": "",
         "full": "",
         "src_fp": "eef3af10ebddce16",
+    },
+    "entity-thesis-mechanism-registry": {
+        "short": "",
+        "full": "",
+        "src_fp": "161761b3e23173b0",
+    },
+    "evidence-clock": {
+        "short": "",
+        "full": "",
+        "src_fp": "096288451a0909aa",
+    },
+    "evidence-clock-reviews": {
+        "short": "",
+        "full": "",
+        "src_fp": "44f0d5bd64b017bf",
     },
     "factor-contradictions-ledger": {
         "short": "Append-only log of days when the factor pair signals borrowed strength from each other — display only.",
@@ -122,10 +197,30 @@ LOBE_DESCRIPTIONS = {
         "full": "For each recent signal firing, this feed adds three diagnostic flags: whether it fired during a hostile market regime (stagflation, growth scare, or recession), whether market breadth was below normal that day, and whether the same engine and stock fired repeatedly in a short window (a rough proxy for a signal running late). All three flags are display-only context. Missing regime or breadth data makes the flags null rather than assumed.",
         "src_fp": "46496c4eda3afdca",
     },
+    "liquidity-plumbing": {
+        "short": "",
+        "full": "",
+        "src_fp": "277f5806406db13f",
+    },
     "machine-registry": {
         "short": "The official ledger of research hypotheses proposed by the AI reviewer and formally registered for tracking.",
         "full": "This append-only ledger records every research hypothesis the AI reviewer has formally registered, including the question, the pre-committed decision criteria, the time horizon, and a come-back date for review. A hard budget of three new registrations per calendar week applies — to add a new one, an old one must be retired. No scoring surface may read this ledger for decision-making; it is context and record-keeping only.",
         "src_fp": "15658cf62ffd9472",
+    },
+    "mechanism-pathways": {
+        "short": "",
+        "full": "",
+        "src_fp": "f5b7ebc6fff87d6d",
+    },
+    "mechanism-pathways-history": {
+        "short": "",
+        "full": "",
+        "src_fp": "a877a25246d46445",
+    },
+    "nasdaq-internals": {
+        "short": "",
+        "full": "",
+        "src_fp": "b0ee91358541276e",
     },
     "neuralweb-daily-brief": {
         "short": "A daily plain-language summary of what the Neural Web did today — deterministic, no trading language.",
@@ -145,7 +240,12 @@ LOBE_DESCRIPTIONS = {
     "neuralweb-mastermind-context": {
         "short": "The daily bridge feed packaging Neural Web context for the Terminal product — context only, no authority.",
         "full": "Each day this feed assembles a curated package of Neural Web context — market state, reliability summaries, detected contradictions, bottom-sensor readings, options-entry context, and the AI reviewer note — formatted for the Terminal product to read. Its candidate list draws from US standouts, alternative data, and radar tickers, capped at 250 rows. All five authority switches are off: this is context only. The Terminal product stays the decision-maker.",
-        "src_fp": "d99cc384529b1e56",
+        "src_fp": "af9df5338e5c1483",
+    },
+    "nw-health-run-history": {
+        "short": "",
+        "full": "",
+        "src_fp": "71bdaa94919c4ae4",
     },
     "ops-push-basket-freeze": {
         "short": "Deduplication log for basket-freeze churn alerts, preventing repeat notifications for the same event.",
@@ -156,6 +256,11 @@ LOBE_DESCRIPTIONS = {
         "short": "Deduplication log for system health heartbeat failure alerts.",
         "full": "When the system health check detects a heartbeat failure and dispatches an alert, a record is appended here. However, the heartbeat workflow does not commit this file, so the six-hour dedup window is effectively inactive for this lane — every heartbeat failure alert dispatches regardless of prior alerts. This is an honest limitation documented in the system.",
         "src_fp": "2a0ec953a0da02f1",
+    },
+    "ops-push-nw-health": {
+        "short": "",
+        "full": "",
+        "src_fp": "8c0a08a5f316c83d",
     },
     "ops-push-signal-sanity": {
         "short": "Deduplication log for signal-sanity tripwire alerts, with a six-hour suppression window.",
@@ -192,6 +297,11 @@ LOBE_DESCRIPTIONS = {
         "full": "When a priority alert is dispatched, a record is appended here keyed by the alert's source, type, asset, and send time. The sole purpose is to prevent duplicate pushes — this log is never read by any scoring or ranking surface and never raises or lowers any signal. Push alerts were formally enabled by an operator authorization event.",
         "src_fp": "bc0d8b48a00279ef",
     },
+    "release-forecast-latest": {
+        "short": "Before each major data release, this feed shows our projection alongside several reference benchmarks and the current Fed policy backdrop — display only, never conditions any trade.",
+        "full": "Each night before CPI and jobs report releases, this feed publishes our quantitative projection (point estimate plus a confidence band) for the upcoming print, compares it against reference benchmarks including the Cleveland Fed nowcast, and attaches the current Fed policy context: stance, the market-versus-Fed-dots gap in basis points, implied cuts over the next twelve months, and the next meeting date. The surprise-skew field shows which direction our projection leans relative to the benchmark set, in units of historical forecast error. A running scoreboard accumulates actual versus projected accuracy as prints land. Everything here is display-only and horizon-agnostic context — it never gates alerts, conditions entries, or changes any score. Forward accrual began in July 2026.",
+        "src_fp": "18153b17f4e42daf",
+    },
     "research-queue": {
         "short": "An advisory ranked list of research candidates from the AI reviewer's pipeline — purely informational.",
         "full": "This feed ranks potential research items from the hypothesis inbox, the registered-hypothesis ledger, the signal-species registry, and the trial ledger into buckets: high value to build now, blocked by missing data, too sparse, duplicate of existing work, or invalid shape. It is advisory only — the formal registration process stays the sole gatekeeper for what gets pursued. It is off the nightly render path and holds no authority over rankings, alerts, or sizing.",
@@ -222,6 +332,31 @@ LOBE_DESCRIPTIONS = {
         "full": "Each day the signal-export process writes a manifest listing every artifact it produced. Three downstream consumers read this manifest to confirm the pipeline ran completely. It serves as a conformance checkpoint — if an artifact is missing, the manifest exposes the gap.",
         "src_fp": "07a8b02b06bde190",
     },
+    "site-attention-deterministic": {
+        "short": "",
+        "full": "",
+        "src_fp": "5561d4d16c467a5d",
+    },
+    "site-causal-lab-state": {
+        "short": "Public-site copy of the CHF lab heartbeat, byte-identical to the data copy.",
+        "full": "This is the site-published copy of the causal lab state, written at the same time by the causal frontier builder. It is the preferred read source for the admin Causal Lab panel and for any future committee display surface. Byte-identical to the data copy. Display-only context artifact with not-a-signal status unconditionally.",
+        "src_fp": "03680cf0a66fc266",
+    },
+    "site-china-cycle-phase": {
+        "short": "",
+        "full": "",
+        "src_fp": "d4c954f030a161fd",
+    },
+    "site-china-market-state": {
+        "short": "",
+        "full": "",
+        "src_fp": "f6b3de953945780c",
+    },
+    "site-context-risk": {
+        "short": "",
+        "full": "",
+        "src_fp": "a30d99ba05cbcea5",
+    },
     "site-covariance-spine": {
         "short": "",
         "full": "",
@@ -237,6 +372,11 @@ LOBE_DESCRIPTIONS = {
         "full": "The signal-export process writes a snapshot of the key signals along with a hash of its inputs. Three consumers read this to verify that signal values match what was produced and that nothing changed unexpectedly between runs. It functions as an integrity check for the pipeline.",
         "src_fp": "067a74de2b8050a1",
     },
+    "site-mechanism-pathways": {
+        "short": "",
+        "full": "",
+        "src_fp": "c873e26a819487c4",
+    },
     "site-neuralweb-daily-brief": {
         "short": "The public-site copy of the Neural Web daily brief, read by the committee page.",
         "full": "This is the public-site mirror of the Neural Web daily brief, written atomically alongside the data copy by the same script. The committee page on the public site reads this copy to display the daily summary to users. It is display and operations only with no authority.",
@@ -245,12 +385,17 @@ LOBE_DESCRIPTIONS = {
     "site-neuralweb-health": {
         "short": "The public-site copy of the Neural Web health status file, for the admin panel and frontend to read.",
         "full": "This is the public-site mirror of the Neural Web health status, written atomically alongside the data copy by the same script. It is display and operations use only with no authority. The admin panel and frontend consume this copy to show lobe status.",
-        "src_fp": "09ae917d1257816a",
+        "src_fp": "32f95c6fd368941c",
     },
     "site-neuralweb-mastermind-context": {
         "short": "The public-site copy of the Terminal bridge feed, byte-identical to the canonical version.",
         "full": "This is the public-site copy of the Neural Web to Terminal bridge feed, written at the same time as the canonical data copy. The Terminal product's sync process picks this file up automatically as part of its existing site-folder checkout, with no new sync infrastructure required. It is context only and carries no authority.",
-        "src_fp": "2bed2d90b921edab",
+        "src_fp": "332a083b7ac6a113",
+    },
+    "site-neuralweb-ruling-graph": {
+        "short": "",
+        "full": "",
+        "src_fp": "a9c9def77b47a937",
     },
     "site-qledger-track-record": {
         "short": "Daily track-record output for the signal ledger, combining raw grades and ladder states.",
@@ -262,6 +407,26 @@ LOBE_DESCRIPTIONS = {
         "full": "The radar builder assembles per-ticker Risk Radar data and writes it to the public site each day. Six other parts of the system read this feed. It provides the ticker-resolution view of risk conditions that complements the broader market-state signals.",
         "src_fp": "26e960ae67900d05",
     },
+    "site-theme-asymmetry": {
+        "short": "",
+        "full": "",
+        "src_fp": "f97bf8dc53c56128",
+    },
+    "site-theme-pathways": {
+        "short": "",
+        "full": "",
+        "src_fp": "75e5bcaae48f9fd6",
+    },
+    "site-theme-state": {
+        "short": "",
+        "full": "",
+        "src_fp": "8e69e2d21d827c90",
+    },
+    "site-theme-thesis": {
+        "short": "",
+        "full": "",
+        "src_fp": "2655c4c92f392a60",
+    },
     "site-us-standouts": {
         "short": "Daily list of US stock standouts published to the public site and read by the Terminal screener.",
         "full": "Each day the engine scores US stocks and writes the resulting standout list to the public site. This feed is the anchor contract for the Terminal product's stock screener — any downstream tool that reads standout data relies on it. It has 16 consumers, making it one of the most widely read feeds in the system.",
@@ -270,16 +435,36 @@ LOBE_DESCRIPTIONS = {
     "spine-index": {
         "short": "The master searchable table joining every engine's recent signal history, rebuilt fresh each night.",
         "full": "Each night the system rebuilds a unified table that joins signal history from all major engines: US, Hong Kong, Canada, and China boards, the signal ledger, and sector-cycle forward logs. It also pulls in graded rows from the track-record store. Because it is a fully rebuilt derived view rather than a running ledger, overwriting it each night is correct. Several source ledgers are still pending formal registration in a future cleanup sweep.",
-        "src_fp": "0308c4a886992247",
+        "src_fp": "7a23127513aaf65e",
+    },
+    "theme-asymmetry": {
+        "short": "",
+        "full": "",
+        "src_fp": "2283b351521c4ebd",
+    },
+    "theme-pathways": {
+        "short": "",
+        "full": "",
+        "src_fp": "4cf30e315f3c4683",
+    },
+    "theme-phase-history": {
+        "short": "",
+        "full": "",
+        "src_fp": "f875255fb62d09b1",
+    },
+    "theme-state": {
+        "short": "",
+        "full": "",
+        "src_fp": "72f09076e95ca26a",
+    },
+    "theme-thesis-ledger": {
+        "short": "",
+        "full": "",
+        "src_fp": "cc07bd7fe36f547a",
     },
     "world-state": {
         "short": "A daily one-page snapshot of the full market state: regime, risk, breadth, alerts, and data health.",
         "full": "Each day this feed assembles the current market regime, risk-radar verdict, breadth conditions, sector-rotation summary, data-health status, and alert census into one unified snapshot. Any unavailable source leaves that section null rather than fabricated — gaps are listed explicitly. Ten other parts of the system read this feed. A planned qualitative-intelligence section is currently null, pending a cross-team ruling.",
         "src_fp": "280c564245a5e3d4",
-    },
-    "release-forecast-latest": {
-        "short": "Before each major data release, this feed shows our projection alongside several reference benchmarks and the current Fed policy backdrop — display only, never conditions any trade.",
-        "full": "Each night before CPI and jobs report releases, this feed publishes our quantitative projection (point estimate plus a confidence band) for the upcoming print, compares it against reference benchmarks including the Cleveland Fed nowcast, and attaches the current Fed policy context: stance, the market-versus-Fed-dots gap in basis points, implied cuts over the next twelve months, and the next meeting date. The surprise-skew field shows which direction our projection leans relative to the benchmark set, in units of historical forecast error. A running scoreboard accumulates actual versus projected accuracy as prints land. Everything here is display-only and horizon-agnostic context — it never gates alerts, conditions entries, or changes any score. Forward accrual began in July 2026.",
-        "src_fp": "18153b17f4e42daf",
     },
 }

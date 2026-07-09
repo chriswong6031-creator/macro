@@ -1147,6 +1147,35 @@ def build_graph(
     # ── R-ORTH PR-4: independence block (additive, fail-open) ─────────────────
     independence = _read_independence_block(repo, gaps)
 
+    # ── CHF W6: causal_confluence_audit stamping (additive, fail-open) ─────────
+    # Reads data/neuralweb/causal_confluence_audit.json and stamps matching
+    # confirms edges with causal_audit: {duplicate_risk|shared_parent_suspect}.
+    # Tolerant when absent: no error, no edge modified.
+    causal_audit_artifact: dict | None = None
+    _audit_path = repo / "data" / "neuralweb" / "causal_confluence_audit.json"
+    if _audit_path.exists():
+        try:
+            causal_audit_artifact = json.loads(_audit_path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("confluence: causal_confluence_audit.json read failed — %s", exc)
+            gaps.append(f"causal_confluence_audit.json: read error — {exc}")
+
+    if causal_audit_artifact is not None:
+        try:
+            from engine.neuralweb.causal_audit import stamp_confluence_edges  # noqa: PLC0415
+            # stamp_confluence_edges returns a deep copy with edges annotated
+            # We only want the edges list modified; rebuild edges from the copy
+            _stamped = stamp_confluence_edges({"edges": edges}, causal_audit_artifact)
+            edges = _stamped.get("edges", edges)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("confluence: causal_audit stamping failed (non-fatal) — %s", exc)
+            gaps.append(f"causal_audit stamping failed: {exc}")
+    else:
+        gaps.append(
+            "causal_confluence_audit.json: absent — confirms edges not stamped "
+            "(CHF W6 not yet run or artifact not committed)"
+        )
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "schema": _SCHEMA,

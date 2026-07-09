@@ -135,10 +135,11 @@ const ICONS = {
   vector:      NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M9.5 7.5h4.2a2.2 2 0 0 1 0 4H9.5m0 0h4.6a2.2 2 0 0 1 0 4.4H9.5m0-8.4V5.5m0 13v-2m2.4-11v2m0 7.4v2"/>'),
   long_hold:     NAV_ICO('<polyline points="3 18 8 10 13 14 18 6"/><line x1="3" y1="21" x2="21" y2="21"/>'),
   context_lobe:  NAV_ICO('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'),
+  causal_lab:    NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/><circle cx="17" cy="7" r="3"/><path d="M15.5 5.5l3 3"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -1759,6 +1760,151 @@ RENDER.context_lobe = async () => {
     <div class="card">${manifestHtml}</div>
     <div class="section">Candidate Context <span class="cnt">${d.n_candidates_total || 0}</span></div>
     <div class="card">${candidatesHtml}</div>`;
+};
+
+/* ---- Causal Lab --------------------------------------------------------- */
+RENDER.causal_lab = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted" style="margin-bottom:8px">Loading…</div>`;
+  const d = await api("/api/causal_lab");
+
+  const freshStr = d.freshness
+    ? `produced ${esc(String(d.freshness).slice(0, 16).replace("T", " "))} UTC · ${fmtAge(d.age_hours)} old`
+    : "artifact not yet written (runs on Mac host nightly)";
+
+  // display-only / annotate-only banner
+  const banner = `<div class="banner show" style="margin-bottom:12px;padding:8px 12px;border-radius:6px;background:var(--surface2,#1e2030);border:1px solid var(--border,#334)">
+    <span style="font-weight:600">Display-only · annotate_only · not_a_signal</span>
+    <span class="sub" style="margin-left:8px">CHF epistemic infrastructure — causal-candidate screened, not gauntleted. No authority surface.</span>
+  </div>`;
+
+  if (d.error) {
+    v.innerHTML = banner + card("Causal Lab", `<div class="sub muted">${esc(d.error)}</div>`);
+    return;
+  }
+
+  // heartbeat
+  const hb = d.heartbeat || {};
+  const hbHtml = `<div class="kv"><span>Program</span><b>${esc(hb.program || "—")}</b></div>
+    <div class="kv"><span>Wave</span><b>${esc(hb.wave || "—")}</b></div>
+    <div class="kv"><span>Status</span><b>${esc(hb.status || "—")}</b></div>`;
+
+  // funnel counts
+  const fn = d.funnel || {};
+  const evByVerdict = fn.edges_by_verdict || {};
+  const verdictChips = Object.entries(evByVerdict)
+    .map(([k, n]) => `<span class="statpill">${esc(k)} <b>${n}</b></span>`)
+    .join(" ") || "<span class='muted sub'>none</span>";
+  const mechByStatus = fn.mechanisms_by_status || {};
+  const mechChips = Object.entries(mechByStatus)
+    .map(([k, n]) => `<span class="statpill">${esc(k)} <b>${n}</b></span>`)
+    .join(" ") || "<span class='muted sub'>none</span>";
+  const funnelHtml = `
+    <div class="kv"><span>Edges by verdict</span><b>${verdictChips}</b></div>
+    <div class="kv"><span>Total edges</span><b>${fn.total_edges || 0}</b></div>
+    <div class="kv"><span>Nulls</span><b>${d.n_nulls || 0}</b></div>
+    <div class="kv"><span>Mechanisms by status</span><b>${mechChips}</b></div>
+    <div class="kv"><span>Total mechanisms</span><b>${d.n_mechanisms || 0}</b></div>`;
+
+  // scan width (cumulative causal_scan FDR family width — CHF-R3)
+  const sw = d.scan_width || {};
+  const swHtml = `<div class="kv"><span>Cumulative causal_scan width</span><b>${sw.cumulative_width || 0}</b></div>
+    <div class="sub muted" style="margin-top:4px">${esc(sw.description || "")}</div>`;
+
+  // frontier summary
+  const fr = d.frontier || {};
+  const frStateCells = Object.entries(fr.cells_by_state || {})
+    .map(([k, n]) => `<span class="statpill">${esc(k)} <b>${n}</b></span>`)
+    .join(" ") || "<span class='muted sub'>—</span>";
+  const frHtml = `
+    <div class="kv"><span>Total cells</span><b>${fr.total_cells || 0}</b></div>
+    <div class="kv"><span>Cells by state</span><b>${frStateCells}</b></div>
+    <div class="kv"><span>Target families</span><b>${esc((fr.target_families || []).join(", ") || "—")}</b></div>
+    <div class="kv"><span>Environments</span><b>${esc((fr.environments || []).join(", ") || "—")}</b></div>`;
+
+  // surprise queue
+  const sq = d.surprise_queue || {};
+  const sqHtml = `<div class="kv"><span>Queue size</span><b>${sq.size || 0}</b></div>
+    <div class="kv"><span>Stalest source</span><b>${esc(sq.stalest_source || "—")}</b></div>
+    <div class="kv"><span>Stalest asof</span><b>${esc(sq.stalest_source_asof || "—")}</b></div>`;
+
+  // LLM lane status
+  const ll = d.llm_lane || {};
+  const llStatusClass = ll.status === "ok" ? "s-ok" : (ll.status === "degraded" ? "s-warn" : "s-na");
+  const llHtml = `<div class="kv"><span>Status</span><b><span class="statpill ${llStatusClass}">${esc(ll.status || "unknown")}</span></b></div>
+    <div class="sub muted" style="margin-top:4px">${esc(ll.description || "")}</div>`;
+
+  // latest edges table
+  const latEdges = d.latest_edges || [];
+  let edgesHtml = "";
+  if (!latEdges.length) {
+    edgesHtml = `<div class="sub muted">no edges yet</div>`;
+  } else {
+    const rows = latEdges.map(e => `<tr>
+      <td class="mono">${esc(e.edge_id || "—")}</td>
+      <td class="sub">${esc(e.cause_feature_id || "—")}</td>
+      <td class="sub">${esc(e.target_id || "—")}</td>
+      <td><span class="statpill">${esc(e.verdict || "—")}</span></td>
+      <td class="r">${e.n_concerns != null ? e.n_concerns : "—"}</td>
+      <td class="sub">${esc((e.scanned_at || "").slice(0, 10))}</td>
+    </tr>`).join("");
+    edgesHtml = `<table><thead><tr>
+      <th>Edge ID</th><th>Cause</th><th>Target</th><th>Verdict</th><th class="r">Concerns</th><th>Scanned</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // audit counts
+  const ac = d.audit_counts || {};
+  const auditAvail = ac.available !== false;
+  const acHtml = auditAvail
+    ? `<div class="kv"><span>Duplicate exposure</span><b>${ac.duplicate_exposure || 0}</b></div>
+       <div class="kv"><span>Shared parent suspect</span><b>${ac.shared_parent_suspect || 0}</b></div>
+       <div class="kv"><span>Collider risk</span><b>${ac.collider_risk || 0}</b></div>
+       <div class="kv"><span>Total annotations</span><b>${ac.total || 0}</b></div>
+       <div class="kv sub muted"><span>Audit asof</span><b>${esc(ac.asof || "—")}</b></div>`
+    : `<div class="sub muted">causal_confluence_audit.json not yet written (W6 step pending)</div>`;
+
+  // latest annotations
+  const anns = d.latest_audit_annotations || [];
+  let annsHtml = "";
+  if (!anns.length) {
+    annsHtml = `<div class="sub muted">no annotations yet</div>`;
+  } else {
+    annsHtml = anns.map(a => `<div style="margin-bottom:8px">
+      <span class="statpill">${esc(a.rule_id || "—")}</span>
+      <span class="sub" style="margin-left:6px">${esc(a.annotation_type || "—")}</span>
+      <div class="note sub muted" style="margin-top:4px">${esc(a.display_text || "—")}</div>
+    </div>`).join("");
+  }
+
+  // data absent notes
+  const danotes = d.data_absent_notes || [];
+  const daHtml = danotes.length
+    ? `<div class="section">Data Absent Notes</div><div class="card">${danotes.map(n => `<div class="note muted">${esc(n)}</div>`).join("")}</div>`
+    : "";
+
+  v.innerHTML = `
+    ${banner}
+    <div class="sub muted" style="margin-bottom:8px">${esc(freshStr)}</div>
+    ${daHtml}
+    <div class="section">Heartbeat</div>
+    <div class="card">${hbHtml}</div>
+    <div class="section">Funnel Counts</div>
+    <div class="card">${funnelHtml}</div>
+    <div class="section">Causal Scan Width</div>
+    <div class="card">${swHtml}</div>
+    <div class="section">Frontier Map</div>
+    <div class="card">${frHtml}</div>
+    <div class="section">Surprise Queue</div>
+    <div class="card">${sqHtml}</div>
+    <div class="section">LLM Lane</div>
+    <div class="card">${llHtml}</div>
+    <div class="section">Latest Edges <span class="cnt">${d.n_edges || 0}</span></div>
+    <div class="card">${edgesHtml}</div>
+    <div class="section">Anti-Mirage Audit Counts</div>
+    <div class="card">${acHtml}</div>
+    <div class="section">Latest Audit Annotations <span class="cnt">${anns.length}</span></div>
+    <div class="card">${annsHtml}</div>`;
 };
 
 /* ---- boot --------------------------------------------------------------- */
