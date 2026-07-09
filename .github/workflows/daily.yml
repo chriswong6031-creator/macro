@@ -1830,6 +1830,12 @@ jobs:
     env:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Dedicated metered API key for the cortex job — decouples deliberation from
+      # the shared OAuth session quota (root cause of 429 rate_limit_error runs).
+      # OPERATOR ACTION: create a GitHub secret CORTEX_ANTHROPIC_API_KEY with a
+      # metered Anthropic API key.  Absent/empty = transparent fallback to the
+      # shared ANTHROPIC_API_KEY above; nothing breaks if the secret is not set.
+      CORTEX_ANTHROPIC_API_KEY: ${{ secrets.CORTEX_ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:

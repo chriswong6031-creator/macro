@@ -1648,3 +1648,262 @@ class TestDegradedGate:
             "Second run must attempt the LLM (staleness gate must not fire after a "
             "degraded run) — sticky-failure bug regression"
         )
+
+
+# ---------------------------------------------------------------------------
+# 16. Rate-limit backoff + Retry-After + fallback model (PR-1 resilience)
+# ---------------------------------------------------------------------------
+
+class TestRateLimitResilience:
+    """Tests for 429 backoff, Retry-After honoring, and fallback-model path."""
+
+    def _make_rate_limit_exc(self, retry_after: float | None = None):
+        """Build a mock RateLimitError with optional Retry-After header."""
+        exc = Exception("429 rate_limit: too many requests")
+        # Attach .response.headers so _retry_after_secs can extract the value
+        if retry_after is not None:
+            headers = {"retry-after": str(retry_after)}
+            resp_mock = MagicMock()
+            resp_mock.headers = headers
+            exc.response = resp_mock
+        return exc
+
+    def test_429_with_retry_after_sleeps_correct_duration(self, repo):
+        """On a 429 with Retry-After header, sleep must honor the header value."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        call_count = [0]
+        # First call: 429 with Retry-After: 5
+        # Second call: succeeds with write_memo
+        # Third call: end_turn
+
+        def side_effect(**kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise self._make_rate_limit_exc(retry_after=5.0)
+            if call_count[0] == 2:
+                return _make_write_memo_resp()
+            return _make_end_turn_resp()
+
+        provider = _make_mock_provider("anthropic", env_var="AK", side_effect=side_effect)
+        cfg = {"max_tool_calls": 5, "max_tokens": 512}
+
+        sleep_calls = []
+        with patch("engine.neuralweb.cortex.time.sleep", side_effect=lambda s: sleep_calls.append(s)):
+            _run_tool_loop(repo, cfg, [provider], _NOW_STR, _PROBATION)
+
+        # Must have slept approximately the Retry-After value
+        assert any(abs(s - 5.0) < 1.0 for s in sleep_calls), (
+            f"Expected sleep ~5s from Retry-After header; got sleep_calls={sleep_calls}"
+        )
+
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        assert memo_path.exists(), "memo must be written even after a 429 retry"
+
+    def test_429_without_retry_after_uses_exponential_backoff(self, repo):
+        """On a 429 without Retry-After, backoff must follow the [15, 60, 180] table."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        call_count = [0]
+
+        def side_effect(**kwargs):
+            call_count[0] += 1
+            if call_count[0] < 3:
+                raise self._make_rate_limit_exc(retry_after=None)
+            if call_count[0] == 3:
+                return _make_write_memo_resp()
+            return _make_end_turn_resp()
+
+        provider = _make_mock_provider("anthropic", env_var="AK", side_effect=side_effect)
+        cfg = {"max_tool_calls": 5, "max_tokens": 512}
+
+        sleep_calls = []
+        with patch("engine.neuralweb.cortex.time.sleep", side_effect=lambda s: sleep_calls.append(s)):
+            _run_tool_loop(repo, cfg, [provider], _NOW_STR, _PROBATION)
+
+        # First 429: sleep 15s; second 429: sleep 60s
+        assert len(sleep_calls) >= 2, f"Expected at least 2 sleep calls; got {sleep_calls}"
+        assert abs(sleep_calls[0] - 15.0) < 1.0, f"First backoff should be ~15s; got {sleep_calls[0]}"
+        assert abs(sleep_calls[1] - 60.0) < 1.0, f"Second backoff should be ~60s; got {sleep_calls[1]}"
+
+    def test_fallback_model_produces_warn_status(self, repo):
+        """When primary model exhausts rate-limit retries, fallback model produces status=warn."""
+        from engine.neuralweb.cortex import _run_tool_loop, _RATE_LIMIT_MAX_ATTEMPTS
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        # Primary model: always 429 (exhaust all _RATE_LIMIT_MAX_ATTEMPTS attempts)
+        p1_calls = [0]
+
+        def p1_side(**kwargs):
+            p1_calls[0] += 1
+            raise self._make_rate_limit_exc(retry_after=None)
+
+        # Fallback model: succeeds with write_memo then end_turn
+        p2_seq = [_make_write_memo_resp(), _make_end_turn_resp()]
+        p2_iter = iter(p2_seq)
+        p2_calls = [0]
+
+        def p2_side(**kwargs):
+            p2_calls[0] += 1
+            return next(p2_iter)
+
+        # Same provider, two clients with different side effects to simulate model switch
+        # We provide one provider; _run_tool_loop reuses it with the fallback model
+        provider = _make_mock_provider("anthropic", env_var="AK")
+        # The _make_call in _run_tool_loop will call client.messages.create;
+        # we hook it to return p1 behaviour until fallback, then p2
+        total_calls = [0]
+        fallback_started = [False]
+
+        original_create = provider["client"].messages.create.side_effect
+
+        def unified_side(**kwargs):
+            total_calls[0] += 1
+            model = kwargs.get("model", "")
+            from engine.neuralweb.cortex import _DEFAULT_FALLBACK_MODEL
+            if model == _DEFAULT_FALLBACK_MODEL:
+                fallback_started[0] = True
+                return p2_side(**kwargs)
+            return p1_side(**kwargs)
+
+        provider["client"].messages.create.side_effect = unified_side
+        # Patch time.sleep to avoid real waits in tests
+        cfg = {"max_tool_calls": 5, "max_tokens": 512, "fallback_model": "claude-sonnet-4-6"}
+
+        with patch("engine.neuralweb.cortex.time.sleep"):
+            _run_tool_loop(repo, cfg, [provider], _NOW_STR, _PROBATION)
+
+        assert fallback_started[0], "Fallback model path must have been triggered"
+
+        memo = json.loads((repo / "data" / "neuralweb" / "cortex" / "memo.json").read_text())
+        rs = memo.get("run_status", {})
+        assert rs.get("status") == "warn", (
+            f"Fallback-model run with tool calls must produce status='warn'; got {rs.get('status')!r}"
+        )
+        assert rs.get("degradation_reason") == "model_fallback", (
+            f"degradation_reason must be 'model_fallback'; got {rs.get('degradation_reason')!r}"
+        )
+        assert rs.get("model_used") == "claude-sonnet-4-6", (
+            f"model_used must be the fallback model; got {rs.get('model_used')!r}"
+        )
+
+    def test_fallback_never_fires_when_primary_succeeds(self, repo):
+        """When the primary model succeeds, fallback_model_attempted must remain False."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        seq = [_make_write_memo_resp(), _make_end_turn_resp()]
+        seq_iter = iter(seq)
+
+        def side(**kwargs):
+            model = kwargs.get("model", "")
+            from engine.neuralweb.cortex import _DEFAULT_FALLBACK_MODEL
+            assert model != _DEFAULT_FALLBACK_MODEL, (
+                f"Fallback model must NOT be used when primary succeeds; got model={model!r}"
+            )
+            return next(seq_iter)
+
+        provider = _make_mock_provider("anthropic", env_var="AK", side_effect=side)
+        cfg = {"max_tool_calls": 5, "max_tokens": 512, "fallback_model": "claude-sonnet-4-6"}
+
+        with patch("engine.neuralweb.cortex.time.sleep"):
+            _run_tool_loop(repo, cfg, [provider], _NOW_STR, _PROBATION)
+
+        memo = json.loads((repo / "data" / "neuralweb" / "cortex" / "memo.json").read_text())
+        rs = memo.get("run_status", {})
+        assert rs.get("status") == "ok", (
+            f"Primary-success run must produce status='ok'; got {rs.get('status')!r}"
+        )
+        assert rs.get("degradation_reason") is None
+
+    def test_probation_memo_json_consistency(self, repo):
+        """probation.json and memo['probation'] must be consistent after a run."""
+        from engine.neuralweb.cortex import run
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        seq = [_make_write_memo_resp(), _make_end_turn_resp()]
+        seq_iter = iter(seq)
+        mock_client = MagicMock()
+        mock_client.messages.create.side_effect = lambda **kwargs: next(seq_iter)
+        provider = {"name": "anthropic", "env_var": "AK", "cred": "tok",
+                    "client": mock_client, "model": "claude-opus-4-8"}
+
+        with patch("engine.neuralweb.cortex._build_providers", return_value=[provider]):
+            run(root=repo, force=True)
+
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        probation_path = repo / "data" / "neuralweb" / "cortex" / "probation.json"
+
+        assert memo_path.exists(), "memo.json must exist after run"
+        assert probation_path.exists(), "probation.json must exist after run"
+
+        memo = json.loads(memo_path.read_text())
+        probation = json.loads(probation_path.read_text())
+
+        memo_prob = memo.get("probation", {})
+        # Core keys must match
+        assert memo_prob.get("granted") == probation.get("granted"), (
+            f"probation.granted disagrees: memo={memo_prob.get('granted')} "
+            f"vs file={probation.get('granted')}"
+        )
+        assert memo_prob.get("tier") == probation.get("tier"), (
+            f"probation.tier disagrees: memo={memo_prob.get('tier')!r} "
+            f"vs file={probation.get('tier')!r}"
+        )
+
+    def test_cortex_api_key_preferred_over_shared_key(self, repo):
+        """When CORTEX_ANTHROPIC_API_KEY is set, it must be used over ANTHROPIC_API_KEY."""
+        import os as _os
+        from engine.neuralweb.cortex import _build_providers, _CORTEX_API_KEY_ENV
+
+        env_backup = _os.environ.copy()
+        try:
+            _os.environ["CORTEX_ANTHROPIC_API_KEY"] = "cortex-key-xyz"
+            _os.environ["ANTHROPIC_API_KEY"] = "shared-key-abc"
+            _os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+
+            import anthropic
+            built_clients = []
+
+            original_init = anthropic.Anthropic.__init__
+
+            def mock_init(self, **kwargs):
+                built_clients.append(kwargs)
+                # Don't actually connect — skip parent init
+                self.__dict__["_api_key"] = kwargs.get("api_key", "")
+
+            with patch.object(anthropic.Anthropic, "__init__", mock_init):
+                # _build_providers calls llm_auth.build_providers which calls lib.config.secret
+                # which reads from env; we need the env set (done above)
+                # Just check that api_key_env was set to CORTEX_ANTHROPIC_API_KEY
+                cfg_override_seen = {}
+
+                original_bp = None
+                try:
+                    from engine import llm_auth as _llm_auth
+                    original_bp = _llm_auth.build_providers
+
+                    def mock_bp(cfg, **kwargs):
+                        cfg_override_seen.update(cfg)
+                        return []
+
+                    with patch("engine.llm_auth.build_providers", side_effect=mock_bp):
+                        _build_providers({})
+
+                    assert cfg_override_seen.get("api_key_env") == _CORTEX_API_KEY_ENV, (
+                        f"When {_CORTEX_API_KEY_ENV} is set, api_key_env must be overridden; "
+                        f"got {cfg_override_seen.get('api_key_env')!r}"
+                    )
+                finally:
+                    if original_bp is not None:
+                        pass  # patch context manager handles restore
+        finally:
+            _os.environ.clear()
+            _os.environ.update(env_backup)
