@@ -641,6 +641,20 @@
   #hk-command-panel .cp-tape .row a.tk{font-weight:800;color:inherit;text-decoration:none}
   #hk-command-panel .cp-tape .row a.tk:hover{text-decoration:underline}
   @media (max-width:640px){ #hk-command-panel .cp-watch{grid-template-columns:1fr} #hk-command-panel .cp-meters{margin-left:0;width:100%} }
+  /* ===== combined Southbound & A/H section (flow + cross-listing value, each with a read) ===== */
+  #sb-ah-combined .sbah-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:11px;margin:6px 0 10px}
+  #sb-ah-combined .sbah-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  #sb-ah-combined .sbah-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+  #sb-ah-combined .sbah-t{font-size:12.5px;font-weight:800}
+  #sb-ah-combined .sbah-sig{font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;white-space:nowrap;
+    border:1px solid var(--c,var(--muted));color:var(--c,var(--muted));background:color-mix(in srgb,var(--c,var(--muted)) 13%,transparent)}
+  #sb-ah-combined .sig-in{--c:var(--up)}
+  #sb-ah-combined .sig-out{--c:var(--down)}
+  #sb-ah-combined .sig-neu{--c:var(--muted)}
+  #sb-ah-combined .sbah-read{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45}
+  #sb-ah-combined .sbah-pairs{margin-top:9px;width:100%;font-size:11px;border-collapse:collapse}
+  #sb-ah-combined .sbah-pairs td{padding:2px 0;border-bottom:1px solid var(--line)}
+  #sb-ah-combined .sbah-pairs td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -1558,7 +1572,6 @@
           <b>{{ (_stress*100)|round|int }}%</b> {{ t('stress', '压力') }}
           {% if setups and setups.overlay and setups.overlay.drivers %}{% for d in setups.overlay.drivers %}<span class="ov-chip">{{ d }}</span>{% endfor %}{% endif %}
           {% if setups and setups.cohort and setups.cohort.state %} · {{ t('leadership', '领先股') }} <b>{{ setups.cohort.state }}</b>{% endif %}
-          — {{ t('a hot tape taxes a chase and caps size; it never gates the rank.', '过热行情会对追高征税并限制仓位；从不决定排名。') }}
         </div>
         {# H5 PEG-LIQUIDITY REGIME conditioner (ACCRUE — reports/h5-peg-liquidity-phase0.md).
            agg_balance-driven EASY/TIGHT label + one sizing-context sentence. Display + sizing
@@ -1601,15 +1614,7 @@
        "what this desk is / isn't" caveat; the ~6× repeated "not a buy list" lines below
        are DELETED. Per-card trust tier (nb-tier) + the §5.0 order tooltip stay. #}
     <div class="desk-manifest">
-      <div class="dm-cell dm-is">
-        <div class="dm-k">✓ {{ t('What this desk is', '本研判台是什么') }}</div>
-        <div class="dm-v">{{ t('A <b>flow-and-structure screen</b>. It ranks HK names by flow, A/H value and cleaner relative strength.', '一个<b>资金与结构筛选</b>。按资金流、A/H 价值与较干净的相对强度排序港股。') }}</div>
-      </div>
-      <div class="dm-cell dm-isnt">
-        <div class="dm-k">✕ {{ t('What it isn\'t', '它不是什么') }}</div>
-        <div class="dm-v">{{ t('<b>Not a buy list</b>. The scoreboard is still building, so treat the rank as a screen.', '<b>不是买入清单</b>。记分牌仍在积累，请把排名当作筛选。') }}</div>
-      </div>
-      <div class="dm-tierline">{{ t('<b>Trust tier: screen.</b> Cycle state and sizing are context.', '<b>信任等级：筛选。</b>周期状态与仓位仅作背景。') }}
+      <div class="dm-tierline">{{ t('A <b>flow &amp; structure screen</b> — ranked by flow, A/H value and relative strength. A research shortlist, <b>not a buy list</b>.', '一个<b>资金与结构筛选</b> — 按资金流、A/H 价值与相对强度排序。研究备选清单，<b>非买入清单</b>。') }}
         <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></div>
     </div>
   </div>
@@ -1702,12 +1707,9 @@
         {% if n.lead %}
         <div class="nb-lead"><span class="l-en">{{ n.lead.en }}</span><span class="l-zh">{{ n.lead.zh }}</span></div>
         {% endif %}
-        {% if n.group or n.entry_window %}
+        {% if n.group %}
         <div class="nb-ripe">
-          {% if n.group %}<span class="nb-grp grp-{{ 'open' if n.group == 'entry_open' else 'set' }}">{{ t('Entry open', '入场开启') if n.group == 'entry_open' else t('Setting up', '蓄势中') }}</span>{% endif %}
-          {% if n.entry_window and n.entry_window.kind %}<span class="nb-ewin ew-{{ n.entry_window.kind }}"><span class="l-en">{{ n.entry_window.en }}</span><span class="l-zh">{{ n.entry_window.zh }}</span></span>{% endif %}
-          {% if n.washout_2w %}<span class="nb-port pt-wash" data-tip-en="Higher-timeframe oversold bounce. Context only." data-tip-zh="高周期超卖反弹。仅背景。">{{ t('2W washout', '2周超卖') }}<span class="ev-tag et-accruing">{{ t('accruing', '累积') }}</span></span>{% endif %}
-          {% if n.extended %}<span class="nb-port pt-ext" data-tip-en="Stretched above its 200-day trend. Context only." data-tip-zh="高于200日趋势。仅背景。">{{ t('extended', '过热') }}<span class="ev-tag et-context">{{ t('context', '背景') }}</span></span>{% endif %}
+          <span class="nb-grp grp-{{ 'open' if n.group == 'entry_open' else 'set' }}">{{ t('Entry open', '入场开启') if n.group == 'entry_open' else t('Setting up', '蓄势中') }}</span>
         </div>
         {% endif %}
         {% if c %}
@@ -1727,15 +1729,6 @@
           {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
         </div>
         {% endif %}
-        <div class="nb-axes">
-          {% for ax, lbl, lbl_zh in [('selection','EDGE','优势'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
-          {% set a = c.axes[ax] %}
-          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
-            <div class="axl">{{ t(lbl, lbl_zh) }}</div>
-            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
-          </div>
-          {% endfor %}
-        </div>
         {% endif %}
         {% set es = n.entry_signal %}
         {% if es and es.status %}
@@ -1752,16 +1745,7 @@
         {% endif %}
         <div class="nb-bot">
           {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
-          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Suggested size: less for volatile names, more for calmer names." data-tip-zh="建议仓位：波动大少配，波动小多配。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
         </div>
-        {% if n.alpha is not none or n.alpha_entry %}
-        <div class="nb-alpha">
-          {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha>0 else ('az-dn' if n.alpha<0 else '') }}" data-tip-en="Relative strength vs the HK universe." data-tip-zh="相对港股整体的强弱。">RS {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
-          {% if n.sector_rank %}<span class="nb-rk" data-tip-en="Rank within its sector by relative strength" data-tip-zh="按相对强度在其板块内排名">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
-          {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" data-tip-en="A leader that has cooled off (RSI≤55) — a less-stretched entry" data-tip-zh="已回落的强势股（RSI≤55）— 较不过热的入场">{{ t('pullback', '回调') }}</span>
-          {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" data-tip-en="Stretched (RSI≥70) — short-term reversal risk" data-tip-zh="过热（RSI≥70）— 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
-        </div>
-        {% endif %}
         {% if n.southbound or n.ah_value %}
         <div class="nb-flow">
           {# W6 evidence tags (§7.3): each why-now chip carries an et-validated / et-accruing / et-context
@@ -1769,17 +1753,14 @@
              → visual priority via fl-lead. SB flow decays at render lag (H1 NO-GO) → context. #}
           {% if n.southbound and n.southbound.accum_z is not none %}
           {% set sbz = n.southbound.accum_z %}
-          <span class="{{ 'fl-buy' if sbz>=0.6 else ('fl-sell' if sbz<=-0.6 else '') }}" data-tip-en="Mainland Connect is adding or trimming this name. Positioning context." data-tip-zh="内地港股通正在加仓或减仓该股。持仓背景。">🇨🇳 {{ t('SB', '南向') }} {{ '%+.1f'|format(sbz) }}{% if n.southbound.own_pct is not none %} · {{ n.southbound.own_pct }}%{% endif %}<span class="ev-tag et-context">{{ t('context', '背景') }}</span></span>
+          <span class="{{ 'fl-buy' if sbz>=0.6 else ('fl-sell' if sbz<=-0.6 else '') }}" data-tip-en="Mainland Connect is adding or trimming this name. Positioning context." data-tip-zh="内地港股通正在加仓或减仓该股。持仓背景。">🇨🇳 {{ t('SB', '南向') }} {{ '%+.1f'|format(sbz) }}{% if n.southbound.own_pct is not none %} · {{ n.southbound.own_pct }}%{% endif %}</span>
           {% endif %}
           {% if n.ah_value and n.ah_value.z is not none %}
-          <span class="fl-val{{ ' fl-lead' if n.ah_value.cheap else '' }}" data-tip-en="A/H value: H-share looks cheap or rich vs its mainland A-share twin." data-tip-zh="A/H 价值：H股相对A股孪生便宜或偏贵。">A/H {{ '%+.1f'|format(n.ah_value.z) }}{% if n.ah_value.cheap %} · {{ t('cheap H', 'H 便宜') }}{% endif %}<span class="ev-tag et-accruing">{{ t('near-GO', '临近达标') }}</span></span>
+          <span class="fl-val{{ ' fl-lead' if n.ah_value.cheap else '' }}" data-tip-en="A/H value: H-share looks cheap or rich vs its mainland A-share twin." data-tip-zh="A/H 价值：H股相对A股孪生便宜或偏贵。">A/H {{ '%+.1f'|format(n.ah_value.z) }}{% if n.ah_value.cheap %} · {{ t('cheap H', 'H 便宜') }}{% endif %}</span>
           {% endif %}
           {# SFC reportable-short CONTEXT chip (H2a — ACCRUE-labelled, reports/h2a-phase0.md).
              own-history days-to-cover percentile; correct-signed (high shorts -> softer fwd
              returns) but sub-threshold (DSR 0.32), so it is CONTEXT, never a rank input. #}
-          {% if n.sfc_short and n.sfc_short.pctile is not none %}
-          <span class="{{ 'fl-short' if n.sfc_short.pctile >= 75 else '' }}" data-tip-en="Short interest level vs this name's own history. Context only." data-tip-zh="淡仓相对该股自身历史的位置。仅背景。">🩳 {{ t('shorts', '淡仓') }} P{{ n.sfc_short.pctile }}<span class="ev-tag et-accruing">{{ t('accruing', '累积') }}</span></span>
-          {% endif %}
         </div>
         {% endif %}
         {% if c %}
@@ -1791,7 +1772,6 @@
         </div>{% endif %}
         {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
         {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
-        <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
       </a>
     {% endfor %}
@@ -2661,35 +2641,64 @@
   {% endif %}{# /mode != stocks — breadth & ratios #}
 
   {% if mode != 'macro' %}
-  <!-- ===================== SOUTHBOUND FLOW (南向资金) ===================== -->
-  {% if internals and internals.southbound %}{% set sb = internals.southbound %}
-  <div class="panel span6">
-    <h2>{{ t('🇭🇰 Southbound flow', '🇭🇰 南向资金') }} <span class="note" style="text-transform:none">· {{ t('mainland → Hong Kong', '内地 → 香港') }}</span>
-      {{ help("Daily mainland money flowing into HK stocks. Key liquidity context.", "每日内地资金流入港股。关键流动性背景。") }}</h2>
-    <div class="stat-row">
-      <div><span class="v {{ 'pos' if sb.cum_20d>=0 else 'neg' }}">{{ '%+.0f'|format(sb.cum_20d) }}</span><div class="note">{{ t('20d net (¥100M)', '20日净额(亿元)') }}</div></div>
-      <div><span class="v {{ 'pos' if sb.net_z>=0 else 'neg' }}">{{ '%+.1f'|format(sb.net_z) }}σ</span><div class="note">{{ t('today vs 1y', '今日 vs 一年') }}</div></div>
-      {% if sb.hold_mktcap %}<div><span class="v">{{ '{:,}'.format(sb.hold_mktcap) }}</span><div class="note">{{ t('mainland holdings (¥100M)', '内地持仓(亿元)') }}</div></div>{% endif %}
-      <div><span class="v">{{ sb.pos_days_20 }}/20</span><div class="note">{{ t('net-buy days', '净买入天数') }}</div></div>
+  <!-- ===================== SOUTHBOUND & A/H — combined flow + cross-listing value (item 12) ===================== -->
+  {% if (internals and internals.southbound) or (internals and internals.sb_divergence) or ah %}
+  <div class="panel span12" id="sb-ah-combined">
+    <h2>{{ t('🇭🇰 Southbound &amp; A/H', '🇭🇰 南向资金与 A/H') }} <span class="note" style="text-transform:none">· {{ t('mainland flow · flow-vs-price · cross-listing value — with a read on each', '内地资金 · 资金对价格 · 跨市场估值 — 每项附带解读') }}</span>
+      {{ help("Three cross-market reads in one: daily southbound flow (mainland money into HK), whether that flow confirms or diverges from the HSI trend, and the A/H premium (how cheap HK-listed H-shares are vs their mainland A-share twins). Each carries a plain read. Display context, not a buy signal.", "三个跨市场读数合一：每日南向资金（内地资金流入港股）、该资金是否与恒指趋势一致或背离、以及 A/H 溢价（港股 H 相对 A 股孪生有多便宜）。每项附带简明解读。仅背景，非买卖信号。") }}</h2>
+    <div class="sbah-grid">
+      {# 1. Southbound flow — deterministic inflow/outflow read from 20d net + z #}
+      {% if internals and internals.southbound %}{% set sb = internals.southbound %}
+      {% set _sbsig = 'in' if (sb.net_z >= 0.4 and sb.cum_20d >= 0) else ('out' if sb.net_z <= -0.4 else 'neu') %}
+      <div class="sbah-card">
+        <div class="sbah-head">
+          <span class="sbah-t">{{ t('Southbound flow', '南向资金') }}</span>
+          <span class="sbah-sig sig-{{ _sbsig }}">{% if _sbsig=='in' %}{{ t('▲ Inflow','▲ 流入') }}{% elif _sbsig=='out' %}{{ t('▼ Outflow','▼ 流出') }}{% else %}{{ t('◦ Balanced','◦ 均衡') }}{% endif %}</span>
+        </div>
+        <div class="stat-row">
+          <div><span class="v {{ 'pos' if sb.cum_20d>=0 else 'neg' }}">{{ '%+.0f'|format(sb.cum_20d) }}</span><div class="note">{{ t('20d net (¥100M)', '20日净额(亿)') }}</div></div>
+          <div><span class="v {{ 'pos' if sb.net_z>=0 else 'neg' }}">{{ '%+.1f'|format(sb.net_z) }}σ</span><div class="note">{{ t('vs 1y', '对比一年') }}</div></div>
+          <div><span class="v">{{ sb.pos_days_20 }}/20</span><div class="note">{{ t('net-buy days', '净买入') }}</div></div>
+        </div>
+        <div class="sbah-read"><span class="l-en">{{ 'Mainland is adding — a liquidity tailwind for HK.' if _sbsig=='in' else ('Mainland is trimming — a liquidity drag.' if _sbsig=='out' else 'Flow roughly balanced — no strong tilt.') }}</span><span class="l-zh">{{ '内地在加仓 — 港股流动性顺风。' if _sbsig=='in' else ('内地在减仓 — 流动性拖累。' if _sbsig=='out' else '资金大致均衡 — 无明显倾向。') }}</span></div>
+      </div>
+      {% endif %}
+      {# 2. Flow vs price — reuse the engine's confirms/diverges state as the read #}
+      {% if internals and internals.sb_divergence and internals.sb_divergence.state != 'insufficient' %}{% set d = internals.sb_divergence %}
+      {% set _dsig = 'in' if d.state=='confirms' else ('out' if d.state=='diverges' else 'neu') %}
+      <div class="sbah-card">
+        <div class="sbah-head">
+          <span class="sbah-t">{{ t('Flow vs price', '资金 vs 价格') }}</span>
+          <span class="sbah-sig sig-{{ _dsig }}">{% if _dsig=='in' %}{{ t('✓ Confirms','✓ 同向') }}{% elif _dsig=='out' %}{{ t('⚠ Diverges','⚠ 背离') }}{% else %}{{ t('◦ Mixed','◦ 中性') }}{% endif %}</span>
+        </div>
+        <div class="stat-row">
+          <div><span class="v {{ 'pos' if d.flow_z>=0 else 'neg' }}">{{ '%+.1f'|format(d.flow_z) }}σ</span><div class="note">{{ t('flow trend', '资金趋势') }}</div></div>
+          <div><span class="v {{ 'pos' if d.px_ret_pct>=0 else 'neg' }}">{{ '%+.1f'|format(d.px_ret_pct) }}%</span><div class="note">{{ t('HSI', '恒指') }} {{ d.window_d }}{{ t('d','日') }}</div></div>
+        </div>
+        <div class="sbah-read"><span class="l-en">{{ 'Flow is backing the price trend — cleaner.' if _dsig=='in' else ('Flow and price disagree — watch for a turn.' if _dsig=='out' else 'No clear agreement between flow and price.') }}</span><span class="l-zh">{{ '资金支持价格趋势 — 更干净。' if _dsig=='in' else ('资金与价格背离 — 留意转向。' if _dsig=='out' else '资金与价格无明显一致。') }}</span></div>
+      </div>
+      {% endif %}
+      {# 3. A/H premium — percentile read (high A-over-H = H-shares cheap = value) #}
+      {% if ah %}
+      {% set _ahsig = 'in' if (ah.pctile is not none and ah.pctile >= 65) else ('out' if (ah.pctile is not none and ah.pctile <= 35) else 'neu') %}
+      <div class="sbah-card">
+        <div class="sbah-head">
+          <span class="sbah-t">{{ t('A/H premium', 'A/H 溢价') }}</span>
+          <span class="sbah-sig sig-{{ _ahsig }}">{% if _ahsig=='in' %}{{ t('H cheap','H 便宜') }}{% elif _ahsig=='out' %}{{ t('H rich','H 偏贵') }}{% else %}{{ t('◦ Fair','◦ 中性') }}{% endif %}</span>
+        </div>
+        <div class="stat-row">
+          <div><span class="v">{{ '%+.1f'|format(ah.premium_pct) }}%</span><div class="note">{{ t('A-over-H', 'A 高于 H') }} ({{ ah.n_pairs }})</div></div>
+          {% if ah.pctile is not none %}<div><span class="v">{{ ah.pctile }}%ile</span><div class="note">{{ t('vs 3y', '对比3年') }}</div></div>{% endif %}
+          {% if ah.chg_1y is not none %}<div><span class="v {{ 'neg' if ah.chg_1y<0 else 'pos' }}">{{ '%+.1f'|format(ah.chg_1y) }}pp</span><div class="note">{{ t('1y', '一年') }}</div></div>{% endif %}
+        </div>
+        <div class="sbah-read"><span class="l-en">{{ 'H-shares look cheap vs their A twins — a value tilt.' if _ahsig=='in' else ('H-shares rich vs A — value edge gone.' if _ahsig=='out' else 'A/H spread near its 3y norm.') }}</span><span class="l-zh">{{ 'H 股相对 A 股便宜 — 价值倾向。' if _ahsig=='in' else ('H 股相对 A 偏贵 — 价值优势消退。' if _ahsig=='out' else 'A/H 价差接近三年常态。') }}</span></div>
+        {% if ah.pairs %}<table class="sbah-pairs"><tbody>
+        {% for p in ah.pairs[:4] %}<tr><td class="l">{{ p.name }} <span class="note">{{ p.h }}</span></td><td>{{ '%+.1f'|format(p.premium_pct) }}%</td></tr>{% endfor %}
+        </tbody></table>{% endif %}
+      </div>
+      {% endif %}
     </div>
-    {{ sb.chart_html | safe }}
-  </div>
-  {% endif %}
-
-  <!-- ===== SOUTHBOUND vs PRICE DIVERGENCE (display-only context) ===== -->
-  {% if internals and internals.sb_divergence %}{% set d = internals.sb_divergence %}
-  <div class="panel span6">
-    <h2>{{ t('🔀 Southbound vs price', '🔀 南向 vs 价格') }} <span class="note" style="text-transform:none">· {{ t('flow trend vs HSI trend', '资金趋势 vs 恒指趋势') }}</span>
-      {{ help("Checks whether southbound flow and Hang Seng price trend agree. Context only.", "检查南向资金趋势与恒指价格趋势是否一致。仅背景。") }}</h2>
-    {% if d.state == 'insufficient' %}
-    <div class="note">{{ t('Not enough history to compare.', '历史数据不足，暂无法比较。') }}</div>
-    {% else %}
-    <div class="stat-row">
-      <div><span class="v">{{ t('Confirms','同向') if d.state=='confirms' else (t('Diverges','背离') if d.state=='diverges' else t('Mixed','中性')) }}</span><div class="note">{{ t('flow vs price', '资金 vs 价格') }} · {{ d.window_d }}{{ t('d', '日') }}</div></div>
-      <div><span class="v {{ 'pos' if d.flow_z>=0 else 'neg' }}">{{ '%+.1f'|format(d.flow_z) }}σ</span><div class="note">{{ t('southbound flow trend', '南向资金趋势') }}</div></div>
-      <div><span class="v {{ 'pos' if d.px_ret_pct>=0 else 'neg' }}">{{ '%+.1f'|format(d.px_ret_pct) }}%</span><div class="note">{{ t('HSI', '恒指') }} {{ d.window_d }}{{ t('d', '日') }}</div></div>
-    </div>
-    {% endif %}
+    {% if internals and internals.southbound and internals.southbound.chart_html %}{{ internals.southbound.chart_html | safe }}{% endif %}
   </div>
   {% endif %}
 
@@ -2713,25 +2722,6 @@
 
   {% endif %}{# /mode != stocks — HKMA peg funding #}
 
-  {% if mode != 'macro' %}
-  <!-- ===================== AH PREMIUM (computed basket) ===================== -->
-  {% if ah %}
-  <div class="panel span6">
-    <h2>{{ t('AH premium', 'AH 溢价') }} <span class="note" style="text-transform:none">· {{ t('A-share vs HK-listed H twin', 'A股 对 H股') }}</span>
-      {{ help("A-share premium vs HK-listed H-share twins. High premium means H-shares are cheaper.", "A股相对香港H股孪生的溢价。高溢价表示H股更便宜。") }}</h2>
-    <div class="stat-row">
-      <div><span class="v">{{ '%+.1f'|format(ah.premium_pct) }}%</span><div class="note">{{ t('basket A-over-H', '篮子 A 高于 H') }} ({{ ah.n_pairs }} {{ t('pairs', '对') }})</div></div>
-      {% if ah.pctile is not none %}<div><span class="v">{{ ah.pctile }}%ile</span><div class="note">{{ t('vs 3y range', '对比3年区间') }}</div></div>{% endif %}
-      {% if ah.chg_1y is not none %}<div><span class="v {{ 'neg' if ah.chg_1y<0 else 'pos' }}">{{ '%+.1f'|format(ah.chg_1y) }}pp</span><div class="note">{{ t('1y change', '一年变化') }}</div></div>{% endif %}
-    </div>
-    {{ ah.chart_html | safe }}
-    <table style="margin-top:8px"><thead><tr><th class="l">{{ t('Pair', '配对') }}</th><th>{{ t('A-over-H %', 'A 高于 H %') }}</th></tr></thead><tbody>
-    {% for p in ah.pairs[:6] %}<tr><td class="l">{{ p.name }} <span class="note">{{ p.h }}</span></td><td>{{ '%+.1f'|format(p.premium_pct) }}%</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
-  {% endif %}
-
-  {% endif %}{# /mode != macro — AH premium #}
 
   {% if mode != 'stocks' %}
   <!-- ===================== CHINA EARNINGS BACKDROP ===================== -->
