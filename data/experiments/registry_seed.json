@@ -3229,6 +3229,57 @@
       "status": "accruing",
       "next_step": "Return 2026-09-15: read limit_tape post-backfill nightly append count; cross-tab limit_up_breadth_pct regimes vs lifecycle shelves; flag candidate pattern for potential pre-registration; no promotion at this read.",
       "phase_hint": "CN-SYS W1 W8 · limit-state tape · lifecycle-board confluence · detection context"
+    },
+    {
+      "id": "chf-first-edge-batch",
+      "name": "CHF — first causal edge-batch review",
+      "kind": "validation",
+      "priority": "medium",
+      "cadence": "weekly",
+      "what": "Review the first live causal_scan edge batches: null quality, cumulative family width accounting, drift-monitor behavior, kill-mask sync. Verdict feeds W3+ tuning; no promotion question here.",
+      "source": "scripts/build_causal_edges.py",
+      "storage": "data/neuralweb/causal_edges.jsonl",
+      "hook": "track_record",
+      "come_back_on": "2026-08-15",
+      "come_back_note": "~35d after W3 lands; check causal_lab_state funnel counts + causal_nulls growth",
+      "maturation": ">=2 weekly batches run; cumulative literal_n printed and consistent with ledger; >=1 honest null in library",
+      "status": "accruing",
+      "state": "chartered at W0 (CHF-R15); W3 not yet merged",
+      "next_step": "after W3 merge, confirm causal job green two consecutive nights"
+    },
+    {
+      "id": "chf-phase2-machine-family",
+      "name": "CHF — Phase-2 dedicated machine-registration family question",
+      "kind": "validation",
+      "priority": "medium",
+      "cadence": "on-demand",
+      "what": "Decide whether CHF earns its own metabolism registration family. Requires >=8 matured causal candidates through exit (a) cortex-stake or (b) chartered domain study, plus a fresh Fable ruling (CHF-R2). Until then the cortex 3/week chokepoint stands (QS-U2).",
+      "source": "research/CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md",
+      "storage": "data/neuralweb/causal_lab_state.json",
+      "hook": "track_record",
+      "come_back_on": "2026-10-15",
+      "come_back_note": "conditional clock — do not open early; count matured exit-(a)/(b) candidates in lab state",
+      "maturation": ">=8 matured exit-(a)/(b) candidates with graded verdicts",
+      "status": "accruing",
+      "state": "chartered at W0 (CHF-R15)",
+      "next_step": "count matured candidates at come-back; if <8, roll clock +60d"
+    },
+    {
+      "id": "chf-phase3-structure-learner",
+      "name": "CHF — Phase-3 small-universe structure-learner question",
+      "kind": "validation",
+      "priority": "low",
+      "cadence": "on-demand",
+      "what": "Decide whether a small-universe NOTEARS-with-priors prototype is admissible (CHF-R14 kill covers v1 only). Requires one quarter of scout + null-library operation and the synthetic gauntlet extended to structure-learning mirages.",
+      "source": "research/CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md",
+      "storage": "data/neuralweb/causal_edges.jsonl",
+      "hook": "track_record",
+      "come_back_on": "2027-01-15",
+      "come_back_note": "needs a quarter of causal_scan operation + null library depth; DO_NOT_REBUILD row updates if opened",
+      "maturation": "one quarter of weekly batches; null library >=20 rows; frontier ledger stable",
+      "status": "accruing",
+      "state": "chartered at W0 (CHF-R15)",
+      "next_step": "assess at come-back with fresh Fable ruling"
     }
   ]
 }
