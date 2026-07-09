@@ -36,6 +36,8 @@
   table.ad td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
   table.ad tr:last-child td { border-bottom:none; }
   .tk { font-weight:700; font-variant-numeric:tabular-nums; }
+  .tk a { color:inherit; text-decoration:none; }
+  .tk a:hover { text-decoration:underline; }
   .num, td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .mut2 { color:var(--muted); }
   .cg-score { display:inline-flex; align-items:center; gap:7px; min-width:96px; }
@@ -117,7 +119,7 @@
     <tr>
       <td class="mut2">{{ loop.index }}</td>
       <td>
-        <span class="tk">{{ it.ticker }}</span>
+        <span class="tk"><a href="stock.html#{{ it.ticker }}">{{ it.ticker }}</a></span>
         {% if it.gate_tier %}<span class="cg-flag gate-{{ it.gate_tier|lower }}" data-tip-en="⚡ Prime entry — signal gate {{ it.gate_tier }}" data-tip-zh="⚡ 优质入场 — 信号门 {{ it.gate_tier }}">⚡ {{ it.gate_tier }}</span>{% endif %}
         {% if it.name %}<div class="mut2" style="font-size:10.5px">{{ it.name[:26] }}</div>{% endif %}
       </td>
@@ -238,7 +240,7 @@
       <td>{{ r.representative or '—' }}{% if r.party in ('D','R') %} <span class="cg-mem {{ r.party }}">{{ r.party }}</span>{% endif %}</td>
       <td class="mut2">{{ r.chamber }}</td>
       <td><span class="side-chip {{ r.side }}">{{ r.side|upper }}</span></td>
-      <td><span class="tk">{{ r.ticker }}</span>{% if r.name %} <span class="mut2" style="font-size:10.5px">{{ r.name[:22] }}</span>{% endif %}</td>
+      <td><span class="tk"><a href="stock.html#{{ r.ticker }}">{{ r.ticker }}</a></span>{% if r.name %} <span class="mut2" style="font-size:10.5px">{{ r.name[:22] }}</span>{% endif %}</td>
       <td class="num">{{ amt(r) }}</td>
       <td class="num {{ 'r-pos' if (r.excess_return or 0) > 0 else ('r-neg' if (r.excess_return or 0) < 0 else '') }}">{% if r.excess_return is not none %}{{ '%+.1f'|format(r.excess_return) }}%{% else %}—{% endif %}</td>
       <td class="num mut2">{{ r.transaction_date or '—' }}</td>
