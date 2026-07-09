@@ -204,6 +204,11 @@ def _build_brain_run(health: dict | None, memo: dict | None) -> dict:
         tc = out["individual_tool_calls"]
         tc_str = f" ({tc} tool calls)" if tc is not None else ""
         out["summary"] = f"cortex ran{tc_str}; memo as_of {memo_as_of}"
+    elif cs == "warn":
+        reason = run_status.get("degradation_reason") or "partial"
+        tc = out["individual_tool_calls"]
+        tc_str = f" ({tc} tool calls)" if tc is not None else ""
+        out["summary"] = f"cortex ran{tc_str} with warning — {reason}; memo as_of {memo_as_of}"
     elif cs == "degraded":
         reason = run_status.get("degradation_reason") or "unknown reason"
         out["summary"] = f"cortex degraded — {reason}"
@@ -562,7 +567,8 @@ def _brief_status(health: dict | None, brain_run: dict) -> str:
     cs = brain_run.get("cortex_status", "unknown")
     if cs in ("degraded", "missing") or overall == "degraded":
         return "degraded"
-    if overall == "warn":
+    # cortex warn (e.g. model_fallback) must surface as at least warn in the brief
+    if overall == "warn" or cs == "warn":
         return "warn"
     return "ok"
 
