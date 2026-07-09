@@ -180,6 +180,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("baskets risk-state read failed: %s", e)
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
+    # Collect flat sorted unique member symbols for W2a hidden live-span scrape expansion.
+    # The scraper (build_live_quotes.scrape_site_symbols) reads site/*.html for data-sym attrs;
+    # basket member tickers are only in the BASKETS JSON blob otherwise, so they are invisible
+    # to the scraper. Passing them to Jinja lets us emit aria-hidden spans in static HTML.
+    _member_syms: list[str] = sorted({
+        str(m.get("symbol", "")).strip().upper()
+        for b in data.get("baskets", [])
+        for m in (b.get("members") or [])
+        if m.get("symbol")
+    })
     html = env.get_template("baskets.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":")),
         chart_json=json.dumps(chart, separators=(",", ":")),
@@ -187,7 +197,8 @@ def main() -> int:
         flow=flow,
         risk_state=risk_state,
         risk_radar=risk_radar,
-        generated_utc=built)
+        generated_utc=built,
+        basket_member_syms=_member_syms)
     write_page(site / "baskets.html", html)
     # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
     # theme_intel + members) and the env; chart already split off above. Additive.
