@@ -1257,6 +1257,17 @@ def build(root: Path, today: date | None = None) -> dict:
     # Sort rows
     all_rows.sort(key=_sort_key)
 
+    # Apply owner_overrides from config (display-only metadata; no behavioral effect)
+    try:
+        owner_overrides: dict[str, str] = cfg.get("owner_overrides") or {}
+        if owner_overrides:
+            for row in all_rows:
+                cid = row.get("clock_id", "")
+                if row.get("owner_program") is None and cid in owner_overrides:
+                    row["owner_program"] = owner_overrides[cid]
+    except Exception as exc:
+        all_gaps.append(f"owner_overrides: {exc}")
+
     # Packet stubs
     try:
         _attach_packet_stubs(all_rows, packet_cap, root)
