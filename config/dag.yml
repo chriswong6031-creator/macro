@@ -415,6 +415,19 @@ lanes:
           data/neuralweb/theme_phase_history.jsonl (append-only PIT tape, nightly sole advancer).
           Runs AFTER build_foresight + build_baskets (foresight_cascade.json and baskets.json
           must be fresh). Missing input → stale_legs entry + null block; always exits 0.
+      - id: grade_thematic
+        module: scripts.grade_thematic
+        note: >
+          non-fatal; TIL W6 (PR-H) grading pack — display/shadow only, authority
+          is_context_only=true, all promotion flags false. Runs AFTER build_thematic_state.
+          Stage 1: crowd-arrival lead-lag grader over data/foresight/earliness_log.jsonl →
+          data/foresight/earliness_grades.json (envelope-stamped, atomic write).
+          Stage 2: theme placebo tape — appends K=3 random peer + 1 time-shift variant for
+          each new non-WATCH foresight flag → data/foresight/theme_placebo_tape.jsonl
+          (append-only, deduped, deterministic seed).
+          Stage 3: qledger falsifier auto-evaluation — evaluates check_by-arrived claims →
+          data/qledger/falsifier_evaluations.jsonl (append-only, capped 2000/run).
+          Always exits 0. No LLM calls. No scored-path consumers.
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)

@@ -1356,6 +1356,15 @@ jobs:
         # Authority: is_context_only=true, all promotion flags false. Always exits 0.
         # Outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_thematic_state || echo "::warning::build_thematic_state failed (non-fatal — last committed artifact stands)"
+      - name: grade thematic (TIL W6 — grading pack)
+        if: always()
+        # TIL W6 (PR-H) grading pack — AFTER build_thematic_state.
+        # Stage 1: crowd-arrival lead-lag grader → data/foresight/earliness_grades.json.
+        # Stage 2: placebo tape → data/foresight/theme_placebo_tape.jsonl (append-only).
+        # Stage 3: qledger falsifier auto-evaluation → data/qledger/falsifier_evaluations.jsonl (append-only).
+        # Authority: is_context_only=true, all promotion flags false. No LLM calls. Always exits 0.
+        # Outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.grade_thematic || echo "::warning::grade_thematic failed (non-fatal — last committed artifacts stand)"
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and
