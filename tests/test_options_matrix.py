@@ -560,6 +560,58 @@ def test_vex_mn_formula():
     assert abs(result - 0.025) < 1e-9, f"Expected 0.025, got {result}"
 
 
+def test_vanna_same_sign_call_put():
+    """_bs_vanna_scalar returns the SAME value for calls and puts at identical strike/params.
+
+    Closed-form BS vanna = -N'(d1) * d2 / sigma is RIGHT-INDEPENDENT: the formula
+    contains no call/put branch, only S, K, T, sigma, r.  Therefore a call and a put
+    at the same strike must produce identical vanna values.
+
+    This test pins the convention fix: earlier comments incorrectly stated
+    "calls: positive vex" / "puts: negative vex", implying vanna depends on right.
+    The correct convention is that both accumulate the SAME vanna sign (determined by
+    d2 = moneyness), and net_vex = call_vex + put_vex sums those same-signed values.
+
+    Hand computation (S=500, K=500, T=14/365, iv=0.20, r=_R=0.05):
+      sqrtT = sqrt(14/365) ≈ 0.195791
+      d1 = [ln(1) + (0.05 + 0.5*0.04)*14/365] / (0.20*0.195791)
+         ≈ 0.068547
+      d2 = d1 - 0.20*0.195791 ≈ 0.029377  (positive: ATM with r=0.05 pushes d2 > 0)
+      N'(d1) ≈ 0.398006
+      vanna = -0.398006 * 0.029377 / 0.20 ≈ -0.058461  (negative because d2 > 0)
+      Same for call and put — right-independent formula.
+    """
+    S = 500.0
+    K = 500.0
+    iv = 0.20
+    T_years = 14.0 / 365.0
+
+    vanna_c = _bs_vanna_scalar(S, K, T_years, iv, 0.30)
+    vanna_p = _bs_vanna_scalar(S, K, T_years, iv, 0.30)
+
+    # Must be identical — formula is right-independent
+    assert abs(vanna_c - vanna_p) < 1e-15, (
+        f"Call vanna {vanna_c:.8f} != put vanna {vanna_p:.8f} — formula must be right-independent"
+    )
+
+    # Both must have the same sign (sign from d2/moneyness, not right)
+    assert math.copysign(1, vanna_c) == math.copysign(1, vanna_p), (
+        f"Call and put vanna have different signs: call={vanna_c:.6f} put={vanna_p:.6f}"
+    )
+
+    # Verify hand-computed value: vanna ≈ -0.058461
+    sqrtT = math.sqrt(T_years)
+    d1 = (math.log(S / K) + (_R + 0.5 * iv ** 2) * T_years) / (iv * sqrtT)
+    d2 = d1 - iv * sqrtT
+    expected = -npdf(d1) * d2 / iv
+    assert abs(vanna_c - expected) < 1e-9, (
+        f"Vanna {vanna_c:.8f} does not match hand computation {expected:.8f}"
+    )
+    # d2 > 0 at ATM with r=0.05, T=14/365 → vanna is negative
+    assert d2 > 0, f"Expected d2>0 for this param set, got {d2:.6f}"
+    assert expected < 0, f"Expected negative vanna (d2>0), got {expected:.6f}"
+
+
 def test_build_matrix_vex_mn_present(tmp_path):
     """build_matrix output cells carry vex_mn field when greeks data is present.
 

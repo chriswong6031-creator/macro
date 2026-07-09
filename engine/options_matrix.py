@@ -641,11 +641,11 @@ def build_matrix(
         if right == "C":
             cell["call_oi"]  += int(oi)
             cell["call_gex"] += gex      # positive (calls +)
-            cell["call_vex"] += vex      # calls: positive vex (IV up → delta up)
+            cell["call_vex"] += vex      # same-signed vanna as put at same strike (sign from d2/moneyness, not right)
         elif right == "P":
             cell["put_oi"]  += int(oi)
             cell["put_gex"] += gex       # magnitude (unsigned here; sign in net)
-            cell["put_vex"]  += vex      # puts: negative vex (IV up → delta less negative)
+            cell["put_vex"]  += vex      # same-signed vanna as call at same strike (sign from d2/moneyness, not right)
 
     # ── OI[t-2] accumulation for delta_oi ───────────────────────────────────
     if not oi_t2_w.empty:
@@ -700,8 +700,12 @@ def build_matrix(
         d_call = c["call_oi"] - c["call_oi_t2"]
         d_put  = c["put_oi"]  - c["put_oi_t2"]
 
-        # VEX: aggregate vanna exposure = call_vex + put_vex (both inherit vanna sign).
-        # Sign is experimental and assumption-dependent; display-only.
+        # VEX: aggregate vanna exposure = call_vex + put_vex.
+        # Both call_vex and put_vex carry the SAME vanna sign at a given strike
+        # (closed-form BS vanna = -N'(d1)*d2/sigma is right-independent; sign
+        # depends on d2/moneyness, not on call vs put).  This differs from GEX's
+        # call-minus-put dealer convention — VEX sums all exposure, not net dealer
+        # directional.  Sign is experimental and assumption-dependent; display-only.
         net_vex = c["call_vex"] + c["put_vex"]
 
         cells_out.append({
