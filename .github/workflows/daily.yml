@@ -431,6 +431,12 @@ jobs:
             fi
           }
           run_py "regime engine (engine.run)" engine.run
+          # Shock de-escalation protocol (policy-shock W2-E / D3) — must run AFTER engine.run
+          # so market_drivers.append_log has written coherence_state to the log.  Writes
+          # data/reflexes/shock_deescalation/firings.jsonl (keep-first) + site/live/shock_state.json.
+          # Non-fatal: exits 0 on any error so this can NEVER break the render. PS-R7 guard
+          # is enforced inside engine.shock_deescalation.build_nightly().
+          run_py "shock de-escalation (shock_deescalation)" engine.shock_deescalation
           # S&P allocation deep-dive (spvector.html) + data/regime/spvector_latest.json,
           # BEFORE build_site so the macro page's allocation card reads live numbers.
           run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
