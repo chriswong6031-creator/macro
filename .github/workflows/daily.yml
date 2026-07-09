@@ -693,6 +693,19 @@ jobs:
         # which could run inside cl_china only because both its deps lived in that one cluster).
         # Additive (the builder returns 0 on any failure), so it can never break the deploy.
         run: python -m scripts.build_sector_central
+      - name: Polygon reference-universe cache (GICS sector + market cap for heatmap manifest)
+        # Builds data/polygon_universe/reference.parquet — ticker → GICS sector + USD market cap.
+        # Consumed by the charting-app's ingest/build_universe.py when it rebuilds the
+        # heatmap manifest (~8.7k rows); enriches US names with real sector + cap sizing.
+        # Cache is weekly (exits immediately if fresh); checkpoint survives interruption.
+        # Non-fatal: a failed run leaves the previous cache in place (charting-app degrades
+        # gracefully to OTHER/no-mcap for names not in cache).
+        continue-on-error: true
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+        run: |
+          python -m scripts.build_polygon_universe || echo "::warning::build_polygon_universe failed (non-fatal — previous cache remains)"
       - name: flow_idx R2 mirror (heatmap flow layer freshness)
         # Mirror site/flow/index.json → R2 key live_flow/flow_idx.json so the live
         # options-flow heatmap layer can read a fresh manifest without a full site deploy.
