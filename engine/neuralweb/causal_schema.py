@@ -14,17 +14,36 @@ CHF-R7 rulings
   decayed | rejected.  Transitions carry actor ∈ {script, operator, fable}; an actor
   value of 'llm' (or any other unlisted value) attempting ANY transition raises.
 - Banned words (RUL-CC-5): caused/proved/proof/validated replaced with lawful phrasing
-  in claim_en, claim_zh, and falsifiers text on validation.
+  in ALL string leaf fields of the card (claim_en, claim_zh, falsifiers, notes,
+  test_spec.notes, test_spec.metric, lineage fields, etc.) on sanitization/validation.
 
 CHF-R9: instrument library loaded from config/causal_instruments.yml; validator
 enforces mandatory exogeneity_class and required_confounds for surprise_component and
 endogenous_reaction instruments.
+
+Kill-mask semantics (W4 B1/M2 ruling)
+--------------------------------------
+config/causal_priors.yml ships kill_mask as a DICT with two sub-sections:
+
+  curated   — construction-level kills (e.g. full_graph_structure_learners).
+              Pack-advisory: rendered verbatim in the DO-NOT-PROPOSE section.
+              Ingest-enforced by CONSTRUCTION-KEYWORD check: if any edge_family
+              token from a curated entry appears in the card's
+              test_spec.domain_harness or claim_en (case-insensitive), the card
+              is dropped as dropped_forbidden.
+
+  compiled  — edge-level kills (regenerated from causal_nulls.jsonl).
+              Ingest-enforced by EXACT cause+target matching (case-insensitive).
+
+flatten_kill_mask(priors) extracts both sub-lists into a flat list for callers that
+need to iterate all entries.  Use it instead of raw dict access.
 
 Public API
 ----------
 validate_card(card) -> list[str]  (empty list = valid)
 transition_card(card, to, actor, reason) -> dict (mutated copy)
 canonical_card(card) -> str
+flatten_kill_mask(priors) -> list[dict]
 load_instruments(root) -> list[dict]
 validate_instruments(instruments) -> list[str]
 """
@@ -200,17 +219,50 @@ def canonical_card(card: dict) -> str:
                       default=str)
 
 # ---------------------------------------------------------------------------
+# Kill-mask flattener (shared helper — B1/M2 ruling)
+# ---------------------------------------------------------------------------
+
+def flatten_kill_mask(priors: dict) -> list[dict]:
+    """Return a flat list of all kill-mask entries from a priors dict.
+
+    config/causal_priors.yml ships kill_mask as either:
+      - A list (legacy format): returned directly.
+      - A dict with 'curated' and/or 'compiled' sub-lists: both are flattened
+        into a single list and returned.
+
+    Each entry retains its original fields (edge_family, cause, target, reason,
+    source_ruling, etc.) so callers can distinguish curated vs compiled by the
+    presence of 'edge_family' (curated) or 'cause'+'target' (compiled) keys.
+
+    Returns an empty list if priors is absent, not a dict, or kill_mask is absent.
+    """
+    if not isinstance(priors, dict):
+        return []
+    raw_km = priors.get("kill_mask") or {}
+    if isinstance(raw_km, list):
+        return [e for e in raw_km if isinstance(e, dict)]
+    if isinstance(raw_km, dict):
+        result: list[dict] = []
+        for sub_list in raw_km.values():
+            if isinstance(sub_list, list):
+                result.extend(e for e in sub_list if isinstance(e, dict))
+        return result
+    return []
+
+
+# ---------------------------------------------------------------------------
 # CLAIM_SHAPES import (for exit-a validation)
 # ---------------------------------------------------------------------------
 
 def _get_claim_shapes() -> frozenset[str]:
-    """Import CLAIM_SHAPES from metabolism; fall back to the known set if unavailable."""
-    try:
-        from engine.neuralweb.metabolism import CLAIM_SHAPES  # type: ignore[import]
-        return CLAIM_SHAPES
-    except Exception:  # noqa: BLE001
-        # Fallback in case of import issues — mirrors metabolism.py CLAIM_SHAPES
-        return frozenset({"lead_lag", "conditional_regime", "entry_quality", "sector_conditional"})
+    """Import CLAIM_SHAPES from metabolism.
+
+    Raises ImportError at call time if the module is unavailable — a silent
+    fallback would allow stale or missing claim_shape values to pass validation
+    undetected (m2 ruling).
+    """
+    from engine.neuralweb.metabolism import CLAIM_SHAPES  # type: ignore[import]
+    return CLAIM_SHAPES
 
 # ---------------------------------------------------------------------------
 # Card validator
@@ -374,23 +426,68 @@ def validate_card(card: dict) -> list[str]:
             f"status: must be one of {sorted(VALID_STATUSES)}, got {status!r}"
         )
 
+    # --- banned words in all remaining string leaves (RUL-CC-5 / m1 ruling) ---
+    # claim_en, claim_zh, and falsifiers are already checked individually above.
+    # Walk notes, test_spec.notes, test_spec.metric, lineage fields, and any other
+    # string leaves that may have been missed.
+    _already_checked_keys = frozenset({"claim_en", "claim_zh", "falsifiers"})
+    for top_key, top_val in card.items():
+        if top_key in _already_checked_keys:
+            continue
+        banned_in_field = _walk_banned(top_val)
+        if banned_in_field:
+            errors.append(
+                f"{top_key}: contains banned word(s) {list(set(banned_in_field))} "
+                f"(RUL-CC-5); call sanitize_card() before validation"
+            )
+
     return errors
 
 
+def _walk_sanitize(obj: Any) -> Any:
+    """Recursively walk obj, replacing banned words in every string leaf (RUL-CC-5 / m1).
+
+    - str  → sanitized string
+    - list → new list with each element recursively sanitized
+    - dict → new dict with each value recursively sanitized (keys are preserved)
+    - other → returned as-is
+    """
+    if isinstance(obj, str):
+        return _sanitize_text(obj)
+    if isinstance(obj, list):
+        return [_walk_sanitize(item) for item in obj]
+    if isinstance(obj, dict):
+        return {k: _walk_sanitize(v) for k, v in obj.items()}
+    return obj
+
+
+def _walk_banned(obj: Any) -> list[str]:
+    """Recursively collect all banned words found in any string leaf of obj (m1)."""
+    if isinstance(obj, str):
+        return _contains_banned(obj)
+    if isinstance(obj, list):
+        found = []
+        for item in obj:
+            found.extend(_walk_banned(item))
+        return found
+    if isinstance(obj, dict):
+        found = []
+        for v in obj.values():
+            found.extend(_walk_banned(v))
+        return found
+    return []
+
+
 def sanitize_card(card: dict) -> dict:
-    """Return a copy of the card with banned words replaced in text fields (RUL-CC-5)."""
+    """Return a copy of the card with banned words replaced in ALL string leaf fields (RUL-CC-5).
+
+    Walks the entire card dict recursively so that notes, test_spec.notes,
+    test_spec.metric, lineage fields, and any other nested text fields are
+    covered — not just claim_en, claim_zh, and falsifiers.
+    """
     import copy
     c = copy.deepcopy(card)
-    for field in ("claim_en", "claim_zh"):
-        if isinstance(c.get(field), str):
-            c[field] = _sanitize_text(c[field])
-    falsifiers = c.get("falsifiers")
-    if isinstance(falsifiers, list):
-        c["falsifiers"] = [
-            _sanitize_text(f) if isinstance(f, str) else f
-            for f in falsifiers
-        ]
-    return c
+    return _walk_sanitize(c)
 
 # ---------------------------------------------------------------------------
 # Status machine transition (CHF-R17)

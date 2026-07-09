@@ -7,19 +7,29 @@ of mechanism cards; a file may contain several concatenated JSON arrays).
 This tool:
 
   1. Parses every *.json (tolerant of multiple concatenated JSON arrays).
-  2. Sanitizes banned words (RUL-CC-5) on claim_en, claim_zh, falsifiers.
-  3. Stamps frozen_hash on environment_map (CHF-R7).
+  2. Sanitizes banned words (RUL-CC-5) on ALL string leaf fields of the card.
+  3. Stamps frozen_hash on environment_map ONLY IF the arriving card has no
+     frozen_hash (blank or absent) — MINT path.  If the card arrives with a
+     non-blank frozen_hash, the hash is VERIFIED against the arriving splits;
+     a mismatch drops the card as dropped_forged_hash (B2 tamper law).
   4. Clamps test_spec.min_n to the house floor (25).
   5. Validates each card via causal_schema.validate_card (schema firewall
      — drops invalid, counts dropped_invalid).
   6. Checks test_spec.claim_shape against metabolism CLAIM_SHAPES for exit-a.
   7. Refuses cards matching config/causal_priors.yml kill_mask or
-     forbidden_causes (dropped_forbidden).
+     forbidden_causes (dropped_forbidden).  Kill-mask semantics are SPLIT:
+       curated  → construction-keyword check on test_spec.domain_harness/claim
+       compiled → EXACT cause+target matching (case-insensitive)
   8. RF-14 fixed-order dedup in 4 layers (see below); near-dup flagged.
-  9. ISO-WEEK FILING LOCK (CHF-R8): ≤3 cards per ISO week; second --write
-     run in same week refuses with a printed message.
- 10. Dry-run by default; --write appends accepted cards to
-     data/neuralweb/causal_mechanisms.jsonl with actor='script' provenance.
+  9. ISO-WEEK FILING LOCK (CHF-R8): ≤3 cards per ISO week.  The weekly count
+     is computed as max(causal_mechanisms.jsonl rows, trial_ledger.jsonl rows)
+     so deleting causal_mechanisms.jsonl cannot reset the budget (M3).
+     Second --write run in same week refuses with a printed message.
+ 10. Freshly-minted inbox cards have lineage.transitions reset to [] so the
+     LLM's claimed history is discarded (M1 audit-trail law).
+ 11. Dry-run by default; --write appends accepted cards to
+     data/neuralweb/causal_mechanisms.jsonl with actor='script' provenance
+     and logs one trial_ledger row per filed card under family='causal_scan'.
 
 RF-14 fixed-order dedup:
   (0) Existing causal_mechanisms.jsonl canonical hashes.
@@ -52,6 +62,7 @@ from engine.neuralweb.causal_schema import (
     _compute_env_hash,
     _get_claim_shapes,
     canonical_card,
+    flatten_kill_mask,
     sanitize_card,
     validate_card,
 )
@@ -193,51 +204,72 @@ def _load_oracle_canonical_rules() -> set[str]:
 # Kill-mask loading
 # ---------------------------------------------------------------------------
 
-def _load_kill_mask(priors_path: Path) -> tuple[list[dict], list[dict]]:
-    """Return (forbidden_causes, kill_mask_entries) from causal_priors.yml.
+def _load_kill_mask(priors_path: Path) -> tuple[list[dict], list[dict], list[dict]]:
+    """Return (forbidden_causes, curated_entries, compiled_entries) from causal_priors.yml.
 
-    kill_mask in causal_priors.yml has structure:
-        kill_mask:
-          curated: [{edge_family: ..., reason: ..., ...}]
-          compiled: [{cause: ..., target: ..., reason: ..., ...}]
+    Kill-mask semantics are SPLIT (M2 ruling):
+      curated  — construction-level kills, identified by presence of 'edge_family'.
+                 Ingest-enforced via CONSTRUCTION-KEYWORD check: if any token in
+                 edge_family appears in the card's test_spec.domain_harness or
+                 claim_en (case-insensitive), the card is dropped as
+                 dropped_forbidden.
+      compiled — edge-level kills, identified by presence of 'cause'+'target'.
+                 Ingest-enforced via EXACT cause+target matching (case-insensitive).
 
-    Returns (forbidden_causes_list, flattened_kill_mask_list).
-    Returns ([], []) if file is absent or unreadable.
+    Returns ([], [], []) if file is absent or unreadable.
     """
     if not priors_path.exists():
-        return [], []
+        return [], [], []
     try:
         import yaml
         data = yaml.safe_load(priors_path.read_text(encoding="utf-8"))
         if not isinstance(data, dict):
-            return [], []
+            return [], [], []
         forbidden = data.get("forbidden_causes", [])
         if not isinstance(forbidden, list):
             forbidden = []
 
-        # kill_mask may be None, a list, or a dict with curated/compiled sub-keys
-        raw_km = data.get("kill_mask") or {}
-        if isinstance(raw_km, list):
-            kill_mask_entries = raw_km
-        elif isinstance(raw_km, dict):
-            # Flatten curated + compiled into one list
-            kill_mask_entries = []
-            for sub_list in raw_km.values():
-                if isinstance(sub_list, list):
-                    kill_mask_entries.extend(sub_list)
-        else:
-            kill_mask_entries = []
+        # flatten_kill_mask handles list, dict-with-subkeys, or None
+        all_km = flatten_kill_mask(data)
 
-        return forbidden, kill_mask_entries
+        # Split by presence of 'edge_family' (curated) vs 'cause'+'target' (compiled)
+        curated: list[dict] = []
+        compiled: list[dict] = []
+        for km in all_km:
+            if not isinstance(km, dict):
+                continue
+            if km.get("edge_family"):
+                curated.append(km)
+            elif km.get("cause") and km.get("target"):
+                compiled.append(km)
+
+        return forbidden, curated, compiled
     except Exception:  # noqa: BLE001
-        return [], []
+        return [], [], []
 
 
-def _matches_forbidden(card: dict, forbidden_causes: list[dict], kill_mask_entries: list[dict]) -> str | None:
-    """Return a description string if the card matches any kill-mask entry, else None."""
-    cause = (card.get("causal_graph", {}) or {}).get("cause", "").lower().strip()
-    target = (card.get("causal_graph", {}) or {}).get("target", "").lower().strip()
-    family = (card.get("family") or "").lower().strip()
+def _matches_forbidden(
+    card: dict,
+    forbidden_causes: list[dict],
+    curated_entries: list[dict],
+    compiled_entries: list[dict],
+) -> str | None:
+    """Return a description string if the card matches any kill-mask entry, else None.
+
+    Kill-mask semantics are SPLIT (M2 ruling):
+      forbidden_causes  — substring match on cause field.
+      curated_entries   — construction-keyword check: edge_family tokens vs
+                          test_spec.domain_harness + claim_en (case-insensitive).
+      compiled_entries  — EXACT cause+target matching (case-insensitive).
+    """
+    cg = card.get("causal_graph", {}) or {}
+    cause = cg.get("cause", "").lower().strip()
+    target = cg.get("target", "").lower().strip()
+
+    # Curated: look for match in claim_en and test_spec.domain_harness
+    claim_text = (card.get("claim_en") or "").lower()
+    ts = card.get("test_spec") or {}
+    harness_text = (ts.get("domain_harness") or "").lower()
 
     # Check forbidden_causes patterns (substring match on cause field)
     for fc in forbidden_causes:
@@ -250,34 +282,54 @@ def _matches_forbidden(card: dict, forbidden_causes: list[dict], kill_mask_entri
                 reason = reason.strip().replace("\n", " ")[:80]
             return f"cause {cause!r} matches forbidden_causes pattern {pattern!r}: {reason}"
 
-    # Check kill_mask entries — may have edge_family (pattern match) or cause/target pairs
-    for km in kill_mask_entries:
+    # Check curated kill-mask entries — construction-keyword match (M2a)
+    for km in curated_entries:
         if not isinstance(km, dict):
             continue
-        # edge_family-based entries match on card family or cause/target substrings
         ef = (km.get("edge_family") or "").lower().strip()
-        if ef:
-            if ef in family or ef in cause or ef in target:
-                reason = (km.get("reason") or "")
-                if isinstance(reason, str):
-                    reason = reason.strip().replace("\n", " ")[:80]
-                return f"matches kill_mask edge_family={ef!r}: {reason}"
-        # cause+target pair entries
+        if not ef:
+            continue
+        # Tokenize edge_family by underscore/dash to check individual tokens
+        ef_tokens = [t for t in ef.replace("-", "_").split("_") if len(t) > 2]
+        # Match if the full edge_family string appears in claim or harness,
+        # OR if every token of edge_family appears in either text
+        if ef in claim_text or ef in harness_text:
+            reason = (km.get("reason") or "")
+            if isinstance(reason, str):
+                reason = reason.strip().replace("\n", " ")[:80]
+            return (
+                f"matches curated kill_mask edge_family={ef!r} "
+                f"(construction-keyword in claim/harness): {reason}"
+            )
+        if ef_tokens and all(t in claim_text or t in harness_text for t in ef_tokens):
+            reason = (km.get("reason") or "")
+            if isinstance(reason, str):
+                reason = reason.strip().replace("\n", " ")[:80]
+            return (
+                f"matches curated kill_mask edge_family={ef!r} "
+                f"(construction-keyword tokens in claim/harness): {reason}"
+            )
+
+    # Check compiled kill-mask entries — EXACT cause+target matching (M2b)
+    for km in compiled_entries:
+        if not isinstance(km, dict):
+            continue
         km_cause = (km.get("cause") or "").lower().strip()
         km_target = (km.get("target") or "").lower().strip()
         if km_cause and km_target:
-            if km_cause in cause and km_target in target:
+            if km_cause == cause and km_target == target:
                 reason = (km.get("reason") or "")
                 if isinstance(reason, str):
                     reason = reason.strip().replace("\n", " ")[:80]
                 return (
-                    f"cause+target matches kill_mask: {km_cause!r} → {km_target!r}: {reason}"
+                    f"cause+target exactly matches compiled kill_mask: "
+                    f"{km_cause!r} → {km_target!r}: {reason}"
                 )
 
     return None
 
 # ---------------------------------------------------------------------------
-# ISO-week filing state
+# ISO-week filing state (M3: durable lock via trial_ledger.jsonl)
 # ---------------------------------------------------------------------------
 
 def _current_iso_week() -> str:
@@ -287,12 +339,11 @@ def _current_iso_week() -> str:
     return f"{year}-W{week:02d}"
 
 
-def _count_filed_this_week(out_dir: Path) -> int:
-    """Count mechanism cards filed in the current ISO week."""
+def _count_filed_this_week_from_mechanisms(out_dir: Path, week: str) -> int:
+    """Count mechanism cards filed in week from causal_mechanisms.jsonl."""
     p = out_dir / _MECHANISMS
     if not p.exists():
         return 0
-    week = _current_iso_week()
     count = 0
     for line in p.read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -305,6 +356,58 @@ def _count_filed_this_week(out_dir: Path) -> int:
         except Exception:  # noqa: BLE001
             pass
     return count
+
+
+def _count_filed_this_week_from_ledger(week: str) -> int:
+    """Count filing_budget rows for this ISO week from data/trial_ledger.jsonl.
+
+    M3 ruling: deleting causal_mechanisms.jsonl cannot reset the budget.
+    One trial_ledger row with kind='filing_budget' and filing_week=<week> is
+    appended per filed card by _log_filing_budget_to_ledger() below.
+    """
+    if not _TRIAL_LEDGER.exists():
+        return 0
+    count = 0
+    for line in _TRIAL_LEDGER.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+            if row.get("kind") == "filing_budget" and row.get("filing_week") == week:
+                count += 1
+        except Exception:  # noqa: BLE001
+            pass
+    return count
+
+
+def _count_filed_this_week(out_dir: Path) -> int:
+    """Return durable filed count for current ISO week.
+
+    M3: uses max(causal_mechanisms.jsonl rows, trial_ledger.jsonl rows) so that
+    deleting causal_mechanisms.jsonl cannot reset the ISO-week budget.
+    """
+    week = _current_iso_week()
+    from_mechanisms = _count_filed_this_week_from_mechanisms(out_dir, week)
+    from_ledger = _count_filed_this_week_from_ledger(week)
+    return max(from_mechanisms, from_ledger)
+
+
+def _log_filing_budget_to_ledger(mechanism_id: str, week: str) -> None:
+    """Append one filing_budget row to data/trial_ledger.jsonl for durability (M3)."""
+    row = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "kind": "filing_budget",
+        "family": "causal_scan",
+        "filing_week": week,
+        "mechanism_id": mechanism_id,
+    }
+    try:
+        _TRIAL_LEDGER.parent.mkdir(parents=True, exist_ok=True)
+        with _TRIAL_LEDGER.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, default=str) + "\n")
+    except Exception:  # noqa: BLE001
+        pass  # non-fatal: mechanisms.jsonl is the primary store
 
 # ---------------------------------------------------------------------------
 # Near-dup detection (claim text similarity — flag only, not auto-reject)
@@ -339,7 +442,7 @@ def ingest(
     machine_hyps = _load_machine_hypotheses(_MACHINE_REGISTRY)
     trial_families = _load_trial_families(_TRIAL_LEDGER)
     oracle_rules = _load_oracle_canonical_rules()
-    forbidden_causes, kill_mask = _load_kill_mask(_CAUSAL_PRIORS)
+    forbidden_causes, curated_kill, compiled_kill = _load_kill_mask(_CAUSAL_PRIORS)
     claim_shapes = _get_claim_shapes()
 
     # ---- ISO-week filing state ----
@@ -367,6 +470,7 @@ def ingest(
         "parsed": len(all_cards),
         "dropped_invalid": 0,
         "dropped_forbidden": 0,
+        "dropped_forged_hash": 0,
         "dropped_dup": 0,
         "near_dup_flagged": 0,
         "accepted": 0,
@@ -397,14 +501,36 @@ def ingest(
             stats["dropped_invalid"] += 1
             continue
 
-        # ---- Step 1: sanitize banned words ----
+        # ---- Step 1: sanitize banned words (all string leaves) ----
         card = sanitize_card(raw_card)
 
-        # ---- Step 2: stamp frozen_hash on environment_map ----
+        # ---- Step 2: frozen_hash mint-vs-tamper (B2 tamper law) ----
+        # If the arriving card has a non-blank frozen_hash, VERIFY it against
+        # the current splits.  A mismatch means the card was tampered with
+        # after the pack told the LLM to leave the hash blank — drop it.
+        # Only compute-and-stamp when the field is absent or blank (MINT path).
         em = card.get("environment_map")
         if isinstance(em, dict):
-            em["frozen_hash"] = _compute_env_hash(em)
-            card["environment_map"] = em
+            arriving_hash = em.get("frozen_hash") or ""
+            # Treat pack's placeholder text as blank
+            if arriving_hash and "(leave blank" in arriving_hash:
+                arriving_hash = ""
+            if arriving_hash:
+                # VERIFY path: check hash before any further processing
+                expected_hash = _compute_env_hash(em)
+                if arriving_hash != expected_hash:
+                    print(
+                        f"  DROP forged hash {card_label}: "
+                        f"arriving frozen_hash={arriving_hash!r} does not match "
+                        f"computed={expected_hash!r} — tampered splits"
+                    )
+                    stats["dropped_forged_hash"] += 1
+                    continue
+                # Hash matches: leave it in place (validate_card will re-verify)
+            else:
+                # MINT path: compute and stamp
+                em["frozen_hash"] = _compute_env_hash(em)
+                card["environment_map"] = em
 
         # ---- Step 3: clamp min_n ----
         ts = card.get("test_spec")
@@ -434,8 +560,8 @@ def ingest(
                 stats["dropped_invalid"] += 1
                 continue
 
-        # ---- Step 6: kill-mask check ----
-        kill_reason = _matches_forbidden(card, forbidden_causes, kill_mask)
+        # ---- Step 6: kill-mask check (M2 semantics split) ----
+        kill_reason = _matches_forbidden(card, forbidden_causes, curated_kill, compiled_kill)
         if kill_reason:
             print(f"  DROP forbidden {card_label}: {kill_reason}")
             stats["dropped_forbidden"] += 1
@@ -502,6 +628,10 @@ def ingest(
         card["authority_block"] = AUTHORITY_BLOCK
         # a6-style provenance in lineage
         lin = card.get("lineage", {}) or {}
+        # M1 law: reset transitions to [] at mint — the LLM's claimed transition
+        # history is content/proposal, not audit trail; only script-actor transitions
+        # are stamped by this ingest process.
+        lin["transitions"] = []
         lin["ingested_at"] = now_iso
         lin["model_label"] = model_label
         lin["actor"] = "script"
@@ -556,6 +686,12 @@ def ingest(
     with p.open("a", encoding="utf-8") as fh:
         for card in accepted_cards:
             fh.write(json.dumps(card, ensure_ascii=False, default=str) + "\n")
+            # M3: log one filing_budget row per filed card to trial_ledger for
+            # durability — deleting causal_mechanisms.jsonl cannot reset the budget
+            _log_filing_budget_to_ledger(
+                mechanism_id=card.get("mechanism_id", "unknown"),
+                week=week,
+            )
             written += 1
 
     print(f"\n[causal_ingest] wrote {written} card(s) to {p}")
@@ -568,6 +704,7 @@ def _print_summary(stats: dict) -> None:
         f"parsed={stats['parsed']} "
         f"dropped_invalid={stats['dropped_invalid']} "
         f"dropped_forbidden={stats['dropped_forbidden']} "
+        f"dropped_forged_hash={stats.get('dropped_forged_hash', 0)} "
         f"dropped_dup={stats['dropped_dup']} "
         f"near_dup_flagged={stats['near_dup_flagged']} "
         f"accepted={stats['accepted']}"

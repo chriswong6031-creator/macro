@@ -8,6 +8,15 @@ Covers:
 - Ingest: dry-run writes nothing; --write files ≤3; second --write same ISO
   week refuses; kill-mask card dropped_forbidden; dedup against pre-existing
   mechanisms fixture; invalid JSON dropped not fatal.
+
+W4 BLOCK remediation tests (added 2026-07-09):
+- B1: build_pack() against REAL committed config/causal_priors.yml succeeds and
+  contains curated kill rows verbatim (no list-vs-dict crash).
+- B2: tampered hash → dropped_forged_hash; blank hash → mint-stamped; stored card
+  mutated post-mint → validate_card catches.
+- M1: LLM-injected forged transition history does not survive ingest.
+- M3: deleting causal_mechanisms.jsonl does NOT reset the budget when ledger rows exist.
+- M4: validate_instruments(load_instruments()) passes against real config.
 """
 from __future__ import annotations
 
@@ -247,7 +256,10 @@ class TestCausalIngestBrainstorm:
         out_dir = tmp_path / "out"
         out_dir.mkdir()
 
-        result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+        # Mock _TRIAL_LEDGER to avoid reading/writing the real repo ledger (M3)
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
         mechanisms_file = out_dir / "causal_mechanisms.jsonl"
         assert mechanisms_file.exists()
         lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
@@ -262,7 +274,9 @@ class TestCausalIngestBrainstorm:
         out_dir = tmp_path / "out"
         out_dir.mkdir()
 
-        result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
         mechanisms_file = out_dir / "causal_mechanisms.jsonl"
         lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
         assert len(lines) <= 3
@@ -293,7 +307,9 @@ class TestCausalIngestBrainstorm:
         new_card = _make_valid_card("new-card-001")
         inbox = self._write_inbox(tmp_path, [new_card])
 
-        result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
         # Should have returned non-zero (budget refused)
         assert result == 1
 
@@ -321,7 +337,9 @@ kill_mask: []
         out_dir = tmp_path / "out"
         out_dir.mkdir()
 
-        with mock.patch("scripts.causal_ingest_brainstorm._CAUSAL_PRIORS", priors_path):
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._CAUSAL_PRIORS", priors_path), \
+             mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
             result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
 
         mechanisms_file = out_dir / "causal_mechanisms.jsonl"
@@ -347,7 +365,9 @@ kill_mask: []
         # Now try to ingest the same card again
         inbox = self._write_inbox(tmp_path, [card])
 
-        result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
         lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
         # Should still be exactly 1 (no new row added)
         assert len(lines) == 1
@@ -383,7 +403,9 @@ kill_mask: []
         out_dir = tmp_path / "out"
         out_dir.mkdir()
 
-        result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
         mechanisms_file = out_dir / "causal_mechanisms.jsonl"
         if mechanisms_file.exists():
             lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
@@ -406,7 +428,9 @@ kill_mask: []
         out_dir = tmp_path / "out"
         out_dir.mkdir()
 
-        result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
         mechanisms_file = out_dir / "causal_mechanisms.jsonl"
         if mechanisms_file.exists():
             lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
@@ -423,7 +447,9 @@ kill_mask: []
         out_dir = tmp_path / "out"
         out_dir.mkdir()
 
-        ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test-model")
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test-model")
         mechanisms_file = out_dir / "causal_mechanisms.jsonl"
         if mechanisms_file.exists():
             lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
@@ -431,3 +457,396 @@ kill_mask: []
                 written = json.loads(lines[0])
                 assert written.get("actor") == "script"
                 assert written["lineage"].get("model_label") == "test-model"
+
+
+# ===========================================================================
+# W4 BLOCK REMEDIATION TESTS
+# ===========================================================================
+
+
+# ---------------------------------------------------------------------------
+# B1 — REAL CONFIG: build_pack against committed config/causal_priors.yml
+# ---------------------------------------------------------------------------
+
+class TestB1RealConfigPack:
+    """B1: build_pack() must not crash on the real config/causal_priors.yml
+    (which ships kill_mask as a dict, not a list) and must render curated
+    kill rows verbatim in the pack output."""
+
+    @pytest.fixture
+    def real_config_root(self):
+        """Return the real repo root (where config/causal_priors.yml lives)."""
+        return Path(__file__).resolve().parents[1]
+
+    def test_build_pack_real_config_succeeds(self, real_config_root, tmp_path):
+        """build_pack() against real config/causal_priors.yml must not raise."""
+        import scripts.causal_brainstorm_pack as mod
+
+        real_priors = real_config_root / "config" / "causal_priors.yml"
+        assert real_priors.exists(), f"real config not found: {real_priors}"
+
+        with mock.patch.multiple(
+            mod,
+            _FEATURE_INVENTORY=tmp_path / "causal_feature_inventory.json",
+            _CAUSAL_EDGES=tmp_path / "causal_edges.jsonl",
+            _CAUSAL_FRONTIER=tmp_path / "causal_frontier.json",
+            _SURPRISE_QUEUE=tmp_path / "causal_surprise_queue.jsonl",
+            _CAUSAL_NULLS=tmp_path / "causal_nulls.jsonl",
+            _CAUSAL_PRIORS=real_priors,
+            _MACHINE_REGISTRY=tmp_path / "machine_registry.jsonl",
+            _MECHANISMS=tmp_path / "causal_mechanisms.jsonl",
+        ):
+            # Must not raise (was crashing before B1 fix because kill_mask is a dict)
+            pack = mod.build_pack(n_requested=5)
+
+        assert isinstance(pack, str)
+        assert len(pack) > 200
+
+    def test_build_pack_real_config_contains_curated_kill_rows(self, real_config_root, tmp_path):
+        """build_pack against real config must include curated kill-mask edge_family values."""
+        import yaml
+        import scripts.causal_brainstorm_pack as mod
+
+        real_priors = real_config_root / "config" / "causal_priors.yml"
+        assert real_priors.exists(), f"real config not found: {real_priors}"
+
+        # Load the real curated entries from the config
+        data = yaml.safe_load(real_priors.read_text(encoding="utf-8"))
+        raw_km = data.get("kill_mask") or {}
+        assert isinstance(raw_km, dict), "kill_mask must be a dict in the real config"
+        curated = raw_km.get("curated", [])
+        assert curated, "real config must have at least one curated kill entry"
+
+        # Run pack against real config
+        with mock.patch.multiple(
+            mod,
+            _FEATURE_INVENTORY=tmp_path / "causal_feature_inventory.json",
+            _CAUSAL_EDGES=tmp_path / "causal_edges.jsonl",
+            _CAUSAL_FRONTIER=tmp_path / "causal_frontier.json",
+            _SURPRISE_QUEUE=tmp_path / "causal_surprise_queue.jsonl",
+            _CAUSAL_NULLS=tmp_path / "causal_nulls.jsonl",
+            _CAUSAL_PRIORS=real_priors,
+            _MACHINE_REGISTRY=tmp_path / "machine_registry.jsonl",
+            _MECHANISMS=tmp_path / "causal_mechanisms.jsonl",
+        ):
+            pack = mod.build_pack(n_requested=5)
+
+        # Every curated edge_family must appear verbatim in the pack (DO-NOT-PROPOSE lines)
+        for entry in curated:
+            ef = entry.get("edge_family", "")
+            assert ef and ef in pack, (
+                f"curated kill entry edge_family={ef!r} not found in pack output; "
+                f"pack missing verbatim DO-NOT-PROPOSE rendering of curated kill rows"
+            )
+
+
+# ---------------------------------------------------------------------------
+# B2 — FROZEN-HASH TAMPER EVIDENCE
+# ---------------------------------------------------------------------------
+
+class TestB2FrozenHashTamper:
+    """B2: mint-vs-tamper semantics for frozen_hash."""
+
+    def _write_inbox(self, tmp_path: Path, cards: list[dict]) -> Path:
+        inbox = tmp_path / "inbox"
+        inbox.mkdir(exist_ok=True)
+        (inbox / "batch.json").write_text(json.dumps(cards), encoding="utf-8")
+        return inbox
+
+    def test_tampered_hash_card_dropped_forged_hash(self, tmp_path):
+        """Arriving card with stale frozen_hash + extra split → dropped_forged_hash."""
+        from scripts.causal_ingest_brainstorm import ingest
+        from engine.neuralweb.causal_schema import _compute_env_hash
+
+        # Build a card with a correctly minted hash
+        card = _make_valid_card("tamper-test-001")
+        em = card["environment_map"]
+        good_hash = _compute_env_hash(em)
+        em["frozen_hash"] = good_hash
+
+        # Now tamper: add an extra split condition AFTER computing the hash
+        em["should_hold"].append("INJECTED_CONDITION")
+        card["environment_map"] = em
+        # The hash now mismatches the current splits
+
+        inbox = self._write_inbox(tmp_path, [card])
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+
+        # Redirect trial_ledger writes to tmp_path to avoid polluting real repo data
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+
+        mechanisms_file = out_dir / "causal_mechanisms.jsonl"
+        lines = (
+            [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
+            if mechanisms_file.exists()
+            else []
+        )
+        assert len(lines) == 0, "tampered-hash card must be dropped, not filed"
+
+    def test_blank_hash_card_gets_minted(self, tmp_path):
+        """Arriving card with blank/absent frozen_hash → hash computed-and-stamped at mint."""
+        from scripts.causal_ingest_brainstorm import ingest
+        from engine.neuralweb.causal_schema import _compute_env_hash
+
+        card = _make_valid_card("mint-test-001")
+        # Remove the frozen_hash to simulate an LLM card that left it blank
+        em = card["environment_map"]
+        em.pop("frozen_hash", None)
+        card["environment_map"] = em
+
+        inbox = self._write_inbox(tmp_path, [card])
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+
+        mechanisms_file = out_dir / "causal_mechanisms.jsonl"
+        assert mechanisms_file.exists(), "valid card with blank hash should be filed"
+        lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
+        assert len(lines) == 1
+        written = json.loads(lines[0])
+        # The filed card must have a non-blank frozen_hash that matches the splits
+        em_written = written.get("environment_map", {})
+        assert em_written.get("frozen_hash"), "frozen_hash must be stamped at mint"
+        expected = _compute_env_hash(em_written)
+        assert em_written["frozen_hash"] == expected, "stamped hash must match computed hash"
+
+    def test_stored_card_mutated_post_mint_caught_by_validate(self):
+        """Stored card with mutated environment_map fails validate_card (tamper evidence)."""
+        from engine.neuralweb.causal_schema import validate_card, _compute_env_hash
+
+        card = _make_valid_card("post-mint-tamper")
+        # Ensure hash is correct
+        em = card["environment_map"]
+        em["frozen_hash"] = _compute_env_hash(em)
+        card["environment_map"] = em
+
+        errors = validate_card(card)
+        assert errors == [], f"clean card should pass: {errors}"
+
+        # Now mutate the splits WITHOUT updating the hash (simulates post-mint tamper)
+        card["environment_map"]["should_hold"].append("TAMPERED")
+        errors = validate_card(card)
+        assert any("frozen_hash" in e and "mismatch" in e for e in errors), (
+            f"post-mint tamper must be caught by validate_card: {errors}"
+        )
+
+    def test_pack_placeholder_hash_treated_as_blank(self, tmp_path):
+        """Cards arriving with the pack's placeholder text in frozen_hash are minted."""
+        from scripts.causal_ingest_brainstorm import ingest
+
+        card = _make_valid_card("placeholder-hash-001")
+        card["environment_map"]["frozen_hash"] = (
+            "(leave blank — the ingest script computes this at mint time)"
+        )
+
+        inbox = self._write_inbox(tmp_path, [card])
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+
+        mechanisms_file = out_dir / "causal_mechanisms.jsonl"
+        assert mechanisms_file.exists()
+        lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
+        assert len(lines) == 1, "placeholder-hash card should be filed (treated as blank)"
+
+
+# ---------------------------------------------------------------------------
+# M1 — FORGED TRANSITION HISTORY
+# ---------------------------------------------------------------------------
+
+class TestM1ForgedTransitionHistory:
+    """M1: LLM-supplied lineage.transitions must be discarded on mint."""
+
+    def _write_inbox(self, tmp_path: Path, cards: list[dict]) -> Path:
+        inbox = tmp_path / "inbox"
+        inbox.mkdir(exist_ok=True)
+        (inbox / "batch.json").write_text(json.dumps(cards), encoding="utf-8")
+        return inbox
+
+    def test_llm_forged_transitions_not_in_filed_card(self, tmp_path):
+        """LLM-injected llm→filed transition history does not survive ingest."""
+        from scripts.causal_ingest_brainstorm import ingest
+
+        card = _make_valid_card("forged-history-001")
+        # Inject a forged transition history as an LLM might do
+        card["lineage"]["transitions"] = [
+            {"from": "inbox", "to": "filed", "actor": "llm", "reason": "auto-approved"},
+            {"from": "inbox", "to": "skeptic_passed", "actor": "llm", "reason": "skeptic ok"},
+        ]
+
+        inbox = self._write_inbox(tmp_path, [card])
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+
+        mechanisms_file = out_dir / "causal_mechanisms.jsonl"
+        assert mechanisms_file.exists()
+        lines = [l for l in mechanisms_file.read_text().splitlines() if l.strip()]
+        assert len(lines) == 1
+        written = json.loads(lines[0])
+        transitions = written.get("lineage", {}).get("transitions", [])
+        assert transitions == [], (
+            f"LLM-forged transitions must be reset to [] on mint; got: {transitions}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# M3 — ISO-WEEK LOCK DURABILITY
+# ---------------------------------------------------------------------------
+
+class TestM3IsoWeekLockDurability:
+    """M3: deleting causal_mechanisms.jsonl must not reset the weekly budget
+    when trial_ledger rows exist."""
+
+    def _write_inbox(self, tmp_path: Path, cards: list[dict]) -> Path:
+        inbox = tmp_path / "inbox"
+        inbox.mkdir(exist_ok=True)
+        (inbox / "batch.json").write_text(json.dumps(cards), encoding="utf-8")
+        return inbox
+
+    def test_budget_not_reset_by_deleting_mechanisms_file(self, tmp_path):
+        """Budget is durable: deleting causal_mechanisms.jsonl doesn't reset it."""
+        from scripts.causal_ingest_brainstorm import (
+            ingest, _BUDGET_PER_WEEK, _current_iso_week,
+            _count_filed_this_week, _log_filing_budget_to_ledger,
+        )
+
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+        mechanisms_file = out_dir / "causal_mechanisms.jsonl"
+
+        week = _current_iso_week()
+
+        # Pre-populate trial_ledger with BUDGET rows for this week (simulating
+        # a previous filing run that has since had its mechanisms file deleted)
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            for i in range(_BUDGET_PER_WEEK):
+                _log_filing_budget_to_ledger(f"pre-filed-{i:03d}", week)
+
+        # Confirm mechanisms file does NOT exist (it was "deleted")
+        assert not mechanisms_file.exists()
+
+        # Now try to file a new card — budget should be full from ledger alone
+        new_card = _make_valid_card("post-delete-001")
+        inbox = self._write_inbox(tmp_path, [new_card])
+
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            result = ingest(inbox=inbox, out_dir=out_dir, dry_run=False, model_label="test")
+
+        # Budget should be exhausted from ledger — ingest returns 1
+        assert result == 1, (
+            "ingest must refuse when budget is exhausted via ledger rows, "
+            "even if causal_mechanisms.jsonl was deleted"
+        )
+
+    def test_count_uses_max_of_mechanisms_and_ledger(self, tmp_path):
+        """_count_filed_this_week returns max(mechanisms_rows, ledger_rows)."""
+        from scripts.causal_ingest_brainstorm import (
+            _count_filed_this_week, _current_iso_week,
+        )
+
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+        week = _current_iso_week()
+
+        # Write 2 rows only to the ledger (no mechanisms file)
+        for i in range(2):
+            row = {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "kind": "filing_budget",
+                "family": "causal_scan",
+                "filing_week": week,
+                "mechanism_id": f"test-{i}",
+            }
+            with ledger_path.open("a") as fh:
+                fh.write(json.dumps(row) + "\n")
+
+        with mock.patch("scripts.causal_ingest_brainstorm._TRIAL_LEDGER", ledger_path):
+            count = _count_filed_this_week(out_dir)
+
+        assert count == 2, f"expected 2 from ledger alone, got {count}"
+
+
+# ---------------------------------------------------------------------------
+# M4 — INSTRUMENT VALIDATOR CI WIRING
+# ---------------------------------------------------------------------------
+
+class TestM4InstrumentValidatorRealConfig:
+    """M4: validate_instruments(load_instruments()) must pass against the real
+    committed config/causal_instruments.yml."""
+
+    def test_real_instruments_config_valid(self):
+        """validate_instruments against real config/causal_instruments.yml returns no errors."""
+        from engine.neuralweb.causal_schema import validate_instruments, load_instruments
+
+        real_root = Path(__file__).resolve().parents[1]
+        instruments_path = real_root / "config" / "causal_instruments.yml"
+        assert instruments_path.exists(), (
+            f"config/causal_instruments.yml not found at {instruments_path}"
+        )
+
+        instruments = load_instruments(real_root)
+        assert instruments, "real config must contain at least one instrument"
+
+        errors = validate_instruments(instruments)
+        assert errors == [], (
+            f"validate_instruments against real config returned errors: {errors}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# m1 — BANNED-WORD COVERAGE: notes, test_spec, lineage fields
+# ---------------------------------------------------------------------------
+
+class TestM1BannedWordCoverage:
+    """m1 (minor): banned word check covers all string leaves, not just claim fields."""
+
+    def test_banned_word_in_notes_fails_validation(self):
+        """Banned word in top-level notes field fails validate_card."""
+        from engine.neuralweb.causal_schema import validate_card
+
+        card = _make_valid_card("notes-banned-001")
+        card["notes"] = "This mechanism caused the observed anomaly."
+        errors = validate_card(card)
+        assert any("caused" in e or "notes" in e for e in errors), (
+            f"Banned word in notes should fail validation; errors={errors}"
+        )
+
+    def test_banned_word_in_test_spec_notes_fails_validation(self):
+        """Banned word in test_spec.notes field fails validate_card."""
+        from engine.neuralweb.causal_schema import validate_card
+
+        card = _make_valid_card("ts-notes-banned-001")
+        card["test_spec"]["notes"] = "Validated approach for testing."
+        errors = validate_card(card)
+        assert any("validated" in e.lower() or "test_spec" in e for e in errors), (
+            f"Banned word in test_spec.notes should fail validation; errors={errors}"
+        )
+
+    def test_sanitize_card_cleans_all_leaves(self):
+        """sanitize_card replaces banned words in notes and test_spec.notes."""
+        from engine.neuralweb.causal_schema import sanitize_card
+
+        card = _make_valid_card("sanitize-all-001")
+        card["notes"] = "This mechanism caused the anomaly."
+        card["test_spec"]["notes"] = "Validated approach."
+        card["lineage"]["custom_note"] = "Proof of effectiveness."
+
+        cleaned = sanitize_card(card)
+        assert "caused" not in cleaned.get("notes", "").lower()
+        assert "validated" not in cleaned["test_spec"].get("notes", "").lower()
+        assert "proof" not in cleaned["lineage"].get("custom_note", "").lower()

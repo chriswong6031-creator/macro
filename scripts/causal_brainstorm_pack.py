@@ -10,6 +10,14 @@ and the EXACT JSON output schema.
 All sections are generated live from committed artifacts — an absent file yields
 an honest '(absent — 0 rows)' line; nothing is fabricated.
 
+Kill-mask rendering (B1 ruling):
+  config/causal_priors.yml ships kill_mask as a dict with two sub-sections:
+    curated  — construction-level kills; rendered verbatim as DO-NOT-PROPOSE lines
+               with their edge_family and source_ruling fields.
+    compiled — edge-level kills; not rendered in the pack (they appear in the NULL
+               LIBRARY section via causal_nulls.jsonl which is the source of truth).
+  flatten_kill_mask() from causal_schema extracts both sub-lists for iteration.
+
 No LLM calls; pure stdout; NO file writes (CHF-R8 — the LLM runner is W5).
 
 Usage:
@@ -24,6 +32,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+
+from engine.neuralweb.causal_schema import flatten_kill_mask  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # File paths (all relative to ROOT)
@@ -251,32 +261,63 @@ def _section_null_library_and_kill_mask() -> str:
             parts.append(f"  ... ({len(nulls) - 20} more nulls)")
 
     # Kill mask from causal_priors.yml
+    # config/causal_priors.yml ships kill_mask as {curated: [...], compiled: []}
+    # Use flatten_kill_mask to handle both list and dict formats (B1 fix).
+    # Only the CURATED entries are rendered verbatim here — compiled entries are
+    # edge-level and appear above in the null library section.
     priors = _load_yaml(_CAUSAL_PRIORS)
-    parts.append("\n  KILL MASK (verbatim forbidden causes from config/causal_priors.yml):")
+    parts.append("\n  FORBIDDEN CAUSES (config/causal_priors.yml — Article-2 / fence patterns):")
     if priors is None:
         parts.append(_absent("config/causal_priors.yml"))
     else:
         forbidden = priors.get("forbidden_causes", [])
+        if not isinstance(forbidden, list):
+            forbidden = []
         if not forbidden:
-            parts.append("  (no forbidden causes in kill mask)")
+            parts.append("  (no forbidden_causes in config)")
         else:
             for fc in forbidden:
+                if not isinstance(fc, dict):
+                    continue
                 pattern = fc.get("pattern", "?")
                 reason = fc.get("reason", "?")
+                ruling = fc.get("source_ruling", "")
                 if isinstance(reason, str):
                     reason = reason.strip().replace("\n", " ")[:100]
-                parts.append(f"  - pattern={pattern!r}: {reason}")
+                ruling_str = f" [{ruling}]" if ruling else ""
+                parts.append(f"  - pattern={pattern!r}{ruling_str}: {reason}")
 
-        kill_mask = priors.get("kill_mask", [])
-        if kill_mask:
-            parts.append("\n  EXPLICIT KILL MASK PAIRS (cause → target, never re-propose):")
-            for km in kill_mask:
-                cause = km.get("cause", "?")
-                target = km.get("target", "?")
+        # Curated kill-mask entries: construction-level kills rendered verbatim
+        # as DO-NOT-PROPOSE lines with their actual fields (edge_family, reason,
+        # source_ruling).  These are PACK-advisory: the LLM must not propose
+        # cards in these construction families (B1 fix).
+        raw_km = priors.get("kill_mask") or {}
+        curated: list[dict] = []
+        if isinstance(raw_km, list):
+            curated = [e for e in raw_km if isinstance(e, dict)]
+        elif isinstance(raw_km, dict):
+            curated_raw = raw_km.get("curated") or []
+            if isinstance(curated_raw, list):
+                curated = [e for e in curated_raw if isinstance(e, dict)]
+
+        if curated:
+            parts.append(
+                "\n  CURATED KILL MASK — CONSTRUCTION-LEVEL KILLS (DO NOT PROPOSE):"
+            )
+            for km in curated:
+                ef = km.get("edge_family", "?")
                 reason = km.get("reason", "?")
+                ruling = km.get("source_ruling", "")
                 if isinstance(reason, str):
-                    reason = reason.strip().replace("\n", " ")[:100]
-                parts.append(f"  - {cause} → {target}: {reason}")
+                    reason = reason.strip().replace("\n", " ")[:120]
+                ruling_str = f" [{ruling}]" if ruling else ""
+                clock = km.get("come_back_clock")
+                clock_str = f" (come_back: {clock})" if clock else ""
+                parts.append(
+                    f"  - edge_family={ef!r}{ruling_str}{clock_str}: {reason}"
+                )
+        else:
+            parts.append("  (no curated kill-mask entries)")
 
     return "\n".join(parts)
 
