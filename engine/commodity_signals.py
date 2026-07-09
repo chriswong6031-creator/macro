@@ -409,7 +409,7 @@ def _stoch_kd(close: pd.Series, k_period: int = 14,
 def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
     """Per-asset technical-arming block (display-tier only, context not scoring).
 
-    Returns a JSON-safe dict with v1-frozen parameters printed verbatim.
+    Returns a JSON-safe dict with v1.1 parameters printed verbatim.
     All booleans are True/False (never None/NaN).  Null-safe: returns a
     partial dict with armed=False when the series is too short.
 
@@ -421,15 +421,25 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
                         to avoid flagging stale crosses).
     macd_curl         : MACD histogram rising for 3 consecutive bars while
                         below zero (histogram = MACD-line minus signal line).
+                        v1.1: each positive diff must also exceed a
+                        scale-invariant minimum (`macd_rise_min_frac` × the
+                        rolling mean |histogram|) so float jitter on a
+                        near-constant negative histogram does NOT fire.
     basing            : close within `base_pct` of the `base_window`-day low
                         for >= `base_min_days` consecutive sessions AND the
                         `drawdown_window`-day max-drawdown <= `drawdown_min`.
-    days_in_base      : consecutive sessions meeting the basing price test
-                        (resets when price leaves the band).
+                        v1.1: additionally the absolute net close-to-close
+                        return over the last `base_min_days` sessions must be
+                        <= `base_flat_max_abs_return` (flatness gate — a
+                        genuine base is ±few %, an ongoing decline is −10%+).
+    days_in_base      : consecutive sessions meeting the basing PRICE-BAND
+                        test (resets when price leaves the band); `basing` (and
+                        therefore `armed`) additionally requires the flatness
+                        gate to pass.
     armed             : basing AND (stoch_curl OR macd_curl).
     """
     acfg = cfg.get("technical_arming", {})
-    # --- v1-frozen parameters ------------------------------------------------
+    # --- parameters (v1-frozen unless noted as v1.1 additions) ---------------
     k_period       = int(acfg.get("stoch_k_period", 14))
     smooth_k       = int(acfg.get("stoch_smooth_k", 3))
     smooth_d       = int(acfg.get("stoch_smooth_d", 3))
@@ -444,6 +454,11 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
     drawdown_window = int(acfg.get("drawdown_window_d", 120))
     drawdown_min   = float(acfg.get("drawdown_min", -0.15))
     stoch_curl_lookback = int(acfg.get("stoch_curl_lookback", 3))
+    # v1.1: flatness gate — basing requires net return over base_min_days <= this
+    base_flat_max_abs_return = float(acfg.get("base_flat_max_abs_return", 0.06))
+    # v1.1: scale-invariant minimum per-diff for the MACD rising test
+    # each positive diff must exceed (macd_rise_min_frac × rolling mean |histogram|)
+    macd_rise_min_frac = float(acfg.get("macd_rise_min_frac", 0.02))
 
     params = {
         "stoch_k_period": k_period, "stoch_smooth_k": smooth_k,
@@ -454,13 +469,17 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
         "base_min_days": base_min_days,
         "drawdown_window_d": drawdown_window, "drawdown_min": drawdown_min,
         "stoch_curl_lookback": stoch_curl_lookback,
-        "version": "v1",
+        # v1.1 additions
+        "base_flat_max_abs_return": base_flat_max_abs_return,
+        "macd_rise_min_frac": macd_rise_min_frac,
+        "version": "v1.1",
     }
 
     null_result = {
         "stoch_k": None, "stoch_d": None,
         "stoch_curl": False, "macd_curl": False,
         "basing": False, "days_in_base": 0,
+        "flatness": None,
         "armed": False, "params": params,
     }
 
@@ -492,26 +511,46 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
                 stoch_curl = True
                 break
 
-    # --- MACD curl: histogram rising for `macd_consec` consecutive bars while < 0 ---
+    # --- MACD curl: histogram rising for `macd_consec` consecutive bars while < 0
+    #     v1.1: each positive diff must exceed a scale-invariant minimum so that
+    #     float jitter on a near-constant negative histogram does NOT fire.
     macd_line = _ema(close, macd_fast) - _ema(close, macd_slow)
     macd_sig = _ema(macd_line, macd_signal)
     hist = macd_line - macd_sig
 
     macd_curl = False
-    if len(hist.dropna()) >= macd_consec + 1:
-        tail = hist.dropna().iloc[-(macd_consec + 1):]
-        # all bars must be below zero AND each bar higher than the prior
+    hist_clean = hist.dropna()
+    if len(hist_clean) >= macd_consec + 1:
+        tail = hist_clean.iloc[-(macd_consec + 1):]
         if len(tail) == macd_consec + 1:
             below_zero = (tail.iloc[1:] < 0).all()
-            rising = (tail.diff().iloc[1:] > 0).all()
-            macd_curl = bool(below_zero and rising)
+            diffs = tail.diff().iloc[1:]
+            rising = (diffs > 0).all()
+            if below_zero and rising:
+                # v1.1 scale-invariant minimum: each diff must exceed
+                # macd_rise_min_frac × rolling mean |histogram| (use a
+                # 60-bar window so the floor adapts to the asset's scale).
+                # An absolute floor of price_mean × 1e-6 guards against the
+                # degenerate case where a perfectly linear series produces a
+                # near-constant float-jitter histogram whose rolling magnitude
+                # is also floating-point scale, making the relative epsilon
+                # trivially small.  The floor sets a price-commensurate
+                # lower bound so purely numerical noise cannot satisfy the gate.
+                roll_mag = hist_clean.abs().rolling(60, min_periods=20).mean()
+                mag_floor = float(roll_mag.iloc[-1]) if pd.notna(roll_mag.iloc[-1]) else 0.0
+                price_floor = float(close.mean()) * 1e-6
+                min_diff = max(macd_rise_min_frac * mag_floor, price_floor)
+                economically_rising = (diffs > min_diff).all()
+                macd_curl = bool(economically_rising)
 
     # --- basing: close within `base_pct` of the `base_window`-day low
     #     for >= `base_min_days` consecutive sessions AND 120d drawdown <= -15%
+    #     v1.1: additionally the net return over the last base_min_days sessions
+    #     must be <= base_flat_max_abs_return in absolute value (flatness gate).
     low_60 = close.rolling(base_window, min_periods=base_window).min()
     in_base_band = (close <= low_60 * (1 + base_pct))
 
-    # count consecutive sessions in base band (reset on first False)
+    # count consecutive sessions in price-band (resets on first False)
     days_in_base = 0
     arr = in_base_band.to_numpy()
     for v in reversed(arr):
@@ -524,7 +563,22 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
     dd_120 = float((close / close.rolling(drawdown_window, min_periods=drawdown_window).max() - 1).iloc[-1]) \
         if len(close) >= drawdown_window else 0.0
 
-    basing = bool(days_in_base >= base_min_days and dd_120 <= drawdown_min)
+    # v1.1 flatness gate: |net return over the in-band period| <= threshold.
+    # Window = min(days_in_base, 4 × base_min_days).  The 4× multiplier (default
+    # 40 sessions) is deliberately wider than the base_min_days minimum (10) but
+    # narrower than base_window (60), which can step back into the preceding drop
+    # phase when days_in_base is inflated by the proximity-to-low counter running
+    # throughout the descent.  An ongoing decline shows -8%+ over 40 sessions; a
+    # genuine sideways coil remains ±few % across its full duration.
+    flat_window = min(days_in_base, 4 * base_min_days) if days_in_base >= base_min_days else base_min_days
+    if len(close) >= flat_window and flat_window >= 2:
+        flat_slice = close.iloc[-flat_window:]
+        flatness = float(abs(flat_slice.iloc[-1] / flat_slice.iloc[0] - 1))
+    else:
+        flatness = None
+    flat_ok = (flatness is not None and flatness <= base_flat_max_abs_return)
+
+    basing = bool(days_in_base >= base_min_days and dd_120 <= drawdown_min and flat_ok)
     armed = bool(basing and (stoch_curl or macd_curl))
 
     return {
@@ -534,6 +588,7 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
         "macd_curl": macd_curl,
         "basing": basing,
         "days_in_base": days_in_base,
+        "flatness": round(flatness, 4) if flatness is not None else None,
         "armed": armed,
         "params": params,
     }

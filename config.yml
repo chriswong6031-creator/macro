@@ -2968,6 +2968,14 @@ commodities:
     base_min_days: 10              # min consecutive days in base band
     drawdown_window_d: 120         # max-drawdown lookback for the deep-washout gate
     drawdown_min: -0.15            # drawdown must be <= this (e.g. -15%) to qualify
+    # v1.1 hardening (PS-A1, 2026-07-09)
+    base_flat_max_abs_return: 0.06 # flatness gate: |net return over base_min_days sessions| must be
+                                   # <= this for basing to fire; blocks falling-knife arms (an ongoing
+                                   # -10%+ decline over 10 sessions satisfies proximity-to-low but is NOT
+                                   # a base; a genuine sideways coil is +/-few %)
+    macd_rise_min_frac: 0.02       # scale-invariant MACD epsilon: each positive diff in the rising-3-bars
+                                   # test must exceed (macd_rise_min_frac x rolling 60-bar mean |histogram|);
+                                   # prevents float jitter on a near-constant negative histogram from firing
 
   # --- Phase 5: alerts (daily state-change events) + intraday shock sentinel ---
   alerts:

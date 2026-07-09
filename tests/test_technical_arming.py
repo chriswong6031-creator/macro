@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -116,34 +117,59 @@ def test_stoch_curl_false_when_overbought() -> None:
 def test_macd_curl_fires_in_recovering_downtrend() -> None:
     """MACD histogram below zero but rising for 3+ consecutive bars = MACD curl.
 
-    Construction: a sharp drop drives the MACD histogram deeply negative.
-    We then truncate the series just before the histogram crosses zero (the
-    exact zero-crossing bar is found by scanning and then dropping the tail
-    so that the last bars still have hist < 0 and rising).  This correctly
-    represents the early-recovery / curl phase.
+    Construction: a sharp -40% drop drives the MACD histogram deeply negative.
+    A NOISY recovery then causes the histogram to curl upward with economically
+    meaningful diffs — which is what a real recovery looks like (not a piecewise-
+    linear flat-line that produces only asymptotic float-scale convergence).
+    We scan forward from bar 120 (min_bars gate) to find the first 3-bar window
+    where hist < 0, rising, and diffs exceed the v1.1 scale-invariant epsilon,
+    then truncate there.
+
+    Note: a purely piecewise-linear recovery (linspace + flat) produces diffs
+    that are too small to pass the epsilon, which is CORRECT behavior — those
+    fixtures represent EMA convergence artifacts, not real momentum curls.
     """
     from engine.commodity_signals import _ema
 
+    rng = np.random.default_rng(7)
     n = 600
     idx = pd.date_range("2019-01-01", periods=n, freq="B")
-    c_arr = np.concatenate([
-        np.linspace(100, 60, 250),   # sharp drop -> MACD deeply negative
-        np.full(350, 60.5),          # flat base -> slow EMA catches fast EMA
-    ])
-    c = pd.Series(c_arr, index=idx)
-    # Find the bar where hist crosses zero
+    # Sharp -40% drop in 120 bars, then noisy recovery
+    drop = np.linspace(100, 60, 120)
+    recovery_log = rng.normal(0.001, 0.01, 480).cumsum()
+    recovery = 60 * np.exp(recovery_log - recovery_log[0])  # anchored at 60
+    c = pd.Series(np.concatenate([drop, recovery]), index=idx)
+
     macd_line = _ema(c, 12) - _ema(c, 26)
     macd_sig = _ema(macd_line, 9)
     hist = macd_line - macd_sig
-    # truncate: keep only bars up to the last bar where hist is still negative
-    neg_bars = hist[hist < 0].index
-    assert len(neg_bars) > 30, "fixture sanity: must have negative bars"
-    cutoff = neg_bars[-1]  # last bar where hist < 0
-    c_trunc = c.loc[:cutoff]
+    h = hist.dropna()
+
+    # Find first valid curl window at or after bar 120 (min_bars)
+    cutoff_date = None
+    for i in range(120, len(h)):
+        tail = h.iloc[i - 3:i + 1]
+        if len(tail) < 4:
+            continue
+        diffs = tail.diff().iloc[1:]
+        if not ((tail.iloc[1:] < 0).all() and (diffs > 0).all()):
+            continue
+        roll_mag = h.abs().rolling(60, min_periods=20).mean()
+        mag_f = float(roll_mag.iloc[i]) if pd.notna(roll_mag.iloc[i]) else 0.0
+        price_f = float(c.iloc[:i + 1].mean()) * 1e-6
+        min_diff = max(0.02 * mag_f, price_f)
+        if (diffs > min_diff).all():
+            cutoff_date = h.index[i]
+            break
+
+    assert cutoff_date is not None, (
+        "fixture sanity: no economically-rising negative-histogram window found after bar 120"
+    )
+    c_trunc = c.loc[:cutoff_date]
     px = _px(c_trunc)
     result = technical_arming(px, CFG)
     assert result["macd_curl"] is True, (
-        f"Expected macd_curl=True at histogram zero-crossing tail, got {result}"
+        f"Expected macd_curl=True at genuine histogram curl, got {result}"
     )
 
 
@@ -275,13 +301,16 @@ def test_params_block_present_and_versioned() -> None:
     px = _px(c)
     result = technical_arming(px, CFG)
     p = result["params"]
-    assert p["version"] == "v1", "params must carry version=v1"
+    assert p["version"] == "v1.1", "params must carry version=v1.1"
     # All v1-frozen keys must be present
     for key in ("stoch_k_period", "stoch_smooth_k", "stoch_smooth_d",
                  "stoch_oversold", "macd_fast", "macd_slow", "macd_signal",
                  "macd_consecutive_bars", "base_window_d", "base_pct",
                  "base_min_days", "drawdown_window_d", "drawdown_min"):
         assert key in p, f"params missing key: {key}"
+    # v1.1 addition keys must also be present
+    assert "base_flat_max_abs_return" in p, "params missing v1.1 key: base_flat_max_abs_return"
+    assert "macd_rise_min_frac" in p, "params missing v1.1 key: macd_rise_min_frac"
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +358,145 @@ def test_arming_block_present_via_compute_asset() -> None:
         assert "armed" in arm, f"{asset}: 'armed' key missing"
         assert isinstance(arm["armed"], bool), f"{asset}: armed must be bool"
         assert "params" in arm, f"{asset}: 'params' key missing"
-        assert arm["params"]["version"] == "v1", f"{asset}: params version mismatch"
+        assert arm["params"]["version"] == "v1.1", f"{asset}: params version mismatch"
+
+
+# ---------------------------------------------------------------------------
+# PS-A1 new tests (3): falling knife, genuine base, linear-decline macd_curl
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("seed", [1, 5, 42, 99, 137])
+def test_falling_knife_never_arms(seed: int) -> None:
+    """A noisy monotone -30% decline must NOT arm, regardless of seed.
+
+    This is the core construct-flaw regression from the Opus review (PS-A1):
+    in v1 the proximity-to-trailing-low test is satisfied continuously by an
+    ongoing decline (the 60d low tracks the price down), so days_in_base
+    inflates through the descent and transient noise-bounces fire the curls.
+    The v1.1 flatness gate must block ALL of these seeds.
+    """
+    rng = np.random.default_rng(seed)
+    n = 600
+    idx = pd.date_range("2020-01-01", periods=n, freq="B")
+    # Noisy monotone decline: ~-30% over 600 days with daily vol ~0.8%
+    trend = np.linspace(0, np.log(0.70), n)
+    noise = rng.normal(0, 0.008, n).cumsum()
+    close = pd.Series(100 * np.exp(trend + noise), index=idx)
+    px = _px(close)
+    cfg = config.load()["commodities"]
+    result = technical_arming(px, cfg)
+    assert result["armed"] is False, (
+        f"seed={seed}: falling knife must NOT arm with v1.1, got armed=True "
+        f"(basing={result['basing']}, days_in_base={result['days_in_base']}, "
+        f"flatness={result.get('flatness')}, "
+        f"stoch_curl={result['stoch_curl']}, macd_curl={result['macd_curl']})"
+    )
+
+
+def test_genuine_flat_base_then_curl_arms() -> None:
+    """A sharp -23% drop followed by a genuine flat base THEN a noisy recovery
+    with a real MACD curl must arm.  This verifies the flatness gate does not
+    block valid setups.
+
+    Construction:
+    - 280 bars flat at 100 (establishes the 120d peak)
+    - 80-bar sharp -23% drop (gives 120d drawdown ~-23%, below -15% gate)
+    - 50 bars truly flat at 77.3 (flatness gate: |net_ret| ~ 0%)
+    - Noisy recovery (seed=7, vol=1%, uptrend=0.2%/day) that produces an
+      economically-meaningful MACD curl — i.e. histogram diffs that pass the
+      scale-invariant epsilon.  A purely linear recovery does NOT produce this
+      (asymptotic convergence of EMAs generates only float-scale diffs).
+
+    The test scans forward from bar (base_start + n_base) for the first curl
+    window where basing and macd_curl both fire simultaneously.
+    """
+    from engine.commodity_signals import _ema
+
+    rng = np.random.default_rng(7)
+    n_flat0, n_drop, n_base = 280, 80, 50
+    n_recovery = 400
+    idx = pd.date_range("2020-01-01",
+                        periods=n_flat0 + n_drop + n_base + n_recovery, freq="B")
+
+    recovery_log = np.cumsum(rng.normal(0.002, 0.01, n_recovery))
+    recovery = 77.3 * np.exp(recovery_log - recovery_log[0])
+
+    c = pd.Series(np.concatenate([
+        np.full(n_flat0, 100.0),
+        np.linspace(100, 77, n_drop),
+        np.full(n_base, 77.3),
+        recovery,
+    ]), index=idx)
+
+    macd_line = _ema(c, 12) - _ema(c, 26)
+    macd_sig  = _ema(macd_line, 9)
+    hist      = macd_line - macd_sig
+    h         = hist.dropna()
+
+    base_start_bar = n_flat0 + n_drop  # bar where flat base begins
+
+    cfg = config.load()["commodities"]
+    cutoff_date = None
+    for i in range(max(120, base_start_bar + n_base), len(h)):
+        tail = h.iloc[i - 3:i + 1]
+        if len(tail) < 4:
+            continue
+        diffs = tail.diff().iloc[1:]
+        if not ((tail.iloc[1:] < 0).all() and (diffs > 0).all()):
+            continue
+        roll_mag = h.abs().rolling(60, min_periods=20).mean()
+        mag_f = float(roll_mag.iloc[i]) if pd.notna(roll_mag.iloc[i]) else 0.0
+        price_f = float(c.iloc[:i + 1].mean()) * 1e-6
+        min_diff = max(0.02 * mag_f, price_f)
+        if (diffs > min_diff).all():
+            cutoff_date = h.index[i]
+            break
+
+    assert cutoff_date is not None, (
+        "fixture sanity: no economically-meaningful curl window found after base period"
+    )
+
+    c_trunc = c.loc[:cutoff_date]
+    px = _px(c_trunc)
+    result = technical_arming(px, cfg)
+
+    flatness = result.get("flatness")
+    assert flatness is not None, "flatness must be present in v1.1 result"
+    assert flatness <= 0.06, (
+        f"flatness={flatness:.4f} exceeds 0.06 — genuine base fixture should pass the gate"
+    )
+    assert result["basing"] is True, (
+        f"Expected basing=True after sharp -23% dd + {n_base}d genuine flat base, "
+        f"got basing={result['basing']}, flatness={flatness}, days_in_base={result['days_in_base']}"
+    )
+    assert result["macd_curl"] is True, (
+        f"Expected macd_curl=True in the recovery curl window, got {result['macd_curl']}"
+    )
+    assert result["armed"] is True, (
+        f"Expected armed=True (basing AND macd_curl), got {result}"
+    )
+
+
+def test_linear_decline_macd_curl_false() -> None:
+    """A perfectly linear decline produces a near-constant negative MACD histogram
+    with only float jitter between bars.  macd_curl must be False.
+
+    This is the second construct flaw from the Opus review: on a near-constant
+    negative histogram, 3 consecutive float-jitter diffs can all be positive
+    (e.g. 1e-7, 2e-8, 3e-9) and fire the old rising-3-bars test.  The v1.1
+    scale-invariant epsilon blocks this.
+    """
+    n = 600
+    idx = pd.date_range("2020-01-01", periods=n, freq="B")
+    # Perfectly linear decline (NO noise) — histogram is near-constant negative
+    c = pd.Series(np.linspace(100, 70, n), index=idx)
+    px = _px(c)
+    cfg = config.load()["commodities"]
+    result = technical_arming(px, cfg)
+    assert result["macd_curl"] is False, (
+        f"macd_curl must be False on a perfectly linear decline (float-jitter only), "
+        f"got macd_curl=True"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -337,36 +504,46 @@ def test_arming_block_present_via_compute_asset() -> None:
 # ---------------------------------------------------------------------------
 
 def test_oil_wti_episode_report(capsys=None) -> None:
-    """Read the live signals parquet (if present) and report the arming state
-    for WTI around 2026-07-06..08 — the flagship episode from the contract.
+    """Read the real nightly WTI price source (data/yahoo/CL_F.parquet via the
+    same load path the engine uses) and report the v1.1 arming state for the
+    period 2026-06-15 to 2026-07-09 — the flagship sanity anchor.
 
     This test always PASSES regardless of the stored state. It prints the
     relevant context so the orchestrator can read it in the test output.
     Skips silently when the parquet is absent (CI / fresh checkouts)."""
-    from lib import config as _cfg
-    p = _cfg.data_dir() / "commodity" / "signals_oil.parquet"
-    if not p.exists():
-        print("SKIP test_oil_wti_episode_report: signals_oil.parquet not present")
-        return
-    df = pd.read_parquet(p)
-    if "close" not in df.columns:
-        print("SKIP test_oil_wti_episode_report: 'close' column missing")
+    from engine.commodity_inputs import load_price
+    try:
+        px = load_price("CL_F")
+    except Exception as e:
+        print(f"SKIP test_oil_wti_episode_report: CL_F not loadable ({e})")
         return
     cfg = config.load()["commodities"]
-    px = pd.DataFrame({"close": df["close"]})
     arm = technical_arming(px, cfg)
+    close = px["close"]
     # window of interest
-    window = df.loc["2026-06-01":"2026-07-09"]
-    print("\n=== WTI/CL_F technical_arming — 2026-06..07-08 episode ===")
-    print(f"  Latest bar in parquet: {df.index[-1].date()}")
-    print(f"  Price range in window: {window['close'].min():.2f} – {window['close'].max():.2f}")
-    dd_120 = float((df["close"] / df["close"].rolling(120).max() - 1).iloc[-1])
+    window = close.loc["2026-06-15":"2026-07-09"]
+    armed_dates = []
+    # Scan the window day-by-day to find which dates arm (expensive but correct for the report)
+    idx_all = close.index
+    for dt in window.index:
+        loc = idx_all.get_loc(dt)
+        if loc < 120:
+            continue
+        sub = px.iloc[:loc + 1]
+        r = technical_arming(sub, cfg)
+        if r["armed"]:
+            armed_dates.append(str(dt.date()))
+    print("\n=== WTI/CL_F technical_arming v1.1 — 2026-06-15..2026-07-09 episode ===")
+    print(f"  Latest bar in store: {close.index[-1].date()}")
+    if len(window) > 0:
+        print(f"  Price range in window: {window.min():.2f} - {window.max():.2f}")
+    dd_120 = float((close / close.rolling(120).max() - 1).iloc[-1])
     print(f"  120d max-drawdown at latest bar: {dd_120:.1%}")
-    print(f"  arming block (computed on full history up to latest bar):")
+    print(f"  Armed dates in window: {armed_dates if armed_dates else 'none'}")
+    print(f"  Full-history arming block (latest bar):")
     for k, v in arm.items():
         if k != "params":
             print(f"    {k}: {v}")
-    print(f"  armed: {arm['armed']}")
     print("=== end WTI episode report ===\n")
 
 
@@ -387,9 +564,16 @@ if __name__ == "__main__":
         test_null_result_on_too_short_series,
         test_params_block_present_and_versioned,
         test_arming_block_present_via_compute_asset,
+        # PS-A1 new tests
+        test_genuine_flat_base_then_curl_arms,
+        test_linear_decline_macd_curl_false,
         test_oil_wti_episode_report,
     ]
     for fn in tests:
         fn()
         print(f"PASS {fn.__name__}")
+    # parametrized falling-knife seeds
+    for seed in [1, 5, 42, 99, 137]:
+        test_falling_knife_never_arms(seed)
+        print(f"PASS test_falling_knife_never_arms[seed={seed}]")
     print("all technical_arming tests passed")
