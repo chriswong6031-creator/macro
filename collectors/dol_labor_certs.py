@@ -461,8 +461,11 @@ def collect(
 
                 df = download_and_normalize(program, fy, q, tmp_dir, file_published)
                 if df is None:
-                    # Not yet available — stop checking older quarters for this program
-                    break
+                    # Not yet available (404) — skip to older quarters (they are MORE
+                    # likely to be published, not less).  DOL publishes 4-8 weeks after
+                    # quarter-end, so the newest detected quarter is almost always
+                    # unpublished when this collector runs.
+                    continue
                 if df.empty:
                     log.info("%s: empty after normalization — still marking ingested", key)
                 else:

@@ -279,6 +279,73 @@ class TestQuarterDetection:
         assert result["new_quarters_ingested"] == []
         assert result["rows_added"] == 0
 
+    def test_collect_skips_404_and_falls_through_to_older_quarter(self, tmp_path):
+        """
+        Regression: download_and_normalize returning None (404 / not-yet-published)
+        must trigger 'continue', NOT 'break'.
+
+        DOL publishes 4-8 weeks after quarter-end.  The newest detected quarter
+        is almost always unpublished, so a 'break' here caused the collector to
+        permanently no-op (it never reached the older published quarters).
+
+        Setup:
+          - 3 quarters in the scan window: Q_newest (404), Q_mid (404), Q_old (data)
+          - download_and_normalize returns None for Q_newest and Q_mid, a real
+            DataFrame for Q_old
+          - collect() must ingest Q_old (rows_added > 0) instead of stopping at Q_newest
+        """
+        from collectors.dol_labor_certs import collect, _dol_fiscal_quarters
+        import pandas as pd
+
+        quarters = _dol_fiscal_quarters()
+        # We need at least 3 quarters in the window
+        assert len(quarters) >= 3, "Need at least 3 quarters in scan window"
+
+        fy_new, q_new = quarters[0]
+        fy_mid, q_mid = quarters[1]
+        fy_old, q_old = quarters[2]
+
+        # Only the oldest of the three is "published" (has data)
+        synthetic_df = pd.DataFrame([{
+            "program": "lca",
+            "decision_date": pd.Timestamp("2024-10-15"),
+            "case_status": "Certified",
+            "employer_name": "Test Corp",
+            "job_title": "Software Engineer",
+            "worksite_state": "CA",
+            "wage_annualized": 150000.0,
+            "file_published": "2025-01-15",
+        }])
+
+        def fake_download(program, fy, q, tmp_dir, file_published):
+            if (fy, q) in [(fy_new, q_new), (fy_mid, q_mid)]:
+                return None  # 404 — not yet published
+            if (fy, q) == (fy_old, q_old):
+                return synthetic_df
+            return None
+
+        store_path = tmp_path / "certs" / "certs.parquet"
+        store_path.parent.mkdir(parents=True)
+
+        with mock.patch(
+            "collectors.dol_labor_certs.download_and_normalize",
+            side_effect=fake_download,
+        ):
+            result = collect(
+                programs=["lca"],
+                store_path=store_path,
+                root=tmp_path,
+            )
+
+        # The old quarter must have been ingested — collector must NOT have stopped
+        # at the first 404 (break vs continue regression)
+        assert result["rows_added"] > 0, (
+            "collect() stopped at a 404 instead of falling through to the older "
+            "published quarter — break/continue regression"
+        )
+        assert len(result["new_quarters_ingested"]) == 1
+        assert f"lca:FY{fy_old}_Q{q_old}" in result["new_quarters_ingested"]
+
 
 # ---------------------------------------------------------------------------
 # Store-absent honest null (env override)
