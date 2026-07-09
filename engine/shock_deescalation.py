@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -146,17 +146,33 @@ def build_nightly(snap: dict | None = None) -> dict:
         firings = _load_firings(firings_path)
 
         if trigger_reason:
-            firing = {
-                "date": today_str,
-                "score": score,
-                "state": coherence_state,
+            expires_str = _add_sessions(today, _EXPIRY_SESSIONS).isoformat()
+            ts_utc = datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+            # Build canonical payload so that adapt_reflexes() in the spine fold
+            # does NOT skip this row.  Without claim_id/asof/ts/trigger_key/
+            # scope_type/direction every row was DROPPED — fixed here (PS-W2-E).
+            firing_payload = {
+                # ── canonical spine fields (required by adapt_reflexes) ──
+                "asof":           today_str,
+                "ts":             ts_utc,
+                "trigger_key":    f"shock_deescalation:{today_str}:{trigger_reason}",
+                "trigger_type":   "coherence_threshold",
+                "action_taken":   "de_escalation_window_open",
+                "scope_type":     "macro",
+                "scope_key":      "macro",
+                "direction":      0,    # PS-R3: de-escalation only; no directional bet
+                "horizon_d":      None,
+                # ── descriptive fields (retained for consumers / shock_state) ──
+                "date":           today_str,  # backward-compat readers
+                "score":          score,
+                "state":          coherence_state,
                 "trigger_reason": trigger_reason,
                 "primary_driver": primary_driver,
-                "expires": _add_sessions(today, _EXPIRY_SESSIONS).isoformat(),
+                "expires":        expires_str,
             }
-            firings = _append_firing(firings, firing, firings_path)
+            firings = _append_firing(firings, firing_payload, firings_path)
             log.info("shock_deescalation: FIRED date=%s reason=%s score=%d expires=%s",
-                     today_str, trigger_reason, score, firing["expires"])
+                     today_str, trigger_reason, score, expires_str)
         else:
             log.info("shock_deescalation: no trigger date=%s state=%s score=%d prev_state=%s",
                      today_str, coherence_state, score, prev_state)
@@ -313,6 +329,20 @@ def backscan() -> list[dict]:
                     "primary_driver": row["primary"],
                     "expires": _add_sessions(asof_d, _EXPIRY_SESSIONS).isoformat(),
                     "descriptive": True,
+                    # scores-dependent breadth component is always 0 in the backscan
+                    # path because the log does not store the scores array.  The
+                    # repricing_breadth sub-score therefore differs from what the
+                    # production nightly would have computed, so trigger state
+                    # thresholds near the ELEVATED/SHOCK boundary may differ.
+                    "caveat": (
+                        "repricing_breadth=0 (scores array not stored in log); "
+                        "backscan states near ELEVATED/SHOCK boundary may differ "
+                        "from production nightly."
+                    ),
+                    "caveat_zh": (
+                        "重定价广度=0（分数数组未存储在日志中）；"
+                        "接近偏高/冲击边界的回溯扫描状态可能与生产夜间结果不同。"
+                    ),
                 })
 
         return would_have_fired
@@ -361,31 +391,75 @@ def _load_firings(path: Path) -> list[dict]:
 def _append_firing(firings: list[dict], firing: dict, path: Path) -> list[dict]:
     """Append a new firing to the JSONL ledger (keep-first per date).
 
+    Stamps the canonical spine fields required by ``adapt_reflexes()`` in the NW
+    spine fold (claim_id, claim_family, desk, is_context_only) so that every
+    written row SURVIVES the fold.  Without these fields rows were dropped as
+    "firing records skipped (no asof/ts)" — fixed here (PS-W2-E).
+
+    ``firing`` must already contain at minimum:
+      - ``asof`` (YYYY-MM-DD) — used as the keep-first key and spine as_of
+      - ``ts``  (ISO-8601 UTC) — used in claim_id derivation
+      - ``trigger_key`` — used in claim_id derivation
+
     Returns the updated firings list.  Never raises — on write failure the
     in-memory list is still returned.
     """
-    # keep-first: if today is already in the ledger, skip
-    if any(f["date"] == firing["date"] for f in firings):
-        log.debug("keep-first: %s already in firings ledger — skip", firing["date"])
+    import hashlib  # noqa: PLC0415 — stdlib, always available
+
+    # keep-first: if today is already in the ledger, skip.
+    # Accept both "asof" (canonical) and "date" (backward-compat) as the date key.
+    firing_date = firing.get("asof") or firing.get("date") or ""
+    if any(
+        (f.get("asof") or f.get("date") or "") == firing_date
+        for f in firings
+    ):
+        log.debug("keep-first: %s already in firings ledger — skip", firing_date)
         return firings
+
+    # Stamp canonical spine fields so adapt_reflexes() does not drop this row.
+    ts = str(firing.get("ts", ""))
+    trigger_key = str(firing.get("trigger_key", ""))
+    claim_id = hashlib.sha256(
+        f"shock_deescalation:{ts}:{trigger_key}".encode()
+    ).hexdigest()[:16]
+
+    record: dict = {
+        **firing,
+        "claim_id":       claim_id,
+        "reflex":         "shock_deescalation",
+        "claim_family":   "reflex.shock_deescalation",
+        "desk":           "reflex",
+        "is_context_only": True,
+    }
+
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(firing) + "\n")
-        log.info("appended firing: %s", firing)
+            fh.write(json.dumps(record, default=str) + "\n")
+        log.info("appended firing: asof=%s claim_id=%s", firing_date, claim_id)
     except Exception as e:  # noqa: BLE001
         log.error("firing write error: %s", e)
-    return firings + [firing]
+    return firings + [record]
+
+
+def _firing_date(f: dict) -> str:
+    """Return the canonical date string for a firing row.
+
+    New rows written via record_firing() carry ``asof``; older rows (and intraday
+    ephemeral entries) carry ``date``.  Both are accepted.
+    """
+    return f.get("asof") or f.get("date") or ""
 
 
 def _compute_shock_state(firings: list[dict], today: date) -> dict:
     """Find the most recent unexpired firing and compute the active shock_state."""
-    # Sort by date descending, find most recent unexpired
+    # Sort by date descending, find most recent unexpired.
+    # Accept both "asof" (canonical, new rows) and "date" (legacy) as the date key.
     active_firing = None
-    for f in sorted(firings, key=lambda x: x["date"], reverse=True):
+    for f in sorted(firings, key=lambda x: _firing_date(x), reverse=True):
         try:
             expires = date.fromisoformat(f["expires"])
-            since = date.fromisoformat(f["date"])
+            since = date.fromisoformat(_firing_date(f))
         except (ValueError, KeyError):
             continue
         if _active(since, expires, today):
@@ -402,7 +476,7 @@ def _compute_shock_state(firings: list[dict], today: date) -> dict:
     return {
         "active": True,
         "score": active_firing.get("score"),
-        "since": active_firing["date"],
+        "since": _firing_date(active_firing),
         "expires": active_firing["expires"],
         "reason": reason_en,
         "reason_zh": reason_zh,

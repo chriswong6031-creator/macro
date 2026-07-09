@@ -315,6 +315,18 @@ class TestBackscanRegression:
         for r in rows:
             assert r["trigger_reason"] in valid_reasons
 
+    def test_backscan_rows_carry_caveat(self):
+        """Every backscan row must carry caveat/caveat_zh noting breadth=0 limitation."""
+        rows = sd.backscan()
+        if not rows:
+            pytest.skip("no backscan rows available")
+        for r in rows:
+            assert "caveat" in r, f"Row {r['date']} missing 'caveat' field"
+            assert "caveat_zh" in r, f"Row {r['date']} missing 'caveat_zh' field"
+            assert "repricing_breadth" in r["caveat"], (
+                f"Row {r['date']} caveat does not mention repricing_breadth"
+            )
+
 
 # ── shock_state artifact schema ──────────────────────────────────────────────────
 
@@ -338,3 +350,79 @@ class TestShockStateSchema:
         assert s["active"] is True
         assert s["reason"]     # non-empty EN reason
         assert s["reason_zh"]  # non-empty ZH reason
+
+
+# ── spine-survival test (PS-W2-E fix regression) ─────────────────────────────────
+
+class TestSpineSurvival:
+    """Verify that a firing written via the real code path SURVIVES adapt_reflexes().
+
+    This is the test class that would have caught the original bug: _append_firing
+    was writing {date, score, state, trigger_reason, primary_driver, expires}
+    without asof/ts/claim_id/trigger_key, causing every row to be DROPPED by
+    adapt_reflexes() with "firing records skipped (no asof/ts)".
+    """
+
+    def test_firing_survives_spine_fold(self, tmp_path, monkeypatch):
+        """Write a firing via the real code path, run adapt_reflexes(), assert
+        the firing appears (not skipped) with claim_family=reflex.shock_deescalation."""
+        from lib import config
+        from engine.neuralweb.query import adapt_reflexes
+
+        # Set up a project-shaped tree: tmp_path is ROOT, data/ is the data dir.
+        # This ensures build_nightly writes to tmp_path/data/reflexes/... and
+        # discover_all_firings(root=tmp_path) finds the same path.
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        monkeypatch.setattr(config, "data_dir", lambda: data_dir)
+        monkeypatch.setattr(config, "ROOT", tmp_path)
+
+        # Trigger a nightly firing — this calls _append_firing which stamps
+        # canonical fields and writes the JSONL.
+        snap = _make_snap(asof="2026-07-07", state="SHOCK", score=75, flip=30)
+        result = sd.build_nightly(snap=snap)
+        assert result["active"] is True, "build_nightly did not fire — test precondition"
+
+        # Verify the JSONL was written with canonical fields.
+        firings_path = (data_dir / "reflexes" / "shock_deescalation" / "firings.jsonl")
+        assert firings_path.exists(), "firings.jsonl not written"
+        rows = [json.loads(l) for l in firings_path.read_text().splitlines() if l.strip()]
+        assert len(rows) == 1
+        row = rows[0]
+
+        # These are the fields adapt_reflexes() requires; any missing = dropped.
+        assert row.get("asof"), f"asof missing or empty: {row}"
+        assert row.get("ts"),   f"ts missing or empty: {row}"
+        assert row.get("claim_id"), f"claim_id missing or empty: {row}"
+        assert row.get("trigger_key"), f"trigger_key missing or empty: {row}"
+        assert row.get("scope_type") == "macro", f"scope_type wrong: {row}"
+        assert row.get("direction") == 0, f"direction wrong (should be 0 per PS-R3): {row}"
+        assert row.get("claim_family") == "reflex.shock_deescalation", (
+            f"claim_family wrong: {row}"
+        )
+        assert row.get("is_context_only") is True, f"is_context_only missing: {row}"
+
+        # Now run adapt_reflexes() against the same tmp_path tree.
+        df, gaps = adapt_reflexes(root=tmp_path)
+
+        # The firing must NOT have been skipped.
+        skipped_gaps = [g for g in gaps if "skipped" in g]
+        assert not skipped_gaps, (
+            f"adapt_reflexes skipped rows (spine-survival FAIL): {skipped_gaps}"
+        )
+
+        # The firing must appear in the emitted dataframe.
+        assert not df.empty, "adapt_reflexes returned empty dataframe — firing was dropped"
+        emitted_families = set(df["engine"].tolist())
+        assert "reflex.shock_deescalation" in emitted_families, (
+            f"reflex.shock_deescalation not in emitted engines: {emitted_families}"
+        )
+
+        # claim_family should propagate correctly via the family column.
+        reflex_rows = df[df["engine"] == "reflex.shock_deescalation"]
+        assert len(reflex_rows) == 1, (
+            f"Expected 1 shock_deescalation row, got {len(reflex_rows)}"
+        )
+        assert reflex_rows.iloc[0]["as_of"] == "2026-07-07", (
+            f"as_of mismatch: {reflex_rows.iloc[0]['as_of']}"
+        )
