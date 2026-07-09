@@ -442,7 +442,8 @@
   .flow-col h3 { margin: 0 0 7px; }
   .flow-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
   .flow-row:last-child { border-bottom: none; }
-  .flow-row .fr-tk { font-weight: 800; min-width: 64px; }
+  .flow-row .fr-tk { font-weight: 800; min-width: 64px; color: inherit; text-decoration: none; cursor: pointer; }
+  .flow-row .fr-tk:hover { text-decoration: underline; }
   .flow-row .fr-nm { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .flow-row .fr-bar { flex: 0 0 88px; height: 8px; border-radius: 5px; background: var(--panel2); position: relative; overflow: hidden; }
   .flow-row .fr-bar i { position: absolute; top: 0; height: 100%; border-radius: 5px; }
@@ -737,7 +738,7 @@
           {% set _ficon = _force_icons.get(force.key, '◆') %}
           <div class="cp-force-row" style="display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);">
             <span style="flex:0 0 auto;font-size:14px;line-height:1;">{{ _ficon }}</span>
-            <span style="flex:0 0 120px;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            <span style="flex:0 0 160px;font-size:12.5px;font-weight:700;min-width:0;word-break:break-word;">
               <span class="l-en">{{ force.name_en if force.name_en else '—' }}</span>
               <span class="l-zh">{{ force.name_zh if force.name_zh else '—' }}</span>
             </span>
@@ -845,7 +846,7 @@
         <span class="l-en">Catalyst Tape</span>
         <span class="l-zh">催化剂追踪</span>
       </p>
-      <div style="display:flex;flex-direction:column;gap:4px;" data-showmore="6">
+      <div style="display:flex;flex-direction:column;gap:4px;" data-showmore="5">
         {% for ev in _cpct %}
         <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--line);">
           <span style="flex:0 0 80px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;">{{ ev.date if ev.date else '—' }}</span>
@@ -858,6 +859,12 @@
              title="Open {{ ev.ticker }} terminal"
              style="font-weight:800;flex:0 0 auto;color:inherit;text-decoration:none;cursor:pointer;"
              onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ ev.ticker }}</a>
+          {% if ev.name_en or ev.name_zh %}
+          <span class="note" style="flex:0 0 auto;font-size:11px;">
+            <span class="l-en">{{ ev.name_en if ev.name_en else '' }}</span>
+            <span class="l-zh">{{ ev.name_zh if ev.name_zh else (ev.name_en if ev.name_en else '') }}</span>
+          </span>
+          {% endif %}
           {% endif %}
           <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
             <span class="l-en">{{ ev.text_en if ev.text_en else '—' }}</span>
@@ -2437,11 +2444,11 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px">
       <div>
         <div class="sub pos" style="font-weight:700;margin-bottom:3px">↑ {{ t('Adding', '加仓') }}</div>
-        {% for r in SM.buying[:5] %}<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><a href="hk_stocks.html">{{ r.ticker }}</a><span class="pos">+{{ r.chg5_pct }}%</span></div>{% endfor %}
+        {% for r in SM.buying[:5] %}<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><a href="hk_lookup.html#{{ r.ticker }}" style="color:inherit;text-decoration:none;font-weight:700;cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ r.ticker }}</a><span class="pos">+{{ r.chg5_pct }}%</span></div>{% endfor %}
       </div>
       <div>
         <div class="sub neg" style="font-weight:700;margin-bottom:3px">↓ {{ t('Trimming', '减仓') }}</div>
-        {% for r in SM.selling[:5] %}<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><a href="hk_stocks.html">{{ r.ticker }}</a><span class="neg">{{ r.chg5_pct }}%</span></div>{% endfor %}
+        {% for r in SM.selling[:5] %}<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><a href="hk_lookup.html#{{ r.ticker }}" style="color:inherit;text-decoration:none;font-weight:700;cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ r.ticker }}</a><span class="neg">{{ r.chg5_pct }}%</span></div>{% endfor %}
       </div>
     </div>
     <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Per-stock southbound holdings (5-day Δ). The where, not the how-much. Display-only — full desk on the', '个股南向持股（5日变化）。资金流向，而非流量。仅展示 —— 完整研判台见') }}
@@ -2487,7 +2494,7 @@
       var TILT = { favored: ['favored', '占优'], exposed: ['exposed', '最受冲击'], lag: ['lags', '滞后'], neutral: ['—', '—'] };
       var COL = {
         stock: { en: 'Stock', zh: '个股', l: true, key: function (r) { return r.ticker; },
-          cell: function (r) { return '<a href="hk_lookup.html#' + r.ticker + '"><b>' + r.ticker + '</b></a>' + (r.name ? ' <span class="note">' + r.name + '</span>' : ''); } },
+          cell: function (r) { return '<a href="hk_lookup.html#' + r.ticker + '" style="color:inherit;text-decoration:none;font-weight:inherit;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'"><b>' + r.ticker + '</b></a>' + (r.name ? ' <span class="note">' + r.name + '</span>' : ''); } },
         sector: { en: 'Sector', zh: '板块', l: true, key: function (r) { return r.sector || ''; },
           cell: function (r) { return '<span class="note">' + bl(r.sector || '—', r.sector_zh || r.sector || '—') + '</span>'; } },
         price: { en: 'Price', zh: '价格', key: function (r) { return r.price; },

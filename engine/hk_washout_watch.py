@@ -740,6 +740,7 @@ def _compute_inner(
             row: dict = {
                 "ticker":            ticker,
                 "name":              e.get("name"),
+                "name_zh":           e.get("name_zh"),
                 "state":             state,
                 "confluence_count":  confluence_count,
                 "confluence_signals": signals,
