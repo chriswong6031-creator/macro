@@ -5,9 +5,9 @@ All tests are network-free: no clock reads, no R2, no Theta Terminal.
 Coverage:
   1.  q_score parity — 3 hand-computed events match the formula exactly
   2.  q_score tier boundaries — ELITE/STRONG/HIGH/MEDIUM/LOW at exact thresholds
-  3.  MULTI_LEG detector — fires on has_multileg=True; near-miss on False
-  4.  MULTI_LEG detector — fires on cluster_type present; near-miss on absent
-  5.  MULTI_LEG detector — fires on spread_type present
+  3.  MULTI_LEG detector — fires on swept=True (live poller field)
+  4.  MULTI_LEG detector — near-miss on swept=False/absent
+  5.  MULTI_LEG detector — direction_discounted True when swept fires
   6.  LADDER detector — fires on >= 3 distinct strikes; near-miss on 2
   7.  REPEAT_HITTER detector — fires on >= 3 events for same root; near-miss on 2
   8.  SIZE_VS_OI detector — fires on vol_gt_oi=True + prem >= $500k; near-miss on prem < $500k
@@ -23,11 +23,14 @@ Coverage:
   18. threshold computation — percentile ordering (elite >= strong >= high >= medium)
   19. threshold bootstrap flag — True when pool has one session_date
   20. threshold bootstrap flag — False when pool spans multiple session_dates
-  21. enrich_feed end-to-end — correct schema keys present
+  21. enrich_feed end-to-end — correct schema keys present, including why/why_zh
   22. OI join — empty confirmed returns empty list + note
   23. OI join — matching contract returned in confirmed_yesterday
   24. envelope schema — required top-level keys all present
-  25. q_score parity check — same event fields produce same score as TS formula
+  25. q_score determinism check — same fields produce same score every time
+  26. elite $1M floor enforcement — event with q >= elite threshold but premium < $1M is NOT elite
+  27. elite $1M floor pass — event with q >= elite threshold AND premium >= $1M is elite
+  28. bilingual why/why_zh — every enriched event has non-empty why and why_zh strings
 """
 from __future__ import annotations
 
@@ -192,31 +195,38 @@ def test_tier_boundaries(score, expected_tier):
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 3–5. MULTI_LEG detector
+# The live poller (engine/live_flow.py) emits `swept` (bool) — not has_multileg,
+# spread_type, or cluster_type. The detector keys off `swept` only.
 # ════════════════════════════════════════════════════════════════════════════════
 
-def test_multi_leg_fires_on_has_multileg_true():
-    ev = _mk_event(has_multileg=True)
+def test_multi_leg_fires_on_swept_true():
+    """MULTI_LEG fires when the poller's swept flag is True."""
+    ev = _mk_event(swept=True)
     assert fe.detect_multi_leg(ev, [ev]) is True
 
 
-def test_multi_leg_near_miss_has_multileg_false():
-    ev = _mk_event()   # no has_multileg key
+def test_multi_leg_near_miss_swept_false():
+    """MULTI_LEG does not fire when swept=False (the default)."""
+    ev = _mk_event(swept=False)
     assert fe.detect_multi_leg(ev, [ev]) is False
 
 
-def test_multi_leg_fires_on_cluster_type():
-    ev = _mk_event(cluster_type="ACCUMULATION")
-    assert fe.detect_multi_leg(ev, [ev]) is True
-
-
-def test_multi_leg_near_miss_no_cluster():
-    ev = _mk_event(cluster_type=None)
+def test_multi_leg_near_miss_swept_absent():
+    """MULTI_LEG does not fire when swept key is absent."""
+    ev = {k: v for k, v in _mk_event().items() if k != "swept"}
     assert fe.detect_multi_leg(ev, [ev]) is False
 
 
-def test_multi_leg_fires_on_spread_type():
-    ev = _mk_event(spread_type="VERTICAL")
-    assert fe.detect_multi_leg(ev, [ev]) is True
+def test_multi_leg_direction_discounted_via_swept():
+    """direction_discounted=True in the envelope when swept=True fires MULTI_LEG."""
+    ev = _mk_event(swept=True)
+    envelope = fe.build_enrich_envelope(
+        [ev], SESSION_DATE, ASOF,
+        thresholds=fe.compute_thresholds([ev]),
+    )
+    enriched = envelope["events"][0]
+    assert "MULTI_LEG" in enriched["badges"]
+    assert enriched["direction_discounted"] is True
 
 
 # ════════════════════════════════════════════════════════════════════════════════
@@ -380,8 +390,8 @@ def test_z_outlier_near_miss_none():
 # ════════════════════════════════════════════════════════════════════════════════
 
 def test_direction_discounted_true_when_multi_leg():
-    """direction_discounted=True when MULTI_LEG fires (spread ambiguity)."""
-    ev = _mk_event(has_multileg=True)
+    """direction_discounted=True when MULTI_LEG fires (swept=True)."""
+    ev = _mk_event(swept=True)
     envelope = fe.build_enrich_envelope(
         [ev], SESSION_DATE, ASOF,
         thresholds=fe.compute_thresholds([ev]),
@@ -393,7 +403,8 @@ def test_direction_discounted_true_when_multi_leg():
 
 
 def test_direction_discounted_false_without_multi_leg():
-    ev = _mk_event()
+    """direction_discounted=False when swept=False (default)."""
+    ev = _mk_event(swept=False)
     envelope = fe.build_enrich_envelope(
         [ev], SESSION_DATE, ASOF,
         thresholds=fe.compute_thresholds([ev]),
@@ -465,6 +476,11 @@ def test_enrich_feed_schema_keys():
     assert "badges" in ev
     assert "direction_discounted" in ev
     assert "components" in ev
+    # bilingual why-strings (spec §4)
+    assert "why" in ev
+    assert "why_zh" in ev
+    assert isinstance(ev["why"], str) and len(ev["why"]) > 0
+    assert isinstance(ev["why_zh"], str) and len(ev["why_zh"]) > 0
 
 
 def test_enrich_feed_empty_events():
@@ -543,7 +559,8 @@ def test_envelope_has_required_keys():
 
 
 # ════════════════════════════════════════════════════════════════════════════════
-# 25. Q-score parity — same event fields same score (determinism check)
+# 25. Q-score determinism — same event fields produce same score every time.
+# (Weights are registered against FLOW_INTELLIGENCE_V2_SPEC.md §3, not a TS file.)
 # ════════════════════════════════════════════════════════════════════════════════
 
 def test_q_score_deterministic():
@@ -564,3 +581,97 @@ def test_q_score_components_sum_matches_score():
     result = fe.compute_q_score(ev)
     total  = sum(c["value"] for c in result["components"])
     assert int(round(min(100.0, max(0.0, total)))) == result["q_score"]
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 26–27. Elite $1M floor enforcement (spec §3: ELITE requires q >= threshold AND premium >= $1M)
+# ════════════════════════════════════════════════════════════════════════════════
+
+def test_elite_floor_blocks_low_premium_high_q():
+    """An event with q >= elite threshold but premium < $1M must NOT get session_tier='elite'."""
+    # Use a pool with known low premium to drive elite threshold low (e.g. ~50),
+    # then present an event with q well above that threshold but premium = $300k.
+    pool = [
+        _mk_event(premium=200_000, premium_z=None, mny_bucket="far_otm", dte=0,
+                  session_date="2026-07-07"),
+        _mk_event(premium=150_000, premium_z=None, mny_bucket="far_otm", dte=0,
+                  session_date="2026-07-07"),
+    ]
+    thresh = fe.compute_thresholds(pool)
+    # A high-q event with premium $300k (below _ELITE_PREM_FLOOR of $1M)
+    ev = _mk_event(premium=300_000, premium_z=4.0, mny_bucket="atm", dte=14,
+                   vol_gt_oi=True, repeated=True, n_prints=5)
+    q = fe.compute_q_score(ev)["q_score"]
+    # Verify that q is above the elite threshold (precondition for this test to be meaningful)
+    assert q >= thresh["elite"], (
+        f"Test precondition failed: q={q} < elite={thresh['elite']}; "
+        "adjust pool to lower the threshold"
+    )
+    envelope = fe.build_enrich_envelope([ev], SESSION_DATE, ASOF, thresholds=thresh)
+    result_tier = envelope["events"][0]["session_tier"]
+    assert result_tier != "elite", (
+        f"Expected NOT elite (premium $300k < $1M floor) but got {result_tier!r}"
+    )
+
+
+def test_elite_floor_passes_high_premium_high_q():
+    """An event with q >= elite threshold AND premium >= $1M must get session_tier='elite'."""
+    pool = [
+        _mk_event(premium=200_000, premium_z=None, mny_bucket="far_otm", dte=0,
+                  session_date="2026-07-07"),
+        _mk_event(premium=150_000, premium_z=None, mny_bucket="far_otm", dte=0,
+                  session_date="2026-07-07"),
+    ]
+    thresh = fe.compute_thresholds(pool)
+    ev = _mk_event(premium=1_500_000, premium_z=4.0, mny_bucket="atm", dte=14,
+                   vol_gt_oi=True, repeated=True, n_prints=5)
+    q = fe.compute_q_score(ev)["q_score"]
+    assert q >= thresh["elite"], (
+        f"Test precondition failed: q={q} < elite={thresh['elite']}"
+    )
+    envelope = fe.build_enrich_envelope([ev], SESSION_DATE, ASOF, thresholds=thresh)
+    result_tier = envelope["events"][0]["session_tier"]
+    assert result_tier == "elite", (
+        f"Expected elite (premium $1.5M >= $1M floor, q={q} >= {thresh['elite']}) "
+        f"but got {result_tier!r}"
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 28. Bilingual why/why_zh present and non-empty on every enriched event
+# ════════════════════════════════════════════════════════════════════════════════
+
+def test_bilingual_why_strings_present_on_all_events():
+    """Every event in the envelope must carry non-empty why and why_zh strings."""
+    events = [
+        _mk_event(root="AAPL", swept=True),        # will have MULTI_LEG badge
+        _mk_event(root="TSLA", premium=4_000_000),  # will have WHALE badge
+        _mk_event(root="NVDA"),                     # no badges expected
+    ]
+    envelope = fe.build_enrich_envelope(
+        events, SESSION_DATE, ASOF,
+        thresholds=fe.compute_thresholds(events),
+    )
+    for ev in envelope["events"]:
+        assert "why" in ev, f"missing 'why' for {ev.get('root')}"
+        assert "why_zh" in ev, f"missing 'why_zh' for {ev.get('root')}"
+        assert isinstance(ev["why"], str) and len(ev["why"]) > 0, (
+            f"empty 'why' for {ev.get('root')}"
+        )
+        assert isinstance(ev["why_zh"], str) and len(ev["why_zh"]) > 0, (
+            f"empty 'why_zh' for {ev.get('root')}"
+        )
+
+
+def test_bilingual_why_zh_is_chinese_for_whale():
+    """An event that fires WHALE should have Chinese characters in why_zh."""
+    ev = _mk_event(premium=4_000_000)
+    envelope = fe.build_enrich_envelope(
+        [ev], SESSION_DATE, ASOF,
+        thresholds=fe.compute_thresholds([ev]),
+    )
+    enriched = envelope["events"][0]
+    assert "WHALE" in enriched["badges"]
+    # Chinese characters have codepoints in the CJK Unified Ideographs range
+    has_chinese = any("一" <= ch <= "鿿" for ch in enriched["why_zh"])
+    assert has_chinese, f"why_zh contains no Chinese characters: {enriched['why_zh']!r}"

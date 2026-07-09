@@ -2,19 +2,22 @@
 
 Pure functions: no network calls, no clock reads, no randomness.
 Takes a list of live_flow.feed/v1 event dicts (from feed_current.json) and
-emits a list of enriched events per the flow.enrich/v1 schema (§5 of brief).
+emits a list of enriched events per the flow.enrich/v1 schema (§5 of spec).
 
 Detectors (all deterministic, no LLM):
-  MULTI_LEG    — has_multileg or cluster with spread_type present
+  MULTI_LEG    — event.swept=True (poller's sweep-heuristic flag is the closest
+                 available proxy; has_multileg/spread_type/cluster_type are NOT
+                 emitted by live_flow.py — confirmed via engine/live_flow.py:699).
+                 When MULTI_LEG fires, direction_discounted=True (direction ambiguous).
   LADDER       — repeated contract appearing across multiple strikes (same root/right/exp)
-  REPEAT_HITTER — same root hits notable threshold in >= 3 distinct events in the session
+  REPEAT_HITTER — same root appears in >= 3 distinct events in the session
   SIZE_VS_OI   — size > OI (vol_gt_oi == True with premium >= $500k floor)
   WHALE        — premium >= $1M AND (side == ~buy) AND premium_z >= 2 (if available) OR
                   premium >= $3M regardless of z (floor-based whale)
   FRESH        — vol_gt_oi == True AND mny_bucket in (atm, near_otm) AND dte in (1..45)
   Z_OUTLIER    — premium_z >= 3.0
 
-Q-score: port of terminal/lib/flowScore.ts formula (weights copied exactly).
+Q-score weights (registered against FLOW_INTELLIGENCE_V2_SPEC.md §3):
   premiumMagnitude   0.30  log ramp $50k → $5M
   unusualness        0.20  z-score cap at z=4
   dteRelevance       0.15  0DTE=0.20, 1-45d=1.0, taper to 0.5@90d, 0.30>90d
@@ -23,8 +26,8 @@ Q-score: port of terminal/lib/flowScore.ts formula (weights copied exactly).
   repeatCluster      0.08  repeated+n_prints bonus
   directionPenalty  -0.05  mixed+floor=-1.0, mixed=-0.75, floor=-0.40, tape=-0.20
 
-Thresholds (trailing-sessions percentiles):
-  elite  = top 2%  with $1M floor
+Thresholds (trailing-sessions percentiles, spec §3):
+  elite  = top 2%  AND premium >= $1M (both conditions required)
   strong = top 10%
   high   = top 25%
   medium = top 50%
@@ -32,8 +35,10 @@ Thresholds (trailing-sessions percentiles):
 HOUSE LAWS (binding):
   - Display-tier only; no user-facing "signal" or "validated" strings.
   - direction_discounted=True whenever MULTI_LEG fires (direction ambiguous on spreads).
+  - ELITE session_tier requires both q >= elite threshold AND premium >= $1M.
   - EARNINGS_WINDOW detector skipped (no PIT-clean earnings source consumable inline).
   - OI data comes from event field vol_gt_oi (OI[t-1] law already honoured upstream).
+  - Every badge carries bilingual why/why_zh strings (spec §4).
 """
 from __future__ import annotations
 
@@ -63,7 +68,9 @@ _REPEAT_HITTER_MIN   = 3           # root must appear in >= 3 events
 # ── elite q-score floor ───────────────────────────────────────────────────────
 _ELITE_PREM_FLOOR    = 1_000_000   # $1M — elite badge requires this minimum premium
 
-# ── tier cutoffs (from flowScore.ts toTier) ──────────────────────────────────
+# ── q_tier cutoffs (fixed absolute bands — used for the q_tier label only) ───
+# session_tier is computed separately via percentile thresholds (see _tier_from_thresholds).
+# These absolute cutoffs are structurally empty on a calibrated feed (spec §1 analysis).
 _TIER_ELITE  = 90
 _TIER_STRONG = 80
 _TIER_HIGH   = 70
@@ -218,24 +225,17 @@ def compute_q_score(event: dict) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def detect_multi_leg(event: dict, _session_events: list[dict]) -> bool:
-    """MULTI_LEG: has_multileg flag OR cluster with a spread_type.
+    """MULTI_LEG: event is flagged as a sweep by the poller (swept=True).
 
-    Both fields are upstream-set (from poller/engine). On the feed/v1 schema
-    these are not present as top-level keys; the swept field covers part of the
-    spread territory. We check 'has_multileg', 'spread_type', and 'cluster_type'
-    fields if they are present on the event.
+    The live_flow.py poller (engine/live_flow.py:699) emits `swept` (bool) as
+    its spread/multi-print heuristic flag (>= 3 prints, >= 2 exchanges, <= 2s
+    span). The fields has_multileg, spread_type, and cluster_type are NOT in
+    the live feed — using them caused 0 MULTI_LEG fires on all real sessions.
+
+    When this detector fires, direction_discounted is set True in the envelope,
+    indicating the direction read is ambiguous (spread or accumulated sweep).
     """
-    if event.get("has_multileg"):
-        return True
-    # spread_type present and non-empty → multi-leg spread
-    spread = event.get("spread_type") or ""
-    if spread:
-        return True
-    # cluster_type present → accumulated / iceberg / cluster
-    cluster = event.get("cluster_type") or ""
-    if cluster:
-        return True
-    return False
+    return bool(event.get("swept"))
 
 
 def detect_ladder(event: dict, session_events: list[dict]) -> bool:
@@ -326,6 +326,58 @@ _DETECTORS: list[tuple[str, Any]] = [
     ("FRESH",         detect_fresh),
     ("Z_OUTLIER",     detect_z_outlier),
 ]
+
+# ── bilingual badge rationale strings (spec §4: every badge carries why/why_zh) ─
+
+_BADGE_WHY: dict[str, tuple[str, str]] = {
+    "MULTI_LEG":     (
+        "Sweep flag active — direction is ambiguous; treat as spread or accumulated order.",
+        "探测到扫单标志——方向不明确，视为价差单或累积订单。",
+    ),
+    "LADDER":        (
+        "Same expiry appears across 3+ distinct strikes — possible staged accumulation.",
+        "同一到期日出现3个以上不同行权价——可能为梯形建仓。",
+    ),
+    "REPEAT_HITTER": (
+        "This root appeared in 3+ separate events this session — conviction reload pattern.",
+        "本交易日该标的出现3次以上独立流量事件——疑似反复加仓。",
+    ),
+    "SIZE_VS_OI":    (
+        "Today's volume exceeds prior open interest — new positioning, cannot hide in existing OI.",
+        "今日成交量超过昨日未平仓量——新建头寸，无法隐入现有持仓。",
+    ),
+    "WHALE":         (
+        "Single-event premium $1M+ (with z-score or $3M hard floor) — large capital commitment.",
+        "单笔权利金超过100万美元（含z分数条件或300万美元硬门槛）——大额资金投入。",
+    ),
+    "FRESH":         (
+        "Volume exceeds OI at ATM/near-OTM with 1–45 DTE — likely fresh directional positioning.",
+        "ATM/近虚值期权成交量超过未平仓量，剩余期限1–45天——疑似新建方向性头寸。",
+    ),
+    "Z_OUTLIER":     (
+        "Premium z-score ≥ 3 vs 252-session baseline — unusually large for this root.",
+        "权利金z分数≥3（相对252个交易日基准）——该标的权利金规模异常偏大。",
+    ),
+    "OI_CONFIRMED":  (
+        "Yesterday's flow confirmed: this contract built open interest overnight.",
+        "昨日流量获确认：该合约隔夜增加了未平仓量。",
+    ),
+}
+
+
+def _build_why(badges: list[str]) -> tuple[str, str]:
+    """Return (why_en, why_zh) combining rationale strings for all active badges."""
+    if not badges:
+        return ("No detection badges active.", "无检测徽章激活。")
+    parts_en = []
+    parts_zh = []
+    for badge in badges:
+        pair = _BADGE_WHY.get(badge)
+        if pair:
+            parts_en.append(pair[0])
+            parts_zh.append(pair[1])
+    return (" | ".join(parts_en) or "No detection badges active.",
+            " | ".join(parts_zh) or "无检测徽章激活。")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -532,9 +584,12 @@ def build_enrich_envelope(
                     if badge_name == "MULTI_LEG":
                         direction_discounted = True
 
-            # Tier from thresholds
-            def _tier_from_thresholds(score: int) -> str:
-                if score >= thresholds.get("elite", 999):
+            # Tier from thresholds (spec §3: elite requires q >= threshold AND premium >= $1M)
+            premium_val = float(ev.get("premium", 0) or 0)
+
+            def _tier_from_thresholds(score: int, premium: float) -> str:
+                if (score >= thresholds.get("elite", 999)
+                        and premium >= _ELITE_PREM_FLOOR):
                     return "elite"
                 if score >= thresholds.get("strong", 999):
                     return "strong"
@@ -544,7 +599,9 @@ def build_enrich_envelope(
                     return "medium"
                 return "below_medium"
 
-            session_tier = _tier_from_thresholds(q_score)
+            session_tier = _tier_from_thresholds(q_score, premium_val)
+
+            why_en, why_zh = _build_why(badges)
 
             enriched.append({
                 # pass-through identity fields
@@ -574,6 +631,9 @@ def build_enrich_envelope(
                 "badges":             badges,
                 "direction_discounted": direction_discounted,
                 "components":         q_result["components"],
+                # bilingual badge rationale (spec §4)
+                "why":                why_en,
+                "why_zh":             why_zh,
             })
         except Exception as e:  # noqa: BLE001
             log.warning("flow_enrich: skipped event %s: %s", ev.get("id"), e)
@@ -629,13 +689,11 @@ def enrich_feed(
     # Pool for thresholds: trailing sessions first, then current session
     pool = list(pool_events or [])
     if pool:
-        # Annotate current events with session_date for bootstrap detection
-        for ev in events:
-            ev = dict(ev)  # copy to avoid mutation
-            ev.setdefault("session_date", session_date)
+        # pool is from trailing sessions; use as-is (session_date already set there).
         pool_for_thresh = pool
     else:
-        # Bootstrap: use current session events only
+        # Bootstrap: annotate current-session events with session_date so
+        # compute_thresholds can detect single-session bootstrap mode.
         for ev in events:
             if isinstance(ev, dict):
                 ev.setdefault("session_date", session_date)
