@@ -170,14 +170,28 @@ def _find_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def _env_store_file(root: Path) -> Optional[Path]:
+    """Resolve DOL_CERTS_STORE to the store FILE path.
+
+    The env var names the store DIRECTORY (THETADATA_STORE convention).
+    Back-compat: a value ending in .parquet is accepted as the file itself.
+    (2026-07-09 incident: the old file-path-only semantics + a directory value
+    wrote the store one level up, into git-swept data/.)
+    """
+    env_val = os.environ.get("DOL_CERTS_STORE", "").strip()
+    if not env_val:
+        return None
+    p = Path(env_val) if Path(env_val).is_absolute() else root / env_val
+    return p if p.suffix == ".parquet" else p / _DEFAULT_STORE_REL.name
+
+
 def _find_store(root: Path) -> Optional[Path]:
     """Resolve store path via env override, local, then main-checkout fallback."""
-    env_val = os.environ.get("DOL_CERTS_STORE", "").strip()
-    if env_val:
-        p = Path(env_val) if Path(env_val).is_absolute() else root / env_val
+    p = _env_store_file(root)
+    if p is not None:
         if p.exists():
             return p
-        log.warning("DOL_CERTS_STORE env points to non-existent path: %s", p)
+        log.warning("DOL_CERTS_STORE store file does not exist yet: %s", p)
 
     local = root / _DEFAULT_STORE_REL
     if local.exists():
@@ -190,10 +204,9 @@ def _find_store(root: Path) -> Optional[Path]:
 
 
 def _store_dir(root: Path) -> Path:
-    """Return store directory, preferring env override."""
-    env_val = os.environ.get("DOL_CERTS_STORE", "").strip()
-    if env_val:
-        p = Path(env_val) if Path(env_val).is_absolute() else root / env_val
+    """Return store directory, preferring env override (directory semantics)."""
+    p = _env_store_file(root)
+    if p is not None:
         return p.parent
     return root / _DEFAULT_STORE_REL.parent
 
