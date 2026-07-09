@@ -132,16 +132,24 @@ def build_region(region: str, env, built: str, site) -> bool:
     fdir = site / "allocationdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / jname).write_text(json.dumps(data, separators=(",", ":"), default=str))
+    # Slim PIT snapshot (data/allocation/latest_<region>.json) — written BEFORE the
+    # alerts try/except so it is never silently dropped by an alerts rebuild failure.
+    # Root cause of 2026-07-07→09 freeze: _write_alloc_snapshot was inside the same
+    # try block as allocation_alerts.rebuild(); when rebuild() raised, the snapshot was
+    # never written and data/allocation/latest_us.json went 3 days stale.
+    try:
+        _write_alloc_snapshot(region, data)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("[%s] alloc snapshot write failed: %s", region, e, exc_info=True)
     # ROTATION ALERTS + risk-over-time history + the theme buy/sell shortlist (additive)
     rot_alerts, hist = [], []
     try:
         from engine import allocation_alerts
         allocation_alerts.rebuild(data, region)
-        _write_alloc_snapshot(region, data)
         rot_alerts = allocation_alerts.recent(region, 45, as_of=data.get("as_of"))
         hist = _alloc_history(region)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("[%s] rotation alerts/history failed: %s", region, e)
+        log.error("[%s] rotation alerts/history failed: %s", region, e, exc_info=True)
     act_now = _theme_act_now(region, site)
     standouts = _standouts_per_theme(region, site)
     html = env.get_template("allocation.html.j2").render(
@@ -228,13 +236,18 @@ def _run_thematic_desk(regions: list[str]) -> None:
         log.error("thematic_desk score_ledger failed: %s", e)
 
 
-def main(regions: list[str] | None = None) -> int:
+def main(regions: list[str] | None = None) -> bool:
+    """Build all allocation pages.  Returns True (stale) when any region failed or produced
+    no output — used by build_baskets.py to stamp site/allocationdata/freshness.json."""
     site = config.ROOT / "site"
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     regions = regions or list(PAGES.keys())
+    any_failed = False
     for r in regions:
-        build_region(r, env, built, site)
+        ok = build_region(r, env, built, site)
+        if not ok:
+            any_failed = True
     # ship the live-desk renderer alongside the pages (self-contained, like build_baskets'
     # lightweight-charts.js) so the new JS is always present when the page is built.
     js = config.ROOT / "templates" / "ai_desk_thematic.js"
@@ -243,9 +256,9 @@ def main(regions: list[str] | None = None) -> int:
     _run_macro_narrative()             # GDELT macro-narrative backdrop the desk reads (bus owned here)
     _run_theme_discovery()             # candidate-theme radar (US) → feeds the scout + a page panel
     _run_thematic_desk(regions)        # additive AI layer; gated + never fatal
-    return 0
+    return any_failed  # True = stale; build_baskets stamps freshness.json
 
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
-    sys.exit(main(args or None))
+    sys.exit(1 if main(args or None) else 0)
