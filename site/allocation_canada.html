@@ -405,12 +405,57 @@
   <p class="tagline"><span class="l-en">Find the leading theme, hold it while trend is healthy, and raise cash when risk breaks. Discipline, not prediction.</span><span class="l-zh">寻找主导主题，趋势健康时持有，风险破坏时提高现金。这是纪律，不是预测。</span></p>
 </header>
 
+<!-- ── Shock de-escalation banner (FTR W1 / PS-R3, de-escalation only) ── -->
+<!-- Fetched live from site/live/shock_state.json. Absent file = no banner (graceful). -->
+<div id="ftr-shock-banner"></div>
+<!-- ── Policy-lever state chip (FTR W1 / PS-W2-F, display-only) ── -->
+<div id="ftr-lever-chip"></div>
+<script>
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// Shock banner
+fetch('live/shock_state.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();})
+  .then(function(d){
+    if(!d||!d.active)return;
+    var el=document.getElementById('ftr-shock-banner');
+    if(!el)return;
+    var msg=isZh()?
+      ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。剧烈反转在 T+1 有 58% 的概率消退（n=26）。'):
+      ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Violent flips fade 58% at T+1 (n=26).');
+    el.innerHTML='<div class="banner" style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn)">'+msg+'</div>';
+  }).catch(function(){/* absent file → no banner */});
+// Policy-lever chip
+fetch('policy_lever.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();})
+  .then(function(d){
+    if(!d||!d.state)return;
+    var el=document.getElementById('ftr-lever-chip');
+    if(!el)return;
+    var s=d.state, c=s==='ARMED'?'var(--down)':s==='ELEVATED'?'var(--orange)':'var(--muted)';
+    var sZh={'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}[s]||s;
+    // Use framing/framing_zh from the JSON itself — single source of truth, immune to drift
+    var disc=isZh()?(d.framing_zh||d.framing||''):(d.framing||'');
+    el.innerHTML='<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;margin:4px 0 8px">'
+      +'<span style="font-weight:700;padding:1px 9px;border-radius:10px;border:1px solid '+c+';color:'+c+'">'
+      +'<span class="l-en">'+esc(s)+'</span><span class="l-zh">'+esc(sZh)+'</span>'
+      +'</span>'
+      +'<span style="color:var(--muted);font-size:11.5px">'+esc(disc)+'</span>'
+      +'</div>';
+  }).catch(function(){/* absent file → no chip */});
+})();
+</script>
+
 <!-- ============ HEADLINE: current best place to allocate ============ -->
 
 
 <section class="hero" style="margin-top:14px">
   <div class="big">
     <div class="lead"><span class="l-en">Prevailing narrative — current best place to allocate</span><span class="l-zh">主导叙事 — 当前最佳配置去向</span></div>
+    <!-- FT-R11 horizon label: honest framing of the strategic construction (SKIP_D=21, 63/126/252d ensemble) -->
+    <div style="font-size:11px;color:var(--muted);margin:2px 0 4px;font-style:italic"><span class="l-en">Strategic horizon (3–12m): skip-month momentum by construction — this view is deliberately slow. See the Tape strip for the current session.</span><span class="l-zh">战略视角（3–12个月）：结构上使用跳月动量 — 此视图有意放慢。当前交易状态请参阅快速行情区。</span></div>
     <div class="name"><span class="l-en">Big Banks</span><span class="l-zh">大型银行</span></div>
     <div class="wt"><span class="l-en">Suggested weight</span><span class="l-zh">建议权重</span> <b>25%</b>
       · <span class="l-en">cash</span><span class="l-zh">现金</span> 0%</div>
@@ -888,7 +933,7 @@
 
 
 <footer>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-09 15:47 UTC<br>
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-09 17:03 UTC<br>
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
 <script>
