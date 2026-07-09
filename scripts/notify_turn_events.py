@@ -5,21 +5,29 @@ transport (DISCORD_WEBHOOK_WATCHLIST).
 
 EVENT SOURCES
 -------------
-(a) turn-watch IGNITION transitions  (site/basketdata/turn_watch.json)
-    Fire on TRANSITION into IGNITION — not on persistence.
+(a) turn-watch IGNITION (site/basketdata/turn_watch.json)
+    Fire at most once per basket-day while in IGNITION state (state-day dedup).
+    Dedup key: (kind="ignition", basket_id, date).
 
-(b) shock_state activation           (site/live/shock_state.json)
-    Fire on ACTIVATION transition — not on persistence.
+(b) shock_state activation (site/live/shock_state.json)
+    Fire at most once per day while active (state-day dedup).
+    Dedup key: (kind="shock_activation", "shock_state", date).
 
-(c) tape disagreement                (site/live/basket_pulse.json + turn_watch)
+(c) tape disagreement (site/live/basket_pulse.json + turn_watch)
     IGNITION basket whose live tape continues positive (live_ew_chg_pct > 0)
     while slow reco is NOT in {enter, accumulate}.
-    Fire at most once per basket-day.
+    Fire at most once per basket-day (state-day dedup).
+
+NOTE ON DEDUP SEMANTICS: all three detectors use state-day dedup — they fire
+once per calendar day per subject while the state is active, NOT only on the
+first transition into the state.  Masterplan §5 specifies "dedup per state-day".
 
 DEDUP STATE
 -----------
 site/live/notify_state.json — site-only write per FT-R5.
 Keyed by (kind, subject, date).  Tolerant of missing file.
+Written only when state changes (alert fires); file may not exist on no-event
+or dark-mode ticks.  The fastpath git add uses '|| true' to tolerate absence.
 
 COPY CONTRACT (FT-R13)
 -----------------------
@@ -37,6 +45,7 @@ Absent secret → log-and-exit-0 (dark by default locally).
 WIRING
 ------
 - Nightly: called at end of scripts/build_baskets.py main() after turn-watch hook.
+  Requires DISCORD_WEBHOOK_WATCHLIST / DISCORD_WEBHOOK_URL in the step env.
 - Intraday: step 5 of .github/workflows/intraday-fastpath.yml (after basket pulse).
 """
 from __future__ import annotations
@@ -197,19 +206,22 @@ def _shock_activation_message(score: Any, as_of: str, reason: str | None) -> str
     return msg
 
 
-def _tape_disagreement_message(basket_id: str, live_chg: float, as_of: str) -> str:
-    """Build FT-R13-compliant tape disagreement alert message."""
-    pct = round(live_chg * 100, 2) if abs(live_chg) < 1 else round(live_chg, 2)
-    # Distinguish: if the value looks like it's already a percent (> 1 abs), show as-is
-    if abs(live_chg) < 1:
-        chg_str = f"+{pct:.2f}%" if pct >= 0 else f"{pct:.2f}%"
-    else:
-        chg_str = f"+{live_chg:.2f}%" if live_chg >= 0 else f"{live_chg:.2f}%"
+def _tape_disagreement_message(
+    basket_id: str, live_chg_pct: float, tape_as_of: str
+) -> str:
+    """Build FT-R13-compliant tape disagreement alert message.
+
+    live_chg_pct is the value from basket_pulse.baskets[].live_ew_chg_pct, which
+    is ALREADY in percent units (e.g. 0.40 means +0.40%, not +40%).  Display it
+    directly — no multiply-by-100 heuristic.
+    """
+    sign = "+" if live_chg_pct >= 0 else ""
+    chg_str = f"{sign}{live_chg_pct:.2f}%"
     msg = (
         f"TAPE DISAGREEMENT — {basket_id} IGNITION basket "
         f"live tape {chg_str} "
         f"while slow state not in {{enter, accumulate}} "
-        f"· as-of {as_of} "
+        f"· as-of {tape_as_of} "
         f"· display-tier, expected-null meter "
         f"· {_FADE_COPY}"
     )
@@ -218,11 +230,21 @@ def _tape_disagreement_message(basket_id: str, live_chg: float, as_of: str) -> s
 
 
 def _assert_no_forbidden_words(msg: str) -> None:
-    """Raise ValueError if any forbidden word appears in the message (case-insensitive)."""
+    """Raise ValueError if any forbidden word appears in the message (case-insensitive).
+
+    Uses word-boundary substring matching so hyphenated forms like 'add-on' are
+    also caught.  Matches any occurrence where the word appears as a standalone
+    token or as a prefix/suffix of a hyphenated compound.
+    """
+    import re
+
     lower = msg.lower()
     for word in FORBIDDEN_WORDS:
-        if word in lower.split() or f" {word} " in lower or lower.startswith(word + " ") or lower.endswith(" " + word):
-            raise ValueError(f"FT-R13 violation: forbidden word '{word}' in message: {msg[:80]}")
+        # \b is a word boundary — catches 'buy', 'buy-side', 'add-on', etc.
+        if re.search(r"\b" + re.escape(word) + r"\b", lower):
+            raise ValueError(
+                f"FT-R13 violation: forbidden word '{word}' in message: {msg[:80]}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -332,7 +354,6 @@ def _detect_tape_disagreement(
 
     # Build IGNITION set from turn_watch
     ignition_baskets: set[str] = set()
-    turn_as_of = turn_watch.get("as_of") or today_str
     for b in (turn_watch.get("baskets") or []):
         if b.get("state") == "IGNITION":
             ignition_baskets.add(b.get("basket_id", ""))
@@ -376,7 +397,9 @@ def _detect_tape_disagreement(
             log.debug("notify_turn_events: tape_disagreement %s already fired today", basket_id)
             continue
 
-        msg = _tape_disagreement_message(basket_id, live_chg, turn_as_of)
+        # Stamp with basket_pulse as_of_utc (the live tape freshness) not the
+        # nightly turn_watch date — the live_ew_chg_pct is an intraday figure.
+        msg = _tape_disagreement_message(basket_id, live_chg, pulse_as_of)
         results.append((basket_id, msg))
 
     return results

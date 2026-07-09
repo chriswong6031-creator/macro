@@ -114,7 +114,11 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           # Stage the served live artifacts (site/live/* is gitignored -> force-track, like site/stockdata)
           # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
-          git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live_config.js site/live/notify_state.json
+          git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live_config.js
+          # notify_state.json is only written when an alert actually fires (or webhook is absent on
+          # first tick — dark mode never creates the file). Guard with || true so a missing file on
+          # the common no-event / dark-mode tick does NOT abort the commit step under bash -eo pipefail.
+          git add -f site/live/notify_state.json 2>/dev/null || true
           git add -f data/regime/latest.json data/market_state/latest.json
           # W6a SENTINEL STAGING LAW: regime_stale_selfheal writes to data/reflexes/
           # when it fires. Stage the directory so a self-heal firing commit is never

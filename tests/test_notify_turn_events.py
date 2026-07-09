@@ -99,12 +99,15 @@ _BASKET_PULSE_WITH_IGNITION = {
     "baskets": [
         {
             "id": "semicap_equipment",
-            "live_ew_chg_pct": 0.031,
+            # live_ew_chg_pct is ALREADY in percent units: 0.40 = +0.40%
+            # (scripts/build_basket_pulse.py averages changePct from live_quotes,
+            #  which emits (price/prev - 1) * 100). Use a realistic percent value.
+            "live_ew_chg_pct": 0.40,
             "stale": False,
             "n_members": 16,
             "n_quoted": 14,
             "tape_rank": 3,
-            "cum_2d_pct": 0.05,
+            "cum_2d_pct": 0.80,
         },
     ],
 }
@@ -116,7 +119,7 @@ _BASKET_PULSE_STALE = {
     "baskets": [
         {
             "id": "semicap_equipment",
-            "live_ew_chg_pct": 0.031,
+            "live_ew_chg_pct": 0.40,  # percent units; stale=True → should NOT fire
             "stale": True,  # stale — should NOT fire
             "n_members": 16,
             "n_quoted": 0,
@@ -132,7 +135,7 @@ _BASKET_PULSE_NEGATIVE = {
     "baskets": [
         {
             "id": "semicap_equipment",
-            "live_ew_chg_pct": -0.015,  # negative — not a disagreement
+            "live_ew_chg_pct": -0.75,  # percent units: -0.75% — not a disagreement
             "stale": False,
             "n_members": 16,
             "n_quoted": 14,
@@ -375,10 +378,23 @@ class TestCopyContract:
             assert word not in lower, f"Forbidden word '{word}' found in: {msg}"
 
     def test_tape_disagreement_message_no_forbidden_words(self):
-        msg = NTE._tape_disagreement_message("semicap_equipment", 0.031, _TODAY)
+        # live_ew_chg_pct is in percent units (e.g. 0.40 = +0.40%)
+        msg = NTE._tape_disagreement_message("semicap_equipment", 0.40, _TODAY)
         lower = msg.lower().split()
         for word in NTE.FORBIDDEN_WORDS:
             assert word not in lower, f"Forbidden word '{word}' found in: {msg}"
+
+    def test_tape_disagreement_message_percent_scale(self):
+        """live_ew_chg_pct is already a percent: 0.40 must render as +0.40%, NOT +40.00%."""
+        msg = NTE._tape_disagreement_message("semicap_equipment", 0.40, _TODAY)
+        assert "+0.40%" in msg, f"Expected '+0.40%' in message, got: {msg}"
+        assert "40.00%" not in msg, f"Expected NOT to find '40.00%' (scale bug) in: {msg}"
+
+    def test_tape_disagreement_message_sub_one_percent_scale(self):
+        """Values < 1 (e.g. 0.75%) must NOT be multiplied by 100."""
+        msg = NTE._tape_disagreement_message("test_basket", 0.75, _TODAY)
+        assert "+0.75%" in msg, f"Expected '+0.75%' in message, got: {msg}"
+        assert "75.00%" not in msg
 
     def test_ignition_message_contains_fade_copy(self):
         legs = {"impulse_day": True, "rs_z": True}
@@ -396,7 +412,7 @@ class TestCopyContract:
         assert "display-tier" in msg.lower()
 
     def test_disagreement_message_contains_expected_null(self):
-        msg = NTE._tape_disagreement_message("test_basket", 0.02, _TODAY)
+        msg = NTE._tape_disagreement_message("test_basket", 0.20, _TODAY)
         assert "expected-null" in msg.lower()
 
     def test_ignition_message_contains_k_count(self):
@@ -418,6 +434,24 @@ class TestCopyContract:
         msg = NTE._ignition_message("test_basket", legs, _TODAY)
         assert "impulse_day" in msg
         assert "rs_z" in msg
+
+    def test_forbidden_word_guard_catches_exact_word(self):
+        """_assert_no_forbidden_words raises on an exact forbidden word."""
+        import pytest as _pytest
+        with _pytest.raises(ValueError, match="buy"):
+            NTE._assert_no_forbidden_words("IGNITION — buy this basket")
+
+    def test_forbidden_word_guard_catches_word_boundary_compound(self):
+        """Hyphenated forms like 'buy-side' contain the boundary word 'buy'."""
+        import pytest as _pytest
+        with _pytest.raises(ValueError, match="buy"):
+            NTE._assert_no_forbidden_words("IGNITION — buy-side flow detected")
+
+    def test_tape_disagreement_message_uses_pulse_as_of(self):
+        """tape_as_of is the pulse as_of_utc, not the nightly turn_watch date."""
+        pulse_as_of = _TODAY + "T14:30:00Z"
+        msg = NTE._tape_disagreement_message("test_basket", 0.50, pulse_as_of)
+        assert pulse_as_of in msg
 
 
 # ---------------------------------------------------------------------------

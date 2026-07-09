@@ -592,6 +592,10 @@ jobs:
           COLLECT_LANE: nightly  # lane sentinel: basket_turn_watch.stamp_ledger + other engine
                                  # nightly-only ledger writers check COLLECT_LANE==nightly before
                                  # writing; render/earlyclose/asia-close lanes leave it unset → no-op.
+          # FTR W10: build_baskets.py calls notify_turn_events at the end of main().
+          # Without these env vars the hook hits dark mode (no webhook → exit 0).
+          DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           set +e
           ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
@@ -1474,6 +1478,11 @@ jobs:
           # them — same as the force-tracked stock-search libraries. -f overrides the
           # ignore; || true so an empty/absent dir (feature off) never fails the commit.
           git add -f site/stockbrief 2>/dev/null || true
+          # FTR W10: persist nightly dedup state so the first intraday tick of the same day
+          # does not double-fire an IGNITION/shock alert that the nightly already sent.
+          # notify_state.json is site/live/ (gitignored); force-add with || true so an
+          # absent file (no alert fired, dark mode) never fails the commit.
+          git add -f site/live/notify_state.json 2>/dev/null || true
           # China stock-search library: gitignored like the other markets' libraries —
           # force-add it so the committed-tree deploy ships every indexed A-share detail
           # JSON, not just the old tracked subset.
