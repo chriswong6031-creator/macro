@@ -2101,6 +2101,27 @@ artifacts:
       - terminal:pull_macro_intel
     notes: "Producer: engine/sector_pulse.py:629 write_pulse. schema=1 integer version in payload."
 
+  # FTR W4 — basket turn-watch K-of-N organ (display/context, expected-NULL forward meter)
+  site-basket-turn-watch:
+    path: site/basketdata/turn_watch.json
+    format: json
+    producer: engine/basket_turn_watch.py
+    known_extra_writers: []
+    owner_program: fast-turn
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: basket_turn_watch.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_baskets.py
+    external_consumers: []
+    notes: "FTR W4. K-of-N confluence (6 legs) per US basket. Disclosure: sector-level standalone washout-to-turn printed NULL (Oracle P8 P-W1/S-W3); this construction is display-tier expected-NULL forward meter (FT-R9). authority.may_rank/gate/size/escalate=false."
+
   # --- 4 consumers ---
   site-radar-ticker:
     path: site/basketdata/radar_ticker.json

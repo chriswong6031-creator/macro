@@ -73,10 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 303, (
-        f"Expected 303 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 304, (
+        f"Expected 304 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (HK Pick Lab added hk-pick-lab-snapshots, hk-pick-lab-entry-ledger,"
+        " (FTR W4 added site-basket-turn-watch = 303->304;"
+        " HK Pick Lab added hk-pick-lab-snapshots, hk-pick-lab-entry-ledger,"
         " hk-1d-velocity-desk-artifact = 300->303;"
         " (CN Pick Lab added cn-pick-lab-snapshots, cn-pick-lab-entry-ledger,"
         " cn-reversion-desk-artifact = 297->300;"

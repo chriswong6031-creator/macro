@@ -23,6 +23,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | engine-fix | 16 |
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
+| fast-turn | 1 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | institutional-sector-intelligence | 2 |
@@ -57,7 +58,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 176 |
+| display | 177 |
 | infrastructure | 77 |
 | scored | 4 |
 | shadow | 46 |
@@ -66,7 +67,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 291 |
+| git | 292 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -201,6 +202,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | fire-coordinates | `data/factordata/fire_coordinates.jsonl` | jsonl | nightly-factor-panel | display | 2 | 0 |
 | factor-state-history | `data/factordata/factor_state_history.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
 | site-factor-intelligence-state | `site/neuralwebdata/factor_intelligence_state.json` | json | nightly-factor-panel | display | 0 | 0 |
+
+### fast-turn
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-basket-turn-watch | `site/basketdata/turn_watch.json` | json | daily-engine | display | 1 | 0 |
 
 ### hk-canada
 

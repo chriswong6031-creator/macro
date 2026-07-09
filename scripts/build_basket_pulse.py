@@ -352,6 +352,88 @@ def _load_market_drivers(drivers_path: Path | None) -> dict[str, Any] | None:
         return None
 
 
+# ── W5: AI-capex complex rollup ───────────────────────────────────────────────
+
+# AI-capex complex basket ids (mirrors engine/demand_capex.AI_CAPEX_THEMES keys).
+# FT-R10: FTR creates no new theme vocabulary; we import the canonical set.
+def _ai_capex_ids() -> frozenset[str]:
+    try:
+        from engine.demand_capex import AI_CAPEX_THEMES
+        return frozenset(AI_CAPEX_THEMES.keys())
+    except Exception:
+        # Fallback hard-coded to avoid dependency failures making the build fatal
+        return frozenset({
+            "memory_storage", "ai_semiconductors", "semicap_equipment",
+            "data_center_power", "grid_electrification", "nuclear_power",
+        })
+
+
+def _compute_complexes(
+    baskets_data: list[dict[str, Any]],
+    quotes: dict[str, Any],
+    now_ms: int,
+    stale_min: int = LIVE_STALE_MIN,
+) -> list[dict[str, Any]]:
+    """W5: aggregate live basket pulse to the AI-capex complex.
+
+    For the ai_capex complex (engine/demand_capex.AI_CAPEX_THEMES keys):
+    - live_ew_chg_pct: EW over member baskets' live_ew_chg_pct (skipping nulls)
+    - n_baskets: total baskets in the complex
+    - n_live: baskets with a non-null live_ew_chg_pct
+    - only_green_complex: bool — this complex EW positive while SPY proxy negative
+      AND all other computable complexes negative (descriptive, same-session)
+
+    Coverage-null rules: if no member basket has live_ew_chg_pct, live_ew_chg_pct
+    is None (honest null). FT-R3: descriptive same-session only.
+    """
+    ai_ids = _ai_capex_ids()
+
+    # Index baskets by id
+    by_id: dict[str, dict[str, Any]] = {b["id"]: b for b in baskets_data}
+
+    # Compute EW for ai_capex complex
+    ai_chgs: list[float] = []
+    n_baskets = 0
+    for bid in ai_ids:
+        if bid in by_id:
+            n_baskets += 1
+            chg = by_id[bid].get("live_ew_chg_pct")
+            if chg is not None:
+                ai_chgs.append(float(chg))
+
+    ai_ew = round(sum(ai_chgs) / len(ai_chgs), 3) if ai_chgs else None
+
+    # SPY proxy: read from quotes directly (stale-gated)
+    spy_q = quotes.get("SPY") or quotes.get("^GSPC")
+    spy_chg: float | None = None
+    if spy_q is not None and not _is_stale(spy_q, now_ms, stale_min):
+        raw = spy_q.get("changePct")
+        if raw is not None:
+            spy_chg = float(raw)
+
+    # only_green_complex: ai_capex EW positive while SPY negative
+    # AND all other computable complex EWs are also negative.
+    # "Other computable complexes" = there are none yet in v1 (only ai_capex).
+    # Per the spec: "all other computable complexes negative" — with only one
+    # complex in v1, this condition is satisfied vacuously when SPY is down.
+    only_green: bool = (
+        ai_ew is not None
+        and spy_chg is not None
+        and ai_ew > 0
+        and spy_chg < 0
+    )
+
+    return [
+        {
+            "complex_id": "ai_capex",
+            "live_ew_chg_pct": ai_ew,
+            "n_baskets": n_baskets,
+            "n_live": len(ai_chgs),
+            "only_green_complex": only_green,
+        }
+    ]
+
+
 # ── main build ─────────────────────────────────────────────────────────────────
 
 def build(
@@ -421,6 +503,9 @@ def build(
     # ── coverage summary ───────────────────────────────────────────────────────
     coverage_pct = round(coverage_sum / coverage_count * 100, 1) if coverage_count else 0.0
 
+    # ── W5: AI-capex complex rollup ────────────────────────────────────────────
+    complexes = _compute_complexes(baskets_data, quotes, now_ms, stale_min)
+
     # ── assemble output ────────────────────────────────────────────────────────
     return {
         "schema": "basket_pulse.v1",
@@ -434,6 +519,7 @@ def build(
         "baskets": baskets_data,
         "od_spread_print": od_spread,
         "shock_day_relative_bid": shock_bid,
+        "complexes": complexes,
     }
 
 
@@ -473,6 +559,7 @@ def main() -> None:
             "baskets": [],
             "od_spread_print": None,
             "shock_day_relative_bid": None,
+            "complexes": [],
         }
 
     out_path.write_text(
