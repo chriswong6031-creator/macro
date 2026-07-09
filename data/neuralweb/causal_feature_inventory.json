@@ -1,0 +1,305 @@
+{
+  "schema": "neuralweb.causal_feature_inventory.v1",
+  "artifact_id": "causal-feature-inventory",
+  "asof": "2026-07-09T02:40:18.838024+00:00",
+  "authority": {
+    "tier": "infrastructure",
+    "display_only": true,
+    "not_a_signal": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "scored_path_surfaces": []
+  },
+  "features": [
+    {
+      "feature_id": "regime_v2_pit__growth_inflation",
+      "family": "regime_macro",
+      "path": "data/regime/regime_v2_pit.parquet",
+      "producer": "regime-v2-pit",
+      "cadence": "daily-engine",
+      "time_grain": "daily",
+      "asof_field": "date",
+      "first_available_date": "1971-01-04",
+      "first_available_date_probed": false,
+      "pit_basis": "recomputed_history",
+      "era_coverage": [
+        "pre-2000",
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "tier": "macro_plumbing",
+      "allowed_roles": [
+        "candidate_cause",
+        "conditioner",
+        "environment_split"
+      ],
+      "forbidden_roles": [
+        "target",
+        "forbidden_future"
+      ],
+      "min_lag_days": 1,
+      "collider_risk": "low",
+      "present": true,
+      "notes": "Recomputed_history: single-vintage rebuild from current code applied to historical dates. growth_score/inflation_score sparse pre-1980 due to missing macro leg inputs. recession flag uses NBER dates (PIT by publication with ~6-12m announcement lag)."
+    },
+    {
+      "feature_id": "regime_latest__liquidity_quality",
+      "family": "regime_macro",
+      "path": "data/regime/latest.json",
+      "producer": "regime-latest",
+      "cadence": "daily-engine",
+      "time_grain": "snapshot",
+      "asof_field": "asof",
+      "first_available_date": "2022-01-01",
+      "first_available_date_probed": false,
+      "pit_basis": "current_snapshot_backfill",
+      "era_coverage": [
+        "2022-07+"
+      ],
+      "tier": "macro_plumbing",
+      "allowed_roles": [
+        "candidate_cause",
+        "conditioner",
+        "environment_split"
+      ],
+      "forbidden_roles": [
+        "target",
+        "forbidden_future"
+      ],
+      "min_lag_days": 1,
+      "collider_risk": "low",
+      "present": true,
+      "notes": "current_snapshot_backfill: latest.json is a nightly snapshot. Liquidity quality block (label, rrp_buffer_bn, rrp_exhausted) is the liquidity-quality sub-object. For backtesting, the regime_history.parquet analogue is recomputed_history. Treat as 2022+ feature."
+    },
+    {
+      "feature_id": "fed_net_liquidity",
+      "family": "macro_plumbing",
+      "path": "data/macro/fed_net_liquidity.parquet",
+      "producer": "fed-net-liquidity",
+      "cadence": "weekly",
+      "time_grain": "weekly",
+      "asof_field": "date",
+      "first_available_date": "2002-12-18",
+      "first_available_date_probed": true,
+      "pit_basis": "pit_live",
+      "era_coverage": [
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "tier": "macro_plumbing",
+      "allowed_roles": [
+        "candidate_cause",
+        "conditioner",
+        "environment_split"
+      ],
+      "forbidden_roles": [
+        "target",
+        "forbidden_future"
+      ],
+      "min_lag_days": 5,
+      "collider_risk": "low",
+      "present": true,
+      "notes": "pit_live: WALCL/RRP/TGA published H.4.1 Wednesdays without revision. Expanding percentile recomputed at each date from available history. Null before 2002-12-18. Weekly cadence \u2192 min_lag_days=5 (weekly_publication rule)."
+    },
+    {
+      "feature_id": "liquidity_plumbing",
+      "family": "macro_plumbing",
+      "path": "data/neuralweb/liquidity_plumbing.json",
+      "producer": "liquidity-plumbing",
+      "cadence": "daily-engine",
+      "time_grain": "snapshot",
+      "asof_field": "asof",
+      "first_available_date": "2022-01-01",
+      "first_available_date_probed": false,
+      "pit_basis": "current_snapshot_backfill",
+      "era_coverage": [
+        "2022-07+"
+      ],
+      "tier": "macro_plumbing",
+      "allowed_roles": [
+        "conditioner",
+        "environment_split"
+      ],
+      "forbidden_roles": [
+        "candidate_cause",
+        "target",
+        "forbidden_future"
+      ],
+      "min_lag_days": 1,
+      "collider_risk": "medium",
+      "present": true,
+      "notes": "Composite lobe artifact \u2014 quantity/quality/funding blocks aggregate multiple upstream sources (fed_net_liquidity, regime/latest.json, net_issuance, tga). As a composite it carries medium collider risk (conditioning on it may open back-doors through parent sources). Use for environment conditioning only; do not treat as a primitive cause."
+    },
+    {
+      "feature_id": "breadth__market_breadth",
+      "family": "breadth",
+      "path": "data/breadth/breadth.parquet",
+      "producer": "breadth-breadth",
+      "cadence": "daily-engine",
+      "time_grain": "daily",
+      "asof_field": "Date",
+      "first_available_date": "1962-03-13",
+      "first_available_date_probed": true,
+      "pit_basis": "recomputed_history",
+      "era_coverage": [
+        "pre-2000",
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "tier": "asset_class",
+      "allowed_roles": [
+        "candidate_cause",
+        "conditioner",
+        "environment_split"
+      ],
+      "forbidden_roles": [
+        "target",
+        "forbidden_future"
+      ],
+      "min_lag_days": 1,
+      "collider_risk": "low",
+      "present": true,
+      "notes": "SURVIVORSHIP CAVEAT: pre-2002 breadth uses current sp1500 membership backfilled to historical prices \u2014 NOT PIT-membership-aware. Post-2002 uses sp1500_pit_membership.parquet (cleaner). Whole series classified recomputed_history to avoid misleading callers about pre-2002 data quality."
+    },
+    {
+      "feature_id": "gex_history__spy",
+      "family": "gex",
+      "path": "data/index_gex_history/SPY.parquet",
+      "producer": "gex-state-history",
+      "cadence": "daily-engine",
+      "time_grain": "daily",
+      "asof_field": "date",
+      "first_available_date": "2017-01-03",
+      "first_available_date_probed": true,
+      "pit_basis": "pit_live",
+      "era_coverage": [
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "tier": "asset_class",
+      "allowed_roles": [
+        "candidate_cause",
+        "conditioner"
+      ],
+      "forbidden_roles": [
+        "target",
+        "forbidden_future"
+      ],
+      "min_lag_days": 1,
+      "collider_risk": "medium",
+      "present": true,
+      "notes": "ERA FLAG: 2017+ only. GEX data is not reliable pre-2017 (ThetaData coverage and methodology constraints). Any edge using this feature must be auto-stamped era_specific and may not claim pre-2017 inference. dist_to_flip_pct captures proximity to the gamma flip level \u2014 medium collider risk because it is a function of price, spot GEX, and dealer positioning simultaneously."
+    },
+    {
+      "feature_id": "cycle_pattern__state_monthly",
+      "family": "cycle",
+      "path": "data/cycle_pattern/state_monthly.parquet",
+      "producer": "cycle-pattern-state-monthly",
+      "cadence": "on-demand",
+      "time_grain": "monthly",
+      "asof_field": "date",
+      "first_available_date": "2010-12-31",
+      "first_available_date_probed": true,
+      "pit_basis": "recomputed_history",
+      "era_coverage": [
+        "2009-16",
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "tier": "sector_complex",
+      "allowed_roles": [
+        "candidate_cause",
+        "conditioner",
+        "environment_split"
+      ],
+      "forbidden_roles": [
+        "target",
+        "forbidden_future"
+      ],
+      "min_lag_days": 1,
+      "collider_risk": "medium",
+      "present": true,
+      "notes": "Cycle patterns are fit retrospectively from current code applied to historical price data. A pattern detected in 2012 may have been identified using future-available data if the fitting window extended beyond 2012. Medium collider risk: phase is partially determined by the return history it may be used to predict."
+    },
+    {
+      "feature_id": "options_entry__state",
+      "family": "options_entry",
+      "path": "data/options_entry/state.parquet",
+      "producer": "options-entry-state",
+      "cadence": "daily-engine",
+      "time_grain": "daily",
+      "asof_field": "as_of",
+      "first_available_date": "2026-06-22",
+      "first_available_date_probed": true,
+      "pit_basis": "pit_live",
+      "era_coverage": [
+        "2022-07+"
+      ],
+      "tier": "stock",
+      "allowed_roles": [
+        "candidate_cause",
+        "conditioner"
+      ],
+      "forbidden_roles": [
+        "target",
+        "forbidden_future"
+      ],
+      "min_lag_days": 1,
+      "collider_risk": "medium",
+      "present": true,
+      "notes": "RECENT_ONLY: effective window is 2022-07-01+ (Oracle RECENT_ONLY pattern). Any edge using this feature is auto-stamped era_specific by construction and the era-split leg returns insufficient_era_span. Medium collider risk: options-entry features co-vary strongly with contemporaneous price momentum and may reflect the same underlying dealer-positioning parent."
+    },
+    {
+      "feature_id": "replay__entry_quality_outcomes",
+      "family": "entry_quality",
+      "path": "data/replay/replay_boarded.parquet",
+      "producer": "unregistered",
+      "cadence": "daily-engine",
+      "time_grain": "daily",
+      "asof_field": "date",
+      "first_available_date": "2022-06-30",
+      "first_available_date_probed": false,
+      "pit_basis": "recomputed_history",
+      "era_coverage": [
+        "2022-07+"
+      ],
+      "tier": "fire_outcome",
+      "allowed_roles": [
+        "target"
+      ],
+      "forbidden_roles": [
+        "candidate_cause",
+        "conditioner",
+        "environment_split",
+        "confounder",
+        "mediator",
+        "collider",
+        "proxy",
+        "lagged_outcome_echo",
+        "negative_control"
+      ],
+      "min_lag_days": 1,
+      "collider_risk": "high",
+      "present": false,
+      "notes": "FILE ABSENT on this checkout (present=false). This may be a runner-local store (e.g. replay_boarded.parquet) or a path not yet produced. Scout emits data_absent null when this path is unresolvable. | GITIGNORED / RUNNER-LOCAL: replay_boarded.parquet is not git-tracked. The causal job resolves it via REPLAY_BOARDED_PATH env override (THETADATA_STORE pattern). Absent \u2192 data_absent null printed (CHF-R6). EFFECTIVE window \u2248 2022-06-30+ (P0 memo \u00a76 v1.1 \u2014 nominal 2021-07-06 window does not exist in the ledger). ERA: all edges targeting this feature are auto-stamped era_specific and return insufficient_era_span on the era-split leg. forward-outcome columns: fwd_mdd_21, fwd_ret_21, fwd_ret_63 are forward-realized outcomes and match the forbidden_causes fwd_ pattern."
+    }
+  ],
+  "feature_count": 9,
+  "gap_notes": [
+    "feature replay__entry_quality_outcomes: file absent at data/replay/replay_boarded.parquet"
+  ],
+  "produced_by": "engine.neuralweb.causal_inventory.build_inventory"
+}
