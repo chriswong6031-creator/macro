@@ -23,15 +23,9 @@ import pandas as pd
 import pytest
 
 from engine.neuralweb.causal_scout import (
-    N_BOOTSTRAP,
-    N_SHIFT,
-    EdgeResult,
     EdgeSpec,
     EnvironmentSplit,
     _sanitize_text,
-    cumulative_family_width,
-    load_priors,
-    log_battery_cells,
     run_battery,
     FAMILY,
 )
@@ -431,11 +425,20 @@ def test_regime_persistence_mirage_flagged_as_unstable():
 
     # Signal only exists in first half — pure noise in second half.
     # iid cause so target DOES NOT lead cause (neg-lag placebo stays quiet).
+    # IMPORTANT: use a genuine lag-1 structure (target[t] depends on cause[t-1])
+    # so that the lag-1 z-product effect series e_t = z(cause[t-1])*z(target[t])
+    # is large in the first half and near-zero in the second half.  This ensures
+    # the block-bootstrap CI on e_t spans zero (FIX 1: the lag-aware era stats
+    # also correctly detect the concentration).
     cause_vals = rng.standard_normal(n)
     target_vals = np.zeros(n)
     half = n // 2
-    target_vals[:half] = 0.95 * cause_vals[:half] + rng.standard_normal(half) * 0.05
-    target_vals[half:] = rng.standard_normal(n - half)  # pure noise in 2nd half
+    noise_vals = rng.standard_normal(n) * 0.05
+    # Lag-1 planted effect in the first half (target[t] = 0.95*cause[t-1] + noise)
+    for t in range(1, half):
+        target_vals[t] = 0.95 * cause_vals[t - 1] + noise_vals[t]
+    # Second half: pure iid noise, no lag-1 effect
+    target_vals[half:] = rng.standard_normal(n - half)
 
     cause = pd.Series(cause_vals, index=dates)
     target = pd.Series(target_vals, index=dates)
@@ -720,7 +723,6 @@ def test_cumulative_width_accumulates_across_batches():
 
     Uses weekly era-straddling dates so both batteries complete.
     """
-    rng = np.random.default_rng(RNG_SEED + 12)
     n = N_OBS_WEEKLY
     dates = _make_dates(n)
 
@@ -787,54 +789,54 @@ def test_cumulative_width_accumulates_across_batches():
 # Parameterized over >= 5 seeds.
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("seed_offset", [0, 1, 2, 3, 4, 5, 6])
-def test_falsifier_regime_persistence_mirage_no_sign_flip(seed_offset: int):
+@pytest.mark.parametrize(
+    "phi,seed_offset",
+    [
+        # phi in {0.0, 0.1, 0.3, 0.6} x 5 seeds = 20 cases (FIX 3)
+        (0.0, 0), (0.0, 1), (0.0, 2), (0.0, 3), (0.0, 4),
+        (0.1, 0), (0.1, 1), (0.1, 2), (0.1, 3), (0.1, 4),
+        (0.3, 0), (0.3, 1), (0.3, 2), (0.3, 3), (0.3, 4),
+        (0.6, 0), (0.6, 1), (0.6, 2), (0.6, 3), (0.6, 4),
+    ],
+)
+def test_falsifier_regime_persistence_mirage_no_sign_flip(phi: float, seed_offset: int):
     """
     MANDATORY FALSIFIER (CHF-R12, reviewer-specified):
     Regime-persistence mirage WITHOUT a target-mean sign flip.
 
     Structure:
-      - Cause: AR(1) phi=0.3 — mild autocorrelation
-      - Effect z(x_{t-1})*z(y_t): strong ONLY pre-2010 (high planted beta=0.95)
+      - Cause: AR(1) with phi ∈ {0.0, 0.1, 0.3, 0.6} — iid to high autocorrelation
+      - Effect z(x_{t-1})*z(y_t): strong ONLY pre-2010 (planted beta=0.95)
       - Post-2010: target = pure noise, NO effect from cause
       - Small constant positive drift added to target across ENTIRE span so
         that per-era TARGET mean t-stats are BOTH positive (no sign flip in
         the old hollow estimator — both era means positive => old code saw
         "same sign" and wrongly returned screened_candidate)
 
-    Before the fix: hollow estimator measures per-era target mean t-stats;
-    both are positive due to drift => no sign flip => falsely returns
-    screened_candidate when the lag survives time-shift and neg-lag filters.
+    phi=0.0/0.1: iid/near-iid cause — the low cause autocorrelation means the
+    time-shift placebo may NOT kill the lag (the shift distribution is flat when
+    the cause is nearly iid).  This is the hard case: the era-concentration
+    concern (FIX 1 + FIX 2) must be the backstop.
 
-    After the fix: the effect series e_t = z(x_{t-1})*z(y_t) is large pre-2010
-    and near-zero post-2010.  The block-bootstrap CI on the effect series spans
-    zero (effect not stable across time blocks) OR the era-concentration concern
-    fires => verdict is NEVER screened_candidate.
-
-    The forward effect mean in the pre-2010 window is substantially larger than
-    the reverse (we plant z(x_t)*z(y_t) not z(y_t)*z(x_t)) so the neg-lag
-    placebo is silent, ensuring the failure mode tests the ERA/bootstrap leg.
+    Parameterized over phi ∈ {0.0, 0.1, 0.3, 0.6} × 5 seeds = 20 cases.
+    NEVER screened_candidate — ZERO false positives required.
     """
-    rng_base = 3000 + seed_offset * 97
+    rng_base = 3000 + seed_offset * 97 + int(phi * 1000)
     rng = np.random.default_rng(rng_base)
 
     n = N_OBS_WEEKLY   # 400 weekly obs, straddles 2010
     dates = _make_dates(n)
 
-    # AR(1) cause — mild autocorrelation; prevents time-shift from trivially
-    # killing it while keeping neg-lag correlations low
-    cause_vals = _ar1(n, phi=0.3, seed=rng_base + 1)
+    # AR(1) cause — phi controls autocorrelation; phi=0 → iid innovations
+    cause_vals = _ar1(n, phi=phi, seed=rng_base + 1)
 
     # Find the pre/post era boundary index in the series
     era_break_idx = int((dates < pd.Timestamp("2010-01-01")).sum())
 
     # Target: strong effect pre-2010, pure noise post-2010
     target_vals = np.zeros(n)
-    # pre-2010 portion (from index 1 to era_break_idx; lag=1 so x_{t-1}->y_t)
-    # Planted: y_t = 0.95 * x_{t-1} + small noise  (strong forward beta)
     n_pre = era_break_idx
-    # For lag=1: x_lagged = cause_vals[:n-1], y_shifted = target_vals[1:]
-    # So target_vals[t] = 0.95 * cause_vals[t-1] + noise for t in 1..era_break_idx
+    # For lag=1: target_vals[t] = 0.95 * cause_vals[t-1] + small_noise (pre-2010)
     pre_noise = rng.standard_normal(n_pre) * 0.15
     for t in range(1, n_pre):
         target_vals[t] = 0.95 * cause_vals[t - 1] + pre_noise[t]
@@ -843,10 +845,8 @@ def test_falsifier_regime_persistence_mirage_no_sign_flip(seed_offset: int):
     post_noise = rng.standard_normal(n - era_break_idx) * 1.0
     target_vals[era_break_idx:] = post_noise
 
-    # Add a constant positive drift across the ENTIRE target so that both
-    # pre-2010 and post-2010 TARGET means are positive
-    # (the hollow estimator's per-era target-mean t-stats would both be > 0,
-    # so no sign flip in the old code => false screened_candidate)
+    # Add a constant positive drift so both pre- and post-2010 TARGET means
+    # are positive (no sign flip in the old hollow estimator's target-mean check)
     drift = 0.35
     target_vals += drift
 
@@ -856,10 +856,10 @@ def test_falsifier_regime_persistence_mirage_no_sign_flip(seed_offset: int):
     spec = _make_spec(lags=[1], horizon_d=1)
     result = run_battery(spec, cause, target, priors={}, hermetic=True)
 
-    # CRITICAL assertion: must NOT be screened_candidate
+    # CRITICAL assertion: must NOT be screened_candidate (ZERO FP requirement)
     assert result.verdict != "screened_candidate", (
-        f"seed_offset={seed_offset}: regime-persistence mirage (no sign flip) "
-        f"must not be screened_candidate; got {result.verdict!r}. "
+        f"phi={phi}, seed_offset={seed_offset}: regime-persistence mirage "
+        f"(no sign flip) must not be screened_candidate; got {result.verdict!r}. "
         f"concerns={result.concerns}"
     )
 
@@ -867,27 +867,171 @@ def test_falsifier_regime_persistence_mirage_no_sign_flip(seed_offset: int):
     assert result.verdict in (
         "era_specific", "unstable", "null", "insufficient_power"
     ), (
-        f"seed_offset={seed_offset}: unexpected verdict {result.verdict!r}. "
-        f"concerns={result.concerns}"
+        f"phi={phi}, seed_offset={seed_offset}: unexpected verdict "
+        f"{result.verdict!r}. concerns={result.concerns}"
     )
 
-    # The cause-aware machinery must have fired: the concern must come from the
-    # effect-series bootstrap or era-concentration machinery, NOT from a
-    # target-mean sign flip (which would be absent here due to drift).
-    # Acceptable concern keywords: spans zero (bootstrap), era split / era-specific
-    # concentration, unstable, invariance failure, reverse causation (neg-lag),
-    # or time-shift placebo (any of these are cause-aware, not target-mean checks).
+    # The cause-aware machinery must have fired — acceptable concern keywords:
+    # spans zero (bootstrap), era split / era-specific concentration, unstable,
+    # invariance failure, reverse causation (neg-lag), time-shift placebo.
     any_effect_concern = [
         c for c in result.concerns
         if any(kw in c.lower() for kw in (
             "spans zero", "unstable", "era split", "concentrated in single era",
             "opposite signs", "effect direction", "effect concentrated",
             "invariance failure", "invariance concern",
-            "reverse-causation", "may lead",  # neg-lag placebo (effect-based)
-            "indistinguishable", "time-shift",  # shift placebo (cause-aware)
+            "reverse-causation", "may lead",
+            "indistinguishable", "time-shift",
+            "not invariant",
         ))
     ]
     assert any_effect_concern, (
-        f"seed_offset={seed_offset}: expected effect-machinery concern but got "
-        f"concerns={result.concerns} (verdict={result.verdict!r})"
+        f"phi={phi}, seed_offset={seed_offset}: expected effect-machinery "
+        f"concern but got concerns={result.concerns} (verdict={result.verdict!r})"
+    )
+
+
+# ---------------------------------------------------------------------------
+# FIX 3 — split-leakage invariance case (re-verifier's spec):
+# effect present in BOTH split and complement but 2x stronger in one;
+# difference CI excludes zero → invariance concern fires.
+# ---------------------------------------------------------------------------
+
+def test_split_leakage_invariance_fires_on_2x_asymmetry():
+    """
+    FIX 3 invariance test: effect present in BOTH split and complement, but
+    materially stronger in the split half (split effect ≈ 3× complement).
+    The difference CI should exclude zero and the invariance concern must fire,
+    even though BOTH sides are individually significant (|t|>=2 in both).
+
+    The old XOR gate required EXACTLY ONE side to be significant — it would
+    have missed this case entirely.  After FIX 2, the primary trigger is the
+    difference-CI + materiality threshold, so this correctly fires.
+
+    Design:
+      - Cause: iid innovations (neg-lag placebo stays quiet)
+      - Target pre-2010 (split): y_t = 1.4*x_{t-1} + small_noise  (high SNR)
+      - Target post-2010 (complement): y_t = 0.5*x_{t-1} + large_noise (low SNR)
+      - Both sides significant: split_t ≈ 11, complement_t ≈ 4
+      - z-product effect: split ≈ 1.0, complement ≈ 0.35 (ratio > 2×)
+      - materiality: 0.35 < 0.5 * 1.0 → fires
+      - Difference CI [0.44, 0.88] excludes zero → concern fires
+    """
+    rng = np.random.default_rng(5555)
+    n = N_OBS_WEEKLY
+    dates = _make_dates(n)
+
+    # iid cause innovations
+    cause_vals = rng.standard_normal(n)
+
+    era_break_idx = int((dates < pd.Timestamp("2010-01-01")).sum())
+
+    # Target: high-SNR pre-2010, lower-SNR post-2010 — BOTH sides significant
+    # Split (pre-2010): beta=1.4, noise σ=0.05 → z-product mean ≈ 1.0
+    # Complement (post-2010): beta=0.5, noise σ=1.2 → z-product mean ≈ 0.35
+    target_vals = np.zeros(n)
+    for t in range(1, era_break_idx):
+        target_vals[t] = 1.4 * cause_vals[t - 1] + rng.standard_normal() * 0.05
+    for t in range(era_break_idx, n):
+        target_vals[t] = 0.5 * cause_vals[t - 1] + rng.standard_normal() * 1.2
+
+    cause = pd.Series(cause_vals, index=dates)
+    target = pd.Series(target_vals, index=dates)
+
+    # Declare an environment split that maps to pre-2010 half
+    era_break_ts = pd.Timestamp("2010-01-01")
+    pre_mask = np.array([(d < era_break_ts) for d in dates], dtype=bool)
+    env_split = EnvironmentSplit(split_id="pre_2010_half", definition="pre-2010 window")
+    spec = _make_spec(lags=[1], horizon_d=1, env_splits=[env_split])
+
+    result = run_battery(
+        spec, cause, target,
+        priors={},
+        environment_masks={"pre_2010_half": pre_mask},
+        hermetic=True,
+    )
+
+    # The invariance concern must fire (difference CI excludes zero + material diff)
+    inv_concerns = [
+        c for c in result.concerns
+        if any(kw in c.lower() for kw in (
+            "invariance failure", "invariance concern",
+        ))
+    ]
+    assert inv_concerns, (
+        f"Expected invariance concern for 3x asymmetric effect; "
+        f"got verdict={result.verdict!r}, concerns={result.concerns}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# FIX 4 — grid sweep (slow; skip unless CAUSAL_SCOUT_GRID_SWEEP=1 is set)
+# Covers drift {0.1,0.35,0.8,1.5} x beta {0.6,0.95,1.4} x phi {0.0,0.3,0.6}
+# x seeds {0,1,2,3} = 144 configs.  Reports FP count in assertion message.
+# Must be ZERO screened_candidate on regime-persistence-mirage constructions.
+# ---------------------------------------------------------------------------
+
+import os as _os
+
+
+@pytest.mark.skipif(
+    _os.environ.get("CAUSAL_SCOUT_GRID_SWEEP", "0") != "1",
+    reason="Set CAUSAL_SCOUT_GRID_SWEEP=1 to run the full grid sweep (slow)",
+)
+def test_grid_sweep_regime_persistence_zero_fp():
+    """
+    FIX 4 — grid sweep over 144 regime-persistence-mirage configurations.
+
+    For each config (drift, beta_pre, phi, seed), we build a target where:
+      - beta_pre * cause → target for pre-2010 (planted strong effect)
+      - target = pure noise post-2010 (no effect)
+      - constant drift added to both eras to prevent target-mean sign flip
+
+    Assert ZERO configs yield screened_candidate (zero false positives).
+    The assertion message reports the FP count for auditability.
+    """
+    drifts = [0.1, 0.35, 0.8, 1.5]
+    betas = [0.6, 0.95, 1.4]
+    phis = [0.0, 0.3, 0.6]
+    seeds = [0, 1, 2, 3]
+
+    fp_configs = []
+
+    for drift in drifts:
+        for beta in betas:
+            for phi in phis:
+                for seed in seeds:
+                    rng_base = 9000 + int(drift * 100) + int(beta * 100) + int(phi * 100) + seed * 7
+                    rng = np.random.default_rng(rng_base)
+                    n = N_OBS_WEEKLY
+                    dates = _make_dates(n)
+
+                    cause_vals = _ar1(n, phi=phi, seed=rng_base + 1)
+                    era_break_idx = int((dates < pd.Timestamp("2010-01-01")).sum())
+
+                    target_vals = np.zeros(n)
+                    pre_noise = rng.standard_normal(n) * 0.15
+                    for t in range(1, era_break_idx):
+                        target_vals[t] = beta * cause_vals[t - 1] + pre_noise[t]
+                    post_noise = rng.standard_normal(n - era_break_idx) * 1.0
+                    target_vals[era_break_idx:] = post_noise
+                    target_vals += drift
+
+                    cause = pd.Series(cause_vals, index=dates)
+                    target = pd.Series(target_vals, index=dates)
+
+                    spec = _make_spec(lags=[1], horizon_d=1)
+                    result = run_battery(spec, cause, target, priors={}, hermetic=True)
+
+                    if result.verdict == "screened_candidate":
+                        fp_configs.append({
+                            "drift": drift, "beta": beta, "phi": phi, "seed": seed,
+                            "concerns": result.concerns,
+                        })
+
+    fp_count = len(fp_configs)
+    assert fp_count == 0, (
+        f"Grid sweep: {fp_count} false-positive screened_candidate configs "
+        f"out of {len(drifts)*len(betas)*len(phis)*len(seeds)} total. "
+        f"FP configs: {fp_configs}"
     )

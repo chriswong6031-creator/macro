@@ -431,6 +431,7 @@ def _compute_era_stats(
     y: np.ndarray,
     dates: pd.DatetimeIndex,
     horizon: int,
+    lag: int = 0,
 ) -> dict:
     """Compute pre/post-2010 split effect statistics for the market_series path.
 
@@ -440,13 +441,31 @@ def _compute_era_stats(
 
     Comparison of effect estimates across eras (not target means) is what
     the era concern text describes.
+
+    lag: the same x[:-lag]/y[lag:] shift applied for the primary lag — era stats
+    must be computed on the SAME aligned window, not the contemporaneous series.
+    When lag=0, the full contemporaneous arrays are used (no shift).
     """
+    # Apply the same lag-shift as the primary leg (FIX 1 — Defect A):
+    # contemporaneous x/y are NOT the same as the lag-shifted window used for
+    # the primary HAC — computing era stats on x_full/y_full measures a different
+    # z-product than the screened lag.
+    n = len(x)
+    if lag > 0 and lag < n:
+        x_lag = x[:-lag]
+        y_lag = y[lag:]
+        dates_lag = dates[lag:]
+    else:
+        x_lag = x
+        y_lag = y
+        dates_lag = dates
+
     era_break_ts = pd.Timestamp(ERA_BREAK)
-    pre_mask = dates < era_break_ts
-    post_mask = dates >= era_break_ts
+    pre_mask = dates_lag < era_break_ts
+    post_mask = dates_lag >= era_break_ts
 
     def _leg(mask: np.ndarray) -> dict | None:
-        xi, yi = x[mask], y[mask]
+        xi, yi = x_lag[mask], y_lag[mask]
         if len(xi) < MIN_N:
             return None
         e_era = _effect_series(xi, yi)
@@ -737,8 +756,112 @@ def _run_market_series_battery(
 
         lag_stats[f"{lag}_bootstrap"] = boot_stats
 
+        # --- Era split statistics per lag (FIX 1 — Defect A): compute era stats
+        # on the SAME lag-shifted window used for the primary HAC, not the
+        # contemporaneous full series.  Called here inside the per-lag loop.
+        lag_era_stats = _compute_era_stats(x_full, y_full, dates, spec.horizon_d, lag=lag)
+        lag_stats[f"{lag}_era"] = lag_era_stats
+
+        # Era divergence concern (M2 fix + FIX 2 — Defect B): compare EFFECT
+        # estimates across eras using the lag-aware era stats.
+        # PRIMARY trigger: block-bootstrap CI on the era-effect DIFFERENCE excludes
+        # zero AND the weaker side's effect is materially smaller (|weak| < 0.5*|strong|).
+        # SECONDARY (XOR) trigger: significant in one era but not the other.
+        # The sign-flip trigger is unconditional (separate branch).
+        _pre_era = lag_era_stats.get("pre_2010")
+        _post_era = lag_era_stats.get("post_2010")
+        if _pre_era is not None and _post_era is not None:
+            pre_effect_lag = _pre_era.get("mean") or 0.0
+            post_effect_lag = _post_era.get("mean") or 0.0
+            pre_t_lag = _pre_era.get("t") or 0.0
+            post_t_lag = _post_era.get("t") or 0.0
+            effect_sign_flip = (pre_effect_lag * post_effect_lag < 0)
+            if effect_sign_flip:
+                concerns.append(_sanitize_text(
+                    f"lag={lag}: era split: pre-2010 effect "
+                    f"(mean={pre_effect_lag:.3f}, t={pre_t_lag:.2f}) "
+                    f"and post-2010 effect (mean={post_effect_lag:.3f}, "
+                    f"t={post_t_lag:.2f}) have opposite signs — "
+                    "effect direction reverses across eras"
+                ))
+                if lag in screened_lags:
+                    screened_lags.remove(lag)
+            else:
+                # Build per-era effect series for the difference-CI bootstrap
+                # (same lag shift as primary leg)
+                n_full = len(x_full)
+                x_lag_era = x_full[:-lag] if lag > 0 and lag < n_full else x_full
+                y_lag_era = y_full[lag:] if lag > 0 and lag < n_full else y_full
+                dates_lag_era = dates[lag:] if lag > 0 and lag < n_full else dates
+                era_break_ts = pd.Timestamp(ERA_BREAK)
+                pre_mask_lag = dates_lag_era < era_break_ts
+                post_mask_lag = dates_lag_era >= era_break_ts
+                e_pre_era = _effect_series(x_lag_era[pre_mask_lag], y_lag_era[pre_mask_lag]) \
+                    if pre_mask_lag.sum() >= MIN_N else np.array([])
+                e_post_era = _effect_series(x_lag_era[post_mask_lag], y_lag_era[post_mask_lag]) \
+                    if post_mask_lag.sum() >= MIN_N else np.array([])
+
+                era_concern_fired = False
+                if len(e_pre_era) > 0 and len(e_post_era) > 0:
+                    boot_pre_era = _circular_block_bootstrap_1d(
+                        e_pre_era, n_draws=N_BOOTSTRAP, seed=lag + 1000
+                    )
+                    boot_post_era = _circular_block_bootstrap_1d(
+                        e_post_era, n_draws=N_BOOTSTRAP, seed=lag + 1100
+                    )
+                    if len(boot_pre_era) > 0 and len(boot_post_era) > 0:
+                        era_diff_boot = boot_pre_era - boot_post_era
+                        era_diff_ci_lo = float(np.percentile(era_diff_boot, 2.5))
+                        era_diff_ci_hi = float(np.percentile(era_diff_boot, 97.5))
+                        era_ci_excludes_zero = not (era_diff_ci_lo <= 0 <= era_diff_ci_hi)
+                        # Materiality: weaker side's absolute effect < 0.5 * stronger side's
+                        stronger_era = max(abs(pre_effect_lag), abs(post_effect_lag))
+                        weaker_era = min(abs(pre_effect_lag), abs(post_effect_lag))
+                        era_material_diff = (stronger_era > 1e-9 and
+                                             weaker_era < 0.5 * stronger_era)
+                        lag_stats[f"{lag}_era"]["diff_ci_2p5"] = round(era_diff_ci_lo, 5)
+                        lag_stats[f"{lag}_era"]["diff_ci_97p5"] = round(era_diff_ci_hi, 5)
+                        # PRIMARY trigger: difference-CI excludes zero AND material difference
+                        if era_ci_excludes_zero and era_material_diff:
+                            era_concern_fired = True
+                            concerns.append(_sanitize_text(
+                                f"lag={lag}: era split: effect concentrated in single era — "
+                                f"pre-2010 (mean={pre_effect_lag:.3f}, t={pre_t_lag:.2f}), "
+                                f"post-2010 (mean={post_effect_lag:.3f}, t={post_t_lag:.2f}); "
+                                f"era-difference CI [{era_diff_ci_lo:.3f}, {era_diff_ci_hi:.3f}] "
+                                "excludes zero (effect not invariant across eras)"
+                            ))
+                            if lag in screened_lags:
+                                screened_lags.remove(lag)
+                    # XOR as additional (non-required) trigger — fires if diff-CI unavailable
+                    # or as a second signal when bootstrap is silent
+                    if not era_concern_fired:
+                        one_era_sig = (abs(pre_t_lag) >= 2.0) != (abs(post_t_lag) >= 2.0)
+                        if one_era_sig:
+                            era_concern_fired = True
+                            concerns.append(_sanitize_text(
+                                f"lag={lag}: era split: effect concentrated in single era — "
+                                f"pre-2010 (mean={pre_effect_lag:.3f}, t={pre_t_lag:.2f}), "
+                                f"post-2010 (mean={post_effect_lag:.3f}, t={post_t_lag:.2f})"
+                            ))
+                            if lag in screened_lags:
+                                screened_lags.remove(lag)
+                elif _pre_era is not None or _post_era is not None:
+                    # Only one era has enough data — XOR fires by construction
+                    one_era_sig = (abs(pre_t_lag) >= 2.0) != (abs(post_t_lag) >= 2.0)
+                    if one_era_sig:
+                        concerns.append(_sanitize_text(
+                            f"lag={lag}: era split: effect concentrated in single era — "
+                            f"pre-2010 (mean={pre_effect_lag:.3f}, t={pre_t_lag:.2f}), "
+                            f"post-2010 (mean={post_effect_lag:.3f}, t={post_t_lag:.2f})"
+                        ))
+                        if lag in screened_lags:
+                            screened_lags.remove(lag)
+
         # --- Environment invariance (B2 fix): effect estimate per split + block-bootstrap
         # CI on the DIFFERENCE of split effect-means (CHF-R5/CHF-R7) ---
+        # FIX 2 (Defect B): difference-CI is PRIMARY trigger; XOR is ADDITIONAL only.
+        # Threshold for materiality: |weak| < 0.5 * |strong| (documented here).
         for env_split in spec.environment_splits:
             split_key = f"{lag}_{env_split.split_id}"
             mask = environment_masks.get(env_split.split_id)
@@ -812,17 +935,21 @@ def _run_market_series_battery(
                 lag_stats[split_key]["diff_ci_2p5"] = round(diff_ci_lo, 5)
                 lag_stats[split_key]["diff_ci_97p5"] = round(diff_ci_hi, 5)
 
-                # Invariance failure: effect significant in one split but near-zero/
-                # opposite in complement, AND difference CI excludes zero
-                one_split_sig = (abs(t_env) >= 2.0) != (abs(t_comp) >= 2.0)
+                # FIX 2: PRIMARY trigger — difference CI excludes zero AND weaker
+                # side's effect is materially smaller (|weak| < 0.5 * |strong|).
+                # SECONDARY (XOR) trigger remains as additional signal.
                 ci_excludes_zero = not (diff_ci_lo <= 0 <= diff_ci_hi)
-                if one_split_sig and ci_excludes_zero:
+                stronger = max(abs(mean_env), abs(mean_comp))
+                weaker = min(abs(mean_env), abs(mean_comp))
+                material_diff = (stronger > 1e-9 and weaker < 0.5 * stronger)
+                one_split_sig = (abs(t_env) >= 2.0) != (abs(t_comp) >= 2.0)
+                if ci_excludes_zero and (material_diff or one_split_sig):
                     invariance_failure = True
                     concerns.append(_sanitize_text(
                         f"lag={lag}, split={env_split.split_id}: "
-                        f"environment invariance failure — effect significant in "
-                        f"split (mean={mean_env:.3f}, t={t_env:.2f}) but not in "
-                        f"complement (mean={mean_comp:.3f}, t={t_comp:.2f}); "
+                        f"environment invariance failure — split effect "
+                        f"(mean={mean_env:.3f}, t={t_env:.2f}) materially differs "
+                        f"from complement (mean={mean_comp:.3f}, t={t_comp:.2f}); "
                         f"difference CI [{diff_ci_lo:.3f}, {diff_ci_hi:.3f}] "
                         "excludes zero"
                     ))
@@ -841,34 +968,22 @@ def _run_market_series_battery(
             if invariance_failure and lag in screened_lags:
                 screened_lags.remove(lag)
 
-    # Era split statistics (DT-R16) — effect-based, not target-mean-based
-    era_stats = _compute_era_stats(x_full, y_full, dates, spec.horizon_d)
-    stats["era_split"] = era_stats
-
-    # Era divergence concern (M2 fix): compare EFFECT estimates across eras,
-    # not target means.  The concern text describes what was measured.
-    pre = era_stats.get("pre_2010")
-    post = era_stats.get("post_2010")
-    if pre is not None and post is not None:
-        pre_effect = pre.get("mean") or 0.0
-        post_effect = post.get("mean") or 0.0
-        pre_t = pre.get("t") or 0.0
-        post_t = post.get("t") or 0.0
-        # Effect concentrated in one era: significant in one, near-zero in other
-        one_era_sig = (abs(pre_t) >= 2.0) != (abs(post_t) >= 2.0)
-        effect_sign_flip = (pre_effect * post_effect < 0)
-        if effect_sign_flip:
-            concerns.append(_sanitize_text(
-                f"era split: pre-2010 effect (mean={pre_effect:.3f}, t={pre_t:.2f}) "
-                f"and post-2010 effect (mean={post_effect:.3f}, t={post_t:.2f}) "
-                "have opposite signs — effect direction reverses across eras"
-            ))
-        elif one_era_sig:
-            concerns.append(_sanitize_text(
-                f"era split: effect concentrated in single era — "
-                f"pre-2010 (mean={pre_effect:.3f}, t={pre_t:.2f}), "
-                f"post-2010 (mean={post_effect:.3f}, t={post_t:.2f})"
-            ))
+    # Era split statistics (DT-R16) — aggregate across lags for the top-level stats key.
+    # Per-lag era stats are already stored as lag_stats[f"{lag}_era"] inside the loop.
+    # For backward compatibility, report the era stats of the first screened lag
+    # (or any lag if none screened) as stats["era_split"].
+    if screened_lags:
+        _representative_lag = screened_lags[0]
+    elif spec.lags:
+        _representative_lag = spec.lags[0]
+    else:
+        _representative_lag = 0
+    _rep_era_key = f"{_representative_lag}_era"
+    if _rep_era_key in lag_stats:
+        stats["era_split"] = lag_stats[_rep_era_key]
+    else:
+        # Fallback: compute era stats on full (lag=0) arrays for the stats key
+        stats["era_split"] = _compute_era_stats(x_full, y_full, dates, spec.horizon_d, lag=0)
 
     # Sibling check (CHF-R10 shared-parent concern)
     sib_flag, sib_corr = _check_sibling_correlation(x_full, declared_siblings)
@@ -1218,7 +1333,9 @@ def _run_ticker_panel_battery(
             }
             splits_tested_set.add(env_split.split_id)
 
-            # Block-bootstrap CI on the difference
+            # Block-bootstrap CI on the difference (FIX 2 — Defect B):
+            # PRIMARY trigger: CI excludes zero AND material effect difference
+            # (|weak| < 0.5 * |strong|).  XOR (one_split_sig) is ADDITIONAL.
             boot_in = _circular_block_bootstrap_1d(in_effect, n_draws=N_BOOTSTRAP, seed=lag + 800)
             boot_out = _circular_block_bootstrap_1d(out_effect, n_draws=N_BOOTSTRAP, seed=lag + 900)
             invariance_failure = False
@@ -1229,15 +1346,18 @@ def _run_ticker_panel_battery(
                 lag_stats[split_key]["diff_ci_2p5"] = round(diff_ci_lo, 5)
                 lag_stats[split_key]["diff_ci_97p5"] = round(diff_ci_hi, 5)
 
-                one_split_sig = (abs(t_in) >= 2.0) != (abs(t_out) >= 2.0)
                 ci_excludes_zero = not (diff_ci_lo <= 0 <= diff_ci_hi)
-                if one_split_sig and ci_excludes_zero:
+                stronger_p = max(abs(mean_in), abs(mean_out))
+                weaker_p = min(abs(mean_in), abs(mean_out))
+                material_diff = (stronger_p > 1e-9 and weaker_p < 0.5 * stronger_p)
+                one_split_sig = (abs(t_in) >= 2.0) != (abs(t_out) >= 2.0)
+                if ci_excludes_zero and (material_diff or one_split_sig):
                     invariance_failure = True
                     concerns.append(_sanitize_text(
                         f"lag={lag}, split={env_split.split_id}: "
-                        f"environment invariance failure — effect significant in "
-                        f"split (mean={mean_in:.3f}, t={t_in:.2f}) but not in "
-                        f"complement (mean={mean_out:.3f}, t={t_out:.2f}); "
+                        f"environment invariance failure — split effect "
+                        f"(mean={mean_in:.3f}, t={t_in:.2f}) materially differs "
+                        f"from complement (mean={mean_out:.3f}, t={t_out:.2f}); "
                         f"difference CI [{diff_ci_lo:.3f}, {diff_ci_hi:.3f}] "
                         "excludes zero"
                     ))
