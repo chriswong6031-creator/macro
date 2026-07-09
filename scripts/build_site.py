@@ -3797,6 +3797,11 @@ def main() -> int:
         if _lp_src.exists():
             (nwd / "liquidity_plumbing.json").write_bytes(_lp_src.read_bytes())
             log.info("neuralwebdata: copied liquidity_plumbing.json")
+        # PR-4 M2: copy deterministic attention items for committee.html client-side fetch
+        _ad_src = config.data_dir() / "neuralweb" / "attention_deterministic.json"
+        if _ad_src.exists():
+            (nwd / "attention_deterministic.json").write_bytes(_ad_src.read_bytes())
+            log.info("neuralwebdata: copied attention_deterministic.json")
         # Supabase config (same as watchlist / theme.js)
         committee_html = env.get_template("committee.html.j2").render(
             generated_utc=generated,

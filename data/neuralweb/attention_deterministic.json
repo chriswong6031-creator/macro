@@ -1,0 +1,53 @@
+{
+  "as_of": "2026-07-09",
+  "item_count": 4,
+  "counts_by_severity": {
+    "P2": 2,
+    "P3": 2
+  },
+  "items": [
+    {
+      "kind": "lobe_sla_breach",
+      "severity": "P2",
+      "summary_en": "Lobe 'nasdaq-internals' overdue: 47h old vs 30h SLA (1.6×)",
+      "summary_zh": "脉叶 'nasdaq-internals' 过期：47小时，SLA 30小时（1.6倍）",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-07-09"
+    },
+    {
+      "kind": "regime_indeterminate",
+      "severity": "P2",
+      "summary_en": "Regime indeterminate: Q1 confidence 23% (below 25% threshold)",
+      "summary_zh": "周期不明确：Q1 置信度 23%（低于25%阈值）",
+      "evidence_path": "data/neuralweb/world_state.json",
+      "as_of": "2026-07-09"
+    },
+    {
+      "kind": "cortex_degraded",
+      "severity": "P3",
+      "summary_en": "Cortex deliberation unavailable: model_unavailable",
+      "summary_zh": "皮层审议当前不可用：model_unavailable",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-07-09"
+    },
+    {
+      "kind": "evidence_clock_overdue",
+      "severity": "P3",
+      "summary_en": "6 evidence clock(s) overdue; top: qledger:placebo",
+      "summary_zh": "6 个证据时钟逾期；最高优先级：qledger:placebo",
+      "evidence_path": "data/neuralweb/evidence_clock.json",
+      "as_of": "2026-07-09"
+    }
+  ],
+  "caveats": [
+    "deterministic: all items are template-filled from structured artifact values; no LLM",
+    "display-only: no signals, no scoring authority, no ranking authority",
+    "no trading authority: items contain no buy/sell/hold guidance",
+    "does not write to data/reflexes/cortex_attention/ (cortex A2 earn-in track is separate)"
+  ],
+  "schema_version": 1,
+  "produced_by": "scripts/build_attention_deterministic.py",
+  "produced_at": "2026-07-09T09:08:55Z",
+  "inputs_hash": "sha256:b1584f4e9fe403cc588e2c81bcf795443c6ccee184292073a89fd052d864a032",
+  "tier": "display"
+}
