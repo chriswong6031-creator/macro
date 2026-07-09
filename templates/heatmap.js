@@ -799,10 +799,72 @@
     }
 
     /* ----- flat stocks treemap (sector → stock-leaf tile; CN / HK / CA) ----- */
+    // Live-overlay: maps ticker -> tileEls index for O(1) recolor on live.js update.
+    var _liveTickerIdx = {};   // ticker (e.g. "0700.HK") -> tileEls index
+    var _liveObserver = null;  // MutationObserver watching .nb-chg[data-sym] mutations
+
+    // Live market-id for each market key (matches live.js regionOf() logic).
+    var _LIVE_MKT = { hk: 'hk', china: 'cn', canada: 'ca' };
+
+    function _parsePc(text) {
+      // Parse live.js chg% text like "+1.23%" or "-0.45%" -> float, or null.
+      if (!text) return null;
+      var s = String(text).replace(/[%\s]/g, '').replace(/−/g, '-').replace(/\+/, '');
+      var v = parseFloat(s);
+      return isFinite(v) ? v : null;
+    }
+
+    function _recolorTileByLive(idx, livePc) {
+      // Recolor one tile from a live % change, using the same color scale as EOD.
+      // Only fires when TF === '1D' (live data = intraday, not multi-day move).
+      if (TF !== '1D') return;
+      var rec = tileEls[idx];
+      if (!rec || !rec.el) return;
+      var edges = edgesFor('1D'), pal = binPalette();
+      var c = pal[binIndex(livePc, edges)];
+      rec.el.style.backgroundColor = rgb(c);
+      rec.el.style.color = fgFor(c);
+      // Update the visible % label on the tile too.
+      if (rec.pcEl) rec.pcEl.textContent = fmtPc(livePc);
+    }
+
+    function _startLiveObserver() {
+      // MutationObserver watching for live.js textContent writes to .nb-chg[data-sym].
+      // Each mutation = live.js just painted a fresh chg% for that symbol.
+      // Fail-open: if MutationObserver is unavailable (very old browser) we skip.
+      if (_liveObserver || !window.MutationObserver) return;
+      _liveObserver = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+          var el = m.target;
+          var sym = el.getAttribute && el.getAttribute('data-sym');
+          if (!sym) return;
+          var idx = _liveTickerIdx[sym.toUpperCase()];
+          if (idx == null) return;
+          var livePc = _parsePc(el.textContent);
+          if (livePc != null) _recolorTileByLive(idx, livePc);
+        });
+      });
+      // Observe the tile container — only childList+characterData mutations on
+      // .nb-chg descendants (subtree). live.js writes textContent on the span
+      // itself, which fires a characterData mutation on the Text node child.
+      _liveObserver.observe(tm, { subtree: true, characterData: true, childList: false });
+      // Also observe each .nb-chg span directly for characterData (covers both
+      // el.textContent= and el.nodeValue= write paths live.js may use).
+      Array.prototype.forEach.call(
+        tm.querySelectorAll('.nb-chg[data-sym]'),
+        function (span) { _liveObserver.observe(span, { subtree: true, characterData: true, childList: true }); }
+      );
+    }
+    function _stopLiveObserver() {
+      if (_liveObserver) { _liveObserver.disconnect(); _liveObserver = null; }
+      _liveTickerIdx = {};
+    }
+
     function layoutStocksFlat() {
+      _stopLiveObserver();
       mode = 'tree'; root.classList.remove('hm-mobile');
       var animate = firstLayout && !REDUCE; firstLayout = false;
-      tileEls = []; secPc = [];
+      tileEls = []; secPc = []; _liveTickerIdx = {};
       var H = Math.max(560, Math.min(window.innerHeight - 140, 1280));
       wrap.style.height = H + 'px'; tm.style.height = H + 'px';
       var W = tm.clientWidth || wrap.clientWidth;
@@ -816,6 +878,8 @@
       var secItems = Object.keys(hier).map(function (k) { return { value: hier[k].value, ref: hier[k] }; });
       var secRects = squarify(secItems, 0, 0, W, H);
       var html = [], si = 0;
+      // live.js data-mkt for this market (e.g. "hk"); undefined markets get no live attrs.
+      var liveMkt = _LIVE_MKT[data.market] || null;
 
       secRects.forEach(function (sr) {
         var s = sr.ref;
@@ -843,9 +907,21 @@
           if (tw >= 150 && th >= 104) cls += ' huge';
           if (animate) cls += ' hm-in';
           var dly = animate ? ';animation-delay:' + Math.min(tileEls.length * 0.8, 480).toFixed(0) + 'ms' : '';
-          html.push('<div class="' + cls + '" data-i="' + tileEls.length + '" style="left:' + tr.x + 'px;top:'
+          var idx = tileEls.length;
+          // Wire live.js hooks: data-sym/data-mkt on the tile so live.js can paint
+          // an nb-chg span; the hidden nb-chg span is what we observe for recolor.
+          // Only wired when the market has a live feed (hk/cn/ca); benign no-op for
+          // markets not in _LIVE_MKT (never breaks the non-live path).
+          var liveAttrs = liveMkt
+            ? ' data-sym="' + esc(t.t) + '" data-mkt="' + esc(liveMkt) + '"'
+            : '';
+          var liveSpan = liveMkt
+            ? '<span class="nb-chg hm-live-chg" data-sym="' + esc(t.t) + '" aria-hidden="true" style="display:none"></span>'
+            : '';
+          if (liveMkt) { _liveTickerIdx[String(t.t).toUpperCase()] = idx; }
+          html.push('<div class="' + cls + '" data-i="' + idx + '"' + liveAttrs + ' style="left:' + tr.x + 'px;top:'
             + (innerY + tr.y) + 'px;width:' + tw + 'px;height:' + th + 'px' + dly + '">'
-            + tileLabel(t, tw, th) + '</div>');
+            + tileLabel(t, tw, th) + liveSpan + '</div>');
           tileEls.push({ t: t });
         });
         html.push('</div>');    // .hm-sec
@@ -858,11 +934,21 @@
       });
       secPc.forEach(function (sp) { sp.el = sp.show ? tm.querySelector('.pc[data-secpc="' + sp.key + '"]') : null; });
       recolor();
+      // Start the live observer AFTER the DOM is built.
+      if (liveMkt) _startLiveObserver();
     }
     function recolor() {
       var edges = edgesFor(TF), pal = binPalette();
       tileEls.forEach(function (rec) {
-        var pc = rec.t.perf[TF], c = pal[binIndex(pc, edges)];
+        // On 1D, prefer the live chg% already painted by live.js (if any) over the
+        // stale EOD value; other timeframes always use the EOD close data.
+        var livePc = null;
+        if (TF === '1D' && rec.el) {
+          var chgSpan = rec.el.querySelector('.nb-chg.hm-live-chg[data-sym]');
+          if (chgSpan && chgSpan.textContent) livePc = _parsePc(chgSpan.textContent);
+        }
+        var pc = (livePc != null) ? livePc : rec.t.perf[TF];
+        var c = pal[binIndex(pc, edges)];
         rec.el.style.backgroundColor = rgb(c);
         rec.el.style.color = fgFor(c);
         if (rec.pcEl) rec.pcEl.textContent = fmtPc(pc);
@@ -1001,6 +1087,7 @@
         tm.removeEventListener('mousemove', onMove);
         tm.removeEventListener('mouseleave', onLeave);
         tm.removeEventListener('click', onClick);
+        _stopLiveObserver();
         hideCard(); hideMembers();
       }
     };

@@ -2,7 +2,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Canada · TSX Heatmap — Market Intelligence</title>
@@ -19,6 +18,17 @@
   .hm-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
   .hm-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:74ch; line-height:1.5; }
   .hm-foot { color:var(--muted); font-size:11px; margin:14px 2px 0; line-height:1.6; }
+  /* Live-feed badge: populated by live.js when LIVE_FEED_LABEL is set.
+     Hidden (no layout footprint) when the span is empty (no live feed). */
+  .hm-live-badge { display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; color:var(--muted); font-weight:600;
+    background:color-mix(in srgb,#d97706 14%,transparent);
+    border:1px solid color-mix(in srgb,#d97706 35%,transparent);
+    color:#b45309; border-radius:7px; padding:3px 9px; margin-top:6px;
+    white-space:nowrap; align-self:flex-end; }
+  .hm-live-badge:empty { display:none; }
+  /* Hidden live-chg spans that live.js writes to (observer then recolors the tile) */
+  .hm-live-chg { display:none !important; }
 </style>
 </head>
 <body>
@@ -311,6 +321,8 @@
       <h1>🔥 <span class="l-en">Canada · TSX Heatmap</span><span class="l-zh">加拿大 · TSX 热力图</span></h1>
       <div class="sub"><span class="l-en">The TSX universe as a tile each, grouped <b>Sector → stock</b> and sized by <b>market cap</b> — the institutional treemap in our theme. Tiles shade by the move over the timeframe you pick; hover a tile for our conviction read, or a sector header for its members, and click through to the analyzer.</span><span class="l-zh">多伦多交易所标的逐一成块，按「<b>板块 → 个股</b>」分组、按<b>市值</b>定大小 —— 采用我们主题配色的机构级树图。方块按所选周期的涨跌幅着色；悬停方块查看我们的研判，悬停板块标题查看其成员，点击进入分析器。</span></div>
     </div>
+    
+    <span class="hm-live-badge" data-live-label></span>
   </div>
 
   <div id="heatmap-full" data-hm-maps='[{"key":"canada","icon":"🔥","label_en":"Canada · TSX","label_zh":"加拿大 · TSX","url":"marketdata/canada_heatmap.json"}]'></div>
