@@ -125,40 +125,94 @@ def _load_price(ticker: str) -> pd.DataFrame | None:
 def _compute_drawdown(tickers: list[str]) -> dict:
     """Equal-weight composite drawdown (trailing-120d peak) for a basket of tickers.
 
+    Composite is built from daily returns (not price level) so that different
+    price scales do not bias the equal-weight average.
+
     Returns a dict with keys: drawdown_pct (float), drawdown_z (float | None),
-    as_of (str), note (EN), note_zh (ZH).
+    basket (list — members that actually loaded), basket_incomplete (bool),
+    as_of (str), note (EN), note_zh (ZH), and optionally
+    basket_caveat / basket_caveat_zh when any configured member is missing.
     """
+    # --- load price series, track which members loaded vs. configured ---
     series: list[pd.Series] = []
+    members_loaded: list[str] = []
+    members_missing: list[str] = []
     for t in tickers:
         px = _load_price(t)
         if px is not None and not px.empty:
             series.append(px["close"].rename(t))
+            members_loaded.append(t)
+        else:
+            members_missing.append(t)
 
+    basket_incomplete = bool(members_missing)
+
+    # --- zero members: null block ---
     if not series:
-        return {
+        note_en = (
+            "Price data unavailable for all configured members "
+            f"({', '.join(tickers)}) — drawdown not computed."
+        )
+        note_zh = (
+            f"所有配置成员（{'/'.join(tickers)}）价格数据不可用，回撤未计算。"
+        )
+        result: dict = {
             "basket": tickers,
+            "basket_incomplete": True,
             "drawdown_pct": None,
             "drawdown_z": None,
             "as_of": None,
-            "note": "Price data unavailable — drawdown not computed.",
-            "note_zh": "价格数据不可用，回撤未计算。",
+            "note": note_en,
+            "note_zh": note_zh,
         }
+        # add visible caveat so template can surface it
+        caveat_en = (
+            f"Data missing for: {', '.join(tickers)}. "
+            "Drawdown block not computed — treat as unavailable."
+        )
+        caveat_zh = (
+            f"以下成员数据缺失：{', '.join(tickers)}。"
+            "回撤模块未计算，视为不可用。"
+        )
+        result["basket_caveat"] = caveat_en
+        result["basket_caveat_zh"] = caveat_zh
+        return result
 
-    # align, fill forward, equal-weight composite
-    aligned = pd.concat(series, axis=1).sort_index().ffill().dropna(how="all")
-    composite = aligned.mean(axis=1)
+    # --- build equal-weight composite from RETURNS (not price level) ---
+    # Align on common dates, compute daily returns per member, average, then
+    # cumulatively compound back to an index starting at 1.0.
+    aligned_px = pd.concat(series, axis=1).sort_index().ffill().dropna(how="all")
+    # pct_change gives NaN for the first row; drop it
+    returns = aligned_px.pct_change().dropna(how="all")
+    # mean of available (non-NaN) member returns each day
+    ew_returns = returns.mean(axis=1)
+    # cumulative product → index level
+    composite = (1 + ew_returns).cumprod()
 
-    # trailing-120d drawdown
+    # trailing-120d drawdown on the composite index
     trail_120 = composite.tail(_DRAWDOWN_WINDOW_D + 1)  # +1 for safety
     if len(trail_120) < 10:
-        return {
-            "basket": tickers,
+        result = {
+            "basket": members_loaded,
+            "basket_incomplete": basket_incomplete,
             "drawdown_pct": None,
             "drawdown_z": None,
             "as_of": str(composite.index[-1].date()) if len(composite) else None,
             "note": "Insufficient price history for drawdown.",
             "note_zh": "价格历史数据不足，无法计算回撤。",
         }
+        if basket_incomplete:
+            caveat_en = (
+                f"Basket incomplete — data missing for: {', '.join(members_missing)}. "
+                "Drawdown computed from loaded members only."
+            )
+            caveat_zh = (
+                f"组合不完整——以下成员数据缺失：{'/'.join(members_missing)}。"
+                "回撤仅基于已加载成员计算。"
+            )
+            result["basket_caveat"] = caveat_en
+            result["basket_caveat_zh"] = caveat_zh
+        return result
 
     peak = float(trail_120.max())
     current = float(composite.iloc[-1])
@@ -168,9 +222,9 @@ def _compute_drawdown(tickers: list[str]) -> dict:
     # z-score vs trailing 252d distribution of same rolling window
     dd_z: float | None = None
     try:
-        hist_close = composite.tail(_DRAWDOWN_ZSCORE_WINDOW_D + _DRAWDOWN_WINDOW_D)
-        rolling_peak = hist_close.rolling(_DRAWDOWN_WINDOW_D, min_periods=60).max()
-        dd_series = (hist_close / rolling_peak - 1).dropna()
+        hist = composite.tail(_DRAWDOWN_ZSCORE_WINDOW_D + _DRAWDOWN_WINDOW_D)
+        rolling_peak = hist.rolling(_DRAWDOWN_WINDOW_D, min_periods=60).max()
+        dd_series = (hist / rolling_peak - 1).dropna()
         if len(dd_series) >= 20:
             mean = float(dd_series.mean())
             std = float(dd_series.std())
@@ -179,26 +233,40 @@ def _compute_drawdown(tickers: list[str]) -> dict:
     except Exception:  # noqa: BLE001
         pass
 
-    # display note (unsigned, no probabilities, no "intent")
+    # display note — built from members that ACTUALLY loaded
+    basket_label = "/".join(members_loaded)
     dd_str = f"{dd_pct:+.1f}%" if dd_pct is not None else "N/A"
     note = (
-        f"Semis complex (SMH/SOXX equal-weight) is {dd_str} from the "
+        f"Semis complex ({basket_label} equal-weight) is {dd_str} from the "
         f"trailing-120-day peak. Depth of the drawdown is the structural "
         f"context for rotation-reversal conditions."
     )
     note_zh = (
-        f"半导体组合（SMH/SOXX等权）距过去120日高点{dd_str}。"
+        f"半导体组合（{basket_label}等权）距过去120日高点{dd_str}。"
         f"回撤深度是轮动反转条件的结构性背景。"
     )
 
-    return {
-        "basket": tickers,
+    result = {
+        "basket": members_loaded,
+        "basket_incomplete": basket_incomplete,
         "drawdown_pct": dd_pct,
         "drawdown_z": dd_z,
         "as_of": as_of,
         "note": note,
         "note_zh": note_zh,
     }
+    if basket_incomplete:
+        caveat_en = (
+            f"Basket incomplete — data missing for: {', '.join(members_missing)}. "
+            "Drawdown computed from loaded members only."
+        )
+        caveat_zh = (
+            f"组合不完整——以下成员数据缺失：{'/'.join(members_missing)}。"
+            "回撤仅基于已加载成员计算。"
+        )
+        result["basket_caveat"] = caveat_en
+        result["basket_caveat_zh"] = caveat_zh
+    return result
 
 
 def _compute_oil_arming() -> dict | None:
@@ -238,11 +306,24 @@ def _compute_jawboning(alerts_path: Path) -> dict:
         return null_result
 
     try:
-        lines = alerts_path.read_text(encoding="utf-8").splitlines()
-        alerts = [json.loads(l) for l in lines if l.strip()]
+        raw_text = alerts_path.read_text(encoding="utf-8")
     except Exception as e:  # noqa: BLE001
-        log.warning("whitehouse alerts parse failed: %s", e)
-        return {**null_result, "_note": f"parse error: {e}"}
+        log.warning("whitehouse alerts read failed: %s", e)
+        return {**null_result, "_note": f"read error: {e}"}
+
+    # Per-line parse: skip bad lines (torn last line, encoding noise) instead of
+    # letting one bad line null the whole jawboning block.
+    alerts: list[dict] = []
+    skipped = 0
+    for line in raw_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            alerts.append(json.loads(line))
+        except json.JSONDecodeError:
+            skipped += 1
+            log.debug("jawboning: skipped malformed line: %.80s…", line)
 
     now = datetime.now(timezone.utc)
     cutoff_7d = now - timedelta(days=_JAWBONE_7D_WINDOW)
@@ -274,19 +355,31 @@ def _compute_jawboning(alerts_path: Path) -> dict:
             last_alert = a
 
     last_alert_ts: str | None = None
-    last_alert_summary: str | None = None
+    last_alert_summary: str | None = None      # EN display
+    last_alert_summary_zh: str | None = None   # ZH display
     if last_alert is not None:
         last_alert_ts = last_alert.get("published") or last_alert.get("generated_at")
-        # Prefer the short banner_title; fall back to summary[:140]
-        raw_summary = last_alert.get("banner_title") or last_alert.get("summary") or ""
-        last_alert_summary = raw_summary[:_LAST_ALERT_SUMMARY_LEN] if raw_summary else None
+        # EN: prefer banner_title, fall back to summary
+        raw_en = last_alert.get("banner_title") or last_alert.get("summary") or ""
+        last_alert_summary = raw_en[:_LAST_ALERT_SUMMARY_LEN] if raw_en else None
+        # ZH: prefer banner_title_zh or summary_zh from the alert record; fall back to EN
+        raw_zh = (
+            last_alert.get("banner_title_zh")
+            or last_alert.get("summary_zh")
+            or raw_en
+        )
+        last_alert_summary_zh = raw_zh[:_LAST_ALERT_SUMMARY_LEN] if raw_zh else None
 
-    return {
+    result: dict = {
         "n_7d": n_7d,
         "n_30d": n_30d,
         "last_alert_ts": last_alert_ts,
         "last_alert_summary": last_alert_summary,
+        "last_alert_summary_zh": last_alert_summary_zh,
     }
+    if skipped:
+        result["_skipped_lines"] = skipped
+    return result
 
 
 def _compute_calendar() -> dict:

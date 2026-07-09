@@ -2176,6 +2176,12 @@
     {% if FC.get('note') %}
     <div class="pl-sub"><span class="l-en">{{ FC.note }}</span><span class="l-zh">{{ FC.get('note_zh') or FC.note }}</span></div>
     {% endif %}
+    {% if FC.get('basket_caveat') %}
+    <div class="pl-sub" style="color:var(--orange);margin-top:3px">
+      <span class="l-en">⚠ {{ FC.basket_caveat }}</span>
+      <span class="l-zh">⚠ {{ FC.get('basket_caveat_zh') or FC.basket_caveat }}</span>
+    </div>
+    {% endif %}
     {% endif %}
 
     {# Lever table #}
@@ -2245,7 +2251,8 @@
       {% if JW.get('last_alert_summary') %}
       <span class="pl-jaw-item" style="flex:1;min-width:200px">
         <span class="pl-label">{{ t('Last','最近') }}</span>
-        <span class="muted">{{ JW.last_alert_summary }}</span>
+        <span class="l-en muted">{{ JW.last_alert_summary }}</span>
+        <span class="l-zh muted">{{ JW.get('last_alert_summary_zh') or JW.last_alert_summary }}</span>
       </span>
       {% endif %}
     </div>

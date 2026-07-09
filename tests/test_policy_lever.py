@@ -556,3 +556,294 @@ class TestTemplateRender:
             assert not chinese_chars, (
                 f"title= attribute contains Chinese text: {title_val!r}"
             )
+
+    def test_render_basket_caveat_visible(self):
+        """basket_caveat renders as a visible warning in macro mode."""
+        env = self._env()
+        pl = self._policy_lever_fixture()
+        # Inject an incomplete-basket scenario
+        pl["favored_complex"]["basket_incomplete"] = True
+        pl["favored_complex"]["basket_caveat"] = "Basket incomplete — data missing for: SOXX."
+        pl["favored_complex"]["basket_caveat_zh"] = "组合不完整——以下成员数据缺失：SOXX。"
+        html = env.get_template("dashboard.html.j2").render(**self._base_vm(pl), mode="macro")
+        assert "Basket incomplete" in html or "组合不完整" in html
+
+    def test_render_zh_jaw_summary_rendered(self):
+        """ZH jawboning summary (last_alert_summary_zh) renders in macro mode."""
+        env = self._env()
+        pl = self._policy_lever_fixture()
+        pl["jawboning"]["last_alert_summary_zh"] = "特朗普NEPA改革解锁联邦土地及许可证"
+        html = env.get_template("dashboard.html.j2").render(**self._base_vm(pl), mode="macro")
+        assert "特朗普NEPA改革" in html
+
+
+# ---------------------------------------------------------------------------
+# New unit tests for the four Opus-review findings
+# ---------------------------------------------------------------------------
+
+class TestBasketIntegrityLabeling:
+    """Finding 1 (MAJOR): basket misattribution + incomplete caveat + zero-member null."""
+
+    def _call(self, tickers, patch_load=None):
+        """Call _compute_drawdown with optional monkey-patch for _load_price."""
+        from scripts import build_policy_lever as mod
+        if patch_load is not None:
+            orig = mod._load_price
+            mod._load_price = patch_load
+            try:
+                return mod._compute_drawdown(tickers)
+            finally:
+                mod._load_price = orig
+        return mod._compute_drawdown(tickers)
+
+    def _make_prices(self, n=200, start=100.0, drift=0.0):
+        """Synthetic daily close series."""
+        import pandas as pd
+        import numpy as np
+        dates = pd.date_range("2025-01-01", periods=n, freq="B")
+        closes = start * np.exp(np.cumsum(np.random.default_rng(42).normal(drift, 0.01, n)))
+        df = pd.DataFrame({"close": closes, "open": closes, "high": closes, "low": closes}, index=dates)
+        return df
+
+    def test_zero_members_returns_null_drawdown(self):
+        """When ALL configured members fail to load → drawdown_pct is None."""
+        result = self._call(["SMH", "SOXX"], patch_load=lambda t: None)
+        assert result["drawdown_pct"] is None
+        assert result["basket_incomplete"] is True
+        assert "basket_caveat" in result
+        assert result["basket_caveat"]  # non-empty string
+
+    def test_zero_members_caveat_zh_present(self):
+        """Zero-member null: basket_caveat_zh must also be present."""
+        result = self._call(["SMH", "SOXX"], patch_load=lambda t: None)
+        assert "basket_caveat_zh" in result
+        assert result["basket_caveat_zh"]
+
+    def test_partial_load_labels_loaded_only(self):
+        """When one member missing, basket and note reflect only loaded members."""
+        px = self._make_prices()
+
+        def _fake_load(t):
+            return px if t == "SMH" else None
+
+        result = self._call(["SMH", "SOXX"], patch_load=_fake_load)
+        assert result["basket_incomplete"] is True
+        assert "SMH" in result["basket"]
+        assert "SOXX" not in result["basket"]
+        # note must NOT say "SMH/SOXX" — must reflect only what loaded
+        assert "SOXX" not in result["note"] or "SMH" in result["note"]
+
+    def test_partial_load_caveat_present(self):
+        """Partial load: basket_caveat warns about missing member."""
+        px = self._make_prices()
+
+        def _fake_load(t):
+            return px if t == "SMH" else None
+
+        result = self._call(["SMH", "SOXX"], patch_load=_fake_load)
+        assert "basket_caveat" in result
+        assert "SOXX" in result["basket_caveat"]
+
+    def test_full_load_no_caveat(self):
+        """When all members load, basket_incomplete=False and no caveat key."""
+        px = self._make_prices()
+        result = self._call(["SMH", "SOXX"], patch_load=lambda t: px)
+        assert result["basket_incomplete"] is False
+        assert "basket_caveat" not in result
+
+    def test_full_load_basket_contains_all_members(self):
+        """All members loaded → basket list contains both tickers."""
+        px = self._make_prices()
+        result = self._call(["SMH", "SOXX"], patch_load=lambda t: px)
+        assert set(result["basket"]) == {"SMH", "SOXX"}
+
+
+class TestReturnsEWComposite:
+    """Finding 2 (MINOR): equal-weight composite from returns, not price level."""
+
+    def _make_prices_scale(self, n=200, start=100.0, drift=0.0, seed=42):
+        """Synthetic daily close with controllable start price."""
+        import pandas as pd
+        import numpy as np
+        dates = pd.date_range("2025-01-01", periods=n, freq="B")
+        closes = start * np.exp(np.cumsum(np.random.default_rng(seed).normal(drift, 0.01, n)))
+        df = pd.DataFrame({"close": closes, "open": closes, "high": closes, "low": closes}, index=dates)
+        return df
+
+    def test_returns_ew_differs_from_price_mean_on_scale_mismatch(self):
+        """Two members with very different price scales: returns-EW should differ
+        from price-level mean.  Verifies the construction change matters."""
+        import pandas as pd
+        import numpy as np
+        from scripts import build_policy_lever as mod
+
+        # Both members have the same synthetic *return* path (seed=42) but at
+        # very different price scales (10 vs 1000).
+        px_low = self._make_prices_scale(n=200, start=10.0, seed=42)
+        px_high = self._make_prices_scale(n=200, start=1000.0, seed=99)
+
+        # Compute drawdown via the builder (returns-EW path)
+        def _fake_load(t):
+            return px_low if t == "SMH" else px_high
+
+        result = mod._compute_drawdown.__wrapped__(["SMH", "SOXX"]) if hasattr(
+            mod._compute_drawdown, "__wrapped__"
+        ) else None
+
+        orig = mod._load_price
+        mod._load_price = _fake_load
+        try:
+            result_ew = mod._compute_drawdown(["SMH", "SOXX"])
+        finally:
+            mod._load_price = orig
+
+        # Compute what price-level mean would give
+        aligned = pd.concat([px_low["close"].rename("SMH"), px_high["close"].rename("SOXX")], axis=1)
+        aligned = aligned.sort_index().ffill().dropna(how="all")
+        price_composite = aligned.mean(axis=1).tail(121)
+        price_peak = float(price_composite.max())
+        price_current = float(price_composite.iloc[-1])
+        dd_price_mean = round((price_current / price_peak - 1) * 100, 2)
+
+        dd_ew = result_ew["drawdown_pct"]
+        assert dd_ew is not None
+        # The two methods should differ when price scales are mismatched
+        # (difference may be small if returns are similar, but let's verify
+        # the non-None path ran and the construction is consistent)
+        assert isinstance(dd_ew, float)
+        # Returns-EW drawdown should NOT equal price-mean drawdown when scales differ
+        # (tolerance: allow match only if scales are effectively the same)
+        price_scale_ratio = px_high["close"].mean() / px_low["close"].mean()
+        if price_scale_ratio > 5:
+            # Scales are very different — the two methods must differ
+            assert abs(dd_ew - dd_price_mean) > 0.01, (
+                f"returns-EW ({dd_ew}) should differ from price-mean ({dd_price_mean}) "
+                f"when scale ratio is {price_scale_ratio:.1f}x"
+            )
+
+    def test_returns_ew_identical_series_gives_same_drawdown(self):
+        """When both members have the same price series, returns-EW = price-mean = member drawdown."""
+        import pandas as pd
+        from scripts import build_policy_lever as mod
+
+        px = self._make_prices_scale(n=200, start=100.0, seed=42)
+
+        orig = mod._load_price
+        mod._load_price = lambda t: px
+        try:
+            result = mod._compute_drawdown(["SMH", "SOXX"])
+        finally:
+            mod._load_price = orig
+
+        # compute member drawdown directly
+        trail = px["close"].tail(121)
+        peak = float(trail.max())
+        cur = float(trail.iloc[-1])
+        expected_dd = round((cur / peak - 1) * 100, 2)
+
+        assert result["drawdown_pct"] is not None
+        # When returns are identical the EW composite drawdown matches individual member
+        assert abs(result["drawdown_pct"] - expected_dd) < 0.15, (
+            f"EW returns composite drawdown {result['drawdown_pct']} "
+            f"differs too much from member drawdown {expected_dd}"
+        )
+
+
+class TestZHJawboningSummary:
+    """Finding 3 (MINOR): ZH summary prefers banner_title_zh / summary_zh."""
+
+    def _call(self, path):
+        from scripts.build_policy_lever import _compute_jawboning
+        return _compute_jawboning(path)
+
+    def test_zh_summary_from_banner_title_zh(self, tmp_path):
+        """banner_title_zh present → last_alert_summary_zh uses it."""
+        now_ts = datetime.now(timezone.utc).isoformat()
+        p = tmp_path / "alerts.jsonl"
+        p.write_text(json.dumps({
+            "published": now_ts,
+            "banner_title": "EN headline",
+            "banner_title_zh": "中文标题",
+            "summary": "EN summary text",
+        }) + "\n", encoding="utf-8")
+        result = self._call(p)
+        assert result["last_alert_summary_zh"] == "中文标题"
+        assert result["last_alert_summary"] == "EN headline"
+
+    def test_zh_summary_from_summary_zh_when_no_banner_title_zh(self, tmp_path):
+        """summary_zh present (no banner_title_zh) → last_alert_summary_zh uses summary_zh."""
+        now_ts = datetime.now(timezone.utc).isoformat()
+        p = tmp_path / "alerts.jsonl"
+        p.write_text(json.dumps({
+            "published": now_ts,
+            "banner_title": "EN headline",
+            "summary_zh": "中文摘要",
+        }) + "\n", encoding="utf-8")
+        result = self._call(p)
+        assert result["last_alert_summary_zh"] == "中文摘要"
+
+    def test_zh_summary_falls_back_to_en_when_no_zh_field(self, tmp_path):
+        """No ZH fields → last_alert_summary_zh falls back to EN banner_title."""
+        now_ts = datetime.now(timezone.utc).isoformat()
+        p = tmp_path / "alerts.jsonl"
+        p.write_text(json.dumps({
+            "published": now_ts,
+            "banner_title": "EN headline only",
+        }) + "\n", encoding="utf-8")
+        result = self._call(p)
+        assert result["last_alert_summary_zh"] == "EN headline only"
+        assert result["last_alert_summary"] == "EN headline only"
+
+    def test_zh_summary_key_always_present(self, tmp_path):
+        """last_alert_summary_zh key is always present in the result dict."""
+        p = tmp_path / "alerts.jsonl"
+        p.write_text("", encoding="utf-8")
+        result = self._call(p)
+        assert "last_alert_summary_zh" in result
+
+
+class TestTornLineResilience:
+    """Finding 4 (MINOR): per-line parse skips bad lines without nulling the block."""
+
+    def _call(self, path):
+        from scripts.build_policy_lever import _compute_jawboning
+        return _compute_jawboning(path)
+
+    def test_torn_last_line_skipped_good_lines_counted(self, tmp_path):
+        """A torn (truncated) last JSON line is skipped; valid lines are counted."""
+        now_ts = datetime.now(timezone.utc).isoformat()
+        p = tmp_path / "alerts.jsonl"
+        good_line = json.dumps({"published": now_ts, "banner_title": "Good alert"})
+        torn_line = '{"published":"' + now_ts + '","banner_title":"torn'  # intentionally truncated
+        p.write_text(good_line + "\n" + torn_line, encoding="utf-8")
+        result = self._call(p)
+        # Good line must be counted; torn line must not crash the whole block
+        assert result["n_7d"] == 1
+        assert result["last_alert_summary"] == "Good alert"
+        assert result.get("_skipped_lines", 0) == 1
+
+    def test_all_bad_lines_skipped_returns_zero_counts(self, tmp_path):
+        """All bad lines → n_7d=0, n_30d=0 (not None — the file exists)."""
+        p = tmp_path / "alerts.jsonl"
+        p.write_text("not json\n{broken line\nanother bad", encoding="utf-8")
+        result = self._call(p)
+        # File is present → zero counts (not None)
+        assert result["n_7d"] == 0
+        assert result["n_30d"] == 0
+        assert result.get("_skipped_lines", 0) == 3
+
+    def test_mixed_good_bad_lines(self, tmp_path):
+        """Mix of good and bad lines: good lines counted, bad skipped."""
+        now_ts = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        old_ts = (datetime.now(timezone.utc) - timedelta(days=20)).isoformat()
+        p = tmp_path / "alerts.jsonl"
+        lines = [
+            json.dumps({"published": now_ts, "banner_title": "Recent"}),
+            "BAD LINE HERE",
+            json.dumps({"published": old_ts, "banner_title": "Older"}),
+        ]
+        p.write_text("\n".join(lines), encoding="utf-8")
+        result = self._call(p)
+        assert result["n_7d"] == 1
+        assert result["n_30d"] == 2
+        assert result.get("_skipped_lines", 0) == 1

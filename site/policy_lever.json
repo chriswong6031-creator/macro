@@ -6,7 +6,8 @@
       "SMH",
       "SOXX"
     ],
-    "drawdown_pct": -12.76,
+    "basket_incomplete": false,
+    "drawdown_pct": -12.77,
     "drawdown_z": -1.23,
     "as_of": "2026-07-08",
     "note": "Semis complex (SMH/SOXX equal-weight) is -12.8% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
@@ -16,7 +17,8 @@
     "n_7d": 0,
     "n_30d": 4,
     "last_alert_ts": "2026-06-30T15:12:06+00:00",
-    "last_alert_summary": "Trump's NEPA overhaul unlocks federal land & permits \u2014 tailwind for energy, construction, defense & data centers"
+    "last_alert_summary": "Trump's NEPA overhaul unlocks federal land & permits \u2014 tailwind for energy, construction, defense & data centers",
+    "last_alert_summary_zh": "\u7279\u6717\u666eNEPA\u6539\u9769\u653e\u5f00\u8054\u90a6\u571f\u5730\u548c\u8bb8\u53ef\u2014\u2014\u80fd\u6e90\u3001\u5efa\u7b51\u3001\u56fd\u9632\u548c\u6570\u636e\u4e2d\u5fc3\u83b7\u63d0\u632f"
   },
   "calendar": {
     "days_to_midterm": 117,
