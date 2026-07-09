@@ -117,6 +117,7 @@ jobs:
           run_py "recalibrate (macro)" scripts.recalibrate
           run_py "regime engine (engine.run)" engine.run
           run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
+          run_py "policy-lever card (build_policy_lever)" scripts.build_policy_lever
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           # descriptive A-share fundamentals (akshare, keyless) — refresh high-value
           # names + widen the universe ~150/run; the China build reads the cache.

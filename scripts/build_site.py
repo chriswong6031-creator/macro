@@ -1599,6 +1599,26 @@ def _sector_heat_view() -> dict | None:
         return None
 
 
+def _policy_lever_view() -> dict | None:
+    """Load the policy-lever ARMED/QUIET card artifact (site/policy_lever.json).
+
+    Written nightly by scripts/build_policy_lever.py (Policy-Shock W2-F).
+    Display/context tier only (PS-R3): never feeds scoring.
+    Returns None (never raises) if the artifact is absent or malformed.
+    """
+    try:
+        p = config.ROOT / config.load().get("storage", {}).get("site_dir", "site") / "policy_lever.json"
+        if not p.exists():
+            return None
+        d = json.loads(p.read_text(encoding="utf-8"))
+        if d.get("schema") != "policy_lever.v1":
+            return None
+        return d
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("policy_lever_view failed (%s)", e)
+        return None
+
+
 def holdings_rows() -> list[dict]:
     """Compact teaser for the dashboard's "real fund moves" panel: the top
     conviction-ranked ACCUMULATION decisions across the thematic/active fund
@@ -3337,6 +3357,7 @@ def main() -> int:
         fear_greed=_fear_greed_view(),    # Fear/Greed composite dial (display-only, P1.2)
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
         dispersion_regime=_dispersion_regime_view(),  # L3 selection-regime chip (NW Rails W2 PR-4, display-only)
+        policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /
