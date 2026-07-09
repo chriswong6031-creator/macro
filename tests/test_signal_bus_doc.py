@@ -73,10 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 284, (
-        f"Expected 284 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 285, (
+        f"Expected 285 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (TIL PR-0 pre-registered theme-thesis-ledger, site-theme-thesis, theme-pathways,"
+        " (CHF-W4 added causal-mechanisms = 284->285;"
+        " TIL PR-0 pre-registered theme-thesis-ledger, site-theme-thesis, theme-pathways,"
         " site-theme-pathways, theme-asymmetry, site-theme-asymmetry,"
         " foresight-earliness-grades, theme-placebo-tape, qledger-falsifier-evaluations"
         " = 275->284 (entries land before the W1/W2/W3/W6 producer lanes to avoid"
