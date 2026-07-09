@@ -1197,3 +1197,35 @@ checks:
     notes: >
       W1 wires this into pr_ci and upgrades severity to hard (upgrade needs no
       ruling; downgrades do).
+
+  - law_id: ops.nw_health_escalation
+    summary: >
+      Persistent Neural Web degradation must escalate to a visible ops push:
+      >=3 consecutive degraded nightly runs (streak keyed on run date, NOT the
+      data-vintage as_of, which freezes when upstream data is stale) fires a
+      maintenance-language alert through the W6b push spine (nw_health lane).
+      Born from the 5-night silent cortex outage 2026-07-04..09.
+    source_ref:
+      - scripts/check_nw_health_escalation.py
+      - "PR #2012 (M3 organ; NW review sweep 2026-07-09)"
+    severity: warn
+    check_script: scripts/check_nw_health_escalation.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      Nightly ops organ, fail-open by design; functional coverage provided by
+      tests/test_nw_health_escalation.py (streak math incl. frozen-as_of
+      pathology, adjacency guard, lane single-writer, verb blacklist).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Detects persistent degradation only (>=3 nights); single-night failures
+        remain ::warning-only by design (fail-open law RUL-LIVE3).
+      - Reads the engine-phase health core; same-night cortex status arrives
+        via cortex_source=previous_run, so cortex-only outages fire on night 4
+        at the latest rather than night 3.
+    owner_program: neural-web
+    notes: null

@@ -1331,9 +1331,11 @@ jobs:
         run: python -m scripts.build_neuralweb_health || echo "::warning::build_neuralweb_health failed (non-fatal) — keeping last committed health.json"
       - name: check nw health escalation (M3 — persistent degradation detector)
         if: always()
-        # M3 escalation organ: reads health.json + daily_brief_history.jsonl.
+        # M3 escalation organ: reads health.json + its own run-date-keyed ledger
+        # data/neuralweb/nw_health_run_history.jsonl (NOT daily_brief_history —
+        # that is as_of-keyed and collapses when upstream data freezes as_of).
         # When overall_status==degraded or daily-cadence lobes are missing/stale
-        # beyond 1.5x SLA for >=3 consecutive nights, dispatches an ops alert via
+        # beyond 1.5x SLA for >=3 consecutive nightly runs, dispatches an ops alert via
         # the nw_health W6b lane (data/alert_triage/push_sent_nw_health.jsonl).
         # cortex_source=previous_run is correct here: day-2 detection still holds.
         # Fail-open: any failure exits 0, never blocks the pipeline.
