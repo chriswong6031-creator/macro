@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.mastermind.prophetmarks.plist — launchd agent for the Prophet live-marks publisher.
+
+  Fires once on weekdays at 09:25 ET, then the runner script (run_prophet_marks_loop.sh)
+  polls every 5 minutes.  The runner exits when the current ET time passes 16:05 or the
+  session is over; launchd fires it again at 09:25 the next weekday.
+
+  DO NOT touch the com.mastermind.liveflow lane — this is a separate, independent job.
+
+  INSTALL (as the mac user who runs Theta Terminal — not root):
+    cp ops/launchd/com.mastermind.prophetmarks.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.mastermind.prophetmarks.plist
+
+  UNINSTALL:
+    launchctl unload ~/Library/LaunchAgents/com.mastermind.prophetmarks.plist
+    rm ~/Library/LaunchAgents/com.mastermind.prophetmarks.plist
+
+  DO NOT load this plist directly from the repo. Copy first — the repo path may not
+  match the deployment path, and launchd requires the exact plist path when unloading.
+
+  ENV FILE:
+    R2 credentials are sourced from /Users/chriswong/flow-ops-wt/.env via
+    run_with_env.sh. Required vars:
+      R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+
+  LOG TAILING:
+    tail -f /tmp/prophetmarks.stdout.log /tmp/prophetmarks.stderr.log
+
+  MANUAL RUN (smoke — no publish):
+    set -a
+    source /Users/chriswong/flow-ops-wt/.env
+    set +a
+    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    python -m scripts.build_prophet_marks
+
+  MANUAL PUBLISH (one cycle):
+    set -a
+    source /Users/chriswong/flow-ops-wt/.env
+    set +a
+    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    python -m scripts.build_prophet_marks --publish
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mastermind.prophetmarks</string>
+
+  <!--
+    run_with_env.sh sources .env before executing the runner loop script.
+    The loop runs build_prophet_marks.py --publish every 5 min until 16:05 ET.
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/flow-ops-wt/.env</string>
+    <string>/bin/sh</string>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_prophet_marks_loop.sh</string>
+  </array>
+
+  <!-- Working directory = flow-ops-wt (launchd law: never ~/Documents). -->
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/flow-ops-wt</string>
+
+  <!--
+    Start weekdays at 09:25 ET (slightly before market open).
+    The build_prophet_marks script has its own RTH guard (09:30–16:00 ET);
+    the pre-open 09:25 cycle exits cleanly.
+  -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Weekday</key><integer>1</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>2</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>3</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>4</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>5</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+    <!-- R2_* and other secrets sourced from .env via run_with_env.sh above. -->
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/prophetmarks.stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/prophetmarks.stderr.log</string>
+
+  <!-- Do NOT set KeepAlive: the runner self-exits after 16:05 ET;
+       launchd respawns at the next StartCalendarInterval. -->
+  <key>KeepAlive</key>
+  <false/>
+
+  <!-- Throttle: if the job crashes in under 10s, wait 60s before retrying. -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+</dict>
+</plist>
