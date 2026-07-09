@@ -211,6 +211,8 @@ _ASK_READ_TOOLS = frozenset({
 _THEME_TRIGGER_TERMS = re.compile(
     r"(?i)\b("
     r"thematic\s+state|state\s+of\s+themes?|theme\s+thesis|theme\s+stage|"
+    r"theme\s+state|which\s+themes?\b|themes?\s+(?:are|have|look|with)\b|"
+    r"asymmetric\s+themes?|next\s+themes?\b|themes?\s+(?:early|crowded|forming)|"
     r"theme\s+pathway|theme\s+beneficiar\w*|theme\s+asymmetr\w*|"
     r"falsifier\s+fired|thesis\s+falsifier|thematic\s+falsifier|"
     r"beneficiar\w+\s+of\s+theme|pathway\s+of\s+theme|theme\s+logic|"
@@ -398,7 +400,7 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     # add read_theme_pathways when beneficiary/pathway phrasing is present.
     if _THEME_TRIGGER_TERMS.search(question):
         seeds: list[str] = ["read_theme_state", "read_theme_thesis"]
-        if re.search(r"\b(pathway|beneficiar\w*|路径|受益者)\b", q, re.IGNORECASE):
+        if re.search(r"\b(pathway|beneficiar\w*)\b|路径|受益者", q, re.IGNORECASE):
             seeds.append("read_theme_pathways")
         return _BUDGET_REGIME, seeds
 

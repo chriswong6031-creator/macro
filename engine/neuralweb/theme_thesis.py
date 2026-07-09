@@ -608,11 +608,17 @@ def run_stage(root: Path) -> None:
         log.warning("theme_thesis: ledger sidecar write failed: %s", exc)
 
     # ── Build and write site projection ──────────────────────────────────
+    # n_falsifier_fired counts FALSIFIERS fired (not theses) — must equal the
+    # length of any fired-falsifier list a consumer derives (W5 review finding).
     n_fired = sum(
+        int(r.get("falsifier_summary", {}).get("n_fired", 0))
+        for r in compiled_records
+    )
+    n_theses_with_fired = sum(
         1 for r in compiled_records
         if r.get("falsifier_summary", {}).get("any_fired", False)
     )
-    n_ok = len(compiled_records) - n_fired
+    n_ok = len(compiled_records) - n_theses_with_fired
 
     site_payload: dict[str, Any] = {
         "schema": SCHEMA,
@@ -621,6 +627,7 @@ def run_stage(root: Path) -> None:
         "authority": AUTHORITY_BLOCK,
         "n_theses": len(compiled_records),
         "n_falsifier_fired": n_fired,
+        "n_theses_with_fired": n_theses_with_fired,
         "n_ok": n_ok,
         "stale_legs": stale_legs,
         "theses": compiled_records,
