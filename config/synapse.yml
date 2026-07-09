@@ -3273,6 +3273,31 @@ artifacts:
       consecutive nights.  dedup/ledger skipped when spine disabled; raw
       dispatch still fires (W6b dispatch-always invariant).
 
+  nw-health-run-history:
+    path: data/neuralweb/nw_health_run_history.jsonl
+    format: jsonl
+    producer: scripts/check_nw_health_escalation.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: run_date
+    freshness_sla_hours: 26
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/check_nw_health_escalation.py
+    notes: >
+      M3 escalation organ (PR-3 review fix): per-nightly-run health status log.
+      Keyed by produced_at date (not data-vintage as_of) so frozen as_of across
+      consecutive degraded nights is correctly counted as distinct run records.
+      APPEND-only: one new row per nightly engine run.  Schema: {run_date,
+      degraded, produced_at, reasons_count}.  Used by _compute_streak to
+      measure consecutive degraded run streak with calendar-adjacency guard.
+
   feeds-plane:
     path: site/feeds/
     format: json

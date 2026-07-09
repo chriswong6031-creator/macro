@@ -31,7 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
-| neural-web | 45 |
+| neural-web | 46 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 3 |
@@ -54,7 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 164 |
-| infrastructure | 73 |
+| infrastructure | 74 |
 | scored | 4 |
 | shadow | 45 |
 
@@ -62,7 +62,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 274 |
+| git | 275 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -331,6 +331,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mechanism-pathways-history | `data/neuralweb/mechanism_pathways_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | neuralweb-daily-brief | `data/neuralweb/daily_brief.json` | json | daily-engine | display | 1 | 0 |
 | neuralweb-daily-brief-history | `data/neuralweb/daily_brief_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| nw-health-run-history | `data/neuralweb/nw_health_run_history.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
 | ops-push-basket-freeze | `data/alert_triage/push_sent_basket_freeze.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-healthcheck | `data/alert_triage/push_sent_healthcheck.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-nw-health | `data/alert_triage/push_sent_nw_health.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
