@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_nw_feedback.v2",
-  "generated_at": "2026-07-09T12:25:00Z",
+  "generated_at": "2026-07-09T22:25:00Z",
   "window_days": 14,
   "thesis_counts": {
     "open": 24,
@@ -24,7 +24,7 @@
       "other": 0
     },
     "macro_refresh": {
-      "ok": 25,
+      "ok": 28,
       "error": 0,
       "other": 0
     },
@@ -34,17 +34,17 @@
       "other": 0
     },
     "publish_macro_snapshot": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "derisk_us_intraday": {
-      "ok": 41,
+      "ok": 55,
       "error": 0,
       "other": 0
     },
     "watch_asia_overnight": {
-      "ok": 9,
+      "ok": 11,
       "error": 0,
       "other": 0
     },
@@ -89,17 +89,17 @@
       "other": 0
     },
     "settle_pending": {
-      "ok": 2,
+      "ok": 3,
       "error": 0,
       "other": 0
     },
     "portfolio_risk_compose": {
-      "ok": 22,
+      "ok": 38,
       "error": 0,
       "other": 0
     },
     "portfolio_risk_daily": {
-      "ok": 1,
+      "ok": 2,
       "error": 0,
       "other": 0
     }
@@ -208,7 +208,7 @@
       {
         "book_id": "china",
         "packet_accepted": 0,
-        "packet_rejected": 16
+        "packet_rejected": 17
       },
       {
         "book_id": "etf",
@@ -228,12 +228,12 @@
       {
         "book_id": "hk",
         "packet_accepted": 0,
-        "packet_rejected": 9
+        "packet_rejected": 10
       }
     ],
     "rejection_error_classes": {
-      "expected_failure_mode": 57,
-      "falsifiers": 57
+      "expected_failure_mode": 59,
+      "falsifiers": 59
     }
   },
   "outcome_mix": {
