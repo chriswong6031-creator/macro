@@ -1,0 +1,13 @@
+{
+  "active": false,
+  "score": null,
+  "since": null,
+  "expires": null,
+  "reason": null,
+  "reason_zh": null,
+  "trigger_reason": null,
+  "primary_driver": null,
+  "note": "No active shock de-escalation window.",
+  "note_zh": "\u65e0\u6fc0\u6d3b\u7684\u51b2\u51fb\u964d\u7ea7\u7a97\u53e3\u3002",
+  "schema": "shock_deescalation.v1"
+}
