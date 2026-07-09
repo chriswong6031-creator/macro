@@ -7,22 +7,48 @@
 # FRESHNESS GATE
 # ─────────────────────────────────────────────────────────────────────────────
 # Before running the matrix builder, this script verifies that the ThetaData
-# EOD store contains SPY data for the expected last NYSE session.
+# OI store contains SPY data for the expected last NYSE session.
+#
+# The gate reads the OI store (not EOD) because build_matrix() resolves its
+# published asof date from the OI parquet (engine/options_matrix.py line ~478:
+# asof = latest date in oi_all).  Gating on EOD while the builder keys off OI
+# would allow a stale-OI / fresh-EOD mismatch to slip through undetected.
 #
 # Logic:
 #   1. Ask lib/nyse_calendar.expected_last_session() for the expected date.
-#   2. Read only the 'date' column of the current-year SPY parquet shard
+#   2. Read only the 'date' column of the current-year SPY OI parquet shard
 #      (column-pruned; never loads the full store).
-#   3. If the latest date in the shard == expected_last_session → FRESH → run.
+#   3. If the latest date in the OI shard >= expected_last_session → FRESH → run.
+#      (>= rather than == so a store that is ahead of the calendar does not
+#      false-fail; the calendar is the floor, not the ceiling.)
 #   4. Otherwise sleep 20 min and retry (max 6 attempts = 2h window).
 #   5. After 6 failures, log and exit 1 without running the builder.
 #
+#   NOTE (early-January edge): if the new-year OI shard has not yet been
+#   written, the fallback reads the prior-year shard whose last row is Dec 31
+#   — this will always be stale vs a January expected date.  The runner will
+#   burn all 6 retries and exit 1 every night until the new shard appears.
+#   This is the safe direction (no publish on unknown data), but operators
+#   should be aware of the early-January blackout window (typically 1-2 days).
+#
 # BYPASS
 # ─────────────────────────────────────────────────────────────────────────────
-# Set MATRIX_FRESHNESS_BYPASS=1 to skip the wait loop (used for one-shot
-# smoke verification).
+# Set MATRIX_FRESHNESS_BYPASS=1 to skip the freshness wait loop and run the
+# builder immediately regardless of store freshness.
 #
-# USAGE (manual smoke):
+# DRY-RUN (no publish)
+# ─────────────────────────────────────────────────────────────────────────────
+# Set MATRIX_NO_PUBLISH=1 to run the builder without --publish.  The builder
+# writes local JSON to data/live_flow_out/options_matrix/ but does NOT upload
+# to R2.  Use this for smoke / integration checks where you want to verify
+# the build pipeline without touching live artifacts.
+#
+# USAGE (smoke / dry-run — builds locally, no R2 publish):
+#   source /Users/chriswong/flow-ops-wt/.env
+#   MATRIX_FRESHNESS_BYPASS=1 MATRIX_NO_PUBLISH=1 \
+#     ops/launchd/run_options_matrix.sh
+#
+# USAGE (full publish — same as the nightly launchd run):
 #   source /Users/chriswong/flow-ops-wt/.env
 #   MATRIX_FRESHNESS_BYPASS=1 \
 #     ops/launchd/run_options_matrix.sh
@@ -38,7 +64,7 @@ PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 STORE="${THETADATA_STORE:-/Users/chriswong/theta-ops-wt/data/thetadata_eod}"
 
 # ── freshness check helper ────────────────────────────────────────────────────
-# Prints "fresh" if SPY EOD data has the expected last session, else "stale".
+# Prints "fresh" if the SPY OI shard has the expected last session, else "stale".
 _check_freshness() {
     "$PYTHON" - "$STORE" "$REPO" <<'PYEOF'
 import sys
@@ -51,16 +77,20 @@ repo  = sys.argv[2]
 # resolve nyse_calendar from repo
 sys.path.insert(0, repo)
 from lib.nyse_calendar import expected_last_session
-from datetime import datetime, timezone
 
 expected = expected_last_session()
 
-# column-pruned read of the current-year SPY shard only
+# Gate on the OI shard — build_matrix() resolves its published asof from
+# the OI store, so freshness of the OI store is what actually matters.
+# Gating on EOD (as before) would silently pass when EOD is fresh but OI
+# lags a session, publishing a mismatched artifact.
 year = expected.year
-shard = Path(store) / "eod" / "SPY" / f"{year}.parquet"
+shard = Path(store) / "oi" / "SPY" / f"{year}.parquet"
 if not shard.exists():
-    # Fall back to prior year shard (edge: Jan 1 before new year shard written)
-    shard = Path(store) / "eod" / "SPY" / f"{year - 1}.parquet"
+    # Edge: early Jan before the new-year OI shard is written.
+    # Prior-year shard's last row is Dec 31 — always stale vs Jan expected.
+    # Safe direction: will burn retries and exit 1 until shard appears.
+    shard = Path(store) / "oi" / "SPY" / f"{year - 1}.parquet"
 if not shard.exists():
     print("stale")
     sys.exit(0)
@@ -71,13 +101,14 @@ if tbl.num_rows == 0:
     sys.exit(0)
 
 # date column may be datetime or date; normalize to date
-import pyarrow.compute as pc
 raw = tbl.column("date").to_pylist()[-1]
 if hasattr(raw, "date"):
     latest = raw.date()
 else:
     latest = raw
 
+# >= rather than == : a store ahead of the calendar (e.g. after a holiday
+# correction) should not false-fail; the calendar date is the floor.
 if latest >= expected:
     print("fresh")
 else:
@@ -110,6 +141,12 @@ else
 fi
 
 # ── run builder ───────────────────────────────────────────────────────────────
-echo "[options_matrix] launching build_options_matrix --publish"
-cd "$REPO"
-exec "$PYTHON" -m scripts.build_options_matrix --publish
+if [ "${MATRIX_NO_PUBLISH:-0}" = "1" ]; then
+    echo "[options_matrix] MATRIX_NO_PUBLISH=1 — launching build_options_matrix (local only, no R2 publish)"
+    cd "$REPO"
+    exec "$PYTHON" -m scripts.build_options_matrix
+else
+    echo "[options_matrix] launching build_options_matrix --publish"
+    cd "$REPO"
+    exec "$PYTHON" -m scripts.build_options_matrix --publish
+fi

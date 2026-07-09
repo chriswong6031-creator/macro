@@ -36,18 +36,22 @@
       R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
       THETADATA_STORE=/Users/chriswong/theta-ops-wt/data/thetadata_eod
 
-  FRESHNESS BYPASS (smoke / one-shot):
-    MATRIX_FRESHNESS_BYPASS=1 ops/launchd/run_options_matrix.sh
+  SMOKE / DRY-RUN (no R2 publish — builds local JSON only):
+    set -a
+    source /Users/chriswong/flow-ops-wt/.env
+    set +a
+    MATRIX_FRESHNESS_BYPASS=1 MATRIX_NO_PUBLISH=1 \
+      "/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_options_matrix.sh"
 
-  LOG TAILING:
-    tail -f /tmp/optionsmatrix.stdout.log /tmp/optionsmatrix.stderr.log
-
-  MANUAL RUN (full, with publish):
+  MANUAL RUN (full, with R2 publish — same as nightly launchd):
     set -a
     source /Users/chriswong/flow-ops-wt/.env
     set +a
     MATRIX_FRESHNESS_BYPASS=1 \
       "/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_options_matrix.sh"
+
+  LOG TAILING:
+    tail -f /tmp/optionsmatrix.stdout.log /tmp/optionsmatrix.stderr.log
 -->
 <plist version="1.0">
 <dict>
