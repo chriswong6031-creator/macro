@@ -411,6 +411,9 @@ lanes:
       - id: build_neuralweb_brief
         module: scripts.build_neuralweb_brief
         note: non-fatal; PR-D NW daily brief surface — engine phase writes phase='engine' after health; cortex job --finalize writes phase='final' + upserts history row
+      - id: build_attention_deterministic
+        module: scripts.build_attention_deterministic
+        note: non-fatal; PR-4 M2 deterministic operator-attention items — zero LLM, five pre-registered rules; after health + daily_brief; writes data/neuralweb/attention_deterministic.json + site/neuralwebdata/ mirror
       - id: research_factory_monitor
         module: scripts.research_factory_monitor
         note: non-fatal; Research Factory W6 — paper monitor, regime-aware decay, nightly forward-ledger wiring (RF-8/RF-9/RF-10); data/research_factory/ writes covered by 'git add data/' in commit step

@@ -31,7 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
-| neural-web | 46 |
+| neural-web | 48 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 3 |
@@ -53,7 +53,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 164 |
+| display | 166 |
 | infrastructure | 74 |
 | scored | 4 |
 | shadow | 45 |
@@ -62,7 +62,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 275 |
+| git | 277 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -322,6 +322,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
+| attention-deterministic | `data/neuralweb/attention_deterministic.json` | json | daily-engine | display | 1 | 0 |
 | causal-mechanisms | `data/neuralweb/causal_mechanisms.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | claim-accountability | `data/governance/claim_accountability.json` | json | collect | infrastructure | 1 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
@@ -339,6 +340,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| site-attention-deterministic | `site/neuralwebdata/attention_deterministic.json` | json | daily-engine | display | 1 | 0 |
 | site-mechanism-pathways | `site/neuralwebdata/mechanism_pathways.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
 | causal-feature-inventory | `data/neuralweb/causal_feature_inventory.json` | json | daily-engine | infrastructure | 0 | 0 |

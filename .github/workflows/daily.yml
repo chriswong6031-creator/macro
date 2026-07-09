@@ -1348,6 +1348,14 @@ jobs:
         # Fail-open: any missing input → brief with explicit gap notes, exit 0.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_neuralweb_brief || echo "::warning::build_neuralweb_brief failed (non-fatal) — keeping last committed daily_brief.json"
+      - name: build attention_deterministic (PR-4 M2 — deterministic operator-attention items)
+        if: always()
+        # PR-4 M2: zero-LLM deterministic attention items from world_state + health + daily_brief.
+        # Five pre-registered rules: contradiction tension, lobe SLA breach, regime indeterminate,
+        # evidence clock overdue, cortex degraded. Fail-open: any missing input → empty-items artifact.
+        # Writes data/neuralweb/attention_deterministic.json + site/neuralwebdata/ mirror.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_attention_deterministic || echo "::warning::build_attention_deterministic failed (non-fatal) — keeping last committed attention_deterministic.json"
       - name: research_factory_monitor (W6 — paper monitor + nightly ledger)
         if: always()
         # Research Factory W6 (RF-8/RF-9/RF-10): paper monitor over all 'paper',

@@ -6093,6 +6093,54 @@ artifacts:
       upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
       Chronologically sorted. Used for delta detection in next run. Display/ops only.
 
+  # --- PR-4 M2: Deterministic operator-attention items ---
+  attention-deterministic:
+    path: data/neuralweb/attention_deterministic.json
+    format: json
+    producer: scripts/build_attention_deterministic.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.attention_deterministic.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      PR-4 M2 deterministic attention surface. Zero LLM — all items are template-filled
+      from structured artifact values. Five pre-registered rules: (A) contradiction tension,
+      (B) daily-cadence lobe past 1.5× SLA, (C) regime confidence < 0.25,
+      (D) evidence clock overdue, (E) cortex run degraded. Display-only; never writes
+      to cortex A2 earn-in track. Maintenance vocabulary only.
+
+  site-attention-deterministic:
+    path: site/neuralwebdata/attention_deterministic.json
+    format: json
+    producer: scripts/build_attention_deterministic.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.attention_deterministic.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of attention-deterministic for client-side fetch in committee.html.
+      Written by scripts/build_attention_deterministic.py in the same step.
+
   # --- W1 NW Core-Cognition: Mechanism Pathway Compiler v1 ---
   mechanism-pathways:
     path: data/neuralweb/mechanism_pathways.json
