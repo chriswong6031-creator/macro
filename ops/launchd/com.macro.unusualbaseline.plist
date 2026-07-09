@@ -4,8 +4,8 @@
 <!--
   com.macro.unusualbaseline.plist — launchd agent for the nightly unusual-volume baseline.
 
-  Runs build_unusual_baseline on weekdays at 19:30 local time.
-  Deliberately offset from the 19:00 options-matrix job (com.macro.optionsmatrix)
+  Runs build_unusual_baseline on weekdays at 16:30 local (19:30 ET).
+  Deliberately offset from the 16:00-local options-matrix job (com.macro.optionsmatrix)
   so two heavy EOD-store readers never overlap.
 
   INSTALL (as the mac user who runs Theta Terminal — not root):
@@ -69,35 +69,35 @@
   <string>/Users/chriswong/flow-ops-wt</string>
 
   <!--
-    19:30 local weekdays (Mon=1 through Fri=5 in launchd).
-    Deliberately offset from 19:00 options-matrix job to avoid simultaneous
+    16:30 local weekdays (19:30 ET) (Mon=1 through Fri=5 in launchd).
+    Deliberately offset from 16:00-local options-matrix job to avoid simultaneous
     heavy reads from the thetadata_eod store.
   -->
   <key>StartCalendarInterval</key>
   <array>
     <dict>
       <key>Weekday</key><integer>1</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>30</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>2</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>30</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>3</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>30</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>4</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>30</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>5</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>30</integer>
     </dict>
   </array>
