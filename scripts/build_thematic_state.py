@@ -127,6 +127,42 @@ def build(root: Path) -> int:
     return 0
 
 
+# ── Optional TIL stages (W1/W2/W3) — auto-discovered, tolerant ────────────
+# Contract (TIL PR-0): each stage module exposes `run_stage(root: Path) -> None`,
+# owns its own artifacts (paths pre-registered in config/synapse.yml), never
+# raises fatally, and stays display/context tier. Stages land in later waves;
+# absence is a skip, not an error. This dispatcher exists so the W1/W2/W3
+# builder lanes never have to edit this script (or daily.yml/dag.yml)
+# concurrently — zero shared-file merge races.
+_OPTIONAL_STAGES = (
+    "engine.neuralweb.theme_thesis",     # W1 (PR-C) thesis ledger
+    "engine.neuralweb.theme_pathways",   # W2 (PR-D) beneficiary/loser pathway graph
+    "engine.neuralweb.theme_asymmetry",  # W3 (PR-E) per-leg asymmetry panel
+)
+
+
+def run_optional_stages(root: Path) -> None:
+    """Run any present optional TIL stage modules. Absent module → skip."""
+    import importlib
+
+    for mod_name in _OPTIONAL_STAGES:
+        try:
+            mod = importlib.import_module(mod_name)
+        except ImportError:
+            log.info("optional stage %s absent — skipped", mod_name)
+            continue
+        fn = getattr(mod, "run_stage", None)
+        if fn is None:
+            log.warning("optional stage %s has no run_stage() — skipped", mod_name)
+            continue
+        t0 = time.perf_counter()
+        try:
+            fn(root)
+            log.info("stage %s done in %.2fs", mod_name, time.perf_counter() - t0)
+        except Exception as exc:  # noqa: BLE001
+            log.error("stage %s failed (non-fatal): %s", mod_name, exc)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build thematic state artifacts (TIL W0)")
     parser.add_argument(
@@ -136,6 +172,7 @@ def main() -> None:
     args = parser.parse_args()
     root = Path(args.root).resolve() if args.root else _REPO_ROOT
     code = build(root)
+    run_optional_stages(root)
     sys.exit(code)
 
 
