@@ -192,6 +192,26 @@ jobs:
             [ "$rc" -ne 0 ] && echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 500)"
           done
           exit 0
+      - name: CN Pick Lab — fire books + grade + render (CNPL-R8 asia lane, ≤2 min)
+        # Runs AFTER build_china_library (above) so tonight's CN snapshot is on disk.
+        # CN_LANE=asia is the ledger-write gate (CNPL-R8); the step always exits 0
+        # (never-break contract). Artifacts committed in the "commit engine outputs"
+        # step below via 'git add data/ site/' which covers:
+        #   data/china_pick_lab/  (snapshots/, fires.jsonl, grades.jsonl)
+        #   site/labdata/china_pick_lab.json
+        #   site/china_stocks_lab.html
+        #   site/factordata/china_reversion_desk.json  (produced by build_china_library)
+        env:
+          CN_LANE: asia
+        run: |
+          echo "::group::CN Pick Lab (build_china_pick_lab)"
+          python -m scripts.build_china_pick_lab > /tmp/cnlab.log 2>&1; rc=$?
+          cat /tmp/cnlab.log
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=build_china_pick_lab failed (rc=$rc)::$(tail -n 2 /tmp/cnlab.log | tr '\n' ' ' | tail -c 500)"
+          fi
+          exit 0
       - name: inject data-base shim into CN/HK pages (site-wide, no-op while DATA_BASE empty)
         run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit engine outputs

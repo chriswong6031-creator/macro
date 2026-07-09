@@ -261,6 +261,7 @@ def scoreboard(
     ctrl_grades: Optional[list[dict]] = None,
     universe_base_rate_21d: Optional[float] = None,
     open_fire_dates: Optional[set[str]] = None,
+    profile=None,
 ) -> dict:
     """Compute the scoreboard for one book.
 
@@ -293,8 +294,11 @@ def scoreboard(
     -------
     dict with all scoreboard fields.
     """
+    _avoid_id = (
+        profile.avoid_engine_id if profile is not None else AVOID_ENGINE_ID
+    )
     is_lh = (horizon_role == LH_HORIZON_ROLE)
-    is_avoid = (engine_id == AVOID_ENGINE_ID)
+    is_avoid = (engine_id == _avoid_id)
     horizons = LH_HORIZONS if is_lh else ENTRY_HORIZONS
 
     my_fires = _filter(fires, engine_id)
@@ -470,6 +474,7 @@ def all_scoreboards(
     ruler_map: Optional[dict[str, str]] = None,
     ctrl_fires: Optional[list[dict]] = None,
     ctrl_grades: Optional[list[dict]] = None,
+    profile=None,
 ) -> list[dict]:
     """Compute scoreboards for all books.
 
@@ -480,15 +485,20 @@ def all_scoreboards(
     horizon_role_map : {engine_id: horizon_role} from the registry.
     ruler_map        : {engine_id: ruler} — pre-declared ruler per book (PL-R3).
                        Defaults to '21d_spy_excess' for any book not in the map.
-    ctrl_fires       : Fires from plab_random_ctrl.
-    ctrl_grades      : Grades from plab_random_ctrl.
+    ctrl_fires       : Fires from plab_random_ctrl (or cnlab_random_ctrl for CN).
+    ctrl_grades      : Grades from plab_random_ctrl (or cnlab_random_ctrl for CN).
+    profile          : optional MarketProfile; when supplied, uses profile.random_ctrl_id
+                       as the control book id.  Omitting preserves US behaviour.
 
     Returns
     -------
     List of scoreboard dicts, one per engine_id in horizon_role_map.
     """
-    ctrl_g = ctrl_grades or _filter(grades, "plab_random_ctrl")
-    ctrl_f = ctrl_fires or _filter(fires, "plab_random_ctrl")
+    _ctrl_id = (
+        profile.random_ctrl_id if profile is not None else "plab_random_ctrl"
+    )
+    ctrl_g = ctrl_grades or _filter(grades, _ctrl_id)
+    ctrl_f = ctrl_fires or _filter(fires, _ctrl_id)
     ruler_map = ruler_map or {}
 
     # PL-R5 requires lift over BOTH plab_random_ctrl AND the universe buy-anytime

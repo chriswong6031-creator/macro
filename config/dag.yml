@@ -793,6 +793,18 @@ lanes:
       - id: build_subsector_rotation_china_pages
         module: scripts.build_subsector_rotation_china_pages
         note: non-fatal; W9 lane unification — per-subsector CN detail pages
+      # ── CN Pick Lab (CNPL-R8): runs AFTER build_china_library (library step) ──
+      # build_china_library produces the CN snapshot; build_china_pick_lab reads it.
+      # Runs in the library-restore step shell loop (after CN library); wired here
+      # for conformance documentation only (the parser cannot extract shell loops).
+      - id: build_china_pick_lab
+        module: scripts.build_china_pick_lab
+        note: >
+          non-fatal; ≤2 min; CN Pick Lab asia-lane runner (CNPL-R8). Reads CN
+          snapshot from data/china_pick_lab/snapshots/, enriches with chinastatedata
+          + THS baskets, runs 20 books + flagship2_mirror, grades via (H+L)/2 fills,
+          writes site/labdata/china_pick_lab.json + site/china_stocks_lab.html.
+          CN_LANE=asia required for all ledger/data writes.
       - id: inject_data_base
         module: scripts.inject_data_base
       - id: publish_r2_asia

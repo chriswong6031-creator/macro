@@ -924,6 +924,55 @@ def main() -> int:
                 vm["scoreboard"] = fallback
                 log.info("using persisted china_scoreboard.json fallback")
 
+        # Flagship-2 Reversion Desk — CN Pick Lab (spec §4/§7).
+        # Load the artifact produced by build_china_library's CN pick-lab producer block
+        # and transform it to the schema the template expects.  Never fatal.
+        try:
+            _rd_artifact = _load_json(factordata / "china_reversion_desk.json")
+            if _rd_artifact and isinstance(_rd_artifact.get("rows"), list):
+                _rd_picks = []
+                for _row in _rd_artifact["rows"]:
+                    _chips = _row.get("chips") or {}
+                    _rev_depth = _row.get("rev_depth") or {}
+                    # Derive rev_depth_pct from rev_depth.rev_3m (raw 3-month return %)
+                    _rev_3m = _rev_depth.get("rev_3m")
+                    # off_high: use rev_3m as a proxy for distance from high (it's the
+                    # 3-month return — negative means off high by that amount)
+                    _off_high = float(_rev_3m) if _rev_3m is not None else None
+                    # name: combine EN/ZH for bilingual split in template
+                    _name = _row.get("name") or ""
+                    _name_zh = _row.get("name_zh") or _name
+                    _name_combined = f"{_name} / {_name_zh}" if _name_zh and _name_zh != _name else _name
+                    _rd_picks.append({
+                        "ticker": _row.get("ticker"),
+                        "name": _name_combined,
+                        "sector": _row.get("sector"),
+                        "price": _row.get("close"),          # template reads .get('price')
+                        "rev_depth_pct": _rev_3m,            # template reads .get('rev_depth_pct')
+                        "off_high": _off_high,               # template reads .get('off_high')
+                        # flatten chips to top-level (template reads top-level keys)
+                        "washout_2w": _chips.get("washout_2w"),
+                        "coiled": _chips.get("coiled"),
+                        "chase_veto": _chips.get("chase_veto"),
+                        "cycle_phase": _chips.get("cycle_phase"),
+                        # pass through remaining fields for completeness
+                        "rank": _row.get("rank"),
+                        "score": _row.get("score"),
+                    })
+                vm["reversion_desk"] = {
+                    "as_of": _rd_artifact.get("as_of"),
+                    "picks": _rd_picks,
+                    "n_picks": len(_rd_picks),
+                    "authority": "display_only",
+                }
+                log.info("china stocks: reversion_desk loaded (%d picks)", len(_rd_picks))
+            else:
+                vm["reversion_desk"] = None
+                log.debug("china stocks: no reversion_desk artifact — flagship-2 block hidden")
+        except Exception as _rd_e:  # noqa: BLE001 — additive, never fatal
+            log.error("china stocks: reversion_desk load failed (%s); skipping", _rd_e)
+            vm["reversion_desk"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
