@@ -651,7 +651,113 @@
   </div>
   {% endif %}
 
-  {# ===================== HK COMMAND PANEL — top-of-page synthesis (macro mode only) =====================
+  {% if mode != 'stocks' %}
+  <!-- ===================== MARKET STATE + HK REGIME — command-center hero (top-of-page front board) ===================== -->
+  {% set _ol = {
+    'Q1': ('Falling inflation with steady growth — the friendliest backdrop for HK internet, tech &amp; quality. China earnings set the cycle; the global risk overlay sets the tape.', '通胀回落、增长平稳 — 对香港互联网、科技与质量最友好的环境。中国盈利决定周期，全球风险开关决定盘面。'),
+    'Q2': ('Growth and inflation both firming — favour H-share cyclicals, energy and banks. Watch the global risk overlay, HK\'s primary high-frequency driver.', '增长与通胀同步走强 — 偏好 H 股周期、能源与银行。关注全球风险开关，香港最主要的高频驱动。'),
+    'Q3': ('Sticky inflation into slowing growth — the dangerous regime; defend capital, lean on domestic cushions and watch the HKD peg.', '通胀粘性叠加增长放缓 — 最危险的周期；保住本金，依靠本地防御股并紧盯港元联汇。'),
+    'Q4': ('A growth scare with cooling inflation — lean defensive; SOE staples &amp; telecom over high-beta tech.', '增长恐慌伴随通胀降温 — 偏防御；国企必需消费与电信优于高贝塔科技。')
+  } %}
+  <div class="panel span12 cmd-hero" id="regime-radar">
+    {% if market_state %}
+    {% set ms = market_state %}
+    {% set board = {
+      'eyebrow_help_en': "What kind of HK market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite (the 12-leg RORO composite, heavily global), the volatility regime (VHSI + HIBOR funding), market breadth, HKMA/peg liquidity, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction — every leg reads what has ALREADY turned, not a forecast. DISPLAY-ONLY: a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.",
+      'eyebrow_help_zh': "当前是什么样的港股市场 — 一个把多周期大盘趋势、跨资产风险偏好（12 腿 RORO 综合，高度全球化）、波动率环境（VHSI＋HIBOR 资金）、市场广度、金管局／联汇流动性，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测 — 每条腿读取的是已经转向的东西，而非预测。仅供展示：它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。",
+      'tape_title_en': "Multi-timeframe tape · the broad HK market", 'tape_title_zh': "多周期趋势 · 港股大盘",
+      'tape_help_en': "One non-duplicated tape read: confluence shows whether the major HK indices agree across timeframes, while the Hang Seng technical chart keeps the detailed daily / 3-day / weekly RSI, Stochastics and MACD view.",
+      'tape_help_zh': "一个不重复的大盘读数：合流标签显示香港主要指数在多周期上是否一致；恒生技术图保留日线、3日、周线 RSI、随机指标与 MACD 细节。",
+      'divider_en': "Macro backdrop — the growth × inflation regime", 'divider_zh': "宏观背景 — 增长 × 通胀周期",
+      'show_benchmark_mtf': True,
+      'compact_tape': True
+    } %}
+    {% endif %}
+    {# ===== ONE side-by-side board: Market State (left) + the HK regime backdrop (right) ===== #}
+    <div class="ms-front{% if market_state %} ms ms-{{ market_state.color }}{% endif %}">
+    {% if market_state %}{% include "_market_state_board.html.j2" %}{% endif %}
+    <div class="hero-bar">
+      <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
+      <div class="hero-loc">
+        <div class="loc-axes"><span>{{ t('GROWTH','增长') }} ↑</span><span>{{ t('INFL','通胀') }} →</span></div>
+        <div class="qmini">
+          <span class="qm{{ ' on' if latest.quad == 'Q1' }}" style="--qc:var(--q1)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q2' }}" style="--qc:var(--q2)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q4' }}" style="--qc:var(--q4)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q3' }}" style="--qc:var(--q3)"></span>
+        </div>
+      </div>
+      <!-- CENTER — headline regime + plain-English standfirst -->
+      <div class="hero-main">
+        <div class="hero-eyebrow"><span class="num">{{ latest.date }}</span> · {{ t('HONG KONG REGIME', '香港周期') }}
+          · <span class="num {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ t('G','增') }} {{ '%+.2f'|format(latest.growth_score) }}</span>
+          <span class="num {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ t('I','胀') }} {{ '%+.2f'|format(latest.inflation_score) }}</span>
+          · <span class="num">{{ (latest.confidence*100)|round|int }}%</span> {{ t('agree','一致') }}
+          {{ help("Four regimes from growth and inflation. HK also needs the global-risk overlay because it is highly externally sensitive.", "增长与通胀组成四种周期。香港对外部因素敏感，还要结合全球风险开关。") }}
+        </div>
+        <div class="hero-regime">
+          <span class="hr-dot" style="background:var(--q{{ latest.quad[1] }});box-shadow:0 0 14px var(--q{{ latest.quad[1] }})"></span>
+          <h1 class="hr-name">{{ td(latest.quad_name) }}</h1>
+        </div>
+        <p class="hero-says">{{ t(_ol[latest.quad][0], _ol[latest.quad][1]) }}</p>
+        {% if latest.pending_quad in ['Q1','Q2','Q3','Q4'] and latest.pending_days %}
+        <p class="hero-says" style="margin-top:7px;color:var(--warn)">⚠️ {{ t('Regime watch', '周期预警') }}: {{ t('evidence is building toward', '证据正在累积，指向') }} <b>{{ td({'Q1':'Goldilocks','Q2':'Reflation','Q3':'Stagflation','Q4':'Growth scare'}[latest.pending_quad]) }}</b> ({{ latest.pending_days }}{{ t('d so far; flips after 7', ' 天；第7天翻转') }})</p>{% endif %}
+      </div>
+      <!-- RIGHT — vitals strip: HK's native drivers -->
+      <div class="hero-vitals">
+        {% if gv and gv.state %}
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('GLOBAL RISK', '全球风险') }}</span>
+            {{ help("HK is highly sensitive to global risk. Risk-on helps high-beta names; risk-off favours cushions.", "香港对全球风险很敏感。风险偏好利好高贝塔；风险规避偏向缓冲股。") }}</div>
+          <span class="v-chip {{ 'tone-up' if gv.state=='Risk-on' else ('tone-down' if gv.state=='Risk-off' else '') }}">{{ td(gv.state) }}</span>
+          <span class="v-mean">{{ t("HK's primary driver", '香港主驱动') }}</span>
+        </div>
+        {% if gv.peg %}
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('HKD PEG', '港元联汇') }}</span>
+            {{ help("USD/HKD peg band. Near the weak side, funding stress can rise.", "美元/港元联系汇率区间。接近弱方时，资金压力可能上升。") }}</div>
+          <span class="v-num num-lg">{{ '%.4f'|format(gv.peg.level) }}</span>
+          <span class="v-mean">{{ t('7.75 strong ↔ 7.85 weak', '7.75 强 ↔ 7.85 弱') }} · {{ td(gv.peg.state) }}</span>
+        </div>
+        {% else %}
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span></div>
+          <span class="v-num num-lg">{{ (latest.confidence*100)|round|int }}<small>%</small></span>
+          <span class="v-meter" style="--p:{{ (latest.confidence*100)|round|int }}%;--mc:{{ 'var(--up)' if latest.confidence>=0.45 else ('var(--warn)' if latest.confidence>=0.30 else 'var(--down)') }}"></span>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span></div>
+          <span class="v-num num-lg">{{ (latest.confidence*100)|round|int }}<small>%</small></span>
+          <span class="v-meter" style="--p:{{ (latest.confidence*100)|round|int }}%;--mc:{{ 'var(--up)' if latest.confidence>=0.45 else ('var(--warn)' if latest.confidence>=0.30 else 'var(--down)') }}"></span>
+        </div>
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('GROWTH', '增长') }}</span></div>
+          <span class="v-num num-lg {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</span>
+          <span class="v-mean">{{ t('falling ↔ rising', '下行 ↔ 上行') }}</span>
+        </div>
+        {% endif %}
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('DUAL LIQUIDITY', '双重流动性') }}</span>
+            {{ help("Combines Mainland liquidity, Fed/peg liquidity and southbound flow.", "结合内地流动性、联汇传导的美联储流动性与南向资金。") }}</div>
+          <span class="v-chip liq-{{ latest.liquidity_overlay }}">{{ td(latest.liquidity_overlay) }}</span>
+          <span class="v-mean">{{ t('PBoC + Fed-via-peg + southbound', '央行＋联汇传导＋南向') }}</span>
+        </div>
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('CYCLE', '商业周期') }}</span>
+            {{ help("Business-cycle position — the slower-moving multi-year backdrop. Context for patience, not a trade trigger.", "商业周期位置 — 变化更慢的多年期背景。决定耐心，而非交易触发。") }}</div>
+          <span class="v-chip">{{ td(latest.cycle_tag) }}</span>
+          <span class="v-mean">{{ t('multi-year backdrop', '多年期背景') }}{% if vhsi %} · {{ t('VHSI','恒指波幅') }} {{ vhsi.level }}{% endif %}</span>
+        </div>
+      </div>
+    </div>
+    </div>{# /.ms-front — close the side-by-side board #}
+    {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
+  </div>
+  {% endif %}{# /mode != stocks — Market State front board #}
+
+  {# ===================== HK COMMAND PANEL — actionable synthesis, sits directly below the Market State front board (macro mode only) =====================
      Fuses 7 Neural Web organs into one combustibility view.
      DISPLAY-ONLY CONTEXT — NOT a buy/sell signal. Deterministic tally, no LLM score.
      "context, not a signal / 参考，非买卖信号"
@@ -1881,109 +1987,6 @@
   {% endif %}
 
   {% if mode != 'stocks' %}
-  <!-- ===================== HK REGIME — command-center hero ===================== -->
-  {% set _ol = {
-    'Q1': ('Falling inflation with steady growth — the friendliest backdrop for HK internet, tech &amp; quality. China earnings set the cycle; the global risk overlay sets the tape.', '通胀回落、增长平稳 — 对香港互联网、科技与质量最友好的环境。中国盈利决定周期，全球风险开关决定盘面。'),
-    'Q2': ('Growth and inflation both firming — favour H-share cyclicals, energy and banks. Watch the global risk overlay, HK\'s primary high-frequency driver.', '增长与通胀同步走强 — 偏好 H 股周期、能源与银行。关注全球风险开关，香港最主要的高频驱动。'),
-    'Q3': ('Sticky inflation into slowing growth — the dangerous regime; defend capital, lean on domestic cushions and watch the HKD peg.', '通胀粘性叠加增长放缓 — 最危险的周期；保住本金，依靠本地防御股并紧盯港元联汇。'),
-    'Q4': ('A growth scare with cooling inflation — lean defensive; SOE staples &amp; telecom over high-beta tech.', '增长恐慌伴随通胀降温 — 偏防御；国企必需消费与电信优于高贝塔科技。')
-  } %}
-  <div class="panel span12 cmd-hero" id="regime-radar">
-    {% if market_state %}
-    {% set ms = market_state %}
-    {% set board = {
-      'eyebrow_help_en': "What kind of HK market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite (the 12-leg RORO composite, heavily global), the volatility regime (VHSI + HIBOR funding), market breadth, HKMA/peg liquidity, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction — every leg reads what has ALREADY turned, not a forecast. DISPLAY-ONLY: a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.",
-      'eyebrow_help_zh': "当前是什么样的港股市场 — 一个把多周期大盘趋势、跨资产风险偏好（12 腿 RORO 综合，高度全球化）、波动率环境（VHSI＋HIBOR 资金）、市场广度、金管局／联汇流动性，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测 — 每条腿读取的是已经转向的东西，而非预测。仅供展示：它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。",
-      'tape_title_en': "Multi-timeframe tape · the broad HK market", 'tape_title_zh': "多周期趋势 · 港股大盘",
-      'tape_help_en': "One non-duplicated tape read: confluence shows whether the major HK indices agree across timeframes, while the Hang Seng technical chart keeps the detailed daily / 3-day / weekly RSI, Stochastics and MACD view.",
-      'tape_help_zh': "一个不重复的大盘读数：合流标签显示香港主要指数在多周期上是否一致；恒生技术图保留日线、3日、周线 RSI、随机指标与 MACD 细节。",
-      'divider_en': "Macro backdrop — the growth × inflation regime", 'divider_zh': "宏观背景 — 增长 × 通胀周期",
-      'show_benchmark_mtf': True,
-      'compact_tape': True
-    } %}
-    {% endif %}
-    {# ===== ONE side-by-side board: Market State (left) + the HK regime backdrop (right) ===== #}
-    <div class="ms-front{% if market_state %} ms ms-{{ market_state.color }}{% endif %}">
-    {% if market_state %}{% include "_market_state_board.html.j2" %}{% endif %}
-    <div class="hero-bar">
-      <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
-      <div class="hero-loc">
-        <div class="loc-axes"><span>{{ t('GROWTH','增长') }} ↑</span><span>{{ t('INFL','通胀') }} →</span></div>
-        <div class="qmini">
-          <span class="qm{{ ' on' if latest.quad == 'Q1' }}" style="--qc:var(--q1)"></span>
-          <span class="qm{{ ' on' if latest.quad == 'Q2' }}" style="--qc:var(--q2)"></span>
-          <span class="qm{{ ' on' if latest.quad == 'Q4' }}" style="--qc:var(--q4)"></span>
-          <span class="qm{{ ' on' if latest.quad == 'Q3' }}" style="--qc:var(--q3)"></span>
-        </div>
-      </div>
-      <!-- CENTER — headline regime + plain-English standfirst -->
-      <div class="hero-main">
-        <div class="hero-eyebrow"><span class="num">{{ latest.date }}</span> · {{ t('HONG KONG REGIME', '香港周期') }}
-          · <span class="num {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ t('G','增') }} {{ '%+.2f'|format(latest.growth_score) }}</span>
-          <span class="num {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ t('I','胀') }} {{ '%+.2f'|format(latest.inflation_score) }}</span>
-          · <span class="num">{{ (latest.confidence*100)|round|int }}%</span> {{ t('agree','一致') }}
-          {{ help("Four regimes from growth and inflation. HK also needs the global-risk overlay because it is highly externally sensitive.", "增长与通胀组成四种周期。香港对外部因素敏感，还要结合全球风险开关。") }}
-        </div>
-        <div class="hero-regime">
-          <span class="hr-dot" style="background:var(--q{{ latest.quad[1] }});box-shadow:0 0 14px var(--q{{ latest.quad[1] }})"></span>
-          <h1 class="hr-name">{{ td(latest.quad_name) }}</h1>
-        </div>
-        <p class="hero-says">{{ t(_ol[latest.quad][0], _ol[latest.quad][1]) }}</p>
-        {% if latest.pending_quad in ['Q1','Q2','Q3','Q4'] and latest.pending_days %}
-        <p class="hero-says" style="margin-top:7px;color:var(--warn)">⚠️ {{ t('Regime watch', '周期预警') }}: {{ t('evidence is building toward', '证据正在累积，指向') }} <b>{{ td({'Q1':'Goldilocks','Q2':'Reflation','Q3':'Stagflation','Q4':'Growth scare'}[latest.pending_quad]) }}</b> ({{ latest.pending_days }}{{ t('d so far; flips after 7', ' 天；第7天翻转') }})</p>{% endif %}
-      </div>
-      <!-- RIGHT — vitals strip: HK's native drivers -->
-      <div class="hero-vitals">
-        {% if gv and gv.state %}
-        <div class="vital">
-          <div class="v-top"><span class="v-label">{{ t('GLOBAL RISK', '全球风险') }}</span>
-            {{ help("HK is highly sensitive to global risk. Risk-on helps high-beta names; risk-off favours cushions.", "香港对全球风险很敏感。风险偏好利好高贝塔；风险规避偏向缓冲股。") }}</div>
-          <span class="v-chip {{ 'tone-up' if gv.state=='Risk-on' else ('tone-down' if gv.state=='Risk-off' else '') }}">{{ td(gv.state) }}</span>
-          <span class="v-mean">{{ t("HK's primary driver", '香港主驱动') }}</span>
-        </div>
-        {% if gv.peg %}
-        <div class="vital">
-          <div class="v-top"><span class="v-label">{{ t('HKD PEG', '港元联汇') }}</span>
-            {{ help("USD/HKD peg band. Near the weak side, funding stress can rise.", "美元/港元联系汇率区间。接近弱方时，资金压力可能上升。") }}</div>
-          <span class="v-num num-lg">{{ '%.4f'|format(gv.peg.level) }}</span>
-          <span class="v-mean">{{ t('7.75 strong ↔ 7.85 weak', '7.75 强 ↔ 7.85 弱') }} · {{ td(gv.peg.state) }}</span>
-        </div>
-        {% else %}
-        <div class="vital">
-          <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span></div>
-          <span class="v-num num-lg">{{ (latest.confidence*100)|round|int }}<small>%</small></span>
-          <span class="v-meter" style="--p:{{ (latest.confidence*100)|round|int }}%;--mc:{{ 'var(--up)' if latest.confidence>=0.45 else ('var(--warn)' if latest.confidence>=0.30 else 'var(--down)') }}"></span>
-        </div>
-        {% endif %}
-        {% else %}
-        <div class="vital">
-          <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span></div>
-          <span class="v-num num-lg">{{ (latest.confidence*100)|round|int }}<small>%</small></span>
-          <span class="v-meter" style="--p:{{ (latest.confidence*100)|round|int }}%;--mc:{{ 'var(--up)' if latest.confidence>=0.45 else ('var(--warn)' if latest.confidence>=0.30 else 'var(--down)') }}"></span>
-        </div>
-        <div class="vital">
-          <div class="v-top"><span class="v-label">{{ t('GROWTH', '增长') }}</span></div>
-          <span class="v-num num-lg {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</span>
-          <span class="v-mean">{{ t('falling ↔ rising', '下行 ↔ 上行') }}</span>
-        </div>
-        {% endif %}
-        <div class="vital">
-          <div class="v-top"><span class="v-label">{{ t('DUAL LIQUIDITY', '双重流动性') }}</span>
-            {{ help("Combines Mainland liquidity, Fed/peg liquidity and southbound flow.", "结合内地流动性、联汇传导的美联储流动性与南向资金。") }}</div>
-          <span class="v-chip liq-{{ latest.liquidity_overlay }}">{{ td(latest.liquidity_overlay) }}</span>
-          <span class="v-mean">{{ t('PBoC + Fed-via-peg + southbound', '央行＋联汇传导＋南向') }}</span>
-        </div>
-        <div class="vital">
-          <div class="v-top"><span class="v-label">{{ t('CYCLE', '商业周期') }}</span>
-            {{ help("Business-cycle position — the slower-moving multi-year backdrop. Context for patience, not a trade trigger.", "商业周期位置 — 变化更慢的多年期背景。决定耐心，而非交易触发。") }}</div>
-          <span class="v-chip">{{ td(latest.cycle_tag) }}</span>
-          <span class="v-mean">{{ t('multi-year backdrop', '多年期背景') }}{% if vhsi %} · {{ t('VHSI','恒指波幅') }} {{ vhsi.level }}{% endif %}</span>
-        </div>
-      </div>
-    </div>
-    </div>{# /.ms-front — close the side-by-side board #}
-    {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
-  </div>
 
   <!-- ===================== HIGH-IMPACT EVENT-RISK BANNER (macro) ===================== -->
   {% if event_strip %}
