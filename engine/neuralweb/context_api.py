@@ -1,5 +1,13 @@
 """engine.neuralweb.context_api — Context Snapshot PIT API (NW-CI W2, R-CI4).
 
+CLASSIFICATION: research-side query API — no nightly caller by design.
+Consumers are future pre-registered context studies (analogous to
+engine/neuralweb/alpha_grammar.py and engine/neuralweb/alpha_overlap.py which
+are likewise query-only research utilities with zero nightly import paths).
+This module is NOT wired into daily.yml and does NOT appear in the nightly
+engine job.  It is imported directly by ad-hoc research notebooks, study
+scripts, and future context-layer analysis pipelines when needed.
+
 TIER: display/context — READ-ONLY.  Never computes new signals, scores,
 ranks, sizes, gates, or raises attention floors.  This is the "amassed
 context" substrate (R-CI4) consumed by lobes, studies, and cortex tools.

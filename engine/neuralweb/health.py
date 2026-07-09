@@ -269,7 +269,10 @@ def _derive_run_status_legacy(memo: dict) -> dict:
     tcc = memo.get("tool_call_census") or {}
     has_tools = bool(tcc) and not (len(tcc) == 1 and "fallback_call" in tcc)
     return {
-        "status": "warn" if has_tools else "degraded",
+        # Legacy normal run (has_tools=True) maps to 'ok', not 'warn', so the
+        # health rollup sees it as fresh — 'warn' is reserved for PR-A partial runs
+        # (model_fallback, context_stale) that need operator attention.
+        "status": "ok" if has_tools else "degraded",
         "degraded": not has_tools,
         "degradation_reason": "zero_tool_calls" if not has_tools else None,
         "provider_attempts": [],
@@ -302,7 +305,16 @@ def _cortex_section(root: Path, cortex_source: str = "previous_run") -> dict:
         run_status = raw_rs if raw_rs else _derive_run_status_legacy(memo)
         out["run_status"] = run_status
         degraded = run_status.get("degraded", False)
-        out["status"] = "degraded" if degraded else "fresh"
+        rs_status = run_status.get("status", "ok")
+        # Honesty law: a fallback-model run sets degraded=False but status='warn'.
+        # Map any non-ok run_status (warn = model_fallback, context_stale, budget)
+        # to lobe status 'warn' so health/brief rollups surface it.
+        if degraded:
+            out["status"] = "degraded"
+        elif rs_status == "warn":
+            out["status"] = "warn"
+        else:
+            out["status"] = "fresh"
     else:
         out["status"] = "missing"
 
@@ -366,8 +378,8 @@ def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "worl
     warn     — stale or fresh_partial present, cortex not degraded
     degraded — cortex degraded OR world_state missing/stale OR any core lobe missing
     """
-    cortex_degraded = cortex.get("status") == "degraded"
-    if cortex_degraded:
+    cortex_status = cortex.get("status", "unknown")
+    if cortex_status == "degraded":
         return "degraded"
 
     lobe_map = {r["id"]: r for r in lobes}
@@ -379,6 +391,10 @@ def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "worl
     any_missing = any(r["status"] == "missing" for r in lobes)
     if any_missing:
         return "degraded"
+
+    # cortex status='warn' (model_fallback, context_stale, budget) elevates overall to warn
+    if cortex_status == "warn":
+        return "warn"
 
     any_bad = any(r["status"] in ("stale", "fresh_partial", "degraded") for r in lobes)
     if any_bad:

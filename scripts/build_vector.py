@@ -1872,7 +1872,7 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
         card("com", "◆", "Commodity Vector", "大宗商品向量", "Commodities", "商品", com, "Allocation & shock detection", "配置与冲击检测", "commodities.html"),
         card("fx", "💱", "Forex Vector", "外汇向量", "Forex", "外汇", fx, "Dollar-smile currency board", "美元微笑货币面板", "forex.html"),
     ]
-    return ('<div class="band"><h2>' + _bi("Vectors & strategies", "向量与策略") + '</h2><span class="ln"></span></div>'
+    return ('<div class="band"><h2>' + _bi("Other Features", "其他功能") + '</h2><span class="ln"></span></div>'
             '<div class="nav vc reveal">' + "".join(cards) + '</div>')
 
 

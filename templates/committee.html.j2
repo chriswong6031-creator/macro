@@ -193,6 +193,35 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 .plain-eng { background:color-mix(in srgb,var(--link) 8%,var(--panel2)); border-left:3px solid var(--link); border-radius:0 9px 9px 0; padding:12px 16px; margin:14px 0; font-size:13.5px; line-height:1.65; }
 .plain-eng strong { color:var(--link); }
 
+/* ── Today's Read card (PR-4 M1) ── */
+.tr-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:16px; }
+.tr-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.tr-title { font-size:16px; font-weight:800; letter-spacing:-.01em; }
+.tr-asof { font-size:11px; color:var(--muted); }
+.tr-tape { border-left:3px solid var(--link); background:color-mix(in srgb,var(--link) 7%,var(--panel2)); border-radius:0 9px 9px 0; padding:10px 14px; margin-bottom:12px; }
+.tr-tape-primary { font-size:14px; font-weight:700; line-height:1.4; }
+.tr-tape-legs { font-size:12px; color:var(--muted); margin-top:4px; }
+.tr-tape-alts { font-size:12px; color:var(--muted); margin-top:2px; }
+.tr-regime { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; align-items:center; }
+.tr-regime-chip { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:20px; background:var(--panel2); border:1px solid var(--line); font-size:12px; font-weight:600; }
+.tr-regime-conf { font-size:11px; color:var(--muted); }
+.tr-regime-low { border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); }
+.tr-regime-low .tr-regime-chip { color:var(--warn); }
+.tr-section-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:5px; }
+.tr-item { display:flex; align-items:baseline; gap:7px; padding:5px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent); font-size:13px; }
+.tr-item:last-child { border-bottom:none; }
+.tr-sev { font-size:10px; font-weight:700; padding:2px 6px; border-radius:5px; flex:none; }
+.tr-sev-P1 { background:color-mix(in srgb,var(--down) 18%,var(--panel2)); color:var(--down); }
+.tr-sev-P2 { background:color-mix(in srgb,var(--warn) 18%,var(--panel2)); color:var(--warn,#e6a817); }
+.tr-sev-P3 { background:var(--panel2); color:var(--muted); }
+.tr-attn-block { margin-bottom:12px; }
+.tr-contra-block { margin-bottom:12px; }
+.tr-stale-count { font-size:12px; color:var(--muted); margin-bottom:10px; }
+.tr-degraded-line { font-size:12px; color:var(--warn,#e6a817); padding:6px 10px; border-radius:7px; background:color-mix(in srgb,var(--warn) 10%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); display:none; }
+.tr-degraded-line.visible { display:block; }
+.tr-loading { font-size:13px; color:var(--muted); padding:8px 0; }
+.tr-empty { font-size:13px; color:var(--muted); font-style:italic; }
+
 /* ── Lazy sections ── */
 .section-lazy { opacity:0; transform:translateY(14px); transition:opacity .35s ease,transform .35s ease; }
 .section-lazy.visible { opacity:1; transform:none; }
@@ -235,6 +264,66 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 
 <!-- Main content (hidden until auth) -->
 <div id="cm_content">
+
+  <!-- 0. TODAY'S READ / 今日读数 (PR-4 M1) -->
+  <div class="tr-card section-lazy" id="tr_card_section">
+    <div class="tr-header">
+      <div class="tr-title">
+        <span class="l-en">Today's Read</span>
+        <span class="l-zh">今日读数</span>
+        <span class="is-context-badge" style="margin-left:8px">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+      </div>
+      <div class="tr-asof" id="tr_asof">—</div>
+    </div>
+    <div class="tr-loading" id="tr_loading">
+      <span class="l-en">Loading…</span><span class="l-zh">加载中…</span>
+    </div>
+    <div id="tr_body" style="display:none">
+      <!-- Tape attribution -->
+      <div class="tr-section-label">
+        <span class="l-en">Why the tape moved</span>
+        <span class="l-zh">行情变动原因</span>
+      </div>
+      <div class="tr-tape" id="tr_tape">
+        <div class="tr-tape-primary" id="tr_tape_primary"></div>
+        <div class="tr-tape-legs" id="tr_tape_legs"></div>
+        <div class="tr-tape-alts" id="tr_tape_alts"></div>
+      </div>
+      <!-- Regime -->
+      <div class="tr-section-label">
+        <span class="l-en">Regime</span>
+        <span class="l-zh">周期</span>
+      </div>
+      <div class="tr-regime" id="tr_regime_row">
+        <div class="tr-regime-chip" id="tr_regime_chip">—</div>
+        <span class="tr-regime-conf" id="tr_regime_conf"></span>
+      </div>
+      <!-- Top contradictions -->
+      <div class="tr-contra-block" id="tr_contra_block" style="display:none">
+        <div class="tr-section-label">
+          <span class="l-en">Contradictions</span>
+          <span class="l-zh">矛盾项</span>
+        </div>
+        <div id="tr_contra_list"></div>
+      </div>
+      <!-- Deterministic attention items -->
+      <div class="tr-attn-block" id="tr_attn_block" style="display:none">
+        <div class="tr-section-label">
+          <span class="l-en">Operator attention</span>
+          <span class="l-zh">操作人员注意</span>
+        </div>
+        <div id="tr_attn_list"></div>
+      </div>
+      <!-- Stale lobe count -->
+      <div class="tr-stale-count" id="tr_stale_count" style="display:none"></div>
+      <!-- LLM deliberation status line (demoted from dominating banner) -->
+      <div class="tr-degraded-line" id="tr_cortex_status"></div>
+    </div>
+    <div id="tr_error" style="display:none;font-size:12px;color:var(--muted)">
+      <span class="l-en">Today's Read unavailable.</span>
+      <span class="l-zh">今日读数暂不可用。</span>
+    </div>
+  </div>
 
   <!-- 1. HERO -->
   <div class="nw-hero section-lazy" id="cm_hero_section">
@@ -538,6 +627,18 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     </div>
   </div>
 
+  <!-- 9. POLICY-PUT DOCTRINE -->
+  <div class="panel section-lazy" id="cm_policy_doctrine_section">
+    <div class="panel-head">
+      <h1>{{ t('Policy-Put Doctrine', '政策托底守则') }}</h1>
+      <span class="is-context-badge">{{ t('2026-07', '2026-07') }}</span>
+    </div>
+    <div class="plain-eng">
+      <span class="l-en">In a regime where a single actor can reprice expectations intraday, direction is not forecastable — only conditions are. (1) Never short the admin-favored complex without a pre-stated falsifier level and defined risk; being right about the destination does not protect you from the path. (2) Treat defensive leadership as a rental, not a residence — trim into strength when reversal conditions are armed. (3) On shock days the correct engine move is de-escalation: discount stale ranks, defer fresh entries, and wait for T+1 confirmation before chasing or fading. (4) No surface in this system predicts policy timing or reads intent; the midterm-blackout audit (BTC D1–D5) stands as precedent that conviction may never be laundered into sizing.</span>
+      <span class="l-zh">当单一行为体可以在日内重定价市场预期时，方向不可预测——只有条件可以评估。（1）没有事先声明的证伪价位与限定风险，绝不做空政府偏好的板块；看对终点并不能保护你扛过路径。（2）把防御板块的领涨当作"租借"而非"常驻"——当反转条件进入待命状态时，应逢强减仓。（3）冲击日里引擎的正确动作是降级：对陈旧排名打折、推迟新入场，等待T+1确认后再决定追或退。（4）本系统任何界面都不预测政策时点、不解读意图；中期选举封锁期审计（BTC D1–D5）作为判例：主观信念永远不得偷渡进仓位决策。</span>
+    </div>
+  </div>
+
 </div><!-- #cm_content -->
 
 <script src="supabase.js"></script>
@@ -611,6 +712,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     setupSearch();
     setupLazyReveal();
     loadGraph();
+    loadTodaysRead();
     loadDailyBrief();
     loadMechanismPathways();
     loadMemo();
@@ -2788,6 +2890,174 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       canvas.addEventListener('click', function(){ drawFrame(performance.now()); });
       canvas.addEventListener('wheel', function(){ drawFrame(performance.now()); });
     }
+  }
+
+  // ── PR-4 M1: Today's Read / 今日读数 ─────────────────────────────────────
+  // Composes from daily_brief.json (tape attribution, contradictions, stale) +
+  // attention_deterministic.json (deterministic operator attention items).
+  // Degrades gracefully: missing attention file → shows only brief data.
+  function loadTodaysRead() {
+    var loadEl  = document.getElementById('tr_loading');
+    var bodyEl  = document.getElementById('tr_body');
+    var errEl   = document.getElementById('tr_error');
+    var asofEl  = document.getElementById('tr_asof');
+
+    var escB = function (s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    };
+
+    var lang = document.documentElement.getAttribute('data-lang') || '';
+
+    Promise.all([
+      fetch('neuralwebdata/daily_brief.json').then(function (r) {
+        if (!r.ok) throw new Error('daily_brief HTTP ' + r.status);
+        return r.json();
+      }),
+      fetch('neuralwebdata/attention_deterministic.json').then(function (r) {
+        if (!r.ok) return null;
+        return r.json();
+      }).catch(function () { return null; })
+    ]).then(function (results) {
+      var brief = results[0];
+      var attn  = results[1];
+
+      if (loadEl) loadEl.style.display = 'none';
+      if (bodyEl) bodyEl.style.display = '';
+
+      var asOf = (brief.as_of || '').slice(0, 10);
+      if (asofEl) asofEl.textContent = asOf || '';
+
+      // ── Tape attribution ──
+      var tape = brief.why_the_tape_moved || {};
+      var primary = tape.primary || {};
+      var tapeEl = document.getElementById('tr_tape');
+      var tapePrimaryEl = document.getElementById('tr_tape_primary');
+      var tapeLegsEl = document.getElementById('tr_tape_legs');
+      var tapeAltsEl = document.getElementById('tr_tape_alts');
+
+      if (tape.available && primary.direction) {
+        if (tapePrimaryEl) tapePrimaryEl.textContent = escB(primary.direction);
+        var legs = primary.evidence_legs || [];
+        if (tapeLegsEl && legs.length) {
+          tapeLegsEl.innerHTML = '<span class="l-en">Evidence: </span><span class="l-zh">证据：</span>'
+            + escB(legs.join(' · '));
+        }
+        var alts = tape.alternates || [];
+        if (tapeAltsEl && alts.length) {
+          tapeAltsEl.innerHTML = '<span class="l-en">Alternates: </span><span class="l-zh">备选：</span>'
+            + escB(alts.join(', '));
+        }
+        if (tapeEl) tapeEl.style.display = '';
+      } else {
+        if (tapeEl) { tapeEl.style.borderLeftColor = 'var(--muted)'; }
+        if (tapePrimaryEl) tapePrimaryEl.innerHTML =
+          '<span class="l-en" style="color:var(--muted)">No tape attribution available</span>'
+          + '<span class="l-zh" style="color:var(--muted)">无行情归因可用</span>';
+      }
+
+      // ── Regime ──
+      // Note: regime is in world_state, not daily_brief. We display from attention_deterministic
+      // items if regime_indeterminate is present; otherwise just mark ok.
+      var regimeChipEl = document.getElementById('tr_regime_chip');
+      var regimeConfEl = document.getElementById('tr_regime_conf');
+      var regimeRowEl  = document.getElementById('tr_regime_row');
+      // We get regime info from attention items (rule C fires when low confidence)
+      var regimeItem = null;
+      if (attn && attn.items) {
+        attn.items.forEach(function (it) {
+          if (it.kind === 'regime_indeterminate') regimeItem = it;
+        });
+      }
+      if (regimeItem) {
+        if (regimeChipEl) {
+          regimeChipEl.textContent = '';
+          regimeChipEl.innerHTML = '<span class="l-en" style="color:var(--warn,#e6a817)">'
+            + escB(regimeItem.summary_en) + '</span>'
+            + '<span class="l-zh" style="color:var(--warn,#e6a817)">'
+            + escB(regimeItem.summary_zh) + '</span>';
+        }
+        if (regimeRowEl) regimeRowEl.classList.add('tr-regime-low');
+      } else {
+        // Regime ok — no low-confidence flag; show placeholder
+        if (regimeChipEl) regimeChipEl.innerHTML =
+          '<span class="l-en" style="color:var(--muted)">Regime: no indeterminate flag</span>'
+          + '<span class="l-zh" style="color:var(--muted)">周期：无不确定性标记</span>';
+      }
+
+      // ── Contradictions (from what_contradicted in daily_brief) ──
+      var contras = (brief.what_contradicted || []).filter(function (c) {
+        return c.severity === 'tension' || c.severity === 'P2';
+      });
+      var contraBlockEl = document.getElementById('tr_contra_block');
+      var contraListEl  = document.getElementById('tr_contra_list');
+      if (contraBlockEl && contraListEl && contras.length) {
+        var contraHtml = contras.slice(0, 3).map(function (c) {
+          return '<div class="tr-item">'
+            + '<span class="tr-sev tr-sev-P2">tension</span>'
+            + '<span>' + escB(c.summary || c.id || '') + '</span>'
+            + '</div>';
+        }).join('');
+        contraListEl.innerHTML = contraHtml;
+        contraBlockEl.style.display = '';
+      }
+
+      // ── Deterministic attention items (excluding regime_indeterminate shown above) ──
+      var attnItems = attn && attn.items ? attn.items.filter(function (it) {
+        return it.kind !== 'regime_indeterminate';
+      }) : [];
+      var attnBlockEl = document.getElementById('tr_attn_block');
+      var attnListEl  = document.getElementById('tr_attn_list');
+      if (attnBlockEl && attnListEl && attnItems.length) {
+        var attnHtml = attnItems.slice(0, 5).map(function (it) {
+          var sevClass = 'tr-sev-' + (it.severity || 'P3');
+          var sum = lang === 'zh' ? (it.summary_zh || it.summary_en) : it.summary_en;
+          return '<div class="tr-item">'
+            + '<span class="tr-sev ' + escB(sevClass) + '">' + escB(it.severity || '') + '</span>'
+            + '<span>' + escB(sum || '') + '</span>'
+            + '</div>';
+        }).join('');
+        attnListEl.innerHTML = attnHtml;
+        attnBlockEl.style.display = '';
+      }
+
+      // ── Stale lobes (from what_is_stale) ──
+      var staleItems = brief.what_is_stale || [];
+      var staleCountEl = document.getElementById('tr_stale_count');
+      if (staleCountEl && staleItems.length) {
+        staleCountEl.innerHTML =
+          '<span class="l-en">' + staleItems.length + ' stale lobe(s): '
+          + escB(staleItems.slice(0, 3).map(function (s) { return s.id || ''; }).join(', '))
+          + (staleItems.length > 3 ? '…' : '') + '</span>'
+          + '<span class="l-zh">' + staleItems.length + ' 个过期脉叶：'
+          + escB(staleItems.slice(0, 3).map(function (s) { return s.id || ''; }).join('、'))
+          + (staleItems.length > 3 ? '…' : '') + '</span>';
+        staleCountEl.style.display = '';
+      }
+
+      // ── Cortex deliberation status line (demoted from dominating banner) ──
+      // Replaces the page-dominating degraded treatment; logic from isMemoFailed()
+      // is preserved — honesty law (RUL-LIVE3) is maintained.
+      var cortexStatusEl = document.getElementById('tr_cortex_status');
+      var cortexDegraded = false;
+      if (attn && attn.items) {
+        attn.items.forEach(function (it) {
+          if (it.kind === 'cortex_degraded') cortexDegraded = true;
+        });
+      }
+      if (cortexStatusEl && cortexDegraded) {
+        cortexStatusEl.innerHTML =
+          '<span class="l-en"><strong>LLM deliberation: degraded</strong>'
+          + ' — the deterministic read above is unaffected.</span>'
+          + '<span class="l-zh"><strong>LLM审议：降级</strong>'
+          + ' — 以上确定性读数不受影响。</span>';
+        cortexStatusEl.classList.add('visible');
+      }
+
+    }).catch(function (err) {
+      if (loadEl) loadEl.style.display = 'none';
+      if (errEl) errEl.style.display = '';
+      console.warn('loadTodaysRead error:', err);
+    });
   }
 
   // ── PR-D: Neural Web Daily Brief ──────────────────────────────────────────

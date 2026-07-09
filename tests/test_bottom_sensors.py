@@ -936,3 +936,32 @@ class TestWiringConformance:
             "build_bottom_sensors must have a dag.yml entry "
             "(feat/nw-bottom-sensors-wiring wiring assertion)"
         )
+
+    # ── PR-2 shadow wiring assertions ─────────────────────────────────────────
+    def test_daily_yml_contains_mature_bottom_sensors_shadow(self):
+        """mature_bottom_sensors_shadow must be invoked in daily.yml after build_bottom_sensors."""
+        text = self.DAILY_YML.read_text()
+        assert "scripts.mature_bottom_sensors_shadow" in text, (
+            "scripts.mature_bottom_sensors_shadow must be invoked in daily.yml "
+            "(PR-2 wiring: shadow audit can never mature without nightly invocation)"
+        )
+
+    def test_dag_yml_contains_mature_bottom_sensors_shadow(self):
+        """mature_bottom_sensors_shadow must have a dag.yml entry."""
+        text = self.DAG_YML.read_text()
+        assert "mature_bottom_sensors_shadow" in text, (
+            "mature_bottom_sensors_shadow must have a dag.yml entry "
+            "(PR-2 wiring: dag-conformance CI requires it)"
+        )
+
+    def test_mature_shadow_wired_after_build_bottom_sensors(self):
+        """In daily.yml, mature_bottom_sensors_shadow must appear AFTER build_bottom_sensors."""
+        text = self.DAILY_YML.read_text()
+        pos_build = text.find("scripts.build_bottom_sensors")
+        pos_mature = text.find("scripts.mature_bottom_sensors_shadow")
+        assert pos_build != -1, "scripts.build_bottom_sensors not found in daily.yml"
+        assert pos_mature != -1, "scripts.mature_bottom_sensors_shadow not found in daily.yml"
+        assert pos_mature > pos_build, (
+            "mature_bottom_sensors_shadow must appear AFTER build_bottom_sensors in daily.yml "
+            "(shadow must mature AFTER the snapshot step that produces the book)"
+        )

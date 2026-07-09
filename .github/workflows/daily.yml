@@ -500,6 +500,7 @@ jobs:
           python -m scripts.backfill_regime_stamps > /tmp/backfill_regime_stamps.log 2>&1; rc=$?
           cat /tmp/backfill_regime_stamps.log
           [ "$rc" -ne 0 ] && echo "::warning title=backfill_regime_stamps::rc=$rc (non-fatal)"
+          exit 0  # PR-2 fix: missing exit 0 caused [ "$rc" -ne 0 ] to exit 1 when rc=0, skipping all downstream kernel steps
       - name: Sector-flip confirmation lens (Policy-Shock W1-C)
         # Detects violent defensive/offense spread flips (|z| >= 2.5 vs 252d), appends the
         # keep-first event ledger at data/flip_confirmation/events.jsonl, registers one
@@ -890,6 +891,10 @@ jobs:
         # data/neuralweb/spine_index.parquet + envelope sidecar. AFTER grade_us_board
         # (all graders incl. qledger grading in collect have run); BEFORE radar_plus block.
         # Exit 0 on partial gaps; 1 only on write failure. Resilient wrapper.
+        # if: always() — PR-2 fix: backfill_regime_stamps had a shell bug that caused it to
+        # exit 1 silently, skipping all downstream kernel steps; add guard so these run
+        # even if an upstream optional step fails.
+        if: always()
         run: |
           set +e
           python -m scripts.build_spine_index > /tmp/spine_index.log 2>&1; rc=$?
@@ -902,6 +907,7 @@ jobs:
         # Display-first: zero behavior-changing consumers; the quarterly FDR batch (PR2)
         # is the only path to behavior. Input: spine_index.parquet (only dependency).
         # Resilient wrapper: exits 0 on empty/thin data; 1 only on write failure.
+        if: always()
         run: |
           set +e
           python -m scripts.build_kernel_estimates > /tmp/kernel_estimates.log 2>&1; rc=$?
@@ -914,6 +920,7 @@ jobs:
         # and NW engine firing independence. Display-only; four independently-guarded
         # blocks; always exits 0. Writes data/neuralweb/covariance_spine.json +
         # site/neuralwebdata/covariance_spine.json + history parquet.
+        if: always()
         run: |
           set +e
           python -m scripts.build_covariance_spine > /tmp/covariance_spine.log 2>&1; rc=$?
@@ -925,6 +932,7 @@ jobs:
         # (lagging_signals.json). Both are display-only diagnostics; zero behavior-changing
         # consumers. Runs AFTER build_kernel_estimates (kernel_families reads its parquet).
         # Resilient wrapper: each sub-step fail-open; exits 0 unless both steps fail.
+        if: always()
         run: |
           set +e
           python -m scripts.build_kernel_diagnostics > /tmp/kernel_diagnostics.log 2>&1; rc=$?
@@ -941,6 +949,7 @@ jobs:
         # so a crashed job is distinguishable from a successful all-null result.
         # Expected honest outcome: all families null (track_record IC rises;
         # radar/us_board have <3 graded horizons).  Resilient wrapper (exit 0).
+        if: always()
         run: |
           set +e
           python -m scripts.build_kernel_half_lives > /tmp/kernel_half_lives.log 2>&1; rc=$?
@@ -1242,6 +1251,15 @@ jobs:
         # Benchmark: 2.29s on the full US universe (~1722 names, 2026-07-06).
         # Fail-soft: missing optional inputs degrade gracefully; never blocks the commit.
         run: python -m scripts.build_bottom_sensors || echo "::warning::build_bottom_sensors failed (non-fatal - keeping last committed bottom sensors)"
+      - name: mature bottom sensors shadow (Amendment-3 forward audit — display-only)
+        if: always()
+        # PR-2 wiring: grades elapsable decline_geometry/underwater_state descriptor snapshots
+        # against realized forward returns (Amendment 3 structural shadow, RUL-28).
+        # Runs AFTER build_bottom_sensors so today's snapshot is available.
+        # Output: site/shadow/bottom_sensors_geometry_audit.json (display-only; covered by
+        # 'git add site/' in 'commit engine outputs' below). Benchmark: 0.6s (2026-07-09).
+        # Fail-soft: empty until ~1-3 months of snapshots mature; always exits 0.
+        run: python -m scripts.mature_bottom_sensors_shadow || echo "::warning::mature_bottom_sensors_shadow failed (non-fatal)"
       - name: LT-4 thesis funnel history append (PR-A2 — nightly longitudinal store)
         if: always()
         # LT-4 thesis funnel longitudinal history — append-only per (ticker, snapshot_date).
@@ -1326,6 +1344,18 @@ jobs:
         # Fail-open: per-lobe exceptions produce status='unknown'; missing synapse.yml exits 0.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_neuralweb_health || echo "::warning::build_neuralweb_health failed (non-fatal) — keeping last committed health.json"
+      - name: check nw health escalation (M3 — persistent degradation detector)
+        if: always()
+        # M3 escalation organ: reads health.json + its own run-date-keyed ledger
+        # data/neuralweb/nw_health_run_history.jsonl (NOT daily_brief_history —
+        # that is as_of-keyed and collapses when upstream data freezes as_of).
+        # When overall_status==degraded or daily-cadence lobes are missing/stale
+        # beyond 1.5x SLA for >=3 consecutive nightly runs, dispatches an ops alert via
+        # the nw_health W6b lane (data/alert_triage/push_sent_nw_health.jsonl).
+        # cortex_source=previous_run is correct here: day-2 detection still holds.
+        # Fail-open: any failure exits 0, never blocks the pipeline.
+        # Ledger covered by 'git add data/' in 'commit engine outputs' below.
+        run: python -m scripts.check_nw_health_escalation || echo "::warning::check_nw_health_escalation failed (non-fatal)"
       - name: build neuralweb daily brief (PR-D — NW daily brief surface, engine phase)
         if: always()
         # PR-D two-phase brief: engine job writes phase='engine' after health.json is ready.
@@ -1333,6 +1363,14 @@ jobs:
         # Fail-open: any missing input → brief with explicit gap notes, exit 0.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_neuralweb_brief || echo "::warning::build_neuralweb_brief failed (non-fatal) — keeping last committed daily_brief.json"
+      - name: build attention_deterministic (PR-4 M2 — deterministic operator-attention items)
+        if: always()
+        # PR-4 M2: zero-LLM deterministic attention items from world_state + health + daily_brief.
+        # Five pre-registered rules: contradiction tension, lobe SLA breach, regime indeterminate,
+        # evidence clock overdue, cortex degraded. Fail-open: any missing input → empty-items artifact.
+        # Writes data/neuralweb/attention_deterministic.json + site/neuralwebdata/ mirror.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_attention_deterministic || echo "::warning::build_attention_deterministic failed (non-fatal) — keeping last committed attention_deterministic.json"
       - name: research_factory_monitor (W6 — paper monitor + nightly ledger)
         if: always()
         # Research Factory W6 (RF-8/RF-9/RF-10): paper monitor over all 'paper',
@@ -1633,8 +1671,8 @@ jobs:
           git add site/neuralwebdata/factor_intelligence_state.json
           git add data/factordata/factor_state_history.jsonl
           git add data/factordata/fire_coordinates.jsonl
-          git add data/neuralweb/factor_contradictions.jsonl
-          git add data/reflexes/factor_attention/firings.jsonl
+          git add data/neuralweb/factor_contradictions.jsonl || true  # dormant until panel backfill ≥60d; absent = expected
+          git add data/reflexes/factor_attention/firings.jsonl || true  # absent until first factor_attention firing
           git add site/factordata/dna_class.json
           if git diff --cached --quiet; then echo "no factor intelligence changes"; exit 0; fi
           git commit -m "factor-intelligence: nightly state artifact + pool $(date -u +%F)"
@@ -1845,6 +1883,12 @@ jobs:
     env:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Dedicated metered API key for the cortex job — decouples deliberation from
+      # the shared OAuth session quota (root cause of 429 rate_limit_error runs).
+      # OPERATOR ACTION: create a GitHub secret CORTEX_ANTHROPIC_API_KEY with a
+      # metered Anthropic API key.  Absent/empty = transparent fallback to the
+      # shared ANTHROPIC_API_KEY above; nothing breaks if the secret is not set.
+      CORTEX_ANTHROPIC_API_KEY: ${{ secrets.CORTEX_ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:

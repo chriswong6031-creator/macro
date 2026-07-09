@@ -115,6 +115,8 @@ Deterministic, display-tier, EN/ZH chip on the commodities surface. Parameters a
 (PS-R9); print them in the artifact for transparency. `engine/coiled.py` is equity-only —
 adapt logic, do not import equity assumptions blindly (different vol/gap structure).
 
+**Amendment PS-A1 (2026-07-09, logged per PS-R9):** Opus review of PR #2007 demonstrated v1 `basing` arms on falling knives (proximity-to-trailing-low is satisfied by an ongoing decline; 15.5% false-arm rate on noisy monotone-decline seeds) and `macd_curl` can fire on float jitter of near-constant histograms. v1.1 adds a flatness gate (`base_flat_max_abs_return`, default 0.06 over `min(days_in_base, 4 × base_min_days)` sessions) and a scale-invariant minimum-rise epsilon on the MACD curl (`macd_rise_min_frac`, default 0.02, with a price-commensurate absolute floor). Reviewer-identified construct fix, applied before first consumer (W2-F) ships.
+
 ### W1-C (PR-4) — T+1 flip-confirmation lens (D6)
 
 Producer: new `engine/flip_confirmation.py` + nightly build step.

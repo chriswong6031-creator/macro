@@ -217,6 +217,10 @@ FAMILY_ZH = {"rates": "利率", "fx": "外汇", "credit": "信用", "liquidity":
              "china": "中国", "inflation": "通胀", "equity-leadership": "股票领涨",
              "crypto": "加密"}
 
+# repricing_coherence state thresholds (contract §4 W1-A)
+_COH_THRESHOLDS = {"QUIET": (0, 40), "ELEVATED": (40, 70), "SHOCK": (70, 100)}
+_COH_STATE_ZH = {"QUIET": "平静", "ELEVATED": "偏高", "SHOCK": "冲击"}
+
 
 def _cfg() -> dict:
     base = {
@@ -436,6 +440,143 @@ def _absorption_pctile_series(window: int = 63) -> pd.Series:
         return pd.Series(dtype=float)
 
 
+def _load_log_df() -> pd.DataFrame:
+    """Load the market_drivers_log.parquet for coherence computation. Returns empty
+    DataFrame on any failure (coherence degrades gracefully without it)."""
+    try:
+        p = config.data_dir() / "regime" / "market_drivers_log.parquet"
+        return pd.read_parquet(p) if p.exists() else pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
+
+
+def repricing_coherence(snap: dict, log_df: pd.DataFrame | None = None) -> dict:
+    """Compute the repricing_coherence block from today's classify_day output.
+
+    Inputs
+    ------
+    snap      : dict returned by classify_day() for today
+    log_df    : (optional) existing market_drivers_log.parquet loaded by the caller
+                so this function never reads from disk itself (pure function).
+                Pass None to have it loaded automatically; on failure → quiet with note.
+
+    Returns a dict with keys: score, state, components, state_zh, note, note_zh.
+    Never raises — degrades to state=QUIET with a reason note on any error.
+
+    Component scoring (contract §4 W1-A):
+      driver_flip         30 pts — primary changed vs previous log row AND
+                                   min(strength_today, strength_prev) >= 1.0
+      strength_extreme    25 pts — strength >= p95 of trailing 252 log rows
+                                   (fallback: strength >= 2.0 when < 40 rows)
+      absorption_spike    20 pts — absorption_pctile >= 0.90 (0 if None)
+      repricing_breadth   25 pts — >= 3 distinct driver families with |proj| >= 1.5
+    """
+    _quiet = lambda note, note_zh="": {   # noqa: E731
+        "score": 0, "state": "QUIET", "state_zh": _COH_STATE_ZH["QUIET"],
+        "components": {
+            "driver_flip": 0, "strength_extreme": 0,
+            "absorption_spike": 0, "repricing_breadth": 0,
+        },
+        "note": note,
+        "note_zh": note_zh or "数据不足，降级为平静状态。",
+    }
+
+    try:
+        if not snap or snap.get("verdict") in (None, "unknown"):
+            return _quiet("no valid snap — degraded to QUIET",
+                          "无有效快照，降级为平静状态。")
+
+        # ---------- load log if not supplied ----------
+        _log: pd.DataFrame | None = log_df
+        if _log is None:
+            try:
+                p = config.data_dir() / "regime" / "market_drivers_log.parquet"
+                _log = pd.read_parquet(p) if p.exists() else pd.DataFrame()
+            except Exception:
+                _log = pd.DataFrame()
+
+        # ---------- component 1: driver_flip ----------
+        c_flip = 0
+        today_primary = snap.get("primary")
+        today_strength = float(snap.get("strength") or 0.0)
+        if _log is not None and not _log.empty and "primary" in _log.columns and "asof" in _log.columns:
+            prev_rows = _log.sort_values("asof")
+            today_asof = str(snap.get("asof", ""))
+            prev_rows = prev_rows[prev_rows["asof"].astype(str) < today_asof]
+            if not prev_rows.empty:
+                prev_primary = prev_rows.iloc[-1].get("primary")
+                prev_strength_raw = prev_rows.iloc[-1].get("strength")
+                prev_strength = float(prev_strength_raw) if pd.notna(prev_strength_raw) else 0.0
+                if (today_primary and prev_primary and today_primary != prev_primary and
+                        min(today_strength, prev_strength) >= 1.0):
+                    c_flip = 30
+
+        # ---------- component 2: strength_extreme ----------
+        c_strength = 0
+        if _log is not None and not _log.empty and "strength" in _log.columns:
+            today_asof = str(snap.get("asof", ""))
+            hist_str = _log[_log["asof"].astype(str) < today_asof]["strength"].dropna()
+            tail_252 = hist_str.iloc[-252:] if len(hist_str) >= 252 else hist_str
+            if len(tail_252) >= 40:
+                p95 = float(np.percentile(tail_252, 95))
+                if today_strength >= p95:
+                    c_strength = 25
+            else:
+                # fallback: fewer than 40 rows available
+                if today_strength >= 2.0:
+                    c_strength = 25
+
+        # ---------- component 3: absorption_spike ----------
+        c_absorb = 0
+        ar = snap.get("absorption_pctile")
+        if ar is not None and not np.isnan(float(ar)) and float(ar) >= 0.90:
+            c_absorb = 20
+
+        # ---------- component 4: repricing_breadth ----------
+        # Count distinct driver families with |driver projection| >= 1.5.
+        # The projections are already available in snap["scores"] as floats.
+        c_breadth = 0
+        scores_list = snap.get("scores") or []
+        # Deduplicate by family — take the max |projection| per family.
+        family_max: dict[str, float] = {}
+        for s in scores_list:
+            fam = DRIVERS.get(s.get("driver", ""), {}).get("family", "")
+            proj_abs = abs(float(s.get("projection") or 0.0))
+            if fam:
+                family_max[fam] = max(family_max.get(fam, 0.0), proj_abs)
+        n_families_hot = sum(1 for v in family_max.values() if v >= 1.5)
+        if n_families_hot >= 3:
+            c_breadth = 25
+
+        # ---------- aggregate ----------
+        score = c_flip + c_strength + c_absorb + c_breadth
+        score = max(0, min(100, score))
+        if score >= 70:
+            state = "SHOCK"
+        elif score >= 40:
+            state = "ELEVATED"
+        else:
+            state = "QUIET"
+
+        return {
+            "score": score,
+            "state": state,
+            "state_zh": _COH_STATE_ZH[state],
+            "components": {
+                "driver_flip": c_flip,
+                "strength_extreme": c_strength,
+                "absorption_spike": c_absorb,
+                "repricing_breadth": c_breadth,
+            },
+            "note": ("derived reading of market_drivers — de-escalation/display consumer only"),
+            "note_zh": "基于市场驱动因子的衍生读数，仅供展示参考，不作为评分依据。",
+        }
+
+    except Exception as e:
+        return _quiet(f"repricing_coherence computation error: {e}",
+                      "计算异常，降级为平静状态。")
+
+
 def snapshot() -> dict:
     """Latest market-driver attribution for latest.json["market_drivers"]."""
     try:
@@ -449,7 +590,11 @@ def snapshot() -> dict:
     day = proj_df.dropna(how="all").index[-1]
     ar = _absorption_pctile_series()
     ar_pctile = float(ar.get(day)) if day in ar.index and pd.notna(ar.get(day)) else None
-    return classify_day(proj_df, raw_z, day, cfg, ar_pctile)
+    snap = classify_day(proj_df, raw_z, day, cfg, ar_pctile)
+    # attach repricing_coherence block — load the log once, pass it in (pure)
+    log_df = _load_log_df()
+    snap["repricing_coherence"] = repricing_coherence(snap, log_df=log_df)
+    return snap
 
 
 def history(n: int = 20) -> list[dict]:
@@ -459,17 +604,28 @@ def history(n: int = 20) -> list[dict]:
     proj_df, raw_z = projections(frame, cfg)
     proj_df = proj_df.dropna(how="all")
     ar = _absorption_pctile_series()
+    # load the log once for all history rows (coherence uses it for driver_flip + p95)
+    log_df = _load_log_df()
     out = []
     for day in proj_df.index[-n:]:
         arp = float(ar.get(day)) if day in ar.index and pd.notna(ar.get(day)) else None
-        out.append(classify_day(proj_df, raw_z, day, cfg, arp))
+        snap = classify_day(proj_df, raw_z, day, cfg, arp)
+        snap["repricing_coherence"] = repricing_coherence(snap, log_df=log_df)
+        out.append(snap)
     return out
 
 
-def append_log(snap: dict) -> None:
+def append_log(snap: dict, allow_write: bool = True) -> None:
     """Append today's verdict to an append-only log (keep-first per date) so the
     attribution can be GRADED later. Best-effort — never read back into a score,
-    never breaks the build. See engine/alerts.py log_and_dedup for the pattern."""
+    never breaks the build. See engine/alerts.py log_and_dedup for the pattern.
+
+    PS-R7 guard: intraday callers MUST pass allow_write=False (the nightly path is
+    the sole advancer of data/ ledgers). The default allow_write=True preserves the
+    existing nightly call-sites unchanged.
+    """
+    if not allow_write:
+        return  # PS-R7: intraday path must not write the parquet ledger
     try:
         if not snap or snap.get("verdict") in (None, "unknown") or not snap.get("asof"):
             return
@@ -483,6 +639,10 @@ def append_log(snap: dict) -> None:
                ("asof", "verdict", "primary", "direction", "dir_sign", "confidence",
                 "strength", "dominance_ratio", "absorption_pctile")}
         row["evidence"] = "; ".join(snap.get("evidence") or [])
+        # include coherence columns (None-safe; old rows without them are fine on read)
+        coh = snap.get("repricing_coherence") or {}
+        row["coherence_score"] = coh.get("score")
+        row["coherence_state"] = coh.get("state")
         new = pd.DataFrame([row])
         out = pd.concat([old, new], ignore_index=True) if old is not None else new
         out.to_parquet(p, index=False)

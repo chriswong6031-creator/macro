@@ -110,9 +110,12 @@ def _art(
 
 def test_fresh_artifact_with_nrows(tmp_path):
     """Fresh JSON artifact → status='fresh', row_count populated from content."""
+    from datetime import datetime, timezone, timedelta
+    # Use a timestamp 1 hour ago so it is always within the 30h SLA
+    fresh_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
     payload = {
-        "as_of": "2026-07-06T00:00:00+00:00",
-        "produced_at": "2026-07-06T00:00:00+00:00",
+        "as_of": fresh_ts,
+        "produced_at": fresh_ts,
         "n_rows": 42,
     }
     _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", payload)
@@ -124,7 +127,7 @@ def test_fresh_artifact_with_nrows(tmp_path):
     ws = lobes["world-state"]
     assert ws["status"] == "fresh", ws
     assert ws["row_count"] == 42
-    assert ws["as_of"] == "2026-07-06T00:00:00+00:00"
+    assert ws["as_of"] == fresh_ts
 
 
 # ---- test 2: stale by SLA ---------------------------------------------------
@@ -233,6 +236,57 @@ def test_cortex_degraded_run_status_propagates(tmp_path):
     assert result["overall_status"] == "degraded"
 
 
+# ---- test 5b: model_fallback memo is warn, never fresh/ok -------------------
+
+def test_cortex_model_fallback_is_warn_not_fresh(tmp_path):
+    """Honesty law: a fallback-model run (degradation_reason='model_fallback') must produce
+    cortex lobe status='warn' (not 'fresh') and overall_status != 'ok' in health.json.
+
+    This guards against the regression where degraded=False (fallback ran tool calls) caused
+    health.py to incorrectly surface the run as 'fresh', hiding the model substitution.
+    """
+    fallback_memo = {
+        "schema": "neuralweb.cortex_memo.v1",
+        "as_of": "2026-07-09T00:00:00+00:00",
+        "summary": "fallback model summary",
+        "what_fired": [],
+        "run_status": {
+            "status": "warn",
+            "degraded": False,                      # fallback ran tool calls → not degraded
+            "degradation_reason": "model_fallback", # but primary was rate-limited
+            "model_used": "claude-sonnet-4-6",
+            "provider_attempts": [],
+            "tool_call_batches": 2,
+            "individual_tool_calls": 5,
+            "expected_min_tool_calls": 1,
+            "context_stale": False,
+            "context_as_of": None,
+        },
+        "probation": {"granted": False, "reason": "n=0", "attention_track_record": {"n": 0, "hits": 0}},
+    }
+    (tmp_path / "data" / "neuralweb" / "cortex").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "data" / "neuralweb" / "cortex" / "memo.json").write_text(
+        json.dumps(fallback_memo), encoding="utf-8"
+    )
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {
+        "as_of": "2026-07-09T00:00:00+00:00",
+    })
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json"),
+    })
+    result = build(root=root)
+    cortex = result["cortex"]
+    assert cortex["status"] == "warn", (
+        f"model_fallback run must surface as cortex lobe 'warn', got {cortex['status']!r}. "
+        "Honesty regression: degraded=False should not silently map to 'fresh' when "
+        "degradation_reason='model_fallback'."
+    )
+    assert result["overall_status"] != "ok", (
+        f"overall_status must not be 'ok' when cortex is 'warn' (model_fallback); "
+        f"got {result['overall_status']!r}"
+    )
+
+
 # ---- test 6: legacy memo without run_status still parses --------------------
 
 def test_legacy_memo_without_run_status(tmp_path):
@@ -256,8 +310,8 @@ def test_legacy_memo_without_run_status(tmp_path):
     cortex = result["cortex"]
     assert cortex["run_status"] is not None
     assert cortex["run_status"].get("_legacy_memo") is True
-    # has_tools=True → status should be 'warn', not 'degraded'
-    assert cortex["run_status"].get("status") == "warn"
+    # has_tools=True → legacy status is 'ok' (normal run, legacy format); lobe status 'fresh'
+    assert cortex["run_status"].get("status") == "ok"
     assert cortex["status"] == "fresh"  # not degraded
 
 
@@ -299,10 +353,15 @@ def test_workflow_conformance_ok_when_producer_present(tmp_path):
 def test_refresh_cortex_preserves_lobes_updates_cortex(tmp_path):
     """refresh_cortex() preserves lobe sections and updates cortex + overall + produced_at."""
     import time as _time
+    from datetime import datetime, timezone, timedelta
+
+    # Use a fresh timestamp so the SLA check always passes
+    fresh_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    fresh_ts2 = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
     # Build an initial artifact
     _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {
-        "as_of": "2026-07-06T00:00:00+00:00",
+        "as_of": fresh_ts,
     })
     root = _make_repo(tmp_path, {
         "world-state": _art("data/neuralweb/world_state.json"),
@@ -316,7 +375,7 @@ def test_refresh_cortex_preserves_lobes_updates_cortex(tmp_path):
 
     # Write a cortex memo with ok status
     ok_memo = {
-        "as_of": "2026-07-06T01:00:00+00:00",
+        "as_of": fresh_ts2,
         "run_status": {
             "status": "ok",
             "degraded": False,

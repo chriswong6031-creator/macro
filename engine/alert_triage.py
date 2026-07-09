@@ -669,6 +669,8 @@ _OPS_LANES: dict[str, str] = {
     "basket_freeze": "push_sent_basket_freeze.jsonl",
     "signal_sanity": "push_sent_signal_sanity.jsonl",
     "healthcheck": "push_sent_healthcheck.jsonl",
+    # M3 escalation organ (PR-3): persistent NW health degradation detector
+    "nw_health": "push_sent_nw_health.jsonl",
 }
 
 

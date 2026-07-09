@@ -2950,6 +2950,33 @@ commodities:
     cost_bps: 8                    # one-way transaction cost (spread+roll slippage) per unit |Δpos|; liquid commodity futures/ETF proxy — wider than FX spot, tighter than BTC. Allocation CAGR/Sharpe are NET of this
     n_trials: 40                  # honest UPPER-BOUND of independent strategy configs explored per asset, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more
 
+  # --- Policy-Shock W1-B: per-asset technical arming detector (display-only) ---
+  # Powers the "oil basing + momentum curl = lever armed" read.
+  # All params are v1-frozen and printed verbatim in the artifact.
+  technical_arming:
+    stoch_k_period: 14             # lookback for raw %K (full stochastic, not StochRSI)
+    stoch_smooth_k: 3              # %K smoothing period
+    stoch_smooth_d: 3              # %D smoothing period
+    stoch_oversold: 30.0           # %K must be below this on the cross bar
+    stoch_curl_lookback: 3         # scan latest N bars for the cross (avoids stale fires)
+    macd_fast: 12                  # MACD fast EMA
+    macd_slow: 26                  # MACD slow EMA
+    macd_signal: 9                 # MACD signal EMA
+    macd_consecutive_bars: 3       # histogram must rise for this many bars while < 0
+    base_window_d: 60              # rolling low window for basing test
+    base_pct: 0.08                 # close within this % of the 60d low = "in base"
+    base_min_days: 10              # min consecutive days in base band
+    drawdown_window_d: 120         # max-drawdown lookback for the deep-washout gate
+    drawdown_min: -0.15            # drawdown must be <= this (e.g. -15%) to qualify
+    # v1.1 hardening (PS-A1, 2026-07-09)
+    base_flat_max_abs_return: 0.06 # flatness gate: |net return over base_min_days sessions| must be
+                                   # <= this for basing to fire; blocks falling-knife arms (an ongoing
+                                   # -10%+ decline over 10 sessions satisfies proximity-to-low but is NOT
+                                   # a base; a genuine sideways coil is +/-few %)
+    macd_rise_min_frac: 0.02       # scale-invariant MACD epsilon: each positive diff in the rising-3-bars
+                                   # test must exceed (macd_rise_min_frac x rolling 60-bar mean |histogram|);
+                                   # prevents float jitter on a near-constant negative histogram from firing
+
   # --- Phase 5: alerts (daily state-change events) + intraday shock sentinel ---
   alerts:
     timeline_days: 60               # window shown on the commodities.html timeline
@@ -5616,3 +5643,20 @@ cycle_pattern_intelligence:
   state_daily_live_path: "data/cycle_pattern/state_daily_live.parquet"  # nightly union of forward logs (scripts/build_cycle_pattern_live.py)
   hazard_epoch: "price_c4414dcb"                 # feature source epoch joined into state
   embargo_holdout_start: "2024-01-01"            # rows dated after this are permanently embargoed (holdout)
+
+# --------------------------------------------------------------------------- #
+# Cortex — Neural Web W7b deliberation runtime (engine/neuralweb/cortex.py).
+# DeepSeek is EXCLUDED from the deliberation path (D8 ruling: governance never
+# thinks on a third-party model; zh narration fallback only, unchanged).
+# --------------------------------------------------------------------------- #
+cortex:
+  # Primary deliberation model (Opus-class).  Rate-limited runs retry with
+  # exponential backoff (15s/60s/180s, up to 4 attempts) before falling back.
+  llm_model: claude-opus-4-8
+  # Fallback model used ONCE when the primary model exhausts rate-limit retries
+  # on ALL live providers.  A fallback run stamps run_status.status='warn' and
+  # run_status.degradation_reason='model_fallback' (never 'ok').
+  # DeepSeek is never used here (D8 ruling — governance stays on Anthropic).
+  fallback_model: claude-sonnet-4-6
+  max_tool_calls: 24
+  max_tokens: 4096

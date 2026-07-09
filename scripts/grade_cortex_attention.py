@@ -92,7 +92,37 @@ def _probation_path(root: Path) -> Path:
 # Load helpers
 # ---------------------------------------------------------------------------
 
+def _is_synthetic(row: dict) -> bool:
+    """Return True if the row is a dry-run synthetic item that must be excluded from grading.
+
+    Synthetic rows must never contribute to the probation counter (n) or hits — they are
+    dry-run artefacts seeded at system initialisation, not real cortex attention events.
+    Exclusion is at READ/GRADE time only; ledger rows are never deleted (append-only law).
+    A row is synthetic if ANY of the following hold:
+      - trigger_key == "SYNTHETIC_TICKER"  (legacy dry-run marker)
+      - scope_key == "SYNTHETIC_TICKER"
+      - "(dry-run synthetic item)" appears in the falsifier field
+      - explicit field synthetic: true
+    """
+    trigger_key = str(row.get("trigger_key") or "")
+    scope_key = str(row.get("scope_key") or "")
+    falsifier = str(row.get("falsifier") or "")
+    synthetic_flag = row.get("synthetic", False)
+    return (
+        trigger_key == "SYNTHETIC_TICKER"
+        or scope_key == "SYNTHETIC_TICKER"
+        or "(dry-run synthetic item)" in falsifier
+        or synthetic_flag is True
+    )
+
+
 def _load_firings(root: Path) -> list[dict]:
+    """Load real (non-synthetic) firing rows from firings.jsonl.
+
+    Synthetic dry-run items (ticker=SYNTHETIC_TICKER or explicit marker) are excluded
+    at read time — they must never enter the grading loop or the probation counter.
+    The ledger itself is never modified (append-only law).
+    """
     p = _firings_path(root)
     if not p.exists():
         return []
@@ -102,13 +132,51 @@ def _load_firings(root: Path) -> list[dict]:
         if not line:
             continue
         try:
-            rows.append(json.loads(line))
+            row = json.loads(line)
+            if _is_synthetic(row):
+                log.debug("grade_cortex_attention: skipping synthetic row claim_id=%s", row.get("claim_id", "?"))
+                continue
+            rows.append(row)
         except Exception:  # noqa: BLE001
             pass
     return rows
 
 
+def _is_synthetic_grade(row: dict) -> bool:
+    """Return True if a grade row corresponds to a dry-run synthetic item.
+
+    Mirrors _is_synthetic() for firing rows.  Grade rows use different field names
+    (symbol instead of trigger_key/scope_key; outcome_detail.symbol for the resolved
+    entity), so we must check all analogous paths to avoid silent leakage if a future
+    synthetic grade row lacks a top-level symbol field.
+
+    A grade row is synthetic if ANY of the following hold:
+      - top-level symbol == "SYNTHETIC_TICKER"
+      - outcome_detail.symbol == "SYNTHETIC_TICKER"
+      - "(dry-run synthetic item)" appears in the falsifier field (carried through
+        from the original firing row)
+      - explicit field synthetic: true
+    """
+    symbol = str(row.get("symbol") or "")
+    outcome_symbol = str((row.get("outcome_detail") or {}).get("symbol") or "")
+    falsifier = str(row.get("falsifier") or "")
+    synthetic_flag = row.get("synthetic", False)
+    return (
+        symbol == "SYNTHETIC_TICKER"
+        or outcome_symbol == "SYNTHETIC_TICKER"
+        or "(dry-run synthetic item)" in falsifier
+        or synthetic_flag is True
+    )
+
+
 def _load_grades(root: Path) -> list[dict]:
+    """Load real (non-synthetic) grade rows from grades.jsonl.
+
+    Synthetic grades are excluded at read time so they never inflate n or hits.
+    Uses _is_synthetic_grade() which mirrors all four conditions of _is_synthetic()
+    (the firing-row predicate) to ensure both readers agree on what 'synthetic' means.
+    Ledger rows are never deleted (append-only law).
+    """
     p = _grades_path(root)
     if not p.exists():
         return []
@@ -118,7 +186,11 @@ def _load_grades(root: Path) -> list[dict]:
         if not line:
             continue
         try:
-            rows.append(json.loads(line))
+            row = json.loads(line)
+            if _is_synthetic_grade(row):
+                log.debug("grade_cortex_attention: skipping synthetic grade claim_id=%s", row.get("claim_id", "?"))
+                continue
+            rows.append(row)
         except Exception:  # noqa: BLE001
             pass
     return rows

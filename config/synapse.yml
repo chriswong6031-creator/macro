@@ -897,7 +897,18 @@ artifacts:
       - scripts/build_vol_regime.py
       - scripts/validate_gex.py
     external_consumers: []
-    notes: "gitignored-local: gate.json is NOT git-tracked. Written on --persist flag during cycle-calibration workflow. Census note: vol-regime scored weight is ungated on CI clones (gap). Scored tier: writes only after --persist on a validation pass."
+    notes: >
+      gitignored-local: gate.json is NOT git-tracked. Written on --persist flag
+      during cycle-calibration workflow. Census note: vol-regime scored weight is
+      ungated on CI clones (gap). Scored tier: writes only after --persist on a
+      validation pass. scored_path_surfaces intentionally empty: this gate acts as
+      an internal firewall INSIDE engine/vol_regime.py — it controls the
+      scored_active/scored_score flags that reach engine/cycles.py and
+      engine/board_ledger.py as sizing inputs, but the gate file itself is not a
+      money-path surface. The downstream engines that consume it (engine/vol_regime.py
+      → engine/cycles.py/board_ledger.py) own the actual scored-path surfaces. Tier
+      reflects that validated defensive results gate access to the overlay, not that
+      this artifact is itself a scored-path surface.
 
   # --- 2 consumers ---
   vol-regime-basket-overlay-gate:
@@ -919,7 +930,16 @@ artifacts:
       - engine/vol_regime.py
       - scripts/build_vol_regime.py
     external_consumers: []
-    notes: "Scored tier: backtest_vol_overlay.py writes verdict gate only after OOS backtest pass."
+    notes: >
+      Scored tier: backtest_vol_overlay.py writes verdict gate only after OOS
+      backtest pass. scored_path_surfaces intentionally empty: this gate acts as
+      an internal firewall INSIDE engine/vol_regime.py — it controls the
+      regime-state caution haircut (sized by regime_caution_scored()) that the
+      sizing_overlay() function applies to basket/ladder/bot allocations, but the
+      gate file itself is not a money-path surface. The downstream engines that
+      consume the overlay output own the scored-path surfaces. Tier reflects that
+      a validated additive-value verdict is required before the caution haircut
+      influences sizing, not that this artifact is itself a scored-path surface.
 
   # --- 4 consumers (gitignored-local) ---
   regime-vector:
@@ -3227,6 +3247,56 @@ artifacts:
       never committed (heartbeat.yml has contents:read, no commit step) — the
       6-hour dedup window is INERT for this lane; dispatch-always; noise
       unchanged vs pre-migration.
+
+  ops-push-nw-health:
+    path: data/alert_triage/push_sent_nw_health.jsonl
+    format: jsonl
+    producer: scripts/check_nw_health_escalation.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: sent_at
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/alert_triage.py
+    notes: >
+      M3 escalation organ (PR-3): NW health degradation alert dedup store.
+      Single-writer (scripts/check_nw_health_escalation.py via
+      push_ops_alert(lane="nw_health")).  Fires when overall_status==degraded
+      or any daily-cadence lobe is missing/stale beyond 1.5x SLA for >=3
+      consecutive nights.  dedup/ledger skipped when spine disabled; raw
+      dispatch still fires (W6b dispatch-always invariant).
+
+  nw-health-run-history:
+    path: data/neuralweb/nw_health_run_history.jsonl
+    format: jsonl
+    producer: scripts/check_nw_health_escalation.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: run_date
+    freshness_sla_hours: 26
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/check_nw_health_escalation.py
+    notes: >
+      M3 escalation organ (PR-3 review fix): per-nightly-run health status log.
+      Keyed by produced_at date (not data-vintage as_of) so frozen as_of across
+      consecutive degraded nights is correctly counted as distinct run records.
+      APPEND-only: one new row per nightly engine run.  Schema: {run_date,
+      degraded, produced_at, reasons_count}.  Used by _compute_streak to
+      measure consecutive degraded run streak with calendar-adjacency guard.
 
   feeds-plane:
     path: site/feeds/
@@ -6023,6 +6093,54 @@ artifacts:
       upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
       Chronologically sorted. Used for delta detection in next run. Display/ops only.
 
+  # --- PR-4 M2: Deterministic operator-attention items ---
+  attention-deterministic:
+    path: data/neuralweb/attention_deterministic.json
+    format: json
+    producer: scripts/build_attention_deterministic.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.attention_deterministic.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      PR-4 M2 deterministic attention surface. Zero LLM — all items are template-filled
+      from structured artifact values. Five pre-registered rules: (A) contradiction tension,
+      (B) daily-cadence lobe past 1.5× SLA, (C) regime confidence < 0.25,
+      (D) evidence clock overdue, (E) cortex run degraded. Display-only; never writes
+      to cortex A2 earn-in track. Maintenance vocabulary only.
+
+  site-attention-deterministic:
+    path: site/neuralwebdata/attention_deterministic.json
+    format: json
+    producer: scripts/build_attention_deterministic.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.attention_deterministic.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of attention-deterministic for client-side fetch in committee.html.
+      Written by scripts/build_attention_deterministic.py in the same step.
+
   # --- W1 NW Core-Cognition: Mechanism Pathway Compiler v1 ---
   mechanism-pathways:
     path: data/neuralweb/mechanism_pathways.json
@@ -8115,6 +8233,15 @@ artifacts:
       on page. No scored surfaces.
 
   # ── nw-context-intelligence program (W3 — personality risk lens) ──────────
+
+  # NOTE: engine/neuralweb/context_api.py is a RESEARCH-SIDE QUERY LIBRARY with no
+  # nightly caller — analogous to alpha_grammar.py / alpha_overlap.py (FR-12 pattern).
+  # It produces NO artifact and is NOT wired into daily.yml.  Its consumer-of-artifacts
+  # relationship (it reads regime/personality/spine at query time) is noted in the
+  # individual artifact consumer lists above as a QUERY-TIME consumer, not a nightly one.
+  # It does NOT have a standalone synapse entry because it neither produces nor surfaces
+  # any committed artifact; its entry here would be dishonest.
+  # Consumers: future pre-registered context studies only.
 
   context-risk:
     path: data/neuralweb/context_risk.json
