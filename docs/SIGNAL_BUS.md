@@ -31,7 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
-| neural-web | 43 |
+| neural-web | 44 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 3 |
@@ -56,13 +56,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 164 |
 | infrastructure | 72 |
 | scored | 4 |
-| shadow | 44 |
+| shadow | 45 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 272 |
+| git | 273 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -322,6 +322,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
+| causal-mechanisms | `data/neuralweb/causal_mechanisms.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | claim-accountability | `data/governance/claim_accountability.json` | json | collect | infrastructure | 1 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |

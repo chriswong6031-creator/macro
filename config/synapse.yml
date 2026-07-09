@@ -6693,6 +6693,43 @@ artifacts:
       that the committed compiled section matches regeneration.
       NO dag.yml wiring in W1 — the nightly causal job is wired in W3.
 
+  # --- CHF W4: mechanism cards ---
+  causal-mechanisms:
+    path: data/neuralweb/causal_mechanisms.jsonl
+    format: jsonl
+    producer: scripts/causal_ingest_brainstorm.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: filed_at
+    freshness_sla_hours: null
+    schema: neuralweb.causal_mechanism_card.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/causal_brainstorm_pack.py
+    external_consumers: []
+    notes: >
+      CHF-R7/R17 mechanism cards (LLM-proposed drafts, zero authority).
+      Schema neuralweb.causal_mechanism_card.v1: mechanism_id, family,
+      claim_en/zh, causal_graph (cause/target/mediators/confounders/
+      colliders_to_avoid), frozen environment map (frozen_hash tamper
+      evidence), >=2 falsifiers, test_spec (exit_path a/b, claim_shape
+      from metabolism CLAIM_SHAPES for exit-a, domain_harness for exit-b,
+      min_n >= 25 house floor), lineage (source, pack_id, model), status.
+      Status machine: inbox → deduped → skeptic_passed → filed | decayed |
+      rejected; transitions carry actor in {script, operator, fable}; actor
+      'llm' raises (CHF-R17). AUTHORITY_BLOCK: tier=display, not_a_signal=True,
+      may_rank/gate/size/escalate=False, forbidden_uses=[ranking, sizing,
+      alert_escalation, claim_validation, board_ordering, mastermind_arming].
+      ISO-week filing lock: <=3 cards per week (CHF-R8). Kill-mask and
+      forbidden_causes enforced at ingest. RF-14 four-layer dedup.
+      Ingest: scripts/causal_ingest_brainstorm.py (default dry-run; --write
+      commits). NO scoring, ranking, or alert surfaces at any time.
+
   # --- PR-A3: Operator-tape outcome resolution ---
   oracle-operator-tape-outcomes:
     path: data/oracle/operator_tape_outcomes.jsonl
