@@ -88,7 +88,7 @@ def _cfg() -> dict:
         "llm_base_url": "https://api.deepseek.com/anthropic",
         "llm_model": "deepseek-v4-pro",
         "max_tokens": 8000,
-        "interval_days": 7,                 # slow-moving layer — weekly regen
+        "interval_days": 3,                 # policy-shock W1-D: 3-day cadence (was 7)
         "max_theses": 5,
         "default_horizon_d": 40,            # policy horizons are longer than flow
         "falsifier_defaults": {"rel_return": 0.05},
