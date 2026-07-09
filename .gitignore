@@ -353,3 +353,9 @@ data/china_block_tape/
 # The data velocity artifact (hiring_velocity.json) is also runner-local.
 # Only the site projection (site/basketdata/hiring_intent.json) is git-tracked.
 data/dol_certs/
+
+# TIL W9 EDGAR phrase-velocity runner-local parquet store.
+# Env override: EDGAR_PHRASE_VELOCITY_STORE (DIRECTORY semantics — DOL_CERTS_STORE convention).
+# Only the site projections (site/basketdata/phrase_velocity.json,
+# site/basketdata/github_adoption.json, data/neuralweb/discovery_confluence.json) are git-tracked.
+data/edgar_phrase_velocity/

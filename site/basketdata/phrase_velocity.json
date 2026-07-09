@@ -1,0 +1,197 @@
+{
+  "schema": "edgar_phrase_velocity.v1",
+  "vocab_version": 1,
+  "as_of": "2026-07-09",
+  "generated_at": "2026-07-09T20:57:25.648864+00:00",
+  "authority": {
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "is_context_only": true,
+    "framing": "phrase_velocity_discovery_watchlist",
+    "rotation_calls": false,
+    "short_calls": false,
+    "honesty_note": "Detection is noisy — ~half of phrase-velocity accelerations are real; early-entry edge ≈ 0 (thematic baskets/ETFs launch near the top). This is a WATCHLIST / candidate feed, never a buy signal."
+  },
+  "honesty_header": "This is a WATCHLIST / candidate feed. Detection is noisy — ~half of phrase-velocity accelerations correspond to real supply-stress shifts. Early-entry return edge ≈ 0. Not a buy signal. Not a scored factor. Carries the same honesty stance as theme_discovery.py.",
+  "coverage_stats": {
+    "bottleneck_rows": 60,
+    "emergence_rows": 1061,
+    "combined_rows": 1015,
+    "date_range_min": "2025-05-28",
+    "date_range_max": "2026-07-02",
+    "unique_tickers": 495,
+    "unique_phrases": 13
+  },
+  "expand_note": "Vocabulary expansion disabled in v1: FTS endpoint returns metadata only (no snippet/text). Co-occurrence expansion requires raw filing text (not available from efts.sec.gov). Expansion cap = 0.",
+  "themes": {
+    "ai_semiconductors": {
+      "theme_id": "ai_semiconductors",
+      "ticker_count": 26,
+      "top_accelerating": [
+        {
+          "phrase": "on allocation",
+          "recent_count": 2,
+          "prior_count": 1,
+          "recent_filers": 2,
+          "prior_filers": 1,
+          "velocity_z": 1.0,
+          "is_affinity_phrase": true
+        }
+      ],
+      "coverage_note": "26 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员26个；PIT窗口30天/60天。"
+    },
+    "memory_storage": {
+      "theme_id": "memory_storage",
+      "ticker_count": 4,
+      "top_accelerating": [],
+      "coverage_note": "4 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员4个；PIT窗口30天/60天。"
+    },
+    "semicap_equipment": {
+      "theme_id": "semicap_equipment",
+      "ticker_count": 16,
+      "top_accelerating": [],
+      "coverage_note": "16 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员16个；PIT窗口30天/60天。"
+    },
+    "data_center_power": {
+      "theme_id": "data_center_power",
+      "ticker_count": 18,
+      "top_accelerating": [],
+      "coverage_note": "18 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员18个；PIT窗口30天/60天。"
+    },
+    "nuclear_power": {
+      "theme_id": "nuclear_power",
+      "ticker_count": 19,
+      "top_accelerating": [],
+      "coverage_note": "19 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员19个；PIT窗口30天/60天。"
+    },
+    "grid_electrification": {
+      "theme_id": "grid_electrification",
+      "ticker_count": 24,
+      "top_accelerating": [],
+      "coverage_note": "24 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员24个；PIT窗口30天/60天。"
+    },
+    "cybersecurity": {
+      "theme_id": "cybersecurity",
+      "ticker_count": 10,
+      "top_accelerating": [],
+      "coverage_note": "10 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员10个；PIT窗口30天/60天。"
+    },
+    "defense_aerospace": {
+      "theme_id": "defense_aerospace",
+      "ticker_count": 21,
+      "top_accelerating": [],
+      "coverage_note": "21 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员21个；PIT窗口30天/60天。"
+    },
+    "robotics_automation": {
+      "theme_id": "robotics_automation",
+      "ticker_count": 12,
+      "top_accelerating": [],
+      "coverage_note": "12 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员12个；PIT窗口30天/60天。"
+    },
+    "glp1_obesity": {
+      "theme_id": "glp1_obesity",
+      "ticker_count": 14,
+      "top_accelerating": [],
+      "coverage_note": "14 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员14个；PIT窗口30天/60天。"
+    },
+    "fintech_payments": {
+      "theme_id": "fintech_payments",
+      "ticker_count": 21,
+      "top_accelerating": [],
+      "coverage_note": "21 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员21个；PIT窗口30天/60天。"
+    },
+    "space_satellite": {
+      "theme_id": "space_satellite",
+      "ticker_count": 15,
+      "top_accelerating": [],
+      "coverage_note": "15 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员15个；PIT窗口30天/60天。"
+    },
+    "rare_earth_critical_min": {
+      "theme_id": "rare_earth_critical_min",
+      "ticker_count": 11,
+      "top_accelerating": [],
+      "coverage_note": "11 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员11个；PIT窗口30天/60天。"
+    },
+    "copper_steel_electrify": {
+      "theme_id": "copper_steel_electrify",
+      "ticker_count": 16,
+      "top_accelerating": [],
+      "coverage_note": "16 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员16个；PIT窗口30天/60天。"
+    },
+    "ag_fertilizer": {
+      "theme_id": "ag_fertilizer",
+      "ticker_count": 0,
+      "top_accelerating": [
+        {
+          "phrase": "capacity constrained",
+          "recent_count": 4,
+          "prior_count": 3,
+          "recent_filers": 4,
+          "prior_filers": 3,
+          "velocity_z": 0.3333333333333333,
+          "is_affinity_phrase": false
+        }
+      ],
+      "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员0个；PIT窗口30天/60天。"
+    },
+    "medical_devices": {
+      "theme_id": "medical_devices",
+      "ticker_count": 9,
+      "top_accelerating": [],
+      "coverage_note": "No FTS hits for 9 basket tickers in the 30d/60d windows.",
+      "coverage_note_zh": "过去30/60天内，9个篮子成员无FTS命中记录。"
+    },
+    "diagnostics_lifesci": {
+      "theme_id": "diagnostics_lifesci",
+      "ticker_count": 0,
+      "top_accelerating": [
+        {
+          "phrase": "capacity constrained",
+          "recent_count": 4,
+          "prior_count": 3,
+          "recent_filers": 4,
+          "prior_filers": 3,
+          "velocity_z": 0.3333333333333333,
+          "is_affinity_phrase": true
+        }
+      ],
+      "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员0个；PIT窗口30天/60天。"
+    },
+    "solar": {
+      "theme_id": "solar",
+      "ticker_count": 0,
+      "top_accelerating": [
+        {
+          "phrase": "capacity constrained",
+          "recent_count": 4,
+          "prior_count": 3,
+          "recent_filers": 4,
+          "prior_filers": 3,
+          "velocity_z": 0.3333333333333333,
+          "is_affinity_phrase": false
+        }
+      ],
+      "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
+      "coverage_note_zh": "篮子成员0个；PIT窗口30天/60天。"
+    }
+  },
+  "novel_phrases": []
+}

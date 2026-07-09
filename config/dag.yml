@@ -76,6 +76,22 @@ lanes:
           FENCE: cert_velocity_z is a SEPARATE display leg — never fused
           into fused_obs_z. Employer→ticker via lib.warn_fuzzy.
           Always exits 0 (tolerant; absent store → honest null written).
+      - id: build_discovery_confluence
+        module: scripts.build_discovery_confluence
+        note: >
+          TIL W9 (PR-W9) two-source early-discovery confluence (off render path).
+          Runs edgar_phrase_velocity (FTS hit counts from data/edgar/*.parquet)
+          and theme_adoption (GitHub star velocity from data/github/repo_stars.parquet),
+          then joins the two legs to emit discovery candidates.
+          Outputs:
+            site/basketdata/phrase_velocity.json  (git-tracked)
+            site/basketdata/github_adoption.json  (git-tracked)
+            data/neuralweb/discovery_confluence.json  (git-tracked)
+          Runner-local parquets in data/edgar_phrase_velocity/ (gitignored;
+          env override: EDGAR_PHRASE_VELOCITY_STORE).
+          NO LLM. Deterministic n-gram/statistics only.
+          DISPLAY/WATCHLIST — all outputs may_rank/may_gate/may_size/may_escalate=false.
+          Always exits 0 (tolerant; absent stores → honest nulls written).
       - id: publish_r2_attention
         module: scripts.publish_r2
         args: [--dirs, attention]
@@ -1421,6 +1437,21 @@ divergences:
       still in ACCRUAL phase." These steps are safe to invoke standalone; the
       workflow PR will close this divergence when accrual gates pass.
     evidence: "collectors/dol_labor_certs.py:WIRING NOTE"
+
+  - lanes: [collect]
+    differs: >
+      scripts.build_discovery_confluence is declared in dag.yml collect lane
+      (TIL W9 PR-W9) but is NOT yet present in the live
+      .github/workflows/daily.yml collect job.
+    reason: >
+      New collect-lane step (TIL W9 EDGAR phrase-velocity + GitHub adoption
+      two-source discovery confluence). The dag.yml entry registers the intended
+      placement (collect lane, after build_hiring_velocity and before
+      publish_r2_attention). The daily.yml wiring follows the same pattern as
+      W7 (scripts.collect_dol_certs / scripts.build_hiring_velocity): safe to
+      invoke standalone; workflow PR closes this divergence when the lane is
+      activated. No new secrets required (keyless sources only).
+    evidence: "engine/edgar_phrase_velocity.py:_STORE_ENV, engine/theme_adoption.py:AUTHORITY"
 
 # ---------------------------------------------------------------------------
 # MODULES — 25-module IO table from the W5a scout

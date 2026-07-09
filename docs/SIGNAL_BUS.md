@@ -55,13 +55,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
 | til-w7-hiring-intent | 3 |
+| til-w9-discovery-v2 | 3 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
 
 | tier | count |
 |---|---|
-| display | 191 |
+| display | 194 |
 | infrastructure | 79 |
 | scored | 4 |
 | shadow | 48 |
@@ -70,7 +71,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 308 |
+| git | 311 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -621,6 +622,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hiring-velocity | `data/dol_certs/hiring_velocity.json` | json | collect | display | 0 | 0 |
 | site-hiring-intent | `site/basketdata/hiring_intent.json` | json | collect | display | 0 | 0 |
 
+### til-w9-discovery-v2
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-github-adoption | `site/basketdata/github_adoption.json` | json | collect | display | 1 | 0 |
+| site-phrase-velocity | `site/basketdata/phrase_velocity.json` | json | collect | display | 1 | 0 |
+| neuralweb-discovery-confluence | `data/neuralweb/discovery_confluence.json` | json | collect | display | 0 | 0 |
+
 ### us-stocks-prebreakout
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -1150,12 +1159,26 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
   - scripts/build_baskets_hk.py — writes hkbasketdata/baskets.json (separate path)
   - scripts/build_baskets_intl.py — writes intlbasketdata/baskets.json (separate path)
 
+### site-github-adoption
+
+- **path:** `site/basketdata/github_adoption.json`
+- **declared producer:** `engine/theme_adoption.py`
+- **extra writers:**
+  - scripts/build_discovery_confluence.py
+
 ### site-neuralweb-mastermind-context
 
 - **path:** `site/neuralwebdata/mastermind_context.json`
 - **declared producer:** `scripts/build_nw_mastermind_context.py`
 - **extra writers:**
   - engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy
+
+### site-phrase-velocity
+
+- **path:** `site/basketdata/phrase_velocity.json`
+- **declared producer:** `engine/edgar_phrase_velocity.py`
+- **extra writers:**
+  - scripts/build_discovery_confluence.py
 
 ### site-qledger-track-record
 

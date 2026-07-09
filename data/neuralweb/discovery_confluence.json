@@ -1,0 +1,131 @@
+{
+  "schema": "discovery_confluence.v1",
+  "as_of": "2026-07-09",
+  "generated_at": "2026-07-09T20:57:25.648738+00:00",
+  "authority": {
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "is_context_only": true,
+    "framing": "discovery_confluence_watchlist",
+    "rotation_calls": false,
+    "short_calls": false,
+    "honesty_note": "Two-source confluence: EDGAR phrase acceleration + GitHub adoption velocity. Both legs must accelerate for a confluence flag. Detection is noisy — ~half of flags are real. Early-entry edge ≈ 0. Candidate for curated review only — never auto-promoted."
+  },
+  "honesty_header": "Two-source confluence: EDGAR phrase acceleration + GitHub adoption velocity. Both legs must accelerate for a confluence flag. Detection is noisy — ~half of flags are real. Early-entry edge ≈ 0. Candidate for curated review only — never auto-promoted.",
+  "sources": {
+    "phrase_velocity": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/til-prw9/site/basketdata/phrase_velocity.json",
+    "github_adoption": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/til-prw9/site/basketdata/github_adoption.json"
+  },
+  "confluence_candidates": [
+    {
+      "theme_id": "ai_semiconductors",
+      "baskets": [
+        "ai_semiconductors",
+        "ai_infra"
+      ],
+      "phrase_accelerating": true,
+      "adoption_positive": true,
+      "top_phrases": [
+        {
+          "phrase": "on allocation",
+          "recent_count": 2,
+          "prior_count": 1,
+          "recent_filers": 2,
+          "prior_filers": 1,
+          "velocity_z": 1.0,
+          "is_affinity_phrase": true
+        }
+      ],
+      "basket_z_scores": {
+        "ai_semiconductors": 0.716,
+        "ai_infra": 0.716
+      },
+      "confidence": "both_legs"
+    }
+  ],
+  "single_leg_phrase": [
+    {
+      "theme_id": "ag_fertilizer",
+      "baskets": [],
+      "phrase_accelerating": true,
+      "adoption_positive": false,
+      "top_phrases": [
+        {
+          "phrase": "capacity constrained",
+          "recent_count": 4,
+          "prior_count": 3,
+          "recent_filers": 4,
+          "prior_filers": 3,
+          "velocity_z": 0.3333333333333333,
+          "is_affinity_phrase": false
+        }
+      ],
+      "basket_z_scores": {},
+      "confidence": "phrase_only"
+    },
+    {
+      "theme_id": "diagnostics_lifesci",
+      "baskets": [],
+      "phrase_accelerating": true,
+      "adoption_positive": false,
+      "top_phrases": [
+        {
+          "phrase": "capacity constrained",
+          "recent_count": 4,
+          "prior_count": 3,
+          "recent_filers": 4,
+          "prior_filers": 3,
+          "velocity_z": 0.3333333333333333,
+          "is_affinity_phrase": true
+        }
+      ],
+      "basket_z_scores": {},
+      "confidence": "phrase_only"
+    },
+    {
+      "theme_id": "solar",
+      "baskets": [],
+      "phrase_accelerating": true,
+      "adoption_positive": false,
+      "top_phrases": [
+        {
+          "phrase": "capacity constrained",
+          "recent_count": 4,
+          "prior_count": 3,
+          "recent_filers": 4,
+          "prior_filers": 3,
+          "velocity_z": 0.3333333333333333,
+          "is_affinity_phrase": false
+        }
+      ],
+      "basket_z_scores": {},
+      "confidence": "phrase_only"
+    }
+  ],
+  "single_leg_adoption": [
+    {
+      "theme_id": "cybersecurity",
+      "baskets": [
+        "cybersecurity"
+      ],
+      "phrase_accelerating": false,
+      "adoption_positive": true,
+      "top_phrases": [],
+      "basket_z_scores": {
+        "cybersecurity": 2.162
+      },
+      "confidence": "adoption_only"
+    }
+  ],
+  "novel_phrase_clusters": [],
+  "summary": {
+    "both_legs_count": 1,
+    "single_leg_phrase_count": 3,
+    "single_leg_adoption_count": 1,
+    "novel_phrase_count": 0,
+    "themes_evaluated": 18,
+    "note": "1 themes show confluence (both legs accelerating). 3 show phrase-only acceleration. 1 show adoption-only positive. 0 novel phrase clusters with no theme home."
+  }
+}

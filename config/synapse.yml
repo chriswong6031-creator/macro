@@ -9253,3 +9253,98 @@ artifacts:
       Registration §4 convention.
 
       '
+
+  site-phrase-velocity:
+    path: site/basketdata/phrase_velocity.json
+    format: json
+    producer: engine/edgar_phrase_velocity.py
+    known_extra_writers:
+      - scripts/build_discovery_confluence.py
+    owner_program: til-w9-discovery-v2
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 2160
+    schema: edgar_phrase_velocity.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_discovery_confluence.py
+    external_consumers: []
+    notes: >
+      TIL W9 (PR-W9) site projection of EDGAR phrase-velocity metrics.
+      Git-tracked (committed); compact per-theme rows for UI consumption.
+      Schema: {schema, vocab_version, as_of, authority, honesty_header,
+      coverage_stats, expand_note, themes{}, novel_phrases[]}.
+      Vocab version 1: seed=supply-stress/demand phrases; expansion cap=0
+      (FTS endpoint is metadata-only, no text corpus for co-occurrence).
+      Per-theme: top_accelerating phrases + coverage_note (EN/ZH).
+      novel_phrases: top-10 accelerating phrases among tickers with no theme home.
+      Authority: all may_* false; is_context_only=true.
+      DISPLAY/WATCHLIST ONLY — detection is noisy, early-entry edge approx 0.
+      Off render path (collect-lane step or standalone CLI).
+      Runner-local parquets in data/edgar_phrase_velocity/ (gitignored;
+      env override: EDGAR_PHRASE_VELOCITY_STORE).
+
+  site-github-adoption:
+    path: site/basketdata/github_adoption.json
+    format: json
+    producer: engine/theme_adoption.py
+    known_extra_writers:
+      - scripts/build_discovery_confluence.py
+    owner_program: til-w9-discovery-v2
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 2160
+    schema: theme_adoption.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_discovery_confluence.py
+    external_consumers: []
+    notes: >
+      TIL W9 (PR-W9) site projection of GitHub developer-adoption velocity.
+      Git-tracked (committed); compact per-basket rows (no ticker_detail).
+      Schema: {schema, as_of, authority, coverage_stats, npm_pypi_note,
+      history_note, honesty_header, baskets{}}.
+      Per-basket: star_velocity_7d_z, n_covered, covered_tickers,
+      coverage_note (EN/ZH).
+      Coverage: 17 tickers with curated OSS repos (data/github/repo_ticker.json).
+      Non-tech baskets → honest null with explanatory coverage_note.
+      History: ~19 days at W9 launch (2026-07-09), expanding nightly.
+      npm/PyPI descoped (no collectors exist).
+      Authority: all may_* false; is_context_only=true.
+      Off render path (collect-lane step or standalone CLI).
+
+  neuralweb-discovery-confluence:
+    path: data/neuralweb/discovery_confluence.json
+    format: json
+    producer: scripts/build_discovery_confluence.py
+    known_extra_writers: []
+    owner_program: til-w9-discovery-v2
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 2160
+    schema: discovery_confluence.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W9 (PR-W9) two-source discovery-confluence join artifact.
+      Joins edgar_phrase_velocity + theme_adoption legs.
+      Confluence rule: theme flagged when BOTH phrase_velocity_z > 0 (>=2 filers)
+      AND any basket star_velocity_7d_z > 0.
+      Output sections: confluence_candidates (both legs), single_leg_phrase,
+      single_leg_adoption, novel_phrase_clusters.
+      WATCHLIST / candidate feed only — never auto-promoted.
+      Detection noisy, early-entry edge approx 0 (same honesty stance as
+      theme_discovery.py). Authority: all may_* false; is_context_only=true.
