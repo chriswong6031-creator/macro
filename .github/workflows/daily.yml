@@ -1275,6 +1275,16 @@ jobs:
           cat /tmp/mechanism_pathways.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_mechanism_pathways::rc=$rc (non-fatal)"
           exit 0
+      - name: build thematic state (TIL W0 — display/context only)
+        if: always()
+        # TIL W0 (PR-A): composition organ — reads foresight_cascade, baskets, radar/radar_enriched,
+        # narrative_emergence, subsector_rotation, divergence_log. Adapter-cheap; no network calls.
+        # Runs AFTER build_foresight + build_baskets (foresight_cascade.json and baskets.json must
+        # be fresh). Outputs: data/neuralweb/theme_state.json, site/neuralwebdata/theme_state.json,
+        # data/neuralweb/theme_phase_history.jsonl (append-only PIT tape, nightly sole advancer).
+        # Authority: is_context_only=true, all promotion flags false. Always exits 0.
+        # Outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_thematic_state || echo "::warning::build_thematic_state failed (non-fatal — last committed artifact stands)"
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and

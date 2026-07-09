@@ -378,6 +378,16 @@ lanes:
       - id: build_mechanism_pathways
         module: scripts.build_mechanism_pathways
         note: non-fatal; MPC v1 (RUL-CC-1..13) — deterministic display-only pathway compiler; reads market_drivers/transmission/factor_intelligence emitted artifacts; outputs data/neuralweb/mechanism_pathways.json + history + site mirror
+      - id: build_thematic_state
+        module: scripts.build_thematic_state
+        note: >
+          non-fatal; TIL W0 (PR-A) thematic state composition organ — display/context only
+          (authority: is_context_only=true, all promotion flags false). Reads foresight_cascade,
+          baskets, radar/radar_enriched, narrative_emergence, subsector_rotation, divergence_log.
+          Outputs data/neuralweb/theme_state.json, site/neuralwebdata/theme_state.json,
+          data/neuralweb/theme_phase_history.jsonl (append-only PIT tape, nightly sole advancer).
+          Runs AFTER build_foresight + build_baskets (foresight_cascade.json and baskets.json
+          must be fresh). Missing input → stale_legs entry + null block; always exits 0.
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
