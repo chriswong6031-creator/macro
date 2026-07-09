@@ -452,7 +452,7 @@
       return '<button class="sr-zc'+on+'" data-q="'+q+'" aria-pressed="'+(zq===q?'true':'false')+'"'+(q!=='all'?' style="--zc:var('+QCOL[q]+')"':'')+'>'+inner+'</button>';}
     var chips=chip('all','','',L('All','全部'))
       +qorder.map(function(q){return chip(q,q,q,'<span class="sr-zc-dot"></span><span class="sr-zc-tx">'+L(QUAD[q].en,QUAD[q].zh)+'<i>'+L(QUADX[q].en,QUADX[q].zh)+'</i></span>');}).join('');
-    var hint=_zoom?L('press Esc or "All" to zoom out','按 Esc 或"全部"退出放大'):L('tip: click a quadrant to zoom in','提示：点击象限可放大');
+    var hint=_zoom?L('click the background, press Esc, or "All" to zoom out','点击空白处、按 Esc 或"全部"退出放大'):L('tip: click a quadrant to zoom in','提示：点击象限可放大');
     var legend='<div class="sr-legend">'
       +'<span class="sr-lg"><span class="sr-lg-tail"></span>'+L('trail = where it came from','轨迹 = 来路')+'</span>'
       +'<span class="sr-lg"><span class="sr-lg-arw">➜</span>'+L('arrow = where it\'s heading','箭头 = 去向')+'</span>'
@@ -596,6 +596,7 @@
     sv.addEventListener('click',function(e){
       var t=e.target.closest('.sr-dot'); if(t){var k=t.getAttribute('data-k'); if(hasDetail())location.href=detailHref(k); else if(!fs)flashRow(k); return;}
       if(!_zoom){var z=e.target.closest('.sr-qz'); if(z&&card){_zoom=z.getAttribute('data-q');drawMapCard(card);}}
+      else if(card){_zoom=null;drawMapCard(card);}   // zoomed: click the empty background (anything but a dot) to zoom out
     });
   }
 
@@ -761,7 +762,7 @@
     +'.sr-zc.on{color:var(--text);border-color:var(--zc,var(--link));box-shadow:inset 0 0 0 1px var(--zc,var(--link));background:color-mix(in srgb,var(--zc,var(--link)) 9%,var(--panel2));}'
     +'.sr-legend{display:flex;flex-wrap:wrap;gap:5px 15px;margin:0 0 6px;font-size:10.5px;color:var(--muted);} .sr-lg{display:inline-flex;align-items:center;gap:5px;} .sr-lg-hint{margin-left:auto;font-style:italic;opacity:.85;}'
     +'.sr-lg-tail{width:22px;height:0;border-top:2.5px solid color-mix(in srgb,var(--text) 42%,transparent);border-radius:2px;} .sr-lg-arw{color:color-mix(in srgb,var(--text) 55%,transparent);font-size:12px;line-height:1;} .sr-lg-dot{width:10px;height:10px;border-radius:50%;background:color-mix(in srgb,var(--text) 28%,transparent);}'
-    +'.sr-map-wrap{width:100%;} .sr-map{width:100%;height:auto;display:block;overflow:hidden;animation:sr-mapin .4s cubic-bezier(.2,.7,.25,1);} .sr-map.sr-zoomed{animation:sr-zoomin .5s cubic-bezier(.2,.7,.25,1);} .sr-map .sr-qz{cursor:zoom-in;} .sr-map path{pointer-events:none;}'
+    +'.sr-map-wrap{width:100%;} .sr-map{width:100%;height:auto;display:block;overflow:hidden;animation:sr-mapin .4s cubic-bezier(.2,.7,.25,1);} .sr-map.sr-zoomed{animation:sr-zoomin .5s cubic-bezier(.2,.7,.25,1);cursor:zoom-out;} .sr-map.sr-zoomed .sr-dot{cursor:pointer;} .sr-map .sr-qz{cursor:zoom-in;} .sr-map path{pointer-events:none;}'
     +'@keyframes sr-mapin{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}} @keyframes sr-zoomin{from{opacity:0;transform:scale(1.14)}to{opacity:1;transform:scale(1)}}'
     +'.sr-dot{cursor:pointer;transition:r .12s,fill-opacity .12s;} .sr-dot:hover{stroke-width:2.8;}'
     +'.sr-dlab{font:600 11px Inter,sans-serif;fill:color-mix(in srgb,var(--text) 82%,transparent);pointer-events:none;} .sr-dlab-hot{font-weight:800;font-size:12.5px;fill:var(--text);}'
