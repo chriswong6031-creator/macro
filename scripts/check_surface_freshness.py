@@ -110,11 +110,17 @@ def selftest() -> int:
         rc = run(now=datetime(2026, 7, 9, 3, 0, tzinfo=timezone.utc), root=tmp)
         assert rc == 0, f"fresh scenario returned {rc}"
 
-        # Poison one artifact — should still return 0 (warn-only)
+        # Poison one artifact — should still return 0 (warn-only).
+        # Capture stdout so the synthetic ::warning:: line doesn't surface as a real GHA
+        # annotation if --selftest is ever wired into a CI step.
+        import io, contextlib
         spec0 = _ARTIFACTS[0]
         (tmp / spec0.path).write_text(json.dumps({"as_of": "2020-01-01"}))
-        rc = run(now=datetime(2026, 7, 9, 3, 0, tzinfo=timezone.utc), root=tmp)
+        _buf = io.StringIO()
+        with contextlib.redirect_stdout(_buf):
+            rc = run(now=datetime(2026, 7, 9, 3, 0, tzinfo=timezone.utc), root=tmp)
         assert rc == 0, f"stale scenario must still exit 0 (warn-only), got {rc}"
+        assert "SURFACE STALE" in _buf.getvalue(), "stale scenario should have printed a warning"
 
     log.info("check_surface_freshness selftest passed")
     return 0

@@ -235,18 +235,20 @@ def main() -> int:
         print("::warning::allocation sub-build (via build_baskets) raised an unhandled exception"
               " — data/allocation/latest_*.json will NOT be updated this run. "
               f"Root cause: {type(e).__name__}: {e}")
-    if _alloc_stale:
-        # Stamp a sibling freshness file so W3 tape surfaces can render a STALE chip.
-        import json as _json
-        from datetime import datetime, timezone
-        from lib import config as _cfg
-        _fdir = _cfg.ROOT / "site" / "allocationdata"
-        _fdir.mkdir(parents=True, exist_ok=True)
-        (_fdir / "freshness.json").write_text(
-            _json.dumps({"stale": True,
-                         "reason": "allocation sub-build failed or returned stale",
-                         "stamped_at": datetime.now(timezone.utc).isoformat(timespec="seconds")},
-                        separators=(",", ":")))
+    # Always write freshness.json so the file reflects the CURRENT run, not the worst
+    # run in history.  If we only write on failure the file persists stale=true in the
+    # committed tree forever after the first bad nightly, permanently misleading W3.
+    import json as _json
+    from datetime import datetime, timezone
+    from lib import config as _cfg
+    _fdir = _cfg.ROOT / "site" / "allocationdata"
+    _fdir.mkdir(parents=True, exist_ok=True)
+    (_fdir / "freshness.json").write_text(
+        _json.dumps({"stale": _alloc_stale,
+                     "reason": ("allocation sub-build failed or returned stale"
+                                if _alloc_stale else "ok"),
+                     "stamped_at": datetime.now(timezone.utc).isoformat(timespec="seconds")},
+                    separators=(",", ":")))
     try:
         from scripts.build_anticipation import main as _build_anticipation
         _build_anticipation()                             # anticipation.html + per-ticker cones

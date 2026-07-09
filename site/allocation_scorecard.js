@@ -97,20 +97,14 @@
         } else if (h.id || h.name) {
           // Tier 2: derive from the allocation payload's own data (available on ALL pages
           // including allocation.html, since this script already fetched the alloc JSON).
-          var ranks = d.ranks || [];
-          var leaderRank = null;
-          for (i = 0; i < ranks.length; i++) {
-            if (ranks[i] && (ranks[i].id === h.id || ranks[i].name === h.name)) { leaderRank = ranks[i]; break; }
-          }
-          // Check breadth_laggards from the rotation object (allocation payload carries this)
-          var rotLags = (d.rotation && d.rotation.breadth_laggards) ? d.rotation.breadth_laggards : [];
-          for (i = 0; i < rotLags.length; i++) {
-            if (rotLags[i] && (rotLags[i].id === h.id || rotLags[i].name === h.name)) { lag = true; break; }
-          }
-          // Use headline.durability_bar as a proxy: < 0.35 = breaking down
+          // Note: d.rotation.breadth_laggards is NOT present in the live US allocation
+          // payload, so breadth-laggard detection is skipped here; durability_bar is the
+          // only reliable Tier-2 proxy.  The threshold 0.35 is the lower-quartile of the
+          // observed durability_bar distribution across US baskets — below it the leader's
+          // momentum is decelerating materially (display-only caution chip, FT-R1 holds).
           var durLow = (h.durability_bar != null && h.durability_bar < 0.35);
-          if (lag || durLow)
-            faltering = { lag: lag, ladder: '', reco: '', source: 'payload' };
+          if (durLow)
+            faltering = { lag: false, ladder: '', reco: '', source: 'payload' };
         }
       } catch (e) { faltering = null; }
       var faltPill = faltering
