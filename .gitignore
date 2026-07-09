@@ -345,3 +345,11 @@ data/trial_ledger_d2_local.jsonl
 # Yearly mrtj_YYYY.parquet + mrmx_YYYY.parquet + sw_l1_map.parquet +
 # sw_l1_constituents.parquet are Mac-local/server-local only.
 data/china_block_tape/
+
+# TIL W7 DOL foreign-labor-certification store (PR-W7).
+# Quarterly xlsx files are 50-80MB (LCA) / 1-30MB (PERM) — never committed.
+# Compact normalized store (certs.parquet) is runner-local only; not in git.
+# Env override: DOL_CERTS_STORE=/path/to/certs.parquet
+# The data velocity artifact (hiring_velocity.json) is also runner-local.
+# Only the site projection (site/basketdata/hiring_intent.json) is git-tracked.
+data/dol_certs/

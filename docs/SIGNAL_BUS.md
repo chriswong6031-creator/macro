@@ -54,13 +54,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | stock-personality | 5 |
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
+| til-w7-hiring-intent | 3 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
 
 | tier | count |
 |---|---|
-| display | 187 |
+| display | 190 |
 | infrastructure | 77 |
 | scored | 4 |
 | shadow | 46 |
@@ -69,8 +70,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 302 |
-| gitignored-local | 6 |
+| git | 303 |
+| gitignored-local | 8 |
 | r2 | 6 |
 
 ## Artifacts by owner_program
@@ -606,6 +607,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-theme-state | `site/neuralwebdata/theme_state.json` | json | daily-engine | display | 0 | 0 |
 | theme-asymmetry | `data/neuralweb/theme_asymmetry.json` | json | daily-engine | display | 0 | 0 |
 | theme-pathways | `data/neuralweb/theme_pathways.json` | json | daily-engine | display | 0 | 0 |
+
+### til-w7-hiring-intent
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| dol-certs-store | `data/dol_certs/certs.parquet` | parquet | collect | display | 1 | 0 |
+| hiring-velocity | `data/dol_certs/hiring_velocity.json` | json | collect | display | 0 | 0 |
+| site-hiring-intent | `site/basketdata/hiring_intent.json` | json | collect | display | 0 | 0 |
 
 ### us-stocks-prebreakout
 

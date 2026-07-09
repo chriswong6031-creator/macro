@@ -57,6 +57,25 @@ lanes:
         note: >
           T2a ETF-history backfill (#1441) — 20 ETF anchors, full history 2017→.
           Hard-stop at 20 min; runs last of the three tape-flow steps. Non-fatal.
+      - id: collect_dol_certs
+        module: scripts.collect_dol_certs
+        note: >
+          TIL W7 (PR-W7) DOL foreign-labor-certification quarterly ingest.
+          Off the render critical path. Detects newest quarterly LCA/PERM
+          disclosure file not yet ingested, downloads, normalizes to compact
+          store data/dol_certs/certs.parquet (runner-local, gitignored).
+          No-ops in seconds when no new quarter exists.
+          Env override: DOL_CERTS_STORE. Always exits 0 (tolerant).
+      - id: build_hiring_velocity
+        module: scripts.build_hiring_velocity
+        note: >
+          TIL W7 (PR-W7) per-basket hiring-intent velocity (collect lane).
+          Cheap once certs.parquet exists — pure in-memory aggregation, no
+          network calls. Produces data/dol_certs/hiring_velocity.json
+          (runner-local) + site/basketdata/hiring_intent.json (git-tracked).
+          FENCE: cert_velocity_z is a SEPARATE display leg — never fused
+          into fused_obs_z. Employer→ticker via lib.warn_fuzzy.
+          Always exits 0 (tolerant; absent store → honest null written).
       - id: publish_r2_attention
         module: scripts.publish_r2
         args: [--dirs, attention]
@@ -1388,6 +1407,20 @@ divergences:
       documented justification (policy_intent_desk omission IS documented at lines 234-244).
       If these are intentionally omitted for the same reason as policy_intent_desk (LLM/secret
       dependency or long-running), add a comment and a documented divergence entry here.
+
+  - lanes: [collect]
+    differs: >
+      scripts.collect_dol_certs and scripts.build_hiring_velocity are declared in
+      dag.yml collect lane (TIL W7 PR-W7) but are NOT yet present in the live
+      .github/workflows/daily.yml collect job.
+    reason: >
+      New collect-lane steps (TIL W7 DOL PERM/LCA hiring-intent leg). The dag.yml
+      entry registers the intended placement (collect lane, before publish_r2_attention).
+      The daily.yml wiring is a follow-on ops step per the warn_notices.py pattern:
+      "Do NOT edit scripts/collect.py to include this collector — the family is
+      still in ACCRUAL phase." These steps are safe to invoke standalone; the
+      workflow PR will close this divergence when accrual gates pass.
+    evidence: "collectors/dol_labor_certs.py:WIRING NOTE"
 
 # ---------------------------------------------------------------------------
 # MODULES — 25-module IO table from the W5a scout
