@@ -76,6 +76,10 @@ SITE_ARTIFACT_ID = "site-neuralweb-mastermind-context"
 # Hard row cap for candidate_context (ruling §3.1)
 CANDIDATE_ROW_CAP = 250
 
+# Size cap raised from 200KB→300KB (Build 3: analyst block adds rows; prior
+# headroom was only ~1.7KB per Build-1 review).
+CONTEXT_SIZE_CAP_BYTES = 300 * 1024  # 300 KB
+
 # Freshness threshold in hours for lobe stale determination
 LOBE_FRESHNESS_SLA_HOURS = 30.0
 
@@ -213,14 +217,21 @@ def _build_lobe_manifest(registry: dict, repo: Path, now: datetime) -> list[dict
         path_str = entry.get("path", "")
         artifact_path = repo / path_str if path_str else None
         asof = None
-        stale = True
+        stale = None  # unknown until we read the file
         if artifact_path and artifact_path.exists():
-            try:
-                obj = json.loads(artifact_path.read_text(encoding="utf-8"))
-                asof = _asof_of(obj)
-                stale = _is_stale(asof)
-            except Exception:  # noqa: BLE001
-                stale = True
+            if path_str.endswith(".parquet"):
+                # Parquet artifacts cannot be read via json.loads.
+                # Leave asof=None and stale=None (unknown) rather than
+                # reporting stale=True, which would produce a spurious
+                # perma-stale flag (e.g. options-entry-state).
+                pass
+            else:
+                try:
+                    obj = json.loads(artifact_path.read_text(encoding="utf-8"))
+                    asof = _asof_of(obj)
+                    stale = _is_stale(asof)
+                except Exception:  # noqa: BLE001
+                    stale = None
         rows.append({
             "artifact_id": artifact_id,
             "path": path_str,
@@ -387,6 +398,161 @@ def _summarize_cortex(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
+    """Distill macro climate from world_state.json + data/macro_snapshots/latest.json.
+
+    Returns a gap when data/macro_snapshots/latest.json is absent — the snapshot
+    file is created by PR-C; absence means PR-C has not yet landed, so
+    ``has_rich_summary`` must NOT be patched onto the manifest row (red-team §5.4).
+
+    Serialised lobe budget: ≤ 12 KB (RUL-M8).
+    Macro ETF/futures tickers are admissible as macro-level records per RUL-M8;
+    they are NOT candidate names.  The no-new-names invariant is tested by
+    tests/test_macro_context_authority.py.
+    """
+    snapshot_path = repo / "data" / "macro_snapshots" / "latest.json"
+    if not snapshot_path.exists():
+        return {}, "data/macro_snapshots/latest.json absent (PR-C not landed)"
+
+    try:
+        snapshot = _read_json(snapshot_path)
+        if not isinstance(snapshot, dict):
+            return {}, "data/macro_snapshots/latest.json unreadable or not a dict"
+
+        ws = _read_json(repo / "data" / "neuralweb" / "world_state.json")
+        if not isinstance(ws, dict):
+            return {}, "world_state.json absent — cannot build macro_weather"
+
+        # ── Core identity ─────────────────────────────────────────────────────
+        asof = snapshot.get("asof")
+        macro_context_id = snapshot.get("macro_context_id")
+        labels = snapshot.get("labels") or {}
+
+        # ── Quads per market (snapshot v1 domain keys: us/china/hk/canada) ────
+        us_labels = labels.get("us") or {}
+        china_labels = labels.get("china") or {}
+        hk_labels = labels.get("hk") or {}
+        canada_labels = labels.get("canada") or {}
+
+        # ── FX block from world_state fx_dollar lobe ──────────────────────────
+        fx_ws = ws.get("fx_dollar") or {}
+        tx_ws = fx_ws.get("transmission") or {}
+        fx_block = {
+            "regime": fx_ws.get("regime"),
+            "usd_trend": (fx_ws.get("dollar_desk") or {}).get("trend"),
+            "headwind_for": (tx_ws.get("headwind_for") or [])[:5],
+            "tailwind_for": (tx_ws.get("tailwind_for") or [])[:5],
+        }
+
+        # ── Rates block from world_state rates_transmission + rates_credit ────
+        rt_ws = ws.get("rates_transmission") or {}
+        rc_ws = ws.get("rates_credit") or {}
+        yc = rt_ws.get("yield_curve") or {}
+        yc_regime = yc.get("regime") or {}
+        yc_recession = yc.get("recession") or {}
+
+        # Transmission headwinds/tailwinds: compact list of asset names
+        hw_assets = [h.get("asset") for h in (rt_ws.get("headwinds") or []) if isinstance(h, dict) and h.get("asset")]
+        tw_assets = [t.get("asset") for t in (rt_ws.get("tailwinds") or []) if isinstance(t, dict) and t.get("asset")]
+
+        rates_block = {
+            "yield_curve_regime": yc_regime.get("key"),
+            "recession_risk": yc_recession.get("risk"),
+            "transmission_headwinds": hw_assets[:5],
+            "transmission_tailwinds": tw_assets[:3],
+        }
+
+        # ── Credit block from rates_credit ────────────────────────────────────
+        credit_block = {
+            "health_label": rc_ws.get("health_label"),
+            "cycle_phase": rc_ws.get("cycle_phase"),
+        }
+
+        # ── Commodity block from commodity_context ────────────────────────────
+        cc_ws = ws.get("commodity_context") or {}
+        commodity_block = {
+            "regime": cc_ws.get("regime"),
+            "favored": cc_ws.get("favored"),
+        }
+
+        # ── Cross-asset block from cross_asset_flows (R6) ─────────────────────
+        ca_ws = ws.get("cross_asset_flows") or {}
+        ca_corr = ca_ws.get("correlation") or {}
+        ca_im_raw = ca_ws.get("intermarket") or []
+        ca_block = {
+            "regime": ca_ws.get("regime"),
+            "correlation_concentration": ca_corr.get("verdict") if isinstance(ca_corr, dict) else None,
+            "absorption_pctile": ca_corr.get("absorption_pctile") if isinstance(ca_corr, dict) else None,
+            "intermarket_top": ca_im_raw[:3] if isinstance(ca_im_raw, list) else [],
+            "breadth": ca_ws.get("breadth"),
+            "leadlag_verdict": (ca_ws.get("leadlag") or {}).get("verdict"),
+        }
+
+        # ── Label deltas from macro_deltas ────────────────────────────────────
+        md_ws = ws.get("macro_deltas") or {}
+        deltas_raw = md_ws.get("transitions") or []
+        deltas_14d = deltas_raw[:10]
+
+        # ── Contradiction note from world_state contradictions ────────────────
+        contra_ws = ws.get("contradictions") or {}
+        n_contra = contra_ws.get("n") or 0
+        contradiction_note = f"{n_contra} contradiction pairs active" if n_contra else "no contradictions"
+
+        # ── China spine labels (CN-SYS W7 NW adapter) ────────────────────────
+        # Read site/chinastatedata/market_state.json for sovereign spine fields.
+        # Labels-only per the FB counts-only privacy contract (no raw series).
+        # CN-SYS-R1/R13/R14: context_only, no fused score, no LLM origination.
+        china_spine_path = repo / "site" / "chinastatedata" / "market_state.json"
+        china_spine_block: dict = {
+            "china_quad": china_labels.get("china_quad"),
+            "phase_label": None,
+            "who_controls": None,
+            "policy_impulse": None,
+            "source": "site/chinastatedata/market_state.json",
+        }
+        _cn_spine_gap: str | None = None
+        if china_spine_path.exists():
+            try:
+                _cn_raw = json.loads(china_spine_path.read_text(encoding="utf-8"))
+                if isinstance(_cn_raw, dict):
+                    _ph = _cn_raw.get("phase") or {}
+                    _part = _cn_raw.get("participation") or {}
+                    _pol = _cn_raw.get("policy") or {}
+                    china_spine_block["phase_label"] = _ph.get("phase")
+                    china_spine_block["who_controls"] = _part.get("who_controls")
+                    china_spine_block["policy_impulse"] = _pol.get("policy_impulse")
+                    china_spine_block["as_of"] = _cn_raw.get("as_of")
+            except Exception as _exc:  # noqa: BLE001
+                _cn_spine_gap = f"china_market_state: read error ({_exc})"
+                log.warning("mastermind_context: china spine labels read failed — %s", _exc)
+        else:
+            _cn_spine_gap = "china_market_state: site/chinastatedata/market_state.json absent (CN-SYS W6 pending)"
+
+        lobe: dict = {
+            "asof": asof,
+            "macro_context_id": macro_context_id,
+            "us_quad": us_labels.get("us_quad"),
+            "china_quad": china_labels.get("china_quad"),
+            "china": china_spine_block,  # CN-SYS W7: sovereign China spine labels
+            "hk_quad": hk_labels.get("hk_quad"),
+            "canada_quad": canada_labels.get("canada_quad"),
+            "fx": fx_block,
+            "rates": rates_block,
+            "credit": credit_block,
+            "commodity": commodity_block,
+            "cross_asset": ca_block,
+            "deltas_14d": deltas_14d,
+            "contradiction_note": contradiction_note,
+            "display_only": True,
+        }
+        if _cn_spine_gap:
+            lobe["_gap_china_spine"] = _cn_spine_gap
+
+        return lobe, None
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("mastermind_context: macro_weather summarizer failed — %s", exc)
+        return {}, f"macro_weather: {exc}"
 def _summarize_claim_reliability(repo: Path) -> tuple[dict, str | None]:
     """Distill site/qledger/track_record.json into the claim_reliability lobe.
 
@@ -540,6 +706,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "bottom_sensors": _summarize_bottom_sensors,
     "options_entry": _summarize_options_entry,
     "cortex": _summarize_cortex,
+    "macro_weather": _summarize_macro_weather,
     "claim_reliability": _summarize_claim_reliability,
     "cycle_pattern": _summarize_cycle_pattern,
 }
@@ -552,25 +719,228 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "bottom_sensors": ["bottom-sensors-json"],
     "options_entry": ["options-entry-gate"],
     "cortex": ["cortex-memo"],
+    "macro_weather": ["macro-snapshots-latest"],
     "claim_reliability": ["site-qledger-track-record"],
     "cycle_pattern": ["cycle-pattern-state"],
 }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Analyst targets loader (Build 3 — data/analyst/targets.parquet)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Columns projected from the parquet into each candidate row.
+# Upstream (collector) pre-computes implied_upside_pct + target_dispersion.
+# The builder is a pure projection — no arithmetic here.
+_ANALYST_CONTEXT_COLS = (
+    "target_mean",
+    "implied_upside_pct",
+    "target_dispersion",
+    "recommendation",
+    "num_analysts",
+)
+
+
+def _load_analyst_map(repo: Path, gap_notes: list[str]) -> dict[str, dict]:
+    """Load data/analyst/targets.parquet into a {ticker: {...}} index.
+
+    Fail-open: absent or unreadable parquet → empty dict + gap_note (honest-null).
+    The builder treats a missing analyst block the same as absent data — the
+    candidate row is unaffected and no downstream surface is gated on this.
+
+    DISPLAY/CONTEXT only: fields carry allowed_behavior='annotate_only' in the
+    candidate row and may never feed any scored surface.
+    """
+    path = repo / "data" / "analyst" / "targets.parquet"
+    if not path.exists():
+        gap_notes.append(
+            "candidate_context.analyst: data/analyst/targets.parquet absent "
+            "(run collectors/yf_analyst.py to populate)"
+        )
+        return {}
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(path)
+        if "ticker" not in df.columns:
+            gap_notes.append(
+                "candidate_context.analyst: targets.parquet missing 'ticker' column"
+            )
+            return {}
+        out: dict[str, dict] = {}
+        cols = [c for c in _ANALYST_CONTEXT_COLS if c in df.columns]
+        for _, row in df[["ticker"] + cols].iterrows():
+            ticker = row["ticker"]
+            if not ticker:
+                continue
+            entry = {c: row[c] for c in cols if c in row.index}
+            # Coerce numpy scalars (pandas returns numpy dtypes from parquet)
+            entry = _coerce_numpy(entry)
+            # Remove None / NaN values — _sparse contract
+            clean: dict = {}
+            for k, v in entry.items():
+                if v is None:
+                    continue
+                if isinstance(v, float) and math.isnan(v):
+                    continue
+                clean[k] = v
+            if clean:
+                out[str(ticker)] = clean
+        return out
+    except Exception as exc:  # noqa: BLE001
+        gap_notes.append(
+            f"candidate_context.analyst: targets.parquet read failed — {exc}"
+        )
+        return {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Candidate context sub-block helpers (pure projections — no scoring)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _earnings_ctx_for_ticker(
+    ticker: str,
+    earnings_map: dict[str, Any],
+    asof: datetime,
+    br_full: dict,
+) -> dict:
+    """Compute earnings_ctx sub-block for one ticker.
+
+    Pure projection: reads next_date from earnings_map (pre-loaded once).
+    days_to_earnings = (next_date - asof).days; is_blackout = 0 < days <= 30.
+    shareholder_yield surfaced from bottom_map if present (no recompute).
+    Returns {} when no earnings row exists.
+    """
+    row: dict = {}
+    rec = earnings_map.get(ticker)
+    if rec is not None:
+        next_date_raw = rec.get("next_date")
+        if next_date_raw is not None:
+            try:
+                from datetime import date as _date  # noqa: PLC0415
+                if hasattr(next_date_raw, "date"):
+                    nd = next_date_raw.date()
+                elif isinstance(next_date_raw, str):
+                    nd = _date.fromisoformat(str(next_date_raw)[:10])
+                else:
+                    nd = _date.fromisoformat(str(next_date_raw)[:10])
+                asof_date = asof.date() if hasattr(asof, "date") else asof
+                days_to = (nd - asof_date).days
+                # next_date is already in bottom.earnings_next_date — omit here to
+                # avoid duplication and keep payload within 200KB cap.
+                row["days_to_earnings"] = days_to
+                row["is_blackout"] = bool(0 < days_to <= 30)
+            except Exception:  # noqa: BLE001
+                pass
+    sy = br_full.get("shareholder_yield")
+    if sy is not None:
+        row["shareholder_yield"] = sy
+    return _sparse(row)
+
+
+def _load_earnings_map(repo: Path, gap_notes: list[str]) -> dict[str, dict]:
+    """Load data/earnings/earnings.parquet once; return {ticker: {next_date, ...}}.
+
+    Honest-null on absence (per nwqs-c graceful pattern).
+    """
+    earnings_map: dict[str, dict] = {}
+    ep = repo / "data" / "earnings" / "earnings.parquet"
+    if not ep.exists():
+        gap_notes.append("candidate_context.earnings_ctx: earnings.parquet absent — block omitted")
+        return earnings_map
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(ep, columns=["next_date"])
+        for ticker, row in df.iterrows():
+            earnings_map[str(ticker)] = {"next_date": row["next_date"]}
+    except Exception as exc:  # noqa: BLE001
+        gap_notes.append(f"candidate_context.earnings_ctx: earnings.parquet read failed — {exc}")
+    return earnings_map
+
+
+def _rpo_ctx_for_ticker(ticker: str, rpo_map: dict[str, dict]) -> dict:
+    """Compute visibility sub-block for one ticker from pre-loaded RPO map.
+
+    rpo_rev_ratio = rpo / revenue (guarded: revenue > 0).
+    rpo_yoy_pct computed if prior-year RPO exists; else omitted.
+    Returns {} when ticker absent from rpo_map.
+    """
+    rec = rpo_map.get(ticker)
+    if rec is None:
+        return {}
+    row: dict = {}
+    rpo = rec.get("rpo")
+    revenue = rec.get("revenue")
+    prior_rpo = rec.get("prior_rpo")
+    # rpo_rev_ratio and rpo_yoy_pct are the display-useful derived values; raw rpo
+    # is a large absolute float (e.g. 2.25e+10) and is omitted to keep payload compact.
+    if rpo is not None and revenue is not None and isinstance(revenue, (int, float)) and revenue > 0:
+        row["rpo_rev_ratio"] = round(rpo / revenue, 4)
+    if rpo is not None and prior_rpo is not None and isinstance(prior_rpo, (int, float)) and prior_rpo > 0:
+        row["rpo_yoy_pct"] = round((rpo - prior_rpo) / prior_rpo * 100, 2)
+    return _sparse(row)
+
+
+def _load_rpo_map(repo: Path, gap_notes: list[str]) -> dict[str, dict]:
+    """Load data/edgar/rpo.parquet once; return {ticker: {rpo, revenue, prior_rpo}}.
+
+    Takes the latest fiscal year per ticker; prior_rpo is the immediately
+    preceding year's value (for yoy pct). Honest-null on absence.
+    """
+    rpo_map: dict[str, dict] = {}
+    rp = repo / "data" / "edgar" / "rpo.parquet"
+    if not rp.exists():
+        gap_notes.append("candidate_context.visibility: rpo.parquet absent — block omitted")
+        return rpo_map
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(rp, columns=["ticker", "fy", "rpo", "revenue"])
+        df = df.sort_values(["ticker", "fy"])
+        for ticker, grp in df.groupby("ticker"):
+            rows = grp.reset_index(drop=True)
+            latest = rows.iloc[-1]
+            rec: dict = {
+                "rpo": _coerce_numpy(latest["rpo"]),
+                "revenue": _coerce_numpy(latest["revenue"]),
+            }
+            if len(rows) >= 2:
+                rec["prior_rpo"] = _coerce_numpy(rows.iloc[-2]["rpo"])
+            rpo_map[str(ticker)] = rec
+    except Exception as exc:  # noqa: BLE001
+        gap_notes.append(f"candidate_context.visibility: rpo.parquet read failed — {exc}")
+    return rpo_map
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Candidate context builder
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_candidate_context(repo: Path, gap_notes: list[str]) -> dict:
+def _build_candidate_context(
+    repo: Path,
+    gap_notes: list[str],
+    now: datetime | None = None,
+) -> dict:
     """Build per-ticker candidate_context following the scope rule (ruling §3.1).
 
     Universe = standouts (buy/watch/laggards) ∪ altdata signals/broken_signals
                ∪ radar_ticker tickers where actionable NW context exists.
 
     Per-row: bottom (from bottom_sensors), options (from state.parquet),
+             leverage/structural/dilution (from bottom_sensors extended fields),
+             earnings_ctx (from earnings.parquet + bottom_sensors),
+             visibility (from edgar/rpo.parquet),
              graph_conflicts (contradiction records mentioning ticker/sector),
              kernel caveat, allowed_behavior='annotate_only'.
+
+    All sub-blocks are pure projections — no arithmetic combining fields into
+    a composite/score; no field may gate, rank, or size any board surface.
     """
+    asof = now or datetime.now(timezone.utc)
+
+    # --- One-shot data loads (outside per-ticker loop) ---
+    earnings_map = _load_earnings_map(repo, gap_notes)
+    rpo_map = _load_rpo_map(repo, gap_notes)
+    # Analyst targets (Build 3 — free yfinance, display/context only, PIT snapshot)
+    analyst_map = _load_analyst_map(repo, gap_notes)
     # --- Standouts tickers ---
     standouts_path = repo / "site" / "factordata" / "us_standouts.json"
     standouts_tickers: set[str] = set()
@@ -697,6 +1067,71 @@ def _build_candidate_context(repo: Path, gap_notes: list[str]) -> dict:
             br_full = bottom_map[ticker]
             br = {k: br_full[k] for k in _BOTTOM_CONTEXT_COLS if k in br_full}
             row["bottom"] = _sparse(br)
+            # Valuation context slice — display/annotate only; no origination.
+            # Pulled from the SAME bottom_sensors row (no new source) so size budget
+            # and null hygiene are maintained.  Whole key omitted when all values
+            # are None/missing (so the cortex never reads absence as "fairly valued").
+            _VALUATION_CONTEXT_COLS = ("ev_sales", "ev_ebit", "p_fcf", "pe")
+            val_raw = {k: br_full.get(k) for k in _VALUATION_CONTEXT_COLS if br_full.get(k) is not None}
+            val_sparse = _sparse(val_raw)
+            if val_sparse:
+                row["valuation"] = val_sparse
+
+            # --- leverage block (pure allowlist from bottom_sensors; no arithmetic) ---
+            _LEVERAGE_COLS = ("interest_coverage", "net_debt_to_ebitda", "net_debt_to_op_income")
+            lev_raw = {k: br_full.get(k) for k in _LEVERAGE_COLS if br_full.get(k) is not None}
+            lev_sparse = _sparse(lev_raw)
+            if lev_sparse:
+                row["leverage"] = lev_sparse
+
+            # --- structural block (decline geometry + underwater state + sponsorship) ---
+            # sponsorship_state folded here — do NOT create a separate sponsorship block.
+            _STRUCTURAL_COLS = (
+                "decline_geometry", "underwater_state",
+                "decline_herf", "sponsorship_state",
+            )
+            struct_raw = {k: br_full.get(k) for k in _STRUCTURAL_COLS if br_full.get(k) is not None}
+            struct_sparse = _sparse(struct_raw)
+            if struct_sparse:
+                row["structural"] = struct_sparse
+
+            # --- dilution block (shelf / takedown / dilution events) ---
+            _DILUTION_COLS = ("days_since_shelf", "days_since_takedown", "dilution_events_365d")
+            dil_raw = {k: br_full.get(k) for k in _DILUTION_COLS if br_full.get(k) is not None}
+            dil_sparse = _sparse(dil_raw)
+            if dil_sparse:
+                row["dilution"] = dil_sparse
+
+            # --- earnings_ctx block (earnings proximity + optional shareholder_yield) ---
+            ec = _earnings_ctx_for_ticker(ticker, earnings_map, asof, br_full)
+            if ec:
+                row["earnings_ctx"] = ec
+        else:
+            # No bottom_map row — still attempt earnings_ctx from earnings.parquet only
+            ec = _earnings_ctx_for_ticker(ticker, earnings_map, asof, {})
+            if ec:
+                row["earnings_ctx"] = ec
+
+        # --- visibility block (RPO / revenue visibility from edgar) ---
+        vis = _rpo_ctx_for_ticker(ticker, rpo_map)
+        if vis:
+            row["visibility"] = vis
+
+        # Analyst context block (Build 3 — display/context only, PIT snapshot).
+        # Fields are pre-computed upstream by collectors/yf_analyst.py; the builder
+        # is a pure projection (no arithmetic here). Omit the whole block when
+        # analyst_map has no entry for this ticker (honest-null contract).
+        if ticker in analyst_map:
+            analyst_entry = analyst_map[ticker]
+            analyst_sparse = _sparse({
+                "target_mean":          analyst_entry.get("target_mean"),
+                "implied_upside_pct":   analyst_entry.get("implied_upside_pct"),
+                "target_dispersion":    analyst_entry.get("target_dispersion"),
+                "recommendation":       analyst_entry.get("recommendation"),
+                "num_analysts":         analyst_entry.get("num_analysts"),
+            })
+            if analyst_sparse:
+                row["analyst"] = analyst_sparse
 
         # Options row (sparse, numpy-coerced)
         if ticker in options_map:
@@ -826,6 +1261,10 @@ def _build_freshness(lobes: dict, lobe_manifest: list[dict]) -> dict:
             _asof_of(lobes.get("cortex", {}).get("memo")),
             False,
         ),
+        "macro_weather": (
+            lobes.get("macro_weather", {}).get("asof"),
+            False,
+        ),
         "claim_reliability": (
             lobes.get("claim_reliability", {}).get("as_of"),
             False,
@@ -920,10 +1359,13 @@ def build_context(
         "site/factordata/us_standouts.json",
         "site/altdata/mastermind.json",
         "site/basketdata/radar_ticker.json",
+        "data/earnings/earnings.parquet",
+        "data/edgar/rpo.parquet",
+        "data/analyst/targets.parquet",
     ]
 
     # ── Candidate context ─────────────────────────────────────────────────────
-    candidate_context = _build_candidate_context(repo, gap_notes)
+    candidate_context = _build_candidate_context(repo, gap_notes, now=now)
 
     # ── Freshness index ───────────────────────────────────────────────────────
     freshness = _build_freshness(lobes, lobe_manifest)

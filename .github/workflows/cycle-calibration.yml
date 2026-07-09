@@ -260,6 +260,10 @@ jobs:
             exit 0
           fi
           python -m scripts.grade_promises --verbose || true
+          # NOTE: this lane has permissions: contents: read — it does NOT commit
+          # the refreshed scorecard JSONs.  site/measurement.html is rebuilt nightly
+          # by daily.yml (cl_misc cluster, scripts.build_measurement step), so the
+          # page lags a regrade by at most one night.
 
       # ── Slot: D4 price-basis audit (planned, W2.2) ─────────────────────────
       # When merged: python -m scripts.audit_price_basis --report

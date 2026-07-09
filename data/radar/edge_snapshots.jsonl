@@ -3848,3 +3848,13 @@
 {"date":"2026-07-07","kind":"ticker","subject":"MSFT","ticker":"MSFT","edge_score":0,"state":"BROKEN_LAGGARD"}
 {"date":"2026-07-07","kind":"ticker","subject":"TSLA","ticker":"TSLA","edge_score":0,"state":"CONFIRMED_UP"}
 {"date":"2026-07-07","kind":"ticker","subject":"MNST","ticker":"MNST","edge_score":0,"state":"NEGATIVE_DIVERGENCE"}
+{"date":"2026-07-07","kind":"basket","subject":"us_sector_energy","ticker":"XLE","edge_score":25,"state":"CONFIRMED_DOWN"}
+{"date":"2026-07-07","kind":"ticker","subject":"SGML","ticker":"SGML","edge_score":42,"state":"NEGATIVE_DIVERGENCE"}
+{"date":"2026-07-07","kind":"ticker","subject":"ALM","ticker":"ALM","edge_score":41,"state":"CONFIRMED_DOWN"}
+{"date":"2026-07-07","kind":"ticker","subject":"ABBV","ticker":"ABBV","edge_score":26,"state":"NEGATIVE_DIVERGENCE"}
+{"date":"2026-07-07","kind":"ticker","subject":"NXPI","ticker":"NXPI","edge_score":23,"state":"CONFIRMED_DOWN"}
+{"date":"2026-07-07","kind":"ticker","subject":"APA","ticker":"APA","edge_score":15,"state":"CONFIRMED_DOWN"}
+{"date":"2026-07-07","kind":"ticker","subject":"TPL","ticker":"TPL","edge_score":15,"state":"NEGATIVE_DIVERGENCE"}
+{"date":"2026-07-07","kind":"ticker","subject":"OKE","ticker":"OKE","edge_score":11,"state":"NEGATIVE_DIVERGENCE"}
+{"date":"2026-07-07","kind":"ticker","subject":"RHHBY","ticker":"RHHBY","edge_score":10,"state":"CONFIRMED_DOWN"}
+{"date":"2026-07-07","kind":"ticker","subject":"DVA","ticker":"DVA","edge_score":9,"state":"NEGATIVE_DIVERGENCE"}

@@ -1,0 +1,331 @@
+#!/usr/bin/env python3
+"""End-to-end verification of Slate against a local server.
+
+Usage: python3 -m playwright... just run: python3 verify_playwright.py [base_url]
+Writes screenshots to /tmp/slate_verify/.
+"""
+import sys
+import time
+from pathlib import Path
+
+from playwright.sync_api import sync_playwright, expect
+
+BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8123"
+SHOTS = Path("/tmp/slate_verify")
+SHOTS.mkdir(exist_ok=True)
+
+results = []
+
+
+def check(name, cond, detail=""):
+    results.append((name, bool(cond), detail))
+    print(("PASS " if cond else "FAIL ") + name + (f"  [{detail}]" if detail and not cond else ""))
+
+
+def drag(page, from_box, to_x, to_y, steps=12):
+    page.mouse.move(from_box["x"] + from_box["width"] / 2, from_box["y"] + 14)
+    page.mouse.down()
+    fx, fy = from_box["x"] + from_box["width"] / 2, from_box["y"] + 14
+    for i in range(1, steps + 1):
+        page.mouse.move(fx + (to_x - fx) * i / steps, fy + (to_y - fy) * i / steps)
+        page.wait_for_timeout(16)
+    page.mouse.up()
+    page.wait_for_timeout(350)
+
+
+with sync_playwright() as pw:
+    browser = pw.chromium.launch()
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    page.goto(BASE)
+    page.wait_for_timeout(400)
+
+    # 1. first-run seed
+    check("first-run: 3 seeded boards", page.locator(".board").count() == 3)
+    check("first-run: 7 seeded cards", page.locator(".card").count() == 7,
+          str(page.locator(".card").count()))
+    page.screenshot(path=str(SHOTS / "01_first_run.png"))
+
+    # 2. add card via composer (Enter for rapid entry)
+    b0 = page.locator(".board").nth(0)
+    b0.locator(".add-card-btn").click()
+    page.locator(".composer-title").fill("Buy espresso beans")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(200)
+    check("composer: card added", b0.locator(".card-title", has_text="Buy espresso beans").count() == 1)
+    check("composer: stays open for rapid entry", page.locator(".composer-title").count() == 1)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+    check("composer: Escape closes", page.locator(".composer").count() == 0)
+
+    # 3. drag card from board 1 to board 2
+    src = b0.locator(".card", has_text="Drag me onto another board")
+    sbox = src.bounding_box()
+    b1 = page.locator(".board").nth(1)
+    tbox = b1.locator(".cards").bounding_box()
+    drag(page, sbox, tbox["x"] + tbox["width"] / 2, tbox["y"] + tbox["height"] - 10)
+    moved = b1.locator(".card-title", has_text="Drag me onto another board").count()
+    check("card dnd: moved across boards", moved == 1)
+    check("card dnd: removed from source",
+          b0.locator(".card-title", has_text="Drag me onto another board").count() == 0)
+
+    # 4. complete ritual
+    target = b0.locator(".card", has_text="Click my circle")
+    target.locator(".complete-circle").click()
+    page.wait_for_timeout(1100)
+    check("complete: card left active list", b0.locator(".card", has_text="Click my circle").count() == 0)
+    check("complete: done ledger shows", "1 done" in (b0.locator(".done-bar-label").text_content() or ""))
+    # expand + restore
+    b0 = page.locator(".board").nth(0)
+    b0.locator(".done-bar").click()
+    page.wait_for_timeout(250)
+    check("done: expanded list", page.locator(".done-list .done-card").count() == 1)
+    page.locator(".done-card .complete-circle.filled").click()
+    page.wait_for_timeout(300)
+    b0 = page.locator(".board").nth(0)
+    check("done: restore works", b0.locator(".card", has_text="Click my circle").count() == 1)
+    # complete again for the screenshots/state
+    b0.locator(".card", has_text="Click my circle").locator(".complete-circle").click()
+    page.wait_for_timeout(1100)
+
+    # 5. card modal: color, tag, due, desc
+    page.locator(".card", has_text="Buy espresso beans").click()
+    page.wait_for_timeout(350)
+    check("modal: opens", page.locator(".modal").count() == 1)
+    page.locator(".swatch.tint-c7").click()
+    page.locator(".tag-input").fill("errand")
+    page.keyboard.press("Enter")
+    page.locator(".due-input").fill("2026-07-15")
+    page.locator(".modal-desc").fill("The good ones from the roastery on 5th.")
+    page.wait_for_timeout(200)
+    page.screenshot(path=str(SHOTS / "02_modal.png"))
+    page.mouse.click(30, 450)  # backdrop
+    page.wait_for_timeout(350)
+    check("modal: closes on outside click", page.locator(".modal").count() == 0)
+    card = page.locator(".card", has_text="Buy espresso beans")
+    check("modal edits: tint applied", "tint-c7" in (card.get_attribute("class") or ""))
+    check("modal edits: tag chip", card.locator(".tag-chip", has_text="errand").count() == 1)
+    check("modal edits: due chip", card.locator(".due-chip").count() == 1)
+    check("modal edits: desc indicator", card.locator(".desc-chip").count() == 1)
+
+    # 6. attachment via simulated file drop (image)
+    card_box = card.bounding_box()
+    page.evaluate(
+        """async ([cx, cy]) => {
+            const cv = document.createElement('canvas');
+            cv.width = 80; cv.height = 60;
+            const ctx = cv.getContext('2d');
+            ctx.fillStyle = '#3A5BF0'; ctx.fillRect(0,0,80,60);
+            ctx.fillStyle = '#fff'; ctx.fillRect(16,14,48,32);
+            const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+            const file = new File([blob], 'mock-photo.png', {type: 'image/png'});
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            const txt = new File([new Blob(['hello slate'])], 'notes.txt', {type: 'text/plain'});
+            dt.items.add(txt);
+            window.dispatchEvent(new DragEvent('dragover', {dataTransfer: dt, clientX: cx, clientY: cy, cancelable: true, bubbles: true}));
+            window.dispatchEvent(new DragEvent('drop', {dataTransfer: dt, clientX: cx, clientY: cy, cancelable: true, bubbles: true}));
+        }""",
+        [card_box["x"] + card_box["width"] / 2, card_box["y"] + 10],
+    )
+    page.wait_for_timeout(900)
+    card = page.locator(".card", has_text="Buy espresso beans")
+    check("attach: image thumbnail on card", card.locator(".att-img img").count() == 1)
+    check("attach: file chip on card", card.locator(".att-file").count() == 1)
+    chip_title = card.locator(".att-file").get_attribute("title")
+    check("attach: hover shows filename", chip_title == "notes.txt", str(chip_title))
+    # lightbox
+    card.locator(".att-img").click()
+    page.wait_for_timeout(350)
+    check("attach: lightbox opens", page.locator(".lightbox img").count() == 1)
+    page.screenshot(path=str(SHOTS / "03_lightbox.png"))
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(300)
+    check("attach: lightbox closes", page.locator(".lightbox").count() == 0)
+
+    # 7. double-click canvas creates a board
+    page.mouse.dblclick(700, 700)
+    page.wait_for_timeout(300)
+    check("dblclick: new board input", page.locator(".board-title-input").count() == 1)
+    page.keyboard.type("Errands")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(250)
+    check("dblclick: board named", page.locator(".board-title", has_text="Errands").count() == 1)
+    check("dblclick: 4 boards now", page.locator(".board").count() == 4)
+
+    # 8. board drag persists
+    eb = page.locator(".board", has=page.locator(".board-title", has_text="Errands"))
+    ebox = eb.bounding_box()
+    drag(page, ebox, ebox["x"] + 260, ebox["y"] + 60)
+    pos_before = eb.evaluate("n => [n.style.left, n.style.top]")
+    page.reload()
+    page.wait_for_timeout(500)
+    eb = page.locator(".board", has=page.locator(".board-title", has_text="Errands"))
+    pos_after = eb.evaluate("n => [n.style.left, n.style.top]")
+    check("board drag: position persisted across reload", pos_before == pos_after,
+          f"{pos_before} vs {pos_after}")
+
+    # 9. persistence of everything else
+    check("persist: cards survive reload",
+          page.locator(".card-title", has_text="Buy espresso beans").count() == 1)
+    check("persist: attachments survive reload",
+          page.locator(".card", has_text="Buy espresso beans").locator(".att-img img").count() == 1)
+    check("persist: done ledger survives", "1 done" in (page.locator(".done-bar-label").first.text_content() or ""))
+
+    # 10. tidy
+    page.locator("#tidyBtn").click()
+    page.wait_for_timeout(700)
+    xs = page.eval_on_selector_all(".board", "ns => ns.map(n => parseInt(n.style.left))")
+    ys = page.eval_on_selector_all(".board", "ns => ns.map(n => parseInt(n.style.top))")
+    on_grid = all((x - 48) % 324 == 0 for x in xs)
+    check("tidy: boards snapped to grid columns", on_grid, f"xs={xs} ys={ys}")
+    page.screenshot(path=str(SHOTS / "04_tidy_light.png"))
+
+    # 11. workspaces: create, switch, rename flow
+    page.locator("#wsSwitcher").click()
+    page.wait_for_timeout(250)
+    page.locator(".pop-item", has_text="New workspace").click()
+    page.wait_for_timeout(400)
+    if page.locator(".ws-rename-input").count():
+        page.locator(".ws-rename-input").fill("Trading")
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(300)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+    check("workspace: created + switched", (page.locator("#wsName").text_content() or "") == "Trading",
+          page.locator("#wsName").text_content())
+    check("workspace: empty canvas hint", page.locator("#hint").is_visible())
+    # add a board here, then switch back
+    page.mouse.dblclick(500, 400)
+    page.keyboard.type("Watchlist")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(200)
+    page.locator("#wsSwitcher").click()
+    page.wait_for_timeout(250)
+    page.locator(".ws-row-name", has_text="Personal").click()
+    page.wait_for_timeout(300)
+    check("workspace: switch back shows 4 boards", page.locator(".board").count() == 4)
+
+    # 12. dark theme
+    page.locator("#themeBtn").click()
+    page.wait_for_timeout(300)
+    check("theme: dark applied", page.evaluate("document.documentElement.dataset.theme") == "dark")
+    page.screenshot(path=str(SHOTS / "05_dark.png"))
+    page.locator("#themeBtn").click()
+
+    # 13. export payload sanity
+    n_files = page.evaluate("async () => Object.keys(await fileAll()).length")
+    check("export: attachment store has files", n_files >= 2, str(n_files))
+    state_ok = page.evaluate(
+        "() => { const s = JSON.parse(localStorage.getItem('slate.state.v1')); return s.v === 1 && s.ws.length === 2; }")
+    check("export: state JSON valid, 2 workspaces", state_ok)
+
+    # 14. delete card with undo
+    page.locator(".card", has_text="Buy espresso beans").click()
+    page.wait_for_timeout(300)
+    page.locator(".modal-foot .ghost-btn.danger").click()
+    page.wait_for_timeout(300)
+    check("delete: card gone", page.locator(".card", has_text="Buy espresso beans").count() == 0)
+    check("delete: undo toast", page.locator(".toast-action", has_text="Undo").count() == 1)
+    page.locator(".toast-action").click()
+    page.wait_for_timeout(300)
+    check("delete: undo restores", page.locator(".card", has_text="Buy espresso beans").count() == 1)
+
+    # 15. REGRESSION: composer draft survives a board re-render (review finding: input loss)
+    b0 = page.locator(".board").nth(0)
+    b0.locator(".add-card-btn").click()
+    page.locator(".composer-title").fill("half-typed thought")
+    page.evaluate("rerenderBoard(activeWs().boards[0].id)")
+    page.wait_for_timeout(250)
+    check("regression: composer draft survives rerender",
+          page.locator(".composer-title").input_value() == "half-typed thought")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+
+    # 16. REGRESSION: double-complete across a mid-ritual rerender cannot duplicate into done
+    dup = page.evaluate(
+        """async () => {
+            const b = activeWs().boards.find(x => x.cards.length);
+            const c = b.cards[0];
+            completeCard(c.id);
+            await new Promise(r => setTimeout(r, 100));
+            rerenderBoard(b.id);           // wipes the .completing DOM class mid-ritual
+            completeCard(c.id);            // second click on the fresh node
+            await new Promise(r => setTimeout(r, 1400));
+            return { inDone: b.done.filter(x => x.id === c.id).length,
+                     inCards: b.cards.filter(x => x.id === c.id).length };
+        }""")
+    check("regression: no duplicate in done", dup["inDone"] == 1 and dup["inCards"] == 0, str(dup))
+
+    # 17. REGRESSION: dropping a file on the OPEN modal attaches it
+    page.locator(".card", has_text="Buy espresso beans").click()
+    page.wait_for_timeout(300)
+    tiles_before = page.locator(".att-tile").count()
+    page.evaluate(
+        """() => {
+            const m = document.querySelector('.modal');
+            const r = m.getBoundingClientRect();
+            const dt = new DataTransfer();
+            dt.items.add(new File([new Blob(['modal drop'])], 'dropped-on-modal.txt', {type: 'text/plain'}));
+            const opts = {dataTransfer: dt, clientX: r.left + r.width/2, clientY: r.top + 40, cancelable: true, bubbles: true};
+            m.dispatchEvent(new DragEvent('dragover', opts));
+            m.dispatchEvent(new DragEvent('drop', opts));
+        }""")
+    page.wait_for_timeout(600)
+    check("regression: modal drop attaches file", page.locator(".att-tile").count() == tiles_before + 1,
+          f"{tiles_before} -> {page.locator('.att-tile').count()}")
+    page.mouse.click(30, 450)
+    page.wait_for_timeout(300)
+
+    # 18. REGRESSION: an .html attachment downloads instead of rendering (script-execution vector)
+    card = page.locator(".card", has_text="Buy espresso beans")
+    cb = card.bounding_box()
+    page.evaluate(
+        """([cx, cy]) => {
+            const dt = new DataTransfer();
+            dt.items.add(new File([new Blob(['<script>document.title="pwned"</script>'])], 'evil.html', {type: 'text/html'}));
+            const opts = {dataTransfer: dt, clientX: cx, clientY: cy, cancelable: true, bubbles: true};
+            window.dispatchEvent(new DragEvent('dragover', opts));
+            window.dispatchEvent(new DragEvent('drop', opts));
+        }""", [cb["x"] + cb["width"] / 2, cb["y"] + 10])
+    page.wait_for_timeout(600)
+    card = page.locator(".card", has_text="Buy espresso beans")
+    html_chip = card.locator(".att-file[title='evil.html']")
+    check("regression: html file shows as chip", html_chip.count() == 1)
+    with page.expect_download() as dl:
+        html_chip.click()
+    check("regression: html attachment downloads (not rendered)",
+          dl.value.suggested_filename == "evil.html", dl.value.suggested_filename)
+    check("regression: no script execution", "pwned" not in page.title(), page.title())
+
+    page.screenshot(path=str(SHOTS / "06_final.png"))
+
+    js_errors = [e for e in errors if "favicon" not in e.lower()]
+    check("console: no JS errors", not js_errors, "; ".join(js_errors[:5]))
+
+    # 19. REGRESSION: corrupt localStorage on a COLD start is stashed for recovery, not clobbered.
+    # (An in-session reload can't simulate this: the pagehide flush rewrites good state first.)
+    ctx2 = browser.new_context(viewport={"width": 1440, "height": 900})
+    ctx2.add_init_script("try { localStorage.setItem('slate.state.v1', '{\"v\":1,\"ws\":['); } catch (e) {}")
+    p2 = ctx2.new_page()
+    p2.goto(BASE)
+    p2.wait_for_timeout(700)
+    check("regression: corrupt state reseeds UI", p2.locator(".board").count() == 3,
+          str(p2.locator(".board").count()))
+    stash = p2.evaluate("localStorage.getItem('slate.state.v1.recovery')")
+    check("regression: corrupt state stashed under recovery key", stash == '{"v":1,"ws":[', str(stash))
+    check("regression: recovery toast shown", p2.locator(".toast", has_text="recovery").count() == 1)
+    ctx2.close()
+
+    browser.close()
+
+fails = [r for r in results if not r[1]]
+print(f"\n{len(results) - len(fails)}/{len(results)} passed")
+if fails:
+    print("FAILURES:")
+    for name, _, detail in fails:
+        print(" -", name, detail)
+    sys.exit(1)

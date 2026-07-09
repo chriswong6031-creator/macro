@@ -13,6 +13,11 @@ on:
       - "scripts/check_nav_gap.py"
       - "scripts/check_nav_mega.py"
       - "scripts/check_board_contradictions.py"
+      # ms-board coherence guard: a rendered Market State board must be single-snapshot
+      # coherent (2026-07-07 -X theirs hybrid incident, commit 5bf116a3b3).
+      - "scripts/check_ms_board_coherence.py"
+      - "tests/test_check_ms_board_coherence.py"
+      - "engine/market_state.py"
       # title-i18n guard: bilingual/CJK text must never sit in a title= attribute.
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
@@ -134,6 +139,16 @@ on:
       - "tests/test_signal_bus_doc.py"
       - "tests/test_synapse_registry.py"
       - "tests/test_neuralweb_envelope.py"
+      # NW Macro Context Rail R5 (PR-A): five orphan NW test files now wired via neural-web-core job.
+      - "tests/test_mastermind_context.py"
+      - "tests/test_confluence.py"
+      - "tests/test_spine_query.py"
+      - "tests/test_ask_brain.py"
+      - "tests/test_world_state.py"
+      - "tests/test_admin_neural_web.py"
+      - "tests/test_macro_snapshot.py"
+      - "tests/test_macro_context_authority.py"
+      - "tests/test_law_dates.py"
       # Wave B2 ETM registry: builder, integrity gate, config, and both test files must
       # re-run together so a schema drift or authority violation fails RED before merging.
       # engine/neuralweb/** above already covers engine/neuralweb/entity_thesis_mechanism_registry.py.
@@ -266,6 +281,28 @@ jobs:
             exit 0
           fi
           python3 scripts/check_board_contradictions.py site/factordata/us_standouts.json
+
+  ms-board-coherence:
+    # 2026-07-07 incident: render commit 5bf116a3b3 shipped a hybrid Market State board
+    # (score 56 / "Mixed" verdict beside a "Risk Radar forces Risk-off." note + Risk-off
+    # thesis) — stitched by the render lane's `git pull --rebase -X theirs` racing the
+    # 07:10 engine-render. engine/market_state.py can never emit that pair from one
+    # snapshot (the "forces" note requires ceiling < 42, then score = min(score, ceiling)).
+    # This job fails RED on any committed board whose verdict/score/thesis/notes/flip
+    # cannot come from a single snapshot; the render lanes carry a self-healing twin.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: market-state boards must be single-snapshot coherent
+        run: python3 scripts/check_ms_board_coherence.py
+      - name: guard selftest (synthetic fixtures incl. the 5bf116a3b3 hybrid)
+        run: python3 scripts/check_ms_board_coherence.py --selftest
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps (engine cross-check imports market_state)
+        run: pip install pytest pandas numpy
+      - name: guard constants must match engine/market_state.py
+        run: python -m pytest tests/test_check_ms_board_coherence.py -q
 
   conflict-markers:
     # 2026-07-03 incident: a merge commit shipped literal git conflict markers
@@ -531,11 +568,28 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
-        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py -q
+        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py -q
       - name: "HARD | entity/thesis/mechanism registry integrity (ETM-C1..C7)"
         run: |
           python3 -m scripts.check_entity_thesis_registry --selftest
           python3 -m scripts.check_entity_thesis_registry
+
+  neural-web-core:
+    # NW Macro Context Rail R5 (PR-A): wires the five orphan NW test files that were
+    # previously run by ZERO GitHub workflows.  Path-gated on engine/neuralweb/** and
+    # the five test files (workflow-level on.pull_request.paths covers engine/neuralweb/**).
+    # Runs: test_mastermind_context, test_confluence, test_spine_query, test_ask_brain,
+    # test_world_state — all 163 tests green on origin/main e0e9f71cc6 (red-team lens 1).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
+      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context)
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py -q
 
   dag-conformance:
     # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;

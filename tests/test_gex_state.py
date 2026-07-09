@@ -427,6 +427,157 @@ class TestPinProbability:
         if prob is not None:
             assert 0.0 <= prob <= 0.95
 
+    # ------------------------------------------------------------------
+    # Gross-gamma regression (feat/prophet-nightly fix)
+    # ------------------------------------------------------------------
+
+    def _make_strike_gross(
+        self, k: float, net_mn: float, call_gamma_mn: float, put_gamma_mn: float,
+        coi: int = 1000, poi: int = 1000,
+    ) -> dict:
+        """Build a by_strike row that includes the gross gamma fields."""
+        return {
+            "K": k, "net_mn": net_mn,
+            "call_oi": coi, "put_oi": poi,
+            "call_vol": 0, "put_vol": 0,
+            "call_gamma_mn": call_gamma_mn,
+            "put_gamma_mn": put_gamma_mn,
+        }
+
+    def test_balanced_high_oi_outscores_small_one_sided(self):
+        """Regression: a strike with large OFFSETTING call/put gamma (net≈0) must
+        out-score a small one-sided strike (spec §7.4 avgGamma = (callGamma+putGamma)/2).
+
+        Before the fix, |net_mn| was used as the gamma proxy, which collapsed to ~0
+        for balanced strikes — under-ranking true pin targets vs. lightly one-sided
+        strikes. The fix uses (call_gamma_mn + put_gamma_mn) / 2, which is highest
+        when BOTH sides carry large gross gamma, regardless of sign balance.
+        """
+        spot = 500.0
+        # Balanced strike: huge call and put gamma that nearly cancel → net≈0
+        # This is the classic pin strike spec §7.4 is designed to find.
+        balanced_k = 500.0
+        balanced_call_gamma = 100.0   # $mn
+        balanced_put_gamma = 98.0    # $mn (nearly equal → net=2, avg=99)
+
+        # Small one-sided strike far from spot: only call gamma, small magnitude
+        onesided_k = 530.0
+        onesided_call_gamma = 5.0    # $mn
+        onesided_put_gamma = 0.0     # $mn → avg=2.5
+
+        # A third strike to clear the < 3 guard
+        filler_k = 470.0
+        filler_call_gamma = 1.0
+        filler_put_gamma = 1.0
+
+        by_strike = [
+            self._make_strike_gross(
+                balanced_k,
+                net_mn=balanced_call_gamma - balanced_put_gamma,  # net≈2
+                call_gamma_mn=balanced_call_gamma,
+                put_gamma_mn=balanced_put_gamma,
+                coi=5000, poi=5000,
+            ),
+            self._make_strike_gross(
+                onesided_k,
+                net_mn=onesided_call_gamma,  # pure call
+                call_gamma_mn=onesided_call_gamma,
+                put_gamma_mn=onesided_put_gamma,
+                coi=500, poi=100,
+            ),
+            self._make_strike_gross(
+                filler_k,
+                net_mn=filler_call_gamma - filler_put_gamma,
+                call_gamma_mn=filler_call_gamma,
+                put_gamma_mn=filler_put_gamma,
+                coi=100, poi=100,
+            ),
+        ]
+
+        # The balanced ATM strike must win (highest score → highest prob when it is best)
+        # We compute scores manually to assert ordering directly.
+        def _score(row):
+            total_oi = row["call_oi"] + row["put_oi"]
+            avg_gamma = (row["call_gamma_mn"] + row["put_gamma_mn"]) / 2.0
+            dNorm = abs(row["K"] - spot) / (spot * 0.01)
+            return (total_oi * avg_gamma) / (1.0 + dNorm ** 2)
+
+        score_balanced = _score(by_strike[0])
+        score_onesided = _score(by_strike[1])
+
+        assert score_balanced > score_onesided, (
+            f"Balanced ATM strike score ({score_balanced:.2f}) must exceed "
+            f"small one-sided strike score ({score_onesided:.2f}) — "
+            f"gross-gamma fix not working"
+        )
+
+        # Also verify _pin_probability is consistent with this ordering
+        prob = _pin_probability(by_strike, spot, max_pain=spot)
+        assert prob is not None
+        assert 0.0 < prob <= 0.95
+
+    def test_perfectly_balanced_net_zero_uses_gross_gamma(self):
+        """True discriminating test for the gross-gamma fix.
+
+        A strike with net_mn=0 (perfectly offsetting call/put gamma) carries
+        zero information under the OLD |net_mn| formula — avg_gamma collapses to
+        abs(0)=0 and the strike is SKIPPED by the avg_gamma<=0 guard.  That leaves
+        only 2 valid strikes (the fillers), so _pin_probability returns None.
+
+        Under the NEW (call_gamma_mn + put_gamma_mn)/2 formula the balanced strike
+        contributes avg_gamma=100, passes the guard, and a valid probability is
+        returned.
+
+        This test fails identically on the old code and passes only on the new code —
+        something the existing test_balanced_high_oi_outscores_small_one_sided cannot
+        claim (its local _score helper never calls production code).
+        """
+        spot = 500.0
+        # Perfectly balanced: huge call and put gamma cancel exactly → net_mn = 0.
+        # OLD code: avg_gamma = |0| = 0 → skipped → only 2 valid strikes → None.
+        # NEW code: avg_gamma = (100 + 100) / 2 = 100 → valid score → prob returned.
+        by_strike = [
+            self._make_strike_gross(
+                500.0, net_mn=0.0,
+                call_gamma_mn=100.0, put_gamma_mn=100.0,
+                coi=10000, poi=10000,
+            ),
+            self._make_strike_gross(
+                490.0, net_mn=2.0,
+                call_gamma_mn=1.0, put_gamma_mn=1.0,
+                coi=500, poi=500,
+            ),
+            self._make_strike_gross(
+                510.0, net_mn=2.0,
+                call_gamma_mn=1.0, put_gamma_mn=1.0,
+                coi=500, poi=500,
+            ),
+        ]
+        prob = _pin_probability(by_strike, spot, max_pain=spot)
+        # NEW code must return a valid probability; OLD |net_mn| code returns None.
+        assert prob is not None, (
+            "net_mn=0 balanced strike must score under gross-gamma formula "
+            "(old |net_mn| code would return None — fewer than 3 valid strikes)"
+        )
+        assert 0.0 < prob <= 0.95
+
+    def test_legacy_fallback_net_mn(self):
+        """Rows without call_gamma_mn/put_gamma_mn fall back to |net_mn| gracefully."""
+        # Legacy rows (no gross gamma fields)
+        spot = 500.0
+        by_strike = [
+            {"K": 500.0, "net_mn": 20.0, "call_oi": 5000, "put_oi": 5000,
+             "call_vol": 0, "put_vol": 0},
+            {"K": 510.0, "net_mn": 5.0, "call_oi": 1000, "put_oi": 1000,
+             "call_vol": 0, "put_vol": 0},
+            {"K": 490.0, "net_mn": 3.0, "call_oi": 1000, "put_oi": 1000,
+             "call_vol": 0, "put_vol": 0},
+        ]
+        prob = _pin_probability(by_strike, spot, max_pain=spot)
+        # Must not crash; must return a valid probability
+        assert prob is not None
+        assert 0.0 < prob <= 0.95
+
 
 # ===========================================================================
 # 8. cascade / upside trigger gating

@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-07T09:10:29.687673+00:00",
-  "as_of": "2026-07-07",
+  "generated_at": "2026-07-09T06:59:50.514575+00:00",
+  "as_of": "2026-07-09",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
@@ -9,9 +9,9 @@
     "features": [
       {
         "feature": "iv30",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "iv_rank_252",
@@ -27,21 +27,21 @@
       },
       {
         "feature": "ivspread_rel",
-        "n_nonnull": 355,
+        "n_nonnull": 373,
         "n_total": 403,
-        "share_nonnull": 0.8809
+        "share_nonnull": 0.9256
       },
       {
         "feature": "ivspread_5d_chg",
-        "n_nonnull": 307,
+        "n_nonnull": 316,
         "n_total": 403,
-        "share_nonnull": 0.7618
+        "share_nonnull": 0.7841
       },
       {
         "feature": "skew",
-        "n_nonnull": 386,
+        "n_nonnull": 401,
         "n_total": 403,
-        "share_nonnull": 0.9578
+        "share_nonnull": 0.995
       },
       {
         "feature": "skew_5d_chg",
@@ -57,33 +57,33 @@
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 315,
+        "n_nonnull": 321,
         "n_total": 403,
-        "share_nonnull": 0.7816
+        "share_nonnull": 0.7965
       },
       {
         "feature": "fresh_contracts",
-        "n_nonnull": 348,
+        "n_nonnull": 353,
         "n_total": 403,
-        "share_nonnull": 0.8635
+        "share_nonnull": 0.8759
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 310,
+        "n_nonnull": 324,
         "n_total": 403,
-        "share_nonnull": 0.7692
+        "share_nonnull": 0.804
       },
       {
         "feature": "zerodte_share",
-        "n_nonnull": 368,
+        "n_nonnull": 369,
         "n_total": 403,
-        "share_nonnull": 0.9132
+        "share_nonnull": 0.9156
       },
       {
         "feature": "gamma_regime",
-        "n_nonnull": 385,
+        "n_nonnull": 400,
         "n_total": 403,
-        "share_nonnull": 0.9553
+        "share_nonnull": 0.9926
       },
       {
         "feature": "gamma_regime_structurally_constant",
@@ -93,27 +93,27 @@
       },
       {
         "feature": "dist_to_flip_pct",
-        "n_nonnull": 264,
+        "n_nonnull": 303,
         "n_total": 403,
-        "share_nonnull": 0.6551
+        "share_nonnull": 0.7519
       },
       {
         "feature": "wall_up_dist_pct",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "wall_down_dist_pct",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "max_pain_dist_pct",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "opex_days",
@@ -129,9 +129,9 @@
       },
       {
         "feature": "gex_confirm_verdict",
-        "n_nonnull": 388,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 0.9975
       },
       {
         "feature": "evidence_quality",
@@ -141,35 +141,35 @@
       },
       {
         "feature": "src_gex_asof",
-        "n_nonnull": 388,
+        "n_nonnull": 403,
         "n_total": 403,
-        "share_nonnull": 0.9628
+        "share_nonnull": 1.0
       },
       {
         "feature": "src_skew_asof",
-        "n_nonnull": 386,
+        "n_nonnull": 401,
         "n_total": 403,
-        "share_nonnull": 0.9578
+        "share_nonnull": 0.995
       },
       {
         "feature": "src_ivspread_asof",
-        "n_nonnull": 355,
+        "n_nonnull": 373,
         "n_total": 403,
-        "share_nonnull": 0.8809
+        "share_nonnull": 0.9256
       },
       {
         "feature": "src_flow_asof",
-        "n_nonnull": 368,
+        "n_nonnull": 369,
         "n_total": 403,
-        "share_nonnull": 0.9132
+        "share_nonnull": 0.9156
       }
     ],
     "ticker_coverage": {
       "n_tickers": 403,
       "n_rows": 403,
-      "n_tickers_ge75pct_features": 346,
-      "n_tickers_50to74pct_features": 29,
-      "n_tickers_lt50pct_features": 28
+      "n_tickers_ge75pct_features": 345,
+      "n_tickers_50to74pct_features": 44,
+      "n_tickers_lt50pct_features": 14
     }
   },
   "family_stamp_coverage": [
@@ -342,7 +342,7 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 8,
+      "current_opex_days": 6,
       "next_opex_date": "2026-07-17",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
@@ -369,31 +369,29 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-05",
+          "latest_as_of": "2026-07-07",
           "age_days_from_today": 2,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-06 08:36 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-07-07 15:17 UTC",
+          "age_days_from_today": 2,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-06-24",
-          "age_days_from_today": 13,
+          "age_days_from_today": 15,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-07T09:10:29.653699+00:00",
-      "ok": false,
-      "fail_reasons": [
-        "CHAINS STALE: latest chain file is 2026-07-05 (2 trading day(s) behind last_td=2026-07-07); threshold=1d \u2014 OI snapshot may have been missed"
-      ],
+      "generated_at": "2026-07-09T06:59:50.479715+00:00",
+      "ok": true,
+      "fail_reasons": [],
       "warnings": [
         "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
       ]
@@ -401,8 +399,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-07T09:10:29.687665+00:00",
-    "as_of": "2026-07-07",
+    "generated_at_utc": "2026-07-09T06:59:50.514568+00:00",
+    "as_of": "2026-07-09",
     "absent_stores": []
   }
 }

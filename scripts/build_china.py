@@ -385,6 +385,7 @@ def _build_sector_pages(env) -> int:
 
 
 def _build_history(env, latest: dict, generated: str) -> None:
+    import math
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     hist = store.read("china_regime", "regime_history")
     if hist is None or "quad" not in hist.columns:
@@ -400,10 +401,56 @@ def _build_history(env, latest: dict, generated: str) -> None:
         rows.append({"name": QUAD_SHORT[q], "n": trans["n_by_quad"].get(q, "—"),
                      "median": trans["median_days"].get(q, "—"),
                      "next": next_quads_line(nxt), "next_zh": next_quads_line(nxt, zh=True)})
+
+    # CN-SYS W8 — phase history block (display-only; degrade silently if artifacts absent)
+    phase_strip: list[dict] = []
+    era_table: list[dict] = []
+    phase_current: dict = {}
+    analogs: list[dict] = []
+    try:
+        _root = Path(__file__).resolve().parent.parent
+        _chinastate = Path(config.load()["storage"]["site_dir"]) / "chinastatedata"
+        cp_path = _chinastate / "cycle_phase.json"
+        if cp_path.exists():
+            import json as _json
+            cp = _json.loads(cp_path.read_text())
+            phase_current = {
+                "phase": cp.get("phase", ""),
+                "confidence": cp.get("confidence"),
+                "asof": cp.get("asof", ""),
+                "falsifiers": cp.get("falsifiers", []),
+            }
+            era_table = cp.get("era_table", [])
+        phase_tape_path = _root / "data" / "china_cycle_phase" / "phase_tape.parquet"
+        if phase_tape_path.exists():
+            tape = pd.read_parquet(phase_tape_path)
+            tape.index = pd.to_datetime(tape.index)
+            for idx, row in tape.tail(90).iterrows():
+                v = row.get("confidence")
+                conf = None if (v is None or (isinstance(v, float) and (math.isnan(v) or math.isinf(v)))) else float(v)
+                phase_strip.append({
+                    "d": idx.strftime("%Y-%m-%d"),
+                    "phase": str(row.get("phase", "")),
+                    "confidence": conf,
+                })
+        analogs_path = Path(config.load()["storage"]["site_dir"]) / "china_intel" / "analogs.json"
+        if analogs_path.exists():
+            import json as _json
+            a_data = _json.loads(analogs_path.read_text())
+            analogs = a_data.get("analogs", [])[:5]  # top-5 closest analogs, display-only
+    except Exception as e:  # noqa: BLE001
+        log.warning("phase history block failed (%s); degrading to empty", e)
+
     html = env.get_template("china_history.html.j2").render(
         latest=latest, generated_utc=generated,
         chart_regime=_chart_regime(px, hist) if not px.empty else "", chart_axes=_chart_axes(hist),
-        lifespan_rows=rows)
+        lifespan_rows=rows,
+        # CN-SYS W8 phase history additions (degrade-safe: empty list / dict if absent)
+        phase_strip=phase_strip,
+        era_table=era_table,
+        phase_current=phase_current,
+        analogs=analogs,
+    )
     write_page(Path(config.load()["storage"]["site_dir"]) / "china_history.html", html)
     log.info("wrote china_history.html (%d regime periods)", trans.get("n_segments", 0))
 
@@ -625,6 +672,28 @@ def main() -> int:
 
     try:
         sectors = _sector_cards(latest)
+
+        # CN-SYS W8: load spine + lobe snapshot payloads for the market-state
+        # cockpit strip and the stocks-board microstructure chips.  None-safe:
+        # the strip degrades silently when these files haven't been built yet.
+        def _load_chinastatedata(name: str) -> dict | None:
+            path = Path(config.load()["storage"]["site_dir"]) / "chinastatedata" / name
+            return _load_json(path)
+
+        _cn_market_state_json = _load_chinastatedata("market_state.json")
+        _cn_participation_json = _load_chinastatedata("participation.json")
+        _cn_cycle_phase_json   = _load_chinastatedata("cycle_phase.json")
+        _cn_policy_json        = _load_chinastatedata("policy_transmission.json")
+        _cn_microstructure_json = _load_chinastatedata("microstructure.json")
+
+        # index name_packets by ticker for O(1) lookup on stocks cards
+        _micro_by_ticker: dict = {}
+        if _cn_microstructure_json:
+            for pkt in (_cn_microstructure_json.get("name_packets") or []):
+                ticker = pkt.get("ticker")
+                if ticker:
+                    _micro_by_ticker[ticker] = pkt
+
         vm = {
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -639,6 +708,13 @@ def main() -> int:
             "alloc_card": _china_alloc_card(),       # China Income Vector button (blue card)
             "signal_stack": _china_signal_stack(latest),  # consolidated cross-subsystem read
             "market_tiles": _china_market_tiles(),   # cross-asset market-snapshot tiles
+            # CN-SYS W8 — spine + lobe snapshots (context_only; CN-SYS-R1)
+            "cn_market_state_json": _cn_market_state_json,
+            "cn_participation_json": _cn_participation_json,
+            "cn_cycle_phase_json": _cn_cycle_phase_json,
+            "cn_policy_json": _cn_policy_json,
+            "cn_microstructure_json": _cn_microstructure_json,
+            "cn_micro_by_ticker": _micro_by_ticker,
         }
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
@@ -848,6 +924,55 @@ def main() -> int:
                 vm["scoreboard"] = fallback
                 log.info("using persisted china_scoreboard.json fallback")
 
+        # Flagship-2 Reversion Desk — CN Pick Lab (spec §4/§7).
+        # Load the artifact produced by build_china_library's CN pick-lab producer block
+        # and transform it to the schema the template expects.  Never fatal.
+        try:
+            _rd_artifact = _load_json(factordata / "china_reversion_desk.json")
+            if _rd_artifact and isinstance(_rd_artifact.get("rows"), list):
+                _rd_picks = []
+                for _row in _rd_artifact["rows"]:
+                    _chips = _row.get("chips") or {}
+                    _rev_depth = _row.get("rev_depth") or {}
+                    # Derive rev_depth_pct from rev_depth.rev_3m (raw 3-month return %)
+                    _rev_3m = _rev_depth.get("rev_3m")
+                    # off_high: use rev_3m as a proxy for distance from high (it's the
+                    # 3-month return — negative means off high by that amount)
+                    _off_high = float(_rev_3m) if _rev_3m is not None else None
+                    # name: combine EN/ZH for bilingual split in template
+                    _name = _row.get("name") or ""
+                    _name_zh = _row.get("name_zh") or _name
+                    _name_combined = f"{_name} / {_name_zh}" if _name_zh and _name_zh != _name else _name
+                    _rd_picks.append({
+                        "ticker": _row.get("ticker"),
+                        "name": _name_combined,
+                        "sector": _row.get("sector"),
+                        "price": _row.get("close"),          # template reads .get('price')
+                        "rev_depth_pct": _rev_3m,            # template reads .get('rev_depth_pct')
+                        "off_high": _off_high,               # template reads .get('off_high')
+                        # flatten chips to top-level (template reads top-level keys)
+                        "washout_2w": _chips.get("washout_2w"),
+                        "coiled": _chips.get("coiled"),
+                        "chase_veto": _chips.get("chase_veto"),
+                        "cycle_phase": _chips.get("cycle_phase"),
+                        # pass through remaining fields for completeness
+                        "rank": _row.get("rank"),
+                        "score": _row.get("score"),
+                    })
+                vm["reversion_desk"] = {
+                    "as_of": _rd_artifact.get("as_of"),
+                    "picks": _rd_picks,
+                    "n_picks": len(_rd_picks),
+                    "authority": "display_only",
+                }
+                log.info("china stocks: reversion_desk loaded (%d picks)", len(_rd_picks))
+            else:
+                vm["reversion_desk"] = None
+                log.debug("china stocks: no reversion_desk artifact — flagship-2 block hidden")
+        except Exception as _rd_e:  # noqa: BLE001 — additive, never fatal
+            log.error("china stocks: reversion_desk load failed (%s); skipping", _rd_e)
+            vm["reversion_desk"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
@@ -911,42 +1036,13 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china sector pages build failed (%s); skipping", e)
 
-        # China Intelligence surfaces (News powerhouse → Policy Watch → Alt-Data →
-        # Divergence Radar) + the transmission bus that bundles them for the future
-        # China Mastermind. Each is additive + None-safe; standalone pages built here so
-        # the daily China build refreshes them. See research/CHINA_INTEL_POWERHOUSE.md.
-        for _name, _mod, _fn in (
-            # predictive validation FIRST — earns the signal weights altdata + analysis read
-            ("china validation", "engine.china_validation", "validate_all"),
-            ("china news powerhouse", "scripts.build_china_news", "build"),
-            ("china policy watch", "scripts.build_china_policy_watch", "build"),
-            ("china alt-data desk", "scripts.build_china_altdata", "build"),
-            ("china divergence radar", "scripts.build_china_radar", "build"),
-            # central-intelligence synthesis MUST run after the surfaces, before the hub/bus
-            ("china central analysis", "scripts.build_china_synthesis", "build"),
-            # historical regime analog finder — display-only context (W2.3)
-            ("china analogs", "scripts.build_china_analogs", "build"),
-        ):
-            try:
-                import importlib
-                getattr(importlib.import_module(_mod), _fn)()
-            except Exception as e:  # noqa: BLE001 — additive, never fatal
-                log.error("%s build failed (%s); skipping", _name, e, exc_info=True)
-        try:
-            from scripts.build_china_special_situations import build as _build_css
-            _build_css()    # special-sits desk → site/chinaspecialdata/special.json + page
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china special situations build failed (%s); skipping", e)
-        try:
-            from scripts.build_china_intel_hub import build as _build_china_intel_hub
-            _build_china_intel_hub()  # command apparatus → site/china_intel/command.json
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china intel hub command apparatus build failed (%s); skipping", e)
-        try:
-            from scripts.build_china_intel import build as _build_china_intel
-            _build_china_intel()      # fan-in 5 surfaces + analysis + hub for the China Mastermind (v5 schema)
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china intel hub/bus build failed (%s); skipping", e)
+        # CN-SYS W5a: the 10 China Intelligence sub-builders (validation → news →
+        # policy_watch → altdata → radar → synthesis → analogs → special_sits →
+        # intel_hub → intel_bus) were EXTRACTED from this inline importlib chain
+        # into discrete asia-close.yml run_py steps so per-step timing is visible
+        # and the intel surfaces land even when the main china render fails.
+        # DO NOT re-add them here — they run as separate steps after build_china.
+        # See research/CHINA_SYSTEM_MASTERPLAN_BY_FABLE.md §6 W5a Scope 2.
     except Exception as e:  # noqa: BLE001
         log.error("china page render failed (%s); skipping", e)
         return 0

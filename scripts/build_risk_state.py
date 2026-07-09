@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from engine import live_overlay, live_quotes, market_state, risk_radar
+from engine import live_overlay, live_quotes, market_state, market_drivers, risk_radar
 from lib import config
 from lib import store as store_mod
 
@@ -322,6 +322,38 @@ def build(offline: bool = False) -> dict:
     log.info("risk_state: live=%s n_live=%d display=%s score=%s (live=%s nightly=%s) movers=%s",
              live_active, len(spliced), display["verdict"], display["score"],
              live_blk.get("verdict"), nightly_blk.get("verdict"), movers)
+
+    # ---- thin drivers pass (PS-R7: site/ only, NO data/ writes) ---------------
+    # Recompute market_drivers snapshot (with repricing_coherence) and write it
+    # alongside risk_state.json.  append_log(allow_write=False) enforces the law
+    # that the parquet ledger is nightly-only.
+    import time as _time
+    _t0 = _time.perf_counter()
+    try:
+        drivers_snap = market_drivers.snapshot()
+        market_drivers.append_log(drivers_snap, allow_write=False)  # PS-R7: no parquet write
+        drivers_out = out_dir / "market_drivers.json"
+        drivers_out.write_text(json.dumps(drivers_snap, indent=2, allow_nan=False,
+                                          default=str))
+        _elapsed = _time.perf_counter() - _t0
+        log.info("drivers pass: state=%s score=%s elapsed=%.1fs",
+                 (drivers_snap.get("repricing_coherence") or {}).get("state"),
+                 (drivers_snap.get("repricing_coherence") or {}).get("score"),
+                 _elapsed)
+    except Exception as _e:  # noqa: BLE001 — best-effort; never abort the main path
+        _elapsed = _time.perf_counter() - _t0
+        log.warning("drivers pass failed (non-fatal, %.1fs): %s", _elapsed, _e)
+
+    # ---- shock de-escalation intraday fast-path (PS-R7: site/ only) -----------
+    # Reads the just-written site/live/market_drivers.json and refreshes
+    # site/live/shock_state.json.  Committed firings ledger is read-only here.
+    try:
+        from engine import shock_deescalation as _sd
+        _sd.build_intraday()
+        log.info("shock_deescalation intraday pass complete")
+    except Exception as _e2:  # noqa: BLE001 — best-effort; never abort the main path
+        log.warning("shock_deescalation intraday pass failed (non-fatal): %s", _e2)
+
     return {"status": "ok", "live_active": live_active, "display": display["verdict"],
             "live": live_blk.get("verdict"), "nightly": nightly_blk.get("verdict")}
 

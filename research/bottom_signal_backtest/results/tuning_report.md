@@ -1,5 +1,12 @@
 # Bottom Signal Combination Tuning
 
+> **⚠️ NO INFERENCE / TEST-LEAKED — DO NOT CITE AS EVIDENCE (banner added 2026-07-07).**
+> Combo selection here is point-estimate max over hundreds of candidates with no CIs,
+> p-values, multiplicity correction, or calendar-time control; the S7 SPEC
+> (`research/species/s7_rs_repair_phase0/SPEC.md`) rules these tuned outputs test-leaked.
+> Verdicts were adjudicated by the time-controlled S7 re-run, not this report. See
+> `research/TIME_CONFOUND_EXPOSURE_AUDIT.md` §3.6.
+
 ## First-principles model
 
 The base signal is a completed higher-timeframe momentum turn. Its first-order effect is breadth: it finds a lot of possible bounces. Its first-order weakness is that it fires after a bounce has already started and still includes many falling-knife/idiosyncratic failures.

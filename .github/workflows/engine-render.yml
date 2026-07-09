@@ -30,7 +30,7 @@ on:
         description: "Which pages to rebuild after the engine recompute (all = every page)"
         type: choice
         default: all
-        options: [all, macro, china, hk, markets, gex, baskets]
+        options: [all, macro, china, hk, markets, gex, baskets, fast]
   push:
     branches: [main]
     # A change to ENGINE code auto-recomputes + redeploys. Disjoint from render.yml's paths
@@ -116,6 +116,15 @@ jobs:
           path: data/intraday
           key: intraday-engine-${{ github.run_id }}
           restore-keys: intraday-
+      - name: price-store freshness check (last SPY bar vs expected NYSE session; check-only)
+        # Same calendar assertion as daily.yml's engine gate, WITHOUT --heal: this lane is
+        # deliberately network-free, so a stale committed store is annotated loudly (red step,
+        # continue-on-error) rather than re-pulled. The regime recompute below then proceeds on
+        # cached bars — engine.market_state.persist stamps the snapshot freshness.stale, and the
+        # intraday fast-path's refresh_regime_if_stale self-heal (which IS allowed network) is
+        # the healing lane. 2026-07-07 incident guard (see scripts/check_price_store_freshness).
+        continue-on-error: true
+        run: python -m scripts.check_price_store_freshness
       - name: recompute signals + regime from committed data (no collect / no LLM / no network)
         # The ENGINE half of the lane. Pure functions of committed data on disk: regenerate the
         # MTF signal leaf (engine.run loads it into latest["mtf_signals"]), then run engine.run.
@@ -154,6 +163,13 @@ jobs:
         # that reads it during the render (the builders run after this step and
         # read data/neuralweb/world_state.json from the working tree).
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: build mastermind context (NW bridge)
+        if: always()
+        # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and
+        # site/neuralwebdata/mastermind_context.json from committed NW outputs.
+        # Must run AFTER build world state so world_state.json is fresh.
+        # Resilient: fail-open; kept last committed context on error; never blocks the render.
+        run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
       - name: re-render pages from the freshly recomputed engine output (resilient)
         # IDENTICAL to render.yml's render step — reads the engine output just recomputed above
         # (regime/latest.json + the MTF leaf, now in the working tree) and re-renders every page.
@@ -189,6 +205,7 @@ jobs:
             run_py "S&P allocation vector (build_spvector)"        scripts.build_spvector
             run_py "alternative data desk (build_alt_data)"        scripts.build_alt_data
             run_py "13F smart-money tracker (build_smart_money)"   scripts.build_smart_money
+            run_py "policy-lever card (build_policy_lever)"        scripts.build_policy_lever
             run_py "macro dashboard + US stocks (build_site)"      scripts.build_site
             # Buy Board 2.0 SHADOW (W6-US) — AFTER build_site, reuses its us_standouts.json +
             # setups.json + the rotation artifacts (tolerant readers). Unlinked preview + shadow
@@ -366,6 +383,23 @@ jobs:
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
               hub ;;
+            fast)
+              # Early-close provisional render (FTR W6, PR-7).
+              # Runs the macro+baskets clusters only — the smallest set that gives a
+              # meaningful provisional EOD state within the 30-45 min budget.
+              # Explicitly excluded: gex (live network fetches), special-situations
+              # (EDGAR), LLM brains (policy_intent_desk/ai_desk), collectors,
+              # china/hk/markets clusters (not changed by intraday US session moves),
+              # us_pages (intel-hub/briefings — LLM-dependent), libs (stock libraries).
+              # Steps reused verbatim from the macro and baskets scope branches above.
+              spine
+              run_py "thematic baskets (build_baskets)"     scripts.build_baskets
+              run_py "news suite (build_news)"              scripts.build_news
+              run_py "methodology page (build_methodology)" scripts.build_methodology
+              run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
+              run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
+              run_py "radar page (build_radar_page)"        scripts.build_radar_page
+              hub ;;
             *)
               echo "::error::unknown scope '$SCOPE'"; exit 1 ;;
           esac
@@ -373,6 +407,16 @@ jobs:
       - name: guard — inline JS must parse
         # Same gate as render.yml/pages.yml: a JS syntax error keeps the last-good site live.
         run: python3 scripts/check_inline_js.py site
+      - name: guard — market-state board coherence (ui.ms_board_coherence)
+        # A freshly rendered board whose verdict/score/thesis/notes disagree means the
+        # render itself is broken (engine or template regression) — restore last-good
+        # boards from checkout HEAD so the commit step (if: always()) can't ship them,
+        # then fail RED for visibility. The rebase-race hybrid variant (2026-07-07,
+        # commit 5bf116a3b3) is healed separately inside the push loop below.
+        run: |
+          python3 scripts/check_ms_board_coherence.py && exit 0
+          python3 scripts/check_ms_board_coherence.py --heal-from HEAD || true
+          exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
         run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit rendered site (site/ ONLY — never data/, so every ledger stays pristine)
@@ -401,8 +445,17 @@ jobs:
               # 20 min earlier. templates/ is now fresh post-rebase main — re-copy the
               # plain-copy page assets from it and fold any delta into a follow-up commit.
               python -m scripts.check_template_site_sync --fix || true
+              # ms-board coherence guard (ui.ms_board_coherence): -X theirs resolves whole
+              # conflict REGIONS toward this run's replayed render, so racing another
+              # mid-render lane can stitch a hybrid Market State board — 2026-07-07 commit
+              # 5bf116a3b3 (render.yml racing THIS lane's 7a1c30ced4) baked upstream's
+              # score 56/"Mixed" beside the replayed run's stale "Risk Radar forces
+              # Risk-off." note. Restore any incoherent page WHOLESALE from post-rebase
+              # origin/main (coherent, at most one render old).
+              python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
+                || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
               if ! git diff --quiet -- site/; then
-                git add site/ && git commit -m "render-sync: re-copy template assets post-rebase (site==templates guard)" \
+                git add site/ && git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
               if git push; then echo "pushed engine-rendered site on attempt $i"; exit 0; fi

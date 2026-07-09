@@ -114,7 +114,12 @@ fred:
     # ADPMNUSNERSA: ADP monthly SA total-private payrolls; ALFRED vintages available;
     #   note 2022 methodology redesign (Moody's Analytics collaboration) which re-revised
     #   the full history — backtest era-splits at 2022 boundary per MRI-R9.
-    UNRATE, RSAFS, JTSJOL, ADPMNUSNERSA]
+    UNRATE, RSAFS, JTSJOL, ADPMNUSNERSA,
+    # MRI-PR-H: NFP decomposition + AHE/hours targets. All monthly, ~1 initial-release row/period.
+    # USPRIV/USGOVT: 1939→, ALFRED vintages expected. CES0500000003/AWHAETP: 2006-03→, ALFRED
+    # vintages expected. Note: if ALFRED has no vintage history for a series on the keyed
+    # collect run, the series returns empty and the model falls back gracefully (absent leg).
+    USPRIV, USGOVT, CES0500000003, AWHAETP]
   series:
     rates:
       DGS2: us2y
@@ -318,12 +323,16 @@ fred:
       CAPUTLG211S: cap_u_oilgas   # cap-U oil & gas extraction (NAICS 211)
       IPG3344S: ip_semi           # industrial production, semis (NAICS 3344)
       CAPG3344S: capacity_semi    # industrial capacity LEVEL, semis (production>capacity = squeeze)
-      ISRATIO: inv_sales_total    # total business inventories/sales (the headline)
+      # ISRATIO/NEWORDER also live in the cycle groups above — a duplicate FRED id MUST
+      # reuse the same column alias: _all_series() dict-merges groups (last wins) and the
+      # store upsert's outlier guard reads the existing parquet by the merged alias, so a
+      # conflicting alias KeyErrors and kills the WHOLE fred adapter (8-run outage, 2026-07).
+      ISRATIO: inventory_sales    # total business inventories/sales (the headline)
       MNFCTRIRSA: inv_sales_mfg   # manufacturing inventories/sales
       AMTMUO: unfilled_orders     # mfrs' unfilled orders, total mfg — the backlog headline
       AMTMVS: shipments_total     # value of shipments, total mfg (backlog denominator)
       DGORDER: new_orders_durable # new orders, durable goods (headline)
-      NEWORDER: new_orders_capex  # new orders, nondefense cap goods ex-aircraft (capex proxy)
+      NEWORDER: cap_goods_orders  # new orders, nondefense cap goods ex-aircraft (capex proxy)
       PCU334413334413: ppi_semi   # PPI semiconductor & related device mfg (the memory pricing proxy)
       PCU331110331110: ppi_steel  # PPI iron & steel mills
       DTCISA156MSFRBPHI: deliv_time_philly  # Philly Fed current delivery time, % increases
@@ -353,6 +362,11 @@ fred:
                                         # 2022 methodology redesign re-revised full history; era-split at 2022
       UNRATE: unemployment_rate         # unemployment rate (monthly, %) — promoted from macro_surprise ad-hoc
       RSAFS: retail_sales               # advance retail & food services sales (monthly, $M SA) — promoted from macro_surprise ad-hoc
+      # MRI-PR-H: NFP decomposition + AHE/hours targets (2006-03→)
+      USPRIV: nfp_private               # private payrolls (thousands SA, 1939→) — decomposition private leg
+      USGOVT: nfp_government            # government payrolls (thousands SA, 1939→) — decomposition government leg
+      CES0500000003: avg_hourly_earnings  # avg hourly earnings total private ($/hr SA, 2006-03→) — AHE target
+      AWHAETP: avg_weekly_hours         # avg weekly hours total private (hrs/wk SA, 2006-03→) — hours target
   retries: 3
   backoff_base_s: 5
   batch_size: 80
@@ -938,6 +952,22 @@ cleveland_nowcast:                 # Cleveland Fed daily inflation nowcast (MRI-
   month_url: "https://www.clevelandfed.org/-/media/files/webcharts/inflationnowcasting/nowcast_month.json?sc_lang=en"
   retries: 3
   timeout: 60
+
+kalshi_releases:                   # Kalshi macro-release bracket markets (MRI PR-K; keyless, no auth)
+  # Keyless v2 trade API: api.elections.kalshi.com/trade-api/v2/markets
+  # Series collected (LIVE VERIFIED 2026-07-07 via direct API probe):
+  #   KXCPI       → US CPI headline MoM % SA bracket markets
+  #                 "Will CPI rise more than X%?" — P(YES) = P(CPI MoM > X pct)
+  #   KXPAYROLLS  → US non-farm payrolls MoM change, thousands
+  #                 "Will above X jobs be added?" — P(YES) = P(NFP MoM > X k jobs)
+  #   KXJOBLESSCLAIMS → US initial jobless claims, weekly level
+  #                 "How many claims will there be the week ending [date]?"
+  # Bracket structure: each event has 9-14 exceedance binaries at 0.1pp (CPI)
+  # or 10-25k (NFP) step intervals. Storage: first-seen append-only parquet.
+  # Collector: collectors/kalshi_releases.py. Fail-open — any fetch/parse
+  # error is logged and skipped; never raises into the collect lane.
+  retries: 3
+  timeout: 30
 
 ofr_fsi:                           # distinct from the OFR funding-rates collector (collectors/ofr.py, group "ofr")
   fsi_url: https://www.financialresearch.gov/financial-stress-index/data/fsi.csv
@@ -2675,6 +2705,10 @@ prediction_markets:
     fed_next:  {match: "Fed Decision", pick: nearest_end, label_en: "Next Fed decision", label_zh: "下次美联储决议"}
     fed_cuts:  {match: "rate cuts in", pick: max_volume,  label_en: "Fed cuts this year", label_zh: "今年降息次数"}
     recession: {match: "recession",    pick: max_volume,  label_en: "US recession",       label_zh: "美国衰退"}
+    # MRI-R16 — market-implied CPI/NFP benchmarks (display context only, never fused into model math).
+    # Title substrings match Polymarket events; snapshots accrue nightly → history backtestable.
+    cpi_print: {match: "CPI",           pick: nearest_end, label_en: "CPI outcome market",  label_zh: "CPI市场预期"}
+    nfp_print: {match: "nonfarm",       pick: nearest_end, label_en: "NFP outcome market",  label_zh: "非农市场预期"}
 
 # =============================================================================
 # BIS global credit cycle (collectors/bis.py + engine/credit_cycle.py) — the
@@ -2915,6 +2949,33 @@ commodities:
     whipsaw_target_pct: 15
     cost_bps: 8                    # one-way transaction cost (spread+roll slippage) per unit |Δpos|; liquid commodity futures/ETF proxy — wider than FX spot, tighter than BTC. Allocation CAGR/Sharpe are NET of this
     n_trials: 40                  # honest UPPER-BOUND of independent strategy configs explored per asset, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more
+
+  # --- Policy-Shock W1-B: per-asset technical arming detector (display-only) ---
+  # Powers the "oil basing + momentum curl = lever armed" read.
+  # All params are v1-frozen and printed verbatim in the artifact.
+  technical_arming:
+    stoch_k_period: 14             # lookback for raw %K (full stochastic, not StochRSI)
+    stoch_smooth_k: 3              # %K smoothing period
+    stoch_smooth_d: 3              # %D smoothing period
+    stoch_oversold: 30.0           # %K must be below this on the cross bar
+    stoch_curl_lookback: 3         # scan latest N bars for the cross (avoids stale fires)
+    macd_fast: 12                  # MACD fast EMA
+    macd_slow: 26                  # MACD slow EMA
+    macd_signal: 9                 # MACD signal EMA
+    macd_consecutive_bars: 3       # histogram must rise for this many bars while < 0
+    base_window_d: 60              # rolling low window for basing test
+    base_pct: 0.08                 # close within this % of the 60d low = "in base"
+    base_min_days: 10              # min consecutive days in base band
+    drawdown_window_d: 120         # max-drawdown lookback for the deep-washout gate
+    drawdown_min: -0.15            # drawdown must be <= this (e.g. -15%) to qualify
+    # v1.1 hardening (PS-A1, 2026-07-09)
+    base_flat_max_abs_return: 0.06 # flatness gate: |net return over base_min_days sessions| must be
+                                   # <= this for basing to fire; blocks falling-knife arms (an ongoing
+                                   # -10%+ decline over 10 sessions satisfies proximity-to-low but is NOT
+                                   # a base; a genuine sideways coil is +/-few %)
+    macd_rise_min_frac: 0.02       # scale-invariant MACD epsilon: each positive diff in the rising-3-bars
+                                   # test must exceed (macd_rise_min_frac x rolling 60-bar mean |histogram|);
+                                   # prevents float jitter on a near-constant negative histogram from firing
 
   # --- Phase 5: alerts (daily state-change events) + intraday shock sentinel ---
   alerts:
@@ -5582,3 +5643,20 @@ cycle_pattern_intelligence:
   state_daily_live_path: "data/cycle_pattern/state_daily_live.parquet"  # nightly union of forward logs (scripts/build_cycle_pattern_live.py)
   hazard_epoch: "price_c4414dcb"                 # feature source epoch joined into state
   embargo_holdout_start: "2024-01-01"            # rows dated after this are permanently embargoed (holdout)
+
+# --------------------------------------------------------------------------- #
+# Cortex — Neural Web W7b deliberation runtime (engine/neuralweb/cortex.py).
+# DeepSeek is EXCLUDED from the deliberation path (D8 ruling: governance never
+# thinks on a third-party model; zh narration fallback only, unchanged).
+# --------------------------------------------------------------------------- #
+cortex:
+  # Primary deliberation model (Opus-class).  Rate-limited runs retry with
+  # exponential backoff (15s/60s/180s, up to 4 attempts) before falling back.
+  llm_model: claude-opus-4-8
+  # Fallback model used ONCE when the primary model exhausts rate-limit retries
+  # on ALL live providers.  A fallback run stamps run_status.status='warn' and
+  # run_status.degradation_reason='model_fallback' (never 'ok').
+  # DeepSeek is never used here (D8 ruling — governance stays on Anthropic).
+  fallback_model: claude-sonnet-4-6
+  max_tool_calls: 24
+  max_tokens: 4096

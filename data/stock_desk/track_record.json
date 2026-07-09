@@ -1,14 +1,14 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-06",
-  "scored_total": 2,
-  "open": 88,
-  "unscored_neutral": 44,
+  "as_of": "2026-07-09",
+  "scored_total": 3,
+  "open": 94,
+  "unscored_neutral": 56,
   "overall": {
-    "n": 2,
+    "n": 3,
     "hits": 1,
-    "misses": 1,
-    "hit_rate": 0.5,
+    "misses": 2,
+    "hit_rate": 0.333,
     "dir_accuracy": 0.0
   },
   "by_lean": {
@@ -27,10 +27,10 @@
       "dir_accuracy": null
     },
     "cautious": {
-      "n": 2,
+      "n": 3,
       "hits": 1,
-      "misses": 1,
-      "hit_rate": 0.5,
+      "misses": 2,
+      "hit_rate": 0.333,
       "dir_accuracy": 0.0
     },
     "avoid": {
@@ -43,10 +43,10 @@
   },
   "by_conviction": {
     "low": {
-      "n": 2,
+      "n": 3,
       "hits": 1,
-      "misses": 1,
-      "hit_rate": 0.5,
+      "misses": 2,
+      "hit_rate": 0.333,
       "dir_accuracy": 0.0
     },
     "medium": {
@@ -64,8 +64,17 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "2 leans scored, hit-rate 0.5 (directional accuracy 0.0). Small sample \u2014 treat conviction as provisional; the prior remains no validated forward edge (this layer is accountability, not alpha).",
+  "calibration_note": "3 leans scored, hit-rate 0.333 (directional accuracy 0.0). Small sample \u2014 treat conviction as provisional; the prior remains no validated forward edge (this layer is accountability, not alpha).",
   "recent": [
+    {
+      "id": "2026-06-29-FDS-4",
+      "ticker": "FDS",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": 0.0657,
+      "check_by": "2026-07-06"
+    },
     {
       "id": "2026-06-18-OFG-4",
       "ticker": "OFG",

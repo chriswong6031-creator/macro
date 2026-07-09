@@ -407,6 +407,24 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   .nav-dd-menu a { padding: 5px 8px; font-size: 12.5px; }
   .nav-dd-menu a .d { display: none; }
 }
+/* Pre-JS / no-JS overflow guard for the .site-nav family. theme.js loads at the
+   END of <body> and only then adds .has-nav-toggle, whose 0,3,0-specificity rules
+   collapse the dropdowns into the hamburger. Until it runs, the FIRST paint shows
+   the un-collapsed bar — and the closed .nav-dd-menu panels are still
+   position:absolute; min-width:218px, so on a phone they stick out past the
+   viewport and force documentElement.scrollWidth wider than the screen, clipping
+   page content (a horizontal-overflow flash on every load; also the permanent
+   state if JS fails). The generic ≤560 collapse above can't neutralise this
+   because `.site-nav .nav-dd-menu{position:absolute}` (0,2,0) out-specificities its
+   bare `.nav-dd-menu` (0,1,0). Mirror the hamburger's closed state at the same
+   ≤1259px range: fold the dropdowns in-flow (stacked, zero-height) so nothing
+   overflows. Once theme.js runs its has-nav-toggle rules (0,3,0) win and this goes
+   inert; desktop (>1259px) is untouched, so hover fly-outs are unaffected. */
+@media (max-width: 1259px) {
+  .site-nav .nav-dd { display: block; }
+  .site-nav .nav-dd-menu { position: static; min-width: 0; max-height: 0;
+    overflow: hidden; transform: none; box-shadow: none; border: 0; background: transparent; }
+}
 
 /* global stock search */
 .nav-search { grid-column: 1; grid-row: 2; position: relative; min-width: 0; max-width: 480px; }
@@ -902,6 +920,13 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 @media (max-width:680px) { .lst-collapse.lst-cap6.is-collapsed > :nth-child(6) { display:flex; } }
 @media (min-width:681px) {
   .lst-wrap:has(.lst-collapse.lst-cap6 > :nth-child(7)) > .lst-more { display:block; }
+}
+
+/* Tightest 4-row variant (.lst-cap4) — the China stocks page's "What to act on now"
+   sector columns cap at 4 on EVERY width; button gates on a 5th child. */
+.lst-collapse.lst-cap4.is-collapsed > :nth-child(n+5) { display:none; }
+@media (min-width:681px) {
+  .lst-wrap:has(.lst-collapse.lst-cap4 > :nth-child(5)) > .lst-more { display:block; }
 }
 
 /* ==== regime panels (base-effect strip + HMM regime-probability) — shared by dashboard.html.j2 (US) + china.html.j2. Status colours --ok/--warn/--muted do NOT flip in zh; quad colours --q1..--q4 do (intentional). ==== */

@@ -133,6 +133,53 @@ def _gex_dollar(oi: float, gamma: float, spot: float) -> float:
     return oi * gamma * spot * spot * _VOL_PCT * _CONTRACT_MULT
 
 
+# ── VEX (vanna exposure) helpers — EXPERIMENTAL ──────────────────────────────
+
+def _bs_vanna_scalar(S: float, K: float, T_years: float,
+                     iv: float, median_iv: float) -> float:
+    """Per-contract vanna (d_delta / d_sigma) using closed-form BS.
+
+    Formula: -N'(d1) * d2 / sigma  (dividend-free, q=0)
+    where d1 = (ln(S/K) + (r + 0.5*σ²)*T) / (σ*√T)
+          d2 = d1 - σ*√T
+
+    Same iv fallback and floor conventions as _bs_gamma_scalar.
+    Returns 0.0 on degenerate inputs.
+
+    EXPERIMENTAL — tagged in payload, display-only.
+    """
+    effective_iv = iv if iv > _MIN_IV else median_iv
+    if effective_iv <= _MIN_IV:
+        return 0.0
+    T = max(T_years, 0.001)
+    sqrtT = math.sqrt(T)
+    try:
+        d1 = (math.log(S / K) + (_R + 0.5 * effective_iv ** 2) * T) / (effective_iv * sqrtT)
+        d2 = d1 - effective_iv * sqrtT
+        vanna = -npdf(d1) * d2 / effective_iv
+        return vanna if math.isfinite(vanna) else 0.0
+    except (ValueError, ZeroDivisionError):
+        return 0.0
+
+
+def _vex_mn(oi: float, vanna: float, spot: float) -> float:
+    """Vanna exposure in $mn per 1 vol-point (1%) move in IV.
+
+    Formula: oi * vanna * S * 0.01 * 100 / 1_000_000
+      - oi:    open interest (contracts)
+      - vanna: per-contract d_delta/d_sigma (from _bs_vanna_scalar)
+      - S:     spot price
+      - 0.01:  1% IV move (1 vol point in decimal)
+      - 100:   contract multiplier
+      - /1e6:  scale to $mn
+
+    Sign is inherited from vanna (= -N'(d1)*d2/sigma).  For ATM strikes with
+    positive rate (d2 > 0), vanna is negative; for deep OTM or low-rate cases
+    it can be positive.  vex_mn sign is EXPERIMENTAL — display-only.
+    """
+    return oi * vanna * spot * _VOL_PCT * _CONTRACT_MULT / 1_000_000
+
+
 def _median_iv(ivs: list[float]) -> float:
     """Population median of valid IVs in range (0.01, 5.0)."""
     valid = [v for v in ivs if 0.01 < v < 5.0]
@@ -140,14 +187,41 @@ def _median_iv(ivs: list[float]) -> float:
 
 
 def _dte(expiry_str: str, asof_date: str) -> float:
-    """Calendar days from asof_date to expiry_str. Returns 0.5 when expiry is same day."""
+    """Calendar days from asof_date to expiry_str.
+
+    Returns:
+      - Positive float for future expiries.
+      - 0.5 for same-day expiry (intraday contracts; still live on asof).
+      - Negative float for already-expired contracts (expiry < asof).
+
+    Callers that need a positive floor for T_years (e.g. BS gamma) must
+    apply max(dte, 0.001) themselves; _in_window excludes negatives so that
+    expired contracts never enter the cell map.
+    """
     try:
         exp_dt = pd.Timestamp(expiry_str)
         as_dt  = pd.Timestamp(asof_date)
         days = (exp_dt - as_dt).days
-        return max(days, 0.5)
+        if days > 0:
+            return float(days)
+        elif days == 0:
+            return 0.5   # same-day expiry sentinel
+        else:
+            return float(days)   # negative — expired
     except Exception:  # noqa: BLE001
         return 0.5
+
+
+def _to_iso_date(val) -> str:
+    """Normalize an expiration value to plain ISO date string 'YYYY-MM-DD'.
+
+    Handles pandas Timestamps ('2026-07-06 00:00:00'), date objects, and
+    strings already in ISO format.
+    """
+    try:
+        return pd.Timestamp(val).strftime("%Y-%m-%d")
+    except Exception:  # noqa: BLE001
+        return str(val)
 
 
 # ============================================================================ #
@@ -328,6 +402,11 @@ def _heat_seeker(
         expiry = c.get("expiry", "")
         dte_val = c.get("_dte", 1.0)
 
+        # Exclude already-expired contracts — DTE must be > 0
+        # (same-day sentinel 0.5 is retained; negative means past expiry)
+        if dte_val < 0:
+            continue
+
         # exclude nearest-to-spot strike (prism_spec §5 excludeSpotRow)
         if nearest_strike is not None and abs(strike - nearest_strike) < 1e-6:
             continue
@@ -491,8 +570,13 @@ def build_matrix(
         df = df[(df["strike"] >= low_k) & (df["strike"] <= high_k)]
         if "expiration" in df.columns:
             df = df[df["expiration"].notna()]
-            df["_dte"] = df["expiration"].astype(str).apply(lambda e: _dte(e, asof))
-            df = df[df["_dte"] <= _MAX_DTE]
+            # Normalize to plain ISO date ("YYYY-MM-DD") — parquets may store
+            # pandas Timestamps which stringify as "2026-07-06 00:00:00".
+            df["expiration"] = df["expiration"].apply(_to_iso_date)
+            df["_dte"] = df["expiration"].apply(lambda e: _dte(e, asof))
+            # Exclude already-expired contracts: DTE window is [0, +90], never negative.
+            # Same-day expiries are retained (DTE == 0.5 sentinel) per prism_spec §5.
+            df = df[(df["_dte"] > 0) & (df["_dte"] <= _MAX_DTE)]
         return df
 
     oi_t1_w  = _in_window(oi_t1)
@@ -526,16 +610,18 @@ def build_matrix(
                 "put_vol":  0,
                 "call_gex": 0.0,
                 "put_gex":  0.0,
+                "call_vex": 0.0,   # VEX (experimental): call vanna exposure $mn
+                "put_vex":  0.0,   # VEX (experimental): put vanna exposure $mn
                 "call_oi_t2": 0,
                 "put_oi_t2":  0,
                 "_dte":     _dte(exp, asof),
             }
         return cell_map[key]
 
-    # ── OI[t-1] accumulation with GEX ────────────────────────────────────────
+    # ── OI[t-1] accumulation with GEX + VEX (experimental) ──────────────────
     for _, row in oi_t1_w.iterrows():
         k   = float(row["strike"])
-        exp = str(row.get("expiration", ""))
+        exp = _to_iso_date(row.get("expiration", ""))
         oi  = float(row.get("open_interest", 0) or 0)
         right = str(row.get("right", "")).upper()[:1]
 
@@ -548,20 +634,24 @@ def build_matrix(
         T_years     = dte_days / 365.0
         gamma       = _bs_gamma_scalar(spot, k, T_years, iv_contract, median_iv)
         gex         = _gex_dollar(oi, gamma, spot)
+        vanna       = _bs_vanna_scalar(spot, k, T_years, iv_contract, median_iv)
+        vex         = _vex_mn(oi, vanna, spot)
 
         cell = _get_cell(k, exp)
         if right == "C":
             cell["call_oi"]  += int(oi)
             cell["call_gex"] += gex      # positive (calls +)
+            cell["call_vex"] += vex      # same-signed vanna as put at same strike (sign from d2/moneyness, not right)
         elif right == "P":
             cell["put_oi"]  += int(oi)
             cell["put_gex"] += gex       # magnitude (unsigned here; sign in net)
+            cell["put_vex"]  += vex      # same-signed vanna as call at same strike (sign from d2/moneyness, not right)
 
     # ── OI[t-2] accumulation for delta_oi ───────────────────────────────────
     if not oi_t2_w.empty:
         for _, row in oi_t2_w.iterrows():
             k   = float(row["strike"])
-            exp = str(row.get("expiration", ""))
+            exp = _to_iso_date(row.get("expiration", ""))
             oi  = float(row.get("open_interest", 0) or 0)
             right = str(row.get("right", "")).upper()[:1]
             if not exp:
@@ -576,7 +666,7 @@ def build_matrix(
     if not eod_w.empty and "volume" in eod_w.columns:
         for _, row in eod_w.iterrows():
             k   = float(row.get("strike", 0))
-            exp = str(row.get("expiration", ""))
+            exp = _to_iso_date(row.get("expiration", ""))
             vol = float(row.get("volume", 0) or 0)
             right = str(row.get("right", "")).upper()[:1]
             if not exp or k < low_k or k > high_k:
@@ -610,6 +700,14 @@ def build_matrix(
         d_call = c["call_oi"] - c["call_oi_t2"]
         d_put  = c["put_oi"]  - c["put_oi_t2"]
 
+        # VEX: aggregate vanna exposure = call_vex + put_vex.
+        # Both call_vex and put_vex carry the SAME vanna sign at a given strike
+        # (closed-form BS vanna = -N'(d1)*d2/sigma is right-independent; sign
+        # depends on d2/moneyness, not on call vs put).  This differs from GEX's
+        # call-minus-put dealer convention — VEX sums all exposure, not net dealer
+        # directional.  Sign is experimental and assumption-dependent; display-only.
+        net_vex = c["call_vex"] + c["put_vex"]
+
         cells_out.append({
             "strike":   _f(k),
             "expiry":   exp,
@@ -622,6 +720,7 @@ def build_matrix(
                 "call": d_call if c["call_oi"] > 0 or c["call_oi_t2"] > 0 else None,
                 "put":  d_put  if c["put_oi"]  > 0 or c["put_oi_t2"]  > 0 else None,
             },
+            "vex_mn":   _f(net_vex, 4),      # experimental: vanna exposure $mn per 1% IV move
             "_dte":    c["_dte"],             # internal; stripped before validate
         })
         expiry_set.add(exp)
@@ -655,16 +754,17 @@ def build_matrix(
         "levels":   levels,
         "heat_seeker": heat_seeker,
         "authority_tier": "display",
+        "experimental":   True,    # vex_mn field is experimental; no scoring path
         "reliability": {
             "gex":       "assumption-signed — display-only until GEX→vol gate (~Sept 2026)",
             "delta_oi":  "reliable — signing-free OI change (OI[t-1] − OI[t-2], both lagged)",
             "vol":       "reliable magnitude",
             "call_oi":   "reliable — OI[t-1]",
             "put_oi":    "reliable — OI[t-1]",
+            "vex_mn":    "experimental — closed-form BS vanna × OI[t-1]; assumption-signed; no scoring path",
             "note":      "Sign is an assumption, not a fact. Magnitude is the reliable read.",
         },
         "deferred": {
-            "VEX":     "deferred — requires greeks-path stability verification across ThetaData store",
             "UNUSUAL": "deferred — requires 30d per-strike volume baseline not yet in EOD store",
         },
         "_build_meta": {
@@ -746,12 +846,15 @@ def _extract_spot(greeks_df: pd.DataFrame, eod_df: pd.DataFrame) -> float | None
 
 
 def _lookup_iv(greeks_df: pd.DataFrame, strike: float, expiry: str, right: str) -> float:
-    """Return IV for (strike, expiry, right) from greeks, or 0.0 if not found."""
+    """Return IV for (strike, expiry, right) from greeks, or 0.0 if not found.
+
+    Both sides normalized to plain ISO date to match regardless of parquet storage type.
+    """
     if greeks_df.empty or "implied_vol" not in greeks_df.columns:
         return 0.0
     mask = (
         (greeks_df["strike"].astype(float) == strike) &
-        (greeks_df["expiration"].astype(str) == expiry) &
+        (greeks_df["expiration"].apply(_to_iso_date) == expiry) &
         (greeks_df["right"].astype(str).str.upper().str[:1] == right[:1])
     )
     sub = greeks_df[mask]["implied_vol"].dropna()

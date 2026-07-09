@@ -393,4 +393,25 @@ LEX: dict[str, str] = {
     "Accumulation": "吸筹",
     "Distribution": "派发",
     "Crowded": "拥挤",
+    # --- China W8 cockpit — finite-vocab enums (who_controls, policy_impulse, risk,
+    #     participation regime).  Used in china.html.j2 + china_mechanics.html.j2 chips.
+    # who_controls
+    "institutional": "机构控盘",
+    "offshore": "外资控盘",
+    "retail": "散户控盘",
+    "margin": "融资盘控盘",
+    # policy_impulse  (easing/tightening already mapped above)
+    "targeted support": "定向支持",
+    "market rescue": "救市",
+    "neutral": "中性",
+    # risk environment
+    "frothy": "泡沫化",
+    "fire sale": "恐慌抛售",
+    "normal": "正常",
+    # participation regime labels (used as .title() → capitalised first word)
+    "Retail Ignition": "散户点火",
+    "Margin Acceleration": "杠杆加速",
+    "Broad Mania": "全面亢奋",
+    "Forced Deleveraging": "强制去杠杆",
+    "Unclear": "不明朗",
 }

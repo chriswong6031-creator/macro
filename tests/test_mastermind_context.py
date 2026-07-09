@@ -389,18 +389,24 @@ class TestGapNotes:
 # ---------------------------------------------------------------------------
 
 class TestSizeCap:
-    def test_real_build_under_200kb(self):
-        """Real build from the worktree data must produce an artifact under 200KB."""
+    def test_real_build_under_300kb(self):
+        """Real build from the worktree data must produce an artifact under 300KB.
+
+        Cap raised from 200KB to 300KB in Build 3 (analyst block adds rows;
+        prior headroom was ~1.7KB per Build-1 review). CONTEXT_SIZE_CAP_BYTES
+        in mastermind_context.py is the authoritative constant.
+        """
+        from engine.neuralweb.mastermind_context import CONTEXT_SIZE_CAP_BYTES  # noqa: PLC0415
         canonical = _REPO_ROOT / "data" / "neuralweb" / "mastermind_context.json"
         if not canonical.exists():
             # Trigger a fresh build
             build_and_write(root=_REPO_ROOT)
         assert canonical.exists(), "mastermind_context.json not written"
         size_bytes = canonical.stat().st_size
-        cap_bytes = 200 * 1024  # 200 KB
+        cap_bytes = CONTEXT_SIZE_CAP_BYTES  # 300 KB
         assert size_bytes <= cap_bytes, (
-            f"mastermind_context.json too large: {size_bytes/1024:.1f}KB > 200KB. "
-            "Reduce candidate_context rows or field columns."
+            f"mastermind_context.json too large: {size_bytes/1024:.1f}KB > "
+            f"{cap_bytes//1024}KB. Reduce candidate_context rows or field columns."
         )
 
 
@@ -647,6 +653,104 @@ class TestHelpers:
             assert row.get("allowed_behavior") == "annotate_only", (
                 f"Ticker {ticker!r} missing allowed_behavior='annotate_only'"
             )
+
+    def test_new_sub_block_keys_when_data_present(self, tmp_path):
+        """When bottom_sensors carries extended fields, new sub-blocks appear."""
+        _build_minimal_tree(tmp_path)
+        # Patch bottom_sensors fixture with extended fields on FIXTURE_BUY
+        bs_path = tmp_path / "site" / "neuralwebdata" / "bottom_sensors.json"
+        bs = json.loads(bs_path.read_text())
+        for row in bs["rows"]:
+            if row.get("symbol") == "FIXTURE_BUY":
+                row.update({
+                    "net_debt_to_ebitda": 1.5,
+                    "net_debt_to_op_income": 2.0,
+                    "decline_geometry": "flush",
+                    "underwater_state": "mid",
+                    "decline_herf": 0.08,
+                    "sponsorship_state": "headwind",
+                    "days_since_shelf": 90,
+                })
+        bs_path.write_text(json.dumps(bs))
+        payload = build_context(root=tmp_path, now=_NOW)
+        row = payload["candidate_context"].get("FIXTURE_BUY", {})
+        # leverage block must appear (net_debt_to_ebitda is non-null)
+        assert "leverage" in row, f"leverage block missing; row keys: {list(row.keys())}"
+        assert "net_debt_to_ebitda" in row["leverage"]
+        # structural block must appear
+        assert "structural" in row, f"structural block missing; row keys: {list(row.keys())}"
+        assert "decline_geometry" in row["structural"]
+        assert "sponsorship_state" in row["structural"], "sponsorship_state must fold into structural"
+        # dilution block must appear (days_since_shelf is non-null)
+        assert "dilution" in row, f"dilution block missing; row keys: {list(row.keys())}"
+        assert "days_since_shelf" in row["dilution"]
+
+    def test_new_sub_blocks_omitted_when_all_null(self, tmp_path):
+        """Sub-blocks must be omitted entirely when all their fields are None/absent."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        # Fixture rows have no leverage/structural/dilution fields — blocks must be absent
+        for ticker, row in payload["candidate_context"].items():
+            # None of the fixture rows have leverage fields set
+            # (they only have bottom_state, coiled, etc.)
+            lev = row.get("leverage", {})
+            # If leverage is present, all values must be non-null (sparse guarantee)
+            for k, v in lev.items():
+                assert v is not None, f"leverage.{k}=None on {ticker!r} — sparse failed"
+
+    def test_no_new_names_invariant(self, tmp_path):
+        """New sub-blocks add no new ticker names — only values on existing tickers."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        # candidate_context keys must still be exactly the intake union
+        intake = {
+            "FIXTURE_BUY", "FIXTURE_WATCH", "FIXTURE_LAGGARD",
+            "ALTDATA_A", "ALTDATA_B", "RADAR_COILED",
+        }
+        for ticker in payload["candidate_context"]:
+            assert ticker in intake, (
+                f"Ticker {ticker!r} in candidate_context but not in intake union "
+                "(new sub-blocks must not introduce new tickers)"
+            )
+
+    def test_candidate_context_compact_json_under_200kb(self, tmp_path):
+        """candidate_context compact JSON must stay under 200 KB (size-cap regression)."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        cc_bytes = json.dumps(payload["candidate_context"], separators=(",", ":")).encode("utf-8")
+        cap_bytes = 200 * 1024
+        assert len(cc_bytes) <= cap_bytes, (
+            f"candidate_context compact JSON {len(cc_bytes)/1024:.1f}KB > 200KB cap"
+        )
+
+    def test_earnings_ctx_block_absent_when_parquet_missing(self, tmp_path):
+        """When earnings.parquet is absent, earnings_ctx block must not appear."""
+        _build_minimal_tree(tmp_path)
+        # No earnings.parquet written — block must be silently absent (not raise)
+        payload = build_context(root=tmp_path, now=_NOW)
+        for ticker, row in payload["candidate_context"].items():
+            # earnings_ctx may or may not be present; if present it must be valid
+            ec = row.get("earnings_ctx")
+            if ec is not None:
+                assert isinstance(ec, dict), f"earnings_ctx must be a dict on {ticker!r}"
+
+    def test_visibility_block_absent_when_rpo_parquet_missing(self, tmp_path):
+        """When rpo.parquet is absent, visibility block must not appear."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        for ticker, row in payload["candidate_context"].items():
+            # No rpo.parquet in tmp_path, so visibility must be absent
+            assert "visibility" not in row, (
+                f"visibility block on {ticker!r} despite absent rpo.parquet"
+            )
+
+    def test_sector_vel_and_accel_not_in_any_block(self, tmp_path):
+        """sector_vel_1m and sector_accel must never appear (confirmed absent from source)."""
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        cc_str = json.dumps(payload["candidate_context"])
+        assert "sector_vel_1m" not in cc_str, "sector_vel_1m must not appear (absent from source)"
+        assert "sector_accel" not in cc_str, "sector_accel must not appear (absent from source)"
 
     def test_lobe_manifest_nonempty_on_real_registry(self):
         """On the real registry, lobe_manifest must contain at least the seed
@@ -929,4 +1033,129 @@ class TestClaimReliabilityLobe:
         rel = lobes["reliability"]
         assert "kernel_decisions" in rel, (
             "reliability lobe clobbered — kernel_decisions missing"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 12. Analyst block (Build 3 — NW consolidated context layer)
+# ---------------------------------------------------------------------------
+
+def _minimal_analyst_parquet(tmp_path: Path, rows: list[dict] | None = None) -> Path:
+    """Write a minimal data/analyst/targets.parquet fixture."""
+    import pandas as pd
+    (tmp_path / "data" / "analyst").mkdir(parents=True, exist_ok=True)
+    default_rows = [
+        {
+            "ticker": "FIXTURE_BUY",
+            "target_mean": 100.0,
+            "target_high": 120.0,
+            "target_low": 85.0,
+            "implied_upside_pct": 15.2,
+            "target_dispersion": 0.35,
+            "recommendation": "buy",
+            "num_analysts": 12,
+            "current_price": 86.8,
+            "as_of": "2026-07-05",
+            "provenance_note": "yfinance_info_pit_snapshot",
+        },
+        {
+            "ticker": "FIXTURE_WATCH",
+            "target_mean": None,
+            "target_high": None,
+            "target_low": None,
+            "implied_upside_pct": None,
+            "target_dispersion": None,
+            "recommendation": None,
+            "num_analysts": None,
+            "current_price": None,
+            "as_of": "2026-07-05",
+            "provenance_note": "yfinance_info_pit_snapshot",
+        },
+    ]
+    df = pd.DataFrame(rows or default_rows)
+    p = tmp_path / "data" / "analyst" / "targets.parquet"
+    df.to_parquet(p, index=False)
+    return p
+
+
+class TestAnalystBlock:
+    """Tests for the analyst sub-block (Build 3 — display/context only)."""
+
+    def test_analyst_block_present_when_parquet_exists(self, tmp_path):
+        """When targets.parquet has a row for a standout ticker, analyst block appears."""
+        _build_minimal_tree(tmp_path)
+        _minimal_analyst_parquet(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        cc = payload["candidate_context"]
+        # FIXTURE_BUY has a full analyst row
+        assert "FIXTURE_BUY" in cc, "FIXTURE_BUY should be in candidate_context"
+        row = cc["FIXTURE_BUY"]
+        assert "analyst" in row, (
+            "analyst block should be present for FIXTURE_BUY (has target_mean)"
+        )
+        analyst = row["analyst"]
+        assert analyst.get("target_mean") == pytest.approx(100.0)
+        assert analyst.get("implied_upside_pct") == pytest.approx(15.2)
+        assert analyst.get("target_dispersion") == pytest.approx(0.35)
+        assert analyst.get("recommendation") == "buy"
+        assert analyst.get("num_analysts") == 12
+
+    def test_analyst_block_absent_when_all_fields_null(self, tmp_path):
+        """When all analyst fields are None (honest-null row), no analyst block emitted."""
+        _build_minimal_tree(tmp_path)
+        _minimal_analyst_parquet(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        cc = payload["candidate_context"]
+        # FIXTURE_WATCH has all-None analyst fields — block should be absent
+        assert "FIXTURE_WATCH" in cc, "FIXTURE_WATCH should be in candidate_context"
+        row = cc["FIXTURE_WATCH"]
+        assert "analyst" not in row, (
+            "analyst block should NOT appear for FIXTURE_WATCH (all fields None)"
+        )
+
+    def test_analyst_block_absent_when_parquet_missing(self, tmp_path):
+        """When targets.parquet is absent, no analyst block appears and gap_note is added."""
+        _build_minimal_tree(tmp_path)
+        # Deliberately do NOT write targets.parquet
+        payload = build_context(root=tmp_path, now=_NOW)
+        cc = payload["candidate_context"]
+        # No ticker should have an analyst block
+        for ticker, row in cc.items():
+            assert "analyst" not in row, (
+                f"analyst block appeared for {ticker!r} despite absent parquet"
+            )
+        # A gap_note must be present
+        gap_str = " ".join(payload["gap_notes"])
+        assert "analyst" in gap_str, (
+            f"Expected gap note mentioning 'analyst'; got: {payload['gap_notes']}"
+        )
+
+    def test_analyst_block_allowed_behavior_unchanged(self, tmp_path):
+        """Adding an analyst block must NOT change allowed_behavior for any row."""
+        _build_minimal_tree(tmp_path)
+        _minimal_analyst_parquet(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        for ticker, row in payload["candidate_context"].items():
+            assert row.get("allowed_behavior") == "annotate_only", (
+                f"Ticker {ticker!r} has wrong allowed_behavior after analyst block added"
+            )
+
+    def test_analyst_block_fields_no_validated_text(self, tmp_path):
+        """No analyst field value may contain the word 'validated'."""
+        _build_minimal_tree(tmp_path)
+        _minimal_analyst_parquet(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        for ticker, row in payload["candidate_context"].items():
+            analyst = row.get("analyst") or {}
+            for k, v in analyst.items():
+                if isinstance(v, str):
+                    assert "validated" not in v.lower(), (
+                        f"analyst.{k} for {ticker!r} contains 'validated': {v!r}"
+                    )
+
+    def test_size_cap_constant_is_300kb(self):
+        """CONTEXT_SIZE_CAP_BYTES must be 300 * 1024 (Build 3 cap raise)."""
+        from engine.neuralweb.mastermind_context import CONTEXT_SIZE_CAP_BYTES  # noqa: PLC0415
+        assert CONTEXT_SIZE_CAP_BYTES == 300 * 1024, (
+            f"Expected CONTEXT_SIZE_CAP_BYTES=307200, got {CONTEXT_SIZE_CAP_BYTES}"
         )

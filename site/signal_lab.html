@@ -179,6 +179,7 @@
           <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
             <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
             <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
@@ -346,6 +347,7 @@
             <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
             <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
             <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
@@ -392,7 +394,7 @@
   <p class="lead" style="margin:10px 0 0"><span class="l-en">What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.</span><span class="l-zh">把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是“信号墓地”：那些我们测量后拒绝上线的信号。</span></p>
   <div class="chips">
     <span class="chip"><span class="dot d-scored"></span><b>6</b> <span class="l-en">scored</span><span class="l-zh">已计分</span></span>
-    <span class="chip"><span class="dot d-confirmer"></span><b>21</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
+    <span class="chip"><span class="dot d-confirmer"></span><b>23</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
     <span class="chip"><span class="dot d-display"></span><b>27</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
     <span class="chip"><span class="dot d-killed"></span><b>9</b> <span class="l-en">killed (NO-GO)</span><span class="l-zh">已否决</span></span>
     <span class="chip"><span class="dot d-pending"></span><b>0</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
@@ -427,6 +429,11 @@
       <span class="l-en">500 screened / 8 advanced → 1 family queued + 1 park + 2 kills</span><span class="l-zh">500筛选 / 8候选 → 1个家族排队 + 1个暂存 + 2个否决</span>;
     </span>
     <span style="color:var(--muted)"><span class="l-en">generation moratorium in force until wave-1 + spike verdicts booked and queue &lt; 3</span><span class="l-zh">生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次</span>.</span>
+    <div style="margin-top:10px;border-left:3px solid var(--accent,#4a9);padding-left:10px">
+      <strong><span class="l-en">Build-day (Day 3) results</span><span class="l-zh">构建日（第3天）结果</span></strong>
+      <span class="l-en">13 families tested → 2 PASS, 1 ACCRUE, 1 DIRECTIONAL FAIL, 1 PARK, 8 NULL, gaming DATA-BLOCKED.</span><span class="l-zh">13个家族测试 → 2 通过, 1 积累中, 1 方向性否决, 1 暂存, 8 无效, 博彩数据受阻。</span>
+      <span style="color:var(--muted)"><span class="l-en">Authorized queue is now EMPTY except accrual clocks and parked items — moratorium condition met. Next docket generation requires operator ratification.</span><span class="l-zh">授权队列已清空（积累时钟和暂存项除外）——暂停令条件已满足。下一批次生成需要运营方批准。</span></span>
+    </div>
   </div>
   <div class="scroll"><table class="frontier-table">
     <thead><tr>
@@ -1095,7 +1102,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-confirmer" style="align-self:center"></span>
-    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 21</h2>
+    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 23</h2>
     <span class="bl"><span class="l-en">A measured forward edge used as context or a tiebreaker — never sized on its own.</span><span class="l-zh">有可测的前瞻性边际，用作背景或加分项 — 但不单独定仓。</span></span>
   </div>
   
@@ -1596,6 +1603,52 @@
           <span class="muted sm"><span class="l-en">CONFIRMED — the honest INTL-43 resurrection. The broad-USD REER value factor (cheap = bullish USD, faithful to config fo…</span><span class="l-zh">已确认——诚实的 INTL-43 复活。宽美元 REER 价值因子（便宜=看多美元，忠于 config forex.dollar_desk.valuation）…</span></span>
           <span class="help">?<span class="tip"><span class="l-en">CONFIRMED — the honest INTL-43 resurrection. The broad-USD REER value factor (cheap = bullish USD, faithful to config forex.dollar_desk.valuation) CONFIRMED in BOTH halves vs forward broad-USD returns at all three declared horizons (h=21 +0.031/+0.030, h=63 +0.062/+0.056, h=126 +0.120/+0.099). Graded on its OWN single-trial budget (trial_family c4_reer_value_n1) — the pre-registered N=1 door, budget-separated from the forex 60-trial family (DSR 0.0056 there) AND the intl_bridge N=17 family (DSR 0.40 there): de-risk long-flat DSR 0.9436 >= 0.90, split-half PASS, orthogonality vs the 5 US MRS legs PASS (residual −0.130), crisis-count 4, crisis-independent ES +0.0025. weight_cap 0.1333. NO consumer wiring this wave: verdict recorded + surfaced by intl_feed at cap, but no scorer consumes the feed — the MRS-composite orthogonality gate must clear first (W2-C2 showed the bar is high and this is a returns-predicting factor, not a US-DD leg).  [reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)]</span><span class="l-zh">已确认——诚实的 INTL-43 复活。宽美元 REER 价值因子（便宜=看多美元，忠于 config forex.dollar_desk.valuation）在两半、三个预声明期限均确认对未来宽美元回报（h=21 +0.031/+0.030，h=63 +0.062/+0.056，h=126 +0.120/+0.099）。以独立单试验预算（trial_family c4_reer_value_n1）评分——预注册的 N=1 门，与外汇60试验家族（该处 DSR 0.0056）及 intl_bridge N=17 家族（该处 DSR 0.40）分开：降险多-空仓 DSR 0.9436 >= 0.90，两半通过，对5条美国 MRS 腿正交通过（残差 −0.130），危机计数4，去危机期望损失 +0.0025。权重上限 0.1333。本波不接入消费者：结论已记录并由 intl_feed 以上限呈现，但无计分器消费该源——须先通过 MRS 组合正交门。  [reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)]</span></span></span>
           <div class="src">reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="confirmer" data-mkt="Rates"
+          data-text="month-end bond-index extension day  (tlt / ief last-day lift) 月末债券指数展期日（tlt / ief 尾日上涨） rates bond index managers buy longer-duration bonds on the last trading day of each month to match their benchmark's new duration. tlt last-day mean return +0.183%/day (t_hac=3.63, bh q=0.0009, n=287 months 2002-2026); ief t=5.02, q~0. known documented effect confirmed live. g2 split-half same-sign: both halves positive (h1=+0.258%, h2=+0.108%). g3 last-day > avg-other-days baseline: confirmed. timing overlay candidacy: tlt/ief entry-timing conditioner on last trading day of month. v1 (auction-cycle) and v2 (quarter-end pension rebalance) both null — only v3 survives.">
+        <td>
+          <div class="sig"><span class="l-en">Month-end bond-index extension day  (TLT / IEF last-day lift)</span><span class="l-zh">月末债券指数展期日（TLT / IEF 尾日上涨）</span>
+            <span class="yes" title="survives FDR">✓FDR</span></div>
+          <div class="mkt">Rates · 1d (last trading day of month) · none — timing overlay candidacy pending program review</div>
+          <div class="extra">TLT last-day mean +0.183%/day, t_HAC=3.63, BH q=0.0009 · IEF last-day mean +0.110%/day, t_HAC=5.02, BH q~0 · V1 auction-cycle verdict NULL · V2 QE-rebalance verdict NULL</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r">+3.63</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">287</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Bond index managers buy longer-duration bonds on the last trading day of each month to match their benchmark's new durat…</span><span class="l-zh">债券指数经理在每月最后一个交易日买入久期更长的债券以匹配基准新久期。TLT 月末日平均收益 +0.183%/天（t_HAC=3.63，BH q=0.0009，n…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Bond index managers buy longer-duration bonds on the last trading day of each month to match their benchmark's new duration. TLT last-day mean return +0.183%/day (t_HAC=3.63, BH q=0.0009, n=287 months 2002-2026); IEF t=5.02, q~0. Known documented effect confirmed live. G2 split-half same-sign: both halves positive (H1=+0.258%, H2=+0.108%). G3 last-day > avg-other-days baseline: confirmed. Timing overlay candidacy: TLT/IEF entry-timing conditioner on last trading day of month. V1 (auction-cycle) and V2 (quarter-end pension rebalance) both NULL — only V3 survives.  [reports/d2-rates-calendar-flows-phase0.md; TLT/IEF Yahoo daily 2002-2026]</span><span class="l-zh">债券指数经理在每月最后一个交易日买入久期更长的债券以匹配基准新久期。TLT 月末日平均收益 +0.183%/天（t_HAC=3.63，BH q=0.0009，n=287个月，2002-2026）；IEF t=5.02，q≈0。已知文献效应，已在样本外确认。V1（拍卖周期）和V2（季末养老金再平衡）均为NULL——仅V3通过。  [reports/d2-rates-calendar-flows-phase0.md; TLT/IEF Yahoo daily 2002-2026]</span></span></span>
+          <div class="src">reports/d2-rates-calendar-flows-phase0.md; TLT/IEF Yahoo daily 2002-2026</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="confirmer" data-mkt="US S&P (broad)"
+          data-text="sec comment-letter release drift  (substantive-review, 21d) sec意见函披露漂移（实质性审查，21日） us s&p (broad) when the sec releases the full upload/corresp correspondence for a substantive review (≥3 sec letters) on edgar, stocks drift lower over the next 21 trading days (massive store, post-2021): mean beta-adj ar -3.34%, t=-3.26, bh q=0.0044, n=1084. mandatory caveat: effect concentrated 2023-2025 — first split-half not significant (first-half t=-1.396, p=0.163); second half highly significant (t=-5.008, p~0). accrual required before any promotion. light-review cells and yahoo-store cells are null. 7 of 8 pre-registered cells fail; single passing cell rides on post-2021 massive store only (survivorship bias present in both stores).">
+        <td>
+          <div class="sig"><span class="l-en">SEC comment-letter release drift  (substantive-review, 21d)</span><span class="l-zh">SEC意见函披露漂移（实质性审查，21日）</span>
+            <span class="yes" title="survives FDR">✓FDR</span></div>
+          <div class="mkt">US S&P (broad) · 21d · none</div>
+          <div class="extra">passing cell substantive/h21/massive: t=-3.26, q=0.0044, n=1084 · temporal caveat first-half t=-1.396 (p=0.163) not significant; concentrated 2023-2025 · survivorship both stores: only tickers alive at collection date · 7 of 8 cells NULL; promotion requires further accrual</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r">-3.26</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">1084</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">When the SEC releases the full UPLOAD/CORRESP correspondence for a substantive review (≥3 SEC letters) on EDGAR, stocks …</span><span class="l-zh">当SEC在EDGAR上发布实质性审查（≥3封SEC来函）的完整往来信件时，股票在随后21个交易日内下跌（massive数据集，2021年后）：beta调整异常收…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">When the SEC releases the full UPLOAD/CORRESP correspondence for a substantive review (≥3 SEC letters) on EDGAR, stocks drift lower over the next 21 trading days (massive store, post-2021): mean beta-adj AR -3.34%, t=-3.26, BH q=0.0044, n=1084. MANDATORY CAVEAT: effect concentrated 2023-2025 — first split-half not significant (first-half t=-1.396, p=0.163); second half highly significant (t=-5.008, p~0). Accrual required before any promotion. Light-review cells and yahoo-store cells are NULL. 7 of 8 pre-registered cells fail; single passing cell rides on post-2021 massive store only (survivorship bias present in both stores).  [reports/d2-comment-letter-release-phase0.md; EDGAR 2005-2026, massive+yahoo stores]</span><span class="l-zh">当SEC在EDGAR上发布实质性审查（≥3封SEC来函）的完整往来信件时，股票在随后21个交易日内下跌（massive数据集，2021年后）：beta调整异常收益均值-3.34%，t=-3.26，BH q=0.0044，n=1084。强制警示：效应集中于2023-2025年——前半样本不显著（t=-1.396，p=0.163）；后半样本高度显著（t=-5.008，p~0）。需积累更多数据方可晋升。  [reports/d2-comment-letter-release-phase0.md; EDGAR 2005-2026, massive+yahoo stores]</span></span></span>
+          <div class="src">reports/d2-comment-letter-release-phase0.md; EDGAR 2005-2026, massive+yahoo stores</div>
         </td>
       </tr>
     
@@ -2506,8 +2559,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-07 07:14 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-07 07:14 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-09 17:31 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-09 17:31 UTC</p>
 </div>
 
 <script src="theme.js"></script>
@@ -2569,6 +2622,5 @@
   apply();
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

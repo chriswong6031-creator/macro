@@ -1,0 +1,240 @@
+employer_name_pattern,ticker,valid_from,valid_to,confidence,notes
+# Canonical employer-ticker map for WARN w2044 study
+# Fields: employer_name_pattern (regex/substring, case-insensitive), ticker, valid_from, valid_to (inclusive), confidence [high/med/low], notes
+# valid_to="" means still active as of build date
+# Pattern matching: case-insensitive substring match on employer_raw; longest match wins
+# Subsidiaries: map to parent ticker with lower confidence and a note
+#
+# ── Big Tech ──────────────────────────────────────────────────────────────────
+Amazon,AMZN,1997-05-15,,high,Parent Amazon.com
+Amazon.com,AMZN,1997-05-15,,high,
+Meta Platforms,META,2021-10-28,,high,Renamed from Facebook
+Facebook,META,2012-05-18,,high,
+Google,GOOGL,2004-08-19,,high,
+Alphabet,GOOGL,2015-10-02,,high,
+Microsoft,MSFT,1986-03-13,,high,
+Apple,AAPL,1984-01-01,,high,
+Intel Corporation,INTC,1971-01-01,,high,
+Qualcomm,QCOM,1991-12-13,,high,
+Oracle America,ORCL,1986-03-12,,high,Also: Oracle Corporation
+Oracle Corporation,ORCL,1986-03-12,,high,
+Cisco Systems,CSCO,1990-02-16,,high,
+Marvell Semiconductor,MRVL,2000-06-27,,high,Also: Marvell Technology
+Marvell Technology,MRVL,2000-06-27,,high,
+Tesla,TSLA,2010-06-29,,high,
+Rivian,RIVN,2021-11-10,,high,
+Illumina,ILMN,2000-07-28,,high,
+Jabil,JBL,2001-01-01,,high,Also: Jabil Inc
+Jabil Inc,JBL,2001-01-01,,high,
+# ── Airlines & Transport ───────────────────────────────────────────────────────
+Boeing,BA,1962-01-01,,high,All Boeing variants → BA
+Boeing Company,BA,1962-01-01,,high,
+United Airlines,UAL,1990-01-01,,high,
+American Airlines,AAL,2013-12-09,,high,
+Delta Air Lines,DAL,2007-04-30,,high,
+Delta Air,DAL,2007-04-30,,high,
+Southwest Airlines,LUV,1971-01-01,,high,
+Alaska Airlines,ALK,1985-04-23,,high,Also: Alaska Air
+Alaska Air,ALK,1985-04-23,,high,
+Spirit Airlines,SAVE,2011-06-01,2024-11-18,high,Delisted/bankruptcy Nov 2024
+JetBlue,JBLU,2002-04-11,,high,
+Frontier Airlines,ULCC,2021-04-01,,high,
+Hawaiian Holdings,HA,2005-01-01,,high,Also: Hawaiian Airlines
+Hawaiian Airlines,HA,2005-01-01,,high,
+FedEx,FDX,1978-04-12,,high,
+UPS,UPS,1999-11-10,,high,United Parcel Service
+Yellow Corporation,YELL,1996-03-15,2023-08-06,high,Bankruptcy Aug 2023
+YRC Worldwide,YELL,2007-01-01,2021-01-25,med,Renamed to Yellow Corporation
+# ── Financial ─────────────────────────────────────────────────────────────────
+Wells Fargo,WFC,1970-01-01,,high,
+Bank of America,BAC,1998-09-30,,high,
+JPMorgan,JPM,1969-05-01,,high,Also: JPMorgan Chase
+JPMorgan Chase,JPM,1969-05-01,,high,
+Citigroup,C,1998-10-08,,high,Also: Citi
+AT&T,T,1984-01-01,,high,
+PennyMac,PFSI,2013-05-08,,high,Also: Pennymac
+Pennymac,PFSI,2013-05-08,,high,
+Goldman Sachs,GS,1999-05-04,,high,
+Morgan Stanley,MS,1986-03-05,,high,
+Charles Schwab,SCHW,1987-09-22,,high,
+Fidelity,,,,,Private — exclude
+Vanguard,,,,,Private — exclude
+BlackRock,BLK,1999-10-01,,high,
+# ── Healthcare ────────────────────────────────────────────────────────────────
+Kaiser Foundation Hospitals,,,,,Non-profit — exclude
+Kaiser,,,,,Non-profit — exclude
+Thermo Fisher,TMO,2006-11-09,,high,Also: Thermo Fisher Scientific
+Thermo Fisher Scientific,TMO,2006-11-09,,high,
+Cepheid,CPHD,2000-03-02,2016-11-21,high,Acquired by Danaher Nov 2016
+Carbon Health,,,,,Private — exclude (as of 2026-07)
+Symantec Corporation,NLOK,1989-03-23,,high,Renamed to NortonLifeLock/Gen Digital
+Centene,CNC,2001-12-12,,high,
+Humana,HUM,1984-01-01,,high,
+Anthem,ANTM,2001-11-28,,high,Renamed to Elevance
+Elevance Health,ELV,2022-06-28,,high,
+CVS Health,CVS,1999-01-01,,high,
+DaVita,DVA,1995-05-02,,high,
+Becton Dickinson,BDX,1978-01-01,,high,
+Baxter International,BAX,1962-01-01,,high,
+# ── Retail ────────────────────────────────────────────────────────────────────
+Walmart,WMT,1972-10-01,,high,
+Target,TGT,1969-01-01,,high,
+Macy's,M,2015-05-01,,high,Also: Macy's Inc
+Advance Auto Parts,AAP,2001-11-29,,high,Also: Advance Stores
+Advance Stores,AAP,2001-11-29,,high,
+bebe stores,BEBE,1998-08-01,2017-05-31,high,Went private/closed May 2017
+Pet Valu,PVH,,,low,Canadian company — exclude unless US exchange listed; PVH is different company
+Kohl's,KSS,1992-05-19,,high,
+Nordstrom,JWN,1971-01-01,,high,
+Bloomingdale's,M,2015-05-01,,med,Subsidiary of Macy's
+Gap,GPS,1976-02-18,,high,
+Old Navy,GPS,1994-01-01,,med,Subsidiary of Gap
+Banana Republic,GPS,1983-01-01,,med,Subsidiary of Gap
+Bed Bath Beyond,BBBY,1992-01-01,2023-04-23,high,Bankruptcy/delisted 2023
+# ── Industrials ───────────────────────────────────────────────────────────────
+General Motors,GM,1916-01-01,,high,Also: GM
+GM,GM,1916-01-01,,high,
+Ford,F,1956-01-17,,high,Also: Ford Motor
+Ford Motor,F,1956-01-17,,high,
+Stellantis,STLA,2021-01-16,,high,Also: FCA Fiat Chrysler
+Fiat Chrysler,STLA,2014-10-13,2021-01-15,med,Merged into Stellantis
+General Dynamics,GD,1971-01-01,,high,Also: General Dynamics Information Technology
+General Dynamics Information Technology,GD,1971-01-01,,high,Subsidiary of GD
+Lockheed Martin,LMT,1995-03-15,,high,
+Raytheon,RTX,1933-01-01,,high,Also: RTX
+RTX,RTX,1933-01-01,,high,
+Northrop Grumman,NOC,1994-04-17,,high,
+L3 Technologies,LHX,2016-01-01,2019-05-08,med,Merged into L3Harris
+L3Harris,LHX,2019-05-08,,high,
+Howmet Aerospace,HWM,2020-04-01,,high,Also: Arconic
+Arconic,ARNC,2016-11-01,,high,
+Silgan Containers,SLGN,1987-01-01,,med,Subsidiary of Silgan Holdings
+Silgan Holdings,SLGN,1987-01-01,,high,
+Hawker Beechcraft,,,,,Bankrupt 2012 — private
+# ── Tech / Software ───────────────────────────────────────────────────────────
+Salesforce,CRM,2004-06-23,,high,
+Workday,WDAY,2012-10-12,,high,
+ServiceNow,NOW,2012-06-29,,high,
+Snowflake,SNOW,2020-09-16,,high,
+Zoom,ZM,2019-04-18,,high,Also: Zoom Video
+Zoom Video,ZM,2019-04-18,,high,
+Lyft,LYFT,2019-03-29,,high,
+Uber,UBER,2019-05-10,,high,
+Airbnb,ABNB,2020-12-10,,high,
+DoorDash,DASH,2020-12-09,,high,
+Instacart,CART,2023-09-19,,high,
+Stripe,,,,,Private — exclude
+Palantir,PLTR,2020-09-30,,high,
+Robinhood,HOOD,2021-07-29,,high,
+Coinbase,COIN,2021-04-14,,high,
+Block,SQ,2015-11-19,,high,Also: Square
+Square,SQ,2015-11-19,,high,
+PayPal,PYPL,2002-02-28,,high,
+eBay,EBAY,1998-09-24,,high,
+Expedia,EXPE,1999-11-10,,high,
+Booking Holdings,BKNG,1999-01-01,,high,
+TripAdvisor,TRIP,2011-12-21,,high,
+Twitter,TWTR,2013-11-07,2022-10-27,high,Taken private Oct 2022; now X
+Snap,SNAP,2017-03-02,,high,Also: Snapchat
+Snapchat,SNAP,2017-03-02,,high,
+Pinterest,PINS,2019-04-18,,high,
+Spotify,SPOT,2018-04-03,,high,
+Netflix,NFLX,2002-05-23,,high,
+Hulu,DIS,2019-03-19,,med,Disney subsidiary since 2019 majority
+Disney,DIS,1957-11-12,,high,Also: Walt Disney
+Walt Disney,DIS,1957-11-12,,high,
+Warner Bros,WBD,2022-04-11,,high,Also: WarnerMedia
+WarnerMedia,WBD,2022-04-11,,med,Spun off from AT&T
+Paramount,PARA,1952-01-01,,high,Also: CBS
+CBS,PARA,1928-01-01,,high,Merged into Paramount
+Comcast,CMCSA,2002-11-18,,high,Also: NBCUniversal
+NBCUniversal,CMCSA,2013-01-01,,med,Subsidiary of Comcast
+# ── Energy ────────────────────────────────────────────────────────────────────
+ExxonMobil,XOM,1882-01-01,,high,
+Chevron,CVX,1879-01-01,,high,
+Pioneer Natural Resources,PXD,1997-08-18,2023-10-11,high,Acquired by XOM
+ConocoPhillips,COP,2002-12-12,,high,
+Halliburton,HAL,1948-01-01,,high,
+Schlumberger,SLB,1962-06-05,,high,Also: SLB
+# ── Staffing & Services ───────────────────────────────────────────────────────
+Sodexo,,,,,French company — exclude (not US-listed; parent Sodexo SA is French)
+Centerra Group,MOO,,,low,Subsidiary — Centerra Gold is TSX; not same company; exclude
+First Student,,,,,Private (private equity owned) — exclude
+# ── Pharma ───────────────────────────────────────────────────────────────────
+Pfizer,PFE,1944-01-01,,high,
+Moderna,MRNA,2018-12-06,,high,
+Johnson & Johnson,JNJ,1944-09-25,,high,Also: J&J
+J&J,JNJ,1944-09-25,,high,
+AbbVie,ABBV,2013-01-02,,high,
+Eli Lilly,LLY,1952-01-01,,high,Also: Lilly
+Lilly,LLY,1952-01-01,,high,
+Amgen,AMGN,1983-06-17,,high,
+Biogen,BIIB,1991-03-05,,high,
+Bristol Myers Squibb,BMY,1929-01-01,,high,Also: BMS
+BMS,BMY,1929-01-01,,high,
+Merck,MRK,1946-06-07,,high,Also: MSD
+AstraZeneca,AZN,1993-06-02,,high,
+Gilead,GILD,1992-01-22,,high,
+Regeneron,REGN,1991-04-04,,high,
+Vertex,VRTX,1991-07-26,,high,Also: Vertex Pharmaceuticals
+# ── Telecom ───────────────────────────────────────────────────────────────────
+Verizon,VZ,2000-06-30,,high,
+T-Mobile,TMUS,2013-05-01,,high,Also: T-Mobile US
+Sprint,TMUS,1987-01-01,2020-04-01,med,Merged into T-Mobile
+Lumen Technologies,LUMN,2020-09-14,,high,Also: CenturyLink
+CenturyLink,LUMN,1997-01-01,2020-09-13,med,Renamed to Lumen
+# ── Banks ─────────────────────────────────────────────────────────────────────
+Goldman Sachs,GS,1999-05-04,,high,
+Morgan Stanley,MS,1986-03-05,,high,
+Citibank,C,1998-10-08,,high,Subsidiary of Citigroup
+US Bank,USB,1929-01-01,,high,Also: US Bancorp
+USB,USB,1929-01-01,,high,
+PNC,PNC,1972-04-10,,high,Also: PNC Financial
+PNC Financial,PNC,1972-04-10,,high,
+Truist,TFC,2019-12-06,,high,Also: BB&T / SunTrust
+KeyBank,KEY,1958-01-01,,high,Also: KeyCorp
+Fifth Third,FITB,1975-01-01,,high,Also: Fifth Third Bank
+Regions Financial,RF,2004-09-21,,high,Also: Regions Bank
+Silicon Valley Bank,SIVB,1988-10-03,2023-03-10,high,Closed by FDIC Mar 2023
+Signature Bank,SBNY,2004-03-24,2023-03-12,high,Closed by FDIC Mar 2023
+First Republic,FRC,1985-01-01,2023-05-01,high,Seized by FDIC May 2023
+# ── Real Estate ───────────────────────────────────────────────────────────────
+Redfin,RDFN,2017-07-28,,high,
+Opendoor,OPEN,2020-12-21,,high,
+Compass,COMP,2021-04-01,,high,
+Zillow,Z,2011-07-20,,high,Also: Zillow Group
+Zillow Group,Z,2011-07-20,,high,
+# ── Consumer ──────────────────────────────────────────────────────────────────
+Nike,NKE,1980-12-02,,high,
+Under Armour,UA,2005-11-18,,high,
+Levi Strauss,LEVI,2019-03-21,,high,
+Hanesbrands,HBI,2006-09-06,,high,
+Tupperware,TUP,1996-01-01,2023-11-03,high,Bankruptcy/delisted Nov 2023
+PepsiCo,PEP,1980-01-01,,high,
+Coca-Cola,KO,1919-01-01,,high,
+Starbucks,SBUX,1992-06-26,,high,
+McDonald's,MCD,1965-01-01,,high,
+Yum Brands,YUM,1997-10-07,,high,Also: KFC Pizza Hut Taco Bell
+Chipotle,CMG,2006-01-26,,high,
+Darden,DRI,1995-05-20,,high,Also: Olive Garden
+Olive Garden,DRI,1995-05-20,,med,Subsidiary of Darden
+# ── Semiconductor ─────────────────────────────────────────────────────────────
+NVIDIA,NVDA,1999-01-22,,high,Also: Nvidia
+Nvidia,NVDA,1999-01-22,,high,
+AMD,AMD,1972-09-27,,high,Also: Advanced Micro Devices
+Advanced Micro Devices,AMD,1972-09-27,,high,
+Micron,MU,1984-01-01,,high,Also: Micron Technology
+Micron Technology,MU,1984-01-01,,high,
+Applied Materials,AMAT,1972-10-14,,high,
+Lam Research,LRCX,1984-01-01,,high,
+KLA,KLAC,1980-01-01,,high,Also: KLA Corporation
+Texas Instruments,TXN,1953-10-01,,high,Also: TI
+# ── Other Notable ─────────────────────────────────────────────────────────────
+Blue Shield of California,,,,,Non-profit — exclude
+Head Start,,,,,Government program — exclude
+Knight Facilities Management,,,,,Private — exclude
+Sentinel Transportation,,,,,Private — exclude
+Herbalife,HLF,2004-01-16,,high,
+Wescom Financial,,,,,Credit union — exclude (private)
+University of Southern California,,,,,Non-profit university — exclude
+Right At School,,,,,Private — exclude

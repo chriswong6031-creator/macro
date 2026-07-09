@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.unusualbaseline.plist — launchd agent for the nightly unusual-volume baseline.
+
+  Runs build_unusual_baseline on weekdays at 16:30 local (19:30 ET).
+  Deliberately offset from the 16:00-local options-matrix job (com.macro.optionsmatrix)
+  so two heavy EOD-store readers never overlap.
+
+  INSTALL (as the mac user who runs Theta Terminal — not root):
+    cp ops/launchd/com.macro.unusualbaseline.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.macro.unusualbaseline.plist
+
+  UNINSTALL:
+    launchctl unload ~/Library/LaunchAgents/com.macro.unusualbaseline.plist
+    rm ~/Library/LaunchAgents/com.macro.unusualbaseline.plist
+
+  DO NOT load this plist directly from the repo. Copy first — the repo path
+  may not match the deployment path, and launchd requires the exact plist path
+  when unloading.
+
+  ENV FILE:
+    R2 credentials and THETADATA_STORE are sourced from
+    /Users/chriswong/flow-ops-wt/.env via ops/launchd/run_with_env.sh.
+    NEVER inline secrets in EnvironmentVariables — use the wrapper.
+
+    Required env vars:
+      R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+      THETADATA_STORE=/Users/chriswong/theta-ops-wt/data/thetadata_eod
+
+  LOG TAILING:
+    tail -f /tmp/unusualbaseline.stdout.log /tmp/unusualbaseline.stderr.log
+
+  MANUAL RUN (smoke — 3 roots, no publish):
+    set -a
+    source '/Users/chriswong/flow-ops-wt/.env'
+    set +a
+    cd '/Users/chriswong/flow-ops-wt'
+    python -m scripts.build_unusual_baseline --roots SPY NVDA TSLA
+
+  MANUAL RUN (with publish):
+    python -m scripts.build_unusual_baseline --publish
+
+  NOTE: The UNUSUAL_BASELINE=1 poller flag is NOT set here. The poller lane owner
+  enables it separately. This job only maintains the artifact.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.macro.unusualbaseline</string>
+
+  <!--
+    run_with_env.sh sources the .env file before executing the builder.
+    Args: <env_file> <python_bin> -m <module> [flags...]
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/flow-ops-wt/.env</string>
+    <string>/opt/homebrew/Caskroom/miniconda/base/bin/python</string>
+    <string>-m</string>
+    <string>scripts.build_unusual_baseline</string>
+    <string>--publish</string>
+  </array>
+
+  <!-- Working directory must be flow-ops-wt (avoids ~/Documents TCC denial). -->
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/flow-ops-wt</string>
+
+  <!--
+    16:30 local weekdays (19:30 ET) (Mon=1 through Fri=5 in launchd).
+    Deliberately offset from 16:00-local options-matrix job to avoid simultaneous
+    heavy reads from the thetadata_eod store.
+  -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Weekday</key><integer>1</integer>
+      <key>Hour</key><integer>16</integer>
+      <key>Minute</key><integer>30</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>2</integer>
+      <key>Hour</key><integer>16</integer>
+      <key>Minute</key><integer>30</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>3</integer>
+      <key>Hour</key><integer>16</integer>
+      <key>Minute</key><integer>30</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>4</integer>
+      <key>Hour</key><integer>16</integer>
+      <key>Minute</key><integer>30</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>5</integer>
+      <key>Hour</key><integer>16</integer>
+      <key>Minute</key><integer>30</integer>
+    </dict>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/flow-ops-wt</string>
+    <!--
+      THETADATA_STORE is sourced from .env via run_with_env.sh above.
+      Do NOT set it here to avoid duplication / stale override.
+      UNUSUAL_BASELINE flag is intentionally NOT set — poller lane owner controls it.
+    -->
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/unusualbaseline.stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/unusualbaseline.stderr.log</string>
+
+  <key>KeepAlive</key>
+  <false/>
+
+  <!-- Throttle: if the job exits in under 10s, wait 60s before retrying. -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+</dict>
+</plist>

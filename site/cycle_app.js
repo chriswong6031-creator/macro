@@ -455,8 +455,7 @@
       '<div class="cc-meta">' +
         '<div class="cc-leg"><div class="cc-leg-bar"><i style="width:' + legPct + '%"></i></div>' +
           '<div class="cc-leg-lab">' + legLab + '</div></div>' +
-        '<div class="cc-next"><span class="cc-arrow">' + (pj.nextTurn === "peak" ? "▲" : "▼") + '</span>' +
-          '<span>' + turnWord(pj.nextTurn, true) + ' ≈ ' + fmtMon(pj.central) + '</span></div>' +
+        '<div class="cc-next">' + cardNextInnerHTML(band, pj) + '</div>' +
       '</div>' +
       tolNote +
       tripwireStripHTML(card);
@@ -809,11 +808,128 @@
       '</div>';
   }
 
+  /* ── honest-headline helpers (cycle-honest-headline-w0) ─────────────────────
+     hazardHeadlineHTML : hazard-first headline for card face + focus panel.
+       When band.now.hazard exists, leads with P(turn≤6m) + MODEL/PRIOR badge.
+       Falls back to the classic "Turn ≈ date" when no hazard data.
+     projRefHTML        : secondary reference line (overdue wording / half-cycle ref).
+     provisionalTurnLine: shows the latest provisional turn if newer than last confirmed.
+     firedDemotionLabel : muted label shown when any tripwire on the card is FIRED.       */
+
+  function hazardHeadlineHTML(band, pj) {
+    var hz = band.now && band.now.hazard;
+    var nextTurn = pj.nextTurn || "turn";
+    var arrow = nextTurn === "peak" ? "▲" : "▼";
+    if (hz && hz["6m"] && hz["6m"].p != null) {
+      var c6 = hz["6m"];
+      var pct6 = Math.round(c6.p * 100);
+      var isModel = (c6.cell_verdict === "PASS") || (c6.source === "MODEL");
+      var badge = isModel
+        ? '<span class="hz-badge hz-pass"><span class="l-en">PASS</span><span class="l-zh">通过</span></span>'
+        : '<span class="hz-badge hz-prior"><span class="l-en">baseline</span><span class="l-zh">基准</span></span>';
+      var tw = turnWord(nextTurn, true);
+      return '<div class="cc-hz-headline">' +
+        '<span class="cc-arrow">' + arrow + '</span>' +
+        '<span class="l-en">P(' + tw + ' &le;&#x202F;6m): ' + pct6 + '%</span>' +
+        '<span class="l-zh">P(' + tw + '≤6月): ' + pct6 + '%</span>' +
+        badge +
+        '</div>';
+    }
+    // fallback: no hazard data
+    return '<div class="cc-hz-headline">' +
+      '<span class="cc-arrow">' + arrow + '</span>' +
+      '<span>' + turnWord(nextTurn, true) + ' ≈ ' + fmtMon(pj.central) + '</span>' +
+      '</div>';
+  }
+
+  function cardNextInnerHTML(band, pj) {
+    // compact card-face turn line: hazard-first when the calibrated surface exists;
+    // overdue-aware past-tense fallback otherwise (never a bare future-tense past date).
+    var arrow = '<span class="cc-arrow">' + (pj.nextTurn === "peak" ? "▲" : "▼") + '</span>';
+    var tw = turnWord(pj.nextTurn, true);
+    var hz = band.now && band.now.hazard;
+    if (hz && hz["6m"] && hz["6m"].p != null) {
+      var c6 = hz["6m"];
+      var pct6 = Math.round(c6.p * 100);
+      var isModel = (c6.cell_verdict === "PASS") || (c6.source === "MODEL");
+      var badge = '<span class="hz-badge ' + (isModel ? "hz-pass" : "hz-prior") + '">' +
+        (isModel ? L("PASS", "通过") : L("baseline", "基准")) + '</span>';
+      return arrow + '<span>' + L("P(" + tw + " ≤ 6m): " + pct6 + "%", "P(" + tw + "≤6月): " + pct6 + "%") + '</span>' + badge;
+    }
+    if (pj.overdue) {
+      return arrow + '<span>' + L("ref: " + tw + " was proj. " + fmtMon(pj.central) + " — elapsed",
+                                  "参考：" + tw + "原预计 " + fmtMon(pj.central) + " — 已过窗") + '</span>';
+    }
+    return arrow + '<span>' + tw + ' ≈ ' + fmtMon(pj.central) + '</span>';
+  }
+
+  function projRefHTML(band, pj, card) {
+    // returns the secondary reference line: overdue wording OR half-cycle ref
+    var firedDemote = (card.tripwires || []).some(function (tw) { return tw.state === "FIRED"; });
+    var wrapper = firedDemote ? "cc-proj-demoted" : "";
+    var refLine = "";
+    if (pj.overdue) {
+      var frac = pj.overdue_frac != null ? pj.overdue_frac.toFixed(1) : "?";
+      refLine = '<div class="cc-proj-ref' + (firedDemote ? " cc-proj-refuted" : "") + '">' +
+        '<span class="l-en">ref: ' + turnWord(pj.nextTurn, true) + ' was projected ' +
+          fmtMon(pj.central) + ' — window elapsed (' + frac + '× median)</span>' +
+        '<span class="l-zh">参考：' + turnWord(pj.nextTurn, true) + '原预计 ' +
+          fmtMon(pj.central) + ' — 窗口已过（' + frac + '倍中位数）</span>' +
+        '</div>';
+    } else {
+      var medYrs = pj.period_yrs && pj.period_yrs.median != null ? pj.period_yrs.median : null;
+      var halfCycLabel = L(
+        "median half-cycle ref ≈ " + fmtMon(pj.central) + (medYrs != null ? " (median cycle ~" + medYrs + "y)" : ""),
+        "半周期中位参考 ≈ " + fmtMon(pj.central) + (medYrs != null ? "（周期中位约" + medYrs + "年）" : ""));
+      refLine = '<div class="cc-proj-ref">' + halfCycLabel + '</div>';
+    }
+    // fired-falsifier demotion label
+    var demotionLine = "";
+    if (firedDemote) {
+      var firedTW = (card.tripwires || []).filter(function (tw) { return tw.state === "FIRED"; });
+      var firedOn = firedTW.length && firedTW[0].fired_on ? firedTW[0].fired_on.slice(0, 10) : "";
+      demotionLine =
+        '<div class="cc-proj-ref cc-proj-refuted">' +
+          '<span class="l-en">projection refuted by falsifier' + (firedOn ? " (fired " + firedOn + ")" : "") + ' — reference only</span>' +
+          '<span class="l-zh">预测已被证伪' + (firedOn ? "（触发 " + firedOn + "）" : "") + ' — 仅供参考</span>' +
+        '</div>';
+    }
+    return (wrapper ? '<div class="' + wrapper + '">' : '') + refLine + demotionLine + (wrapper ? '</div>' : '');
+  }
+
+  function provisionalTurnLine(band) {
+    // if the band has a provisional turn newer than the last confirmed turn, show a line
+    var turns = band.turns || [];
+    var lastConfirmed = null, lastProvisional = null;
+    turns.forEach(function (t) {
+      if (!t.provisional) lastConfirmed = t;
+      else lastProvisional = t;
+    });
+    if (!lastProvisional) return "";
+    // only show if provisional is newer than last confirmed
+    var provX = lastProvisional.x != null ? lastProvisional.x : 0;
+    var confX = lastConfirmed ? (lastConfirmed.x != null ? lastConfirmed.x : 0) : 0;
+    if (provX <= confX) return "";
+    var tw = turnWord(lastProvisional.k, true);
+    return '<div class="cc-provisional">' +
+      '<span class="l-en">provisional ' + tw + ' ' + fmtMon(lastProvisional.t) + ' — awaiting confirmation</span>' +
+      '<span class="l-zh">临时' + tw + ' ' + fmtMon(lastProvisional.t) + ' — 待确认</span>' +
+    '</div>';
+  }
+
   function measuredFacts(card, band) {
     var pj = band.proj || {};
     var h = band.health || {};
     var provisional = (band.turns || []).some(function (t) { return t.provisional; });
-    return '<div class="cyc-grp cyc-grp-3"><div class="cyc-facts">' +
+    var hz = band.now && band.now.hazard;
+    var hzHeadline = hz
+      ? '<div class="cyc-hz-headline-row">' +
+          hazardHeadlineHTML(band, pj) +
+          projRefHTML(band, pj, card) +
+          provisionalTurnLine(band) +
+        '</div>'
+      : '';
+    return '<div class="cyc-grp cyc-grp-3">' + hzHeadline + '<div class="cyc-facts">' +
       factRow(L("Series", "序列"), esc((band.ref || "").split(":").pop()) + ' <span class="fv-sub">' + esc(measuredBasisLine(band).split(" · ").slice(1).join(" · ")) + '</span>') +
       factRow(L("History", "历史区间"), (band.series_first || "?") + " → " + (band.series_last || "?")) +
       factRow(L("Confirmed turns", "已确认拐点"), (band.n_turns_all != null ? band.n_turns_all : "—") + (provisional ? L(" · +1 provisional", " · +1 待确认") : "")) +

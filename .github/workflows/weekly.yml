@@ -117,6 +117,7 @@ jobs:
           run_py "recalibrate (macro)" scripts.recalibrate
           run_py "regime engine (engine.run)" engine.run
           run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
+          run_py "policy-lever card (build_policy_lever)" scripts.build_policy_lever
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           # descriptive A-share fundamentals (akshare, keyless) — refresh high-value
           # names + widen the universe ~150/run; the China build reads the cache.
@@ -162,6 +163,28 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ reports/ site/
+          # W0b sibling fix (#1963, 2026-07-08 stale-HK incident): asia-close.yml runs
+          # daily at 08:30 UTC INCLUDING Saturdays and is the sole authoritative writer
+          # of all china*/hk*/hkma data stores. Weekly runs at 14:00 UTC — AFTER the
+          # Saturday asia-close has already committed fresh HK/China data. This job runs
+          # build_china/build_hk/calibrate_china/calibrate_hk (which write to
+          # data/china_regime/, data/hk_regime/ etc.), but a checkout-time stale copy of
+          # data/china_stocks/, data/hk_stocks/, data/china_breadth/, data/hk_breadth/
+          # etc. can also be staged by the broad `git add data/` above. Combined with
+          # `-X theirs` on the rebase-push, this would clobber asia-close's fresh commit
+          # with the checkout's stale snapshot — the same bug class as the 2026-07-08
+          # daily.yml incident (fixed in #1963).
+          # Guard: unstage every asia-close-owned path after the broad add so `-X theirs`
+          # is harmless for the asia data plane. Path derivation matches #1963: asia group
+          # = adapters starting with `china` or `hk` (scripts/collect.py group_members);
+          # data/hkma adapter key `hkma` also starts with `hk`.
+          # Trade-off: weekly's calibration outputs at data/china_regime/ and
+          # data/hk_regime/ are also excluded, so they stay at last Saturday's state on
+          # main until next Saturday. This is acceptable: calibration is designed to be
+          # weekly-stable, and preventing a stale-overwrite of fresh market data is the
+          # higher-priority safety invariant. (asia-close does not run calibrate_china/
+          # calibrate_hk, so there is no daily lane to carry these forward.)
+          git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
           # Stock-search libraries are gitignored — force-add so the committed-tree
           # deploy ships their index/detail JSON. See daily.yml.
           if git diff --cached --quiet; then echo "no weekly changes to commit"; exit 0; fi
@@ -169,8 +192,12 @@ jobs:
           # best-effort push: losing a race with a concurrent push must NOT fail the
           # pipeline (the deploy below uses the uploaded artifact). Retry rebase+push,
           # preferring our freshly-built outputs on any conflict.
+          # --autostash: parity with daily.yml (#1823 fix); prevents an "unstaged changes"
+          # rebase halt when builders leave stray tracked writes outside staged paths
+          # (e.g. reports/*.md graders, site/qledger/) — without it, the push dies after
+          # 5 attempts and the weekly commit is silently discarded.
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed weekly outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true

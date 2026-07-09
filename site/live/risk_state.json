@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-06 21:52:52 UTC",
+  "built": "2026-07-09 18:16:54 UTC",
   "session": {
     "region": "us",
-    "open": false,
-    "local_time": "2026-07-06 17:52 EDT"
+    "open": true,
+    "local_time": "2026-07-09 14:16 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -12,41 +12,45 @@
   "delayed_min": 15,
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
-  "nightly_asof": "2026-07-02",
+  "nightly_asof": "2026-07-08",
   "polygon_status": "ok",
-  "n_live_symbols": 4,
+  "n_live_symbols": 12,
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": 0.94
+      "chg_pct": 0.83
     },
     {
       "sym": "QQQ",
-      "chg_pct": 1.44
+      "chg_pct": 1.75
+    },
+    {
+      "sym": "VIX",
+      "chg_pct": -5.33
     }
   ],
   "display": {
-    "verdict": "RISK_OFF",
-    "label_en": "Risk-off",
-    "label_zh": "\u907f\u9669",
-    "color": "red",
-    "score": 40,
-    "band_changed": false,
+    "verdict": "RISK_ON",
+    "label_en": "Risk-on",
+    "label_zh": "\u98ce\u9669\u504f\u597d",
+    "color": "green",
+    "score": 77,
+    "band_changed": true,
     "pending": null
   },
   "live": {
-    "verdict": "RISK_OFF",
-    "score": 40,
-    "raw_score": 72,
-    "color": "red",
-    "label_en": "Risk-off",
-    "label_zh": "\u907f\u9669",
-    "headline_en": "Risk-off \u2014 stress is elevated; defend capital first.",
-    "headline_zh": "\u907f\u9669 \u2014 \u538b\u529b\u5347\u9ad8\uff1b\u4f18\u5148\u9632\u5b88\u3002",
+    "verdict": "RISK_ON",
+    "score": 77,
+    "raw_score": 77,
+    "color": "green",
+    "label_en": "Risk-on",
+    "label_zh": "\u98ce\u9669\u504f\u597d",
+    "headline_en": "Risk-on \u2014 the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.",
+    "headline_zh": "\u98ce\u9669\u504f\u597d \u2014 \u4ef7\u683c\u3001\u5e7f\u5ea6\u4e0e\u8de8\u8d44\u4ea7\u4fe1\u53f7\u4e00\u81f4\u3002\u987a\u52bf\u4ea4\u6613\u4e0e\u9022\u5f3a\u52a0\u4ed3\u5f97\u5230\u652f\u6301\u3002",
     "radar": {
-      "state": "caution",
-      "state_ungated": "risk-off",
-      "top_score": 61,
+      "state": "watch",
+      "state_ungated": "watch",
+      "top_score": 59,
       "label_en": "Bubble / blow-off unwind",
       "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
@@ -54,43 +58,37 @@
         "spy_below_200dma": false,
         "breadth_weak": false
       },
-      "amp": 1,
-      "ceiling": 40,
+      "amp": 0,
+      "ceiling": null,
       "alert": false,
       "conjunction": false
     },
-    "overrides": [
-      {
-        "kind": "radar",
-        "note_en": "Risk Radar forces Risk-off.",
-        "note_zh": "\u98ce\u9669\u96f7\u8fbe\u5f3a\u5236\u4e3a\u300c\u907f\u9669\u300d\u3002"
-      }
-    ]
+    "overrides": []
   },
   "nightly": {
-    "verdict": "RISK_OFF",
-    "score": 40,
-    "raw_score": 70,
-    "color": "red",
-    "label_en": "Risk-off",
-    "label_zh": "\u907f\u9669",
-    "headline_en": "Risk-off \u2014 stress is elevated; defend capital first.",
-    "headline_zh": "\u907f\u9669 \u2014 \u538b\u529b\u5347\u9ad8\uff1b\u4f18\u5148\u9632\u5b88\u3002",
+    "verdict": "MIXED",
+    "score": 56,
+    "raw_score": 76,
+    "color": "yellow",
+    "label_en": "Mixed",
+    "label_zh": "\u6df7\u5408",
+    "headline_en": "Mixed / transition \u2014 the signals disagree. Trade smaller, favour quality, take profits faster; don't position aggressively.",
+    "headline_zh": "\u6df7\u5408 / \u8f6c\u6362 \u2014 \u4fe1\u53f7\u5206\u6b67\u3002\u7f29\u5c0f\u4ed3\u4f4d\u3001\u504f\u597d\u8d28\u91cf\u3001\u66f4\u5feb\u83b7\u5229\u4e86\u7ed3\uff1b\u52ff\u6fc0\u8fdb\u5e03\u5c40\u3002",
     "radar": {
       "state": "caution",
       "state_ungated": null,
-      "top_score": 84,
+      "top_score": 75,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": null,
-      "amp": 1,
-      "ceiling": 40
+      "amp": 0,
+      "ceiling": 56
     },
     "overrides": [
       {
         "kind": "radar",
-        "note_en": "Risk Radar forces Risk-off.",
-        "note_zh": "\u98ce\u9669\u96f7\u8fbe\u5f3a\u5236\u4e3a\u300c\u907f\u9669\u300d\u3002"
+        "note_en": "Capped at Mixed by the Risk Radar above.",
+        "note_zh": "\u7531\u4e0a\u65b9\u98ce\u9669\u96f7\u8fbe\u5c01\u9876\u4e3a\u300c\u6df7\u5408\u300d\u3002"
       }
     ]
   },
@@ -105,48 +103,48 @@
     {
       "key": "risk",
       "label_en": "Risk appetite",
-      "score": 42,
+      "score": 70,
       "basis": "carried",
-      "asof": "2026-07-02"
+      "asof": "2026-07-08"
     },
     {
       "key": "vol",
       "label_en": "Volatility regime",
-      "score": 80,
+      "score": 74,
       "basis": "live",
       "asof": "live"
     },
     {
       "key": "breadth",
       "label_en": "Breadth & participation",
-      "score": 68,
+      "score": 58,
       "basis": "carried",
-      "asof": "2026-07-02"
+      "asof": "2026-07-08"
     },
     {
       "key": "liquidity",
       "label_en": "Liquidity & credit",
-      "score": 58,
+      "score": 78,
       "basis": "carried",
-      "asof": "2026-07-02"
+      "asof": "2026-07-08"
     },
     {
       "key": "stress",
       "label_en": "Downturn-risk guard",
-      "score": 88,
+      "score": 87,
       "basis": "carried",
-      "asof": "2026-07-02"
+      "asof": "2026-07-08"
     }
   ],
   "legs_asof": {
     "tape_trend": "live",
-    "volatility": "2026-07-02",
+    "volatility": "live",
     "radar_fast": "live",
-    "credit_hy_oas": "2026-07-02",
-    "breadth": "2026-07-02",
-    "liquidity": "2026-07-02",
-    "macro_stress": "2026-07-02",
-    "cross_asset": "2026-07-02"
+    "credit_hy_oas": "2026-07-07",
+    "breadth": "2026-07-08",
+    "liquidity": "2026-07-08",
+    "macro_stress": "2026-07-08",
+    "cross_asset": "2026-07-08"
   },
   "note": "Fast legs (tape, vol, radar equity/vol/credit-proxy + SPY-200dma context gate) recomputed on live prices; slow legs (HY OAS, NFCI, breadth, macro) carried from the nightly build and stamped with their own as-of. The score moves every tick; the band word is debounced. De-risk = sizing, not selection."
 }

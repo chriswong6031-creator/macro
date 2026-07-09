@@ -29,6 +29,7 @@
   .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
   .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
   .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
   .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
   .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
   .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
@@ -183,6 +184,7 @@
           <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
             <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
             <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
@@ -350,6 +352,7 @@
             <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
             <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
             <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
@@ -411,17 +414,36 @@
   <span class="rescount" id="repCount"></span>
   <div class="tagbar" id="tagBar">
     <span class="chip on" data-tag="all"><span class="l-en">All</span><span class="l-zh">全部</span></span>
-    <span class="chip tag-ai" data-tag="ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-macro" data-tag="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-equities" data-tag="equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-crypto" data-tag="crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-china" data-tag="china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-fed" data-tag="fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-credit" data-tag="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span><span class="chip tag-rates" data-tag="rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span>
+    <span class="chip tag-equities" data-tag="equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-energy" data-tag="energy"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="chip tag-china" data-tag="china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-macro" data-tag="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-crypto" data-tag="crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-ai" data-tag="ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-fed" data-tag="fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-credit" data-tag="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span><span class="chip tag-rates" data-tag="rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span>
   </div>
 </div>
 
 <div class="report-list" id="reportList">
   
-  <a class="report-row feat" href="report_second_act.html"
+  <a class="report-row feat" href="report_relapse_jul8.html"
+     data-date="2026-07-08"
+     data-tags="equities energy china macro crypto"
+     data-search="the relapse a tactical companion to the second act. the iran war restarted six weeks early, the disinflation glide path took a torpedo, and hong kong ripped 3% into a global risk-off tape — none of it breaks the 18-month map; it bends the schedule. we re-mark our own odds in public, then convert the week&#39;s tape into a ranked seven-idea buy list with entry timing, sizing, and the exact tripwire that proves each wrong: energy that now pays carry, the china platform leg with the 1260h caveat, act ii power into weakness, the first mag-7 trough tranche, gold, bitcoin, and copper — while memory-chip strength stays something you sell. 复燃 《第二幕》的战术姊妹篇。伊朗战争提前六周复燃、反通胀滑翔路径中了一枚鱼雷，而恒指却顶着全球避险盘面大涨 3%——这一切都没有推翻 18 个月的路线图，只是弯曲了时间表。本文先公开重估我们自己的概率，再把本周盘面转译为一张排序的七点买入清单，附入场时点、仓位与每个观点被证伪的确切绊线：现在开始付息的能源、附 1260h 警示的中国平台、趁弱建仓的第二幕电力、mag-7 第一批低谷仓、黄金、比特币与铜——而存储芯片的强势，仍然只能用来卖出。">
+    <span class="feat-badge"><span class="l-en">Latest</span><span class="l-zh">最新</span></span>
+    <div class="rr-date"><span class="mo">JUL</span><span class="day">8</span><span class="yr">2026</span></div>
+    <div class="rr-main">
+      <div class="rr-title"><span class="l-en">The Relapse</span><span class="l-zh">复燃</span></div>
+      <div class="rr-dek"><span class="l-en">A tactical companion to The Second Act. The Iran war restarted six weeks early, the disinflation glide path took a torpedo, and Hong Kong ripped 3% into a global risk-off tape — none of it breaks the 18-month map; it bends the schedule. We re-mark our own odds in public, then convert the week&#39;s tape into a ranked seven-idea buy list with entry timing, sizing, and the exact tripwire that proves each wrong: energy that now pays carry, the China platform leg with the 1260H caveat, Act II power into weakness, the first Mag-7 trough tranche, gold, Bitcoin, and copper — while memory-chip strength stays something you sell.</span><span class="l-zh">《第二幕》的战术姊妹篇。伊朗战争提前六周复燃、反通胀滑翔路径中了一枚鱼雷，而恒指却顶着全球避险盘面大涨 3%——这一切都没有推翻 18 个月的路线图，只是弯曲了时间表。本文先公开重估我们自己的概率，再把本周盘面转译为一张排序的七点买入清单，附入场时点、仓位与每个观点被证伪的确切绊线：现在开始付息的能源、附 1260H 警示的中国平台、趁弱建仓的第二幕电力、Mag-7 第一批低谷仓、黄金、比特币与铜——而存储芯片的强势，仍然只能用来卖出。</span></div>
+      <div class="rr-tags">
+        <span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-energy"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span>
+      </div>
+    </div>
+    <div class="rr-aside">
+      <span>⏱ 18 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
+      <span class="rr-arrow">→</span>
+    </div>
+  </a>
+  
+  <a class="report-row " href="report_second_act.html"
      data-date="2026-07-02"
      data-tags="ai macro equities crypto china"
      data-search="the second act the ai boom isn&#39;t ending — it&#39;s changing hands. chips and memory had their run; the money now flows to power, cooling, optical networking, robots, and the payment rails underneath. a month-by-month map from july 2026 to december 2027: what to own, when to buy it, what the mag 7 are really worth at their cash-flow low, and exactly what would prove us wrong. the best buying window on the map: october 2026. 第二幕 ai 热潮没有结束 —— 而是在换手。芯片与存储已经跑完了自己的一程；资金正流向电力、散热、光模块、机器人，以及底层的支付轨道。这是一份 2026年7月 → 2027年12月 的逐月路线图：该持有什么、何时买入、七巨头在现金流低谷处的真实价值，以及什么情况会证明我们错了。全图最佳买入窗口：2026年10月。">
-    <span class="feat-badge"><span class="l-en">Latest</span><span class="l-zh">最新</span></span>
+    
     <div class="rr-date"><span class="mo">JUL</span><span class="day">2</span><span class="yr">2026</span></div>
     <div class="rr-main">
       <div class="rr-title"><span class="l-en">The Second Act</span><span class="l-zh">第二幕</span></div>
@@ -560,6 +582,5 @@
 </script>
 
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

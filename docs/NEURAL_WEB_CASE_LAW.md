@@ -1,6 +1,6 @@
 <!-- DO NOT EDIT BY HAND — regenerate with: python3 scripts/build_ruling_graph.py -->
 <!-- Source: config/ruling_graph.yml -->
-<!-- source_sha256: 8d058e3f5158d6e64440a819d83f169578b66924b745ff233368db304ad7794a -->
+<!-- source_sha256: a52f0c7a5d4aebb3b275d2a614309dcea58b75c7e674cd8194b029864b86fcfd -->
 
 # Neural Web Case Law
 
@@ -3177,7 +3177,7 @@ Total rulings: 500
 **Unblock condition:** Pass gauntlet; register gate before publishing.
 
 **Source:** `CLAUDE.md`
-> display-only until gauntleted; pre-registered gates; nulls are printed, not hidden. The word "validated" in user-facing text is CI-enforced (`scripts/check_validated_claims.py`). LLMs may only de-escalate calibrated keys — never originate signals, scores, or escalations.
+> display-only until gauntleted; pre-registered gates; nulls printed, not hidden. The word "validated" in user-facing text is CI-enforced (`scripts/check_validated_claims.py`). LLMs may only de-escalate calibrated keys — never originate signals, scores, or escalations.
 
 *Owner program: house-law*
 

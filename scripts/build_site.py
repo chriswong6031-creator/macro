@@ -1563,6 +1563,24 @@ def _dispersion_regime_view() -> dict | None:
         return None
 
 
+def _flip_confirmation_view() -> dict | None:
+    """T+1 sector-flip confirmation lens snapshot (Policy-Shock W1-C).
+
+    Reads engine.flip_confirmation.snapshot() — the detect-since-2024 descriptive
+    scan plus the last flip event with T+1 verdict.  DISPLAY-ONLY; never scored.
+    Returns None (never raises) so the card is hidden when data is unavailable.
+    """
+    try:
+        from engine import flip_confirmation as _fc
+        snap = _fc.snapshot()
+        if not snap or snap.get("error") or not snap.get("last_event"):
+            return None
+        return snap
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("flip_confirmation_view failed (%s)", e)
+        return None
+
+
 def _sector_heat_view() -> dict | None:
     """Compact sector-heat strip for the macro.html dashboard: up to 4 heating themes
     and up to 4 cooling/broken themes, each with a link to baskets.html#theme-<id>.
@@ -1596,6 +1614,26 @@ def _sector_heat_view() -> dict | None:
         }
     except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
         log.warning("sector_heat_view failed (%s)", e)
+        return None
+
+
+def _policy_lever_view() -> dict | None:
+    """Load the policy-lever ARMED/QUIET card artifact (site/policy_lever.json).
+
+    Written nightly by scripts/build_policy_lever.py (Policy-Shock W2-F).
+    Display/context tier only (PS-R3): never feeds scoring.
+    Returns None (never raises) if the artifact is absent or malformed.
+    """
+    try:
+        p = config.ROOT / config.load().get("storage", {}).get("site_dir", "site") / "policy_lever.json"
+        if not p.exists():
+            return None
+        d = json.loads(p.read_text(encoding="utf-8"))
+        if d.get("schema") != "policy_lever.v1":
+            return None
+        return d
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("policy_lever_view failed (%s)", e)
         return None
 
 
@@ -2358,7 +2396,7 @@ def build_smartmoney_data(site: Path) -> dict | None:
     factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
     a future consensus board). Additive — any failure logs and skips. CONTEXT only,
     never wired into any score. See collectors/edgar_13f.py + engine/smart_money.py."""
-    from engine.smart_money import compute_smart_money
+    from engine.smart_money import compute_smart_money, enrich_since_filing
     try:
         sm = compute_smart_money()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
@@ -2366,6 +2404,12 @@ def build_smartmoney_data(site: Path) -> dict | None:
         return None
     if not sm:
         return None
+    # Attach realized price-since-filing context (DESCRIPTIVE, not a score/signal).
+    # Best-effort: any failure is silently skipped per-ticker and never blocks the build.
+    try:
+        enrich_since_filing(sm.get("by_ticker") or {})
+    except Exception as e:  # noqa: BLE001 — enrichment is additive only
+        log.warning("since-filing enrichment failed (non-fatal): %s", e)
     fdir = site / "factordata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "smartmoney.json").write_text(json.dumps(sm, separators=(",", ":"), default=str))
@@ -2510,6 +2554,15 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     tpl = env.get_template("sector.html.j2")
     outdir = site / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
+    # Policy-shock de-escalation state (PS-R3: display de-escalation only — no sizing/reordering)
+    _shock_path = site / "live" / "shock_state.json"
+    _shock_state: dict | None = None
+    try:
+        if _shock_path.exists():
+            import json as _jsss
+            _shock_state = _jsss.loads(_shock_path.read_text())
+    except Exception as _sse:  # noqa: BLE001 — additive, never fatal
+        log.warning("shock_state unavailable for sector pages (%s)", _sse)
 
     import json as _json2
     summaries: dict[str, dict] = {}
@@ -2637,7 +2690,8 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
             str(ec.index.max().date()), days=_adays, max_events=_amax)
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
-                          alerts=feed, generated_utc=generated)
+                          alerts=feed, generated_utc=generated,
+                          shock_state=_shock_state)
         write_page(outdir / f"{fund}.html", html)
         summaries[fund] = {"state": res["ladder"]["state"],
                            "label": res["ladder"]["label"],
@@ -3081,6 +3135,31 @@ def main() -> int:
             us_standouts = json.loads(_us.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_standouts.json unreadable (%s)", e)
+    # W4 stock-personality slim attach: thread chart+mode chips into us_standouts buy cards
+    # (inside .nb-more expander only per guardrail 16; fail-open if JSON absent or malformed).
+    _sp_path = site / "factordata" / "stock_personality.json"
+    _sp_per_ticker: dict = {}
+    if _sp_path.exists():
+        try:
+            _sp_doc = json.loads(_sp_path.read_text())
+            _sp_per_ticker = _sp_doc.get("per_ticker") or {}
+        except Exception as _spe:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_personality.json unreadable for board attach (%s)", _spe)
+    if us_standouts and _sp_per_ticker:
+        try:
+            for _card in (us_standouts.get("buy") or []):
+                _tk = _card.get("ticker")
+                _sp_slim = _sp_per_ticker.get(_tk)
+                if _sp_slim:
+                    _chart = _sp_slim.get("chart") or []
+                    _modes = _sp_slim.get("modes") or []
+                    _mode1 = next((m for m in _modes if m != "normal"), None)
+                    _card["personality"] = {
+                        "chart": _chart[0] if _chart else None,
+                        "mode": _mode1,
+                    }
+        except Exception as _spe2:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_personality board attach failed (%s)", _spe2)
     # W2 surfaced-outcome strip (written by grade_us_board.py --nightly).
     # Absent on first run or before grade_us_board runs. Additive, never fatal.
     us_board_outcomes = None
@@ -3243,6 +3322,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("mtf monitor failed: %s", e)
         mtf_data = None
+    # Policy-shock de-escalation state for dashboard fresh-entry caution chip
+    # (PS-R3: display de-escalation only — no reordering, no sizing)
+    _dash_shock_state: dict | None = None
+    try:
+        _dsp = site / "live" / "shock_state.json"
+        if _dsp.exists():
+            import json as _dsj
+            _dash_shock_state = _dsj.loads(_dsp.read_text())
+    except Exception as _dse:  # noqa: BLE001 — additive, never fatal
+        log.warning("shock_state unavailable for dashboard (%s)", _dse)
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -3306,6 +3395,9 @@ def main() -> int:
         fear_greed=_fear_greed_view(),    # Fear/Greed composite dial (display-only, P1.2)
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
         dispersion_regime=_dispersion_regime_view(),  # L3 selection-regime chip (NW Rails W2 PR-4, display-only)
+        policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
+        flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
+        shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /
@@ -3546,19 +3638,40 @@ def main() -> int:
 
     # China Subsector Rotation — A-share twin (同花顺 concepts + curated themes), reads the
     # committed China basket JSONs. Additive, never fatal.
+    # W9-CN lane unification: primarily built in asia-close.yml; this is the nightly fallback.
+    # Idempotency guard: skip if the committed JSON already has today's asof (asia lane ran).
+    _src_json = site / "marketdata" / "subsector_rotation_china.json"
     try:
-        from scripts.build_subsector_rotation_china import build as build_sr_china
-        build_sr_china(site, generated_utc=generated)
-        out_src = site / "subsector_rotation_china.html"
-        write_page(out_src, env.get_template("subsector_rotation_china.html.j2").render())
-        log.info("wrote %s (%.0f KB)", out_src, out_src.stat().st_size / 1024)
+        _src_today = str(json.loads(_src_json.read_text()).get("asof", "")).startswith(generated[:10]) if _src_json.exists() else False
+    except Exception:  # noqa: BLE001
+        _src_today = False
+    if _src_today:
+        log.info("build_site: subsector_rotation_china already built by asia lane today (%s) — re-rendering HTML only", generated[:10])
         try:
-            from scripts.build_subsector_rotation_china_pages import build as build_src_pages
-            log.info("wrote %d China subsector detail pages", build_src_pages(site))
+            out_src = site / "subsector_rotation_china.html"
+            write_page(out_src, env.get_template("subsector_rotation_china.html.j2").render())
+            log.info("wrote %s (%.0f KB) from committed JSON", out_src, out_src.stat().st_size / 1024)
+            try:
+                from scripts.build_subsector_rotation_china_pages import build as build_src_pages
+                log.info("wrote %d China subsector detail pages (re-render from committed JSON)", build_src_pages(site))
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.error("China subsector detail pages re-render failed: %s", e)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("China subsector detail pages failed: %s", e)
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("China subsector rotation failed: %s", e)
+            log.error("China subsector rotation HTML re-render failed: %s", e)
+    else:
+        try:
+            from scripts.build_subsector_rotation_china import build as build_sr_china
+            build_sr_china(site, generated_utc=generated)
+            out_src = site / "subsector_rotation_china.html"
+            write_page(out_src, env.get_template("subsector_rotation_china.html.j2").render())
+            log.info("wrote %s (%.0f KB)", out_src, out_src.stat().st_size / 1024)
+            try:
+                from scripts.build_subsector_rotation_china_pages import build as build_src_pages
+                log.info("wrote %d China subsector detail pages", build_src_pages(site))
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.error("China subsector detail pages failed: %s", e)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("China subsector rotation failed: %s", e)
 
     # Subsector Confluence — the ENTRY-NOW desk: each S&P-500 sub-industry (+ the curated
     # thematic baskets) as an equal-weight synthetic index, read through the T1-T4 confluence
@@ -3738,6 +3851,18 @@ def main() -> int:
         if _db_src.exists():
             (nwd / "daily_brief.json").write_bytes(_db_src.read_bytes())
             log.info("neuralwebdata: copied daily_brief.json")
+        # liquidity_plumbing lobe (neuralweb.liquidity_plumbing.v1) for committee card.
+        # Render job is a fresh checkout, so copy from the committed data/ artifact
+        # here rather than relying on the engine job's site-mirror surviving cross-job.
+        _lp_src = config.data_dir() / "neuralweb" / "liquidity_plumbing.json"
+        if _lp_src.exists():
+            (nwd / "liquidity_plumbing.json").write_bytes(_lp_src.read_bytes())
+            log.info("neuralwebdata: copied liquidity_plumbing.json")
+        # PR-4 M2: copy deterministic attention items for committee.html client-side fetch
+        _ad_src = config.data_dir() / "neuralweb" / "attention_deterministic.json"
+        if _ad_src.exists():
+            (nwd / "attention_deterministic.json").write_bytes(_ad_src.read_bytes())
+            log.info("neuralwebdata: copied attention_deterministic.json")
         # Supabase config (same as watchlist / theme.js)
         committee_html = env.get_template("committee.html.j2").render(
             generated_utc=generated,

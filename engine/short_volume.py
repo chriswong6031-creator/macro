@@ -7,6 +7,10 @@ baseline window (default last 20) of volume-weighted short ratio
 percentage points: positive = off-exchange short flow building *recently* vs the
 trailing norm — a fresher read than the bi-monthly short-interest settlement.
 
+`ratio_z` = (latest short_ratio − mean) / std over ALL available history, using
+the same formula as build_darkpool_desk.py (nanmean / nanstd, min 5 rows, 0.0
+when sigma is zero). Surfaces on the per-stock page as context only.
+
 Honest framing: daily short-volume is noisy and its standalone edge is
 modest/contested, so this is surfaced as a positioning confirmer on the stock
 page, NOT folded into any scored alpha factor. Pure + import-light so it stays
@@ -16,6 +20,7 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
 import pandas as pd
 
 from lib import config
@@ -56,13 +61,27 @@ def _ticker_signal(g: pd.DataFrame, recent: int, baseline: int) -> dict | None:
     latest = g.iloc[-1]
     if vw_base is None or vw_rec is None:
         return None
+
+    # Short ratio for z-score: use pre-computed column if available, else vw_rec
+    has_col = "short_ratio" in g.columns and pd.notna(latest.get("short_ratio"))
+    short_ratio_latest = float(latest["short_ratio"]) if has_col else vw_rec
+
+    # Z-score vs own full history — same definition as build_darkpool_desk.py:
+    # nanmean/nanstd over ALL rows, min 5 rows, 0.0 when sigma is zero.
+    if has_col and len(g) >= 5:
+        ratios = g["short_ratio"].values
+        mu = float(np.nanmean(ratios))
+        sigma = float(np.nanstd(ratios))
+        ratio_z = round((short_ratio_latest - mu) / sigma, 2) if sigma > 0 else 0.0
+    else:
+        ratio_z = None
+
     return {
-        "short_ratio": round(float(latest["short_ratio"]), 4)
-        if "short_ratio" in g.columns and pd.notna(latest.get("short_ratio"))
-        else vw_rec,
+        "short_ratio": round(short_ratio_latest, 4),
         "ratio_recent": vw_rec,
         "ratio_baseline": vw_base,
         "trend_pp": round((vw_rec - vw_base) * 100, 2),
+        "ratio_z": ratio_z,
         "n_days": int(len(g)),
         "asof": str(latest["date"].date()),
     }
@@ -70,7 +89,7 @@ def _ticker_signal(g: pd.DataFrame, recent: int, baseline: int) -> dict | None:
 
 def signal_map(panel: pd.DataFrame | None = None, *, recent: int = 5,
                baseline: int = 20) -> dict[str, dict]:
-    """{ticker: {short_ratio, ratio_recent, ratio_baseline, trend_pp, n_days, asof}}.
+    """{ticker: {short_ratio, ratio_recent, ratio_baseline, trend_pp, ratio_z, n_days, asof}}.
     Empty dict when the panel is missing — callers degrade gracefully."""
     if panel is None:
         panel = load_panel()

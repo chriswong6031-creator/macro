@@ -13,6 +13,7 @@
 | cpi_headline | **active** | 292 | 292 |
 | cpi_core | **active** | 292 | 292 |
 | nfp | **active** | 293 | 197 |
+| claims | **benchmark_only** | 890 | 890 |
 
 *NFP n_eval_predictions = 2010+ only per PREREG_V1.md §4.1; pre-2010 NFP rows trained on but not reported in full-window metrics.*
 
@@ -104,6 +105,35 @@ Columns: MAE/RMSE vs model/naive/trailing3m/ar3; p10-p90 coverage; Skew HR (COND
 - 2010+ window (per prereg): MAE model=372.2171 vs naive=459.8426
 - 2021+ slice: MAE model=235.8056 vs naive=270.8923
 - Kill triggered: NO -> active
+
+---
+## claims
+
+**Status:** benchmark_only
+**Kill rule triggered:** model MAE >= naive MAE in full/2010+ window AND 2021+ slice.
+**Total predictions:** 890
+
+### Era-Split Metrics Table
+
+Columns: MAE/RMSE vs model/naive/trailing3m/ar3; p10-p90 coverage; Skew HR (CONDITIONAL: of predictions where model takes stance vs naive, n_stance of n_total shown in last two columns); Wilson 95% CI.
+
+| Era | n | MAE Model | MAE Naive | MAE Trail4w | MAE AR3 | RMSE Model | RMSE Naive | Cov p10-p90 | Skew HR | Wilson 95% CI | Skew n |
+|-----|---|-----------|-----------|-------------|---------|------------|------------|-------------|---------|---------------|--------|
+| Full | 890 | 43.8551 | 27.9135 | 43.7166 | 32.9923 | 285.3927 | 167.0822 | 80.8% | 0.612 | [0.579, 0.644] | 845 |
+| pre-2010 | 30 | 20.1833 | 18.1667 | 18.9250 | 16.1466 | 27.1199 | 22.0658 | 83.3% | 0.552 | [0.375, 0.716] | 29 |
+| 2010–2020-02 | 531 | 12.2622 | 12.4087 | 12.0080 | 11.5155 | 16.3839 | 16.7695 | 87.4% | 0.644 | [0.601, 0.685] | 503 |
+| 2010–2019 (pre-COVID visibility) | 522 | 12.3113 | 12.5000 | 12.0675 | 11.6015 | 16.4577 | 16.8818 | 87.2% | 0.644 | [0.601, 0.685] | 494 |
+| COVID (2020-03..06) | 17 | 1434.1471 | 686.0588 | 1439.9118 | 808.6820 | 2053.5285 | 1194.7167 | 5.9% | 0.235 | [0.096, 0.473] | 17 |
+| 2020-07..12 (recovery gap) | 26 | 95.2212 | 70.2308 | 95.2885 | 85.5044 | 123.5329 | 95.9178 | 11.5% | 0.500 | [0.314, 0.686] | 24 |
+| 2021+ | 286 | 17.6853 | 14.7552 | 17.5096 | 23.3993 | 28.9424 | 24.9185 | 79.4% | 0.592 | [0.533, 0.649] | 272 |
+
+**Skew HR note:** CONDITIONAL hit-rate — only predictions where sign(model-naive) != 0 are counted. 'Skew n' = n_stance (predictions with a directional stance). n_total for the era is the 'n' column.
+
+### Kill Rule Detail
+
+- Full window: MAE model=43.8551 vs naive=27.9135
+- 2021+ slice: MAE model=17.6853 vs naive=14.7552
+- Kill triggered: YES -> benchmark_only
 
 ---
 ## Notes and Deviations

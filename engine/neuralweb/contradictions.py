@@ -802,6 +802,141 @@ def _pair_g_oracle_out_vs_entry_buy(
 
 
 # ---------------------------------------------------------------------------
+# Liquidity plumbing pair detectors (pairs h & i)
+#
+# PHASE-1 GUARD — Phase 1 populates quantity/quality/overlay from existing
+# artifacts but leaves funding and foreign_dollar blocks as null.  Any pair
+# that references funding or foreign_dollar MUST check for presence first
+# and silently return [] when those blocks are null (they can't fire until
+# Phases 3/5 data lands).  Pairs h and i are safe: they operate only on
+# quantity.overlay, quality.label, headline.state, and the degraded flag —
+# all of which are present in Phase 1.
+# ---------------------------------------------------------------------------
+
+def _pair_h_liquidity_overlay_vs_quality_stress(
+    lp: dict | None,
+    gaps: list[str],
+) -> list[dict]:
+    """Pair H: liquidity_overlay expanding vs quality stress_confirming.
+
+    Fires when the quantity overlay signals EXPANDING liquidity while the
+    quality block signals stress_confirming=True (i.e., the expansion is
+    driven by stress-related mechanics rather than benign Fed support).
+
+    This is an attention flag — not a hard blocker.  Consumers should note
+    that an expanding overlay driven by stress mechanics may not provide the
+    same entry-quality tailwind as a genuinely benign expansion.
+
+    Phase-1 guard: only fires when the lp artifact is present and populated.
+    Never fires when funding/foreign_dollar blocks are the sole evidence
+    (those blocks are null in Phase 1).
+    """
+    records: list[dict] = []
+    try:
+        if lp is None or not lp.get("available"):
+            # Artifact absent or unavailable — skip silently (fail-open)
+            return records
+
+        overlay = lp.get("overlay")
+        stress_confirming = lp.get("stress_confirming")
+        quality_label = lp.get("quality_label") or ""
+        state = lp.get("state") or ""
+        asof = lp.get("asof") or "unknown"
+
+        # Pair fires only when overlay is clearly expanding AND stress is confirming
+        overlay_expanding = overlay == "expanding"
+        stress_active = stress_confirming is True
+
+        if not overlay_expanding or not stress_active:
+            return records
+
+        # Don't fire on data_degraded state — already honested by degraded flag
+        if state == "data_degraded":
+            return records
+
+        records.append(_record(
+            pair_id="liquidity_overlay_expanding-vs-quality_stress",
+            a_artifact="data/neuralweb/liquidity_plumbing.json:quantity.overlay",
+            a_reading=f"overlay={overlay} (expanding liquidity)",
+            b_artifact="data/neuralweb/liquidity_plumbing.json:quality",
+            b_reading=f"quality_label={quality_label!r}, stress_confirming={stress_confirming}",
+            kind="label-tension",
+            severity="note",
+            as_of=str(asof),
+            note=(
+                "Liquidity overlay signals EXPANDING while quality flags stress_confirming=True.  "
+                f"State={state!r}, quality={quality_label!r}.  "
+                "Expansion driven by stress mechanics (e.g. elevated RRP drain, "
+                "WALCL support under duress) does not provide the same entry-quality "
+                "tailwind as benign Fed-driven expansion.  "
+                "Caveat any tailwind interpretation with quality context.  "
+                "Display-only attention flag; not a gate."
+            ),
+        ))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("contradictions pair-h failed: %s", exc)
+        gaps.append(f"pair-h: {exc}")
+    return records
+
+
+def _pair_i_benign_tailwind_vs_freshness_degraded(
+    lp: dict | None,
+    gaps: list[str],
+) -> list[dict]:
+    """Pair I: benign_liquidity_tailwind state claim vs source freshness degraded.
+
+    Fires when the headline state is 'benign_liquidity_tailwind' (the most
+    optimistic state label) but the artifact itself is marked degraded=True,
+    indicating that one or more source inputs were stale or missing when the
+    artifact was built.
+
+    A 'benign' claim on degraded data deserves attention — the benign label
+    may be stale or based on incomplete inputs.
+
+    Phase-1 guard: only fires when the lp artifact is present and populated.
+    """
+    records: list[dict] = []
+    try:
+        if lp is None or not lp.get("available"):
+            return records
+
+        state = lp.get("state") or ""
+        degraded = lp.get("degraded")
+        asof = lp.get("asof") or "unknown"
+
+        if state != "benign_liquidity_tailwind" or not degraded:
+            return records
+
+        gaps_list = lp.get("gaps") or []
+        gaps_summary = (
+            f"{len(gaps_list)} gap(s): {gaps_list[:3]}"
+            if gaps_list else "gaps not enumerated"
+        )
+
+        records.append(_record(
+            pair_id="benign_liquidity_tailwind-vs-freshness_degraded",
+            a_artifact="data/neuralweb/liquidity_plumbing.json:headline.state",
+            a_reading=f"state={state!r} (most optimistic label)",
+            b_artifact="data/neuralweb/liquidity_plumbing.json:degraded",
+            b_reading=f"degraded={degraded}, {gaps_summary}",
+            kind="label-tension",
+            severity="note",
+            as_of=str(asof),
+            note=(
+                f"Headline state is {state!r} but the artifact is marked degraded=True, "
+                "indicating missing or stale source inputs at build time.  "
+                "The benign label may reflect incomplete data — interpret with caution.  "
+                "This is a data-quality attention flag, not a signal contradiction.  "
+                "Display-only; not a gate."
+            ),
+        ))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("contradictions pair-i failed: %s", exc)
+        gaps.append(f"pair-i: {exc}")
+    return records
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -918,6 +1053,46 @@ def detect_contradictions(
             "site/factordata/us_standouts.json absent — pair-g skipped"
         )
 
+    # ── Read liquidity_plumbing.json for pairs h & i ─────────────────────────
+    # Phase-1 guard: the artifact may be absent if the engine builder lane has
+    # not run yet.  Pairs h/i fail-open and return [] when it is absent.
+    lp_path = data_dir / "neuralweb" / "liquidity_plumbing.json"
+    lp_raw = _read_json(lp_path)
+    # Build a flattened view matching what _compose_liquidity_plumbing exposes
+    # (quantity.overlay, quality.stress_confirming, headline.state, degraded).
+    # Pairs h/i read this flat dict; they never touch funding/foreign_dollar.
+    lp_flat: dict | None = None
+    if lp_raw is not None and isinstance(lp_raw, dict):
+        try:
+            # Strip envelope keys before reading payload (canonical helper, so this
+            # never drifts from the envelope schema — matches world_state/ask_brain).
+            from engine.neuralweb.envelope import strip_envelope  # noqa: PLC0415
+            payload = strip_envelope(lp_raw)
+            headline = payload.get("headline") or {}
+            quantity = payload.get("quantity") or {}
+            quality = payload.get("quality") or {}
+            rrp = payload.get("rrp") or {}
+            lp_flat = {
+                "available": True,
+                "asof": payload.get("asof"),
+                "state": headline.get("state"),
+                "overlay": quantity.get("overlay"),
+                "quality_label": quality.get("label"),
+                "stress_confirming": quality.get("stress_confirming"),
+                "degraded": payload.get("degraded"),
+                "gaps": payload.get("gaps") or [],
+                "rrp_buffer_state": rrp.get("buffer_state"),
+            }
+        except Exception as exc:  # noqa: BLE001
+            log.warning("contradictions: lp_flat build failed — %s", exc)
+            gaps.append(f"pair-h/i: lp_flat build error: {exc}")
+    else:
+        # Absent artifact — pairs h/i will silently return [] (fail-open)
+        gaps.append(
+            "data/neuralweb/liquidity_plumbing.json absent — "
+            "pairs h/i skipped (run scripts/build_liquidity_plumbing.py)"
+        )
+
     # ── Build basket_tickers_map for pair-g (basket_id → set[active ticker]) ─
     # Uses data/baskets/membership.json.  Fail-open: missing → empty map.
     basket_tickers_map: dict[str, set[str]] = {}
@@ -946,7 +1121,7 @@ def detect_contradictions(
     # Inject basket_tickers_map into pair-g via function attribute (fail-open)
     _pair_g_oracle_out_vs_entry_buy._basket_tickers_cache = basket_tickers_map  # type: ignore[attr-defined]
 
-    # ── Run seven pairs ───────────────────────────────────────────────────────
+    # ── Run nine pairs ────────────────────────────────────────────────────────
     records.extend(_pair_a_regime_vs_market_state(world_state, gaps))
     records.extend(_pair_b_regime_vector_vs_risk_radar(world_state, gaps))
     records.extend(_pair_c_oracle_vs_sector_central(
@@ -958,5 +1133,10 @@ def detect_contradictions(
     records.extend(_pair_g_oracle_out_vs_entry_buy(
         oracle_state, rotation_groups, standouts, gaps
     ))
+    # Pairs h & i: liquidity plumbing attention flags (Phase-1 guarded).
+    # Only fire when the lp artifact is present and populated; silently
+    # return [] otherwise (fail-open, no Phase-1 false-positives).
+    records.extend(_pair_h_liquidity_overlay_vs_quality_stress(lp_flat, gaps))
+    records.extend(_pair_i_benign_tailwind_vs_freshness_degraded(lp_flat, gaps))
 
     return records, gaps

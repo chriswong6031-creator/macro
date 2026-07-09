@@ -1,0 +1,351 @@
+# CPI Component Map — Track CB (MRI-R25)
+#
+# Maps each bridge block to its official CPI series, RI weight key, HF proxy, method, and PIT status.
+# Frozen per PREREG_CPI_BRIDGE_V1.md before any backtest results.
+#
+# Generated: 2026-07-08
+# Branch: claude/mri-w10-track-cb
+
+meta:
+  version: "1"
+  frozen_date: "2026-07-08"
+  prereg_ref: "research/release_forecast/PREREG_CPI_BRIDGE_V1.md"
+  ruling_ref: "MRI-R25 (research/MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md §11)"
+  weight_source: "data/release_forecast/component_weights/cpi_relative_importance_2026.yml"
+  weight_basis: "BLS Dec-2025 relative importance, in effect Jan-Dec 2026"
+
+blocks:
+
+  # ---- MODELLED BLOCKS -------------------------------------------------------
+
+  - block: "energy_gasoline"
+    official_cpi_series: "CUUR0000SAG1"  # CPI: Gasoline (all types); BLS series code
+    ri_weight_key: "gasoline_all_types"
+    ri_weight: 2.895
+    hf_proxy_series: "GASREGW"
+    hf_proxy_source: "data/fred/GASREGW.parquet"
+    hf_proxy_description: "EIA weekly retail gasoline price (all grades, all formulations), unrevised"
+    mom_method: "reference_month_avg_vs_prior_month_avg"
+    mom_method_detail: >
+      Reference-month average of weekly GASREGW readings vs prior-month average.
+      Only weeks falling within the target reference month M (and knowable at asof) are used.
+      Identical to champion gasoline_mom computation.
+    pit_status: "unrevised"
+    prior_only: false
+    confidence: 1.0
+    revision_optimistic: false
+    gap_notes: >
+      Mid-month: if fewer than 2 weekly readings fall in the reference month,
+      the estimate uses whatever is available (can be 1 reading). Provenance
+      records the count. At decision date D (day before CPI release), typically
+      3-4 weeks of reference-month data are available.
+
+  - block: "energy_electricity"
+    official_cpi_series: "APU000072610"  # BLS average price electricity (cents/kWh), monthly
+    ri_weight_key: "electricity"
+    ri_weight: 2.375
+    hf_proxy_series: "APU000072610"
+    hf_proxy_source: "data/fred/APU000072610.parquet"
+    hf_proxy_description: "BLS average price: Electricity per KWH, U.S. city average, monthly"
+    mom_method: "level_mom_lag1"
+    mom_method_detail: >
+      MoM % change of most recent knowable APU000072610 print.
+      At decision date (day before month M release), last knowable = month M-1
+      (electricity releases concurrently with CPI).
+    pit_status: "revision_optimistic"
+    prior_only: false
+    confidence: 0.8
+    revision_optimistic: true
+    gap_notes: >
+      APU000072610 is the BLS average price series (not the CPI index directly) but
+      tracks the CPI electricity sub-index closely. Non-vintaged — declared revision_optimistic.
+      Historical data starts 1978-11; no gap for our backtest period.
+
+  - block: "shelter"
+    official_cpi_series: "CUSR0000SAH1"  # CPI: Shelter, monthly
+    ri_weight_key: "shelter"
+    ri_weight: 35.625
+    hf_proxy_series: "ZORI_national + CUSR0000SAH1"
+    hf_proxy_source: "data/zori/national.parquet + data/fred/CUSR0000SAH1.parquet"
+    hf_proxy_description: "ZORI national lease-reset signal blended with CPI shelter momentum (PREREG_V2.md §2)"
+    mom_method: "shelter_nowcast_v2"
+    mom_method_detail: >
+      Identical to champion shelter_nowcast:
+      shelter_nowcast = (1 - k) × cpi_shelter_mom_lag1 + k × zori_lease_reset_signal
+      where k=0.35 (frozen), ZORI lag=45 days, divergence guard at 3σ (halves k).
+      ZORI lease-reset window: months M-12 through M-6 (7-month mean MoM).
+      Falls back to pure CPI shelter momentum if ZORI absent.
+    pit_status: "revision_optimistic"
+    prior_only: false
+    confidence: 0.6
+    revision_optimistic: true
+    gap_notes: >
+      Full shelter weight (35.625) applied to nowcast, which primarily captures OER+rent
+      (34.044). Lodging-away-from-home (1.289) is included in the weight but not explicitly
+      modelled — lodging MoM is absorbed into the shelter nowcast as a residual component.
+      This is a known approximation; noted in provenance as 'shelter_includes_lodging'.
+
+  - block: "food_at_home"
+    official_cpi_series: "CUSR0000SAF11"  # CPI: Food at home, monthly
+    ri_weight_key: "food_at_home"
+    ri_weight: 8.325
+    hf_proxy_series: "WPU01 + CUSR0000SAF11"
+    hf_proxy_source: "data/fred/WPU01.parquet + data/fred/CUSR0000SAF11.parquet"
+    hf_proxy_description: "PPI farm products (WPU01) directional signal applied to CUSR0000SAF11 prior MoM"
+    mom_method: "ppi_directional_blend"
+    mom_method_detail: >
+      1. wpu01_mom = WPU01 MoM % (most recent PIT-knowable, non-vintaged)
+      2. fah_prior_mom = CUSR0000SAF11 lag-1 MoM % (non-vintaged)
+      3. sign_signal = sign(wpu01_mom) if abs(wpu01_mom) > 1.0, else 0.0
+      4. fah_mom_est = fah_prior_mom + 0.2 × sign_signal × abs(fah_prior_mom)
+      5. Clamped to [fah_prior_mom × 0.5, fah_prior_mom × 1.5]
+      Falls back to fah_prior_mom if WPU01 absent. Falls to prior_only if both absent.
+    pit_status: "revision_optimistic"
+    prior_only: false
+    confidence: 0.4
+    revision_optimistic: true
+    gap_notes: >
+      WPU01 (farm products) is a coarse proxy for food-at-home inflation. PPI farm
+      products lead CPI food-at-home with a variable lag (0-2 months). The directional
+      threshold (1.0 pp) prevents noise amplification. The 0.2 scaling factor is conservative.
+      WPU01 has data from 1913; CUSR0000SAF11 from 1952; no gap for backtest period.
+      PPI releases typically 2-3 weeks before CPI — WPU01 for month M-1 is usually
+      available at decision date for month M.
+
+  - block: "core_goods_pipeline"
+    official_cpi_series: "CUUR0000SACL1E"  # CPI: Commodities less food and energy commodities
+    ri_weight_key: "commodities_less_food_and_energy"
+    ri_weight: 19.176
+    hf_proxy_series: "PPIFIS + PPIFES"
+    hf_proxy_source: "data/fred_vintage/vintages.parquet (PPIFIS, PPIFES)"
+    hf_proxy_description: "PPI Final Demand (PPIFIS) and PPI Final Demand ex-food/energy (PPIFES) momentum, ALFRED-vintaged"
+    mom_method: "ppi_pipeline_average"
+    mom_method_detail: >
+      ppifis_mom = lag-1 MoM of PPIFIS (ALFRED initial print, PIT-safe)
+      ppifes_mom = lag-1 MoM of PPIFES (ALFRED initial print, PIT-safe)
+      pipeline_mom_est = 0.5 × ppifis_mom + 0.5 × ppifes_mom
+      If one absent: use the other with weight 1.0. If both absent: prior_only.
+    pit_status: "alfred_vintaged"
+    prior_only: false
+    confidence: 0.6
+    revision_optimistic: false
+    gap_notes: >
+      PPIFIS and PPIFES available from 2014-03 in ALFRED vintages. Before 2014-03,
+      this block falls to prior_only (no proxy). This creates a structural break in
+      the bridge's coverage for the pre-2014 era — noted prominently in results.
+      Core goods also includes used/new vehicles — these are prior_only in practice
+      since Manheim is paid, but the RI weight (19.176) is applied to the whole
+      commodities-less-food-and-energy basket as if the pipeline proxy covers it all.
+
+  - block: "core_services_ex_shelter"
+    official_cpi_series: "CUSR0000SASLE"  # CPI: All items less food, energy, shelter; monthly
+    ri_weight_key: "core_services_ex_shelter"
+    ri_weight: 44.294  # all_items_less_food_and_energy (79.919) - shelter (35.625)
+    hf_proxy_series: "CUSR0000SASLE"
+    hf_proxy_source: "data/fred/CUSR0000SASLE.parquet"
+    hf_proxy_description: "CPI all items less food, energy, shelter — persistence (lag-1 MoM)"
+    mom_method: "persistence_lag1"
+    mom_method_detail: >
+      csxs_mom_est = most recent knowable CUSR0000SASLE MoM % (non-vintaged, revision_optimistic)
+      At decision date (day before month M release), last knowable = month M-1.
+      Falls to prior_only if CUSR0000SASLE absent.
+    pit_status: "revision_optimistic"
+    prior_only: false
+    confidence: 0.4
+    revision_optimistic: true
+    gap_notes: >
+      CUSR0000SASLE tracks 'all items less food, energy, shelter' which includes BOTH
+      core goods AND core services ex-shelter. Its RI weight (44.294 implied) therefore
+      overlaps with core_goods_pipeline (19.176). This is a known double-counting issue.
+      The bridge handles this by applying each block's contribution directly (not summing
+      weights), so the overlap appears in weight_coverage > 100% for modelled blocks.
+      The reconciliation prints the actual sum of modelled contributions vs the headline,
+      with the gap labelled residual_pp. Data starts 1967-01; no gap for backtest period.
+      WARNING: Because CUSR0000SASLE is broader than 'core services ex-shelter' (it includes
+      core goods too), using it as a persistence proxy for that category introduces
+      bias. Declared in provenance.
+
+  # ---- PRIOR-ONLY BLOCKS -----------------------------------------------------
+
+  - block: "food_away_from_home"
+    official_cpi_series: "CUSR0000SEFV"
+    ri_weight_key: "food_away_from_home"
+    ri_weight: 5.373
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "No free PIT proxy available"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Restaurant scanner data (e.g., Bloomberg Second Measure) is paid. No free proxy."
+
+  - block: "alcoholic_beverages"
+    official_cpi_series: "CUUR0000SAF116"
+    ri_weight_key: "alcoholic_beverages"
+    ri_weight: 0.840
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "No free PIT proxy"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Small basket share; no free proxy."
+
+  - block: "new_vehicles"
+    official_cpi_series: "CUUR0000SETA01"
+    ri_weight_key: "new_vehicles"
+    ri_weight: 3.838
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "Manheim/JD Power/Edmunds are all paid; no free proxy"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Free proxy hypothetical: BLS new vehicle transaction prices (not available free/RT). House W6 SKIP applies."
+
+  - block: "used_vehicles"
+    official_cpi_series: "CUUR0000SETA02"
+    ri_weight_key: "used_cars_and_trucks"
+    ri_weight: 2.759
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "Manheim Used Vehicle Value Index is paid; no free proxy"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "House W6 SKIP: Manheim is paid. Could be proxied by CarGurus/Autotrader scrape but that's not in our stack."
+
+  - block: "airline_fares"
+    official_cpi_series: "CUUR0000SETG01"
+    ri_weight_key: "airline_fares"
+    ri_weight: 0.881
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "Google Flights/Kayak pricing is not free/structured; Adobe analytics is paid"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Airfare is notoriously volatile; prior MoM is a poor proxy but it is the only free one."
+
+  - block: "lodging_away_from_home"
+    official_cpi_series: "CUUR0000SEHB"
+    ri_weight_key: "lodging_away_from_home"
+    ri_weight: 1.289
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "STR (hotel data) is paid; no free PIT proxy"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Included in shelter block weight (35.625) but modelled separately here for clarity. Not double-counted in bridge."
+
+  - block: "medical_care"
+    official_cpi_series: "CUUR0000SAM"
+    ri_weight_key: "medical_care"
+    ri_weight: 8.423
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "No free monthly HF proxy for medical services/commodities"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Health insurance is revised annually via a special BLS methodology. Medical services follow administered price schedules. No free HF proxy available."
+
+  - block: "apparel"
+    official_cpi_series: "CUUR0000SAA"
+    ri_weight_key: "apparel"
+    ri_weight: 2.368
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "No free monthly apparel price index"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Apparel is highly seasonal and volatile. No free HF proxy."
+
+  - block: "recreation"
+    official_cpi_series: "CUUR0000SAR"
+    ri_weight_key: "recreation"
+    ri_weight: 5.137
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "No free PIT proxy covering recreational goods + services"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: null
+
+  - block: "education_and_communication"
+    official_cpi_series: "CUUR0000SAE"
+    ri_weight_key: "education_and_communication"
+    ri_weight: 5.846
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "No free PIT proxy"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Wireless/internet prices are the largest component; carrier rate changes are available but not structured for this pipeline."
+
+  - block: "other_goods_and_services"
+    official_cpi_series: "CUUR0000SAG5"
+    ri_weight_key: "other_goods_and_services"
+    ri_weight: 2.902
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "No free PIT proxy"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Includes tobacco, personal care, financial services, miscellaneous."
+
+  - block: "motor_vehicle_insurance"
+    official_cpi_series: "CUUR0000SETA05"
+    ri_weight_key: "motor_vehicle_insurance"
+    ri_weight: 2.754
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "No free monthly proxy"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Insurance rate data is available from state filings with a long lag; no free RT proxy."
+
+  - block: "other_transportation"
+    official_cpi_series: null  # residual: public transport ex-airline + motor vehicle fees/parts/repair
+    ri_weight_key: null
+    ri_weight: 4.093  # 16.316 total transport - 14.832 private transport bridge items - airline 0.881 = 0.603; but private includes vehicle parts/repair/insurance/fees
+    # More precisely: motor_vehicle_parts_equipment (0.349) + maintenance_repair (1.039) + motor_vehicle_fees (0.505) + other_intercity (0.244) + intracity (0.355) + car_truck_rental (0.138) = 2.630 + prior contrib from leased/unsampled
+    hf_proxy_series: null
+    hf_proxy_source: null
+    hf_proxy_description: "Residual transportation components — no free proxy"
+    mom_method: "prior_own_mom"
+    pit_status: "revision_optimistic"
+    prior_only: true
+    confidence: 0.0
+    revision_optimistic: true
+    gap_notes: "Residual: all private/public transport not covered by gasoline, new/used vehicles, airline, motor vehicle insurance."

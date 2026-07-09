@@ -506,6 +506,41 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         <div class="sigline" style="border:none"><span class="l">{{ t('State','状态') }}</span><span class="r"><b>{{ td(a.pos_state) }}</b></span></div>
         <div class="sub">{{ t('Crowding can persist. Crowded-short washouts are the cleaner signal.', '拥挤可延续。拥挤空头后的超卖更清晰。') }}</div>
       </div>
+      <!-- technical arming (Policy-Shock W1-B — display-only context) -->
+      {% set arm = a.arming if a.arming is defined else {} %}
+      {% if arm %}
+      <div class="card" style="border-color:{{ 'var(--blue)' if arm.armed else 'var(--grid)' }}">
+        <h3>
+          {{ t('Technical arming', '技术就位') }}
+          {% if arm.armed %}
+          <span class="chip chip-bull" style="font-size:12px;padding:3px 10px;margin-left:8px">{{ t('ARMED','已就位') }}</span>
+          {% else %}
+          <span class="chip chip-ghost" style="font-size:12px;padding:3px 10px;margin-left:8px">{{ t('not armed','未就位') }}</span>
+          {% endif %}
+        </h3>
+        <div class="sigline">
+          <span class="l">{{ t('Basing (60d low ±8%, ≥10d, −15% dd)', '筑底（60日低位±8%，≥10日，回撤≤−15%）') }}</span>
+          <span class="r">
+            {% if arm.basing %}<b style="color:var(--green)">{{ t('Yes','是') }}</b>{% else %}<b style="color:var(--muted)">{{ t('No','否') }}</b>{% endif %}
+            <span class="faint"> · {{ arm.days_in_base }} {{ t('d','日') }}</span>
+          </span>
+        </div>
+        <div class="sigline">
+          <span class="l">{{ t('Stoch curl (%K×%D, %K<30)', '随机指标金叉（%K穿越%D，%K<30）') }}</span>
+          <span class="r">
+            {% if arm.stoch_curl %}<b style="color:var(--green)">{{ t('Yes','是') }}</b>{% else %}<b style="color:var(--muted)">{{ t('No','否') }}</b>{% endif %}
+            <span class="faint"> · K={{ arm.stoch_k if arm.stoch_k is not none else '—' }} D={{ arm.stoch_d if arm.stoch_d is not none else '—' }}</span>
+          </span>
+        </div>
+        <div class="sigline" style="border:none">
+          <span class="l">{{ t('MACD curl (hist ↑×3 while <0)', 'MACD卷曲（柱状图连续3根上升且<0）') }}</span>
+          <span class="r">
+            {% if arm.macd_curl %}<b style="color:var(--green)">{{ t('Yes','是') }}</b>{% else %}<b style="color:var(--muted)">{{ t('No','否') }}</b>{% endif %}
+          </span>
+        </div>
+        <div class="sub" style="margin-top:8px">{{ t('Display-only context — basing + momentum curl signals the lever is primed, not a trade trigger.', '仅作背景展示 — 筑底+动量卷曲信号表明杠杆已就位，并非交易触发。') }}</div>
+      </div>
+      {% endif %}
       <!-- asset-specific: GSR (metals) or Brent-WTI (oil) -->
       {% if a.key in ['gold','silver'] %}
       <div class="card">

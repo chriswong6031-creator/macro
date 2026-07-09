@@ -1,0 +1,1054 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Macro Weather — 2026-07-07</title>
+
+<meta name="description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK and Canada reads — display-only context.">
+<link rel="canonical" href="https://mastermind-x.com/macro_context.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Macro Weather Station — Regime Labels &amp; Context | Mastermind">
+<meta property="og:description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK and Canada reads — display-only context.">
+<meta property="og:url" content="https://mastermind-x.com/macro_context.html">
+<meta property="og:image" content="https://mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Macro Weather Station — Regime Labels &amp; Context | Mastermind">
+<meta name="twitter:description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK and Canada reads — display-only context.">
+<meta name="twitter:image" content="https://mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{
+  --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
+  --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42; --green:#1a7f43; --teal:#1F8A70;
+  --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1fr 1fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0;overflow-wrap:break-word}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.brand .gn{color:var(--blue)}
+.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
+.sub{font-size:13px;color:var(--muted);min-width:0}.faint{color:var(--faint)}
+.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
+/* jump nav */
+.jump-nav{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 20px}
+.jump-nav a{font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:5px 12px;white-space:nowrap;transition:color .15s,border-color .15s}
+.jump-nav a:hover{color:var(--ink);border-color:var(--blue)}
+/* weather board */
+.domain-block{margin-bottom:18px}
+.domain-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.domain-label{font-size:13px;font-weight:700;color:var(--ink)}
+.domain-asof{font-size:11px;color:var(--muted);margin-left:auto}
+.stale-ok{color:var(--green)}.stale-warn{color:var(--amber)}.stale-old{color:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:10px;border:1px solid var(--grid);background:var(--card);min-width:0;max-width:200px}
+.chip-field{font-size:10.5px;color:var(--muted);font-weight:600;white-space:nowrap}
+.chip-val{font-size:13px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
+.chip-null .chip-val{color:var(--faint)}
+html[data-theme="dark"] .chip{background:#1e2230;border-color:#2a2f3a}
+/* headwind/tailwind matrix */
+.hw-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:700px){.hw-grid{grid-template-columns:1fr}}
+.hw-section h3{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 10px}
+.hw-rows{display:flex;flex-direction:column;gap:7px}
+.hw-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;background:var(--card);border:1px solid var(--grid);font-size:13px}
+html[data-theme="dark"] .hw-row{background:#1e2230}
+.hw-asset{font-weight:700;color:var(--ink);flex:1;min-width:0}
+.hw-chip{padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap}
+.hw-head{background:var(--red)}.hw-tail{background:var(--green)}.hw-neut{background:var(--muted)}
+.hw-net{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;min-width:42px;text-align:right}
+/* transition timeline */
+.tl-wrap{overflow-x:auto}
+.tl-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+.tl-tbl th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:700;white-space:nowrap}
+.tl-tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.tl-tbl tr:hover td{background:rgba(40,95,255,.04)}
+html[data-theme="dark"] .tl-tbl tr:hover td{background:rgba(40,95,255,.10)}
+.tl-asof{color:var(--muted);font-size:12px;white-space:nowrap}
+.tl-domain{font-weight:700;color:var(--ink)}
+.tl-field{color:var(--text)}
+.tl-from{color:var(--red)}.tl-to{color:var(--green)}.tl-arrow{color:var(--faint);padding:0 4px}
+/* contradiction census strip */
+.census-strip{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:14px 18px;background:var(--card);border:1px solid var(--grid);border-radius:14px;font-size:14px}
+html[data-theme="dark"] .census-strip{background:#1e2230}
+.census-kv{display:flex;flex-direction:column}
+.census-k{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.census-v{font-size:18px;font-weight:800;color:var(--ink);line-height:1}
+/* disclaimer */
+.disclaimer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:14px 18px;border-left:3px solid var(--amber);background:rgba(245,173,66,.07);border-radius:0 10px 10px 0;margin-top:10px}
+.disclaimer b{color:var(--ink)}
+html[data-theme="dark"] .disclaimer{background:rgba(245,173,66,.10)}
+/* footnote */
+.footnote{font-size:12px;color:var(--faint);margin-top:16px;line-height:1.7}
+.footnote a{color:var(--muted)}
+/* empty state */
+.empty-state{padding:24px;text-align:center;color:var(--muted);font-size:14px;border:1px dashed var(--grid);border-radius:14px}
+@media(max-width:560px){
+  .wrap{padding:0 12px 48px}
+  .card{padding:16px}
+  .site-footer{padding:16px 12px}
+}
+</style>
+
+<style>
+/* ambient aurora — fixed accents blended into transparent, pinned behind all
+   content (paints over the opaque body bg, under the page). Light default gets
+   the airier tint; dark gets the richer wash. */
+html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),
+   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%);}
+html[data-theme="dark"] body::before{
+  background:
+   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 20%,transparent),transparent 68%),
+   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 16%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 14%,transparent),transparent 70%);}
+
+/* buttons — smooth transition + a subtle accent glow / lift on hover (additive;
+   vtm/tm only exist on the Bitcoin Vector page, harmless elsewhere) */
+.vtm-btn,.tm-btn,.navbtn,.ai-brief-link{transition:transform .16s ease,border-color .16s ease,
+  color .16s ease,background .16s ease,box-shadow .18s ease;}
+.vtm-btn:hover,.tm-btn:hover,.navbtn:hover{border-color:color-mix(in srgb,var(--blue) 58%,var(--grid));
+  box-shadow:0 4px 13px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
+.ai-brief-link:hover{transform:translateY(-1px);
+  box-shadow:0 5px 14px -5px color-mix(in srgb,var(--blue) 42%,transparent);}
+
+/* menu light-up — accent-tinted hover/active (replaces the hardcoded #eef1f6 /
+   #222732; matched specificity so the dark variants win too) */
+a.nav-link:hover,a.nav-link.active{background:color-mix(in srgb,var(--blue) 12%,var(--card));}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{
+  background:color-mix(in srgb,var(--blue) 18%,var(--card));}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:color-mix(in srgb,var(--blue) 12%,var(--card));}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{
+  background:color-mix(in srgb,var(--blue) 18%,var(--card));}
+
+/* 3rd-tier fly-out (Other Assets ▸ Bitcoin Vector / Commodities) — layout only,
+   palette inherited from the host page's inline nav-dd-menu. Loaded after the
+   page <style>, so these position overrides win. */
+.nav-dd-menu .nav-sub{display:block;position:relative;}
+.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:flex-start;}
+.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
+  opacity:.55;flex:none;align-self:center;transition:transform .2s;}
+.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{opacity:.9;transform:translateX(2px);}
+.nav-dd-menu .nav-sub>a.nav-sub-trig .nav-sub-text{display:block;flex:1;min-width:0;white-space:normal;}
+.nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
+.nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
+
+/* ---- #286 regression repair -------------------------------------------------
+   PR #286 switched the self-contained Vector-family pages (vector, commodities,
+   forex, bonds, transmission) from the old inline `.topbar` nav to
+   `<nav class="site-nav">` — but these pages don't link theme.css, so the
+   `.site-nav` menu lost ALL its base styling and rendered as a fully-expanded,
+   unstyled list ("menu looks css-broken"). Restore the base menu + controls CSS
+   here (the partial every Vector-family page already shares), themed with the
+   Vector-family vars (--card/--grid/--ink/--text/--muted/--blue) and scoped to
+   `.site-nav` so the `.topbar` pages that also include this partial keep their
+   own inline nav untouched. The fly-out + hover polish above still apply. The
+   `≤700px` mobile hamburger is injected later by theme.js and wins on order. */
+.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
+/* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
+.site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px}
+/* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
+.site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
+.site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
+.site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
+.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
+@media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
+.site-nav a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+.site-nav .nav-dd{position:relative;display:inline-flex}
+.site-nav .nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.site-nav .nav-dd:hover>a.nav-link .caret,.site-nav .nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.site-nav .nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+/* frosted glass — mirrors the --glass-* token recipe in theme.css (which this
+   self-contained family can't load), themed with the vector palette. Dual-targets
+   BOTH nav wrappers this family ships: the migrated `.site-nav` pages (forex,
+   bonds, commodities, vector, crossasset, transmission) and the legacy `.topbar`
+   pages (strategies, masterminds, spr, *_allocation …), so every page in the
+   family gets the same glass — not just the site-nav half. Loaded after each
+   page's inline `.nav-dd-menu` (0,1,0), so this (0,2,0) wins. */
+.site-nav .nav-dd-menu,.topbar .nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;
+  background:color-mix(in srgb,var(--card) 66%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
+  border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);border-radius:14px;
+  box-shadow:0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20),inset 0 1px 0 rgba(255,255,255,.85);
+  padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+html[data-theme="dark"] .site-nav .nav-dd-menu,html[data-theme="dark"] .topbar .nav-dd-menu{background:color-mix(in srgb,var(--card) 75%,transparent);
+  border-color:color-mix(in srgb,var(--text) 14%,transparent);
+  box-shadow:0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55),inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent)}
+/* 3rd-tier fly-out: its parent .nav-dd-menu is already a backdrop root, so the
+   nested backdrop-filter can't blur the page behind and the fill reads see-through.
+   A denser near-opaque card fill matches the 2nd tier's frosted density. This
+   selector is (0,4,0) — it beats the 2nd-tier glass rules above, including the
+   dark override (0,3,1), so one rule covers both themes. */
+.site-nav .nav-dd-menu .nav-sub>.nav-dd-menu,.topbar .nav-dd-menu .nav-sub>.nav-dd-menu{
+  background:color-mix(in srgb,var(--card) 96%,transparent)}
+.site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
+.site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
+.site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.site-nav .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--card);border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+.site-nav .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.site-nav .theme-switch .ic.sun{right:8px}
+.site-nav .theme-switch .ic.moon{left:8px}
+.site-nav .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#e8c15a;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.site-nav .theme-switch .knob::before{content:"🌙"}
+html[data-theme="light"] .site-nav .theme-switch .knob{transform:translateX(29px);background:#285fff}
+html[data-theme="light"] .site-nav .theme-switch .knob::before{content:"☀️"}
+.site-nav .lang-toggle{display:inline-flex;position:relative;background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:3px;flex:none;cursor:pointer}
+.site-nav .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .site-nav .lang-toggle .pill{transform:translateX(100%)}
+.site-nav .lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .site-nav .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .site-nav .lang-toggle .zh-opt{color:#fff}
+
+/* One-row section menu (re-fix on current main): the 8-dropdown section menu
+   (~1418px) overflowed the 1180 content rail and wrapped onto a second row.
+   Widen the nav to the same ~1500 rail the macro family uses, on >=701px, for
+   whichever nav variant a family page renders today: the body-level .site-nav
+   (migrated vector pages, capped by an inline max-width:1180) and the legacy
+   in-wrap .topbar (strategy / misc pages, a sticky bar inside the content rail).
+   The page body keeps its 1180 rail and the <=700px hamburger (theme.js) is
+   untouched. */
+@media (min-width:701px){
+  nav.site-nav{max-width:1500px !important;}
+  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+    padding-left:max(40px,calc((100vw - 1500px)/2));
+    padding-right:max(40px,calc((100vw - 1500px)/2));}
+}
+
+/* toggles — subtle hover feedback (their slide animations are untouched) */
+.theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
+.theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
+  box-shadow:0 3px 11px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
+
+/* clickable card / tile containers — the landing's hover light-up, but only when
+   the card is actually a link (display cards are untouched) */
+a.card,a.actitem,a.idx-alloc{transition:transform .2s cubic-bezier(.2,.7,.3,1),
+  border-color .2s ease,box-shadow .2s ease;}
+a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));
+  box-shadow:0 14px 30px -16px color-mix(in srgb,var(--blue) 40%,transparent);}
+
+/* AI Daily Brief card — these self-contained pages don't link theme.css, where
+   the .aibrief-card / .abc-* layout lives, so the 🧠 card collapsed to a raw
+   emoji + text run with no flex. Port the layout here (mirrors theme.css) so it
+   lays out; the base .card surface + the a.card:hover above still apply. */
+.aibrief-card{display:flex;align-items:center;gap:14px;text-decoration:none}
+.aibrief-card .abc-ic{font-size:30px;line-height:1;flex:none}
+.aibrief-card .abc-mid{flex:1;min-width:0}
+.aibrief-card .abc-tit{display:block;font-size:16px;font-weight:700;color:var(--ink)}
+.aibrief-card .abc-sub{display:block;margin-top:3px;color:var(--muted);font-size:13px;line-height:1.5}
+.aibrief-card .abc-go{font-size:22px;font-weight:700;color:var(--blue);flex:none}
+
+/* "?" help affordance — a circled question-mark that reveals a plain-language
+   note on hover/focus (native title, bilingual "EN · ZH" like the .tip pattern).
+   Used to lift cryptic micro-copy off the cards without losing the explanation. */
+.qm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+  border-radius:50%;border:1px solid var(--faint);color:var(--muted);font-size:10px;
+  font-weight:700;line-height:1;cursor:help;vertical-align:middle;margin-left:5px;
+  user-select:none;transition:border-color .15s ease,color .15s ease}
+.qm:hover,.qm:focus{border-color:var(--blue);color:var(--blue);outline:none}
+
+/* accessible keyboard focus ring */
+:where(.vtm-btn,.tm-btn,.navbtn,.ai-brief-link,a.nav-link,.nav-dd-menu a,.theme-switch,
+  .lang-toggle,a.card,a.actitem,a.idx-alloc):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--blue) 70%,transparent);outline-offset:2px;}
+
+@media (prefers-reduced-motion: reduce){
+  .vtm-btn:hover,.tm-btn:hover,.navbtn:hover,.ai-brief-link:hover,
+  a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:none;}
+}
+</style>
+</head>
+<body>
+<nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
+  
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="brand">🌦️ <span class="l-en">Macro Weather</span><span class="l-zh">Macro Weather</span><span class="gn"> <span class="l-en">Station</span><span class="l-zh">宏观气象台</span></span></div>
+  <p class="lead"><span class="l-en">Live macro label board — quadrant, FX, rates, bond health, commodity, China, HK, Canada. Display-only context; not signals.</span><span class="l-zh">宏观标签全景展示 — 象限、外汇、利率、债券健康、大宗、中港加。仅作背景参考，非信号。</span>
+  <span class="faint">· <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-07</span></p>
+
+  <!-- display-only disclaimer -->
+  <div class="disclaimer">
+    <b><span class="l-en">Display-only context.</span><span class="l-zh">仅供展示参考。</span></b>
+    <span class="l-en">Labels describe current regime reads — they are not trade signals and carry no forward-return claim. For committee-graded signals see</span><span class="l-zh">标签描述当前周期读数，不构成交易信号，不含任何前瞻收益声明。如需委员会评级信号，请参阅</span>
+    <a href="committee.html"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></a>.
+  </div>
+
+  <!-- section jump nav -->
+  <div class="jump-nav" style="margin-top:16px">
+    <a href="#board">🌡️ <span class="l-en">Weather Board</span><span class="l-zh">气象板</span></a>
+    <a href="#matrix">⚖️ <span class="l-en">Head/Tailwind Matrix</span><span class="l-zh">顺逆风矩阵</span></a>
+    <a href="#timeline">🕑 <span class="l-en">Transitions</span><span class="l-zh">转换记录</span></a>
+    <a href="#census">🔍 <span class="l-en">Contradictions</span><span class="l-zh">矛盾统计</span></a>
+    <a href="#footnote">📌 <span class="l-en">Footnote</span><span class="l-zh">注脚</span></a>
+  </div>
+
+  <!-- ==================== MACRO WEATHER BOARD ==================== -->
+  <div id="board">
+    <div class="sec-head">🌡️ <span class="l-en">Macro Weather Board</span><span class="l-zh">宏观气象板</span></div>
+    
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          
+          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-07" data-tip-zh="数据截至 2026-07-07">2026-07-07</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+            <span class="chip-val" style="color:#1a7f43">Q1</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
+            <span class="chip-val" style="color:#285FFF">TRANSITIONING</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
+            <span class="chip-val" style="color:#1a7f43">risk-on</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Vol Regime</span><span class="l-zh">波动率周期</span></span>
+            <span class="chip-val" style="color:#1F8A70">normalizing</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
+            <span class="chip-val" style="color:#F5AD42">caution</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Rate Pressure</span><span class="l-zh">利率压力</span></span>
+            <span class="chip-val" style="color:#285FFF">pressure</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
+            <span class="chip-val" style="color:#F5AD42">mixed</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
+          
+          <span class="domain-asof stale-warn" data-tip-en="Source as-of 2026-07-06" data-tip-zh="数据截至 2026-07-06">2026-07-06</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
+            <span class="chip-val" style="color:#285FFF">MIXED</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
+          
+          <span class="domain-asof stale-warn" data-tip-en="Source as-of 2026-07-06" data-tip-zh="数据截至 2026-07-06">2026-07-06</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
+            <span class="chip-val" style="color:#1F8A70">bull_flattener</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Recession Risk</span><span class="l-zh">衰退风险</span></span>
+            <span class="chip-val" style="color:#1a7f43">low</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
+          
+          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-07" data-tip-zh="数据截至 2026-07-07">2026-07-07</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">USD Trend</span><span class="l-zh">美元趋势</span></span>
+            <span class="chip-val" style="color:#1a7f43">up</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">USD Regime</span><span class="l-zh">美元周期</span></span>
+            <span class="chip-val" style="color:#285FFF">US growth premium</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">FX Risk</span><span class="l-zh">外汇风险</span></span>
+            <span class="chip-val" style="color:#1a7f43">risk-on</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Real Rates</span><span class="l-zh">实际利率</span></span>
+            <span class="chip-val" style="color:#D30B0B">Restrictive real yields</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
+            <span class="chip-val" style="color:#1F8A70">soft</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">Bonds &amp; Credit</span><span class="l-zh">债券与信用</span></span>
+          
+          <span class="domain-asof stale-warn" data-tip-en="Source as-of 2026-07-06" data-tip-zh="数据截至 2026-07-06">2026-07-06</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Bond Health</span><span class="l-zh">债券健康</span></span>
+            <span class="chip-val" style="color:#1a7f43">healthy</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Cycle Phase</span><span class="l-zh">周期阶段</span></span>
+            <span class="chip-val" style="color:#285FFF">late</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
+          
+          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-07" data-tip-zh="数据截至 2026-07-07">2026-07-07</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Regime</span><span class="l-zh">周期</span></span>
+            <span class="chip-val" style="color:#1a7f43">Goldilocks</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Favored</span><span class="l-zh">偏好</span></span>
+            <span class="chip-val" style="color:#285FFF">[&#39;Gold&#39;, &#39;Copper&#39;]</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">China</span><span class="l-zh">中国</span></span>
+          
+          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-07" data-tip-zh="数据截至 2026-07-07">2026-07-07</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+            <span class="chip-val" style="color:#D30B0B">Q3</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
+          
+          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-07" data-tip-zh="数据截至 2026-07-07">2026-07-07</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+            <span class="chip-val" style="color:#4559DC">Q4</span>
+          </div>
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Risk State</span><span class="l-zh">风险状态</span></span>
+            <span class="chip-val" style="color:#D30B0B">Risk-off</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
+          
+          <span class="domain-asof stale-warn" data-tip-en="Source as-of 2026-07-06" data-tip-zh="数据截至 2026-07-06">2026-07-06</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+            <span class="chip-val" style="color:#1a7f43">Q1</span>
+          </div>
+          
+        </div>
+      </div>
+      
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label"><span class="l-en">Dispersion</span><span class="l-zh">离散度</span></span>
+          
+          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-07" data-tip-zh="数据截至 2026-07-07">2026-07-07</span>
+          
+        </div>
+        <div class="chips">
+          
+          <div class="chip">
+            <span class="chip-field"><span class="l-en">State</span><span class="l-zh">状态</span></span>
+            <span class="chip-val" style="color:#1a7f43">lean_in</span>
+          </div>
+          
+        </div>
+      </div>
+      
+    
+  </div>
+
+  <!-- ==================== HEADWIND / TAILWIND MATRIX ==================== -->
+  <div id="matrix">
+    <div class="sec-head">⚖️ <span class="l-en">Headwind / Tailwind Matrix</span><span class="l-zh">顺逆风矩阵</span></div>
+    <div class="hw-grid">
+      <!-- Rates Transmission -->
+      <div class="card hw-section">
+        <h2><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></h2>
+        
+        
+        <div class="hw-rows">
+          
+          <div class="hw-row">
+            <span class="hw-asset">XLV</span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="hw-net">-0.36</span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset">XLB</span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="hw-net">-0.35</span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset">QQQ</span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="hw-net">-0.35</span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset">XLK</span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="hw-net">-0.34</span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset">IWM</span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="hw-net">-0.30</span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset">XLP</span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="hw-net">-0.27</span>
+          </div>
+          
+          
+          <div class="hw-row">
+            <span class="hw-asset">GC=F</span>
+            <span class="hw-chip hw-tail"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
+            <span class="hw-net">+0.19</span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset">FXI</span>
+            <span class="hw-chip hw-tail"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
+            <span class="hw-net">+0.13</span>
+          </div>
+          
+        </div>
+        
+        <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-06</div>
+      </div>
+
+      <!-- FX / Dollar -->
+      <div class="card hw-section">
+        <h2><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></h2>
+        
+        
+        <div class="hw-rows">
+          
+          <div class="hw-row">
+            <span class="hw-asset"><span class="l-en">US equities</span><span class="l-zh">US equities</span></span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset"><span class="l-en">EM equities</span><span class="l-zh">EM equities</span></span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset"><span class="l-en">Copper</span><span class="l-zh">铜</span></span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset"><span class="l-en">10y Treasury</span><span class="l-zh">10y Treasury</span></span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+          </div>
+          
+          <div class="hw-row">
+            <span class="hw-asset"><span class="l-en">Bitcoin</span><span class="l-zh">Bitcoin</span></span>
+            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+          </div>
+          
+          
+          <div class="hw-row">
+            <span class="hw-asset"><span class="l-en">Oil (WTI)</span><span class="l-zh">Oil (WTI)</span></span>
+            <span class="hw-chip hw-tail"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
+          </div>
+          
+        </div>
+        <div class="sub" style="margin-top:8px"><span class="l-en">USD trend</span><span class="l-zh">美元趋势</span>: <b><span class="l-en">up</span><span class="l-zh">up</span></b></div>
+        
+        <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-07</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TRANSITION TIMELINE ==================== -->
+  <div id="timeline">
+    <div class="sec-head">🕑 <span class="l-en">Transition Timeline</span><span class="l-zh">周期转换记录</span></div>
+    
+    <div class="tl-wrap">
+      <table class="tl-tbl">
+        <thead>
+          <tr>
+            <th><span class="l-en">Date</span><span class="l-zh">日期</span></th>
+            <th><span class="l-en">Domain</span><span class="l-zh">领域</span></th>
+            <th><span class="l-en">Field</span><span class="l-zh">字段</span></th>
+            <th><span class="l-en">Change</span><span class="l-zh">变化</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="tl-asof">2026-07-07</td>
+            <td class="tl-domain"><span class="l-en">market</span><span class="l-zh">market</span></td>
+            <td class="tl-field">market_state_verdict</td>
+            <td>
+              <span class="tl-from">—</span>
+              <span class="tl-arrow">→</span>
+              <span class="tl-to">—</span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="tl-asof">2026-07-06</td>
+            <td class="tl-domain"><span class="l-en">us</span><span class="l-zh">us</span></td>
+            <td class="tl-field">cross_asset_verdict</td>
+            <td>
+              <span class="tl-from">—</span>
+              <span class="tl-arrow">→</span>
+              <span class="tl-to">—</span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="tl-asof">2026-07-06</td>
+            <td class="tl-domain"><span class="l-en">us</span><span class="l-zh">us</span></td>
+            <td class="tl-field">us_rate_pressure</td>
+            <td>
+              <span class="tl-from">—</span>
+              <span class="tl-arrow">→</span>
+              <span class="tl-to">—</span>
+            </td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+  </div>
+
+  <!-- ==================== CONTRADICTION CENSUS STRIP ==================== -->
+  <div id="census">
+    <div class="sec-head">🔍 <span class="l-en">Contradiction Census</span><span class="l-zh">矛盾统计</span></div>
+    <div class="census-strip">
+      <div class="census-kv">
+        <span class="census-k"><span class="l-en">Contradictions</span><span class="l-zh">矛盾对数</span></span>
+        <span class="census-v">4</span>
+      </div>
+      
+      
+      <div class="census-kv">
+        <span class="census-k"><span class="l-en">Intelligence Divergences</span><span class="l-zh">情报分歧数</span></span>
+        <span class="census-v">5</span>
+      </div>
+      
+      
+      <div class="census-kv" style="max-width:420px">
+        <span class="census-k"><span class="l-en">Active Pairs</span><span class="l-zh">活跃矛盾对</span></span>
+        <span style="font-size:12px;color:var(--muted);margin-top:4px">regime-vs-market_state · regime_vector-vs-risk_radar · vol_regime-vs-market_state · briefing-divergences</span>
+      </div>
+      
+    </div>
+    <div class="sub" style="margin-top:8px"><span class="l-en">Contradiction pairs are display-only — no gate, no rank raise. See committee.html for graded signal authority.</span><span class="l-zh">矛盾对仅供展示，不触发任何门槛或排名变化。如需评级信号权威，请参阅委员会视图。</span></div>
+  </div>
+
+  <!-- ==================== NEURAL WEB FOOTNOTE ==================== -->
+  <div id="footnote">
+    <div class="sec-head">📌 <span class="l-en">Neural Web Footnote</span><span class="l-zh">神经网络注脚</span></div>
+    <div class="footnote">
+      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>2cb7aded520102c9</code>
+      &nbsp;·&nbsp;
+      <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-07-07
+      &nbsp;·&nbsp;
+      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 3
+      &nbsp;·&nbsp;
+      <a href="committee.html"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></a>
+    </div>
+    <div class="disclaimer" style="margin-top:12px">
+      <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
+      <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
+    </div>
+    <div class="meta-foot" style="margin-top:8px"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-09 18:16 UTC</div>
+  </div>
+
+</div><!-- /wrap -->
+
+<footer class="site-footer">
+  <span>© Mastermind-X</span>
+  <span class="faint"><span class="l-en">Macro Weather Station · display-only context · labels, not signals</span><span class="l-zh">宏观气象台 · 仅供展示 · 标签，非信号</span></span>
+</footer>
+
+</body>
+</html>

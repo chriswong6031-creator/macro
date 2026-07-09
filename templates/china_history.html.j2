@@ -91,6 +91,143 @@
     </table>
   </div>
 
+  {# ── CN-SYS W8 — Phase History Block ───────────────────────────────────────────
+     Source: data/china_cycle_phase/phase_tape.parquet (last 90 sessions)
+             site/chinastatedata/cycle_phase.json (era_table, falsifiers)
+             site/china_intel/analogs.json (top-5 analogs, READ-ONLY)
+     Authority: context_only (CN-SYS-R1). Degrade silently if any artifact absent.
+     No forward projections — descriptive display only (CN-SYS-R13/R14). #}
+  {% if phase_strip or era_table or phase_current %}
+  <div class="panel" id="phase-history">
+    <h2>{{ t('Cycle Phase Memory', '周期阶段记忆') }}
+      {{ help('Current A-share cycle phase from the W3 lobe, with a 90-session strip and ERA analog table (2005→). Falsifiers are pre-committed machine-checkable conditions graded nightly. Descriptive only — no signal (CN-SYS-R1).', '当前A股周期阶段（W3脉络），含90个交易日图条与历史ERA对照表（2005年至今）。证伪条件为每夜自动评分的预提交可检查条件。仅为描述性 — 非信号（CN-SYS-R1）。') }}
+    </h2>
+
+    {% if phase_current and phase_current.get('phase') %}
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:8px 0 14px">
+      <div style="padding:10px 18px;border-radius:10px;background:color-mix(in srgb,#5b9bf0 14%,var(--panel));border:1px solid color-mix(in srgb,#5b9bf0 30%,var(--line))">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">{{ t('Current Phase', '当前阶段') }}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--text)">{{ phase_current.phase.replace('_',' ') }}</div>
+        {% if phase_current.confidence is not none %}<div style="font-size:12px;color:var(--muted);margin-top:2px">{{ t('confidence', '置信度') }} {{ ('%.0f'|format(phase_current.confidence * 100)) }}%</div>{% endif %}
+        {% if phase_current.asof %}<div style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ phase_current.asof }}</div>{% endif %}
+      </div>
+      {% set falsifiers = phase_current.get('falsifiers') or [] %}
+      {% if falsifiers %}
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">{{ falsifiers|length }} {{ t('falsifiers armed — auto-graded nightly', '个证伪条件已激活 — 每夜自动评分') }}</div>
+        {% for f in falsifiers %}
+        <div style="display:flex;gap:8px;align-items:baseline;padding:4px 8px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);margin-bottom:3px;font-size:11.5px">
+          <span style="font-family:monospace;color:#5b9bf0;flex-shrink:0">{{ f.id }}</span>
+          <code style="flex:1;font-size:10.5px;color:var(--text);background:none">{{ f.expr }}</code>
+          <span style="color:var(--muted)">{{ f.horizon_d }}{{ t('d','天') }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if phase_strip %}
+    <h3 style="font-size:13px;margin:12px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.055em">{{ t('90-session phase strip', '90个交易日阶段图条') }}</h3>
+    <div id="phase-history-strip" data-strip="{{ phase_strip | tojson }}"
+         style="display:flex;gap:2px;flex-wrap:wrap;margin:6px 0;align-items:flex-end"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:10.5px">
+      {% for ph_name, ph_color in [
+        ('POLICY_PUT','#5b9bf0'),('LIQUIDITY_IGNITION','#45b873'),('BROADENING','#3da564'),
+        ('THEME_LEADERSHIP','#e08b45'),('EUPHORIA','#e06464'),('DISTRIBUTION','#e07070'),
+        ('DELEVERAGING','#c04040'),('CAPITULATION','#8b93a1'),('GRINDING_BEAR','#a07070'),
+        ('REPAIR','#7aa7e0')
+      ] %}
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:{{ ph_color }};display:inline-block;flex:none"></span>
+        {{ ph_name.replace('_',' ') }}
+      </span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if era_table %}
+    <h3 style="font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.055em">{{ t('Historical ERA table', '历史ERA对照表') }}
+      {{ help('Known A-share market cycle eras since 2005. Each ERA is annotated with the phases it passed through. Descriptive only — no forward projection (CN-SYS-R1).', '2005年以来已知的A股市场周期时代，每个时代标注所经历的阶段。仅为描述性 — 无前瞻预测（CN-SYS-R1）。') }}
+    </h3>
+    <details>
+      <summary style="cursor:pointer;color:var(--link);font-size:12px;font-weight:600;list-style:none">
+        <span class="l-en">▸ Show ERA table ({{ era_table|length }} eras)</span>
+        <span class="l-zh">▸ 展开ERA表（{{ era_table|length }}个时代）</span>
+      </summary>
+      <table style="border-collapse:collapse;width:100%;font-size:12px;margin-top:8px">
+        <tr>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('ERA', '时代') }}</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('Period', '时期') }}</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('Phases', '阶段') }}</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('Note', '注释') }}</th>
+        </tr>
+        {% for era in era_table %}
+        <tr>
+          <td style="padding:4px 8px;border-bottom:1px solid var(--line);font-size:11px;white-space:nowrap">{{ era.era.replace('_',' ') }}</td>
+          <td style="padding:4px 8px;border-bottom:1px solid var(--line);font-size:11px;white-space:nowrap">{{ era.start[:7] }} → {{ era.end[:7] }}</td>
+          <td style="padding:4px 8px;border-bottom:1px solid var(--line);font-size:10.5px">{{ era.phases | join(' → ') }}</td>
+          <td style="padding:4px 8px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)">{{ era.note }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </details>
+    {% endif %}
+
+    {% if analogs %}
+    <h3 style="font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.055em">{{ t('Historical analogs (display-only)', '历史类比（仅供展示）') }}
+      {{ help('Top-5 closest historical dates by regime/liquidity/cycle similarity. Forward returns shown for reference — no extrapolation (CN-SYS-R1). Source: site/china_intel/analogs.json (read-only).', '按周期/流动性/商业周期相似度匹配的最近5个历史时间点。前瞻收益仅供参考 — 不作外推（CN-SYS-R1）。来源：site/china_intel/analogs.json（只读）。') }}
+    </h3>
+    <table style="border-collapse:collapse;width:100%;font-size:12px;margin-top:4px">
+      <tr>
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('Date', '日期') }}</th>
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('Quad', '象限') }}</th>
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('Dist', '距离') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('SHCOMP 20d', '上证20日') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600">{{ t('CSI300 60d', '沪深300 60日') }}</th>
+      </tr>
+      {% for a in analogs %}
+      {% set fsh = a.get('fwd_shcomp') or {} %}
+      {% set fcsi = a.get('fwd_csi300') or {} %}
+      <tr>
+        <td style="padding:4px 8px;border-bottom:1px solid var(--line)">{{ a.date }}</td>
+        <td style="padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted)">{{ a.quad }}</td>
+        <td style="padding:4px 8px;border-bottom:1px solid var(--line);color:var(--muted)">{{ ('%.3f'|format(a.distance)) if a.distance is not none else '—' }}</td>
+        {% set sh20 = fsh.get('h20') %}
+        <td style="padding:4px 8px;border-bottom:1px solid var(--line);text-align:right;color:{{ 'var(--up)' if sh20 is not none and sh20 > 0 else ('var(--down)' if sh20 is not none and sh20 < 0 else 'var(--muted)') }}">{{ ('%+.1f%%'|format(sh20 * 100)) if sh20 is not none else '—' }}</td>
+        {% set csi60 = fcsi.get('h60') %}
+        <td style="padding:4px 8px;border-bottom:1px solid var(--line);text-align:right;color:{{ 'var(--up)' if csi60 is not none and csi60 > 0 else ('var(--down)' if csi60 is not none and csi60 < 0 else 'var(--muted)') }}">{{ ('%+.1f%%'|format(csi60 * 100)) if csi60 is not none else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p style="font-size:10.5px;color:var(--muted);margin:6px 0 0">{{ t('Display-only analog readout. Context only — no forward projection or signal (CN-SYS-R1).', '展示性历史类比读取。仅供背景参考 — 不作前瞻预测或信号解读（CN-SYS-R1）。') }}</p>
+    {% endif %}
+
+    <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.5">{{ t('Context-only (CN-SYS-R1). Phase tape accruing since W3 launch. ERA table covers 2005→. Falsifier ledger graded nightly.', '仅供背景参考（CN-SYS-R1）。阶段磁带自W3启动后持续积累。ERA表格涵盖2005年至今。证伪台账每夜评分。') }}</p>
+  </div>
+  <script>
+  (function(){
+    var PHASE_COLORS = {
+      'POLICY_PUT':'#5b9bf0','LIQUIDITY_IGNITION':'#45b873','BROADENING':'#3da564',
+      'THEME_LEADERSHIP':'#e08b45','EUPHORIA':'#e06464','DISTRIBUTION':'#e07070',
+      'DELEVERAGING':'#c04040','CAPITULATION':'#8b93a1','GRINDING_BEAR':'#a07070',
+      'REPAIR':'#7aa7e0'
+    };
+    var el = document.getElementById('phase-history-strip');
+    if(!el) return;
+    var strip;
+    try { strip = JSON.parse(el.getAttribute('data-strip')||'[]'); } catch(e){return;}
+    strip.forEach(function(cell){
+      var div = document.createElement('div');
+      div.style.cssText = 'height:22px;min-width:7px;border-radius:3px;flex:1;cursor:default;position:relative;opacity:.82;';
+      div.style.background = PHASE_COLORS[cell.phase] || '#8b93a1';
+      div.title = cell.d + ' ' + cell.phase + (cell.confidence ? ' (' + Math.round(cell.confidence*100) + '%)' : '');
+      el.appendChild(div);
+    });
+  })();
+  </script>
+  {% endif %}
+
   <p class="muted">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
 <script>
 window.__CHART_SWAP__ = {

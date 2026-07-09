@@ -1,0 +1,5 @@
+# The fetch checkpoint is runner-local mutable state; it must NOT be committed.
+# Gitignoring it here ensures the nightly engine job cannot commit it via
+# `git add data/` (which would otherwise stage it every run).
+# See: scripts/build_polygon_universe.py _checkpoint_path()
+reference_checkpoint.json

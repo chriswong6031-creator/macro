@@ -1350,7 +1350,8 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
 .state.reveal{animation-delay:0ms} .nav.mk.reveal{animation-delay:70ms} .nav.vc.reveal{animation-delay:120ms} .alerts.reveal{animation-delay:160ms}
 @media (prefers-reduced-motion: reduce){
  .eyebrow .live{animation:none} .reveal{animation:none}
- .card,.ico,.ha-item summary{transition:none} .card:hover{transform:none}}
+ .card,.ico,.ha-item summary{transition:none} .card:hover{transform:none}
+ .gd-scroll,.gd-scroll::before,.gd-scroll::after,.gd-scroll-chev svg{animation:none}}
 
 /* ===== flight deck ===== */
 /* single full-bleed column — the globe is the whole instrument; the market-clock
@@ -1443,14 +1444,7 @@ html[data-theme="light"] .gd-cluster{background:color-mix(in srgb,var(--panel) 5
 .gd-cluster .cl-dots{display:flex;gap:3px;margin-left:3px}
 .gd-cluster .cl-dots i{width:6px;height:6px;border-radius:50%;display:block;box-shadow:0 0 5px currentColor}
 .gd-cluster .l-zh{display:none} html[data-lang="zh"] .gd-cluster .l-en{display:none} html[data-lang="zh"] .gd-cluster .l-zh{display:inline}
-/* ===== slim residual strip — world-clock anchor + next-bell + motion toggle ===== */
-.gd-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 16px;margin:2px auto 0;font-size:12px;color:var(--muted)}
-.gd-strip .gd-utc{color:var(--text);font-variant-numeric:tabular-nums;font-weight:700}
-.gd-strip .gd-nextbell{color:color-mix(in srgb,var(--text) 80%,var(--muted));font-weight:600}
-.gd-strip .gd-motion{font:inherit;color:var(--muted);background:color-mix(in srgb,var(--panel) 60%,transparent);border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer}
-.gd-strip .gd-motion:hover{border-color:color-mix(in srgb,var(--info) 45%,var(--line))}
-.gd-strip .gd-asof{flex-basis:100%;text-align:center;font-size:10.5px;color:var(--muted)}
-.gd-strip .l-zh{display:none} html[data-lang="zh"] .gd-strip .l-en{display:none} html[data-lang="zh"] .gd-strip .l-zh{display:inline}
+@media(max-width:560px){.h .eyebrow{display:none}}
 @media(max-width:560px){.gd-isl .body{gap:6px;padding:5px 10px 5px 8px} .gd-isl .isl-chg{font-size:12px} .gd-isl .isl-px{display:none} .gd-isl .isl-flag{font-size:14px}}
 @media (prefers-reduced-motion: reduce){.gd-isl .glow,.gd-isl .isl-sem.open{animation:none}}
 .gd-poster{position:absolute;inset:0;width:100%;height:100%;transition:opacity .6s ease;pointer-events:none}
@@ -1579,6 +1573,71 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
 .gd-clock .nb-chg.up{color:var(--up)}
 .gd-clock .nb-chg.down{color:var(--down)}
 .gd-clock .nb-chg.stale{color:var(--muted)}
+
+/* ===== scroll CTA pill ===== */
+@keyframes gd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes gd-halo-glow{0%,100%{opacity:0.7}50%{opacity:1}}
+@keyframes gd-conv-top{0%{transform:translateY(0);opacity:1}45%{transform:translateY(6px);opacity:0.35}46%{transform:translateY(-10px);opacity:0}47%{transform:translateY(-10px);opacity:0}75%{transform:translateY(0);opacity:1}100%{transform:translateY(0);opacity:1}}
+@keyframes gd-conv-bot{0%{transform:translateY(0);opacity:0.55}45%{transform:translateY(8px);opacity:0}46%{transform:translateY(-8px);opacity:0}75%{transform:translateY(0);opacity:0.55}100%{transform:translateY(0);opacity:0.55}}
+.gd-cta{display:flex;justify-content:center;margin:6px 0 2px}
+.gd-scroll{position:relative;display:inline-flex;align-items:center;gap:9px;padding:10px 20px 10px 22px;border-radius:999px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;letter-spacing:.01em;color:var(--text);background:color-mix(in srgb,var(--panel2) 72%,transparent);-webkit-backdrop-filter:blur(13px) saturate(1.2);backdrop-filter:blur(13px) saturate(1.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px -12px rgba(0,0,0,.6);animation:gd-float 2.8s ease-in-out infinite;overflow:visible}
+.gd-scroll::before{content:'';position:absolute;inset:-1px;border-radius:999px;background:linear-gradient(135deg,var(--info),#7c5cff);-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;pointer-events:none}
+.gd-scroll::after{content:'';position:absolute;inset:-10px;border-radius:999px;background:radial-gradient(closest-side,color-mix(in srgb,var(--info) 22%,transparent),transparent 70%);z-index:-1;opacity:0.7;animation:gd-halo-glow 2.8s ease-in-out infinite;pointer-events:none}
+.gd-scroll-chev{position:relative;width:16px;height:18px;overflow:hidden}
+.gd-scroll-chev svg{position:absolute;left:0}
+.gd-scroll-chev svg:first-child{top:0;animation:gd-conv-top 1.6s ease-in-out infinite}
+.gd-scroll-chev svg:last-child{top:8px;animation:gd-conv-bot 1.6s ease-in-out infinite}
+.gd-scroll:hover{transform:scale(1.05);animation:none}
+.gd-scroll:hover::after{opacity:1;animation:none}
+.gd-scroll:hover .gd-scroll-chev svg{animation-duration:.9s}
+.gd-scroll:active{transform:scale(1.02)}
+.gd-scroll:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.gd-scroll .l-zh{display:none}
+html[data-lang="zh"] .gd-scroll .l-en{display:none}
+html[data-lang="zh"] .gd-scroll .l-zh{display:inline}
+html[data-theme="light"] .gd-scroll{background:color-mix(in srgb,var(--panel) 62%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 8px 22px -12px rgba(28,40,64,.3)}
+
+/* ===== mobile segmented toggle ===== */
+.hub-seg{display:none}
+@media(max-width:560px){
+.hub-seg{position:relative;display:flex;height:40px;margin:2px auto 14px;max-width:340px;background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:12px;padding:3px;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 5%,transparent)}
+.hub-seg-ind{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:9px;background:color-mix(in srgb,var(--info) 15%,var(--panel2));border:1px solid color-mix(in srgb,var(--info) 30%,transparent);box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent),0 0 8px color-mix(in srgb,var(--info) 12%,transparent);transition:transform .22s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.hub-seg-btn{flex:1;background:none;border:none;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--muted);border-radius:9px;cursor:pointer;position:relative;z-index:1;transition:color .18s}
+.hub-seg-btn:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.hub-seg-btn.on{color:var(--info);font-weight:700}
+.hub-views[data-view="vc"] .hub-seg-ind{transform:translateX(100%)}
+.hub-views[data-view="mk"] .vc-sec{display:none}
+.hub-views[data-view="vc"] .mk-sec{display:none}
+.hub-views .mk-sec,.hub-views .vc-sec{animation:smReveal .3s cubic-bezier(.2,.7,.3,1) both}
+}
+.hub-seg .l-zh{display:none}
+html[data-lang="zh"] .hub-seg .l-en{display:none}
+html[data-lang="zh"] .hub-seg .l-zh{display:inline}
+
+/* ===== mobile compact grids ===== */
+.sb-mini{display:none}
+.ch-mini{display:none}
+@media(max-width:560px){
+.sb-full{display:none}
+.split .sb-tx em{display:none}
+.sb-mini{display:inline}
+.nav.vc .ch-full{display:none}
+.nav.vc .ch-mini{display:inline}
+.split{flex-direction:row}
+.splitbtn{flex:1;min-width:0;padding:8px 9px;gap:7px}
+.sb-ic{width:24px;height:24px;font-size:13px}
+.sb-tx b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card{min-height:0}
+.nav.vc{grid-template-columns:1fr 1fr;gap:10px}
+.nav.vc .card{min-height:0;flex-direction:row;align-items:center;padding:0 12px;height:52px}
+.nav.vc .card-top{margin:0;flex:1;min-width:0}
+.nav.vc .ico{width:26px;height:26px;font-size:13px;border-radius:7px}
+.nav.vc .card-h{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav.vc .chips,.nav.vc .bar{display:none}
+.nav.vc .go{margin:0;flex:none;font-size:12px}
+.nav.vc .go .go-tx{display:none}
+}
+.go-tx{display:inline}
 </style>"""
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
@@ -1592,13 +1651,17 @@ _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global mac
       <div class="gd-tip glass" role="tooltip" hidden></div>
       <ul class="gd-legend" aria-label="Markets / 市场列表">__LEGEND__</ul>
     </div>
-    <div class="gd-strip">
-      <span class="gd-clk"><time class="gd-utc"></time> <span class="l-en">UTC</span><span class="l-zh">协调时</span></span>
-      <span class="gd-nextbell"></span>
-      <button class="gd-motion" type="button" aria-pressed="false"></button>
-      <span class="gd-asof"><span class="l-en">Prices ≈15-min delayed · sessions live · holidays not modeled</span><span class="l-zh">价格约延迟15分钟 · 交易时段实时 · 未计入假期</span></span>
-    </div>
+    <div class="gd-cta"><button class="gd-scroll" type="button" aria-label="Explore markets">
+<span class="gd-scroll-tx"><span class="l-en">Explore</span><span class="l-zh">探索</span></span>
+<span class="gd-scroll-chev" aria-hidden="true"><svg width="16" height="10" viewBox="0 0 20 12" fill="none"><path d="M3 3 L10 9 L17 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg width="16" height="10" viewBox="0 0 20 12" fill="none"><path d="M3 3 L10 9 L17 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+</button></div>
   </section>"""
+
+_HUB_SEG_HTML = """<div class="hub-seg" role="group" aria-label="Sections / 版块">
+<span class="hub-seg-ind" aria-hidden="true"></span>
+<button class="hub-seg-btn on" type="button" aria-pressed="true" data-v="mk"><span class="l-en">Markets</span><span class="l-zh">市场</span></button>
+<button class="hub-seg-btn" type="button" aria-pressed="false" data-v="vc"><span class="l-en">Other Features</span><span class="l-zh">其他功能</span></button>
+</div>"""
 
 _GQUAD_ZH = {"Goldilocks": "理想增长", "Reflation": "再通胀", "Stagflation": "滞胀",
              "Growth scare": "增长恐慌", "Growth-scare": "增长恐慌", "Deflation": "通缩"}
@@ -1735,15 +1798,17 @@ def _g_legend(blob):
 
 def _g_markets(blob, us_n, cn_n, hk_n):
     by = {m["cc"]: m for m in blob}
+    # Each entry: (href, ic, ten, tzh, ten_s, tzh_s, sen, szh)
+    # ten_s/tzh_s = short label shown on mobile; ten/tzh = full label shown on desktop
     SUB = {
-        "US": [("macro.html", "📊", "Macro Dashboard", "宏观看板", "Regime · cycle · drivers", "周期 · 阶段 · 驱动"),
-               ("us_stocks.html", "📈", "Stock Dashboard", "个股看板", str(us_n) + " standout setups", str(us_n) + " 只精选个股")],
-        "CN": [("china.html", "📊", "Macro Dashboard", "宏观看板", "A-share regime · cycle", "A股周期 · 阶段"),
-               ("china_stocks.html", "📈", "Stock Dashboard", "个股看板", str(cn_n) + " setups · screener", str(cn_n) + " 形态 · 筛选")],
-        "HK": [("hk.html", "📊", "Macro Dashboard", "宏观看板", "Regime · risk overlay", "周期 · 风险叠加"),
-               ("hk_stocks.html", "📈", "Stock Dashboard", "个股看板", str(hk_n) + " beta exposures", str(hk_n) + " 个 beta 敞口")],
-        "CA": [("canada.html", "📊", "Macro Dashboard", "宏观看板", "Regime · CAD overlay", "周期 · 加元叠加"),
-               ("canada_stocks.html", "📈", "Stock Dashboard", "个股看板", "TSX names & sectors", "TSX 个股与板块")],
+        "US": [("macro.html", "📊", "Macro Dashboard", "宏观看板", "Macro", "宏观", "Regime · cycle · drivers", "周期 · 阶段 · 驱动"),
+               ("us_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(us_n), "个股 · " + str(us_n), str(us_n) + " standout setups", str(us_n) + " 只精选个股")],
+        "CN": [("china.html", "📊", "Macro Dashboard", "宏观看板", "Macro", "宏观", "A-share regime · cycle", "A股周期 · 阶段"),
+               ("china_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(cn_n), "个股 · " + str(cn_n), str(cn_n) + " setups · screener", str(cn_n) + " 形态 · 筛选")],
+        "HK": [("hk.html", "📊", "Macro Dashboard", "宏观看板", "Macro", "宏观", "Regime · risk overlay", "周期 · 风险叠加"),
+               ("hk_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(hk_n), "个股 · " + str(hk_n), str(hk_n) + " beta exposures", str(hk_n) + " 个 beta 敞口")],
+        "CA": [("canada.html", "📊", "Macro Dashboard", "宏观看板", "Macro", "宏观", "Regime · CAD overlay", "周期 · 加元叠加"),
+               ("canada_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks", "个股", "TSX names & sectors", "TSX 个股与板块")],
     }
     cls = {"US": "us", "CN": "cn", "HK": "hk", "CA": "ca"}
     nm = {"US": ("United States", "美国"), "CN": ("China", "中国"), "HK": ("Hong Kong", "香港"), "CA": ("Canada · TSX", "加拿大 · TSX")}
@@ -1751,9 +1816,9 @@ def _g_markets(blob, us_n, cn_n, hk_n):
     for cc in ("US", "CN", "HK", "CA"):
         m = by[cc]
         btns = []
-        for href, ic, ten, tzh, sen, szh in SUB[cc]:
+        for href, ic, ten, tzh, ten_s, tzh_s, sen, szh in SUB[cc]:
             btns.append('<a class="splitbtn" href="' + href + '"><span class="sb-ic" aria-hidden="true">' + ic + '</span>'
-                        '<span class="sb-tx"><b>' + _bi(ten, tzh) + '</b><em>' + _bi(sen, szh) + '</em></span>'
+                        '<span class="sb-tx"><b><span class="sb-full">' + _bi(ten, tzh) + '</span><span class="sb-mini">' + _bi(ten_s, tzh_s) + '</span></b><em>' + _bi(sen, szh) + '</em></span>'
                         '<span class="sb-go" aria-hidden="true">→</span></a>')
         cards.append('<div class="glass acc card ' + cls[cc] + '">'
                      '<div class="card-top"><span class="ico" aria-hidden="true">' + m["flag"] + '</span>'
@@ -1772,11 +1837,11 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
     b_phase = (bonds or {}).get("phase") or ""
     fx_risk = (forex or {}).get("risk", "")
 
-    def card(cls, ic, h_en, h_zh, body, go_en, go_zh, href, attrs=""):
+    def card(cls, ic, h_en, h_zh, h_en_s, h_zh_s, body, go_en, go_zh, href, attrs=""):
         return ('<a class="glass acc card ' + cls + '" href="' + href + '"' + attrs + '>'
                 '<div class="card-top"><span class="ico" aria-hidden="true">' + ic + '</span>'
-                '<h3 class="card-h">' + _bi(h_en, h_zh) + '</h3></div>' + body
-                + '<span class="go">' + _bi(go_en, go_zh) + '</span></a>')
+                '<h3 class="card-h"><span class="ch-full">' + _bi(h_en, h_zh) + '</span><span class="ch-mini">' + _bi(h_en_s, h_zh_s) + '</span></h3></div>' + body
+                + '<span class="go"><span class="go-tx">' + _bi(go_en, go_zh) + '</span></span></a>')
 
     btc = ('<div class="bar b-risk"><i style="width:' + str(vm["risk_index"]) + '%"></i></div>'
            '<div class="chips"><span class="pill ' + risk_cls + '">' + _bi("Risk " + vm["risk_word"] + " · " + str(vm["risk_index"]),
@@ -1797,17 +1862,17 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
     sec_cn = '<div class="chips"><span class="pill">' + _bi("CN sectors", "中国行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
     rep = '<div class="chips"><span class="pill">' + _bi("Research library", "研究库") + '</span><span class="pill">' + _bi("Deep dives", "深度报告") + '</span></div>'
     cards = [
-        card("term", "▣", "Terminal", "交易终端", term, "Trading charts & stock workspace", "交易图表与个股工作台", "https://app.mastermind-x.com", ' rel="noopener"'),
-        card("cyc", "◷", "Cycle Intelligence", "周期智能", cyc, "Country cycle dashboards", "国家周期看板", "cycle.html"),
-        card("sec l-en", "▦", "US Sectors", "美股行业", sec_us, "Sector Central rotation map", "行业轮动中心", "sector_central.html"),
-        card("sec l-zh", "▦", "CN Sectors", "CN Sectors", sec_cn, "Sector Central rotation map", "中国行业轮动中心", "sector_central_china.html"),
-        card("rep", "◇", "Research Reports", "研究报告", rep, "Read the latest research desk", "阅读最新研究", "reports.html"),
-        card("btc", "₿", "Bitcoin Vector", "比特币向量", btc, "Risk, momentum & allocation", "风险、动量与配置", "vector.html"),
-        card("bd", "🏛️", "Bonds & Bond Health", "债券与债券健康", bd, "Curve, credit & cycle clock", "曲线、信用与周期时钟", "bonds.html"),
-        card("com", "◆", "Commodity Vector", "大宗商品向量", com, "Allocation & shock detection", "配置与冲击检测", "commodities.html"),
-        card("fx", "💱", "Forex Vector", "外汇向量", fx, "Dollar-smile currency board", "美元微笑货币面板", "forex.html"),
+        card("term", "▣", "Terminal", "交易终端", "Terminal", "终端", term, "Trading charts & stock workspace", "交易图表与个股工作台", "https://app.mastermind-x.com", ' rel="noopener"'),
+        card("cyc", "◷", "Cycle Intelligence", "周期智能", "Cycle Intel", "周期", cyc, "Country cycle dashboards", "国家周期看板", "cycle.html"),
+        card("sec l-en", "▦", "US Sectors", "美股行业", "US Sectors", "美股行业", sec_us, "Sector Central rotation map", "行业轮动中心", "sector_central.html"),
+        card("sec l-zh", "▦", "CN Sectors", "CN Sectors", "CN Sectors", "中国行业", sec_cn, "Sector Central rotation map", "中国行业轮动中心", "sector_central_china.html"),
+        card("rep", "◇", "Research Reports", "研究报告", "Reports", "报告", rep, "Read the latest research desk", "阅读最新研究", "reports.html"),
+        card("btc", "₿", "Bitcoin Vector", "比特币向量", "Bitcoin", "比特币", btc, "Risk, momentum & allocation", "风险、动量与配置", "vector.html"),
+        card("bd", "🏛️", "Bonds & Bond Health", "债券与债券健康", "Bonds", "债券", bd, "Curve, credit & cycle clock", "曲线、信用与周期时钟", "bonds.html"),
+        card("com", "◆", "Commodity Vector", "大宗商品向量", "Commodities", "商品", com, "Allocation & shock detection", "配置与冲击检测", "commodities.html"),
+        card("fx", "💱", "Forex Vector", "外汇向量", "Forex", "外汇", fx, "Dollar-smile currency board", "美元微笑货币面板", "forex.html"),
     ]
-    return ('<div class="band"><h2>' + _bi("Vectors & strategies", "向量与策略") + '</h2><span class="ln"></span></div>'
+    return ('<div class="band"><h2>' + _bi("Other Features", "其他功能") + '</h2><span class="ln"></span></div>'
             '<div class="nav vc reveal">' + "".join(cards) + '</div>')
 
 
@@ -1946,7 +2011,13 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         + '<span class="logo-word">MASTERMIND</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
                     "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
-        + globe_deck + markets + vectors + alerts_html
+        + globe_deck
+        + '<div class="hub-views" id="hub-views" data-view="mk">'
+        + _HUB_SEG_HTML
+        + '<div class="mk-sec">' + markets + '</div>'
+        + '<div class="vc-sec">' + vectors + '</div>'
+        + '</div>'
+        + alerts_html
         + '<div class="foot">' + _bi("Rigorously tested data · powered by AI · not investment advice",
                                       "经严格测试的数据 · 由 AI 驱动 · 非投资建议") + '</div>'
         '<footer class="site-footer"><span class="made">' + _bi("© 2026 MastermindX Inc", "© 2026 MastermindX Inc") + '</span></footer>'
@@ -1968,6 +2039,29 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         'function tick(){var d=new Date();for(var i=0;i<els.length;i++){var l=els[i].getAttribute("data-loc")||undefined;'
         'try{els[i].textContent=d.toLocaleString(l,opt);}catch(e){els[i].textContent=d.toLocaleString(undefined,opt);}}}'
         'tick();setInterval(tick,1000);})();</script>'
+        # hub-views segmented toggle + scroll CTA
+        '<script>(function(){'
+        'var hv=document.getElementById("hub-views");if(!hv)return;'
+        'var btns=hv.querySelectorAll(".hub-seg-btn");'
+        'btns.forEach(function(b){b.addEventListener("click",function(){'
+        'var v=b.getAttribute("data-v")||"mk";if(hv.getAttribute("data-view")===v)return;'
+        'hv.setAttribute("data-view",v);'
+        'btns.forEach(function(x){var on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on?"true":"false");});'
+        'var sec=hv.querySelector(v==="mk"?".mk-sec":".vc-sec");'
+        'if(sec){sec.style.animation="none";void sec.offsetWidth;sec.style.animation="";}'
+        '});});'
+        'var sb=document.querySelector(".gd-scroll");'
+        'if(sb){sb.addEventListener("click",function(){'
+        'var target=hv;var rm=false;'
+        'try{rm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}'
+        'var to=target.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop)-12;'
+        'if(rm){window.scrollTo(0,to);return;}'
+        'var from=window.pageYOffset||document.documentElement.scrollTop,d=650,t0=null;'
+        'function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}'
+        'function step(ts){if(t0===null)t0=ts;var p=Math.min((ts-t0)/d,1);window.scrollTo(0,from+(to-from)*ease(p));if(p<1)requestAnimationFrame(step);}'
+        'requestAnimationFrame(step);'
+        '});}'
+        '})();</script>'
         '</body></html>'
     )
     return head + body
@@ -3085,19 +3179,48 @@ def main() -> int:
         _build_ipo()
     except Exception as e:  # noqa: BLE001
         log.error("ipo radar page (via build_vector) failed (%s)", e)
-    try:  # China Mastermind GTAA flagships — detail pages + snapshot. MUST run BEFORE
-          # build_china_strategies so strategy_cnmm_*.html exist when the pinned hero links to them.
-          # (PAT lacks workflow scope → piggyback on build_vector; promote to a daily.yml step later.)
-        from scripts.build_china_masterminds import build as _build_china_masterminds
-        _build_china_masterminds()
-    except Exception as e:  # noqa: BLE001
-        log.error("china mastermind flagship pages (via build_vector) failed (%s)", e)
-    try:  # China Strategy Scorecards hub + detail pages (same hook rationale as the US hub;
-          # the China Income Vector card pulls from build_china_allocation, so this runs after it).
-        from scripts.build_china_strategies import build as _build_china_strategies
-        _build_china_strategies()
-    except Exception as e:  # noqa: BLE001
-        log.error("china strategies pages (via build_vector) failed (%s)", e)
+    # W9-CN lane unification: china_masterminds + china_strategies are now PRIMARILY built
+    # in asia-close.yml (after the china builds, sharing one CN session). These hooks are the
+    # FALLBACK for the nightly 02:00 UTC lane (daily.yml via build_vector) — they run only if
+    # the asia lane did not already build today's version (idempotent by as_of/built date).
+    # Note: _today_utc / _dt imported once below (W6-CN Fix 4 block) — define it here too
+    # so the guard can check before that block runs.
+    import datetime as _dt
+    _today_utc = str(_dt.datetime.now(_dt.timezone.utc).date())
+
+    def _cn_snap_already_built(json_path: str, date_key: str) -> bool:
+        """Return True if the committed JSON has today's date in the given key."""
+        try:
+            import json as _json_mod
+            p = config.ROOT / "data" / "china_regime" / json_path
+            if not p.exists():
+                return False
+            d = _json_mod.loads(p.read_text())
+            return str(d.get(date_key, "")).startswith(_today_utc)
+        except Exception:  # noqa: BLE001
+            return False
+
+    if _cn_snap_already_built("china_masterminds_latest.json", "asof"):
+        log.info("build_vector: china masterminds already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # China Mastermind GTAA flagships — detail pages + snapshot. MUST run BEFORE
+              # build_china_strategies so strategy_cnmm_*.html exist when the pinned hero links to them.
+              # Promoted to asia-close.yml (W9-CN lane unification); this is the nightly fallback.
+            from scripts.build_china_masterminds import build as _build_china_masterminds
+            _build_china_masterminds()
+        except Exception as e:  # noqa: BLE001
+            log.error("china mastermind flagship pages (via build_vector) failed (%s)", e)
+
+    if _cn_snap_already_built("china_strategies_latest.json", "built"):
+        log.info("build_vector: china strategies already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # China Strategy Scorecards hub + detail pages (same hook rationale as the US hub;
+              # the China Income Vector card pulls from build_china_allocation, so this runs after it).
+              # Promoted to asia-close.yml (W9-CN lane unification); this is the nightly fallback.
+            from scripts.build_china_strategies import build as _build_china_strategies
+            _build_china_strategies()
+        except Exception as e:  # noqa: BLE001
+            log.error("china strategies pages (via build_vector) failed (%s)", e)
     try:  # Commodity Strategy Scorecards (per-commodity toggle grid) + detail pages.
         from scripts.build_commodity_strategies import build as _build_commodity_strategies
         _build_commodity_strategies()
@@ -3124,8 +3247,7 @@ def main() -> int:
     # the asia lane did not already build today's version (idempotent by as_of date).
     # Idempotent guard: read the as_of from the committed chinabasketdata/baskets.json;
     # if it matches today's UTC date, the asia lane already ran and we skip.
-    import datetime as _dt
-    _today_utc = str(_dt.date.today())
+    # (_dt and _today_utc already defined above in the W9-CN masterminds/strategies block.)
 
     def _asia_already_built(json_path: str) -> bool:
         """Return True if the committed basket JSON has today's as_of (asia lane ran first)."""

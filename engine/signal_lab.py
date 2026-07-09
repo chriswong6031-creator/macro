@@ -1119,6 +1119,59 @@ REGISTRY: list[dict] = [
          wired="display-only on main until its own can_force gate matures (NOT duplicated by intl_bridge)",
          extra=[("composite lift", "2.07× (p=0.01), CSI300-confirmed"),
                 ("governance", "risk_radar_intl_audit.can_force (≥30 graded, ≥8 alerts, lift ≥1.25×)")]),
+    # ---- Day-3 SLF confirmer entries (2026-07-07) ----
+    _row("Month-end bond-index extension day  (TLT / IEF last-day lift)",
+         "月末债券指数展期日（TLT / IEF 尾日上涨）", "Rates", "confirmer",
+         why="Bond index managers buy longer-duration bonds on the last trading day of each month "
+             "to match their benchmark's new duration. TLT last-day mean return +0.183%/day "
+             "(t_HAC=3.63, BH q=0.0009, n=287 months 2002-2026); IEF t=5.02, q~0. "
+             "Known documented effect confirmed live. G2 split-half same-sign: both halves positive "
+             "(H1=+0.258%, H2=+0.108%). G3 last-day > avg-other-days baseline: confirmed. "
+             "Timing overlay candidacy: TLT/IEF entry-timing conditioner on last trading day of month. "
+             "V1 (auction-cycle) and V2 (quarter-end pension rebalance) both NULL — only V3 survives.",
+         why_zh="债券指数经理在每月最后一个交易日买入久期更长的债券以匹配基准新久期。"
+                "TLT 月末日平均收益 +0.183%/天（t_HAC=3.63，BH q=0.0009，n=287个月，2002-2026）；"
+                "IEF t=5.02，q≈0。已知文献效应，已在样本外确认。"
+                "V1（拍卖周期）和V2（季末养老金再平衡）均为NULL——仅V3通过。",
+         source="reports/d2-rates-calendar-flows-phase0.md; TLT/IEF Yahoo daily 2002-2026",
+         horizon="1d (last trading day of month)",
+         ic=None, t_hac=3.63, n=287,
+         fdr_survivor=True,
+         wired="none — timing overlay candidacy pending program review",
+         dsr_family="d2_rates_calendar_flows",
+         dsr_n_trials=11,
+         dsr_basis="frozen-quote",
+         extra=[("TLT last-day mean", "+0.183%/day, t_HAC=3.63, BH q=0.0009"),
+                ("IEF last-day mean", "+0.110%/day, t_HAC=5.02, BH q~0"),
+                ("V1 auction-cycle verdict", "NULL"),
+                ("V2 QE-rebalance verdict", "NULL")]),
+    _row("SEC comment-letter release drift  (substantive-review, 21d)",
+         "SEC意见函披露漂移（实质性审查，21日）", "US S&P (broad)", "confirmer",
+         why="When the SEC releases the full UPLOAD/CORRESP correspondence for a substantive "
+             "review (≥3 SEC letters) on EDGAR, stocks drift lower over the next 21 trading days "
+             "(massive store, post-2021): mean beta-adj AR -3.34%, t=-3.26, BH q=0.0044, n=1084. "
+             "MANDATORY CAVEAT: effect concentrated 2023-2025 — first split-half not significant "
+             "(first-half t=-1.396, p=0.163); second half highly significant (t=-5.008, p~0). "
+             "Accrual required before any promotion. Light-review cells and yahoo-store cells "
+             "are NULL. 7 of 8 pre-registered cells fail; single passing cell rides on post-2021 "
+             "massive store only (survivorship bias present in both stores).",
+         why_zh="当SEC在EDGAR上发布实质性审查（≥3封SEC来函）的完整往来信件时，"
+                "股票在随后21个交易日内下跌（massive数据集，2021年后）：beta调整异常收益均值-3.34%，"
+                "t=-3.26，BH q=0.0044，n=1084。"
+                "强制警示：效应集中于2023-2025年——前半样本不显著（t=-1.396，p=0.163）；"
+                "后半样本高度显著（t=-5.008，p~0）。需积累更多数据方可晋升。",
+         source="reports/d2-comment-letter-release-phase0.md; EDGAR 2005-2026, massive+yahoo stores",
+         horizon="21d",
+         ic=None, t_hac=-3.26, n=1084,
+         fdr_survivor=True,
+         wired="none",
+         dsr_family="d2_comment_letter_release",
+         dsr_n_trials=8,
+         dsr_basis="frozen-quote",
+         extra=[("passing cell", "substantive/h21/massive: t=-3.26, q=0.0044, n=1084"),
+                ("temporal caveat", "first-half t=-1.396 (p=0.163) not significant; concentrated 2023-2025"),
+                ("survivorship", "both stores: only tickers alive at collection date"),
+                ("7 of 8 cells", "NULL; promotion requires further accrual")]),
 ]
 
 
@@ -1491,4 +1544,64 @@ def _waves_adjudication_block() -> dict:
             "生成暂停令生效：在第一波 + 尖峰候选裁决登记、排队家族数降至3以下之前，"
             "不授权新一波筛选。"
         ),
+        "day3_results": {
+            "date": "2026-07-07",
+            "families_tested": 13,
+            "pass_count": 2,
+            "accrue_count": 1,
+            "directional_fail_count": 1,
+            "park_count": 1,
+            "null_count": 8,
+            "data_blocked_count": 1,
+            "label": "Build-day (Day 3) results",
+            "label_zh": "构建日（第3天）结果",
+            "verdicts": [
+                {"family": "d2_rates_calendar_flows",      "result": "PASS",              "result_zh": "通过",
+                 "note": "V3 month-end extension day (TLT t=3.63, IEF t=5.02); V1+V2 NULL"},
+                {"family": "d2_comment_letter_release",    "result": "PASS (accrual caveat)", "result_zh": "通过（需积累）",
+                 "note": "substantive/h21/massive t=-3.26 q=0.0044; effect concentrated 2023-2025; accrual required"},
+                {"family": "w3_bank_callreport_stress",    "result": "ACCRUE",            "result_zh": "积累中",
+                 "note": "n=1 crisis episode; verdict clock ~2027; FFIEC Y-9C machinery live"},
+                {"family": "d2_cn_holder_sale_calendar",   "result": "DIRECTIONAL FAIL",  "result_zh": "方向性否决",
+                 "note": "anti-hypothesis: POSITIVE excess (C1 t=2.41, C5 t=4.11, largest tercile most positive)"},
+                {"family": "w5b_warn_paid_feed",           "result": "PARK",              "result_zh": "暂存",
+                 "note": "paid-feed only ($49/mo); collectors built; on hold pending feed decision"},
+                {"family": "w5_trade_size_capitulation",   "result": "NULL",              "result_zh": "无效",
+                 "note": "trade-size collapse at 52w lows; store 2021+ only; all 6 cells NULL"},
+                {"family": "d2_rates_calendar_flows_v1v2", "result": "NULL",              "result_zh": "无效",
+                 "note": "V1 auction-cycle + V2 QE-rebalance: all cells NULL"},
+                {"family": "w2104_cmdi_conditioning",      "result": "NULL",              "result_zh": "无效",
+                 "note": "CMDI AUC <0.60; LOCO crisis-dependent; context display only"},
+                {"family": "w2153_itc337",                 "result": "NULL",              "result_zh": "无效",
+                 "note": "ITC 337 institution/adverse events: E2 underpowered (n=1); E1 NULL"},
+                {"family": "w2051_housing_hf",             "result": "NULL",              "result_zh": "无效",
+                 "note": "housing HF signals; direction correct but <4 gates simultaneously"},
+                {"family": "d2_russell_deletion_overshoot","result": "NULL (n=3 descriptive)", "result_zh": "无效（n=3描述性）",
+                 "note": "n=3 recon years; 2/3 positive at T+21d; accrual-only"},
+                {"family": "d2_cn_export_share_nowcast",   "result": "NULL",              "result_zh": "无效",
+                 "note": "CN export share nowcast t=1.47 p=0.14 n=39; PIT-clean conditions"},
+                {"family": "w4_multistate_gaming_tape",    "result": "DATA-BLOCKED",      "result_zh": "数据受阻",
+                 "note": "collectors live (NY/NJ/PA/NV); network-blocked in build env; re-run with real data"},
+            ],
+            "data_products_live": [
+                "data/tsa — TSA daily passenger throughput (git-tracked, 2019->)",
+                "data/china_block_tape — A-share block-trade archiver (SLF-A10, 39 files)",
+                "data/options_tape_signed — options tape pilot 20 tickers (SLF-A11)",
+                "data/cn_holder_sales — 减持 calendar 38,988 windows (SLF-B3)",
+                "data/nyfed_cmdi — CMDI weekly/monthly (SLF-A4)",
+                "data/redfin_hf + data/zori — housing HF panels (SLF-A7)",
+                "data/gaming_tape — gaming nowcast panel synthetic (SLF-B1, real data pending)",
+                "data/cn_export_products — Comtrade 5 HS tapes (SLF-B4)",
+                "data/comment_letter_events — EDGAR CORRESP/UPLOAD 26,141 events (SLF-A3)",
+                "FFIEC Y-9C panel: NOT PRESENT (slf-b2 removed; regenerate via scripts/collect_ffiec_y9c.py --resume)",
+            ],
+            "queue_status": (
+                "Authorized queue is now EMPTY except accrual clocks and parked items — "
+                "moratorium condition met. Next docket generation requires operator ratification."
+            ),
+            "queue_status_zh": (
+                "授权队列已清空（积累时钟和暂存项除外）——暂停令条件已满足。"
+                "下一批次生成需要运营方批准。"
+            ),
+        },
     }

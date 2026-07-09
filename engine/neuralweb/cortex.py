@@ -78,9 +78,17 @@ _SCHEMA_MEMO = "neuralweb.cortex_memo.v1"
 _SCHEMA_ATTN = "reflex.cortex_attention"
 _SCHEMA_HYPO = "neuralweb.hypothesis_inbox.v1"
 _DEFAULT_MODEL = "claude-opus-4-8"
+_DEFAULT_FALLBACK_MODEL = "claude-sonnet-4-6"  # used when primary exhausts rate-limit retries
 _DEFAULT_MAX_TOOL_CALLS = 24
 _READ_SIZE_CAP = 50 * 1024          # 50 KB per read_artifact
 _SPINE_ROW_CAP = 200                 # max rows serialized from query_spine
+# Rate-limit retry config: up to 4 attempts; backoff 15s → 60s → 180s
+_RATE_LIMIT_MAX_ATTEMPTS = 4
+_RATE_LIMIT_BACKOFF_SECS = [15, 60, 180]   # delay after attempt 1, 2, 3
+_RATE_LIMIT_MAX_TOTAL_SLEEP = 300           # cap total sleep so job stays inside timeout
+# Dedicated cortex API key env var (preferred) with fallback to shared key
+_CORTEX_API_KEY_ENV = "CORTEX_ANTHROPIC_API_KEY"
+_FALLBACK_API_KEY_ENV = "ANTHROPIC_API_KEY"
 _DENY_FILENAME_EXACT = {".env", "config.yml"}   # deny entire file (not path-prefix)
 _DENY_PATH_FRAGMENTS = [".git", ".ssh"]          # deny if any component matches
 
@@ -106,6 +114,8 @@ _READ_TOOLS = frozenset({
     "read_cycle_pattern_state",
     # W3 MPC consumer: read-only mechanism pathway artifact
     "read_mechanism_pathways",
+    # W4 context scanner: read-only context candidates + risk lens
+    "read_context_candidates",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -164,13 +174,30 @@ def _cfg(root: Path | None = None) -> dict:
 # ---------------------------------------------------------------------------
 
 def _build_providers(cfg: dict) -> list[dict]:
-    """Build Anthropic-only provider list.  DeepSeek excluded from deliberation path."""
+    """Build Anthropic-only provider list.  DeepSeek excluded from deliberation path.
+
+    For the anthropic provider, prefers CORTEX_ANTHROPIC_API_KEY when set so
+    the cortex job can use a dedicated metered API key decoupled from the shared
+    OAuth session quota.  Falls back to ANTHROPIC_API_KEY when the cortex key is
+    absent (empty secret = transparent; nothing breaks).
+    """
     from engine import llm_auth  # noqa: PLC0415
     model = cfg.get("llm_model", _DEFAULT_MODEL)
+
+    # Override api_key_env when CORTEX_ANTHROPIC_API_KEY is populated in env
+    cortex_key = os.environ.get(_CORTEX_API_KEY_ENV, "").strip()
+    cfg_override = dict(cfg)
+    if cortex_key:
+        cfg_override["api_key_env"] = _CORTEX_API_KEY_ENV
+        log.info("cortex: using dedicated %s for anthropic provider", _CORTEX_API_KEY_ENV)
+    else:
+        # Ensure the standard key env is used (belt-and-suspenders default)
+        cfg_override.setdefault("api_key_env", _FALLBACK_API_KEY_ENV)
+
     return llm_auth.build_providers(
-        cfg,
+        cfg_override,
         opus_model=model,
-        deepseek_model=None,  # not used in deliberation
+        deepseek_model=None,  # not used in deliberation (D8 ruling)
     )
 
 
@@ -976,6 +1003,100 @@ def _tool_explain_factor_context(root: Path, params: dict) -> dict:
     return context
 
 
+def _tool_read_context_candidates(root: Path, params: dict) -> dict:
+    """Read data/neuralweb/context_candidates.jsonl — W4 context scanner output.
+
+    Returns top-K (<=20) non-decayed candidates and the risk-lens summary if
+    data/neuralweb/context_risk.json exists (fail-open when absent).
+
+    R-CI11: bounded top-K, no per-ticker dumps.  is_context_only always true.
+    DISPLAY ONLY — candidates are never signals, never ranked, never scored.
+    All three legal exits for a candidate are: (a) cortex stakes hypothesis via
+    metabolism; (b) human charters pre-reg study; (c) candidate decays.
+    """
+    _MAX_CANDIDATES = 20
+
+    result: dict = {
+        "is_context_only": True,
+        "display_only": True,
+        "mandate": (
+            "context candidates are NEVER signals; exits: (a) stake_hypothesis via "
+            "metabolism; (b) human pre-reg study; (c) decay. Article 1 enforced."
+        ),
+        "candidates": [],
+        "total_non_decayed": 0,
+        "risk_lens": None,
+        "gaps": [],
+    }
+
+    # Load candidates
+    cand_path = _data(root, "neuralweb", "context_candidates.jsonl")
+    if not cand_path.exists():
+        result["gaps"].append(
+            "data/neuralweb/context_candidates.jsonl: absent — "
+            "build_context_candidates has not run yet"
+        )
+    else:
+        try:
+            rows: list[dict] = []
+            with cand_path.open(encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                        if row.get("status") != "decayed":
+                            rows.append(row)
+                    except Exception:  # noqa: BLE001
+                        pass
+
+            result["total_non_decayed"] = len(rows)
+
+            # Apply optional template filter
+            template_filter = str(params.get("template") or "").upper()
+            if template_filter:
+                rows = [r for r in rows if r.get("template", "").upper() == template_filter]
+
+            # Sort by null_pctile descending, cap at _MAX_CANDIDATES
+            rows.sort(key=lambda r: r.get("null_pctile", 0), reverse=True)
+            top_k = params.get("top_k")
+            try:
+                cap = min(int(top_k), _MAX_CANDIDATES) if top_k else _MAX_CANDIDATES
+            except (TypeError, ValueError):
+                cap = _MAX_CANDIDATES
+            result["candidates"] = rows[:cap]
+
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(
+                f"data/neuralweb/context_candidates.jsonl: unreadable — {exc}"
+            )
+
+    # Load risk lens (fail-open)
+    risk_path = _data(root, "neuralweb", "context_risk.json")
+    if not risk_path.exists():
+        result["gaps"].append(
+            "data/neuralweb/context_risk.json: absent — "
+            "build_context_risk has not run yet (W3 pending)"
+        )
+    else:
+        try:
+            risk_doc = json.loads(risk_path.read_text(encoding="utf-8"))
+            # Return summary sub-block only (not full per-ticker detail — R-CI11)
+            result["risk_lens"] = {
+                "as_of": risk_doc.get("as_of"),
+                "board_composition_summary": risk_doc.get("board_composition_summary"),
+                "regime_cell": risk_doc.get("regime_cell"),
+                "display_only": True,
+            }
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(
+                f"data/neuralweb/context_risk.json: unreadable — {exc}"
+            )
+
+    return result
+
+
 def dispatch_tool(
     tool_name: str,
     tool_params: dict,
@@ -1024,6 +1145,8 @@ def dispatch_tool(
         return _tool_read_cycle_pattern_state(root, tool_params)
     elif tool_name == "read_mechanism_pathways":
         return _tool_read_mechanism_pathways(root, tool_params)
+    elif tool_name == "read_context_candidates":
+        return _tool_read_context_candidates(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1235,6 +1358,38 @@ def _tool_schemas() -> list[dict]:
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
+        # --- W4 context scanner: context candidates + risk lens (R-CI11) ---
+        {
+            "name": "read_context_candidates",
+            "description": (
+                "Read data/neuralweb/context_candidates.jsonl — W4 context scanner "
+                "output: top-K (<=20) non-decayed cross-sectional pattern candidates "
+                "(T1 composition drift, T2 outcome heterogeneity, T3 co-occurrence "
+                "shift) plus the risk-lens summary from context_risk.json when present. "
+                "DISPLAY-ONLY ceiling (R-CI6): candidates are NEVER signals; they are "
+                "pattern observations awaiting one of three legal exits: "
+                "(a) stake_hypothesis via metabolism; (b) human pre-reg study; "
+                "(c) decay after 60 days unrefreshed. "
+                "Forbidden: treating candidates as escalations, scores, or ranks. "
+                "is_context_only: true. Fails open with structured gaps when absent. "
+                "Optional params: template (T1/T2/T3 filter), top_k (max 20)."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "template": {
+                        "type": "string",
+                        "description": "Optional: filter by template (T1, T2, or T3)",
+                        "enum": ["T1", "T2", "T3"],
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "description": "Max candidates to return (default 20, max 20)",
+                    },
+                },
+                "required": [],
+            },
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -1338,12 +1493,13 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (16): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (17): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
            read_factor_state, list_factor_contradictions, explain_factor_context,
-           read_cycle_pattern_state, read_mechanism_pathways
+           read_cycle_pattern_state, read_mechanism_pathways,
+           read_context_candidates
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CYCLE-PATTERN CEILING: read_cycle_pattern_state is display/context only. Cite turn-hazard
@@ -1569,12 +1725,56 @@ def _run_tool_loop(
             or ("403" in msg and ("permission" in msg or "forbidden" in msg))
         )
 
+    def _is_rate_limit_exc(exc: BaseException) -> bool:
+        """Return True when the exception represents an HTTP 429 rate-limit error."""
+        try:
+            import anthropic  # noqa: PLC0415
+            if isinstance(exc, anthropic.RateLimitError):
+                return True
+        except (ImportError, AttributeError):
+            pass
+        msg = str(exc).lower()
+        return "429" in msg or "rate_limit" in msg or "rate limit" in msg or "too many requests" in msg
+
+    def _retry_after_secs(exc: BaseException) -> float | None:
+        """Extract Retry-After value (seconds) from a rate-limit exception, or None."""
+        try:
+            # anthropic SDK: APIStatusError exposes .response.headers
+            resp_obj = getattr(exc, "response", None)
+            if resp_obj is not None:
+                headers = getattr(resp_obj, "headers", None) or {}
+                ra = headers.get("retry-after") or headers.get("Retry-After")
+                if ra is not None:
+                    return float(ra)
+        except Exception:  # noqa: BLE001
+            pass
+        return None
+
+    # Tracks total sleep consumed by rate-limit backoff this run so we can cap it
+    _total_rate_limit_sleep: list[float] = [0.0]
+
     def _make_call(client, effective_model: str, provider_dict: dict) -> Any:
-        """One messages.create call with up to 2 retries on transient errors."""
+        """One messages.create call.
+
+        * Auth errors (401/403): mark provider dead immediately, re-raise.
+        * Rate-limit errors (429): honor Retry-After header when present, else
+          exponential backoff (15s → 60s → 180s); up to _RATE_LIMIT_MAX_ATTEMPTS
+          attempts; total sleep capped at _RATE_LIMIT_MAX_TOTAL_SLEEP.  On
+          exhaustion adds name to _skipped_this_run and re-raises so the outer
+          loop can try the next provider or the fallback model.
+        * Other transient errors: up to 2 retries (unchanged behaviour).
+
+        Every attempt (success and failure) appends a record to provider_attempts
+        for run_status.provider_attempts (RUL-LIVE1).
+        """
         name = provider_dict.get("name", "unknown")
         env_var = provider_dict.get("env_var", "")
-        max_attempts = 2
-        for attempt in range(1, max_attempts + 1):
+        max_transient = 2
+        max_rate_limit = _RATE_LIMIT_MAX_ATTEMPTS
+        transient_count = 0
+        rate_limit_count = 0
+
+        while True:
             try:
                 resp = client.messages.create(
                     model=effective_model,
@@ -1593,7 +1793,9 @@ def _run_tool_loop(
                 })
                 return resp
             except Exception as exc:  # noqa: BLE001
-                etype = "auth" if _is_auth_exc(exc) else "transient"
+                is_auth = _is_auth_exc(exc)
+                is_rate = _is_rate_limit_exc(exc) and not is_auth
+                etype = "auth" if is_auth else ("rate_limit" if is_rate else "transient")
                 provider_attempts.append({
                     "provider": name,
                     "model": effective_model,
@@ -1602,22 +1804,66 @@ def _run_tool_loop(
                     "error_type": etype,
                     "error_message": str(exc)[:300],
                 })
-                if _is_auth_exc(exc):
+
+                if is_auth:
                     llm_auth.mark_dead(name, env_var)
                     log.warning(
                         "cortex: provider '%s' auth error (turn %d) — marking dead",
                         name, tool_call_count,
                     )
                     raise
+
+                if is_rate:
+                    rate_limit_count += 1
+                    if rate_limit_count >= max_rate_limit:
+                        log.warning(
+                            "cortex: provider '%s' rate-limited — exhausted %d rate-limit attempts "
+                            "(turn %d); skipping provider",
+                            name, max_rate_limit, tool_call_count,
+                        )
+                        _skipped_this_run.add(name)
+                        raise
+                    # Compute sleep: Retry-After first, else exponential backoff table
+                    ra = _retry_after_secs(exc)
+                    if ra is not None:
+                        sleep_s = min(ra, 300.0)
+                        log.info(
+                            "cortex: provider '%s' 429 (attempt %d/%d, turn %d) "
+                            "— honoring Retry-After: %.0fs",
+                            name, rate_limit_count, max_rate_limit, tool_call_count, sleep_s,
+                        )
+                    else:
+                        idx = min(rate_limit_count - 1, len(_RATE_LIMIT_BACKOFF_SECS) - 1)
+                        sleep_s = float(_RATE_LIMIT_BACKOFF_SECS[idx])
+                        log.info(
+                            "cortex: provider '%s' 429 (attempt %d/%d, turn %d) "
+                            "— exponential backoff %.0fs",
+                            name, rate_limit_count, max_rate_limit, tool_call_count, sleep_s,
+                        )
+                    remaining_budget = max(
+                        0.0,
+                        _RATE_LIMIT_MAX_TOTAL_SLEEP - _total_rate_limit_sleep[0],
+                    )
+                    sleep_s = min(sleep_s, remaining_budget)
+                    if sleep_s > 0:
+                        _total_rate_limit_sleep[0] += sleep_s
+                        time.sleep(sleep_s)
+                    continue
+
+                # Transient (non-auth, non-rate-limit)
+                transient_count += 1
                 log.warning(
                     "cortex: provider '%s' transient error (attempt %d/%d, turn %d): %s",
-                    name, attempt, max_attempts, tool_call_count, exc,
+                    name, transient_count, max_transient, tool_call_count, exc,
                 )
-                if attempt == max_attempts:
-                    # Exhausted retries — skip this provider for this run
+                if transient_count >= max_transient:
                     _skipped_this_run.add(name)
                     raise
-        raise RuntimeError("unreachable")  # pragma: no cover
+                # no sleep on transient (matches prior behaviour)
+
+    # Tracks whether the fallback model has already been attempted this run
+    _fallback_model_attempted: list[bool] = [False]
+    _fallback_model_used: list[str | None] = [None]
 
     initial_client, initial_model_str, initial_pdict = _pick_live_provider()
     if initial_client is None:
@@ -1650,6 +1896,41 @@ def _run_tool_loop(
                 n_tool_calls_total = 0
                 tool_call_census.clear()
                 continue
+
+            # All providers exhausted on primary model.  Attempt fallback model once
+            # when we have not already tried the fallback.  DeepSeek stays excluded (D8 ruling).
+            # Note: we fire on ANY provider exhaustion (rate-limit OR transient), not only
+            # rate-limit class, because transient failures also leave the run without a memo.
+            if not _fallback_model_attempted[0]:
+                fallback_model = cfg.get("fallback_model", _DEFAULT_FALLBACK_MODEL)
+                # Reset skipped set so we can retry the best available provider with
+                # the new (cheaper) model — rate-limit quota is per model.
+                fb_client, _, fb_pdict = next(
+                    ((p["client"], p.get("model"), p) for p in providers
+                     if p.get("cred") and p.get("client")),
+                    (None, None, None),
+                )
+                if fb_client is not None and fallback_model != effective_model:
+                    log.warning(
+                        "cortex: primary model '%s' exhausted retries on all providers; "
+                        "restarting tool loop ONCE on fallback model '%s'",
+                        effective_model, fallback_model,
+                    )
+                    _fallback_model_attempted[0] = True
+                    _fallback_model_used[0] = fallback_model
+                    _skipped_this_run.clear()
+                    client = fb_client
+                    effective_model = fallback_model
+                    current_pdict = fb_pdict
+                    deliberation_restarted = True
+                    messages[:] = [
+                        {"role": "user", "content": "Begin deliberation. Read the world state first, then explore the spine and contradictions, then flag attention items and write your memo."},
+                    ]
+                    tool_call_count = 0
+                    n_tool_calls_total = 0
+                    tool_call_census.clear()
+                    continue
+
             log.warning("cortex: all providers exhausted or already restarted; breaking loop (%s)", exc)
             break
 
@@ -1700,11 +1981,18 @@ def _run_tool_loop(
     # that could be silently swallowed).
     has_model_response = bool(provider_attempts) and any(a["ok"] for a in provider_attempts)
     context_stale, context_as_of = _detect_context_stale(root, now_str)
+    used_fallback_model = _fallback_model_used[0]  # non-None when fallback was invoked
 
     if n_tool_calls_total >= 1 and has_model_response:
-        run_status_value = "ok"
-        degraded = False
-        degradation_reason = None
+        if used_fallback_model:
+            # Honesty law: fallback-model run with real tool calls = warn, never ok
+            run_status_value = "warn"
+            degraded = False
+            degradation_reason = "model_fallback"
+        else:
+            run_status_value = "ok"
+            degraded = False
+            degradation_reason = None
     elif has_model_response and n_tool_calls_total == 0:
         run_status_value = "degraded"
         degraded = True
@@ -1721,6 +2009,7 @@ def _run_tool_loop(
         "status": run_status_value,
         "degraded": degraded,
         "degradation_reason": degradation_reason,
+        "model_used": used_fallback_model or cfg.get("llm_model", _DEFAULT_MODEL),
         "provider_attempts": provider_attempts,
         "tool_call_batches": tool_call_count,
         "individual_tool_calls": n_tool_calls_total,
@@ -1944,6 +2233,39 @@ def run(root: Path | None = None, force: bool = False) -> int:
         )
     else:
         _save_last_run_state(root, current_state)
+
+    # 6. Write probation.json from the in-memory probation_status so data/neuralweb/cortex/
+    #    probation.json and the memo's embedded probation block are always in sync.
+    #    The grader (grade_cortex_attention.py) is the authoritative writer; this write
+    #    is a belt-and-suspenders sync so the two never diverge across runs when the
+    #    grader has already written a fresh version.  We only write when the in-memory
+    #    status differs from what is on disk (or the file doesn't exist), so we never
+    #    overwrite a fresher grader-produced file with stale inline fallback data.
+    try:
+        probation_path = _cortex_dir(root) / "probation.json"
+        _write_probation = True
+        if probation_path.exists():
+            try:
+                _disk = json.loads(probation_path.read_text(encoding="utf-8"))
+                # Prefer the on-disk version when it carries a higher-fidelity n
+                disk_n = _disk.get("attention_track_record", {}).get("n", 0)
+                mem_n = probation_status.get("attention_track_record", {}).get("n", 0)
+                if disk_n > mem_n:
+                    _write_probation = False
+                    log.debug(
+                        "cortex: probation.json on disk has n=%d > in-memory n=%d; skipping sync write",
+                        disk_n, mem_n,
+                    )
+            except Exception:  # noqa: BLE001
+                pass  # unreadable on-disk version → overwrite
+        if _write_probation:
+            probation_path.parent.mkdir(parents=True, exist_ok=True)
+            probation_path.write_text(
+                json.dumps(probation_status, indent=2, default=str), encoding="utf-8"
+            )
+            log.debug("cortex: probation.json synced from in-memory probation_status")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cortex: failed to sync probation.json (%s) — non-fatal", exc)
 
     elapsed = time.monotonic() - t0
     log.info("cortex: run complete in %.1fs", elapsed)

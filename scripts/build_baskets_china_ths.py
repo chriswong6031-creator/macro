@@ -12,6 +12,13 @@ theme-rotation desk / forming-narratives / allocation scorecard (those are tied 
 Additive — any failure logs and returns 0 so it can never break the rest of the site.
 
 Usage: python -m scripts.build_baskets_china_ths
+       python -m scripts.build_baskets_china_ths --snapshot   (PIT membership side-car only)
+
+--snapshot (CN-SYS W1 side-car): append a dated point-in-time snapshot of THS concept
+membership to data/baskets_china_ths/snapshots/YYYY-MM-DD.json so membership history accrues
+(any future theme study is look-ahead-dead without it). Content-deduped: a new dated file is
+written only when membership differs from the most recent snapshot; PIT read = most recent
+snapshot ≤ date. Skips the full page render entirely.
 """
 from __future__ import annotations
 
@@ -32,7 +39,39 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets_china_ths")
 
 
+def snapshot_membership() -> int:
+    """Append a dated PIT snapshot of THS concept membership (content-deduped, never fatal)."""
+    import hashlib
+
+    try:
+        src = config.data_dir() / "baskets_china_ths" / "membership.json"
+        if not src.exists():
+            log.warning("ths snapshot: membership.json missing — skipping")
+            return 0
+        snap_dir = config.data_dir() / "baskets_china_ths" / "snapshots"
+        snap_dir.mkdir(parents=True, exist_ok=True)
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        dest = snap_dir / f"{today}.json"
+        if dest.exists():
+            log.info("ths snapshot: %s already stamped — skipping", today)
+            return 0
+        raw = src.read_bytes()
+        prior = sorted(p for p in snap_dir.glob("????-??-??.json"))
+        if prior:
+            last = prior[-1]
+            if hashlib.sha256(last.read_bytes()).hexdigest() == hashlib.sha256(raw).hexdigest():
+                log.info("ths snapshot: membership unchanged since %s — dedup skip", last.stem)
+                return 0
+        dest.write_bytes(raw)
+        log.info("ths snapshot: wrote %s (%d bytes)", dest.name, len(raw))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("ths snapshot failed (%s)", e)
+    return 0
+
+
 def main() -> int:
+    if "--snapshot" in sys.argv[1:]:
+        return snapshot_membership()
     site = config.ROOT / "site"
     try:
         from engine.baskets_china import compute_china_ths_baskets

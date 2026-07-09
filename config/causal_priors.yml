@@ -1,0 +1,262 @@
+# config/causal_priors.yml — Causal constitution (CHF-R4)
+# Schema: causal_priors.v1
+# Owner: neural-web (CHF program)
+# Ruling authority: CHF-R4 (2026-07-09)
+#
+# This file encodes structural priors that the causal feature inventory and
+# edge scout treat as hard constraints.  Changes require a Fable ruling.
+
+schema: causal_priors.v1
+
+# ---------------------------------------------------------------------------
+# Tier ordering
+# EDGE DIRECTION LAW: edges may only point DOWNWARD or ACROSS within a tier.
+# No upward edges (stock → macro_plumbing is forbidden).
+# ---------------------------------------------------------------------------
+tiers:
+  - name: macro_plumbing
+    tier_rule: >
+      Macro liquidity and monetary plumbing that sets the global water level
+      (Fed balance sheet, RRP, TGA, funding spreads).  May cause anything
+      below.  Cannot be caused by anything in this list.
+  - name: asset_class
+    tier_rule: >
+      Cross-asset signals and regime states (equity/rates/FX/commodity context,
+      quad, breadth index-level).  May receive causes from macro_plumbing and
+      may cause sector_complex and below.  Cross-tier edges (asset_class →
+      asset_class) are permitted.
+  - name: sector_complex
+    tier_rule: >
+      Sector-level and style-complex signals (sector breadth, rotation state,
+      cycle phase per sector entity).  May receive causes from macro_plumbing
+      and asset_class.  Cross-tier edges within sector_complex are permitted.
+  - name: stock
+    tier_rule: >
+      Per-stock features (options entry state, personality, entry quality).
+      May receive causes from all tiers above.  Cross-tier edges within stock
+      are permitted (e.g. GEX → entry quality).
+  - name: fire_outcome
+    tier_rule: >
+      Outcome variables only: good_21d, STOPPED rate, fwd_mdd_21, fwd_ret_21,
+      fwd_ret_63, regime transition realizations.  NEVER a cause — always a
+      target.  Any feature assigned fire_outcome tier must carry only the
+      'target' role in the feature inventory.
+
+# ---------------------------------------------------------------------------
+# Minimum lag constraints by publication cadence (H.4.1 pattern)
+# A cause measured at weekly cadence cannot be treated as same-day for a
+# daily outcome — minimum lag enforced at edge registration.
+# ---------------------------------------------------------------------------
+min_lag_days_by_cadence:
+  weekly_publication: 5   # H.4.1 / breadth-weekly sources: >= 5 calendar days
+  daily_engine: 1         # Daily-engine sources: >= 1 calendar day
+  monthly_grain: 21       # Monthly-grain sources: >= 21 trading-day-floor calendar days
+
+# ---------------------------------------------------------------------------
+# Forbidden causes
+# Any feature matching these patterns may NEVER appear as candidate_cause.
+# The causal_inventory.py validate function enforces this at build time;
+# the edge scout enforces it at scan time.
+# ---------------------------------------------------------------------------
+forbidden_causes:
+
+  # --- Article-2 surfaces (NW-ART2: downstream authority composites) ---
+  # CANONICAL ENUMERATION: config/synapse.yml meta.article2_surfaces.
+  # Keep these patterns in sync with that list whenever new Article-2
+  # surfaces are added there.
+  - pattern: "board_rank"
+    reason: >
+      Downstream NW authority composite (Article-2 surface).  Using it as a
+      cause would launder the NW's own decisions back into the causal layer —
+      circular by construction.
+    source_ruling: NW-ART2
+
+  - pattern: "final_verdict"
+    reason: >
+      Article-2 authority surface — the NW's terminal output signal.
+      Forbidden as a cause for the same circular-laundering reason.
+    source_ruling: NW-ART2
+
+  - pattern: "top_setups"
+    reason: >
+      Article-2 display surface assembling ranked setups from board outputs.
+      Downstream composite; cannot be a cause.
+    source_ruling: NW-ART2
+
+  - pattern: "board_score"
+    reason: >
+      Article-2 surface — any scored board output column.  Pattern covers
+      board_score, board_score_*, etc.
+    source_ruling: NW-ART2
+
+  - pattern: "board_brief"
+    reason: >
+      Article-2 surface — rendered board-level text.  Forbidden as cause.
+    source_ruling: NW-ART2
+
+  - pattern: "board_ordering"
+    reason: >
+      Article-2 surface — board rank / standout ordering surfaces
+      (config/synapse.yml meta.article2_surfaces).  Circular-laundering
+      rule applies identically.
+    source_ruling: NW-ART2
+
+  - pattern: "attention_queue"
+    reason: >
+      Article-2 surface — missing-tape attention queue
+      (config/synapse.yml meta.article2_surfaces).  Downstream authority;
+      cannot be a cause.
+    source_ruling: NW-ART2
+
+  - pattern: "alert_triage"
+    reason: >
+      Article-2 surface — engine/alert_triage.py money-path
+      (config/synapse.yml meta.article2_surfaces).  Downstream authority;
+      cannot be a cause.
+    source_ruling: NW-ART2
+
+  - pattern: "push_floor"
+    reason: >
+      Article-2 surface — push-notification floor (notify.py)
+      (config/synapse.yml meta.article2_surfaces).  Downstream authority;
+      cannot be a cause.
+    source_ruling: NW-ART2
+
+  # --- Forward-outcome echoes (encoder-exclusion law, panel_manifest frozen_law 2) ---
+  - pattern: "outcome_excess"
+    reason: >
+      Forward-realized outcome column.  Using it as a cause would be direct
+      future look-ahead (frozen law 2, panel_manifest.json).
+    source_ruling: RUL-CC-2
+
+  - pattern: "fwd_"
+    reason: >
+      All fwd_* columns (fwd_ret_*, fwd_mfe_*, fwd_mdd_*, etc.) are
+      forward-realized outcomes.  Pattern substring match (case-insensitive).
+      Forbidden as causes; allowed ONLY as targets.
+    source_ruling: RUL-CC-2
+
+  - pattern: "terminal_state_"
+    reason: >
+      terminal_state_* columns encode realized terminal outcomes of a trade.
+      Forward-outcome echo; forbidden as a cause.
+    source_ruling: RUL-CC-2
+
+  - pattern: "outcome_graded"
+    reason: >
+      Post-hoc graded outcome label from spine_index.  Forward information.
+    source_ruling: RUL-CC-2
+
+  # --- Kernel estimates fence (NW-U16, R-CI8 — fence lifts 2026-10-01) ---
+  - pattern: "kernel_estimates"
+    reason: >
+      Kernel reliability estimates are under the NW-U16/R-CI8 fence until
+      2026-10-01.  Using them as causal inputs before the batch gate runs
+      would embed unreliable reliability estimates into causal structure.
+    source_ruling: NW-U16
+    fence_until: "2026-10-01"
+
+  - pattern: "shrunken_ic"
+    reason: >
+      Kernel shrunken IC — part of kernel_estimates fence.  Same fence date.
+    source_ruling: NW-U16
+    fence_until: "2026-10-01"
+
+  - pattern: "kernel_"
+    reason: >
+      Any kernel_* column (kernel_families, kernel_decisions, etc.) falls under
+      the NW-U16 fence until 2026-10-01.
+    source_ruling: NW-U16
+    fence_until: "2026-10-01"
+
+  # --- Positioning-fusion ruling (Signal Commons positioning-fusion ruling) ---
+  - pattern: "positioning_fusion"
+    reason: >
+      Positioning-fusion keys are barred by the Signal Commons positioning-fusion
+      ruling.  Fused positioning composites embed illegal cross-signal combinations.
+    source_ruling: SC-POSITIONING-FUSION
+
+  - pattern: "position_score"
+    reason: >
+      Fused positioning score — barred by positioning-fusion ruling.
+    source_ruling: SC-POSITIONING-FUSION
+
+  - pattern: "net_positioning"
+    reason: >
+      Derived net-positioning aggregate — barred by positioning-fusion ruling.
+    source_ruling: SC-POSITIONING-FUSION
+
+# ---------------------------------------------------------------------------
+# Kill mask
+#
+# Two sub-sections:
+#
+# CURATED — hand-appended rows, each with a source_ruling and reason.  These
+# mirror research/DO_NOT_REBUILD.md adjudications.  Never extracted
+# automatically (the DO_NOT_REBUILD no-extractor ruling stands).  A Fable
+# ruling must accompany any new row.
+#
+# COMPILED — regenerated on every nightly build from
+# data/neuralweb/causal_nulls.jsonl (absent file → empty list).
+# The build script (scripts/build_causal_inventory.py) writes the compiled
+# section and a sync assertion in tests/test_causal_inventory.py verifies
+# that the committed compiled section matches regeneration.  A newly-killed
+# edge cannot become proposable again without both (a) regeneration updating
+# this section and (b) the CI sync test passing.
+#
+# CI SYNC LAW: the committed compiled list must match what
+# engine.neuralweb.causal_inventory.compile_kill_mask(root) returns.
+# If you add rows to causal_nulls.jsonl without re-running the builder
+# and committing the updated compiled section, the sync test will FAIL.
+# ---------------------------------------------------------------------------
+kill_mask:
+
+  curated:
+    # CHF-R14: Full-graph structure learners in v1 — KILLED
+    - edge_family: "full_graph_structure_learners"
+      reason: >
+        Full-graph learners (NOTEARS/DAG-GNN/LoRAM/CMIN-style) are killed for
+        v1.  Small-universe NOTEARS-with-priors is a Phase-3 candidate behind
+        the 2027-01-15 clock, admissible only after the scout + null library
+        have operated for a quarter.
+      source_ruling: CHF-R14
+      come_back_clock: "2027-01-15"
+
+    # CHF-R14: Causal-DAG → portfolio construction — FORBIDDEN
+    - edge_family: "causal_dag_portfolio_construction"
+      reason: >
+        Causal-DAG to portfolio construction is unconditionally forbidden
+        (Article 1/2 authority law).  The CHF never originates authority
+        and this path would bypass the gauntlet entirely.
+      source_ruling: CHF-R14
+      come_back_clock: null
+
+    # CHF-R14: Weekly full-DAG re-estimation — REJECTED
+    - edge_family: "weekly_full_dag_reestimation"
+      reason: >
+        Weekly full-DAG re-estimation rejected due to graph churn risk and
+        render budget law.  Drift monitors are nightly; structure re-estimation
+        is quarterly at most (CHF-R8).
+      source_ruling: CHF-R14
+      come_back_clock: null
+
+    # CHF-R14: LLM numeric confidence anywhere in CHF — FORBIDDEN
+    - edge_family: "llm_numeric_confidence"
+      reason: >
+        LLM numeric confidence scores anywhere in the CHF pipeline are
+        forbidden (RF-16 extension).  LLM output is categorical only;
+        skeptic output must never carry numeric probability or IC estimates.
+      source_ruling: CHF-R14
+      come_back_clock: null
+
+    # CHF-R14: New fire/outcome ledger — FORBIDDEN
+    - edge_family: "new_fire_outcome_ledger"
+      reason: >
+        A new fire or outcome ledger for CHF is forbidden (RUL-ORTH-4).
+        The scout reuses existing ledgers via env-override resolution.
+      source_ruling: CHF-R14
+      come_back_clock: null
+
+  # COMPILED — regenerated nightly from data/neuralweb/causal_nulls.jsonl.
+  # DO NOT hand-edit this section; edit causal_nulls.jsonl instead.
+  compiled: []

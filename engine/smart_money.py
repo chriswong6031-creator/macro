@@ -284,6 +284,85 @@ def as_of_for_scoring(trend: dict | None) -> str | None:
     return trend.get("available_on") or None
 
 
+def enrich_since_filing(by_ticker: dict[str, dict]) -> None:
+    """Attach realized price-move-since-filing context to each ticker in `by_ticker`
+    (mutates in-place). For every ticker whose `trend.available_on` is a valid date,
+    we compute the stock's % return and SPY-excess return from that public filing date
+    to the latest available close. Result is stored as `since_filing` on the ticker
+    record — a DESCRIPTIVE realized fact, NEVER a score, prediction, or signal input.
+
+    LOOK-AHEAD-FREE: anchor is always `trend.available_on` (the date the 13F became
+    public, ~45 days after period_end). Missing/unparseable date or missing price file
+    → field is OMITTED for that ticker (best-effort, never crashes the build).
+
+    Uses the same ClosePanel (yahoo ∪ breadth caches) as engine.manager_trades so
+    the price-load logic is identical and not duplicated."""
+    try:
+        from engine.manager_trades import ClosePanel
+        panel = ClosePanel()
+    except Exception:  # noqa: BLE001 — price panel unavailable; degrade silently
+        log.debug("enrich_since_filing: ClosePanel unavailable — skipping price enrichment")
+        return
+
+    import pandas as pd
+
+    for ticker, rec in by_ticker.items():
+        try:
+            trend = rec.get("trend") or {}
+            ao = trend.get("available_on") or ""
+            if not ao or ao == "nan" or ao == "None":
+                continue
+            # Validate the date is parseable
+            try:
+                ao_ts = pd.Timestamp(ao)
+            except Exception:
+                continue
+
+            s = panel.get(ticker)
+            if s is None or len(s) == 0:
+                continue
+            spy = panel.spy
+            if spy is None or len(spy) == 0:
+                continue
+
+            after = s.index[s.index >= ao_ts]
+            if len(after) == 0:
+                continue
+            entry_date = after[0]
+            p0 = float(s.loc[entry_date])
+            p1 = float(s.iloc[-1])
+            if p0 <= 0:
+                continue
+
+            # SPY over the same calendar window
+            spy_after = spy.index[spy.index >= ao_ts]
+            if len(spy_after) == 0:
+                continue
+            b0 = float(spy.loc[spy_after[0]])
+            b1_idx = spy.index[spy.index <= s.index[-1]]
+            if len(b1_idx) == 0:
+                continue
+            b1 = float(spy.loc[b1_idx[-1]])
+            if b0 <= 0:
+                continue
+
+            ret_pct = round((p1 / p0 - 1.0) * 100.0, 1)
+            spy_pct = round((b1 / b0 - 1.0) * 100.0, 1)
+            ex_spy_pct = round(ret_pct - spy_pct, 1)
+            # trading days in the window (inclusive of entry session)
+            days = int(len(s.index[(s.index >= entry_date) & (s.index <= s.index[-1])]))
+
+            rec["since_filing"] = {
+                "available_on": ao,
+                "ret_pct": ret_pct,
+                "ex_spy_pct": ex_spy_pct,
+                "days": days,
+                "thru": str(s.index[-1].date()),
+            }
+        except Exception:  # noqa: BLE001 — per-ticker failure must not interrupt the loop
+            log.debug("enrich_since_filing: skipped %s", ticker, exc_info=True)
+
+
 # --------------------------------------------------------------------------- #
 # Orchestration (reads disk; the heavy lifting above is pure/tested).
 # --------------------------------------------------------------------------- #

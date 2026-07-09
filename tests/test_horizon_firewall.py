@@ -437,6 +437,15 @@ class TestRealRegistryFirewallClean:
             "long-hold-thesis-funnel-history",
             # A1 per-fire sector benchmark (#1694) — hold_thesis by design; display tier only
             "per-fire-sector-benchmark",
+            # Winner Autopsy Lab (WA-R1..R10) — top-down long-hold department; all display-only
+            "winner-episodes",
+            "winner-episodes-manifest",
+            "breakaway-watch-states",
+            "breakaway-watch-history",
+            "winner-autopsy-panel",
+            "winner-autopsy-manifest",
+            # Pick Lab LH grid site artifact (PL-R6 firewall) — display-only, horizon_role=hold_thesis
+            "pick-lab-longhold-ledger",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

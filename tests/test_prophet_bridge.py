@@ -59,6 +59,9 @@ from engine.prophet_bridge import (
     _make_id,
     _next_monthly_expiry,
     _third_friday,
+    _build_what_to_do_now,
+    _build_profit_plan,
+    _build_thesis,
 )
 from engine.options_structure import validate_trade_plan
 
@@ -738,3 +741,317 @@ def test_originate_plans_respects_n_candidates(tmp_path):
         thetadata_store=None,
     )
     assert len(plans) <= N_CANDIDATES
+
+
+# ---------------------------------------------------------------------------
+# 29a–29f. Content block tests (_build_what_to_do_now, _build_profit_plan, _build_thesis)
+# ---------------------------------------------------------------------------
+
+def test_what_to_do_now_all_phases():
+    """Every lifecycle phase produces 2-3 bullets; no validated word."""
+    phases = [
+        "pre_trigger", "triggered_pre_t1", "at_t1", "between_t1_t2",
+        "post_t1_failed_hold", "at_t2", "overtime", "invalidated",
+    ]
+    for phase in phases:
+        bullets = _build_what_to_do_now(
+            phase=phase, entry=100.0, trigger=102.0, invalidation=90.0,
+            t1=115.0, t2=130.0,
+        )
+        assert 2 <= len(bullets) <= 3, f"phase {phase}: expected 2-3 bullets, got {len(bullets)}"
+        for b in bullets:
+            assert isinstance(b, str) and len(b) > 10, f"phase {phase}: bullet too short: {b!r}"
+            assert "validated" not in b.lower(), f"phase {phase}: 'validated' in bullet"
+
+
+def test_what_to_do_now_no_t2():
+    """Pre-trigger without T2 returns 2 bullets (not 3)."""
+    bullets = _build_what_to_do_now(
+        phase="pre_trigger", entry=100.0, trigger=102.0,
+        invalidation=90.0, t1=115.0, t2=None,
+    )
+    assert len(bullets) == 2
+
+
+def test_what_to_do_now_price_levels_interpolated():
+    """Price levels are present in the bullets for the pre_trigger phase."""
+    bullets = _build_what_to_do_now(
+        phase="pre_trigger", entry=100.0, trigger=102.50, invalidation=90.0,
+        t1=115.0, t2=None,
+    )
+    combined = " ".join(bullets)
+    assert "$102.50" in combined
+
+
+def test_profit_plan_statuses():
+    """profit_plan rows carry correct ACTIVE/PENDING/DONE statuses per phase."""
+    # pre_trigger: T1=ACTIVE, T2=PENDING
+    rows = _build_profit_plan("pre_trigger", 100.0, 115.0, 130.0)
+    assert rows[0]["status"] == "ACTIVE"
+    assert rows[1]["status"] == "PENDING"
+
+    # at_t1: T1=DONE, T2=ACTIVE
+    rows = _build_profit_plan("at_t1", 100.0, 115.0, 130.0)
+    assert rows[0]["status"] == "DONE"
+    assert rows[1]["status"] == "ACTIVE"
+
+    # at_t2: T1=DONE, T2=DONE
+    rows = _build_profit_plan("at_t2", 100.0, 115.0, 130.0)
+    assert rows[0]["status"] == "DONE"
+    assert rows[1]["status"] == "DONE"
+
+    # invalidated: T1=DONE
+    rows = _build_profit_plan("invalidated", 100.0, 115.0, 130.0)
+    assert rows[0]["status"] == "DONE"
+
+
+def test_profit_plan_without_t2():
+    """profit_plan without T2 returns exactly 1 row."""
+    rows = _build_profit_plan("pre_trigger", 100.0, 115.0, None)
+    assert len(rows) == 1
+    assert rows[0]["label"] == "T1"
+
+
+def test_profit_plan_row_keys():
+    """Every profit_plan row has required keys and valid status."""
+    rows = _build_profit_plan("pre_trigger", 100.0, 115.0, 130.0)
+    for row in rows:
+        assert "level" in row
+        assert "label" in row
+        assert "action" in row
+        assert "status" in row
+        assert row["status"] in ("ACTIVE", "PENDING", "DONE")
+
+
+def test_thesis_no_validated_positive_claim():
+    """thesis must not positively claim anything is validated."""
+    b = {
+        "conviction": {
+            "score": 75, "band": "high",
+            "drivers": ["validated momentum factor", "validated risk gate: trim"],
+            "cautions": ["regime change risk"],
+            "trust_tier": {"en": "T2 — medium confidence"},
+        },
+        "entry_signal": {
+            "above200": True, "weekly_bull": False, "coiled": True,
+            "entry_grade": "B+",
+        },
+        "hold": {},
+        "state": "COILED",
+        "archetype": "Resumption",
+    }
+    thesis = _build_thesis("AAPL", b)
+    # "validated" must not appear before the DISPLAY-ONLY footer
+    before_footer = thesis.split("DISPLAY-ONLY")[0]
+    assert "validated" not in before_footer.lower(), (
+        f"'validated' appeared in thesis body: {before_footer!r}"
+    )
+    # Should contain driver content (after sanitization)
+    assert "momentum factor" in thesis or "risk gate" in thesis
+
+
+def test_thesis_contains_technical_flags():
+    """thesis includes technical flag context when es fields are set."""
+    b = {
+        "conviction": {"score": 80, "band": "high", "drivers": [], "cautions": []},
+        "entry_signal": {"above200": True, "weekly_bull": True, "coiled": True},
+        "hold": {},
+        "state": "RUNNING",
+    }
+    thesis = _build_thesis("NVDA", b)
+    assert "above 200-day" in thesis or "200" in thesis
+    assert "coiled" in thesis or "compression" in thesis
+
+
+def test_originate_plans_includes_content_blocks(tmp_path):
+    """originate_plans output plans include what_to_do_now and profit_plan."""
+    buys = [_make_buy("TSLA", score=72, act_level=3, spot=250.0)]
+    standouts = _make_standouts(gate_go=False, buys=buys)
+    standouts_path = tmp_path / "us_standouts.json"
+    standouts_path.write_text(json.dumps(standouts))
+
+    plans = originate_plans(
+        standouts_path=standouts_path,
+        asof="2026-07-07",
+        existing_ids=set(),
+        thetadata_store=None,
+    )
+    assert len(plans) == 1, f"expected 1 plan, got {len(plans)}"
+    plan = plans[0]
+    assert "what_to_do_now" in plan, "plan missing what_to_do_now"
+    assert "profit_plan" in plan, "plan missing profit_plan"
+    assert isinstance(plan["what_to_do_now"], list) and len(plan["what_to_do_now"]) >= 2
+    assert isinstance(plan["profit_plan"], list) and len(plan["profit_plan"]) >= 1
+    # content blocks must not contain "validated" positively
+    for bullet in plan["what_to_do_now"]:
+        assert "validated" not in bullet.lower(), f"'validated' in bullet: {bullet}"
+
+
+# ---------------------------------------------------------------------------
+# 31–37. Ledger advancement (advance_ledger)
+# ---------------------------------------------------------------------------
+
+import scripts.build_prophet as _bp  # noqa: E402 (after imports block)
+
+
+def _make_plan(
+    plan_id: str = "AAPL-BULL-20260601",
+    ticker: str = "AAPL",
+    entry: float = 100.0,
+    invalidation: float = 90.0,
+    t1: float = 115.0,
+    t2: float = 130.0,
+    signal_date: str = "2026-06-01",
+    horizon_days: int = 45,
+    direction: str = "BULL",
+) -> dict:
+    """Build a minimal prophet.trade_plan/v1 dict for ledger tests."""
+    return {
+        "schema": "prophet.trade_plan/v1",
+        "id": plan_id,
+        "asof": signal_date,
+        "asset": ticker,
+        "direction": direction,
+        "signal_date": signal_date,
+        "_signal_date": signal_date,
+        "entry": entry,
+        "invalidation": invalidation,
+        "targets": [t1, t2],
+        "horizon_days": horizon_days,
+        "min_hold_days": 10,
+        "tranche": 1,
+        "option_contract": None,
+        "authority_tier": "display",
+        "source_engines": ["us_standouts_buy_lane"],
+    }
+
+
+def _price_history_from_closes(closes: list[float], start: str = "2026-06-02") -> pd.DataFrame:
+    """Build a DatetimeIndex DataFrame from a list of daily closes."""
+    dates = pd.date_range(start, periods=len(closes), freq="B")
+    return pd.DataFrame({"close": closes}, index=dates)
+
+
+class TestLedgerAdvancement:
+    """Tests for advance_ledger + _determine_outcome."""
+
+    def _run_advance(self, tmp_path, plans: dict, ph_map: dict, asof: str) -> list:
+        """Run advance_ledger with mocked price history loader + tmp ledger path."""
+        orig_ledger_path = _bp.LEDGER_PATH
+        orig_ledger_dir = _bp.LEDGER_DIR
+
+        try:
+            _bp.LEDGER_PATH = tmp_path / "ledger.jsonl"
+            _bp.LEDGER_DIR = tmp_path
+            _bp._initialize_ledger()
+
+            with patch("scripts.build_prophet._load_price_history_for_management",
+                       side_effect=lambda ticker: ph_map.get(ticker)):
+                return _bp.advance_ledger(plans, asof)
+        finally:
+            _bp.LEDGER_PATH = orig_ledger_path
+            _bp.LEDGER_DIR = orig_ledger_dir
+
+    def test_invalidation_hit(self, tmp_path):
+        """Plan closes INVALIDATED when price drops through invalidation level."""
+        plan = _make_plan(entry=100.0, invalidation=90.0, t1=115.0, t2=130.0,
+                          signal_date="2026-06-01")
+        # Day 3 (2026-06-04): price drops to 88 (< 90 invalidation)
+        closes = [101.0, 100.5, 88.0, 95.0]
+        ph = _price_history_from_closes(closes, start="2026-06-02")
+        rows = self._run_advance(tmp_path, {plan["id"]: plan}, {"AAPL": ph}, "2026-07-01")
+        assert len(rows) == 1
+        assert rows[0]["outcome"] == "INVALIDATED"
+        assert rows[0]["stock_result_pct"] is not None
+        assert rows[0]["stock_result_pct"] < 0  # loss
+
+    def test_t1_hit(self, tmp_path):
+        """Plan closes T1_HIT when price reaches T1 before invalidation or horizon."""
+        plan = _make_plan(entry=100.0, invalidation=90.0, t1=115.0, t2=130.0,
+                          signal_date="2026-06-01")
+        # Day 5: price reaches 116 (> 115 T1)
+        closes = [101.0, 103.0, 108.0, 112.0, 116.0]
+        ph = _price_history_from_closes(closes, start="2026-06-02")
+        rows = self._run_advance(tmp_path, {plan["id"]: plan}, {"AAPL": ph}, "2026-07-01")
+        assert len(rows) == 1
+        assert rows[0]["outcome"] == "T1_HIT"
+        assert rows[0]["stock_result_pct"] > 0  # profit
+
+    def test_t2_hit(self, tmp_path):
+        """T2_HIT takes priority over T1_HIT on same scan (T2 first in priority)."""
+        plan = _make_plan(entry=100.0, invalidation=90.0, t1=115.0, t2=130.0,
+                          signal_date="2026-06-01")
+        # Day 3: price jumps straight to 132 (> 130 T2)
+        closes = [101.0, 110.0, 132.0]
+        ph = _price_history_from_closes(closes, start="2026-06-02")
+        rows = self._run_advance(tmp_path, {plan["id"]: plan}, {"AAPL": ph}, "2026-07-01")
+        assert len(rows) == 1
+        assert rows[0]["outcome"] == "T2_HIT"
+
+    def test_expired(self, tmp_path):
+        """Plan closes EXPIRED when horizon_days elapse without hitting T1/T2/inval."""
+        plan = _make_plan(entry=100.0, invalidation=90.0, t1=115.0, t2=130.0,
+                          signal_date="2026-06-01", horizon_days=5)
+        # 6 business days, price stays flat (never hits any trigger, reaches horizon on day 5)
+        closes = [101.0, 101.5, 102.0, 101.0, 101.5]  # 5 days → EXPIRED
+        ph = _price_history_from_closes(closes, start="2026-06-02")
+        rows = self._run_advance(tmp_path, {plan["id"]: plan}, {"AAPL": ph}, "2026-07-01")
+        assert len(rows) == 1
+        assert rows[0]["outcome"] == "EXPIRED"
+
+    def test_idempotency(self, tmp_path):
+        """Re-running advance_ledger for an already-closed plan appends no new rows."""
+        plan = _make_plan(entry=100.0, invalidation=90.0, t1=115.0, t2=130.0,
+                          signal_date="2026-06-01")
+        closes = [88.0, 90.0, 90.0]  # invalidated on day 1
+        ph = _price_history_from_closes(closes, start="2026-06-02")
+
+        orig_ledger_path = _bp.LEDGER_PATH
+        orig_ledger_dir = _bp.LEDGER_DIR
+        try:
+            _bp.LEDGER_PATH = tmp_path / "ledger.jsonl"
+            _bp.LEDGER_DIR = tmp_path
+            _bp._initialize_ledger()
+
+            with patch("scripts.build_prophet._load_price_history_for_management",
+                       side_effect=lambda ticker: ph):
+                rows1 = _bp.advance_ledger({plan["id"]: plan}, "2026-07-01")
+                rows2 = _bp.advance_ledger({plan["id"]: plan}, "2026-07-01")
+
+            assert len(rows1) == 1
+            assert len(rows2) == 0, "Second run must not duplicate the ledger row"
+
+            # Verify ledger has exactly ONE data row (not 2)
+            content = _bp.LEDGER_PATH.read_text()
+            data_lines = [l for l in content.splitlines() if l.strip() and not l.startswith("#")]
+            assert len(data_lines) == 1
+        finally:
+            _bp.LEDGER_PATH = orig_ledger_path
+            _bp.LEDGER_DIR = orig_ledger_dir
+
+    def test_open_plan_produces_no_row(self, tmp_path):
+        """A plan that hasn't hit any trigger yet produces no ledger row."""
+        plan = _make_plan(entry=100.0, invalidation=90.0, t1=115.0, t2=130.0,
+                          signal_date="2026-06-01", horizon_days=45)
+        # Price stays just inside all triggers
+        closes = [101.0, 102.0, 103.0]
+        ph = _price_history_from_closes(closes, start="2026-06-02")
+        rows = self._run_advance(tmp_path, {plan["id"]: plan}, {"AAPL": ph}, "2026-06-05")
+        assert rows == []
+
+    def test_row_schema_keys(self, tmp_path):
+        """Every appended ledger row has all required schema keys."""
+        required_keys = {
+            "schema", "id", "asset", "direction", "signal_date",
+            "close_date", "outcome", "stock_result_pct",
+            "option_result_pct", "days_held", "plan_adherence", "asof",
+        }
+        plan = _make_plan(entry=100.0, invalidation=90.0, t1=115.0, t2=130.0,
+                          signal_date="2026-06-01")
+        closes = [88.0]  # immediate invalidation
+        ph = _price_history_from_closes(closes, start="2026-06-02")
+        rows = self._run_advance(tmp_path, {plan["id"]: plan}, {"AAPL": ph}, "2026-07-01")
+        assert len(rows) == 1
+        missing = required_keys - set(rows[0].keys())
+        assert missing == set(), f"Missing ledger row keys: {missing}"
+        assert rows[0]["schema"] == "prophet.ledger/v1"

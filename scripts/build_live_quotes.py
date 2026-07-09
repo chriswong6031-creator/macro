@@ -115,10 +115,18 @@ def top_conviction(site_dir: Path, n: int) -> list[str]:
 
 
 def build_universe(site_dir: Path, extra: list[str] | None = None,
-                   cap: int = 800, top_n: int = 120) -> list[str]:
+                   cap: int = 2200, top_n: int = 120) -> list[str]:
     """CORE index/futures symbols first (never dropped by the cap), then every
     site data-sym, then top-N US conviction names, then config/CLI extras.
-    De-duped, charset-validated, capped."""
+    De-duped, charset-validated, capped.
+
+    Cap raised from 800 → 2200 (2026-07-09): the full scraped universe is ~1942
+    symbols (CORE 39 + site data-sym ~1918 + conviction overlap). A Yahoo-path
+    timing run resolved 1938/1942 in 53 s wall-clock — well within the live-quotes
+    workflow 8-min job timeout (~11 % utilisation). File size at full universe was
+    275 KB (< 500 KB browser-fetch budget). At cap=800 only ~249/680 basket members
+    survived alphabetical truncation; cap=2200 covers the whole scraped universe
+    with ~250 symbol headroom for site growth."""
     ordered: list[str] = []
     seen: set[str] = set()
     for s in (CORE_SYMBOLS + scrape_site_symbols(site_dir)
@@ -185,7 +193,7 @@ def _validate_symbols(syms: list[str]) -> list[str]:
 
 
 def build(site_dir: Path, *, offline: bool = False, extra: list[str] | None = None,
-          cap: int = 800, symbols: list[str] | None = None) -> dict:
+          cap: int = 2200, symbols: list[str] | None = None) -> dict:
     now = datetime.now(timezone.utc)
     lcfg = config.load().get("live") or {}
     # symbols= builds an EXACT-universe snapshot (bypasses CORE + site scrape +
@@ -221,7 +229,7 @@ def main() -> None:
     ap.add_argument("--out", default="quotes.json", help="output JSON path")
     ap.add_argument("--site", default=None, help="built-site dir (default: config site_dir)")
     ap.add_argument("--offline", action="store_true", help="no network — empty snapshot")
-    ap.add_argument("--max", type=int, default=800, help="universe cap")
+    ap.add_argument("--max", type=int, default=2200, help="universe cap")
     ap.add_argument("--symbols", default=None,
                     help="comma-separated EXACT universe (bypass CORE+scrape+conviction); "
                          "e.g. 'BTC-USD' for the hourly crypto-only snapshot")

@@ -27,6 +27,10 @@
   .sb-star { color:var(--warn); text-decoration:none; font-size:12px; }
   .sb-star:hover { filter:brightness(1.15); }
   .chip.sb-chip { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 38%, var(--line)); background:color-mix(in srgb, var(--warn) 12%, var(--panel2)); }
+  /* W4 stock-personality slim chips in holdings table (display-only, R-SP13) */
+  .sp-td-chip,.sp-td-mode{display:inline-block;font-size:9.5px;font-weight:600;padding:0px 5px;border-radius:5px;cursor:help;white-space:nowrap}
+  .sp-td-chip{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
+  .sp-td-mode{background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 28%,transparent)}
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; }
   .hero { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
   .hero .lhs { flex:1; min-width:280px; }
@@ -140,6 +144,50 @@
 </nav>
 
 <a class="back" href="{{ back_href | default('../baskets.html') }}">← {{ t('Theme Rotation Desk', '主题轮动台') }}</a>
+
+<!-- ── Shock de-escalation banner (FTR W1 / PS-R3, de-escalation only) ── -->
+<!-- Fetched from ../live/shock_state.json (basket detail pages live under site/basket/). -->
+<div id="ftr-shock-banner"></div>
+<!-- ── Policy-lever state chip (FTR W1 / PS-W2-F, display-only) ── -->
+<div id="ftr-lever-chip"></div>
+<script>
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// Shock banner
+fetch('../live/shock_state.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();})
+  .then(function(d){
+    if(!d||!d.active)return;
+    var el=document.getElementById('ftr-shock-banner');
+    if(!el)return;
+    var msg=isZh()?
+      ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。剧烈反转在 T+1 有 58% 的概率消退（n=26）。'):
+      ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Violent flips fade 58% at T+1 (n=26).');
+    el.innerHTML='<div style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn);border-radius:9px;padding:9px 14px;margin:8px 0;font-size:13px">'+msg+'</div>';
+  }).catch(function(){/* absent file → no banner */});
+// Policy-lever chip
+fetch('../policy_lever.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();})
+  .then(function(d){
+    if(!d||!d.state)return;
+    var el=document.getElementById('ftr-lever-chip');
+    if(!el)return;
+    var s=d.state, c=s==='ARMED'?'var(--down)':s==='ELEVATED'?'var(--orange)':'var(--muted)';
+    var sZh={'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}[s]||s;
+    // Use framing/framing_zh from the JSON itself — single source of truth, immune to drift
+    var disc=isZh()?(d.framing_zh||d.framing||''):(d.framing||'');
+    el.innerHTML='<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;margin:4px 0 8px">'
+      +'<span style="font-weight:700;padding:1px 9px;border-radius:10px;border:1px solid '+c+';color:'+c+'">'
+      +'<span class="l-en">'+esc(s)+'</span><span class="l-zh">'+esc(sZh)+'</span>'
+      +'</span>'
+      +'<span style="color:var(--muted);font-size:11.5px">'+esc(disc)+'</span>'
+      +'</div>';
+  }).catch(function(){/* absent file → no chip */});
+})();
+</script>
+
 <div id="app"></div>
 
 <footer>
@@ -536,10 +584,36 @@ function render(){
     const col = e.act_level>=3?cssv('--up'):e.act_level>=2?cssv('--g-cold'):e.act_level>=1?cssv('--warn'):cssv('--down');
     const zone = e.zone_low!=null?(' $'+e.zone_low.toFixed(2)+(e.zone_high&&e.zone_high!=e.zone_low?'–$'+e.zone_high.toFixed(2):'')):'';
     return `<span style="font-weight:700;color:${col}">${L(esc(e.headline||e.status),esc(e.headline_zh||e.status))}</span><span class="muted sm">${zone}</span>`;};
+  // W4 personality slim chip — display-only context, no ranking power (R-SP13).
+  // chart_map/mode_map: short EN/ZH labels (≤3 words EN) matching the board chip vocab.
+  const _SP_C={'event_gapper':'Event-gapper','failed_breakout_trap':'Breakout-fade','mean_reversion_rubber_band':'Mean-reversion','smooth_compounder_grind':'Smooth grind','stair_step_leader':'Stair-step','volatile_momentum_vehicle':'Volatile momo','basing_accumulator':'Basing','defensive_range_stock':'Defensive','mixed_chart':'Mixed'};
+  const _SP_CZ={'event_gapper':'事件跳空','failed_breakout_trap':'突破易回落','mean_reversion_rubber_band':'均值回归','smooth_compounder_grind':'平稳复利','stair_step_leader':'阶梯领涨','volatile_momentum_vehicle':'高波动','basing_accumulator':'筑底','defensive_range_stock':'防御','mixed_chart':'混合'};
+  const _SP_M={'event_override':'Pre-earnings','forced_liquidation':'Forced liq','squeeze':'Squeeze','options_pin':'Pin','negative_gamma_trend':'Neg-gamma','sector_rotation_feeder':'Rotation','post_news_attention':'News spike','stale_dead_money':'Dead money','accumulation':'Accumul.','distribution':'Distrib.'};
+  const _SP_MZ={'event_override':'财报窗口','forced_liquidation':'被动清仓','squeeze':'逼空','options_pin':'期权钉住','negative_gamma_trend':'负Gamma','sector_rotation_feeder':'轮动','post_news_attention':'新闻后','stale_dead_money':'死钱','accumulation':'积累','distribution':'派发'};
+  function personalityChip(c) {
+    if (!c) return '';
+    const p = c.personality;
+    if (!p) return '';
+    const ch = p.chart, mo = p.mode;
+    let out = '';
+    if (ch) {
+      const en = _SP_C[ch] || ch, zh = _SP_CZ[ch] || ch;
+      out += `<span class="sp-td-chip" data-tip-en="Chart personality: ${esc(ch)}. Context only — no ranking power." data-tip-zh="图形个性：${esc(ch)}。仅供参考。">${L(esc(en),esc(zh))}</span>`;
+    }
+    if (mo) {
+      const en = _SP_M[mo] || mo, zh = _SP_MZ[mo] || mo;
+      out += `<span class="sp-td-mode" data-tip-en="Current mode: ${esc(mo)}. Fast-layer state, context only." data-tip-zh="当前模式：${esc(mo)}。快速层，仅供参考。">${L(esc(en),esc(zh))}</span>`;
+    }
+    return out ? `<div style="margin-top:2px;display:flex;flex-wrap:wrap;gap:2px">${out}</div>` : '';
+  }
+  // W2a: per-member nb-chg span so live.js can paint live price changes on the holdings table.
+  // data-mkt="us" assumed for US basket detail pages (CN/HK detail pages use their own builders).
   const rows=sortMembers(mem).map(m=>{const c=m.conviction;
     const star=m.on_board?` <a class="sb-star" href="${SB?'../us_stocks.html':'#'}" title="On the US standout buy board right now">★</a>`:'';
+    // Hidden live-chg span: live.js writes the changePct here; aria-hidden to avoid screen reader noise.
+    const liveSym=m.symbol?`<span class="nb-chg" data-sym="${esc(m.symbol)}" data-mkt="us" aria-hidden="true" style="display:none"></span>`:'';
     return `<tr>
-      <td class="hold-stock">${stk(m.symbol)}${star}${tierBadge(c)} <span class="hold-company">${esc(m.name||'')}</span></td>
+      <td class="hold-stock">${stk(m.symbol)}${star}${tierBadge(c)}${liveSym} <span class="hold-company">${esc(m.name||'')}</span>${personalityChip(c)}</td>
       <td class="num hold-potential">${convCell(c)}</td>
       <td class="hold-verdict">${c&&c.verdict?`<span class="v-full">${L(esc(c.verdict),esc(c.verdict_zh||c.verdict))}</span><span class="v-short">${shortVerdict(c)}</span>`:'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
       <td class="hold-entry">${entryCell(c)}</td>

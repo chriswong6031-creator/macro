@@ -20,6 +20,19 @@
   .sr-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:80ch; line-height:1.5; }
   .sr-foot { color:var(--muted); font-size:11px; margin:16px 2px 0; line-height:1.6; }
 
+  /* ── Shock de-escalation banner (PS-W2-E) ── */
+  .shock-deesc-banner { margin:0 2px 16px; padding:11px 16px; border-radius:10px;
+    background:color-mix(in srgb, var(--warn) 14%, var(--panel2));
+    border-left:4px solid var(--warn); font-size:13px; font-weight:600;
+    color:var(--text); line-height:1.5; }
+  /* muted rank lists while shock active */
+  .shock-active .sr-rank-list { opacity:0.7; }
+
+  /* ── Oracle panel staleness note (PS-W2-E) ── */
+  .oracle-shock-note { margin:8px 2px 0; padding:8px 12px; border-radius:8px;
+    background:color-mix(in srgb, var(--warn) 10%, var(--panel2));
+    border-left:3px solid var(--warn); font-size:12px; color:var(--muted); }
+
   /* ── Time Machine ── */
   .tm-section { margin:44px 2px 0; }
   .tm-section h2 { font-size:19px; font-weight:800; letter-spacing:-.015em; margin:0 0 5px; }
@@ -195,6 +208,7 @@
           <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
             <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
             <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
@@ -362,6 +376,7 @@
             <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
             <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
             <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
@@ -409,6 +424,28 @@
     </div>
   </div>
 
+  <!-- ── Shock de-escalation banner (PS-W2-E / PS-R3) ── -->
+  <!-- Fetched live from site/live/shock_state.json. Absent file = no banner (graceful). -->
+  <div id="shock-deesc-banner"></div>
+  <script>
+  (function(){
+  'use strict';
+  function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  fetch('live/shock_state.json',{cache:'no-cache'})
+    .then(function(r){if(!r.ok)throw 0;return r.json();})
+    .then(function(d){
+      if(!d||!d.active)return;
+      var el=document.getElementById('shock-deesc-banner');
+      if(!el)return;
+      var msg=isZh()?
+        ('⚠ 冲击 — 排名依据冲击前数据计算；有效期至 '+esc(d.expires)+'，届前请酌情折扣。'):
+        ('⚠ SHOCK — ranks computed on pre-shock data; discount until '+esc(d.expires)+'.');
+      el.innerHTML='<div class="shock-deesc-banner">'+msg+'</div>';
+    }).catch(function(){/* absent file → no banner */});
+  })();
+  </script>
+
   <div id="rotation-app"></div>
 
   <div class="sr-foot">
@@ -421,6 +458,28 @@
   <section class="tm-section" id="tm-section" aria-label="Time Machine">
     <h2>⏱ <span class="l-en">Rotation Time Machine</span><span class="l-zh">轮动时光机</span></h2>
     <p class="tm-sub"><span class="l-en">Replay the full measured history of sector &amp; subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = gaining momentum). Short trails show the last 6 dates so each path stays readable. Episode annotations mark measured rotation events from the catalog. No predictive claim — this replays measured history.</span><span class="l-zh">回放板块与子行业相对轮动的完整实测历史。每个点代表一个板块或子行业；横轴 = 相对强度（越靠右越强），纵轴 = 该强度是在升温还是降温（越靠上越热）。短轨迹显示近6个交易日，令每条路径清晰可辨。情节注释标记了来自数据库的实际轮动事件。无预测性主张——仅回放实测历史。</span></p>
+
+    <!-- ── Oracle panel shock staleness note (PS-W2-E / PS-R3) ── -->
+    <!-- Fetched live; absent file = no note (graceful). -->
+    <div id="oracle-shock-note"></div>
+    <script>
+    (function(){
+    'use strict';
+    function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+    function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    fetch('live/shock_state.json',{cache:'no-cache'})
+      .then(function(r){if(!r.ok)throw 0;return r.json();})
+      .then(function(d){
+        if(!d||!d.active)return;
+        var el=document.getElementById('oracle-shock-note');
+        if(!el)return;
+        var msg=isZh()?
+          ('注意：冲击降级协议激活（至 '+esc(d.expires)+'）——数据依据冲击前基准，仅供参考。'):
+          ('Note: Shock de-escalation active (until '+esc(d.expires)+') — data reflects pre-shock baseline; interpret with caution.');
+        el.innerHTML='<p class="oracle-shock-note">'+msg+'</p>';
+      }).catch(function(){/* absent file → no note */});
+    })();
+    </script>
 
     <!-- Preset playlist -->
     <div class="tm-presets" id="tm-presets">
@@ -1486,6 +1545,5 @@ _themeObs.observe(document.documentElement, {attributes:true, attributeFilter:['
 
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

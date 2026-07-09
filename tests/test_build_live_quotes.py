@@ -103,3 +103,47 @@ def test_build_offline_is_a_valid_empty_snapshot(tmp_path):
     assert snap["meta"]["offline"] is True
     assert snap["meta"]["requested"] > 0                    # universe still assembled
     assert isinstance(snap["ts"], int) and snap["ts"] > 0
+
+
+# ── Cap-raise regression guards (2026-07-09) ─────────────────────────────────
+# Problem: build_universe capped at 800 (default), truncating alphabetically.
+# At cap=800 only ~249/680 basket members survived. Cap raised to 2200 to cover
+# the full ~1942-symbol scraped universe (CORE 39 + site data-sym ~1918) with
+# headroom. Measured: 1938/1942 resolved in 53 s on Yahoo path (< 8-min timeout).
+# File size at full universe: ~275 KB (< 500 KB browser-fetch budget).
+
+def test_default_cap_is_2200():
+    """Cap default must be at least 2200 to cover the full scraped universe."""
+    import inspect
+    sig = inspect.signature(blq.build_universe)
+    assert sig.parameters["cap"].default >= 2200, (
+        f"build_universe default cap is {sig.parameters['cap'].default} — "
+        "must be >= 2200 to cover the full ~1942-symbol scraped universe"
+    )
+
+
+def test_build_default_cap_is_2200():
+    """build() inherits the raised cap — pin it so a build() caller without
+    an explicit cap= argument still gets the full universe."""
+    import inspect
+    sig = inspect.signature(blq.build)
+    assert sig.parameters["cap"].default >= 2200
+
+
+def test_cap_high_enough_for_full_scraped_universe(tmp_path):
+    """Universe of ~1942 symbols (CORE + site data-sym) must fit under the cap
+    without truncation, so no basket member is silently dropped."""
+    # Simulate the full-size scraped universe: write a page with 1960 fake symbols
+    # (A0000..A1959 — all pass the charset) to verify the cap doesn't truncate them.
+    syms = [f"A{i:04d}" for i in range(1960)]        # 1960 valid-looking symbols
+    html_lines = " ".join(f'<span data-sym="{s}">' for s in syms)
+    (tmp_path / "big.html").write_text(html_lines)
+    uni = blq.build_universe(tmp_path)                # uses default cap=2200
+    # CORE (39) + 1960 scraped = 1999 unique; all must survive under cap=2200
+    assert len(uni) >= 1999, (
+        f"universe len {len(uni)} — default cap truncated symbols that should survive"
+    )
+    # Every scraped symbol must be present (no alphabetical truncation)
+    uni_set = set(uni)
+    missing = [s for s in syms if s not in uni_set]
+    assert not missing, f"{len(missing)} scraped symbols truncated: {missing[:5]}..."

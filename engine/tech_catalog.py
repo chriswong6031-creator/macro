@@ -12,7 +12,7 @@ AGGREGATION SOURCES
 - engine.trend_signals  SIGNALS dict  (trend, performance families)
 - engine.fundamental_screens SIGNALS dict (fundamental_valuation family) — cross-sectional;
                           fn(df) returns a constant Series (requires df.attrs['ticker']).
-- engine.insider_power     SIGNALS dict (insider family) — cross-sectional quality-weighted
+- engine.insider_power_signals SIGNALS dict (insider family) — cross-sectional quality-weighted
                           Form-4 signals (insider_power_state, insider_buy, insider_sell).
 - engine.tech_stars     golden_star_signal / death_star_signal wrappers (tech_stars family)
   Pre-registered MA pairs: (7,35), (21,100), (50,200) for both Golden Star and Death Star.
@@ -200,7 +200,7 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
         ("engine.formations",          "formations"),
         ("engine.trend_signals",       "trend_signals"),
         ("engine.fundamental_screens", "fundamental_screens"),
-        ("engine.insider_power",       "insider_power"),
+        ("engine.insider_power_signals", "insider_power_signals"),
     ]
 
     for module_path, label in source_modules:

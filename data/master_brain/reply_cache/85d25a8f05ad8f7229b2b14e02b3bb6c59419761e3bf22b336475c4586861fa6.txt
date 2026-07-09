@@ -1,0 +1,41 @@
+## CROWDING-SKEPTIC DESK NOTE — China A‑shares (2026-07-07)
+*Falsifying the longs, not balancing. Size caution only. Everything below is fallible, conditional, and never a position weight.*
+
+---
+
+### 1. MOST OVER-EXTENDED / CROWDED THEME → SIZE-DOWN
+**Innovative Pharma & CXO (cn_pharma_cxo)**
+- **Crowding‑z: 1.00** (the only theme flagged `crowded: true`)
+- Broadth 0.929 (extremely wide participation — often a co‑incident sign that all the good news is already in the price)
+- Durability bar 0.88, Hurst `trend` — structurally looks strong, but the combination of near‑max breadth and max crowding‑z creates a profile where incremental buyers are likely already in, and marginal sellers can trigger outsized air‑pocket moves.
+- **RS‑stretch** (implied by rank #6 with a score of only 0.073) and **narrowing breadth** of the eligible universe (41% eligible; rotation absorption 0.36) suggest that the crowded theme is a relatively late‑cycle winner within a shrinking leadership pool.
+- **Macro overlay**: Geopolitics dominates the unscheduled flow (7 of 12 themes). Pharma/CXO, with heavy US‑China policy‑linkage and pricing‑reform risk, is exactly the kind of theme that gets whipsawed by unscheduled headlines.
+➡ **Action**: SIZE DOWN any exposure to Pharma/CXO. This is not a fade or a short — it is a reflexive caution. When a trend theme is simultaneously highly‑breadth and max‑crowding, the fragility of the consensus makes it unsuitable for full trend‑following allocation. Cap at a reduced size and make the risk budget conditional on breadth holding.
+
+---
+
+### 2. SHARPEST BEAR CASE FOR EACH LONG
+*(Longs = top‑5 eligible themes with positive momentum scores)*
+
+**a) AI Compute & Optics (cn_ai_compute) — rank #1, score 2.847, breadth 0.588, crowding_z -0.11**
+- **Bear case**: Breadth of only 0.588 on the leader means the rally is narrow — it’s driven by a few heavyweights, not a broad ecosystem. A reversal in any key optical‑component or compute stock can drag the whole theme down. The backtest verdict says the absolute‑trend gate **did not hold on this market**, so a mean‑reverting drawdown can come with no early stop. If the durability bar (0.76) cracks below 0.5, the trend is likely to reverse violently.
+
+**b) Semiconductors (cn_semis) — rank #2, score 2.495, breadth 0.909, crowding_z 0.93**
+- **Bear case**: Crowding‑z 0.93 is borderline extreme (just shy of the 1.0 flag). The ultra‑high breadth of 0.909 is a double‑edged sword — it shows cohesion now, but in a growth‑scare or tariff escalation, the whole basket moves together and there is no internal hedge. The theme is fully loved; any disappointment in global semi guidance (e.g., from US peers) triggers a wholesale exit. **This is a size‑down candidate alongside Pharma** — the crowding is already too close for comfort.
+
+**c) Consumer Electronics (cn_consumer_elec) — rank #3, score 1.28, breadth 0.533, crowding_z -0.06**
+- **Bear case**: Low breadth and a score that trails the top two sharply. This is a second‑derivative play on the AI narrative (end‑device upgrade cycle). If AI Compute demand slows, the consumer electronics thesis unwinds faster because it is further down the capex chain. Not crowded, but fragile because it lacks internal breadth to absorb a rotation.
+
+**d) Robotics & Automation (cn_robotics) — rank #4, score 1.142, breadth 0.636, crowding_z 0.74**
+- **Bear case**: No direct ETF proxy (scorable: false), meaning any basket is a synthetic construction — liquidity and tracking risk are high. Crowding‑z 0.74 is moderately stretched. The theme is policy‑dependent (industrial automation incentives); unscheduled industrial‑policy headlines can both make and break it. With 50% unscheduled macro news share, the risk of a policy‑driven gap against the position is elevated.
+
+**e) Rare Earth & Magnets (cn_rare_earth) — rank #5, score 1.14, breadth 0.333, durability_bar 0.46 (mean‑revert Hurst)**
+- **Bear case**: The durability bar is already below the trend threshold (0.46, Hurst tagged `mean‑revert`). Breadth is a paltry 0.333 — the rally is extremely narrow and may simply be a short squeeze on trade‑war expectations. If geopolitical tensions ease (the dominant macro theme shifts away), this theme reverts hard. The trend‑following optics are a mirage; the actual signal is mean‑reversion. **This is not a trend long — it is a fragile, low‑durability spike that should be sized as if it could evaporate tomorrow.**
+
+---
+
+### 3. FALSIFIABLE CONDITIONAL LEAN (with check‑by horizon)
+**IF** Innovative Pharma & CXO’s breadth remains above 0.9 and its crowding‑z recedes below 0.7 within the next 20 trading days, **THEN** the crowding‑driven size‑down call would be falsified — structural trend absorption is happening and the theme can be re‑sized upward with caution.  
+**IF** breadth drops below 0.75 while crowding‑z stays >0.8 over the same horizon, **THEN** the size‑down caution is validated, and any remaining exposure should be further reduced, as the crowded consensus begins to unravel.
+
+*This is a conditional statement, not a prediction. It is intended to be checked and discarded if the world evolves differently. No trade size, no weight, no certainty.*

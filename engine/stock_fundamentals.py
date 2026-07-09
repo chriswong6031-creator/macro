@@ -621,6 +621,79 @@ def _leverage_ratios(rows: list[dict], sector: str | None = None) -> dict:
     return out
 
 
+def _valuation_ratios(rows: list[dict], mktcap: float | None, sector: str | None = None) -> dict:
+    """Per-stock trailing EV/price multiples for the bottom-sensors context wire.
+
+    Exact math mirrors ``_context_frame`` (the parity source) so the bottom-sensors
+    lobe and the cross-sectional valuation panel agree on the EV multiples
+    (ev_sales / ev_ebit / p_fcf). ``pe`` can differ slightly: it uses the latest
+    statement-row ni, whereas _context_frame uses the factors-table ni — same
+    formula, different NI vintage (harmless for a display annotation). Formulas:
+      ev_sales  = (mktcap + net_debt) / revenue       — rounded to 2 dp
+      ev_ebit   = (mktcap + net_debt) / op_income     — rounded to 1 dp
+      p_fcf     = mktcap / (cfo − capex)              — rounded to 1 dp
+      pe        = mktcap / ni                          — rounded to 1 dp (ni from the latest statement row)
+
+    EV multiples (ev_sales / ev_ebit / p_fcf) are suppressed for Financials-sector
+    names (``sector in _FINANCIAL_SECTORS``); pe may stay.
+
+    Denominator guard: explicit ``> 0`` check required (revenue, op_income, fcf, ni).
+    Missing input → that key OMITTED; None is never fabricated.
+    Uses rows[-1] as the latest filed statement (PIT-safe, same contract as _leverage_ratios).
+
+    ``mktcap``: USD float from ``_mcap_map()``.
+    ``sector``: GICS sector string from the factors table (NOT from statement rows).
+
+    Note: forward P/E is NOT computed here — its real source is the yfinance deep snapshot
+    (data/stock_fundamentals/snapshots.parquet), which is not available in the bottom-sensors
+    scope.  Do not add fwd_pe without a proper source path.
+    """
+    if not rows:
+        return {}
+    if mktcap is None:
+        return {}
+    latest = rows[-1]
+    is_fin = sector in _FINANCIAL_SECTORS if sector is not None else False
+
+    out: dict = {}
+
+    # ── EV multiples (Financials-suppressed) ─────────────────────────────────
+    nd = _net_debt(latest)
+    if not is_fin and nd is not None:
+        ev = mktcap + nd
+
+        # ev_sales = EV / revenue. Statement-row revenue ONLY — intentionally no
+        # cross-sectional fallback (unlike _context_frame), to keep this helper free
+        # of any cross-sectional dependency on the render path. Do not "restore parity".
+        rev_s = _num(latest.get("revenue"))
+        if rev_s is not None and rev_s > 0:
+            out["ev_sales"] = round(ev / rev_s, 2)
+
+        # ev_ebit = EV / op_income
+        op_income = _num(latest.get("op_income"))
+        if op_income is not None and op_income > 0:
+            out["ev_ebit"] = round(ev / op_income, 1)
+
+        # p_fcf = mktcap / (cfo − capex)
+        cfo_s = _num(latest.get("cfo"))
+        capex = _num(latest.get("capex"))
+        if cfo_s is not None and capex is not None:
+            fcf = cfo_s - capex
+            if fcf > 0:
+                out["p_fcf"] = round(mktcap / fcf, 1)
+
+    # ── pe = mktcap / ni (trailing; not Financials-suppressed) ───────────────
+    # ni IS a statement-row column (the same column _piotroski/_altman read), so pe
+    # populates directly from the latest filed statement. This is the EDGAR annual
+    # NI, which can differ in vintage from the factors-table NI that _context_frame's
+    # pe uses — same formula, harmless for a display annotation. Omitted if absent.
+    ni = _num(latest.get("ni"))
+    if mktcap is not None and ni is not None and ni > 0:
+        out["pe"] = round(mktcap / ni, 1)
+
+    return out
+
+
 def _cagr(series: list) -> float | None:
     s = [x for x in series if x is not None]
     if len(series) < 2 or series[0] is None or series[-1] is None:
@@ -1686,6 +1759,7 @@ def _positioning(t, f, short, insider, short_flow=None) -> dict | None:
         block["short_flow"] = {
             "short_ratio_pct": _r((short_flow.get("short_ratio") or 0) * 100, 1),
             "trend_pp": _r(short_flow.get("trend_pp"), 2),
+            "ratio_z": _r(short_flow.get("ratio_z"), 2),
             "n_days": short_flow.get("n_days"),
             "asof": short_flow.get("asof"),
         }

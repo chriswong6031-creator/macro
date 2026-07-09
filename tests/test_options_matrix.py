@@ -32,11 +32,13 @@ if str(_REPO) not in sys.path:
 from engine.greeks import npdf
 from engine.options_matrix import (
     _bs_gamma_scalar,
+    _bs_vanna_scalar,
     _compute_max_pain,
     _gex_dollar,
     _heat_seeker,
     _median_iv,
     _null_payload,
+    _vex_mn,
     build_matrix,
     _MIN_TOTAL_OI,
     _CONTRACT_MULT,
@@ -474,6 +476,197 @@ def test_median_iv_fallback():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 12. VEX — vanna formula known-value check (EXPERIMENTAL)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_bs_vanna_scalar_known_value():
+    """_bs_vanna_scalar: known-value cross-check against the greeks.bs_greeks vanna.
+
+    vanna = -N'(d1) * d2 / sigma  (dividend-free, r=_R)
+
+    Hand computation (S=500, K=500, T=14/365, iv=0.20):
+      sqrtT = sqrt(14/365) ≈ 0.19579
+      d1 = [ln(1) + (0.05 + 0.5*0.04)*14/365] / (0.20*0.19579)
+         = [0 + 0.001096] / 0.039159
+         ≈ 0.027992
+      d2 = d1 - 0.20*0.19579 = 0.027992 - 0.039159 ≈ -0.011167
+      N'(d1) = exp(-0.5*d1^2) / sqrt(2π) ≈ 0.39884
+      vanna = -0.39884 * (-0.011167) / 0.20 ≈ +0.022267
+    """
+    S = 500.0
+    K = 500.0
+    iv = 0.20
+    T_years = 14.0 / 365.0
+
+    vanna = _bs_vanna_scalar(S, K, T_years, iv, 0.30)
+
+    # Cross-check: direct formula
+    sqrtT = math.sqrt(T_years)
+    d1 = (math.log(S / K) + (_R + 0.5 * iv ** 2) * T_years) / (iv * sqrtT)
+    d2 = d1 - iv * sqrtT
+    expected_vanna = -npdf(d1) * d2 / iv
+    assert abs(vanna - expected_vanna) < 1e-9, (
+        f"vanna mismatch: got {vanna:.6f} expected {expected_vanna:.6f}"
+    )
+
+    # Cross-check with greeks.bs_greeks (which also computes vanna, using q=0 assumption)
+    from engine.greeks import bs_greeks
+    _, _, greeks_vanna, _ = bs_greeks(S, K, T_years, iv, is_call=True, r=_R, q=0.0)
+    # bs_greeks uses -eqT * pdf * d2 / sigma; with q=0 eqT=1 so should match exactly
+    assert abs(vanna - greeks_vanna) < 1e-9, (
+        f"vanna vs bs_greeks mismatch: {vanna:.6f} vs {greeks_vanna:.6f}"
+    )
+
+    # Sanity: ATM vanna is finite and non-zero for typical parameters.
+    # Sign depends on moneyness/d2: when d2 > 0 (ATM + rate effect) vanna is negative;
+    # when d2 < 0 (short-dated deep OTM or low-rate) vanna is positive.  Only test finiteness.
+    assert math.isfinite(vanna), f"Expected finite vanna, got {vanna}"
+    assert vanna != 0.0, f"Expected non-zero vanna for typical ATM parameters"
+
+
+def test_bs_vanna_scalar_degenerate():
+    """_bs_vanna_scalar returns 0.0 only when BOTH iv and median_iv are below _MIN_IV.
+
+    When iv is below the floor, median_iv is used as fallback (same as _bs_gamma_scalar).
+    Only when median_iv is also too small does the function return 0.0.
+    """
+    # Both iv and median_iv below _MIN_IV (0.005) → 0.0
+    assert _bs_vanna_scalar(500.0, 500.0, 0.038, 0.004, 0.004) == 0.0
+
+    # iv below floor but median_iv=0.30 → fallback to median_iv → finite non-zero result
+    result = _bs_vanna_scalar(500.0, 500.0, 0.038, 0.0, 0.30)
+    assert math.isfinite(result), "Expected finite result when fallback iv is valid"
+
+
+def test_vex_mn_formula():
+    """_vex_mn: known-value check — formula oi * vanna * S * 0.01 * 100 / 1e6.
+
+    S=500, oi=2000, vanna=0.025 → vex = 2000 * 0.025 * 500 * 0.01 * 100 / 1e6
+                                       = 2000 * 0.025 * 500 * 1 / 1e6
+                                       = 25 / 1e6 * 1e6 ... let's compute:
+    = 2000 * 0.025 = 50
+    = 50 * 500 = 25000
+    = 25000 * 0.01 * 100 = 25000
+    = 25000 / 1e6 = 0.025
+    """
+    S = 500.0
+    oi = 2000.0
+    vanna = 0.025
+    expected = oi * vanna * S * _VOL_PCT * _CONTRACT_MULT / 1_000_000
+    result = _vex_mn(oi, vanna, S)
+    assert abs(result - expected) < 1e-12, (
+        f"_vex_mn formula mismatch: got {result} expected {expected}"
+    )
+    assert abs(result - 0.025) < 1e-9, f"Expected 0.025, got {result}"
+
+
+def test_vanna_same_sign_call_put():
+    """_bs_vanna_scalar returns the SAME value for calls and puts at identical strike/params.
+
+    Closed-form BS vanna = -N'(d1) * d2 / sigma is RIGHT-INDEPENDENT: the formula
+    contains no call/put branch, only S, K, T, sigma, r.  Therefore a call and a put
+    at the same strike must produce identical vanna values.
+
+    This test pins the convention fix: earlier comments incorrectly stated
+    "calls: positive vex" / "puts: negative vex", implying vanna depends on right.
+    The correct convention is that both accumulate the SAME vanna sign (determined by
+    d2 = moneyness), and net_vex = call_vex + put_vex sums those same-signed values.
+
+    Hand computation (S=500, K=500, T=14/365, iv=0.20, r=_R=0.05):
+      sqrtT = sqrt(14/365) ≈ 0.195791
+      d1 = [ln(1) + (0.05 + 0.5*0.04)*14/365] / (0.20*0.195791)
+         ≈ 0.068547
+      d2 = d1 - 0.20*0.195791 ≈ 0.029377  (positive: ATM with r=0.05 pushes d2 > 0)
+      N'(d1) ≈ 0.398006
+      vanna = -0.398006 * 0.029377 / 0.20 ≈ -0.058461  (negative because d2 > 0)
+      Same for call and put — right-independent formula.
+    """
+    S = 500.0
+    K = 500.0
+    iv = 0.20
+    T_years = 14.0 / 365.0
+
+    vanna_c = _bs_vanna_scalar(S, K, T_years, iv, 0.30)
+    vanna_p = _bs_vanna_scalar(S, K, T_years, iv, 0.30)
+
+    # Must be identical — formula is right-independent
+    assert abs(vanna_c - vanna_p) < 1e-15, (
+        f"Call vanna {vanna_c:.8f} != put vanna {vanna_p:.8f} — formula must be right-independent"
+    )
+
+    # Both must have the same sign (sign from d2/moneyness, not right)
+    assert math.copysign(1, vanna_c) == math.copysign(1, vanna_p), (
+        f"Call and put vanna have different signs: call={vanna_c:.6f} put={vanna_p:.6f}"
+    )
+
+    # Verify hand-computed value: vanna ≈ -0.058461
+    sqrtT = math.sqrt(T_years)
+    d1 = (math.log(S / K) + (_R + 0.5 * iv ** 2) * T_years) / (iv * sqrtT)
+    d2 = d1 - iv * sqrtT
+    expected = -npdf(d1) * d2 / iv
+    assert abs(vanna_c - expected) < 1e-9, (
+        f"Vanna {vanna_c:.8f} does not match hand computation {expected:.8f}"
+    )
+    # d2 > 0 at ATM with r=0.05, T=14/365 → vanna is negative
+    assert d2 > 0, f"Expected d2>0 for this param set, got {d2:.6f}"
+    assert expected < 0, f"Expected negative vanna (d2>0), got {expected:.6f}"
+
+
+def test_build_matrix_vex_mn_present(tmp_path):
+    """build_matrix output cells carry vex_mn field when greeks data is present.
+
+    The field must be a finite float (not None) for contracts with real OI + IV.
+    """
+    root = "SPY"
+    expiry = "2026-08-15"
+
+    t1_rows = [
+        {"root": root, "expiration": expiry, "strike": 500.0, "right": "C", "open_interest": 1000},
+        {"root": root, "expiration": expiry, "strike": 490.0, "right": "P", "open_interest": 800},
+    ]
+    store = _make_store(tmp_path, root, t1_rows)
+
+    # Write greeks with IV + spot
+    greeks_path = store / "greeks" / root
+    greeks_path.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {
+            "root": root, "expiration": expiry, "strike": 500.0, "right": "C",
+            "date": "2026-07-07", "implied_vol": 0.20, "underlying_price": 500.0,
+            "delta": 0.5, "theta": -0.1, "vega": 0.2, "rho": 0.0, "iv_error": 0.0,
+        },
+        {
+            "root": root, "expiration": expiry, "strike": 490.0, "right": "P",
+            "date": "2026-07-07", "implied_vol": 0.22, "underlying_price": 500.0,
+            "delta": -0.3, "theta": -0.08, "vega": 0.18, "rho": 0.0, "iv_error": 0.0,
+        },
+    ]).to_parquet(greeks_path / "2026.parquet", index=False)
+
+    from engine.thetadata_store import clear_parquet_cache
+    clear_parquet_cache()
+
+    payload = build_matrix(root, store=str(store), asof="2026-07-07")
+    errors = validate_matrix(payload)
+    assert errors == [], f"validate_matrix errors: {errors}"
+
+    # All cells must have vex_mn key
+    cells = payload["cells"]
+    assert len(cells) > 0, "Expected at least one cell"
+    for c in cells:
+        assert "vex_mn" in c, f"Cell missing vex_mn: {c}"
+
+    # At least one cell should have a non-None vex_mn (call with real OI + IV)
+    vex_values = [c["vex_mn"] for c in cells if c.get("vex_mn") is not None]
+    assert len(vex_values) > 0, "Expected at least one non-None vex_mn cell"
+
+    # Payload should be marked experimental
+    assert payload.get("experimental") is True, "Payload should have experimental=True"
+
+    # reliability should mention vex_mn
+    assert "vex_mn" in payload.get("reliability", {}), "reliability should document vex_mn"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 12. GEX sign convention
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -556,3 +749,163 @@ def test_heat_seeker_excludes_nearest_not_exact():
     assert hs["strike"] == 510.0, (
         f"Expected 510.0 (top non-nearest candidate), got {hs['strike']}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 14. expired_expiries_excluded — regression for operator-gate finding 2026-07-07
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_expired_expiries_excluded(tmp_path):
+    """Contracts with expiry < asof must be excluded from cells, expiries list,
+    and must never be selected by heat_seeker.
+
+    Regression for: SPY payload asof=2026-07-06 contained expiries 2026-07-02
+    and 2026-07-06 (already expired / same-day only retained by 0.5 floor).
+    The DTE window must be [0, +90] — never negative.
+    """
+    root = "SPY"
+    asof = "2026-07-07"
+    spot = 500.0
+
+    # Three rows: one expired (2026-07-02), one future (2026-08-15)
+    t1_rows = [
+        # EXPIRED — expiry 5 days before asof — must be excluded
+        _base_oi_row(root, 500.0, "2026-07-02", "C", 9999),
+        # FUTURE — expiry 39 days out — must be included
+        _base_oi_row(root, 500.0, "2026-08-15", "C", 1000),
+        _base_oi_row(root, 495.0, "2026-08-15", "P", 2000),
+        _base_oi_row(root, 505.0, "2026-08-15", "C", 3000),
+    ]
+    store = _make_store(tmp_path, root, t1_rows)
+
+    # greeks for spot
+    greeks_path = store / "greeks" / root
+    greeks_path.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{
+        "root": root, "expiration": "2026-08-15", "strike": 500.0, "right": "C",
+        "date": asof, "implied_vol": 0.20, "underlying_price": spot,
+        "delta": 0.5, "theta": -0.1, "vega": 0.2, "rho": 0.0, "iv_error": 0.0,
+    }]).to_parquet(greeks_path / "2026.parquet", index=False)
+
+    payload = build_matrix(root, store=str(store), asof=asof)
+
+    # 1. Expired expiry must not appear in the expiries list
+    assert "2026-07-02" not in payload["expiries"], (
+        f"Expired expiry 2026-07-02 leaked into payload['expiries']: {payload['expiries']}"
+    )
+
+    # 2. No cell must have an expired expiry
+    expired_cells = [c for c in payload["cells"] if c.get("expiry", "") < asof]
+    assert expired_cells == [], (
+        f"Expired cells in payload: {expired_cells}"
+    )
+
+    # 3. heat_seeker must not reference an expired expiry
+    hs = payload.get("heat_seeker")
+    if hs is not None:
+        assert hs.get("expiry", "") >= asof, (
+            f"heat_seeker picked expired expiry: {hs.get('expiry')}"
+        )
+
+    # 4. Schema still valid
+    errors = validate_matrix(payload)
+    assert errors == [], f"validate_matrix errors: {errors}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 15. heat_seeker_never_picks_negative_dte
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_heat_seeker_never_picks_negative_dte():
+    """heat_seeker must never select a cell whose DTE < 0 (already expired).
+
+    This exercises the _heat_seeker function directly with a cell whose _dte
+    is negative — it should be excluded before ranking, so only the non-expired
+    cell can win.
+    """
+    spot = 500.0
+    cells = [
+        # EXPIRED cell — massive GEX — must be excluded
+        {"strike": 490.0, "expiry": "2026-07-02", "gex": 999_000_000.0,
+         "call_oi": 50000, "put_oi": 50000, "call_vol": 5000, "put_vol": 5000,
+         "_dte": -5.0},   # explicitly negative DTE
+        # FUTURE cell — smaller GEX but non-expired
+        {"strike": 510.0, "expiry": "2026-08-15", "gex": 5_000_000.0,
+         "call_oi": 3000, "put_oi": 2000, "call_vol": 100, "put_vol": 80,
+         "_dte": 39.0},
+        # Second future cell for ratio computation
+        {"strike": 520.0, "expiry": "2026-08-15", "gex": 500_000.0,
+         "call_oi": 1000, "put_oi": 800, "call_vol": 30, "put_vol": 20,
+         "_dte": 39.0},
+    ]
+    hs = _heat_seeker(cells, spot, "GEX")
+    assert hs is not None, "Expected a pick from the non-expired cells"
+    assert (hs.get("expiry") or "") >= "2026-07-07", (
+        f"heat_seeker selected an expired expiry: {hs.get('expiry')}"
+    )
+    assert hs["strike"] != 490.0, (
+        f"heat_seeker must not pick the expired cell (strike=490.0), got {hs['strike']}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 16. plain_iso_expiry_serialization — no pandas timestamp strings
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_plain_iso_expiry_serialization(tmp_path):
+    """Expiry strings in cells, expiries list, and heat_seeker must match
+    the pattern YYYY-MM-DD (plain ISO), not a pandas Timestamp string like
+    '2026-07-18 00:00:00'.
+
+    Regression for: ThetaData parquets store expiration as Timestamp objects;
+    str(Timestamp) produces '2026-07-18 00:00:00' which is non-canonical.
+    """
+    import re
+    ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+    root = "SPY"
+    asof = "2026-07-07"
+    # Use a pandas Timestamp as the expiration in the parquet to simulate the
+    # real store format.
+    expiry_ts = pd.Timestamp("2026-08-15")
+
+    t1_rows = [
+        {"root": root, "expiration": expiry_ts, "strike": 500.0,
+         "right": "C", "open_interest": 1000},
+        {"root": root, "expiration": expiry_ts, "strike": 495.0,
+         "right": "P", "open_interest": 2000},
+        {"root": root, "expiration": expiry_ts, "strike": 505.0,
+         "right": "C", "open_interest": 3000},
+    ]
+    store = _make_store(tmp_path, root, t1_rows)
+
+    greeks_path = store / "greeks" / root
+    greeks_path.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{
+        "root": root, "expiration": expiry_ts, "strike": 500.0, "right": "C",
+        "date": asof, "implied_vol": 0.20, "underlying_price": 500.0,
+        "delta": 0.5, "theta": -0.1, "vega": 0.2, "rho": 0.0, "iv_error": 0.0,
+    }]).to_parquet(greeks_path / "2026.parquet", index=False)
+
+    payload = build_matrix(root, store=str(store), asof=asof)
+
+    # All expiry strings in the expiries list must be plain ISO
+    for exp in payload["expiries"]:
+        assert ISO_DATE_RE.match(str(exp)), (
+            f"expiries list contains non-ISO date: {exp!r}"
+        )
+
+    # All expiry strings in cells must be plain ISO
+    for cell in payload["cells"]:
+        exp = cell.get("expiry", "")
+        assert ISO_DATE_RE.match(str(exp)), (
+            f"cell expiry is not plain ISO: {exp!r}"
+        )
+
+    # heat_seeker expiry (if present) must be plain ISO
+    hs = payload.get("heat_seeker")
+    if hs is not None:
+        exp = hs.get("expiry", "")
+        assert ISO_DATE_RE.match(str(exp)), (
+            f"heat_seeker expiry is not plain ISO: {exp!r}"
+        )

@@ -79,6 +79,10 @@ lanes:
           SLF-048 attention store restore (#1677) — build_site.build_attention_data
           reads data/attention/*.parquet (gitignored, R2-hosted). Non-fatal: absent
           store = attention chip silently absent this render.
+      # price-store freshness gate (2026-07-07 incident guard) — precedes the serial spine
+      - id: check_price_store_freshness
+        module: scripts.check_price_store_freshness
+        args: [--heal]
       # serial spine (pre-band)
       - id: build_signal_quality
         module: scripts.build_signal_quality
@@ -94,6 +98,14 @@ lanes:
         note: non-fatal
       - id: engine_run
         module: engine.run
+      - id: build_shock_deescalation
+        module: engine.shock_deescalation
+        note: >
+          Policy-shock W2-E de-escalation protocol (PS-R7/PS-R9) — runs after engine.run
+          so market_drivers.append_log has already advanced the coherence columns in
+          data/regime/market_drivers_log.parquet. Writes data/reflexes/shock_deescalation/
+          firings.jsonl (keep-first per date) + site/live/shock_state.json. Non-fatal:
+          any error degrades to active=False without breaking the build.
       - id: build_spvector
         module: scripts.build_spvector
       - id: factor_ic_scorecard
@@ -104,10 +116,16 @@ lanes:
         note: first pass (before altdata_brain)
       - id: build_smart_money
         module: scripts.build_smart_money
+      - id: build_policy_lever
+        module: scripts.build_policy_lever
+        note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
       - id: build_stock_board_v2
         module: scripts.build_stock_board_v2
+      - id: build_pick_lab
+        module: scripts.build_pick_lab
+        note: Pick Lab nightly runner — enriches snapshot, fires 23 books, grades, writes site/labdata/pick_lab.json + pick_lab_longhold.json + renders us_stocks_lab.html (never-break contract)
       - id: build_reflexivity_overlay
         module: scripts.build_reflexivity_overlay
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
@@ -123,6 +141,15 @@ lanes:
         module: scripts.build_congress
       - id: build_foresight
         module: scripts.build_foresight
+      - id: backfill_regime_stamps
+        module: scripts.backfill_regime_stamps
+        note: "nw-macro-rail R5 PR-C — regime stamp backfill on qledger rows (non-fatal); near-term yield ≈ 2 rows from regime_vector.parquet coverage"
+      - id: build_flip_confirmation
+        module: scripts.build_flip_confirmation
+        note: "Policy-Shock W1-C — T+1 sector-flip confirmation lens; detects violent defensive/offense spread flips, appends keep-first ledger, registers qledger claims, emits site/flip_confirmation_data.json (display-only, non-fatal)"
+      - id: build_prophet
+        module: scripts.build_prophet
+        note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
       # parallel band
       - id: band
         cluster:
@@ -171,6 +198,10 @@ lanes:
       # serial post-band
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_polygon_universe
+        module: scripts.build_polygon_universe
+      - id: mirror_flow_idx
+        module: scripts.mirror_flow_idx
       - id: build_vector
         module: scripts.build_vector
       - id: master_brain_scorer
@@ -206,6 +237,12 @@ lanes:
         note: "Options Alpha W1.3 — pre-registered options entry-quality gate"
       - id: build_calibration
         module: scripts.build_calibration
+      - id: build_macro_snapshot
+        module: scripts.build_macro_snapshot
+        note: "nw-macro-rail R5 PR-C — macro context snapshot registry (latest.json + ledger.parquet + transitions.jsonl); fail-open, runs before build_spine_index"
+      - id: build_macro_context
+        module: scripts.build_macro_context
+        note: "nw-macro-rail R5 PR-E — Macro Weather Station page (site/macro_context.html) + hub contract (data/macro_context/latest.json); fail-open, runs after build_macro_snapshot"
       - id: build_spine_index
         module: scripts.build_spine_index
         note: "neural-web W2 — spine query index (read-side union over all graded ledgers)"
@@ -284,6 +321,20 @@ lanes:
                    data/treasury/tga.parquet]
           outputs: [data/macro/fed_net_liquidity.parquet,
                     data/macro/fed_net_liquidity_meta.json]
+      - id: build_liquidity_plumbing
+        module: scripts.build_liquidity_plumbing
+        note: >
+          non-fatal; Neural Web liquidity-plumbing lobe (neuralweb.liquidity_plumbing.v1)
+          — pure aggregation, no network calls. Runs AFTER build_netliq_daily (consumes
+          data/macro/fed_net_liquidity.parquet) and AFTER the regime/treasury/auction
+          artifacts are present. Shadow-tier, display/de-escalation only, no score raise.
+          inputs: [data/macro/fed_net_liquidity.parquet,
+                   data/macro/fed_net_liquidity_meta.json,
+                   data/regime/latest.json,
+                   data/treasury/net_issuance.parquet,
+                   data/treasury/tga.parquet,
+                   data/treasury_auctions/auctions.parquet]
+          outputs: [data/neuralweb/liquidity_plumbing.json]
       - id: build_release_forecast
         module: scripts.build_release_forecast
         note: >
@@ -321,6 +372,14 @@ lanes:
       - id: build_bottom_sensors
         module: scripts.build_bottom_sensors
         note: non-fatal; display-only bottom-sensor envelope (Amendment 1 Lane B0) — wired 2026-07-06 after build_world_state; benchmark 2.29s
+      - id: mature_bottom_sensors_shadow
+        module: scripts.mature_bottom_sensors_shadow
+        note: >
+          non-fatal; Amendment-3 forward audit of decline_geometry/underwater_state descriptors
+          (RUL-28). Grades elapsable snapshot rows against realized forward returns.
+          Output: site/shadow/bottom_sensors_geometry_audit.json (display-only; empty until
+          ~1-3 months of snapshots mature — latency is the price of honesty).
+          Runs AFTER build_bottom_sensors. Benchmark: 0.6s (2026-07-09). PR-2 wiring.
       - id: build_thesis_funnel_history
         module: scripts.research.build_thesis_funnel_snapshot
         note: >
@@ -329,12 +388,46 @@ lanes:
           flag per sole-advancer law. Appends keep-FIRST rows (ticker, snapshot_date)
           to data/research/thesis_funnel_history.parquet. Runs after build_bottom_sensors.
           Display-only; no scored_path_surfaces; FIREWALL LH-R1.
+      - id: build_winner_autopsy
+        module: scripts.research.build_winner_autopsy
+        note: >
+          non-fatal; Winner Autopsy Lab nightly (WA-R1..R10). Default mode computes
+          current breakaway watch states + winner_autopsy_panel.json; --write-history
+          appends keep-FIRST rows (ticker, snapshot_date) to
+          data/research/breakaway_watch.parquet history (sole-advancer law: only this
+          engine step passes --write-history). The historical episode census
+          (winner_episodes.parquet) is built off-render via --backfill on the Mac host
+          (needs data/massive_stock_day/). Display-only; no scored_path_surfaces;
+          FIREWALL WA-R5. Degrades to a coverage-honest no-op when name prices absent.
       - id: build_entity_thesis_mechanism_registry
         module: scripts.build_entity_thesis_mechanism_registry
         note: non-fatal; Wave B2 ETM crosswalk — display-only entity/thesis/mechanism registry (ETM-R1..R8); output data/neuralweb/entity_thesis_mechanism_registry.json
       - id: build_mechanism_pathways
         module: scripts.build_mechanism_pathways
         note: non-fatal; MPC v1 (RUL-CC-1..13) — deterministic display-only pathway compiler; reads market_drivers/transmission/factor_intelligence emitted artifacts; outputs data/neuralweb/mechanism_pathways.json + history + site mirror
+      - id: build_thematic_state
+        module: scripts.build_thematic_state
+        note: >
+          non-fatal; TIL W0 (PR-A) thematic state composition organ — display/context only
+          (authority: is_context_only=true, all promotion flags false). Reads foresight_cascade,
+          baskets, radar/radar_enriched, narrative_emergence, subsector_rotation, divergence_log.
+          Outputs data/neuralweb/theme_state.json, site/neuralwebdata/theme_state.json,
+          data/neuralweb/theme_phase_history.jsonl (append-only PIT tape, nightly sole advancer).
+          Runs AFTER build_foresight + build_baskets (foresight_cascade.json and baskets.json
+          must be fresh). Missing input → stale_legs entry + null block; always exits 0.
+      - id: grade_thematic
+        module: scripts.grade_thematic
+        note: >
+          non-fatal; TIL W6 (PR-H) grading pack — display/shadow only, authority
+          is_context_only=true, all promotion flags false. Runs AFTER build_thematic_state.
+          Stage 1: crowd-arrival lead-lag grader over data/foresight/earliness_log.jsonl →
+          data/foresight/earliness_grades.json (envelope-stamped, atomic write).
+          Stage 2: theme placebo tape — appends K=3 random peer + 1 time-shift variant for
+          each new non-WATCH foresight flag → data/foresight/theme_placebo_tape.jsonl
+          (append-only, deduped, deterministic seed).
+          Stage 3: qledger falsifier auto-evaluation — evaluates check_by-arrived claims →
+          data/qledger/falsifier_evaluations.jsonl (append-only, capped 2000/run).
+          Always exits 0. No LLM calls. No scored-path consumers.
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
@@ -344,9 +437,15 @@ lanes:
       - id: build_neuralweb_health
         module: scripts.build_neuralweb_health
         note: non-fatal; PR-C NW lobe-status surface — two-phase (engine job = previous_run cortex; cortex job --refresh-cortex = current_run); after all NW lobe producers
+      - id: check_nw_health_escalation
+        module: scripts.check_nw_health_escalation
+        note: non-fatal; M3 escalation organ — reads health.json + daily_brief_history.jsonl; dispatches ops alert when >=3 consecutive degraded nights; runs after build_neuralweb_health in ENGINE job
       - id: build_neuralweb_brief
         module: scripts.build_neuralweb_brief
         note: non-fatal; PR-D NW daily brief surface — engine phase writes phase='engine' after health; cortex job --finalize writes phase='final' + upserts history row
+      - id: build_attention_deterministic
+        module: scripts.build_attention_deterministic
+        note: non-fatal; PR-4 M2 deterministic operator-attention items — zero LLM, five pre-registered rules; after health + daily_brief; writes data/neuralweb/attention_deterministic.json + site/neuralwebdata/ mirror
       - id: research_factory_monitor
         module: scripts.research_factory_monitor
         note: non-fatal; Research Factory W6 — paper monitor, regime-aware decay, nightly forward-ledger wiring (RF-8/RF-9/RF-10); data/research_factory/ writes covered by 'git add data/' in commit step
@@ -439,6 +538,21 @@ lanes:
   - workflow: .github/workflows/daily.yml
     job: cortex
     steps:
+      - id: build_context_risk
+        module: scripts.build_context_risk
+        note: >
+          nw-context-intelligence W3 (R-CI7) — Personality risk lens (display-only).
+          Reads git-tracked inputs: site/factordata/us_standouts.json,
+          site/factordata/stock_personality.json, site/regime_timeline.json.
+          Computes board/universe archetype composition ratios, weighted risk profile
+          from field-guide fingerprints (context_risk_constants.py), regime-conditional
+          21d P10 tail (current quad x liquidity; cells below n=887 floor print
+          insufficient_n). Always exits 0 (fail-open per cortex-job law).
+          inputs: [site/factordata/us_standouts.json,
+                   site/factordata/stock_personality.json,
+                   site/regime_timeline.json]
+          outputs: [data/neuralweb/context_risk.json,
+                    site/neuralwebdata/context_risk.json]
       - id: register_factor_hypotheses
         module: scripts.register_factor_hypotheses
         note: >
@@ -455,6 +569,22 @@ lanes:
           inputs: [data/neuralweb/machine_registry.jsonl]
           outputs: [data/neuralweb/machine_registry.jsonl,
                     data/neuralweb/governance.jsonl,
+                    data/trial_ledger.jsonl]
+      - id: build_context_candidates
+        module: scripts.build_context_candidates
+        note: >
+          W4 nw-context-intelligence — context scanner (CORTEX JOB). Runs three
+          FROZEN v1 templates (T1 composition drift, T2 outcome heterogeneity,
+          T3 co-occurrence shift) against pre-declared budget fdr_family=context_scan.
+          Refuses to run without budget row (GovernorRefusal). Display/context tier
+          only (R-CI6, Article 2). Dedupe against oracle/species/machine/trial-ledger
+          + own archive (dead-stays-dead). Decay after 60 days unrefreshed.
+          Non-fatal (always exits 0 in the workflow step).
+          inputs: [data/neuralweb/spine_index.parquet,
+                   data/us_board_ledger/retro_grades.parquet,
+                   data/neuralweb/context_candidates.jsonl,
+                   data/trial_ledger.jsonl]
+          outputs: [data/neuralweb/context_candidates.jsonl,
                     data/trial_ledger.jsonl]
       - id: cortex_deliberation
         module: engine.neuralweb.cortex
@@ -610,6 +740,99 @@ lanes:
         module: scripts.build_baskets_hk
       - id: build_cn_reversal_sleeve
         module: scripts.build_cn_reversal_sleeve
+      # ── CN-SYS W5a Scope 2: intel sub-builders (extracted from build_china.py) ──
+      - id: build_china_validation
+        module: scripts.build_china_validation
+        note: non-fatal; china predictive-validation scorecard (validate_all)
+      - id: build_china_news
+        module: scripts.build_china_news
+        note: non-fatal; china news powerhouse
+      - id: build_china_policy_watch
+        module: scripts.build_china_policy_watch
+        note: non-fatal; china policy watch surface
+      - id: build_china_altdata
+        module: scripts.build_china_altdata
+        note: non-fatal; china alt-data desk
+      - id: build_china_radar
+        module: scripts.build_china_radar
+        note: non-fatal; china divergence radar
+      - id: build_china_synthesis
+        module: scripts.build_china_synthesis
+        note: non-fatal; china central-intelligence synthesis (intel_analysis)
+      - id: build_china_analogs
+        module: scripts.build_china_analogs
+        note: non-fatal; china historical regime analog finder
+      - id: build_china_special_situations
+        module: scripts.build_china_special_situations
+        note: non-fatal; china special-sits desk
+      - id: build_china_intel_hub
+        module: scripts.build_china_intel_hub
+        note: non-fatal; china intel hub command apparatus
+      - id: build_china_intel
+        module: scripts.build_china_intel
+        note: non-fatal; china intel bus / mastermind fan-in
+      # ── CN-SYS W5a Scope 3: Batch-1 lobe wiring (W1/W2/W4) ──────────────────
+      - id: build_china_microstructure
+        module: scripts.build_china_microstructure
+        note: non-fatal; ~2 min; W1 microstructure lobe + limit tape (CN-SYS-R11)
+      - id: build_china_participation
+        module: scripts.build_china_participation
+        note: non-fatal; ~2 min; W2 participation lobe + tape (CN-SYS-R11)
+      - id: build_china_policy_transmission
+        module: scripts.build_china_policy_transmission
+        note: non-fatal; ~2 min; W4 policy transmission unifier (CN-SYS-R11)
+      - id: build_baskets_china_ths_snapshot
+        module: scripts.build_baskets_china_ths
+        args: [--snapshot]
+        note: non-fatal; ~2 min; W1 THS PIT membership snapshot side-car (CN-SYS-R11)
+      # ── CN-SYS Batch-2 lobe wiring (W3 + W6) ─────────────────────────────
+      - id: build_china_cycle_phase
+        module: scripts.build_china_cycle_phase
+        note: non-fatal; ~2 min; W3 cycle phase lobe + phase tape + falsifier ledger (CN-SYS-R11)
+      - id: build_china_market_state
+        module: scripts.build_china_market_state
+        note: non-fatal; ~2 min; W6 sovereign spine — china_market_state.v1 (CN-SYS-R11 R13)
+      - id: build_china_mechanics
+        module: scripts.build_china_mechanics
+        note: non-fatal; W8 mechanics cockpit — reads spine artifacts (CN-SYS-R1 R13)
+      # ── CN-SYS W9: lane unification ──────────────────────────────────────────
+      - id: build_china_masterminds
+        module: scripts.build_china_masterminds
+        note: non-fatal; W9 lane unification — CN GTAA flagship pages (was build_vector fallback)
+      - id: build_china_strategies
+        module: scripts.build_china_strategies
+        note: non-fatal; W9 lane unification — CN strategy scorecard hub + detail pages (was build_vector fallback)
+      - id: build_subsector_rotation_china
+        module: scripts.build_subsector_rotation_china
+        note: non-fatal; W9 lane unification — CN subsector rotation JSON (was build_site fallback)
+      - id: build_subsector_rotation_china_pages
+        module: scripts.build_subsector_rotation_china_pages
+        note: non-fatal; W9 lane unification — per-subsector CN detail pages
+      # ── CN Pick Lab (CNPL-R8): runs AFTER build_china_library (library step) ──
+      # build_china_library produces the CN snapshot; build_china_pick_lab reads it.
+      # Runs in the library-restore step shell loop (after CN library); wired here
+      # for conformance documentation only (the parser cannot extract shell loops).
+      - id: build_china_pick_lab
+        module: scripts.build_china_pick_lab
+        note: >
+          non-fatal; ≤2 min; CN Pick Lab asia-lane runner (CNPL-R8). Reads CN
+          snapshot from data/china_pick_lab/snapshots/, enriches with chinastatedata
+          + THS baskets, runs 20 books + flagship2_mirror, grades via (H+L)/2 fills,
+          writes site/labdata/china_pick_lab.json + site/china_stocks_lab.html.
+          CN_LANE=asia required for all ledger/data writes.
+      # ── HK Pick Lab (HKPL-R8): runs AFTER build_hk_library (library step) ──
+      # build_hk_library produces the HK snapshot; build_hk_pick_lab reads it.
+      # Wired here for conformance documentation; step runs in asia-close.yml.
+      - id: build_hk_pick_lab
+        module: scripts.build_hk_pick_lab
+        note: >
+          non-fatal; ≤2 min; HK Pick Lab asia-lane runner (HKPL-R8). Reads HK
+          snapshot from data/hk_pick_lab/snapshots/, enriches with organ artifacts
+          (ADR bridge, CBBC, filing bus, narrative, catalyst calendar, standouts),
+          runs 20 books + flagship2_mirror, grades via next-HK-session close with
+          halt law, writes site/labdata/hk_pick_lab.json + site/hk_stocks_lab.html
+          + enriched site/factordata/hk_1d_velocity_desk.json.
+          CN_LANE=asia required for all ledger/data writes.
       - id: inject_data_base
         module: scripts.inject_data_base
       - id: publish_r2_asia
@@ -635,6 +858,9 @@ lanes:
         note: >
           SLF-048 attention store restore (#1677) — pre-render, non-fatal
           (absent store = attention chip silently absent this render).
+      # price-store freshness check (2026-07-07 incident guard) — precedes the recompute
+      - id: check_price_store_freshness
+        module: scripts.check_price_store_freshness
       # regime recompute (serial, pre-render)
       - id: build_signal_quality
         module: scripts.build_signal_quality
@@ -644,6 +870,8 @@ lanes:
         module: engine.run
       - id: build_world_state
         module: scripts.build_world_state
+      - id: build_nw_mastermind_context
+        module: scripts.build_nw_mastermind_context
       # spine (serial)
       - id: build_spvector
         module: scripts.build_spvector
@@ -651,6 +879,9 @@ lanes:
         module: scripts.build_alt_data
       - id: build_smart_money
         module: scripts.build_smart_money
+      - id: build_policy_lever
+        module: scripts.build_policy_lever
+        note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
       - id: build_stock_board_v2
@@ -759,6 +990,9 @@ lanes:
         module: scripts.build_alt_data
       - id: build_smart_money
         module: scripts.build_smart_money
+      - id: build_policy_lever
+        module: scripts.build_policy_lever
+        note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
       - id: build_congress
@@ -774,6 +1008,7 @@ lanes:
             - scripts.build_crossasset
             - scripts.build_transmission
             - scripts.build_discovery
+            - scripts.build_macro_context
           cl_china:
             - scripts.build_china
           cl_hk:
@@ -864,6 +1099,8 @@ lanes:
         module: scripts.build_live_overlay
       - id: build_risk_state
         module: scripts.build_risk_state
+      - id: build_basket_pulse
+        module: scripts.build_basket_pulse
 
   # ── weekly.yml / weekly-report ──────────────────────────────────────────
   - workflow: .github/workflows/weekly.yml
@@ -901,6 +1138,9 @@ lanes:
         module: engine.run
       - id: build_spvector
         module: scripts.build_spvector
+      - id: build_policy_lever
+        module: scripts.build_policy_lever
+        note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
       - id: china_fundamentals
@@ -1060,12 +1300,13 @@ divergences:
 
   - lanes: [intraday-fastpath]
     differs: >
-      Only 3 steps (refresh_regime_if_stale, build_live_overlay, build_risk_state); all
-      nightly band modules absent.
+      Only 4 steps (refresh_regime_if_stale, build_live_overlay, build_risk_state,
+      build_basket_pulse); all nightly band modules absent.
     reason: >
       Documented in intraday-fastpath.yml header: the fast/slow split — only price-driven
-      leaves run every 30 min during RTH; the slow regime/conviction/brain layer stays in
-      the nightly. The three steps are the complete fast path by design.
+      leaves run every 30 min during RTH (basket_pulse also premarket from 07:00 ET);
+      the slow regime/conviction/brain layer stays in the nightly. The four steps are
+      the complete fast path by design (FTR W2, masterplan FT-R5).
     evidence: intraday-fastpath.yml:1-17
 
   - lanes: [sentinel, commodity-sentinel, whitehouse-sentinel]
@@ -1581,3 +1822,29 @@ modules:
       Incremental nightly factor panel build (bounded 10-day window).
       data/factordata/panel/ is gitignored (R2 data plane). Also produces
       site/factordata/dna_class.json (DNA class reference; stock-personality program).
+
+  # --- nw-context-intelligence W4: context scanner (CORTEX JOB) ---
+  - module: scripts.build_context_candidates
+    reads:
+      - data/neuralweb/spine_index.parquet
+      - data/us_board_ledger/retro_grades.parquet
+      - data/us_board_ledger/snapshots.jsonl
+      - data/oracle/compounds/registry.jsonl
+      - data/species/registry.json
+      - data/neuralweb/machine_registry.jsonl
+      - data/trial_ledger.jsonl
+      - data/neuralweb/context_candidates.jsonl
+    writes:
+      - data/neuralweb/context_candidates.jsonl
+      - data/trial_ledger.jsonl
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      W4 context scanner (CORTEX JOB, nwci-w4). Runs three FROZEN v1 templates
+      (T1 composition drift, T2 outcome heterogeneity, T3 co-occurrence shift)
+      against pre-declared budget fdr_family='context_scan'. Refuses to run
+      without a declared budget row (GovernorRefusal). Outputs are display/context
+      tier only (horizon_role=context); candidates NEVER rank or score anything
+      (R-CI5, R-CI6, Article 2). Dedupe against oracle/species/machine/trial-ledger
+      + own archive (dead-stays-dead). Decay after 60 days.

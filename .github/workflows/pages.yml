@@ -85,6 +85,12 @@ jobs:
       # token-split compare around its baked Supabase config.
       - name: guard — site copies of template assets must match templates/
         run: python3 scripts/check_template_site_sync.py
+      # Guard: refuse to deploy a stitched hybrid Market State board — the render lanes'
+      # `git pull --rebase -X theirs` once baked upstream's score 56/"Mixed" beside a
+      # stale "Risk Radar forces Risk-off." note (2026-07-07, commit 5bf116a3b3), a pair
+      # engine/market_state.py can never emit from one snapshot. Stdlib-only.
+      - name: guard — market-state boards must be single-snapshot coherent
+        run: python3 scripts/check_ms_board_coherence.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/

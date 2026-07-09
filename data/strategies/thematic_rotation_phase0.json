@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-07-07T08:10:40.056587+00:00",
+  "generated_at": "2026-07-07T14:27:04.832459+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -22,16 +22,16 @@
           "worst_decile_ret": -0.0724
         },
         "top3_mom12_rel": {
-          "cagr": 0.0896,
+          "cagr": 0.0899,
           "sharpe": 0.65,
           "max_dd": -0.4142,
           "calmar": 0.22,
           "n_months": 319,
-          "dsr": 0.948,
+          "dsr": 0.949,
           "worst_decile_ret": -0.0664
         },
         "top3_mom6_rel": {
-          "cagr": 0.0848,
+          "cagr": 0.085,
           "sharpe": 0.64,
           "max_dd": -0.3969,
           "calmar": 0.21,
@@ -40,16 +40,16 @@
           "worst_decile_ret": -0.0625
         },
         "top3_mom12_dual": {
-          "cagr": 0.0692,
+          "cagr": 0.0695,
           "sharpe": 0.61,
           "max_dd": -0.2804,
           "calmar": 0.25,
           "n_months": 319,
-          "dsr": 0.925,
+          "dsr": 0.927,
           "worst_decile_ret": -0.0439
         },
         "top4_mom12_dual": {
-          "cagr": 0.072,
+          "cagr": 0.0722,
           "sharpe": 0.66,
           "max_dd": -0.2407,
           "calmar": 0.3,
@@ -87,16 +87,16 @@
           "p05": -0.1197,
           "n": 981
         },
-        "mean_diff_t": 0.11,
-        "mean_diff_p": 0.9116
+        "mean_diff_t": 0.1,
+        "mean_diff_p": 0.9171
       },
       "extension_drawdown": {
         "fwd_days": 63,
         "cohorts": {
           "normal": {
             "mean_fwd_maxdd": -0.0627,
-            "p05_fwd_maxdd": -0.211,
-            "n": 49655
+            "p05_fwd_maxdd": -0.2109,
+            "n": 49665
           },
           "stretched": {
             "mean_fwd_maxdd": -0.052,
@@ -106,7 +106,7 @@
           "parabolic": {
             "mean_fwd_maxdd": -0.0564,
             "p05_fwd_maxdd": -0.1609,
-            "n": 2394
+            "n": 2395
           }
         },
         "spearman_ez_vs_fwd_maxdd": 0.073
@@ -122,7 +122,7 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.4074,
+          "cagr": 0.4078,
           "sharpe": 1.79,
           "max_dd": -0.1162,
           "calmar": 3.51,
@@ -130,15 +130,15 @@
           "dsr": 0.929
         },
         "top3_mom12_rel": {
-          "cagr": 1.1191,
+          "cagr": 1.1222,
           "sharpe": 1.5,
           "max_dd": -0.2645,
-          "calmar": 4.23,
+          "calmar": 4.24,
           "n_months": 25,
-          "dsr": 0.772
+          "dsr": 0.774
         },
         "top3_mom6_rel": {
-          "cagr": 1.5085,
+          "cagr": 1.5076,
           "sharpe": 1.93,
           "max_dd": -0.1908,
           "calmar": 7.9,
@@ -146,26 +146,26 @@
           "dsr": 0.912
         },
         "top3_mom12_dual": {
-          "cagr": 1.0489,
+          "cagr": 1.0519,
           "sharpe": 1.49,
           "max_dd": -0.2645,
-          "calmar": 3.97,
+          "calmar": 3.98,
           "n_months": 25,
-          "dsr": 0.748
+          "dsr": 0.75
         },
         "top4_mom12_dual": {
-          "cagr": 1.007,
+          "cagr": 1.0083,
           "sharpe": 1.5,
           "max_dd": -0.2332,
           "calmar": 4.32,
           "n_months": 25,
-          "dsr": 0.748
+          "dsr": 0.749
         }
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0586,
-          "ic_t_hac": 1.31,
+          "mean_ic": 0.0587,
+          "ic_t_hac": 1.314,
           "hit": 0.52,
           "n_steps": 25
         },
@@ -179,9 +179,9 @@
       "tsmom_conditional": {
         "above_trend": {
           "mean": 0.0272,
-          "std": 0.113,
+          "std": 0.1129,
           "sharpe": 0.83,
-          "p05": -0.1315,
+          "p05": -0.1307,
           "n": 1043
         },
         "below_trend": {
@@ -192,7 +192,7 @@
           "n": 659
         },
         "mean_diff_t": -1.65,
-        "mean_diff_p": 0.0995
+        "mean_diff_p": 0.0998
       },
       "extension_drawdown": {
         "fwd_days": 63,

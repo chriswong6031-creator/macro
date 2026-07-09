@@ -1812,6 +1812,13 @@ def main(alpha: dict | None = None) -> dict | None:
             _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
             _bt = china_standout_track.grade()
             if _bt.get("available"):
+                # Interim (unrealized) mark-to-latest-close read — shown while the forward ledger
+                # is still pre-maturity so the panel isn't a black box until ~07-29. Labeled
+                # INTERIM in the template; graduates to the 21d grade once maturities land.
+                try:
+                    _bt["interim"] = china_standout_track.interim_grade()
+                except Exception as _ie:  # noqa: BLE001 — telemetry, never fatal
+                    log.warning("china interim board-track read failed (%s)", _ie)
                 wide["board_track"] = _bt
                 setups["board_track"] = _bt
             setups["coverage"] = wide["coverage"]
@@ -1826,6 +1833,7 @@ def main(alpha: dict | None = None) -> dict | None:
         try:
             from engine.risk_radar_intl import cn_sleeve_chip
             wide["sleeve_chip"] = cn_sleeve_chip()
+            setups["sleeve_chip"] = wide["sleeve_chip"]  # mirror onto rendered object (mirrors board_track/coverage pattern at L1823-1824)
             log.info("china stocks sleeve chip: %s", wide["sleeve_chip"].get("label_en"))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("china stocks sleeve chip failed (%s)", e)
@@ -1883,6 +1891,252 @@ def main(alpha: dict | None = None) -> dict | None:
                  len(eligible_rows), len(cand))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))
+
+    # ── CN Pick Lab snapshot producer + Flagship-2 Reversion Desk ────────────
+    # Spec §5 (snapshot) + §4 (reversion desk). Never-fatal: any failure logs a
+    # warning and returns setups unchanged. Adds ≤30s to the library build.
+    # Wires into the asia-lane commit via CN_LANE=asia (CNPL-R8).
+    _cnpl_asof = (alpha or {}).get("as_of")
+    if not _cnpl_asof:
+        log.warning("china pick_lab snapshot: no as_of (alpha unavailable) — skipped")
+    else:
+        try:
+            import time as _cnpl_time
+            _cnpl_t0 = _cnpl_time.time()
+            from engine.pick_lab.cn_snapshot import build_cn_core_rows, CN_SNAPSHOT_COLUMNS
+            from engine.pick_lab.snapshot import write_snapshot
+            from engine.pick_lab.profile import CN_PROFILE
+            from engine.pick_lab.reversion_desk import build_reversion_desk_artifact
+            from engine.china_signals import board_type as _cn_board_type
+
+            # ── 1. Collect per-ticker raw vols (for low-vol tercile) ──────────
+            _cnpl_vol_by: dict[str, float | None] = {}
+            for (_cpl_t, _cpl_c, *_cpl_rest) in uni:
+                try:
+                    _cpl_ser = _cpl_c.dropna() if _cpl_c is not None else None
+                    if _cpl_ser is None or len(_cpl_ser) < 63:
+                        continue
+                    _cpl_ret = _cpl_ser.pct_change(fill_method=None).dropna()
+                    if len(_cpl_ret) >= 20:
+                        _cnpl_vol_by[_cpl_t] = float(_cpl_ret.tail(60).std() * (252 ** 0.5))
+                except Exception:  # noqa: BLE001 — additive, never fatal
+                    pass
+
+            # ── 2. Collect washout_2w and extension per ticker from cand ──────
+            _cnpl_washout_by: dict[str, bool | None] = {}
+            _cnpl_extension_by: dict[str, dict | None] = {}
+            for (_cpl_s, _cpl_r) in cand:
+                _cpl_t = _cpl_r.get("ticker")
+                if not _cpl_t:
+                    continue
+                _cnpl_washout_by[_cpl_t] = _cpl_r.get("washout_2w")
+                _cnpl_extension_by[_cpl_t] = _cpl_r.get("extension")
+
+            # ── 3. Collect 1D/2D oscillators on the closes panel ─────────────
+            _cnpl_osc_by: dict[str, dict] = {}
+            try:
+                _cnpl_closes_path = config.data_dir() / "china_search" / "closes.parquet"
+                if _cnpl_closes_path.exists():
+                    from engine.pick_lab.signals_1d import compute_grids as _cnpl_grids
+                    _cnpl_panel = pd.read_parquet(_cnpl_closes_path)
+                    _cnpl_osc_df = _cnpl_grids(_cnpl_panel)
+                    for _cpl_t, _cpl_row in _cnpl_osc_df.iterrows():
+                        _cnpl_osc_by[str(_cpl_t)] = _cpl_row.to_dict()
+            except Exception as _cnpl_osc_e:  # noqa: BLE001 — additive, never fatal
+                log.debug("china pick_lab: 1D/2D grid skipped (%s)", _cnpl_osc_e)
+
+            # ── 4. Collect tech (rsi5/rsi10 etc) from per-stock JSON files ────
+            _cnpl_tech_by: dict[str, dict] = {}
+            _cnpl_outdir = site / "chinastockdata"
+            for _cpl_t in list(sector_by.keys())[:]:
+                _cpl_safe = _safe(_cpl_t)
+                _cpl_fp = _cnpl_outdir / f"{_cpl_safe}.json"
+                if not _cpl_fp.exists():
+                    continue
+                try:
+                    _cpl_rec = json.loads(_cpl_fp.read_text())
+                    _cpl_tech = _cpl_rec.get("tech") or {}
+                    _cnpl_tech_by[_cpl_t] = {
+                        "rsi5":       _cpl_tech.get("rsi5"),
+                        "rsi10":      _cpl_tech.get("rsi10"),
+                        "ret_5d":     _cpl_tech.get("ret_5d"),
+                        "dist_ma20_z": _cpl_tech.get("dist_ma20_z"),
+                        "above_ma120": _cpl_tech.get("above_ma120"),
+                        "ma20_slope_up": _cpl_tech.get("ma20_slope_up"),
+                        "limit_flag": _cpl_tech.get("limit_flag"),
+                    }
+                except Exception:  # noqa: BLE001
+                    pass
+
+            # ── 5. Board type + limit width per ticker ────────────────────────
+            _cnpl_board_by: dict[str, str | None] = {}
+            _cnpl_limit_width_by: dict[str, float | None] = {}
+            for _cpl_t in sector_by:
+                try:
+                    _cpl_bd, _cpl_lw = _cn_board_type(_cpl_t)
+                    _cnpl_board_by[_cpl_t] = _cpl_bd
+                    _cnpl_limit_width_by[_cpl_t] = _cpl_lw
+                except Exception:  # noqa: BLE001
+                    _cnpl_board_by[_cpl_t] = None
+                    _cnpl_limit_width_by[_cpl_t] = None
+
+            # ── 6. Build reversal feature dicts from rev_z_by + reversal watch ─
+            _cnpl_rev_data: dict | None = None
+            try:
+                _cnpl_rev_data = compute_china_reversal()
+            except Exception:  # noqa: BLE001
+                pass
+            _cnpl_rev_z_by: dict[str, float] = dict(rev_z_by)  # already computed above
+            _cnpl_rev_3m_by: dict[str, float | None] = {}
+            _cnpl_rev_rank_by: dict[str, int | None] = {}
+            _cnpl_rev_n_by: dict[str, int | None] = {}
+            _cnpl_rev_deepest_by: dict[str, bool | None] = {}
+            if _cnpl_rev_data:
+                for _cpl_w in _cnpl_rev_data.get("watch", []):
+                    _cpl_t = _cpl_w.get("ticker")
+                    if not _cpl_t:
+                        continue
+                    _cnpl_rev_3m_by[_cpl_t] = _cpl_w.get("ret_3m")
+                    _cnpl_rev_rank_by[_cpl_t] = _cpl_w.get("sector_rank")
+                    _cnpl_rev_n_by[_cpl_t] = _cpl_w.get("sector_n")
+                # deepest quintile: sector_rank <= sector_n // 5
+                for _cpl_t, _cpl_rk in _cnpl_rev_rank_by.items():
+                    _cpl_n = _cnpl_rev_n_by.get(_cpl_t)
+                    if _cpl_rk is not None and _cpl_n is not None and _cpl_n > 0:
+                        _cnpl_rev_deepest_by[_cpl_t] = bool(_cpl_rk <= max(1, _cpl_n // 5))
+
+            # ── 7. Draw-down (2y high %) from close series ────────────────────
+            _cnpl_dd_by: dict[str, float | None] = {}
+            for (_cpl_t, _cpl_c, *_cpl_rest) in uni:
+                try:
+                    _cpl_ser = _cpl_c.dropna() if _cpl_c is not None else None
+                    if _cpl_ser is None or len(_cpl_ser) < 10:
+                        continue
+                    _cpl_look = _cpl_ser.tail(504)  # ~2y trading days
+                    _cpl_high = float(_cpl_look.max())
+                    _cpl_last = float(_cpl_ser.iloc[-1])
+                    if _cpl_high > 0:
+                        _cnpl_dd_by[_cpl_t] = round((1.0 - _cpl_last / _cpl_high) * 100, 1)
+                except Exception:  # noqa: BLE001
+                    pass
+
+            # ── 8. Regime scalars ─────────────────────────────────────────────
+            _cnpl_cycle_phase = None
+            _cnpl_partic_regime = None
+            _cnpl_partic_risk = None
+            _cnpl_policy_impulse = None
+            _cnpl_qvix_z = (qvix_reg or {}).get("qvix_z") if qvix_reg else None
+            _cnpl_csi300_close = None
+            try:
+                _cnpl_ms_path = (config.data_dir() / "china_regime" /
+                                 "market_state.json")
+                if _cnpl_ms_path.exists():
+                    _cnpl_ms = json.loads(_cnpl_ms_path.read_text())
+                    _cnpl_cycle_phase = _cnpl_ms.get("cycle_phase")
+                    _cnpl_partic_regime = _cnpl_ms.get("participation_regime")
+                    _cnpl_partic_risk = _cnpl_ms.get("participation_risk")
+                    _cnpl_policy_impulse = _cnpl_ms.get("policy_impulse")
+            except Exception:  # noqa: BLE001 — additive, never fatal
+                pass
+            try:
+                _csi_df = store.read("china", CSI300_ETF)
+                if _csi_df is not None and "close" in _csi_df.columns:
+                    _cnpl_csi300_close = float(_csi_df["close"].iloc[-1])
+            except Exception:  # noqa: BLE001
+                pass
+
+            # ── 9. Turnover by ticker (from liq_by) ──────────────────────────
+            _cnpl_turnover_by: dict[str, float | None] = {
+                _cpl_t: (_liq_v.get("adv_yi", None) * 1e8
+                         if _liq_v and _liq_v.get("adv_yi") is not None else None)
+                for _cpl_t, _liq_v in liq_by.items()
+            }
+
+            # ── 10. Assemble rows ─────────────────────────────────────────────
+            _cnpl_tickers = list(sector_by.keys())
+            _cnpl_rows = build_cn_core_rows(
+                tickers=_cnpl_tickers,
+                asof=_cnpl_asof,
+                close_by=price_by,
+                turnover_by=_cnpl_turnover_by,
+                sector_by=sector_by,
+                name_by={_cpl_t: _cpl_n for (_cpl_t, _, _, _cpl_n, _) in uni},
+                name_zh_by=name_zh_by,
+                board_by=_cnpl_board_by,
+                is_st_by=st_flag_by,
+                rev_3m_by=_cnpl_rev_3m_by,
+                rev_z_by=_cnpl_rev_z_by,
+                rev_sector_rank_by=_cnpl_rev_rank_by,
+                rev_sector_n_by=_cnpl_rev_n_by,
+                rev_deepest_quintile_by=_cnpl_rev_deepest_by,
+                washout_2w_by=_cnpl_washout_by,
+                coiled_by=coiled_by,
+                extension_by=_cnpl_extension_by,
+                vol_by=_cnpl_vol_by,
+                osc_d12_by=_cnpl_osc_by,
+                tech_by=_cnpl_tech_by,
+                dd_pct_2y_by=_cnpl_dd_by,
+                # limit_state / fillable: null-honest (require live OHLC)
+                limit_state_by={},
+                limit_width_by=_cnpl_limit_width_by,
+                chase_veto_by={},
+                t_plus_one_risk_by={},
+                cycle_phase=_cnpl_cycle_phase,
+                participation_regime=_cnpl_partic_regime,
+                participation_risk=_cnpl_partic_risk,
+                policy_impulse=_cnpl_policy_impulse,
+                qvix_z=_cnpl_qvix_z,
+                csi300_close=_cnpl_csi300_close,
+                archetype_by={},
+                above_20d_low_by={},
+                theme_basket_by={},
+                theme_breadth_pct_by={},
+                theme_member_ret21_rank_by={},
+                block_discount_recent_by={},
+                lhb_inst_seats_5d_by={},
+            )
+            log.info("china pick_lab snapshot: %d rows assembled for %s (%.1fs)",
+                     len(_cnpl_rows), _cnpl_asof, _cnpl_time.time() - _cnpl_t0)
+
+            # ── 11. Write snapshot parquet (monthly partition) ────────────────
+            if _cnpl_rows:
+                _cnpl_df = pd.DataFrame(_cnpl_rows).set_index("ticker")
+                _cnpl_df.attrs["asof"] = _cnpl_asof
+                try:
+                    # CNPL-R8: snapshot writes advance the forward ledger; only the
+                    # asia-close nightly lane may do so.  Default is "" (no-op) so
+                    # render/daily/weekly invocations that never set CN_LANE are
+                    # honest no-ops — they cannot accidentally persist a snapshot
+                    # with a render-clock asof.
+                    _cnpl_lane = os.environ.get("CN_LANE", "")
+                    if _cnpl_lane == "asia":
+                        _cnpl_n_written = write_snapshot(
+                            _cnpl_df, asof=_cnpl_asof, profile=CN_PROFILE)
+                        log.info("china pick_lab snapshot: wrote %d rows to parquet (lane=asia)",
+                                 _cnpl_n_written)
+                    else:
+                        log.debug("china pick_lab snapshot: skipped parquet write (lane=%s, not asia — CNPL-R8)",
+                                  _cnpl_lane or "<unset>")
+                except Exception as _cnpl_sw_e:  # noqa: BLE001 — never fatal
+                    log.warning("china pick_lab snapshot: parquet write failed (%s)", _cnpl_sw_e)
+
+                # ── 12. Flagship-2 Reversion Desk JSON ───────────────────────
+                try:
+                    _cnpl_fdir = site / "factordata"
+                    _cnpl_fdir.mkdir(parents=True, exist_ok=True)
+                    _cnpl_desk = build_reversion_desk_artifact(
+                        _cnpl_df, as_of=_cnpl_asof)
+                    (_cnpl_fdir / "china_reversion_desk.json").write_text(
+                        json.dumps(_cnpl_desk, separators=(",", ":"), default=str))
+                    log.info("china reversion desk: %d rows written (schema=%s)",
+                             _cnpl_desk.get("n_rows", 0), _cnpl_desk.get("schema"))
+                except Exception as _cnpl_rd_e:  # noqa: BLE001 — never fatal
+                    log.warning("china reversion desk write failed (%s)", _cnpl_rd_e)
+
+        except Exception as _cnpl_e:  # noqa: BLE001 — never fatal (additive lane)
+            log.warning("china pick_lab snapshot producer failed (%s)", _cnpl_e)
+    # ── END CN Pick Lab snapshot producer ─────────────────────────────────────
+
     return setups
 
 

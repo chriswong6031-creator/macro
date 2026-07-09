@@ -440,3 +440,80 @@ def test_w1_tested_verdicts_in_frontier_docket():
     # SLF-052 must be ACCRUE-CONFIRMED (probe result: unmanufacturable)
     assert FABLE_VERDICTS.get("SLF-052", {}).get("verdict") == "ACCRUE-CONFIRMED", \
         "SLF-052 should be ACCRUE-CONFIRMED (history unmanufacturable)"
+
+
+# ---- Day-3 SLF consolidation tests (2026-07-07) ----
+
+def test_day3_extension_day_confirmer_row_present():
+    """Month-end bond-index extension day must be in confirmer tier with correct fields."""
+    p = _payload()
+    confirmer = next((t for t in p["tiers"] if t["key"] == "confirmer"), None)
+    assert confirmer, "confirmer tier not found"
+    matches = [r for r in confirmer["rows"]
+               if "extension" in r["name"].lower() or "month-end bond" in r["name"].lower()]
+    assert matches, "Month-end bond-index extension day row not found in confirmer tier"
+    row = matches[0]
+    assert row["tier"] == "confirmer", f"expected confirmer, got {row['tier']}"
+    assert row["dsr_family"] == "d2_rates_calendar_flows", \
+        f"expected dsr_family=d2_rates_calendar_flows, got {row['dsr_family']}"
+    assert row["ic"] is None, "extension-day row must have ic=None (no cross-sectional IC)"
+    assert row["t_hac"] is not None, "t_hac must be set (time-series HAC stat)"
+    assert row["t_hac"] > 2.0, f"t_hac should be >2.0 (significant), got {row['t_hac']}"
+    assert "none" in row.get("wired", "").lower(), \
+        "extension-day row must not be wired into any score (display-only candidacy)"
+    # Bilingual fields present
+    assert row["name_zh"] and "月末" in row["name_zh"], "Chinese name must include 月末"
+    assert row["why_zh"], "Chinese rationale must be present"
+
+
+def test_day3_comment_letter_confirmer_row_present():
+    """SEC comment-letter release drift must be in confirmer tier with mandatory accrual caveat."""
+    p = _payload()
+    confirmer = next((t for t in p["tiers"] if t["key"] == "confirmer"), None)
+    assert confirmer, "confirmer tier not found"
+    matches = [r for r in confirmer["rows"]
+               if "comment" in r["name"].lower() and "letter" in r["name"].lower()]
+    assert matches, "SEC comment-letter release drift row not found in confirmer tier"
+    row = matches[0]
+    assert row["tier"] == "confirmer", f"expected confirmer, got {row['tier']}"
+    assert row["dsr_family"] == "d2_comment_letter_release", \
+        f"expected dsr_family=d2_comment_letter_release, got {row['dsr_family']}"
+    assert row["ic"] is None, "comment-letter row must have ic=None (event study, not cross-sectional IC)"
+    assert row["t_hac"] is not None and row["t_hac"] < -2.0, \
+        f"t_hac should be negative and significant (effect is negative drift), got {row['t_hac']}"
+    # Accrual caveat must appear in the why field
+    why_combined = (row.get("why", "") + row.get("why_zh", "")).lower()
+    assert "accrual" in why_combined or "concentrate" in why_combined or "2023" in why_combined, \
+        "Mandatory accrual caveat (temporal concentration) must appear in why/why_zh"
+    assert "none" in row.get("wired", "").lower(), \
+        "comment-letter row must not be wired into any score"
+
+
+def test_day3_block_renders_in_html():
+    """Day-3 build-day results block must appear in the rendered signal_lab.html."""
+    env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
+    env.filters["min"] = lambda seq: min(seq)
+    env.globals.update(t=i18n.t, td=i18n.td, tr=i18n.tr, zip=zip)
+    payload = signal_lab.build_scorecard()
+    html = env.get_template("signal_lab.html.j2").render(**payload)
+    # Day-3 block must be rendered
+    assert "Day 3" in html or "day3" in html.lower() or "第3天" in html, \
+        "Day-3 results block not found in rendered signal_lab.html"
+    # Queue moratorium text must reference empty queue
+    assert "EMPTY" in html or "清空" in html or "moratorium" in html.lower(), \
+        "Queue moratorium/empty status not in rendered HTML"
+
+
+def test_day3_no_score_leakage():
+    """Neither Day-3 confirmer row may feed into any numeric score (ic/hit must be None)."""
+    from engine.signal_lab import REGISTRY
+    day3_families = {"d2_rates_calendar_flows", "d2_comment_letter_release"}
+    for r in REGISTRY:
+        if r.get("dsr_family") in day3_families:
+            assert r["ic"] is None, \
+                f"{r['name']}: ic must be None for confirmer rows, not {r['ic']}"
+            # hit should not be set to a numeric value
+            assert r.get("hit") is None, \
+                f"{r['name']}: hit must be None for confirmer rows, got {r.get('hit')}"
+            assert r["tier"] == "confirmer", \
+                f"{r['name']}: must be confirmer tier, got {r['tier']}"

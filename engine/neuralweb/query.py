@@ -119,10 +119,13 @@ __all__ = [
     "adapt_cortex_attention",
     "adapt_options_entry",
     "adapt_tech_signals",
+    "adapt_personality_context",
     "build_index",
     "write_index",
     "load_index",
     "query",
+    "_stamp_personality",   # NW-CI W2: exported for tests
+    "_CI_NEW_COLS",         # NW-CI W2: exported for tests
 ]
 
 # ---------------------------------------------------------------------------
@@ -175,6 +178,20 @@ COLUMNS: list[str] = [
     "is_context",   # Catch-all default; True for non-sizing/non-veto/non-alpha rows
     "falsifier",    # Human-facing falsifier text (nullable str); spine-ledger rows only
     "half_life",    # Decay half-life in trading days (nullable float); filled by W2
+    # R5 PR-C — macro context + market routing + own-market quad (additive; None defaults)
+    "macro_context_id",       # sha256[:16] of the day's macro label composite; None pre-ledger
+    "macro_context_asof",     # asof of the macro snapshot that stamped this row; None pre-ledger
+    "market",                 # US | CN | HK | CA | None (derived from ledger+symbol routing)
+    "own_market_quad",        # national market quad for CN/HK/CA rows; None for US / macro
+    "regime_stamp_basis",     # pit_live | recomputed_history | None
+    # basis describes REGIME-stamp provenance (the regime= filter axis);
+    # macro_context_id provenance is guaranteed separately by the max-asof
+    # join-key law.  A row with a live macro_context_id whose quad was filled
+    # from history is correctly 'recomputed_history'.
+    # NW-CI W2 — personality coordinates (additive; None defaults; R-CI3 provenance)
+    "chart_primary",     # primary chart label from PIT parquet or production JSON
+    "micro_primary",     # primary micro-structure label
+    "personality_basis", # pit_labels | snapshot_not_pit | absent
 ]
 
 # Conservative defaults for role flag columns in _ensure_columns / load_index.
@@ -186,6 +203,29 @@ _FLAG_DEFAULTS: dict[str, object] = {
     "is_timing":  False,
     "is_context": True,
 }
+
+# R5 PR-C new columns — None defaults (read-time compatibility with existing parquets).
+# These are NOT in _FLAG_DEFAULTS because they are nullable str/None, not bool flags.
+_R5_NEW_COLS: tuple[str, ...] = (
+    "macro_context_id",
+    "macro_context_asof",
+    "market",
+    "own_market_quad",
+    "regime_stamp_basis",
+)
+
+# NW-CI W2 new columns — None defaults; personality coordinates.
+# personality_basis ∈ {pit_labels, snapshot_not_pit, absent} per R-CI3.
+_CI_NEW_COLS: tuple[str, ...] = (
+    "chart_primary",
+    "micro_primary",
+    "personality_basis",
+)
+
+# Ledgers whose rows are reconstructed from history, not registered at live time.
+# Census 2026-07-06 — track_record date==first_seen_asof match rate 0.0002;
+# a per-row first_seen_asof column is docketed.
+_RECONSTRUCTED_LEDGERS: frozenset[str] = frozenset({"track_record"})
 
 # Valid ledger values — used to name-space signal_id prefixes
 LEDGER_ENUM: tuple[str, ...] = (
@@ -202,6 +242,8 @@ LEDGER_ENUM: tuple[str, ...] = (
     "cortex_attention",     # Neural Web W7b PR2: graded cortex attention claims
     "options_entry",        # Options→NW W-B (RO-5): ungraded-honest options state context
     "tech_signals",         # Tech-signal suite W2 (DARK): display/context only; §3 gate required for promotion
+    "macro_context",        # R5 PR-C: macro snapshot context rows (scope_type='macro')
+    "personality_context",  # Stock Personality R-SP20: slim label join by ticker (display/context)
 )
 
 # ---------------------------------------------------------------------------
@@ -267,12 +309,17 @@ def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
     W1: role flag columns default to conservative values (is_context=True, others=False)
     rather than NaN so old rows honour R8's 'is_context=true for pre-W1 rows' requirement.
     falsifier defaults None, half_life defaults NaN.
+    R5: macro_context_id, macro_context_asof, market, own_market_quad, regime_stamp_basis
+    default to None for read-time compatibility with existing parquets.
     """
     for c in COLUMNS:
         if c not in df.columns:
-            # Use conservative default for flag cols; NaN for everything else
-            default = _FLAG_DEFAULTS.get(c, np.nan)
-            df[c] = default
+            if c in _R5_NEW_COLS or c in _CI_NEW_COLS:
+                df[c] = None
+            else:
+                # Use conservative default for flag cols; NaN for everything else
+                default = _FLAG_DEFAULTS.get(c, np.nan)
+                df[c] = default
     df = df[COLUMNS].copy()
     # Backfill any NaN in flag columns with conservative defaults (handles mixed old/new rows)
     for flag, default_val in _FLAG_DEFAULTS.items():
@@ -1011,6 +1058,8 @@ def build_index(
         ("cortex_attention", lambda: adapt_cortex_attention(root)),  # W7b PR2 — graded cortex attention
         ("options_entry",  lambda: adapt_options_entry(root)),       # Options→NW W-B — ungraded-honest context
         ("tech_signals",   lambda: adapt_tech_signals(root)),        # W2 tech-signal suite — DARK display/context
+        ("macro_context",  lambda: adapt_macro_context(root)),        # R5 PR-C — macro snapshot context rows
+        ("personality_context", lambda: adapt_personality_context(root)),  # R-SP20 — slim label join
     ]
 
     for name, fn in adapters:
@@ -1042,6 +1091,41 @@ def build_index(
         na_position="last",
     ).reset_index(drop=True)
 
+    # R5 PR-C — market routing: derive market for every row from (ledger, symbol).
+    # Vectorised by applying _market_for_row row-wise.  None for non-market ledgers.
+    if "market" in combined.columns:
+        combined["market"] = [
+            _market_for_row(str(r["ledger"]) if r["ledger"] is not None else None,
+                            str(r["symbol"]) if r["symbol"] is not None else None)
+            for _, r in combined[["ledger", "symbol"]].iterrows()
+        ]
+
+    # R5 PR-C — adapter-carried regime stamps are live-registration stamps (qledger
+    # claims stamped at registration via regime_vector; board rows stamped during
+    # live nightly builds).  Label them pit_live BEFORE the historical helper runs,
+    # so the default regime= filter keeps the genuinely-live population.  Rows with
+    # no stamps keep basis None (nothing to label).
+    # NOTE: track_record rows are in _RECONSTRUCTED_LEDGERS and must NOT be labeled
+    # pit_live here; _stamp_macro_context will assign 'recomputed_history' when it
+    # stamps them.  The clobber gate below guards against double-labeling.
+    if "regime_stamp_basis" in combined.columns:
+        _stamp_cols = [
+            "rate_pressure", "quad_hard_label", "fused_risk_label",
+            "vol_regime", "risk_radar_state",
+        ]
+        _has_stamp = combined[_stamp_cols].notna().any(axis=1)
+        _no_basis = combined["regime_stamp_basis"].isna()
+        _not_reconstructed = ~combined["ledger"].astype(str).isin(_RECONSTRUCTED_LEDGERS)
+        combined.loc[_has_stamp & _no_basis & _not_reconstructed, "regime_stamp_basis"] = "pit_live"
+
+    # R5 PR-C — macro context stamp-join: backward merge_asof from macro snapshot ledger.
+    # Stamps macro_context_id + macro_context_asof onto all rows (PIT-correct, fail-open).
+    combined = _stamp_macro_context(combined, root)
+
+    # R5 PR-C — historical quad stamps: fill quad_hard_label + own_market_quad from
+    # per-market regime_history parquets (recomputed_history basis).
+    combined = _stamp_historical_quads(combined, root)
+
     # W2 — stamp family_half_life from half_life.json (family-level constant broadcast).
     # This is a cheap map-merge: reads the artifact once and joins on engine.
     # CRITICAL: the stamped value is a FAMILY-level constant broadcast to rows,
@@ -1053,6 +1137,12 @@ def build_index(
     # column carries the PRIOR night's artifact (fail-open NaN on first run).
     # This is display-only family metadata, not PIT-sensitive.
     combined = _stamp_family_half_life(combined, root)
+
+    # NW-CI W2 — personality coordinates: chart_primary, micro_primary, personality_basis.
+    # PIT parquet join for the 223 deep names; production JSON only for rows whose
+    # as_of is within 5 trading days of the JSON's as_of (R-CI3 provenance law).
+    # Fail-open: absent PIT parquet → all rows basis='absent'.
+    combined = _stamp_personality(combined, root)
 
     return combined, gaps
 
@@ -1108,6 +1198,305 @@ def _stamp_family_half_life(df: pd.DataFrame, root: Path | str | None) -> pd.Dat
         log.warning("_stamp_family_half_life: failed (half_life stays NaN): %s", e)
 
     return df
+
+
+def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.DataFrame:
+    """Stamp chart_primary, micro_primary, personality_basis onto spine rows.
+
+    R-CI3 provenance law (HARD BOUNDARY — do NOT weaken):
+      pit_labels   : row's (symbol, as_of) sourced from data/research/personality_pit_labels.parquet
+                     (the 223 deep names, daily PIT labels).  Applied at each row's as_of.
+      snapshot_not_pit: row's as_of is AFTER prod_asof by 0-5 business days (directional:
+                     prod_asof <= row_asof) AND the ticker is in the production JSON per_ticker
+                     dict.  Applied ONLY for non-deep-name tickers when PIT parquet misses.
+                     R-CI3 DIRECTIONAL LAW: rows dated BEFORE prod_asof get absent — today's
+                     snapshot is NEVER applied to historical dates (this is the leak boundary).
+      absent       : no PIT data available for this (ticker, as_of) combination.
+
+    Mirror of _stamp_historical_quads pattern: deterministic, build-time, fail-open.
+    PIT parquet read is lazy and cached within this call (no cross-call cache contamination).
+    If the PIT parquet is absent, all rows get personality_basis='absent'.
+
+    Non-destructive: rows that already carry a non-null personality_basis are not overwritten.
+    """
+    if df.empty:
+        return df
+
+    # Ensure columns exist (additive — _ensure_columns adds them as None)
+    for col in ("chart_primary", "micro_primary", "personality_basis"):
+        if col not in df.columns:
+            df[col] = None
+
+    data_p = _data_dir(root) if root is not None else _data_dir(None)
+
+    # ---------------------------------------------------------------------------
+    # 1. Load PIT parquet (lazy, local cache for this call)
+    # ---------------------------------------------------------------------------
+    pit_labels: pd.DataFrame | None = None
+    pit_tickers: frozenset[str] = frozenset()
+    pit_path = data_p / "research" / "personality_pit_labels.parquet"
+    if pit_path.exists():
+        try:
+            pit_labels = pd.read_parquet(pit_path)
+            if "ticker" in pit_labels.columns:
+                pit_tickers = frozenset(pit_labels["ticker"].dropna().unique())
+            else:
+                pit_labels = None
+                log.warning("_stamp_personality: personality_pit_labels.parquet missing 'ticker' column")
+        except Exception as e:  # noqa: BLE001
+            log.warning("_stamp_personality: cannot read personality_pit_labels.parquet (%s)", e)
+            pit_labels = None
+
+    if pit_labels is not None and not pit_labels.empty:
+        # Pre-process PIT parquet: ensure date column is datetime
+        pit_labels = pit_labels.copy()
+        if "date" in pit_labels.columns:
+            pit_labels["_dt"] = pd.to_datetime(pit_labels["date"], errors="coerce")
+        else:
+            pit_labels = None  # cannot proceed without a date column
+            log.warning("_stamp_personality: personality_pit_labels.parquet missing 'date' column")
+
+    # ---------------------------------------------------------------------------
+    # 2. Load production JSON (for snapshot_not_pit fallback)
+    # ---------------------------------------------------------------------------
+    prod_per_ticker: dict = {}
+    prod_asof_ts: pd.Timestamp | None = None
+
+    if root is not None:
+        root_p = Path(root)
+    else:
+        # Walk up from this file
+        root_p = Path(__file__).resolve().parent.parent.parent
+
+    prod_json_path = root_p / "site" / "factordata" / "stock_personality.json"
+    if prod_json_path.exists():
+        try:
+            raw = json.loads(prod_json_path.read_text(encoding="utf-8"))
+            prod_per_ticker = raw.get("per_ticker") or {}
+            as_of_str = raw.get("as_of")
+            if as_of_str:
+                try:
+                    prod_asof_ts = pd.Timestamp(as_of_str).normalize()
+                except Exception:  # noqa: BLE001
+                    prod_asof_ts = None
+        except Exception as e:  # noqa: BLE001
+            log.warning("_stamp_personality: cannot read stock_personality.json (%s)", e)
+
+    # ---------------------------------------------------------------------------
+    # 3. Stamp rows: first PIT parquet, then snapshot_not_pit fallback
+    # ---------------------------------------------------------------------------
+    # Only process rows with null personality_basis (non-destructive)
+    needs_stamp = df["personality_basis"].isna()
+    if not needs_stamp.any():
+        return df
+
+    work = df.loc[needs_stamp, ["symbol", "as_of"]].copy()
+    work["_as_of_dt"] = pd.to_datetime(work["as_of"], errors="coerce")
+
+    # --- Pass A: PIT parquet join for deep names ---
+    if pit_labels is not None and not pit_labels.empty:
+        deep_mask = work["symbol"].isin(pit_tickers)
+        if deep_mask.any():
+            deep_work = work[deep_mask].copy().sort_values("_as_of_dt")
+
+            # For each unique ticker in deep_mask, do backward merge_asof
+            for ticker_val, ticker_group in deep_work.groupby("symbol"):
+                ticker_pit = pit_labels[pit_labels["ticker"] == ticker_val].copy()
+                if ticker_pit.empty or "_dt" not in ticker_pit.columns:
+                    continue
+                ticker_pit_sorted = ticker_pit.dropna(subset=["_dt"]).sort_values("_dt")
+
+                merged = pd.merge_asof(
+                    ticker_group.sort_values("_as_of_dt"),
+                    ticker_pit_sorted[["_dt", "chart_primary", "micro_primary"]],
+                    left_on="_as_of_dt",
+                    right_on="_dt",
+                    direction="backward",
+                )
+                merged.index = ticker_group.index
+
+                # Apply to main df for rows where a match was found (chart_primary not null)
+                matched = merged.index[merged["chart_primary"].notna()]
+                if len(matched) > 0:
+                    df.loc[matched, "chart_primary"] = merged.loc[matched, "chart_primary"].values
+                    # micro_primary: null is valid (some rows lack micro labels)
+                    df.loc[matched, "micro_primary"] = merged.loc[matched, "micro_primary"].values
+                    df.loc[matched, "personality_basis"] = "pit_labels"
+
+    # --- Pass B: snapshot_not_pit fallback for non-deep names within 5 trading days ---
+    # Vectorized: compute signed business-day gaps for all still_needs rows at once.
+    # Gap = (row_as_of - prod_asof) in business days (np.busday_count; holiday-agnostic
+    # like the previous bdate_range — consistent approximation per codebase convention).
+    # R-CI3 DIRECTIONAL LAW: only apply when 0 <= signed_gap <= 5; rows dated BEFORE
+    # the snapshot (signed_gap < 0) must return absent — today's snapshot never applies
+    # to yesterday's events.
+    if prod_per_ticker and prod_asof_ts is not None:
+        still_needs = df["personality_basis"].isna()
+        if still_needs.any():
+            work2 = df.loc[still_needs, ["symbol", "as_of"]].copy()
+            work2["_as_of_dt"] = pd.to_datetime(work2["as_of"], errors="coerce")
+
+            # Compute signed gaps for all unique as_of values at once
+            unique_dts = work2["_as_of_dt"].dropna().unique()
+            prod_date = prod_asof_ts.date()
+            gap_map: dict = {}
+            for udt in unique_dts:
+                try:
+                    row_date = pd.Timestamp(udt).date()
+                    # np.busday_count(d0, d1) returns d1 - d0 in business days (exclusive of d0)
+                    # so count from prod to row gives signed gap (row >= prod → positive)
+                    signed_gap = int(np.busday_count(prod_date, row_date))
+                except Exception:  # noqa: BLE001
+                    signed_gap = -9999
+                gap_map[udt] = signed_gap
+
+            work2["_signed_gap"] = work2["_as_of_dt"].map(gap_map)
+
+            # NaT rows → absent
+            nat_mask = work2["_as_of_dt"].isna()
+            df.loc[work2.index[nat_mask], "personality_basis"] = "absent"
+
+            # Directional window: prod_asof <= row_asof <= prod_asof + 5 business days
+            in_window = (~nat_mask) & (work2["_signed_gap"] >= 0) & (work2["_signed_gap"] <= 5)
+            out_window = (~nat_mask) & ~in_window
+
+            # Out-of-window (including rows before prod_asof) → absent
+            df.loc[work2.index[out_window], "personality_basis"] = "absent"
+
+            # In-window: vectorised per-ticker label map (no per-row Python loop).
+            # Build lookup Series keyed by ticker string once, then .map onto symbols.
+            if in_window.any():
+                in_idx = work2.index[in_window]
+                in_symbols = work2.loc[in_idx, "symbol"].astype(str)
+
+                # Build chart/micro/basis lookup dicts keyed by ticker (unique tickers only)
+                unique_tickers = in_symbols.unique()
+                chart_lookup: dict[str, object] = {}
+                micro_lookup: dict[str, object] = {}
+                basis_lookup: dict[str, str] = {}
+                for t in unique_tickers:
+                    rec = prod_per_ticker.get(t)
+                    if isinstance(rec, dict):
+                        charts = [c for c in (rec.get("chart") or []) if isinstance(c, str)]
+                        micros = [m for m in (rec.get("micro") or []) if isinstance(m, str)]
+                        chart_lookup[t] = charts[0] if charts else None
+                        micro_lookup[t] = micros[0] if micros else None
+                        basis_lookup[t] = "snapshot_not_pit"
+                    else:
+                        chart_lookup[t] = None
+                        micro_lookup[t] = None
+                        basis_lookup[t] = "absent"
+
+                # .map applies the lookup to all in-window rows at once
+                df.loc[in_idx, "personality_basis"] = in_symbols.map(basis_lookup).values
+                df.loc[in_idx, "chart_primary"]     = in_symbols.map(chart_lookup).values
+                df.loc[in_idx, "micro_primary"]     = in_symbols.map(micro_lookup).values
+
+    # Any remaining null → absent
+    still_null = df["personality_basis"].isna()
+    if still_null.any():
+        df.loc[still_null, "personality_basis"] = "absent"
+
+    return df
+
+
+def _stamp_macro_context(combined: pd.DataFrame, root: Path | str | None = None) -> pd.DataFrame:
+    """Stamp macro_context_id and macro_context_asof onto all rows from the macro snapshot ledger.
+
+    Backward merge_asof: each spine row gets the macro snapshot from the MOST RECENT
+    snapshot day whose asof <= row's as_of (PIT-correct, no forward-look).
+
+    DTYPE LAW (§0.5 item 9):
+      1. pd.to_datetime both keys
+      2. sort left table by datetime key
+      3. merge_asof(direction='backward')
+      4. restore string as_of
+
+    Source: data/macro_snapshots/ledger.parquet — one row per (asof, domain,
+    field); the backward merge_asof uses the unique asof index.
+    If ledger.parquet absent → gap note, no-op.
+
+    Only stamps rows where macro_context_id is currently None (non-destructive).
+    Sets regime_stamp_basis='pit_live' for rows that receive a stamp, EXCEPT
+    rows from _RECONSTRUCTED_LEDGERS which receive 'recomputed_history'.
+    """
+    if combined.empty:
+        return combined
+
+    snap_path = _data_dir(root) / "macro_snapshots" / "ledger.parquet"
+    if not snap_path.exists():
+        log.debug("_stamp_macro_context: ledger.parquet absent — macro_context_id stays None")
+        return combined
+
+    try:
+        snap = pd.read_parquet(snap_path)
+    except Exception as e:  # noqa: BLE001
+        log.warning("_stamp_macro_context: ledger.parquet unreadable (%s) — no-op", e)
+        return combined
+
+    if snap.empty or "asof" not in snap.columns or "macro_context_id" not in snap.columns:
+        log.debug("_stamp_macro_context: ledger.parquet empty or missing columns — no-op")
+        return combined
+
+    # Build per-asof snapshot index: one row per unique asof, most-recent macro_context_id
+    snap_asofs = (
+        snap[["asof", "macro_context_id"]]
+        .dropna(subset=["asof", "macro_context_id"])
+        .drop_duplicates(subset=["asof"], keep="last")
+        .copy()
+    )
+    if snap_asofs.empty:
+        return combined
+
+    # DTYPE LAW
+    snap_asofs["_snap_dt"] = pd.to_datetime(snap_asofs["asof"], errors="coerce")
+    snap_asofs = snap_asofs.dropna(subset=["_snap_dt"]).sort_values("_snap_dt")
+    snap_asofs = snap_asofs.rename(columns={"asof": "_snap_asof"})
+
+    # Only stamp rows where macro_context_id is currently None
+    needs_stamp = combined["macro_context_id"].isna()
+    if not needs_stamp.any():
+        return combined
+
+    work = combined.loc[needs_stamp, ["as_of"]].copy()
+    work["_as_of_dt"] = pd.to_datetime(work["as_of"], errors="coerce")
+    work = work.dropna(subset=["_as_of_dt"]).sort_values("_as_of_dt")
+
+    if work.empty:
+        return combined
+
+    try:
+        merged = pd.merge_asof(
+            work,
+            snap_asofs[["_snap_dt", "_snap_asof", "macro_context_id"]],
+            left_on="_as_of_dt",
+            right_on="_snap_dt",
+            direction="backward",
+        )
+        merged.index = work.index
+
+        # Apply non-null results back
+        stamp_mask = needs_stamp & combined.index.isin(merged.index)
+        ctx_id_vals = merged["macro_context_id"].reindex(combined.index)
+        ctx_asof_vals = merged["_snap_asof"].reindex(combined.index)
+
+        notnull_ctx = ctx_id_vals.notna()
+        combined.loc[stamp_mask & notnull_ctx, "macro_context_id"] = ctx_id_vals[stamp_mask & notnull_ctx]
+        combined.loc[stamp_mask & notnull_ctx, "macro_context_asof"] = ctx_asof_vals[stamp_mask & notnull_ctx]
+        # Set basis for rows that just received a stamp and don't have a basis yet.
+        # Rows from reconstructed ledgers receive 'recomputed_history'; all others
+        # receive 'pit_live' (they were registered at live time).
+        no_basis = combined["regime_stamp_basis"].isna() | (
+            combined["regime_stamp_basis"].astype(str).isin({"None", "nan", ""})
+        )
+        is_reconstructed = combined["ledger"].astype(str).isin(_RECONSTRUCTED_LEDGERS)
+        combined.loc[stamp_mask & notnull_ctx & no_basis & ~is_reconstructed, "regime_stamp_basis"] = "pit_live"
+        combined.loc[stamp_mask & notnull_ctx & no_basis & is_reconstructed, "regime_stamp_basis"] = "recomputed_history"
+
+    except Exception as e:  # noqa: BLE001
+        log.warning("_stamp_macro_context: merge_asof failed (%s) — no-op", e)
+
+    return combined
 
 
 # ---------------------------------------------------------------------------
@@ -1196,6 +1585,8 @@ def query(
     as_of_before: str | None = None,
     graded_before: str | None = None,
     graded_only: bool = False,
+    macro_context_id: str | None = None,
+    stamp_basis: str | None = None,
     root: Path | str | None = None,
 ) -> pd.DataFrame:
     """Filter the spine index by the given criteria.
@@ -1213,13 +1604,33 @@ def query(
     regime:
         Filter by regime label.  Matches against quad_hard_label OR
         fused_risk_label OR vol_regime OR risk_radar_state (any match
-        qualifies the row).
+        qualifies the row).  Default (None) returns all rows (no filter).
+        Note: ``regime='pit_live'`` is NOT a valid label — pit_live is a
+        stamp BASIS, not a regime label; use ``stamp_basis='pit_live'``
+        for that filter.
     horizon:
         Filter by horizon (int, exact).
     symbol:
         Filter by symbol (exact).
     scope_type:
         Filter by scope_type (entity | sector | basket | macro).
+    macro_context_id:
+        R5 — filter by macro_context_id (sha256[:16] of macro label composite).
+        Returns only rows stamped with this specific snapshot id.
+    stamp_basis:
+        R5 — filter by regime_stamp_basis.
+
+        Interaction with ``regime``::
+
+            regime=X, stamp_basis=None     → restrict regime match to pit_live rows
+                                             (callers opt out via stamp_basis='any')
+            regime=X, stamp_basis='any'    → no basis restriction (all rows)
+            regime=X, stamp_basis='pit_live'            → pit_live rows only
+            regime=X, stamp_basis='recomputed_history'  → reconstructed rows only
+            regime=None, stamp_basis='pit_live'         → pit_live rows (any regime)
+            regime=None, stamp_basis=None  → no basis filter
+
+        When regime is None, stamp_basis=None applies no basis filter.
     as_of_before:
         PIT guard — retain rows where as_of < cutoff (ISO date str).
         These rows EXISTED before the cutoff; their outcomes were graded AFTER.
@@ -1271,6 +1682,10 @@ def query(
             (df["risk_radar_state"].astype(str) == regime)
         )
         mask &= reg_mask
+        # Default pit_live restriction when regime is set and no explicit basis given.
+        # Callers opt out via stamp_basis='any' (no restriction) or pass an explicit value.
+        if stamp_basis is None and "regime_stamp_basis" in df.columns:
+            mask &= df["regime_stamp_basis"].astype(str) == "pit_live"
     if horizon is not None:
         mask &= pd.to_numeric(df["horizon"], errors="coerce") == int(horizon)
     if symbol is not None:
@@ -1309,6 +1724,17 @@ def query(
         except (TypeError, ValueError):
             graded_col = graded_col.map(lambda x: bool(x) if x is not None else False)
         mask &= graded_col
+    if macro_context_id is not None:
+        if "macro_context_id" in df.columns:
+            mask &= df["macro_context_id"].astype(str) == macro_context_id
+        else:
+            # Column absent (pre-R5 index) — filter returns zero rows for safety
+            mask &= pd.Series([False] * len(df), index=df.index)
+    if stamp_basis is not None and stamp_basis != "any":
+        if "regime_stamp_basis" in df.columns:
+            mask &= df["regime_stamp_basis"].astype(str) == stamp_basis
+        else:
+            mask &= pd.Series([False] * len(df), index=df.index)
 
     return df[mask].copy().reset_index(drop=True)
 
@@ -1510,6 +1936,420 @@ def adapt_options_entry(
 
 
 # ---------------------------------------------------------------------------
+# adapt_tech_signals — Tech-signal suite NW context feed (DARK)
+# ---------------------------------------------------------------------------
+# GATE: these signals are display/context only (direction=0, outcome_graded=False,
+# is_context=True). Promotion to confirmer tier requires an Article-3 gauntlet
+# pass (n_dates>=25, Wilson CI lower-bound > 0 vs matched control). LLMs may
+# only de-escalate calibrated keys — never originate signals, scores, or
+# escalations. Nothing here is wired to allocation or masterminds.
+# ---------------------------------------------------------------------------
+
+def adapt_tech_signals(
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt ``site/factordata/tech_lab.json`` → ledger='tech_signals'.
+
+    DARK — NW CONTEXT FEED (tech-signal suite W2)
+    ----------------------------------------------
+    Registers per-signal descriptive fire-metrics from ``engine.tech_catalog``
+    as display/context rows in the spine index.  Every row carries:
+
+      direction=0           — no directional claim; purely descriptive state
+      outcome_graded=False  — UNGRADED-HONEST; no §3 gauntlet has passed
+      is_context=True       — catch-all context flag per W1 R8
+
+    PROMOTION GATE: a signal family may only be promoted from display →
+    confirmer after an Article-3 gauntlet with n_dates>=25 and Wilson CI
+    lower-bound > 0 vs a matched control.  Until that gate fires, these rows
+    are invisible to every Article-2 surface (alert_triage, board_ordering,
+    top_setups, attention_queue, push_floor).
+
+    Fail-open: missing or unreadable tech_lab.json → gap note + zero rows.
+    The artifact is DARK at registration time (site/factordata/tech_lab.json
+    may not yet exist on a fresh clone); zero rows is the correct behaviour.
+    """
+    gaps: list[str] = []
+
+    if root is not None:
+        root_p = Path(root)
+    else:
+        try:
+            from lib import config as _cfg  # noqa: PLC0415
+            root_p = Path(_cfg.ROOT)
+        except Exception:  # noqa: BLE001
+            root_p = Path(".")
+
+    path = root_p / "site" / "factordata" / "tech_lab.json"
+    if not path.exists():
+        gaps.append("tech_signals: site/factordata/tech_lab.json absent — zero rows (DARK)")
+        return _empty_df(), gaps
+
+    try:
+        with open(path, encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"tech_signals: tech_lab.json unreadable ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    # Extract top-level asof from generated_utc (ISO string → date prefix)
+    asof_raw = payload.get("generated_utc") or ""
+    asof = _str_date(asof_raw) if asof_raw else None
+    if not asof:
+        gaps.append("tech_signals: missing generated_utc — zero rows")
+        return _empty_df(), gaps
+
+    signals: dict = payload.get("signals") or {}
+    if not signals:
+        gaps.append("tech_signals: no signals block in tech_lab.json — zero rows")
+        return _empty_df(), gaps
+
+    rows: list[dict] = []
+    for sig_name, sig_meta in signals.items():
+        if not isinstance(sig_meta, dict):
+            continue
+        row: dict[str, Any] = {c: None for c in COLUMNS}
+        row["signal_id"]      = f"tech_signals:{asof}:{sig_name}"
+        row["engine"]         = "tech_signals"
+        row["family"]         = f"tech.{sig_name}"
+        row["ledger"]         = "tech_signals"
+        row["as_of"]          = asof
+        row["symbol"]         = sig_name          # signal name as the "symbol" key
+        row["scope_type"]     = "basket"           # cross-sectional; not a single entity
+        row["universe"]       = "tech_signals.lab"
+        row["horizon"]        = None
+        # CONTEXT record: direction=0 always — no directional claim (DARK gate)
+        row["direction"]      = 0
+        row["size_binding"]   = False
+        row["fill_basis"]     = "tech_lab_snapshot"
+        row["score"]          = None   # DARK context row carries no score (matches adapt_options_entry)
+        row["outcome_excess"] = None
+        # UNGRADED-HONEST: outcome_graded=False until §3 gauntlet passes
+        row["outcome_graded"] = False
+        row["graded_at"]      = None
+        row["is_context"]     = True
+        rows.append(row)
+
+    gaps.append(
+        f"tech_signals: {len(rows)} context rows emitted from tech_lab.json "
+        f"(asof={asof}, DARK — direction=0, ungraded-honest)"
+    )
+
+    if not rows:
+        return _empty_df(), gaps
+    return _ensure_columns(pd.DataFrame(rows)), gaps
+
+
+# ---------------------------------------------------------------------------
+# R5 PR-C helpers: market routing, historical quad stamps, macro adapter
+# ---------------------------------------------------------------------------
+
+def _market_for_row(ledger: str | None, symbol: str | None) -> str | None:
+    """Derive market routing from (ledger, symbol).
+
+    Routing rules (§6.3):
+      board_hk                    → HK
+      board_ca                    → CA
+      board_cn                    → CN
+      track_record, spine,
+        options_entry              → US  (track_record verified all-US by census)
+      qledger                     → by symbol suffix:
+                                     .SS / .SZ → CN; .HK → HK; else → US
+      macro_context               → None  (not market-specific)
+      reflexes, cortex_attention,
+        cycles_*                  → None  (no market-specific routing)
+      None / other                → None
+    """
+    ledger = _safe_str(ledger) or ""
+    symbol = _safe_str(symbol) or ""
+
+    if ledger in ("board_hk",):
+        return "HK"
+    if ledger in ("board_ca",):
+        return "CA"
+    if ledger in ("board_cn",):
+        return "CN"
+    if ledger in ("track_record", "spine", "options_entry"):
+        return "US"
+    if ledger == "qledger":
+        sym_upper = symbol.upper()
+        if sym_upper.endswith(".SS") or sym_upper.endswith(".SZ"):
+            return "CN"
+        if sym_upper.endswith(".HK"):
+            return "HK"
+        return "US"
+    # macro_context, reflexes, cortex_attention, cycles_*, etc. → None
+    return None
+
+
+def _stamp_historical_quads(df: pd.DataFrame, root: Path | None = None) -> pd.DataFrame:
+    """Fill quad_hard_label and own_market_quad from per-market regime_history parquets.
+
+    Deterministic, build-time, inside build_index. §6.3.3.
+
+    quad_hard_label: US quads only — fills where null from data/regime/regime_history.parquet
+    (US history, 1971→). US quads stay US-primary EVERYWHERE (query.py:159 invariant).
+    regime_stamp_basis set to 'recomputed_history' for these rows.
+
+    own_market_quad: fills for market ∈ {CN, HK, CA} from matching history parquet:
+      CN → data/china_regime/regime_history.parquet
+      HK → data/hk_regime/regime_history.parquet
+      CA → data/canada_regime/regime_history.parquet
+
+    DTYPE LAW (§0.5 item 9): reset_index() on DatetimeIndex parquets, convert both keys
+    with pd.to_datetime, sort, merge_asof(direction='backward'), restore string as_of.
+
+    Rows outside a parquet's range stay null (no imputation).
+    """
+    if df.empty:
+        return df
+
+    data = _data_dir(root)
+
+    def _merge_history(
+        target_df: pd.DataFrame,
+        history_path: Path,
+        quad_col: str,
+        dest_col: str,
+    ) -> pd.DataFrame:
+        """Merge regime_history onto target_df by backward merge_asof on as_of."""
+        if not history_path.exists():
+            return target_df
+        try:
+            hist = pd.read_parquet(history_path)
+        except Exception as e:  # noqa: BLE001
+            log.warning("_stamp_historical_quads: cannot read %s (%s)", history_path, e)
+            return target_df
+
+        if hist.empty:
+            return target_df
+
+        # Reset DatetimeIndex → plain column. An unnamed DatetimeIndex resets to a
+        # column literally called "index" — name it first so the date-column
+        # resolution below finds it (all four regime_history parquets are unnamed).
+        if isinstance(hist.index, pd.DatetimeIndex):
+            if hist.index.name is None:
+                hist.index.name = "date"
+            hist = hist.reset_index()
+
+        # Resolve the date column name
+        date_col = None
+        for cand in ("date", "as_of", "asof"):
+            if cand in hist.columns:
+                date_col = cand
+                break
+        if date_col is None:
+            log.warning("_stamp_historical_quads: no date column in %s", history_path)
+            return target_df
+
+        if quad_col not in hist.columns:
+            # Try common alternatives
+            for alt in ("quad", "hard_label", "quad_hard_label"):
+                if alt in hist.columns:
+                    quad_col = alt
+                    break
+            else:
+                log.warning(
+                    "_stamp_historical_quads: column %r absent in %s", quad_col, history_path
+                )
+                return target_df
+
+        # DTYPE LAW: convert both keys to datetime, sort, merge_asof, restore string
+        try:
+            hist_sorted = hist[[date_col, quad_col]].copy()
+            hist_sorted[date_col] = pd.to_datetime(hist_sorted[date_col], errors="coerce")
+            hist_sorted = hist_sorted.dropna(subset=[date_col]).sort_values(date_col)
+            hist_sorted = hist_sorted.rename(columns={date_col: "_hist_dt", quad_col: "_hist_quad"})
+
+            # Need a mask of rows to update
+            needs_update = target_df[dest_col].isna()
+            if not needs_update.any():
+                return target_df
+
+            work = target_df.loc[needs_update, ["as_of"]].copy()
+            work["_as_of_dt"] = pd.to_datetime(work["as_of"], errors="coerce")
+            work = work.dropna(subset=["_as_of_dt"]).sort_values("_as_of_dt")
+
+            if work.empty:
+                return target_df
+
+            merged = pd.merge_asof(
+                work,
+                hist_sorted,
+                left_on="_as_of_dt",
+                right_on="_hist_dt",
+                direction="backward",
+            )
+
+            # Restore original index
+            merged.index = work.index
+            # Apply to target_df
+            update_mask = needs_update & target_df.index.isin(merged.index)
+            quad_values = merged["_hist_quad"].reindex(target_df.index)
+            target_df.loc[update_mask, dest_col] = quad_values[update_mask]
+
+            # Set basis for rows that got filled
+            filled_mask = update_mask & target_df[dest_col].notna()
+            target_df.loc[filled_mask, "regime_stamp_basis"] = "recomputed_history"
+
+        except Exception as e:  # noqa: BLE001
+            log.warning("_stamp_historical_quads: merge failed for %s (%s)", history_path, e)
+
+        return target_df
+
+    # 1. Fill quad_hard_label for ALL rows with null quad_hard_label
+    #    from US history parquet (US quads are US-primary on every lane)
+    us_hist_path = data / "regime" / "regime_history.parquet"
+    df = _merge_history(df, us_hist_path, "quad", "quad_hard_label")
+
+    def _apply_subset(
+        target_df: pd.DataFrame,
+        market_val: str,
+        hist_path: Path,
+        quad_col: str,
+        dest_col: str,
+    ) -> pd.DataFrame:
+        """Apply _merge_history on the subset matching market_val, write results back."""
+        market_mask = target_df["market"] == market_val
+        if not market_mask.any():
+            return target_df
+        subset = target_df[market_mask].copy()
+        subset = _merge_history(subset, hist_path, quad_col, dest_col)
+        # Write own_market_quad back using reindex to keep index alignment
+        target_df.loc[market_mask, dest_col] = subset[dest_col].reindex(
+            target_df.loc[market_mask].index
+        )
+        # Write regime_stamp_basis back for rows that got filled
+        basis_vals = subset["regime_stamp_basis"].reindex(target_df.loc[market_mask].index)
+        filled = basis_vals.notna()
+        target_df.loc[target_df.index[market_mask][filled], "regime_stamp_basis"] = (
+            basis_vals[filled].values
+        )
+        return target_df
+
+    # 2. Fill own_market_quad for CN rows
+    cn_hist_path = data / "china_regime" / "regime_history.parquet"
+    df = _apply_subset(df, "CN", cn_hist_path, "quad", "own_market_quad")
+
+    # 3. Fill own_market_quad for HK rows
+    hk_hist_path = data / "hk_regime" / "regime_history.parquet"
+    df = _apply_subset(df, "HK", hk_hist_path, "quad", "own_market_quad")
+
+    # 4. Fill own_market_quad for CA rows
+    ca_hist_path = data / "canada_regime" / "regime_history.parquet"
+    df = _apply_subset(df, "CA", ca_hist_path, "quad", "own_market_quad")
+
+    return df
+
+
+def adapt_macro_context(
+    root: Path | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt data/macro_snapshots/ledger.parquet → ledger='macro_context'.
+
+    ADAPTER PATTERN: follows adapt_options_entry (ungraded-honest context rows).
+    One row per (asof, domain) from ledger.parquet.
+
+    signal_id: 'macro_context:{asof}:{domain}'
+    ledger: 'macro_context'
+    engine: 'macro_context'
+    scope_type: 'macro'  (pre-declared vocabulary at query.py COLUMNS, first population)
+    direction: 0  (context rows)
+    is_context: True
+    horizon: 0  (context, no trading-day horizon)
+    regime_stamp_basis: 'pit_live'
+    market: None  (not market-specific)
+
+    us_* regime stamps are injected from the day's labels where present.
+
+    Fail-open: absent/unreadable ledger.parquet → gap note + zero rows.
+    """
+    gaps: list[str] = []
+
+    ledger_path = _data_dir(root) / "macro_snapshots" / "ledger.parquet"
+    if not ledger_path.exists():
+        gaps.append("macro_context: data/macro_snapshots/ledger.parquet absent — zero rows")
+        return _empty_df(), gaps
+
+    try:
+        ledger_df = pd.read_parquet(ledger_path)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"macro_context: ledger.parquet unreadable ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if ledger_df.empty:
+        gaps.append("macro_context: ledger.parquet empty — zero rows")
+        return _empty_df(), gaps
+
+    # Group by (asof, domain) — emit one row per group
+    # Pivot field→value within each (asof, domain) pair to build a mini dict
+    # Then extract us_* stamps from the 'us' domain for regime stamp injection.
+
+    # First build a lookup: asof → {domain → {field: value}}
+    asof_domain_map: dict[str, dict[str, dict[str, Any]]] = {}
+    for _, r in ledger_df.iterrows():
+        asof = _str_date(r.get("asof")) or ""
+        domain = _safe_str(r.get("domain")) or ""
+        field = _safe_str(r.get("field")) or ""
+        value = _safe_str(r.get("value"))
+        macro_context_id = _safe_str(r.get("macro_context_id"))
+        if not asof or not domain:
+            continue
+        asof_domain_map.setdefault(asof, {}).setdefault(domain, {})[field] = value
+        # Attach macro_context_id to the asof level
+        if "macro_context_id" not in asof_domain_map[asof]:
+            asof_domain_map[asof]["macro_context_id"] = macro_context_id
+
+    rows: list[dict] = []
+    for asof, domain_map in asof_domain_map.items():
+        ctx_id = domain_map.pop("macro_context_id", None)
+        # us stamps for regime injection
+        us_fields = domain_map.get("us") or {}
+
+        for domain, field_vals in domain_map.items():
+            sig = f"macro_context:{asof}:{domain}"
+            row: dict[str, Any] = {c: None for c in COLUMNS}
+            row["signal_id"]         = sig
+            row["engine"]            = "macro_context"
+            row["family"]            = domain
+            row["ledger"]            = "macro_context"
+            row["as_of"]             = asof
+            row["symbol"]            = domain
+            row["scope_type"]        = "macro"
+            row["universe"]          = "macro_context"
+            row["horizon"]           = 0
+            row["direction"]         = 0
+            row["size_binding"]      = False
+            row["fill_basis"]        = "macro_snapshot"
+            row["score"]             = None
+            row["outcome_excess"]    = None
+            row["outcome_graded"]    = False
+            row["graded_at"]         = None
+            row["is_context"]        = True
+            row["macro_context_id"]  = ctx_id
+            row["macro_context_asof"] = asof
+            row["market"]            = None
+            row["own_market_quad"]   = None
+            row["regime_stamp_basis"] = "pit_live"
+
+            # Inject us_* regime stamps from the day's 'us' domain labels
+            row["quad_hard_label"]  = us_fields.get("us_quad")
+            row["fused_risk_label"] = us_fields.get("us_fused_risk")
+            row["vol_regime"]       = us_fields.get("us_vol_regime")
+            row["risk_radar_state"] = us_fields.get("us_risk_radar")
+            row["rate_pressure"]    = us_fields.get("us_rate_pressure")
+
+            rows.append(row)
+
+    if not rows:
+        gaps.append("macro_context: no (asof, domain) pairs found — zero rows")
+        return _empty_df(), gaps
+
+    gaps.append(f"macro_context: {len(rows)} context rows emitted (ungraded-honest)")
+    return _ensure_columns(pd.DataFrame(rows)), gaps
+
+
+# ---------------------------------------------------------------------------
 # adapt_cortex_attention — W7b PR2
 # ---------------------------------------------------------------------------
 
@@ -1675,104 +2515,111 @@ def adapt_cortex_attention(
 
 
 # ---------------------------------------------------------------------------
-# adapt_tech_signals — Tech-signal suite NW context feed (DARK)
-# ---------------------------------------------------------------------------
-# GATE: these signals are display/context only (direction=0, outcome_graded=False,
-# is_context=True). Promotion to confirmer tier requires an Article-3 gauntlet
-# pass (n_dates>=25, Wilson CI lower-bound > 0 vs matched control). LLMs may
-# only de-escalate calibrated keys — never originate signals, scores, or
-# escalations. Nothing here is wired to allocation or masterminds.
+# adapt_personality_context — Stock Personality R-SP20
 # ---------------------------------------------------------------------------
 
-def adapt_tech_signals(
+def adapt_personality_context(
     root: Path | str | None = None,
 ) -> tuple[pd.DataFrame, list[str]]:
-    """Adapt ``site/factordata/tech_lab.json`` → ledger='tech_signals'.
+    """Adapt site/factordata/stock_personality.json → ledger='personality_context'.
 
-    DARK — NW CONTEXT FEED (tech-signal suite W2)
-    ----------------------------------------------
-    Registers per-signal descriptive fire-metrics from ``engine.tech_catalog``
-    as display/context rows in the spine index.  Every row carries:
+    DISPLAY/CONTEXT ONLY (R-SP19/R-SP20)
+    -------------------------------------
+    Joins slim personality labels (chart labels, modes, archetype) onto spine
+    rows by ticker from the site aggregate.  Every row folds as
+    ``outcome_graded=False``, ``direction=0``: these are CONTEXT records, not
+    directional claims, and carry no size_binding (R-SP19 descriptive tier).
 
-      direction=0           — no directional claim; purely descriptive state
-      outcome_graded=False  — UNGRADED-HONEST; no §3 gauntlet has passed
-      is_context=True       — catch-all context flag per W1 R8
+    Cortex may cite these labels in de-escalation memos (R-SP20); labels may
+    never originate, score, rank, or escalate (R-SP19 NEVER guarantees).
 
-    PROMOTION GATE: a signal family may only be promoted from display →
-    confirmer after an Article-3 gauntlet with n_dates>=25 and Wilson CI
-    lower-bound > 0 vs a matched control.  Until that gate fires, these rows
-    are invisible to every Article-2 surface (alert_triage, board_ordering,
-    top_setups, attention_queue, push_floor).
+    Field mapping from per_ticker:
+      arch      → archetype (spine "archetype" column)
+      chart[0]  → symbol suffix slot; emitted in signal_id only
+      modes[0]  → emitted in family field for cortex query surface
 
-    Fail-open: missing or unreadable tech_lab.json → gap note + zero rows.
-    The artifact is DARK at registration time (site/factordata/tech_lab.json
-    may not yet exist on a fresh clone); zero rows is the correct behaviour.
+    Fail-open: missing/unreadable aggregate → gap note + zero rows.
     """
     gaps: list[str] = []
 
     if root is not None:
-        root_p = Path(root)
+        data_root = Path(root)
     else:
-        try:
-            from lib import config as _cfg  # noqa: PLC0415
-            root_p = Path(_cfg.ROOT)
-        except Exception:  # noqa: BLE001
-            root_p = Path(".")
+        data_root = Path(__file__).resolve().parent.parent.parent
 
-    path = root_p / "site" / "factordata" / "tech_lab.json"
+    path = data_root / "site" / "factordata" / "stock_personality.json"
     if not path.exists():
-        gaps.append("tech_signals: site/factordata/tech_lab.json absent — zero rows (DARK)")
+        gaps.append("personality_context: stock_personality.json absent — zero rows")
         return _empty_df(), gaps
 
     try:
-        with open(path, encoding="utf-8") as fh:
-            payload = json.load(fh)
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except Exception as e:  # noqa: BLE001
-        gaps.append(f"tech_signals: tech_lab.json unreadable ({e}) — zero rows")
+        gaps.append(f"personality_context: stock_personality.json unreadable ({e}) — zero rows")
         return _empty_df(), gaps
 
-    # Extract top-level asof from generated_utc (ISO string → date prefix)
-    asof_raw = payload.get("generated_utc") or ""
-    asof = _str_date(asof_raw) if asof_raw else None
-    if not asof:
-        gaps.append("tech_signals: missing generated_utc — zero rows")
+    if not isinstance(raw, dict):
+        gaps.append("personality_context: aggregate not a dict — zero rows")
         return _empty_df(), gaps
 
-    signals: dict = payload.get("signals") or {}
-    if not signals:
-        gaps.append("tech_signals: no signals block in tech_lab.json — zero rows")
+    per_ticker: dict = raw.get("per_ticker") or {}
+    if not per_ticker:
+        gaps.append("personality_context: per_ticker empty — zero rows")
         return _empty_df(), gaps
+
+    as_of_global = _str_date(raw.get("as_of"))
 
     rows: list[dict] = []
-    for sig_name, sig_meta in signals.items():
-        if not isinstance(sig_meta, dict):
+    skipped = 0
+
+    for ticker, rec in per_ticker.items():
+        if not isinstance(rec, dict):
+            skipped += 1
             continue
+        asof = as_of_global
+        if not asof:
+            skipped += 1
+            continue
+
+        # Slim label extraction (chart first, then modes, then archetype)
+        arch = _safe_str(rec.get("arch"))
+        charts: list[str] = [c for c in (rec.get("chart") or []) if isinstance(c, str)]
+        modes: list[str] = [m for m in (rec.get("modes") or []) if isinstance(m, str)]
+
+        primary_chart = charts[0] if charts else None
+        primary_mode = modes[0] if modes else None
+
+        family_label = (
+            f"personality.{primary_mode}" if primary_mode
+            else "personality.normal"
+        )
+
+        sig = f"personality_context:{asof}:{ticker}"
+
         row: dict[str, Any] = {c: None for c in COLUMNS}
-        row["signal_id"]      = f"tech_signals:{asof}:{sig_name}"
-        row["engine"]         = "tech_signals"
-        row["family"]         = f"tech.{sig_name}"
-        row["ledger"]         = "tech_signals"
+        row["signal_id"]      = sig
+        row["engine"]         = "stock_personality"
+        row["family"]         = family_label
+        row["ledger"]         = "personality_context"
         row["as_of"]          = asof
-        row["symbol"]         = sig_name          # signal name as the "symbol" key
-        row["scope_type"]     = "basket"           # cross-sectional; not a single entity
-        row["universe"]       = "tech_signals.lab"
+        row["symbol"]         = ticker
+        row["scope_type"]     = "entity"
+        row["universe"]       = "personality_context"
         row["horizon"]        = None
-        # CONTEXT record: direction=0 always — no directional claim (DARK gate)
-        row["direction"]      = 0
+        row["direction"]      = 0           # CONTEXT record: never directional
         row["size_binding"]   = False
-        row["fill_basis"]     = "tech_lab_snapshot"
-        row["score"]          = None   # DARK context row carries no score (matches adapt_options_entry)
+        row["fill_basis"]     = "personality_site_aggregate"
+        row["score"]          = None
         row["outcome_excess"] = None
-        # UNGRADED-HONEST: outcome_graded=False until §3 gauntlet passes
-        row["outcome_graded"] = False
+        row["outcome_graded"] = False       # UNGRADED-HONEST by design
         row["graded_at"]      = None
         row["is_context"]     = True
+        row["archetype"]      = arch        # slim label for cortex surface
         rows.append(row)
 
-    gaps.append(
-        f"tech_signals: {len(rows)} context rows emitted from tech_lab.json "
-        f"(asof={asof}, DARK — direction=0, ungraded-honest)"
-    )
+    if skipped:
+        gaps.append(f"personality_context: {skipped} rows skipped (no asof/rec)")
+    gaps.append(f"personality_context: {len(rows)} context rows emitted (ungraded-honest)")
 
     if not rows:
         return _empty_df(), gaps

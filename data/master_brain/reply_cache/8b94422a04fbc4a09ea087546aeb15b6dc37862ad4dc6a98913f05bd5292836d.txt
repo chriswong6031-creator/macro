@@ -1,0 +1,5 @@
+{
+  "regime_context": "The flow lens shows a broad cluster dominated by Industrials, Consumer Discretionary, Real Estate, and Health Care, with top pair Industrials–Consumer Discretionary correlation 0.79. VIX is low (15.9, 24.8th percentile) and the regime snap assesses recent relief as fragile and likely to fail. Flow has no validated forward edge (overall verdict display_only), so no directional lean is warranted.",
+  "theses": [],
+  "confidence": "low"
+}

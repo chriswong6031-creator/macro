@@ -30,13 +30,18 @@ sys.path.insert(0, str(_REPO))
 
 from scripts.build_release_forecast import (
     _append_ledger_rows,
+    _build_projection_ledger_rows,
     _build_scoreboard,
+    _build_upcoming_block,
     _check_release_day_capture,
+    _CLAIMS_MODE,
     _compute_actual_from_print,
+    _get_initial_print,
     _ledger_key,
     _load_ledger,
     _read_cleveland_nowcast,
     _read_policy_backdrop,
+    _run_projection,
     _wilson,
 )
 
@@ -136,7 +141,7 @@ class TestContract:
     """Verify the latest.json artifact structure."""
 
     def test_build_produces_schema_keys(self, tmp_root: Path, monkeypatch):
-        """build() returns a dict with all required release_forecast.v1 keys."""
+        """build() returns a dict with all required release_forecast.v1/v2 keys."""
         # Patch _find_upcoming_releases to return empty (no real engine needed)
         import scripts.build_release_forecast as producer
         monkeypatch.setattr(producer, "_find_upcoming_releases", lambda *a, **k: [])
@@ -147,7 +152,7 @@ class TestContract:
 
         result = producer.build(tmp_root, dry_run=True)
 
-        assert result["schema"] == "release_forecast.v1"
+        assert result["schema"] in ("release_forecast.v1", "release_forecast.v2")
         assert "asof" in result
         assert "display_only" in result
         assert "authority" in result
@@ -317,7 +322,7 @@ class TestScoreboard:
     def test_n_zero_honest_output(self):
         """With no scored rows, scoreboard prints zeros/nulls honestly."""
         sb = _build_scoreboard([], accrual_start="2026-07-07")
-        assert sb["schema"] == "release_forecast_scoreboard.v1"
+        assert sb["schema"] in ("release_forecast_scoreboard.v1", "release_forecast_scoreboard.v2")
         assert sb["forward_accrual_began"] == "2026-07-07"
         assert sb["by_release"] == {}
 
@@ -603,7 +608,7 @@ class TestDryRun:
         assert not (tmp_root / "site" / "macrodata" / "release_forecast.json").exists()
 
         # Result is still a well-formed payload
-        assert result["schema"] == "release_forecast.v1"
+        assert result["schema"] in ("release_forecast.v1", "release_forecast.v2")
         assert result["display_only"] is True
 
     def test_full_run_writes_artifacts(self, tmp_root: Path, monkeypatch):
@@ -641,3 +646,657 @@ class TestDryRun:
         # No duplicates: each (release, period, row_type, asof_night) appears once
         keys = [_ledger_key(r) for r in rows]
         assert len(keys) == len(set(keys)), "Duplicate ledger keys detected"
+
+
+# ============================================================
+# 8. CLAIMS — scoreboard label, block_note, benchmark_only mode
+# ============================================================
+
+def _claims_scored_row(period: str = "2026-07-03", asof_night: str = "2026-07-10") -> dict:
+    """Build a synthetic scored row for claims (weekly period, benchmark_only mode).
+
+    In benchmark_only mode projection_point is null, so our_surprise, interval_hit,
+    and skew_hit are also null. Benchmarks carry real values so trailing/naive
+    surprise_vs_* is computable.
+    """
+    return {
+        "row_type": "scored",
+        "asof_night": asof_night,
+        "release": "claims",
+        "period": period,
+        "release_date": asof_night,
+        "actual": 215.0,            # ICSA in thousands
+        "raw_initial_print": 215000.0,
+        "frozen_asof_night": "2026-07-09",
+        "frozen_projection_point": None,     # benchmark_only
+        "frozen_projection_p10": None,
+        "frozen_projection_p90": None,
+        "our_surprise": None,                # null in benchmark_only
+        "surprise_vs_naive": 215.0 - 220.0, # vs naive_prior
+        "surprise_vs_trailing": 215.0 - 218.0,
+        "surprise_vs_ar": 215.0 - 217.0,
+        "surprise_vs_cleveland": None,
+        "interval_hit": None,               # null in benchmark_only
+        "skew_hit": None,                   # null in benchmark_only
+        "projection_mode": "benchmark_only",
+        "benchmark_trailing_key": "benchmark_trailing_4w",
+    }
+
+
+class TestClaimsScoreboard:
+    """Verify claims-specific scoreboard behavior: block_note, label, and benchmark_only mode."""
+
+    def test_claims_scoreboard_block_note_present(self):
+        """Claims scoreboard entry must include a block_note (MRI-R9 caveat)."""
+        row = _claims_scored_row()
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"].get("claims")
+        assert claims_stats is not None, "claims entry missing from scoreboard"
+        assert "block_note" in claims_stats, "block_note missing from claims scoreboard entry"
+        assert "MRI-R9" in claims_stats["block_note"]
+
+    def test_claims_scoreboard_trailing_label_is_4w(self):
+        """Claims scoreboard uses mae_trailing_4w label, not mae_trailing_3m."""
+        row = _claims_scored_row()
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        assert "mae_trailing_4w" in claims_stats, "mae_trailing_4w key missing"
+        assert "mae_trailing_3m" not in claims_stats, "mae_trailing_3m must not appear for claims"
+
+    def test_claims_scoreboard_n_counts(self):
+        """Two scored claims rows produce n=2 in scoreboard."""
+        row1 = _claims_scored_row(period="2026-07-03", asof_night="2026-07-10")
+        row2 = _claims_scored_row(period="2026-07-10", asof_night="2026-07-17")
+        sb = _build_scoreboard([row1, row2], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        assert claims_stats["n"] == 2
+
+    def test_claims_benchmark_only_mae_ours_null(self):
+        """In benchmark_only mode all scored rows have null proj_point -> mae_ours is None."""
+        row = _claims_scored_row()
+        # Confirm frozen_projection_point is None in our fixture
+        assert row["frozen_projection_point"] is None
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        # mae_ours = None because no projection_point was frozen (benchmark_only)
+        assert claims_stats["mae_ours"] is None, (
+            f"Expected mae_ours=None in benchmark_only mode, got {claims_stats['mae_ours']}"
+        )
+
+    def test_claims_naive_mae_computable_from_surprise(self):
+        """Even in benchmark_only mode, mae_naive_prior accumulates from surprise_vs_naive."""
+        row = _claims_scored_row()
+        # surprise_vs_naive = 215 - 220 = -5; abs = 5
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        assert claims_stats["mae_naive_prior"] == pytest.approx(5.0, abs=1e-3)
+
+    def test_non_claims_has_no_block_note(self):
+        """CPI scoreboard entry must NOT have a block_note (that's claims-only)."""
+        scored = _scored_row(release="cpi_headline")
+        scored["actual"] = 0.30
+        scored["frozen_projection_point"] = 0.28
+        scored["interval_hit"] = True
+        scored["skew_hit"] = True
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"].get("cpi_headline", {})
+        assert "block_note" not in cpi_stats, "block_note must not appear for non-claims releases"
+
+    def test_non_claims_has_trailing_3m_not_4w(self):
+        """CPI scoreboard entry must use mae_trailing_3m, not mae_trailing_4w."""
+        scored = _scored_row(release="cpi_headline")
+        scored["actual"] = 0.30
+        scored["frozen_projection_point"] = 0.28
+        scored["interval_hit"] = True
+        scored["skew_hit"] = True
+        scored["surprise_vs_trailing"] = 0.05
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        assert "mae_trailing_3m" in cpi_stats, "mae_trailing_3m must appear for CPI"
+        assert "mae_trailing_4w" not in cpi_stats, "mae_trailing_4w must not appear for CPI"
+
+
+# ============================================================
+# 9. CLAIMS LEDGER — weekly period dedup semantics
+# ============================================================
+
+class TestClaimsLedger:
+    """Verify ledger dedup works for weekly (YYYY-MM-DD) claim periods."""
+
+    def test_claims_weekly_period_dedup(self, tmp_root: Path):
+        """Two identical claims projection rows (same period, same asof_night) don't duplicate."""
+        ledger_path = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+        row = {
+            "row_type": "projection",
+            "asof_night": "2026-07-06",
+            "release": "claims",
+            "period": "2026-07-10",        # Thursday date (weekly period)
+            "release_date": "2026-07-10",
+            "days_to": 4,
+            "projection_point": None,       # benchmark_only
+            "benchmark_naive_prior": 220.0,
+            "benchmark_trailing_4w": 218.5,
+        }
+        _append_ledger_rows(ledger_path, [row])
+        _append_ledger_rows(ledger_path, [row])  # second run same night
+        rows = _load_ledger(ledger_path)
+        assert len(rows) == 1, f"Expected 1 row, got {len(rows)}: dedup failed for claims period"
+
+    def test_claims_different_weekly_periods_not_deduped(self, tmp_root: Path):
+        """Two different claim weekly periods are separate ledger rows (not deduped)."""
+        ledger_path = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+        row1 = {
+            "row_type": "projection",
+            "asof_night": "2026-07-06",
+            "release": "claims",
+            "period": "2026-07-10",
+            "release_date": "2026-07-10",
+        }
+        row2 = {
+            "row_type": "projection",
+            "asof_night": "2026-07-06",
+            "release": "claims",
+            "period": "2026-07-17",        # different week
+            "release_date": "2026-07-17",
+        }
+        _append_ledger_rows(ledger_path, [row1, row2])
+        rows = _load_ledger(ledger_path)
+        assert len(rows) == 2, f"Expected 2 rows for different weekly periods, got {len(rows)}"
+
+
+# ============================================================
+# 10. CLAIMS PROJECTION — integration tests (require vintages.parquet)
+# ============================================================
+
+_VINTAGES_PATH = Path(__file__).resolve().parents[1] / "data" / "fred_vintage" / "vintages.parquet"
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_CLAIMS_INT_MARK = pytest.mark.skipif(
+    not _VINTAGES_PATH.exists(),
+    reason="data/fred_vintage/vintages.parquet not present; skipping claims integration tests",
+)
+
+
+class TestB1ClaimsProjectionIntegration:
+    """Integration: _run_projection for 'claims' returns a valid dict, not None.
+
+    These tests require the committed vintages.parquet (ICSA + IC4WSA series).
+    Skipped automatically if the file is absent.
+    """
+
+    @_CLAIMS_INT_MARK
+    def test_run_projection_claims_returns_dict_not_none(self, tmp_root: Path):
+        """_run_projection('claims', ...) must return a dict, not None (B1 crash fix)."""
+        asof = date(2026, 7, 7)
+        # Use a recent Thursday-date period (the period string for claims is a Thursday date)
+        result = _run_projection("claims", asof, _REPO_ROOT, period_str="2026-07-03")
+        assert result is not None, (
+            "_run_projection('claims') returned None — likely a crash in project_claims"
+        )
+        assert isinstance(result, dict), f"Expected dict, got {type(result)}"
+
+    @_CLAIMS_INT_MARK
+    def test_run_projection_claims_benchmark_set_populated(self, tmp_root: Path):
+        """benchmark_set for claims must have naive_prior and trailing_4w as real floats."""
+        asof = date(2026, 7, 7)
+        result = _run_projection("claims", asof, _REPO_ROOT, period_str="2026-07-03")
+        assert result is not None
+        bs = result.get("benchmark_set", {})
+        assert "naive_prior" in bs, "naive_prior missing from claims benchmark_set"
+        assert "trailing_4w" in bs, "trailing_4w missing from claims benchmark_set (must not be trailing_3m)"
+        assert "trailing_3m" not in bs, "trailing_3m must not appear in claims benchmark_set"
+        # Both should be floats (real ICSA values in thousands)
+        assert isinstance(bs["naive_prior"], float), f"naive_prior is {type(bs['naive_prior'])}, expected float"
+        assert isinstance(bs["trailing_4w"], float), f"trailing_4w is {type(bs['trailing_4w'])}, expected float"
+        # Sanity: ICSA in thousands is typically 200–300k range (i.e., 200.0–300.0 as float)
+        assert 100.0 <= bs["naive_prior"] <= 1000.0, f"naive_prior out of plausible range: {bs['naive_prior']}"
+        assert 100.0 <= bs["trailing_4w"] <= 1000.0, f"trailing_4w out of plausible range: {bs['trailing_4w']}"
+
+    @_CLAIMS_INT_MARK
+    def test_build_upcoming_block_claims_benchmark_only_mode(self, tmp_root: Path):
+        """_build_upcoming_block with a claims release emits benchmark_only projection block."""
+        # Synthetic upcoming releases list with one claims event
+        upcoming_releases = [
+            {
+                "release_type": "claims",
+                "release": "claims",
+                "period": "2026-07-10",
+                "release_date": "2026-07-10",
+                "regime_axis": "growth",
+            }
+        ]
+        policy_backdrop = {
+            "fed_stance": None, "gap_bp": None,
+            "implied_cuts_12m": None, "next_fomc": None, "guidance_direction": None,
+        }
+        today = date(2026, 7, 7)
+        root = _REPO_ROOT
+        block = _build_upcoming_block(today, root, upcoming_releases, policy_backdrop)
+
+        assert len(block) == 1, f"Expected 1 upcoming card, got {len(block)}"
+        card = block[0]
+
+        # Projection block must carry benchmark_only mode (§6 kill rule is active)
+        assert _CLAIMS_MODE == "benchmark_only", "_CLAIMS_MODE must be benchmark_only"
+        proj = card.get("projection", {})
+        assert proj.get("mode") == "benchmark_only", (
+            f"claims projection.mode must be 'benchmark_only', got {proj.get('mode')!r}"
+        )
+        assert "reason" in proj, "benchmark_only projection must include reason"
+
+        # Benchmark set must be populated (even in benchmark_only mode, benchmarks are graded)
+        bs = card.get("benchmark_set", {})
+        assert bs.get("naive_prior") is not None, "naive_prior must be a real value, not null"
+        assert bs.get("trailing_4w") is not None, "trailing_4w must be a real value, not null"
+        assert "trailing_3m" not in bs, "trailing_3m must not appear in claims benchmark_set"
+
+        # Point/quantiles/confidence must all be null
+        assert card.get("confidence") is None, "confidence must be null in benchmark_only mode"
+        assert card.get("input_completeness") is None, "input_completeness must be null in benchmark_only mode"
+
+
+# ============================================================
+# 11. CLAIMS CAPTURE PATH — end-to-end integration (FIX-6)
+#     Requires committed data/fred_vintage/vintages.parquet
+# ============================================================
+
+class TestClaimsCapturePathIntegration:
+    """Verify the full claims capture path end-to-end against real committed ICSA vintages.
+
+    Release Thursday 2026-06-11 → ICSA vintage period 2026-06-06 (Sat, Thu−5d)
+    ICSA initial print: 229,000 raw persons → 229.0 thousands.
+
+    Asserts:
+      - _get_initial_print returns 229000.0 (raw persons from ALFRED)
+      - _compute_actual_from_print returns 229.0 (thousands)
+      - _check_release_day_capture produces exactly one scored row
+      - actual = 229.0 thousands (plausible range)
+      - benchmark MAEs computable (surprise_vs_naive populated)
+      - our-model fields (our_surprise, interval_hit, skew_hit) are None in benchmark_only mode
+      - scoreboard emits a claims entry with mae_naive_prior populated and mae_ours None
+    """
+
+    @_CLAIMS_INT_MARK
+    def test_get_initial_print_thursday_to_saturday_mapping(self):
+        """_get_initial_print must map Thursday period to preceding Saturday for ICSA lookup."""
+        # Thursday 2026-06-11 → Saturday 2026-06-06 (−5 days)
+        raw = _get_initial_print(
+            _REPO_ROOT,
+            release_type="claims",
+            period_str="2026-06-11",   # Thursday date (as stored in ledger)
+            release_date_str="2026-06-11",
+        )
+        assert raw is not None, (
+            "_get_initial_print returned None for claims 2026-06-11. "
+            "Likely Thursday→Saturday period mapping failed or ICSA missing in vintages.parquet."
+        )
+        # Raw value from ALFRED is in persons (expected ~229000.0)
+        assert 100_000.0 <= raw <= 1_000_000.0, f"raw_print={raw} out of plausible persons range"
+        # Specifically: 2026-06-06 period, realtime_start 2026-06-11, value 229000.0
+        assert raw == pytest.approx(229_000.0, abs=1.0), (
+            f"Expected ICSA initial print 229000.0 for period 2026-06-06, got {raw}"
+        )
+
+    @_CLAIMS_INT_MARK
+    def test_compute_actual_claims_returns_thousands(self):
+        """_compute_actual_from_print for claims returns raw_print / 1000.0."""
+        actual = _compute_actual_from_print(
+            "claims", 229_000.0, _REPO_ROOT, "2026-06-11"
+        )
+        assert actual is not None, "_compute_actual_from_print returned None for claims"
+        assert actual == pytest.approx(229.0, abs=0.01), (
+            f"Expected 229.0 thousands (229000 / 1000), got {actual}"
+        )
+
+    @_CLAIMS_INT_MARK
+    def test_full_claims_capture_path_produces_scored_row(self):
+        """End-to-end: a benchmark_only claims projection ledger row produces exactly one
+        scored row when _check_release_day_capture runs on/after the release date."""
+        # Build a synthetic benchmark_only claims projection row for Thu 2026-06-11
+        proj_row = {
+            "schema": 2,
+            "row_type": "projection",
+            "asof_night": "2026-06-10",          # T-1 (day before release)
+            "release": "claims",
+            "period": "2026-06-11",              # Thursday release date (ledger period)
+            "release_date": "2026-06-11",
+            "projection_mode": "benchmark_only",  # FIX-3: projection_mode written to ledger
+            "projection_point": None,             # benchmark_only: null
+            "projection_p10": None,
+            "projection_p90": None,
+            "benchmark_naive_prior": 225.0,      # thousands (synthetic prior)
+            "benchmark_trailing_4w": 222.0,
+            "benchmark_ar_model": 223.0,
+            "benchmark_cleveland": None,
+        }
+        existing_ledger = [proj_row]
+
+        # Run capture as of the release day (2026-06-11 = Thursday)
+        today = date(2026, 6, 11)
+        scored_rows = _check_release_day_capture(today, _REPO_ROOT, existing_ledger)
+
+        assert len(scored_rows) == 1, (
+            f"Expected exactly 1 scored row for claims 2026-06-11, got {len(scored_rows)}. "
+            "FIX-1 (ICSA in _FRED_VINTAGE_SERIES) or FIX-2 (Thursday→Saturday mapping) may be missing."
+        )
+        sr = scored_rows[0]
+
+        # actual must be thousands-scale and match the known initial print
+        assert sr["actual"] is not None, "actual must not be None in scored row"
+        assert sr["actual"] == pytest.approx(229.0, abs=0.1), (
+            f"Expected actual=229.0 thousands (ICSA 229000 / 1000), got {sr['actual']}"
+        )
+
+        # Our-model fields must be None in benchmark_only mode (FIX-3 guard works)
+        assert sr.get("our_surprise") is None, (
+            f"our_surprise must be None in benchmark_only mode, got {sr.get('our_surprise')}"
+        )
+        assert sr.get("interval_hit") is None, (
+            f"interval_hit must be None in benchmark_only mode, got {sr.get('interval_hit')}"
+        )
+        assert sr.get("skew_hit") is None, (
+            f"skew_hit must be None in benchmark_only mode, got {sr.get('skew_hit')}"
+        )
+
+        # Benchmark surprises must be computable
+        assert sr.get("surprise_vs_naive") is not None, "surprise_vs_naive must be populated"
+        expected_vs_naive = round(229.0 - 225.0, 4)
+        assert sr["surprise_vs_naive"] == pytest.approx(expected_vs_naive, abs=0.01), (
+            f"Expected surprise_vs_naive={expected_vs_naive}, got {sr['surprise_vs_naive']}"
+        )
+
+        # projection_mode must be carried through to scored row
+        assert sr.get("projection_mode") == "benchmark_only", (
+            f"projection_mode in scored row must be 'benchmark_only', got {sr.get('projection_mode')!r}"
+        )
+
+    @_CLAIMS_INT_MARK
+    def test_claims_scoreboard_from_real_capture(self):
+        """Scoreboard from a real-data claims scored row: mae_naive_prior populated, mae_ours None."""
+        proj_row = {
+            "schema": 2,
+            "row_type": "projection",
+            "asof_night": "2026-06-10",
+            "release": "claims",
+            "period": "2026-06-11",
+            "release_date": "2026-06-11",
+            "projection_mode": "benchmark_only",
+            "projection_point": None,
+            "projection_p10": None,
+            "projection_p90": None,
+            "benchmark_naive_prior": 225.0,
+            "benchmark_trailing_4w": 222.0,
+            "benchmark_ar_model": 223.0,
+            "benchmark_cleveland": None,
+        }
+        today = date(2026, 6, 11)
+        scored_rows = _check_release_day_capture(today, _REPO_ROOT, [proj_row])
+        assert len(scored_rows) == 1, "Expected 1 scored row (prerequisite)"
+
+        sb = _build_scoreboard(scored_rows, accrual_start="2026-01-01")
+        claims_stats = sb["by_release"].get("claims")
+        assert claims_stats is not None, "claims entry missing from scoreboard"
+        assert claims_stats["n"] == 1, f"Expected n=1, got {claims_stats['n']}"
+        # mae_ours must be None (no projection point in benchmark_only)
+        assert claims_stats["mae_ours"] is None, (
+            f"mae_ours must be None in benchmark_only mode, got {claims_stats['mae_ours']}"
+        )
+        # mae_naive_prior must be populated (|229.0 - 225.0| = 4.0)
+        assert claims_stats["mae_naive_prior"] is not None, "mae_naive_prior must be populated"
+        assert claims_stats["mae_naive_prior"] == pytest.approx(4.0, abs=0.1), (
+            f"Expected mae_naive_prior=4.0, got {claims_stats['mae_naive_prior']}"
+        )
+
+
+# ============================================================
+# 12. EXPECTATION READ — MRI-R22
+# ============================================================
+
+from scripts.build_release_forecast import (
+    _build_projection_ledger_rows,
+    _check_release_day_capture,
+    _EXPECTATION_BAND_THRESHOLD,
+)
+
+
+def _make_projection_item_with_expectation_read(
+    release_type: str = "cpi_headline",
+    period: str = "2026-06",
+    release_date: str = "2026-07-10",
+    proj_point: float = 0.42,
+    expectation_read: dict | None = None,
+    sigma_scale_pp: float = 0.3073,
+) -> dict:
+    """Build a minimal upcoming item as produced by _build_upcoming_block + _enrich_upcoming_block."""
+    return {
+        "release": "cpi",
+        "release_type": release_type,
+        "period": period,
+        "release_date": release_date,
+        "days_to": 3,
+        "projection": {"point": proj_point, "p10": 0.1, "p25": 0.2, "p50": 0.35, "p75": 0.5, "p90": 0.65},
+        "confidence": 0.60,
+        "input_completeness": 0.75,
+        "benchmark_set": {
+            "naive_prior": 0.47, "trailing_3m": 0.66, "ar_model": 0.86,
+            "cleveland_nowcast": -0.061, "market_implied": None,
+        },
+        "surprise_skew": {"sigma_scale_pp": sigma_scale_pp, "sigma": -0.16, "tag": "inline"},
+        "pit": {"inputs_hash": "abc123"},
+        "regime_axis": "inflation",
+        "policy_backdrop": {},
+        "quirk_flags": [],
+        "expectation_read": expectation_read,
+    }
+
+
+class TestExpectationReadProducer:
+    """Tests for expectation_read wiring in producer: ledger freezing, scored-row hit, scoreboard."""
+
+    def test_expectation_read_frozen_in_ledger_row(self):
+        """Projection ledger row must carry frozen expectation_read dict."""
+        from datetime import date
+        today = date(2026, 7, 7)
+        er = {"tag": "above_expectations", "delta_pp": 0.4848, "standardized": 1.58,
+              "expectation_median": -0.0612, "sources": ["cleveland_nowcast"], "n_sources": 1}
+        item = _make_projection_item_with_expectation_read(expectation_read=er)
+        policy_backdrop = {"fed_stance": None, "gap_bp": None,
+                           "implied_cuts_12m": None, "next_fomc": None}
+        rows = _build_projection_ledger_rows(today, [item], policy_backdrop)
+        assert len(rows) == 1
+        row = rows[0]
+        assert "expectation_read" in row, "expectation_read must be frozen in ledger projection row"
+        assert row["expectation_read"]["tag"] == "above_expectations"
+        assert row["expectation_read"]["n_sources"] == 1
+
+    def test_null_expectation_read_frozen_as_none(self):
+        """When expectation_read is None (empty expectation set), ledger row carries null."""
+        from datetime import date
+        today = date(2026, 7, 7)
+        item = _make_projection_item_with_expectation_read(expectation_read=None)
+        policy_backdrop = {"fed_stance": None, "gap_bp": None,
+                           "implied_cuts_12m": None, "next_fomc": None}
+        rows = _build_projection_ledger_rows(today, [item], policy_backdrop)
+        assert rows[0].get("expectation_read") is None
+
+    def test_sigma_scale_pp_frozen_in_ledger_row(self):
+        """sigma_scale_pp must be frozen in the projection ledger row for scoring."""
+        from datetime import date
+        today = date(2026, 7, 7)
+        item = _make_projection_item_with_expectation_read(sigma_scale_pp=0.3073)
+        policy_backdrop = {"fed_stance": None, "gap_bp": None,
+                           "implied_cuts_12m": None, "next_fomc": None}
+        rows = _build_projection_ledger_rows(today, [item], policy_backdrop)
+        assert rows[0].get("sigma_scale_pp") == pytest.approx(0.3073, abs=1e-6)
+
+    def test_expectation_hit_above_expectations_correct(self, tmp_root: Path):
+        """When actual falls above the frozen expectation_median+0.35σ, expectation_hit=True
+        for a frozen tag='above_expectations'."""
+        # Setup: frozen tag='above_expectations', expectation_median=-0.06, sigma=0.3073
+        # Actual = 0.50 → std = (0.50 - (-0.06)) / 0.3073 = 1.82 → above → hit=True
+        er = {"tag": "above_expectations", "delta_pp": 0.48, "standardized": 1.58,
+              "expectation_median": -0.06, "sources": ["cleveland_nowcast"], "n_sources": 1}
+        proj_row = {
+            "schema": 2, "row_type": "projection",
+            "asof_night": "2026-07-07", "release": "cpi_headline", "period": "2026-06",
+            "release_date": "2026-07-10",
+            "projection_mode": None, "projection_point": 0.42,
+            "projection_p10": 0.1, "projection_p90": 0.65,
+            "benchmark_naive_prior": 0.47, "benchmark_trailing_3m": 0.66,
+            "benchmark_ar_model": 0.86, "benchmark_cleveland": -0.06,
+            "surprise_skew_sigma": -0.16, "surprise_skew_tag": "inline",
+            "fed_stance": None, "gap_bp": None, "implied_cuts_12m": None, "next_fomc": None,
+            "expectation_read": er,
+            "sigma_scale_pp": 0.3073,
+        }
+
+        # Provide vintage with actual = 0.50 MoM
+        # CPI: need prior month level + current month level
+        # prior month 2026-05 level: 315.0
+        # current month 2026-06 level: 315.0 * (1 + 0.50/100) = 316.575
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 316.575,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [proj_row])
+
+        assert len(scored) == 1
+        sr = scored[0]
+        # actual ≈ (316.575/315.0 - 1)*100 = 0.50%
+        # frozen tag='above_expectations', frozen_median=-0.06, sigma=0.3073
+        # actual_std = (0.50 - (-0.06)) / 0.3073 = 1.82 > 0.35 → actual_tag='above_expectations'
+        # frozen_tag == actual_tag → hit = True
+        assert sr.get("expectation_hit") is True, (
+            f"Expected expectation_hit=True when actual=0.5 and frozen tag='above_expectations'; "
+            f"got {sr.get('expectation_hit')!r}"
+        )
+
+    def test_expectation_hit_tag_mismatch_is_false(self, tmp_root: Path):
+        """When actual falls in a different band than the frozen tag, expectation_hit=False."""
+        # frozen tag='above_expectations', but actual is well below expectation_median
+        # expectation_median = 0.4, sigma = 0.3073
+        # actual = 0.10 → std = (0.10 - 0.4) / 0.3073 = -0.976 → below_expectations ≠ above
+        er = {"tag": "above_expectations", "delta_pp": 0.1, "standardized": 0.5,
+              "expectation_median": 0.4, "sources": ["cleveland_nowcast"], "n_sources": 1}
+        proj_row = {
+            "schema": 2, "row_type": "projection",
+            "asof_night": "2026-07-07", "release": "cpi_headline", "period": "2026-06",
+            "release_date": "2026-07-10",
+            "projection_mode": None, "projection_point": 0.5,
+            "projection_p10": 0.1, "projection_p90": 0.9,
+            "benchmark_naive_prior": 0.4, "benchmark_trailing_3m": 0.4,
+            "benchmark_ar_model": 0.4, "benchmark_cleveland": 0.4,
+            "surprise_skew_sigma": None, "surprise_skew_tag": None,
+            "fed_stance": None, "gap_bp": None, "implied_cuts_12m": None, "next_fomc": None,
+            "expectation_read": er,
+            "sigma_scale_pp": 0.3073,
+        }
+
+        # actual = 0.10 MoM → prior=315.0, current=315.315
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 315.315,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [proj_row])
+
+        assert len(scored) == 1
+        sr = scored[0]
+        assert sr.get("expectation_hit") is False, (
+            f"Expected expectation_hit=False when actual is below_expectations but frozen='above'; "
+            f"got {sr.get('expectation_hit')!r}"
+        )
+
+    def test_expectation_hit_none_when_frozen_read_null(self, tmp_root: Path):
+        """expectation_hit is null when the frozen expectation_read is None."""
+        proj_row = {
+            "schema": 2, "row_type": "projection",
+            "asof_night": "2026-07-07", "release": "cpi_headline", "period": "2026-06",
+            "release_date": "2026-07-10",
+            "projection_mode": None, "projection_point": 0.42,
+            "projection_p10": 0.1, "projection_p90": 0.9,
+            "benchmark_naive_prior": 0.47, "benchmark_trailing_3m": 0.66,
+            "benchmark_ar_model": 0.86, "benchmark_cleveland": None,
+            "surprise_skew_sigma": None, "surprise_skew_tag": None,
+            "fed_stance": None, "gap_bp": None, "implied_cuts_12m": None, "next_fomc": None,
+            "expectation_read": None,   # frozen read was null
+            "sigma_scale_pp": None,
+        }
+
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 316.26,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [proj_row])
+
+        assert len(scored) == 1
+        assert scored[0].get("expectation_hit") is None, (
+            "expectation_hit must be None when frozen expectation_read was null"
+        )
+
+    def test_scoreboard_expectation_read_hit_rate_n0_honest(self):
+        """Scoreboard with no scored rows: expectation_read_hit_rate is None (n=0 honest)."""
+        sb = _build_scoreboard([], accrual_start="2026-07-07")
+        # No releases yet → by_release is empty; fields are per-release so absent
+        assert sb["by_release"] == {}
+
+    def test_scoreboard_expectation_read_hit_rate_field_present_when_scored(self):
+        """Scoreboard emits expectation_read_hit_rate (None) when scored rows have no hit data."""
+        scored = _scored_row(release="cpi_headline")
+        scored["actual"] = 0.30
+        scored["frozen_projection_point"] = 0.28
+        scored["interval_hit"] = True
+        scored["skew_hit"] = True
+        # No expectation_hit in this row (not set)
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"].get("cpi_headline", {})
+        assert "expectation_read_hit_rate" in cpi_stats, (
+            "expectation_read_hit_rate must be present in scoreboard even with n=0"
+        )
+        # n=0 → None (honest)
+        assert cpi_stats["expectation_read_hit_rate"] is None
+        assert cpi_stats["expectation_read_hit_rate_n"] == 0
+
+    def test_scoreboard_expectation_read_hit_rate_computes_correctly(self):
+        """Scoreboard correctly aggregates expectation_hit values."""
+        scored1 = _scored_row(release="cpi_headline", period="2026-05")
+        scored1["actual"] = 0.25
+        scored1["frozen_projection_point"] = 0.28
+        scored1["interval_hit"] = True
+        scored1["skew_hit"] = False
+        scored1["expectation_hit"] = True   # hit
+
+        scored2 = _scored_row(release="cpi_headline", period="2026-06")
+        scored2["actual"] = 0.30
+        scored2["frozen_projection_point"] = 0.27
+        scored2["interval_hit"] = False
+        scored2["skew_hit"] = True
+        scored2["expectation_hit"] = False  # miss
+
+        sb = _build_scoreboard([scored1, scored2], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        assert cpi_stats["expectation_read_hit_rate_n"] == 2
+        assert cpi_stats["expectation_read_hit_rate"] == pytest.approx(0.5, abs=1e-4)
+
+    def test_enrichments_list_includes_expectation_read(self, tmp_root: Path, monkeypatch):
+        """The enrichments list in latest.json must include 'expectation_read'."""
+        import scripts.build_release_forecast as producer
+        monkeypatch.setattr(producer, "_find_upcoming_releases", lambda *a, **k: [])
+        monkeypatch.setattr(producer, "_read_policy_backdrop", lambda *a, **k: {
+            "fed_stance": None, "gap_bp": None,
+            "implied_cuts_12m": None, "next_fomc": None, "guidance_direction": None,
+        })
+        result = producer.build(tmp_root, dry_run=True)
+        assert "expectation_read" in result.get("enrichments", []), (
+            "enrichments list must include 'expectation_read'"
+        )

@@ -680,6 +680,18 @@ def _hk_track_record_vm() -> dict | None:
 
 
 def main() -> int:
+    # Run the freshness sentinel FIRST so the banner can be set before any data is read.
+    # Fail-open: sentinel crashes are caught inside run_sentinel; a degraded result still
+    # allows the page to render — it just shows a banner. Never blocks the build.
+    freshness = None
+    try:
+        from engine.hk_freshness import run_sentinel as _hk_sentinel
+        freshness = _hk_sentinel()
+        log.info("hk freshness sentinel: %s (expected %s)",
+                 freshness.get("verdict"), freshness.get("expected_session"))
+    except Exception as e:  # noqa: BLE001 — sentinel must never block the build
+        log.error("hk freshness sentinel import/call failed (%s); continuing without it", e)
+
     try:
         from engine.hk_run import run
         latest = run()
@@ -693,6 +705,7 @@ def main() -> int:
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "sectors": sectors,
+            "freshness": freshness,          # sentinel result for the page-top banner
             "actions": _action_board(sectors),   # "what to act on now" sector board (stocks page)
             "breadth": _breadth(),
             "full_breadth": _full_breadth(),     # full main-board adv/dec (fragile; None when blocked)
@@ -776,6 +789,103 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk calendar build failed (%s); skipping", e)
             vm["calendar"], vm["event_strip"], vm["imminent"] = [], [], None
+
+        # HK / ADR Overnight Bridge — display-tier context organ (W1 data-plane).
+        # Shows what US ADRs did after the HK close, implying the next HK open.
+        # DISPLAY-ONLY — no signal, no edge claim. Stamps the forward ledger.
+        try:
+            from engine import hk_adr_bridge as _adr
+            _adr_snap = _adr.run()
+            vm["adr_bridge"] = _adr_snap
+            # Persist to site/factordata/hk_adr_bridge.json for API consumption
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_adr_bridge.json").write_text(
+                json.dumps(_adr_snap, indent=2, default=str))
+            log.info("hk adr bridge: freshness=%s composite=%s",
+                     _adr_snap.get("freshness_verdict"),
+                     (_adr_snap.get("composite") or {}).get("bellwether_implied_open_pct"))
+        except Exception as e:  # noqa: BLE001 — additive panel, never fatal
+            log.error("hk adr bridge failed (%s); skipping", e)
+            vm["adr_bridge"] = None
+
+        # HK Scheduled-Catalyst Calendar — display-tier forward-looking organ.
+        # Surfaces DATED structural catalysts (index reviews, Stock Connect eligibility,
+        # MSCI/FTSE reviews). DISPLAY-ONLY; no scoring; no LLM origination.
+        try:
+            from engine import hk_catalyst_calendar as _hcc
+            _cat_snap = _hcc.build_snapshot(horizon_days=45)
+            vm["catalyst_strip"] = _cat_snap.get("upcoming", [])
+            vm["catalyst_imminent"] = _cat_snap.get("imminent")
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_catalyst_calendar.json").write_text(
+                json.dumps(_cat_snap, indent=2, default=str))
+            log.info("hk catalyst calendar: %d upcoming catalysts in 45d window",
+                     len(vm["catalyst_strip"]))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk catalyst calendar failed (%s); skipping", e)
+            vm["catalyst_strip"] = []
+            vm["catalyst_imminent"] = None
+
+        # CBBC / Warrant Leverage Map — display-tier microstructure organ (W2 data-plane).
+        # W1: bull/bear froth from daily XLSX outstanding. W2 (this build): mandatory call
+        # price from SLD PDFs → real magnet-cluster computation (bull-CBBC call zones below
+        # spot = forced-sell magnets; bear-CBBC call zones above spot = forced-buy).
+        # DISPLAY-ONLY. Stamps a forward ledger (CN_LANE=asia gate).
+        try:
+            from engine import hk_cbbc as _cbbc
+            _cbbc_snap = _cbbc.run()
+            vm["cbbc_map"] = _cbbc_snap
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_cbbc.json").write_text(
+                json.dumps(_cbbc_snap, indent=2, default=str))
+            log.info("hk cbbc map: freshness=%s bellwethers=%d",
+                     _cbbc_snap.get("freshness"),
+                     len(_cbbc_snap.get("bellwethers", [])))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk cbbc map failed (%s); skipping", e)
+            vm["cbbc_map"] = None
+
+        # HKEXnews Company-Catalyst Filing Bus — display-tier event tape (W1 data-plane).
+        # Surfaces recent corporate catalysts (buyback / results / mandate / shareholder)
+        # per bellwether name. DISPLAY-ONLY; deterministic classification; no scoring.
+        # Stamps a forward ledger (CN_LANE=asia gate).
+        try:
+            from engine import hk_filing_bus as _fbus
+            _fbus_snap = _fbus.run()
+            vm["filing_bus"] = _fbus_snap
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_filing_bus.json").write_text(
+                json.dumps(_fbus_snap, indent=2, default=str))
+            log.info("hk filing bus: freshness=%s tape=%d bellwethers=%d",
+                     _fbus_snap.get("freshness"),
+                     len(_fbus_snap.get("tape", [])),
+                     len(_fbus_snap.get("bellwethers", [])))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk filing bus failed (%s); skipping", e)
+            vm["filing_bus"] = None
+
+        # GDELT Narrative / Attention-Shock organ — context-tier, display-only (W1 data-plane).
+        # Surfaces news-volume z-scores + tone shifts for HK platform-tech bellwethers.
+        # WEAKEST evidence tier — labelled as such on-page. Stamps the forward ledger.
+        # try/except resets ONLY vm["hk_narrative"] — follows filing-bus pattern.
+        try:
+            from engine import hk_narrative as _hn
+            _hn_snap = _hn.run()
+            vm["hk_narrative"] = _hn_snap
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_narrative.json").write_text(
+                json.dumps(_hn_snap, indent=2, default=str))
+            log.info("hk narrative: freshness=%s entities=%d",
+                     _hn_snap.get("freshness"),
+                     len(_hn_snap.get("entities", [])))
+        except Exception as e:  # noqa: BLE001 — additive organ, never fatal
+            log.error("hk narrative organ failed (%s); skipping", e)
+            vm["hk_narrative"] = None
 
         # HK residential-property panel (Centaline CCL) — display/regime context, None-safe
         try:
@@ -867,6 +977,34 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk scoreboard persist failed (%s); skipping", e)
 
+        # HK Command Panel — top-of-page synthesis fusing the 7 Neural Web organs.
+        # DISPLAY-ONLY. Deterministic tally — no LLM score, no buy/sell signal.
+        # Additive; its own try/except resets ONLY vm["command_panel"] (follows the
+        # organ pattern; do NOT repeat the CBBC mis-nesting). Never blocks the build.
+        try:
+            from engine import hk_command_panel as _cp
+            vm["command_panel"] = _cp.compute(
+                freshness=freshness,
+                adr_bridge=vm.get("adr_bridge"),
+                market_drivers=latest.get("market_drivers"),
+                hk_narrative=vm.get("hk_narrative"),
+                internals=vm.get("internals"),
+                breadth=vm.get("breadth"),
+                cbbc_map=vm.get("cbbc_map"),
+                funding=vm.get("funding"),
+                latest=latest,
+                filing_bus=vm.get("filing_bus"),
+                catalyst_strip=vm.get("catalyst_strip"),
+                setups=vm.get("setups"),
+            )
+            log.info("hk command panel: verdict=%s bottom=%d chase=%d",
+                     (vm["command_panel"].get("verdict") or {}).get("label_en", "?"),
+                     (vm["command_panel"].get("verdict") or {}).get("bottom_arming_n", 0),
+                     (vm["command_panel"].get("verdict") or {}).get("chase_risk_n", 0))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk command panel failed (%s); skipping", e)
+            vm["command_panel"] = None
+
         # W6 TRACK-RECORD panel (§7.4) — the program's public-accountability centerpiece.
         # Reads the standout-board forward scorecard and renders the honest 'accruing' state
         # (or graded hit-rates + rank-IC once the min-IC-dates gate clears). View-model only;
@@ -876,6 +1014,48 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk track-record view-model failed (%s); skipping", e)
             vm["track_record"] = None
+
+        # 1D Velocity Desk (flagship-2, hk_stocks.html only) — load the nightly artifact
+        # produced by build_hk_pick_lab / the pick-lab runner.  Defensive load mirrors
+        # build_china.py's reversion_desk pattern: never fatal; degrades to None (block
+        # hidden in the template).  Jinja guard: "is defined" not "is not none" (GOTCHA).
+        try:
+            _vd_path = site / "factordata" / "hk_1d_velocity_desk.json"
+            if _vd_path.exists():
+                _vd_raw = json.loads(_vd_path.read_text())
+                # Artifact key is `rows` (velocity_desk.py schema); template reads `picks`.
+                # Flatten chips.* sub-dict to top-level keys so the template can access
+                # confluence_count, washout_state, adr_gap_pct, knife_risk, beta_role directly.
+                _vd_rows = _vd_raw.get("rows") if isinstance(_vd_raw, dict) else None
+                if _vd_rows and isinstance(_vd_rows, list):
+                    _vd_picks = []
+                    for _r in _vd_rows:
+                        _chips = _r.get("chips") or {}
+                        _pick = dict(_r)
+                        # rename confluence_n → confluence_count for template
+                        _pick["confluence_count"] = _r.get("confluence_n")
+                        # lift chip sub-keys to flat so template n.get(...) resolves directly
+                        _pick.setdefault("washout_state", _chips.get("washout_state"))
+                        _pick.setdefault("adr_gap_pct", _chips.get("adr_gap_pct"))
+                        _pick.setdefault("knife_risk", _chips.get("knife_risk"))
+                        _pick.setdefault("beta_role", _chips.get("beta_role"))
+                        _vd_picks.append(_pick)
+                    vm["hk_1d_velocity_desk"] = {
+                        "as_of": _vd_raw.get("as_of"),
+                        "picks": _vd_picks,
+                        "n_picks": len(_vd_picks),
+                        "authority": "display_only",
+                    }
+                    log.info("hk stocks: 1D velocity desk loaded (%d picks)", len(_vd_picks))
+                else:
+                    vm["hk_1d_velocity_desk"] = None
+                    log.debug("hk stocks: hk_1d_velocity_desk.json empty — desk block hidden")
+            else:
+                vm["hk_1d_velocity_desk"] = None
+                log.debug("hk stocks: hk_1d_velocity_desk.json absent — desk block hidden")
+        except Exception as _vd_e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk stocks: 1D velocity desk load failed (%s); skipping", _vd_e)
+            vm["hk_1d_velocity_desk"] = None
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)

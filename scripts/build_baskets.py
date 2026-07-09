@@ -180,6 +180,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("baskets risk-state read failed: %s", e)
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
+    # Collect flat sorted unique member symbols for W2a hidden live-span scrape expansion.
+    # The scraper (build_live_quotes.scrape_site_symbols) reads site/*.html for data-sym attrs;
+    # basket member tickers are only in the BASKETS JSON blob otherwise, so they are invisible
+    # to the scraper. Passing them to Jinja lets us emit aria-hidden spans in static HTML.
+    _member_syms: list[str] = sorted({
+        str(m.get("symbol", "")).strip().upper()
+        for b in data.get("baskets", [])
+        for m in (b.get("members") or [])
+        if m.get("symbol")
+    })
     html = env.get_template("baskets.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":")),
         chart_json=json.dumps(chart, separators=(",", ":")),
@@ -187,7 +197,8 @@ def main() -> int:
         flow=flow,
         risk_state=risk_state,
         risk_radar=risk_radar,
-        generated_utc=built)
+        generated_utc=built,
+        basket_member_syms=_member_syms)
     write_page(site / "baskets.html", html)
     # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
     # theme_intel + members) and the env; chart already split off above. Additive.
@@ -225,11 +236,30 @@ def main() -> int:
         _phase0_all()                                     # us, canada, china (HK skipped → US proxy)
     except Exception as e:  # noqa: BLE001 — additive; falls back to the committed artifacts
         log.error("thematic rotation Phase-0 refresh failed (using committed artifacts): %s", e)
+    _alloc_stale = False
     try:
         from scripts.build_allocation import main as _build_allocation
-        _build_allocation()                               # builds all four allocation pages
+        _alloc_stale = _build_allocation()                # builds all four allocation pages
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("allocation pages (via build_baskets) failed: %s", e)
+        _alloc_stale = True
+        log.error("allocation pages (via build_baskets) failed: %s", e, exc_info=True)
+        print("::warning::allocation sub-build (via build_baskets) raised an unhandled exception"
+              " — data/allocation/latest_*.json will NOT be updated this run. "
+              f"Root cause: {type(e).__name__}: {e}")
+    # Always write freshness.json so the file reflects the CURRENT run, not the worst
+    # run in history.  If we only write on failure the file persists stale=true in the
+    # committed tree forever after the first bad nightly, permanently misleading W3.
+    import json as _json
+    from datetime import datetime, timezone
+    from lib import config as _cfg
+    _fdir = _cfg.ROOT / "site" / "allocationdata"
+    _fdir.mkdir(parents=True, exist_ok=True)
+    (_fdir / "freshness.json").write_text(
+        _json.dumps({"stale": _alloc_stale,
+                     "reason": ("allocation sub-build failed or returned stale"
+                                if _alloc_stale else "ok"),
+                     "stamped_at": datetime.now(timezone.utc).isoformat(timespec="seconds")},
+                    separators=(",", ":")))
     try:
         from scripts.build_anticipation import main as _build_anticipation
         _build_anticipation()                             # anticipation.html + per-ticker cones
@@ -258,6 +288,29 @@ def main() -> int:
         log.error("basket_freeze[us]: SKIPPED (churn guard): %s", e)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("basket_freeze[us]: failed: %s", e)
+
+    # FTR W4 — BASKET TURN-WATCH K-of-N confluence organ.
+    # Placed before the freshness sentinel (W0) so the sentinel can audit the artifact.
+    # Own try/except — exit-0 always (build_allocation hook pattern).
+    try:
+        from engine.basket_turn_watch import compute as _btw_compute, write_site_artifact as _btw_write
+        _btw_result = _btw_compute()
+        _btw_path = _btw_write(_btw_result)
+        _btw_n_watch = sum(
+            1 for b in _btw_result.get("baskets", [])
+            if b.get("state") in ("WATCH", "IGNITION")
+        )
+        log.info("basket_turn_watch: wrote %s (%d WATCH/IGNITION baskets)", _btw_path, _btw_n_watch)
+    except Exception as _btw_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("::warning::basket_turn_watch hook failed: %s", _btw_exc)
+
+    # FT-R8 — surface-freshness sentinel: assert first-class artifacts carry today's
+    # NYSE session.  Warn-only (exits 0 always); annotations appear in the job summary.
+    try:
+        from scripts.check_surface_freshness import run as _check_freshness
+        _check_freshness()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("check_surface_freshness failed: %s", e)
 
     return 0
 

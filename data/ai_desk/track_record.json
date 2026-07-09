@@ -1,16 +1,16 @@
 {
   "schema": "ai_desk_track_record.v1",
   "as_of": "2026-07-07",
-  "scored_total": 2,
+  "scored_total": 3,
   "open": 24,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 2,
-    "hits": 1,
+    "n": 3,
+    "hits": 2,
     "misses": 1,
-    "hit_rate": 0.5,
-    "dir_accuracy": 0.5
+    "hit_rate": 0.667,
+    "dir_accuracy": 0.667
   },
   "by_conviction": {
     "high": {
@@ -28,17 +28,17 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 2,
-      "hits": 1,
+      "n": 3,
+      "hits": 2,
       "misses": 1,
-      "hit_rate": 0.5,
-      "dir_accuracy": 0.5
+      "hit_rate": 0.667,
+      "dir_accuracy": 0.667
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 1,
-      "hits": 1,
+      "n": 2,
+      "hits": 2,
       "misses": 0,
       "hit_rate": 1.0,
       "dir_accuracy": 1.0
@@ -52,8 +52,17 @@
     }
   },
   "by_regime": {},
-  "calibration_note": "2 scored, hit-rate 0.5 (directional accuracy 0.5). Sample is tiny \u2014 treat conviction as provisional and lean low.",
+  "calibration_note": "3 scored, hit-rate 0.667 (directional accuracy 0.667). Sample is tiny \u2014 treat conviction as provisional and lean low.",
   "recent": [
+    {
+      "id": "2026-06-15-1",
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0451,
+      "check_by": "2026-07-03"
+    },
     {
       "id": "2026-06-15-2",
       "subject": "Energy",
@@ -73,5 +82,5 @@
       "check_by": "2026-06-24"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 2 \u6761\uff0c\u547d\u4e2d\u7387 0.5\uff08\u65b9\u5411\u51c6\u786e\u7387 0.5\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 3 \u6761\uff0c\u547d\u4e2d\u7387 0.667\uff08\u65b9\u5411\u51c6\u786e\u7387 0.667\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
 }

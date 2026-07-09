@@ -20,6 +20,17 @@
   .hm-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
   .hm-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:74ch; line-height:1.5; }
   .hm-foot { color:var(--muted); font-size:11px; margin:14px 2px 0; line-height:1.6; }
+  /* Live-feed badge: populated by live.js when LIVE_FEED_LABEL is set.
+     Hidden (no layout footprint) when the span is empty (no live feed). */
+  .hm-live-badge { display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; color:var(--muted); font-weight:600;
+    background:color-mix(in srgb,#d97706 14%,transparent);
+    border:1px solid color-mix(in srgb,#d97706 35%,transparent);
+    color:#b45309; border-radius:7px; padding:3px 9px; margin-top:6px;
+    white-space:nowrap; align-self:flex-end; }
+  .hm-live-badge:empty { display:none; }
+  /* Hidden live-chg spans that live.js writes to (observer then recolors the tile) */
+  .hm-live-chg { display:none !important; }
 </style>
 </head>
 <body>
@@ -52,6 +63,10 @@
       <h1>{{ mk.icon }} {{ t(mk.h1_en, mk.h1_zh) }}</h1>
       <div class="sub">{{ t(mk.sub_en, mk.sub_zh) }}</div>
     </div>
+    {# live.js populates [data-live-label] with the honest feed caption
+       (e.g. "≈15-min delayed (Polygon Standard / Yahoo)") when a live feed
+       is configured. Hidden via :empty CSS when no feed is wired. #}
+    <span class="hm-live-badge" data-live-label></span>
   </div>
 
   <div id="heatmap-full" data-hm-maps='[{"key":"{{ mk.key }}","icon":"{{ mk.icon }}","label_en":"{{ mk.label_en }}","label_zh":"{{ mk.label_zh }}","url":"{{ mk.json }}"}]'></div>

@@ -484,6 +484,12 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
         conv = commodity_conviction.conviction(asset, df, drivers, extras, mtf_a,
                                                alert_tilt_val, conv_calib)
         vm["conviction"] = conv
+    # --- technical arming block (Policy-Shock W1-B, display-only) -------------
+    # Deterministic per-asset stoch + basing detector. Never feeds scoring.
+    from engine import commodity_signals as _cs
+    _arm_cfg = config.load()["commodities"]
+    vm["arming"] = _cs.technical_arming(df, _arm_cfg)
+
     # dollar sensitivity (display-only, from the forex Dollar Desk transmission)
     vm["dollar_corr"], vm["dollar_stable"] = None, None
     try:
@@ -605,7 +611,9 @@ def main() -> int:
     log.info("wrote %s/commodities.html (%d KB)", site, len(html) // 1024)
 
     # hub latest.json (consumed by build_vector's hub card; runs before build_vector)
-    latest = {"date": as_of, "regime": cx["regime"], "favored": cx["favored"],
+    _asof_raw = results["gold"].index.max()
+    latest = {"date": as_of, "asof": _asof_raw.strftime("%Y-%m-%d"),
+              "regime": cx["regime"], "favored": cx["favored"],
               "assets": {a["key"]: {"label": a["label"], "price": a["price"], "chg": a["chg"],
                                     "alloc": a["alloc_pct"], "risk": a["risk_word"],
                                     "trend": a["ts_trend"],

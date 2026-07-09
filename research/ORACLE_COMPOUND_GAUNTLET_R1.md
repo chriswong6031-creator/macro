@@ -5,6 +5,18 @@
 > across the post-2020 regime break. A17 holds within-modern OOS and is a live
 > modern-regime candidate. See §Correction. A15 and the rest stand.
 
+> **AMENDMENT (2026-07-07, RC-RUL-3 — research/TIME_CONFOUND_RECHECK_ADJUDICATION.md).**
+> ORC-RC-1 (PR #1864, `research/ORACLE_COMPOUND_TC_RECHECK.md`) replaced the G3
+> independent-draw placebo with a circular time-shift null that preserves onset
+> clustering (2000 draws; reproduction exact). Under it: **A15 PASS reaffirmed**
+> (p=0.0095); **A9 PASS WITHDRAWN** (p=0.139 — its G3 evidence was temporal
+> clustering, not signal; A9 reverts to screened evidence only and is not a
+> promotion candidate absent fresh out-of-time evidence); **A17-modern stands**
+> (p=0.013, n=73 caveat) while the already-superseded full-history read is
+> additionally non-robust (p=0.105) and must not be revived. Standing law: future
+> gauntlet rounds use the time-shift placebo (`scripts/research/oracle_compound_tc_recheck.py`)
+> as the G3 null.
+
 **Date:** 2026-07-04 · **Harness:** `scripts/oracle_gauntlet_compound.py` ·
 **Status:** first-pass OOS + timing-placebo gauntlet. This is a Tier-1.5 bridge,
 **not** the canonical P3 pre-registration. A PASS here is a promotion candidate

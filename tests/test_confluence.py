@@ -890,6 +890,257 @@ class TestWorldStateContradictions:
 
 
 # ===========================================================================
+# Macro node + edge tests (PR-D)
+# ===========================================================================
+
+def _make_world_state_with_macro_lobes(
+    tmp: Path,
+    quad: str = "Q1",
+    ca_diverge: bool = False,
+) -> dict:
+    """Write a world_state.json that contains macro lobes (as PR-B will produce)."""
+    ws: dict = {
+        "regime": {
+            "quad": quad,
+            "quad_name": "Goldilocks",
+            "asof": "2026-07-04",
+            "confidence": 0.75,
+            "flip_margin": 0.50,
+            "transition_state": "STABLE",
+        },
+        "verdict": {"verdict": "RISK_OFF", "asof": "2026-07-04"},
+        "gaps": [],
+        # PR-B macro lobes:
+        "fx_dollar": {
+            "asof": "2026-07-04",
+            "regime": "risk-off",
+            "risk": "elevated",
+            "dollar_desk": {"trend": "down", "lean": "bearish"},
+        },
+        "rates_transmission": {
+            "asof": "2026-07-04",
+            "state": "restrictive",
+            "scored_status": "confirmed",
+            "calibrated": True,
+            "headwinds": [
+                {"asset": "XLK", "verdict": "headwind", "net": -0.337},
+                {"asset": "XLB", "verdict": "headwind", "net": -0.372},
+            ],
+            "tailwinds": [
+                {"asset": "XLU", "verdict": "tailwind", "net": 0.15},
+                # Non-GICS asset — should NOT create a sector edge
+                {"asset": "GC=F", "verdict": "tailwind", "net": 0.20},
+            ],
+            "yield_curve": {
+                "regime": {"key": "bear_flattener", "label": "Bear Flattener"},
+                "recession": {"risk": "low"},
+            },
+        },
+        "rates_credit": {
+            "as_of": "2026-07-04",
+            "health_score": 85,
+            "health_label": "healthy",
+            "cycle_phase": "mid",
+            "recession_risk": "low",
+            "alarms": [],
+        },
+        "commodity_context": {
+            "asof": "2026-07-04",
+            "regime": "neutral",
+            "favored": "gold",
+            "assets": [],
+        },
+        "global_regimes": {
+            "us": {"quad": "Q1", "quad_name": "Goldilocks", "cycle_tag": "mid",
+                   "date": "2026-07-04", "stale": False},
+            "china": {"quad": "Q3", "quad_name": "Stagflation", "cycle_tag": "early",
+                      "date": "2026-07-04", "stale": False},
+            "hk": {"quad": "Q4", "quad_name": "Deflation", "cycle_tag": "late",
+                   "date": "2026-07-04", "stale": False},
+            "canada": {"quad": "Q2", "quad_name": "Reflation", "cycle_tag": "mid",
+                       "date": "2026-07-04", "stale": False},
+            "dispersion_note": "4 distinct quads across markets",
+        },
+        # Contradictions block (carries the diverge verdict for edges)
+        "contradictions": {
+            "n": 1 if ca_diverge else 0,
+            "by_severity": {"tension": 1} if ca_diverge else {},
+            "top_pair_ids": ["cross_asset_confirm-diverge"] if ca_diverge else [],
+            "display_only": True,
+        },
+    }
+    _write_json(tmp / "data" / "neuralweb" / "world_state.json", ws)
+    return ws
+
+
+class TestMacroNodes:
+    """Positive + negative control for macro node/edge generation (PR-D)."""
+
+    def test_macro_nodes_positive(self, tmp_path):
+        """Fixture with macro lobes → macro nodes present, display_only=True."""
+        _make_synapse(tmp_path)
+        _make_world_state_with_macro_lobes(tmp_path, quad="Q1", ca_diverge=False)
+        graph = build_graph(root=tmp_path, now=_NOW)
+
+        macro_nodes = [n for n in graph["nodes"] if n["type"] == "macro"]
+        macro_ids = {n["id"] for n in macro_nodes}
+
+        assert "macro:fx_dollar" in macro_ids, (
+            f"Expected macro:fx_dollar node; got macro_ids={macro_ids}"
+        )
+        assert "macro:rates_transmission" in macro_ids
+        assert "macro:rates_credit" in macro_ids
+        assert "macro:commodity" in macro_ids
+        assert "macro:global_regime:us" in macro_ids
+        assert "macro:global_regime:china" in macro_ids
+        assert "macro:dispersion" in macro_ids
+
+        # Every macro node must have display_only=True in meta
+        for n in macro_nodes:
+            assert n["meta"].get("display_only") is True, (
+                f"Macro node {n['id']} missing display_only=True in meta"
+            )
+
+    def test_macro_nodes_negative_no_lobes(self, tmp_path):
+        """world_state without macro lobes → zero macro nodes, no crash, gap noted."""
+        _make_synapse(tmp_path)
+        # Write world_state WITHOUT macro lobes (simulates pre-PR-B state)
+        _make_world_state(tmp_path, quad="Q1", verdict="RISK_OFF")
+        graph = build_graph(root=tmp_path, now=_NOW)
+
+        macro_nodes = [n for n in graph["nodes"] if n["type"] == "macro"]
+        assert macro_nodes == [], (
+            f"Expected no macro nodes when lobes absent; got {macro_nodes}"
+        )
+        # A gap note should be present
+        gap_texts = " ".join(graph["gaps"])
+        assert "macro" in gap_texts.lower(), (
+            f"Expected gap note about missing macro lobes; got gaps={graph['gaps']}"
+        )
+
+    def test_macro_nodes_absent_world_state(self, tmp_path):
+        """No world_state.json at all → zero macro nodes, gap noted, no crash."""
+        _make_synapse(tmp_path)
+        # Do NOT write any world_state.json
+        graph = build_graph(root=tmp_path, now=_NOW)
+
+        macro_nodes = [n for n in graph["nodes"] if n["type"] == "macro"]
+        assert macro_nodes == [], "Expected no macro nodes when world_state absent"
+        # Graph must still be returned
+        assert isinstance(graph, dict)
+
+
+class TestMacroEdges:
+    """Headwind/tailwind and contradicts edges from macro nodes (PR-D)."""
+
+    def test_headwind_tailwind_edges_present(self, tmp_path):
+        """Macro lobes with GICS sector assets → headwind/tailwind edges created."""
+        _make_synapse(tmp_path)
+        _make_world_state_with_macro_lobes(tmp_path, quad="Q1", ca_diverge=False)
+        graph = build_graph(root=tmp_path, now=_NOW)
+
+        hw_edges = [e for e in graph["edges"] if e["edge_type"] == "headwind"]
+        tw_edges = [e for e in graph["edges"] if e["edge_type"] == "tailwind"]
+
+        # XLK and XLB are GICS sectors → headwind edges should exist
+        xlk_hw = [e for e in hw_edges if e["dst"] == "sector:xlk"]
+        xlb_hw = [e for e in hw_edges if e["dst"] == "sector:xlb"]
+        assert len(xlk_hw) >= 1, (
+            f"Expected headwind edge to sector:xlk; hw_edges={hw_edges}"
+        )
+        assert len(xlb_hw) >= 1, (
+            f"Expected headwind edge to sector:xlb; hw_edges={hw_edges}"
+        )
+
+        # XLU is a GICS sector → tailwind edge
+        xlu_tw = [e for e in tw_edges if e["dst"] == "sector:xlu"]
+        assert len(xlu_tw) >= 1, (
+            f"Expected tailwind edge to sector:xlu; tw_edges={tw_edges}"
+        )
+
+        # GC=F is NOT a GICS sector → no edge
+        gcf_tw = [e for e in tw_edges if "gc=f" in e["dst"].lower()]
+        assert gcf_tw == [], (
+            f"GC=F is not a GICS sector node — expected no tailwind edge; got {gcf_tw}"
+        )
+
+    def test_all_new_edges_display_only(self, tmp_path):
+        """Every headwind/tailwind/macro-contradicts edge has display_only=True."""
+        _make_synapse(tmp_path)
+        _make_world_state_with_macro_lobes(tmp_path, quad="Q1", ca_diverge=True)
+        graph = build_graph(root=tmp_path, now=_NOW)
+
+        new_edge_types = {"headwind", "tailwind"}
+        # Also check contradicts edges that originate from macro nodes
+        for e in graph["edges"]:
+            if e["edge_type"] in new_edge_types:
+                assert e["display_only"] is True, (
+                    f"Edge {e['edge_type']} {e['src']}→{e['dst']} missing display_only=True"
+                )
+            if e["edge_type"] == "contradicts" and e["src"].startswith("macro:"):
+                assert e["display_only"] is True, (
+                    f"Macro contradicts edge {e['src']}→{e['dst']} missing display_only=True"
+                )
+
+    def test_edge_endpoints_exist(self, tmp_path):
+        """All headwind/tailwind/macro-contradicts edge endpoints exist as nodes."""
+        _make_synapse(tmp_path)
+        _make_world_state_with_macro_lobes(tmp_path, quad="Q1", ca_diverge=True)
+        graph = build_graph(root=tmp_path, now=_NOW)
+
+        node_ids = {n["id"] for n in graph["nodes"]}
+        for e in graph["edges"]:
+            if e["edge_type"] in ("headwind", "tailwind"):
+                assert e["src"] in node_ids, (
+                    f"headwind/tailwind src={e['src']} not in nodes"
+                )
+                assert e["dst"] in node_ids, (
+                    f"headwind/tailwind dst={e['dst']} not in nodes"
+                )
+            if e["edge_type"] == "contradicts" and e["src"].startswith("macro:"):
+                assert e["src"] in node_ids, (
+                    f"macro contradicts src={e['src']} not in nodes"
+                )
+                assert e["dst"] in node_ids, (
+                    f"macro contradicts dst={e['dst']} not in nodes"
+                )
+
+    def test_contradicts_edge_on_diverge(self, tmp_path):
+        """Diverge fixture → macro:fx_dollar and macro:rates_credit contradicts regime:Q1."""
+        _make_synapse(tmp_path)
+        _make_world_state_with_macro_lobes(tmp_path, quad="Q1", ca_diverge=True)
+        graph = build_graph(root=tmp_path, now=_NOW)
+
+        macro_contra = [
+            e for e in graph["edges"]
+            if e["edge_type"] == "contradicts" and e["src"].startswith("macro:")
+        ]
+        src_ids = {e["src"] for e in macro_contra}
+        dst_ids = {e["dst"] for e in macro_contra}
+
+        assert "macro:fx_dollar" in src_ids, (
+            f"Expected macro:fx_dollar contradicts edge; macro_contra={macro_contra}"
+        )
+        assert "macro:rates_credit" in src_ids, (
+            f"Expected macro:rates_credit contradicts edge; macro_contra={macro_contra}"
+        )
+        assert "regime:Q1" in dst_ids, (
+            f"Expected contradicts dst=regime:Q1; macro_contra={macro_contra}"
+        )
+
+    def test_no_contradicts_edge_on_confirm(self, tmp_path):
+        """No diverge (ca_diverge=False) → no macro contradicts edges."""
+        _make_synapse(tmp_path)
+        _make_world_state_with_macro_lobes(tmp_path, quad="Q1", ca_diverge=False)
+        graph = build_graph(root=tmp_path, now=_NOW)
+
+        macro_contra = [
+            e for e in graph["edges"]
+            if e["edge_type"] == "contradicts" and e["src"].startswith("macro:")
+        ]
+        assert macro_contra == [], (
+            f"Expected no macro contradicts edges when ca_diverge=False; got {macro_contra}"
+        )
 # R-ORTH PR-4: independence block tests (RUL-ORTH-5/11)
 # ===========================================================================
 

@@ -1,0 +1,80 @@
+{
+  "schema": "neuralweb.liquidity_plumbing.v1",
+  "asof": "2026-07-06",
+  "authority": {
+    "entry_tailwind": "measured_near_term_only",
+    "score_raise": false,
+    "score_lower": "buy_setup_caution_only_where_existing_engine_allows",
+    "explain": true,
+    "attend": true,
+    "deescalate": true,
+    "hard_gate": false
+  },
+  "headline": {
+    "state": "stress_liquidity_expansion",
+    "summary": "Net liquidity is technically expanding but RRP is near-exhausted or stress indicators are confirming — expansion quality is poor; treat with caution, not as a clean tailwind."
+  },
+  "fed": {
+    "assets_bn": 6724.564,
+    "assets_chg_20d_bn": 13.069,
+    "reserve_balances_bn": null,
+    "walcl_stale_days": 1,
+    "policy_stance": "hawkish",
+    "administered_rate_posture": "on_hold",
+    "asof": "2026-07-06"
+  },
+  "treasury": {
+    "tga_bn": 783.107,
+    "tga_chg_20d_bn": -42.433,
+    "net_issuance_20d_bn": 89.604,
+    "expected_tga_pressure": "unknown_until_financing_estimates_parser",
+    "coupon_supply_pressure": "context_only",
+    "asof": "2026-07-06"
+  },
+  "rrp": {
+    "rrp_bn": 2.719,
+    "rrp_chg_20d_bn": 1.958,
+    "buffer_state": "exhausted"
+  },
+  "quantity": {
+    "netliq_bn": 5945.002,
+    "netliq_chg_20d_bn": 59.808,
+    "netliq_chg_65d_bn": 46.061,
+    "netliq_pctile_expanding": 0.81852,
+    "overlay": "expanding"
+  },
+  "quality": {
+    "label": "stress-expansion",
+    "fed_share": 0.15,
+    "mechanical": true,
+    "stress_confirming": false
+  },
+  "funding": {
+    "effr_minus_iorb_bp": null,
+    "sofr_minus_iorb_bp": null,
+    "srf_takeup_bn": null,
+    "discount_window_primary_credit_bn": null,
+    "reserve_scarcity_state": "unknown"
+  },
+  "foreign_dollar": {
+    "swap_lines_bn": null,
+    "fima_repo_bn": null,
+    "state": "not_integrated_yet"
+  },
+  "entry_effect": {
+    "direction": "tailwind",
+    "quality": "low_quality_tailwind",
+    "measured_basis": "cycle_ladder_21d_odds",
+    "use": "support existing buy setup, never originate one"
+  },
+  "gaps": [
+    "funding scarcity spreads not integrated (Phase 3)",
+    "H.4.1 swap/FIMA not integrated (Phase 5)"
+  ],
+  "degraded": false,
+  "schema_version": 1,
+  "produced_by": "scripts/build_liquidity_plumbing.py",
+  "produced_at": "2026-07-08T12:58:53Z",
+  "inputs_hash": "sha256:1452320251edf118ec068d9f35393637862c22c1332accc03519a2e45fa61766",
+  "tier": "shadow"
+}

@@ -45,3 +45,29 @@ declared_clocks:
     due_at: "2027-05-01"
     note: "NW weights review; NW masterplan standing clock"
 migration_note: "declared_clocks is a stopgap; prefer registering come-backs in data/experiments/registry_seed.json (RF-9)."
+
+# owner_overrides: display-only metadata applied during evidence_clock assembly.
+# Assigns owner_program to clock_ids whose source adapters hardcode owner_program=None.
+# Never overrides a row that already has a non-None owner_program.
+# Inference confidence noted inline; guesses marked [GUESS] — correct in the source
+# adapter or registry_seed.json when the authoritative program is confirmed.
+owner_overrides:
+  # Overdue qledger clocks — all qledger desks owned by qualitative-intelligence program
+  "qledger:placebo": "qualitative-intelligence"         # qledger desk; MEMORY: qualitative-intelligence masterplan #897
+  "qledger:china_news": "qualitative-intelligence"      # qledger desk; china_news = W6 qualitative intelligence
+  "qledger:cn_importance_v0": "qualitative-intelligence"     # CN importance PIT tape; qualitative-intelligence
+  "qledger:cn_importance_v0_pit": "qualitative-intelligence" # PIT variant; same program
+  "qledger:us_importance_v0": "qualitative-intelligence"     # US importance tape; news-delta/qualitative-intelligence
+  "qledger:us_importance_v0_pit": "qualitative-intelligence" # PIT variant; same program
+  # Due experiment clocks
+  "experiments:species-S10": "setup-species"    # engine/species_registry.py; MEMORY: signal-moat-setup-species-research
+  "experiments:species-S11": "setup-species"    # engine/species_registry.py; same program
+  "species:S10": "setup-species"                # species source adapter; same program
+  "experiments:calibration-hub": "neural-web"   # engine/calibration_hub.py; NW calibration surface
+  "experiments:expect-drift-ruler-p": "setup-species"   # scripts/research/expect_drift_ruler_p_study.py; [GUESS] species ruler study
+  "experiments:insider-lh-ruler-p": "setup-species"     # scripts/research/insider_lh_ruler_p_study.py; [GUESS] species ruler study
+  # Due rule_experiment clocks — all from rule_experiments registry, no program field; [GUESS] engine-fix
+  "rule_experiments:disp_gate_1": "engine-fix"   # displacement-gate rule experiment; [GUESS]
+  "rule_experiments:exit_grid_v1": "engine-fix"  # exit-grid rule experiment; [GUESS]
+  "rule_experiments:trim_grid_v1": "engine-fix"  # trim-grid rule experiment; [GUESS]
+  "rule_experiments:wait_grid_v1": "engine-fix"  # wait-grid rule experiment; [GUESS]

@@ -1,175 +1,167 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-02",
-  "generated_at": "2026-07-06T08:49:19.861042+00:00",
+  "as_of": "2026-07-08",
+  "generated_at": "2026-07-09T08:12:22.902484+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-02-AEE-1",
-      "ticker": "AEE",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The neutral verdict is supported by mixed signals: a positive SUE (validated, z=0.66) is offset by deteriorating revisions (z=-0.18) and momentum (z=-0.23), with no strong entry urgency or tailwind; no edge over the S&P 500 is warranted.",
-      "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis Z= -0.05 (49th pct) \u2014 SUE positive but revisions and momentum negative",
-        "Entry axis Z= 0.16 (52nd pct) \u2014 urgency 'hold', no vol-squeeze conviction",
-        "Quality axis Z= -1.04 (34th pct) \u2014 factor headwinds"
-      ],
-      "dissent": "The lone bright spot \u2014 insider buying and a positive QoQ earnings surprise \u2014 could catalyze a catch-up trade if the revision trend stabilizes and momentum turns.",
-      "falsifier": {
-        "text": "The lean turns constructive if revisions flip positive and price clears its 50-day average with expanding volume, or cautious if the price breaks below $110 on sustained selling pressure.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-07-30",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-02-BA-2",
-      "ticker": "BA",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Despite a moderate entry axis (Z=0.67, urgency 'caution' on a TURN SIGNAL), the deterministic verdict is neutral and the selection axis is negative (SUE -0.3, revisions -0.29, momentum -0.41) plus an accounting warn flag; this warrants a cautious stance relative to SPX.",
-      "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis Z= -0.33 (45th pct) \u2014 negative across SUE, revisions, momentum",
-        "Quality flag: accounting 'warn'",
-        "Board state: TURN SIGNALED, off-high -10.2%, urgency caution"
-      ],
-      "dissent": "The entry axis compression and spotlight tailwind could trigger a sharp mean-reversion rally if the macro backdrop improves, punishing a cautious lean.",
-      "falsifier": {
-        "text": "The cautious lean is invalidated if BA closes above $245 on a weekly timeframe while the accounting warning is resolved, switching to constructive; or if it breaks below $210 with no recovery, confirming the caution.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "BA",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-30",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-02-COIN-3",
-      "ticker": "COIN",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The Lagging verdict is reinforced by a deeply negative selection axis (revisions Z=-1.04, momentum Z=-1.53) and a validated risk gate flagging the Crypto & Digital Assets narrative basket deterioration; only the modest entry axis keeps it from an avoid.",
-      "evidence": [
-        "Verdict: Lagging \u2014 relative weakness",
-        "Selection axis Z= -1.11 (33rd pct) \u2014 no SUE, weak revisions and momentum",
-        "Driver: entry axis Z=0.29 (55th pct) with urgency 'caution'",
-        "Caution: 'Narrative basket (Crypto & Digital Assets) is deteriorating'",
-        "Board state: HOLD, off-high -60.6%, urgency caution"
-      ],
-      "dissent": "Extreme pessimism and a deeply oversold condition (60% off high) could spark a violent counter-trend rally if crypto sentiment shifts abruptly.",
-      "falsifier": {
-        "text": "The cautious lean is wrong if COIN reclaims its 40-week moving average and the crypto narrative basket strengthens, warranting a neutral upgrade; or if it falls below $130 with no bounce, deepening caution.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "COIN",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-30",
-      "engine_verdict": "Lagging \u2014 relative weakness"
-    },
-    {
-      "id": "2026-07-02-CPK-4",
-      "ticker": "CPK",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "A strong validated SUE (z=1.37) is undercut by negative momentum (-0.66) and revisions (-0.23), and the board is in a TURN SIGNALED caution state off -9.1% highs; the mix yields no reliable edge.",
-      "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis Z= -0.07 (49th pct) \u2014 SUE positive but momentum and revisions detract",
-        "Entry axis Z= 0.67 (60th pct) but urgency 'caution' on a TURN SIGNAL",
-        "Quality axis Z= -0.45 (43rd pct) \u2014 factor drag"
-      ],
-      "dissent": "The earnings-surprise impulse could attract value seekers if the stock stabilizes above $120, turning the neutral stance insufficiently cautious.",
-      "falsifier": {
-        "text": "A break above $135 on above-average volume and a turn in momentum (registered in the model) would challenge the neutral view toward constructive; a decline below $115 with no SUE follow-through would shift it to cautious.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-07-30",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-02-CUBE-5",
-      "ticker": "CUBE",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The Lagging verdict is supported by universal selection weakness (SUE -0.59, revisions -0.54, momentum -0.88) despite a mild entry compression; relative weakness is likely to persist against SPX.",
-      "evidence": [
-        "Verdict: Lagging \u2014 relative weakness",
-        "Selection axis Z= -0.65 (40th pct) \u2014 all legs negative",
-        "Entry axis Z= 0.59 (59th pct) but urgency 'caution' on HOLD state",
-        "Board: off-high only -1.4%, no clear catalyst"
-      ],
-      "dissent": "A tight consolidation near highs with positive entry signals could be a stealth accumulation phase, turning a cautious lean premature.",
-      "falsifier": {
-        "text": "The cautious lean is invalidated if CUBE breaks above $42 on strong volume and the selection axis turns positive, shifting to neutral; a failure to hold $39 would confirm the lag.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "CUBE",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-30",
-      "engine_verdict": "Lagging \u2014 relative weakness"
-    },
-    {
-      "id": "2026-07-02-CVSA-6",
-      "ticker": "CVSA",
+      "id": "2026-07-08-APP-1",
+      "ticker": "APP",
       "name": null,
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "The constructive verdict is backed by positive revisions (z=0.79) driving the selection axis, combined with strong entry urgency ('now') on a TURN SIGNALED base after a -15.9% pullback; the risk/reward tilts favorable against the index.",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "The residual-alpha selection is supported by a strong post-earnings surprise (SUE z 2.53) and positive revisions, while the technical picture shows a fresh buy signal off -28.8% from highs, suggesting base-building. The constructive verdict aligns with event-edge confluence, though the deteriorating Technology basket and accounting watch require small size.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Selection axis Z= 0.28 (54th pct) \u2014 revisions positive, SUE negative but fresh at 33 days",
-        "Entry axis Z= 0.72 (61st pct) \u2014 urgency 'now', off-high -15.9%, TURN SIGNALED",
-        "Quality axis Z= 0.21 (53rd pct) \u2014 clean accounting"
+        "SUE z 2.53 (validated)",
+        "revisions z 0.48 (literature)",
+        "entry axis not blocked (z 0.43)",
+        "board off-high -28.8%, fresh buy imminent"
       ],
-      "dissent": "The negative SUE (z=-0.5) and the fact that the price is still in a downtrend off highs could trap early buyers if the base fails, making this a premature lean.",
+      "dissent": "The Technology equal-weight narrative basket is deteriorating, and APP's large drawdown could signal value trap if base fails; accounting watch adds fundamental risk.",
       "falsifier": {
-        "text": "The constructive lean is falsified if CVSA fails to hold $120 or closes below its 20-day low on increasing volume, invalidating the base-building thesis; a decisive break above $140 with expanding momentum would support it.",
+        "text": "A close below $500 in the next 30 days would break the base-building pattern and invalidate the constructive lean.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "CVSA",
+          "subject_ticker": "APP",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-07-30",
+      "check_by": "2026-08-19",
       "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-08-BMY-2",
+      "ticker": "BMY",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "BMY lacks a directional edge: the selection axis is mixed (negative SUE and flat revisions), and while the entry axis is favorable (turn signaled, vol-squeeze), it does not overcome the earnings vacuum. The Neutral verdict is appropriate given the lack of dominant signal and an overcrowded Big Pharma basket.",
+      "evidence": [
+        "SUE z -0.28 (validated, negative)",
+        "revisions z 0.06",
+        "entry z 0.67 with turn signaled",
+        "risk gate: Big Pharma basket crowded"
+      ],
+      "dissent": "The favorable entry setup (off-high -6.8%, vol-squeeze) could trigger a breakout if the Big Pharma tailwind persists despite crowding.",
+      "falsifier": {
+        "text": "A close above $60 in the next 30 days would challenge the neutral lean.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-19",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-08-CI-3",
+      "ticker": "CI",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "CI's selection axis is essentially flat (SUE near zero, negative momentum), offering no earnings-based edge, despite a technical fresh buy signal. The Neutral verdict correctly reflects this stalemate, with added caution from accounting watch and a crowded Health Care basket.",
+      "evidence": [
+        "selection z -0.033",
+        "SUE z 0.07",
+        "entry fresh buy (z 0.67)",
+        "risk gate: Health Care basket crowded"
+      ],
+      "dissent": "The fresh buy signal with urgency and only -5.3% off highs could indicate immediate upside, rendering a neutral stance too passive.",
+      "falsifier": {
+        "text": "A close above $300 within 30 days would falsify the neutral lean.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-19",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-08-CLH-4",
+      "ticker": "CLH",
+      "name": null,
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "CLH's constructive verdict is supported by strong upward revisions (z 0.63) and a robust entry signal (turn signaled, off-high -4.1%, urgency), with clean accounting and no cautions. The missing positive SUE (validated) keeps conviction low.",
+      "evidence": [
+        "revisions z 0.63 (literature)",
+        "entry z 0.91, turn signaled",
+        "tailwind spotlight",
+        "clean accounting"
+      ],
+      "dissent": "Without a positive SUE (z -0.18), the revisions edge may already be discounted, and the base-building could fail if market breadth deteriorates.",
+      "falsifier": {
+        "text": "A close below $290 in the next 20 trading days would break the base and invalidate the constructive lean.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "CLH",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-08-19",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-08-EOG-5",
+      "ticker": "EOG",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "EOG's selection contains contradictory signals: positive SUE and revisions are overshadowed by very negative momentum (z -0.95). With a deteriorating Energy basket and accounting watch, the Neutral verdict correctly reflects the low-confidence environment.",
+      "evidence": [
+        "SUE z 0.32",
+        "revisions z 0.29",
+        "momentum z -0.95",
+        "risk gate: US Energy Complex deteriorating",
+        "board HOLD, caution"
+      ],
+      "dissent": "If the positive SUE and revisions eventually reverse the downtrend, the neutral lean would have missed a buy point; the vol-squeeze could precede a breakout.",
+      "falsifier": {
+        "text": "A close above $145 within 30 days would challenge the neutral lean.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-19",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-08-PI-6",
+      "ticker": "PI",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "PI shows strong technicals (off -40.8%, fresh buy) and revisions (z 0.77), but the extremely negative SUE (z -1.01, validated) and mixed selection block a constructive lean. The Neutral verdict correctly reflects the event-edge stalemate and accounting watch.",
+      "evidence": [
+        "SUE z -1.01",
+        "revisions z 0.77",
+        "entry fresh buy off -40.8%",
+        "accounting watch"
+      ],
+      "dissent": "The powerful revisions and deeply oversold condition could produce a sharp rebound, rendering the neutral stance too conservative.",
+      "falsifier": {
+        "text": "A close above $160 within 30 days would falsify the neutral lean.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-19",
+      "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."

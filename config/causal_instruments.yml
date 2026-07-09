@@ -1,0 +1,170 @@
+# config/causal_instruments.yml — CHF-R9 instrument library
+# Schema: causal_instruments.v1
+# Owner: neural-web (CHF program)
+# Ruling authority: CHF-R9 (2026-07-09)
+#
+# Every entry requires:
+#   instrument_id       : kebab-slug identifier
+#   event_tape          : path to event tape or 'declared'
+#   exogeneity_class    : MANDATORY — one of:
+#                           timing_only          (calendar-scheduled; usable as event-window clocks)
+#                           surprise_component   (realization usable ONLY with mandatory
+#                                                anticipated-vs-surprise decomposition)
+#                           endogenous_reaction  (policy reaction functions; admissible ONLY
+#                                                as conditioning context with printed
+#                                                reaction-function confound note)
+#   required_confounds  : list of required confound controls; MUST be non-empty for
+#                         surprise_component and endogenous_reaction classes
+#   mechanism_families  : mechanism families this instrument is relevant for
+#   notes               : free-form explanatory text
+#
+# The scout refuses to run an instrument whose class requirements are unmet (CHF-R9).
+# CI validation (validate_instruments) enforces the schema at test time.
+
+schema: causal_instruments.v1
+
+instruments:
+
+  # ---------------------------------------------------------------------------
+  # timing_only — calendar events (exogenous by schedule)
+  # ---------------------------------------------------------------------------
+
+  - instrument_id: opex_calendar
+    event_tape: declared
+    exogeneity_class: timing_only
+    required_confounds: []
+    mechanism_families:
+      - entry_quality
+      - exit_fragility
+      - confluence_independence
+    notes: >
+      Standard options expiration calendar (monthly 3rd Friday + quarterly index OPEX).
+      The calendar itself is pre-announced and exogenous — the event window around OPEX
+      dates is a valid clock for studying GEX-related effects.  Does NOT identify
+      direction or surprise; use only as a timing window instrument.
+
+  - instrument_id: fomc_meeting_dates
+    event_tape: declared
+    exogeneity_class: timing_only
+    required_confounds: []
+    mechanism_families:
+      - macro_transmission
+      - liquidity_transmission
+      - rotation_transfer
+    notes: >
+      Pre-announced FOMC meeting calendar.  The MEETING DATES themselves are exogenous
+      (Fed schedules them in advance); usable as event-window clocks for pre-FOMC
+      drift or announcement-window studies.  Distinct from fomc_decision which carries
+      the surprise component of the actual policy action.
+
+  - instrument_id: cpi_release_timestamp
+    event_tape: declared
+    exogeneity_class: timing_only
+    required_confounds: []
+    mechanism_families:
+      - macro_transmission
+      - rotation_transfer
+    notes: >
+      BLS pre-announced CPI release schedule.  The release timestamp is exogenous
+      (BLS publishes the calendar in advance); usable as event-window clock for
+      pre-release positioning or announcement-window studies.  Distinct from
+      cpi_print which requires surprise decomposition.
+
+  - instrument_id: index_rebalance_dates
+    event_tape: declared
+    exogeneity_class: timing_only
+    required_confounds: []
+    mechanism_families:
+      - rotation_transfer
+      - entry_quality
+      - exit_fragility
+    notes: >
+      Pre-announced index rebalance calendar (S&P, Russell, MSCI reconstitution
+      windows).  The rebalance dates are exogenous; the event window around them
+      is a valid timing instrument for studying forced-flow effects.
+
+  # ---------------------------------------------------------------------------
+  # surprise_component — realizations requiring mandatory surprise decomposition
+  # ---------------------------------------------------------------------------
+
+  - instrument_id: fomc_decision
+    event_tape: declared
+    exogeneity_class: surprise_component
+    required_confounds:
+      - anticipated_component
+      - futures_implied_path
+    mechanism_families:
+      - macro_transmission
+      - liquidity_transmission
+      - rotation_transfer
+    notes: >
+      The FOMC policy decision (rate change, QE/QT announcement).  Only the SURPRISE
+      component is usable for identification — the anticipated component is already
+      priced.  Required decomposition: subtract futures-implied path (e.g. Fed funds
+      futures 30 days prior) from realized decision to isolate surprise.  Studies using
+      the raw policy change without this decomposition are confounded by anticipated
+      policy and will overstate transmission effects.
+
+  - instrument_id: cpi_print
+    event_tape: declared
+    exogeneity_class: surprise_component
+    required_confounds:
+      - consensus_surprise_decomposition
+    mechanism_families:
+      - macro_transmission
+      - rotation_transfer
+    notes: >
+      CPI headline/core print.  Only the surprise vs consensus is usable for
+      identification.  Required: consensus_surprise_decomposition (realized minus
+      Bloomberg/survey median).  The anticipated component is priced in advance;
+      raw print levels do not isolate causal signal.
+
+  - instrument_id: nfp_print
+    event_tape: declared
+    exogeneity_class: surprise_component
+    required_confounds:
+      - consensus_surprise_decomposition
+    mechanism_families:
+      - macro_transmission
+      - rotation_transfer
+    notes: >
+      Non-Farm Payrolls print.  Only the surprise vs consensus is usable for
+      identification.  Required: consensus_surprise_decomposition.  Same logic as
+      cpi_print — anticipated labor-market trajectory is priced; use only the
+      survey-relative surprise component for causal claims.
+
+  # ---------------------------------------------------------------------------
+  # endogenous_reaction — policy reaction functions (conditioning context only)
+  # ---------------------------------------------------------------------------
+
+  - instrument_id: china_rrr_moves
+    event_tape: declared
+    exogeneity_class: endogenous_reaction
+    required_confounds:
+      - policy_reaction_function_state
+    mechanism_families:
+      - macro_transmission
+      - liquidity_transmission
+      - rotation_transfer
+    notes: >
+      PBoC Reserve Requirement Ratio (RRR) changes.  ENDOGENOUS: the PBoC reacts
+      to growth, credit, and financial-stability conditions.  Admissible ONLY as
+      conditioning context (e.g. "given that a cut occurred, does X follow?") with
+      a printed reaction-function confound note.  NEVER use as an identification
+      instrument for causal direction — the selection into a cut is correlated with
+      the economic environment that drives the outcome.
+
+  - instrument_id: china_lpr_moves
+    event_tape: declared
+    exogeneity_class: endogenous_reaction
+    required_confounds:
+      - policy_reaction_function_state
+    mechanism_families:
+      - macro_transmission
+      - liquidity_transmission
+      - rotation_transfer
+    notes: >
+      PBoC Loan Prime Rate (LPR) changes.  Same endogeneity caveat as china_rrr_moves.
+      Admissible only as conditioning context with a printed reaction-function confound
+      note.  The LPR change is chosen by the PBoC in response to observable economic
+      conditions, making it endogenous to the very outcomes one might want to study.

@@ -1,687 +1,274 @@
-"""engine/insider_power.py — Insider Power: quality-weighted Form-4 insider signal.
+"""Insider Power — per-ticker, quality-weighted Form-4 insider score (0..100).
 
-Inspired by StockInvest's "Insider Power" metric: "Based on the 100 latest insider trades
-… the score focuses on the QUALITY of the trades" (weighted by size, time, transaction
-type, and the person).
+The StockInvest-style "Insider Power" read, built on the point-in-time SEC
+Form-4 per-transaction panel (`collectors/sec_insider.backfill_panel` →
+`data/sec_insider/insider_panel.parquet`). This is the per-NAME companion to the
+cross-sectional research factor in `engine/insider_factor.py`: it reuses that
+module's role weighting and the P/S open-market convention, but instead of
+ranking the universe it emits a single 0..100 conviction score per ticker plus
+the display payload the Mastermind Terminal "Insider" tab renders.
 
-DATA SOURCES
-------------
-Primary  : data/sec_insider/panel/<quarter>.parquet
-           Per-transaction panel with columns:
-             ticker, filing_date, trans_date, rptownercik, code ('P'=buy, 'S'=sell),
-             is_officer, is_director, is_tenpct, title, shares, price, usd, quarter
-           PIT-clean: gate by filing_date (public availability), not trans_date.
+Construction (as-of a date D, over a trailing window of FILINGS). Each trade
+carries a signed conviction weight:
 
-Fallback  : site/factordata/insider_signals.json
-           Cross-sectional snapshot: {ticker: {bps, buyers, sellers, net_mn}}
-           Used when panel files are unavailable.
+    w = sign · role · recency · size
+      sign     +1 buy (code P) / −1 sell (code S)
+      role     CEO/CFO/… 1.5 · officer 1.0 · director 0.6 · 10% holder 0.3 · other 0.2
+      recency  0.5 ** (age_days / 90)         # 90-day half-life
+      size     log10(1 + usd / 1e4)           # compress $ so one $10m ticket
+                                              #   doesn't drown a cluster of small buys
 
-SCORE CONSTRUCTION (0-100 scale, 50 = neutral)
------------------------------------------------
-For a trailing window of the N most-recent-filing open-market transactions per ticker:
+The score is the NET weight NORMALISED by gross activity, so it reads as a
+quality-weighted balance in (−1, 1) rather than an unbounded sum that just
+tracks how liquid the name is (a raw Σw saturates instantly for a mega-cap where
+insiders sell every quarter — the exact "sum every trade into one number
+destroys the signal" failure engine/insider_factor.py warns about):
 
-  1. TRANSACTION TYPE WEIGHT  (w_type)
-     P (open-market purchase)   : +1.0
-     S (open-market sale)       : -1.0
-     (only code P/S is used; awards/grants have code A/F/other and are excluded)
+    bal   = Σ w  /  (Σ |w| + K)               # K = activity floor → thin tapes pull to neutral
+    score = 50 + 50 · tanh(GAIN · bal)        # 50 = neutral, →100 all-buy, →0 all-sell
 
-  2. ROLE WEIGHT  (w_role)  — mirrors engine/insider_factor.py role_weights()
-     top officer (CEO/CFO/COO/CHAIR/FOUNDER/…)  : 1.5
-     line officer                                : 1.0
-     director                                   : 0.6
-     10%-holder                                 : 0.3
-     other/unknown                              : 0.2
+It is quality-weighted, NOT a raw buy/sell count ratio: a single recent CEO
+purchase can outweigh a pile of routine small director sales, and — because the
+log-dollar term and role weights can flip the sign versus naive net dollars — a
+name can carry a positive Power Score while its net-dollar VOLUME is negative.
+That divergence is what drives the display confidence below.
 
-  3. RECENCY DECAY  (w_time)
-     Exponential decay on calendar days since filing_date.
-     w_time = exp(-decay_rate * days_since_filing)
-     Default decay_rate = ln(2) / HALF_LIFE_DAYS (half-life = 90 days).
-     Trades filed more than LOOKBACK_DAYS ago receive near-zero weight.
+Signals: ``insider_buy`` fires at score ≥ 60, ``insider_sell`` at score ≤ 40 —
+the score-threshold booleans. The DISPLAY signal + confidence (the
+"SELL SIGNAL — Low Confidence: contradicted by a positive Insider Power Score"
+line) reads the naive net-dollar flow direction against the quality-weighted
+score: when the two DISAGREE the signal is low-confidence, exactly the
+StockInvest UX.
 
-  4. SIZE WEIGHT  (w_size)
-     |usd| / mean(|usd|) across all N trades (winsorised at 5x).
-     Normalised so that the raw $ amount doesn't dominate but larger trades
-     still receive higher weight within the window.
-
-  Weighted score per trade  = w_type * w_role * w_time * w_size
-  Raw score = sum of per-trade weighted scores
-  Bounded score = 50 + 50 * tanh(raw / TANH_SCALE)  → [0, 100]
-
-  Where no open-market P/S transactions exist in the window: NaN.
-
-LIMITATIONS (honest)
---------------------
-- The panel only contains open-market codes P and S. Awards (A), in-kind
-  dispositions (F), and other codes are excluded from the quality score —
-  this is by design (quality filter).
-- The aggregate fallback (insider_signals.json) exposes only net_mn/bps/
-  buyers/sellers — no per-trade type/role/recency breakdown. The fallback
-  score is necessarily simpler: sign(net_mn) * normalized(|bps|), mapped 0-100.
-- Panel data starts 2006q1; tickers with no filings in the trailing window
-  receive NaN, not 0.
-- Cross-sectional percentile used in catalog signals is computed at call time
-  across all tickers with panel data — not stored pre-computed.
-
-DISPLAY CONTRACT
-----------------
-Display-only / research. No 'validated' claim in any user-facing string.
-No LLM-originated signals, scores, or escalations.
+Everything is causal: a trade enters only once its FILING_DATE ≤ D (the date it
+became public). Pure compute (no I/O) — `scripts/export_insider_power.py` feeds
+it the panel slice and writes the per-ticker JSON artifacts.
 """
 from __future__ import annotations
 
-import glob
-import json
-import logging
 import math
-import os
-from functools import lru_cache
-from typing import Any
 
 import numpy as np
 import pandas as pd
 
-log = logging.getLogger(__name__)
+# Title keywords that mark a top-of-house officer (weighted above a line officer)
+# — kept in sync with engine/insider_factor._TOP_TITLE.
+_TOP_TITLE = ("CHIEF EXEC", "CEO", "CHIEF FIN", "CFO", "PRESIDENT", "CHAIR",
+              "FOUNDER", "CHIEF OPER", "COO", "PRINCIPAL EXEC", "PRINCIPAL FIN")
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
+HALF_LIFE_DAYS = 90.0    # recency decay: a 90-day-old filing counts half
+WINDOW_DAYS = 365        # trailing window that feeds the score + headline stats
+SERIES_MONTHS = 24       # trailing months drawn in the buy/sell-volume chart
+ACTIVITY_FLOOR = 2.0     # K: gross-weight floor → thin/one-off tapes stay near neutral
+SCORE_GAIN = 2.0         # tanh gain on the normalised balance (spread the 0..100 range)
+BUY_THRESHOLD = 60.0     # insider_buy fires at/above  (≈ +0.10 net weighted buy tilt)
+SELL_THRESHOLD = 40.0    # insider_sell fires at/below (≈ −0.10 net weighted sell tilt)
+MAX_TRADES = 40          # recent open-market trades kept for the display table
 
-#: Title keywords marking a top-of-house officer (mirrors insider_factor.py).
-_TOP_TITLE: tuple[str, ...] = (
-    "CHIEF EXEC", "CEO", "CHIEF FIN", "CFO", "PRESIDENT", "CHAIR",
-    "FOUNDER", "CHIEF OPER", "COO", "PRINCIPAL EXEC", "PRINCIPAL FIN",
-)
-
-#: Trailing window for "latest N trades" scoring.
-N_TRADES: int = 100
-
-#: Only include trades filed within this many calendar days.
-LOOKBACK_DAYS: int = 365
-
-#: Recency decay half-life in calendar days.
-HALF_LIFE_DAYS: float = 90.0
-
-#: tanh normalisation scale — raw score below which tanh compresses near-linearly.
-TANH_SCALE: float = 5.0
-
-#: Insider-buy event threshold: score must exceed this to fire buy signal (0-100).
-BUY_THRESHOLD: float = 60.0
-
-#: Insider-sell event threshold: score must be below this to fire sell signal.
-SELL_THRESHOLD: float = 40.0
-
-# Derived decay rate
-_DECAY_RATE: float = math.log(2.0) / HALF_LIFE_DAYS
-
-# Canonical paths (relative to repo root, resolved at import time via __file__)
-_REPO_ROOT: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_PANEL_DIR: str = os.path.join(_REPO_ROOT, "data", "sec_insider", "panel")
-_JSON_PATH: str = os.path.join(_REPO_ROOT, "site", "factordata", "insider_signals.json")
+_ROLE_WEIGHT = {"top": 1.5, "officer": 1.0, "director": 0.6, "tenpct": 0.3, "other": 0.2}
+_ROLE_LABEL = {"top": "Top exec", "officer": "Officer", "director": "Director",
+               "tenpct": "10% owner", "other": "Insider"}
 
 
-# ---------------------------------------------------------------------------
-# Panel data loading
-# ---------------------------------------------------------------------------
-
-@lru_cache(maxsize=4)
-def _load_recent_panel(n_quarters: int = 4, as_of: str | None = None) -> pd.DataFrame:
-    """Load the most recent ``n_quarters`` panel quarters into one DataFrame.
-
-    Parameters
-    ----------
-    n_quarters : int
-        How many of the most-recent quarterly panel files to load and concatenate.
-    as_of : str or None
-        If given (ISO date string), only include panel files whose quarter
-        start-date <= as_of.  Used for PIT-clean scoring in signal fns.
-        Pass as a stable string so LRU caching is effective per call-site.
-
-    Returns
-    -------
-    pd.DataFrame  with columns matching the per-quarter panel schema.
-    Empty DataFrame if no panel files are found.
-    """
-    files = sorted(glob.glob(os.path.join(_PANEL_DIR, "*.parquet")))
-    if not files:
-        log.warning("insider_power: no panel files found in %s", _PANEL_DIR)
-        return pd.DataFrame()
-
-    # Filter by as_of PIT gate
-    if as_of is not None:
-        as_of_ts = pd.Timestamp(as_of)
-        def _quarter_start(fname: str) -> pd.Timestamp:
-            stem = os.path.basename(fname).replace(".parquet", "")  # e.g. '2025q4'
-            try:
-                yr, q = int(stem[:4]), int(stem[5])
-                month = (q - 1) * 3 + 1
-                return pd.Timestamp(yr, month, 1)
-            except Exception:
-                return pd.Timestamp("2099-01-01")
-        files = [f for f in files if _quarter_start(f) <= as_of_ts]
-
-    files = files[-n_quarters:]
-    if not files:
-        return pd.DataFrame()
-
-    dfs = []
-    for f in files:
-        try:
-            dfs.append(pd.read_parquet(f))
-        except Exception as exc:
-            log.warning("insider_power: failed to read %s: %s", f, exc)
-
-    if not dfs:
-        return pd.DataFrame()
-
-    df = pd.concat(dfs, ignore_index=True)
-    df["filing_date"] = pd.to_datetime(df["filing_date"])
-    return df
+def _role_bucket(title: str, is_officer: bool, is_director: bool, is_tenpct: bool) -> str:
+    """Bucket a filer into the conviction tiers used by role weighting."""
+    up = title.upper() if isinstance(title, str) else ""
+    if is_officer and any(k in up for k in _TOP_TITLE):
+        return "top"
+    if is_officer:
+        return "officer"
+    if is_director:
+        return "director"
+    if is_tenpct:
+        return "tenpct"
+    return "other"
 
 
-# ---------------------------------------------------------------------------
-# Role-weight helper (mirrors insider_factor.py for consistency)
-# ---------------------------------------------------------------------------
+def score_from_balance(net_w: float, gross_w: float) -> float:
+    """Map the activity-normalised conviction balance onto the 0..100 scale.
 
-def _role_weight(row: pd.Series) -> float:
-    """Return the conviction weight for a single transaction row."""
-    title = str(row.get("title", "") or "").upper()
-    is_top = any(k in title for k in _TOP_TITLE)
-    if bool(row.get("is_officer", False)) and is_top:
-        return 1.5
-    if bool(row.get("is_officer", False)):
-        return 1.0
-    if bool(row.get("is_director", False)):
-        return 0.6
-    if bool(row.get("is_tenpct", False)):
-        return 0.3
-    return 0.2
+    `net_w` = Σ signed weights, `gross_w` = Σ |weights|. The balance
+    net_w / (gross_w + K) sits in (−1, 1); K keeps thin tapes near 50."""
+    bal = net_w / (gross_w + ACTIVITY_FLOOR)
+    return round(50.0 + 50.0 * math.tanh(SCORE_GAIN * bal), 1)
 
 
-def _role_weights_series(panel: pd.DataFrame) -> pd.Series:
-    """Vectorised role-weight computation for a panel DataFrame."""
-    title = panel["title"].fillna("").str.upper()
-    is_top = title.apply(lambda t: any(k in t for k in _TOP_TITLE))
+def _signal_and_confidence(score: float, net_usd: float, buyers: int, sellers: int) -> tuple[str, str, str]:
+    """StockInvest-style headline signal + confidence + analysis breakdown.
 
-    w = pd.Series(0.2, index=panel.index, dtype=float)
-    w = w.mask(panel["is_tenpct"].fillna(False).astype(bool), 0.3)
-    w = w.mask(panel["is_director"].fillna(False).astype(bool), 0.6)
-    w = w.mask(panel["is_officer"].fillna(False).astype(bool), 1.0)
-    w = w.mask(panel["is_officer"].fillna(False).astype(bool) & is_top, 1.5)
-    return w
+    The naive net-dollar flow gives the buy/sell VOLUME signal; the quality-
+    weighted `score` either confirms or contradicts it. Disagreement → low
+    confidence (the score is the higher-quality read)."""
+    if buyers == 0 and sellers == 0:
+        return "NEUTRAL", "None", "No recent open-market insider activity."
 
-
-# ---------------------------------------------------------------------------
-# Core scoring
-# ---------------------------------------------------------------------------
-
-def insider_power(
-    ticker_or_df: "str | pd.DataFrame",
-    *,
-    as_of_date: "str | pd.Timestamp | None" = None,
-    n_trades: int = N_TRADES,
-    lookback_days: int = LOOKBACK_DAYS,
-    half_life_days: float = HALF_LIFE_DAYS,
-    tanh_scale: float = TANH_SCALE,
-    _panel: "pd.DataFrame | None" = None,
-) -> float:
-    """Quality-weighted insider power score for one ticker.
-
-    Parameters
-    ----------
-    ticker_or_df : str or pd.DataFrame
-        Ticker symbol string, or a single-ticker panel DataFrame (for testing).
-    as_of_date : str, Timestamp, or None
-        If given, only consider transactions with filing_date <= as_of_date.
-        This is the PIT gate: filing_date is when the Form-4 became public.
-    n_trades : int
-        Maximum number of most-recent-filing open-market trades to include.
-    lookback_days : int
-        Discard trades older than this many calendar days from as_of_date
-        (or from today if as_of_date is None).
-    half_life_days : float
-        Recency decay half-life in calendar days.
-    tanh_scale : float
-        Scale factor for tanh compression: output = 50 + 50*tanh(raw/tanh_scale).
-    _panel : pd.DataFrame or None
-        Optional override for the full panel — used in tests to avoid disk I/O.
-
-    Returns
-    -------
-    float
-        Score in [0, 100], 50 = neutral.
-        NaN if no eligible open-market P/S transactions found.
-    """
-    if as_of_date is None:
-        cutoff = pd.Timestamp.utcnow().tz_localize(None).normalize()
+    if net_usd > 0:
+        flow = "BUY"
+    elif net_usd < 0:
+        flow = "SELL"
     else:
-        cutoff = pd.Timestamp(as_of_date)
+        flow = "BUY" if score >= 50 else "SELL"
 
-    # Obtain panel
-    if isinstance(ticker_or_df, pd.DataFrame):
-        panel = ticker_or_df
-        ticker = None
+    agree = (flow == "BUY" and score >= 50) or (flow == "SELL" and score <= 50)
+    strength = abs(score - 50)
+    breadth = buyers if flow == "BUY" else sellers
+
+    if not agree:
+        conf = "Low"
+    elif strength >= 15 or breadth >= 3:
+        conf = "High"
     else:
-        ticker = str(ticker_or_df).upper()
-        if _panel is not None:
-            panel = _panel
+        conf = "Medium"
+
+    s = f"{score:.0f}"
+    if flow == "BUY":
+        if agree:
+            analysis = (f"BUY SIGNAL — {conf} Confidence: confirmed by a positive "
+                        f"Insider Power Score ({s}); {buyers} insider buyer"
+                        f"{'' if buyers == 1 else 's'} vs {sellers} seller"
+                        f"{'' if sellers == 1 else 's'}.")
         else:
-            # Load enough quarters to cover lookback_days
-            n_q = max(4, math.ceil(lookback_days / 90) + 1)
-            panel = _load_recent_panel(n_quarters=n_q, as_of=cutoff.strftime("%Y-%m-%d"))
-        if panel.empty:
-            return float("nan")
-        panel = panel[panel["ticker"] == ticker]
-
-    if panel.empty:
-        return float("nan")
-
-    # Ensure filing_date is datetime
-    panel = panel.copy()
-    panel["filing_date"] = pd.to_datetime(panel["filing_date"])
-
-    # PIT gate: only trades with filing_date <= cutoff
-    panel = panel[panel["filing_date"] <= cutoff]
-    if panel.empty:
-        return float("nan")
-
-    # Open-market only: code P (purchase) or S (sale)
-    panel = panel[panel["code"].isin(["P", "S"])]
-    if panel.empty:
-        return float("nan")
-
-    # Lookback window
-    earliest = cutoff - pd.Timedelta(days=lookback_days)
-    panel = panel[panel["filing_date"] >= earliest]
-    if panel.empty:
-        return float("nan")
-
-    # Take the N most recent by filing_date
-    panel = panel.sort_values("filing_date", ascending=False).head(n_trades)
-
-    # --- Component weights ---
-
-    # 1. Transaction-type direction: buy = +1, sell = -1
-    w_type = panel["code"].map({"P": 1.0, "S": -1.0}).fillna(0.0)
-
-    # 2. Role weight (vectorised)
-    w_role = _role_weights_series(panel)
-
-    # 3. Recency decay: days since filing_date
-    days_ago = (cutoff - panel["filing_date"]).dt.days.clip(lower=0).astype(float)
-    decay_rate = math.log(2.0) / half_life_days
-    w_time = np.exp(-decay_rate * days_ago.to_numpy())
-
-    # 4. Size weight: |usd| normalised, winsorised at 5x mean
-    usd_abs = panel["usd"].abs().fillna(0.0)
-    mean_usd = usd_abs.mean()
-    if mean_usd > 0:
-        w_size = (usd_abs / mean_usd).clip(upper=5.0)
-    else:
-        w_size = pd.Series(1.0, index=panel.index)
-
-    # Composite weight per trade
-    per_trade = w_type.to_numpy() * w_role.to_numpy() * w_time * w_size.to_numpy()
-
-    raw = float(np.sum(per_trade))
-
-    # Bounded score: 0-100, 50 = neutral
-    score = 50.0 + 50.0 * math.tanh(raw / tanh_scale)
-    return round(score, 4)
+            analysis = (f"BUY SIGNAL — Low Confidence: contradicted by a negative "
+                        f"Insider Power Score ({s}).")
+    else:  # SELL
+        if agree:
+            analysis = (f"SELL SIGNAL — {conf} Confidence: confirmed by a negative "
+                        f"Insider Power Score ({s}); {sellers} insider seller"
+                        f"{'' if sellers == 1 else 's'} vs {buyers} buyer"
+                        f"{'' if buyers == 1 else 's'}.")
+        else:
+            analysis = (f"SELL SIGNAL — Low Confidence: contradicted by a positive "
+                        f"Insider Power Score ({s}).")
+    return flow, conf, analysis
 
 
-# ---------------------------------------------------------------------------
-# Cross-sectional universe score table
-# ---------------------------------------------------------------------------
-
-def insider_power_universe(
-    tickers: "list[str] | None" = None,
-    *,
-    as_of_date: "str | pd.Timestamp | None" = None,
-    n_trades: int = N_TRADES,
-    lookback_days: int = LOOKBACK_DAYS,
-    half_life_days: float = HALF_LIFE_DAYS,
-    tanh_scale: float = TANH_SCALE,
-    _panel: "pd.DataFrame | None" = None,
-) -> pd.Series:
-    """Compute insider_power scores for all tickers in the panel (or a given list).
-
-    Returns
-    -------
-    pd.Series  index=ticker, values=score (float NaN where absent).
-    """
-    if as_of_date is None:
-        cutoff = pd.Timestamp.utcnow().tz_localize(None).normalize()
-    else:
-        cutoff = pd.Timestamp(as_of_date)
-
-    # Load panel
-    if _panel is not None:
-        panel = _panel.copy()
-    else:
-        n_q = max(4, math.ceil(lookback_days / 90) + 1)
-        panel = _load_recent_panel(n_quarters=n_q, as_of=cutoff.strftime("%Y-%m-%d"))
-
-    if panel.empty:
-        return pd.Series(dtype=float)
-
-    panel = panel.copy()
-    panel["filing_date"] = pd.to_datetime(panel["filing_date"])
-
-    # PIT gate
-    panel = panel[panel["filing_date"] <= cutoff]
-    # Open-market only
-    panel = panel[panel["code"].isin(["P", "S"])]
-    # Lookback
-    earliest = cutoff - pd.Timedelta(days=lookback_days)
-    panel = panel[panel["filing_date"] >= earliest]
-
-    if tickers is not None:
-        panel = panel[panel["ticker"].isin(tickers)]
-
-    if panel.empty:
-        return pd.Series(dtype=float)
-
-    all_tickers = panel["ticker"].unique().tolist()
-    scores = {}
-    for tkr in all_tickers:
-        sub = panel[panel["ticker"] == tkr]
-        scores[tkr] = insider_power(
-            sub,
-            as_of_date=cutoff,
-            n_trades=n_trades,
-            lookback_days=lookback_days,
-            half_life_days=half_life_days,
-            tanh_scale=tanh_scale,
-        )
-    return pd.Series(scores, dtype=float)
+def _prep(panel: pd.DataFrame, asof: pd.Timestamp) -> pd.DataFrame:
+    """Slice to causal open-market (P/S) trades in the trailing SERIES window and
+    attach the per-row role weight, recency and compressed-dollar size."""
+    lo = asof - pd.Timedelta(days=int(SERIES_MONTHS * 31))
+    p = panel[(panel["code"].isin(("P", "S")))
+              & (panel["filing_date"] <= asof)
+              & (panel["filing_date"] > lo)].copy()
+    if p.empty:
+        return p
+    bucket = [
+        _role_bucket(t, o, d, x)
+        for t, o, d, x in zip(p["title"].tolist(), p["is_officer"].tolist(),
+                              p["is_director"].tolist(), p["is_tenpct"].tolist())
+    ]
+    p["role"] = bucket
+    p["role_w"] = p["role"].map(_ROLE_WEIGHT).astype(float)
+    age = (asof - p["filing_date"]).dt.days.clip(lower=0).to_numpy(dtype=float)
+    p["recency"] = np.power(0.5, age / HALF_LIFE_DAYS)
+    usd = p["usd"].fillna(0.0).abs().to_numpy(dtype=float)
+    p["size_w"] = np.log10(1.0 + usd / 1e4)
+    p["sign"] = np.where(p["code"].to_numpy() == "P", 1.0, -1.0)
+    p["contrib"] = p["sign"] * p["role_w"] * p["recency"] * p["size_w"]
+    p["month"] = p["filing_date"].dt.strftime("%Y-%m")
+    return p
 
 
-# ---------------------------------------------------------------------------
-# Fallback: aggregate-only score from insider_signals.json
-# ---------------------------------------------------------------------------
+def _ticker_payload(g: pd.DataFrame, ticker: str, asof: pd.Timestamp) -> dict:
+    """Build one ticker's Insider Power artifact from its prepared trade slice."""
+    win_lo = asof - pd.Timedelta(days=WINDOW_DAYS)
+    win = g[g["filing_date"] > win_lo]
+    buys = win[win["code"] == "P"]
+    sells = win[win["code"] == "S"]
 
-@lru_cache(maxsize=1)
-def _load_json_snapshot() -> dict:
-    """Load site/factordata/insider_signals.json, cached."""
-    try:
-        with open(_JSON_PATH) as f:
-            return json.load(f)
-    except Exception as exc:
-        log.warning("insider_power: cannot load JSON snapshot %s: %s", _JSON_PATH, exc)
+    score = score_from_balance(float(win["contrib"].sum()), float(win["contrib"].abs().sum()))
+    buyers = int(buys["rptownercik"].nunique())
+    sellers = int(sells["rptownercik"].nunique())
+    buy_usd = float(buys["usd"].fillna(0.0).sum())
+    sell_usd = float(sells["usd"].fillna(0.0).sum())
+    buy_shares = float(buys["shares"].fillna(0.0).sum())
+    sell_shares = float(sells["shares"].fillna(0.0).sum())
+    net_usd = buy_usd - sell_usd
+
+    signal, confidence, analysis = _signal_and_confidence(score, net_usd, buyers, sellers)
+
+    # ── monthly buy/sell volume series (full SERIES window, oldest→newest) ──
+    months = pd.period_range(
+        pd.Timestamp(asof).to_period("M") - (SERIES_MONTHS - 1),
+        pd.Timestamp(asof).to_period("M"), freq="M").strftime("%Y-%m")
+    b_usd = g[g["code"] == "P"].groupby("month")["usd"].sum()
+    s_usd = g[g["code"] == "S"].groupby("month")["usd"].sum()
+    b_sh = g[g["code"] == "P"].groupby("month")["shares"].sum()
+    s_sh = g[g["code"] == "S"].groupby("month")["shares"].sum()
+    series = []
+    for m in months:
+        bu = float(b_usd.get(m, 0.0) or 0.0)
+        su = float(s_usd.get(m, 0.0) or 0.0)
+        series.append({
+            "month": m,
+            "buy_usd": round(bu, 2),
+            "sell_usd": round(su, 2),
+            "buy_shares": float(b_sh.get(m, 0.0) or 0.0),
+            "sell_shares": float(s_sh.get(m, 0.0) or 0.0),
+            "net_usd": round(bu - su, 2),
+        })
+
+    # ── recent individual open-market trades (newest first) for the table + markers ──
+    recent = g.sort_values("filing_date", ascending=False).head(MAX_TRADES)
+    trades = []
+    for r in recent.itertuples(index=False):
+        trades.append({
+            "date": pd.Timestamp(r.filing_date).strftime("%Y-%m-%d"),
+            "trade_date": pd.Timestamp(r.trans_date).strftime("%Y-%m-%d") if pd.notna(r.trans_date) else None,
+            "code": r.code,
+            "side": "buy" if r.code == "P" else "sell",
+            "role": _ROLE_LABEL.get(r.role, "Insider"),
+            "title": (r.title if isinstance(r.title, str) and r.title.strip() else _ROLE_LABEL.get(r.role, "Insider")),
+            "shares": None if pd.isna(r.shares) else float(r.shares),
+            "price": None if pd.isna(r.price) else round(float(r.price), 4),
+            "usd": None if pd.isna(r.usd) else round(float(r.usd), 2),
+            "weight": round(float(r.role_w), 2),
+        })
+
+    return {
+        "ticker": ticker,
+        "asof": pd.Timestamp(asof).strftime("%Y-%m-%d"),
+        "window_days": WINDOW_DAYS,
+        "score": score,
+        "signal": signal,
+        "confidence": confidence,
+        "analysis": analysis,
+        "insider_buy": bool(score >= BUY_THRESHOLD),
+        "insider_sell": bool(score <= SELL_THRESHOLD),
+        "buyers": buyers,
+        "sellers": sellers,
+        "buy_usd": round(buy_usd, 2),
+        "sell_usd": round(sell_usd, 2),
+        "net_usd": round(net_usd, 2),
+        "buy_shares": buy_shares,
+        "sell_shares": sell_shares,
+        "series": series,
+        "trades": trades,
+    }
+
+
+def compute(panel: pd.DataFrame, asof: pd.Timestamp | str | None = None,
+            tickers: list[str] | None = None) -> dict[str, dict]:
+    """Return ``{ticker: payload}`` for every ticker with open-market (P/S)
+    activity in the trailing window before `asof`.
+
+    `panel` is the per-transaction Form-4 panel (columns: ticker, filing_date,
+    trans_date, rptownercik, code, is_officer/is_director/is_tenpct, title,
+    shares, price, usd). `asof` defaults to the panel's latest filing date.
+    `tickers` optionally restricts the universe (case-insensitive)."""
+    if asof is None:
+        asof = panel["filing_date"].max()
+    asof = pd.Timestamp(asof)
+    p = _prep(panel, asof)
+    if p.empty:
         return {}
-
-
-def insider_power_from_snapshot(ticker: str) -> float:
-    """Quality-constrained score from the aggregate JSON snapshot.
-
-    LIMITATION: the snapshot only provides net_mn (net $ bought in millions),
-    bps (net buy bps of mcap), buyers, sellers — no per-trade breakdown.
-    The fallback score is sign(net_mn) * normalised(|bps|), mapped to 0-100.
-    If bps is None (mcap unavailable), falls back to net_mn normalisation.
-    Treat this as a coarser approximation.
-
-    Returns NaN if the ticker is absent or all fields are None.
-    """
-    snap = _load_json_snapshot()
-    rec = snap.get(ticker.upper())
-    if rec is None:
-        return float("nan")
-
-    bps = rec.get("bps")
-    net_mn = rec.get("net_mn")
-
-    # Use bps (size-normalised) when available, else net_mn clipped
-    if bps is not None and not math.isnan(float(bps)):
-        # bps centred at 0; clip at ±30 bps (empirical 99th pct), map to [-1,+1]
-        raw = float(np.clip(float(bps) / 30.0, -1.0, 1.0))
-    elif net_mn is not None and not math.isnan(float(net_mn)):
-        # net_mn: clip at ±100 M
-        raw = float(np.clip(float(net_mn) / 100.0, -1.0, 1.0))
-    else:
-        return float("nan")
-
-    return 50.0 + 50.0 * raw
-
-
-# ---------------------------------------------------------------------------
-# Catalog signal functions  (fn(df, **params) -> pd.Series aligned to df.index)
-# ---------------------------------------------------------------------------
-# All three signals are state signals (cross-sectional snapshot, constant per ticker
-# like fundamental_valuation) — the score does not change bar-by-bar within a day;
-# it is updated daily when the nightly pipeline regenerates the panel.
-#
-# PIT guarantee: the score is computed using only transactions with
-# filing_date <= the last bar date in df.  This is enforced via the
-# as_of_date parameter passed as the last bar of the OHLCV frame.
-# ---------------------------------------------------------------------------
-
-
-def _infer_ticker(df: pd.DataFrame) -> "str | None":
-    """Infer ticker from df.attrs or df.index.name (mirrors fundamental_screens)."""
-    t = df.attrs.get("ticker")
-    if t:
-        return str(t)
-    if (
-        isinstance(df.index.name, str)
-        and len(df.index.name) <= 8
-        and df.index.name.upper() == df.index.name
-    ):
-        return df.index.name
-    return None
-
-
-def _constant_series(df: pd.DataFrame, value: float, name: str) -> pd.Series:
-    """Series of constant ``value`` aligned to df.index."""
-    return pd.Series(value, index=df.index, dtype=float, name=name)
-
-
-def insider_power_state(
-    df: pd.DataFrame,
-    *,
-    n_trades: int = N_TRADES,
-    lookback_days: int = LOOKBACK_DAYS,
-    half_life_days: float = HALF_LIFE_DAYS,
-    tanh_scale: float = TANH_SCALE,
-    _panel: "pd.DataFrame | None" = None,
-) -> pd.Series:
-    """State signal: quality-weighted insider score (0-100, 50=neutral).
-
-    Returns a constant Series aligned to df.index.  The as_of gate is set
-    to the last date in df.index, so no future filings contaminate the score.
-    NaN where the ticker has no eligible panel data.
-
-    Parameters
-    ----------
-    df : OHLCV DataFrame.  df.attrs['ticker'] or df.index.name used for lookup.
-    """
-    ticker = _infer_ticker(df)
-    if not ticker:
-        return _constant_series(df, float("nan"), name="insider_power_state")
-
-    # PIT: gate by the last bar date visible in the OHLCV frame
-    if len(df.index) > 0:
-        as_of = df.index[-1]
-    else:
-        as_of = None
-
-    score = insider_power(
-        ticker,
-        as_of_date=as_of,
-        n_trades=n_trades,
-        lookback_days=lookback_days,
-        half_life_days=half_life_days,
-        tanh_scale=tanh_scale,
-        _panel=_panel,
-    )
-    return _constant_series(df, score, name="insider_power_state")
-
-
-def insider_buy(
-    df: pd.DataFrame,
-    *,
-    threshold: float = BUY_THRESHOLD,
-    n_trades: int = N_TRADES,
-    lookback_days: int = LOOKBACK_DAYS,
-    half_life_days: float = HALF_LIFE_DAYS,
-    tanh_scale: float = TANH_SCALE,
-    _panel: "pd.DataFrame | None" = None,
-) -> pd.Series:
-    """Event signal: 1.0 when insider_power_state >= threshold, else 0.0.
-
-    NaN where no panel data exists for the ticker.
-
-    Parameters
-    ----------
-    df : OHLCV DataFrame.
-    threshold : float
-        Minimum score to fire.  Default = BUY_THRESHOLD (60.0).
-    """
-    ticker = _infer_ticker(df)
-    if not ticker:
-        return _constant_series(df, float("nan"), name="insider_buy")
-
-    if len(df.index) > 0:
-        as_of = df.index[-1]
-    else:
-        as_of = None
-
-    score = insider_power(
-        ticker,
-        as_of_date=as_of,
-        n_trades=n_trades,
-        lookback_days=lookback_days,
-        half_life_days=half_life_days,
-        tanh_scale=tanh_scale,
-        _panel=_panel,
-    )
-    if math.isnan(score):
-        value = float("nan")
-    else:
-        value = 1.0 if score >= threshold else 0.0
-    return _constant_series(df, value, name="insider_buy")
-
-
-def insider_sell(
-    df: pd.DataFrame,
-    *,
-    threshold: float = SELL_THRESHOLD,
-    n_trades: int = N_TRADES,
-    lookback_days: int = LOOKBACK_DAYS,
-    half_life_days: float = HALF_LIFE_DAYS,
-    tanh_scale: float = TANH_SCALE,
-    _panel: "pd.DataFrame | None" = None,
-) -> pd.Series:
-    """Event signal: 1.0 when insider_power_state <= threshold (net selling), else 0.0.
-
-    NaN where no panel data exists for the ticker.
-
-    Parameters
-    ----------
-    df : OHLCV DataFrame.
-    threshold : float
-        Maximum score to fire (below = net selling).  Default = SELL_THRESHOLD (40.0).
-    """
-    ticker = _infer_ticker(df)
-    if not ticker:
-        return _constant_series(df, float("nan"), name="insider_sell")
-
-    if len(df.index) > 0:
-        as_of = df.index[-1]
-    else:
-        as_of = None
-
-    score = insider_power(
-        ticker,
-        as_of_date=as_of,
-        n_trades=n_trades,
-        lookback_days=lookback_days,
-        half_life_days=half_life_days,
-        tanh_scale=tanh_scale,
-        _panel=_panel,
-    )
-    if math.isnan(score):
-        value = float("nan")
-    else:
-        value = 1.0 if score <= threshold else 0.0
-    return _constant_series(df, value, name="insider_sell")
-
-
-# ---------------------------------------------------------------------------
-# SIGNALS catalog  (consumed by engine/tech_catalog.py)
-# ---------------------------------------------------------------------------
-
-SIGNALS: dict[str, dict[str, Any]] = {
-    "insider_power_state": {
-        "fn": insider_power_state,
-        "kind": "state",
-        "family": "insider",
-        "direction": 0,   # 0-100 DISPLAY score only — direction carried by insider_buy/insider_sell; +1 would dominate the -10..+10 composite
-        "screener_firing": False,   # 0–100 raw score, non-zero for ~all names → not a "firing" screen (stays a rank key / profile field)
-        "default_params": {
-            "n_trades": N_TRADES,
-            "lookback_days": LOOKBACK_DAYS,
-            "half_life_days": HALF_LIFE_DAYS,
-            "tanh_scale": TANH_SCALE,
-        },
-        "display": {
-            "en": (
-                "Insider Power (0–100) — quality-weighted Form-4 open-market "
-                "trades (role × size × recency); 50 = neutral"
-            ),
-            "zh": (
-                "内部人力量（0–100）—— "
-                "加权Form-4公开市场交易"
-                "（职务×规模×时效）；50=中性"
-            ),
-        },
-        "glyph": "line",
-    },
-    "insider_buy": {
-        "fn": insider_buy,
-        "kind": "state",
-        "family": "insider",
-        "direction": +1,
-        "default_params": {
-            "threshold": BUY_THRESHOLD,
-            "n_trades": N_TRADES,
-            "lookback_days": LOOKBACK_DAYS,
-            "half_life_days": HALF_LIFE_DAYS,
-            "tanh_scale": TANH_SCALE,
-        },
-        "display": {
-            "en": (
-                f"Insider Buy signal — fires when Insider Power ≥ {BUY_THRESHOLD:.0f} "
-                "(net buying on quality-weighted basis)"
-            ),
-            "zh": (
-                f"内部人买入信号——"
-                f"力量得分≥{BUY_THRESHOLD:.0f}时触发"
-            ),
-        },
-        "glyph": "arrow_up",
-    },
-    "insider_sell": {
-        "fn": insider_sell,
-        "kind": "state",
-        "family": "insider",
-        "direction": -1,
-        "default_params": {
-            "threshold": SELL_THRESHOLD,
-            "n_trades": N_TRADES,
-            "lookback_days": LOOKBACK_DAYS,
-            "half_life_days": HALF_LIFE_DAYS,
-            "tanh_scale": TANH_SCALE,
-        },
-        "display": {
-            "en": (
-                f"Insider Sell signal — fires when Insider Power ≤ {SELL_THRESHOLD:.0f} "
-                "(net selling on quality-weighted basis)"
-            ),
-            "zh": (
-                f"内部人卖出信号——"
-                f"力量得分≤{SELL_THRESHOLD:.0f}时触发"
-            ),
-        },
-        "glyph": "arrow_down",
-    },
-}
+    if tickers:
+        want = {t.upper() for t in tickers}
+        p = p[p["ticker"].str.upper().isin(want)]
+    out: dict[str, dict] = {}
+    for ticker, g in p.groupby("ticker", sort=False):
+        payload = _ticker_payload(g, str(ticker), asof)
+        # Skip names with zero activity in the SCORE window (series-only tails):
+        if payload["buyers"] == 0 and payload["sellers"] == 0:
+            continue
+        out[str(ticker)] = payload
+    return out

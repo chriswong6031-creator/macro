@@ -57,6 +57,7 @@ _BUDGET_CONTRADICTS = 5
 _BUDGET_REGIME = 3
 _BUDGET_FACTOR = 6
 _BUDGET_OPTIONS = 6
+_BUDGET_CHINA = 5   # CN-SYS W7: China/A-share scope questions
 _BUDGET_GENERAL = 8
 _BUDGET_MAX_HARD_CAP = 8
 
@@ -89,6 +90,48 @@ _FACTOR_TRIGGER_TERMS = re.compile(
     re.I,
 )
 
+# China/A-share scope trigger terms (CN-SYS W7) — deterministic keyword + ticker detection.
+# Checked BEFORE generic regime/macro branches so China questions route to the China lobe.
+# Ticker patterns: A-share tickers are only matched when they carry an exchange suffix
+#   (.SS/.SZ) that makes them unambiguously A-share codes.  Bare 6-digit integers are NOT
+#   matched because they collide with any 6-digit quantity or order number in generic text
+#   (e.g. "300000 shares of TSLA", "ORDER 000042").
+# HK H-shares (XXXX.HK suffix) are retained — the .HK suffix is unambiguous.
+# Keyword list is conservative: only unambiguous China market / A-share terms.
+# CJK list: only multi-character terms or terms with explicit A-share context retained;
+#   bare single-character / generic trading terms (板, 回调, 底部) removed to avoid
+#   false-positive routing on generic Chinese-language trading questions.
+_CHINA_TRIGGER_TERMS = re.compile(
+    # ASCII keyword triggers with word-boundary anchors
+    r"(?i)\b("
+    r"a[- ]share|"
+    r"csi\s*300|csi\s*500|csi\s*1000|sse\s*50|"
+    r"shcomp|szcomp|chinext|star\s*market|"
+    r"china\s*(market|regime|phase|cycle|policy|stock|equity|sector|mainland)|"
+    r"mainland\s*(china|market|equity|stock)|"
+    r"pboc|csrc|northbound|southbound|"
+    r"margin\s*(balance|froth|debt)|"
+    r"limit.?(up|down)|"
+    r"who.?controls|policy.?impulse|"
+    r"qvix|zt.breadth|china.*phase|phase.*china|"
+    r"china.*policy|policy.*china|"
+    r"a.share.*(phase|cycle|regime)|"
+    r"yuan|renminbi|rmb|usdcnh|cnh|"
+    r"lianban"
+    r")\b"
+    # Chinese character terms — no \b (word boundaries don't work for CJK).
+    # Only unambiguous A-share / China-market terms included.
+    # Removed: 板 (board — generic), 回调 (pullback — generic), 底部 (bottom — generic).
+    r"|(?:a股|上证|深证|沪深|创业板|科创板|北交所|主板|北向|南向|"
+    r"陆股通|港股通|沪港通|深港通|"
+    r"融资|融券|涨停|跌停|连板)"
+    # A-share tickers with explicit exchange suffix (unambiguous; bare 6-digit integers excluded)
+    r"|\b[0-9]{6}\.(SS|SZ)\b"
+    # HK-listed Chinese shares (e.g. 0700.HK, 9988.HK)
+    r"|\b\d{4}\.HK\b",
+    re.IGNORECASE,
+)
+
 # Options-question trigger terms (RO-7) — checked after factor, before generic branches.
 # Bare "delta" and bare "vol" excluded: collide with News Delta Desk / generic usage.
 # Known over-match: bare "options"/"iv"/"skew"/"gamma" also catch non-options usage
@@ -100,6 +143,19 @@ _OPTIONS_TRIGGER_TERMS = re.compile(
     r"dealer\s+positioning|open\s+interest|put[/-]call|vanna|charm|straddle|"
     r"iv\s+rank|iv\s+percentile|term\s+structure)\b"
     r"|\b\d{1,2}dte\b|\bodte\b",
+)
+
+# Liquidity plumbing trigger terms — checked after factor/China, before options/generic.
+# Matches questions about Fed balance sheet, Treasury supply, RRP, net liquidity.
+_LIQUIDITY_PLUMBING_TRIGGER_TERMS = re.compile(
+    r"(?i)\b("
+    r"fed\s+balance\s+sheet|walcl|rrp|reverse\s+repo|net\s+liquidity|netliq|"
+    r"tga|treasury\s+general\s+account|treasury\s+(supply|drain|issuance)|"
+    r"liquidity\s+(plumbing|quality|overlay|tailwind|headwind|state)|"
+    r"reserve\s+(scarcity|balance)|swap\s+line|fima|"
+    r"benign\s+expansion|mechanical\s+tailwind|stress\s+expansion|orderly\s+drain"
+    r")\b",
+    re.IGNORECASE,
 )
 
 # Prompt-injection reject patterns
@@ -139,6 +195,10 @@ _ASK_READ_TOOLS = frozenset({
     "read_cycle_pattern_state",
     # W3 MPC consumer: mechanism pathway artifact (display/context only, RUL-CC-1)
     "read_mechanism_pathways",
+    # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
+    "read_china_decision_packet",
+    # Liquidity plumbing packet (shadow tier, context/entry-quality only)
+    "read_liquidity_plumbing",
 })
 
 # Customer-facing system prompt
@@ -302,6 +362,18 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
         if re.search(r"\b(contradict\w*|conflict\w*|tension\w*|borrowed\s+strength)\b", q):
             seeds.append("list_factor_contradictions")
         return _BUDGET_FACTOR, seeds
+    # China / A-share path (CN-SYS W7) — checked after factor but before options and generic
+    # branches.  Keyword + ticker detection is deterministic (no LLM judgment in routing).
+    # Seeds: read_world_state (china_market_state sub-block) + read_china_decision_packet
+    # (assembles the Codex §11.2 packet from committed artifacts, context_only tier).
+    if _CHINA_TRIGGER_TERMS.search(question):
+        return _BUDGET_CHINA, ["read_world_state", "read_china_decision_packet"]
+
+    # Liquidity plumbing path — checked after China, before options and generic branches.
+    # Seeds: read_world_state (liquidity_plumbing sub-block) + read_liquidity_plumbing.
+    if _LIQUIDITY_PLUMBING_TRIGGER_TERMS.search(q):
+        return _BUDGET_REGIME, ["read_world_state", "read_liquidity_plumbing"]
+
     # Options path (RO-7) — checked after factor, before generic contradictions/regime
     # so "options contradictions" and "skew" questions don't bleed into generic branches
     if _OPTIONS_TRIGGER_TERMS.search(question):
@@ -319,11 +391,390 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     # "what contradicts / contradictions / disagreement" — generic graph contradictions
     if re.search(r"\b(contradict\w*|disagree\w*|conflict\w*|tension\w*|opposing\w*)\b", q):
         return _BUDGET_CONTRADICTS, ["read_contradictions", "read_graph"]
+    # FX / rates / credit / commodity terms — macro lobes in world_state (PR-D).
+    # Scoped to terms the regime branch does NOT already catch (macro/quad/regime
+    # are deliberately left to the regime branch below).
+    # R6 extension: cross-asset / correlation / intermarket terms added (terms
+    # not already caught: cross-asset, correlation, absorption, breadth, intermarket,
+    # carry, lead-lag — copper/gold/oil are already covered above).
+    # NOTE: tested against q (already lowercased); re.IGNORECASE applied for safety.
+    if re.search(
+        r"\b(dollar|usd|fx|forex|yield\s+curve|real\s+rates?|bonds?|credit|"
+        r"treasur\w+|commodit\w+|gold|copper|oil|transmission|headwinds?|tailwinds?|"
+        r"cross[- ]?asset|correlation|absorption|breadth|intermarket|carry|lead[- ]?lag)\b",
+        q,
+        re.IGNORECASE,
+    ):
+        return _BUDGET_REGIME, ["read_world_state"]
     # "macro regime / market state / risk / outlook" — generic macro state
     if re.search(r"\b(regime|macro|risk[.\s-]off|risk[.\s-]on|market\s+state|outlook|quad)\b", q):
         return _BUDGET_REGIME, ["read_world_state"]
     # default
     return _BUDGET_GENERAL, ["read_world_state"]
+
+
+# ---------------------------------------------------------------------------
+# China decision packet assembler (CN-SYS W7, Codex §11.2 shape)
+# ---------------------------------------------------------------------------
+
+def assemble_china_decision_packet(root: "Path | None" = None) -> dict:
+    """Assemble a china_decision_packet.v1 FROM ARTIFACTS ONLY (CN-SYS W7).
+
+    Shape per Codex §11.2:
+        market_phase          — from phase lobe
+        policy_liquidity      — from policy lobe
+        participation         — from participation lobe
+        sector_theme          — from rotation lobe (top sector leaders / hot baskets)
+        execution_constraints — from microstructure lobe (chase veto, fillability)
+        action_context        — summary prose (no trade verbs)
+        falsifiers            — from phase falsifiers
+        authority             — fixed: originates_signal=false, can_de_escalate=false,
+                               validated_components=[]
+
+    CN-SYS-R1:  context_only — no rank/size/gate/origination.
+    CN-SYS-R13: no fused score.
+    CN-SYS-R14: LLM layer may phrase the action_context string at presentation time,
+                but NEVER modify the structured fields from this packet.
+
+    The packet is computed deterministically from committed artifacts.
+    Returns {"available": False, "note": ...} when the source artifact is absent/stale.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    ms_path = root / "site" / "chinastatedata" / "market_state.json"
+    if not ms_path.exists():
+        return {
+            "available": False,
+            "schema": "china_decision_packet.v1",
+            "note": "site/chinastatedata/market_state.json absent — packet unavailable",
+            "authority": {
+                "originates_signal": False,
+                "can_de_escalate": False,
+                "validated_components": [],
+                "tier": "context_only",
+            },
+        }
+
+    try:
+        raw = json.loads(ms_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "available": False,
+            "schema": "china_decision_packet.v1",
+            "note": f"read error: {exc}",
+            "authority": {
+                "originates_signal": False,
+                "can_de_escalate": False,
+                "validated_components": [],
+                "tier": "context_only",
+            },
+        }
+
+    phase_raw = raw.get("phase") or {}
+    policy_raw = raw.get("policy") or {}
+    part_raw = raw.get("participation") or {}
+    micro_raw = raw.get("microstructure") or {}
+    rot_raw = raw.get("rotation") or {}
+
+    # market_phase
+    market_phase = {
+        "label": phase_raw.get("phase"),
+        "confidence": phase_raw.get("confidence"),
+        "as_of": phase_raw.get("as_of"),
+        "evidence": (phase_raw.get("evidence") or [])[:5],
+    }
+
+    # policy_liquidity
+    policy_liquidity = {
+        "impulse": policy_raw.get("policy_impulse"),
+        "channels": policy_raw.get("transmission_channel"),
+        "as_of": policy_raw.get("as_of"),
+        "staleness": policy_raw.get("staleness"),
+    }
+
+    # participation
+    participation = {
+        "regime": part_raw.get("regime"),
+        "who_controls": part_raw.get("who_controls"),
+        "risk": part_raw.get("risk"),
+        "as_of": part_raw.get("as_of"),
+        # CN-SYS-R4: northbound dead post-2024-08, noted honestly
+        "northbound_note": "DEAD post-2024-08-16 (SLF-050) — never read as live zero",
+    }
+
+    # sector_theme — from rotation
+    leaders = rot_raw.get("sector_leaders") or []
+    hot_baskets = [
+        b.get("id") for b in (rot_raw.get("ths_heat") or {}).get("hot_baskets") or []
+        if isinstance(b, dict) and b.get("id")
+    ]
+    sector_theme = {
+        "sector_leaders": leaders[:3],
+        "hot_baskets": hot_baskets[:3],
+        "as_of": rot_raw.get("as_of"),
+    }
+
+    # execution_constraints — from microstructure (CN-SYS-R3: limit-up context/veto only)
+    agg = (micro_raw.get("aggregate") or {})
+    name_summary = (micro_raw.get("name_summary") or {})
+    chase_veto_count = name_summary.get("chase_veto_count") or 0
+    fillable_count = name_summary.get("fillable_count") or 0
+    execution_constraints = {
+        "chase_veto_count": chase_veto_count,
+        "fillable_count": fillable_count,
+        "limit_up_count": agg.get("limit_up_count"),
+        "limit_down_count": agg.get("limit_down_count"),
+        "lianban_max": agg.get("lianban_max"),
+        "note": (
+            "CN-SYS-R3: limit-up data is market-structure/breadth context and "
+            "chase-veto input only — BUY-direction use is forbidden (standing kill)."
+        ),
+        "as_of": micro_raw.get("as_of"),
+    }
+
+    # action_context — factual phrase built from structured fields, no trade verbs
+    phase_label = phase_raw.get("phase") or "unknown"
+    who_controls = part_raw.get("who_controls") or "unknown"
+    impulse = policy_raw.get("policy_impulse") or "unknown"
+    action_context = (
+        f"China A-shares: phase={phase_label}, who_controls={who_controls}, "
+        f"policy_impulse={impulse}. Context/display tier only — "
+        "no signal rank, no position sizing, no origination."
+    )
+
+    # falsifiers — from phase lobe
+    falsifiers = phase_raw.get("falsifiers") or []
+
+    return {
+        "available": True,
+        "schema": "china_decision_packet.v1",
+        "as_of": raw.get("as_of"),
+        "market_phase": market_phase,
+        "policy_liquidity": policy_liquidity,
+        "participation": participation,
+        "sector_theme": sector_theme,
+        "execution_constraints": execution_constraints,
+        "action_context": action_context,
+        "falsifiers": falsifiers[:5],
+        "authority": {
+            "originates_signal": False,
+            "can_de_escalate": False,
+            "validated_components": [],
+            "tier": "context_only",
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Liquidity Plumbing decision packet assembler
+# ---------------------------------------------------------------------------
+
+def assemble_liquidity_plumbing_decision_packet(root: "Path | None" = None) -> dict:
+    """Assemble a concise liquidity_plumbing decision packet from the committed artifact.
+
+    Authority: shadow tier, context/entry-quality only.
+    - DE-ESCALATION authority only: may explain, attend, de-escalate.
+    - May NEVER originate a signal, raise a score/rank, or escalate.
+    - The only entry tailwind exposed is the ALREADY-MEASURED cycle-ladder 21d
+      nudge (engine/cycles.py untouched); this packet surfaces its quality context.
+    - Funding and foreign_dollar blocks are null in Phase 1 (no data yet).
+
+    Sections returned:
+        state           — headline state label
+        summary         — one-line plain-language quality-caveated summary
+        entry_effect    — direction/quality/basis/use (context only, no new signal)
+        quantity        — net liquidity level and trend context
+        quality         — composition label + stress flags
+        rrp             — buffer state
+        treasury        — TGA and supply pressure context
+        gaps            — honest null notes (funding/foreign_$ pending)
+        authority       — fixed constants (score_raise=False always)
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    lp_path = root / "data" / "neuralweb" / "liquidity_plumbing.json"
+    if not lp_path.exists():
+        return {
+            "available": False,
+            "schema": "liquidity_plumbing_decision_packet.v1",
+            "note": (
+                "data/neuralweb/liquidity_plumbing.json absent — "
+                "run scripts/build_liquidity_plumbing.py to populate"
+            ),
+            "authority": {
+                "entry_tailwind": "measured_near_term_only",
+                "score_raise": False,
+                "explain": True,
+                "attend": True,
+                "deescalate": True,
+                "hard_gate": False,
+            },
+        }
+
+    try:
+        raw = json.loads(lp_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "available": False,
+            "schema": "liquidity_plumbing_decision_packet.v1",
+            "note": f"read error: {exc}",
+            "authority": {"score_raise": False, "hard_gate": False},
+        }
+
+    if not isinstance(raw, dict):
+        return {
+            "available": False,
+            "schema": "liquidity_plumbing_decision_packet.v1",
+            "note": "artifact is not a dict",
+            "authority": {"score_raise": False, "hard_gate": False},
+        }
+
+    # Strip envelope keys so only payload fields are read
+    try:
+        from engine.neuralweb.envelope import strip_envelope  # noqa: PLC0415
+        payload = strip_envelope(raw)
+    except Exception:  # noqa: BLE001
+        payload = raw
+
+    headline = payload.get("headline") or {}
+    quantity = payload.get("quantity") or {}
+    quality = payload.get("quality") or {}
+    rrp = payload.get("rrp") or {}
+    fed = payload.get("fed") or {}
+    treasury = payload.get("treasury") or {}
+    entry_effect = payload.get("entry_effect") or {}
+    authority_raw = payload.get("authority") or {}
+    gaps = payload.get("gaps") or []
+    degraded = payload.get("degraded", False)
+
+    # Build concise entry effect note respecting authority limits
+    ee_direction = entry_effect.get("direction") or "unknown"
+    ee_quality = entry_effect.get("quality") or "unknown"
+    ee_basis = entry_effect.get("measured_basis") or "cycle_ladder_21d_odds"
+    ee_use = (
+        entry_effect.get("use")
+        or "support existing buy setup, never originate one"
+    )
+
+    # Quality caveat: if tailwind but degraded or low-quality, surface it
+    quality_caveat = ""
+    if degraded:
+        quality_caveat = " (data degraded — interpret with caution)"
+    elif ee_quality == "low_quality_tailwind":
+        quality_caveat = " (low-quality tailwind — mechanical or stress-driven; not benign)"
+
+    entry_effect_note = (
+        f"direction={ee_direction}, quality={ee_quality}{quality_caveat}. "
+        f"Basis: {ee_basis}. Use: {ee_use}."
+    )
+
+    return {
+        "available": True,
+        "schema": "liquidity_plumbing_decision_packet.v1",
+        "asof": payload.get("asof"),
+        # State and summary
+        "state": headline.get("state"),
+        "summary": headline.get("summary"),
+        # Entry effect — context/quality context only, no new signal
+        "entry_effect": {
+            "direction": ee_direction,
+            "quality": ee_quality,
+            "note": entry_effect_note,
+        },
+        # Quantity context
+        "quantity": {
+            "netliq_bn": quantity.get("netliq_bn"),
+            "netliq_chg_20d_bn": quantity.get("netliq_chg_20d_bn"),
+            "netliq_chg_65d_bn": quantity.get("netliq_chg_65d_bn"),
+            "netliq_pctile_expanding": quantity.get("netliq_pctile_expanding"),
+            "overlay": quantity.get("overlay"),
+        },
+        # Quality context
+        "quality": {
+            "label": quality.get("label"),
+            "fed_share": quality.get("fed_share"),
+            "mechanical": quality.get("mechanical"),
+            "stress_confirming": quality.get("stress_confirming"),
+        },
+        # RRP buffer
+        "rrp": {
+            "rrp_bn": rrp.get("rrp_bn"),
+            "rrp_chg_20d_bn": rrp.get("rrp_chg_20d_bn"),
+            "buffer_state": rrp.get("buffer_state"),
+        },
+        # Fed
+        "fed": {
+            "assets_bn": fed.get("assets_bn"),
+            "assets_chg_20d_bn": fed.get("assets_chg_20d_bn"),
+            "policy_stance": fed.get("policy_stance"),
+            "asof": fed.get("asof"),
+        },
+        # Treasury supply context
+        "treasury": {
+            "tga_bn": treasury.get("tga_bn"),
+            "tga_chg_20d_bn": treasury.get("tga_chg_20d_bn"),
+            "net_issuance_20d_bn": treasury.get("net_issuance_20d_bn"),
+            "coupon_supply_pressure": treasury.get("coupon_supply_pressure"),
+        },
+        # Gaps (honest null notes — funding/foreign_$ pending)
+        "gaps": gaps,
+        "degraded": degraded,
+        # Authority block — constants, never raises a score
+        "authority": {
+            "entry_tailwind": authority_raw.get("entry_tailwind", "measured_near_term_only"),
+            "score_raise": False,   # house-law constant — NEVER raise a score
+            "explain": True,
+            "attend": True,
+            "deescalate": True,
+            "hard_gate": False,
+        },
+        "display_only": True,
+        "is_context_only": True,
+    }
+
+
+# ---------------------------------------------------------------------------
+# CN-SYS W7 — read_china_decision_packet tool handler
+# ---------------------------------------------------------------------------
+
+def _tool_read_china_decision_packet(root: Path, _params: dict) -> dict:
+    """Tool handler: assemble and return the china_decision_packet.v1.
+
+    Wraps assemble_china_decision_packet() for the ask-brain read-only tool
+    dispatcher (CN-SYS W7, Codex §11.2).  Params are ignored — the packet
+    is deterministic from committed artifacts; no user-controlled inputs.
+
+    Authority: context_only, originates_signal=False, can_de_escalate=False
+    (CN-SYS-R1 / R13 / R14).
+    """
+    return assemble_china_decision_packet(root=root)
+
+
+# ---------------------------------------------------------------------------
+# Liquidity Plumbing — read_liquidity_plumbing tool handler
+# ---------------------------------------------------------------------------
+
+def _tool_read_liquidity_plumbing(root: Path, _params: dict) -> dict:
+    """Tool handler: assemble and return the liquidity_plumbing decision packet.
+
+    Wraps assemble_liquidity_plumbing_decision_packet() for the ask-brain
+    read-only tool dispatcher.  Params are ignored — the packet is
+    deterministic from committed artifacts; no user-controlled inputs.
+
+    Authority: shadow tier, context/entry-quality only.
+    - score_raise is ALWAYS False (house-law constant).
+    - hard_gate is ALWAYS False.
+    - Entry effect is context/quality context for EXISTING buy setups only;
+      never originates a new signal or rank raise.
+    - Funding/foreign_dollar blocks are null (Phase 1 — not yet integrated).
+    """
+    return assemble_liquidity_plumbing_decision_packet(root=root)
 
 
 # ---------------------------------------------------------------------------
@@ -559,6 +1010,12 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
         return _tool_read_cycle_pattern_state(root, tool_params)
     elif tool_name == "read_mechanism_pathways":
         return _tool_read_mechanism_pathways(root, tool_params)
+    elif tool_name == "read_china_decision_packet":
+        # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
+        return _tool_read_china_decision_packet(root, tool_params)
+    elif tool_name == "read_liquidity_plumbing":
+        # Liquidity plumbing packet (shadow tier, context/entry-quality only)
+        return _tool_read_liquidity_plumbing(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 

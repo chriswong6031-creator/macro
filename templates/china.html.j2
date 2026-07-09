@@ -88,27 +88,40 @@
   .sbt-chip.soft { background:color-mix(in srgb,var(--up) 7%,transparent);
               color:color-mix(in srgb,var(--up) 72%,var(--muted)); }
   .sbt-legend { margin:0 0 10px; font-size:11px; text-transform:none; }
-  /* ---- standout-stock cards (ported from the US dashboard) ------------------- */
+  /* ---- standout-stock cards — zoned V2 architecture ------------------- */
   /* Dynamic columns: ~240px min → ~4-5 cards per row on a normal laptop, more on an ultrawide
      screen, fewer as the viewport narrows. auto-fill does the responsive work — no fixed count. */
   .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; margin-top:11px; }
-  /* mobile: 2-up (paired with the 3-row cap via data-showmore-rows + theme.js). Tighter padding
-     buys card width; slightly larger type keeps the ticker / price / verdict readable. */
+  /* mobile: 2-up (paired with the 3-row cap via data-showmore-rows + theme.js). */
   @media (max-width:680px){
     .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
-    .nbgrid[data-showmore-rows] .nbcard{ padding:7px 8px 8px; gap:3px; }
-    .nbgrid[data-showmore-rows] .nb-tk{ font-size:15px; }
-    .nbgrid[data-showmore-rows] .nb-px{ font-size:13px; }
-    .nbgrid[data-showmore-rows] .nb-nm{ font-size:10.5px; }
-    .nbgrid[data-showmore-rows] .nb-verdict{ font-size:11px; }
-    .nbgrid[data-showmore-rows] .nb-state{ font-size:10.5px; }
-    /* let the header wrap so the signal badge + price drop to a new line instead of being
-       clipped by the card's overflow:hidden when the column is this narrow. */
-    .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+    .nbgrid[data-showmore-rows] .nbcard{ padding:0; gap:0; }
+    .nbgrid[data-showmore-rows] .nb-tk{ font-size:14px; }
+    .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
+    .nbgrid[data-showmore-rows] .nb-nm{ font-size:10px; }
+    .nbgrid[data-showmore-rows] .nb-verdict{ font-size:9.5px; }
+    .nbgrid[data-showmore-rows] .nb-state{ font-size:8.5px; }
+    .nbgrid[data-showmore-rows] .nb-id{ padding:6px 8px 5px; gap:3px; }
+    .nbgrid[data-showmore-rows] .nb-act{ padding:5px 8px 5px; gap:4px; }
+    .nbgrid[data-showmore-rows] .nb-ctx{ padding:3px 8px 5px; font-size:8px; }
+    .nbgrid[data-showmore-rows] .nb-conv-top{ padding:4px 7px; }
+    .nbgrid[data-showmore-rows] .nb-conv-top .nb-verdict{ font-size:9.5px; }
+    .nbgrid[data-showmore-rows] .nb-conv-top .nb-cscore{ font-size:11px; }
+    .nbgrid[data-showmore-rows] .nb-entry{ padding:4px 7px 5px; }
+    /* On 2-up narrow cards the buy zone + cycle STAY VISIBLE (primary action info —
+       adjudicated; the judged V2 mockup hid them and that was ruled a blocker).
+       They compact instead: smaller type, tighter gaps, window text dropped. */
+    .nbgrid[data-showmore-rows] .nbe-zone{ gap:4px; margin-top:2px; }
+    .nbgrid[data-showmore-rows] .nbe-zone .nbe-px{ font-size:10px; }
+    .nbgrid[data-showmore-rows] .nbe-zone .nbe-pct{ font-size:8px; }
+    .nbgrid[data-showmore-rows] .nbe-cyc{ font-size:7.5px; gap:3px; flex-wrap:wrap; }
+    .nbgrid[data-showmore-rows] .nbe-status{ font-size:9px; }
+    .nbgrid[data-showmore-rows] .nb-asof{ display:none; } /* secondary freshness note only */
+    .nbgrid[data-showmore-rows] .nb-rip-nm{ font-size:9.5px; }
   }
   a.nbcard { background:var(--panel2,var(--panel)); border:1px solid var(--line); border-radius:10px;
-             padding:9px 11px 10px; border-left:3px solid var(--muted); display:flex;
-             flex-direction:column; gap:4px; min-width:0; overflow:hidden;
+             padding:0; border-left:3px solid var(--muted); display:flex;
+             flex-direction:column; gap:0; min-width:0; overflow:hidden;
              transition:transform .12s, box-shadow .12s, border-color .12s; }
   /* every flex child may shrink below its content width AND never exceed the card —
      this is what stops a long verdict / chip row from blowing the card (and with it
@@ -117,13 +130,75 @@
   a.nbcard:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.22); border-color:var(--link); }
   .nbcard.nb-up { border-left-color:var(--up); } .nbcard.nb-down { border-left-color:var(--down); }
   .nbcard.nb-caution { border-left-color:var(--warn); }
-  .nb-top { display:flex; align-items:baseline; gap:6px; }
-  .nb-tk { font-weight:800; font-size:14px; color:var(--text); }
-  .nb-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
-  .nb-px { font-weight:700; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .nb-sub { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:10px; color:var(--muted); min-width:0; }
-  .nb-sub > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-  .nb-sub .nb-offh { margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+  /* ── IDENTITY ZONE ─────────────────────────────────────────────────────── */
+  .nb-id { padding:8px 11px 7px; background:color-mix(in srgb,var(--muted) 7%,transparent);
+           border-bottom:1px solid var(--line); border-radius:7px 7px 0 0;
+           display:flex; flex-direction:column; gap:4px; min-width:0; }
+  html[data-theme="light"] .nb-id { background:color-mix(in srgb,var(--muted) 5%,transparent); }
+  /* row 0: stage badge + gate badge */
+  .nb-badges { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; }
+  /* size the shared gate badge for this page only */
+  .nbcard .sig-gate { font-size:9px; white-space:nowrap; }
+  /* why-ranked chip de-emphasized in badges row */
+  .nb-badges .nb-why { font-size:7.5px; opacity:.7; }
+  /* row 1: ticker + price */
+  .nb-tkrow { display:flex; align-items:baseline; justify-content:space-between; gap:6px; min-width:0; }
+  .nb-tk { font-weight:800; font-size:15px; color:var(--text); }
+  /* row 2: full name — own full-width line */
+  .nb-nm { font-size:11.5px; font-weight:600; color:var(--text); white-space:nowrap;
+           overflow:hidden; text-overflow:ellipsis; max-width:100%; line-height:1.3; display:block; }
+  /* row 3: sector + off-high */
+  .nb-secrow { display:flex; align-items:center; gap:5px; min-width:0; font-size:10px; color:var(--muted); }
+  .nb-sec { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1 1 auto; }
+  .nb-offh { margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; flex:none; font-size:9.5px; }
+
+  .nb-px { font-weight:700; font-size:13.5px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; flex:none; }
+
+  /* ── ACTION ZONE ─────────────────────────────────────────────────────────── */
+  .nb-act { padding:7px 11px 7px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  /* sparkline inside action zone */
+  .nb-act .nch { margin:0; border-radius:4px; }
+  /* The fused READY score + verdict + entry gauge block */
+  .nb-conv { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+             overflow:hidden; min-width:0; display:flex; flex-direction:column; gap:0;
+             /* keep old margin for compat */ margin:0; }
+  /* top sub-row: score + verdict */
+  .nb-conv-top { display:flex; align-items:flex-start; gap:7px; padding:5px 8px 5px;
+                 border-bottom:1px solid var(--line); min-width:0; }
+  .nb-conv-top .nb-cscore { flex:none; }
+  .nb-conv-top .nb-verdict { flex:1 1 auto; min-width:0; font-size:10.5px; }
+
+  /* RAN card modifier: muted gate badge */
+  .nb-stage-ran-card .sig-gate { filter:grayscale(.75); opacity:.55; }
+
+  /* Entry gauge fused inside conv block */
+  .nb-conv .nb-entry { margin:0; border:none; border-radius:0; background:transparent;
+                       padding:5px 8px 6px; border-left:3px solid var(--muted); }
+  .nb-conv .nbe-buy_now, .nb-conv .nbe-partial { border-left-color:var(--up); background:color-mix(in srgb,var(--up) 5%,transparent); }
+  .nb-conv .nbe-buy_soon, .nb-conv .nbe-watch { border-left-color:var(--g-cold,var(--link)); }
+  .nb-conv .nbe-wait_pullback, .nb-conv .nbe-hold { border-left-color:var(--warn); }
+  .nb-conv .nbe-extended, .nb-conv .nbe-topping { border-left-color:var(--warn); }
+  .nb-conv .nbe-exit, .nb-conv .nbe-avoid, .nb-conv .nbe-blocked { border-left-color:var(--down); background:color-mix(in srgb,var(--down) 5%,transparent); }
+
+  /* ── CONTEXT STRIP ──────────────────────────────────────────────────────── */
+  .nb-ctx { padding:4px 11px 6px; display:flex; align-items:center; gap:4px 5px; flex-wrap:wrap;
+            min-width:0; font-size:9px; color:var(--muted);
+            border-top:1px solid var(--line);
+            background:color-mix(in srgb,var(--muted) 3%,transparent);
+            border-radius:0 0 7px 7px; }
+  /* state chip in context strip */
+  .nb-ctx .nb-state { font-size:8.5px; padding:1px 5px; border-radius:6px; letter-spacing:.02em; }
+  .nb-up .nb-ctx .nb-state { color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel)); }
+  .nb-down .nb-ctx .nb-state { color:var(--down); background:color-mix(in srgb,var(--down) 14%,var(--panel)); }
+  .nb-caution .nb-ctx .nb-state { color:var(--warn); background:color-mix(in srgb,var(--warn) 14%,var(--panel)); }
+  /* condition chips smaller in context strip */
+  .nb-ctx .nb-washout, .nb-ctx .nb-coiled, .nb-ctx .nb-ext { font-size:7.5px; padding:1px 4px; }
+  /* caution button compact in context strip */
+  .nb-ctx .nb-cau { margin-top:0; }
+  .nb-ctx .nb-cau-btn { font-size:8px; height:16px; padding:0 4px 0 3px; }
+  /* signal as-of pushed right */
+  .nb-asof { font-size:8px; color:var(--muted); margin-left:auto; white-space:nowrap; opacity:.75; }
   .nb-washout { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
                 background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); }
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
@@ -131,13 +206,11 @@
   .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 20%,transparent)}
   .nb-ext { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
             background:color-mix(in srgb,var(--orange) 15%,transparent); color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 42%,transparent); }
-  .nbcard .nch { background:transparent; margin:4px 0 2px; width:100%; height:42px; border-radius:5px; }
-  .nb-bot { display:flex; align-items:center; flex-wrap:wrap; gap:5px 6px; margin-top:1px; }
+  .nbcard .nch { background:transparent; margin:0; width:100%; height:42px; border-radius:4px; }
+  /* nb-state defaults (overridden per-dir in context strip above) */
   .nb-state { font-size:10px; font-weight:800; letter-spacing:.02em; padding:1px 7px; border-radius:8px; }
-  .nb-up .nb-state { color:var(--up); background:color-mix(in srgb,var(--up) 15%,var(--panel)); }
-  .nb-down .nb-state { color:var(--down); background:color-mix(in srgb,var(--down) 15%,var(--panel)); }
-  .nb-caution .nb-state { color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,var(--panel)); }
-  /* ---- Entry-timing gauge (the SECOND gauge — ported from the US dashboard) ---- */
+  /* ---- Entry-timing gauge (inside nb-conv fused block) ---- */
+  /* standalone nb-entry (outside nb-conv) still possible on non-zoned cards — keep base rules */
   .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px;
               background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--muted); }
   .nbe-buy_now, .nbe-partial { border-left-color:var(--up);
@@ -160,12 +233,13 @@
   .nbe-px { font-weight:800; font-size:11px; color:var(--text); font-variant-numeric:tabular-nums; }
   .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
   .nbe-cyc { font-size:8.5px; color:var(--muted); margin-top:3px; display:flex;
-             align-items:center; gap:4px; font-variant-numeric:tabular-nums; }
-  .nbe-bar { display:inline-block; width:42px; height:3px; border-radius:2px;
+             align-items:center; gap:5px; font-variant-numeric:tabular-nums; min-width:0; }
+  .nbe-cyc > span:first-child { flex:none; white-space:nowrap; }
+  /* slim progress bar stretches to fill the row (V3 graft) */
+  .nbe-bar { display:inline-block; flex:1 1 auto; min-width:24px; height:3px; border-radius:2px;
              background:var(--line); overflow:hidden; }
   .nbe-bf { display:block; height:100%; background:var(--g-cold); }
-  /* ---- unified Conviction Profile on each standout card (ported from the US dashboard) ---- */
-  .nb-conv { display:flex; align-items:center; gap:7px; margin:5px 0 1px; min-width:0; }
+  /* ---- Conviction Profile score + verdict ---- */
   .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
                min-width:30px; flex:none; text-align:center; padding:1px 5px; border-radius:8px;
                border:1px solid var(--line); color:var(--text); }
@@ -238,7 +312,7 @@
   /* Stage badge — top-left of each card (loudest element on the card) */
   .nb-stage { display:inline-flex; align-items:center; font-size:8.5px; font-weight:800;
               letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:9px;
-              white-space:nowrap; margin-bottom:3px; }
+              white-space:nowrap; }
   .nb-stage.stg-entry { color:#fff; background:var(--up);
                          box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 60%,transparent); }
   .nb-stage.stg-ran   { color:var(--muted); background:color-mix(in srgb,var(--muted) 12%,var(--panel));
@@ -246,28 +320,39 @@
   /* why_ranked chip — small, beside rank indicator on ENTRY cards */
   .nb-why { font-size:8px; color:var(--muted); padding:1px 5px; border-radius:6px;
              border:1px solid var(--line); white-space:nowrap; cursor:help; }
-  /* RAN card: muted score, prominent detail string */
-  .nb-ran-detail { font-size:10px; color:var(--muted); line-height:1.35; margin:3px 0 1px;
-                   padding:4px 7px; border-radius:7px;
+  /* RAN card: muted score, prominent detail string — sits between identity zone and action zone */
+  .nb-ran-detail { font-size:10px; color:var(--muted); line-height:1.35; margin:0;
+                   padding:5px 11px;
                    background:color-mix(in srgb,var(--down) 7%,var(--panel));
-                   border:1px solid color-mix(in srgb,var(--down) 20%,var(--line)); }
+                   border-bottom:1px solid color-mix(in srgb,var(--down) 20%,var(--line)); }
   /* RAN card modifier: de-emphasise score display */
   .nb-stage-ran-card .nb-cscore { opacity:.45; }
-  /* ── RIPENING SHELF: compact cards (NOT full nbcard) ────────────────────── */
+  /* ── RIPENING SHELF: compact zoned cards (NOT full nbcard) ─────────────── */
   .nb-rip-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:7px; margin-top:8px; }
   .nb-rip-card { background:var(--panel); border:1px solid var(--line); border-radius:9px;
-                 padding:8px 10px; display:flex; flex-direction:column; gap:3px; min-width:0;
-                 border-left:3px solid color-mix(in srgb,var(--warn) 55%,var(--line)); }
-  .nb-rip-top { display:flex; align-items:baseline; gap:5px; }
+                 min-width:0; border-left:3px solid color-mix(in srgb,var(--warn) 55%,var(--line));
+                 overflow:hidden; display:flex; flex-direction:column; }
+  /* ripening identity zone */
+  .nb-rip-id { padding:6px 9px 5px;
+               background:color-mix(in srgb,var(--warn) 5%,color-mix(in srgb,var(--muted) 5%,var(--panel)));
+               border-bottom:1px solid color-mix(in srgb,var(--warn) 18%,var(--line));
+               display:flex; flex-direction:column; gap:3px; min-width:0; }
+  html[data-theme="light"] .nb-rip-id { background:color-mix(in srgb,var(--warn) 6%,var(--panel)); }
+  .nb-rip-top { display:flex; align-items:baseline; gap:5px; min-width:0; }
   .nb-rip-tk { font-weight:800; font-size:13px; color:var(--text); }
-  .nb-rip-nm { font-size:9.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis;
-               white-space:nowrap; flex:1; min-width:0; }
-  .nb-rip-imm { font-size:8.5px; font-weight:800; color:var(--warn); flex:none; }
+  .nb-rip-imm { font-size:8.5px; font-weight:800; color:var(--warn); flex:none; margin-left:auto; }
+  /* name on its own full-width line */
+  .nb-rip-nm { font-size:10.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis;
+               white-space:nowrap; max-width:100%; display:block; }
+  /* ripening body */
+  .nb-rip-body { padding:5px 9px 7px; display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .nb-rip-secrow { display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:9px; color:var(--muted); }
   .nb-rip-chips { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
   .nb-rip-chip { font-size:8px; font-weight:700; padding:1px 5px; border-radius:6px; overflow-wrap:anywhere; max-width:100%;
                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel));
                  border:1px solid color-mix(in srgb,var(--warn) 38%,var(--line)); }
   .nb-rip-sec { font-size:9px; color:var(--muted); }
+  .nb-rip-range { font-size:8px; color:var(--muted); margin-left:auto; }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
@@ -319,42 +404,6 @@
   .note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
   .mtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .mtf-card .mtf-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; color: var(--text); }
-
-  /* ---- Regime Time Machine (ported from the macro dashboard) ---------------- */
-  #time-machine .tm-wrap { position: relative; margin: 4px 0 2px; }
-  .tm-canvas { display: block; width: 100%; height: 56px; cursor: ew-resize; border-radius: 8px; touch-action: none; }
-  .tm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: transparent; margin: 2px 0 0; cursor: ew-resize; }
-  .tm-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line); }
-  .tm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); box-shadow: 0 1px 4px rgba(0,0,0,.35); }
-  .tm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); }
-  .tm-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 8px 0 12px; }
-  .tm-presets { display: inline-flex; flex-wrap: wrap; gap: 6px; }
-  .tm-btn { font: inherit; font-size: 12px; font-weight: 600; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 11px; cursor: pointer; }
-  .tm-btn:hover { border-color: var(--link); }
-  .tm-play { display: inline-flex; align-items: center; gap: 7px; }
-  .tm-play-ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent var(--text); }
-  .tm-play.is-playing .tm-play-ico { width: 9px; height: 11px; border: none; border-left: 3px solid var(--text); border-right: 3px solid var(--text); }
-  .tm-readout { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
-  .tm-asof { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
-  .tm-date { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .tm-state-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 10px; }
-  .tm-state-tag.is-live { color: color-mix(in srgb, var(--up) 85%, var(--text)); background: color-mix(in srgb, var(--up) 16%, var(--panel)); }
-  .tm-state-tag.is-hist { color: var(--muted); background: color-mix(in srgb, var(--muted) 16%, var(--panel)); }
-  .tm-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-  .tm-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 12px 0 4px; }
-  @media (max-width: 640px) { .tm-gauges { grid-template-columns: 1fr; } }
-  .tm-glabel { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
-  .tm-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .tm-flag { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: color-mix(in srgb, var(--c) 16%, var(--panel)); color: color-mix(in srgb, var(--c) 82%, var(--text)); }
-  .tm-nowarn { font-size: 12px; color: var(--muted); }
-  /* shared badge / kv / gauge primitives the time-machine readout needs */
-  .badge { display: inline-block; padding: 3px 11px; border-radius: 11px; font-weight: 700; font-size: 12.5px; }
-  .badge.quad-Q1 { background: var(--q1); color: #fff; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
-  .badge.quad-Q3 { background: var(--q3); color: #fff; } .badge.quad-Q4 { background: var(--q4); color: #fff; }
-  .badge.state-STABLE { background: color-mix(in srgb, var(--muted) 16%, var(--panel)); color: color-mix(in srgb, var(--muted) 82%, var(--text)); }
-  .kv { font-size: 12.5px; color: var(--muted); } .kv b { color: var(--text); font-variant-numeric: tabular-nums; }
-  .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
-  .gauge i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); transform: translate(-50%,-50%); }
 
   /* ---- gauges / dials / tiles for the new internals panels ------------------ */
   .dial { position: relative; height: 9px; border-radius: 5px; margin: 6px 0 3px;
@@ -521,7 +570,22 @@
       {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span class="chip c-muted">{{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{% endif %}
     </div>
     <p class="note" style="margin:8px 0 0;text-transform:none">{{ t('A-share entry watchlist: washed-out names with a fresh 3D/2D turn. Rank means buy-readiness, not advice.', 'A股入场观察表：洗盘后出现3日/2日新转向的个股。排序表示买入就绪度，非建议。') }}
-      <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a></p>
+      <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a>
+      <a href="china_stocks_lab.html" style="margin-left:14px;padding:4px 11px;border:1.5px solid var(--link);border-radius:8px;font-size:12px;font-weight:700;color:var(--link);white-space:nowrap;display:inline-block;margin-top:4px">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
+    {# W5b EDGE-1 — CN drawdown radar sleeve-size chip. Source: engine/risk_radar_intl.py
+       cn_sleeve_chip(). Wired into setups.sleeve_chip by build_china_library.main().
+       Degrades: hidden when setups.sleeve_chip absent or radar_state is None.
+       CN-SYS-R7: display context only — never board-sort input. #}
+    {% set _sc = setups.sleeve_chip if setups else none %}
+    {% if _sc and _sc.radar_state and _sc.radar_state != 'None' %}
+    {% set _sc_col = 'var(--down)' if _sc.radar_state in ('elevated','risk-off') else ('var(--warn)' if _sc.radar_state == 'caution' else 'var(--up)') %}
+    <div style="margin:8px 0 0;padding:6px 10px;border-radius:8px;font-size:11.5px;line-height:1.5;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;border:1px solid var(--line);border-left:3px solid {{ _sc_col }};background:color-mix(in srgb,{{ _sc_col }} 6%,var(--panel))">
+      <span style="color:{{ _sc_col }};font-weight:700"><span class="l-en">{{ _sc.label_en }}</span><span class="l-zh">{{ _sc.label_zh }}</span></span>
+      {% if _sc.dominant_driver_en %}<span class="muted" style="font-size:10.5px">· <span class="l-en">{{ _sc.dominant_driver_en }}</span><span class="l-zh">{{ _sc.dominant_driver_zh or _sc.dominant_driver_en }}</span></span>{% endif %}
+      {% if _sc.radar_as_of %}<span class="muted" style="font-size:10px">· {{ t('as of', '截至') }} {{ _sc.radar_as_of }}</span>{% endif %}
+      {{ help('CN drawdown radar: measures external-driver risk (US rate shocks, USD/CNH, US–China yield gap, breadth). Sizes the sleeve — context only, never vetoes names or changes board rank (CN-SYS-R7).', 'CN回撤雷达：衡量外部驱动风险（美债利率冲击、美元/人民币、中美利差、市场广度）。用于确定仓位规模——仅供背景参考，不排除个股或改变看板排名（CN-SYS-R7）。') }}
+    </div>
+    {% endif %}
   </div>
 
   <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
@@ -535,14 +599,14 @@
       {% if items %}
       <div class="act-col {{ cls }} lst-wrap">
         <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
-        <div class="lst-collapse is-collapsed">
+        <div class="lst-collapse lst-cap4 is-collapsed">
         {% for it in items %}
         <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
           <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
         </div>
         {% endfor %}
         </div>
-        {% if items|length > 5 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
+        {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
       </div>
       {% endif %}
       {% endmacro %}
@@ -644,6 +708,122 @@
 
   {# Forward base-effect path; the separate HMM probability read was retired from China too. #}
   {% include "_base_effect_strip.html.j2" %}
+
+  {# CN-SYS W8 — Market State Cockpit Strip
+     Source: site/chinastatedata/market_state.json (build_china_market_state.py W6 spine).
+     Authority: context_only (CN-SYS-R1).  No fused scores (CN-SYS-R13).
+     Degrade-don't-crash: entire strip hidden if cn_market_state_json absent.
+     Dual-mode: visible on macro page; in stocks mode the header already shows the
+     radar sleeve chip — we skip the full strip there to avoid bloat, but add one
+     compact chip row if cheap. #}
+  {% set _cms = cn_market_state_json %}
+  {% if _cms %}
+  <div class="panel span12" id="cn-state-strip">
+    {# ── phase chip + confidence ── #}
+    {% set _ph = (_cms.get('phase') or {}) %}
+    {% set _phase_name = _ph.get('phase') or '—' %}
+    {% set _conf = _ph.get('confidence') %}
+    {% set _parti = (_cms.get('participation') or {}) %}
+    {% set _who = _parti.get('who_controls') or '—' %}
+    {% set _risk = _parti.get('risk') or '—' %}
+    {% set _pol = (_cms.get('policy') or {}) %}
+    {% set _impulse = _pol.get('policy_impulse') or '—' %}
+    {% set _contradictions = (_cms.get('contradictions') or []) %}
+    {% set _falsifiers = (_cms.get('falsifiers') or []) %}
+    {% set _data_gaps = (_cms.get('data_gaps') or []) %}
+
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px 20px">
+      {# ── LEFT: phase card ── #}
+      <div style="flex:none">
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">{{ t('A-Share Phase', 'A股阶段') }}
+          {{ help('Current A-share cycle phase from the china_cycle_phase lobe (W3). Confidence = fraction of active evidence legs aligned with this phase label. Context only — never a signal (CN-SYS-R1).', '当前A股周期阶段来自china_cycle_phase脉络（W3）。置信度 = 与该阶段标签对齐的活跃证据腿比例。仅供参考 — 非信号（CN-SYS-R1）。') }}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:17px;font-weight:800;padding:4px 14px;border-radius:10px;
+            background:color-mix(in srgb,var(--info) 14%,var(--panel));
+            border:1px solid color-mix(in srgb,var(--info) 28%,var(--line));color:var(--text)">{{ _phase_name.replace('_',' ') }}</span>
+          {% if _conf is not none %}<span class="chip c-muted" style="font-size:11px">{{ ('%.0f'|format(_conf * 100)) }}%</span>{% endif %}
+          {% if _ph.get('as_of') %}<span style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ _ph.as_of }}</span>{% endif %}
+        </div>
+        {% if _ph.get('evidence') %}
+        <div style="margin-top:5px;font-size:11px;color:var(--muted);line-height:1.4">
+          {% for e in _ph.evidence[:3] %}<div>· {{ e }}</div>{% endfor %}
+          {% if _ph.evidence | length > 3 %}<div>… {{ _ph.evidence | length - 3 }} {{ t('more', '条') }}</div>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      {# ── CENTER: context chips ── #}
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">{{ t('Context chips', '背景芯片') }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          {# who_controls chip #}
+          <span class="chip {{ 'c-info' if _who == 'offshore' else ('c-warn' if _who in ('retail','margin') else ('c-up' if _who == 'institutional' else 'c-muted')) }}">
+            {{ t('controls: ' + _who.replace('_',' '), '控盘：' + tr(_who.replace('_',' '))) }}</span>
+          {# policy_impulse chip #}
+          <span class="chip {{ 'c-up' if _impulse in ('easing','market_rescue') else ('c-info' if _impulse == 'targeted_support' else ('c-down' if _impulse == 'tightening' else 'c-muted')) }}">
+            {{ t('policy: ' + _impulse.replace('_',' '), '政策：' + tr(_impulse.replace('_',' '))) }}</span>
+          {# risk chip #}
+          <span class="chip {{ 'c-down' if _risk in ('frothy','fire_sale') else ('c-warn' if _risk == 'normal' else 'c-muted') }}">
+            {{ t('risk: ' + _risk, '风险：' + tr(_risk)) }}</span>
+        </div>
+        {# top contradiction line #}
+        {% if _contradictions %}
+        <div style="margin-top:7px;font-size:11.5px;line-height:1.45;padding:5px 9px;
+          border-radius:7px;background:color-mix(in srgb,var(--warn) 9%,var(--panel));
+          border:1px solid color-mix(in srgb,var(--warn) 22%,var(--line))">
+          ⚠ <span style="color:var(--warn);font-weight:600">{{ t('Contradiction', '矛盾') }}</span>:
+          <span style="color:var(--text)">{{ _contradictions[0].a }}</span> {{ t('vs', 'vs') }}
+          <span style="color:var(--text)">{{ _contradictions[0].b }}</span>
+          {% if _contradictions[0].get('detail') %} — <span style="color:var(--muted)">{{ _contradictions[0].detail }}</span>{% endif %}
+          {% if _contradictions | length > 1 %}<span style="color:var(--muted)"> ({{ _contradictions | length - 1 }} {{ t('more', '条') }})</span>{% endif %}
+        </div>
+        {% else %}
+        <div style="margin-top:7px;font-size:11px;color:var(--muted)">{{ t('no contradictions today', '今日无矛盾') }}</div>
+        {% endif %}
+      </div>
+
+      {# ── RIGHT: falsifiers + data gaps ── #}
+      <div style="flex:none;min-width:180px">
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">{{ t('Falsifiers & gaps', '证伪 & 数据缺口') }}</div>
+        <div style="font-size:12px;margin-bottom:4px">
+          <b>{{ _falsifiers | length }}</b> {{ t('falsifiers armed — auto-graded nightly', '个证伪条件已激活 — 每夜自动评分') }}</div>
+        {% if _falsifiers %}
+        <details style="margin-bottom:6px">
+          <summary style="cursor:pointer;color:var(--link);font-size:11.5px;font-weight:600;list-style:none">
+            <span class="l-en">▸ Show falsifiers</span><span class="l-zh">▸ 展开证伪条件</span>
+          </summary>
+          {% for f in _falsifiers %}
+          <div style="font-size:10.5px;padding:2px 0;border-bottom:1px solid var(--line);display:flex;gap:6px">
+            <span style="font-family:monospace;color:var(--info)">{{ f.id }}</span>
+            <code style="flex:1;font-size:10px">{{ f.expr }}</code>
+            <span style="color:var(--muted)">{{ f.horizon_d }}{{ t('d','天') }}</span>
+          </div>
+          {% endfor %}
+        </details>
+        {% endif %}
+        {# data-gaps disclosure chip #}
+        {% if _data_gaps %}
+        <details>
+          <summary style="cursor:pointer;color:var(--warn);font-size:11px;font-weight:600;list-style:none">
+            <span class="l-en">⚠ {{ _data_gaps | length }} data gap(s)</span>
+            <span class="l-zh">⚠ {{ _data_gaps | length }} 个数据缺口</span>
+          </summary>
+          <ul style="font-size:10px;color:var(--muted);margin:4px 0 0;padding-left:14px;line-height:1.5">
+            {% for g in _data_gaps %}<li>{{ g }}</li>{% endfor %}
+          </ul>
+        </details>
+        {% else %}
+        <span style="font-size:11px;color:var(--muted)">{{ t('no data gaps', '无数据缺口') }}</span>
+        {% endif %}
+        {# link to cockpit page #}
+        <div style="margin-top:8px;font-size:11.5px">
+          <a href="china_mechanics.html" style="color:var(--link);font-weight:600">🔬 {{ t('Full mechanics cockpit →', '完整结构驾驶舱 →') }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
      (aibrief.html). Replaces the old inline AI Master Brief panel. #}
@@ -927,52 +1107,6 @@
   </div>
   {% endif %}
 
-  <!-- ===================== REGIME TIME MACHINE ===================== -->
-  {% if lifespan_rows %}
-  <div class="panel span12" id="time-machine" data-timeline="china_regime_timeline.json">
-    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
-      {{ help("Drag the playhead across ~20 years of A-share history and the readout rewinds the regime CORE to that day — quadrant, growth/inflation scores, agreement, PBoC liquidity and the business cycle. China’s engine doesn’t track transition/warning flags, so those stay blank. Hit ▶ to watch the quad ribbon flip at every major turn — 2008, the 2015 bubble, 2018, 2020.", "拖动播放头横扫约 20 年 A 股历史，下方读数会把周期核心回退到那一天 — 象限、增长／通胀分数、一致度、央行流动性与商业周期。中国引擎不追踪转换／预警旗，故此处留空。点击 ▶ 观看周期色带在每个重大转折处翻转 — 2008、2015 泡沫、2018、2020。") }}
-    </h2>
-    <div class="tm-wrap">
-      <canvas id="tm-canvas" class="tm-canvas"></canvas>
-      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0" aria-label="Scrub regime history">
-    </div>
-    <div class="tm-controls">
-      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause" title="Play / pause"><span class="tm-play-ico"></span></button>
-      <span class="tm-presets">
-        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
-        <button class="tm-btn" data-tm-jump="2015-06-12">{{ t('2015 bubble', '2015 泡沫') }}</button>
-        <button class="tm-btn" data-tm-jump="2018-12-28">{{ t('2018 bear', '2018 熊市') }}</button>
-        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
-      </span>
-    </div>
-    <div class="tm-readout">
-      <div class="tm-asof">
-        <span class="tm-date" id="tm-date">—</span>
-        <span class="tm-state-tag is-live" id="tm-tag">—</span>
-      </div>
-      <div class="tm-badges">
-        <span class="badge" id="tm-quad">—</span>
-        <span class="badge" id="tm-trans">—</span>
-        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
-        <span class="kv">{{ t('cycle', '商业周期') }} <b id="tm-cyc">—</b></span>
-        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
-      </div>
-      <div class="tm-gauges">
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="sub" id="tm-g-v">—</span></div>
-          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
-        </div>
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="sub" id="tm-i-v">—</span></div>
-          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
-        </div>
-      </div>
-      <div class="tm-flags" id="tm-flags"></div>
-    </div>
-  </div>
-  {% endif %}
-
   <!-- ===================== CHINA MACRO CALENDAR (display-only, no news API) ===================== -->
   {% if event_strip or calendar %}
   <div class="panel span12" id="china-calendar">
@@ -1043,12 +1177,14 @@
     {% endif %}
     <div class="section-title">{{ t('China news intelligence', '中国新闻情报流') }}{% if CN.news and CN.news.n_raw %} <span class="muted">({{ CN.news.n_kept }}/{{ CN.news.n_raw }} · {{ CN.news.n_official or 0 }} official · {{ CN.news.n_news_rss or 0 }} RSS · {{ CN.news.n_wire or 0 }} GDELT · {{ CN.news.n_high_impact or 0 }} high)</span>{% endif %}{% if CNS.dominant_channel %} <span class="muted">· {{ CNS.dominant_channel }}</span>{% endif %} <span class="muted" style="text-transform:none">· <a href="china_news.html">{{ t('open full feed →', '打开完整新闻流 →') }}</a></span></div>
     {% if CN.news and CN.news.headlines %}
+      <div data-showmore="5">
       {% for h in CN.news.headlines %}
       {% set tl = CN.theme_label.get(h.theme, [h.theme, h.theme]) %}
       {% if h.url %}<a class="cn-item" href="{{ h.url }}" target="_blank" rel="noopener">{% else %}<span class="cn-item">{% endif %}<span class="cn-theme">{{ t(tl[0], tl[1]) }}</span><span class="cn-title"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>{% if h.time %}<span class="cn-when">{{ h.time }}</span>{% endif %}
         <span class="cn-intel"><span class="cn-pill cn-imp-{{ h.importance }}"><b>{{ h.importance_score }}</b>/100 · {{ h.importance }}</span>{% if h.source_name %}<span class="cn-pill">{{ h.source_name }}{% if h.source_tier %} · {{ h.source_tier }}{% endif %}</span>{% endif %}{% for c in h.channels[:4] %}<span class="cn-pill">{{ c }}</span>{% endfor %}{% for tk in h.tickers[:5] %}<span class="cn-pill cn-tk">{{ tk }}</span>{% endfor %}</span>
       {% if h.url %}</a>{% else %}</span>{% endif %}
       {% endfor %}
+      </div>
     {% else %}
       <p class="note" style="text-transform:none">{{ t('No macro flashes right now — the flash fetch is off (default) or temporarily unavailable.', '暂无宏观快讯 —— 快讯抓取已关闭（默认）或暂不可用。') }}</p>
     {% endif %}
@@ -1201,7 +1337,7 @@
         <th>{{ t('%ile', '分位') }}</th>
         <th class="l">{{ t('Cycle state', '周期状态') }}</th>
       </tr></thead>
-      <tbody>
+      <tbody data-showmore="6">
       {% for s in sectors %}
         <tr>
           <td class="l"><a href="sectors/{{ s.ticker }}.html">{{ td(s.name) }}</a></td>
@@ -1293,59 +1429,89 @@
     {% for n in _entry_rows %}
       {% set _d = n.dir or 'caution' %}
       <a class="nbcard nb-{{ _d }}" href="china_lookup.html#{{ n.ticker }}">
-        {# stage badge (loudest element) + why_ranked chip #}
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span class="nb-stage stg-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
-          {% if n.get('why_ranked') %}<span class="nb-why" data-tip-en="Why it ranks here: {{ n.get('why_ranked','') }}" data-tip-zh="此处排序原因：{{ n.get('why_ranked','') }}">{{ n.get('why_ranked') }}</span>{% endif %}
-        </div>
-        <div class="nb-top">
-          <span class="nb-tk">{{ n.ticker }}</span>
-          <span class="nb-nm">{{ nm(n.name) }}</span>
-          {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
-          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
-        </div>
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout" data-tip-en="Washed out on the 2-week chart and turning back up — usually a more durable bottom than a daily bounce." data-tip-zh="2周线已洗盘并回升——通常比日线反弹更稳的底部。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}" data-tip-en="Volatility squeezed tight — a big move is loading." data-tip-zh="波动被极度压缩——大行情正在酝酿。"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext" data-tip-en="Already run up a lot — higher chase risk, so it is ranked lower." data-tip-zh="已经大涨——追高风险较大，故排名靠后。">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
-        {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
-        {% set c = n.conviction %}
-        {% if c %}
-        <div class="nb-conv">
-          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Buy-readiness 0–100 — how ready it looks to buy, not a win-rate." data-tip-zh="买入就绪度0–100——看起来离买点有多近，并非胜率。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
-          <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
-        </div>
-        {% set es = n.entry_signal %}
-        {% if es %}
-        {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended, with the
-           actual buy-zone price + cycle position. The WHEN/AT-WHAT-PRICE the conviction score
-           must never be mistaken for. Market-agnostic (reads the cycle/ladder + vol). #}
-        <div class="nb-entry nbe-{{ es.status }}" data-tip-en="Entry timing — when and at what price to buy. {{ es.action }}" data-tip-zh="入场时机——何时、以何价买入。{{ es.action_zh or es.action }}">
-          <div class="nbe-head">
-            <span class="nbe-dot a{{ es.act_level }}"></span>
-            <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+        {# ── IDENTITY ZONE ─────────────────────────────────────────────────── #}
+        <div class="nb-id">
+          {# row 0: stage badge (loudest element) + gate badge + why_ranked chip #}
+          <div class="nb-badges">
+            <span class="nb-stage stg-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
+            {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
+            {% if n.get('why_ranked') and not (n.washout_2w and n.get('why_ranked') == '2W-washout') %}<span class="nb-why" data-tip-en="Why it ranks here: {{ n.get('why_ranked','') }}" data-tip-zh="此处排序原因：{{ n.get('why_ranked','') }}">{{ n.get('why_ranked') }}</span>{% endif %}
           </div>
-          {% if es.buy_zone and es.buy_zone.high is not none %}
-          <div class="nbe-zone">
-            <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
-            <span class="nbe-px">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
-            {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
+          {# row 1: ticker + price #}
+          <div class="nb-tkrow">
+            <span class="nb-tk">{{ n.ticker }}</span>
+            {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          </div>
+          {# row 2: full name — own full-width line #}
+          <div class="nb-nm">{{ nm(n.name) }}</div>
+          {# row 3: sector left + off-52w-high right #}
+          <div class="nb-secrow">
+            <span class="nb-sec">{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>
+            {% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}
+          </div>
+        </div>
+        {# ── ACTION ZONE ─────────────────────────────────────────────────────── #}
+        <div class="nb-act">
+          {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
+          {% set c = n.conviction %}
+          {% set es = n.entry_signal %}
+          {% if c %}
+          {# Fused READY-score + verdict + entry-gauge block #}
+          <div class="nb-conv">
+            <div class="nb-conv-top">
+              {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Buy-readiness 0–100 — how ready it looks to buy, not a win-rate." data-tip-zh="买入就绪度0–100——看起来离买点有多近，并非胜率。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
+              <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+            </div>
+            {% if es %}
+            {# ENTRY-timing gauge: buy now / wait for the pullback / extended, with the
+               actual buy-zone price + cycle position. Market-agnostic (reads the cycle/ladder + vol). #}
+            <div class="nb-entry nbe-{{ es.status }}" data-tip-en="Entry timing — when and at what price to buy. {{ es.action }}" data-tip-zh="入场时机——何时、以何价买入。{{ es.action_zh or es.action }}">
+              <div class="nbe-head">
+                <span class="nbe-dot a{{ es.act_level }}"></span>
+                <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+              </div>
+              {% if es.buy_zone and es.buy_zone.high is not none %}
+              <div class="nbe-zone">
+                <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
+                <span class="nbe-px">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
+                {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
+              </div>
+              {% endif %}
+              {% if es.cycle_pos and es.cycle_pos.dc_day is not none %}
+              <div class="nbe-cyc">
+                <span>{{ t('cycle day', '周期第') }} {{ es.cycle_pos.dc_day }}{{ t('', '天') }}/{{ es.cycle_pos.dc_band[0] }}–{{ es.cycle_pos.dc_band[1] }}</span>
+                <span class="nbe-bar"><span class="nbe-bf" style="width:{{ [es.cycle_pos.pct_through or 0, 100]|min }}%"></span></span>
+                {% if es.timing and es.timing.opens_in_days_lo is not none and es.status not in ['buy_now','partial'] %}<span>· {{ t('window', '窗口') }} ~{{ es.timing.opens_in_days_lo }}{% if es.timing.opens_in_days_hi and es.timing.opens_in_days_hi != es.timing.opens_in_days_lo %}–{{ es.timing.opens_in_days_hi }}{% endif %}d</span>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
-          {% if es.cycle_pos and es.cycle_pos.dc_day is not none %}
-          <div class="nbe-cyc">
-            <span>{{ t('cycle day', '周期第') }} {{ es.cycle_pos.dc_day }}{{ t('', '天') }}/{{ es.cycle_pos.dc_band[0] }}–{{ es.cycle_pos.dc_band[1] }}</span>
-            <span class="nbe-bar"><span class="nbe-bf" style="width:{{ [es.cycle_pos.pct_through or 0, 100]|min }}%"></span></span>
-            {% if es.timing and es.timing.opens_in_days_lo is not none and es.status not in ['buy_now','partial'] %}<span>· {{ t('window', '窗口') }} ~{{ es.timing.opens_in_days_lo }}{% if es.timing.opens_in_days_hi and es.timing.opens_in_days_hi != es.timing.opens_in_days_lo %}–{{ es.timing.opens_in_days_hi }}{% endif %}d</span>{% endif %}
-          </div>
-          {% endif %}
         </div>
-        {% endif %}
-        {% endif %}
-        <div class="nb-bot">
+        {# ── CONTEXT STRIP ─────────────────────────────────────────────────── #}
+        <div class="nb-ctx">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
-          {# freshness: show the signal's own bar date only when it trails the board date #}
+          {# condition chips #}
+          {% if n.washout_2w %}<span class="nb-washout" data-tip-en="Washed out on the 2-week chart and turning back up — usually a more durable bottom than a daily bounce." data-tip-zh="2周线已洗盘并回升——通常比日线反弹更稳的底部。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}
+          {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}" data-tip-en="Volatility squeezed tight — a big move is loading." data-tip-zh="波动被极度压缩——大行情正在酝酿。"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
+          {% if n.extension and n.extension.extended %}<span class="nb-ext" data-tip-en="Already run up a lot — higher chase risk, so it is ranked lower." data-tip-zh="已经大涨——追高风险较大，故排名靠后。">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}
+          {# microstructure chips (limit_state / chase_veto) — CN-SYS-R3 #}
+          {% set _mpkt = cn_micro_by_ticker.get(n.ticker) if cn_micro_by_ticker else none %}
+          {% if _mpkt %}
+            {% set _ls = _mpkt.get('limit_state') %}
+            {% set _cv = (_mpkt.get('chase_veto') or {}) %}
+            {% if _ls and _ls != 'open' %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)" data-tip-en="Microstructure: limit state={{ _ls }}. Context only — CN-SYS-R3." data-tip-zh="市场结构：涨跌停状态={{ _ls }}。仅供参考 — CN-SYS-R3。"><span class="l-en">{{ _ls }}</span><span class="l-zh">{{ _ls }}</span></span>{% endif %}
+            {# CN-SYS-R3: chase-veto ZH tooltip uses generic Chinese reason #}
+            {% if _cv.get('flag') %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--down) 13%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)" data-tip-en="Chase veto: {{ _cv.get('reason') or 'limit-up context (CN-SYS-R3)' }}" data-tip-zh="追涨否决：近期涨幅过大（追高风险）— CN-SYS-R3"><span class="l-en">chase ⚑</span><span class="l-zh">追涨 ⚑</span></span>{% endif %}
+          {% endif %}
+          {# caution popover #}
+          {% set c = n.conviction %}
+          {% if c and c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
+          {# freshness: signal as-of pushed to the right #}
           {% set _sig_asof = (n.signal or {}).get('asof') %}
-          {% if _sig_asof and setups.as_of and _sig_asof < setups.as_of %}<span class="muted" style="font-size:9px" data-tip-en="This signal is from {{ _sig_asof }}, a bar or two behind today's board (the 3-day bucket was not complete yet). Prices are current." data-tip-zh="该信号基于 {{ _sig_asof }}，比看板日期早一两个交易日（3日周期桶尚未收盘）。价格为最新。"><span class="l-en">signal as of {{ _sig_asof }}</span><span class="l-zh">信号截至 {{ _sig_asof }}</span></span>{% endif %}
+          {% if _sig_asof and setups.as_of and _sig_asof < setups.as_of %}<span class="nb-asof" data-tip-en="This signal is from {{ _sig_asof }}, a bar or two behind today's board (the 3-day bucket was not complete yet). Prices are current." data-tip-zh="该信号基于 {{ _sig_asof }}，比看板日期早一两个交易日（3日周期桶尚未收盘）。价格为最新。"><span class="l-en">signal as of {{ _sig_asof }}</span><span class="l-zh">信号截至 {{ _sig_asof }}</span></span>{% endif %}
         </div>
-        {% if c and c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
       </a>
     {% endfor %}
     </div>
@@ -1359,56 +1525,75 @@
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal live — entry passed; wait for pullback. Shown for honesty, not action — do not chase.</span><span class="l-zh">信号有效但入场时机已过；等待回调。出于诚实展示 — 不要追涨。</span></span>
     </div>
-    <div class="nbgrid" data-showmore-rows="3">
+    <div class="nbgrid" data-showmore-rows="1">
     {% for n in _ran_late_rows %}
       {% set _d = 'caution' %}
       <a class="nbcard nb-{{ _d }} nb-stage-ran-card" href="china_lookup.html#{{ n.ticker }}">
-        {# W1-C stage badge — muted family for RAN_LATE #}
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span class="nb-stage stg-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
+        {# ── IDENTITY ZONE (RAN) ──────────────────────────────────────────── #}
+        <div class="nb-id">
+          {# row 0: stage badge (muted RAN) + gate badge (muted via CSS) #}
+          <div class="nb-badges">
+            <span class="nb-stage stg-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
+            {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
+          </div>
+          {# row 1: ticker + price #}
+          <div class="nb-tkrow">
+            <span class="nb-tk">{{ n.ticker }}</span>
+            {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          </div>
+          {# row 2: full name — own full-width line #}
+          <div class="nb-nm">{{ nm(n.name) }}</div>
+          {# row 3: sector + off-high #}
+          <div class="nb-secrow">
+            <span class="nb-sec">{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>
+            {% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}
+          </div>
         </div>
-        <div class="nb-top">
-          <span class="nb-tk">{{ n.ticker }}</span>
-          <span class="nb-nm">{{ nm(n.name) }}</span>
-          {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
-          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
-        </div>
-        {# Prominent detail string — what happened: sublabel from rule 2 #}
+        {# Prominent honesty sublabel — DIRECTLY under identity zone (W1-C rule 2) #}
         {% set _sl = n.get('stage_sublabel') %}
         {% if _sl %}
         <div class="nb-ran-detail"><span class="l-en">{{ _sl }}</span><span class="l-zh">{{ n.get('stage_sublabel_zh') or '信号有效但入场时机已过；等待回调' }}</span></div>
         {% endif %}
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}</div>
-        {% set c = n.conviction %}
-        {% if c %}
-        <div class="nb-conv">
-          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Score muted — this name is on the RAN/LATE shelf: entry timing passed." data-tip-zh="评分已淡化 — 此股处于信号已过板块，入场时机已过。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
-          <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
-        </div>
-        {% set es = n.entry_signal %}
-        {% if es %}
-        {% if n.get('muted_entry') %}
-        {# F6 adjudicated design: entry gauge was open (buy_now/partial) but name is overextended.
-           Extension beats the timing gauge — render a neutral muted line, no green class, no Buy-now.
-           Dual-span per i18n rules. #}
-        <div class="nb-entry nbe-wait_pullback" data-tip-en="Entry gauge open but name is extended — not actionable here. Wait for pullback." data-tip-zh="入场量表打开但股票已延伸 — 当前不可操作，等待回调。">
-          <div class="nbe-head">
-            <span class="nbe-dot a1"></span>
-            <span class="nbe-status"><span class="l-en">gauge open — but extended; not actionable</span><span class="l-zh">量表打开 — 但已延伸；当前不可操作</span></span>
+        {# ── ACTION ZONE (RAN) ────────────────────────────────────────────── #}
+        <div class="nb-act">
+          {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
+          {% set c = n.conviction %}
+          {% set es = n.entry_signal %}
+          {% if c %}
+          <div class="nb-conv">
+            <div class="nb-conv-top">
+              {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Score muted — this name is on the RAN/LATE shelf: entry timing passed." data-tip-zh="评分已淡化 — 此股处于信号已过板块，入场时机已过。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
+              <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+            </div>
+            {% if es %}
+            {% if n.get('muted_entry') %}
+            {# F6 adjudicated design: entry gauge was open (buy_now/partial) but name is overextended.
+               Extension beats the timing gauge — render a neutral muted line, no green class, no Buy-now.
+               Dual-span per i18n rules. #}
+            <div class="nb-entry nbe-wait_pullback" data-tip-en="Entry gauge open but name is extended — not actionable here. Wait for pullback." data-tip-zh="入场量表打开但股票已延伸 — 当前不可操作，等待回调。">
+              <div class="nbe-head">
+                <span class="nbe-dot a1"></span>
+                <span class="nbe-status"><span class="l-en">gauge open — but extended; not actionable</span><span class="l-zh">量表打开 — 但已延伸；当前不可操作</span></span>
+              </div>
+            </div>
+            {% else %}
+            <div class="nb-entry nbe-{{ es.status }}" data-tip-en="Entry timing — {{ es.action }}" data-tip-zh="入场时机——{{ es.action_zh or es.action }}">
+              <div class="nbe-head">
+                <span class="nbe-dot a{{ es.act_level }}"></span>
+                <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+              </div>
+            </div>
+            {% endif %}
+            {% endif %}
           </div>
+          {% endif %}
         </div>
-        {% else %}
-        <div class="nb-entry nbe-{{ es.status }}" title="Entry timing — {{ es.action }}">
-          <div class="nbe-head">
-            <span class="nbe-dot a{{ es.act_level }}"></span>
-            <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
-          </div>
-        </div>
-        {% endif %}
-        {% endif %}
-        {% endif %}
-        <div class="nb-bot">
+        {# ── CONTEXT STRIP (RAN) ──────────────────────────────────────────── #}
+        <div class="nb-ctx">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
+          {% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}
+          {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}
+          {% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}
         </div>
       </a>
     {% endfor %}
@@ -1427,21 +1612,31 @@
     <div class="nb-rip-grid" data-showmore-rows="3">
     {% for r in _rip %}
     <div class="nb-rip-card">
-      <div class="nb-rip-top">
-        <span class="nb-rip-tk">{{ r.get('ticker','') }}</span>
+      {# ── RIPENING identity zone ──────────────────────────────────────── #}
+      <div class="nb-rip-id">
+        {# top row: ticker (bold) + imminence chip right #}
+        <div class="nb-rip-top">
+          <span class="nb-rip-tk">{{ r.get('ticker','') }}</span>
+          {% if r.get('imminence') is not none %}<span class="nb-rip-imm" data-tip-en="2W-MACD bars to cross" data-tip-zh="2周MACD距交叉周期数">~{{ '%.1f'|format(r.get('imminence')) }}{{ t('W','周') }}</span>{% endif %}
+        </div>
+        {# name on its own full-width line #}
         <span class="nb-rip-nm">{{ nm(r.get('name','')) }}</span>
-        {% if r.get('imminence') is not none %}<span class="nb-rip-imm" data-tip-en="2W-MACD bars to cross" data-tip-zh="2周MACD距交叉周期数">~{{ '%.1f'|format(r.get('imminence')) }}{{ t('W','周') }}</span>{% endif %}
       </div>
-      <span class="nb-rip-sec">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</span>
-      {% set _rs = r.get('reasons') %}
-      {% if _rs %}
-      <div class="nb-rip-chips">
-        {% for reason in (_rs if _rs is iterable and _rs is not string else _rs.split(',')) %}
-        <span class="nb-rip-chip">{{ reason | trim }}</span>
-        {% endfor %}
+      {# ── RIPENING body ───────────────────────────────────────────────── #}
+      <div class="nb-rip-body">
+        <div class="nb-rip-secrow">
+          <span class="nb-rip-sec">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</span>
+          {% if r.get('spot_pct_in_range') is not none %}<span class="nb-rip-range"><span class="l-en">range {{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span><span class="l-zh">区间位置{{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span></span>{% endif %}
+        </div>
+        {% set _rs = r.get('reasons') %}
+        {% if _rs %}
+        <div class="nb-rip-chips">
+          {% for reason in (_rs if _rs is iterable and _rs is not string else _rs.split(',')) %}
+          <span class="nb-rip-chip">{{ reason | trim }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
-      {% if r.get('spot_pct_in_range') is not none %}<span style="font-size:8.5px;color:var(--muted)"><span class="l-en">range {{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span><span class="l-zh">区间位置{{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span></span>{% endif %}
     </div>
     {% endfor %}
     </div>
@@ -1456,7 +1651,7 @@
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal fired and aged out — shown for honesty, not action. Do not chase.</span><span class="l-zh">信号已触发并过期 — 出于诚实展示，不可追涨。</span></span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px" data-showmore="8">
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px" data-showmore="1">
     {% for r in _ran %}
     <div style="display:flex;align-items:flex-start;gap:9px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:10.5px">
       <div style="flex:none;min-width:90px">
@@ -1502,6 +1697,7 @@
         {{ help("Forward ledger for the board order. Matured picks are graded vs CSI300 from a realistic T+1 entry.", "榜单排序的前瞻账本。成熟样本按相对沪深300、可成交T+1入场打分。") }}
       </div>
       {% set h21 = bt.by_horizon['21d'] %}
+      {% set itm = bt.interim %}
       {% if h21 and h21.n and h21.n >= 8 %}
       <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:12px">
         <span><b>{{ t('Hit vs CSI300', '跑赢沪深300') }}</b> (21d): <span class="{{ 'pos' if h21.hit_vs_csi300 >= 0.5 else 'neg' }}"><b>{{ '%.0f'|format(h21.hit_vs_csi300 * 100) }}%</b></span>{% if h21.hit_ci %} <span class="note">CI {{ '%.0f'|format(h21.hit_ci[0]*100) }}–{{ '%.0f'|format(h21.hit_ci[1]*100) }}%</span>{% endif %}</span>
@@ -1512,6 +1708,17 @@
       {% if h21.extended_fwd is not none and h21.not_extended_fwd is not none %}
       <div style="font-size:11.5px;margin-top:4px" class="note">{{ t('Extended-tagged picks', '已大涨标记') }}: <span class="{{ 'pos' if h21.extended_fwd >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.extended_fwd*100) }}%</span> {{ t('vs not-extended', '对比未大涨') }} <span class="{{ 'pos' if h21.not_extended_fwd >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.not_extended_fwd*100) }}%</span> {{ t('(21d, CSI300-relative)', '（21日，相对沪深300）') }}</div>
       {% endif %}
+      {% elif itm and itm.available and itm.n and itm.n >= 8 %}
+      {# INTERIM read: the 21d forward grade hasn't matured (first ~2026-07-29), so show an honest,
+         explicitly UNREALIZED mark-to-latest-close read instead of a black box. Very early — median
+         hold is only a session or two — so it is framed as "so far", never as a validated edge. #}
+      <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:12px">
+        <span class="note" style="text-transform:none;font-weight:700;color:var(--warn)">⏳ {{ t('Interim — unrealized, marked to latest close', '临时 —— 未实现，按最新收盘价标记') }}</span>
+        <span><b>{{ t('Beating CSI300 so far', '暂时跑赢沪深300') }}</b>: <span class="{{ 'pos' if itm.hit_vs_csi300 >= 0.5 else 'neg' }}"><b>{{ '%.0f'|format(itm.hit_vs_csi300 * 100) }}%</b></span>{% if itm.hit_ci %} <span class="note">CI {{ '%.0f'|format(itm.hit_ci[0]*100) }}–{{ '%.0f'|format(itm.hit_ci[1]*100) }}%</span>{% endif %}</span>
+        {% if itm.median_excess is not none %}<span><b>{{ t('Median excess', '超额中位数') }}</b>: <span class="{{ 'pos' if itm.median_excess >= 0 else 'neg' }}">{{ '%+.1f'|format(itm.median_excess * 100) }}%</span></span>{% endif %}
+        <span class="note">n={{ itm.n }}</span>
+      </div>
+      <div style="font-size:11px;margin-top:4px" class="note">{{ t('This is NOT the matured grade — median', '这不是成熟评分 —— 中位持有') }} {{ itm.median_days_held }} {{ t('session(s) held so far (max', '个交易日（最长') }} {{ itm.max_days_held }}{{ t('); far too early to read as an edge. First matured 21-day grades ~2026-07-29.', '）；过早，不能视作优势。首批21日成熟评分约在 2026-07-29。') }}{% if bt.dates %} <span class="l-en">Logging since {{ bt.dates[0] }} ({{ bt.n_rows }} rows).</span><span class="l-zh">自 {{ bt.dates[0] }} 起记录（{{ bt.n_rows }} 条）。</span>{% endif %}</div>
       {% else %}
       <div style="font-size:12px" class="note">{{ t('Accruing — no picks have matured yet. First 21-day maturities ~2026-07-29.', '累积中 —— 尚无成熟样本。首批21日成熟约在 2026-07-29。') }}{% if bt.dates %} <span class="l-en">Logging since {{ bt.dates[0] }} ({{ bt.n_rows }} rows).</span><span class="l-zh">自 {{ bt.dates[0] }} 起记录（{{ bt.n_rows }} 条）。</span>{% endif %}</div>
       {% endif %}
@@ -1681,6 +1888,87 @@
     </script>
   </div>
   {% endif %}
+
+  {# ======= REVERSION DESK — flagship-2 (china_stocks.html only) ========================
+     Spec: CHINA_PICK_LAB_MASTERPLAN_BY_FABLE.md §4 + §7.
+     VM key: reversion_desk (loaded from site/factordata/china_reversion_desk.json by
+     build_china.py as a fallback when the producer block sets it). Degrades gracefully
+     when the key is absent — the block is simply hidden. Authority: display_only (CNPL-R1).
+     GOTCHA: Jinja `is not none` on a missing key CRASHES — use .get() guards throughout.
+  #}
+  {% if mode == 'stocks' %}
+  {% set _rd = reversion_desk if reversion_desk is defined else none %}
+  {% if _rd %}
+  <!-- ===================== REVERSION DESK (flagship-2, A-share native edge) ===================== -->
+  <div class="panel span12" id="reversion-desk">
+    {# lane header #}
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <h2 style="margin:0">🔄 {{ t('Reversion Desk', '回归台') }}
+        <span class="note" style="text-transform:none;font-size:13px;font-weight:400">· {{ t('flagship-2 · A-share native edge — within-sector 3-month reversal depth', '旗舰2 · A股原生优势 — 行业内3月回归深度') }}</span>
+      </h2>
+      <span class="chip c-muted" style="font-size:11px;font-weight:600">{{ t('display-only', '仅展示') }}</span>
+    </div>
+    <p class="note" style="margin:0 0 10px;text-transform:none;font-size:12px">
+      <span class="l-en">Deepest-quintile within-sector 3-month return, ranked by reversal depth + CN-native bonuses (washout_2w, COILED/STAR). No confluence-cascade gate — the gate-vs-edge divorce measured live. Not a buy list: display context, not a signal (CNPL-R1).</span>
+      <span class="l-zh">行业内3月回报最深五分位，按回归深度+CN原生奖励（2周洗盘、盘绕/STAR）排序。无汇流级联门控——现场测量门控与优势的离婚。非买入清单：展示背景，非信号（CNPL-R1）。</span>
+    </p>
+    {# stale / as_of stamp #}
+    {% set _rd_asof = _rd.get('as_of') %}
+    {% if _rd_asof %}
+    <p class="note" style="font-size:11px;margin:0 0 10px;color:var(--muted)">{{ t('as of', '截至') }} {{ _rd_asof }}</p>
+    {% endif %}
+    {# top picks cards #}
+    {% set _rd_picks = _rd.get('picks') or [] %}
+    {% if _rd_picks %}
+    <div class="nbgrid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px" data-showmore-rows="2">
+      {% for n in _rd_picks %}
+      <div class="nbcard nb-up" style="cursor:default">
+        <div class="nb-id">
+          <div class="nb-tkrow">
+            <span class="nb-tk">{{ n.get('ticker','') }}</span>
+            {% set _np = n.get('price') %}
+            {% if _np is not none %}<span class="nb-px" data-sym="{{ n.get('ticker','') }}" data-mkt="cn">{{ '%.2f'|format(_np) }}</span>{% endif %}
+          </div>
+          <div class="nb-nm">
+            {% set _nn = (n.get('name') or '').split(' / ') %}
+            <span class="l-en">{{ _nn[0] }}</span><span class="l-zh">{{ _nn[1] if _nn|length > 1 else _nn[0] }}</span>
+          </div>
+          <div class="nb-secrow">
+            {% set _ns = n.get('sector','') %}
+            <span class="nb-sec">{{ t(_ns, {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'}.get(_ns, _ns)) }}</span>
+            {% set _noh = n.get('off_high') %}
+            {% if _noh is not none %}<span class="nb-offh">{{ '%+.1f'|format(_noh) }}% {{ t('off high', '距高点') }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="nb-ctx">
+          {# reversal depth chip #}
+          {% set _nrd = n.get('rev_depth_pct') %}
+          {% if _nrd is not none %}<span class="chip c-muted" style="font-size:10px">{{ t('3m rev', '3月回归') }} {{ '%+.1f'|format(_nrd) }}%</span>{% endif %}
+          {# CN-native bonus chips — washout, coiled/star, extension #}
+          {% if n.get('washout_2w') %}<span class="nb-washout" style="font-size:10px"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}
+          {% if n.get('coiled') %}<span class="nb-coiled" style="font-size:10px"><span class="l-en">⚡ Coiled</span><span class="l-zh">⚡ 蓄势</span></span>{% endif %}
+          {# chase / T+1-risk chip (display only — never a veto here) #}
+          {% if n.get('chase_veto') %}<span class="nb-ext" style="font-size:10px">⚠ <span class="l-en">chase risk</span><span class="l-zh">追高风险</span></span>{% endif %}
+          {# cycle-phase chip if present #}
+          {% set _ncp = n.get('cycle_phase') %}
+          {% if _ncp %}<span class="chip c-muted" style="font-size:10px">{{ _ncp }}</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if _rd_picks|length > 6 %}
+    <button class="lst-more" type="button" aria-expanded="false" style="margin-top:8px"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
+    {% endif %}
+    {% else %}
+    <p class="note" style="text-transform:none;font-size:12.5px;color:var(--muted)">{{ t('No picks available for the Reversion Desk today.', '今日回归台暂无选择。') }}</p>
+    {% endif %}
+    <p class="note" style="margin:10px 0 0;font-size:11px">
+      <span class="l-en">Ruler: 21-session CSI 300 excess (CNPL-R3) · T+1 fill (CNPL-R4) · track record accruing, not a buy list.</span>
+      <span class="l-zh">标尺：21节沪深300超额（CNPL-R3）· T+1入场（CNPL-R4）· 成绩累积中，非买入清单。</span>
+    </p>
+  </div>
+  {% endif %}{# /_rd #}
+  {% endif %}{# /mode == 'stocks' reversion desk #}
 
   {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch) #}
 
@@ -2012,7 +2300,6 @@ window.__CHART_SWAP__ = {
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
 <script src="mtf.js"></script>
-<script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
 <script>
   // keep tooltips on-screen: flip below near the top of the viewport, and anchor to

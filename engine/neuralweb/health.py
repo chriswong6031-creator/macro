@@ -269,7 +269,10 @@ def _derive_run_status_legacy(memo: dict) -> dict:
     tcc = memo.get("tool_call_census") or {}
     has_tools = bool(tcc) and not (len(tcc) == 1 and "fallback_call" in tcc)
     return {
-        "status": "warn" if has_tools else "degraded",
+        # Legacy normal run (has_tools=True) maps to 'ok', not 'warn', so the
+        # health rollup sees it as fresh — 'warn' is reserved for PR-A partial runs
+        # (model_fallback, context_stale) that need operator attention.
+        "status": "ok" if has_tools else "degraded",
         "degraded": not has_tools,
         "degradation_reason": "zero_tool_calls" if not has_tools else None,
         "provider_attempts": [],
@@ -302,7 +305,16 @@ def _cortex_section(root: Path, cortex_source: str = "previous_run") -> dict:
         run_status = raw_rs if raw_rs else _derive_run_status_legacy(memo)
         out["run_status"] = run_status
         degraded = run_status.get("degraded", False)
-        out["status"] = "degraded" if degraded else "fresh"
+        rs_status = run_status.get("status", "ok")
+        # Honesty law: a fallback-model run sets degraded=False but status='warn'.
+        # Map any non-ok run_status (warn = model_fallback, context_stale, budget)
+        # to lobe status 'warn' so health/brief rollups surface it.
+        if degraded:
+            out["status"] = "degraded"
+        elif rs_status == "warn":
+            out["status"] = "warn"
+        else:
+            out["status"] = "fresh"
     else:
         out["status"] = "missing"
 
@@ -366,8 +378,8 @@ def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "worl
     warn     — stale or fresh_partial present, cortex not degraded
     degraded — cortex degraded OR world_state missing/stale OR any core lobe missing
     """
-    cortex_degraded = cortex.get("status") == "degraded"
-    if cortex_degraded:
+    cortex_status = cortex.get("status", "unknown")
+    if cortex_status == "degraded":
         return "degraded"
 
     lobe_map = {r["id"]: r for r in lobes}
@@ -379,6 +391,10 @@ def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "worl
     any_missing = any(r["status"] == "missing" for r in lobes)
     if any_missing:
         return "degraded"
+
+    # cortex status='warn' (model_fallback, context_stale, budget) elevates overall to warn
+    if cortex_status == "warn":
+        return "warn"
 
     any_bad = any(r["status"] in ("stale", "fresh_partial", "degraded") for r in lobes)
     if any_bad:
@@ -474,6 +490,229 @@ def _embed_support_impact(lobes: list[dict], root: Path) -> None:
             lobe["support_impact"] = {"available": False, "note": f"error: {exc}"}
 
 
+# ---- context accrual heartbeat (R-CI12) ---------------------------------------
+
+def _context_accrual_heartbeat(root: Path) -> dict:
+    """R-CI12: verify accrual plumbing for personality + fire_coordinates.
+
+    Fail-open: every sub-block catches its own exceptions and returns honest
+    absent markers.  Never raises.  Returns a dict embedded in health.json
+    under 'context_accrual'.
+
+    Checks:
+      personality_forward_ledger: data/stock_personality/forward_ledger.parquet
+        exists, n_rows, last_append date.
+      fire_coordinates: data/factordata/fire_coordinates.jsonl
+        exists, n_rows, last_as_of, dna_nonnull_pct (% rows where dna_class != null).
+      panel_partitions: data/factordata/panel/*/panel.parquet
+        latest partition month, n_partitions.
+      stamper_gap: true when track_record has buy/rebuy fires on a date
+        where the personality forward_ledger has NO row that date.
+    """
+    result: dict[str, Any] = {}
+
+    # --- personality_forward_ledger ---
+    fl_path = root / "data" / "stock_personality" / "forward_ledger.parquet"
+    try:
+        fl_exists = fl_path.exists()
+        fl_rows: int | None = None
+        fl_last_append: str | None = None
+        if fl_exists:
+            fl_rows = _row_count(fl_path, "parquet")
+            try:
+                import pyarrow.parquet as pq  # noqa: PLC0415
+                pf = pq.ParquetFile(str(fl_path))
+                # read only date/as_of columns
+                schema_names = list(pf.schema_arrow.names)
+                date_cols = [c for c in schema_names if c in ("as_of", "date", "fire_date", "asof")]
+                if date_cols:
+                    tbl = pf.read(columns=date_cols[:1])
+                    col = tbl.column(0).to_pylist()
+                    non_null = [str(v) for v in col if v is not None]
+                    fl_last_append = max(non_null) if non_null else None
+            except Exception:  # noqa: BLE001
+                pass
+        result["personality_forward_ledger"] = {
+            "exists": fl_exists,
+            "rows": fl_rows,
+            "last_append": fl_last_append,
+        }
+    except Exception as exc:  # noqa: BLE001
+        result["personality_forward_ledger"] = {"exists": None, "rows": None,
+                                                  "last_append": None, "error": str(exc)}
+
+    # --- fire_coordinates ---
+    fc_path = root / "data" / "factordata" / "fire_coordinates.jsonl"
+    try:
+        fc_exists = fc_path.exists()
+        fc_rows: int | None = None
+        fc_last_asof: str | None = None
+        fc_dna_nonnull_pct: float | None = None
+        if fc_exists:
+            rows_parsed: list[dict] = []
+            try:
+                with fc_path.open("r", encoding="utf-8", errors="replace") as fh:
+                    for line in fh:
+                        line = line.strip()
+                        if line:
+                            try:
+                                rows_parsed.append(json.loads(line))
+                            except Exception:  # noqa: BLE001
+                                pass
+            except Exception:  # noqa: BLE001
+                pass
+            fc_rows = len(rows_parsed)
+            if rows_parsed:
+                asofs = [r.get("as_of") for r in rows_parsed if r.get("as_of")]
+                fc_last_asof = max(str(a) for a in asofs) if asofs else None
+                n_dna = sum(1 for r in rows_parsed if r.get("dna_class") is not None)
+                fc_dna_nonnull_pct = round(100 * n_dna / fc_rows, 1) if fc_rows else None
+        result["fire_coordinates"] = {
+            "exists": fc_exists,
+            "rows": fc_rows,
+            "last_asof": fc_last_asof,
+            "dna_nonnull_pct": fc_dna_nonnull_pct,
+        }
+    except Exception as exc:  # noqa: BLE001
+        result["fire_coordinates"] = {"exists": None, "rows": None,
+                                       "last_asof": None, "dna_nonnull_pct": None,
+                                       "error": str(exc)}
+
+    # --- panel_partitions ---
+    panel_dir = root / "data" / "factordata" / "panel"
+    try:
+        parts = sorted(panel_dir.glob("*/panel.parquet")) if panel_dir.exists() else []
+        result["panel_partitions"] = {
+            "latest": parts[-1].parent.name if parts else None,
+            "n": len(parts),
+        }
+    except Exception as exc:  # noqa: BLE001
+        result["panel_partitions"] = {"latest": None, "n": None, "error": str(exc)}
+
+    # --- stamper_gap: buy/rebuy fires post-wire with no forward-ledger append ---
+    # False-positive guard (R-CI12): restrict to fires at/after the ledger wire date
+    # AND to tickers in the personality universe.  Historical fires pre-wire are
+    # irrelevant — the stamper could not have run before the ledger existed.
+    # When ledger is empty → gap check is meaningless → stamper_gap=null with note.
+    try:
+        stamper_gap: bool | None = False
+        gap_dates: list[str] = []
+        fires_seen_since_wire: int | None = None
+        tr_path = root / "data" / "signal_archive" / "track_record.parquet"
+
+        _gap_checked = False  # tracks whether we reached the actual comparison
+
+        if tr_path.exists() and fl_path.exists():
+            try:
+                import pyarrow.parquet as pq  # noqa: PLC0415
+                import pandas as _pd  # noqa: PLC0415
+
+                # --- wire_floor: earliest date in the ledger ---
+                fl_pf = pq.ParquetFile(str(fl_path))
+                fl_schema_names = list(fl_pf.schema_arrow.names)
+                fl_date_cols = [c for c in fl_schema_names if c in ("as_of", "date", "fire_date", "asof")]
+                fl_ticker_cols = [c for c in fl_schema_names if c in ("ticker", "symbol")]
+
+                if fl_date_cols:
+                    fl_read_cols = fl_date_cols[:1] + fl_ticker_cols[:1]
+                    fl_tbl = fl_pf.read(columns=fl_read_cols)
+                    fl_dates = [str(v) for v in fl_tbl.column(0).to_pylist() if v is not None]
+
+                    if not fl_dates:
+                        # Empty ledger — gap check not yet meaningful; honest null heartbeat
+                        stamper_gap = None
+                        fires_seen_since_wire = None
+                        result["stamper_gap_note"] = "awaiting first ledger append"
+                        _gap_checked = True
+                    else:
+                        wire_floor = min(fl_dates)
+                        fl_dates_set = set(fl_dates)
+
+                        # Build (date, ticker) set from ledger if ticker column present
+                        fl_pairs: set[tuple[str, str]] | None = None
+                        if fl_ticker_cols:
+                            fl_ticker_vals = [
+                                str(v) for v in fl_tbl.column(1).to_pylist() if v is not None
+                            ]
+                            fl_pairs = set(zip(fl_dates, fl_ticker_vals))
+
+                        # --- personality universe: tickers we track ---
+                        personality_universe: set[str] | None = None
+                        sp_path = root / "site" / "factordata" / "stock_personality.json"
+                        if sp_path.exists():
+                            try:
+                                sp_raw = json.loads(sp_path.read_text(encoding="utf-8"))
+                                pt = sp_raw.get("per_ticker")
+                                if isinstance(pt, dict):
+                                    personality_universe = set(pt.keys())
+                            except Exception:  # noqa: BLE001
+                                pass
+
+                        # --- track_record: buy/rebuy fires ---
+                        tr_pf = pq.ParquetFile(str(tr_path))
+                        tr_schema = list(tr_pf.schema_arrow.names)
+                        tr_date_col = "date" if "date" in tr_schema else None
+                        tr_ticker_col = next(
+                            (c for c in tr_schema if c in ("ticker", "symbol")), None
+                        )
+
+                        if tr_date_col and "type" in tr_schema:
+                            tr_read_cols = [c for c in [tr_date_col, "type", tr_ticker_col] if c]
+                            tr_tbl = tr_pf.read(columns=tr_read_cols)
+                            tr_df = tr_tbl.to_pandas()
+
+                            buy_mask = tr_df["type"].isin(["buy", "rebuy"])
+                            # Wire-floor filter: only fires at/after the ledger wire date
+                            date_strs = tr_df[tr_date_col].astype(str)
+                            post_wire_mask = date_strs >= wire_floor
+                            candidate_df = tr_df[buy_mask & post_wire_mask]
+
+                            # Personality-universe filter: only tickers we track
+                            if personality_universe is not None and tr_ticker_col:
+                                candidate_df = candidate_df[
+                                    candidate_df[tr_ticker_col].astype(str).isin(
+                                        personality_universe
+                                    )
+                                ]
+
+                            fires_seen_since_wire = len(candidate_df)
+
+                            # Gap detection
+                            if fl_pairs is not None and tr_ticker_col:
+                                # (date, ticker) level gap detection
+                                fire_pairs = set(
+                                    zip(
+                                        candidate_df[tr_date_col].astype(str),
+                                        candidate_df[tr_ticker_col].astype(str),
+                                    )
+                                )
+                                missing_pairs = fire_pairs - fl_pairs
+                                gap_dates = sorted({d for d, _ in missing_pairs})[-5:]
+                            else:
+                                # Date-level gap detection (ledger has no ticker column)
+                                buy_post_wire_dates = set(
+                                    candidate_df[tr_date_col].dropna().astype(str).unique()
+                                )
+                                gap_dates = sorted(buy_post_wire_dates - fl_dates_set)[-5:]
+
+                            stamper_gap = bool(gap_dates)
+                            _gap_checked = True
+
+            except Exception:  # noqa: BLE001
+                pass
+
+        result["stamper_gap"] = stamper_gap
+        result["fires_seen_since_wire"] = fires_seen_since_wire
+        if gap_dates:
+            result["stamper_gap_dates_sample"] = gap_dates
+    except Exception as exc:  # noqa: BLE001
+        result["stamper_gap"] = None
+        result["fires_seen_since_wire"] = None
+        result["stamper_gap_error"] = str(exc)
+
+    return result
+
+
 # ---- main build function -----------------------------------------------------
 
 def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict:
@@ -545,6 +784,13 @@ def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict
     overall = _overall_status(lobes, cortex)
     counts = _summary_counts(lobes, cortex)
 
+    # R-CI12: context accrual heartbeat (fail-open)
+    try:
+        context_accrual = _context_accrual_heartbeat(root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("health: context_accrual_heartbeat failed: %s", exc)
+        context_accrual = {"error": str(exc)}
+
     # Conservative as_of: oldest fresh data timestamp across lobes
     fresh_times = [
         r["as_of"] for r in lobes
@@ -563,6 +809,7 @@ def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict
         "cortex": cortex,
         "workflow_conformance_misses": conformance_misses,
         "summary_counts": counts,
+        "context_accrual": context_accrual,
     }
 
 

@@ -548,10 +548,133 @@ def test_backfill_regime_stamps_null_only(prices, tmp_path, monkeypatch):
 
     out = q.backfill_regime_stamps(tmp_path)
     q._regime_stamp_cached.cache_clear()
-    assert out == {"n_claims": 3, "n_backfilled": 1, "n_unstamped": 1}
+    # W1: return dict now includes n_precoverage
+    assert out["n_claims"] == 3
+    assert out["n_backfilled"] == 1
+    assert out["n_unstamped"] == 1
+    assert "n_precoverage" in out  # W1 addition
     rows = {r["claim_id"]: r for r in q.load_claims(tmp_path)}
     assert rows["a1"]["rate_pressure"] == "pressure"          # filled
     assert rows["a1"]["vector_asof"] == "2026-02-02"
+    # W1 R-CI3: backfilled row must carry regime_stamp_basis='recomputed_history'
+    assert rows["a1"].get("regime_stamp_basis") == "recomputed_history", (
+        f"R-CI3 provenance: expected recomputed_history, got {rows['a1'].get('regime_stamp_basis')}"
+    )
     assert rows["b2"]["rate_pressure"] == "keepme"            # never altered
     assert rows["b2"]["vector_asof"] == "2026-01-30"
-    assert rows["c3"].get("vector_asof") is None              # honest residual
+    # b2 already had vector_asof → NOT backfilled → must NOT have regime_stamp_basis set by backfill
+    assert rows["b2"].get("regime_stamp_basis") is None       # keep-FIRST: already stamped
+    assert rows["c3"].get("vector_asof") is None              # honest residual (precoverage)
+
+
+def test_backfill_regime_stamps_skips_a_share_hk(prices, tmp_path, monkeypatch):
+    """Claims with .SS, .SZ, or .HK symbols must be skipped — they must not
+    receive US regime_vector rich stamps.  The skipped count must be logged.
+    """
+    q._regime_stamp_cached.cache_clear()
+    import engine.regime_vector as rv
+    covered = {"rate_pressure": "pressure", "quad_hard_label": "Q2",
+               "fused_risk_label": "risk_on", "vol_regime": "warning",
+               "risk_radar_state": "watch", "regime_vector_degraded": 0,
+               "vector_asof": "2026-02-02", "staleness_hours": 0.0}
+    monkeypatch.setattr(
+        rv, "get_vector_for_date",
+        lambda asof, data_dir=None: dict(covered))
+
+    p = tmp_path / "data" / "qledger" / "claims.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+
+    # US claim — should receive stamp
+    row_us = {"claim_id": "us1", "asof": "2026-02-02", "scope": {"type": "entity", "key": "AAPL"}}
+    # A-share claims — must be skipped
+    row_ss = {"claim_id": "ss1", "asof": "2026-02-02", "scope": {"type": "entity", "key": "600519.SS"}}
+    row_sz = {"claim_id": "sz1", "asof": "2026-02-02", "scope": {"type": "entity", "key": "300725.SZ"}}
+    # HK claim — must be skipped
+    row_hk = {"claim_id": "hk1", "asof": "2026-02-02", "scope": {"type": "entity", "key": "0700.HK"}}
+
+    with p.open("w", encoding="utf-8") as fh:
+        for r in (row_us, row_ss, row_sz, row_hk):
+            fh.write(json.dumps(r) + "\n")
+
+    out = q.backfill_regime_stamps(tmp_path)
+    q._regime_stamp_cached.cache_clear()
+
+    # Only the US claim was backfilled
+    assert out["n_backfilled"] == 1, f"Expected 1 backfilled (US only), got: {out}"
+
+    rows = {r["claim_id"]: r for r in q.load_claims(tmp_path)}
+    assert rows["us1"].get("vector_asof") == "2026-02-02", "US claim must receive stamp"
+    assert rows["ss1"].get("vector_asof") is None, ".SS claim must be skipped"
+    assert rows["sz1"].get("vector_asof") is None, ".SZ claim must be skipped"
+    assert rows["hk1"].get("vector_asof") is None, ".HK claim must be skipped"
+
+
+def test_w1_backfill_regime_stamps_basis_recomputed_history(prices, tmp_path, monkeypatch):
+    """W1 R-CI3: backfill_regime_stamps sets regime_stamp_basis='recomputed_history'
+    on backfilled rows.  Pre-existing basis values are never overwritten (keep-FIRST).
+    Claims predating coverage stay null + are counted in n_precoverage.
+    The returned dict includes n_precoverage.
+    """
+    q._regime_stamp_cached.cache_clear()
+    import engine.regime_vector as rv
+    covered = {
+        "rate_pressure": "hot", "quad_hard_label": "Q3",
+        "fused_risk_label": "risk_on", "vol_regime": "calm",
+        "risk_radar_state": "neutral", "regime_vector_degraded": 0,
+        "vector_asof": "2026-05-15", "staleness_hours": 0.0,
+    }
+    # Monkeypatch: 2026-05-15 covered; 1998-01-01 pre-coverage (returns nulls)
+    monkeypatch.setattr(
+        rv, "get_vector_for_date",
+        lambda asof, data_dir=None: (
+            dict(covered) if asof == "2026-05-15"
+            else {k: None for k in q._REGIME_STAMP_KEYS}
+        ),
+    )
+
+    p = tmp_path / "data" / "qledger" / "claims.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+
+    # row_a: no stamps, covered date → should be backfilled + get recomputed_history basis
+    row_a = {"claim_id": "a1", "asof": "2026-05-15", "scope": {"type": "entity", "key": "NVDA"}}
+    # row_b: pre-existing basis value → basis must not be overwritten
+    row_b = {
+        "claim_id": "b2", "asof": "2026-05-15",
+        "scope": {"type": "entity", "key": "AAPL"},
+        "regime_stamp_basis": "pit_live", "vector_asof": None,
+    }
+    # row_c: predates coverage → stays null, counted in n_precoverage
+    row_c = {"claim_id": "c3", "asof": "1998-01-01", "scope": {"type": "entity", "key": "IBM"}}
+
+    with p.open("w", encoding="utf-8") as fh:
+        for r in (row_a, row_b, row_c):
+            fh.write(json.dumps(r) + "\n")
+
+    out = q.backfill_regime_stamps(tmp_path)
+    q._regime_stamp_cached.cache_clear()
+
+    assert out["n_claims"] == 3
+    assert out["n_backfilled"] == 2  # a1 and b2 both got stamps
+    assert out["n_unstamped"] == 1   # c3 stays unstamped
+    assert "n_precoverage" in out
+    assert out["n_precoverage"] == 1  # c3 predates coverage
+
+    rows = {r["claim_id"]: r for r in q.load_claims(tmp_path)}
+
+    # a1: backfilled → must have recomputed_history basis
+    assert rows["a1"].get("vector_asof") == "2026-05-15"
+    assert rows["a1"].get("regime_stamp_basis") == "recomputed_history", (
+        f"R-CI3: expected recomputed_history, got {rows['a1'].get('regime_stamp_basis')}"
+    )
+
+    # b2: had regime_stamp_basis='pit_live' pre-set but vector_asof=None
+    # → the lying label is normalised to 'recomputed_history' (values are
+    #   demonstrably recomputed; keep-FIRST only applies to rows that had
+    #   a non-None vector_asof, i.e. were genuinely PIT-stamped)
+    assert rows["b2"].get("regime_stamp_basis") == "recomputed_history", (
+        f"R-CI3 basis normalisation: pit_live with vector_asof=None must become "
+        f"recomputed_history, got {rows['b2'].get('regime_stamp_basis')}"
+    )
+
+    # c3: predates coverage → vector_asof stays None
+    assert rows["c3"].get("vector_asof") is None

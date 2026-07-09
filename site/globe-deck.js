@@ -885,22 +885,21 @@
     var lunch = false;
     if (open && m.lunch) { var ls = hm(m.lunch[0]), le = hm(m.lunch[1]); if (now >= ls && now < le) { open = false; lunch = true; } }
     // next boundary minutes
-    var next, label_en, label_zh;
-    if (open) { next = c - now; if (m.lunch) { var l0 = hm(m.lunch[0]); if (now < l0) next = l0 - now; } label_en = "closes in"; label_zh = "距休市"; }
-    else if (lunch) { next = hm(m.lunch[1]) - now; label_en = "reopens in"; label_zh = "距续盘"; }
+    var next;
+    if (open) { next = c - now; if (m.lunch) { var l0 = hm(m.lunch[0]); if (now < l0) next = l0 - now; } }
+    else if (lunch) { next = hm(m.lunch[1]) - now; }
     else { // closed: minutes to next open (today or next weekday)
       var add = 0, day = lp.wd;
       if (!weekend && now < o) add = o - now;
       else { add = (24 * 60 - now) + o; var seq = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; var di = seq.indexOf(day); var d2 = (di + 1) % 7; while (d2 === 0 || d2 === 6) { add += 24 * 60; d2 = (d2 + 1) % 7; } }
-      next = add; label_en = "opens in"; label_zh = "距开盘";
+      next = add;
     }
     // arc = fraction of the current span still remaining (full ring → empties toward the bell)
     var arc = 0;
     if (open) { var span = c - o; arc = span > 0 ? Math.max(0, Math.min(1, next / span)) : 0; }
     else if (lunch) { var sp = hm(m.lunch[1]) - hm(m.lunch[0]); arc = sp > 0 ? Math.max(0, Math.min(1, next / sp)) : 0; }
-    return { open: open, lunch: lunch, next: next, label_en: label_en, label_zh: label_zh, frac: lp.min / 1440, arc: arc };
+    return { open: open, lunch: lunch, next: next, frac: lp.min / 1440, arc: arc };
   }
-  function dur(mins) { var h = Math.floor(mins / 60), m = Math.round(mins % 60); return (h ? h + "h " : "") + m + "m"; }
   function sunmoon(frac) {
     var day = frac > 0.27 && frac < 0.79;        // ~6:30–19:00 local
     var ax = 14 * Math.sin(Math.PI * Math.max(0, Math.min(1, (frac - 0.27) / 0.52)));
@@ -946,8 +945,6 @@
     //  "balloons" in positionIslands() so every market stays individually readable)
     updateClocks();
     setInterval(updateClocks, 1000);
-    var utc = stage.parentNode.querySelector(".gd-utc");
-    if (utc) { var tick = function () { utc.textContent = new Date().toISOString().slice(11, 16); }; tick(); setInterval(tick, 1000); }
   }
   function buildCluster() {
     clusterEl = document.createElement("div"); clusterEl.className = "gd-cluster";
@@ -1019,7 +1016,6 @@
     }
   }
   function updateClocks() {
-    var soonest = null;
     DATA.forEach(function (m) {
       var el = islEls[m.cc]; if (!el) return;
       var st = clockState(m);
@@ -1028,11 +1024,7 @@
       var arcEl = el.querySelector(".arc");
       if (arcEl) { var shown = st.open || st.lunch; arcEl.style.strokeDasharray = RINGC.toFixed(2); arcEl.style.strokeDashoffset = (RINGC * (1 - (shown ? st.arc : 0))).toFixed(2); arcEl.style.stroke = pre ? "var(--warn)" : "var(--qc)"; arcEl.style.opacity = shown ? "1" : "0"; }
       el.classList.toggle("sel", selected === m.cc);
-      if (!soonest || st.next < soonest.next) soonest = { m: m, next: st.next, label_en: st.label_en, label_zh: st.label_zh };
     });
-    var nb = stage.parentNode.querySelector(".gd-nextbell");
-    if (nb && soonest) nb.innerHTML = bilingual("Next bell · " + soonest.m.index_name_en + " " + soonest.label_en + " " + dur(soonest.next),
-                                                "下一响铃 · " + soonest.m.index_name_zh + " " + soonest.label_zh + " " + dur(soonest.next));
   }
   function syncRows() { Object.keys(islEls).forEach(function (cc) { islEls[cc].classList.toggle("sel", selected === cc); }); }
 
@@ -1071,16 +1063,6 @@
     // first poll already ran against an empty DOM — nudge it to patch the fresh
     // .nb-px/.nb-chg index nodes now instead of waiting a full poll interval.
     if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
-    // motion toggle in the slim strip (WCAG 2.2.2 stop control)
-    var mbtn = stage.parentNode.querySelector(".gd-motion");
-    if (mbtn) {
-      var setM = function () {
-        mbtn.innerHTML = motionOK ? bilingual("⏸ Pause motion", "⏸ 暂停动效") : bilingual("▶ Resume motion", "▶ 恢复动效");
-        mbtn.setAttribute("aria-pressed", motionOK ? "false" : "true");
-      };
-      setM();
-      mbtn.addEventListener("click", function () { motionOK = !motionOK; setM(); if (motionOK && !raf) raf = requestAnimationFrame(frame); });
-    }
     if (poster) poster.style.opacity = "0";
     canvas.style.opacity = "1";
     render(performance.now());

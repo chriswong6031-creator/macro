@@ -22,6 +22,8 @@ Coverage:
   (17) BLOCKER-1: altdata_conv excluded from spine; one economic event per symbol+as_of
   (18) BLOCKER-2: graded_before excludes graded rows with null graded_at (PIT leak guard)
   (19) adapt_spine — graded_at backfilled as as_of+horizon for graded rows
+  (20) [R-CI3 DIRECTIONAL] _stamp_personality: row as_of 2 trading days BEFORE prod_asof
+       must get personality_basis='absent' (pre-fix code leaked snapshot backwards)
 """
 from __future__ import annotations
 
@@ -589,12 +591,17 @@ def test_query_scope_type_filter(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_query_regime_matches_any_column(tmp_path):
-    """regime filter matches quad_hard_label OR fused_risk_label OR vol_regime OR risk_radar_state."""
+    """regime filter matches quad_hard_label OR fused_risk_label OR vol_regime OR risk_radar_state.
+
+    Uses stamp_basis='any' to opt out of the R5 pit_live default so the test
+    exercises all basis values (track_record fixture rows have basis=None).
+    """
     _make_track_record(tmp_path)
     Q.write_index(root=tmp_path)
     df = Q.load_index(root=tmp_path)
-    # track_record fixture has us_quad_hard_label="quad1" → mapped to quad_hard_label
-    result = Q.query(df, regime="quad1")
+    # track_record fixture has us_quad_hard_label="quad1" → mapped to quad_hard_label.
+    # stamp_basis='any' opts out of the pit_live default restriction.
+    result = Q.query(df, regime="quad1", stamp_basis="any")
     assert not result.empty, "regime='quad1' should match rows with quad_hard_label='quad1'"
     # Every row must have the regime label in at least one of the four columns
     combined_mask = (
@@ -1092,4 +1099,58 @@ def test_columns_pin_drift_guard(tmp_path):
     assert _SPINE_COLS == Q.COLUMNS, (
         "test_kernel._SPINE_COLS is a hardcoded copy of Q.COLUMNS — it has drifted. "
         "Update _SPINE_COLS in tests/test_kernel.py to match engine.neuralweb.query.COLUMNS."
+    )
+
+
+# ---------------------------------------------------------------------------
+# (20) [R-CI3 DIRECTIONAL] _stamp_personality — row before prod_asof → absent
+# ---------------------------------------------------------------------------
+
+def test_stamp_personality_directional_before_asof_absent(tmp_path):
+    """[R-CI3 DIRECTIONAL] _stamp_personality must return absent for any row whose
+    as_of is BEFORE the production snapshot's as_of (signed gap < 0).
+
+    Pre-fix behaviour: Pass B used min/max(d0,d1) so the absolute gap for a row
+    3 calendar days before prod_asof was |gap|=2 trading days → passed the ≤5
+    window → returned snapshot_not_pit (PIT leak).
+    Post-fix: np.busday_count(prod_date, row_date) < 0 → out_window → absent.
+
+    This test FAILS on pre-fix code and PASSES on post-fix code.
+    """
+    # Write minimal production JSON in site/factordata/stock_personality.json
+    (tmp_path / "site" / "factordata").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "data").mkdir(exist_ok=True)
+    (tmp_path / "config").mkdir(exist_ok=True)
+
+    prod_asof = pd.Timestamp("2026-07-07").normalize()  # Monday
+    # row as_of = Friday 04-Jul = 3 calendar days / 3 business days before prod_asof
+    row_asof = pd.Timestamp("2026-07-04").normalize()
+
+    prod_json = {
+        "as_of": str(prod_asof.date()),
+        "per_ticker": {
+            "TSLA": {"arch": "volatile_growth", "chart": ["volatile_momentum_vehicle"],
+                     "micro": ["wide_spread_impact"], "modes": ["normal"]},
+        }
+    }
+    import json as _json
+    (tmp_path / "site" / "factordata" / "stock_personality.json").write_text(
+        _json.dumps(prod_json), encoding="utf-8"
+    )
+
+    # DataFrame with TSLA row whose as_of is BEFORE prod_asof
+    rows = [
+        {"symbol": "TSLA", "as_of": str(row_asof.date()),
+         "signal_id": "spine:tsla:21", "engine": "us_board",
+         "ledger": "spine", "personality_basis": None,
+         "chart_primary": None, "micro_primary": None},
+    ]
+    df = pd.DataFrame(rows)
+    stamped = Q._stamp_personality(df.copy(), root=tmp_path)
+
+    basis = stamped[stamped["symbol"] == "TSLA"]["personality_basis"].iloc[0]
+    assert basis == "absent", (
+        f"[R-CI3 DIRECTIONAL FAIL] TSLA as_of {row_asof.date()} (BEFORE prod_asof "
+        f"{prod_asof.date()}) got personality_basis={basis!r} instead of 'absent'. "
+        f"Pre-fix code used abs() gap and leaked the snapshot backwards into history."
     )

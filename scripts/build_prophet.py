@@ -173,6 +173,264 @@ def _initialize_ledger() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Ledger advancement (nightly is the SOLE advancer)
+# ---------------------------------------------------------------------------
+
+def _load_closed_ids() -> set[str]:
+    """Return plan IDs that already have a ledger row (idempotency guard).
+
+    Lines beginning with '#' are header comments (skipped).
+    """
+    closed: set[str] = set()
+    if not LEDGER_PATH.exists():
+        return closed
+    for line in LEDGER_PATH.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        try:
+            row = json.loads(line)
+            plan_id = row.get("id")
+            if plan_id:
+                closed.add(plan_id)
+        except Exception:
+            pass
+    return closed
+
+
+def _append_ledger_row(row: dict) -> None:
+    """Append one JSON row to ledger.jsonl (non-atomic; nightly-only caller)."""
+    LEDGER_DIR.mkdir(parents=True, exist_ok=True)
+    with LEDGER_PATH.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row, allow_nan=False, default=str) + "\n")
+
+
+def _determine_outcome(
+    plan: dict,
+    price_history_pit: "pd.DataFrame",
+    asof: str,
+) -> tuple[str | None, float | None, float | None, int | None]:
+    """Check whether a plan has hit a close trigger as of asof.
+
+    Returns (outcome, stock_result_pct, option_result_pct, days_held) or
+    (None, None, None, None) when the plan is still open.
+
+    Close triggers (in priority order):
+      1. INVALIDATED   — any close <= invalidation (BULL) after signal_date
+      2. T2_HIT        — any close >= T2 after signal_date
+      3. T1_HIT        — any close >= T1 after signal_date (and T2 not yet hit)
+      4. EXPIRED       — days since signal_date >= horizon_days
+
+    DESIGN (first-trigger-closes): the loop breaks on the FIRST trigger hit and
+    records that outcome permanently.  A plan that touches T1 then later T2 is
+    recorded as T1_HIT only.  T2_HIT fires only when the price clears T2 without
+    a prior close >= T1 (i.e., a gap day that skips T1).  This is intentional:
+    the ledger records first-observable-close outcomes, not eventual maximum reach.
+    Ledger consumers must not read T2_HIT frequency as "ever reached T2" — it
+    reflects "cleared T2 in a single close without a prior T1 close."
+
+    PIT correctness: `after = price_history_pit[index > sig_ts]` uses strict
+    greater-than so the signal day's own close is excluded (plan was not live yet).
+    If the PIT frame ends before signal_date + horizon_days, the plan stays open
+    indefinitely — this is correct behaviour, not a missed-expiry bug.
+
+    Stock result = (close_price_on_close_date / entry - 1) * 100 (%).
+    Option result = null (premium-mark data not available in this pipeline).
+
+    OURS (nightly-only; PIT-safe): we scan daily closes on the price_history_pit
+    frame (already filtered to <= asof by the caller).  The first day a close
+    crosses a trigger is the close_date for that trigger.  This is conservative
+    (may miss intraday crosses) and documented here as a display-tier limitation.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    direction = plan.get("direction", "BULL")
+    entry = plan.get("entry")
+    invalidation = plan.get("invalidation")
+    targets = plan.get("targets", [])
+    t1 = targets[0] if len(targets) > 0 else None
+    t2 = targets[1] if len(targets) > 1 else None
+    horizon_days = plan.get("horizon_days", 45)
+    signal_date_str = plan.get("signal_date") or plan.get("_signal_date")
+
+    if entry is None or signal_date_str is None:
+        return None, None, None, None
+
+    try:
+        sig_ts = pd.Timestamp(signal_date_str)
+    except Exception:
+        return None, None, None, None
+
+    # Filter to rows strictly AFTER signal_date (the plan wasn't live yet)
+    after = price_history_pit[price_history_pit.index > sig_ts]
+    if after.empty:
+        return None, None, None, None
+
+    close_col = None
+    for col in ["close", "Close", "adj_close", "Adj Close"]:
+        if col in after.columns:
+            close_col = col
+            break
+    if close_col is None:
+        return None, None, None, None
+
+    closes = after[close_col].dropna()
+    if closes.empty:
+        return None, None, None, None
+
+    # Scan chronologically for first trigger hit
+    close_date_str: str | None = None
+    outcome: str | None = None
+    close_price: float | None = None
+
+    for ts, px in closes.items():
+        px = float(px)
+        days = (ts - sig_ts).days
+
+        if direction == "BULL":
+            if invalidation is not None and px <= invalidation:
+                outcome = "INVALIDATED"
+                close_date_str = ts.date().isoformat()
+                close_price = px
+                break
+            if t2 is not None and px >= t2:
+                outcome = "T2_HIT"
+                close_date_str = ts.date().isoformat()
+                close_price = px
+                break
+            if t1 is not None and px >= t1:
+                outcome = "T1_HIT"
+                close_date_str = ts.date().isoformat()
+                close_price = px
+                break
+        else:  # BEAR
+            if invalidation is not None and px >= invalidation:
+                outcome = "INVALIDATED"
+                close_date_str = ts.date().isoformat()
+                close_price = px
+                break
+            if t2 is not None and px <= t2:
+                outcome = "T2_HIT"
+                close_date_str = ts.date().isoformat()
+                close_price = px
+                break
+            if t1 is not None and px <= t1:
+                outcome = "T1_HIT"
+                close_date_str = ts.date().isoformat()
+                close_price = px
+                break
+
+        if days >= horizon_days:
+            outcome = "EXPIRED"
+            close_date_str = ts.date().isoformat()
+            close_price = px
+            break
+
+    if outcome is None:
+        return None, None, None, None
+
+    # Stock result (signed %)
+    stock_result_pct: float | None = None
+    if close_price is not None and entry and entry > 0:
+        raw = (close_price / entry - 1.0) * 100.0
+        stock_result_pct = round(raw, 4)
+
+    # Option result: not computable from EOD chain snapshots in this pipeline
+    option_result_pct: float | None = None
+
+    # Days held
+    days_held: int | None = None
+    if close_date_str:
+        try:
+            days_held = (date.fromisoformat(close_date_str) - sig_ts.date()).days
+        except Exception:
+            pass
+
+    return outcome, stock_result_pct, option_result_pct, days_held
+
+
+def advance_ledger(
+    all_plans: dict[str, dict],
+    asof: str,
+) -> list[dict]:
+    """Evaluate every plan for close triggers and append ledger rows for newly-closed plans.
+
+    Idempotent: plans already recorded in the ledger (by ID) are skipped.
+    Nightly is the SOLE caller of this function (enforced by the call site in main()).
+
+    Returns list of newly-appended rows (for logging / tests).
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    closed_ids = _load_closed_ids()
+    new_rows: list[dict] = []
+
+    for plan_id, plan in all_plans.items():
+        if plan_id in closed_ids:
+            continue  # idempotency: already in ledger
+
+        ticker = plan.get("asset", "")
+        ph = _load_price_history_for_management(ticker)
+        if ph is None:
+            continue
+
+        # PIT filter
+        asof_ts = pd.Timestamp(asof)
+        ph_pit = ph[ph.index <= asof_ts]
+        if ph_pit.empty:
+            continue
+
+        outcome, stock_result_pct, option_result_pct, days_held = _determine_outcome(
+            plan, ph_pit, asof
+        )
+        if outcome is None:
+            continue  # plan still open
+
+        # Determine close_date from the plan signal_date + days_held
+        signal_date_str = plan.get("signal_date") or plan.get("_signal_date")
+        close_date_str: str | None = None
+        if signal_date_str and days_held is not None:
+            try:
+                from datetime import timedelta  # noqa: PLC0415
+                close_date = date.fromisoformat(signal_date_str) + timedelta(days=days_held)
+                close_date_str = close_date.isoformat()
+            except Exception:
+                close_date_str = asof
+
+        row: dict = {
+            "schema": "prophet.ledger/v1",
+            "id": plan_id,
+            "asset": plan.get("asset"),
+            "direction": plan.get("direction"),
+            "signal_date": signal_date_str,
+            "close_date": close_date_str,
+            "outcome": outcome,
+            "stock_result_pct": stock_result_pct,
+            "option_result_pct": option_result_pct,
+            "days_held": days_held,
+            "plan_adherence": (
+                f"nightly-auto: outcome={outcome} asset={plan.get('asset')} "
+                f"entry={plan.get('entry')} inval={plan.get('invalidation')} "
+                f"T1={plan.get('targets', [None])[0] if plan.get('targets') else None}"
+            ),
+            "asof": asof,
+        }
+        _append_ledger_row(row)
+        new_rows.append(row)
+        log.info(
+            "build_prophet: ledger close → %s outcome=%s stock_result=%.2f%% days=%s",
+            plan_id, outcome, stock_result_pct or 0.0, days_held,
+        )
+
+    if new_rows:
+        log.info("build_prophet: advanced ledger — %d new rows", len(new_rows))
+    else:
+        log.info("build_prophet: ledger advancement: no plans closed this run")
+
+    return new_rows
+
+
+# ---------------------------------------------------------------------------
 # Existing plan loader
 # ---------------------------------------------------------------------------
 
@@ -316,6 +574,31 @@ def main() -> None:
         _write_json(PLANS_DIR / f"{plan_id}.json", plan)
         _write_json(STATES_DIR / f"{plan_id}.json", state)
 
+        # Rebuild what_to_do_now and profit_plan with the phase resolved by the
+        # management engine (phase may differ from what originate_plans stored).
+        # Thesis is already in the plan dict if originated by new code; leave it
+        # as-is for pre-existing plans that lack it.
+        from engine.prophet_bridge import (  # noqa: PLC0415
+            _build_what_to_do_now,
+            _build_profit_plan,
+        )
+        resolved_phase = state.get("phase") or plan.get("phase", "pre_trigger")
+        t1 = plan["targets"][0] if plan.get("targets") else None
+        t2 = plan["targets"][1] if plan.get("targets") and len(plan["targets"]) > 1 else None
+        what_to_do_now = _build_what_to_do_now(
+            phase=resolved_phase,
+            entry=plan.get("entry"),
+            trigger=plan.get("trigger"),
+            invalidation=plan.get("invalidation"),
+            t1=t1,
+            t2=t2,
+        )
+        profit_plan = _build_profit_plan(
+            phase=resolved_phase,
+            entry=plan.get("entry"),
+            t1=t1,
+            t2=t2,
+        )
         active_entries.append({
             "id": plan_id,
             "asset": plan.get("asset"),
@@ -328,10 +611,22 @@ def main() -> None:
             "_r_unit": plan.get("_r_unit"),
             "_conviction_score": plan.get("_conviction_score"),
             "_signal_date": plan.get("_signal_date"),
-            "phase": state.get("phase"),
+            "phase": resolved_phase,
             "management_confidence": state.get("management_confidence"),
             "recommended_action": state.get("recommended_action"),
+            # ── Content blocks (W2 — deterministic, no LLM) ───────────────────
+            "what_to_do_now": what_to_do_now,
+            "profit_plan": profit_plan,
+            "thesis": plan.get("thesis") or "",  # originated by prophet_bridge.py
         })
+
+    # ── 3b. Advance ledger (nightly-only — idempotent close-event writer) ────────
+    # Must run AFTER all plans + price histories have been processed so we have
+    # a complete all_plans dict.  Nightly is the SOLE caller of advance_ledger().
+    try:
+        advance_ledger(all_plans, asof)
+    except Exception as e:
+        log.warning("build_prophet: ledger advancement failed (non-fatal): %s", e)
 
     # ── 4. Write index.json ───────────────────────────────────────────────────
     # Sort for determinism: conviction desc, then plan id asc (same-inputs-same-output).

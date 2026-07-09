@@ -1,0 +1,599 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{#
+  CN Pick Lab — A-share candidate pick engine evaluation (display_only, ACCRUING).
+  Spec: research/CHINA_PICK_LAB_MASTERPLAN_BY_FABLE.md §7.
+  Data: site/labdata/china_pick_lab.json (built nightly in asia-close lane).
+  Authority: display_only (CNPL-R1). No Long-Hold tab (CNPL-R10).
+  Ruler: 21-session CSI 300 excess (CNPL-R3). T+1 fill (CNPL-R4).
+  The word "validated" never appears (CI-guarded).
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>CN Pick Lab — Mastermind</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.5}
+  a{text-decoration:none;color:inherit}
+  .pl-wrap{max-width:1360px;margin:0 auto;padding:0 20px 70px}
+
+  /* ── page header ── */
+  .pl-hd{padding:18px 0 10px}
+  .pl-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+  .pl-title{font-size:clamp(22px,3vw,32px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+  .pl-sub{color:var(--muted);font-size:13px;max-width:88ch}
+  .pl-asof{color:var(--muted);font-size:12px;margin-top:4px}
+  .pl-back{font-size:12.5px;color:var(--link);margin-top:6px;display:inline-block}
+
+  /* ── tabs ── */
+  .pl-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 16px}
+  .tabbtn{padding:9px 18px;font:inherit;font-size:13.5px;font-weight:700;border:1.5px solid var(--line);
+    background:var(--panel);color:var(--muted);border-radius:10px;cursor:pointer;transition:.15s}
+  .tabbtn.on{background:var(--panel2,var(--panel));color:var(--text);border-color:var(--muted)}
+
+  /* ── scoreboard tab ── */
+  .sb-note{font-size:12px;color:var(--muted);margin:0 0 12px;padding:10px 13px;
+    border:1px solid var(--line);border-left:3px solid var(--link);border-radius:10px;background:var(--panel)}
+  .sb-note b{color:var(--text)}
+  .sb-skip{font-size:12px;color:var(--muted);margin:0 0 10px;padding:8px 12px;
+    border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:9px;background:var(--panel)}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.sb-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.sb-tbl th{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);
+    color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.sb-tbl td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.sb-tbl th:first-child,table.sb-tbl td:first-child{text-align:left}
+  table.sb-tbl th.l,table.sb-tbl td.l{text-align:left}
+  table.sb-tbl tr.row-random{background:color-mix(in srgb,var(--muted) 7%,transparent);border-top:2px solid var(--line)}
+  table.sb-tbl tr.row-random td{color:var(--muted);font-style:italic}
+  table.sb-tbl tr.row-inverse td.name-cell{color:var(--warn)}
+  table.sb-tbl tr.row-data-gap td.name-cell{opacity:.7}
+  .pos{color:var(--up)} .neg{color:var(--down)} .neu{color:var(--muted)}
+  .family-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;
+    border:1px solid var(--line);color:var(--muted);margin-right:4px}
+  .badge-accruing{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
+    color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+  .badge-active{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--up) 50%,var(--line));
+    color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
+  .badge-data-gap{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--muted) 40%,var(--line));
+    color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent)}
+  .sb-yardstick-label{font-size:10px;color:var(--muted);margin-left:4px}
+  .avoid-label{font-size:10px;font-weight:700;color:var(--warn);margin-left:4px}
+
+  /* ── empty state ── */
+  .pl-empty{text-align:center;padding:60px 20px 80px;color:var(--muted)}
+  .pl-empty-icon{font-size:48px;margin-bottom:14px}
+  .pl-empty h2{font-size:20px;font-weight:700;color:var(--text);margin:0 0 8px}
+  .pl-empty p{max-width:52ch;margin:0 auto;font-size:14px;line-height:1.6}
+
+  /* ── pick cards ── */
+  .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:13px;margin-top:10px}
+  .pick-card{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--panel);
+    border-left:3px solid var(--info,#4c8bf5)}
+  .pick-card.avoid-card{border-left-color:var(--down)}
+  .pick-card:hover{border-color:var(--muted);background:var(--panel2,var(--panel))}
+  .pick-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .pick-rank{font-size:11px;color:var(--muted);font-weight:600;min-width:22px}
+  .pick-tk{font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .pick-close{font-size:13px;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .pick-sector{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .pick-why{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0}
+  .why-chip{font-size:11px;padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted);background:transparent}
+  .why-chip.accent{color:var(--text);border-color:var(--muted)}
+  .why-chip.limit{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
+  .pick-feats{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .pick-feats span b{color:var(--text)}
+
+  /* ── book section header ── */
+  .book-section{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+  .book-section:first-child{border-top:none;padding-top:0;margin-top:0}
+  .book-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .book-name{font-size:16px;font-weight:750}
+  .book-sb{font-size:12px;color:var(--muted)}
+  .no-picks{font-size:13px;color:var(--muted);padding:14px 0;font-style:italic}
+  .data-gap-banner{font-size:12px;color:var(--muted);padding:9px 13px;margin-top:8px;
+    border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:9px;background:var(--panel)}
+
+  /* ── avoid book warning ── */
+  .avoid-banner{font-size:12.5px;padding:10px 13px;margin-bottom:10px;
+    border:1.5px solid color-mix(in srgb,var(--down) 50%,var(--line));
+    border-radius:10px;background:color-mix(in srgb,var(--down) 8%,var(--panel));color:var(--down)}
+  .avoid-banner b{color:var(--down)}
+
+  /* ── recent fires table ── */
+  .fires-hd{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+  table.fires-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  table.fires-tbl th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.fires-tbl td{padding:5px 8px;border-bottom:1px solid var(--line)}
+  table.fires-tbl tr:last-child td{border-bottom:none}
+
+  /* ── all-books chip selector ── */
+  .book-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .book-chip{font-size:12.5px;padding:6px 13px;border:1.5px solid var(--line);border-radius:9px;
+    background:transparent;color:var(--muted);cursor:pointer;font-weight:600;transition:.13s}
+  .book-chip.on{background:var(--panel2,var(--panel));color:var(--text);border-color:var(--muted)}
+  .book-chip .fam{font-size:10px;font-weight:700;color:var(--muted);margin-left:4px}
+  .book-chip.chip-avoid{border-color:color-mix(in srgb,var(--down) 40%,var(--line));color:var(--down)}
+
+  /* ── method tab ── */
+  .method-body{max-width:78ch;line-height:1.7}
+  .method-body h3{font-size:14.5px;font-weight:720;margin:20px 0 6px;color:var(--text)}
+  .method-body p{color:var(--muted);font-size:13.5px;margin:0 0 10px}
+  .method-body ul{color:var(--muted);font-size:13px;padding-left:18px;margin:0 0 10px}
+  .method-body ul li{margin:4px 0}
+  .method-body .law{border-left:3px solid var(--link);padding:10px 14px;
+    background:color-mix(in srgb,var(--link) 7%,var(--panel));border-radius:0 9px 9px 0;
+    margin:12px 0;font-size:13px;color:var(--muted)}
+  .method-body .law b{color:var(--text)}
+  .method-body .kill-law{border-left:3px solid var(--down);padding:10px 14px;
+    background:color-mix(in srgb,var(--down) 6%,var(--panel));border-radius:0 9px 9px 0;
+    margin:12px 0;font-size:13px;color:var(--muted)}
+  .method-body .kill-law b{color:var(--down)}
+
+  /* ── responsive ── */
+  @media(max-width:700px){
+    .pl-wrap{padding:0 12px 60px}
+    table.sb-tbl{font-size:11.5px}
+  }
+</style>
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+<div class="pl-wrap">
+
+  <!-- ── Page header ── -->
+  <div class="pl-hd">
+    <p class="pl-eyebrow">{{ t('CN Pick Lab · Display-only · ACCRUING', 'CN选股实验室 · 仅展示 · 累积中') }}</p>
+    <h1 class="pl-title">🧪 {{ t('A-Share Candidate Pick Engines', 'A股候选选股引擎') }}</h1>
+    <p class="pl-sub">{{ t('20 shadow books running on forward ledgers — measured against a random-control yardstick and the CSI 300. Ruler: 21-session CSI 300 excess (T+1 fill, hl2 proxy). All data is display-only; nothing here drives live selection or gating.', '20个影子书在前向账本上运行 — 与随机控制基准和沪深300对比衡量。标尺：21节沪深300超额（T+1入场，最高最低均价代理）。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。') }}</p>
+    {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
+    <a class="pl-back" href="china_stocks.html">← {{ t('Back to A-Share Dashboard', '返回A股看板') }}</a>
+  </div>
+
+  <!-- ── Tab buttons ── -->
+  <div class="pl-tabs" role="tablist">
+    <button class="tabbtn on" data-tab="scoreboard" role="tab">{{ t('Scoreboard', '记分板') }}</button>
+    <button class="tabbtn" data-tab="velocity" role="tab">{{ t('1D Velocity CN', '1日速度A股') }}</button>
+    <button class="tabbtn" data-tab="allbooks" role="tab">{{ t('All Books', '全部书本') }}</button>
+    <button class="tabbtn" data-tab="method" role="tab">{{ t('Method', '方法') }}</button>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- TAB 1: SCOREBOARD                                                 -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="scoreboard" style="display:block">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">🧪</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('The CN lab runs in the asia-close lane nightly. The scoreboard will appear here after the first snapshot is taken and the first picks are fired.', 'CN实验室在亚盘收市通道每晚运行。首次快照拍摄并触发第一批选择后，记分板将出现在这里。') }}</p>
+    </div>
+    {% else %}
+    {% if total_skipped_unfillable is not none %}
+    <div class="sb-skip">
+      ⚠ {{ t('Sealed-up (unfillable) fires excluded from grading this session', '本期已封涨停（不可成交）触发已从评级中排除') }}:
+      <b>{{ total_skipped_unfillable }}</b>
+      {{ t('(T+1 fill requires an open — sealed limit-up at fire close → logged but not graded per CNPL-R4)', '（T+1入场需要开盘 — 触发时封于涨停价 → 已记录但不评级，见CNPL-R4）') }}
+    </div>
+    {% endif %}
+    <div class="sb-note">
+      <b>{{ t('How to read this table:', '如何阅读此表：') }}</b>
+      {{ t('All 20 CN entry books measured against the Random Control yardstick (pinned at bottom) and CSI 300. ACCRUING = fewer than 25 fires across 3 months — do not act on these numbers yet. Store-dependent books (Block Discount, LHB Inst) show DATA GAP when the runner-local store is absent. The Chase Avoid book is an INVERSE book — expected negative excess. Do not treat Chase Avoid picks as buy signals.', '所有20本CN入场书均与随机控制基准（固定在底部）和沪深300对比。ACCRUING = 3个月内少于25次触发 — 暂不据此行动。依存数据的书（大宗折价、龙虎榜）在本地数据库缺失时显示数据缺失。追涨规避书是反向书 — 预期负超额。切勿将追涨规避选择视为买入信号。') }}
+    </div>
+    <div class="tbl-scroll">
+      <table class="sb-tbl" aria-label="CN Scoreboard">
+        <thead>
+          <tr>
+            <th class="l">{{ t('Book', '书本') }}</th>
+            <th>{{ t('Fam', '族') }}</th>
+            <th>{{ t('Status', '状态') }}</th>
+            <th>{{ t('N fires', 'N触发') }}</th>
+            <th>{{ t('Skip ↑↑', '跳过↑↑') }}</th>
+            <th>{{ t('N open', 'N开放') }}</th>
+            <th>{{ t('Dates', '日期') }}</th>
+            <th>{{ t('Mo span', '月跨') }}</th>
+            <th>{{ t('WR21 abs', 'WR21绝对') }}</th>
+            <th>{{ t('WR21 CSI exc', 'WR21沪深超额') }}</th>
+            <th>{{ t('Med exc21', '中位超额21') }}</th>
+            <th>{{ t('MFE med', 'MFE中位') }}</th>
+            <th>{{ t('MAE med', 'MAE中位') }}</th>
+            <th>{{ t('Asym', '非对称') }}</th>
+            <th>{{ t('NAV exc cum', 'NAV累积超额') }}</th>
+            <th>{{ t('Max DD', '最大回撤') }}</th>
+            <th>{{ t('vs Rand', '对比随机') }}</th>
+            <th>{{ t('vs Univ', '对比全市场') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in scoreboard %}
+          <tr class="{{ 'row-random' if row.is_random else ('row-inverse' if row.is_inverse else ('row-data-gap' if row.has_data_gap else '')) }}">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">{{ row.family }}</span>
+              <span class="l-en">{{ row.name_en }}</span>
+              <span class="l-zh">{{ row.name_zh }}</span>
+              {% if row.is_random %}<span class="sb-yardstick-label">{{ t('(yardstick)', '(基准)') }}</span>{% endif %}
+              {% if row.is_inverse %}<span class="avoid-label">{{ t('NOT BUY — AVOID', '非买入 — 规避') }}</span>{% endif %}
+              {% if row.has_data_gap %}<span class="badge-data-gap">{{ t('DATA GAP', '数据缺失') }}</span>{% endif %}
+            </td>
+            <td>{{ row.family }}</td>
+            <td>
+              {% if row.has_data_gap %}
+              <span class="badge-data-gap">
+                <span class="l-en">DATA GAP</span>
+                <span class="l-zh">数据缺失</span>
+              </span>
+              {% else %}
+              <span class="{{ row.status_badge.css }}">
+                <span class="l-en">{{ row.status_badge.label_en }}</span>
+                <span class="l-zh">{{ row.status_badge.label_zh }}</span>
+              </span>
+              {% endif %}
+            </td>
+            <td>{{ row.n_fires_fmt }}</td>
+            <td class="neu">{{ row.skipped_unfillable_fmt }}</td>
+            <td>{{ row.n_open_fmt }}</td>
+            <td>{{ row.n_dates_fmt }}</td>
+            <td>{{ row.months_span_fmt }}</td>
+            <td class="{{ 'pos' if row.wr21_abs is not none and row.wr21_abs >= 0.5 else '' }}">{{ row.wr21_abs_fmt }}</td>
+            <td class="{{ 'pos' if row.wr21_excess is not none and row.wr21_excess > 0 else ('neg' if row.wr21_excess is not none and row.wr21_excess < 0 else '') }}">{{ row.wr21_excess_fmt }}</td>
+            <td class="{{ 'pos' if row.med_excess21 is not none and row.med_excess21 > 0 else ('neg' if row.med_excess21 is not none and row.med_excess21 < 0 else '') }}">{{ row.med_excess21_fmt }}</td>
+            <td>{{ row.mfe_med_fmt }}</td>
+            <td>{{ row.mae_med_fmt }}</td>
+            <td>{{ row.asym_fmt }}</td>
+            <td class="{{ 'pos' if row.nav_excess_cum is not none and row.nav_excess_cum > 0 else ('neg' if row.nav_excess_cum is not none and row.nav_excess_cum < 0 else '') }}">{{ row.nav_excess_cum_fmt }}</td>
+            <td class="neg">{{ row.max_dd_fmt }}</td>
+            <td class="{{ 'pos' if row.vs_random_lift is not none and row.vs_random_lift > 0 else ('neg' if row.vs_random_lift is not none and row.vs_random_lift < 0 else '') }}">{{ row.vs_random_lift_fmt }}</td>
+            <td class="{{ 'pos' if row.vs_universe_lift is not none and row.vs_universe_lift > 0 else ('neg' if row.vs_universe_lift is not none and row.vs_universe_lift < 0 else '') }}">{{ row.vs_universe_lift_fmt }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 2: 1D VELOCITY CN                                             -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="velocity" style="display:none">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">⚡</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('1D velocity picks will appear here after the first nightly build completes.', '首次夜间构建完成后，1日动能选择将出现在这里。') }}</p>
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--muted);margin:0 0 16px;max-width:88ch">
+      {{ t('Family B (books 5–8) — 1D oscillator-based entry timing on the A-share tape. The hypothesis: fast-moving A-shares incorporate information in a single session faster than the 2D/3D gates can confirm. First operator read: 2026-08-20. Ruler: 21-session CSI 300 excess.', 'B族（书5–8）— 基于1日振荡器的A股入场时机。假设：快速移动的A股在单个交易日内比2D/3D门确认更快地吸收信息。第一次操作员读取：2026-08-20。标尺：21节沪深300超额。') }}
+    </p>
+
+    {% for book in velocity_books %}
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">B</span>
+          <span class="l-en">{{ book.name_en }}</span>
+          <span class="l-zh">{{ book.name_zh }}</span>
+        </span>
+        {% if book.data_gap %}
+        <span class="badge-data-gap">{{ t('DATA GAP', '数据缺失') }}</span>
+        {% elif book.sb %}
+        <span class="book-sb">
+          {{ t('N', 'N') }}={{ book.sb.n_fires_fmt }}
+          · {{ t('WR21 CSI exc', 'WR21沪深超额') }} {{ book.sb.wr21_excess_fmt }}
+          · <span class="{{ book.sb.status_badge.css }}">
+              <span class="l-en">{{ book.sb.status_badge.label_en }}</span>
+              <span class="l-zh">{{ book.sb.status_badge.label_zh }}</span>
+            </span>
+        </span>
+        {% endif %}
+      </div>
+      {% if book.data_gap %}
+      <div class="data-gap-banner">
+        <span class="l-en">Runner-local store absent — no picks today (CNPL-R9: honest no-op when store missing)</span>
+        <span class="l-zh">本地数据库缺失 — 今日无选择（CNPL-R9：数据库缺失时诚实空操作）</span>
+      </div>
+      {% elif book.picks_today %}
+      <div class="pick-grid">
+        {% for p in book.picks_today %}
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}<span class="why-chip accent">{{ chip }}</span>{% endfor %}
+            {% if p.limit_chip_en %}
+            <span class="why-chip limit">{{ p.limit_chip_en }}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% if p.features %}
+          <div class="pick-feats">
+            {% for k, v in p.features.items() %}<span><b>{{ k }}</b> {{ v }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No picks today for this book.', '今日此书无选择。') }}</p>
+      {% endif %}
+
+      {% if book.recent_fires %}
+      <p class="fires-hd">{{ t('Recent graded fires', '近期已评级触发') }}</p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th>{{ t('Ticker', '代码') }}</th>
+          <th>{{ t('Fire date', '触发日期') }}</th>
+          <th>{{ t('Fill basis', '入场基准') }}</th>
+          <th>{{ t('21d CSI exc', '21日沪深超额') }}</th>
+          <th>{{ t('Status', '状态') }}</th>
+        </tr></thead>
+        <tbody>
+          {% for f in book.recent_fires %}
+          <tr>
+            <td>{{ f.ticker }}</td>
+            <td>{{ f.fire_date }}</td>
+            <td class="neu">{{ f.fill_basis_label }}</td>
+            <td class="{{ 'pos' if f.ret21_excess is not none and f.ret21_excess > 0 else ('neg' if f.ret21_excess is not none and f.ret21_excess < 0 else '') }}">{{ f.ret21_excess_fmt }}</td>
+            <td>{{ f.matured_label }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 3: ALL BOOKS                                                  -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="allbooks" style="display:none">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">📚</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('All 20 CN entry books will appear here after the first nightly build.', '首次夜间构建后，所有20本CN入场书将出现在这里。') }}</p>
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
+      {{ t('Select a book to view today\'s picks and recently graded fires. Chase Avoid (Family D) is an INVERSE book — expected negative excess. DATA GAP = store-dependent book with no runner-local data today.', '选择一本书查看今日选择和最近评级触发。追涨规避（D族）是反向书 — 预期负超额。数据缺失 = 今日无本地数据的依存数据书。') }}
+    </p>
+    <!-- book chip selector -->
+    <div class="book-chips" id="ab-chips">
+      {% for book in all_books %}
+      <button class="book-chip {{ 'on' if loop.first else '' }}{{ ' chip-avoid' if book.is_inverse else '' }}" data-ab="{{ book.engine_id }}">
+        <span class="l-en">{{ book.name_en }}</span>
+        <span class="l-zh">{{ book.name_zh }}</span>
+        <span class="fam">{{ book.family }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <!-- per-book panels -->
+    {% for book in all_books %}
+    <div class="ab-panel" id="ab-{{ book.engine_id }}" style="display:{{ 'block' if loop.first else 'none' }}">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">{{ book.family }}</span>
+          <span class="l-en">{{ book.name_en }}</span>
+          <span class="l-zh">{{ book.name_zh }}</span>
+        </span>
+        {% if book.data_gap %}
+        <span class="badge-data-gap">{{ t('DATA GAP', '数据缺失') }}</span>
+        {% elif book.sb %}
+        <span class="book-sb">
+          {{ t('N fires', 'N触发') }}={{ book.sb.n_fires_fmt }}
+          · {{ t('WR21 CSI exc', 'WR21沪深超额') }} {{ book.sb.wr21_excess_fmt }}
+          · <span class="{{ book.sb.status_badge.css }}">
+              <span class="l-en">{{ book.sb.status_badge.label_en }}</span>
+              <span class="l-zh">{{ book.sb.status_badge.label_zh }}</span>
+            </span>
+        </span>
+        {% endif %}
+      </div>
+
+      {% if book.is_inverse %}
+      <div class="avoid-banner">
+        <b>{{ t('NOT BUY — AVOID book (INVERSE, CNPL-R7)', '非买入 — 规避书（反向，CNPL-R7）') }}</b><br>
+        <span class="l-en">Chase Avoid fires names where limit-up continuation / 5d run ≥15% flags a chase risk. Scored as avoid-accuracy: expected NEGATIVE 21-session CSI 300 excess. Do NOT treat these as buy signals.</span>
+        <span class="l-zh">追涨规避触发的是存在追高风险的个股（封于涨停板或5日涨幅≥15%）。评分为规避准确性：预期沪深300超额为负。切勿将这些视为买入信号。</span>
+      </div>
+      {% endif %}
+
+      {% if book.is_data_gap_book %}
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler: {{ book.sb.ruler if book.sb else '—' }} · Store-dependent (CNPL-R9): picks only accrue on the runner where the local data store is present.</span>
+        <span class="l-zh">标尺：{{ book.sb.ruler if book.sb else '—' }} · 依存本地数据（CNPL-R9）：仅在本地数据库存在的运行环境中累积选择。</span>
+      </p>
+      {% else %}
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        {{ t('Ruler', '标尺') }}: {{ book.sb.ruler if book.sb else '—' }}
+      </p>
+      {% endif %}
+
+      {% if book.data_gap %}
+      <div class="data-gap-banner">
+        <span class="l-en">Runner-local store absent — no picks today (CNPL-R9: honest no-op when store missing)</span>
+        <span class="l-zh">本地数据库缺失 — 今日无选择（CNPL-R9：数据库缺失时诚实空操作）</span>
+      </div>
+      {% elif book.picks_today %}
+      <div class="pick-grid">
+        {% for p in book.picks_today %}
+        <div class="pick-card{{ ' avoid-card' if book.is_inverse else '' }}">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}
+            <span class="why-chip{{ ' accent' if not book.is_inverse else '' }}">{{ chip }}</span>
+            {% endfor %}
+            {% if p.limit_chip_en %}
+            <span class="why-chip limit">{{ p.limit_chip_en }}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% if p.features %}
+          <div class="pick-feats">
+            {% for k, v in p.features.items() %}<span><b>{{ k }}</b> {{ v }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No picks today for this book.', '今日此书无选择。') }}</p>
+      {% endif %}
+
+      {% if book.recent_fires %}
+      <p class="fires-hd">{{ t('Recent graded fires', '近期已评级触发') }}</p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th>{{ t('Ticker', '代码') }}</th>
+          <th>{{ t('Fire date', '触发日期') }}</th>
+          <th>{{ t('Fill basis', '入场基准') }}</th>
+          <th>{{ t('21d CSI exc ret', '21日沪深超额回报') }}</th>
+          <th>{{ t('Status', '状态') }}</th>
+        </tr></thead>
+        <tbody>
+          {% for f in book.recent_fires %}
+          <tr>
+            <td>{{ f.ticker }}</td>
+            <td>{{ f.fire_date }}</td>
+            <td class="neu">{{ f.fill_basis_label }}</td>
+            <td class="{{ 'pos' if f.ret21_excess is not none and f.ret21_excess > 0 else ('neg' if f.ret21_excess is not none and f.ret21_excess < 0 else '') }}">{{ f.ret21_excess_fmt }}</td>
+            <td>{{ f.matured_label }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="fires-hd" style="font-style:italic">{{ t('No graded fires yet for this book.', '此书尚无已评级触发。') }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 4: METHOD                                                      -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="method" style="display:none">
+    <div class="method-body">
+      <h3>{{ t('What this CN lab measures', '本CN实验室测量什么') }}</h3>
+      <p>{{ t('20 frozen CN candidate pick engines run in parallel on forward ledgers in the asia-close lane. Each book fires picks nightly; those picks are graded when the horizon elapses. Nothing here drives live selection. The purpose is evidence accrual: let the data tell us which A-share constructions are worth a formal gauntlet.', '20个冻结CN候选选股引擎在亚盘通道的前向账本上并行运行。每本书每晚触发选择；当地平线经过时，这些选择被评级。这里没有任何内容驱动实时选股。目的是证据累积：让数据告诉我们哪些A股构造值得正式考验。') }}</p>
+
+      <h3>{{ t('Ruler (CNPL-R3)', '标尺（CNPL-R3）') }}</h3>
+      <div class="law">
+        <b>{{ t('Primary ruler: 21-session CSI 300 (510300.SS) excess — win rate + median excess. 5/10/63-session descriptive ladder also recorded. MFE/MAE over 25 sessions.', '主标尺：21节沪深300（510300.SS）超额 — 胜率+中位超额。同时记录5/10/63节描述性阶梯。25节MFE/MAE。') }}</b>
+        {{ t('Inverse book (Chase Avoid): scored as avoid-accuracy — expected negative 21-session excess.', '反向书（追涨规避）：评分为规避准确性 — 预期21节负超额。') }}
+      </div>
+
+      <h3>{{ t('Execution law (CNPL-R4)', '执行法则（CNPL-R4）') }}</h3>
+      <div class="law">
+        <b>{{ t('T+1 settlement. Fill = next-session (H+L)/2 from the raw price store (fill_basis="hl2"), falling back to close (fill_basis="close") when raw OHLC is absent.', 'T+1交割。入场 = 下一节（最高+最低）/2，来自原始价格库（fill_basis="hl2"），原始OHLC缺失时回退至收盘价（fill_basis="close"）。') }}</b>
+        {{ t('A fire that is sealed_up at fire close is logged but excluded from grading (counted in skipped_unfillable). ST/*ST names are excluded from all universes.', '触发时封于涨停价的入场已记录但不参与评级（计入skipped_unfillable）。ST/*ST个股从所有宇宙中排除。') }}
+      </div>
+
+      <h3>{{ t('CN kill laws (CN-SYS-R3, CNPL-R7)', 'CN禁止法则（CN-SYS-R3，CNPL-R7）') }}</h3>
+      <div class="kill-law">
+        <b>{{ t('NO momentum ranks. NO subsector-state gates on reversal. NO limit-up/lianban BUY conditioning. NO northbound.', '无动量排名。无反转的子行业状态门控。无涨停/连板买入条件。无北向。') }}</b>
+        {{ t('Limit data may only be used in the AVOID/veto direction. The sole limit-data book is Chase Avoid (inverse, expected negative).', '涨停数据只能用于规避/否决方向。唯一的涨停数据书是追涨规避（反向，预期为负）。') }}
+      </div>
+
+      <h3>{{ t('Store-honest books (CNPL-R9)', '数据诚实书（CNPL-R9）') }}</h3>
+      <p>{{ t('Block Discount (book 9) and LHB Institutional Seats (book 10) need runner-local stores. When the store is absent (worktree / CI runs), these books emit zero picks with a visible DATA GAP flag. They only accrue on the runner. Never fabricated.', '大宗折价（书9）和龙虎榜机构席位（书10）需要本地数据库。当数据库缺失时（工作树/CI运行），这些书返回零选择并显示数据缺失标志。仅在运行器上累积，绝不伪造。') }}</p>
+
+      <h3>{{ t('Controls (CNPL-R5)', '控制变量（CNPL-R5）') }}</h3>
+      <p>{{ t('Every book is measured against two yardsticks: (1) the CN Random Control book (12 deterministic-random liquid names, seed = sha256(engine_id+asof)), visible in the scoreboard; and (2) the universe buy-anytime base rate. Every headline number is lift over both, not raw win rate.', '每本书均与两个基准进行比较：（1）CN随机控制书（12个确定性随机流动名称，种子=sha256(engine_id+asof)），在记分板中可见；以及（2）全市场随时买入基准率。每个标题数字是相对于两者的提升，而非原始胜率。') }}</p>
+
+      <h3>{{ t('ACCRUING floor (CNPL-R4)', '累积下限（CNPL-R4）') }}</h3>
+      <div class="law">
+        <b>{{ t('No verdict language before n≥25 fires spanning ≥3 calendar months and ≥6 distinct fire dates.', '在n≥25次触发跨越≥3个日历月和≥6个不同触发日期之前，无结论语言。') }}</b>
+        {{ t('Until then, the status badge reads ACCRUING. Even past the floor, this page shows descriptive summaries only.', '在此之前，状态徽章显示ACCRUING。即使超过下限，此页面也仅显示描述性摘要。') }}
+      </div>
+
+      <h3>{{ t('No Long-Hold grid (CNPL-R10)', '无长持网格（CNPL-R10）') }}</h3>
+      <p>{{ t('CN long-hold grids are deliberately deferred: CN fundamentals coverage is thin, and no CN long-hold program exists to receive the evidence. Revisit only with its own pre-registration.', 'CN长持网格被故意推迟：CN基本面覆盖率薄弱，且目前没有CN长持项目来接收证据。仅凭其自身的预注册方可重新审视。') }}</p>
+
+      <h3>{{ t('Candidate families', '候选族') }}</h3>
+      <ul>
+        <li><b>A — {{ t('Reversion (accruing edge):', '反转（累积边缘）：') }}</b> {{ t('4 books on the flat within-sector 3m reversal construction. No confirmation/quality/reclaim gates (FALSIFIED). Conditioners are CN-native bonuses (washout/COILED/low-vol), not turn-confirmation.', '4本书基于平坦的行业内3月反转构造。无确认/质量/收复门控（已证伪）。条件是CN原生奖励（洗盘/盘绕/低波），而非转向确认。') }}</li>
+        <li><b>B — {{ t('1D Velocity CN:', '1日速度A股：') }}</b> {{ t('4 books (1D RSI-MACD + StochRSI cross-up entry timing on the fast A-share tape; phase and participation conditioning).', '4本书（在快速A股行情上的1日RSI-MACD + StochRSI交叉上穿入场时机；阶段和参与度条件）。') }}</li>
+        <li><b>C — {{ t('Structure / Flow:', '结构/资金流：') }}</b> {{ t('4 books (block discount ≤−15%, LHB inst seats ≥2, policy put, theme laggard catch-up).', '4本书（大宗折价≤−15%，龙虎榜机构席位≥2，政策托底，主题落后者补涨）。') }}</li>
+        <li><b>D — {{ t('Washout / Panic:', '洗盘/恐慌：') }}</b> {{ t('4 books (capitulation beta, QVIX panic, STAR/ChiNext 20cm timing, Chase Avoid INVERSE).', '4本书（出逃Beta，QVIX恐慌，科创/创业20cm择时，追涨规避反向）。') }}</li>
+        <li><b>E — {{ t('Defensive + Ablations + Control:', '防御+消融+控制：') }}</b> {{ t('4 books (low-vol defensive, dividend/中特估, flagship-nogate ablation, random control yardstick).', '4本书（防御低波，分红/中特估，旗舰无门消融，随机控制基准）。') }}</li>
+      </ul>
+
+      <h3>{{ t('Clocks', '时钟') }}</h3>
+      <ul>
+        <li>{{ t('2026-08-20 — first operator read: flagship-2 vs flagship-1 gap, 1D family signs, dead books pruned to v2.', '2026-08-20 — 第一次操作员读取：旗舰2与旗舰1的差距，1日族信号，死书修剪至v2。') }}</li>
+        <li>{{ t('2026-10-09 — floor-eligible verdict window (n≥25/≥3mo/≥6 dates) for high-frequency books.', '2026-10-09 — 高频书的达标评判窗口（n≥25/≥3月/≥6日期）。') }}</li>
+      </ul>
+
+      {% if method_note %}
+      <h3>{{ t('Notes from last run', '上次运行说明') }}</h3>
+      <p>{{ method_note }}</p>
+      {% endif %}
+
+      <p style="margin-top:20px;font-size:11.5px;color:var(--muted)">
+        {{ t('Authority: display_only. All rows carry authority: "display_only" per CNPL-R1.', '授权：仅展示。所有行按照CNPL-R1携带授权："display_only"。') }}
+        · {{ t('Built', '生成时间') }} {{ built }}
+      </p>
+    </div>
+  </section>
+
+</div><!-- .pl-wrap -->
+
+<!-- ── inline tab-switch JS ── -->
+<script>
+(function () {
+  'use strict';
+  /* main tab switcher */
+  var tabs = document.querySelectorAll('.pl-tabs .tabbtn');
+  var panels = document.querySelectorAll('[data-tab-panel]');
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-tab');
+      tabs.forEach(function (b) { b.classList.remove('on'); });
+      panels.forEach(function (p) { p.style.display = 'none'; });
+      btn.classList.add('on');
+      var panel = document.querySelector('[data-tab-panel="' + id + '"]');
+      if (panel) panel.style.display = 'block';
+    });
+  });
+  /* All Books chip selector */
+  var chips = document.querySelectorAll('#ab-chips .book-chip');
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var id = chip.getAttribute('data-ab');
+      chips.forEach(function (c) { c.classList.remove('on'); });
+      document.querySelectorAll('.ab-panel').forEach(function (p) { p.style.display = 'none'; });
+      chip.classList.add('on');
+      var panel = document.getElementById('ab-' + id);
+      if (panel) panel.style.display = 'block';
+    });
+  });
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

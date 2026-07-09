@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-06"
+updated: "2026-07-08"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -203,6 +203,64 @@ checks:
       loop (post-rebase, pre-push) — a self-heal, not a gate: the lane re-copies
       every pair from post-rebase templates/ and folds the delta into a
       follow-up "render-sync" commit.
+
+  - law_id: ui.ms_board_coherence
+    summary: >
+      Every rendered Market State board (site/macro.html + the CN/HK/CA
+      dashboards) must be single-snapshot coherent — verdict word, 0-100 score,
+      meter tick, thesis, override notes and flip line must all be derivable
+      from ONE engine/market_state.py snapshot ("Risk Radar forces Risk-off."
+      note => score <= 41 and verdict Risk-off; "Capped at Mixed" => score <= 59,
+      never Risk-on; verdict word <=> score band; thesis/flip shape <=> verdict).
+      2026-07-07 incident: render commit 5bf116a3b3 raced the 07:10
+      engine-render (7a1c30ced4); the push step's `git pull --rebase -X theirs`
+      resolved conflict regions toward the replayed stale render, stitching
+      upstream's score 56/"Mixed" beside the stale "Risk Radar forces Risk-off."
+      note — a hybrid ui.template_site_sync cannot catch (it guards plain-copy
+      assets, not rendered pages).
+    source_ref:
+      - scripts/check_ms_board_coherence.py
+      - engine/market_state.py
+      - "2026-07-07 incident (commit 5bf116a3b3 = hybrid of 7a1c30ced4 + d944f0d713)"
+    severity: hard
+    check_script: scripts/check_ms_board_coherence.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: ms-board-coherence
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+      - workflow: .github/workflows/render.yml
+        job: render
+        lane: render
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: render
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+      - workflow: .github/workflows/asia-close.yml
+        job: asia
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Parses the EN (l-en) spans only — EN/ZH share each <p> source line, so a
+        line-granular rebase stitch cannot split the pair.
+      - Factor-row tones are not checked against the verdict (a legitimately
+        mixed board carries mixed tones).
+      - Pages without an ms-verdict section are skipped (not every market ships
+        the board).
+    owner_program: engine-fix-masterplan
+    notes: >
+      Render lanes wire it twice: a pre-commit gate (restore-from-HEAD + fail
+      RED — the commit step is `if: always()`, so a plain red step would not
+      stop the push) and a post-rebase `--heal-from origin/main` inside the push
+      retry loop, which restores any incoherent page WHOLESALE from post-rebase
+      main — a coherent board at most one render old beats a stitched hybrid;
+      the next render re-lands freshness.
 
   # ── Git hygiene ────────────────────────────────────────────────────────────
 
@@ -820,6 +878,97 @@ checks:
     notes: >
       Run manually before each live-quotes worker deploy.
 
+  - law_id: ops.price_store_freshness
+    summary: >
+      The regime engine must not silently compute canonical state from a price
+      store missing the latest completed NYSE session. The gate compares the
+      last SPY daily close against lib/nyse_calendar's expected session — an
+      exchange-calendar reference with zero data dependencies, so it still fires
+      when the WHOLE nightly collection push dies and every committed store
+      agrees on the stale date (2026-07-07 incident: run 28845154707's collect
+      push died 5x pre-#1823; the engine persisted a faithful-but-stale
+      RISK_OFF the live feed carried all session).
+    source_ref:
+      - scripts/check_price_store_freshness.py
+      - lib/nyse_calendar.py
+      - "2026-07-07 incident (commits b1cd43c98f / 38dc031b11; PRs #1823 #1830)"
+    severity: warn
+    check_script: scripts/check_price_store_freshness.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: render
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Unscheduled one-off closures (mourning days, disasters) must be appended
+        to lib/nyse_calendar.ONE_OFF_CLOSURES when announced; a missing entry
+        costs a false red step + honest stale stamp — and the intraday
+        fast-path's refresh_regime_if_stale re-pulls yahoo (keyless, ~16s) and
+        logs store-behind-market on every ~30-min tick until the date is
+        listed — never a silent wrong fresh.
+      - continue-on-error by design — the engine job's if:always() philosophy
+        (a scraper failure must still produce a dashboard from cached data);
+        the teeth are the --heal yahoo re-pull in the daily lane, the
+        freshness.stale stamp engine.market_state.persist writes into the
+        canonical snapshot, and the no-regress refusal to clobber a fresher one.
+      - engine-render wiring is check-only (that lane is network-free); the
+        healing lanes are daily.yml (--heal) and the intraday fast-path's
+        refresh_regime_if_stale (calendar-aware market reference).
+    owner_program: engine-fix-masterplan
+    notes: >
+      Third leg of the stale-data defense: #1823 fixed the push (--autostash),
+      #1830 detects committed-data freezes after the fact (heartbeat), this
+      gate prevents the engine lane from persisting fresh-looking canonical
+      state off a calendar-stale store — and self-heals the daily lane.
+
+  - law_id: ops.surface_freshness
+    summary: >
+      First-class display surfaces (allocation, baskets, oracle_state,
+      sector_pulse) must not silently serve stale as_of dates. The sentinel
+      compares each artifact's as_of stamp against lib/nyse_calendar's expected
+      session and prints a ::warning:: annotation per stale surface
+      (2026-07-06→09 incident: data/allocation froze for 3 sessions inside an
+      exit-0-always sub-build while the allocation page kept rendering the old
+      leader; FTR masterplan FT-R8).
+    source_ref:
+      - scripts/check_surface_freshness.py
+      - lib/nyse_calendar.py
+      - research/FAST_TURN_TWO_SPEED_TAPE_MASTERPLAN_BY_FABLE.md
+      - "PR #2039 (FTR W0)"
+    severity: warn
+    check_script: scripts/check_surface_freshness.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: hook
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: hook
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Invoked from inside scripts/build_baskets.py main() (the build_allocation
+        hook pattern — no dedicated workflow step; PAT lacks workflow scope),
+        so wiring is lane:hook via the workflows that run build_baskets.
+      - >-
+        Warn-only by design (exit 0 always) — a stale surface must not block the
+        rest of the site build; the teeth are the "::warning::" annotation plus
+        the site/allocationdata/freshness.json stale stamp that W3 renders as a
+        visible STALE chip.
+    owner_program: fast-turn
+    notes: >
+      FT-R8 freshness contract, first leg: build_allocation snapshot write was
+      unbundled from the alerts try/except (candidate structural cause) and the
+      wrapper now annotates failures; this sentinel catches whatever class of
+      freeze comes next, on every surface it audits.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry
@@ -1091,3 +1240,35 @@ checks:
     notes: >
       W1 wires this into pr_ci and upgrades severity to hard (upgrade needs no
       ruling; downgrades do).
+
+  - law_id: ops.nw_health_escalation
+    summary: >
+      Persistent Neural Web degradation must escalate to a visible ops push:
+      >=3 consecutive degraded nightly runs (streak keyed on run date, NOT the
+      data-vintage as_of, which freezes when upstream data is stale) fires a
+      maintenance-language alert through the W6b push spine (nw_health lane).
+      Born from the 5-night silent cortex outage 2026-07-04..09.
+    source_ref:
+      - scripts/check_nw_health_escalation.py
+      - "PR #2012 (M3 organ; NW review sweep 2026-07-09)"
+    severity: warn
+    check_script: scripts/check_nw_health_escalation.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      Nightly ops organ, fail-open by design; functional coverage provided by
+      tests/test_nw_health_escalation.py (streak math incl. frozen-as_of
+      pathology, adjacency guard, lane single-writer, verb blacklist).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Detects persistent degradation only (>=3 nights); single-night failures
+        remain ::warning-only by design (fail-open law RUL-LIVE3).
+      - Reads the engine-phase health core; same-night cortex status arrives
+        via cortex_source=previous_run, so cortex-only outages fire on night 4
+        at the latest rather than night 3.
+    owner_program: neural-web
+    notes: null

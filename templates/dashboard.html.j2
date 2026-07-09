@@ -571,13 +571,32 @@
                  color: var(--muted); border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
                  border-radius: 0; }
   .nb-more-btn:hover { color: var(--ink); }
-  /* expander container — collapsed at rest, revealed when .nb-open is on the card */
+  /* Per-card detail — anchored dropdown POPOVER (was an inline expand-in-place).
+     At rest the content is DOM-present but hidden (contract: server-rendered-but-collapsed).
+     When the card is open, .nb-more becomes a FIXED floating panel whose top/left the toggle
+     JS computes from the button rect (flip-up / clamp-to-edge). position:fixed is deliberate:
+     it escapes the card's overflow:hidden clip AND the hover-transform containing-block trap. */
   .nb-more { display: none; margin-top: 4px; }
-  .nbcard.nb-open .nb-more { display: contents; }
-  /* on mobile, expanded card breaks out to full grid width */
-  @media (max-width:680px) {
-    .nbcard.nb-open { grid-column: 1 / -1; overflow: visible; }
+  .nbcard.nb-open { transform: none; }   /* kill hover lift so fixed coords stay viewport-true */
+  .nbcard.nb-open .nb-more {
+    display: block; margin: 0; position: fixed; z-index: 200;
+    width: min(360px, calc(100vw - 20px));
+    max-height: min(72vh, 560px); overflow-y: auto; overscroll-behavior: contain;
+    padding: 12px 13px 13px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.10), 0 18px 46px -12px rgba(0,0,0,.55),
+                0 0 0 1px color-mix(in srgb, var(--link) 12%, transparent);
+    animation: nbMorePop .13s ease-out;
   }
+  @keyframes nbMorePop { from { opacity: 0; transform: translateY(-7px) scale(.985); }
+                         to   { opacity: 1; transform: translateY(0) scale(1); } }
+  /* sticky close (×), pinned to the popover's top-right even while its body scrolls */
+  .nb-more-x { position: sticky; top: -2px; float: right; z-index: 1;
+               margin: -4px -5px 2px 8px; width: 26px; height: 26px;
+               display: flex; align-items: center; justify-content: center;
+               border: none; border-radius: 7px; background: var(--panel); color: var(--muted);
+               font-size: 18px; line-height: 1; cursor: pointer; }
+  .nb-more-x:hover { color: var(--text); background: color-mix(in srgb, var(--line) 55%, transparent); }
   .nbcard.nb-up { border-left-color: var(--up); }
   .nbcard.nb-down { border-left-color: var(--down); }
   .nbcard.nb-caution { border-left-color: var(--warn); }
@@ -947,6 +966,9 @@
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W1.5 board-level suppressed-today note */
   .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
+  /* W4 stock-personality slim chips (expander only, guardrail 16) */
+  .nb-sp-chart{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
+  .nb-sp-mode{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 30%,transparent)}
   /* B4 Conviction Delta — "What changed today" collapsed strip */
   .nb-delta-strip{margin:5px 0 3px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);font-size:11px}
   .nb-delta-hdr{cursor:pointer;padding:5px 11px;display:flex;align-items:center;gap:8px;user-select:none;list-style:none;color:var(--muted);font-weight:600}
@@ -1431,7 +1453,9 @@
       </span>{% endif %}
     </div>
     <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
-      <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a></p>
+      <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a>
+      &nbsp;·&nbsp;
+      <a href="us_stocks_lab.html" style="color:var(--link);font-weight:600">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
   </div>
   {% endif %}
 
@@ -1847,6 +1871,61 @@
       </section>
       {% endif %}
 
+    {# ── Sector-flip confirmation lens (Policy-Shock W1-C) ──
+       Descriptive read of the last violent sector flip and historical base rates.
+       Gated on flip_confirmation.last_event existing; never fatal, never scored. #}
+    {% if flip_confirmation and flip_confirmation.last_event %}
+    {% set FC = flip_confirmation %}
+    {% set FEV = FC.last_event %}
+    {% set _fdir_en = 'defensive' if FEV.direction == 'defensive' else 'offense' %}
+    {% set _fdir_zh = '防御' if FEV.direction == 'defensive' else '进攻' %}
+    {% set _fvc = 'var(--up)' if FEV.verdict == 'CONFIRMED' else ('var(--down)' if FEV.verdict == 'FADED' else 'var(--muted)') %}
+    {% set _fvc_none = 'var(--muted)' %}
+    {% set _fv_en = FEV.verdict if FEV.verdict else 'Pending' %}
+    {% set _fv_zh = {'CONFIRMED':'已确认','FADED':'已消退','MIXED':'混合','Pending':'待定'}.get(_fv_en, _fv_en) %}
+    <section class="ms-flip" id="flip-confirmation">
+      <style>
+      #flip-confirmation{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px 13px;margin-top:10px}
+      #flip-confirmation .flip-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+      #flip-confirmation .flip-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+      #flip-confirmation .flip-asof{font-size:11px}
+      #flip-confirmation .flip-event{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;font-size:13px}
+      #flip-confirmation .flip-date{font-weight:700}
+      #flip-confirmation .flip-dir{font-weight:600}
+      #flip-confirmation .flip-z{font-size:12px}
+      #flip-confirmation .flip-verdict{font-weight:700}
+      #flip-confirmation .flip-rates{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-top:7px;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 40%,transparent);font-size:12px}
+      #flip-confirmation .flip-rate-label{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)}
+      #flip-confirmation .flip-stat{font-weight:600}
+      #flip-confirmation .flip-stat.up{color:var(--up)}
+      #flip-confirmation .flip-stat.down{color:var(--down)}
+      </style>
+      <div class="flip-head">
+        <span class="flip-label">{{ t('Sector-flip confirmation','板块翻转确认') }}</span>
+        {{ help('A violent one-day sector-leadership flip is when the defensive composite (XLP/XLU/XLV) vs offense composite (SMH/XLK) daily spread exceeds |z| ≥ 2.5 vs trailing 252d. The next day\'s tape reads CONFIRMED (same direction), FADED (reversed), or MIXED. Descriptive only — describes what the tape did, never recommends a trade. Base rates since 2024 answer the chase-or-fade question with data.', '当防御复合体（XLP/XLU/XLV）对进攻复合体（SMH/XLK）的单日收益差超过 |z| ≥ 2.5（相对于252日历史）时触发板块翻转。次日表现读作：已确认（同向）、已消退（反向）或混合。纯描述性 — 描述实际走势，从不推荐操作。2024年以来的基率用数据回答"追入还是淡出"的问题。') }}
+        <span class="flip-asof muted">· {{ t('as of', '截至') }} {{ FC.asof }}</span>
+      </div>
+      <div class="flip-body">
+        <div class="flip-event">
+          <span class="flip-date">{{ FEV.event_date }}</span>
+          <span class="flip-dir">{{ t(_fdir_en, _fdir_zh) }}</span>
+          <span class="flip-z muted">z={{ FEV.z }}</span>
+          <span class="flip-verdict" style="color:{{ _fvc if FEV.verdict else _fvc_none }}">{{ t(_fv_en, _fv_zh) }}</span>
+        </div>
+        {% if FC.base_rates %}
+        {% set BR = FC.base_rates %}
+        <div class="flip-rates">
+          <span class="flip-rate-label">{{ t('2024→ base rates (descriptive)','2024→ 基率（描述性）') }}</span>
+          <span class="flip-stat">{{ BR.n_events }} {{ t('flips','次翻转') }}</span>
+          <span class="flip-stat up">{{ BR.confirmed }} {{ t('confirmed','确认') }}</span>
+          <span class="flip-stat down">{{ BR.faded }} {{ t('faded','消退') }}</span>
+          {% if BR.mixed %}<span class="flip-stat muted">{{ BR.mixed }} {{ t('mixed','混合') }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
     <div class="ms-divider">{{ t('Macro backdrop — the growth × inflation regime','宏观背景 — 增长 × 通胀周期') }}</div>
     {% endif %}{# /market_state #}
 
@@ -2090,6 +2169,171 @@
   </div>
 
 
+  {# ===================== POLICY-LEVER ARMED/QUIET CARD (Policy-Shock W2-F) =====================
+     Display-only conditions context — not a signal, not a forecast.
+     PS-R1: card copy never reads or attributes intent; the canonical framing line
+     ("not intent, not timing") is the REQUIRED disclaimer and is exempt (PS-A3).
+     PS-R3: reads policy_lever.json (site artifact); never feeds scoring.
+     PS-R4: no probabilities anywhere in this block.
+     Jinja missing-key gotcha guard: every nested access uses the 'defined' test or
+     dict.get() notation ('d.key is defined') before accessing — NEVER 'if d.key is not none'
+     on a potentially MISSING key (crashes with UndefinedError).
+  #}
+  {% if policy_lever is defined and policy_lever %}
+  {% set PL = policy_lever %}
+  {% set _pl_state = PL.get('state') or 'QUIET' %}
+  {% set _pl_state_color = 'var(--down)' if _pl_state == 'ARMED' else ('var(--orange)' if _pl_state == 'ELEVATED' else 'var(--muted)') %}
+  <div class="panel span12" id="policy-lever-card" style="border-top:3px solid {{ _pl_state_color }};padding:16px 20px 18px">
+    <style>
+    #policy-lever-card{background:var(--panel)}
+    #policy-lever-card h2{margin:0 0 6px;font-size:15px;font-weight:700}
+    #policy-lever-card .pl-state-chip{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:.04em;background:{{ _pl_state_color }};color:#fff;margin-right:8px}
+    #policy-lever-card .pl-section{margin:10px 0 4px;font-size:13px}
+    #policy-lever-card .pl-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-right:6px}
+    #policy-lever-card .pl-framing{font-size:11.5px;color:var(--muted);margin:4px 0 10px;font-style:italic}
+    #policy-lever-card .pl-lever-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+    #policy-lever-card .pl-lever-table th{font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:3px 8px 3px 0;text-align:left;border-bottom:1px solid var(--line)}
+    #policy-lever-card .pl-lever-table td{padding:5px 8px 5px 0;vertical-align:top;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
+    #policy-lever-card .pl-arm-chip{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid}
+    #policy-lever-card .arm-true{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down);border-color:var(--down)}
+    #policy-lever-card .arm-false{background:var(--panel2);color:var(--muted);border-color:var(--line)}
+    #policy-lever-card .pl-sub{font-size:11px;color:var(--muted);margin-top:2px}
+    #policy-lever-card .pl-jaw-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;font-size:12.5px}
+    #policy-lever-card .pl-jaw-item b{color:var(--text)}
+    #policy-lever-card .pl-cal-row{font-size:12.5px;margin-top:6px}
+    @media(max-width:600px){ #policy-lever-card .pl-lever-table th:nth-child(3), #policy-lever-card .pl-lever-table td:nth-child(3){display:none} }
+    </style>
+
+    <h2>
+      <span class="pl-state-chip"><span class="l-en">{{ _pl_state }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_state, _pl_state) }}</span></span>
+      <span class="l-en">Policy-Lever Conditions</span><span class="l-zh">政策杠杆条件监测</span>
+      {{ help("Conditions that make violent overnight reversals more likely — not a forecast, not a signal. ARMED = semis drawdown deep (≤−15%) AND an oil technical curl; ELEVATED = one of the two; QUIET = neither. Display-only context (Policy-Shock W2-F). Drawdown and arming are descriptive; no probabilities.", "使剧烈隔夜反转更可能发生的条件 — 不是预测，不是信号。触发=半导体回撤深（≤−15%）且石油技术卷曲；警戒=两者之一；平静=均无。仅供展示（政策冲击 W2-F）。回撤和触发均为描述性指标，不含概率。") }}
+    </h2>
+    {% if PL.get('framing') %}
+    <div class="pl-framing"><span class="l-en">{{ PL.framing }}</span><span class="l-zh">{{ PL.get('framing_zh') or '' }}</span></div>
+    {% endif %}
+
+    {# Favored complex drawdown #}
+    {% if PL.get('favored_complex') is defined %}
+    {% set FC = PL.get('favored_complex') or {} %}
+    <div class="pl-section">
+      <span class="pl-label"><span class="l-en">Favored complex</span><span class="l-zh">偏好板块</span></span>
+      {% if FC.get('drawdown_pct') is not none %}
+        <b>{{ FC.get('basket', [])|join('/') }}</b>
+        <span style="color:{{ 'var(--down)' if (FC.drawdown_pct is defined and FC.drawdown_pct <= -15) else 'var(--text)' }}">
+          {{ '%+.1f'|format(FC.drawdown_pct) }}%
+        </span>
+        {% if FC.get('drawdown_z') is not none %}
+          <span class="muted" style="font-size:11.5px">(z {{ '%+.1f'|format(FC.drawdown_z) }})</span>
+        {% endif %}
+        <span style="font-size:11px;color:var(--muted);margin-left:4px">{{ t('from 120d peak','距120日高点') }}</span>
+      {% else %}
+        <span class="muted">{{ t('unavailable','不可用') }}</span>
+      {% endif %}
+    </div>
+    {% if FC.get('note') %}
+    <div class="pl-sub"><span class="l-en">{{ FC.note }}</span><span class="l-zh">{{ FC.get('note_zh') or FC.note }}</span></div>
+    {% endif %}
+    {% if FC.get('basket_caveat') %}
+    <div class="pl-sub" style="color:var(--orange);margin-top:3px">
+      <span class="l-en">⚠ {{ FC.basket_caveat }}</span>
+      <span class="l-zh">⚠ {{ FC.get('basket_caveat_zh') or FC.basket_caveat }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {# Lever table #}
+    {% if PL.get('levers') %}
+    <table class="pl-lever-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Lever</span><span class="l-zh">杠杆</span></th>
+          <th><span class="l-en">Arming</span><span class="l-zh">触发状态</span></th>
+          <th><span class="l-en">Context</span><span class="l-zh">背景</span></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for lv in PL.levers %}
+      {% set _arm = lv.get('arming') %}
+      <tr>
+        <td style="font-weight:600;min-width:110px">
+          <span class="l-en">{{ lv.get('name') or '' }}</span><span class="l-zh">{{ lv.get('name_zh') or lv.get('name') or '' }}</span>
+          {% if lv.get('asset') %}<br><span class="muted" style="font-size:11px">{{ lv.asset }}</span>{% endif %}
+        </td>
+        <td style="min-width:120px">
+          {% if _arm is not none %}
+            {% set _is_armed = _arm.get('armed') %}
+            <span class="pl-arm-chip {{ 'arm-true' if _is_armed else 'arm-false' }}">
+              <span class="l-en">{{ 'ARMED' if _is_armed else 'quiet' }}</span>
+              <span class="l-zh">{{ '已触发' if _is_armed else '平静' }}</span>
+            </span>
+            <div class="pl-sub" style="margin-top:3px">
+              {% if _arm.get('basing') %}<span style="color:var(--up)">● basing</span>{% endif %}
+              {% if _arm.get('stoch_curl') %}<span style="color:var(--up)">● stoch↑</span>{% endif %}
+              {% if _arm.get('macd_curl') %}<span style="color:var(--up)">● macd↑</span>{% endif %}
+              {% if _arm.get('days_in_base') is not none and _arm.days_in_base > 0 %}
+                <span>{{ _arm.days_in_base }}d</span>
+              {% endif %}
+              {% if _arm.get('flatness') is not none %}
+                <span title="flatness gate (v1.1)">flat={{ '%+.1f'|format(_arm.flatness * 100) }}%</span>
+              {% endif %}
+            </div>
+          {% else %}
+            <span class="pl-arm-chip arm-false"><span class="l-en">n/a</span><span class="l-zh">不适用</span></span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="l-en">{{ lv.get('watch') or '' }}</span>
+          <span class="l-zh">{{ lv.get('watch_zh') or lv.get('watch') or '' }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# Jawboning row #}
+    {% if PL.get('jawboning') is defined %}
+    {% set JW = PL.get('jawboning') or {} %}
+    <div class="pl-jaw-row">
+      <span class="pl-jaw-item">
+        <span class="pl-label"><span class="l-en">Jawboning</span><span class="l-zh">政策发声</span></span>
+        {% if JW.get('n_7d') is not none %}
+          <b>{{ JW.n_7d }}</b> <span class="muted">{{ t('alerts 7d','条警报（7日）') }}</span>
+          &nbsp;·&nbsp;
+          <b>{{ JW.n_30d }}</b> <span class="muted">{{ t('30d','30日') }}</span>
+        {% else %}
+          <span class="muted">{{ t('unavailable','不可用') }}</span>
+        {% endif %}
+      </span>
+      {% if JW.get('last_alert_summary') %}
+      <span class="pl-jaw-item" style="flex:1;min-width:200px">
+        <span class="pl-label">{{ t('Last','最近') }}</span>
+        <span class="l-en muted">{{ JW.last_alert_summary }}</span>
+        <span class="l-zh muted">{{ JW.get('last_alert_summary_zh') or JW.last_alert_summary }}</span>
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# Calendar row #}
+    {% if PL.get('calendar') is defined %}
+    {% set CAL = PL.get('calendar') or {} %}
+    <div class="pl-cal-row muted">
+      <span class="pl-label"><span class="l-en">Calendar</span><span class="l-zh">日历</span></span>
+      <span class="l-en">{{ CAL.get('context_note') or '' }}</span>
+      <span class="l-zh">{{ CAL.get('context_note_zh') or CAL.get('context_note') or '' }}</span>
+    </div>
+    {% endif %}
+
+    <div class="pl-sub" style="margin-top:8px">
+      <span class="l-en">Display-only conditions context — Policy-Shock program W2-F. As of {{ PL.get('as_of') or '' }}.</span>
+      <span class="l-zh">仅供展示的条件背景 — 政策冲击项目 W2-F。截至{{ PL.get('as_of') or '' }}。</span>
+    </div>
+  </div>
+  {% endif %}{# /policy_lever #}
+
+
   {# Combined "Regime — now & where it's headed": the current-regime HMM probability and the
      base-effect forward path, merged into one scorecard (were two near-identical panels). #}
   {% set be_note_en = 'Growth is point-in-time back to 1997; inflation uses latest-revision data until the core-CPI/PCE vintages backfill.' %}
@@ -2107,21 +2351,81 @@
      — identical to sector_central.html.j2:670. #}
   {% if mode != 'stocks' %}
   <style id="rr-css">
+  /* ---- Release Radar MRI-R24: card+modal redesign ---- */
   #release-radar{padding:16px 20px 18px}
   #release-radar h2{margin:0 0 4px;font-size:15px;font-weight:700}
   #release-radar .rr-subline{font-size:11.5px;color:var(--muted);margin-bottom:14px}
-  #release-radar .rr-grid{display:flex;flex-wrap:wrap;gap:14px}
-  .rr-card{flex:1 1 320px;min-width:280px;max-width:520px;background:var(--panel2);
-    border:1px solid var(--line);border-radius:10px;padding:12px 15px;position:relative}
-  .rr-card-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
-  .rr-card-name{font-size:14px;font-weight:700}
-  .rr-card-period{font-size:11.5px;color:var(--muted)}
-  .rr-countdown{font-size:11px;font-variant-numeric:tabular-nums;padding:1px 7px;
-    border-radius:4px;background:var(--panel);border:1px solid var(--line)}
-  .rr-proj-row{margin:8px 0 4px}
-  .rr-proj-label{font-size:10.5px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.08em;color:var(--muted);margin-bottom:3px}
-  .rr-point{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+  #release-radar .rr-grid{display:flex;flex-wrap:wrap;gap:12px}
+  /* Compact card — click to expand modal */
+  .rr-card{flex:1 1 220px;min-width:200px;max-width:340px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    position:relative;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .rr-card:hover{border-color:var(--accent,var(--up));
+    box-shadow:0 2px 8px color-mix(in srgb,var(--text) 8%,transparent)}
+  .rr-card-head{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+  .rr-card-name{font-size:13.5px;font-weight:700}
+  .rr-card-period{font-size:10.5px;color:var(--muted)}
+  .rr-countdown{font-size:10.5px;font-variant-numeric:tabular-nums;padding:1px 6px;
+    border-radius:4px;background:var(--panel);border:1px solid var(--line);margin-left:auto}
+  .rr-proj-row{margin:6px 0 4px}
+  .rr-proj-label{font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);margin-bottom:2px}
+  .rr-point{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+  .rr-chips-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 4px}
+  /* Expectation chip (expectation_read.tag) */
+  .rr-exp{display:inline-flex;align-items:center;padding:2px 8px;
+    border-radius:12px;font-size:10.5px;font-weight:600}
+  .rr-exp-above{background:color-mix(in srgb,var(--down) 15%,transparent);
+    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
+  .rr-exp-below{background:color-mix(in srgb,var(--up) 15%,transparent);
+    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+  .rr-exp-aligned{background:color-mix(in srgb,var(--muted) 20%,transparent);
+    color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
+  /* Trend skew chip (surprise_skew.tag) */
+  .rr-skew{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;
+    border-radius:12px;font-size:10.5px;font-weight:600}
+  .rr-skew-hot{background:color-mix(in srgb,var(--down) 18%,transparent);
+    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
+  .rr-skew-cool{background:color-mix(in srgb,var(--up) 18%,transparent);
+    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+  .rr-skew-inline{background:color-mix(in srgb,var(--warn) 18%,transparent);
+    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+  /* Coverage chip */
+  .rr-cov{display:inline-flex;align-items:center;padding:2px 7px;
+    border-radius:4px;font-size:9.5px;font-weight:600}
+  .rr-cov-fresh{background:color-mix(in srgb,var(--up) 15%,transparent);
+    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+  .rr-cov-partial{background:color-mix(in srgb,var(--warn) 15%,transparent);
+    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+  .rr-cov-stale{background:color-mix(in srgb,var(--down) 15%,transparent);
+    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
+  .rr-cov-prior{background:color-mix(in srgb,var(--muted) 15%,transparent);
+    color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
+  .rr-card-conf{font-size:10px;color:var(--muted);margin-top:4px}
+  .rr-card-conf b{color:var(--text)}
+  .rr-card-do-note{font-size:9px;color:var(--muted);font-style:italic;margin-top:5px;line-height:1.4}
+  .rr-card-tap{font-size:9.5px;color:var(--muted);margin-top:5px;text-align:right}
+  /* benchmark-only note on card */
+  .rr-bmo-note{font-size:11.5px;color:var(--muted);font-style:italic}
+  /* no-data note on card */
+  .rr-nodata-note{font-size:11px;color:var(--muted);font-style:italic;padding:4px 0}
+  /* ---- Modal overlay ---- */
+  .rr-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);
+    z-index:9900;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px}
+  .rr-modal-overlay.open{display:flex}
+  .rr-modal{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    width:100%;max-width:600px;padding:20px 22px;position:relative;
+    box-shadow:0 8px 32px rgba(0,0,0,.28)}
+  .rr-modal-close{position:absolute;top:12px;right:14px;background:none;border:none;
+    font-size:18px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 6px}
+  .rr-modal-close:hover{color:var(--text)}
+  .rr-modal-title{font-size:16px;font-weight:700;margin:0 0 2px;padding-right:28px}
+  .rr-modal-sub{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  .rr-modal-section{margin:10px 0}
+  .rr-modal-section-label{font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.09em;color:var(--muted);margin-bottom:5px;padding-bottom:3px;
+    border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+  /* interval cone bar (reused in modal) */
   .rr-interval-bar{position:relative;height:8px;border-radius:4px;
     background:var(--panel);border:1px solid var(--line);margin:4px 0 2px;overflow:visible}
   .rr-interval-fill{position:absolute;top:0;bottom:0;border-radius:3px;
@@ -2130,9 +2434,8 @@
     background:var(--text);border-radius:1px}
   .rr-interval-labels{display:flex;justify-content:space-between;
     font-size:9.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-  .rr-meta-row{display:flex;flex-wrap:wrap;gap:5px 12px;
-    font-size:11px;color:var(--muted);margin:5px 0}
-  .rr-bench{margin:8px 0 6px;padding:8px 10px;background:var(--panel);
+  /* benchmark strip (reused in modal) */
+  .rr-bench{margin:6px 0 5px;padding:8px 10px;background:var(--panel);
     border:1px solid var(--line);border-radius:7px}
   .rr-bench-label{font-size:10px;font-weight:700;text-transform:uppercase;
     letter-spacing:.1em;color:var(--muted);margin-bottom:5px}
@@ -2140,15 +2443,9 @@
     font-size:11.5px;font-variant-numeric:tabular-nums;padding:2px 0}
   .rr-bench-name{color:var(--muted)}
   .rr-bench-val{font-weight:600}
-  .rr-skew{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;
-    border-radius:12px;font-size:11.5px;font-weight:600;margin:4px 0}
-  .rr-skew-hot{background:color-mix(in srgb,var(--down) 18%,transparent);
-    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
-  .rr-skew-cool{background:color-mix(in srgb,var(--up) 18%,transparent);
-    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
-  .rr-skew-inline{background:color-mix(in srgb,var(--warn) 18%,transparent);
-    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
-  .rr-policy{margin:8px 0 4px;font-size:11px;display:flex;flex-wrap:wrap;gap:4px 10px}
+  .rr-meta-row{display:flex;flex-wrap:wrap;gap:5px 12px;
+    font-size:11px;color:var(--muted);margin:5px 0}
+  .rr-policy{margin:6px 0 4px;font-size:11px;display:flex;flex-wrap:wrap;gap:4px 10px}
   .rr-policy-item{color:var(--muted)}
   .rr-policy-item b{color:var(--text);font-weight:600}
   .rr-scoreboard{margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
@@ -2165,6 +2462,81 @@
   .rr-asof{font-size:10px;color:var(--muted);margin-top:10px}
   .rr-footer{font-size:10px;color:var(--muted);margin-top:12px;
     padding-top:8px;border-top:1px solid var(--line);line-height:1.5}
+  /* component breakdown bar */
+  .rr-comp-section{margin:8px 0 4px}
+  .rr-comp-label{font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+  .rr-comp-rows{display:flex;flex-direction:column;gap:3px}
+  .rr-comp-row{display:flex;align-items:center;gap:5px;font-size:10.5px}
+  .rr-comp-name{width:130px;flex-shrink:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rr-comp-bar-wrap{flex:1;position:relative;height:8px;border-radius:3px;
+    background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .rr-comp-bar-fill-pos{position:absolute;top:0;bottom:0;left:50%;
+    background:color-mix(in srgb,var(--down) 55%,transparent);border-radius:0 2px 2px 0}
+  .rr-comp-bar-fill-neg{position:absolute;top:0;bottom:0;right:50%;
+    background:color-mix(in srgb,var(--up) 55%,transparent);border-radius:2px 0 0 2px}
+  .rr-comp-val{width:48px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;
+    font-size:10px;color:var(--text)}
+  .rr-comp-muted{color:var(--muted);font-style:italic}
+  /* confidence composition bar */
+  .rr-conf-section{margin:6px 0 4px}
+  .rr-conf-bar-wrap{display:flex;height:7px;border-radius:4px;overflow:hidden;
+    border:1px solid var(--line)}
+  .rr-conf-seg-known{background:color-mix(in srgb,var(--up) 70%,transparent)}
+  .rr-conf-seg-proxy{background:color-mix(in srgb,var(--warn) 65%,transparent)}
+  .rr-conf-seg-residual{background:color-mix(in srgb,var(--muted) 40%,transparent)}
+  .rr-conf-legend{display:flex;gap:10px;margin-top:3px;font-size:9.5px;color:var(--muted)}
+  .rr-conf-leg-dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:2px;vertical-align:middle}
+  /* market-implied row */
+  .rr-mkt-row{display:flex;align-items:center;gap:8px;
+    font-size:11px;padding:3px 0;border-top:1px dashed var(--line);margin-top:4px}
+  .rr-mkt-label{color:var(--muted)}
+  .rr-mkt-val{font-weight:600;font-variant-numeric:tabular-nums}
+  .rr-mkt-source{font-size:9.5px;padding:1px 5px;border-radius:3px;
+    background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+  /* surprise distribution gauge */
+  .rr-sdist-wrap{display:flex;align-items:center;gap:6px;margin:4px 0}
+  .rr-sdist-bar-wrap{flex:1;display:flex;height:7px;border-radius:4px;overflow:hidden;
+    border:1px solid var(--line)}
+  .rr-sdist-hot{background:color-mix(in srgb,var(--down) 60%,transparent)}
+  .rr-sdist-inline{background:color-mix(in srgb,var(--warn) 50%,transparent)}
+  .rr-sdist-cold{background:color-mix(in srgb,var(--up) 60%,transparent)}
+  .rr-sdist-legend{display:flex;gap:7px;font-size:9.5px;color:var(--muted)}
+  /* reaction sensitivity footer */
+  .rr-sens-footer{margin-top:6px;padding-top:5px;border-top:1px solid var(--line);
+    font-size:10px;color:var(--muted);line-height:1.6}
+  .rr-sens-note{font-size:9px;color:var(--muted);font-style:italic;margin-top:1px}
+  /* revision risk (NFP) */
+  .rr-rev-risk{font-size:10.5px;color:var(--muted);margin:3px 0}
+  /* MRI-R20 quirk flag chips */
+  .rr-quirk-row{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0 2px}
+  .rr-quirk-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;
+    border-radius:4px;font-size:9.5px;line-height:1.4;
+    background:color-mix(in srgb,var(--warn) 18%,transparent);
+    border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);
+    color:var(--text)}
+  .rr-quirk-icon{font-size:10px}
+  /* MRI-R24 CPI bridge waterfall */
+  .rr-bridge-row{display:flex;align-items:center;gap:5px;font-size:10.5px;padding:1px 0}
+  .rr-bridge-name{width:130px;flex-shrink:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rr-bridge-bar-wrap{flex:1;position:relative;height:8px;border-radius:3px;
+    background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .rr-bridge-fill-pos{position:absolute;top:0;bottom:0;left:50%;
+    background:color-mix(in srgb,var(--down) 55%,transparent);border-radius:0 2px 2px 0}
+  .rr-bridge-fill-neg{position:absolute;top:0;bottom:0;right:50%;
+    background:color-mix(in srgb,var(--up) 55%,transparent);border-radius:2px 0 0 2px}
+  .rr-bridge-val{width:52px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;
+    font-size:10px;color:var(--text)}
+  .rr-bridge-prior{font-size:9px;color:var(--muted);font-style:italic}
+  /* MRI-R24 v3_factor shadow row */
+  .rr-shadow-row{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+    padding:8px 10px;margin:6px 0;font-size:11px}
+  .rr-shadow-label{font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+  .rr-shadow-warn{font-size:9.5px;color:var(--down);font-style:italic;
+    border-left:2px solid var(--down);padding-left:6px;margin-top:4px;line-height:1.4}
+  .rr-modal-do-note{font-size:9.5px;color:var(--muted);font-style:italic;
+    margin-top:12px;padding-top:8px;border-top:1px solid var(--line);line-height:1.5}
   </style>
   <div class="panel span12" id="release-radar">
     <h2>{{ t('Release Radar', '数据发布雷达') }}
@@ -2182,57 +2554,131 @@
       </div>
     </div>
   </div>
+  <!-- MRI-R24: detail modal (JS-populated) -->
+  <div class="rr-modal-overlay" id="rr-modal-overlay" role="dialog" aria-modal="true">
+    <div class="rr-modal" id="rr-modal-body">
+      <button class="rr-modal-close" id="rr-modal-close" type="button">&#215;</button>
+      <div id="rr-modal-inner"></div>
+    </div>
+  </div>
   <script>
   (function(){
     'use strict';
     var RR_EL = document.getElementById('rr-content');
+    var RR_OVERLAY = document.getElementById('rr-modal-overlay');
+    var RR_MODAL_INNER = document.getElementById('rr-modal-inner');
+    var RR_MODAL_CLOSE = document.getElementById('rr-modal-close');
 
     /* ---- helpers ---- */
     function esc(s){ return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function fmtNum(v, digits){ return (v == null || isNaN(v)) ? '—' : Number(v).toFixed(digits != null ? digits : 2); }
     function fmtPct(v){ return (v == null || isNaN(v)) ? '—' : (Number(v)*100).toFixed(0) + '%'; }
+    /* claims / nfp level formatting: values in thousands */
+    function fmtK(v){ return (v == null || isNaN(v)) ? '—' : Number(v).toFixed(0) + 'k'; }
 
-    /* release name bilingual map */
-    var RN_EN = {cpi:'CPI', nfp:'NFP Payrolls', claims:'Initial Claims', pce:'PCE', ppi:'PPI'};
-    var RN_ZH = {cpi:'消费者物价指数', nfp:'非农就业', claims:'初请失业金', pce:'PCE通胀', ppi:'生产者物价'};
-    function relName(rel){
+    /* release name bilingual map — covers all active release types */
+    var RN_EN = {
+      cpi:'CPI', nfp:'NFP Payrolls', claims:'Initial Claims',
+      pce:'PCE', ppi:'PPI', retail:'Retail Sales'
+    };
+    var RN_ZH = {
+      cpi:'消费者物价指数', nfp:'非农就业', claims:'初请失业金',
+      pce:'PCE通胀', ppi:'生产者物价', retail:'零售销售'
+    };
+    /* sub-type suffix for headline vs core vs final-demand */
+    var RT_SUFFIX_EN = {
+      cpi_headline:'(Headline)', cpi_core:'(Core)', pce_headline:'(Headline)',
+      pce_core:'(Core)', ppi_finaldemand:'(Final Demand)', nfp:'', claims:'', retail_sales:''
+    };
+    var RT_SUFFIX_ZH = {
+      cpi_headline:'(整体)', cpi_core:'(核心)', pce_headline:'(整体)',
+      pce_core:'(核心)', ppi_finaldemand:'(最终需求)', nfp:'', claims:'', retail_sales:''
+    };
+    function relName(rel, release_type){
       var k = (rel||'').toLowerCase();
-      return '<span class="l-en">'+esc(RN_EN[k]||rel)+'</span>'
-            +'<span class="l-zh">'+esc(RN_ZH[k]||rel)+'</span>';
+      var rt = (release_type||'').toLowerCase();
+      var sfxEN = RT_SUFFIX_EN[rt] || '';
+      var sfxZH = RT_SUFFIX_ZH[rt] || '';
+      return '<span class="l-en">'+esc(RN_EN[k]||rel)+(sfxEN?' '+sfxEN:'')+'</span>'
+            +'<span class="l-zh">'+esc(RN_ZH[k]||rel)+(sfxZH?' '+sfxZH:'')+'</span>';
     }
 
-    /* skew chip */
-    function skewChip(sk){
-      if (!sk || sk.sigma == null) return '';
-      var tag = (sk.tag||'').toLowerCase();
-      var cls = tag==='hotter'?'rr-skew-hot':tag==='cooler'?'rr-skew-cool':'rr-skew-inline';
-      var tagEN = tag==='hotter'?'Hotter':tag==='cooler'?'Cooler':'Inline';
-      var tagZH = tag==='hotter'?'热':tag==='cooler'?'冷':'中性';
-      var sig = fmtNum(sk.sigma,1);
-      return '<span class="rr-skew '+esc(cls)+'">'
-        +'<span class="l-en">'+esc(tagEN)+' '+sig+'σ</span>'
-        +'<span class="l-zh">'+esc(tagZH)+' '+sig+'σ</span>'
+    /* ---- MRI-R24 chip helpers ---- */
+
+    /* expectation chip (expectation_read.tag) */
+    function expectationChip(er){
+      if (!er || !er.tag) return '';
+      var tag = (er.tag||'').toLowerCase();
+      var cls, labelEN, labelZH;
+      if (tag === 'above_expectations'){
+        cls='rr-exp-above'; labelEN='above expectations'; labelZH='高于预期';
+      } else if (tag === 'below_expectations'){
+        cls='rr-exp-below'; labelEN='below expectations'; labelZH='低于预期';
+      } else {
+        cls='rr-exp-aligned'; labelEN='aligned'; labelZH='符合预期';
+      }
+      return '<span class="rr-exp '+esc(cls)+'">'
+        +'<span class="l-en">'+esc(labelEN)+'</span>'
+        +'<span class="l-zh">'+esc(labelZH)+'</span>'
         +'</span>';
     }
 
-    /* interval cone bar (inline SVG — p10 to p90, tick at point) */
+    /* trend skew chip (surprise_skew.tag) */
+    function skewChip(sk){
+      if (!sk || sk.tag == null) return '';
+      var tag = (sk.tag||'').toLowerCase();
+      if (!tag) return '';
+      var cls = tag==='hotter'?'rr-skew-hot':tag==='cooler'?'rr-skew-cool':'rr-skew-inline';
+      var tagEN = tag==='hotter'?'hotter':tag==='cooler'?'cooler':'inline';
+      var tagZH = tag==='hotter'?'偏热':tag==='cooler'?'偏冷':'持平';
+      var sig = (sk.sigma != null && !isNaN(sk.sigma)) ? ' '+fmtNum(sk.sigma,1)+'σ' : '';
+      return '<span class="rr-skew '+esc(cls)+'">'
+        +'<span class="l-en">'+esc(tagEN)+esc(sig)+'</span>'
+        +'<span class="l-zh">'+esc(tagZH)+esc(sig)+'</span>'
+        +'</span>';
+    }
+
+    /* source coverage chip (coverage_flags) */
+    function coverageChip(cf){
+      if (!cf) return '';
+      var wc = cf.weight_coverage != null ? Number(cf.weight_coverage) : 0;
+      var fp = cf.fresh_proxy_coverage != null ? Number(cf.fresh_proxy_coverage) : 0;
+      var nv = cf.non_vintaged_share != null ? Number(cf.non_vintaged_share) : 0;
+      var mm = cf.model_maturity != null ? cf.model_maturity : 0;
+      /* derive tier: fresh ≥0.85wc + ≥0.6fp; partial: wc≥0.5; stale: wc≥0.1; else prior-heavy */
+      var tier, cls;
+      if (wc >= 0.85 && fp >= 0.6){ tier='fresh'; cls='rr-cov-fresh'; }
+      else if (wc >= 0.5){ tier='partial'; cls='rr-cov-partial'; }
+      else if (wc >= 0.1){ tier='stale'; cls='rr-cov-stale'; }
+      else { tier='prior-heavy'; cls='rr-cov-prior'; }
+      var tierEN = tier==='fresh'?'fresh':tier==='partial'?'partial':tier==='stale'?'stale':'prior-heavy';
+      var tierZH = tier==='fresh'?'充分':tier==='partial'?'部分':tier==='stale'?'陈旧':'以先验为主';
+      var nStr = mm > 0 ? ' (n='+mm+' scored)' : '';
+      return '<span class="rr-cov '+esc(cls)+'">'
+        +'<span class="l-en">'+esc(tierEN)+esc(nStr)+'</span>'
+        +'<span class="l-zh">'+esc(tierZH)+(mm>0?' (n='+mm+' scored)':'')+'</span>'
+        +'</span>';
+    }
+
+    /* interval cone bar (p10–p90, tick at point) */
     function intervalBar(proj){
       if (!proj) return '';
       var p10 = proj.p10, p90 = proj.p90, pt = proj.point;
-      if (p10 == null || p90 == null || pt == null) return '';
+      if (p10 == null || p90 == null) return '';
       var span = p90 - p10;
       if (span <= 0) return '';
       var fillL = 0, fillW = 100, tickX = 50;
-      /* render as CSS bar: p25–p75 = filled; p10/p90 = range labels; tick = point */
       var p25 = proj.p25, p75 = proj.p75;
       if (p25 != null && p75 != null) {
         fillL = Math.max(0, Math.min(100, (p25-p10)/span*100));
         fillW = Math.max(0, Math.min(100, (p75-p25)/span*100));
       }
-      tickX = Math.max(0, Math.min(100, (pt-p10)/span*100));
+      /* tick at point if present, else p50, else center */
+      var tickSrc = pt != null ? pt : (proj.p50 != null ? proj.p50 : null);
+      if (tickSrc != null) tickX = Math.max(0, Math.min(100, (tickSrc-p10)/span*100));
       return '<div class="rr-interval-bar">'
         +'<div class="rr-interval-fill" style="left:'+fillL.toFixed(1)+'%;width:'+fillW.toFixed(1)+'%"></div>'
-        +'<div class="rr-interval-tick" style="left:'+tickX.toFixed(1)+'%"></div>'
+        +(tickSrc != null ? '<div class="rr-interval-tick" style="left:'+tickX.toFixed(1)+'%"></div>' : '')
         +'</div>'
         +'<div class="rr-interval-labels">'
         +'<span>p10 '+fmtNum(p10,2)+'</span>'
@@ -2243,15 +2689,20 @@
     /* benchmark strip */
     function benchStrip(bs, rel){
       if (!bs) return '';
+      var isClaims = (rel||'').toLowerCase() === 'claims';
+      var isNfp = (rel||'').toLowerCase() === 'nfp';
+      var useK = isClaims || isNfp;
       var items = [];
       if (bs.naive_prior != null)
-        items.push(['<span class="l-en">Naive prior</span><span class="l-zh">朴素先验</span>', fmtNum(bs.naive_prior,2)]);
-      if (bs.trailing_3m != null)
-        items.push(['<span class="l-en">Trailing 3m</span><span class="l-zh">近3月均值</span>', fmtNum(bs.trailing_3m,2)]);
+        items.push(['<span class="l-en">Naive prior</span><span class="l-zh">朴素先验</span>', useK ? fmtK(bs.naive_prior) : fmtNum(bs.naive_prior,2)]);
+      if (isClaims && bs.trailing_4w != null)
+        items.push(['<span class="l-en">Trailing 4w</span><span class="l-zh">近4周均值</span>', fmtK(bs.trailing_4w)]);
+      if (!isClaims && bs.trailing_3m != null)
+        items.push(['<span class="l-en">Trailing 3m</span><span class="l-zh">近3月均值</span>', useK ? fmtK(bs.trailing_3m) : fmtNum(bs.trailing_3m,2)]);
       if (bs.ar_model != null)
-        items.push(['AR model', fmtNum(bs.ar_model,2)]);
+        items.push(['AR model', useK ? fmtK(bs.ar_model) : fmtNum(bs.ar_model,2)]);
       /* Cleveland nowcast: CPI family only */
-      if ((rel||'').toLowerCase()==='cpi' && bs.cleveland_nowcast != null)
+      if (!isClaims && !isNfp && (rel||'').toLowerCase()==='cpi' && bs.cleveland_nowcast != null)
         items.push(['Cleveland nowcast', fmtNum(bs.cleveland_nowcast,2)]);
       if (!items.length) return '';
       var rows = items.map(function(r){
@@ -2311,7 +2762,6 @@
           +'</div>'
           +'</div>';
       }
-      /* group by release type for compact summary */
       var byRel = {};
       lastScored.forEach(function(row){
         var k = (row.release||'other').toLowerCase();
@@ -2333,7 +2783,7 @@
         var maeO = g.n ? (g.mae_ours/g.n).toFixed(3) : '—';
         var maeN = g.n ? (g.mae_naive/g.n).toFixed(3) : '—';
         var skhit = g.n ? (g.skew_hits/g.n*100).toFixed(0)+'%' : '—';
-        return '<tr><td>'+relName(k)+'</td><td>'+g.n+'</td>'
+        return '<tr><td>'+relName(k,'')+'</td><td>'+g.n+'</td>'
           +'<td>'+esc(maeO)+'</td><td>'+esc(maeN)+'</td><td>'+esc(skhit)+'</td></tr>';
       }).join('');
       return '<div class="rr-scoreboard">'
@@ -2342,44 +2792,531 @@
         +'</div>';
     }
 
-    /* render one upcoming card */
+    /* component breakdown bar — reads contribution_pp (cpi_bridge schema) or contrib_pp (legacy) */
+    function componentsBar(components, rel){
+      if (!Array.isArray(components) || !components.length) return '';
+      var maxAbs = 0;
+      components.forEach(function(c){
+        var v = c.contribution_pp != null ? c.contribution_pp : (c.contrib_pp != null ? c.contrib_pp : null);
+        if (v != null) maxAbs = Math.max(maxAbs, Math.abs(v));
+      });
+      if (maxAbs === 0) return '';
+      var COMP_NAME_EN = {
+        energy:'Energy', shelter:'Shelter', core_persistence:'Core persist.',
+        pipeline:'Pipeline', private:'Private', government:'Govt.',
+        'birth-death':'Birth-death', residual:'Residual',
+        energy_gasoline:'Gasoline', energy_electricity:'Electricity',
+        food_at_home:'Food@home', core_goods_pipeline:'Core goods',
+        core_services_ex_shelter:'Core svcs ex-shlt', unmodelled_residual:'Unmod. residual'
+      };
+      var COMP_NAME_ZH = {
+        energy:'能源', shelter:'住房', core_persistence:'核心持续',
+        pipeline:'管道', private:'私人', government:'政府',
+        'birth-death':'出生死亡', residual:'残差',
+        energy_gasoline:'汽油', energy_electricity:'电力',
+        food_at_home:'食品', core_goods_pipeline:'核心商品',
+        core_services_ex_shelter:'核心服务(不含住房)', unmodelled_residual:'未建模残差'
+      };
+      var rows = components.map(function(c){
+        if (!c) return '';
+        var cv = c.contribution_pp != null ? c.contribution_pp : (c.contrib_pp != null ? c.contrib_pp : null);
+        if (cv == null) return '';
+        var name = c.block || c.name || '';
+        var isResidual = name === 'residual' || name === 'birth-death' || name === 'unmodelled_residual';
+        var pct = Math.abs(cv) / maxAbs * 50;
+        var isPos = cv >= 0;
+        var nameEN = COMP_NAME_EN[name] || name;
+        var nameZH = COMP_NAME_ZH[name] || name;
+        var barFill = isPos
+          ? '<div class="rr-comp-bar-fill-pos" style="width:'+pct.toFixed(1)+'%"></div>'
+          : '<div class="rr-comp-bar-fill-neg" style="width:'+pct.toFixed(1)+'%"></div>';
+        var valStr = (cv > 0 ? '+' : '') + fmtNum(cv, 3) + 'pp';
+        var nameSpan = '<span class="rr-comp-name'+(isResidual?' rr-comp-muted':'')+'">'
+          +'<span class="l-en">'+esc(nameEN)+'</span>'
+          +'<span class="l-zh">'+esc(nameZH)+'</span>'
+          +'</span>';
+        return '<div class="rr-comp-row">'
+          +nameSpan
+          +'<div class="rr-comp-bar-wrap">'+barFill+'</div>'
+          +'<span class="rr-comp-val'+(isResidual?' rr-comp-muted':'')+'">'+esc(valStr)+'</span>'
+          +(isResidual?'<span class="rr-comp-muted" style="font-size:9px">'
+            +'<span class="l-en">(plug residual)</span>'
+            +'<span class="l-zh">(残差)</span>'
+            +'</span>':'')
+          +'</div>';
+      }).join('');
+      return '<div class="rr-comp-section">'
+        +'<div class="rr-comp-label">'
+        +'<span class="l-en">What is driving the number</span>'
+        +'<span class="l-zh">驱动因素分解</span>'
+        +'</div>'
+        +'<div class="rr-comp-rows">'+rows+'</div>'
+        +'</div>';
+    }
+
+    /* confidence composition bar — uses coverage_flags (fresh_proxy/non_vintaged) as proxy */
+    function confidenceBar(cv2, cv2comps){
+      if (cv2 == null || !cv2comps) return '';
+      var wk = cv2comps.w_known != null ? cv2comps.w_known : 0;
+      var wp = cv2comps.w_proxy != null ? cv2comps.w_proxy : 0;
+      var wr = cv2comps.w_residual != null ? cv2comps.w_residual : 0;
+      var total = wk + wp + wr;
+      if (total <= 0) return '';
+      var pK = (wk/total*100).toFixed(1), pP = (wp/total*100).toFixed(1), pR = (100 - parseFloat(pK) - parseFloat(pP)).toFixed(1);
+      return '<div class="rr-conf-section">'
+        +'<div class="rr-comp-label">'
+        +'<span class="l-en">Data quality composition</span>'
+        +'<span class="l-zh">数据质量构成</span>'
+        +'</div>'
+        +'<div class="rr-conf-bar-wrap">'
+        +'<div class="rr-conf-seg-known" style="width:'+pK+'%"></div>'
+        +'<div class="rr-conf-seg-proxy" style="width:'+pP+'%"></div>'
+        +'<div class="rr-conf-seg-residual" style="width:'+pR+'%"></div>'
+        +'</div>'
+        +'<div class="rr-conf-legend">'
+        +'<span><span class="rr-conf-leg-dot" style="background:color-mix(in srgb,var(--up) 70%,transparent)"></span>'
+        +'<span class="l-en">Known '+pK+'%</span><span class="l-zh">已知 '+pK+'%</span></span>'
+        +'<span><span class="rr-conf-leg-dot" style="background:color-mix(in srgb,var(--warn) 65%,transparent)"></span>'
+        +'<span class="l-en">Proxy '+pP+'%</span><span class="l-zh">代理 '+pP+'%</span></span>'
+        +'<span><span class="rr-conf-leg-dot" style="background:color-mix(in srgb,var(--muted) 40%,transparent)"></span>'
+        +'<span class="l-en">Residual '+pR+'%</span><span class="l-zh">残差 '+pR+'%</span></span>'
+        +'</div>'
+        +'</div>';
+    }
+
+    /* market-implied benchmark row */
+    function marketImpliedRow(mi){
+      if (!mi || mi == null) return '';
+      var src = (mi.source || '').toLowerCase();
+      var valStr = '—';
+      if (src === 'kalshi' && mi.implied_median != null)
+        valStr = fmtNum(mi.implied_median, 2);
+      else if (src === 'polymarket' && mi.implied != null)
+        valStr = String(mi.implied);
+      if (valStr === '—') return '';
+      var srcLabel = src === 'kalshi' ? 'Kalshi' : src === 'polymarket' ? 'Polymarket' : esc(mi.source||'');
+      return '<div class="rr-mkt-row">'
+        +'<span class="rr-mkt-label">'
+        +'<span class="l-en">Market-implied</span>'
+        +'<span class="l-zh">市场隐含</span>'
+        +'</span>'
+        +'<span class="rr-mkt-val">'+esc(valStr)+'</span>'
+        +'<span class="rr-mkt-source">'+esc(srcLabel)+'</span>'
+        +'</div>';
+    }
+
+    /* surprise distribution 3-segment gauge */
+    function surpriseDistGauge(sd){
+      if (!sd) return '';
+      var ph = sd.p_hot, pi = sd.p_inline, pc = sd.p_cold;
+      if (ph == null && pi == null && pc == null) return '';
+      var phPct = (ph != null ? ph : 0) * 100;
+      var piPct = (pi != null ? pi : 0) * 100;
+      var pcPct = (pc != null ? pc : 0) * 100;
+      return '<div class="rr-sdist-wrap">'
+        +'<div class="rr-sdist-bar-wrap">'
+        +'<div class="rr-sdist-hot" style="width:'+phPct.toFixed(1)+'%"></div>'
+        +'<div class="rr-sdist-inline" style="width:'+piPct.toFixed(1)+'%"></div>'
+        +'<div class="rr-sdist-cold" style="width:'+pcPct.toFixed(1)+'%"></div>'
+        +'</div>'
+        +'<div class="rr-sdist-legend">'
+        +'<span><span class="l-en">Hot '+phPct.toFixed(0)+'%</span><span class="l-zh">热 '+phPct.toFixed(0)+'%</span></span>'
+        +'<span><span class="l-en">Inline '+piPct.toFixed(0)+'%</span><span class="l-zh">中性 '+piPct.toFixed(0)+'%</span></span>'
+        +'<span><span class="l-en">Cold '+pcPct.toFixed(0)+'%</span><span class="l-zh">冷 '+pcPct.toFixed(0)+'%</span></span>'
+        +'</div>'
+        +'</div>';
+    }
+
+    /* reaction sensitivity footer */
+    function reactionSensRow(rs){
+      if (!rs) return '';
+      var h10 = rs.dgs10_h1_hot_bp, c10 = rs.dgs10_h1_cold_bp;
+      var hS = rs.spy_h1_hot_pct, cS = rs.spy_h1_cold_pct;
+      if (h10 == null && c10 == null && hS == null && cS == null) return '';
+      var n = rs.regime_cells_used != null ? rs.regime_cells_used : null;
+      var note = rs.note ? esc(rs.note) : '';
+      var hotParts = [];
+      if (h10 != null) hotParts.push('10y '+(h10>0?'+':'')+fmtNum(h10,0)+'bp');
+      if (hS != null) hotParts.push('SPY '+(hS>0?'+':'')+fmtNum(hS,2)+'%');
+      var coldParts = [];
+      if (c10 != null) coldParts.push('10y '+(c10>0?'+':'')+fmtNum(c10,0)+'bp');
+      if (cS != null) coldParts.push('SPY '+(cS>0?'+':'')+fmtNum(cS,2)+'%');
+      var hotStr = hotParts.length ? hotParts.join(', ') : '—';
+      var coldStr = coldParts.length ? coldParts.join(', ') : '—';
+      var nStr = n != null ? ' (n='+n+')' : '';
+      return '<div class="rr-sens-footer">'
+        +'<span class="l-en">Hot print historically: <b>'+esc(hotStr)+'</b> next session'+nStr+'</span>'
+        +'<span class="l-zh">历史上热数据：<b>'+esc(hotStr)+'</b>（次交易日）'+nStr+'</span>'
+        +'<br>'
+        +'<span class="l-en">Cold print historically: <b>'+esc(coldStr)+'</b> next session</span>'
+        +'<span class="l-zh">历史上冷数据：<b>'+esc(coldStr)+'</b>（次交易日）</span>'
+        +(note?'<div class="rr-sens-note">'+note+'</div>':'')
+        +'</div>';
+    }
+
+    /* revision risk line (NFP) */
+    function revisionRiskLine(rr){
+      if (!rr) return '';
+      var mk = rr.mean_k, pu = rr.pct_upward;
+      if (mk == null && pu == null) return '';
+      var mkStr = mk != null ? fmtNum(mk, 1)+'k' : '—';
+      var puStr = pu != null ? fmtNum(pu, 0)+'%' : '—';
+      return '<div class="rr-rev-risk">'
+        +'<span class="l-en">First-print revision risk: avg <b>'+esc(mkStr)+'</b>, <b>'+esc(puStr)+'</b> revised up</span>'
+        +'<span class="l-zh">首次发布修正风险：平均 <b>'+esc(mkStr)+'</b>，<b>'+esc(puStr)+'</b> 向上修正</span>'
+        +'</div>';
+    }
+
+    /* quirk flag chips */
+    function quirkChips(flags){
+      if (!Array.isArray(flags) || !flags.length) return '';
+      var chips = flags.map(function(f){
+        var en = f.en || f.code || '';
+        var zh = f.zh || f.en || f.code || '';
+        var cite = f.cite || '';
+        return '<span class="rr-quirk-chip"'
+          +(cite?' data-cite="'+esc(cite)+'"':'')+' aria-label="'+esc(cite)+'">'
+          +'<span class="rr-quirk-icon">&#9888;</span>'
+          +'<span class="l-en">'+esc(en)+'</span>'
+          +'<span class="l-zh">'+esc(zh)+'</span>'
+          +'</span>';
+      }).join('');
+      return '<div class="rr-quirk-row">'+chips+'</div>';
+    }
+
+    /* MRI-R24: CPI bridge waterfall (shadows.cpi_bridge) */
+    function cpiBridgeWaterfall(bridge){
+      if (!bridge || !Array.isArray(bridge.components) || !bridge.components.length) return '';
+      var comps = bridge.components;
+      var maxAbs = 0;
+      comps.forEach(function(c){ if (c && c.contribution_pp != null) maxAbs = Math.max(maxAbs, Math.abs(c.contribution_pp)); });
+      if (maxAbs === 0) return '';
+      var BNAME_EN = {
+        energy_gasoline:'Gasoline', energy_electricity:'Electricity', shelter:'Shelter',
+        food_at_home:'Food@home', core_goods_pipeline:'Core goods',
+        core_services_ex_shelter:'Core svcs', unmodelled_residual:'Unmod. residual'
+      };
+      var BNAME_ZH = {
+        energy_gasoline:'汽油', energy_electricity:'电力', shelter:'住房',
+        food_at_home:'食品', core_goods_pipeline:'核心商品',
+        core_services_ex_shelter:'核心服务', unmodelled_residual:'未建模残差'
+      };
+      var rows = comps.map(function(c){
+        if (!c || c.contribution_pp == null) return '';
+        var cv = c.contribution_pp;
+        var block = c.block || '';
+        var isPrior = c.prior_only === true;
+        var pct = Math.abs(cv) / maxAbs * 50;
+        var isPos = cv >= 0;
+        var nameEN = BNAME_EN[block] || block;
+        var nameZH = BNAME_ZH[block] || block;
+        var barFill = isPos
+          ? '<div class="rr-bridge-fill-pos" style="width:'+pct.toFixed(1)+'%"></div>'
+          : '<div class="rr-bridge-fill-neg" style="width:'+pct.toFixed(1)+'%"></div>';
+        var valStr = (cv > 0 ? '+' : '') + fmtNum(cv, 3) + 'pp';
+        return '<div class="rr-bridge-row">'
+          +'<span class="rr-bridge-name'+(isPrior?' rr-comp-muted':'')+'">'
+          +'<span class="l-en">'+esc(nameEN)+'</span>'
+          +'<span class="l-zh">'+esc(nameZH)+'</span>'
+          +'</span>'
+          +'<div class="rr-bridge-bar-wrap">'+barFill+'</div>'
+          +'<span class="rr-bridge-val'+(isPrior?' rr-comp-muted':'')+'">'+esc(valStr)+'</span>'
+          +(isPrior?'<span class="rr-bridge-prior">'
+            +'<span class="l-en">(prior)</span><span class="l-zh">(先验)</span>'
+            +'</span>':'')
+          +'</div>';
+      }).join('');
+      var priorShare = bridge.prior_driven_share != null ? fmtPct(bridge.prior_driven_share) : '—';
+      var covResidual = bridge.coverage_residual_pp != null ? fmtNum(bridge.coverage_residual_pp,3)+'pp' : '—';
+      return '<div class="rr-comp-section">'
+        +'<div class="rr-comp-label">'
+        +'<span class="l-en">Component-bridge waterfall</span>'
+        +'<span class="l-zh">组件桥接瀑布</span>'
+        +'</div>'
+        +'<div class="rr-comp-rows">'+rows+'</div>'
+        +'<div style="font-size:9.5px;color:var(--muted);margin-top:4px">'
+        +'<span class="l-en">Prior-driven share: <b>'+esc(priorShare)+'</b> · Coverage residual: <b>'+esc(covResidual)+'</b></span>'
+        +'<span class="l-zh">先验比重：<b>'+esc(priorShare)+'</b> · 覆盖残差：<b>'+esc(covResidual)+'</b></span>'
+        +'</div>'
+        +'</div>';
+    }
+
+    /* MRI-R24: v3_factor challenger shadow row */
+    function v3FactorRow(v3, isClaims, isNfp){
+      if (!v3) return '';
+      var useK = isClaims || isNfp;
+      var ptStr = v3.point != null ? (useK ? fmtK(v3.point) : fmtNum(v3.point,2)) : '—';
+      var warning = v3.warning || '';
+      return '<div class="rr-shadow-row">'
+        +'<div class="rr-shadow-label">'
+        +'<span class="l-en">v3_factor challenger (shadow — display-only)</span>'
+        +'<span class="l-zh">v3因子挑战者（影子模型·仅展示）</span>'
+        +'</div>'
+        +'<div style="font-size:11px;font-variant-numeric:tabular-nums">'
+        +'<span class="l-en">Point: <b>'+esc(ptStr)+'</b></span>'
+        +'<span class="l-zh">点预测：<b>'+esc(ptStr)+'</b></span>'
+        +'</div>'
+        +intervalBar(v3)
+        +(warning?'<div class="rr-shadow-warn">'+esc(warning)+'</div>':'')
+        +'</div>';
+    }
+
+    /* ---- MRI-R24: compact card ---- */
     function renderCard(item){
       var rel = item.release || '';
+      var rt = item.release_type || '';
       var proj = item.projection || {};
-      var conf = item.confidence != null ? fmtPct(item.confidence) : '—';
-      var incomp = item.input_completeness != null ? fmtPct(item.input_completeness) : '—';
-      var daysTo = item.days_to != null ? item.days_to : '—';
-      var daysLabel = '<span class="l-en">in '+esc(daysTo)+' days</span>'
-                    +'<span class="l-zh">'+esc(daysTo)+'天后</span>';
-      var ptEn = proj.point != null ? fmtNum(proj.point,2) : '—';
-      return '<div class="rr-card">'
-        /* header */
+      var isClaims = rel.toLowerCase() === 'claims';
+      var isNfp = rel.toLowerCase() === 'nfp';
+      var isRetail = rel.toLowerCase() === 'retail';
+      var useK = isClaims || isNfp;
+      var isBenchmarkOnly = proj.mode === 'benchmark_only';
+      /* no_data: retail_sales with no data or all projection intervals null */
+      var pit = item.pit || {};
+      var isNoData = isRetail && (
+        String(pit.reason||'').indexOf('no_data') !== -1 ||
+        (proj.p10 == null && proj.p90 == null)
+      );
+      var conf = (!isBenchmarkOnly && !isNoData && item.confidence != null) ? fmtPct(item.confidence) : null;
+      var daysTo = item.days_to != null ? item.days_to : null;
+      var daysLabel = daysTo != null
+        ? ('<span class="l-en">in '+esc(daysTo)+' d</span>'
+           +'<span class="l-zh">'+esc(daysTo)+'天后</span>')
+        : ('<span class="l-en">awaiting date</span><span class="l-zh">待日期</span>');
+      /* point value */
+      var ptStr = '—';
+      if (!isBenchmarkOnly && !isNoData && proj.point != null)
+        ptStr = useK ? fmtK(proj.point) : fmtNum(proj.point,2)+(rt.indexOf('nfp')===-1?'pp':'');
+      /* chips — expectation_read + surprise_skew */
+      var er = item.expectation_read;
+      var sk = item.surprise_skew;
+      var chips = '';
+      if (!isBenchmarkOnly && !isNoData){
+        chips += expectationChip(er||null);
+        chips += skewChip(sk||null);
+      }
+      /* projection label */
+      var projBlock = '';
+      if (isBenchmarkOnly){
+        projBlock = '<div class="rr-proj-row">'
+          +'<div class="rr-proj-label"><span class="l-en">Projection</span><span class="l-zh">预测</span></div>'
+          +'<span class="rr-bmo-note"><span class="l-en">Benchmark-only (§6 kill rule)</span><span class="l-zh">仅基准对比（§6规则）</span></span>'
+          +'</div>';
+      } else if (isNoData){
+        projBlock = '<div class="rr-nodata-note">'
+          +'<span class="l-en">Awaiting data — machinery ships, series not yet on disk</span>'
+          +'<span class="l-zh">待数据 — 系统就绪，序列未入库</span>'
+          +'</div>';
+      } else {
+        projBlock = '<div class="rr-proj-row">'
+          +'<div class="rr-proj-label"><span class="l-en">Our projection</span><span class="l-zh">本方预测</span></div>'
+          +'<span class="rr-point">'+esc(ptStr)+'</span>'
+          +'</div>';
+      }
+      return '<div class="rr-card" data-rr-rel="'+esc(rel)+'" data-rr-rt="'+esc(rt)+'">'
         +'<div class="rr-card-head">'
-        +'<span class="rr-card-name">'+relName(rel)+'</span>'
+        +'<span class="rr-card-name">'+relName(rel, rt)+'</span>'
         +'<span class="rr-card-period">'+esc(item.period||'')+'</span>'
         +'<span class="rr-countdown">'+daysLabel+'</span>'
         +'</div>'
-        /* release date */
-        +(item.release_date?'<div class="rr-meta-row"><span class="l-en">Release date: <b>'+esc(item.release_date)+'</b></span><span class="l-zh">发布日期：<b>'+esc(item.release_date)+'</b></span></div>':'')
-        /* projection point */
-        +'<div class="rr-proj-row">'
-        +'<div class="rr-proj-label"><span class="l-en">Our projection</span><span class="l-zh">本方预测</span></div>'
-        +'<span class="rr-point">'+esc(ptEn)+'</span>'
+        +projBlock
+        +(chips?'<div class="rr-chips-row">'+chips+'</div>':'')
+        +(conf?'<div class="rr-card-conf"><span class="l-en">Confidence: <b>'+esc(conf)+'</b></span><span class="l-zh">置信度：<b>'+esc(conf)+'</b></span></div>':'')
+        +'<div class="rr-card-do-note">'
+        +'<span class="l-en">display-only — not a signal / not consensus 非信号·非共识</span>'
+        +'<span class="l-zh">仅展示 — 非信号·非共识</span>'
         +'</div>'
-        /* interval bar */
-        +intervalBar(proj)
-        /* confidence + completeness */
-        +'<div class="rr-meta-row">'
-        +'<span><span class="l-en">Confidence: <b>'+esc(conf)+'</b></span><span class="l-zh">置信度：<b>'+esc(conf)+'</b></span></span>'
-        +'<span><span class="l-en">Input completeness: <b>'+esc(incomp)+'</b></span><span class="l-zh">输入完整度：<b>'+esc(incomp)+'</b></span></span>'
+        +'<div class="rr-card-tap">'
+        +'<span class="l-en">tap for detail ▸</span><span class="l-zh">点击查看 ▸</span>'
         +'</div>'
-        /* benchmark strip */
-        +benchStrip(item.benchmark_set, rel)
-        /* skew chip */
-        +(item.surprise_skew?'<div>'+skewChip(item.surprise_skew)+'</div>':'')
-        /* policy backdrop */
-        +policyStrip(item.policy_backdrop)
-        +'</div>';  /* end .rr-card */
+        +'</div>';
+    }
+
+    /* ---- MRI-R24: detail modal ---- */
+    function renderModal(item){
+      var rel = item.release || '';
+      var rt = item.release_type || '';
+      var proj = item.projection || {};
+      var isClaims = rel.toLowerCase() === 'claims';
+      var isNfp = rel.toLowerCase() === 'nfp';
+      var isRetail = rel.toLowerCase() === 'retail';
+      var useK = isClaims || isNfp;
+      var isBenchmarkOnly = proj.mode === 'benchmark_only';
+      var pit = item.pit || {};
+      var isNoData = isRetail && (
+        String(pit.reason||'').indexOf('no_data') !== -1 ||
+        (proj.p10 == null && proj.p90 == null)
+      );
+      var shadows = item.shadows || {};
+      var v3 = shadows.v3_factor || null;
+      var bridge = shadows.cpi_bridge || null;
+      var cf = item.coverage_flags || null;
+      var conf = item.confidence;
+      var er = item.expectation_read;
+      var sk = item.surprise_skew;
+
+      var title = relName(rel, rt);
+      var sub = (item.period||'')
+        +(item.release_date?' · '+esc(item.release_date):'')
+        +(item.days_to!=null?' · <span class="l-en">in '+item.days_to+' days</span><span class="l-zh">'+item.days_to+'天后</span>':'');
+
+      var html = '<div class="rr-modal-title">'+title+'</div>'
+        +'<div class="rr-modal-sub">'+sub+'</div>';
+
+      /* 1. Chips row (expectation + skew + coverage) */
+      if (!isBenchmarkOnly && !isNoData){
+        var chips = expectationChip(er||null) + skewChip(sk||null) + coverageChip(cf||null);
+        if (chips) html += '<div class="rr-chips-row" style="margin-bottom:10px">'+chips+'</div>';
+      }
+
+      /* 2. Interval cone */
+      if (!isBenchmarkOnly && !isNoData && proj.p10 != null){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">Projection interval (p10–p90)</span><span class="l-zh">预测区间（p10–p90）</span></div>'
+          +intervalBar(proj)
+          +'</div>';
+      }
+
+      /* 3. Benchmark strip */
+      if (item.benchmark_set){
+        html += '<div class="rr-modal-section">'+benchStrip(item.benchmark_set, rel)+'</div>';
+      }
+
+      /* 4. Component attribution — champion 4-block ridge (energy/shelter/core_persistence/pipeline).
+             DISTINCT from bridge waterfall: reads item.components ONLY (champion projection output).
+             Hidden when null/empty — does NOT fall back to bridge data (MRI-R26 rework-ui). */
+      var champComponents = (item.components && Array.isArray(item.components) && item.components.length) ? item.components : null;
+      if (!isBenchmarkOnly && !isNoData && champComponents){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">Component attribution</span><span class="l-zh">组件归因</span></div>'
+          +componentsBar(champComponents, rel)
+          +'</div>';
+      }
+
+      /* 5. CPI bridge waterfall — reads shadows.cpi_bridge.components (6-7 block waterfall:
+             gasoline/electricity/shelter/food_at_home/core_goods/core_services/unmodelled_residual).
+             DISTINCT from champion attribution above. Only rendered when cpi_bridge shadow exists. */
+      if (!isBenchmarkOnly && !isNoData && bridge){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">CPI bridge waterfall</span><span class="l-zh">CPI桥接瀑布</span></div>'
+          +cpiBridgeWaterfall(bridge)
+          +'</div>';
+      }
+
+      /* 6. Confidence composition — prefer confidence_v2 + confidence_components_v2 when present
+             (champion's own richer breakdown); fall back to pseudo-cv2 built from coverage_flags. */
+      var cv2 = item.confidence_v2 != null ? item.confidence_v2 : conf;
+      var cv2comps = item.confidence_components_v2 || null;
+      if (!isBenchmarkOnly && !isNoData && cv2 != null){
+        if (!cv2comps && cf && cf.weight_coverage > 0){
+          /* build pseudo cv2comps from coverage_flags as fallback */
+          var wc = Number(cf.weight_coverage||0);
+          var fp = Number(cf.fresh_proxy_coverage||0);
+          var nv = Number(cf.non_vintaged_share||0);
+          cv2comps = { w_known: wc*(1-nv), w_proxy: wc*nv + (1-wc)*fp, w_residual: Math.max(0,1-wc*(1-nv)-wc*nv-(1-wc)*fp) };
+        }
+        if (cv2comps){
+          html += '<div class="rr-modal-section">'
+            +'<div class="rr-modal-section-label"><span class="l-en">Confidence composition</span><span class="l-zh">置信度构成</span></div>'
+            +confidenceBar(cv2, cv2comps)
+            +'</div>';
+        }
+      }
+
+      /* 7. Surprise distribution gauge */
+      if (!isBenchmarkOnly && !isNoData && item.surprise_distribution){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">Surprise distribution</span><span class="l-zh">惊喜分布</span></div>'
+          +surpriseDistGauge(item.surprise_distribution)
+          +'</div>';
+      }
+
+      /* 8. Market-implied row */
+      if (item.benchmark_set && item.benchmark_set.market_implied){
+        var miHtml = marketImpliedRow(item.benchmark_set.market_implied);
+        if (miHtml) html += '<div class="rr-modal-section">'+miHtml+'</div>';
+      }
+
+      /* 9. Reaction sensitivity */
+      if (!isBenchmarkOnly && !isNoData && item.reaction_sensitivity){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">Reaction sensitivity</span><span class="l-zh">市场反应敏感度</span></div>'
+          +reactionSensRow(item.reaction_sensitivity)
+          +'</div>';
+      }
+
+      /* 10. Quirk chips */
+      if (item.quirk_flags && item.quirk_flags.length){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">Quirk flags</span><span class="l-zh">特殊标记</span></div>'
+          +quirkChips(item.quirk_flags)
+          +'</div>';
+      }
+
+      /* 11. NFP revision risk */
+      if (!isBenchmarkOnly && isNfp && item.revision_risk){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">Revision risk</span><span class="l-zh">修正风险</span></div>'
+          +revisionRiskLine(item.revision_risk)
+          +'</div>';
+      }
+
+      /* 12. v3_factor challenger shadow */
+      if (!isBenchmarkOnly && v3){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">v3_factor challenger shadow vs champion</span><span class="l-zh">v3因子挑战者 vs 冠军</span></div>'
+          +v3FactorRow(v3, isClaims, isNfp)
+          +'</div>';
+      }
+
+      /* 13. Policy backdrop */
+      if (item.policy_backdrop){
+        html += '<div class="rr-modal-section">'
+          +'<div class="rr-modal-section-label"><span class="l-en">Policy backdrop</span><span class="l-zh">政策背景</span></div>'
+          +policyStrip(item.policy_backdrop)
+          +'</div>';
+      }
+
+      /* display-only footnote */
+      html += '<div class="rr-modal-do-note">'
+        +'<span class="l-en">display-only — not a signal / not consensus 非信号·非共识 · model projections, not investment advice · scored forward in public</span>'
+        +'<span class="l-zh">仅展示 — 非信号·非共识 · 模型预测，非投资建议 · 正向评分公开记录</span>'
+        +'</div>';
+
+      return html;
+    }
+
+    /* ---- modal open / close ---- */
+    var _rrItems = [];
+
+    function openModal(item){
+      if (!RR_OVERLAY || !RR_MODAL_INNER) return;
+      RR_MODAL_INNER.innerHTML = renderModal(item);
+      RR_OVERLAY.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      /* apply current lang */
+      var lang = (document.documentElement.getAttribute('data-lang') || 'en');
+      RR_OVERLAY.setAttribute('data-lang', lang);
+    }
+
+    function closeModal(){
+      if (!RR_OVERLAY) return;
+      RR_OVERLAY.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    if (RR_MODAL_CLOSE) RR_MODAL_CLOSE.addEventListener('click', closeModal);
+    if (RR_OVERLAY) RR_OVERLAY.addEventListener('click', function(e){ if (e.target === RR_OVERLAY) closeModal(); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
+
+    /* sync modal lang when language is toggled */
+    var _langObserver = null;
+    if (typeof MutationObserver !== 'undefined' && RR_OVERLAY){
+      _langObserver = new MutationObserver(function(){
+        var lang = document.documentElement.getAttribute('data-lang') || 'en';
+        RR_OVERLAY.setAttribute('data-lang', lang);
+      });
+      _langObserver.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
     }
 
     /* main render */
@@ -2391,10 +3328,10 @@
           +'</div>';
         return;
       }
-      var upcoming = Array.isArray(d.upcoming) ? d.upcoming : [];
+      _rrItems = Array.isArray(d.upcoming) ? d.upcoming : [];
       var lastScored = Array.isArray(d.last_scored) ? d.last_scored : [];
       var asof = d.asof || '';
-      var cards = upcoming.length ? upcoming.map(renderCard).join('') :
+      var cards = _rrItems.length ? _rrItems.map(renderCard).join('') :
         '<div class="rr-placeholder">'
         +'<span class="l-en">No upcoming releases in the current window.</span>'
         +'<span class="l-zh">当前窗口内无即将发布的数据。</span>'
@@ -2408,6 +3345,11 @@
         + scoreboardBlock(lastScored)
         + asofLine
         + footer;
+      /* wire up card clicks */
+      var cardEls = RR_EL.querySelectorAll('.rr-card');
+      cardEls.forEach(function(el, idx){
+        el.addEventListener('click', function(){ if (_rrItems[idx]) openModal(_rrItems[idx]); });
+      });
     }
 
     /* fetch — pattern mirrors sector_central.html.j2:670 */
@@ -3122,6 +4064,13 @@
     <h2>{{ t('What to act on now', '当前可操作') }}
       {{ help('One row per GICS sector. 🏛 = the cap-weighted price-cycle timing read (descriptive structure — measured per-state stats show no state→return ordering; the drawdown path and context are the honest content). 🧩 chip = the equal-weight basket read when it disagrees with the cap-weighted cycle — different instrument: breadth vs mega-cap; both shown because they measure different things. The reduce side (trim/avoid, ✓) rides the backtested trend/deterioration drawdown-control gate — the one measured edge on this board, a risk timer not a return forecast. When that gate fires it outranks the cycle read — an extended (no-chase) sector is pulled into the reduce side rather than left on the run, so the ON THE RUN lane can be legitimately empty. ON THE RUN = in favour / extended but no clean entry — do not chase; add on pullback; hold if already long. Narrative baskets (Memory & Storage, Payments, …) are the finer-resolution rows — they carry the actual trade idea behind a blurry GICS label. ★ = in the narrative-rotation model book. Click any name for the full breakdown.', '每行对应一个 GICS 板块。🏛 = 市值加权价格周期判读（描述性结构 — 各状态的实测统计显示无状态→收益排序关系；回撤路径与情境是诚实的内容）。🧩 标签 = 等权篮子判读与市值加权周期不一致时显示 — 不同工具：广度 vs 龙头股；两者同时显示因为它们衡量不同的东西。减仓侧（止盈／回避，✓）依托经回测的趋势／恶化回撤控制门槛 — 这是本板块唯一经实测的优势，是风险计时器而非收益预测。该门槛触发时优先于周期判读——已延伸（勿追高）的板块会被移入减仓侧而非留在顺势运行栏，因此顺势运行栏可能为空，属正常现象。顺势运行 = 看好但无干净入场 — 勿追高；等回调加仓；已持有则持有。叙事篮子（内存与存储、支付等）是更精细分辨率的行 — 携带 GICS 模糊标签背后的真实交易逻辑。★ = 在叙事轮动模型组合中。点击任意名称查看完整拆解。') }}
     </h2>
+    {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
+       no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
+    {% if shock_state is defined and shock_state and shock_state.get('active') %}
+    <div style="margin:6px 0 10px;padding:8px 12px;border-radius:8px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));font-size:13px;font-weight:600">
+      ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
+    </div>
+    {% endif %}
     {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
        lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
        and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the
@@ -3455,7 +4404,7 @@
              role="button" + aria-expanded per spec §6. l-en/l-zh spans, no CJK in title=.
              HOISTED out of {% if c %}: button always present so layout is consistent. #}
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
-                  aria-label="Show details">
+                  aria-haspopup="dialog" aria-label="Show details">
             <span class="l-en">▾ details</span><span class="l-zh">▾ 详情</span>
           </button>
           {# --- Expander content (server-rendered, CSS-collapsed). All demoted elements here.
@@ -3465,7 +4414,8 @@
              Contract ruling (P2.4 §4.2, adjudicated): "server-rendered-but-collapsed" DOM-present
              satisfies contract for ext_z and 200DMA± chips (contracts.md finding #3).
              HOISTED out of {% if c %}. Inner sections that need c are wrapped in {% if c %}. #}
-          <div class="nb-more">
+          <div class="nb-more" role="dialog" aria-label="Standout detail">
+          <button type="button" class="nb-more-x" aria-label="Close details">&times;</button>
           {% if c %}
           {% set al = c.alignment %}
           {% if al and al.line %}
@@ -3608,6 +4558,78 @@
             {% endif %}
           </div>{# end .nb-dossier #}
           {% endif %}{# end if _dos #}
+          {# W4 stock-personality slim chips — expander only (guardrail 16; no at-rest surface).
+             Fail-open: n.get('personality') returns None when data absent. #}
+          {# Display-name maps — ≤3 words EN per spec; no translated text in data- attributes #}
+          {% set _SP_CHART_EN = {
+            'event_gapper': 'Event-gapper',
+            'failed_breakout_trap': 'Breakout-fade prone',
+            'mean_reversion_rubber_band': 'Mean-reversion band',
+            'smooth_compounder_grind': 'Smooth grind',
+            'stair_step_leader': 'Stair-step leader',
+            'volatile_momentum_vehicle': 'Volatile momentum',
+            'basing_accumulator': 'Basing',
+            'defensive_range_stock': 'Defensive range',
+            'mixed_chart': 'Mixed chart'
+          } %}
+          {% set _SP_CHART_ZH = {
+            'event_gapper': '事件跳空',
+            'failed_breakout_trap': '突破易回落',
+            'mean_reversion_rubber_band': '均值回归',
+            'smooth_compounder_grind': '平稳复利',
+            'stair_step_leader': '阶梯领涨',
+            'volatile_momentum_vehicle': '高波动动量',
+            'basing_accumulator': '筑底',
+            'defensive_range_stock': '防御区间',
+            'mixed_chart': '混合图形'
+          } %}
+          {% set _SP_MODE_EN = {
+            'event_override': 'Pre-earnings',
+            'forced_liquidation': 'Forced liq',
+            'squeeze': 'Squeeze',
+            'options_pin': 'Options pin',
+            'negative_gamma_trend': 'Neg-gamma',
+            'sector_rotation_feeder': 'Rotation feeder',
+            'post_news_attention': 'News spike',
+            'stale_dead_money': 'Dead money',
+            'accumulation': 'Accumulation',
+            'distribution': 'Distribution',
+            'normal': 'Normal'
+          } %}
+          {% set _SP_MODE_ZH = {
+            'event_override': '财报窗口',
+            'forced_liquidation': '被动清仓',
+            'squeeze': '逼空',
+            'options_pin': '期权钉住',
+            'negative_gamma_trend': '负Gamma',
+            'sector_rotation_feeder': '轮动传导',
+            'post_news_attention': '新闻后关注',
+            'stale_dead_money': '死钱',
+            'accumulation': '静默积累',
+            'distribution': '筹码派发',
+            'normal': '正常'
+          } %}
+          {% set _npers = n.get('personality') %}
+          {% if _npers %}
+            {% set _pc_chart = _npers.get('chart') %}
+            {% set _pc_mode = _npers.get('mode') %}
+            {% if _pc_chart or _pc_mode %}
+            <div class="nb-sp-chips" style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">
+              {% if _pc_chart %}
+              <span class="nb-sp-chart"
+                data-tip-en="Chart personality: {{ _SP_CHART_EN.get(_pc_chart, _pc_chart) }} — context only, no ranking power (R-SP13)"
+                data-tip-zh="图形个性：{{ _SP_CHART_ZH.get(_pc_chart, _pc_chart) }} — 仅供参考，不参与排名（R-SP13）"
+              ><span class="l-en">{{ _SP_CHART_EN.get(_pc_chart, _pc_chart) }}</span><span class="l-zh">{{ _SP_CHART_ZH.get(_pc_chart, _pc_chart) }}</span></span>
+              {% endif %}
+              {% if _pc_mode %}
+              <span class="nb-sp-mode"
+                data-tip-en="Current mode: {{ _SP_MODE_EN.get(_pc_mode, _pc_mode) }} — fast-layer state, context only"
+                data-tip-zh="当前模式：{{ _SP_MODE_ZH.get(_pc_mode, _pc_mode) }} — 快速层，仅供参考"
+              ><span class="l-en">{{ _SP_MODE_EN.get(_pc_mode, _pc_mode) }}</span><span class="l-zh">{{ _SP_MODE_ZH.get(_pc_mode, _pc_mode) }}</span></span>
+              {% endif %}
+            </div>
+            {% endif %}
+          {% endif %}
           </div>{# end .nb-more #}
         </div>{# end .nbcard div #}
         {% endif %}{# end if not heading #}
@@ -3705,7 +4727,7 @@
       <div class="board-outcomes" id="board-track-record" hidden>
         <div class="board-outcomes-hdr">
           <span class="board-outcomes-title">{{ t('Track record — names that recently left the buy board', '往绩 — 近期离开买入榜的标的') }}</span>
-          <span class="board-outcomes-sub">{{ t('names that left the buy board in the last 21 sessions', '21个交易日内离开买入榜的标的') }} · {{ t('as of', '截至') }} {{ _oc.get('as_of','') }}{% if _sm.get('n_running') is not none %} · <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span> · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% endif %}{% if _sm.get('n_skipped_no_price') %} · ({{ _sm.get('n_skipped_no_price') }} {{ t('names excluded: no price / delisted', '个标的被排除：无价格/已退市') }}){% endif %}</span>
+          <span class="board-outcomes-sub">{{ t('names that left the buy board in the last 21 sessions', '21个交易日内离开买入榜的标的') }} · {{ t('as of', '截至') }} {{ _oc.get('as_of','') }}{% if _sm.get('n_running') is not none %} · <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span> · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% if _sm.get('n_flat') %} · {{ _sm.get('n_flat') }} {{ t('flat', '持平') }}{% endif %}{% endif %}{% if _sm.get('n_total') and _sm.get('n_shown') and _sm.get('n_shown') < _sm.get('n_total') %} · {{ t('showing', '显示') }} {{ _sm.get('n_shown') }}/{{ _sm.get('n_total') }}{% endif %}{% if _sm.get('n_skipped_no_price') %} · ({{ _sm.get('n_skipped_no_price') }} {{ t('names excluded: no price / delisted', '个标的被排除：无价格/已退市') }}){% endif %}</span>
         </div>
         <table class="outcomes-tbl">
           <thead><tr>
@@ -3720,9 +4742,12 @@
           <tr>
             <td><a href="stock.html#{{ oc.ticker }}" style="font-weight:700;text-decoration:none">{{ oc.ticker }}</a></td>
             <td class="muted" style="font-size:10.5px">{{ td(oc.get('sector','')) }}</td>
-            <td class="muted" style="font-size:10.5px">{{ oc.get('first_surfaced','') }}</td>
-            <td class="r"><span class="oc-pct {{ 'az-up' if oc.pct_since > 0 else ('az-dn' if oc.pct_since < 0 else 'muted') }}">{{ '%+.1f'|format(oc.pct_since) }}%</span></td>
-            <td><span class="oc-dot {{ oc.get('status','flat') }}"></span></td>
+            {# data-sort keys: tablesort.js parses "2026-06-30" as parseFloat→2026 (all
+               dates tie → no sort), and the Status dot cell has no text to sort on. Give
+               both an explicit numeric key: YYYYMMDD for Surfaced, running>flat>stopped rank. #}
+            <td class="muted" style="font-size:10.5px" data-sort="{{ oc.get('first_surfaced','')|replace('-','') }}">{{ oc.get('first_surfaced','') }}</td>
+            <td class="r" data-sort="{{ oc.pct_since }}"><span class="oc-pct {{ 'az-up' if oc.pct_since > 0 else ('az-dn' if oc.pct_since < 0 else 'muted') }}">{{ '%+.1f'|format(oc.pct_since) }}%</span></td>
+            <td data-sort="{{ {'running':2,'flat':1,'stopped':0}.get(oc.get('status','flat'),1) }}"><span class="oc-dot {{ oc.get('status','flat') }}"></span></td>
           </tr>
           {% endfor %}
           </tbody>
@@ -4229,23 +5254,56 @@ window.__CHART_SWAP__ = {
 })();
 </script>
 <script>
-/* Per-card expander (.nb-more-btn toggles .nb-open on the .nbcard parent).
-   Delegated on document so it works regardless of showmore reveal order.
-   Pattern mirrors .nb-cau-btn (L3749-style: stopPropagation + tap-toggle).
-   On expand the aria-expanded is set; CSS handles the display. */
+/* Per-card detail as an ANCHORED DROPDOWN POPOVER (.nb-more-btn opens a fixed floating
+   .nb-more panel; JS positions it from the button rect and flips up / clamps to the edge —
+   mirrors the .nb-cau placePop idiom). Only one open at a time; closes on ×, outside click,
+   or Esc; repositions on scroll/resize. Delegated on document so it works regardless of
+   showmore reveal order. */
 (function(){
+  var openCard = null;
+  var LBL_OPEN  = '<span class="l-en">▴ less</span><span class="l-zh">▴ 收起</span>';
+  var LBL_SHUT  = '<span class="l-en">▾ details</span><span class="l-zh">▾ 详情</span>';
+  function closePop(){
+    if (!openCard) return;
+    openCard.classList.remove('nb-open');
+    var b = openCard.querySelector('.nb-more-btn');
+    if (b){ b.setAttribute('aria-expanded','false'); b.innerHTML = LBL_SHUT; }
+    openCard = null;
+  }
+  function place(card){
+    var pop = card.querySelector('.nb-more'), btn = card.querySelector('.nb-more-btn');
+    if (!pop || !btn) return;
+    var r = btn.getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight, m = 10;
+    var pw = pop.offsetWidth, ph = pop.offsetHeight;
+    // horizontal: align the popover's left edge under the button, clamp to viewport
+    var left = Math.min(Math.max(m, r.left), Math.max(m, vw - pw - m));
+    // vertical: drop below the button; if it would overflow, flip above; else pin near bottom
+    var top = r.bottom + 6;
+    if (top + ph > vh - m){ var above = r.top - 6 - ph; top = (above >= m) ? above : Math.max(m, vh - ph - m); }
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  }
   document.addEventListener('click', function(e){
+    if (e.target.closest && e.target.closest('.nb-more-x')){ e.preventDefault(); e.stopPropagation(); closePop(); return; }
     var btn = e.target.closest && e.target.closest('.nb-more-btn');
-    if (!btn) return;
-    e.preventDefault(); e.stopPropagation();
-    var card = btn.closest('.nbcard');
-    if (!card) return;
-    var open = card.classList.toggle('nb-open');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    btn.innerHTML = open
-      ? '<span class="l-en">▴ less</span><span class="l-zh">▴ 收起</span>'
-      : '<span class="l-en">▾ details</span><span class="l-zh">▾ 详情</span>';
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
+      var card = btn.closest('.nbcard'); if (!card) return;
+      var wasOpen = (card === openCard);
+      closePop();
+      if (!wasOpen){
+        card.classList.add('nb-open');
+        btn.setAttribute('aria-expanded','true'); btn.innerHTML = LBL_OPEN;
+        openCard = card;
+        place(card);   // .nb-more is display:block now → measurable
+      }
+      return;
+    }
+    if (openCard && !(e.target.closest && e.target.closest('.nb-more'))) closePop();
   }, true);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePop(); });
+  window.addEventListener('scroll', function(){ if (openCard) place(openCard); }, true);
+  window.addEventListener('resize', function(){ if (openCard) place(openCard); });
 })();
 
 /* Card-body delegated click handler: clicking the .nbcard div (outside the head anchor,

@@ -7,6 +7,11 @@ Covers:
   4. Tone-derivation equivalence — rebuild_cctv_tone_history produces the
      same result as calling _tone_features directly on the same data
   5. Repair flag — all-stub dates ARE re-fetched when --repair is set
+  6. _call_with_timeout — hard ceiling on hung akshare fetches (ported from
+     backfill_china_communiques, #1858); a timed-out day becomes an error
+     row WITHOUT retry
+  7. listing_title recording — stub/error rows carry real listing-page titles
+     for downstream day-level provability checks
 
 Run: .venv/bin/python -m tests.test_backfill_cctv_archive
 """
@@ -27,6 +32,8 @@ sys.path.insert(0, str(REPO_ROOT))
 from scripts.backfill_cctv_archive import (  # noqa: E402
     _already_archived,
     _all_stubs_or_error,
+    _annotate_listing_titles,
+    _call_with_timeout,
     _is_stub_row,
     _load_shard,
     _shard_path,
@@ -201,13 +208,15 @@ def test_fetch_day_tags_stub_rows() -> None:
     mock_ak = MagicMock()
     mock_ak.news_cctv.return_value = stub_frame
 
-    with patch.dict("sys.modules", {"akshare": mock_ak}):
+    with patch.dict("sys.modules", {"akshare": mock_ak}), \
+         patch("scripts.backfill_cctv_archive._fetch_listing_titles", return_value=[]):
         rows, status = fetch_day(date(2025, 1, 15))
 
     assert status == "stub"
     assert len(rows) == 1
     assert rows[0]["fetch_status"] == "stub"
     assert rows[0]["order_idx"] == 0
+    assert rows[0]["listing_title"] == ""   # listing fetch failed → blank
 
 
 def test_fetch_day_ok_items() -> None:
@@ -241,13 +250,169 @@ def test_fetch_day_exception_returns_error_row() -> None:
     mock_ak = MagicMock()
     mock_ak.news_cctv.side_effect = Exception("network timeout")
 
-    with patch.dict("sys.modules", {"akshare": mock_ak}):
+    with patch.dict("sys.modules", {"akshare": mock_ak}), \
+         patch("scripts.backfill_cctv_archive._fetch_listing_titles", return_value=[]):
         rows, status = fetch_day(date(2025, 1, 15), retries=1)
 
     assert status == "error"
     assert len(rows) == 1
     assert rows[0]["fetch_status"] == "error"
     assert "network timeout" in rows[0]["content"]
+
+
+# ---------------------------------------------------------------------------
+# 4b. _call_with_timeout — hard ceiling on hung fetches (#1858 pattern)
+# ---------------------------------------------------------------------------
+
+def test_call_with_timeout_returns_value() -> None:
+    assert _call_with_timeout(lambda x: x + 1, 5.0, 41) == 42
+
+
+def test_call_with_timeout_reraises_fn_exception() -> None:
+    def _boom() -> None:
+        raise ValueError("inner failure")
+    try:
+        _call_with_timeout(_boom, 5.0)
+    except ValueError as exc:
+        assert "inner failure" in str(exc)
+    else:
+        raise AssertionError("expected ValueError to propagate")
+
+
+def test_call_with_timeout_raises_on_hang() -> None:
+    import time as _time
+    try:
+        _call_with_timeout(_time.sleep, 0.2, 30)
+    except TimeoutError:
+        pass
+    else:
+        raise AssertionError("expected TimeoutError on hung call")
+
+
+def test_fetch_day_hang_becomes_error_row_without_retry() -> None:
+    """A hung news_cctv call must time out into an error row and NOT be retried
+    (a hung URL hangs again — 3x300s retries would stall the lane for 15 min
+    per rotten day)."""
+    import time as _time
+    calls = []
+
+    def _hanging_news_cctv(date: str) -> None:
+        calls.append(date)
+        _time.sleep(30)
+
+    mock_ak = MagicMock()
+    mock_ak.news_cctv = _hanging_news_cctv
+
+    with patch.dict("sys.modules", {"akshare": mock_ak}), \
+         patch("scripts.backfill_cctv_archive.CCTV_FETCH_TIMEOUT_S", 0.2), \
+         patch("scripts.backfill_cctv_archive._fetch_listing_titles", return_value=[]):
+        rows, status = fetch_day(date(2025, 1, 15), retries=3)
+
+    assert status == "error"
+    assert len(rows) == 1
+    assert rows[0]["fetch_status"] == "error"
+    assert "timed out" in rows[0]["content"]
+    assert len(calls) == 1   # no retry after a timeout
+
+
+# ---------------------------------------------------------------------------
+# 4c. listing_title recording on stub/error rows
+# ---------------------------------------------------------------------------
+
+def test_annotate_aligned_counts_gives_per_row_titles() -> None:
+    """Row count == listing count → every row gets its aligned real title."""
+    rows = [
+        {"fetch_status": "ok", "listing_title": ""},
+        {"fetch_status": "stub", "listing_title": ""},
+        {"fetch_status": "ok", "listing_title": ""},
+    ]
+    titles = ["联播头条：经济稳增长", "第二条：科技创新", "第三条：外交动态"]
+    with patch("scripts.backfill_cctv_archive._fetch_listing_titles", return_value=titles):
+        _annotate_listing_titles(rows, "20180115")
+    assert [r["listing_title"] for r in rows] == titles
+
+
+def test_annotate_mismatched_counts_joins_listing_on_stub_rows() -> None:
+    """Single-row whole-day stub vs multi-item listing → the stub row carries
+    the FULL joined listing; downstream can still test every real title."""
+    rows = [{"fetch_status": "stub", "listing_title": ""}]
+    titles = ["联播头条：经济稳增长", "第二条：科技创新"]
+    with patch("scripts.backfill_cctv_archive._fetch_listing_titles", return_value=titles):
+        _annotate_listing_titles(rows, "20180115")
+    assert rows[0]["listing_title"] == "联播头条：经济稳增长\n第二条：科技创新"
+
+
+def test_annotate_mismatched_counts_skips_ok_rows() -> None:
+    """On count mismatch only stub/error rows are annotated — ok rows keep
+    their real fetched titles and stay blank."""
+    rows = [
+        {"fetch_status": "ok", "listing_title": ""},
+        {"fetch_status": "error", "listing_title": ""},
+    ]
+    titles = ["a", "b", "c"]
+    with patch("scripts.backfill_cctv_archive._fetch_listing_titles", return_value=titles):
+        _annotate_listing_titles(rows, "20180115")
+    assert rows[0]["listing_title"] == ""
+    assert rows[1]["listing_title"] == "a\nb\nc"
+
+
+def test_annotate_no_stub_rows_skips_listing_fetch() -> None:
+    """All-ok days must not spend a listing request."""
+    rows = [{"fetch_status": "ok", "listing_title": ""}]
+    with patch("scripts.backfill_cctv_archive._fetch_listing_titles") as mock_fetch:
+        _annotate_listing_titles(rows, "20180115")
+    mock_fetch.assert_not_called()
+
+
+def test_fetch_day_stub_records_listing_title() -> None:
+    """End-to-end through fetch_day: a stub day with an aligned listing gets
+    the real title recorded on the stub row."""
+    stub_frame = pd.DataFrame({
+        "date": ["20180115"],
+        "title": [""],
+        "content": ["对不起，可能是网络原因或无此页面"],
+    })
+    mock_ak = MagicMock()
+    mock_ak.news_cctv.return_value = stub_frame
+
+    with patch.dict("sys.modules", {"akshare": mock_ak}), \
+         patch("scripts.backfill_cctv_archive._fetch_listing_titles",
+               return_value=["中央经济工作会议在北京举行"]):
+        rows, status = fetch_day(date(2018, 1, 15))
+
+    assert status == "stub"
+    assert rows[0]["listing_title"] == "中央经济工作会议在北京举行"
+
+
+def test_upsert_backfills_listing_title_on_legacy_shards() -> None:
+    """Old shards written before the listing_title column existed must come out
+    of an upsert with the column present and blank (not NaN)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        arc = Path(tmp)
+        dt_old = date(2019, 4, 1)
+        # Simulate a legacy shard: no listing_title column at all
+        legacy = pd.DataFrame([{
+            "date": "2019-04-01", "order_idx": 0, "title": "旧行",
+            "content": "增长", "fetch_status": "ok",
+            "fetched_at": "2019-04-02T00:00:00Z",
+        }])
+        shard = _shard_path(arc, dt_old)
+        shard.parent.mkdir(parents=True, exist_ok=True)
+        legacy.to_parquet(shard, index=False)
+
+        rows_new = [{
+            "date": "2019-04-05", "order_idx": 0, "title": "",
+            "content": "对不起", "fetch_status": "stub",
+            "fetched_at": "2026-07-08T00:00:00Z",
+            "listing_title": "真标题",
+        }]
+        _upsert_day(arc, date(2019, 4, 5), rows_new)
+
+        out = _load_shard(shard)
+        old_row = out[out["date"] == "2019-04-01"].iloc[0]
+        new_row = out[out["date"] == "2019-04-05"].iloc[0]
+        assert old_row["listing_title"] == ""
+        assert new_row["listing_title"] == "真标题"
 
 
 # ---------------------------------------------------------------------------
@@ -402,6 +567,16 @@ if __name__ == "__main__":
         test_fetch_day_ok_items,
         test_fetch_day_empty_returns_empty_list,
         test_fetch_day_exception_returns_error_row,
+        test_call_with_timeout_returns_value,
+        test_call_with_timeout_reraises_fn_exception,
+        test_call_with_timeout_raises_on_hang,
+        test_fetch_day_hang_becomes_error_row_without_retry,
+        test_annotate_aligned_counts_gives_per_row_titles,
+        test_annotate_mismatched_counts_joins_listing_on_stub_rows,
+        test_annotate_mismatched_counts_skips_ok_rows,
+        test_annotate_no_stub_rows_skips_listing_fetch,
+        test_fetch_day_stub_records_listing_title,
+        test_upsert_backfills_listing_title_on_legacy_shards,
         test_all_stubs_or_error_detection,
         test_mixed_ok_stub_not_flagged_as_all_stubs,
         test_rebuild_tone_equivalence,
