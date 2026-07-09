@@ -127,6 +127,42 @@ class TestBasketsW3Markers:
     def test_sector_pulse_json_fetch(self):
         assert "sector_pulse.json" in _src("baskets.html.j2")
 
+    def test_card_selector_uses_id_prefix_not_data_bid(self):
+        """BLOCKER fix: must use [id^="theme-"] selector (not [data-bid] which matches nothing).
+
+        baskets_desk.js renders cards as id="theme-<bid>" with no data-bid attribute.
+        Using [data-bid] produces an empty NodeList — all per-card chips silently no-op.
+        """
+        src = _src("baskets.html.j2")
+        assert '[id^="theme-"]' in src, (
+            "Card selector must be [id^='theme-'] — [data-bid] matches nothing in the DOM"
+        )
+        assert "[data-bid]" not in src, (
+            "[data-bid] selector matches nothing (baskets_desk.js emits no data-bid attrs)"
+        )
+
+    def test_t1_fade_in_tape_band_html(self):
+        """FT-R3: T+1 fade base rate must appear in the tape band HTML (not only in JS/shock banner).
+
+        The tape band footer must show the base rate as always-visible copy,
+        not only when the shock state is active. The ftr-tape-t1 div is always-rendered HTML
+        (not inside a JS string or shock-conditional block).
+        """
+        src = _src("baskets.html.j2")
+        # Search for the HTML element usage (class="ftr-tape-t1"), not the CSS rule
+        html_element_marker = 'class="ftr-tape-t1"'
+        assert html_element_marker in src, "ftr-tape-t1 HTML element must exist in tape band"
+        idx = src.find(html_element_marker)
+        tape_t1_section = src[idx : idx + 600]
+        assert "58%" in tape_t1_section, (
+            "T+1 58% fade base rate must appear in ftr-tape-t1 HTML element, not only in JS"
+        )
+
+    def test_mover_rows_use_tape_rank(self):
+        """NIT fix: mover rows must use b.tape_rank (authoritative) not synthetic n-i index."""
+        src = _src("baskets.html.j2")
+        assert "b.tape_rank" in src, "moverRow must use b.tape_rank, not n-i or bot3.length-i"
+
 
 # ── allocation.html.j2 tape panel markers ─────────────────────────────────────
 
@@ -149,6 +185,13 @@ class TestAllocationW3Markers:
     def test_basket_pulse_fetch_in_allocation(self):
         src = _src("allocation.html.j2")
         assert "basket_pulse.json" in src
+
+    def test_no_directional_lagging_verb(self):
+        """MINOR fix: 'lagging' is a directional characterization (FT-R13). Must not appear in copy."""
+        src = _src("allocation.html.j2")
+        assert "lagging live tape" not in src, (
+            "FT-R13: 'lagging' is a directional verb — replace with neutral tape-rank framing"
+        )
 
 
 # ── basket_detail.html.j2 live strip + W8 anatomy markers ─────────────────────

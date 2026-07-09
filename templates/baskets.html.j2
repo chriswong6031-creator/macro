@@ -293,6 +293,7 @@
   /* mover rows */
   .ftr-tape-body { display:grid; grid-template-columns:1fr 1fr; }
   @media(max-width:640px){ .ftr-tape-body{ grid-template-columns:1fr; } }
+  .ftr-tape-t1 { padding:5px 16px 6px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); }
   .ftr-tape-half { padding:7px 16px 9px; }
   .ftr-tape-half:first-child { border-right:1px solid var(--line); }
   .ftr-tape-half-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.07em; font-weight:700; margin-bottom:5px; }
@@ -447,6 +448,11 @@
         <div id="ftr-bot-movers"></div>
       </div>
     </div>
+  <!-- T+1 fade base-rate footer (FT-R3: always visible beside tape reads) -->
+  <div class="ftr-tape-t1">{{ t(
+    'T+1 violent-flip base rate: <strong>58% fade</strong> (n=26) · flip-confirmation lens · not a directional signal',
+    'T+1剧烈反转基础概率：<strong>58%消退</strong>（n=26）· 翻转确认透镜 · 非方向信号'
+  ) }}</div>
   </div>
 
   <script>
@@ -542,13 +548,13 @@
         +'<div class="mr-bar '+(isUp?'up':'dn')+'" style="width:'+barW.toFixed(0)+'px"></div>'
         +'</div>';
     }
-    topEl.innerHTML = top3.map(function(b,i){return moverRow(b, n-i);}).join('');
-    botEl.innerHTML = bot3.map(function(b,i){return moverRow(b, bot3.length-i);}).join('');
+    topEl.innerHTML = top3.map(function(b){return moverRow(b, b.tape_rank);}).join('');
+    botEl.innerHTML = bot3.map(function(b){return moverRow(b, b.tape_rank);}).join('');
   }
 
   // ── Per-card tape chip injection (disagreement + heat + stale) ───────────
-  // Called after the main theme desk renders. Looks for [data-bid] containers
-  // added by baskets_desk.js and appends FTR chip strips.
+  // Called after the main theme desk renders. Looks for [id^="theme-"] elements
+  // (rendered by baskets_desk.js as id="theme-${t.id}") and appends FTR chip strips.
   function injectCardChips(pulse, turnWatch, sectorPulse, stale){
     // index pulse by basket id
     var pulseById = {};
@@ -560,10 +566,12 @@
     var spById = {};
     ((sectorPulse&&sectorPulse.themes)||[]).forEach(function(t){ spById[t.id]=t; });
 
-    // Target the theme desk cards (rendered by baskets_desk.js with class .tcard and data-bid attr)
-    var cards = document.querySelectorAll('[data-bid]');
+    // Target the theme desk cards (rendered by baskets_desk.js as id="theme-<bid>")
+    // baskets_desk.js renders: <div class="tcard" id="theme-${t.id}" ...>
+    // No data-bid attr exists; derive bid from the id prefix.
+    var cards = document.querySelectorAll('[id^="theme-"]');
     cards.forEach(function(card){
-      var bid = card.getAttribute('data-bid');
+      var bid = card.id.slice(6);  // "theme-".length === 6
       if(!bid) return;
       // Remove any previously injected FTR chips to avoid duplication on re-render
       var old = card.querySelectorAll('.ftr-chip-strip');

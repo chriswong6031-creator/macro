@@ -303,9 +303,9 @@ fetch('live/basket_pulse.json',{cache:'no-cache'})
       var moversEl=document.getElementById('ftr-alloc-movers');
       if(moversEl){
         moversEl.innerHTML='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--up);margin-bottom:4px">'+L('Top 3 leaders','前3领涨')+'</div>'
-          +top3.map(function(b,i){return mrow(b,n-i);}).join('')+'</div>'
+          +top3.map(function(b){return mrow(b,b.tape_rank);}).join('')+'</div>'
           +'<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--down);margin-bottom:4px">'+L('Bottom 3 laggards','后3领跌')+'</div>'
-          +bot3.map(function(b,i){return mrow(b,bot3.length-i);}).join('')+'</div>';
+          +bot3.map(function(b){return mrow(b,b.tape_rank);}).join('')+'</div>';
       }
       // Disagreement vs strategic leader
       if(stratLeaderId){
@@ -316,8 +316,8 @@ fetch('live/basket_pulse.json',{cache:'no-cache'})
           if(isLeaderLagging){
             var dEl=document.getElementById('ftr-alloc-disagree');
             if(dEl)dEl.innerHTML='<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;background:rgba(251,146,60,.10);border:1px solid rgba(251,146,60,.38);color:var(--amber,#fb923c)">'
-              +L('tape rank #'+leadRank+' · strategic leader lagging live tape — discount; slow construction by design',
-                 '行情排名 #'+leadRank+' · 战略领跑者落后实时行情 — 酌情折扣；结构性慢信号')
+              +L('tape rank #'+leadRank+' of '+n+' · strategic leader at tape rank #'+leadRank+' — discount; slow construction by design',
+                 '行情排名 #'+leadRank+'（共'+n+'）· 战略领跑者当前行情排名 #'+leadRank+' — 酌情折扣；结构性慢信号')
               +'</span>';
           }
         }
