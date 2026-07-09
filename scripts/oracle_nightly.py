@@ -43,12 +43,14 @@ Usage
 -----
   python scripts/oracle_nightly.py [--data-dir PATH] [--site-dir PATH]
                                    [--skip-panel] [--skip-graph] [--skip-episodes]
-                                   [--skip-personality]
+                                   [--skip-personality] [--skip-timemachine]
 
   --skip-panel        skip the panel rebuild (use committed parquets)
   --skip-graph        skip the graph rebuild (use committed graph_s.json)
   --skip-episodes     skip the episode rebuild (use committed episodes)
   --skip-personality  skip the B1 personality step (use committed personality.json)
+  --skip-timemachine  skip the Time Machine feed export (render path; the dedicated
+                      oracle_offrender job owns the panel-dependent feed rebuild)
   --dry-run           run everything but write no files (for timing + smoke tests)
 
 R4 BINDING (ORACLE_GAUNTLET_P3_ADJUDICATION.md):
@@ -1622,6 +1624,11 @@ def main() -> int:
     p.add_argument("--skip-episodes", action="store_true")
     p.add_argument("--skip-personality", action="store_true",
                    help="Skip B1 personality step (use committed personality.json)")
+    p.add_argument("--skip-timemachine", action="store_true",
+                   help="Skip the Time Machine feed export. Use on the RENDER path: "
+                        "the export needs the panel+episode parquets, which are built "
+                        "OFF-render (build_oracle_panel forbids render-path use), so the "
+                        "dedicated oracle_offrender CI job owns the feed rebuild+commit.")
     p.add_argument("--dry-run", action="store_true", help="Run all steps but write no files")
     args = p.parse_args()
 
@@ -1681,8 +1688,11 @@ def main() -> int:
         failures.append("memory_base_rates")
 
     # --- Step 5: Time Machine ---
-    if not _step_timemachine(data_dir, site_dir, args.dry_run):
-        failures.append("timemachine")
+    if not args.skip_timemachine:
+        if not _step_timemachine(data_dir, site_dir, args.dry_run):
+            failures.append("timemachine")
+    else:
+        log.info("=== Step 5: Time Machine SKIPPED (--skip-timemachine) ===")
 
     # --- Step 6: Oracle state ---
     oracle_state = _step_oracle_state(data_dir, site_dir, args.dry_run)

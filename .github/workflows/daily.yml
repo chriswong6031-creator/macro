@@ -1183,8 +1183,12 @@ jobs:
         # Sentinel-gap check: all outputs land under data/ or site/ which are in the
         # "git add data/ site/ reports/" below — NO new explicit git add needed.
         # --skip-panel --skip-graph --skip-episodes: heavy rebuilds run separately off-render.
+        # --skip-timemachine: the TM feed export needs the panel+episode parquets, which are
+        #   built off-render (build_oracle_panel forbids render-path use); the dedicated
+        #   `oracle_offrender` job below rebuilds AND commits site/oracledata/ nightly.
+        #   Without this flag the export FAILED (rc=1) every render on the absent parquets.
         # Non-fatal: missing panel degrades gracefully; later builds use cached state.
-        run: python -m scripts.oracle_nightly --skip-panel --skip-graph --skip-episodes || echo "::warning::oracle_nightly failed (non-fatal — state and alerts degrade gracefully)"
+        run: python -m scripts.oracle_nightly --skip-panel --skip-graph --skip-episodes --skip-timemachine || echo "::warning::oracle_nightly failed (non-fatal — state and alerts degrade gracefully)"
       - name: build world state (neural-web W1)
         if: always()
         # Neural Web N1: compose data/neuralweb/world_state.json from all fresh
@@ -1628,6 +1632,104 @@ jobs:
             echo "factor-intelligence push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push factor intelligence after 5 attempts (non-fatal)"
+
+  # ── Oracle Rotation Time Machine feed (OFF-RENDER) ─────────────────────────
+  # The Time Machine (site/subsector_rotation.html) reads site/oracledata/tm_*.json.
+  # That feed is rebuilt by build_oracle_timemachine, which needs the oracle PANEL +
+  # EPISODE parquets. build_oracle_panel is explicitly FORBIDDEN on the render path
+  # (needs the heavy massive_stock_day store; a missing PIT parquet hard-crashes), so
+  # the render `engine` job skips the export (--skip-timemachine) and this dedicated
+  # off-render job owns the rebuild + commit. Every other input (PIT membership,
+  # constituents, yahoo, themes_tree, baskets) is committed; only massive_stock_day
+  # is fetched from R2 (engine publishes it earlier this run).
+  # needs: engine → today's massive_stock_day is in R2 before we fetch. Off the render
+  # critical path: `publish` needs only engine, so a slow/failed rebuild here can never
+  # block go-live; the feed lands on main for the next deploy (<=1-run stale, same
+  # contract as stock_briefs). Before this job existed the export FAILED (rc=1) every
+  # render and the committed feed sat frozen at its last manual rebuild.
+  oracle_offrender:
+    needs: engine
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: fetch massive_stock_day store from R2 (the one heavy oracle input not committed)
+        if: always()
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        # No-op (exit 0) when creds absent; panel build then uses whatever store is on the
+        # runner and the freshness guard below flags any resulting staleness.
+        run: python -m scripts.fetch_r2 --dirs massive_stock_day || echo "::warning::massive_stock_day R2 fetch failed (non-fatal — panel build may use stale/partial store)"
+      - name: rebuild oracle panels + episodes + Time Machine feed
+        # Strict order: build_oracle_episodes reads panel_{tier}.parquet; build_oracle_timemachine
+        # reads both panels + episodes. Panel/episode failures are warned; the TM export failing
+        # is a loud ::error:: (feed won't refresh). The freshness guard is the final tripwire.
+        run: |
+          set +e
+          python -m scripts.build_oracle_panel --tier all;    rc1=$?
+          python -m scripts.build_oracle_episodes --tier all; rc2=$?
+          python -m scripts.build_oracle_timemachine;         rc3=$?
+          [ "$rc1" -ne 0 ] && echo "::warning title=oracle_panel::rc=$rc1 (panels may be stale)"
+          [ "$rc2" -ne 0 ] && echo "::warning title=oracle_episodes::rc=$rc2 (episode overlay may be stale)"
+          [ "$rc3" -ne 0 ] && echo "::error title=oracle_timemachine::export rc=$rc3 — Time Machine feed NOT refreshed"
+          exit 0
+      - name: publish oracle panels to R2 (refreshes render-path sponsorship inputs)
+        if: always()
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.publish_oracle_panels || echo "::warning::publish_oracle_panels failed (non-fatal — sponsorship keeps last R2 panels)"
+      - name: Time Machine freshness tripwire (loud — the feed must advance daily)
+        # Reads the just-built manifest; date_to older than 4 calendar days means the store
+        # fetch or panel build produced stale data. Loud, never silent-rot; never blocks.
+        run: |
+          python - <<'PY' || echo "::warning::TM freshness guard errored (non-fatal)"
+          import json, datetime, pathlib, sys
+          mf = pathlib.Path("site/oracledata/tm_manifest.json")
+          if not mf.exists():
+              print("::error::tm_manifest.json missing — Time Machine feed not built"); sys.exit(0)
+          m = json.loads(mf.read_text())
+          today = datetime.date.today()
+          for tier, info in (m.get("tiers") or {}).items():
+              dt = info.get("date_to")
+              if not dt:
+                  print(f"::warning::TM tier {tier}: date_to is null"); continue
+              age = (today - datetime.date.fromisoformat(dt)).days
+              line = f"tier {tier}: date_to={dt} ({age}d old)"
+              print(f"::error::TM STALE — {line}" if age > 4 else f"TM fresh — {line}")
+          PY
+      - name: commit oracle Time Machine feed
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add site/oracledata/
+          if git diff --cached --quiet; then echo "no oracle Time Machine changes"; exit 0; fi
+          git commit -m "oracle-tm: nightly Time Machine feed refresh $(date -u +%F)"
+          # best-effort push (own files -> rebases clean; no other job writes site/oracledata/)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash -X theirs origin main && git push; then
+              echo "pushed oracle Time Machine feed on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "oracle-tm push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push oracle Time Machine feed after 5 attempts (non-fatal)"
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
