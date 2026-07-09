@@ -1637,6 +1637,8 @@ modules:
       - data/oracle/turn_desk_ledger.jsonl
       - data/oracle/qual_filter_stamps.jsonl
       - data/oracle/qual_filter_accrual.json
+      - site/basketdata/oracle_tape_onset.json
+      - data/oracle/tape_onset_ledger.jsonl
     impure: false
     needs_secrets: false
     event_driven: true
@@ -1647,6 +1649,10 @@ modules:
       additively). W6 (Step 15): Rotation Turn Desk — armed A15 windows + member fires
       + display artifact + forward ledger (DISPLAY-ONLY under hard law).
       W7 (Step 17): Qualitative filter PIT stamps + accrual report.
+      FTR-W7 (Step 19): TAPE-ONSET (unconfirmed) display tier — registration
+      research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md. Additive fields on
+      oracle_turn_desk.json + sidecar oracle_tape_onset.json + trial ledger
+      tape_onset_ledger.jsonl. DISPLAY-ONLY; no authority granted.
 
   - module: scripts.oracle_reversion_promotion_scan
     reads:

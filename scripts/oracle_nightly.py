@@ -38,6 +38,12 @@ Steps (in order):
                      member cascade fires, base rates, promotion clock.
                      Artifact: site/basketdata/oracle_turn_desk.json.
                      Forward ledger: data/oracle/turn_desk_ledger.jsonl.
+  19. TAPE-ONSET (FTR W7) — DISPLAY-ONLY unconfirmed flag per node: raw
+                     accel_z >= 1.0 AND vel_1w > vel_3m AND no active same-direction
+                     episode.  Printed rates from data.  Additive fields on
+                     oracle_turn_desk.json + sidecar oracle_tape_onset.json.
+                     Trial ledger: data/oracle/tape_onset_ledger.jsonl.
+                     Registration: research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md.
 
 Usage
 -----
@@ -1432,6 +1438,155 @@ def _step_reversion_promotion_scan(
         return False
 
 
+def _step_tape_onset(
+    data_dir: "Path", site_dir: "Path", dry_run: bool
+) -> bool:
+    """Step 19: TAPE-ONSET (unconfirmed) display tier — registration §2/§3/§5.
+
+    Constitution §V additive-only law: appended at END of oracle nightly step order.
+    Loud-error pattern: ::error:: annotation + returns False; later steps still attempt.
+    Payload validated before write; prior payload kept on failure.
+
+    Reads: data/oracle/panel_s.parquet, data/oracle/episodes_s.parquet
+    Writes (additive fields on existing turn_desk artifact):
+        tape_onset_nodes — dict per-node tape_onset_unconfirmed + tape_onset_stats
+    Writes (new artifact):
+        data/oracle/tape_onset_ledger.jsonl — trial ledger, keep-first, PIT-stamped
+
+    Registration: research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md
+    Verdict vocabulary: NULL / DISPLAY-WITH-EDGE (secondary tier cap per Constitution §I.4)
+    Evaluation clock: 2026-10-09
+    """
+    log.info("=== Step 19: TAPE-ONSET (unconfirmed) display tier (FTR W7) ===")
+    try:
+        import pandas as _pd
+        import json as _json
+        from engine.oracle.tape_onset import (
+            compute_tape_onset_payload,
+            append_tape_onset_ledger,
+            check_banned_keys,
+        )
+        from engine.neuralweb.envelope import stamp_if_changed
+
+        # ── 1. Load panel + episodes ──
+        panel_path = data_dir / "oracle" / "panel_s.parquet"
+        episodes_path = data_dir / "oracle" / "episodes_s.parquet"
+
+        if not panel_path.exists():
+            _annotation("oracle_nightly: tape_onset — panel_s.parquet missing, skipping")
+            return False
+
+        panel = _pd.read_parquet(panel_path)
+
+        episodes_df: "_pd.DataFrame | None" = None
+        if episodes_path.exists():
+            episodes_df = _pd.read_parquet(episodes_path)
+        else:
+            log.warning("tape_onset: episodes_s.parquet missing — episode-suppression unavailable; flag may over-fire")
+
+        # ── 2. Compute per-node payload ──
+        tape_onset_payload = compute_tape_onset_payload(panel, episodes_df)
+        n_nodes = len(tape_onset_payload)
+        n_flagged = sum(1 for v in tape_onset_payload.values() if v.get("tape_onset_unconfirmed"))
+        log.info("tape_onset: computed %d nodes, %d flagged", n_nodes, n_flagged)
+
+        # ── 3. Banned-key check on full payload before write ──
+        banned_errs = check_banned_keys(tape_onset_payload, "tape_onset_payload")
+        if banned_errs:
+            for err in banned_errs:
+                _annotation(f"oracle_nightly: tape_onset — {err}")
+            _annotation("oracle_nightly: tape_onset — BANNED KEYS found; prior artifact preserved")
+            return False
+
+        # ── 4. Additive fields on existing turn_desk artifact ──
+        # The turn_desk artifact carries armed sector windows; we add a
+        # `tape_onset_nodes` top-level field (additive, tolerant-reader).
+        turn_desk_path = site_dir / "basketdata" / "oracle_turn_desk.json"
+        prev_turn_desk = _read_json(turn_desk_path) or {}
+
+        if not isinstance(prev_turn_desk, dict):
+            prev_turn_desk = {}
+
+        # Augment with tape_onset_nodes (additive: never overwrite unrelated keys)
+        augmented = {**prev_turn_desk, "tape_onset_nodes": tape_onset_payload}
+
+        # ── 5. Write tape_onset artifact (separate from turn_desk for clarity) ──
+        # The Constitution additive-only law says additive *fields* on existing artifacts.
+        # We write them back onto oracle_turn_desk.json AND emit a separate sidecar
+        # so the display layer can load it independently without re-parsing the full desk.
+        asof = ""
+        if isinstance(panel.index, _pd.MultiIndex):
+            dates = panel.index.get_level_values("date")
+            if len(dates):
+                asof = dates.max().strftime("%Y-%m-%d")
+
+        tape_onset_sidecar: dict = {
+            "schema": "oracle_tape_onset.v1",
+            "asof": asof,
+            "registration": "research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md",
+            "confidence_class": "descriptive",
+            "display_tier": "TAPE-ONSET (unconfirmed)",
+            "authority": {
+                "may_rank": False,
+                "may_gate": False,
+                "may_size": False,
+                "may_escalate": False,
+            },
+            "evaluation_clock": "2026-10-09",
+            "disclaimers": {
+                "display_only": True,
+                "unconfirmed_qualifier": True,
+                "note_en": (
+                    "TAPE-ONSET (unconfirmed): raw accel_z >= 1.0 with no active episode. "
+                    "Historical rates printed from data; descriptive only. "
+                    "Not a forecast. Evaluation clock 2026-10-09."
+                ),
+                "note_zh": (
+                    "TAPE-ONSET（未确认）：原始加速度z值>=1.0且无活跃情节。"
+                    "历史发生率来自数据计算；仅供描述性参考。"
+                    "非预测信号。评估时钟：2026-10-09。"
+                ),
+            },
+            "nodes": tape_onset_payload,
+        }
+
+        # Banned-key sweep on sidecar
+        sidecar_banned = check_banned_keys(tape_onset_sidecar, "sidecar")
+        if sidecar_banned:
+            for err in sidecar_banned:
+                _annotation(f"oracle_nightly: tape_onset — sidecar banned key: {err}")
+            return False
+
+        sidecar_path = site_dir / "basketdata" / "oracle_tape_onset.json"
+        prev_sidecar = _read_json(sidecar_path)
+        stamped_sidecar = stamp_if_changed(
+            tape_onset_sidecar, prev_sidecar, artifact_id="oracle-tape-onset"
+        )
+
+        if not dry_run:
+            _write_json(sidecar_path, stamped_sidecar)
+            # Also update turn_desk with the additive tape_onset_nodes field
+            _write_json(turn_desk_path, augmented)
+
+        log.info(
+            "tape_onset: sidecar written asof=%s nodes=%d flagged=%d",
+            asof, n_nodes, n_flagged,
+        )
+
+        # ── 6. Trial ledger append (registration §4) ──
+        ledger_path = data_dir / "oracle" / "tape_onset_ledger.jsonl"
+        n_new = append_tape_onset_ledger(
+            tape_onset_payload, asof, ledger_path, dry_run=dry_run
+        )
+        log.info("tape_onset_ledger: %d new flag rows appended (keep-first)", n_new)
+
+        return n_new
+
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: tape_onset FAILED: {e}")
+        return -1
+
+
 def _write_turn_desk_ledger(
     armed: list[dict],
     panel_asof: str,
@@ -1768,6 +1923,18 @@ def main() -> int:
     if not _step_operator_tape_outcomes(data_dir, args.dry_run):
         failures.append("tape_outcomes")
 
+    # --- Step 19: TAPE-ONSET (unconfirmed) display tier (FTR W7) — additive at END ---
+    # Registration: research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md (merged before this build).
+    # Additive fields on oracle_turn_desk.json + sidecar site/basketdata/oracle_tape_onset.json
+    # + trial ledger data/oracle/tape_onset_ledger.jsonl. DISPLAY-ONLY, no authority granted.
+    # Loud-error pattern: ::error:: annotation + pipeline continues on failure.
+    n_tape_onset_ledger = 0
+    _tape_onset_result = _step_tape_onset(data_dir, site_dir, args.dry_run)
+    if _tape_onset_result < 0:
+        failures.append("tape_onset")
+    else:
+        n_tape_onset_ledger = _tape_onset_result
+
     elapsed = time.time() - t_total
     log.info(
         "oracle_nightly: DONE in %.1fs — %d new alerts, %d ledger entries, failures=%s",
@@ -1787,6 +1954,7 @@ def main() -> int:
           f"dm={inbox_counts.get('detection_miss',0) if inbox_counts else 0}, "
           f"sld={inbox_counts.get('screen_live_divergence',0) if inbox_counts else 0}, "
           f"sent={inbox_counts.get('sentinel',0) if inbox_counts else 0})")
+    print(f"  tape_onset_ledger_new: {n_tape_onset_ledger}")
     print(f"  elapsed_s:     {elapsed:.1f}")
     if failures:
         print(f"  FAILURES:      {failures}")
