@@ -1,10 +1,23 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-09T20:07:15.681223+00:00",
-  "posts_seen": 6,
-  "seen_total": 15,
-  "evaluated": 0,
+  "as_of": "2026-07-09T21:43:47.983772+00:00",
+  "posts_seen": 8,
+  "seen_total": 17,
+  "evaluated": 2,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-09-fact-sheet-president-donald-j-trump-adjusts-imports-of-commercial-aircraft-jet-e",
+      "importance": null,
+      "activated": false,
+      "degraded_reason": "llm_error"
+    },
+    {
+      "id": "wh-2026-07-09-adjusting-imports-of-commercial-aircraft-jet-engines-and-aircraft-and-engine-par",
+      "importance": null,
+      "activated": false,
+      "degraded_reason": "llm_error"
+    }
+  ]
 }

@@ -89,6 +89,18 @@
       "at": "2026-07-09T16:09:37.697298+00:00",
       "activated": false,
       "importance": null
+    },
+    "https://www.whitehouse.gov/?p=44658": {
+      "id": "wh-2026-07-09-fact-sheet-president-donald-j-trump-adjusts-imports-of-commercial-aircraft-jet-e",
+      "at": "2026-07-09T21:43:47.285433+00:00",
+      "activated": false,
+      "importance": null
+    },
+    "https://www.whitehouse.gov/?p=44659": {
+      "id": "wh-2026-07-09-adjusting-imports-of-commercial-aircraft-jet-engines-and-aircraft-and-engine-par",
+      "at": "2026-07-09T21:43:47.982836+00:00",
+      "activated": false,
+      "importance": null
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
