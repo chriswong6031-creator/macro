@@ -125,9 +125,15 @@ def _rule_a_contradiction_tension(
                             "as_of": as_of,
                         }
                     )
-            return items
+            # Only return early if cg produced tension items; if not, fall
+            # through to world_state fallback so a real tension flagged by
+            # world_state is not silently suppressed.
+            if items:
+                return items
 
-        # Source 2 (fallback): world_state.contradictions summary dict
+        # Source 2 (fallback): world_state.contradictions summary dict — used
+        # when confluence_graph is absent OR when cg records contain no tension
+        # entries (world_state may have detected one via a different detector).
         ws_contras = world_state.get("contradictions") or {}
         if isinstance(ws_contras, dict):
             by_sev = ws_contras.get("by_severity") or {}
@@ -141,7 +147,7 @@ def _rule_a_contradiction_tension(
                             f"{tension_n} tension-severity contradiction(s) detected"
                         ),
                         "summary_zh": f"检测到 {tension_n} 个张力级矛盾",
-                        "evidence_path": "data/neuralweb/world_state.json",
+                        "evidence_path": "site/neuralwebdata/world_state.json",
                         "as_of": as_of,
                     }
                 )
