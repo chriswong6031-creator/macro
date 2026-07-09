@@ -31,7 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
-| neural-web | 42 |
+| neural-web | 43 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 3 |
@@ -53,7 +53,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 155 |
-| infrastructure | 71 |
+| infrastructure | 72 |
 | scored | 4 |
 | shadow | 41 |
 
@@ -61,7 +61,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 259 |
+| git | 260 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -137,12 +137,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cycle-pattern-truths | `data/cycle_pattern/truths.jsonl` | jsonl | on-demand | display | 2 | 0 |
 | cycle-pattern-entities | `data/cycle_pattern/entities.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 | cycle-pattern-state | `data/neuralweb/cycle_pattern_state.json` | json | daily-engine | display | 1 | 0 |
+| cycle-pattern-state-monthly | `data/cycle_pattern/state_monthly.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
+| fed-net-liquidity | `data/macro/fed_net_liquidity.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| regime-v2-pit | `data/regime/regime_v2_pit.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 | cycle-pattern-outcomes | `data/cycle_pattern/outcomes.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
 | cycle-pattern-state-daily-live | `data/cycle_pattern/state_daily_live.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
-| cycle-pattern-state-monthly | `data/cycle_pattern/state_monthly.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
-| fed-net-liquidity | `data/macro/fed_net_liquidity.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | hazard-panel-index-v0 | `data/hazard/panel_index_v0.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
-| regime-v2-pit | `data/regime/regime_v2_pit.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
 | signal-archive-context-daily | `data/signal_archive/context_daily.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 
 ### dannytrades
@@ -155,9 +155,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 32 | 3 |
+| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 33 | 3 |
 | regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 19 | 0 |
-| breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 17 | 0 |
+| breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 18 | 0 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
 | market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 7 | 0 |
 | trial-ledger | `data/trial_ledger.jsonl` | jsonl | on-demand | infrastructure | 6 | 0 |
@@ -305,13 +305,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 9 | 1 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 5 | 0 |
+| liquidity-plumbing | `data/neuralweb/liquidity_plumbing.json` | json | daily-engine | shadow | 4 | 0 |
 | mechanism-pathways | `data/neuralweb/mechanism_pathways.json` | json | daily-engine | display | 4 | 0 |
 | confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 2 | 1 |
 | cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 2 | 1 |
 | cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 2 | 1 |
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 2 | 1 |
-| liquidity-plumbing | `data/neuralweb/liquidity_plumbing.json` | json | daily-engine | shadow | 3 | 0 |
 | machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 3 | 0 |
 | neuralweb-health | `data/neuralweb/health.json` | json | daily-engine | infrastructure | 3 | 0 |
 | rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 3 | 0 |
@@ -337,6 +337,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | site-mechanism-pathways | `site/neuralwebdata/mechanism_pathways.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
+| causal-feature-inventory | `data/neuralweb/causal_feature_inventory.json` | json | daily-engine | infrastructure | 0 | 0 |
 | entity-thesis-mechanism-registry | `data/neuralweb/entity_thesis_mechanism_registry.json` | json | daily-engine | infrastructure | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
@@ -398,7 +399,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| options-entry-state | `data/options_entry/state.parquet` | parquet | collect | display | 2 | 1 |
+| options-entry-state | `data/options_entry/state.parquet` | parquet | collect | display | 3 | 1 |
 | options-entry-gate | `data/options_entry/gate.json` | json | collect | shadow | 1 | 1 |
 | live-options-flow-current | `live_flow/feed_current.json` | json | collect | display | 0 | 1 |
 
@@ -535,7 +536,7 @@ flowchart LR
     C_engine_briefing_py["engine/briefing.py"]
     C_engine_china_intel_analysis_py["engine/china_intel_analysis.py"]
     C_engine_china_intel_bus_py["engine/china_intel_bus.py"]
-    OVF_regime_latest["...+31 more"]
+    OVF_regime_latest["...+32 more"]
     A_regime_history["regime-history"]
     C_engine_alerts_py["engine/alerts.py"]
     C_engine_board_ledger_py["engine/board_ledger.py"]
@@ -547,7 +548,7 @@ flowchart LR
     C_engine_anticipation_py["engine/anticipation.py"]
     C_engine_basket_score_py["engine/basket_score.py"]
     C_engine_neuralweb_world_state_py["engine/neuralweb/world_state.py"]
-    OVF_breadth_breadth["...+13 more"]
+    OVF_breadth_breadth["...+14 more"]
     P_scripts_seed_us_sector_baskets_py(("scripts/seed_us_sector_baskets.py"))
     A_baskets_membership["baskets-membership"]
     C_engine_demand_ledger_py["engine/demand_ledger.py"]
