@@ -142,12 +142,39 @@ def _load_firings(root: Path) -> list[dict]:
     return rows
 
 
+def _is_synthetic_grade(row: dict) -> bool:
+    """Return True if a grade row corresponds to a dry-run synthetic item.
+
+    Mirrors _is_synthetic() for firing rows.  Grade rows use different field names
+    (symbol instead of trigger_key/scope_key; outcome_detail.symbol for the resolved
+    entity), so we must check all analogous paths to avoid silent leakage if a future
+    synthetic grade row lacks a top-level symbol field.
+
+    A grade row is synthetic if ANY of the following hold:
+      - top-level symbol == "SYNTHETIC_TICKER"
+      - outcome_detail.symbol == "SYNTHETIC_TICKER"
+      - "(dry-run synthetic item)" appears in the falsifier field (carried through
+        from the original firing row)
+      - explicit field synthetic: true
+    """
+    symbol = str(row.get("symbol") or "")
+    outcome_symbol = str((row.get("outcome_detail") or {}).get("symbol") or "")
+    falsifier = str(row.get("falsifier") or "")
+    synthetic_flag = row.get("synthetic", False)
+    return (
+        symbol == "SYNTHETIC_TICKER"
+        or outcome_symbol == "SYNTHETIC_TICKER"
+        or "(dry-run synthetic item)" in falsifier
+        or synthetic_flag is True
+    )
+
+
 def _load_grades(root: Path) -> list[dict]:
     """Load real (non-synthetic) grade rows from grades.jsonl.
 
     Synthetic grades are excluded at read time so they never inflate n or hits.
-    A grade row is synthetic if its symbol field is "SYNTHETIC_TICKER" or if the
-    original claim_id matches a known synthetic seed (detected via the symbol field).
+    Uses _is_synthetic_grade() which mirrors all four conditions of _is_synthetic()
+    (the firing-row predicate) to ensure both readers agree on what 'synthetic' means.
     Ledger rows are never deleted (append-only law).
     """
     p = _grades_path(root)
@@ -160,8 +187,7 @@ def _load_grades(root: Path) -> list[dict]:
             continue
         try:
             row = json.loads(line)
-            # Exclude grades whose subject symbol is the synthetic marker
-            if str(row.get("symbol") or "") == "SYNTHETIC_TICKER":
+            if _is_synthetic_grade(row):
                 log.debug("grade_cortex_attention: skipping synthetic grade claim_id=%s", row.get("claim_id", "?"))
                 continue
             rows.append(row)

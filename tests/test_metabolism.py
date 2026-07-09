@@ -687,6 +687,29 @@ class TestA2EarnIn:
         grades = _load_grades(root)
         assert len(grades) == 0, f"expected 0 real grades (synthetic excluded), got {len(grades)}"
 
+    def test_is_synthetic_grade_all_four_conditions(self):
+        """_is_synthetic_grade detects all four synthetic markers, mirroring _is_synthetic."""
+        from scripts.grade_cortex_attention import _is_synthetic_grade
+
+        # Condition 1: top-level symbol
+        assert _is_synthetic_grade({"symbol": "SYNTHETIC_TICKER"}) is True
+        # Condition 2: outcome_detail.symbol (marker only in nested field)
+        assert _is_synthetic_grade(
+            {"symbol": "SPY", "outcome_detail": {"symbol": "SYNTHETIC_TICKER"}}
+        ) is True
+        # Condition 3: falsifier contains dry-run marker text
+        assert _is_synthetic_grade(
+            {"symbol": "SPY", "falsifier": "SPY moves >2% (dry-run synthetic item)"}
+        ) is True
+        # Condition 4: explicit synthetic: true flag
+        assert _is_synthetic_grade({"symbol": "SPY", "synthetic": True}) is True
+        # Real row — none of the conditions
+        assert _is_synthetic_grade(
+            {"symbol": "AAPL", "outcome_detail": {"symbol": "AAPL"}, "falsifier": "AAPL rallies"}
+        ) is False
+        # Empty row is not synthetic
+        assert _is_synthetic_grade({}) is False
+
     def test_real_rows_still_counted_alongside_synthetic(self):
         """When firings include both real and synthetic rows, only real rows enter grading."""
         from scripts.grade_cortex_attention import grade_attention
