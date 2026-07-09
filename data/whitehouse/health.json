@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-09T05:05:18.548358+00:00",
+  "as_of": "2026-07-09T08:44:35.073186+00:00",
   "posts_seen": 5,
   "seen_total": 14,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-09-fact-sheet-president-donald-j-trump-secures-historic-defense-investment-from-nat",
-      "importance": null,
-      "activated": false,
-      "degraded_reason": "llm_error"
-    }
-  ]
+  "gate_scores": []
 }
