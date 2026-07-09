@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "slate",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "tools/taskboard"],
+      "port": 8123
+    },
+    {
       "name": "macro-site",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-c", "import os,functools,http.server,socketserver;h=functools.partial(http.server.SimpleHTTPRequestHandler,directory='site');socketserver.TCPServer(('',int(os.environ.get('PORT') or 8847)),h).serve_forever()"],
