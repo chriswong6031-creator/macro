@@ -99,9 +99,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | causal-nulls | `data/neuralweb/causal_nulls.jsonl` | jsonl | weekly | display | 2 | 0 |
 | causal-edges | `data/neuralweb/causal_edges.jsonl` | jsonl | weekly | display | 1 | 0 |
 | causal-frontier | `data/neuralweb/causal_frontier.json` | json | daily-engine | display | 1 | 0 |
+| causal-llm-lane | `data/neuralweb/causal_llm_lane.json` | json | weekly | infrastructure | 1 | 0 |
 | causal-brainstorm-runs | `data/neuralweb/causal_brainstorm_runs.jsonl` | jsonl | weekly | infrastructure | 0 | 0 |
 | causal-lab-state | `data/neuralweb/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
-| causal-llm-lane | `data/neuralweb/causal_llm_lane.json` | json | weekly | infrastructure | 0 | 0 |
 | causal-surprise-queue | `data/neuralweb/causal_surprise_queue.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | site-causal-lab-state | `site/neuralwebdata/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
 
