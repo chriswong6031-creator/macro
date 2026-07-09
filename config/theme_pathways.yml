@@ -1,0 +1,1208 @@
+# config/theme_pathways.yml — TIL W2 (PR-D) Beneficiary/Loser Pathway Graph
+#
+# Curated supply-chain graph per canonical theme.
+# Canonical theme ids come from config/theme_crosswalk.yml — read-only here.
+# basket_refs reference basket ids from the crosswalk (theme_crosswalk.yml basket_ids)
+# NO bare ticker lists — tickers expressed ONLY via basket_refs.
+#
+# Node types:
+#   enabling_infrastructure | bottleneck | direct_beneficiary | implementer
+#   downstream_winner | impaired_incumbent | second_order_risk
+#
+# Edge schema: {src, dst, order (1|2|3), side (winner|loser), confidence (low|med|high), rationale}
+#
+# Loser legs are AVOID-shaped evidence framing (TI-R2 / short-side lobe ruling: L1 = AVOID-not-SHORT).
+# TI-R5 fence: no runtime shock→beneficiary escalation. Graph is curated taxonomy, not a rotation call.
+#
+# Language law: no "buy/sell/short/rotate now" in any label or rationale.
+# Banned words: validated, caused, proved, proof.
+#
+# Version: 1 (2026-07-09, TIL W2 PR-D)
+
+version: 1
+date: "2026-07-09"
+note: >
+  Curated beneficiary/loser chains for all 18 foresight-mapped canonical themes.
+  basket_refs carry only basket ids from the crosswalk; no bare ticker lists.
+  Loser legs are AVOID-shaped evidence, never directional short calls.
+  This config is PR-reviewed; runtime mutation is forbidden (TI-R5).
+
+themes:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # ai_semiconductors — AI / Semiconductor capex chain (encoded from engine/demand_chain.py)
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: ai_semiconductors
+    nodes:
+      - id: ai_semis__driver
+        label_en: "Hyperscaler AI capex commitment"
+        label_zh: "云厂商AI资本开支承诺"
+        node_type: enabling_infrastructure
+        basket_refs: []
+        rationale: "Hyperscaler (MSFT/Alphabet/AMZN/Meta/ORCL) annual capex is the demand pool for the AI buildout; commitments lead chip revenue ~2-4 quarters."
+
+      - id: ai_semis__bottleneck_compute
+        label_en: "Advanced compute silicon supply"
+        label_zh: "先进算力芯片供给"
+        node_type: bottleneck
+        basket_refs:
+          - ai_semiconductors
+        rationale: "HBM and leading-edge GPU/accelerator capacity is the binding constraint on AI infrastructure buildout pace."
+
+      - id: ai_semis__direct_beneficiary
+        label_en: "AI accelerator & compute silicon"
+        label_zh: "AI加速器与算力芯片"
+        node_type: direct_beneficiary
+        basket_refs:
+          - ai_semiconductors
+          - ai_infra
+        rationale: "Basket members capture the direct revenue pool: accelerators, networking silicon, and HBM directly consumed by hyperscaler capex."
+
+      - id: ai_semis__implementer_wfe
+        label_en: "Wafer-fab equipment (WFE)"
+        label_zh: "晶圆制造设备（WFE）"
+        node_type: implementer
+        basket_refs:
+          - semicap_equipment
+        rationale: "WFE spend is a lagged step back in the capex chain; wafer starts committed today convert to equipment orders 1-3 quarters prior."
+
+      - id: ai_semis__downstream_power
+        label_en: "Data-center power & cooling"
+        label_zh: "数据中心供电与散热"
+        node_type: downstream_winner
+        basket_refs:
+          - data_center_power
+          - ai_neoclouds
+        rationale: "Power and cooling demand is an indirect but durable beneficiary of capacity additions; PUE improvements slow the intensity but not the absolute MW demand."
+
+      - id: ai_semis__impaired_legacy_semis
+        label_en: "Legacy semiconductor nodes (mature/trailing edge)"
+        label_zh: "成熟制程半导体"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: capex concentration in leading-edge AI compute crowds out pricing leverage for commodity/mature-node producers; overcapacity risk in trailing nodes."
+
+      - id: ai_semis__second_order_power_grid
+        label_en: "Grid & electrification build (2nd-order)"
+        label_zh: "电网与电气化建设（二阶）"
+        node_type: second_order_risk
+        basket_refs:
+          - power_grid
+        rationale: "Datacenter power demand growth outpaces incremental renewable capacity; grid interconnection queue is the second-order binding constraint."
+
+    edges:
+      - src: ai_semis__driver
+        dst: ai_semis__bottleneck_compute
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Hyperscaler capex commitments directly translate to accelerator orders within 1-2 quarters."
+      - src: ai_semis__bottleneck_compute
+        dst: ai_semis__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Revenue flows directly into accelerator/networking silicon basket members."
+      - src: ai_semis__direct_beneficiary
+        dst: ai_semis__implementer_wfe
+        order: 2
+        side: winner
+        confidence: med
+        rationale: "Leading-edge capacity additions require WFE spend; lag is 1-3 quarters."
+      - src: ai_semis__direct_beneficiary
+        dst: ai_semis__downstream_power
+        order: 2
+        side: winner
+        confidence: med
+        rationale: "Compute density growth increases per-rack power draw and cooling requirements."
+      - src: ai_semis__driver
+        dst: ai_semis__impaired_legacy_semis
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: capex concentrated at leading edge reduces pricing leverage in mature nodes; trailing-edge basket members face structural headwinds."
+      - src: ai_semis__downstream_power
+        dst: ai_semis__second_order_power_grid
+        order: 3
+        side: winner
+        confidence: low
+        rationale: "MW demand growth from AI datacenters is a second-order tailwind for grid capex; interconnection backlogs are the binding constraint."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # memory_storage — HBM & NAND supply chain
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: memory_storage
+    nodes:
+      - id: mem__driver
+        label_en: "AI training memory intensity (HBM demand)"
+        label_zh: "AI训练内存需求（HBM）"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - ai_semiconductors
+        rationale: "Each successive AI model generation requires more HBM bandwidth per accelerator; demand is near-exclusively driven by the AI buildout."
+
+      - id: mem__bottleneck_hbm
+        label_en: "HBM capacity (CoWoS / advanced packaging)"
+        label_zh: "HBM产能（CoWoS先进封装）"
+        node_type: bottleneck
+        basket_refs:
+          - memory_storage
+        rationale: "CoWoS advanced packaging capacity is the physical binding constraint on HBM output; qualification lead times stretch 6-12 months."
+
+      - id: mem__direct_beneficiary
+        label_en: "Memory & HBM producers"
+        label_zh: "存储与HBM生产商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - memory_storage
+        rationale: "Basket members are the primary revenue recipients of HBM pricing power during capacity-constrained periods."
+
+      - id: mem__impaired_nand
+        label_en: "NAND / commodity DRAM oversupply"
+        label_zh: "NAND与通用DRAM供给过剩"
+        node_type: impaired_incumbent
+        basket_refs:
+          - memory_storage
+        rationale: "AVOID-shaped: capex pivot to HBM within the same fabs draws down NAND and commodity DRAM capacity; oversupply risk persists in non-AI memory segments."
+
+    edges:
+      - src: mem__driver
+        dst: mem__bottleneck_hbm
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "AI training workload growth is the primary demand driver for HBM."
+      - src: mem__bottleneck_hbm
+        dst: mem__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Constrained HBM supply with growing AI demand supports pricing for basket members."
+      - src: mem__bottleneck_hbm
+        dst: mem__impaired_nand
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: fab time redirected to HBM reduces commodity memory output but also risk/reward for non-AI memory in the same basket."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # semicap_equipment — Wafer-fab equipment cycle
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: semicap_equipment
+    nodes:
+      - id: wfe__driver
+        label_en: "Leading-edge fab investment decisions"
+        label_zh: "先进制程晶圆厂投资决策"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - ai_semiconductors
+          - memory_storage
+        rationale: "Fab build/expansion commitments by leading-edge foundries and IDMs are the demand source for WFE; orders follow commitment decisions by 1-4 quarters."
+
+      - id: wfe__bottleneck_litho
+        label_en: "EUV lithography capacity"
+        label_zh: "EUV光刻产能"
+        node_type: bottleneck
+        basket_refs:
+          - semicap_equipment
+        rationale: "EUV tools are the capacity-constrained item in advanced node fabs; lead times extend to 18-24 months."
+
+      - id: wfe__direct_beneficiary
+        label_en: "WFE producers"
+        label_zh: "晶圆制造设备商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - semicap_equipment
+        rationale: "Basket members capture WFE orders directly; book-to-bill is the leading revenue signal."
+
+      - id: wfe__second_order_materials
+        label_en: "Process materials & specialty gases"
+        label_zh: "工艺材料与特种气体"
+        node_type: second_order_risk
+        basket_refs: []
+        rationale: "Process chemistry and specialty gases see volume uplift from increased wafer starts but lack the pricing leverage of equipment suppliers."
+
+    edges:
+      - src: wfe__driver
+        dst: wfe__bottleneck_litho
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Fab investment decisions convert to EUV tool orders within 1-4 quarters."
+      - src: wfe__bottleneck_litho
+        dst: wfe__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "EUV and supporting WFE revenues flow directly to basket members."
+      - src: wfe__direct_beneficiary
+        dst: wfe__second_order_materials
+        order: 2
+        side: winner
+        confidence: low
+        rationale: "Higher wafer starts lift process materials consumption as a second-order effect."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # data_center_power — Data-center power & cooling buildout
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: data_center_power
+    nodes:
+      - id: dcp__driver
+        label_en: "Hyperscaler & neocloud power procurement"
+        label_zh: "云厂商与新云算力电力采购"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - ai_neoclouds
+          - ai_semiconductors
+        rationale: "Hyperscaler and neocloud operators are signing long-term power purchase agreements; MW procurement is the pipeline metric."
+
+      - id: dcp__bottleneck_permitting
+        label_en: "Grid interconnection & permitting"
+        label_zh: "电网接入与许可审批"
+        node_type: bottleneck
+        basket_refs:
+          - power_grid
+        rationale: "FERC interconnection queue and state permitting timelines are the binding constraint on new datacenter power delivery; average queue wait has grown to 3-5 years."
+
+      - id: dcp__direct_beneficiary
+        label_en: "Data-center power & cooling equipment"
+        label_zh: "数据中心供电与冷却设备"
+        node_type: direct_beneficiary
+        basket_refs:
+          - data_center_power
+        rationale: "Basket members provide transformers, UPS, cooling units, and liquid cooling directly consumed by datacenter builds."
+
+      - id: dcp__downstream_nuclear
+        label_en: "Nuclear & SMR power supply"
+        label_zh: "核能与小型模块堆发电"
+        node_type: downstream_winner
+        basket_refs:
+          - nuclear_power
+          - uranium_miners
+        rationale: "24/7 carbon-free power demand from hyperscalers is a structural tailwind for nuclear PPA agreements and SMR development timelines."
+
+      - id: dcp__impaired_diesel_gen
+        label_en: "Diesel backup generation incumbents"
+        label_zh: "柴油备用发电设备商"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: hyperscaler sustainability commitments and carbon targets are displacing diesel backup generation with battery and cleaner alternatives."
+
+    edges:
+      - src: dcp__driver
+        dst: dcp__bottleneck_permitting
+        order: 1
+        side: loser
+        confidence: high
+        rationale: "AVOID-shaped: permitting/interconnection backlog is slowing delivery; projects with secured interconnection command premium."
+      - src: dcp__driver
+        dst: dcp__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Power procurement commitments convert to equipment orders for cooling and power infrastructure."
+      - src: dcp__direct_beneficiary
+        dst: dcp__downstream_nuclear
+        order: 2
+        side: winner
+        confidence: med
+        rationale: "24/7 power demand drives hyperscaler interest in nuclear PPAs and SMR partnerships."
+      - src: dcp__driver
+        dst: dcp__impaired_diesel_gen
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: decarbonization mandates and battery storage are reducing the role of diesel backup generation."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # nuclear_power — Nuclear & SMR power
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: nuclear_power
+    nodes:
+      - id: nuke__driver
+        label_en: "Corporate 24/7 carbon-free power demand"
+        label_zh: "企业全天候清洁电力需求"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - data_center_power
+          - ai_neoclouds
+        rationale: "Hyperscaler sustainability commitments and AI power growth are driving demand for 24/7 carbon-free electricity, channeling interest to nuclear PPAs."
+
+      - id: nuke__bottleneck_uranium
+        label_en: "Uranium supply (enrichment & conversion)"
+        label_zh: "铀供给（浓缩与转化）"
+        node_type: bottleneck
+        basket_refs:
+          - uranium_miners
+        rationale: "Enrichment and conversion capacity is the supply-chain bottleneck; Western enrichment capacity is constrained post-Russia sanctions."
+
+      - id: nuke__direct_beneficiary
+        label_en: "Nuclear operators & SMR developers"
+        label_zh: "核电运营商与小型模块堆开发商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - nuclear_power
+        rationale: "Basket members include utility-scale nuclear operators with PPAs and SMR technology developers with growing order books."
+
+      - id: nuke__implementer_uranium_miners
+        label_en: "Uranium miners"
+        label_zh: "铀矿开采商"
+        node_type: implementer
+        basket_refs:
+          - uranium_miners
+        rationale: "Uranium mining supply is the feedstock input; miners benefit from structural long-term contract demand."
+
+      - id: nuke__impaired_natgas
+        label_en: "Natural gas peaker plants"
+        label_zh: "天然气调峰电厂"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: long-duration clean power PPAs reduce the economics for gas peakers in competitive power markets."
+
+    edges:
+      - src: nuke__driver
+        dst: nuke__bottleneck_uranium
+        order: 1
+        side: winner
+        confidence: med
+        rationale: "New reactor commitments and SMR deals increase long-term uranium demand, tightening enrichment capacity."
+      - src: nuke__bottleneck_uranium
+        dst: nuke__implementer_uranium_miners
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Uranium supply tightness flows through to miner revenue via long-term contract pricing."
+      - src: nuke__driver
+        dst: nuke__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Hyperscaler PPAs and SMR development agreements underpin order books for nuclear basket members."
+      - src: nuke__driver
+        dst: nuke__impaired_natgas
+        order: 2
+        side: loser
+        confidence: low
+        rationale: "AVOID-shaped: structural shift to 24/7 carbon-free power reduces relative competitiveness of gas peakers in forward capacity markets."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # grid_electrification — Grid & electrification buildout
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: grid_electrification
+    nodes:
+      - id: grid__driver
+        label_en: "US grid investment legislation & datacenter load growth"
+        label_zh: "美国电网投资立法与数据中心负荷增长"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - data_center_power
+        rationale: "IRA-driven transmission investment and datacenters' surging load growth are the dual demand drivers for grid buildout spending."
+
+      - id: grid__bottleneck_transformer
+        label_en: "High-voltage transformer supply"
+        label_zh: "高压变压器供给"
+        node_type: bottleneck
+        basket_refs:
+          - power_grid
+        rationale: "Lead times for large power transformers have extended to 2-3 years; capacity is concentrated among a small number of domestic/allied producers."
+
+      - id: grid__direct_beneficiary
+        label_en: "Power grid equipment & EPC"
+        label_zh: "电网设备与工程总包"
+        node_type: direct_beneficiary
+        basket_refs:
+          - power_grid
+        rationale: "Basket members are direct revenue recipients of transmission and distribution capex."
+
+      - id: grid__downstream_winner_copper
+        label_en: "Copper wiring & cable"
+        label_zh: "铜线缆"
+        node_type: downstream_winner
+        basket_refs:
+          - reshoring
+        rationale: "Grid transmission expansion is highly copper-intensive; cable and conductor demand is a durable second-order beneficiary."
+
+      - id: grid__impaired_coal_dispatch
+        label_en: "Coal generation dispatch"
+        label_zh: "煤电调度"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: grid modernization and renewable integration accelerate coal plant retirements."
+
+    edges:
+      - src: grid__driver
+        dst: grid__bottleneck_transformer
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Grid investment converts to transformer orders; supply tightness enhances pricing power for domestic producers."
+      - src: grid__bottleneck_transformer
+        dst: grid__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Equipment demand flows to basket members as the primary supply source."
+      - src: grid__direct_beneficiary
+        dst: grid__downstream_winner_copper
+        order: 2
+        side: winner
+        confidence: med
+        rationale: "Grid expansion is copper-intensive; each GW of transmission requires substantial copper cable and conductors."
+      - src: grid__driver
+        dst: grid__impaired_coal_dispatch
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: grid modernization and renewable penetration reduce coal's dispatch hours and capacity value."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # cybersecurity — Cybersecurity spend
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: cybersecurity
+    nodes:
+      - id: cyber__driver
+        label_en: "AI-era threat surface expansion"
+        label_zh: "AI时代威胁面扩展"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - ai_semiconductors
+          - ai_infra
+        rationale: "AI adoption expands the attack surface through new attack vectors, model poisoning, and proliferation of autonomous threat actors; compliance mandates follow."
+
+      - id: cyber__bottleneck_talent
+        label_en: "Cybersecurity talent & credential scarcity"
+        label_zh: "网络安全人才与认证稀缺"
+        node_type: bottleneck
+        basket_refs:
+          - cybersecurity
+        rationale: "Certified security professionals are in structural deficit; platform consolidation is one response — advantaging large integrated vendors."
+
+      - id: cyber__direct_beneficiary
+        label_en: "Cybersecurity platform vendors"
+        label_zh: "网络安全平台厂商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - cybersecurity
+        rationale: "Basket members capture the enterprise security budget directed at AI-native threat prevention, SOC automation, and identity security."
+
+      - id: cyber__impaired_legacy_siem
+        label_en: "Legacy on-premise SIEM / point-product vendors"
+        label_zh: "传统本地SIEM与单点产品厂商"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: platform consolidation and AI-native threat detection erode revenue for legacy on-premise point-product vendors."
+
+    edges:
+      - src: cyber__driver
+        dst: cyber__bottleneck_talent
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Talent scarcity advantages platform vendors offering automation; enterprises consolidate on fewer integrated solutions."
+      - src: cyber__bottleneck_talent
+        dst: cyber__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Platform consolidation and AI-native security products flow revenue to basket members."
+      - src: cyber__driver
+        dst: cyber__impaired_legacy_siem
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: legacy point-product spend is being consolidated away; margin compression risk for non-platform players."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # defense_aerospace — Defense & aerospace
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: defense_aerospace
+    nodes:
+      - id: def__driver
+        label_en: "NATO re-armament & allied defense budget expansion"
+        label_zh: "北约重整军备与盟友防务预算扩张"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - defense
+        rationale: "Allied defense spending commitments (NATO 2% GDP+ targets) and US supplemental appropriations are the primary demand driver for defense systems."
+
+      - id: def__bottleneck_propulsion
+        label_en: "Missile & munition propulsion supply"
+        label_zh: "导弹与弹药推进系统供给"
+        node_type: bottleneck
+        basket_refs:
+          - defense
+        rationale: "Solid rocket motor and propulsion component production is the primary production bottleneck for guided munitions replenishment."
+
+      - id: def__direct_beneficiary
+        label_en: "Defense prime contractors"
+        label_zh: "国防主承包商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - defense
+        rationale: "Basket members are the primary revenue recipients of re-armament and systems modernization programs."
+
+      - id: def__implementer_sensors
+        label_en: "Defense sensors, electronics & C2"
+        label_zh: "国防传感器、电子与指控系统"
+        node_type: implementer
+        basket_refs:
+          - defense
+        rationale: "Sensors, radars, electronic warfare systems, and command/control electronics are the enabling sub-systems for modern defense platforms."
+
+      - id: def__second_order_dual_use
+        label_en: "Dual-use technology (AI / autonomy)"
+        label_zh: "军民两用技术（AI与自主系统）"
+        node_type: second_order_risk
+        basket_refs:
+          - robotics_automation
+          - ai_semiconductors
+        rationale: "Autonomous systems and AI-chip content in defense platforms create second-order demand linkage to civilian AI and robotics baskets."
+
+    edges:
+      - src: def__driver
+        dst: def__bottleneck_propulsion
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Re-armament spending translates to munitions orders constrained by propulsion supply."
+      - src: def__bottleneck_propulsion
+        dst: def__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Defense primes are primary contractors for re-armament programs."
+      - src: def__direct_beneficiary
+        dst: def__implementer_sensors
+        order: 2
+        side: winner
+        confidence: med
+        rationale: "Platform modernization programs pull through sensor and electronics sub-system orders."
+      - src: def__direct_beneficiary
+        dst: def__second_order_dual_use
+        order: 3
+        side: winner
+        confidence: low
+        rationale: "AI autonomy content in defense platforms creates second-order linkage to civilian AI semiconductor and robotics baskets."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # robotics_automation — Robotics & automation
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: robotics_automation
+    nodes:
+      - id: rob__driver
+        label_en: "Labor cost & reshoring-driven automation investment"
+        label_zh: "劳动力成本与回岸制造自动化投资"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - reshoring
+        rationale: "Persistent wage inflation and onshoring mandates are compressing margins for manufacturers, accelerating the ROI hurdle for automation capital spending."
+
+      - id: rob__bottleneck_actuators
+        label_en: "Precision actuators & servo motors"
+        label_zh: "精密执行器与伺服电机"
+        node_type: bottleneck
+        basket_refs:
+          - robotics_automation
+        rationale: "High-precision actuators and servo drives are the primary lead-time-constrained components in industrial robot delivery."
+
+      - id: rob__direct_beneficiary
+        label_en: "Industrial robots & cobots"
+        label_zh: "工业机器人与协作机器人"
+        node_type: direct_beneficiary
+        basket_refs:
+          - robotics_automation
+        rationale: "Basket members are the direct revenue recipients of factory automation capex; cobot adoption is expanding the addressable market."
+
+      - id: rob__downstream_ai_vision
+        label_en: "AI vision & perception software"
+        label_zh: "AI视觉与感知软件"
+        node_type: downstream_winner
+        basket_refs:
+          - ai_infra
+          - ai_semiconductors
+        rationale: "Robotic systems increasingly embed AI vision; demand for perception chips and software is a downstream winner."
+
+      - id: rob__impaired_manual_assembly
+        label_en: "Labor-intensive assembly operations"
+        label_zh: "劳动密集型组装作业"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: automation ROI competes directly with labor-intensive operations; companies with high manual assembly ratios face structural margin pressure."
+
+    edges:
+      - src: rob__driver
+        dst: rob__bottleneck_actuators
+        order: 1
+        side: winner
+        confidence: med
+        rationale: "Automation capex demand meets actuator supply constraints; lead times extend delivery timelines."
+      - src: rob__bottleneck_actuators
+        dst: rob__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Robot and cobot orders flow to basket members once component supply permits."
+      - src: rob__direct_beneficiary
+        dst: rob__downstream_ai_vision
+        order: 2
+        side: winner
+        confidence: med
+        rationale: "AI-enabled robots pull through AI vision chip and perception software demand."
+      - src: rob__driver
+        dst: rob__impaired_manual_assembly
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: automation investment substitutes for manual assembly labor; affected sub-sectors face structural cost base displacement."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # glp1_obesity — GLP-1 / Obesity
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: glp1_obesity
+    nodes:
+      - id: glp1__driver
+        label_en: "GLP-1 weight-loss drug demand & formulary access"
+        label_zh: "GLP-1减重药需求与医保覆盖"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - obesity_glp1
+        rationale: "Clinically demonstrated weight reduction and cardiovascular benefit are driving formulary inclusion and payer negotiation; patient pipeline is structural."
+
+      - id: glp1__bottleneck_fill_finish
+        label_en: "Fill-finish & drug-delivery device manufacturing"
+        label_zh: "灌装封装与给药装置制造"
+        node_type: bottleneck
+        basket_refs:
+          - obesity_glp1
+        rationale: "Auto-injector device manufacturing and fill-finish sterile capacity are the binding constraints on GLP-1 supply scaling."
+
+      - id: glp1__direct_beneficiary
+        label_en: "GLP-1 drug developers & manufacturers"
+        label_zh: "GLP-1药物研发商与制造商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - obesity_glp1
+        rationale: "Basket members are the primary revenue recipients of prescription volumes and net pricing once payer coverage broadens."
+
+      - id: glp1__downstream_winner_devices
+        label_en: "Medical devices benefiting from obesity reduction"
+        label_zh: "受益于肥胖率下降的医疗器械"
+        node_type: downstream_winner
+        basket_refs:
+          - managed_care
+        rationale: "Reduction in obesity-related comorbidities is a second-order tailwind for managed care cost reduction, though it may reduce procedure volumes for device makers."
+
+      - id: glp1__impaired_bariatric
+        label_en: "Bariatric surgery & related devices"
+        label_zh: "减重手术及相关医疗器械"
+        node_type: impaired_incumbent
+        basket_refs:
+          - managed_care
+        rationale: "AVOID-shaped: widespread GLP-1 adoption is evidence the surgical alternative faces demand displacement; procedure volume data is the observable."
+
+      - id: glp1__second_order_snack_food
+        label_en: "High-calorie packaged food & snack sector"
+        label_zh: "高热量包装食品与零食行业"
+        node_type: second_order_risk
+        basket_refs: []
+        rationale: "AVOID-shaped: population-level caloric intake reduction from GLP-1 adoption is a volume headwind for high-calorie packaged food manufacturers; structural, not cyclical."
+
+    edges:
+      - src: glp1__driver
+        dst: glp1__bottleneck_fill_finish
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Demand growth converts to fill-finish capacity investment; bottleneck suppliers command pricing power."
+      - src: glp1__bottleneck_fill_finish
+        dst: glp1__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Revenue flows to GLP-1 developers once manufacturing capacity scales."
+      - src: glp1__driver
+        dst: glp1__downstream_winner_devices
+        order: 2
+        side: winner
+        confidence: low
+        rationale: "Comorbidity reduction may lower managed care cost structures over multi-year horizons."
+      - src: glp1__driver
+        dst: glp1__impaired_bariatric
+        order: 2
+        side: loser
+        confidence: high
+        rationale: "AVOID-shaped: GLP-1 adoption displaces bariatric procedure demand; procedure volume trends are the observable."
+      - src: glp1__driver
+        dst: glp1__second_order_snack_food
+        order: 3
+        side: loser
+        confidence: low
+        rationale: "AVOID-shaped: population-level GLP-1 adoption is a structural volume headwind for high-calorie food; observable via category scanner data."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # fintech_payments — Fintech & payments
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: fintech_payments
+    nodes:
+      - id: fin__driver
+        label_en: "Digital payments volume & real-time payment rail adoption"
+        label_zh: "数字支付量与实时支付轨道采用"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - payments_fintech
+        rationale: "Global cashless payment volume growth and real-time payment rail (FedNow, RTP) adoption are structural demand drivers for payment infrastructure."
+
+      - id: fin__bottleneck_compliance
+        label_en: "Regulatory compliance & banking charter constraints"
+        label_zh: "监管合规与银行牌照限制"
+        node_type: bottleneck
+        basket_refs:
+          - payments_fintech
+        rationale: "Licensing, AML/KYC requirements, and banking charter constraints are the primary barriers to new entrant scaling."
+
+      - id: fin__direct_beneficiary
+        label_en: "Payment network & fintech enablers"
+        label_zh: "支付网络与金融科技使能商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - payments_fintech
+        rationale: "Basket members capture payment volume economics and software subscription revenue from embedded finance adoption."
+
+      - id: fin__impaired_cash_check
+        label_en: "Cash processing & check clearing incumbents"
+        label_zh: "现金处理与支票清算传统机构"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: secular shift to digital payments structurally reduces cash and check volume handled by legacy processors."
+
+    edges:
+      - src: fin__driver
+        dst: fin__bottleneck_compliance
+        order: 1
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: compliance costs are a structural barrier that advantages large incumbents over new entrants."
+      - src: fin__bottleneck_compliance
+        dst: fin__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Compliance moat advantages scaled payment networks with existing licensing and rails."
+      - src: fin__driver
+        dst: fin__impaired_cash_check
+        order: 2
+        side: loser
+        confidence: high
+        rationale: "AVOID-shaped: cashless volume growth structurally reduces cash and check volume for legacy processors."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # space_satellite — Space & satellites
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: space_satellite
+    nodes:
+      - id: space__driver
+        label_en: "Low-Earth-orbit constellation buildout & launch cadence"
+        label_zh: "低地球轨道星座建设与发射节奏"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - space_economy
+        rationale: "LEO constellation deployment and reusable launch cost reductions are enabling commercial satellite services; launch cadence is the pipeline proxy."
+
+      - id: space__bottleneck_spectrum
+        label_en: "Spectrum licensing & orbital slot allocation"
+        label_zh: "频谱许可与轨道位资源分配"
+        node_type: bottleneck
+        basket_refs:
+          - space_economy
+        rationale: "ITU orbital slot and spectrum licensing are finite resources; incumbents with allocated rights have a regulatory moat."
+
+      - id: space__direct_beneficiary
+        label_en: "Satellite operators & launch providers"
+        label_zh: "卫星运营商与发射服务商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - space_economy
+        rationale: "Basket members capture the revenue from satellite connectivity services and launch vehicle utilization."
+
+      - id: space__downstream_ground_equipment
+        label_en: "Ground equipment & terminal manufacturers"
+        label_zh: "地面设备与终端制造商"
+        node_type: downstream_winner
+        basket_refs:
+          - space_economy
+        rationale: "Growing constellation subscriber base drives terminal and ground station hardware demand."
+
+      - id: space__impaired_geostationary
+        label_en: "Legacy GEO satellite operators (high-latency)"
+        label_zh: "传统高延迟GEO卫星运营商"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: LEO connectivity with low latency is displacing GEO satellite for broadband applications; GEO operators face structural revenue pressure."
+
+    edges:
+      - src: space__driver
+        dst: space__bottleneck_spectrum
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Spectrum scarcity advantages incumbents with existing orbital/spectrum rights."
+      - src: space__bottleneck_spectrum
+        dst: space__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Licensed operators convert spectrum access into service revenue."
+      - src: space__direct_beneficiary
+        dst: space__downstream_ground_equipment
+        order: 2
+        side: winner
+        confidence: med
+        rationale: "Subscriber base growth drives terminal hardware demand from basket members."
+      - src: space__driver
+        dst: space__impaired_geostationary
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: LEO latency advantage is displacing GEO for broadband; subscription revenue migration is the observable."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # rare_earth_critical_min — Rare earth & critical minerals
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: rare_earth_critical_min
+    nodes:
+      - id: rem__driver
+        label_en: "EV / battery & defense supply chain diversification mandates"
+        label_zh: "电动车/电池与国防供应链多元化政策要求"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - critical_minerals
+        rationale: "IRA domestic-content requirements and DoD critical mineral sourcing mandates are the policy-driven demand layer; EV battery chemistry and defense magnets are the end markets."
+
+      - id: rem__bottleneck_processing
+        label_en: "Rare earth processing & refining (ex-China)"
+        label_zh: "稀土精炼加工（中国以外）"
+        node_type: bottleneck
+        basket_refs:
+          - critical_minerals
+        rationale: "China dominates rare earth processing; Western ex-China refining capacity is the binding constraint on supply chain diversification."
+
+      - id: rem__direct_beneficiary
+        label_en: "Critical mineral miners & processors"
+        label_zh: "关键矿产开采与加工商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - critical_minerals
+        rationale: "Basket members are the direct beneficiaries of policy-driven demand for domestically sourced critical minerals."
+
+      - id: rem__impaired_china_dependent
+        label_en: "Manufacturers dependent on Chinese rare earth supply"
+        label_zh: "依赖中国稀土供应的制造商"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: Chinese export controls on rare earth processing intermediaries create supply disruption risk for manufacturers without diversified sourcing."
+
+    edges:
+      - src: rem__driver
+        dst: rem__bottleneck_processing
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Policy mandates translate to investment in Western processing capacity; early movers command pricing premium."
+      - src: rem__bottleneck_processing
+        dst: rem__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Processing capacity scarcity outside China advantages domestic/allied miners and refiners."
+      - src: rem__driver
+        dst: rem__impaired_china_dependent
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: manufacturers without diversified sourcing face input cost and supply continuity risk from Chinese export restrictions."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # copper_steel_electrify — Copper, steel & electrification
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: copper_steel_electrify
+    nodes:
+      - id: cu__driver
+        label_en: "Reshoring & electrification-driven metals demand"
+        label_zh: "制造业回岸与电气化驱动的金属需求"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - reshoring
+        rationale: "IRA-driven manufacturing onshoring and AI/EV/grid electrification are the structural demand drivers for copper and specialty steel."
+
+      - id: cu__bottleneck_mine_grade
+        label_en: "Copper mine grade decline & permitting"
+        label_zh: "铜矿品位下降与许可"
+        node_type: bottleneck
+        basket_refs:
+          - reshoring
+        rationale: "Secular ore-grade decline and 10-15 year mine-permit timelines constrain greenfield copper supply; recycled copper is insufficient to cover the gap."
+
+      - id: cu__direct_beneficiary
+        label_en: "Copper producers & recyclers"
+        label_zh: "铜生产商与回收商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - reshoring
+        rationale: "Basket members include diversified metals producers with copper exposure that benefit from supply-constrained pricing."
+
+      - id: cu__impaired_import_dependent
+        label_en: "Import-dependent copper consuming manufacturers"
+        label_zh: "依赖进口铜的制造商"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: manufacturers without domestic copper supply agreements face input cost headwinds from tariffs and price escalation."
+
+    edges:
+      - src: cu__driver
+        dst: cu__bottleneck_mine_grade
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Demand growth outpacing constrained supply supports copper price; grade decline tightens the structural deficit."
+      - src: cu__bottleneck_mine_grade
+        dst: cu__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Supply tightness converts to pricing power for producers with high-grade assets."
+      - src: cu__driver
+        dst: cu__impaired_import_dependent
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: tariff and price risk for manufacturers that have not secured domestic or allied copper supply."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # ag_fertilizer — Agriculture & fertilizer
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: ag_fertilizer
+    nodes:
+      - id: ag__driver
+        label_en: "Food security policy & nutrient price cycle"
+        label_zh: "粮食安全政策与化肥价格周期"
+        node_type: enabling_infrastructure
+        basket_refs: []
+        rationale: "Global food security concerns, geopolitical supply disruptions (Russia/Belarus potash/urea), and biofuel mandates are structural demand drivers."
+
+      - id: ag__bottleneck_nitrogen
+        label_en: "Natural gas input cost for nitrogen fertilizer"
+        label_zh: "氮肥天然气原料成本"
+        node_type: bottleneck
+        basket_refs: []
+        rationale: "Natural gas is ~70-80% of nitrogen fertilizer production cost; price volatility is the primary margin swing factor for nitrogen producers."
+
+      - id: ag__direct_beneficiary
+        label_en: "Fertilizer producers (nitrogen / potash / phosphate)"
+        label_zh: "化肥生产商（氮/钾/磷）"
+        node_type: direct_beneficiary
+        basket_refs: []
+        rationale: "Fertilizer producers are direct beneficiaries when supply disruption or policy mandates tighten nutrient availability."
+
+      - id: ag__downstream_precision_ag
+        label_en: "Precision agriculture technology"
+        label_zh: "精准农业技术"
+        node_type: downstream_winner
+        basket_refs: []
+        rationale: "Higher input costs accelerate precision agriculture adoption for nutrient optimization; ag-tech platforms benefit from cost-reduction urgency."
+
+      - id: ag__impaired_food_processor
+        label_en: "Food processors with thin margin exposure to ag input costs"
+        label_zh: "农业投入成本高敞口的薄利食品加工商"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: fertilizer price spikes pass through to food processors with limited pricing power; margin compression risk is observable in cost-of-goods."
+
+    edges:
+      - src: ag__driver
+        dst: ag__bottleneck_nitrogen
+        order: 1
+        side: winner
+        confidence: med
+        rationale: "Geopolitical supply disruptions translate to tighter nitrogen supply when gas cost does not deter production."
+      - src: ag__bottleneck_nitrogen
+        dst: ag__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: med
+        rationale: "Supply tightness converts to pricing power for producers with low-cost gas access."
+      - src: ag__direct_beneficiary
+        dst: ag__downstream_precision_ag
+        order: 2
+        side: winner
+        confidence: low
+        rationale: "High input costs drive demand for nutrient-use-efficiency technology."
+      - src: ag__driver
+        dst: ag__impaired_food_processor
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: food processors with commodity exposure face margin headwinds when fertilizer prices rise."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # medical_devices — Medical devices
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: medical_devices
+    nodes:
+      - id: meddev__driver
+        label_en: "Aging demographics & procedure volume recovery"
+        label_zh: "人口老龄化与手术量复苏"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - managed_care
+        rationale: "Post-COVID procedure backlog and aging demographics are structural tailwinds for medical device utilization; GLP-1 displacement is the countervailing risk."
+
+      - id: meddev__bottleneck_regulatory
+        label_en: "FDA clearance & CE marking timelines"
+        label_zh: "FDA许可与CE标志审批周期"
+        node_type: bottleneck
+        basket_refs:
+          - managed_care
+        rationale: "Regulatory clearance timelines for novel devices are the primary constraint on new product cycle monetization."
+
+      - id: meddev__direct_beneficiary
+        label_en: "Surgical device & implant manufacturers"
+        label_zh: "外科器械与植入物制造商"
+        node_type: direct_beneficiary
+        basket_refs:
+          - managed_care
+        rationale: "Basket members capture procedure volume as the primary revenue driver for implants, surgical robotics, and capital equipment."
+
+      - id: meddev__impaired_glp1_displacement
+        label_en: "Devices for obesity-related procedures (surgical)"
+        label_zh: "肥胖相关手术器械"
+        node_type: impaired_incumbent
+        basket_refs:
+          - obesity_glp1
+        rationale: "AVOID-shaped: GLP-1 adoption is reducing bariatric and related procedure volumes; device makers with high obesity-procedure concentration face structural headwinds."
+
+    edges:
+      - src: meddev__driver
+        dst: meddev__bottleneck_regulatory
+        order: 1
+        side: winner
+        confidence: med
+        rationale: "Procedure volume growth justifies regulatory investment; cleared devices capture pent-up demand."
+      - src: meddev__bottleneck_regulatory
+        dst: meddev__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Cleared devices command procedure utilization revenue."
+      - src: meddev__driver
+        dst: meddev__impaired_glp1_displacement
+        order: 2
+        side: loser
+        confidence: med
+        rationale: "AVOID-shaped: GLP-1 weight loss is measurably reducing elective bariatric procedure volumes."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # diagnostics_lifesci — Diagnostics & life-science tools
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: diagnostics_lifesci
+    nodes:
+      - id: diag__driver
+        label_en: "Biopharma R&D spending & AI-driven drug discovery"
+        label_zh: "生物制药研发支出与AI驱动药物发现"
+        node_type: enabling_infrastructure
+        basket_refs:
+          - obesity_glp1
+        rationale: "Biopharma R&D intensity driven by AI drug discovery platforms, GLP-1 pipeline expansion, and oncology is the demand driver for life-science tool vendors."
+
+      - id: diag__bottleneck_sample_infrastructure
+        label_en: "Patient sample & biobanking infrastructure"
+        label_zh: "患者样本与生物样本库基础设施"
+        node_type: bottleneck
+        basket_refs: []
+        rationale: "Sample collection, consent, and biobanking capacity constrains the throughput of genomic and molecular diagnostic platforms."
+
+      - id: diag__direct_beneficiary
+        label_en: "Diagnostic & life-science tool vendors"
+        label_zh: "诊断与生命科学工具供应商"
+        node_type: direct_beneficiary
+        basket_refs: []
+        rationale: "Instrument, reagent, and informatics vendors are primary revenue recipients of R&D spending growth."
+
+      - id: diag__second_order_cro
+        label_en: "Contract research organizations (CRO)"
+        label_zh: "合同研究机构（CRO）"
+        node_type: second_order_risk
+        basket_refs: []
+        rationale: "R&D outsourcing growth is a second-order tailwind for CROs; however, AI-driven productivity may compress headcount-based billing."
+
+    edges:
+      - src: diag__driver
+        dst: diag__bottleneck_sample_infrastructure
+        order: 1
+        side: winner
+        confidence: med
+        rationale: "Growing R&D throughput drives investment in sample infrastructure to feed diagnostic platforms."
+      - src: diag__bottleneck_sample_infrastructure
+        dst: diag__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: high
+        rationale: "Instrument and reagent demand flows to life-science tool vendors as the primary revenue recipients."
+      - src: diag__direct_beneficiary
+        dst: diag__second_order_cro
+        order: 2
+        side: winner
+        confidence: low
+        rationale: "R&D growth drives CRO outsourcing demand; AI efficiency offsets are a countervailing risk."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # solar — Solar
+  # ────────────────────────────────────────────────────────────────────────────
+  - theme_id: solar
+    nodes:
+      - id: solar__driver
+        label_en: "IRA manufacturing credits & utility-scale PPA demand"
+        label_zh: "美国通胀削减法案制造业抵税与公用规模购电协议需求"
+        node_type: enabling_infrastructure
+        basket_refs: []
+        rationale: "IRA Section 45X manufacturing credits and utility-scale PPA demand are the policy-driven demand framework; Chinese module oversupply is the structural countervailing force."
+
+      - id: solar__bottleneck_inverters_transformers
+        label_en: "Solar inverters & grid-interconnection transformers"
+        label_zh: "光伏逆变器与电网接入变压器"
+        node_type: bottleneck
+        basket_refs: []
+        rationale: "Inverter supply and grid-interconnection transformer availability are the project execution bottlenecks; lead times extended to 18-24 months for large transformers."
+
+      - id: solar__direct_beneficiary
+        label_en: "Domestic solar module & equipment manufacturers"
+        label_zh: "国内光伏组件与设备制造商"
+        node_type: direct_beneficiary
+        basket_refs: []
+        rationale: "IRA 45X credits advantage domestic manufacturing over Chinese module imports; US-based producers capture the policy premium."
+
+      - id: solar__impaired_chinese_module
+        label_en: "Chinese solar module exporters to the US"
+        label_zh: "中国光伏组件出口商（面向美国市场）"
+        node_type: impaired_incumbent
+        basket_refs: []
+        rationale: "AVOID-shaped: AD/CVD duties and potential tariff escalation under onshoring policy are structural headwinds for Chinese solar module exports to the US market."
+
+    edges:
+      - src: solar__driver
+        dst: solar__bottleneck_inverters_transformers
+        order: 1
+        side: winner
+        confidence: med
+        rationale: "Project activity growth converts to inverter and transformer demand; scarcity advantages domestic suppliers."
+      - src: solar__bottleneck_inverters_transformers
+        dst: solar__direct_beneficiary
+        order: 1
+        side: winner
+        confidence: med
+        rationale: "Domestic manufacturers benefit from IRA credits and are the primary recipients of utility-scale module demand."
+      - src: solar__driver
+        dst: solar__impaired_chinese_module
+        order: 2
+        side: loser
+        confidence: high
+        rationale: "AVOID-shaped: tariff and policy barriers are a structural headwind for Chinese module market access in the US."
