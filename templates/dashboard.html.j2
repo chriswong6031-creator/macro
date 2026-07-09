@@ -1882,6 +1882,22 @@
     {% set _fv_en = FEV.verdict if FEV.verdict else 'Pending' %}
     {% set _fv_zh = {'CONFIRMED':'已确认','FADED':'已消退','MIXED':'混合','Pending':'待定'}.get(_fv_en, _fv_en) %}
     <section class="ms-flip" id="flip-confirmation">
+      <style>
+      #flip-confirmation{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px 13px;margin-top:10px}
+      #flip-confirmation .flip-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+      #flip-confirmation .flip-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+      #flip-confirmation .flip-asof{font-size:11px}
+      #flip-confirmation .flip-event{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;font-size:13px}
+      #flip-confirmation .flip-date{font-weight:700}
+      #flip-confirmation .flip-dir{font-weight:600}
+      #flip-confirmation .flip-z{font-size:12px}
+      #flip-confirmation .flip-verdict{font-weight:700}
+      #flip-confirmation .flip-rates{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-top:7px;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 40%,transparent);font-size:12px}
+      #flip-confirmation .flip-rate-label{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)}
+      #flip-confirmation .flip-stat{font-weight:600}
+      #flip-confirmation .flip-stat.up{color:var(--up)}
+      #flip-confirmation .flip-stat.down{color:var(--down)}
+      </style>
       <div class="flip-head">
         <span class="flip-label">{{ t('Sector-flip confirmation','板块翻转确认') }}</span>
         {{ help('A violent one-day sector-leadership flip is when the defensive composite (XLP/XLU/XLV) vs offense composite (SMH/XLK) daily spread exceeds |z| ≥ 2.5 vs trailing 252d. The next day\'s tape reads CONFIRMED (same direction), FADED (reversed), or MIXED. Descriptive only — describes what the tape did, never recommends a trade. Base rates since 2024 answer the chase-or-fade question with data.', '当防御复合体（XLP/XLU/XLV）对进攻复合体（SMH/XLK）的单日收益差超过 |z| ≥ 2.5（相对于252日历史）时触发板块翻转。次日表现读作：已确认（同向）、已消退（反向）或混合。纯描述性 — 描述实际走势，从不推荐操作。2024年以来的基率用数据回答"追入还是淡出"的问题。') }}
@@ -2153,7 +2169,8 @@
 
   {# ===================== POLICY-LEVER ARMED/QUIET CARD (Policy-Shock W2-F) =====================
      Display-only conditions context — not a signal, not a forecast.
-     PS-R1: the word "intent" does not appear in card copy.
+     PS-R1: card copy never reads or attributes intent; the canonical framing line
+     ("not intent, not timing") is the REQUIRED disclaimer and is exempt (PS-A3).
      PS-R3: reads policy_lever.json (site artifact); never feeds scoring.
      PS-R4: no probabilities anywhere in this block.
      Jinja missing-key gotcha guard: every nested access uses the 'defined' test or
