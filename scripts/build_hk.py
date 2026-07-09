@@ -828,10 +828,11 @@ def main() -> int:
             vm["catalyst_strip"] = []
             vm["catalyst_imminent"] = None
 
-        # CBBC / Warrant Leverage Map — display-tier microstructure organ (W1 data-plane).
-        # Surfaces bull/bear positioning froth + issuer-hedge magnet zones. DISPLAY-ONLY.
-        # Stamps a forward ledger (CN_LANE=asia gate). Mandatory call price not yet sourced
-        # (requires SLD PDFs — W1 honest caveat); outstanding qty + bull/bear classification live.
+        # CBBC / Warrant Leverage Map — display-tier microstructure organ (W2 data-plane).
+        # W1: bull/bear froth from daily XLSX outstanding. W2 (this build): mandatory call
+        # price from SLD PDFs → real magnet-cluster computation (bull-CBBC call zones below
+        # spot = forced-sell magnets; bear-CBBC call zones above spot = forced-buy).
+        # DISPLAY-ONLY. Stamps a forward ledger (CN_LANE=asia gate).
         try:
             from engine import hk_cbbc as _cbbc
             _cbbc_snap = _cbbc.run()

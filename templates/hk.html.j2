@@ -966,23 +966,46 @@
       {% set _bb = entry.bull_bear_ratio %}
       {% set _state = entry.leverage_state if entry.leverage_state else 'no_data' %}
       {% set _cls = 'c-up' if _state in ('bull_skew_froth','bull_skew') else ('c-down' if _state in ('bear_skew_froth','bear_skew') else 'c-muted') %}
+      {% set _has_magnet_below = entry.magnet_below if entry.magnet_below is defined else false %}
+      {% set _has_magnet_above = entry.magnet_above if entry.magnet_above is defined else false %}
+      {% set _nearest_pct = entry.nearest_magnet_pct if entry.nearest_magnet_pct is defined else none %}
       {% if entry.total_outstanding and entry.total_outstanding > 0 %}
-      <span class="chip {{ _cls }}" style="font-size:12px;"
-            title="{{ entry.name_en }} {{ entry.ticker }} — bull:bear ratio={{ '%.2f'|format(_bb) if _bb is not none else '—' }}">
+      <span class="chip {{ _cls }}" style="font-size:12px;">
         <span class="l-en">{{ entry.name_en }}</span>
         <span class="l-zh">{{ entry.name_zh }}</span>
-        {{ entry.ticker }} ·
+        ·
         <span class="l-en">B/B</span><span class="l-zh">牛熊</span>
         {% if _bb is not none %}{{ '%.2f'|format(_bb) }}{% else %}—{% endif %}
         <span style="font-size:10px;opacity:.7;">{{ _state | replace('_', ' ') }}</span>
+        {# W2: magnet zone indicators #}
+        {% if _has_magnet_below %}
+        <span style="font-size:10px;color:var(--warn);margin-left:3px;"
+              title="Dense bull-CBBC call zone below spot — forced-sell magnet on breach{% if _nearest_pct is not none %} ({{ '%.1f'|format(_nearest_pct) }}% from spot){% endif %}">
+          <span class="l-en">↓mag{{ '%.1f'|format(_nearest_pct) if _nearest_pct is not none else '' }}%</span>
+          <span class="l-zh">↓磁{% if _nearest_pct is not none %}{{ '%.1f'|format(_nearest_pct) }}%{% endif %}</span>
+        </span>
+        {% endif %}
+        {% if _has_magnet_above %}
+        <span style="font-size:10px;color:var(--info);margin-left:3px;"
+              title="Dense bear-CBBC call zone above spot — forced-buy on breach{% if _nearest_pct is not none %} ({{ '%.1f'|format(_nearest_pct) }}% from spot){% endif %}">
+          <span class="l-en">↑mag{{ '%.1f'|format(_nearest_pct) if _nearest_pct is not none else '' }}%</span>
+          <span class="l-zh">↑磁{% if _nearest_pct is not none %}{{ '%.1f'|format(_nearest_pct) }}%{% endif %}</span>
+        </span>
+        {% endif %}
       </span>
       {% endif %}
       {% endfor %}
     </div>
-    {# Caveat footer #}
+    {# Magnet zone legend (only when at least one bellwether has call-level data) #}
+    {% set _any_call_level = _cm.bellwethers | selectattr('call_level_coverage', 'defined') | selectattr('call_level_coverage', 'gt', 0) | list %}
     <div style="margin-top:8px;font-size:11px;color:var(--muted);">
-      <span class="l-en">Outstanding qty from HKEX daily issuer reports. Mandatory call price (magnet level) not yet sourced — W1 context only.</span>
-      <span class="l-zh">持仓量来自交易所每日申报。强制赎回价（磁吸位）暂未获取 — 仅为第一阶段参考。</span>
+      {% if _any_call_level %}
+      <span class="l-en">Outstanding qty (HKEX daily) + mandatory call price (SLD PDFs). ↓mag = bull-CBBC call cluster below spot (forced-sell magnet); ↑mag = bear-CBBC cluster above spot. Context, not a signal.</span>
+      <span class="l-zh">持仓量（交易所每日申报）+ 强制赎回价（上市文件PDF）。↓磁 = 牛证赎回价集中在当前价下方（强制抛售磁吸区）；↑磁 = 熊证在上方。仅供参考。</span>
+      {% else %}
+      <span class="l-en">Outstanding qty from HKEX daily issuer reports. Call price magnet analysis pending SLD PDF coverage.</span>
+      <span class="l-zh">持仓量来自交易所每日申报。强制赎回价磁吸分析待上市文件覆盖。</span>
+      {% endif %}
     </div>
     {# Banner for stale/error state #}
     {% if _cm.banner %}
