@@ -64,25 +64,53 @@
 
       // ---- A2: leader-health gate (display-only). The rank skips the most recent ~21
       // sessions by construction (momentum lookbacks, skip_d=21), so the named "best place
-      // to allocate" can be breaking down short-term while still ranking #1. The baskets
-      // pages co-embed the theme intel (a top-level `const THEME`), so read it defensively:
-      // if it is unreachable or the leader is not covered, the hero renders unchanged.
+      // to allocate" can be breaking down short-term while still ranking #1.
+      //
+      // Two-tier check, most-to-least data-rich:
+      //   Tier 1 (basket detail pages): use the co-embedded THEME (const defined in
+      //     baskets.html / baskets_*.html.j2 inline script), which carries MTF ladder_state
+      //     and per-theme reco from the full theme_intel object. `const` at script-tag top
+      //     level IS accessible as a global name but NOT via window.THEME — read by name.
+      //   Tier 2 (allocation.html or any page without THEME): fall back to the allocation
+      //     payload itself (d.ranks, d.rotation.breadth_laggards) — enough to show the chip
+      //     when the leader has poor breadth or low durability without relying on THEME.
+      //
+      // This fixes the silent-degradation on allocation.html where THEME is absent.
       var faltering = null;
       try {
-        var TI = (typeof THEME !== 'undefined' && THEME) ? THEME : (window.THEME || null);
+        var i, thm = null, lag = false, ladder = '', reco = '';
+        // Tier 1: basket-page THEME (const in inline script, NOT on window)
+        var TI = (typeof THEME !== 'undefined') ? THEME : null;
         if (TI && (h.id || h.name)) {
-          var themes = TI.themes || [], thm = null, i;
+          var themes = TI.themes || [];
           for (i = 0; i < themes.length; i++) {
             if (themes[i] && (themes[i].id === h.id || themes[i].name === h.name)) { thm = themes[i]; break; }
           }
-          var lag = false, lags = TI.breadth_laggards || [];
+          var lags = TI.breadth_laggards || [];
           for (i = 0; i < lags.length; i++) {
             if (lags[i] && (lags[i].id === h.id || lags[i].name === h.name)) { lag = true; break; }
           }
-          var ladder = (thm && thm.mtf) ? String(thm.mtf.ladder_state || '').toUpperCase() : '';
-          var reco = thm ? String(thm.reco || '').toLowerCase() : '';
+          ladder = (thm && thm.mtf) ? String(thm.mtf.ladder_state || '').toUpperCase() : '';
+          reco = thm ? String(thm.reco || '').toLowerCase() : '';
           if (lag || ladder === 'ROLLING OVER' || reco === 'hold' || reco === 'trim' || reco === 'avoid')
-            faltering = { lag: lag, ladder: ladder, reco: reco };
+            faltering = { lag: lag, ladder: ladder, reco: reco, source: 'theme' };
+        } else if (h.id || h.name) {
+          // Tier 2: derive from the allocation payload's own data (available on ALL pages
+          // including allocation.html, since this script already fetched the alloc JSON).
+          var ranks = d.ranks || [];
+          var leaderRank = null;
+          for (i = 0; i < ranks.length; i++) {
+            if (ranks[i] && (ranks[i].id === h.id || ranks[i].name === h.name)) { leaderRank = ranks[i]; break; }
+          }
+          // Check breadth_laggards from the rotation object (allocation payload carries this)
+          var rotLags = (d.rotation && d.rotation.breadth_laggards) ? d.rotation.breadth_laggards : [];
+          for (i = 0; i < rotLags.length; i++) {
+            if (rotLags[i] && (rotLags[i].id === h.id || rotLags[i].name === h.name)) { lag = true; break; }
+          }
+          // Use headline.durability_bar as a proxy: < 0.35 = breaking down
+          var durLow = (h.durability_bar != null && h.durability_bar < 0.35);
+          if (lag || durLow)
+            faltering = { lag: lag, ladder: '', reco: '', source: 'payload' };
         }
       } catch (e) { faltering = null; }
       var faltPill = faltering

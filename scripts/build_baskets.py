@@ -225,11 +225,28 @@ def main() -> int:
         _phase0_all()                                     # us, canada, china (HK skipped → US proxy)
     except Exception as e:  # noqa: BLE001 — additive; falls back to the committed artifacts
         log.error("thematic rotation Phase-0 refresh failed (using committed artifacts): %s", e)
+    _alloc_stale = False
     try:
         from scripts.build_allocation import main as _build_allocation
-        _build_allocation()                               # builds all four allocation pages
+        _alloc_stale = _build_allocation()                # builds all four allocation pages
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("allocation pages (via build_baskets) failed: %s", e)
+        _alloc_stale = True
+        log.error("allocation pages (via build_baskets) failed: %s", e, exc_info=True)
+        print("::warning::allocation sub-build (via build_baskets) raised an unhandled exception"
+              " — data/allocation/latest_*.json will NOT be updated this run. "
+              f"Root cause: {type(e).__name__}: {e}")
+    if _alloc_stale:
+        # Stamp a sibling freshness file so W3 tape surfaces can render a STALE chip.
+        import json as _json
+        from datetime import datetime, timezone
+        from lib import config as _cfg
+        _fdir = _cfg.ROOT / "site" / "allocationdata"
+        _fdir.mkdir(parents=True, exist_ok=True)
+        (_fdir / "freshness.json").write_text(
+            _json.dumps({"stale": True,
+                         "reason": "allocation sub-build failed or returned stale",
+                         "stamped_at": datetime.now(timezone.utc).isoformat(timespec="seconds")},
+                        separators=(",", ":")))
     try:
         from scripts.build_anticipation import main as _build_anticipation
         _build_anticipation()                             # anticipation.html + per-ticker cones
@@ -258,6 +275,14 @@ def main() -> int:
         log.error("basket_freeze[us]: SKIPPED (churn guard): %s", e)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("basket_freeze[us]: failed: %s", e)
+
+    # FT-R8 — surface-freshness sentinel: assert first-class artifacts carry today's
+    # NYSE session.  Warn-only (exits 0 always); annotations appear in the job summary.
+    try:
+        from scripts.check_surface_freshness import run as _check_freshness
+        _check_freshness()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("check_surface_freshness failed: %s", e)
 
     return 0
 
