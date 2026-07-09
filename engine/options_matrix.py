@@ -133,6 +133,53 @@ def _gex_dollar(oi: float, gamma: float, spot: float) -> float:
     return oi * gamma * spot * spot * _VOL_PCT * _CONTRACT_MULT
 
 
+# ── VEX (vanna exposure) helpers — EXPERIMENTAL ──────────────────────────────
+
+def _bs_vanna_scalar(S: float, K: float, T_years: float,
+                     iv: float, median_iv: float) -> float:
+    """Per-contract vanna (d_delta / d_sigma) using closed-form BS.
+
+    Formula: -N'(d1) * d2 / sigma  (dividend-free, q=0)
+    where d1 = (ln(S/K) + (r + 0.5*σ²)*T) / (σ*√T)
+          d2 = d1 - σ*√T
+
+    Same iv fallback and floor conventions as _bs_gamma_scalar.
+    Returns 0.0 on degenerate inputs.
+
+    EXPERIMENTAL — tagged in payload, display-only.
+    """
+    effective_iv = iv if iv > _MIN_IV else median_iv
+    if effective_iv <= _MIN_IV:
+        return 0.0
+    T = max(T_years, 0.001)
+    sqrtT = math.sqrt(T)
+    try:
+        d1 = (math.log(S / K) + (_R + 0.5 * effective_iv ** 2) * T) / (effective_iv * sqrtT)
+        d2 = d1 - effective_iv * sqrtT
+        vanna = -npdf(d1) * d2 / effective_iv
+        return vanna if math.isfinite(vanna) else 0.0
+    except (ValueError, ZeroDivisionError):
+        return 0.0
+
+
+def _vex_mn(oi: float, vanna: float, spot: float) -> float:
+    """Vanna exposure in $mn per 1 vol-point (1%) move in IV.
+
+    Formula: oi * vanna * S * 0.01 * 100 / 1_000_000
+      - oi:    open interest (contracts)
+      - vanna: per-contract d_delta/d_sigma (from _bs_vanna_scalar)
+      - S:     spot price
+      - 0.01:  1% IV move (1 vol point in decimal)
+      - 100:   contract multiplier
+      - /1e6:  scale to $mn
+
+    Sign is inherited from vanna (= -N'(d1)*d2/sigma).  For ATM strikes with
+    positive rate (d2 > 0), vanna is negative; for deep OTM or low-rate cases
+    it can be positive.  vex_mn sign is EXPERIMENTAL — display-only.
+    """
+    return oi * vanna * spot * _VOL_PCT * _CONTRACT_MULT / 1_000_000
+
+
 def _median_iv(ivs: list[float]) -> float:
     """Population median of valid IVs in range (0.01, 5.0)."""
     valid = [v for v in ivs if 0.01 < v < 5.0]
@@ -563,13 +610,15 @@ def build_matrix(
                 "put_vol":  0,
                 "call_gex": 0.0,
                 "put_gex":  0.0,
+                "call_vex": 0.0,   # VEX (experimental): call vanna exposure $mn
+                "put_vex":  0.0,   # VEX (experimental): put vanna exposure $mn
                 "call_oi_t2": 0,
                 "put_oi_t2":  0,
                 "_dte":     _dte(exp, asof),
             }
         return cell_map[key]
 
-    # ── OI[t-1] accumulation with GEX ────────────────────────────────────────
+    # ── OI[t-1] accumulation with GEX + VEX (experimental) ──────────────────
     for _, row in oi_t1_w.iterrows():
         k   = float(row["strike"])
         exp = _to_iso_date(row.get("expiration", ""))
@@ -585,14 +634,18 @@ def build_matrix(
         T_years     = dte_days / 365.0
         gamma       = _bs_gamma_scalar(spot, k, T_years, iv_contract, median_iv)
         gex         = _gex_dollar(oi, gamma, spot)
+        vanna       = _bs_vanna_scalar(spot, k, T_years, iv_contract, median_iv)
+        vex         = _vex_mn(oi, vanna, spot)
 
         cell = _get_cell(k, exp)
         if right == "C":
             cell["call_oi"]  += int(oi)
             cell["call_gex"] += gex      # positive (calls +)
+            cell["call_vex"] += vex      # calls: positive vex (IV up → delta up)
         elif right == "P":
             cell["put_oi"]  += int(oi)
             cell["put_gex"] += gex       # magnitude (unsigned here; sign in net)
+            cell["put_vex"]  += vex      # puts: negative vex (IV up → delta less negative)
 
     # ── OI[t-2] accumulation for delta_oi ───────────────────────────────────
     if not oi_t2_w.empty:
@@ -647,6 +700,10 @@ def build_matrix(
         d_call = c["call_oi"] - c["call_oi_t2"]
         d_put  = c["put_oi"]  - c["put_oi_t2"]
 
+        # VEX: aggregate vanna exposure = call_vex + put_vex (both inherit vanna sign).
+        # Sign is experimental and assumption-dependent; display-only.
+        net_vex = c["call_vex"] + c["put_vex"]
+
         cells_out.append({
             "strike":   _f(k),
             "expiry":   exp,
@@ -659,6 +716,7 @@ def build_matrix(
                 "call": d_call if c["call_oi"] > 0 or c["call_oi_t2"] > 0 else None,
                 "put":  d_put  if c["put_oi"]  > 0 or c["put_oi_t2"]  > 0 else None,
             },
+            "vex_mn":   _f(net_vex, 4),      # experimental: vanna exposure $mn per 1% IV move
             "_dte":    c["_dte"],             # internal; stripped before validate
         })
         expiry_set.add(exp)
@@ -692,16 +750,17 @@ def build_matrix(
         "levels":   levels,
         "heat_seeker": heat_seeker,
         "authority_tier": "display",
+        "experimental":   True,    # vex_mn field is experimental; no scoring path
         "reliability": {
             "gex":       "assumption-signed — display-only until GEX→vol gate (~Sept 2026)",
             "delta_oi":  "reliable — signing-free OI change (OI[t-1] − OI[t-2], both lagged)",
             "vol":       "reliable magnitude",
             "call_oi":   "reliable — OI[t-1]",
             "put_oi":    "reliable — OI[t-1]",
+            "vex_mn":    "experimental — closed-form BS vanna × OI[t-1]; assumption-signed; no scoring path",
             "note":      "Sign is an assumption, not a fact. Magnitude is the reliable read.",
         },
         "deferred": {
-            "VEX":     "deferred — requires greeks-path stability verification across ThetaData store",
             "UNUSUAL": "deferred — requires 30d per-strike volume baseline not yet in EOD store",
         },
         "_build_meta": {

@@ -32,11 +32,13 @@ if str(_REPO) not in sys.path:
 from engine.greeks import npdf
 from engine.options_matrix import (
     _bs_gamma_scalar,
+    _bs_vanna_scalar,
     _compute_max_pain,
     _gex_dollar,
     _heat_seeker,
     _median_iv,
     _null_payload,
+    _vex_mn,
     build_matrix,
     _MIN_TOTAL_OI,
     _CONTRACT_MULT,
@@ -471,6 +473,145 @@ def test_median_iv_fallback():
     assert _median_iv([0.0, -1.0, 6.0]) == 0.30   # all out of (0.01, 5.0)
     result = _median_iv([0.15, 0.20, 0.25])
     assert abs(result - 0.20) < 1e-9
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. VEX — vanna formula known-value check (EXPERIMENTAL)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_bs_vanna_scalar_known_value():
+    """_bs_vanna_scalar: known-value cross-check against the greeks.bs_greeks vanna.
+
+    vanna = -N'(d1) * d2 / sigma  (dividend-free, r=_R)
+
+    Hand computation (S=500, K=500, T=14/365, iv=0.20):
+      sqrtT = sqrt(14/365) ≈ 0.19579
+      d1 = [ln(1) + (0.05 + 0.5*0.04)*14/365] / (0.20*0.19579)
+         = [0 + 0.001096] / 0.039159
+         ≈ 0.027992
+      d2 = d1 - 0.20*0.19579 = 0.027992 - 0.039159 ≈ -0.011167
+      N'(d1) = exp(-0.5*d1^2) / sqrt(2π) ≈ 0.39884
+      vanna = -0.39884 * (-0.011167) / 0.20 ≈ +0.022267
+    """
+    S = 500.0
+    K = 500.0
+    iv = 0.20
+    T_years = 14.0 / 365.0
+
+    vanna = _bs_vanna_scalar(S, K, T_years, iv, 0.30)
+
+    # Cross-check: direct formula
+    sqrtT = math.sqrt(T_years)
+    d1 = (math.log(S / K) + (_R + 0.5 * iv ** 2) * T_years) / (iv * sqrtT)
+    d2 = d1 - iv * sqrtT
+    expected_vanna = -npdf(d1) * d2 / iv
+    assert abs(vanna - expected_vanna) < 1e-9, (
+        f"vanna mismatch: got {vanna:.6f} expected {expected_vanna:.6f}"
+    )
+
+    # Cross-check with greeks.bs_greeks (which also computes vanna, using q=0 assumption)
+    from engine.greeks import bs_greeks
+    _, _, greeks_vanna, _ = bs_greeks(S, K, T_years, iv, is_call=True, r=_R, q=0.0)
+    # bs_greeks uses -eqT * pdf * d2 / sigma; with q=0 eqT=1 so should match exactly
+    assert abs(vanna - greeks_vanna) < 1e-9, (
+        f"vanna vs bs_greeks mismatch: {vanna:.6f} vs {greeks_vanna:.6f}"
+    )
+
+    # Sanity: ATM vanna is finite and non-zero for typical parameters.
+    # Sign depends on moneyness/d2: when d2 > 0 (ATM + rate effect) vanna is negative;
+    # when d2 < 0 (short-dated deep OTM or low-rate) vanna is positive.  Only test finiteness.
+    assert math.isfinite(vanna), f"Expected finite vanna, got {vanna}"
+    assert vanna != 0.0, f"Expected non-zero vanna for typical ATM parameters"
+
+
+def test_bs_vanna_scalar_degenerate():
+    """_bs_vanna_scalar returns 0.0 only when BOTH iv and median_iv are below _MIN_IV.
+
+    When iv is below the floor, median_iv is used as fallback (same as _bs_gamma_scalar).
+    Only when median_iv is also too small does the function return 0.0.
+    """
+    # Both iv and median_iv below _MIN_IV (0.005) → 0.0
+    assert _bs_vanna_scalar(500.0, 500.0, 0.038, 0.004, 0.004) == 0.0
+
+    # iv below floor but median_iv=0.30 → fallback to median_iv → finite non-zero result
+    result = _bs_vanna_scalar(500.0, 500.0, 0.038, 0.0, 0.30)
+    assert math.isfinite(result), "Expected finite result when fallback iv is valid"
+
+
+def test_vex_mn_formula():
+    """_vex_mn: known-value check — formula oi * vanna * S * 0.01 * 100 / 1e6.
+
+    S=500, oi=2000, vanna=0.025 → vex = 2000 * 0.025 * 500 * 0.01 * 100 / 1e6
+                                       = 2000 * 0.025 * 500 * 1 / 1e6
+                                       = 25 / 1e6 * 1e6 ... let's compute:
+    = 2000 * 0.025 = 50
+    = 50 * 500 = 25000
+    = 25000 * 0.01 * 100 = 25000
+    = 25000 / 1e6 = 0.025
+    """
+    S = 500.0
+    oi = 2000.0
+    vanna = 0.025
+    expected = oi * vanna * S * _VOL_PCT * _CONTRACT_MULT / 1_000_000
+    result = _vex_mn(oi, vanna, S)
+    assert abs(result - expected) < 1e-12, (
+        f"_vex_mn formula mismatch: got {result} expected {expected}"
+    )
+    assert abs(result - 0.025) < 1e-9, f"Expected 0.025, got {result}"
+
+
+def test_build_matrix_vex_mn_present(tmp_path):
+    """build_matrix output cells carry vex_mn field when greeks data is present.
+
+    The field must be a finite float (not None) for contracts with real OI + IV.
+    """
+    root = "SPY"
+    expiry = "2026-08-15"
+
+    t1_rows = [
+        {"root": root, "expiration": expiry, "strike": 500.0, "right": "C", "open_interest": 1000},
+        {"root": root, "expiration": expiry, "strike": 490.0, "right": "P", "open_interest": 800},
+    ]
+    store = _make_store(tmp_path, root, t1_rows)
+
+    # Write greeks with IV + spot
+    greeks_path = store / "greeks" / root
+    greeks_path.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {
+            "root": root, "expiration": expiry, "strike": 500.0, "right": "C",
+            "date": "2026-07-07", "implied_vol": 0.20, "underlying_price": 500.0,
+            "delta": 0.5, "theta": -0.1, "vega": 0.2, "rho": 0.0, "iv_error": 0.0,
+        },
+        {
+            "root": root, "expiration": expiry, "strike": 490.0, "right": "P",
+            "date": "2026-07-07", "implied_vol": 0.22, "underlying_price": 500.0,
+            "delta": -0.3, "theta": -0.08, "vega": 0.18, "rho": 0.0, "iv_error": 0.0,
+        },
+    ]).to_parquet(greeks_path / "2026.parquet", index=False)
+
+    from engine.thetadata_store import clear_parquet_cache
+    clear_parquet_cache()
+
+    payload = build_matrix(root, store=str(store), asof="2026-07-07")
+    errors = validate_matrix(payload)
+    assert errors == [], f"validate_matrix errors: {errors}"
+
+    # All cells must have vex_mn key
+    cells = payload["cells"]
+    assert len(cells) > 0, "Expected at least one cell"
+    for c in cells:
+        assert "vex_mn" in c, f"Cell missing vex_mn: {c}"
+
+    # At least one cell should have a non-None vex_mn (call with real OI + IV)
+    vex_values = [c["vex_mn"] for c in cells if c.get("vex_mn") is not None]
+    assert len(vex_values) > 0, "Expected at least one non-None vex_mn cell"
+
+    # Payload should be marked experimental
+    assert payload.get("experimental") is True, "Payload should have experimental=True"
+
+    # reliability should mention vex_mn
+    assert "vex_mn" in payload.get("reliability", {}), "reliability should document vex_mn"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
