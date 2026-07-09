@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-09 15:53:14 UTC",
+  "built": "2026-07-09 18:16:54 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-09 11:53 EDT"
+    "local_time": "2026-07-09 14:16 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -18,29 +18,25 @@
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": 0.58
+      "chg_pct": 0.83
     },
     {
       "sym": "QQQ",
-      "chg_pct": 1.37
+      "chg_pct": 1.75
     },
     {
       "sym": "VIX",
-      "chg_pct": -4.14
+      "chg_pct": -5.33
     }
   ],
   "display": {
-    "verdict": "RISK_OFF",
-    "label_en": "Risk-off",
-    "label_zh": "\u907f\u9669",
-    "color": "red",
+    "verdict": "RISK_ON",
+    "label_en": "Risk-on",
+    "label_zh": "\u98ce\u9669\u504f\u597d",
+    "color": "green",
     "score": 77,
-    "band_changed": false,
-    "pending": {
-      "verdict": "RISK_ON",
-      "ticks": 1,
-      "needs": 2
-    }
+    "band_changed": true,
+    "pending": null
   },
   "live": {
     "verdict": "RISK_ON",
@@ -54,9 +50,9 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 63,
-      "label_en": "Growth scare / defensive rotation",
-      "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
+      "top_score": 59,
+      "label_en": "Bubble / blow-off unwind",
+      "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
         "met": false,
         "spy_below_200dma": false,
