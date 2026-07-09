@@ -1461,7 +1461,7 @@
       ]
     },
     "desk:ai_desk": {
-      "n_recent_fires": 2,
+      "n_recent_fires": 3,
       "n_hostile_regime": 0,
       "n_breadth_unconfirmed": 0,
       "n_repeat_fire": 0,
@@ -1918,7 +1918,7 @@
       "flagged": []
     },
     "reflex.options_flow_attention": {
-      "n_recent_fires": 4,
+      "n_recent_fires": 10,
       "n_hostile_regime": 0,
       "n_breadth_unconfirmed": 0,
       "n_repeat_fire": 0,
@@ -1934,9 +1934,9 @@
       "flagged": []
     },
     "track_record": {
-      "n_recent_fires": 1305,
+      "n_recent_fires": 1250,
       "n_hostile_regime": 0,
-      "n_breadth_unconfirmed": 245,
+      "n_breadth_unconfirmed": 275,
       "n_repeat_fire": 20,
       "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
       "flagged": [
@@ -1982,6 +1982,246 @@
         },
         {
           "engine": "track_record",
+          "symbol": "AMT",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "AMT",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "AMT",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "AMT",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "AMT",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "CI",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "CI",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "CI",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "CI",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "CI",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "ELV",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "ELV",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "ELV",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "ELV",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "ELV",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "MDLZ",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "MDLZ",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "MDLZ",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "MDLZ",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "MDLZ",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "STLD",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "STLD",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "STLD",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "STLD",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "STLD",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "WDC",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "WDC",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "WDC",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "WDC",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
+          "symbol": "WDC",
+          "as_of": "2026-06-17",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "track_record",
           "symbol": "MRK",
           "as_of": "2026-06-11",
           "flags": [
@@ -2096,246 +2336,6 @@
           "engine": "track_record",
           "symbol": "DE",
           "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "LYV",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "LYV",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "LYV",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "LYV",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "LYV",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "MRVL",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "MRVL",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "MRVL",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "MRVL",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "MRVL",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "ORLY",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "ORLY",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "ORLY",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "ORLY",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "ORLY",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "PCG",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "PCG",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "PCG",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "PCG",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "PCG",
-          "as_of": "2026-06-10",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "AMD",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "AMD",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "AMD",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "AMD",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "AMD",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "KO",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "KO",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "KO",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "KO",
-          "as_of": "2026-06-08",
-          "flags": [
-            "breadth_unconfirmed"
-          ]
-        },
-        {
-          "engine": "track_record",
-          "symbol": "KO",
-          "as_of": "2026-06-08",
           "flags": [
             "breadth_unconfirmed"
           ]
@@ -2345,7 +2345,7 @@
     "us_board": {
       "n_recent_fires": 950,
       "n_hostile_regime": 0,
-      "n_breadth_unconfirmed": 0,
+      "n_breadth_unconfirmed": 113,
       "n_repeat_fire": 115,
       "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
       "flagged": [
@@ -3573,7 +3573,7 @@
   "gaps": [],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/lagging.py",
-  "produced_at": "2026-07-07T15:18:30Z",
-  "inputs_hash": "sha256:8a624c758a94599c099677be9a66afa0e0a43faa3a23a2548ebfbebd188826df",
+  "produced_at": "2026-07-09T09:03:57Z",
+  "inputs_hash": "sha256:c1f2eb0a115e17011c460c3260de08d94850e9b9d8821ee59213487c321ed083",
   "tier": "infrastructure"
 }

@@ -8116,6 +8116,15 @@ artifacts:
 
   # ── nw-context-intelligence program (W3 — personality risk lens) ──────────
 
+  # NOTE: engine/neuralweb/context_api.py is a RESEARCH-SIDE QUERY LIBRARY with no
+  # nightly caller — analogous to alpha_grammar.py / alpha_overlap.py (FR-12 pattern).
+  # It produces NO artifact and is NOT wired into daily.yml.  Its consumer-of-artifacts
+  # relationship (it reads regime/personality/spine at query time) is noted in the
+  # individual artifact consumer lists above as a QUERY-TIME consumer, not a nightly one.
+  # It does NOT have a standalone synapse entry because it neither produces nor surfaces
+  # any committed artifact; its entry here would be dishonest.
+  # Consumers: future pre-registered context studies only.
+
   context-risk:
     path: data/neuralweb/context_risk.json
     format: json
