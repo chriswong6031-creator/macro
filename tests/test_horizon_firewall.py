@@ -444,6 +444,8 @@ class TestRealRegistryFirewallClean:
             "breakaway-watch-history",
             "winner-autopsy-panel",
             "winner-autopsy-manifest",
+            # Pick Lab LH grid site artifact (PL-R6 firewall) — display-only, horizon_role=hold_thesis
+            "pick-lab-longhold-ledger",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

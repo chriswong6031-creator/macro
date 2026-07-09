@@ -3759,6 +3759,275 @@ def main() -> int:
                 log.info("shadow book: snapshotted %d frozen scores for %s", _n, _asof)
         except Exception as e:  # noqa: BLE001
             log.debug("shadow snapshot skipped (%s)", e)
+        # ── Pick Lab snapshot producer (spec §5, PL-R7) ────────────────────────────────
+        # Additive block: assembles the PIT universe snapshot for the pick-lab runner.
+        # Wrapped try/except — never fatal. Log success/skip only (no exception re-raise).
+        # Sector/regime enrichment (sector_phase/stage/bucket) stays NULL here; the runner
+        # fills them from that night's committed sector artifacts (PL-R7b).
+        # Budget: 1D/2D grids are vectorized over _ext_closes (already in memory). The 3D
+        # grid values are extracted from signal_frame (one call per ticker, close-only,
+        # no I/O) — adds <30s across the full universe.
+        try:
+            import time as _plab_time
+            _plab_t0 = _plab_time.time()
+            from engine.pick_lab import snapshot as _plab_snap
+            from engine.pick_lab import signals_1d as _plab_s1d
+            from engine.signal_quality import signal_frame as _plab_sf
+
+            _plab_asof = wide.get("as_of")
+            if _plab_asof and "_ext_closes" in dir() and _ext_closes is not None:
+
+                # ── 1. Load personality JSON (small JSON; load once) ──────────────────
+                _plab_personality: dict[str, dict] = {}
+                try:
+                    import json as _plab_json
+                    _plab_sp_path = site / "factordata" / "stock_personality.json"
+                    if _plab_sp_path.exists():
+                        _plab_sp_raw = _plab_json.loads(_plab_sp_path.read_text())
+                        _plab_personality = _plab_sp_raw.get("per_ticker") or {}
+                except Exception as _plab_sp_e:
+                    log.debug("pick_lab: personality load skipped (%s)", _plab_sp_e)
+
+                # ── 2. Compute 1D/2D oscillator grid (vectorized) ────────────────────
+                import pandas as _plab_pd
+                _plab_d12_df = _plab_pd.DataFrame()  # empty fallback
+                try:
+                    _plab_d12_df = _plab_s1d.compute_grids(_ext_closes)
+                except Exception as _plab_d12_e:
+                    log.debug("pick_lab: 1D/2D grid skipped (%s)", _plab_d12_e)
+
+                # ── 3. Compute 3D oscillator scalars per ticker ───────────────────────
+                # signal_frame already ran inside sig_verdict but does not expose raw
+                # macd/k/d scalars in its return; re-run close-only (no I/O).
+                _plab_d3: dict[str, dict] = {}
+                _OS3, _OB3, _CONF_W3 = 20, 80, 8
+                for _plab_t3, _plab_c3 in _ext_closes.items():
+                    try:
+                        _sf3 = _plab_sf(_plab_c3.dropna())
+                        if _sf3.empty or len(_sf3) < 2:
+                            continue
+                        _last3 = _sf3.iloc[-1]
+                        _m3 = float(_last3["macd"]) if _plab_pd.notna(_last3["macd"]) else None
+                        _s3 = float(_last3["sig"])  if _plab_pd.notna(_last3["sig"])  else None
+                        _k3 = float(_last3["k"])    if _plab_pd.notna(_last3["k"])    else None
+                        _d3 = float(_last3["d"])    if _plab_pd.notna(_last3["d"])    else None
+                        # macd cross-up bars (window=15 bars on the 3D frame)
+                        _mx3 = None
+                        _kx3 = None
+                        if _m3 is not None and _s3 is not None:
+                            _macd_col = _sf3["macd"]
+                            _sig_col  = _sf3["sig"]
+                            _k_col    = _sf3["k"]
+                            _d_col    = _sf3["d"]
+                            _mxup = (_macd_col > _sig_col) & (_macd_col.shift(1) <= _sig_col.shift(1))
+                            _kxup = (_k_col > _d_col)     & (_k_col.shift(1) <= _d_col.shift(1))
+                            import numpy as _plab_np
+                            _pos = _plab_np.arange(len(_sf3))
+
+                            def _since3(cond_s):
+                                _last_arr = _plab_pd.Series(
+                                    _plab_np.where(cond_s.to_numpy(), _pos, _plab_np.nan),
+                                    index=cond_s.index).ffill()
+                                return _plab_pd.Series(_pos, index=cond_s.index) - _last_arr
+
+                            _mxbar3 = _since3(_mxup).iloc[-1]
+                            _kxbar3 = _since3(_kxup).iloc[-1]
+                            _XBAR3  = 15  # same window as signals_1d.XBAR_WIN
+                            _mx3 = float(_mxbar3) if _plab_pd.notna(_mxbar3) and _mxbar3 <= _XBAR3 else None
+                            _kx3 = float(_kxbar3) if _plab_pd.notna(_kxbar3) and _kxbar3 <= _XBAR3 else None
+                        # from_os: d < 20 within last 8 3D bars
+                        _from_os3 = None
+                        if len(_sf3) >= _CONF_W3:
+                            _d_tail = _sf3["d"].iloc[-_CONF_W3:]
+                            _from_os3 = bool(_d_tail.min() < _OS3) if _d_tail.notna().any() else None
+                        # ob: k or d >= 80 on latest bar
+                        _ob3 = None
+                        if _k3 is not None and _d3 is not None:
+                            _ob3 = bool(_k3 >= _OB3 or _d3 >= _OB3)
+                        # weekly_bull from signal_frame
+                        _wbull3 = bool(_last3["w_bull"]) if "w_bull" in _sf3.columns else None
+                        _plab_d3[_plab_t3] = {
+                            "d3_macd": _m3, "d3_sig": _s3,
+                            "d3_macd_xup_bars": _mx3, "d3_k": _k3, "d3_d": _d3,
+                            "d3_kd_xup_bars": _kx3, "d3_from_os": _from_os3, "d3_ob": _ob3,
+                            "weekly_bull": _wbull3,
+                        }
+                    except Exception:
+                        pass  # null-honest: leave d3 absent for this ticker
+
+                # ── 4. Build rec lookup for tech/alpha/context fields ─────────────────
+                # to_write is list of (safe_ticker, rec); rec["ticker"] is the canonical key.
+                _plab_rec_by_t: dict[str, dict] = {}
+                for _plab_sf_t, _plab_rec in to_write:
+                    _tk = _plab_rec.get("ticker") or _plab_sf_t
+                    _plab_rec_by_t[_tk] = _plab_rec
+
+                # ── 5. Assemble profile_dicts for the full scored universe ────────────
+                # Use `profiles` (all tickers with a conviction profile) as the universe.
+                # Fields null-honest: if a source dict is missing the key, leave as None.
+                _plab_calm  = calm if calm is not None else None
+                _plab_stress = (risk_overlay or {}).get("stress")
+                _plab_liq_ov = (wide.get("dispersion_regime") or {}).get("state") if wide.get("dispersion_regime") else None
+
+                # SPY close: last close of SPY from _ext_closes if present
+                _plab_spy_close = None
+                try:
+                    if "SPY" in _ext_closes.columns:
+                        _plab_spy_close = float(_ext_closes["SPY"].dropna().iloc[-1])
+                except Exception:
+                    pass
+
+                _plab_profiles: list[dict] = []
+                _plab_board_recs: dict[str, dict] = {}
+                _plab_tech_dicts: dict[str, dict] = {}
+                _plab_osc_dicts: dict[str, dict] = {}
+
+                for _plab_tk, _plab_prof in profiles.items():
+                    # ── identity / scores ──
+                    _plab_rec2 = _plab_rec_by_t.get(_plab_tk) or {}
+                    _plab_tech = _plab_rec2.get("tech") or {}
+                    _plab_alpha = _plab_rec2.get("alpha") or {}
+                    _plab_lad = _plab_rec2.get("ladder") or {}
+                    _plab_vs  = _plab_rec2.get("vol_squeeze") or {}
+                    _plab_liq_chip = _plab_liq_map.get(_plab_tk) or {}
+                    _plab_axes = _plab_prof.get("axes") or {}
+                    _plab_coil_cb = coiled_by.get(_plab_tk) or {}
+
+                    # personality
+                    _plab_pers = _plab_personality.get(_plab_tk) or {}
+                    _plab_arch = _plab_pers.get("arch")
+                    _plab_modes = _plab_pers.get("modes") or []
+                    _plab_cur_mode = _plab_modes[0] if _plab_modes else None
+
+                    # is_20d_high: close == 20d high (derived from off_52w_high_pct proxy is
+                    # unavailable; compute from _ext_closes if possible)
+                    _plab_is_20d = None
+                    try:
+                        _plab_cs = _ext_closes.get(_plab_tk)
+                        if _plab_cs is not None and len(_plab_cs.dropna()) >= 20:
+                            _plab_px = _plab_cs.dropna().iloc[-1]
+                            _plab_h20 = _plab_cs.dropna().iloc[-20:].max()
+                            _plab_is_20d = bool(_plab_px >= _plab_h20)
+                    except Exception:
+                        pass
+
+                    # dollar_adv_20d: prefer liquidity_chip median; fallback to tech mean
+                    _plab_adv20 = (_plab_liq_chip.get("adv_dollar_20d_median")
+                                   or _plab_tech.get("dollar_vol_20d"))
+
+                    _plab_profiles.append({
+                        "ticker": _plab_tk,
+                        "sector": _plab_rec2.get("sector") or _coil_sector.get(_plab_tk),
+                        "close": _plab_tech.get("price"),
+                        "dollar_adv_20d": _plab_adv20,
+                        "vol_ratio_20d": _plab_tech.get("rel_volume"),
+                        "is_20d_high": _plab_is_20d,
+                        "pct_vs_20dma": _plab_tech.get("pct_vs_20dma"),
+                        "above_200": _plab_tech.get("above200"),
+                        "off_52w_high_pct": _plab_tech.get("off_52w_high_pct"),
+                        "rsi14": _plab_tech.get("rsi14"),
+                        "ext_grade": (_plab_rec2.get("ext") or {}).get("grade") or (ext_map.get(_plab_tk) or {}).get("grade"),
+                        # scores
+                        "composite_z": _plab_prof.get("composite_z"),
+                        "score": _plab_prof.get("score"),
+                        "axis_selection": (_plab_axes.get("selection") or {}).get("z"),
+                        "axis_entry":     (_plab_axes.get("entry")     or {}).get("z"),
+                        "axis_quality":   (_plab_axes.get("quality")   or {}).get("z"),
+                        "edge_insider":   _plab_alpha.get("insider_bps"),
+                        "edge_sue":       _plab_alpha.get("sue"),
+                        "edge_revision":  _plab_alpha.get("revision") or _plab_alpha.get("rev_pctile"),
+                        "edge_alpha":     _plab_alpha.get("alpha"),
+                        # context
+                        "cycle_state": (_plab_lad.get("entry") or {}).get("tag") or _plab_lad.get("state"),
+                        "urgency": (_plab_lad.get("entry") or {}).get("urgency"),
+                        "coiled": bool(_plab_coil_cb.get("coiled")) if _plab_coil_cb.get("coiled") is not None else None,
+                        "star":   bool(_plab_coil_cb.get("star"))   if _plab_coil_cb.get("star")   is not None else None,
+                        "washout_active": bool(_coil_wash.get(_plab_tk) is True),
+                        "vol_squeeze_state": _plab_vs.get("state"),
+                        "archetype": _plab_arch,
+                        "current_mode": _plab_cur_mode,
+                        "implied_upside_pct": (_plab_rec2.get("fundamental") or {}).get("implied_upside_pct"),
+                        "is_blackout": bool((_plab_rec2.get("entry_signal") or {}).get("is_blackout")) if (_plab_rec2.get("entry_signal") or {}).get("is_blackout") is not None else None,
+                        "dilution_events_365d": (_plab_rec2.get("fundamental") or {}).get("dilution_events_365d"),
+                        "days_since_shelf": (_plab_rec2.get("fundamental") or {}).get("days_since_shelf"),
+                        "interest_coverage": (_plab_rec2.get("fundamental") or {}).get("interest_coverage"),
+                        # dd_pct: compute from _ext_closes (already in memory, no disk I/O)
+                        # mirrors washout_depth_pit constants from F1D block above
+                        "dd_pct": None,  # computed below into _plab_tech_dicts
+                        # regime scalars (repeated on every row — display-only)
+                        "calm":              _plab_calm,
+                        "stress":            _plab_stress,
+                        "liquidity_overlay": _plab_liq_ov,
+                        "spy_close":         _plab_spy_close,
+                        # enrichment nulls (PL-R7b runner fills these)
+                        "sector_phase": None, "sector_stage": None,
+                        "sector_rs_mom20": None, "sector_bucket": None,
+                    })
+
+                    # ── gate fields ──
+                    _plab_sv = sig_verdict.get(_plab_tk) or {}
+                    _plab_board_recs[_plab_tk] = {
+                        "tier": _plab_sv.get("tier_cascade"),
+                        "t_ticks": _plab_sv.get("ticks"),
+                        "gate_state": ("eligible" if _plab_sv.get("eligible") else "ineligible"),
+                    }
+
+                    # ── oscillator merge: d1/d2 from compute_grids, d3 from signal_frame ──
+                    _plab_osc_row: dict = {}
+                    if not _plab_d12_df.empty and _plab_tk in _plab_d12_df.index:
+                        _plab_osc_row.update(
+                            {k: v for k, v in _plab_d12_df.loc[_plab_tk].to_dict().items()
+                             if v is not None and not (_plab_pd.isna(v) if not isinstance(v, (bool, str)) else False)}
+                        )
+                    _plab_osc_row.update(_plab_d3.get(_plab_tk) or {})
+                    if _plab_osc_row:
+                        _plab_osc_dicts[_plab_tk] = _plab_osc_row
+
+                # ── 6. Compute dd_pct from _ext_closes (mirrors F1D block) ────────────
+                _F1D_WASH_B2, _F1D_WASH_A2 = 91, 217
+                for _plab_dd_t in profiles:
+                    try:
+                        _plab_c_dd = _ext_closes.get(_plab_dd_t)
+                        if _plab_c_dd is None:
+                            continue
+                        _plab_c_dd = _plab_c_dd.dropna()
+                        _arr_dd = _plab_c_dd.to_numpy()
+                        _n_dd = len(_arr_dd)
+                        if _n_dd < _F1D_WASH_A2 + _F1D_WASH_B2:
+                            continue
+                        import numpy as _np_dd
+                        _window_dd = _arr_dd[_n_dd - _F1D_WASH_B2:]
+                        _local_min_dd = int(_np_dd.argmin(_window_dd))
+                        _capit_pos_dd = (_n_dd - _F1D_WASH_B2) + _local_min_dd
+                        if _capit_pos_dd < 126:
+                            continue
+                        _prior_max_dd = float(_np_dd.nanmax(_arr_dd[_capit_pos_dd - 126: _capit_pos_dd]))
+                        if _prior_max_dd <= 0:
+                            continue
+                        _dd_frac = float(-(_arr_dd[_capit_pos_dd] / _prior_max_dd - 1.0))
+                        _plab_tech_dicts[_plab_dd_t] = {"dd_pct": _dd_frac}
+                    except Exception:
+                        pass  # null-honest; leave dd_pct absent for this ticker
+
+                # ── 7. Build rows and write ───────────────────────────────────────────
+                _plab_rows = _plab_snap.build_core_rows(
+                    profile_dicts=_plab_profiles,
+                    board_rec_dicts=_plab_board_recs,
+                    technicals_dicts=_plab_tech_dicts,
+                    oscillator_dicts=_plab_osc_dicts,
+                    asof=_plab_asof,
+                )
+                if _plab_rows:
+                    _plab_df = _plab_pd.DataFrame(_plab_rows)
+                    _plab_snap.write_snapshot(_plab_df, _plab_asof)
+                    log.info("pick_lab snapshot: %d rows for %s (%.1fs)",
+                             len(_plab_rows), _plab_asof, _plab_time.time() - _plab_t0)
+                else:
+                    log.debug("pick_lab snapshot: 0 rows assembled for %s", _plab_asof)
+            else:
+                log.debug("pick_lab snapshot skipped: no as_of or no close panel")
+        except Exception as _plab_e:  # noqa: BLE001 — snapshot producer is never fatal
+            log.debug("pick_lab snapshot skipped (%s)", _plab_e)
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

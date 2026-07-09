@@ -39,6 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 25 |
+| pick-lab | 3 |
 | policy-shock | 5 |
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
@@ -54,8 +55,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 170 |
-| infrastructure | 74 |
+| display | 172 |
+| infrastructure | 75 |
 | scored | 4 |
 | shadow | 46 |
 
@@ -63,7 +64,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 282 |
+| git | 285 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -439,6 +440,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |
+
+### pick-lab
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| pick-lab-entry-ledger | `site/labdata/pick_lab.json` | json | daily-engine | display | 1 | 0 |
+| pick-lab-longhold-ledger | `site/labdata/pick_lab_longhold.json` | json | daily-engine | display | 1 | 0 |
+| pick-lab-snapshots | `data/pick_lab/snapshots/` | parquet | daily-engine | infrastructure | 1 | 0 |
 
 ### policy-shock
 
@@ -967,6 +976,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/build_nw_mastermind_context.py`
 - **extra writers:**
   - engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy
+
+### pick-lab-snapshots
+
+- **path:** `data/pick_lab/snapshots/`
+- **declared producer:** `scripts/build_stock_library.py`
+- **extra writers:**
+  - scripts/build_pick_lab.py — writes enriched snapshot back via write_snapshot (PL-R7b)
 
 ### qledger-claims
 
