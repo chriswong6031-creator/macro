@@ -6176,6 +6176,215 @@ artifacts:
       divergence_quadrant, evidence_z, prev_hash (sha256 hash-chain). Nightly is
       sole advancer. First promotion-eligible read 2026-10-15.
 
+
+  theme-thesis-ledger:
+    path: data/neuralweb/theme_thesis_ledger.jsonl
+    format: jsonl
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_thesis.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_thematic_state.py
+    external_consumers: []
+    notes: >
+      TIL W1 (PR-C) theme-level thesis ledger compiled from curated
+      config/theme_thesis_registry.yml. Append-only versioned records (re-emit on
+      content-hash change only). CLASS-level winner/loser taxonomy; zero per-stock
+      thesis records (R-TIL-1 fence — per-name thesis work belongs to long-hold).
+      Machine-checkable falsifiers evaluated via falsifier_tripwires DSL.
+
+  site-theme-thesis:
+    path: site/neuralwebdata/theme_thesis.json
+    format: json
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_thesis.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Site projection of the theme thesis ledger (latest record per theme +
+      falsifier status). Display/context only.
+
+  theme-pathways:
+    path: data/neuralweb/theme_pathways.json
+    format: json
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_pathways.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W2 (PR-D) theme beneficiary/loser pathway graph compiled from curated
+      config/theme_pathways.yml (TI-R2 taxonomy shape), mirroring
+      mechanism_pathways.v1 conventions at theme-supply-chain granularity.
+      TI-R5 fence: forbidden_uses includes runtime shock-to-beneficiary
+      escalation; loser legs are AVOID-shaped evidence, never short calls.
+      Includes purity-weighted cross-theme node-collision map.
+
+  site-theme-pathways:
+    path: site/neuralwebdata/theme_pathways.json
+    format: json
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_pathways.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Site projection of theme_pathways.json. Display/context only.
+
+  theme-asymmetry:
+    path: data/neuralweb/theme_asymmetry.json
+    format: json
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_asymmetry.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W3 (PR-E) per-leg asymmetry component panel. NO fused master number
+      (WA-R1 fence) — legs only (bottleneck tightness, stale-consensus gap,
+      cyclical dislocation, entry cleanliness, crowding hazard, falsifier
+      clarity, orthogonality). Ownership/attention legs are hazard context
+      only (NEXTL-U13). hard_caveat: not a buy score; no behavior-changing
+      consumer.
+
+  site-theme-asymmetry:
+    path: site/neuralwebdata/theme_asymmetry.json
+    format: json
+    producer: scripts/build_thematic_state.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.theme_asymmetry.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Site projection of theme_asymmetry.json. Display/context only.
+
+  foresight-earliness-grades:
+    path: data/foresight/earliness_grades.json
+    format: json
+    producer: scripts/grade_thematic.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: foresight.earliness_grades.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W6 (PR-H) crowd-arrival lead-lag grader over the previously-unread
+      data/foresight/earliness_log.jsonl: signed lead-days between flag date and
+      attention-leg threshold crossing + price excess pre/post attention arrival.
+      The front-run receipts. Nulls printed.
+
+  theme-placebo-tape:
+    path: data/foresight/theme_placebo_tape.jsonl
+    format: jsonl
+    producer: scripts/grade_thematic.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: foresight.theme_placebo.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/grade_thematic.py
+    external_consumers: []
+    notes: >
+      TIL W6 (PR-H) placebo tape for theme stage flags: on each new stage flag,
+      K random non-flagged themes + time-shifted variants logged and graded through
+      the same grader core. Hit-rates reported as EXCESS over placebo (R-TIL-6).
+      Append-only; nightly sole advancer.
+
+  qledger-falsifier-evaluations:
+    path: data/qledger/falsifier_evaluations.jsonl
+    format: jsonl
+    producer: scripts/grade_thematic.py
+    known_extra_writers: []
+    owner_program: thematic-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: qledger.falsifier_eval.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/grade_thematic.py
+    external_consumers: []
+    notes: >
+      TIL W6 (PR-H) falsifier auto-evaluation engine: compiles the previously-inert
+      qledger falsifier/check_by specs through the falsifier_tripwires DSL and emits
+      FALSIFIER_TRIPPED / CONFIRMED / UNVERIFIABLE at each check_by. Closes the
+      pre-registration loop (a thesis is scored on whether it died the way it
+      predicted). Append-only.
+
   entity-thesis-mechanism-registry:
     path: data/neuralweb/entity_thesis_mechanism_registry.json
     format: json

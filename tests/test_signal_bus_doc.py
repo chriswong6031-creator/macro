@@ -73,10 +73,15 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 275, (
-        f"Expected 275 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 284, (
+        f"Expected 284 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (TIL W0 PR-A added theme-state, site-theme-state, theme-phase-history = 272->275;"
+        " (TIL PR-0 pre-registered theme-thesis-ledger, site-theme-thesis, theme-pathways,"
+        " site-theme-pathways, theme-asymmetry, site-theme-asymmetry,"
+        " foresight-earliness-grades, theme-placebo-tape, qledger-falsifier-evaluations"
+        " = 275->284 (entries land before the W1/W2/W3/W6 producer lanes to avoid"
+        " four-way synapse merge races);"
+        " TIL W0 PR-A added theme-state, site-theme-state, theme-phase-history = 272->275;"
         " CHF-W1 added causal-feature-inventory = 271->272;"
         " liquidity-plumbing lobe added by neural-web registry build = 270->271;"
         " CN-SYS W6 spine added site-china-cycle-phase, site-china-market-state = 267->269;"
