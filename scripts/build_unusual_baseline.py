@@ -197,6 +197,21 @@ def compute_root_baseline(store: Path, root: str) -> dict:
 
     vols = daily["volume"].values
     n_ok = int(len(vols))
+
+    # Post-load gate: the date-scan at line 176 checked len(sessions), but volume
+    # loading may fail or filter rows for some of those sessions.  Re-apply the
+    # floor to the actual post-load session count so we never emit stats over
+    # fewer than MIN_SESSIONS real data points.
+    if n_ok < MIN_SESSIONS:
+        reason = f"only {n_ok} sessions with volume data after load (minimum {MIN_SESSIONS})"
+        log.info("unusual_baseline: %s — null (%s)", root, reason)
+        return {
+            "mean_vol_30d":  None,
+            "p95_vol_30d":   None,
+            "sessions_used": n_ok,
+            "null_reason":   reason,
+        }
+
     mean_v = float(np.mean(vols))
     p95_v  = float(np.percentile(vols, 95))
 

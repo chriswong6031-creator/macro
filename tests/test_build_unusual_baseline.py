@@ -185,3 +185,57 @@ def test_build_writes_local_file(tmp_path, monkeypatch):
     written = json.loads(out_file.read_text())
     assert written["schema"] == "flow.unusual_baseline/v1"
     assert root in written["roots"]
+
+
+# ── test 6: regression — post-load n_ok gate (MUST-FIX bypass) ───────────────
+
+def test_compute_null_when_post_load_volume_sparse(tmp_path):
+    """Regression: compute_root_baseline must emit null when date-scan finds >=
+    MIN_SESSIONS session dates but only a few rows survive the volume load.
+
+    Simulates the bypass: write a parquet that has MIN_SESSIONS *date entries*
+    in one year (visible to _recent_sessions) but only MIN_SESSIONS-1 of those
+    rows have a non-zero, non-null volume value.  Pre-fix: the MIN_SESSIONS gate
+    at line 176 passed (len(sessions) is OK) and stats were computed over a
+    sub-threshold sample.  Post-fix: the post-load n_ok gate must block this.
+    """
+    from scripts.build_unusual_baseline import MIN_SESSIONS
+
+    root = "SPY"
+    store = tmp_path / "theta_store"
+    eod_dir = store / "eod"
+    d = eod_dir / root
+    d.mkdir(parents=True, exist_ok=True)
+
+    # Enough date entries to pass the date-scan gate.
+    n_date_entries = MIN_SESSIONS + 2
+
+    rows = []
+    for i in range(1, n_date_entries + 1):
+        day = f"2026-07-{i:02d}"
+        # Only the first (MIN_SESSIONS - 1) rows carry real volume; the rest have
+        # zero volume so they are filtered out by the volume-load step.
+        vol = 500_000 if i < MIN_SESSIONS else 0
+        rows.append({
+            "date":       day,
+            "root":       root,
+            "expiration": "2026-09-19",
+            "strike":     500.0,
+            "right":      "C",
+            "volume":     vol,
+        })
+
+    pd.DataFrame(rows).to_parquet(d / "2026.parquet", index=False)
+
+    result = compute_root_baseline(store, root)
+
+    assert result["mean_vol_30d"] is None, (
+        "REGRESSION: post-load n_ok gate not applied — mean_vol_30d should be null "
+        f"when only {MIN_SESSIONS - 1} sessions have volume (< MIN_SESSIONS={MIN_SESSIONS})"
+    )
+    assert result["p95_vol_30d"] is None, "p95_vol_30d should also be null"
+    assert result["null_reason"] is not None, "null_reason must be set"
+    # sessions_used should reflect the actual post-load count, not date-scan count
+    assert result["sessions_used"] < MIN_SESSIONS, (
+        f"sessions_used {result['sessions_used']} should be < MIN_SESSIONS {MIN_SESSIONS}"
+    )
