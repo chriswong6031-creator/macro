@@ -107,7 +107,14 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
   letter-spacing: -0.015em;
 }
 .ws-switcher:hover { background: var(--hover); }
-.ws-switcher .chev { color: var(--ink-3); margin-top: 1px; }
+.ws-switcher .chev { color: var(--ink-3); margin-top: 1px; flex-shrink: 0; }
+.ws-name {
+  display: block;
+  max-width: 32vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .tb-btn {
   display: flex;
   align-items: center;
@@ -120,6 +127,35 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
 }
 .tb-btn:hover { background: var(--hover); color: var(--ink); }
 .tb-btn.icon-only { padding: 7px; }
+
+/* segmented control (view switcher, brain tabs) */
+.seg {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--hover);
+  border-radius: 9px;
+  padding: 2.5px;
+}
+.seg-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4.5px 11px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: color 120ms ease, background 120ms ease;
+}
+.seg-btn svg { opacity: 0.75; }
+.seg-btn:hover { color: var(--ink); }
+.seg-btn.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+.seg-btn.active svg { opacity: 1; color: var(--accent); }
 
 /* ---------- canvas ---------- */
 #viewport {
@@ -249,6 +285,24 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
 #viewport::-webkit-scrollbar { width: 11px; height: 11px; }
 #viewport::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 10px; border: 3px solid var(--bg); }
 #viewport::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- touch ---------- */
+/* manipulation: native pan + pinch stay, double-tap zoom goes (so dblclick works on touch) */
+#viewport, #canvas { touch-action: manipulation; }
+.board-head { touch-action: none; }   /* board drag wins immediately */
+.card { touch-action: pan-y; }        /* lists scroll naturally; long-press lifts a card */
+
+/* ---------- small screens ---------- */
+@media (max-width: 700px) {
+  #topbar { padding: 0 8px; }
+  .tb-left, .tb-right { gap: 3px; }
+  .logo { display: none; }
+  #tidyBtn span { display: none; }
+  .ws-switcher { font-size: 14px; padding: 6px 7px; }
+  .ws-name { max-width: 26vw; }
+  .seg-btn { padding: 4.5px 8px; font-size: 12px; }
+  .canvas-hint { font-size: 12.5px; padding: 0 24px; text-align: center; width: 100%; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }

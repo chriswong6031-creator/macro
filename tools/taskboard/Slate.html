@@ -115,7 +115,14 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
   letter-spacing: -0.015em;
 }
 .ws-switcher:hover { background: var(--hover); }
-.ws-switcher .chev { color: var(--ink-3); margin-top: 1px; }
+.ws-switcher .chev { color: var(--ink-3); margin-top: 1px; flex-shrink: 0; }
+.ws-name {
+  display: block;
+  max-width: 32vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .tb-btn {
   display: flex;
   align-items: center;
@@ -128,6 +135,35 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
 }
 .tb-btn:hover { background: var(--hover); color: var(--ink); }
 .tb-btn.icon-only { padding: 7px; }
+
+/* segmented control (view switcher, brain tabs) */
+.seg {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--hover);
+  border-radius: 9px;
+  padding: 2.5px;
+}
+.seg-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4.5px 11px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: color 120ms ease, background 120ms ease;
+}
+.seg-btn svg { opacity: 0.75; }
+.seg-btn:hover { color: var(--ink); }
+.seg-btn.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+.seg-btn.active svg { opacity: 1; color: var(--accent); }
 
 /* ---------- canvas ---------- */
 #viewport {
@@ -257,6 +293,24 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
 #viewport::-webkit-scrollbar { width: 11px; height: 11px; }
 #viewport::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 10px; border: 3px solid var(--bg); }
 #viewport::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- touch ---------- */
+/* manipulation: native pan + pinch stay, double-tap zoom goes (so dblclick works on touch) */
+#viewport, #canvas { touch-action: manipulation; }
+.board-head { touch-action: none; }   /* board drag wins immediately */
+.card { touch-action: pan-y; }        /* lists scroll naturally; long-press lifts a card */
+
+/* ---------- small screens ---------- */
+@media (max-width: 700px) {
+  #topbar { padding: 0 8px; }
+  .tb-left, .tb-right { gap: 3px; }
+  .logo { display: none; }
+  #tidyBtn span { display: none; }
+  .ws-switcher { font-size: 14px; padding: 6px 7px; }
+  .ws-name { max-width: 26vw; }
+  .seg-btn { padding: 4.5px 8px; font-size: 12px; }
+  .canvas-hint { font-size: 12.5px; padding: 0 24px; text-align: center; width: 100%; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
@@ -888,6 +942,327 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
   .ws-row-btn { opacity: 1; }
 }
 
+/* small screens: modals become bottom sheets, overlays fit the viewport */
+@media (max-width: 640px) {
+  .modal-backdrop { padding: 24px 0 0; align-items: flex-end; }
+  .modal {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px); /* dvh tracks the soft keyboard on mobile */
+    border-radius: 18px 18px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .modal-accent { border-radius: 18px 18px 0 0; }
+  .modal-body { padding: 16px 18px 6px; }
+  .modal-foot { padding: 12px 18px 14px; }
+  .popover { max-width: calc(100vw - 16px); }
+  .toast { max-width: calc(100vw - 24px); }
+  .lightbox { padding: 14px; }
+  .lightbox-name { max-width: 40vw; }
+}
+
+</style>
+<style>
+/* Slate — Brain: capture board, note cards, topic panes, library */
+
+/* ---------- view visibility (driven by body[data-view] / body[data-tab]) ---------- */
+#library { display: none; }
+#brainTabs { display: none; }
+.fab { display: none; }
+body[data-view="brain"] #wsSwitcher,
+body[data-view="brain"] #tidyBtn { display: none; }
+body[data-view="brain"] #brainTabs { display: flex; }
+body[data-view="brain"][data-tab="library"] #canvas { display: none; }
+body[data-view="brain"][data-tab="library"] #library { display: block; }
+body[data-view="brain"][data-tab="board"] .fab { display: flex; }
+
+/* ---------- capture note card ---------- */
+.bnote {
+  position: absolute;
+  width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  box-shadow: var(--shadow-card-hover);
+  padding: 14px 16px 12px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  overflow: hidden;
+}
+.bnote[class*="tint-"] { background: var(--t-bg); }
+.bnote[class*="tint-"]::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--t-bar);
+}
+.bnote-dragging {
+  box-shadow: 0 24px 56px -20px rgba(27, 34, 48, 0.38), 0 4px 14px -4px rgba(27, 34, 48, 0.14);
+  transform: scale(1.012);
+  cursor: grabbing;
+}
+[data-theme="dark"] .bnote-dragging { box-shadow: 0 24px 56px -18px rgba(0, 0, 0, 0.75); }
+.bnote-enter { animation: board-in 260ms cubic-bezier(0.2, 0.8, 0.3, 1); }
+.bnote-text {
+  font-size: 14px;
+  line-height: 1.55;
+  letter-spacing: -0.004em;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+.bnote-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 11px;
+}
+.bnote-foot .tag-chip { max-width: 60%; }
+.bnote-saved {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+}
+.bnote-saved svg { color: var(--accent); }
+
+/* ---------- composer ---------- */
+.bnote.composing { cursor: default; user-select: text; touch-action: auto; box-shadow: var(--shadow-pop); }
+.bnote-input {
+  width: 100%;
+  resize: none;
+  border: none;
+  background: transparent;
+  font-size: 14.5px;
+  line-height: 1.55;
+  min-height: 64px;
+  overflow: hidden;
+  padding: 0;
+}
+.bnote-input:focus { outline: none; }
+.bnote-label {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 10px 0 7px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.bnote-topics { display: flex; flex-wrap: wrap; gap: 5px; }
+.bnote-topics:empty { display: none; }
+.topic-chip { font-size: 11.5px; padding: 4px 10px; opacity: 0.65; border: none; cursor: pointer; }
+.topic-chip:hover { opacity: 1; }
+.topic-chip.active {
+  opacity: 1;
+  box-shadow: inset 0 0 0 1.5px var(--t-bar);
+}
+.bnote-newtopic {
+  width: 100%;
+  margin-top: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+.bnote-newtopic:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.bnote-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 11px;
+}
+.bnote-actions .primary-btn:disabled { opacity: 0.45; cursor: default; }
+.bnote-actions .primary-btn:disabled:hover { filter: none; }
+.bnote-actions .ghost-btn { margin-left: auto; }
+.bnote-need { font-size: 11px; color: var(--ink-3); }
+
+/* note edit modal */
+.bnote-edit {
+  width: 100%;
+  resize: none;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.004em;
+  min-height: 84px;
+  overflow: hidden;
+  padding: 0;
+}
+.bnote-edit:focus { outline: none; }
+
+/* ---------- the shadow push ---------- */
+.fly-ghost {
+  position: fixed;
+  z-index: 900;
+  pointer-events: none;
+  background: var(--accent-soft);
+  border: 1.5px solid var(--accent);
+  border-radius: 12px;
+  opacity: 0.9;
+  transition: transform 560ms cubic-bezier(0.35, 0.7, 0.25, 1), opacity 520ms ease;
+}
+.seg-btn.pulse { animation: seg-pulse 420ms cubic-bezier(0.3, 0.7, 0.3, 1.4); }
+@keyframes seg-pulse {
+  0% { transform: scale(1); }
+  38% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- FAB ---------- */
+.fab {
+  position: fixed;
+  right: 22px;
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 28px -8px rgba(58, 91, 240, 0.55), 0 2px 8px -2px rgba(27, 34, 48, 0.2);
+  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.3, 1), filter 140ms ease;
+}
+.fab:hover { filter: brightness(1.08); transform: scale(1.06); }
+.fab:active { transform: scale(0.96); }
+
+/* ---------- library ---------- */
+#library {
+  padding: 26px clamp(16px, 4vw, 44px) 60px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.library-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.library-title {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.library-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.library-empty {
+  margin-top: 16vh;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.library-empty-title { font-size: 16px; font-weight: 650; letter-spacing: -0.012em; color: var(--ink-2); }
+.library-empty-sub { font-size: 13px; color: var(--ink-3); }
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+/* topic pane */
+.pane {
+  background: var(--tray);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  backdrop-filter: blur(12px) saturate(1.15);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-board);
+  display: flex;
+  flex-direction: column;
+  max-height: 560px;
+}
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 10px 8px 15px;
+}
+.pane-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--t-bar);
+  flex-shrink: 0;
+}
+.pane-title {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pane-menu-btn { color: var(--ink-3); border-radius: 6px; padding: 4px; }
+.pane-menu-btn:hover { background: var(--hover); color: var(--ink); }
+.pane-notes {
+  padding: 2px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.pane-notes::-webkit-scrollbar { width: 8px; }
+.pane-notes::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+.pane-empty { font-size: 12.5px; color: var(--ink-3); padding: 6px 4px 8px; }
+
+.pnote {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px 9px;
+  cursor: pointer;
+  transition: box-shadow 140ms ease;
+  box-shadow: var(--shadow-card);
+}
+.pnote:hover { box-shadow: var(--shadow-card-hover); }
+.pnote-text {
+  font-size: 13px;
+  line-height: 1.52;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 7;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pnote-date {
+  margin-top: 7px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 640px) {
+  .bnote { width: min(340px, calc(100vw - 40px)); }
+  #library { padding: 18px 14px 60px; }
+  .library-grid { grid-template-columns: 1fr; gap: 14px; }
+  .fab { right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+}
+
 </style>
 </head>
 <body>
@@ -896,10 +1271,24 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
     <div class="logo" aria-hidden="true">
       <svg viewBox="0 0 32 32" width="22" height="22"><rect x="2" y="2" width="28" height="28" rx="8" fill="var(--accent)"/><rect x="8" y="9" width="16" height="3" rx="1.5" fill="white" opacity=".95"/><rect x="8" y="15" width="16" height="3" rx="1.5" fill="white" opacity=".6"/><rect x="8" y="21" width="10" height="3" rx="1.5" fill="white" opacity=".35"/></svg>
     </div>
+    <div class="seg" id="viewSeg" role="tablist" aria-label="View">
+      <button class="seg-btn" data-view="tasks">
+        <svg viewBox="0 0 16 16" width="13" height="13"><rect x="1.5" y="2.5" width="5.5" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="2.5" width="5.5" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span>Boards</span>
+      </button>
+      <button class="seg-btn" data-view="brain">
+        <svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 2.2c-2.6 0-4.7 1.9-4.7 4.4 0 1.2.5 2.2 1.2 3l-.6 3.2 2.9-1.1c.4.1.8.1 1.2.1 2.6 0 4.7-1.9 4.7-4.4S10.6 2.2 8 2.2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 6.5h4M6 8.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>Brain</span>
+      </button>
+    </div>
     <button id="wsSwitcher" class="ws-switcher" title="Switch workspace">
       <span id="wsName" class="ws-name">Workspace</span>
       <svg class="chev" viewBox="0 0 16 16" width="14" height="14"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
+    <div class="seg seg-sub" id="brainTabs" role="tablist" aria-label="Brain view">
+      <button class="seg-btn" data-tab="board">Board</button>
+      <button class="seg-btn" data-tab="library">Library</button>
+    </div>
   </div>
   <div class="tb-right">
     <button id="tidyBtn" class="tb-btn" title="Tidy boards into a grid">
@@ -918,9 +1307,14 @@ body.dragging-any, body.dragging-any * { cursor: grabbing !important; user-selec
 
 <main id="viewport">
   <div id="canvas"></div>
+  <div id="library"></div>
 </main>
 
 <div id="hint" class="canvas-hint" hidden>Double-click anywhere to start a board</div>
+
+<button id="fabCapture" class="fab" title="Write a note">
+  <svg viewBox="0 0 16 16" width="20" height="20"><path d="M9.8 2.8l3.4 3.4-7.6 7.6-3.9.5.5-3.9zM8.6 4l3.4 3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
 
 <div id="modalRoot"></div>
 <div id="popoverRoot"></div>
@@ -1028,6 +1422,36 @@ function newBoard(name, x, y) {
 function newWorkspace(name) {
   return { id: uid(), name: name, scroll: { x: 0, y: 0 }, boards: [] };
 }
+function newCategory(name) {
+  return { id: uid(), name: name, notes: [] };
+}
+function newNote(text) {
+  return { id: uid(), text: text, created: Date.now() };
+}
+
+/* additive defaults for states saved before a feature existed, plus shape
+   normalization — this is the single choke point for loadState AND import,
+   so a malformed payload can never reach a renderer */
+function migrateState(s) {
+  if (!s.view) s.view = 'tasks';
+  if (!s.brain || !Array.isArray(s.brain.categories)) {
+    s.brain = { categories: [] };
+  }
+  s.brain.categories = s.brain.categories
+    .filter(c => c && typeof c === 'object' && !Array.isArray(c))
+    .map(c => ({
+      id: typeof c.id === 'string' ? c.id : uid(),
+      name: (typeof c.name === 'string' && c.name.trim()) ? c.name : 'Untitled',
+      notes: (Array.isArray(c.notes) ? c.notes : [])
+        .filter(n => n && typeof n === 'object' && typeof n.text === 'string')
+        .map(n => ({
+          id: typeof n.id === 'string' ? n.id : uid(),
+          text: n.text,
+          created: typeof n.created === 'number' ? n.created : Date.now(),
+        })),
+    }));
+  return s;
+}
 
 function seedState() {
   const ws = newWorkspace('Personal');
@@ -1045,11 +1469,16 @@ function seedState() {
   const b3 = newBoard('Ideas', 780, 40);
   b3.cards = [newCard('Double-click the background to make a new board'), newCard('Drag boards anywhere — press Tidy to snap them into a grid')];
   ws.boards = [b1, b2, b3];
+  const cat = newCategory('How this works');
+  const seedNote = newNote('Double-click the Brain board to write down something you’ve learned, file it under a topic, and it’s saved here instantly. The board itself clears every time you leave — a fresh page for fresh thoughts.');
+  cat.notes = [seedNote];
   return {
     v: 1,
     theme: (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light',
+    view: 'tasks',
     activeWs: ws.id,
     ws: [ws],
+    brain: { categories: [cat] },
     _files: null, // inline attachment fallback when IndexedDB is unavailable
   };
 }
@@ -1061,7 +1490,7 @@ function loadState() {
     raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      if (s && s.v === 1 && Array.isArray(s.ws) && s.ws.length) return s;
+      if (s && s.v === 1 && Array.isArray(s.ws) && s.ws.length) return migrateState(s);
     }
   } catch (e) { console.warn('Slate: could not load saved state', e); }
   if (raw) {
@@ -1277,8 +1706,11 @@ function applyTheme() {
 }
 
 function renderTopbar() {
+  const brain = state.view === 'brain';
   $('#wsName').textContent = activeWs().name;
-  document.title = activeWs().name + ' — Slate';
+  document.title = brain ? 'Brain — Slate' : activeWs().name + ' — Slate';
+  $$('#viewSeg .seg-btn').forEach(b => b.classList.toggle('active', (state.view || 'tasks') === b.dataset.view));
+  $$('#brainTabs .seg-btn').forEach(b => b.classList.toggle('active', brainTab === b.dataset.tab));
 }
 
 function renderCanvas() {
@@ -1288,6 +1720,7 @@ function renderCanvas() {
   canvas.style.height = CANVAS_H + 'px';
   canvas.textContent = '';
   for (const b of ws.boards) canvas.appendChild(boardEl(b));
+  $('#hint').textContent = 'Double-click anywhere to start a board';
   $('#hint').hidden = ws.boards.length > 0;
   const vp = $('#viewport');
   vp.scrollLeft = ws.scroll.x || 0;
@@ -1295,6 +1728,10 @@ function renderCanvas() {
 }
 
 function rerenderBoard(boardId) {
+  // state is already mutated by the caller; in Brain view there is no tasks DOM to
+  // patch (renderCanvas rebuilds it on switch), and appending here would leak a
+  // board into the Brain canvas
+  if (state.view === 'brain') return;
   const b = findBoard(boardId);
   const old = $('.board[data-id="' + boardId + '"]');
   if (!b) { if (old) old.remove(); return; }
@@ -1320,7 +1757,7 @@ function rerenderBoard(boardId) {
     $('#canvas').appendChild(fresh);
   }
   if (draft) openComposer(fresh, b, draft);
-  $('#hint').hidden = activeWs().boards.length > 0;
+  if (state.view !== 'brain') $('#hint').hidden = activeWs().boards.length > 0;
 }
 
 function boardEl(b) {
@@ -1469,11 +1906,18 @@ function doneCardEl(c, board) {
   return root;
 }
 
-/* full re-render */
+/* full re-render, dispatching on the active view */
 function renderAll() {
   applyTheme();
+  document.body.dataset.view = state.view || 'tasks';
+  document.body.dataset.tab = state.view === 'brain' ? brainTab : 'board';
   renderTopbar();
-  renderCanvas();
+  if (state.view === 'brain') {
+    renderBrain();
+  } else {
+    lastBrainTabRendered = null; // next brain entry is a fresh tab entry
+    renderCanvas();
+  }
 }
 
 </script>
@@ -1523,6 +1967,10 @@ function bringToFront(boardNode) {
   vp.addEventListener('scroll', debounce(saveScroll, 300));
 
   function saveScroll() {
+    if (state.view === 'brain') { // brain scroll is session-only, and never clobbers workspace scroll
+      if (brainTab === 'board') { brainScroll.x = vp.scrollLeft; brainScroll.y = vp.scrollTop; }
+      return;
+    }
     const ws = activeWs();
     ws.scroll.x = vp.scrollLeft;
     ws.scroll.y = vp.scrollTop;
@@ -1530,6 +1978,7 @@ function bringToFront(boardNode) {
   }
 
   canvas.addEventListener('dblclick', (e) => {
+    if (state.view === 'brain') return; // the Brain board creates notes instead (js/brain.js)
     if (e.target !== canvas) return;
     const r = canvas.getBoundingClientRect();
     const x = clamp(e.clientX - r.left - BOARD_W / 2, 8, CANVAS_W - BOARD_W - 8);
@@ -1537,6 +1986,11 @@ function bringToFront(boardNode) {
     createBoardAt(x, y);
   });
 })();
+
+/* while a drag is live, stop touch gestures from scrolling underneath it */
+const suppressTouchScroll = (e) => e.preventDefault();
+function lockTouchScroll() { document.addEventListener('touchmove', suppressTouchScroll, { passive: false }); }
+function unlockTouchScroll() { document.removeEventListener('touchmove', suppressTouchScroll); }
 
 function createBoardAt(x, y) {
   const b = newBoard('', x, y);
@@ -1693,22 +2147,42 @@ function stopAutoscroll() {
     const cardNode = e.target.closest('.card');
     if (!cardNode || cardNode.classList.contains('done-card')) return;
     if (e.target.closest('button, a, input, textarea')) return;
-    press = { cardNode, x: e.clientX, y: e.clientY };
+    press = { cardNode, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY };
+    if (e.pointerType === 'touch') {
+      // touch: long-press to lift a card; quick swipes stay native scrolls
+      press.timer = setTimeout(() => {
+        if (press && !drag) {
+          startCardDrag({ clientX: press.lx, clientY: press.ly });
+          if (navigator.vibrate) navigator.vibrate(8);
+        }
+      }, 330);
+    }
   });
 
   window.addEventListener('pointermove', (e) => {
     if (press && !drag) {
-      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) >= DRAG_THRESHOLD) startCardDrag(e);
+      press.lx = e.clientX; press.ly = e.clientY;
+      const dist = Math.hypot(e.clientX - press.x, e.clientY - press.y);
+      if (press.timer) { // touch press pending: movement means the user is scrolling
+        if (dist >= 8) { clearTimeout(press.timer); press = null; }
+        return;
+      }
+      if (dist >= DRAG_THRESHOLD) startCardDrag(e);
       return;
     }
     if (drag) moveCardDrag(e);
   });
 
   window.addEventListener('pointerup', (e) => {
+    if (press && press.timer) clearTimeout(press.timer);
     if (drag) endCardDrag(e);
     press = null;
   });
-  window.addEventListener('pointercancel', () => { if (drag) cancelCardDrag(); press = null; });
+  window.addEventListener('pointercancel', () => {
+    if (press && press.timer) clearTimeout(press.timer);
+    if (drag) cancelCardDrag();
+    press = null;
+  });
 
   function startCardDrag(e) {
     const cardNode = press.cardNode;
@@ -1735,6 +2209,7 @@ function stopAutoscroll() {
       w: rect.width,
     };
     document.body.classList.add('dragging-any');
+    lockTouchScroll();
     positionGhost(e);
     press = null;
   }
@@ -1804,6 +2279,7 @@ function stopAutoscroll() {
     ghost.addEventListener('transitionend', finish, { once: true });
     setTimeout(finish, 220); // safety net
     document.body.classList.remove('dragging-any');
+    unlockTouchScroll();
     stopAutoscroll();
     drag = null;
   }
@@ -1812,6 +2288,7 @@ function stopAutoscroll() {
     drag.ghost.remove();
     rerenderBoard(drag.fromBoard.id);
     document.body.classList.remove('dragging-any');
+    unlockTouchScroll();
     stopAutoscroll();
     drag = null;
   }
@@ -2169,6 +2646,504 @@ function openBoardMenu(anchor, board) {
       const boardNode = titleEl.closest('.board');
       startBoardRename(boardNode, findBoard(boardNode.dataset.id), false);
     }
+  });
+})();
+
+</script>
+<script>
+/* Slate — Brain: ephemeral capture board + permanent topic library.
+   Notes are saved into their topic the moment they're filed ("shadow push");
+   the capture board itself is session-only and wipes on refresh/close. */
+'use strict';
+
+let brainTab = 'board';                 // 'board' | 'library' (session only)
+let captureNotes = [];                  // [{id, x, y}] — refs to saved notes, session only
+let brainScroll = { x: 0, y: 0 };       // capture-board scroll, session only
+let activeBnoteComposer = null;         // open composer element (survives re-renders)
+const BNOTE_W = 340;
+
+/* ---------- lookups ---------- */
+function findNote(noteId) {
+  for (const cat of state.brain.categories) {
+    const i = cat.notes.findIndex(n => n.id === noteId);
+    if (i >= 0) return { cat, note: cat.notes[i], index: i };
+  }
+  return null;
+}
+function findCat(catId) { return state.brain.categories.find(c => c.id === catId); }
+function catColor(cat) { return tagColor(cat.name); }
+
+/* ---------- rendering ---------- */
+let lastBrainTabRendered = null; // scroll resets only when a tab is ENTERED, not on in-place re-renders
+function renderBrain() {
+  const entering = lastBrainTabRendered !== brainTab;
+  lastBrainTabRendered = brainTab;
+  if (brainTab === 'library') renderLibrary(entering);
+  else renderCaptureBoard();
+}
+
+function renderCaptureBoard() {
+  const canvas = $('#canvas');
+  canvas.style.width = CANVAS_W + 'px';
+  canvas.style.height = CANVAS_H + 'px';
+  canvas.textContent = '';
+  captureNotes = captureNotes.filter(ref => findNote(ref.id)); // drop refs to deleted notes
+  for (const ref of captureNotes) {
+    const f = findNote(ref.id);
+    const node = bnoteEl(f.note);
+    node.style.left = ref.x + 'px';
+    node.style.top = ref.y + 'px';
+    canvas.appendChild(node);
+  }
+  if (activeBnoteComposer) canvas.appendChild(activeBnoteComposer);
+  const hint = $('#hint');
+  hint.textContent = 'Double-click anywhere to write down something you’ve learned';
+  hint.hidden = captureNotes.length > 0 || !!activeBnoteComposer;
+  const vp = $('#viewport');
+  vp.scrollLeft = brainScroll.x;
+  vp.scrollTop = brainScroll.y;
+}
+
+function renderLibrary(resetScroll) {
+  const lib = $('#library');
+  lib.textContent = '';
+  $('#hint').hidden = true;
+  const cats = state.brain.categories;
+  const total = cats.reduce((n, c) => n + c.notes.length, 0);
+  const head = el('div', 'library-head');
+  head.appendChild(el('h1', 'library-title', 'Library'));
+  head.appendChild(el('span', 'library-count', total + (total === 1 ? ' note' : ' notes') + ' · ' + cats.length + (cats.length === 1 ? ' topic' : ' topics')));
+  lib.appendChild(head);
+  if (!cats.length) {
+    const empty = el('div', 'library-empty');
+    empty.appendChild(el('div', 'library-empty-title', 'Nothing saved yet'));
+    empty.appendChild(el('div', 'library-empty-sub', 'Write your first note on the Board — it lands here, filed under its topic.'));
+    lib.appendChild(empty);
+  } else {
+    const grid = el('div', 'library-grid');
+    for (const cat of cats) grid.appendChild(paneEl(cat));
+    lib.appendChild(grid);
+  }
+  if (resetScroll) {
+    $('#viewport').scrollTop = 0;
+    $('#viewport').scrollLeft = 0;
+  }
+}
+
+function bnoteEl(note) {
+  const f = findNote(note.id);
+  const color = f ? catColor(f.cat) : null;
+  const root = el('article', 'bnote' + (color ? ' tint-' + color : ''));
+  root.dataset.id = note.id;
+  root.appendChild(el('div', 'bnote-text', note.text));
+  const foot = el('div', 'bnote-foot');
+  if (f) foot.appendChild(el('span', 'chip tag-chip tint-' + color, f.cat.name));
+  const saved = el('span', 'bnote-saved');
+  saved.appendChild(svgIcon(ICONS.check, 10, 2.2));
+  saved.appendChild(el('span', null, 'Saved'));
+  foot.appendChild(saved);
+  root.appendChild(foot);
+  return root;
+}
+
+function paneEl(cat) {
+  const color = catColor(cat);
+  const root = el('section', 'pane');
+  root.dataset.id = cat.id;
+  const head = el('header', 'pane-head');
+  head.appendChild(el('span', 'pane-dot tint-' + color));
+  const title = el('h2', 'pane-title', cat.name);
+  title.title = 'Double-click to rename';
+  const count = el('span', 'board-count', String(cat.notes.length));
+  const menu = el('button', 'ghost-btn pane-menu-btn');
+  menu.title = 'Topic actions';
+  menu.appendChild(svgIcon(ICONS.dots, 15, 2.2));
+  head.append(title, count, menu);
+  root.appendChild(head);
+  const list = el('div', 'pane-notes');
+  if (!cat.notes.length) list.appendChild(el('div', 'pane-empty', 'Nothing filed here yet'));
+  for (const n of cat.notes) {
+    const p = el('article', 'pnote');
+    p.dataset.id = n.id;
+    p.appendChild(el('div', 'pnote-text', n.text));
+    p.appendChild(el('div', 'pnote-date', new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })));
+    list.appendChild(p);
+  }
+  root.appendChild(list);
+  return root;
+}
+
+/* ---------- the shadow push ---------- */
+function flyToLibrary(fromEl) {
+  const target = $('#brainTabs .seg-btn[data-tab="library"]');
+  if (!target || !fromEl) return;
+  const a = fromEl.getBoundingClientRect();
+  const b = target.getBoundingClientRect();
+  const g = el('div', 'fly-ghost');
+  g.style.left = a.left + 'px';
+  g.style.top = a.top + 'px';
+  g.style.width = a.width + 'px';
+  g.style.height = a.height + 'px';
+  document.body.appendChild(g);
+  g.getBoundingClientRect();
+  const dx = (b.left + b.width / 2) - (a.left + a.width / 2);
+  const dy = (b.top + b.height / 2) - (a.top + a.height / 2);
+  g.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(0.05)';
+  g.style.opacity = '0.2';
+  setTimeout(() => {
+    g.remove();
+    target.classList.add('pulse');
+    setTimeout(() => target.classList.remove('pulse'), 420);
+  }, 560);
+}
+
+/* ---------- note composer (double-click / FAB) ---------- */
+function openBnoteComposer(x, y) {
+  if (activeBnoteComposer) { $('textarea', activeBnoteComposer).focus(); return; }
+  const canvas = $('#canvas');
+  const comp = el('article', 'bnote composing');
+  comp.style.left = clamp(x, 8, CANVAS_W - BNOTE_W - 8) + 'px';
+  comp.style.top = clamp(y, 8, CANVAS_H - 260) + 'px';
+
+  const ta = el('textarea', 'bnote-input');
+  ta.rows = 3;
+  ta.placeholder = 'Write down what you’ve learned…';
+  comp.appendChild(ta);
+
+  comp.appendChild(el('div', 'bnote-label', 'File under'));
+  const topics = el('div', 'bnote-topics');
+  comp.appendChild(topics);
+  const newTopic = el('input', 'bnote-newtopic');
+  newTopic.placeholder = state.brain.categories.length ? 'New topic…' : 'Name a topic…';
+  newTopic.maxLength = 40;
+  comp.appendChild(newTopic);
+
+  const actions = el('div', 'bnote-actions');
+  const saveBtn = el('button', 'primary-btn', 'Save');
+  const needMsg = el('span', 'bnote-need');
+  const cancel = el('button', 'ghost-btn');
+  cancel.title = 'Discard';
+  cancel.appendChild(svgIcon(ICONS.x, 13, 1.7));
+  actions.append(saveBtn, needMsg, cancel);
+  comp.appendChild(actions);
+
+  let selectedCatId = null;
+  function renderTopics() {
+    topics.textContent = '';
+    const pending = newTopic.value.trim();
+    for (const cat of state.brain.categories) {
+      const chip = el('button', 'chip tag-chip topic-chip tint-' + catColor(cat) + (cat.id === selectedCatId && !pending ? ' active' : ''), cat.name);
+      chip.addEventListener('click', () => {
+        selectedCatId = cat.id;
+        newTopic.value = '';
+        renderTopics();
+        refresh();
+      });
+      topics.appendChild(chip);
+    }
+    if (pending) {
+      const chip = el('span', 'chip tag-chip topic-chip active tint-' + tagColor(pending), pending);
+      topics.appendChild(chip);
+    }
+  }
+  function refresh() {
+    const hasText = !!ta.value.trim();
+    const hasTopic = !!(newTopic.value.trim() || selectedCatId);
+    saveBtn.disabled = !(hasText && hasTopic);
+    needMsg.textContent = hasText && !hasTopic ? 'Pick a topic to save' : '';
+  }
+  ta.addEventListener('input', refresh);
+  newTopic.addEventListener('input', () => { renderTopics(); refresh(); });
+  newTopic.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); ta.focus(); }
+    if (e.key === 'Escape') discard();
+  });
+  renderTopics();
+  refresh();
+  autoGrow(ta);
+
+  function submit() {
+    const text = ta.value.trim();
+    const pending = newTopic.value.trim();
+    if (!text || (!pending && !selectedCatId)) return;
+    let cat;
+    if (pending) {
+      cat = state.brain.categories.find(c => c.name.toLowerCase() === pending.toLowerCase());
+      if (!cat) { cat = newCategory(pending); state.brain.categories.push(cat); }
+    } else {
+      cat = findCat(selectedCatId);
+      if (!cat) return;
+    }
+    const note = newNote(text);
+    cat.notes.unshift(note);   // saved permanently, right now
+    save();
+    captureNotes.push({ id: note.id, x: parseInt(comp.style.left, 10), y: parseInt(comp.style.top, 10) });
+    const savedNode = bnoteEl(note);
+    savedNode.style.left = comp.style.left;
+    savedNode.style.top = comp.style.top;
+    savedNode.classList.add('bnote-enter');
+    comp.replaceWith(savedNode);
+    activeBnoteComposer = null;
+    flyToLibrary(savedNode);
+  }
+  function discard() {
+    comp.remove();
+    activeBnoteComposer = null;
+    $('#hint').hidden = captureNotes.length > 0;
+  }
+  saveBtn.addEventListener('click', submit);
+  cancel.addEventListener('click', discard);
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit(); }
+    if (e.key === 'Escape') discard();
+  });
+
+  activeBnoteComposer = comp;
+  canvas.appendChild(comp);
+  $('#hint').hidden = true;
+  ta.focus();
+}
+
+/* ---------- note modal (edit / re-file / delete) ---------- */
+function openNoteModal(noteId) {
+  const f = findNote(noteId);
+  if (!f) return;
+  const note = f.note;
+  let cat = f.cat;
+  const root = $('#modalRoot');
+  root.textContent = '';
+
+  const backdrop = el('div', 'modal-backdrop');
+  const modal = el('div', 'modal tint-' + catColor(cat));
+  modal.appendChild(el('div', 'modal-accent'));
+  const body = el('div', 'modal-body');
+  modal.appendChild(body);
+
+  const ta = el('textarea', 'bnote-edit');
+  ta.value = note.text;
+  ta.placeholder = 'Your note';
+  ta.addEventListener('input', () => { if (ta.value.trim()) note.text = ta.value.trim(); save(); });
+  ta.addEventListener('blur', () => { if (!ta.value.trim()) ta.value = note.text; });
+  body.appendChild(ta);
+  autoGrow(ta);
+
+  const topicSec = el('div', 'modal-section');
+  topicSec.appendChild(el('div', 'modal-label', 'Topic'));
+  const chips = el('div', 'bnote-topics');
+  topicSec.appendChild(chips);
+  const newTopic = el('input', 'bnote-newtopic');
+  newTopic.placeholder = 'Move to a new topic…';
+  newTopic.maxLength = 40;
+  topicSec.appendChild(newTopic);
+  body.appendChild(topicSec);
+
+  function moveTo(target) {
+    if (target === cat) return;
+    const i = cat.notes.indexOf(note);
+    if (i >= 0) cat.notes.splice(i, 1);
+    target.notes.unshift(note);
+    cat = target;
+    save();
+    modal.className = 'modal tint-' + catColor(cat);
+    renderChips();
+  }
+  function renderChips() {
+    chips.textContent = '';
+    for (const c of state.brain.categories) {
+      const chip = el('button', 'chip tag-chip topic-chip tint-' + catColor(c) + (c === cat ? ' active' : ''), c.name);
+      chip.addEventListener('click', () => moveTo(c));
+      chips.appendChild(chip);
+    }
+  }
+  newTopic.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const name = newTopic.value.trim();
+    if (!name) return;
+    let target = state.brain.categories.find(c => c.name.toLowerCase() === name.toLowerCase());
+    if (!target) { target = newCategory(name); state.brain.categories.push(target); }
+    newTopic.value = '';
+    moveTo(target);
+  });
+  renderChips();
+
+  const foot = el('div', 'modal-foot');
+  const stamp = el('span', 'modal-stamp', 'Saved ' + new Date(note.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }));
+  const del = el('button', 'ghost-btn danger');
+  del.appendChild(svgIcon(ICONS.trash, 13, 1.5));
+  del.appendChild(el('span', null, 'Delete'));
+  del.addEventListener('click', () => {
+    closeModal();
+    const holder = cat;
+    const idx = holder.notes.indexOf(note);
+    if (idx >= 0) holder.notes.splice(idx, 1);
+    const capRef = captureNotes.find(r => r.id === note.id);
+    captureNotes = captureNotes.filter(r => r.id !== note.id);
+    save();
+    renderAll();
+    undoableToast('Note deleted', () => {
+      holder.notes.splice(clamp(idx, 0, holder.notes.length), 0, note);
+      if (capRef) captureNotes.push(capRef);
+    });
+  });
+  foot.append(del, stamp);
+  modal.appendChild(foot);
+
+  backdrop.appendChild(modal);
+  root.appendChild(backdrop);
+  requestAnimationFrame(() => backdrop.classList.add('show'));
+
+  let closed = false;
+  function closeModal() {
+    if (closed) return;
+    closed = true;
+    backdrop.classList.remove('show');
+    setTimeout(() => backdrop.remove(), 180);
+    window.removeEventListener('keydown', onKey);
+    save.flush();
+    if (state.view === 'brain') renderAll();
+  }
+  backdrop.addEventListener('mousedown', (e) => { if (e.target === backdrop) closeModal(); });
+  function onKey(e) { if (e.key === 'Escape' && !activePopoverClose) closeModal(); }
+  window.addEventListener('keydown', onKey);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+/* ---------- pane menu (rename / delete topic) ---------- */
+function startPaneRename(paneNode, cat) {
+  const titleEl = $('.pane-title', paneNode);
+  const input = el('input', 'board-title-input');
+  input.value = cat.name;
+  input.maxLength = 40;
+  titleEl.replaceWith(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const commit = () => {
+    if (done) return;
+    done = true;
+    const v = input.value.trim();
+    if (v && v !== cat.name) {
+      const dup = state.brain.categories.find(c => c !== cat && c.name.toLowerCase() === v.toLowerCase());
+      if (dup) toast('A topic named "' + dup.name + '" already exists', { tone: 'danger' });
+      else cat.name = v;
+    }
+    save();
+    renderLibrary();
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = cat.name; input.blur(); }
+  });
+}
+
+function openPaneMenu(anchor, cat) {
+  openPopover(anchor, (pop, close) => {
+    pop.appendChild(popItem('Rename topic', ICONS.pencil, () => {
+      close();
+      const node = $('.pane[data-id="' + cat.id + '"]');
+      if (node) startPaneRename(node, cat);
+    }));
+    pop.appendChild(popItem('Delete topic', ICONS.trash, () => {
+      close();
+      const idx = state.brain.categories.indexOf(cat);
+      state.brain.categories.splice(idx, 1);
+      captureNotes = captureNotes.filter(r => !cat.notes.some(n => n.id === r.id));
+      save();
+      renderLibrary();
+      const n = cat.notes.length;
+      const msg = n ? 'Topic "' + cat.name + '" and ' + n + (n === 1 ? ' note' : ' notes') + ' deleted'
+        : 'Topic "' + cat.name + '" deleted';
+      undoableToast(msg,
+        () => state.brain.categories.splice(clamp(idx, 0, state.brain.categories.length), 0, cat));
+    }, 'danger'));
+  });
+}
+
+/* ---------- interactions ---------- */
+(function brainInteractions() {
+  const canvas = $('#canvas');
+  const vp = $('#viewport');
+
+  canvas.addEventListener('dblclick', (e) => {
+    if (state.view !== 'brain' || brainTab !== 'board') return;
+    if (e.target !== canvas) return;
+    const r = canvas.getBoundingClientRect();
+    openBnoteComposer(e.clientX - r.left - BNOTE_W / 2, e.clientY - r.top - 20);
+  });
+
+  $('#fabCapture').addEventListener('click', () => {
+    if (activeBnoteComposer) { $('textarea', activeBnoteComposer).focus(); return; }
+    const x = vp.scrollLeft + vp.clientWidth / 2 - BNOTE_W / 2;
+    const y = vp.scrollTop + Math.min(vp.clientHeight / 3, 220);
+    openBnoteComposer(x, y);
+    const comp = activeBnoteComposer;
+    if (comp) comp.scrollIntoView({ block: 'center', inline: 'center' });
+  });
+
+  /* drag saved notes around the capture board */
+  let d = null;
+  let suppressClick = false;
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || state.view !== 'brain') return;
+    const node = e.target.closest('.bnote');
+    if (!node || node.classList.contains('composing')) return;
+    if (e.target.closest('button, input, textarea')) return;
+    d = { node, sx: e.clientX, sy: e.clientY, ox: parseInt(node.style.left, 10), oy: parseInt(node.style.top, 10), h: node.offsetHeight, moved: false };
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!d) return;
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (!d.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    if (!d.moved) { d.moved = true; d.node.classList.add('bnote-dragging'); document.body.classList.add('dragging-any'); lockTouchScroll(); }
+    d.node.style.left = clamp(d.ox + dx, 0, CANVAS_W - BNOTE_W) + 'px';
+    d.node.style.top = clamp(d.oy + dy, 0, CANVAS_H - Math.max(60, d.h)) + 'px';
+    autoscrollViewport(e);
+  });
+  function finishBnoteDrag(revert) {
+    if (revert) { d.node.style.left = d.ox + 'px'; d.node.style.top = d.oy + 'px'; }
+    else {
+      const ref = captureNotes.find(r => r.id === d.node.dataset.id);
+      if (ref) { ref.x = parseInt(d.node.style.left, 10); ref.y = parseInt(d.node.style.top, 10); }
+    }
+    d.node.classList.remove('bnote-dragging');
+    document.body.classList.remove('dragging-any');
+    unlockTouchScroll();
+    stopAutoscroll();
+    suppressClick = !revert && d.moved; // pointercancel produces no click to swallow
+    d = null;
+  }
+  window.addEventListener('pointerup', () => { if (d) finishBnoteDrag(false); });
+  window.addEventListener('pointercancel', () => { if (d) finishBnoteDrag(true); });
+
+  canvas.addEventListener('click', (e) => {
+    if (state.view !== 'brain') return;
+    if (suppressClick) { suppressClick = false; return; }
+    const node = e.target.closest('.bnote');
+    if (!node || node.classList.contains('composing')) return;
+    if (e.target.closest('button, input, textarea')) return;
+    openNoteModal(node.dataset.id);
+  });
+
+  /* library delegation */
+  $('#library').addEventListener('click', (e) => {
+    const menuBtn = e.target.closest('.pane-menu-btn');
+    if (menuBtn) {
+      const cat = findCat(menuBtn.closest('.pane').dataset.id);
+      if (cat) openPaneMenu(menuBtn, cat);
+      return;
+    }
+    const pn = e.target.closest('.pnote');
+    if (pn) openNoteModal(pn.dataset.id);
+  });
+  $('#library').addEventListener('dblclick', (e) => {
+    const titleEl = e.target.closest('.pane-title');
+    if (!titleEl) return;
+    const pane = titleEl.closest('.pane');
+    const cat = findCat(pane.dataset.id);
+    if (cat) startPaneRename(pane, cat);
   });
 })();
 
@@ -2578,11 +3553,12 @@ function openSettings() {
           }
           const prev = JSON.parse(JSON.stringify(state));
           for (const [id, dataUrl] of Object.entries(payload.files || {})) await filePut(id, dataUrl);
-          state = st;
+          state = migrateState(st); // normalizes shape so renderers can't throw on a crafted payload
           saveNow();
-          renderAll();
+          // register the undo BEFORE rendering — even if a render fails, the restore path exists
           undoableToast('Backup imported — replaced ' + prev.ws.length +
             (prev.ws.length === 1 ? ' workspace' : ' workspaces'), () => { state = prev; });
+          renderAll();
         } catch (e) {
           console.error(e);
           toast('Could not read that file', { tone: 'danger' });
@@ -2605,6 +3581,17 @@ function openSettings() {
   renderAll();
   $('#wsSwitcher').addEventListener('click', openWsSwitcher);
   $('#settingsBtn').addEventListener('click', openSettings);
+  $$('#viewSeg .seg-btn').forEach(b => b.addEventListener('click', () => {
+    if ((state.view || 'tasks') === b.dataset.view) return;
+    state.view = b.dataset.view;
+    save();
+    renderAll();
+  }));
+  $$('#brainTabs .seg-btn').forEach(b => b.addEventListener('click', () => {
+    if (brainTab === b.dataset.tab) return;
+    brainTab = b.dataset.tab;
+    renderAll();
+  }));
   $('#themeBtn').addEventListener('click', () => {
     state.theme = state.theme === 'dark' ? 'light' : 'dark';
     save();

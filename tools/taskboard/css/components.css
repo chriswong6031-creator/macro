@@ -621,3 +621,25 @@
   .att-tile-x { display: flex; }
   .ws-row-btn { opacity: 1; }
 }
+
+/* small screens: modals become bottom sheets, overlays fit the viewport */
+@media (max-width: 640px) {
+  .modal-backdrop { padding: 24px 0 0; align-items: flex-end; }
+  .modal {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px); /* dvh tracks the soft keyboard on mobile */
+    border-radius: 18px 18px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .modal-accent { border-radius: 18px 18px 0 0; }
+  .modal-body { padding: 16px 18px 6px; }
+  .modal-foot { padding: 12px 18px 14px; }
+  .popover { max-width: calc(100vw - 16px); }
+  .toast { max-width: calc(100vw - 24px); }
+  .lightbox { padding: 14px; }
+  .lightbox-name { max-width: 40vw; }
+}

@@ -4,6 +4,7 @@
 Usage: python3 -m playwright... just run: python3 verify_playwright.py [base_url]
 Writes screenshots to /tmp/slate_verify/.
 """
+import json
 import sys
 import time
 from pathlib import Path
@@ -234,6 +235,120 @@ with sync_playwright() as pw:
     page.wait_for_timeout(300)
     check("delete: undo restores", page.locator(".card", has_text="Buy espresso beans").count() == 1)
 
+    # --- BRAIN ---
+    page.locator("#viewSeg .seg-btn[data-view='brain']").click()
+    page.wait_for_timeout(350)
+    check("brain: capture hint shown", page.locator("#hint").is_visible()
+          and "learned" in (page.locator("#hint").text_content() or ""))
+    check("brain: workspace controls hidden", not page.locator("#wsSwitcher").is_visible()
+          and not page.locator("#tidyBtn").is_visible())
+    check("brain: tabs + fab visible", page.locator("#brainTabs").is_visible()
+          and page.locator("#fabCapture").is_visible())
+
+    # capture a note into a NEW topic via double-click
+    page.mouse.dblclick(620, 420)
+    page.wait_for_timeout(250)
+    check("brain: composer opens on dblclick", page.locator(".bnote.composing").count() == 1)
+    page.locator(".bnote-input").fill("Trends persist longer than you expect")
+    page.locator(".bnote-newtopic").fill("Markets")
+    page.locator(".bnote-actions .primary-btn").click()
+    page.wait_for_timeout(400)
+    saved_card = page.locator(".bnote", has_text="Trends persist")
+    check("brain: note card stays on board", saved_card.count() == 1)
+    check("brain: card shows Saved + topic chip",
+          saved_card.locator(".bnote-saved").count() == 1
+          and saved_card.locator(".tag-chip", has_text="Markets").count() == 1)
+    n_markets = page.evaluate(
+        "() => (state.brain.categories.find(c => c.name === 'Markets') || {notes: []}).notes.length")
+    check("brain: note persisted into topic instantly", n_markets == 1, str(n_markets))
+
+    # second note, filed under the EXISTING topic chip
+    page.mouse.dblclick(980, 480)
+    page.wait_for_timeout(250)
+    page.locator(".bnote-input").fill("Position size beats entry timing")
+    page.locator(".bnote.composing .topic-chip", has_text="Markets").click()
+    page.locator(".bnote-actions .primary-btn").click()
+    page.wait_for_timeout(400)
+    n_markets = page.evaluate(
+        "() => state.brain.categories.find(c => c.name === 'Markets').notes.length")
+    check("brain: existing-topic filing works", n_markets == 2, str(n_markets))
+    page.screenshot(path=str(SHOTS / "07_brain_capture.png"))
+
+    # library view: panes per topic
+    page.locator("#brainTabs .seg-btn[data-tab='library']").click()
+    page.wait_for_timeout(350)
+    mpane = page.locator(".pane", has=page.locator(".pane-title", has_text="Markets"))
+    check("brain library: Markets pane with 2 notes", mpane.locator(".pnote").count() == 2)
+    check("brain library: seeded pane present",
+          page.locator(".pane-title", has_text="How this works").count() == 1)
+    page.screenshot(path=str(SHOTS / "08_brain_library.png"))
+
+    # edit a note from the library
+    mpane.locator(".pnote", has_text="Position size").click()
+    page.wait_for_timeout(300)
+    page.locator(".bnote-edit").fill("Position size beats entry timing — always.")
+    page.mouse.click(30, 500)
+    page.wait_for_timeout(350)
+    check("brain: note edit saves",
+          page.locator(".pnote", has_text="always.").count() == 1)
+
+    # shadow-push semantics: reload wipes the capture board, library keeps everything
+    page.reload()
+    page.wait_for_timeout(500)
+    check("brain: view persists across reload",
+          page.evaluate("document.body.dataset.view") == "brain")
+    check("brain: capture board wiped on reload",
+          page.locator(".bnote").count() == 0 and page.locator("#hint").is_visible())
+    page.locator("#brainTabs .seg-btn[data-tab='library']").click()
+    page.wait_for_timeout(300)
+    check("brain: library retains notes after reload",
+          page.locator(".pane", has=page.locator(".pane-title", has_text="Markets")).locator(".pnote").count() == 2)
+
+    # delete note + undo
+    page.locator(".pnote", has_text="Trends persist").click()
+    page.wait_for_timeout(300)
+    page.locator(".modal-foot .ghost-btn.danger").click()
+    page.wait_for_timeout(300)
+    check("brain: note deleted", page.locator(".pnote", has_text="Trends persist").count() == 0)
+    page.locator(".toast-action").click()
+    page.wait_for_timeout(300)
+    check("brain: delete undo restores", page.locator(".pnote", has_text="Trends persist").count() == 1)
+
+    # delete-undo from a live capture card restores the card too (review finding)
+    page.locator("#brainTabs .seg-btn[data-tab='board']").click()
+    page.wait_for_timeout(300)
+    page.mouse.dblclick(700, 500)
+    page.wait_for_timeout(250)
+    page.locator(".bnote-input").fill("Ephemeral card, durable note")
+    page.locator(".bnote.composing .topic-chip", has_text="Markets").click()
+    page.locator(".bnote-actions .primary-btn").click()
+    page.wait_for_timeout(400)
+    page.locator(".bnote", has_text="Ephemeral card").click()
+    page.wait_for_timeout(300)
+    page.locator(".modal-foot .ghost-btn.danger").click()
+    page.wait_for_timeout(300)
+    check("brain: delete removes capture card", page.locator(".bnote", has_text="Ephemeral card").count() == 0)
+    page.locator(".toast-action").click()
+    page.wait_for_timeout(300)
+    check("brain: undo restores capture card too", page.locator(".bnote", has_text="Ephemeral card").count() == 1)
+
+    # duplicate topic rename is blocked (review finding)
+    page.locator("#brainTabs .seg-btn[data-tab='library']").click()
+    page.wait_for_timeout(300)
+    page.locator(".pane", has=page.locator(".pane-title", has_text="Markets")).locator(".pane-title").dblclick()
+    page.wait_for_timeout(200)
+    page.locator(".board-title-input").fill("How this works")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(300)
+    check("brain: duplicate topic rename blocked",
+          page.locator(".pane-title", has_text="Markets").count() == 1
+          and page.locator(".toast-danger").count() == 1)
+
+    # back to tasks for the remaining regressions
+    page.locator("#viewSeg .seg-btn[data-view='tasks']").click()
+    page.wait_for_timeout(300)
+    check("brain: switch back to boards", page.locator(".board").count() == 4)
+
     # 15. REGRESSION: composer draft survives a board re-render (review finding: input loss)
     b0 = page.locator(".board").nth(0)
     b0.locator(".add-card-btn").click()
@@ -303,6 +418,32 @@ with sync_playwright() as pw:
 
     page.screenshot(path=str(SHOTS / "06_final.png"))
 
+    # --- RESPONSIVE SMOKE (phone viewport, fresh context) ---
+    ctx3 = browser.new_context(viewport={"width": 390, "height": 844},
+                               has_touch=True, is_mobile=True)
+    p3 = ctx3.new_page()
+    p3.goto(BASE)
+    p3.wait_for_timeout(500)
+    fits = p3.evaluate("() => document.querySelector('#topbar').scrollWidth <= window.innerWidth + 1")
+    check("mobile: topbar fits viewport", fits)
+    check("mobile: boards render", p3.locator(".board").count() == 3)
+    p3.locator(".card", has_text="Plan the week").click()
+    p3.wait_for_timeout(400)
+    mb = p3.locator(".modal").bounding_box()
+    check("mobile: modal is a full-width sheet", mb is not None and abs(mb["width"] - 390) < 2
+          and mb["y"] + mb["height"] >= 842, str(mb))
+    p3.screenshot(path=str(SHOTS / "09_mobile_sheet.png"))
+    p3.mouse.click(195, 10)
+    p3.wait_for_timeout(300)
+    p3.locator("#viewSeg .seg-btn[data-view='brain']").click()
+    p3.wait_for_timeout(300)
+    check("mobile: brain fab visible", p3.locator("#fabCapture").is_visible())
+    p3.locator("#fabCapture").click()
+    p3.wait_for_timeout(300)
+    check("mobile: fab opens composer", p3.locator(".bnote.composing").count() == 1)
+    p3.screenshot(path=str(SHOTS / "10_mobile_brain.png"))
+    ctx3.close()
+
     js_errors = [e for e in errors if "favicon" not in e.lower()]
     check("console: no JS errors", not js_errors, "; ".join(js_errors[:5]))
 
@@ -319,6 +460,38 @@ with sync_playwright() as pw:
     check("regression: corrupt state stashed under recovery key", stash == '{"v":1,"ws":[', str(stash))
     check("regression: recovery toast shown", p2.locator(".toast", has_text="recovery").count() == 1)
     ctx2.close()
+
+    # 20. REGRESSION: malformed brain payload on a cold load is normalized, never crashes (review finding)
+    bad_state = {
+        "v": 1, "theme": "light", "view": "brain", "activeWs": "w1",
+        "ws": [{"id": "w1", "name": "P", "scroll": {"x": 0, "y": 0}, "boards": []}],
+        "brain": {"categories": [
+            {"id": "x", "name": "Broken"},                       # missing .notes
+            "junk",                                               # not an object
+            {"name": 123, "notes": "nope"},                       # bad name + bad notes
+            {"id": "y", "name": "OK",
+             "notes": [{"id": "n1", "text": "survivor", "created": 1}, "bad", {"nope": 1}]},
+        ]},
+    }
+    ctx4 = browser.new_context(viewport={"width": 1440, "height": 900})
+    ctx4.add_init_script(
+        "localStorage.setItem('slate.state.v1', " + json.dumps(json.dumps(bad_state)) + ")")
+    p4 = ctx4.new_page()
+    errs4 = []
+    p4.on("pageerror", lambda e: errs4.append(str(e)))
+    p4.goto(BASE)
+    p4.wait_for_timeout(600)
+    check("malformed brain: app boots into brain view",
+          p4.evaluate("document.body.dataset.view") == "brain")
+    p4.locator("#brainTabs .seg-btn[data-tab='library']").click()
+    p4.wait_for_timeout(400)
+    check("malformed brain: library renders normalized panes",
+          p4.locator(".pane").count() == 3
+          and p4.locator(".pane-title", has_text="Untitled").count() == 1,
+          str(p4.locator(".pane").count()))
+    check("malformed brain: valid note survives", p4.locator(".pnote", has_text="survivor").count() == 1)
+    check("malformed brain: no JS errors", not errs4, "; ".join(errs4[:3]))
+    ctx4.close()
 
     browser.close()
 

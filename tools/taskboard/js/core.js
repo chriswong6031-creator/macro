@@ -98,6 +98,36 @@ function newBoard(name, x, y) {
 function newWorkspace(name) {
   return { id: uid(), name: name, scroll: { x: 0, y: 0 }, boards: [] };
 }
+function newCategory(name) {
+  return { id: uid(), name: name, notes: [] };
+}
+function newNote(text) {
+  return { id: uid(), text: text, created: Date.now() };
+}
+
+/* additive defaults for states saved before a feature existed, plus shape
+   normalization — this is the single choke point for loadState AND import,
+   so a malformed payload can never reach a renderer */
+function migrateState(s) {
+  if (!s.view) s.view = 'tasks';
+  if (!s.brain || !Array.isArray(s.brain.categories)) {
+    s.brain = { categories: [] };
+  }
+  s.brain.categories = s.brain.categories
+    .filter(c => c && typeof c === 'object' && !Array.isArray(c))
+    .map(c => ({
+      id: typeof c.id === 'string' ? c.id : uid(),
+      name: (typeof c.name === 'string' && c.name.trim()) ? c.name : 'Untitled',
+      notes: (Array.isArray(c.notes) ? c.notes : [])
+        .filter(n => n && typeof n === 'object' && typeof n.text === 'string')
+        .map(n => ({
+          id: typeof n.id === 'string' ? n.id : uid(),
+          text: n.text,
+          created: typeof n.created === 'number' ? n.created : Date.now(),
+        })),
+    }));
+  return s;
+}
 
 function seedState() {
   const ws = newWorkspace('Personal');
@@ -115,11 +145,16 @@ function seedState() {
   const b3 = newBoard('Ideas', 780, 40);
   b3.cards = [newCard('Double-click the background to make a new board'), newCard('Drag boards anywhere — press Tidy to snap them into a grid')];
   ws.boards = [b1, b2, b3];
+  const cat = newCategory('How this works');
+  const seedNote = newNote('Double-click the Brain board to write down something you’ve learned, file it under a topic, and it’s saved here instantly. The board itself clears every time you leave — a fresh page for fresh thoughts.');
+  cat.notes = [seedNote];
   return {
     v: 1,
     theme: (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light',
+    view: 'tasks',
     activeWs: ws.id,
     ws: [ws],
+    brain: { categories: [cat] },
     _files: null, // inline attachment fallback when IndexedDB is unavailable
   };
 }
@@ -131,7 +166,7 @@ function loadState() {
     raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      if (s && s.v === 1 && Array.isArray(s.ws) && s.ws.length) return s;
+      if (s && s.v === 1 && Array.isArray(s.ws) && s.ws.length) return migrateState(s);
     }
   } catch (e) { console.warn('Slate: could not load saved state', e); }
   if (raw) {
