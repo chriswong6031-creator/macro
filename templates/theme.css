@@ -922,6 +922,13 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .lst-wrap:has(.lst-collapse.lst-cap6 > :nth-child(7)) > .lst-more { display:block; }
 }
 
+/* Tightest 4-row variant (.lst-cap4) — the China stocks page's "What to act on now"
+   sector columns cap at 4 on EVERY width; button gates on a 5th child. */
+.lst-collapse.lst-cap4.is-collapsed > :nth-child(n+5) { display:none; }
+@media (min-width:681px) {
+  .lst-wrap:has(.lst-collapse.lst-cap4 > :nth-child(5)) > .lst-more { display:block; }
+}
+
 /* ==== regime panels (base-effect strip + HMM regime-probability) — shared by dashboard.html.j2 (US) + china.html.j2. Status colours --ok/--warn/--muted do NOT flip in zh; quad colours --q1..--q4 do (intentional). ==== */
 /* MEASURED / MODELED / NO-EDGE honesty badges (status colours --ok/--warn/--muted do NOT
    flip in zh mode, unlike --up/--down) + the base-effect forward strip (v0). */
