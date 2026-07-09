@@ -1869,6 +1869,45 @@
       </section>
       {% endif %}
 
+    {# ── Sector-flip confirmation lens (Policy-Shock W1-C) ──
+       Descriptive read of the last violent sector flip and historical base rates.
+       Gated on flip_confirmation.last_event existing; never fatal, never scored. #}
+    {% if flip_confirmation and flip_confirmation.last_event %}
+    {% set FC = flip_confirmation %}
+    {% set FEV = FC.last_event %}
+    {% set _fdir_en = 'defensive' if FEV.direction == 'defensive' else 'offense' %}
+    {% set _fdir_zh = '防御' if FEV.direction == 'defensive' else '进攻' %}
+    {% set _fvc = 'var(--up)' if FEV.verdict == 'CONFIRMED' else ('var(--down)' if FEV.verdict == 'FADED' else 'var(--muted)') %}
+    {% set _fvc_none = 'var(--muted)' %}
+    {% set _fv_en = FEV.verdict if FEV.verdict else 'Pending' %}
+    {% set _fv_zh = {'CONFIRMED':'已确认','FADED':'已消退','MIXED':'混合','Pending':'待定'}.get(_fv_en, _fv_en) %}
+    <section class="ms-flip" id="flip-confirmation">
+      <div class="flip-head">
+        <span class="flip-label">{{ t('Sector-flip confirmation','板块翻转确认') }}</span>
+        {{ help('A violent one-day sector-leadership flip is when the defensive composite (XLP/XLU/XLV) vs offense composite (SMH/XLK) daily spread exceeds |z| ≥ 2.5 vs trailing 252d. The next day\'s tape reads CONFIRMED (same direction), FADED (reversed), or MIXED. Descriptive only — describes what the tape did, never recommends a trade. Base rates since 2024 answer the chase-or-fade question with data.', '当防御复合体（XLP/XLU/XLV）对进攻复合体（SMH/XLK）的单日收益差超过 |z| ≥ 2.5（相对于252日历史）时触发板块翻转。次日表现读作：已确认（同向）、已消退（反向）或混合。纯描述性 — 描述实际走势，从不推荐操作。2024年以来的基率用数据回答"追入还是淡出"的问题。') }}
+        <span class="flip-asof muted">· {{ t('as of', '截至') }} {{ FC.asof }}</span>
+      </div>
+      <div class="flip-body">
+        <div class="flip-event">
+          <span class="flip-date">{{ FEV.event_date }}</span>
+          <span class="flip-dir">{{ t(_fdir_en, _fdir_zh) }}</span>
+          <span class="flip-z muted">z={{ FEV.z }}</span>
+          <span class="flip-verdict" style="color:{{ _fvc if FEV.verdict else _fvc_none }}">{{ t(_fv_en, _fv_zh) }}</span>
+        </div>
+        {% if FC.base_rates %}
+        {% set BR = FC.base_rates %}
+        <div class="flip-rates">
+          <span class="flip-rate-label">{{ t('2024→ base rates (descriptive)','2024→ 基率（描述性）') }}</span>
+          <span class="flip-stat">{{ BR.n_events }} {{ t('flips','次翻转') }}</span>
+          <span class="flip-stat up">{{ BR.confirmed }} {{ t('confirmed','确认') }}</span>
+          <span class="flip-stat down">{{ BR.faded }} {{ t('faded','消退') }}</span>
+          {% if BR.mixed %}<span class="flip-stat muted">{{ BR.mixed }} {{ t('mixed','混合') }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
     <div class="ms-divider">{{ t('Macro backdrop — the growth × inflation regime','宏观背景 — 增长 × 通胀周期') }}</div>
     {% endif %}{# /market_state #}
 
@@ -4006,6 +4045,13 @@
     <h2>{{ t('What to act on now', '当前可操作') }}
       {{ help('One row per GICS sector. 🏛 = the cap-weighted price-cycle timing read (descriptive structure — measured per-state stats show no state→return ordering; the drawdown path and context are the honest content). 🧩 chip = the equal-weight basket read when it disagrees with the cap-weighted cycle — different instrument: breadth vs mega-cap; both shown because they measure different things. The reduce side (trim/avoid, ✓) rides the backtested trend/deterioration drawdown-control gate — the one measured edge on this board, a risk timer not a return forecast. When that gate fires it outranks the cycle read — an extended (no-chase) sector is pulled into the reduce side rather than left on the run, so the ON THE RUN lane can be legitimately empty. ON THE RUN = in favour / extended but no clean entry — do not chase; add on pullback; hold if already long. Narrative baskets (Memory & Storage, Payments, …) are the finer-resolution rows — they carry the actual trade idea behind a blurry GICS label. ★ = in the narrative-rotation model book. Click any name for the full breakdown.', '每行对应一个 GICS 板块。🏛 = 市值加权价格周期判读（描述性结构 — 各状态的实测统计显示无状态→收益排序关系；回撤路径与情境是诚实的内容）。🧩 标签 = 等权篮子判读与市值加权周期不一致时显示 — 不同工具：广度 vs 龙头股；两者同时显示因为它们衡量不同的东西。减仓侧（止盈／回避，✓）依托经回测的趋势／恶化回撤控制门槛 — 这是本板块唯一经实测的优势，是风险计时器而非收益预测。该门槛触发时优先于周期判读——已延伸（勿追高）的板块会被移入减仓侧而非留在顺势运行栏，因此顺势运行栏可能为空，属正常现象。顺势运行 = 看好但无干净入场 — 勿追高；等回调加仓；已持有则持有。叙事篮子（内存与存储、支付等）是更精细分辨率的行 — 携带 GICS 模糊标签背后的真实交易逻辑。★ = 在叙事轮动模型组合中。点击任意名称查看完整拆解。') }}
     </h2>
+    {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
+       no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
+    {% if shock_state is defined and shock_state and shock_state.get('active') %}
+    <div style="margin:6px 0 10px;padding:8px 12px;border-radius:8px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));font-size:13px;font-weight:600">
+      ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
+    </div>
+    {% endif %}
     {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
        lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
        and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the

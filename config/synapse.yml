@@ -6093,6 +6093,54 @@ artifacts:
       upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
       Chronologically sorted. Used for delta detection in next run. Display/ops only.
 
+  # --- PR-4 M2: Deterministic operator-attention items ---
+  attention-deterministic:
+    path: data/neuralweb/attention_deterministic.json
+    format: json
+    producer: scripts/build_attention_deterministic.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.attention_deterministic.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      PR-4 M2 deterministic attention surface. Zero LLM — all items are template-filled
+      from structured artifact values. Five pre-registered rules: (A) contradiction tension,
+      (B) daily-cadence lobe past 1.5× SLA, (C) regime confidence < 0.25,
+      (D) evidence clock overdue, (E) cortex run degraded. Display-only; never writes
+      to cortex A2 earn-in track. Maintenance vocabulary only.
+
+  site-attention-deterministic:
+    path: site/neuralwebdata/attention_deterministic.json
+    format: json
+    producer: scripts/build_attention_deterministic.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.attention_deterministic.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of attention-deterministic for client-side fetch in committee.html.
+      Written by scripts/build_attention_deterministic.py in the same step.
+
   # --- W1 NW Core-Cognition: Mechanism Pathway Compiler v1 ---
   mechanism-pathways:
     path: data/neuralweb/mechanism_pathways.json
@@ -8276,6 +8324,60 @@ artifacts:
       file — dead-stays-dead, blocks re-emission as novel). Consumed by cortex
       read_context_candidates tool (R-CI11, top-K<=20, no per-ticker dumps).
 
+  # --- Policy-Shock W1-C artifacts ---
+
+  flip-confirmation-events:
+    path: data/flip_confirmation/events.jsonl
+    format: jsonl
+    producer: scripts/build_flip_confirmation.py
+    known_extra_writers: []
+    owner_program: policy-shock
+    cadence: daily-engine
+    storage: git
+    asof_field: event_date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      Policy-Shock W1-C (PR #2003). Append-only JSONL ledger of violent sector-flip
+      events (|z| >= 2.5 on defensive vs offense 1d return spread). One row per
+      event_date (keep-first). T+1 attribution included: spread_persistence,
+      leadership_continuity, absorption_delta, verdict (CONFIRMED|FADED|MIXED).
+      DISPLAY-ONLY: descriptive vocabulary, never recommended. qledger family
+      flip_confirmation.v1 registers one CRAWL_BOUNDED (gradeable) claim per
+      CONFIRMED/FADED event at horizon_d=21 on the XLP-vs-XLK proxy (MIXED
+      abstains); chassis grades 5d+21d. Nightly is the sole writer.
+
+  flip-confirmation-snapshot:
+    path: site/flip_confirmation_data.json
+    format: json
+    producer: scripts/build_flip_confirmation.py
+    known_extra_writers: []
+    owner_program: policy-shock
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      Policy-Shock W1-C (PR #2003). UI snapshot for the flip-confirmation card
+      on the macro.html market-state surface. Contains last_event, base_rates
+      (confirmed/faded/mixed counts since 2024), and the full descriptive_scan list.
+      Read by _flip_confirmation_view() in build_site.py. DISPLAY-ONLY.
+
   # --- Policy-Shock W2-F ---
   site-policy-lever:
     path: site/policy_lever.json
@@ -8303,3 +8405,58 @@ artifacts:
       Display-only (PS-R3); no scored surfaces, no probabilities (PS-R4).
       Oil/Iran lever is ONE row of the lever table — no standalone organ (PS-R5).
       No new data/ ledger — site artifact only (PS-R7). Thresholds frozen v1 (PS-R9).
+
+  # --- policy-shock W2-E (PR-6 / D3) ---
+  shock-deescalation-firings:
+    path: data/reflexes/shock_deescalation/firings.jsonl
+    format: jsonl
+    producer: engine/shock_deescalation.py
+    known_extra_writers: []
+    owner_program: policy-shock
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/shock_deescalation.py
+    notes: >
+      Policy-shock W2-E firings ledger. Single-writer: only
+      engine/shock_deescalation.py:build_nightly() appends rows (keep-first per
+      date). Intraday path reads this file but NEVER writes it (PS-R7). Shadow
+      tier, direction=0 (de-escalation only — PS-R3). Graded for operational
+      quality; PS-R8: no directional gauntlet before n>=8 episodes.
+      Would-have-fired backscan: 2026-06-25 + 2026-07-07 (descriptive only;
+      ledger starts empty at ship date). Created lazily on first nightly firing.
+
+  shock-deescalation-state:
+    path: site/live/shock_state.json
+    format: json
+    producer: engine/shock_deescalation.py
+    known_extra_writers:
+      - "scripts/build_risk_state.py — intraday fast-path calls build_intraday() site/ only"
+    owner_program: policy-shock
+    cadence: daily-engine
+    storage: git
+    asof_field: since
+    freshness_sla_hours: 30
+    schema: shock_deescalation.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/subsector_rotation.html.j2
+      - templates/sector.html.j2
+      - templates/dashboard.html.j2
+    notes: >
+      Cross-cutting shock de-escalation flag. Schema: {active, score, since,
+      expires, reason, reason_zh, trigger_reason, primary_driver, note, note_zh,
+      schema, would_have_fired}. PS-R3: consumers display only — no direction,
+      no reordering, no sizing. Written nightly by build_nightly() and intraday
+      by build_intraday() (PS-R7: intraday writes site/ only). Staged by the
+      daily.yml engine job commit and the intraday-fastpath.yml commit step.

@@ -333,7 +333,7 @@ function detailSection(b){
     <div class="kpirow">${kr('20d','20d')}${kr('60d','60d')}${kr('MTD','mtd')}${kr('YTD','ytd')}${kr(zh?'全程':'Full','full')}</div>
     ${ref}<div>${warns.join(' ')}</div>
     <details open><summary>${zh?'成分':'Members'} (${b.n_members}) &amp; ${zh?'变更记录':'changelog'}</summary>
-      <div class="ts"><table><thead><tr><th>${memHdr[0]}</th><th>${memHdr[1]}</th><th class="num">${memHdr[2]}</th><th class="num">${memHdr[3]}</th><th class="num">${memHdr[4]}</th></tr></thead><tbody>${memRows(b)}</tbody></table></div>
+      <div class="ts"><table><thead><tr><th>${memHdr[0]}</th><th>${memHdr[1]}</th><th class="num">${memHdr[2]}</th><th class="num">${memHdr[3]}</th><th class="num">${memHdr[4]}</th></tr></thead><tbody data-showmore-rows="8">${memRows(b)}</tbody></table></div>
       <ul class="clog">${clog}</ul>
     </details></div>`;
 }
@@ -359,7 +359,9 @@ function renderModeTabs(){
   renderTabs(document.getElementById('chart-modes'), [['rel',VS()],['abs', LANG()==='zh'?'绝对':'Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
 }
 
-function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChart(); renderCards(); renderDetails(); }
+function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChart(); renderCards(); renderDetails();
+  // Re-wire showmore after full re-render (e.g. langchange replaces tbodies).
+  try{ if(window.initShowMore) window.initShowMore(); }catch(e){} }
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
@@ -368,9 +370,15 @@ function boot(){
   rel.innerHTML=RANGES.map(([lab,v])=>`<button data-v="${v}" class="${v===chartRange?'on':''}">${lab}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N days">`;
   rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
-  renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('hkfw-hz',v); renderCards(); renderDetails(); });
+  renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('hkfw-hz',v); renderCards(); renderDetails(); try{ if(window.initShowMore) window.initShowMore(); }catch(e){} });
   initChartDefaults();
-  renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails(); deskBoot();
+  renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails();
+  // Item 15: wire data-showmore-rows="8" tbodies (basket holdings) after render.
+  try{ if(window.initShowMore) window.initShowMore(); }catch(e){}
+  deskBoot();
+  // Item 16: cap "What to act on now" columns at 4 rows via lst-cap4 (theme.css variant).
+  // renderActNow (inside deskBoot) writes .anlist.lst-collapse — add the cap class after.
+  document.querySelectorAll('#actnow .anlist.lst-collapse').forEach(function(el){ el.classList.add('lst-cap4'); });
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
   if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderAll(); });

@@ -344,6 +344,16 @@ def build(offline: bool = False) -> dict:
         _elapsed = _time.perf_counter() - _t0
         log.warning("drivers pass failed (non-fatal, %.1fs): %s", _elapsed, _e)
 
+    # ---- shock de-escalation intraday fast-path (PS-R7: site/ only) -----------
+    # Reads the just-written site/live/market_drivers.json and refreshes
+    # site/live/shock_state.json.  Committed firings ledger is read-only here.
+    try:
+        from engine import shock_deescalation as _sd
+        _sd.build_intraday()
+        log.info("shock_deescalation intraday pass complete")
+    except Exception as _e2:  # noqa: BLE001 — best-effort; never abort the main path
+        log.warning("shock_deescalation intraday pass failed (non-fatal): %s", _e2)
+
     return {"status": "ok", "live_active": live_active, "display": display["verdict"],
             "live": live_blk.get("verdict"), "nightly": nightly_blk.get("verdict")}
 

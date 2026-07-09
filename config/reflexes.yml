@@ -671,3 +671,60 @@ reflexes:
       NW W2 PR-5: dark scaffold. NOT wired into daily.yml.
       Script is callable manually or via dispatch after both activation conditions
       are met. Checks for GATE-PASSED verdict before writing anything.
+
+  # ─── PS-W2-E — SHOCK DE-ESCALATION (policy-shock program W2-E / D3) ─────────
+
+  shock_deescalation:
+    description: >
+      Cross-asset shock de-escalation protocol (policy-shock W2-E, D3).
+      Fires when repricing_coherence (produced by engine/market_drivers.py W1-A)
+      reaches SHOCK state, OR when two consecutive nightly prints are ELEVATED
+      with driver_flip > 0 on the latest. Active window = trigger date + 3 NYSE
+      sessions. Consumers display a de-escalation banner/chip (PS-R3: removes
+      confidence only — no direction, no reordering, no sizing).
+      Trigger thresholds are frozen v1 (PS-R9).
+      SINGLE-WRITER: only engine/shock_deescalation.py:build_nightly() appends
+      data/reflexes/shock_deescalation/firings.jsonl.
+      Intraday fast-path writes site/live/shock_state.json ONLY (PS-R7).
+    trigger:
+      type: coherence_threshold
+      source: engine/market_drivers.py:repricing_coherence (coherence_state / driver_flip)
+      condition: >
+        (coherence_state == "SHOCK") OR
+        (coherence_state == "ELEVATED" AND driver_flip > 0 AND
+         prev_coherence_state == "ELEVATED")
+      cadence_cron: "nightly — runs after engine.run / market_drivers.append_log in daily.yml"
+      lane: nightly-engine
+    action:
+      type: [append_firings_ledger, write_shock_state_json]
+      ledger: data/reflexes/shock_deescalation/firings.jsonl
+      site_artifacts:
+        - site/live/shock_state.json
+      consumers:
+        - subsector_rotation.html.j2: prominent banner while active (PS-R3)
+        - sector.html.j2: prominent banner while active (PS-R3)
+        - dashboard.html.j2: fresh-entry caution chip on action board (PS-R3)
+        - subsector_rotation.html.j2: Oracle panel staleness note (PS-R3)
+      constitution_note: >
+        display_only=True unconditionally for all consumers. No Article-2
+        surface is touched. PS-R3: de-escalation only — no direction, no
+        reordering, no sizing. v1 thresholds frozen (PS-R9).
+    firings_jsonl: data/reflexes/shock_deescalation/firings.jsonl
+    claim_family: reflex.shock_deescalation
+    tier: shadow
+    push_tier: false
+    graded: true
+    graded_note: >
+      Shadow tier — each firing carries direction=0 (de-escalation only; no
+      directional bet per PS-R3). Graded for operational quality (did the active
+      window cover the actual coherence episode?). PS-R8: no directional gauntlet
+      before n>=8 distinct shock episodes. Forward accrual only from ship date.
+      Would-have-fired backscan (2026-06-25, 2026-07-07) included in site
+      artifact as descriptive — NOT backfilled into firings ledger (PS-R7/PS-R8).
+    migration_status: mirroring
+    producer: engine/shock_deescalation.py
+    ps_w2e_note: >
+      Policy-shock masterplan §4 W2-E (PR #2003 / PR-6). Nightly wiring: run
+      after engine.run / market_drivers.append_log in daily.yml engine job.
+      Intraday wiring: build_risk_state.py calls build_intraday() after the
+      drivers pass — site/ writes only (PS-R7).

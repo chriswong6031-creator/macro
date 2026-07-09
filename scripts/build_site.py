@@ -1563,6 +1563,24 @@ def _dispersion_regime_view() -> dict | None:
         return None
 
 
+def _flip_confirmation_view() -> dict | None:
+    """T+1 sector-flip confirmation lens snapshot (Policy-Shock W1-C).
+
+    Reads engine.flip_confirmation.snapshot() — the detect-since-2024 descriptive
+    scan plus the last flip event with T+1 verdict.  DISPLAY-ONLY; never scored.
+    Returns None (never raises) so the card is hidden when data is unavailable.
+    """
+    try:
+        from engine import flip_confirmation as _fc
+        snap = _fc.snapshot()
+        if not snap or snap.get("error") or not snap.get("last_event"):
+            return None
+        return snap
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("flip_confirmation_view failed (%s)", e)
+        return None
+
+
 def _sector_heat_view() -> dict | None:
     """Compact sector-heat strip for the macro.html dashboard: up to 4 heating themes
     and up to 4 cooling/broken themes, each with a link to baskets.html#theme-<id>.
@@ -2536,6 +2554,15 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     tpl = env.get_template("sector.html.j2")
     outdir = site / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
+    # Policy-shock de-escalation state (PS-R3: display de-escalation only — no sizing/reordering)
+    _shock_path = site / "live" / "shock_state.json"
+    _shock_state: dict | None = None
+    try:
+        if _shock_path.exists():
+            import json as _jsss
+            _shock_state = _jsss.loads(_shock_path.read_text())
+    except Exception as _sse:  # noqa: BLE001 — additive, never fatal
+        log.warning("shock_state unavailable for sector pages (%s)", _sse)
 
     import json as _json2
     summaries: dict[str, dict] = {}
@@ -2663,7 +2690,8 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
             str(ec.index.max().date()), days=_adays, max_events=_amax)
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
-                          alerts=feed, generated_utc=generated)
+                          alerts=feed, generated_utc=generated,
+                          shock_state=_shock_state)
         write_page(outdir / f"{fund}.html", html)
         summaries[fund] = {"state": res["ladder"]["state"],
                            "label": res["ladder"]["label"],
@@ -3294,6 +3322,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("mtf monitor failed: %s", e)
         mtf_data = None
+    # Policy-shock de-escalation state for dashboard fresh-entry caution chip
+    # (PS-R3: display de-escalation only — no reordering, no sizing)
+    _dash_shock_state: dict | None = None
+    try:
+        _dsp = site / "live" / "shock_state.json"
+        if _dsp.exists():
+            import json as _dsj
+            _dash_shock_state = _dsj.loads(_dsp.read_text())
+    except Exception as _dse:  # noqa: BLE001 — additive, never fatal
+        log.warning("shock_state unavailable for dashboard (%s)", _dse)
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -3358,6 +3396,8 @@ def main() -> int:
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
         dispersion_regime=_dispersion_regime_view(),  # L3 selection-regime chip (NW Rails W2 PR-4, display-only)
         policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
+        flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
+        shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /
@@ -3818,6 +3858,11 @@ def main() -> int:
         if _lp_src.exists():
             (nwd / "liquidity_plumbing.json").write_bytes(_lp_src.read_bytes())
             log.info("neuralwebdata: copied liquidity_plumbing.json")
+        # PR-4 M2: copy deterministic attention items for committee.html client-side fetch
+        _ad_src = config.data_dir() / "neuralweb" / "attention_deterministic.json"
+        if _ad_src.exists():
+            (nwd / "attention_deterministic.json").write_bytes(_ad_src.read_bytes())
+            log.info("neuralwebdata: copied attention_deterministic.json")
         # Supabase config (same as watchlist / theme.js)
         committee_html = env.get_template("committee.html.j2").render(
             generated_utc=generated,

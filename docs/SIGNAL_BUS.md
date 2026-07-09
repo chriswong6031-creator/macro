@@ -31,7 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
-| neural-web | 46 |
+| neural-web | 48 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 3 |
@@ -39,6 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 25 |
+| policy-shock | 5 |
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
 | sector-pulse | 3 |
@@ -53,16 +54,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 164 |
+| display | 170 |
 | infrastructure | 74 |
 | scored | 4 |
-| shadow | 45 |
+| shadow | 46 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 275 |
+| git | 282 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -322,6 +323,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
+| attention-deterministic | `data/neuralweb/attention_deterministic.json` | json | daily-engine | display | 1 | 0 |
 | causal-mechanisms | `data/neuralweb/causal_mechanisms.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | claim-accountability | `data/governance/claim_accountability.json` | json | collect | infrastructure | 1 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
@@ -339,6 +341,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| site-attention-deterministic | `site/neuralwebdata/attention_deterministic.json` | json | daily-engine | display | 1 | 0 |
 | site-mechanism-pathways | `site/neuralwebdata/mechanism_pathways.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
 | causal-feature-inventory | `data/neuralweb/causal_feature_inventory.json` | json | daily-engine | infrastructure | 0 | 0 |
@@ -436,6 +439,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |
+
+### policy-shock
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| shock-deescalation-state | `site/live/shock_state.json` | json | daily-engine | display | 3 | 0 |
+| flip-confirmation-events | `data/flip_confirmation/events.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| flip-confirmation-snapshot | `site/flip_confirmation_data.json` | json | daily-engine | display | 1 | 0 |
+| shock-deescalation-firings | `data/reflexes/shock_deescalation/firings.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| site-policy-lever | `site/policy_lever.json` | json | daily-engine | display | 1 | 0 |
 
 ### qualitative-intelligence
 
@@ -1014,6 +1027,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/sector_central.py`
 - **extra writers:**
   - scripts/build_sector_central.py — runner that calls sector_central and persists output
+
+### shock-deescalation-state
+
+- **path:** `site/live/shock_state.json`
+- **declared producer:** `engine/shock_deescalation.py`
+- **extra writers:**
+  - scripts/build_risk_state.py — intraday fast-path calls build_intraday() site/ only
 
 ### signal-archive-track-record
 

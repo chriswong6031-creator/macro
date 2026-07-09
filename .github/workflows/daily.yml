@@ -431,6 +431,12 @@ jobs:
             fi
           }
           run_py "regime engine (engine.run)" engine.run
+          # Shock de-escalation protocol (policy-shock W2-E / D3) — must run AFTER engine.run
+          # so market_drivers.append_log has written coherence_state to the log.  Writes
+          # data/reflexes/shock_deescalation/firings.jsonl (keep-first) + site/live/shock_state.json.
+          # Non-fatal: exits 0 on any error so this can NEVER break the render. PS-R7 guard
+          # is enforced inside engine.shock_deescalation.build_nightly().
+          run_py "shock de-escalation (shock_deescalation)" engine.shock_deescalation
           # S&P allocation deep-dive (spvector.html) + data/regime/spvector_latest.json,
           # BEFORE build_site so the macro page's allocation card reads live numbers.
           run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
@@ -505,6 +511,21 @@ jobs:
           cat /tmp/backfill_regime_stamps.log
           [ "$rc" -ne 0 ] && echo "::warning title=backfill_regime_stamps::rc=$rc (non-fatal)"
           exit 0  # PR-2 fix: missing exit 0 caused [ "$rc" -ne 0 ] to exit 1 when rc=0, skipping all downstream kernel steps
+      - name: Sector-flip confirmation lens (Policy-Shock W1-C)
+        # Detects violent defensive/offense spread flips (|z| >= 2.5 vs 252d), appends the
+        # keep-first event ledger at data/flip_confirmation/events.jsonl, registers one
+        # CRAWL_BOUNDED (gradeable) qledger claim per CONFIRMED/FADED event at horizon_d=21
+        # on the priceable XLP-vs-XLK proxy pair (chassis grades at 5d + 21d automatically;
+        # MIXED events abstain). Emits site/flip_confirmation_data.json for the market-state card.
+        # AFTER engine.run (market_drivers_log.parquet must be updated for absorption_delta)
+        # and AFTER backfill_regime_stamps (qledger consistency). Non-fatal.
+        continue-on-error: true
+        run: |
+          set +e
+          python -m scripts.build_flip_confirmation > /tmp/flip_confirmation.log 2>&1; rc=$?
+          cat /tmp/flip_confirmation.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_flip_confirmation::rc=$rc (non-fatal)"
+          exit 0
       - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
         # AFTER build_site: reads site/factordata/us_standouts.json (just written).
         # Originates new prophet.trade_plan/v1 envelopes, runs the management engine
@@ -1352,6 +1373,14 @@ jobs:
         # Fail-open: any missing input → brief with explicit gap notes, exit 0.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_neuralweb_brief || echo "::warning::build_neuralweb_brief failed (non-fatal) — keeping last committed daily_brief.json"
+      - name: build attention_deterministic (PR-4 M2 — deterministic operator-attention items)
+        if: always()
+        # PR-4 M2: zero-LLM deterministic attention items from world_state + health + daily_brief.
+        # Five pre-registered rules: contradiction tension, lobe SLA breach, regime indeterminate,
+        # evidence clock overdue, cortex degraded. Fail-open: any missing input → empty-items artifact.
+        # Writes data/neuralweb/attention_deterministic.json + site/neuralwebdata/ mirror.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_attention_deterministic || echo "::warning::build_attention_deterministic failed (non-fatal) — keeping last committed attention_deterministic.json"
       - name: research_factory_monitor (W6 — paper monitor + nightly ledger)
         if: always()
         # Research Factory W6 (RF-8/RF-9/RF-10): paper monitor over all 'paper',

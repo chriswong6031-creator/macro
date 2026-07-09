@@ -98,6 +98,14 @@ lanes:
         note: non-fatal
       - id: engine_run
         module: engine.run
+      - id: build_shock_deescalation
+        module: engine.shock_deescalation
+        note: >
+          Policy-shock W2-E de-escalation protocol (PS-R7/PS-R9) — runs after engine.run
+          so market_drivers.append_log has already advanced the coherence columns in
+          data/regime/market_drivers_log.parquet. Writes data/reflexes/shock_deescalation/
+          firings.jsonl (keep-first per date) + site/live/shock_state.json. Non-fatal:
+          any error degrades to active=False without breaking the build.
       - id: build_spvector
         module: scripts.build_spvector
       - id: factor_ic_scorecard
@@ -133,6 +141,9 @@ lanes:
       - id: backfill_regime_stamps
         module: scripts.backfill_regime_stamps
         note: "nw-macro-rail R5 PR-C — regime stamp backfill on qledger rows (non-fatal); near-term yield ≈ 2 rows from regime_vector.parquet coverage"
+      - id: build_flip_confirmation
+        module: scripts.build_flip_confirmation
+        note: "Policy-Shock W1-C — T+1 sector-flip confirmation lens; detects violent defensive/offense spread flips, appends keep-first ledger, registers qledger claims, emits site/flip_confirmation_data.json (display-only, non-fatal)"
       - id: build_prophet
         module: scripts.build_prophet
         note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
@@ -414,6 +425,9 @@ lanes:
       - id: build_neuralweb_brief
         module: scripts.build_neuralweb_brief
         note: non-fatal; PR-D NW daily brief surface — engine phase writes phase='engine' after health; cortex job --finalize writes phase='final' + upserts history row
+      - id: build_attention_deterministic
+        module: scripts.build_attention_deterministic
+        note: non-fatal; PR-4 M2 deterministic operator-attention items — zero LLM, five pre-registered rules; after health + daily_brief; writes data/neuralweb/attention_deterministic.json + site/neuralwebdata/ mirror
       - id: research_factory_monitor
         module: scripts.research_factory_monitor
         note: non-fatal; Research Factory W6 — paper monitor, regime-aware decay, nightly forward-ledger wiring (RF-8/RF-9/RF-10); data/research_factory/ writes covered by 'git add data/' in commit step
