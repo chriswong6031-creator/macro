@@ -8543,3 +8543,90 @@ artifacts:
       FIREWALLED from all entry surfaces — no scored_path_surfaces, not consumed by
       any tactical_entry module. horizon_role=hold_thesis. First maturation ETA ~2027-01
       (126 sessions × 1.4 calendar-day factor). authority='display_only' throughout.
+
+  # --- CN Pick Lab (spec CHINA_PICK_LAB_MASTERPLAN_BY_FABLE.md §5/§6) ---
+  cn-pick-lab-snapshots:
+    path: data/china_pick_lab/snapshots/
+    format: parquet
+    producer: scripts/build_china_library.py
+    known_extra_writers:
+      - "scripts/build_china_pick_lab.py — writes enriched snapshot back via write_snapshot (CNPL-R6)"
+    owner_program: china-pick-lab
+    cadence: asia-close
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: engine.pick_lab.cn_snapshot.CN_SNAPSHOT_COLUMNS
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_china_pick_lab.py
+    external_consumers: []
+    notes: >
+      CN Pick Lab producer-core snapshot tape. Monthly parquet partitions
+      (data/china_pick_lab/snapshots/<YYYY-MM>.parquet). One row per ticker per
+      asof date across the CN search universe. PIT by construction (CNPL-R6):
+      written once per night by build_china_library; enriched (cycle_phase,
+      participation_regime, policy_impulse, qvix_z, limit_state, THS basket
+      membership) and persisted back by build_china_pick_lab (asia lane only).
+      Display-only; authority='display_only' on every row. Never feeds a scored
+      or alert surface. Lane: asia-close (CN_LANE=asia required for writes).
+
+  cn-pick-lab-entry-ledger:
+    path: site/labdata/china_pick_lab.json
+    format: json
+    producer: scripts/build_china_pick_lab.py
+    known_extra_writers: []
+    owner_program: china-pick-lab
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/pick_lab/render_cn.py
+    external_consumers: []
+    notes: >
+      CN Pick Lab entry-books site artifact (horizon_role=tactical_entry). Contains
+      scoreboard (all 20 CN entry books + flagship2_mirror), picks_today per book,
+      recent_fires with h=21 grade outcomes, total_skipped_unfillable counter, and
+      method note. All rows carry authority='display_only' (CNPL-R1). Status ACCRUING
+      until n≥25 fires / ≥3 months / ≥6 distinct fire dates (CNPL-R4 floor).
+      cnlab_random_ctrl pinned as yardstick row. Ruler: 21d CSI 300 excess.
+      Consumed only by render_cn.py → site/china_stocks_lab.html.
+      Lane: asia-close (CN_LANE=asia required for writes, CNPL-R8).
+
+  cn-reversion-desk-artifact:
+    path: site/factordata/china_reversion_desk.json
+    format: json
+    producer: scripts/build_china_library.py
+    known_extra_writers: []
+    owner_program: china-pick-lab
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_china_pick_lab.py
+      - templates/china.html.j2
+    external_consumers: []
+    notes: >
+      Flagship-2 Reversion Desk artifact (spec §4, china_reversion_desk.v1).
+      schema=china_reversion_desk.v1; top-12 CN reversal candidates scored by
+      depth + washout/COILED bonuses − extension penalty. authority='display_only'.
+      Chips (1D/3D oscillator state, cycle_phase, participation_regime, chase_veto,
+      T+1-risk) are context-only display keys — never gates. Consumed by the Reversion
+      Desk panel on china_stocks.html (templates/china.html.j2) and mirrored as
+      cnlab_flagship2_mirror book in the CN Pick Lab ledger. Lane: asia-close
+      (produced by build_china_library which runs in the asia lane).

@@ -570,7 +570,8 @@
       {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span class="chip c-muted">{{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{% endif %}
     </div>
     <p class="note" style="margin:8px 0 0;text-transform:none">{{ t('A-share entry watchlist: washed-out names with a fresh 3D/2D turn. Rank means buy-readiness, not advice.', 'A股入场观察表：洗盘后出现3日/2日新转向的个股。排序表示买入就绪度，非建议。') }}
-      <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a></p>
+      <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a>
+      <a href="china_stocks_lab.html" style="margin-left:14px;padding:4px 11px;border:1.5px solid var(--link);border-radius:8px;font-size:12px;font-weight:700;color:var(--link);white-space:nowrap;display:inline-block;margin-top:4px">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
     {# W5b EDGE-1 — CN drawdown radar sleeve-size chip. Source: engine/risk_radar_intl.py
        cn_sleeve_chip(). Wired into setups.sleeve_chip by build_china_library.main().
        Degrades: hidden when setups.sleeve_chip absent or radar_state is None.
@@ -1887,6 +1888,87 @@
     </script>
   </div>
   {% endif %}
+
+  {# ======= REVERSION DESK — flagship-2 (china_stocks.html only) ========================
+     Spec: CHINA_PICK_LAB_MASTERPLAN_BY_FABLE.md §4 + §7.
+     VM key: reversion_desk (loaded from site/factordata/china_reversion_desk.json by
+     build_china.py as a fallback when the producer block sets it). Degrades gracefully
+     when the key is absent — the block is simply hidden. Authority: display_only (CNPL-R1).
+     GOTCHA: Jinja `is not none` on a missing key CRASHES — use .get() guards throughout.
+  #}
+  {% if mode == 'stocks' %}
+  {% set _rd = reversion_desk if reversion_desk is defined else none %}
+  {% if _rd %}
+  <!-- ===================== REVERSION DESK (flagship-2, A-share native edge) ===================== -->
+  <div class="panel span12" id="reversion-desk">
+    {# lane header #}
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <h2 style="margin:0">🔄 {{ t('Reversion Desk', '回归台') }}
+        <span class="note" style="text-transform:none;font-size:13px;font-weight:400">· {{ t('flagship-2 · A-share native edge — within-sector 3-month reversal depth', '旗舰2 · A股原生优势 — 行业内3月回归深度') }}</span>
+      </h2>
+      <span class="chip c-muted" style="font-size:11px;font-weight:600">{{ t('display-only', '仅展示') }}</span>
+    </div>
+    <p class="note" style="margin:0 0 10px;text-transform:none;font-size:12px">
+      <span class="l-en">Deepest-quintile within-sector 3-month return, ranked by reversal depth + CN-native bonuses (washout_2w, COILED/STAR). No confluence-cascade gate — the gate-vs-edge divorce measured live. Not a buy list: display context, not a signal (CNPL-R1).</span>
+      <span class="l-zh">行业内3月回报最深五分位，按回归深度+CN原生奖励（2周洗盘、盘绕/STAR）排序。无汇流级联门控——现场测量门控与优势的离婚。非买入清单：展示背景，非信号（CNPL-R1）。</span>
+    </p>
+    {# stale / as_of stamp #}
+    {% set _rd_asof = _rd.get('as_of') %}
+    {% if _rd_asof %}
+    <p class="note" style="font-size:11px;margin:0 0 10px;color:var(--muted)">{{ t('as of', '截至') }} {{ _rd_asof }}</p>
+    {% endif %}
+    {# top picks cards #}
+    {% set _rd_picks = _rd.get('picks') or [] %}
+    {% if _rd_picks %}
+    <div class="nbgrid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px" data-showmore-rows="2">
+      {% for n in _rd_picks %}
+      <div class="nbcard nb-up" style="cursor:default">
+        <div class="nb-id">
+          <div class="nb-tkrow">
+            <span class="nb-tk">{{ n.get('ticker','') }}</span>
+            {% set _np = n.get('price') %}
+            {% if _np is not none %}<span class="nb-px" data-sym="{{ n.get('ticker','') }}" data-mkt="cn">{{ '%.2f'|format(_np) }}</span>{% endif %}
+          </div>
+          <div class="nb-nm">
+            {% set _nn = (n.get('name') or '').split(' / ') %}
+            <span class="l-en">{{ _nn[0] }}</span><span class="l-zh">{{ _nn[1] if _nn|length > 1 else _nn[0] }}</span>
+          </div>
+          <div class="nb-secrow">
+            {% set _ns = n.get('sector','') %}
+            <span class="nb-sec">{{ t(_ns, {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'}.get(_ns, _ns)) }}</span>
+            {% set _noh = n.get('off_high') %}
+            {% if _noh is not none %}<span class="nb-offh">{{ '%+.1f'|format(_noh) }}% {{ t('off high', '距高点') }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="nb-ctx">
+          {# reversal depth chip #}
+          {% set _nrd = n.get('rev_depth_pct') %}
+          {% if _nrd is not none %}<span class="chip c-muted" style="font-size:10px">{{ t('3m rev', '3月回归') }} {{ '%+.1f'|format(_nrd) }}%</span>{% endif %}
+          {# CN-native bonus chips — washout, coiled/star, extension #}
+          {% if n.get('washout_2w') %}<span class="nb-washout" style="font-size:10px"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}
+          {% if n.get('coiled') %}<span class="nb-coiled" style="font-size:10px"><span class="l-en">⚡ Coiled</span><span class="l-zh">⚡ 蓄势</span></span>{% endif %}
+          {# chase / T+1-risk chip (display only — never a veto here) #}
+          {% if n.get('chase_veto') %}<span class="nb-ext" style="font-size:10px">⚠ <span class="l-en">chase risk</span><span class="l-zh">追高风险</span></span>{% endif %}
+          {# cycle-phase chip if present #}
+          {% set _ncp = n.get('cycle_phase') %}
+          {% if _ncp %}<span class="chip c-muted" style="font-size:10px">{{ _ncp }}</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if _rd_picks|length > 6 %}
+    <button class="lst-more" type="button" aria-expanded="false" style="margin-top:8px"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
+    {% endif %}
+    {% else %}
+    <p class="note" style="text-transform:none;font-size:12.5px;color:var(--muted)">{{ t('No picks available for the Reversion Desk today.', '今日回归台暂无选择。') }}</p>
+    {% endif %}
+    <p class="note" style="margin:10px 0 0;font-size:11px">
+      <span class="l-en">Ruler: 21-session CSI 300 excess (CNPL-R3) · T+1 fill (CNPL-R4) · track record accruing, not a buy list.</span>
+      <span class="l-zh">标尺：21节沪深300超额（CNPL-R3）· T+1入场（CNPL-R4）· 成绩累积中，非买入清单。</span>
+    </p>
+  </div>
+  {% endif %}{# /_rd #}
+  {% endif %}{# /mode == 'stocks' reversion desk #}
 
   {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch) #}
 

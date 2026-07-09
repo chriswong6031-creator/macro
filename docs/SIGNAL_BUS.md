@@ -14,6 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-vector | 5 |
 | china-alpha | 10 |
 | china-intel-hub | 2 |
+| china-pick-lab | 3 |
 | china-system | 2 |
 | codex-b5 | 1 |
 | codex-docket-b6 | 3 |
@@ -55,8 +56,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 172 |
-| infrastructure | 75 |
+| display | 174 |
+| infrastructure | 76 |
 | scored | 4 |
 | shadow | 46 |
 
@@ -64,7 +65,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 285 |
+| git | 288 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -107,6 +108,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-china-special-sits | `site/chinaspecialdata/special.json` | json | asia-close | display | 2 | 0 |
 | site-china-intel-command | `site/china_intel/command.json` | json | asia-close | display | 1 | 0 |
+
+### china-pick-lab
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| cn-reversion-desk-artifact | `site/factordata/china_reversion_desk.json` | json | asia-close | display | 2 | 0 |
+| cn-pick-lab-entry-ledger | `site/labdata/china_pick_lab.json` | json | asia-close | display | 1 | 0 |
+| cn-pick-lab-snapshots | `data/china_pick_lab/snapshots/` | parquet | asia-close | infrastructure | 1 | 0 |
 
 ### china-system
 
@@ -817,6 +826,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/china_sector_cycles.py`
 - **extra writers:**
   - engine/china_sector_cycles_grader.py — grader also appends grade rows to the same parquet
+
+### cn-pick-lab-snapshots
+
+- **path:** `data/china_pick_lab/snapshots/`
+- **declared producer:** `scripts/build_china_library.py`
+- **extra writers:**
+  - scripts/build_china_pick_lab.py — writes enriched snapshot back via write_snapshot (CNPL-R6)
 
 ### confluence-graph
 

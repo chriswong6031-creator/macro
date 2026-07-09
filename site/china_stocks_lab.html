@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Pick Lab — Mastermind</title>
+<title>CN Pick Lab — Mastermind</title>
 <link rel="stylesheet" href="theme.css">
 <style>
   *{box-sizing:border-box}
@@ -21,9 +21,7 @@
   .pl-title{font-size:clamp(22px,3vw,32px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
   .pl-sub{color:var(--muted);font-size:13px;max-width:88ch}
   .pl-asof{color:var(--muted);font-size:12px;margin-top:4px}
-  .pl-regime{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-  .rg-chip{font-size:12px;border:1px solid var(--line);border-radius:8px;padding:3px 10px;color:var(--muted)}
-  .rg-chip b{color:var(--text)}
+  .pl-back{font-size:12.5px;color:var(--link);margin-top:6px;display:inline-block}
 
   /* ── tabs ── */
   .pl-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 16px}
@@ -35,6 +33,8 @@
   .sb-note{font-size:12px;color:var(--muted);margin:0 0 12px;padding:10px 13px;
     border:1px solid var(--line);border-left:3px solid var(--link);border-radius:10px;background:var(--panel)}
   .sb-note b{color:var(--text)}
+  .sb-skip{font-size:12px;color:var(--muted);margin:0 0 10px;padding:8px 12px;
+    border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:9px;background:var(--panel)}
   .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
   table.sb-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
   table.sb-tbl th{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);
@@ -45,6 +45,7 @@
   table.sb-tbl tr.row-random{background:color-mix(in srgb,var(--muted) 7%,transparent);border-top:2px solid var(--line)}
   table.sb-tbl tr.row-random td{color:var(--muted);font-style:italic}
   table.sb-tbl tr.row-inverse td.name-cell{color:var(--warn)}
+  table.sb-tbl tr.row-data-gap td.name-cell{opacity:.7}
   .pos{color:var(--up)} .neg{color:var(--down)} .neu{color:var(--muted)}
   .family-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;
     border:1px solid var(--line);color:var(--muted);margin-right:4px}
@@ -54,18 +55,23 @@
   .badge-active{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--up) 50%,var(--line));
     color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
+  .badge-data-gap{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--muted) 40%,var(--line));
+    color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent)}
   .sb-yardstick-label{font-size:10px;color:var(--muted);margin-left:4px}
+  .avoid-label{font-size:10px;font-weight:700;color:var(--warn);margin-left:4px}
 
-  /* ── empty state hero ── */
+  /* ── empty state ── */
   .pl-empty{text-align:center;padding:60px 20px 80px;color:var(--muted)}
   .pl-empty-icon{font-size:48px;margin-bottom:14px}
   .pl-empty h2{font-size:20px;font-weight:700;color:var(--text);margin:0 0 8px}
   .pl-empty p{max-width:52ch;margin:0 auto;font-size:14px;line-height:1.6}
 
   /* ── pick cards ── */
-  .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:13px;margin-top:10px}
+  .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:13px;margin-top:10px}
   .pick-card{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--panel);
     border-left:3px solid var(--info,#4c8bf5)}
+  .pick-card.avoid-card{border-left-color:var(--down)}
   .pick-card:hover{border-color:var(--muted);background:var(--panel2,var(--panel))}
   .pick-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
   .pick-rank{font-size:11px;color:var(--muted);font-weight:600;min-width:22px}
@@ -75,6 +81,7 @@
   .pick-why{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0}
   .why-chip{font-size:11px;padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted);background:transparent}
   .why-chip.accent{color:var(--text);border-color:var(--muted)}
+  .why-chip.limit{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
   .pick-feats{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
   .pick-feats span b{color:var(--text)}
 
@@ -85,6 +92,14 @@
   .book-name{font-size:16px;font-weight:750}
   .book-sb{font-size:12px;color:var(--muted)}
   .no-picks{font-size:13px;color:var(--muted);padding:14px 0;font-style:italic}
+  .data-gap-banner{font-size:12px;color:var(--muted);padding:9px 13px;margin-top:8px;
+    border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:9px;background:var(--panel)}
+
+  /* ── avoid book warning ── */
+  .avoid-banner{font-size:12.5px;padding:10px 13px;margin-bottom:10px;
+    border:1.5px solid color-mix(in srgb,var(--down) 50%,var(--line));
+    border-radius:10px;background:color-mix(in srgb,var(--down) 8%,var(--panel));color:var(--down)}
+  .avoid-banner b{color:var(--down)}
 
   /* ── recent fires table ── */
   .fires-hd{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
@@ -93,31 +108,13 @@
   table.fires-tbl td{padding:5px 8px;border-bottom:1px solid var(--line)}
   table.fires-tbl tr:last-child td{border-bottom:none}
 
-  /* ── lane cards (OTR / TP) ── */
-  .lane-section{margin-top:22px}
-  .lane-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-  .lane-title{font-size:14.5px;font-weight:750}
-  .lane-warn{font-size:11.5px;padding:3px 9px;border-radius:7px;font-weight:700;
-    background:color-mix(in srgb,var(--down) 14%,transparent);
-    border:1px solid color-mix(in srgb,var(--down) 40%,var(--line));color:var(--down)}
-  .lane-info{font-size:11.5px;padding:3px 9px;border-radius:7px;font-weight:700;
-    background:color-mix(in srgb,var(--info,#4c8bf5) 14%,transparent);
-    border:1px solid color-mix(in srgb,var(--info,#4c8bf5) 40%,var(--line));color:var(--info,#4c8bf5)}
-
   /* ── all-books chip selector ── */
   .book-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
   .book-chip{font-size:12.5px;padding:6px 13px;border:1.5px solid var(--line);border-radius:9px;
     background:transparent;color:var(--muted);cursor:pointer;font-weight:600;transition:.13s}
   .book-chip.on{background:var(--panel2,var(--panel));color:var(--text);border-color:var(--muted)}
   .book-chip .fam{font-size:10px;font-weight:700;color:var(--muted);margin-left:4px}
-
-  /* ── long-hold tab ── */
-  .lh-banner{margin:0 0 16px;padding:13px 16px;border:1.5px solid color-mix(in srgb,var(--info,#4c8bf5) 40%,var(--line));
-    border-radius:12px;background:color-mix(in srgb,var(--info,#4c8bf5) 7%,var(--panel))}
-  .lh-banner-title{font-size:13.5px;font-weight:700;margin:0 0 4px}
-  .lh-banner-sub{font-size:12.5px;color:var(--muted)}
-  .lh-firewall{margin-top:10px;font-size:11.5px;color:var(--muted);
-    padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2,var(--panel))}
+  .book-chip.chip-avoid{border-color:color-mix(in srgb,var(--down) 40%,var(--line));color:var(--down)}
 
   /* ── method tab ── */
   .method-body{max-width:78ch;line-height:1.7}
@@ -129,6 +126,10 @@
     background:color-mix(in srgb,var(--link) 7%,var(--panel));border-radius:0 9px 9px 0;
     margin:12px 0;font-size:13px;color:var(--muted)}
   .method-body .law b{color:var(--text)}
+  .method-body .kill-law{border-left:3px solid var(--down);padding:10px 14px;
+    background:color-mix(in srgb,var(--down) 6%,var(--panel));border-radius:0 9px 9px 0;
+    margin:12px 0;font-size:13px;color:var(--muted)}
+  .method-body .kill-law b{color:var(--down)}
 
   /* ── responsive ── */
   @media(max-width:700px){
@@ -426,19 +427,18 @@
 
   <!-- ── Page header ── -->
   <div class="pl-hd">
-    <p class="pl-eyebrow"><span class="l-en">Pick Lab · Display-only · ACCRUING</span><span class="l-zh">Pick Lab · 仅展示 · 累积中</span></p>
-    <h1 class="pl-title">🧪 <span class="l-en">Candidate Pick Engines</span><span class="l-zh">候选选股引擎</span></h1>
-    <p class="pl-sub"><span class="l-en">23 shadow books running on forward ledgers — measured against a random-control yardstick before any book earns operator attention. All data is display-only; nothing here drives live selection or gating.</span><span class="l-zh">23个影子书在前向账本上运行 — 在任何书获得操作员关注之前，均与随机控制基准对比衡量。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。</span></p>
+    <p class="pl-eyebrow"><span class="l-en">CN Pick Lab · Display-only · ACCRUING</span><span class="l-zh">CN选股实验室 · 仅展示 · 累积中</span></p>
+    <h1 class="pl-title">🧪 <span class="l-en">A-Share Candidate Pick Engines</span><span class="l-zh">A股候选选股引擎</span></h1>
+    <p class="pl-sub"><span class="l-en">20 shadow books running on forward ledgers — measured against a random-control yardstick and the CSI 300. Ruler: 21-session CSI 300 excess (T+1 fill, hl2 proxy). All data is display-only; nothing here drives live selection or gating.</span><span class="l-zh">20个影子书在前向账本上运行 — 与随机控制基准和沪深300对比衡量。标尺：21节沪深300超额（T+1入场，最高最低均价代理）。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。</span></p>
     
-    
+    <a class="pl-back" href="china_stocks.html">← <span class="l-en">Back to A-Share Dashboard</span><span class="l-zh">返回A股看板</span></a>
   </div>
 
   <!-- ── Tab buttons ── -->
   <div class="pl-tabs" role="tablist">
     <button class="tabbtn on" data-tab="scoreboard" role="tab"><span class="l-en">Scoreboard</span><span class="l-zh">记分板</span></button>
-    <button class="tabbtn" data-tab="velocity" role="tab"><span class="l-en">1D Velocity</span><span class="l-zh">1日动能</span></button>
+    <button class="tabbtn" data-tab="velocity" role="tab"><span class="l-en">1D Velocity CN</span><span class="l-zh">1日速度A股</span></button>
     <button class="tabbtn" data-tab="allbooks" role="tab"><span class="l-en">All Books</span><span class="l-zh">全部书本</span></button>
-    <button class="tabbtn" data-tab="longhold" role="tab"><span class="l-en">Long-Hold Grid</span><span class="l-zh">长持网格</span></button>
     <button class="tabbtn" data-tab="method" role="tab"><span class="l-en">Method</span><span class="l-zh">方法</span></button>
   </div>
 
@@ -450,13 +450,13 @@
     <div class="pl-empty">
       <div class="pl-empty-icon">🧪</div>
       <h2><span class="l-en">First accrual tonight</span><span class="l-zh">今晚首次累积</span></h2>
-      <p><span class="l-en">The lab runs nightly. The scoreboard will appear here after the first snapshot is taken and the first picks are fired. Check back tomorrow.</span><span class="l-zh">实验室每晚运行。首次快照拍摄并触发第一批选择后，记分板将出现在这里。明天再来查看。</span></p>
+      <p><span class="l-en">The CN lab runs in the asia-close lane nightly. The scoreboard will appear here after the first snapshot is taken and the first picks are fired.</span><span class="l-zh">CN实验室在亚盘收市通道每晚运行。首次快照拍摄并触发第一批选择后，记分板将出现在这里。</span></p>
     </div>
     
   </section>
 
   <!-- ================================================================ -->
-  <!-- TAB 2: 1D VELOCITY                                                -->
+  <!-- TAB 2: 1D VELOCITY CN                                             -->
   <!-- ================================================================ -->
   <section data-tab-panel="velocity" style="display:none">
     
@@ -476,135 +476,71 @@
     <div class="pl-empty">
       <div class="pl-empty-icon">📚</div>
       <h2><span class="l-en">First accrual tonight</span><span class="l-zh">今晚首次累积</span></h2>
-      <p><span class="l-en">All 20 entry books will appear here after the first nightly build.</span><span class="l-zh">首次夜间构建后，所有20个入场书将出现在这里。</span></p>
+      <p><span class="l-en">All 20 CN entry books will appear here after the first nightly build.</span><span class="l-zh">首次夜间构建后，所有20本CN入场书将出现在这里。</span></p>
     </div>
     
   </section>
 
   <!-- ================================================================ -->
-  <!-- TAB 4: LONG-HOLD GRID                                            -->
-  <!-- ================================================================ -->
-  <section data-tab-panel="longhold" style="display:none">
-    <div class="lh-banner">
-      <p class="lh-banner-title"><span class="l-en">First maturation ETA</span><span class="l-zh">首次到期预计时间</span>: <b>~2027-01</b> (126 <span class="l-en">trading days</span><span class="l-zh">交易日</span>)</p>
-      <p class="lh-banner-sub"><span class="l-en">Long-hold grids accrue at a 126/252-day horizon. No verdict language before maturation. Ruler: 126d/252d sector-relative + SPY-excess, descriptive only.</span><span class="l-zh">长持网格以126/252日地平线累积。到期前无结论语言。标尺：126日/252日板块相对+SPY超额，仅描述性。</span></p>
-      <div class="lh-firewall">
-        ⚠️ <b><span class="l-en">Firewall</span><span class="l-zh">防火墙</span>:</b>
-        <span class="l-en">Long-hold grids are display-only and never feed entry surfaces (PL-R6). Promotion of any LH grid belongs to the long-hold program (G1), not this lab.</span><span class="l-zh">长持网格仅供展示，永不进入入场界面（PL-R6）。任何LH网格的晋升属于长持项目（G1），而非本实验室。</span>
-      </div>
-    </div>
-
-    
-
-    
-    <div class="book-section">
-      <div class="book-hd">
-        <span class="book-name">
-          <span class="family-badge">LH</span>
-          <span class="l-en">LH Compounder Grid</span>
-          <span class="l-zh">长持复利网格</span>
-        </span>
-        <span class="badge-accruing">
-          <span class="l-en">ACCRUING</span>
-          <span class="l-zh">累积中</span>
-        </span>
-      </div>
-
-      
-      <p class="no-picks"><span class="l-en">No long-hold picks today for this grid.</span><span class="l-zh">今日此网格无长持选择。</span></p>
-      
-
-      
-    </div>
-    
-    <div class="book-section">
-      <div class="book-hd">
-        <span class="book-name">
-          <span class="family-badge">LH</span>
-          <span class="l-en">LH EDGE Durability Grid</span>
-          <span class="l-zh">长持EDGE耐久网格</span>
-        </span>
-        <span class="badge-accruing">
-          <span class="l-en">ACCRUING</span>
-          <span class="l-zh">累积中</span>
-        </span>
-      </div>
-
-      
-      <p class="no-picks"><span class="l-en">No long-hold picks today for this grid.</span><span class="l-zh">今日此网格无长持选择。</span></p>
-      
-
-      
-    </div>
-    
-    <div class="book-section">
-      <div class="book-hd">
-        <span class="book-name">
-          <span class="family-badge">LH</span>
-          <span class="l-en">LH Washout Survivor Grid</span>
-          <span class="l-zh">长持洗盘幸存网格</span>
-        </span>
-        <span class="badge-accruing">
-          <span class="l-en">ACCRUING</span>
-          <span class="l-zh">累积中</span>
-        </span>
-      </div>
-
-      
-      <p class="no-picks"><span class="l-en">No long-hold picks today for this grid.</span><span class="l-zh">今日此网格无长持选择。</span></p>
-      
-
-      
-    </div>
-    
-  </section>
-
-  <!-- ================================================================ -->
-  <!-- TAB 5: METHOD                                                      -->
+  <!-- TAB 4: METHOD                                                      -->
   <!-- ================================================================ -->
   <section data-tab-panel="method" style="display:none">
     <div class="method-body">
-      <h3><span class="l-en">What this lab measures</span><span class="l-zh">本实验室测量什么</span></h3>
-      <p><span class="l-en">23 frozen candidate pick engines run in parallel on forward ledgers. Each book fires picks nightly; those picks are graded when the horizon elapses. Nothing here drives live selection. The purpose is evidence accrual: let the data tell us which constructions are worth a formal gauntlet.</span><span class="l-zh">23个冻结候选选股引擎在前向账本上并行运行。每本书每晚触发选择；当地平线经过时，这些选择被评级。这里没有任何内容驱动实时选股。目的是证据累积：让数据告诉我们哪些构造值得正式考验。</span></p>
+      <h3><span class="l-en">What this CN lab measures</span><span class="l-zh">本CN实验室测量什么</span></h3>
+      <p><span class="l-en">20 frozen CN candidate pick engines run in parallel on forward ledgers in the asia-close lane. Each book fires picks nightly; those picks are graded when the horizon elapses. Nothing here drives live selection. The purpose is evidence accrual: let the data tell us which A-share constructions are worth a formal gauntlet.</span><span class="l-zh">20个冻结CN候选选股引擎在亚盘通道的前向账本上并行运行。每本书每晚触发选择；当地平线经过时，这些选择被评级。这里没有任何内容驱动实时选股。目的是证据累积：让数据告诉我们哪些A股构造值得正式考验。</span></p>
 
-      <h3><span class="l-en">Rulers (per family, pre-declared — PL-R3)</span><span class="l-zh">标尺（每族，预先声明 — PL-R3）</span></h3>
-      <ul>
-        <li><span class="l-en">Families A, B, D, E, F: primary ruler = 21-trading-day SPY-excess (win rate + median excess). 5/10/63d recorded as descriptive ladder.</span><span class="l-zh">A、B、D、E、F族：主标尺 = 21交易日SPY超额（胜率+中位超额）。5/10/63日记录为描述性阶梯。</span></li>
-        <li><span class="l-en">Family C (Washout/Reversion): primary ruler = 21-session absolute reversion-capture + MFE/MAE asymmetry. 63d excess is the wrong ruler here.</span><span class="l-zh">C族（洗盘/均值回归）：主标尺 = 21节绝对均值回归捕获 + MFE/MAE非对称。63日超额在此为错误标尺。</span></li>
-        <li><span class="l-en">Book 19 (Topping Avoid, INVERSE): scored as avoid-accuracy — expected negative 21d excess.</span><span class="l-zh">书19（顶部规避，反向）：评分为规避准确性 — 预期负21日超额。</span></li>
-        <li><span class="l-en">Long-hold grids: 126d and 252d sector-relative + SPY-excess, descriptive only.</span><span class="l-zh">长持网格：126日和252日板块相对+SPY超额，仅描述性。</span></li>
-      </ul>
+      <h3><span class="l-en">Ruler (CNPL-R3)</span><span class="l-zh">标尺（CNPL-R3）</span></h3>
+      <div class="law">
+        <b><span class="l-en">Primary ruler: 21-session CSI 300 (510300.SS) excess — win rate + median excess. 5/10/63-session descriptive ladder also recorded. MFE/MAE over 25 sessions.</span><span class="l-zh">主标尺：21节沪深300（510300.SS）超额 — 胜率+中位超额。同时记录5/10/63节描述性阶梯。25节MFE/MAE。</span></b>
+        <span class="l-en">Inverse book (Chase Avoid): scored as avoid-accuracy — expected negative 21-session excess.</span><span class="l-zh">反向书（追涨规避）：评分为规避准确性 — 预期21节负超额。</span>
+      </div>
 
-      <h3><span class="l-en">Controls (PL-R5)</span><span class="l-zh">控制变量（PL-R5）</span></h3>
-      <p><span class="l-en">Every book is measured against two yardsticks: (1) the Random Control book (12 uniform-random liquid names, deterministic seed per day), visible in the scoreboard; and (2) the universe buy-anytime base rate. Every headline number is lift over both, not raw win rate.</span><span class="l-zh">每本书均与两个基准进行比较：（1）随机控制书（12个均匀随机流动名称，每日确定性种子），在记分板中可见；以及（2）全市场随时买入基准率。每个标题数字是相对于两者的提升，而非原始胜率。</span></p>
+      <h3><span class="l-en">Execution law (CNPL-R4)</span><span class="l-zh">执行法则（CNPL-R4）</span></h3>
+      <div class="law">
+        <b><span class="l-en">T+1 settlement. Fill = next-session (H+L)/2 from the raw price store (fill_basis=&#34;hl2&#34;), falling back to close (fill_basis=&#34;close&#34;) when raw OHLC is absent.</span><span class="l-zh">T+1交割。入场 = 下一节（最高+最低）/2，来自原始价格库（fill_basis=&#34;hl2&#34;），原始OHLC缺失时回退至收盘价（fill_basis=&#34;close&#34;）。</span></b>
+        <span class="l-en">A fire that is sealed_up at fire close is logged but excluded from grading (counted in skipped_unfillable). ST/*ST names are excluded from all universes.</span><span class="l-zh">触发时封于涨停价的入场已记录但不参与评级（计入skipped_unfillable）。ST/*ST个股从所有宇宙中排除。</span>
+      </div>
 
-      <h3><span class="l-en">ACCRUING floor (PL-R4)</span><span class="l-zh">累积下限（PL-R4）</span></h3>
+      <h3><span class="l-en">CN kill laws (CN-SYS-R3, CNPL-R7)</span><span class="l-zh">CN禁止法则（CN-SYS-R3，CNPL-R7）</span></h3>
+      <div class="kill-law">
+        <b><span class="l-en">NO momentum ranks. NO subsector-state gates on reversal. NO limit-up/lianban BUY conditioning. NO northbound.</span><span class="l-zh">无动量排名。无反转的子行业状态门控。无涨停/连板买入条件。无北向。</span></b>
+        <span class="l-en">Limit data may only be used in the AVOID/veto direction. The sole limit-data book is Chase Avoid (inverse, expected negative).</span><span class="l-zh">涨停数据只能用于规避/否决方向。唯一的涨停数据书是追涨规避（反向，预期为负）。</span>
+      </div>
+
+      <h3><span class="l-en">Store-honest books (CNPL-R9)</span><span class="l-zh">数据诚实书（CNPL-R9）</span></h3>
+      <p><span class="l-en">Block Discount (book 9) and LHB Institutional Seats (book 10) need runner-local stores. When the store is absent (worktree / CI runs), these books emit zero picks with a visible DATA GAP flag. They only accrue on the runner. Never fabricated.</span><span class="l-zh">大宗折价（书9）和龙虎榜机构席位（书10）需要本地数据库。当数据库缺失时（工作树/CI运行），这些书返回零选择并显示数据缺失标志。仅在运行器上累积，绝不伪造。</span></p>
+
+      <h3><span class="l-en">Controls (CNPL-R5)</span><span class="l-zh">控制变量（CNPL-R5）</span></h3>
+      <p><span class="l-en">Every book is measured against two yardsticks: (1) the CN Random Control book (12 deterministic-random liquid names, seed = sha256(engine_id+asof)), visible in the scoreboard; and (2) the universe buy-anytime base rate. Every headline number is lift over both, not raw win rate.</span><span class="l-zh">每本书均与两个基准进行比较：（1）CN随机控制书（12个确定性随机流动名称，种子=sha256(engine_id+asof)），在记分板中可见；以及（2）全市场随时买入基准率。每个标题数字是相对于两者的提升，而非原始胜率。</span></p>
+
+      <h3><span class="l-en">ACCRUING floor (CNPL-R4)</span><span class="l-zh">累积下限（CNPL-R4）</span></h3>
       <div class="law">
         <b><span class="l-en">No verdict language before n≥25 fires spanning ≥3 calendar months and ≥6 distinct fire dates.</span><span class="l-zh">在n≥25次触发跨越≥3个日历月和≥6个不同触发日期之前，无结论语言。</span></b>
         <span class="l-en">Until then, the status badge reads ACCRUING. Even past the floor, this page shows descriptive summaries only.</span><span class="l-zh">在此之前，状态徽章显示ACCRUING。即使超过下限，此页面也仅显示描述性摘要。</span>
       </div>
 
-      <h3><span class="l-en">What promotion would take (PL-R1)</span><span class="l-zh">晋升所需条件（PL-R1）</span></h3>
-      <p><span class="l-en">Promotion of any book beyond display-tier requires the existing gauntlet: n≥25 fires across ≥3 months, a time-preserving placebo (no ticker-cluster CIs without time control), and pre-registered outcome gates. The lab contributes forward evidence only. Operator daily review (PL-R8) is a sanctioned selection heuristic for gauntlet slots — never promotion evidence by itself.</span><span class="l-zh">任何书超越展示层级的晋升都需要现有的考验：跨越≥3个月的n≥25次触发，时间保留安慰剂（没有无时间控制的代码集群置信区间），以及预先注册的结果门控。实验室仅提供前向证据。操作员每日审查（PL-R8）是考验槽位的制裁选择启发式 — 本身从不是晋升证据。</span></p>
-
-      <h3><span class="l-en">Frozen configs (PL-R2)</span><span class="l-zh">冻结配置（PL-R2）</span></h3>
-      <p><span class="l-en">Every book registers a frozen config + config_hash at ship time. Any parameter change ships as engine_id-v2 with a fresh ledger. Ledgers are never edited or re-scored in place.</span><span class="l-zh">每本书在发布时注册一个冻结配置+config_hash。任何参数更改以engine_id-v2发布，带有新账本。账本永不就地编辑或重新评分。</span></p>
+      <h3><span class="l-en">No Long-Hold grid (CNPL-R10)</span><span class="l-zh">无长持网格（CNPL-R10）</span></h3>
+      <p><span class="l-en">CN long-hold grids are deliberately deferred: CN fundamentals coverage is thin, and no CN long-hold program exists to receive the evidence. Revisit only with its own pre-registration.</span><span class="l-zh">CN长持网格被故意推迟：CN基本面覆盖率薄弱，且目前没有CN长持项目来接收证据。仅凭其自身的预注册方可重新审视。</span></p>
 
       <h3><span class="l-en">Candidate families</span><span class="l-zh">候选族</span></h3>
       <ul>
-        <li><b>A — 1D Velocity:</b> <span class="l-en">4 books pricing the flagship gate&#39;s speed cost on fast movers. Clock: 2026-08-20.</span><span class="l-zh">4本书定价旗舰门控在快速移动者上的速度成本。时钟：2026-08-20。</span></li>
-        <li><b>B — Momentum:</b> <span class="l-en">4 books (breakout-vol, residual-momentum, OTR pullback, high-base squeeze).</span><span class="l-zh">4本书（突破量能、残差动能、OTR回调、高位基建盘整）。</span></li>
-        <li><b>C — Washout/Reversion:</b> <span class="l-en">3 books; absolute reversion ruler, not SPY-excess.</span><span class="l-zh">3本书；绝对均值回归标尺，而非SPY超额。</span></li>
-        <li><b>D — EDGE/Quality:</b> <span class="l-en">3 books (EDGE pure, EDGE×1D, quality pullback).</span><span class="l-zh">3本书（纯EDGE、EDGE×1日、优质回调）。</span></li>
-        <li><b>E — Context/Personality:</b> <span class="l-en">2 books (beta-squeeze, revision-accel).</span><span class="l-zh">2本书（Beta压缩、预测加速上修）。</span></li>
-        <li><b>F — Ablations + Control:</b> <span class="l-en">4 books including flagship-nogate, flagship-T3/T4, topping-avoid (INVERSE), and the random control yardstick.</span><span class="l-zh">4本书，包括旗舰无门控、旗舰T3/T4、顶部规避（反向）和随机控制基准。</span></li>
-        <li><b>LH — Long-Hold:</b> <span class="l-en">3 grids (compounder, EDGE durability, washout survivor). Firewalled from entry surfaces.</span><span class="l-zh">3个网格（复利、EDGE耐久、洗盘幸存）。与入场界面隔离。</span></li>
+        <li><b>A — <span class="l-en">Reversion (accruing edge):</span><span class="l-zh">反转（累积边缘）：</span></b> <span class="l-en">4 books on the flat within-sector 3m reversal construction. No confirmation/quality/reclaim gates (FALSIFIED). Conditioners are CN-native bonuses (washout/COILED/low-vol), not turn-confirmation.</span><span class="l-zh">4本书基于平坦的行业内3月反转构造。无确认/质量/收复门控（已证伪）。条件是CN原生奖励（洗盘/盘绕/低波），而非转向确认。</span></li>
+        <li><b>B — <span class="l-en">1D Velocity CN:</span><span class="l-zh">1日速度A股：</span></b> <span class="l-en">4 books (1D RSI-MACD + StochRSI cross-up entry timing on the fast A-share tape; phase and participation conditioning).</span><span class="l-zh">4本书（在快速A股行情上的1日RSI-MACD + StochRSI交叉上穿入场时机；阶段和参与度条件）。</span></li>
+        <li><b>C — <span class="l-en">Structure / Flow:</span><span class="l-zh">结构/资金流：</span></b> <span class="l-en">4 books (block discount ≤−15%, LHB inst seats ≥2, policy put, theme laggard catch-up).</span><span class="l-zh">4本书（大宗折价≤−15%，龙虎榜机构席位≥2，政策托底，主题落后者补涨）。</span></li>
+        <li><b>D — <span class="l-en">Washout / Panic:</span><span class="l-zh">洗盘/恐慌：</span></b> <span class="l-en">4 books (capitulation beta, QVIX panic, STAR/ChiNext 20cm timing, Chase Avoid INVERSE).</span><span class="l-zh">4本书（出逃Beta，QVIX恐慌，科创/创业20cm择时，追涨规避反向）。</span></li>
+        <li><b>E — <span class="l-en">Defensive + Ablations + Control:</span><span class="l-zh">防御+消融+控制：</span></b> <span class="l-en">4 books (low-vol defensive, dividend/中特估, flagship-nogate ablation, random control yardstick).</span><span class="l-zh">4本书（防御低波，分红/中特估，旗舰无门消融，随机控制基准）。</span></li>
+      </ul>
+
+      <h3><span class="l-en">Clocks</span><span class="l-zh">时钟</span></h3>
+      <ul>
+        <li><span class="l-en">2026-08-20 — first operator read: flagship-2 vs flagship-1 gap, 1D family signs, dead books pruned to v2.</span><span class="l-zh">2026-08-20 — 第一次操作员读取：旗舰2与旗舰1的差距，1日族信号，死书修剪至v2。</span></li>
+        <li><span class="l-en">2026-10-09 — floor-eligible verdict window (n≥25/≥3mo/≥6 dates) for high-frequency books.</span><span class="l-zh">2026-10-09 — 高频书的达标评判窗口（n≥25/≥3月/≥6日期）。</span></li>
       </ul>
 
       
 
       <p style="margin-top:20px;font-size:11.5px;color:var(--muted)">
-        <span class="l-en">Authority: display_only. All rows carry authority: &#34;display_only&#34; per PL-R10.</span><span class="l-zh">授权：仅展示。所有行按照PL-R10携带授权：&#34;display_only&#34;。</span>
+        <span class="l-en">Authority: display_only. All rows carry authority: &#34;display_only&#34; per CNPL-R1.</span><span class="l-zh">授权：仅展示。所有行按照CNPL-R1携带授权：&#34;display_only&#34;。</span>
         · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-09 13:27 UTC
       </p>
     </div>

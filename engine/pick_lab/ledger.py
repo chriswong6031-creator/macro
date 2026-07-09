@@ -14,6 +14,12 @@ All rows carry authority="display_only".  Keep-first dedup semantics:
 
 Refire lockout helper: is_open(engine_id, ticker, trading_dates, fires, lockout)
 returns True when a ticker already has a fire for this engine within lockout sessions.
+
+Profile support (additive):
+  append_fires / load_fires / append_grades / load_grades accept an optional
+  'profile' keyword argument (engine.pick_lab.profile.MarketProfile).  When
+  supplied, the profile's path fields are used instead of the module-level
+  constants.  Omitting profile (or passing None) preserves exact US behaviour.
 """
 from __future__ import annotations
 
@@ -166,6 +172,7 @@ def append_fires(
     fires: list[dict],
     *,
     hold_thesis: bool = False,
+    profile=None,
 ) -> int:
     """Append fire rows; enforce keep-first dedup and authority.
 
@@ -173,13 +180,18 @@ def append_fires(
     ----------
     fires       : list of fire dicts per spec §4.
     hold_thesis : if True, writes to lh_fires.jsonl (PL-R6 firewall).
+    profile     : optional MarketProfile; when supplied, uses profile path fields.
+                  Defaults to US_PROFILE paths (no behaviour change for US callers).
 
     Returns number of rows actually written (deduped against existing).
     """
     if not fires:
         return 0
 
-    path = LH_FIRES_PATH if hold_thesis else FIRES_PATH
+    if profile is not None:
+        path = profile.lh_fires_path if hold_thesis else profile.fires_path
+    else:
+        path = LH_FIRES_PATH if hold_thesis else FIRES_PATH
 
     # Validate all rows before writing anything
     for row in fires:
@@ -212,9 +224,15 @@ def append_fires(
     return written
 
 
-def load_fires(*, hold_thesis: bool = False) -> list[dict]:
-    """Load fires (keep-first dedup applied)."""
-    path = LH_FIRES_PATH if hold_thesis else FIRES_PATH
+def load_fires(*, hold_thesis: bool = False, profile=None) -> list[dict]:
+    """Load fires (keep-first dedup applied).
+
+    profile : optional MarketProfile; when supplied, uses profile path fields.
+    """
+    if profile is not None:
+        path = profile.lh_fires_path if hold_thesis else profile.fires_path
+    else:
+        path = LH_FIRES_PATH if hold_thesis else FIRES_PATH
     return keep_first(load_jsonl(path), FIRE_KEY)
 
 
@@ -235,6 +253,7 @@ def append_grades(
     grades: list[dict],
     *,
     hold_thesis: bool = False,
+    profile=None,
 ) -> int:
     """Append grade rows; enforce keep-first dedup and authority.
 
@@ -242,13 +261,17 @@ def append_grades(
     ----------
     grades      : list of grade dicts per spec §4.
     hold_thesis : if True, writes to lh_grades.jsonl (PL-R6 firewall).
+    profile     : optional MarketProfile; when supplied, uses profile path fields.
 
     Returns number of rows actually written.
     """
     if not grades:
         return 0
 
-    path = LH_GRADES_PATH if hold_thesis else GRADES_PATH
+    if profile is not None:
+        path = profile.lh_grades_path if hold_thesis else profile.grades_path
+    else:
+        path = LH_GRADES_PATH if hold_thesis else GRADES_PATH
 
     for row in grades:
         _validate_grade(row)
@@ -280,9 +303,15 @@ def append_grades(
     return written
 
 
-def load_grades(*, hold_thesis: bool = False) -> list[dict]:
-    """Load grades (keep-first dedup applied)."""
-    path = LH_GRADES_PATH if hold_thesis else GRADES_PATH
+def load_grades(*, hold_thesis: bool = False, profile=None) -> list[dict]:
+    """Load grades (keep-first dedup applied).
+
+    profile : optional MarketProfile; when supplied, uses profile path fields.
+    """
+    if profile is not None:
+        path = profile.lh_grades_path if hold_thesis else profile.grades_path
+    else:
+        path = LH_GRADES_PATH if hold_thesis else GRADES_PATH
     return keep_first(load_jsonl(path), GRADE_KEY)
 
 

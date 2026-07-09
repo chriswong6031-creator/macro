@@ -111,21 +111,26 @@ def write_snapshot(
     base_dir: str = SNAPSHOT_DIR,
     *,
     mode: str = "keep_first",
+    profile=None,
 ) -> int:
     """Append rows to the monthly parquet partition for `asof`.
 
     Parameters
     ----------
-    mode : 'keep_first' (default) — dedup on (asof, ticker); a second write of the
-           same (asof, ticker) is a no-op (PL-R10 / PL-R2 idempotent).
-           'upsert' — replace any existing (asof, ticker) rows; use for the
-           enrichment re-write in build_pick_lab (PL-R7) so the persisted snapshot
-           carries the enriched frame, not the un-enriched core rows.
+    mode    : 'keep_first' (default) — dedup on (asof, ticker); a second write of the
+              same (asof, ticker) is a no-op (PL-R10 / PL-R2 idempotent).
+              'upsert' — replace any existing (asof, ticker) rows; use for the
+              enrichment re-write in build_pick_lab (PL-R7) so the persisted snapshot
+              carries the enriched frame, not the un-enriched core rows.
+    profile : optional MarketProfile; when supplied, uses profile.snapshot_dir as
+              base_dir (unless base_dir is explicitly passed as a non-default value).
 
     Returns number of rows written (0 in keep_first when all rows already exist).
 
     Write is atomic: tempfile + os.replace, mirroring ledger.write_jsonl.
     """
+    if profile is not None and base_dir == SNAPSHOT_DIR:
+        base_dir = str(profile.snapshot_dir)
     asof = str(pd.Timestamp(asof).date())
     df = df.copy()
     df["asof"] = asof
@@ -186,12 +191,18 @@ def write_snapshot(
 
 def latest_snapshot(
     base_dir: str = SNAPSHOT_DIR,
+    profile=None,
 ) -> tuple[pd.DataFrame, str] | tuple[None, None]:
     """Return (df_for_max_asof, asof_str) across all monthly partitions.
 
     Returns (None, None) if no snapshots exist.
     The returned df has ticker as index.
+
+    profile : optional MarketProfile; when supplied, uses profile.snapshot_dir
+              as base_dir (unless base_dir is explicitly passed).
     """
+    if profile is not None and base_dir == SNAPSHOT_DIR:
+        base_dir = str(profile.snapshot_dir)
     base = Path(base_dir)
     if not base.exists():
         return None, None
