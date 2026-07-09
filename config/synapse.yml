@@ -8196,3 +8196,56 @@ artifacts:
       pre-reg study; (c) decay after 60 days unrefreshed (decayed rows kept in
       file — dead-stays-dead, blocks re-emission as novel). Consumed by cortex
       read_context_candidates tool (R-CI11, top-K<=20, no per-ticker dumps).
+
+  # --- Policy-Shock W1-C artifacts ---
+
+  flip-confirmation-events:
+    path: data/flip_confirmation/events.jsonl
+    format: jsonl
+    producer: scripts/build_flip_confirmation.py
+    known_extra_writers: []
+    owner_program: policy-shock
+    cadence: daily-engine
+    storage: git
+    asof_field: event_date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      Policy-Shock W1-C (PR #2003). Append-only JSONL ledger of violent sector-flip
+      events (|z| >= 2.5 on defensive vs offense 1d return spread). One row per
+      event_date (keep-first). T+1 attribution included: spread_persistence,
+      leadership_continuity, absorption_delta, verdict (CONFIRMED|FADED|MIXED).
+      DISPLAY-ONLY: descriptive vocabulary, never recommended. qledger family
+      flip_confirmation.v1 registers parallel claims with SNAPSHOT_DATE embargo
+      (display-only accrual). Nightly is the sole writer.
+
+  flip-confirmation-snapshot:
+    path: site/flip_confirmation_data.json
+    format: json
+    producer: scripts/build_flip_confirmation.py
+    known_extra_writers: []
+    owner_program: policy-shock
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      Policy-Shock W1-C (PR #2003). UI snapshot for the flip-confirmation card
+      on the macro.html market-state surface. Contains last_event, base_rates
+      (confirmed/faded/mixed counts since 2024), and the full descriptive_scan list.
+      Read by _flip_confirmation_view() in build_site.py. DISPLAY-ONLY.

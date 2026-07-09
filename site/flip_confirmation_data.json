@@ -1,0 +1,525 @@
+{
+  "asof": "2026-07-08",
+  "last_event": {
+    "event_date": "2026-07-02",
+    "z": 3.0032,
+    "spread": 0.0651,
+    "direction": "defensive",
+    "t1_attribution": {
+      "t1_date": "2026-07-06",
+      "spread_persistence": {
+        "same_direction": false,
+        "magnitude": 0.03,
+        "direction": "offense"
+      },
+      "breadth_follow_through": null,
+      "absorption_delta": 0.0,
+      "leadership_continuity": false,
+      "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+    },
+    "verdict": "FADED"
+  },
+  "base_rates": {
+    "n_events": 26,
+    "n_graded": 26,
+    "confirmed": 11,
+    "faded": 15,
+    "mixed": 0
+  },
+  "descriptive_scan": [
+    {
+      "event_date": "2024-01-02",
+      "z": 3.2535,
+      "spread": 0.0464,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-01-03",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.0123,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2024-02-22",
+      "z": -3.2136,
+      "spread": -0.0495,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2024-02-23",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0095,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2024-04-19",
+      "z": 3.0055,
+      "spread": 0.0444,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-04-22",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0096,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2024-06-05",
+      "z": -2.5949,
+      "spread": -0.0395,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2024-06-06",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0079,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2024-06-24",
+      "z": 2.75,
+      "spread": 0.0397,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-06-25",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0268,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2024-07-11",
+      "z": 2.6271,
+      "spread": 0.0384,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-07-12",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0057,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2024-07-17",
+      "z": 4.4002,
+      "spread": 0.068,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-07-18",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0182,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2024-07-24",
+      "z": 3.5859,
+      "spread": 0.0565,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-07-25",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.0117,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2024-07-31",
+      "z": -3.9228,
+      "spread": -0.0666,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2024-08-01",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0673,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2024-08-01",
+      "z": 3.9562,
+      "spread": 0.0673,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-08-02",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.0479,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2024-08-02",
+      "z": 2.8035,
+      "spread": 0.0479,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-08-05",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.002,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2024-09-03",
+      "z": 3.7101,
+      "spread": 0.0668,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2024-09-04",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.004,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2024-09-11",
+      "z": -2.6564,
+      "spread": -0.05,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2024-09-12",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0001,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2025-01-27",
+      "z": 4.9639,
+      "spread": 0.0999,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2025-01-28",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0325,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2025-04-03",
+      "z": 3.5661,
+      "spread": 0.0769,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2025-04-04",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.0209,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2025-04-09",
+      "z": -5.1741,
+      "spread": -0.1178,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2025-04-10",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0458,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2026-04-24",
+      "z": -2.9089,
+      "spread": -0.0535,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2026-04-27",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.0061,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2026-05-06",
+      "z": -2.5157,
+      "spread": -0.0471,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2026-05-07",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0083,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2026-05-08",
+      "z": -2.6746,
+      "spread": -0.0507,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2026-05-11",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.0194,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2026-05-26",
+      "z": -2.8801,
+      "spread": -0.0547,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2026-05-27",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0131,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2026-06-05",
+      "z": 5.1119,
+      "spread": 0.096,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2026-06-08",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0487,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2026-06-11",
+      "z": -2.703,
+      "spread": -0.0566,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2026-06-12",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.0126,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2026-06-18",
+      "z": -2.5853,
+      "spread": -0.0563,
+      "direction": "offense",
+      "t1_attribution": {
+        "t1_date": "2026-06-22",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.008,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": -0.01,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2026-06-23",
+      "z": 3.8025,
+      "spread": 0.0781,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2026-06-24",
+        "spread_persistence": {
+          "same_direction": true,
+          "magnitude": 0.0137,
+          "direction": "defensive"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": -0.01,
+        "leadership_continuity": true,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "CONFIRMED"
+    },
+    {
+      "event_date": "2026-06-26",
+      "z": 2.678,
+      "spread": 0.0554,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2026-06-29",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.0315,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": null,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    },
+    {
+      "event_date": "2026-07-02",
+      "z": 3.0032,
+      "spread": 0.0651,
+      "direction": "defensive",
+      "t1_attribution": {
+        "t1_date": "2026-07-06",
+        "spread_persistence": {
+          "same_direction": false,
+          "magnitude": 0.03,
+          "direction": "offense"
+        },
+        "breadth_follow_through": null,
+        "absorption_delta": 0.0,
+        "leadership_continuity": false,
+        "note_breadth": "breadth_follow_through omitted — no intraday advance/decline series in committed store"
+      },
+      "verdict": "FADED"
+    }
+  ]
+}
