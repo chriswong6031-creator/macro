@@ -455,3 +455,57 @@ class TestToleranceBehavior:
 
         assert result["rows_added"] == 0
         assert not store_path.exists()
+
+
+class TestPermFy2026Layout:
+    """Regression: DOL changed the PERM disclosure layout at FY2026
+    (EMP_BUSINESS_NAME / PRIMARY_WORKSITE_STATE / JOB_OPP_WAGE_*). The
+    pre-fix collector crashed with an unalignable boolean indexer and
+    voided the whole run (2026-07-09 incident)."""
+
+    def _fy2026_raw(self):
+        import pandas as pd
+        return pd.DataFrame({
+            "CASE_NUMBER": ["P-1", "P-2", "P-3", "P-4"],
+            "CASE_STATUS": ["Certified", "Certified - Expired", "Denied", "Withdrawn"],
+            "DECISION_DATE": ["2026-01-15", "2026-02-01", "2026-02-10", "2026-03-01"],
+            "EMP_BUSINESS_NAME": ["Nvidia Corp", "Vertiv Holdings", "Acme LLC", "Beta Inc"],
+            "JOB_TITLE": ["ML Engineer", "Thermal Engineer", "Clerk", "Analyst"],
+            "PRIMARY_WORKSITE_STATE": ["CA", "OH", "TX", "NY"],
+            "JOB_OPP_WAGE_FROM": ["210000", "140000", "50000", "90000"],
+            "JOB_OPP_WAGE_PER": ["Year", "Year", "Year", "Year"],
+        })
+
+    def test_fy2026_columns_normalize(self):
+        from collectors.dol_labor_certs import _normalize_df, _PERM_COLS
+        out = _normalize_df(self._fy2026_raw(), "perm", _PERM_COLS, "2026-07-09")
+        assert len(out) == 2, "Certified + Certified - Expired kept; Denied/Withdrawn dropped"
+        assert set(out["employer_name"]) == {"Nvidia Corp", "Vertiv Holdings"}
+        assert out["wage_annualized"].notna().all()
+        assert set(out["worksite_state"]) == {"CA", "OH"}
+
+    def test_old_layout_still_normalizes(self):
+        import pandas as pd
+        from collectors.dol_labor_certs import _normalize_df, _PERM_COLS
+        raw = pd.DataFrame({
+            "CASE_STATUS": ["Certified"],
+            "DECISION_DATE": ["2025-01-15"],
+            "EMPLOYER_NAME": ["Old Layout Co"],
+            "JOB_TITLE": ["Engineer"],
+            "WORKSITE_STATE": ["WA"],
+            "WAGE_OFFER_FROM": ["120000"],
+            "WAGE_OFFER_UNIT_OF_PAY": ["Year"],
+        })
+        out = _normalize_df(raw, "perm", _PERM_COLS, "2026-07-09")
+        assert len(out) == 1 and out.iloc[0]["employer_name"] == "Old Layout Co"
+
+    def test_missing_employer_column_returns_empty_not_crash(self):
+        import pandas as pd
+        from collectors.dol_labor_certs import _normalize_df, _PERM_COLS
+        raw = pd.DataFrame({
+            "CASE_STATUS": ["Certified", "Certified", "Denied"],
+            "DECISION_DATE": ["2026-01-15", None, "2026-02-01"],
+            "JOB_TITLE": ["A", "B", "C"],
+        })
+        out = _normalize_df(raw, "perm", _PERM_COLS, "2026-07-09")
+        assert len(out) == 0
