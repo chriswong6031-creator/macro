@@ -38,6 +38,8 @@ curated, not generated. Do not build an extractor.
 | Shock→archetype beneficiary/casualty ("shelter") map as an NW/brain feed | KILLED — laundered directional escalation on nulled continuation claims | TI-R5, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
 | LLM classification of narrative-only shock types (tariff/regulatory/cyber/edge/consumer) into calibrated keys | FORBIDDEN — no deterministic price basis; A7 ORIGINATE ban | TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
 | Held-position ledger / live position monitor / held-risk engine inside Macro Dashboard (Codex held-position memo placement) | FORBIDDEN — build lives in Mastermind repo; restates NWC-U4/NWP-U18/RUL-F3.2. Fused per-position risk score also struck | PRD-R1/PRD-R2, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md` |
+| Causal DAG → alpha score → trade / portfolio construction from discovered graphs | FORBIDDEN — CHF is proposal/audit tier only; Article 1/2 | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
+| LLM numeric confidence anywhere in CHF surfaces | FORBIDDEN — RF-16 extension | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
 
 ## 2. Killed / refuted signal families and theses
 
@@ -93,6 +95,8 @@ curated, not generated. Do not build an extractor.
 | Per-ticker multi-label business-model exposure tags (tech) | DEFERRED — group-level taxonomy only; revive needs revenue-geography ingestion + own adjudication | TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
 | Public "Breakaway Desk" site page (Codex Moderna docket §7.1) | DEFERRED — W0 ships admin-panel surface only; public copy needs its own wave | `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8 |
 | Winner-autopsy short-interest / squeeze-fuel legs (Codex Moderna docket §4.3) | DEFERRED with L10 — no PIT short-interest history (single FINRA settlement date) | WA-R (docket adjudication), aligns NEXTL-U19 |
+| Full-graph causal structure learners (NOTEARS/DAG-GNN/LoRAM/CMIN-class) + weekly full-DAG re-estimation | KILLED for v1 / REJECTED (churn) — small-universe NOTEARS-with-priors is a Phase-3 question behind the 2027-01-15 clock | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
+| Dedicated CHF machine-registration family through metabolism | DEFERRED — Phase-2 clock 2026-10-15, needs ≥8 matured exit-(a)/(b) candidates + fresh ruling; cortex 3/week chokepoint stands (QS-U2) | CHF-R2, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
 
 ## 5. Incorporated by reference
 
