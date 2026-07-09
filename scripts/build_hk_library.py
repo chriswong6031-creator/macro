@@ -1440,6 +1440,264 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                  len(buys), len(watch), out["eligible"], out["universe"], risk_state)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("hk_standouts.json persist skipped (%s)", e)
+
+    # ---- HK PICK LAB PRODUCER BLOCK (spec §5, HKPL-R7) --------------------------------
+    # Writes the nightly HK snapshot parquet and the 1D Velocity Desk price-only first
+    # pass.  Never-fatal: a failure here must not block the standout board persist above.
+    # Organ columns are null at producer time (runner enriches via upsert after
+    # build_hk_pick_lab's enrichment join).  See engine/pick_lab/hk_snapshot.py docstring
+    # for the two-pass contract.
+    #
+    # Inputs in scope at this point:
+    #   enriched        — per-ticker list with edge_z, washout_2w, extended, rsi, dist_200dma,
+    #                     above_200, off_high, beta, role, price (close), sector, name, name_zh
+    #   closes          — pd.DataFrame wide close panel (date × ticker) for signals_1d
+    #   risk_state      — str: "Risk-on" / "Risk-off" / "neutral"
+    #   liquidity_regime — from H5 ACCRUE organ (dict or None)
+    #   vhsi_pct        — float or None (VHSI percentile computed above)
+    #   as_of           — str or None (from scoreboard)
+    #   site            — Path to site directory
+    #   adv63           — dict[str, float]: 63d dollar turnover by ticker (from _adv63_map)
+    try:
+        import time as _time
+        _t0_producer = _time.time()
+
+        from engine.pick_lab.hk_snapshot import HK_SNAPSHOT_COLUMNS, build_hk_core_rows
+        from engine.pick_lab.snapshot import write_snapshot
+        from engine.pick_lab.velocity_desk import build_velocity_desk_artifact
+        from engine.pick_lab.profile import HK_PROFILE
+        from engine.pick_lab.signals_1d import compute_grids as _compute_grids
+
+        _producer_asof = str(as_of) if as_of else str(pd.Timestamp.utcnow().date())
+
+        # -- 1. Close panel: the breadth cache (already loaded as `closes` above)
+        # Compute 1D/2D oscillators over the full close panel; also derive the 3D
+        # MACD cross-up bars from a 3B-resampled panel.
+        _osc_d12_map: dict[str, dict] = {}
+        _osc_d3_map: dict[str, float | None] = {}
+        if closes is not None and not closes.empty:
+            try:
+                _osc_df = _compute_grids(closes)
+                # Rename kd_xup_bars → stoch_xup_bars for hk.py compatibility before storing
+                for _t in _osc_df.index:
+                    _od: dict = {}
+                    for _g in ("d1", "d2"):
+                        for _sfx in ("macd", "sig", "macd_xup_bars", "k", "d",
+                                     "kd_xup_bars", "from_os", "ob"):
+                            _od[f"{_g}_{_sfx}"] = _osc_df.at[_t, f"{_g}_{_sfx}"] \
+                                if f"{_g}_{_sfx}" in _osc_df.columns else None
+                    _osc_d12_map[_t] = _od
+                # 3D MACD: resample to 3B bars and compute MACD cross
+                try:
+                    from engine.pick_lab.signals_1d import (
+                        _rsi_macd as _rm, _xup as _xu, _since as _sn, XBAR_WIN as _XW
+                    )
+                    _p3 = closes.resample("3B").last()
+                    for _t in closes.columns:
+                        try:
+                            _c3 = _p3[_t].dropna()
+                            if len(_c3) < 90:
+                                _osc_d3_map[_t] = None
+                                continue
+                            _m3, _s3 = _rm(_c3)
+                            _x3 = _sn(_xu(_m3, _s3))
+                            _v3 = float(_x3.iloc[-1]) if pd.notna(_x3.iloc[-1]) else None
+                            _osc_d3_map[_t] = _v3 if (_v3 is None or _v3 <= _XW) else None
+                        except Exception:  # noqa: BLE001
+                            _osc_d3_map[_t] = None
+                except Exception as _e3:  # noqa: BLE001 — 3D is additive
+                    log.debug("hk producer: 3D MACD compute failed (%s) — d3_macd_xup_bars null", _e3)
+                log.info("hk producer: oscillators computed for %d tickers", len(_osc_d12_map))
+            except Exception as _eosc:  # noqa: BLE001 — oscillator block is additive
+                log.warning("hk producer: signals_1d compute failed (%s) — osc columns null", _eosc)
+
+        # Merge d3 into the osc map so build_hk_core_rows sees a unified dict
+        for _t, _od in _osc_d12_map.items():
+            _od["d3_macd_xup_bars"] = _osc_d3_map.get(_t)
+
+        # -- 2. Stale-cross diagnostic: sessions_since_23d_cross / ret_since_23d_cross
+        # Re-uses osc_d12_map: the 2D/3D cross is the older of d2_macd_xup_bars /
+        # d3_macd_xup_bars.  A cross is "stale" when ≥5 sessions old with |ret| < 3%.
+        _sessions_since_cross: dict[str, int | None] = {}
+        _ret_since_cross: dict[str, float | None] = {}
+        for _e in enriched:
+            _t = _e.get("ticker")
+            if not _t:
+                continue
+            _od = _osc_d12_map.get(_t) or {}
+            # d2_macd_xup_bars is a 2B-bar count; d3_macd_xup_bars is a 3B-bar count.
+            # Convert to approximate session counts before comparing (HKPL-R10a):
+            #   2B bar × 2 ≈ daily sessions;  3B bar × 3 ≈ daily sessions.
+            _d2x_bars = _od.get("d2_macd_xup_bars")
+            _d3x_bars = _osc_d3_map.get(_t)
+            _d2x_sess = int(_d2x_bars) * 2 if _d2x_bars is not None else None
+            _d3x_sess = int(_d3x_bars) * 3 if _d3x_bars is not None else None
+            # Pick the older cross in session units; None = never crossed in window
+            _sessions_since: int | None = None
+            if _d2x_sess is not None and _d3x_sess is not None:
+                _sessions_since = max(_d2x_sess, _d3x_sess)
+            elif _d2x_sess is not None:
+                _sessions_since = _d2x_sess
+            elif _d3x_sess is not None:
+                _sessions_since = _d3x_sess
+            _sessions_since_cross[_t] = _sessions_since
+            # Return since cross: index back _sessions_since into the daily close panel
+            _ret_s: float | None = None
+            if _sessions_since is not None and closes is not None and _t in closes.columns:
+                try:
+                    _cs = closes[_t].dropna()
+                    _sess_back = max(1, _sessions_since)
+                    if len(_cs) > _sess_back:
+                        _ret_s = round(float(_cs.iloc[-1]) / float(_cs.iloc[-1 - _sess_back]) - 1.0, 4)
+                except Exception:  # noqa: BLE001
+                    pass
+            _ret_since_cross[_t] = _ret_s
+
+        # -- 3. last_print_sessions_ago from the close panel (suspension guard)
+        _last_print: dict[str, int | None] = {}
+        if closes is not None and not closes.empty:
+            _last_col = closes.apply(lambda s: s.dropna().shape[0])  # any bar = last print 0
+            # More precisely: count trailing NaN sessions from the end of the panel
+            _panel_len = len(closes)
+            for _t in closes.columns:
+                _s = closes[_t]
+                # Find sessions since last valid bar by counting trailing NaN
+                _rev = _s[::-1]
+                _n_nan = 0
+                for _v in _rev:
+                    if pd.isna(_v):
+                        _n_nan += 1
+                    else:
+                        break
+                _last_print[_t] = _n_nan
+
+        # -- 4. Build per-ticker dicts from the enriched list
+        _close_by: dict[str, float | None] = {}
+        _adv63_by: dict[str, float | None] = {}
+        _name_by: dict[str, str | None] = {}
+        _name_zh_by: dict[str, str | None] = {}
+        _sector_by: dict[str, str | None] = {}
+        _off_high_by: dict[str, float | None] = {}
+        _rsi14_by: dict[str, float | None] = {}
+        _dist_200dma_by: dict[str, float | None] = {}
+        _above_200_by: dict[str, bool | None] = {}
+        _edge_z_by: dict[str, float | None] = {}
+        _edge_basis_by: dict[str, object] = {}
+        _beta_by: dict[str, float | None] = {}
+        _beta_role_by: dict[str, str | None] = {}
+        _washout_2w_by: dict[str, bool | None] = {}
+        _extended_by: dict[str, bool | None] = {}
+        _tickers: list[str] = []
+
+        for _e in enriched:
+            _t = _e.get("ticker")
+            if not _t:
+                continue
+            _tickers.append(_t)
+            _close_by[_t] = _e.get("price")
+            # adv63_hkd: try from the _adv63 field (was popped above but present in enriched scope)
+            # Best-effort: read from adv63 dict computed earlier in the function
+            _adv63_by[_t] = adv63.get(_t) if adv63 else None
+            _name_by[_t] = _e.get("name")
+            _name_zh_by[_t] = _e.get("name_zh")
+            _sector_by[_t] = _e.get("sector")
+            _off_high_by[_t] = _e.get("off_high")
+            _rsi14_by[_t] = _e.get("rsi")
+            _dist_200dma_by[_t] = _e.get("dist_200dma")
+            _above_200_by[_t] = bool(_e.get("dist_200dma", 0) >= 0) if _e.get("dist_200dma") is not None else None
+            _edge_z_by[_t] = _e.get("edge_z")
+            _edge_basis_by[_t] = _e.get("edge_basis")
+            _beta_by[_t] = _e.get("beta")
+            _beta_role_by[_t] = _e.get("role")
+            _washout_2w_by[_t] = bool(_e.get("washout_2w"))
+            _extended_by[_t] = bool(_e.get("extended"))
+
+        # HSI close (scalar)
+        _hsi_close_scalar: float | None = None
+        try:
+            _hsi_df = store.read("hk", "^HSI")
+            if _hsi_df is not None and "close" in _hsi_df.columns:
+                _hsi_s = _hsi_df["close"].dropna()
+                if not _hsi_s.empty:
+                    _hsi_close_scalar = float(_hsi_s.iloc[-1])
+        except Exception:  # noqa: BLE001
+            pass
+
+        # -- 5. Assemble snapshot rows
+        _snap_rows = build_hk_core_rows(
+            tickers=_tickers,
+            asof=_producer_asof,
+            close_by=_close_by,
+            adv63_hkd_by=_adv63_by,
+            name_by=_name_by,
+            name_zh_by=_name_zh_by,
+            sector_by=_sector_by,
+            last_print_sessions_ago_by=_last_print,
+            off_high_by=_off_high_by,
+            rsi14_by=_rsi14_by,
+            dist_200dma_by=_dist_200dma_by,
+            above_200_by=_above_200_by,
+            edge_z_by=_edge_z_by,
+            edge_basis_by=_edge_basis_by,
+            beta_by=_beta_by,
+            beta_role_by=_beta_role_by,
+            washout_2w_by=_washout_2w_by,
+            extended_by=_extended_by,
+            osc_d123_by=_osc_d12_map,
+            sessions_since_23d_cross_by=_sessions_since_cross,
+            ret_since_23d_cross_by=_ret_since_cross,
+            risk_state=risk_state,
+            peg_state=None,          # runner enriches from hk_regime/latest.json
+            liquidity_regime=(liquidity_regime or {}).get("regime")
+                              if isinstance(liquidity_regime, dict) else liquidity_regime,
+            vhsi_pctile=vhsi_pct,
+            hsi_close=_hsi_close_scalar,
+        )
+        log.info("hk producer: assembled %d snapshot rows (asof=%s)", len(_snap_rows), _producer_asof)
+
+        # -- 6. Write snapshot parquet (keep-first; idempotent)
+        # Gated on CN_LANE=asia (HKPL-R8): the US/render lanes must NOT win the keep_first
+        # slot before asia-close runs, and render lanes must not overwrite the asia-enriched
+        # velocity desk with the organ-null price-only first pass.
+        import os as _os
+        _is_asia_lane_lib = _os.environ.get("CN_LANE") == "asia"
+        if _snap_rows:
+            _snap_df = pd.DataFrame(_snap_rows).set_index("ticker")
+            _snap_df.attrs["asof"] = _producer_asof
+            if _is_asia_lane_lib:
+                _n_written = write_snapshot(
+                    _snap_df, _producer_asof, profile=HK_PROFILE, mode="keep_first"
+                )
+                log.info("hk producer: wrote %d new snapshot rows to parquet (HK_PROFILE)", _n_written)
+            else:
+                log.info(
+                    "hk producer: CN_LANE!='asia' — snapshot parquet write skipped "
+                    "(HKPL-R8; %d rows would have been written)", len(_snap_rows)
+                )
+
+        # -- 7. 1D Velocity Desk — price-only first pass (organ columns null)
+        # Also gated on CN_LANE=asia so render/US lanes do not overwrite the asia-enriched
+        # desk JSON with the null-organ first pass (HKPL-R8).
+        try:
+            if _snap_rows and _is_asia_lane_lib:
+                _vd_artifact = build_velocity_desk_artifact(_snap_df, as_of=_producer_asof)
+                _vd_fdir = site / "factordata"
+                _vd_fdir.mkdir(parents=True, exist_ok=True)
+                (_vd_fdir / "hk_1d_velocity_desk.json").write_text(
+                    json.dumps(_vd_artifact, separators=(",", ":"), default=str))
+                log.info("hk producer: wrote hk_1d_velocity_desk.json (%d rows, price-only first pass)",
+                         _vd_artifact["n_rows"])
+            elif _snap_rows:
+                log.info("hk producer: CN_LANE!='asia' — velocity desk write skipped (HKPL-R8)")
+        except Exception as _evd:  # noqa: BLE001 — velocity desk is additive
+            log.warning("hk producer: velocity desk write failed (%s) — skipped", _evd)
+
+        log.info("hk producer block done in %.1fs (%d rows, %d tickers)",
+                 _time.time() - _t0_producer, len(_snap_rows), len(_tickers))
+
+    except Exception as _ep:  # noqa: BLE001 — producer block must NEVER break the standout board
+        log.warning("hk pick-lab producer block failed (%s) — standout board unaffected", _ep)
+
     return out
 
 

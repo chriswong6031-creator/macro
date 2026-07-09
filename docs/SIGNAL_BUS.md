@@ -24,6 +24,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
 | hk-canada | 2 |
+| hk-pick-lab | 3 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 28 |
@@ -56,8 +57,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 174 |
-| infrastructure | 76 |
+| display | 176 |
+| infrastructure | 77 |
 | scored | 4 |
 | shadow | 46 |
 
@@ -65,7 +66,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 288 |
+| git | 291 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -207,6 +208,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | board-ledger-ca | `data/board_ledger/ca_board.parquet` | parquet | daily-engine | shadow | 1 | 0 |
 | board-ledger-hk | `data/board_ledger/hk_board.parquet` | parquet | daily-engine | shadow | 1 | 0 |
+
+### hk-pick-lab
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| hk-1d-velocity-desk-artifact | `site/factordata/hk_1d_velocity_desk.json` | json | asia-close | display | 2 | 0 |
+| hk-pick-lab-entry-ledger | `site/labdata/hk_pick_lab.json` | json | asia-close | display | 1 | 0 |
+| hk-pick-lab-snapshots | `data/hk_pick_lab/snapshots/` | parquet | asia-close | infrastructure | 1 | 0 |
 
 ### institutional-sector-intelligence
 
@@ -878,6 +887,20 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/moat_falsifiers.py`
 - **extra writers:**
   - engine/stock_fundamentals.py — _compute_trap_block() calls great_company_trap() inside panels()
+
+### hk-1d-velocity-desk-artifact
+
+- **path:** `site/factordata/hk_1d_velocity_desk.json`
+- **declared producer:** `scripts/build_hk_library.py`
+- **extra writers:**
+  - scripts/build_hk_pick_lab.py — re-computes enriched second pass (two-pass contract)
+
+### hk-pick-lab-snapshots
+
+- **path:** `data/hk_pick_lab/snapshots/`
+- **declared producer:** `scripts/build_hk_library.py`
+- **extra writers:**
+  - scripts/build_hk_pick_lab.py — writes enriched snapshot back via write_snapshot (HKPL-R7)
 
 ### hub-signal-snapshots
 

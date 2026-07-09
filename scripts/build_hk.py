@@ -1015,6 +1015,48 @@ def main() -> int:
             log.error("hk track-record view-model failed (%s); skipping", e)
             vm["track_record"] = None
 
+        # 1D Velocity Desk (flagship-2, hk_stocks.html only) — load the nightly artifact
+        # produced by build_hk_pick_lab / the pick-lab runner.  Defensive load mirrors
+        # build_china.py's reversion_desk pattern: never fatal; degrades to None (block
+        # hidden in the template).  Jinja guard: "is defined" not "is not none" (GOTCHA).
+        try:
+            _vd_path = site / "factordata" / "hk_1d_velocity_desk.json"
+            if _vd_path.exists():
+                _vd_raw = json.loads(_vd_path.read_text())
+                # Artifact key is `rows` (velocity_desk.py schema); template reads `picks`.
+                # Flatten chips.* sub-dict to top-level keys so the template can access
+                # confluence_count, washout_state, adr_gap_pct, knife_risk, beta_role directly.
+                _vd_rows = _vd_raw.get("rows") if isinstance(_vd_raw, dict) else None
+                if _vd_rows and isinstance(_vd_rows, list):
+                    _vd_picks = []
+                    for _r in _vd_rows:
+                        _chips = _r.get("chips") or {}
+                        _pick = dict(_r)
+                        # rename confluence_n → confluence_count for template
+                        _pick["confluence_count"] = _r.get("confluence_n")
+                        # lift chip sub-keys to flat so template n.get(...) resolves directly
+                        _pick.setdefault("washout_state", _chips.get("washout_state"))
+                        _pick.setdefault("adr_gap_pct", _chips.get("adr_gap_pct"))
+                        _pick.setdefault("knife_risk", _chips.get("knife_risk"))
+                        _pick.setdefault("beta_role", _chips.get("beta_role"))
+                        _vd_picks.append(_pick)
+                    vm["hk_1d_velocity_desk"] = {
+                        "as_of": _vd_raw.get("as_of"),
+                        "picks": _vd_picks,
+                        "n_picks": len(_vd_picks),
+                        "authority": "display_only",
+                    }
+                    log.info("hk stocks: 1D velocity desk loaded (%d picks)", len(_vd_picks))
+                else:
+                    vm["hk_1d_velocity_desk"] = None
+                    log.debug("hk stocks: hk_1d_velocity_desk.json empty — desk block hidden")
+            else:
+                vm["hk_1d_velocity_desk"] = None
+                log.debug("hk stocks: hk_1d_velocity_desk.json absent — desk block hidden")
+        except Exception as _vd_e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk stocks: 1D velocity desk load failed (%s); skipping", _vd_e)
+            vm["hk_1d_velocity_desk"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n

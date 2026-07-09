@@ -1615,9 +1615,79 @@
        are DELETED. Per-card trust tier (nb-tier) + the §5.0 order tooltip stay. #}
     <div class="desk-manifest">
       <div class="dm-tierline">{{ t('A <b>flow &amp; structure screen</b> — ranked by flow, A/H value and relative strength. A research shortlist, <b>not a buy list</b>.', '一个<b>资金与结构筛选</b> — 按资金流、A/H 价值与相对强度排序。研究备选清单，<b>非买入清单</b>。') }}
-        <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></div>
+        <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a>
+        <a href="hk_stocks_lab.html" style="margin-left:14px;padding:4px 11px;border:1.5px solid var(--link);border-radius:8px;font-size:12px;font-weight:700;color:var(--link);white-space:nowrap;display:inline-block;margin-top:4px">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a>
+      </div>
     </div>
   </div>
+
+  {# ======= 1D VELOCITY DESK — flagship-2 (hk_stocks.html only) ========================
+     Spec: HK_PICK_LAB_MASTERPLAN_BY_FABLE.md §4 + §7.
+     VM key: hk_1d_velocity_desk (loaded from site/factordata/hk_1d_velocity_desk.json by
+     build_hk.py defensively). Degrades gracefully when the key is absent — the block is
+     simply hidden. Authority: display_only (HKPL-R1).
+     GOTCHA: Jinja `is not none` on a missing key CRASHES — use 'is defined' guards below.
+  #}
+  {% if mode == 'stocks' %}
+  {% set _vd = hk_1d_velocity_desk if hk_1d_velocity_desk is defined else none %}
+  {% if _vd %}
+  <!-- ===================== 1D VELOCITY DESK (flagship-2, HK native 1D signal) ===================== -->
+  <div class="panel span12" id="hk-velocity-desk">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <h2 style="margin:0">⚡ {{ t('1D Velocity Desk', '1日速度台') }}
+        <span class="note" style="text-transform:none;font-size:13px;font-weight:400">· {{ t('flagship-2 · 1D momentum confluence — HK native', '旗舰2 · 1日动能汇流 — 港股原生') }}</span>
+      </h2>
+      <span class="chip c-muted" style="font-size:11px;font-weight:600">{{ t('display-only', '仅展示') }}</span>
+    </div>
+    <p class="note" style="margin:0 0 10px;text-transform:none;font-size:12px">
+      <span class="l-en">Union of books 1–5 (Family A): 1D MACD/StochRSI cross-up, cross×washout organ, ADR overnight gap, blastoff (3D gate miss), regime. Ranked by confluence count then edge_z. No price limits in HK — a name that prints a 1D confluence and immediately runs shows real demand. Display context, not a signal (HKPL-R1).</span>
+      <span class="l-zh">书1–5（A族）并集：1日MACD/StochRSI交叉上穿、交叉×洗盘器官、ADR隔夜缺口、起飞（3日门遗漏）、状态。按汇流计数后edge_z排序。港股无涨跌停 — 打印1日汇流后立即上涨的个股显示真实需求。展示背景，非信号（HKPL-R1）。</span>
+    </p>
+    {% set _vd_asof = _vd.get('as_of') %}
+    {% if _vd_asof %}
+    <p class="note" style="font-size:11px;margin:0 0 10px;color:var(--muted)">{{ t('as of', '截至') }} {{ _vd_asof }}</p>
+    {% endif %}
+    {% set _vd_picks = _vd.get('picks') or [] %}
+    {% if _vd_picks %}
+    <div class="nbgrid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px" data-showmore-rows="2">
+      {% for n in _vd_picks %}
+      <div class="nbcard nb-up" style="cursor:default">
+        <div class="nb-id">
+          <div class="nb-tkrow">
+            <span class="nb-tk">{{ n.get('ticker','') }}</span>
+            {% set _np = n.get('close') %}
+            {% if _np is not none %}<span class="nb-px" data-sym="{{ n.get('ticker','') }}" data-mkt="hk">{{ 'HK$%.2f'|format(_np) }}</span>{% endif %}
+          </div>
+          <div class="nb-nm">
+            <span class="l-en">{{ n.get('name') or '' }}</span>
+            <span class="l-zh">{{ n.get('name_zh') or n.get('name') or '' }}</span>
+          </div>
+          {% set _ns = n.get('sector','') %}
+          {% if _ns %}<div class="nb-secrow"><span class="nb-sec">{{ _ns }}</span></div>{% endif %}
+        </div>
+        <div class="nb-ctx">
+          {% if n.get('confluence_count') is not none %}<span class="chip c-muted" style="font-size:10px">{{ t('confluence', '汇流') }} {{ n.get('confluence_count') }}</span>{% endif %}
+          {% if n.get('washout_state') %}<span class="nb-washout" style="font-size:10px"><span class="l-en">{{ n.get('washout_state') }}</span><span class="l-zh">{{ n.get('washout_state') }}</span></span>{% endif %}
+          {% if n.get('adr_gap_pct') is not none %}<span class="chip c-muted" style="font-size:10px">ADR {{ '%+.1f'|format(n.get('adr_gap_pct') * 100) if n.get('adr_gap_pct') else '' }}%</span>{% endif %}
+          {% if n.get('knife_risk') %}<span class="chip" style="font-size:10px;color:var(--down)">⚠ <span class="l-en">knife</span><span class="l-zh">刀口</span></span>{% endif %}
+          {% if n.get('beta_role') %}<span class="chip c-muted" style="font-size:10px">{{ n.get('beta_role') }}</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if _vd_picks|length > 6 %}
+    <button class="lst-more" type="button" aria-expanded="false" style="margin-top:8px"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
+    {% endif %}
+    {% else %}
+    <p class="note" style="text-transform:none;font-size:12.5px;color:var(--muted)">{{ t('No picks available for the 1D Velocity Desk today.', '今日1日速度台暂无选择。') }}</p>
+    {% endif %}
+    <p class="note" style="margin:10px 0 0;font-size:11px">
+      <span class="l-en">Ruler: 21-session ^HSI excess (HKPL-R3) · next HK session close fill (HKPL-R4) · track record accruing, not a buy list.</span>
+      <span class="l-zh">标尺：21节恒生超额（HKPL-R3）· 下一港股交易节收盘价入场（HKPL-R4）· 成绩累积中，非买入清单。</span>
+    </p>
+  </div>
+  {% endif %}{# /_vd #}
+  {% endif %}{# /mode == 'stocks' velocity desk #}
 
   <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
   {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}

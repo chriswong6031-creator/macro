@@ -8630,3 +8630,94 @@ artifacts:
       Desk panel on china_stocks.html (templates/china.html.j2) and mirrored as
       cnlab_flagship2_mirror book in the CN Pick Lab ledger. Lane: asia-close
       (produced by build_china_library which runs in the asia lane).
+
+  # --- HK Pick Lab (spec HK_PICK_LAB_MASTERPLAN_BY_FABLE.md §5/§6) ---
+  hk-pick-lab-snapshots:
+    path: data/hk_pick_lab/snapshots/
+    format: parquet
+    producer: scripts/build_hk_library.py
+    known_extra_writers:
+      - "scripts/build_hk_pick_lab.py — writes enriched snapshot back via write_snapshot (HKPL-R7)"
+    owner_program: hk-pick-lab
+    cadence: asia-close
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: engine.pick_lab.hk_snapshot.HK_SNAPSHOT_COLUMNS
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_hk_pick_lab.py
+    external_consumers: []
+    notes: >
+      HK Pick Lab producer-core snapshot tape. Monthly parquet partitions
+      (data/hk_pick_lab/snapshots/<YYYY-MM>.parquet). One row per ticker per
+      asof date across the HK search universe (~160 names). PIT by construction
+      (HKPL-R7): written once per night by build_hk_library; enriched (organ
+      freshness columns, regime scalars, per-ticker ADR/CBBC/filing/narrative/
+      catalyst/SB/SFC/AH context) and persisted back by build_hk_pick_lab
+      (asia lane only). Display-only; authority='display_only' on every row.
+      Never feeds a scored or alert surface. Lane: asia-close
+      (CN_LANE=asia required for writes, HKPL-R8).
+
+  hk-pick-lab-entry-ledger:
+    path: site/labdata/hk_pick_lab.json
+    format: json
+    producer: scripts/build_hk_pick_lab.py
+    known_extra_writers: []
+    owner_program: hk-pick-lab
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/pick_lab/render_hk.py
+    external_consumers: []
+    notes: >
+      HK Pick Lab entry-books site artifact (horizon_role=tactical_entry). Contains
+      scoreboard (all 20 HK entry books + flagship2_mirror), picks_today per book,
+      recent_fires with h=21 grade outcomes, total_halt_voided counter,
+      stale_cross_diagnostic block, and method note. All rows carry
+      authority='display_only' (HKPL-R1). Status ACCRUING until n≥25 fires /
+      ≥3 months / ≥6 distinct fire dates (HKPL-R6 floor). hklab_random_ctrl
+      pinned as yardstick row. Primary ruler: 21d ^HSI excess (HKPL-R3).
+      Consumed only by render_hk.py → site/hk_stocks_lab.html.
+      Lane: asia-close (CN_LANE=asia required for writes, HKPL-R8).
+
+  hk-1d-velocity-desk-artifact:
+    path: site/factordata/hk_1d_velocity_desk.json
+    format: json
+    producer: scripts/build_hk_library.py
+    known_extra_writers:
+      - "scripts/build_hk_pick_lab.py — re-computes enriched second pass (two-pass contract)"
+    owner_program: hk-pick-lab
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/hk.html.j2
+      - templates/hk_stocks_lab.html.j2
+    external_consumers: []
+    notes: >
+      HK 1D Velocity Desk artifact (spec §4, hk_1d_velocity_desk.v1).
+      Two-pass contract: build_hk_library writes a price-only first pass
+      (organ columns null); build_hk_pick_lab enriches and re-writes with
+      organ context. Top-8 1D-confluence picks ranked by confluence_n then
+      edge_z; chips include washout state, ADR gap, CBBC skew, knife/chase
+      warnings, beta role. Mirrored as hklab_flagship2_mirror book in the HK
+      Pick Lab ledger. authority='display_only'. Lane: asia-close
+      (produced by build_hk_library; enriched by build_hk_pick_lab, both
+      run in the asia lane with CN_LANE=asia).

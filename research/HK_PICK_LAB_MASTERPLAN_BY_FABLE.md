@@ -194,7 +194,21 @@ no translated title=).
 | 6,9,19 | (none — organ states are new, display-tier) | organ's own promotion clock unaffected; lab adds a comparable ruler only |
 | 11 | (new construction) | leverage-mechanics (CBBC call clusters), not price-derived momentum |
 
-## §9 Clocks
+## §9 V1 ship notes (accepted gaps, printed not hidden)
+
+- **Velocity Desk predicates are mirrored, not shared** with `hk.py`'s five 1D book
+  implementations (a coordinated refactor was out of v1 scope). Drift risk is real;
+  follow-up: extract shared predicate functions and add a contract test.
+- **SFC-shorts freshness rides the `sb` organ tag** (conservative fail-closed proxy);
+  `hklab_ah_value` has no organ freshness stamp of its own (the A/H store is the
+  program's own nightly artifact). Plumb dedicated stamps when those organs get them.
+- **`hklab_1d_blastoff` ranks by return-since-cross** as the 5d-return proxy until the
+  producer emits a dedicated ret_5d column.
+- The stale-cross diagnostic counts **sessions** (bar-count/session-count mixing was
+  caught in review and fixed); its forward grades populate only once the runner has
+  live benchmark data — empty state until then.
+
+## §10 Clocks
 
 - **2026-08-20** — first operator read with US/CN labs; 1D-vs-stale-cross diagnostic
   first look; prune degenerate books.
