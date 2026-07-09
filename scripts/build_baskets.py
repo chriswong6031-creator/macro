@@ -289,6 +289,21 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("basket_freeze[us]: failed: %s", e)
 
+    # FTR W4 — BASKET TURN-WATCH K-of-N confluence organ.
+    # Placed before the freshness sentinel (W0) so the sentinel can audit the artifact.
+    # Own try/except — exit-0 always (build_allocation hook pattern).
+    try:
+        from engine.basket_turn_watch import compute as _btw_compute, write_site_artifact as _btw_write
+        _btw_result = _btw_compute()
+        _btw_path = _btw_write(_btw_result)
+        _btw_n_watch = sum(
+            1 for b in _btw_result.get("baskets", [])
+            if b.get("state") in ("WATCH", "IGNITION")
+        )
+        log.info("basket_turn_watch: wrote %s (%d WATCH/IGNITION baskets)", _btw_path, _btw_n_watch)
+    except Exception as _btw_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("::warning::basket_turn_watch hook failed: %s", _btw_exc)
+
     # FT-R8 — surface-freshness sentinel: assert first-class artifacts carry today's
     # NYSE session.  Warn-only (exits 0 always); annotations appear in the job summary.
     try:
