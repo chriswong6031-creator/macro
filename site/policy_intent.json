@@ -2,7 +2,7 @@
   "schema": "policy_intent_desk.v1",
   "is_context_only": true,
   "lens": "realpolitik",
-  "generated_at": "2026-07-09T14:34:46.579941+00:00",
+  "generated_at": "2026-07-09T15:48:36.378535+00:00",
   "state_asof": "2026-07-09",
   "model": "deepseek-v4-pro",
   "regime_context": null,
