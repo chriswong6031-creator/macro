@@ -39,6 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 25 |
+| policy-shock | 2 |
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
 | sector-pulse | 3 |
@@ -53,16 +54,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 166 |
+| display | 167 |
 | infrastructure | 74 |
 | scored | 4 |
-| shadow | 45 |
+| shadow | 46 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 277 |
+| git | 279 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -438,6 +439,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |
+
+### policy-shock
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| shock-deescalation-state | `site/live/shock_state.json` | json | daily-engine | display | 3 | 0 |
+| shock-deescalation-firings | `data/reflexes/shock_deescalation/firings.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 
 ### qualitative-intelligence
 
@@ -1016,6 +1024,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/sector_central.py`
 - **extra writers:**
   - scripts/build_sector_central.py — runner that calls sector_central and persists output
+
+### shock-deescalation-state
+
+- **path:** `site/live/shock_state.json`
+- **declared producer:** `engine/shock_deescalation.py`
+- **extra writers:**
+  - scripts/build_risk_state.py — intraday fast-path calls build_intraday() site/ only
 
 ### signal-archive-track-record
 
