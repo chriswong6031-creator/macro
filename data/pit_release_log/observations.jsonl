@@ -1451,3 +1451,8 @@
 {"series": "USGOVT", "group": "fred", "fetch_ts": "2026-07-09T06:37:46.695573+00:00", "last_obs_date": "2026-06-01"}
 {"series": "CES0500000003", "group": "fred", "fetch_ts": "2026-07-09T06:37:46.696733+00:00", "last_obs_date": "2026-06-01"}
 {"series": "AWHAETP", "group": "fred", "fetch_ts": "2026-07-09T06:37:46.697744+00:00", "last_obs_date": "2026-06-01"}
+{"series": "china_prices", "group": "china", "fetch_ts": "2026-07-09T11:25:02.514665+00:00", "last_obs_date": "2026-07-09"}
+{"series": "china_stocks", "group": "china_stocks", "fetch_ts": "2026-07-09T11:27:36.439374+00:00", "last_obs_date": "2026-07-09"}
+{"series": "china_stocks_raw", "group": "china_stocks_raw", "fetch_ts": "2026-07-09T11:30:11.950564+00:00", "last_obs_date": "2026-07-09"}
+{"series": "china_macro", "group": "china_macro", "fetch_ts": "2026-07-09T11:30:31.077805+00:00", "last_obs_date": "2026-07-09"}
+{"series": "china_breadth", "group": "china_breadth", "fetch_ts": "2026-07-09T11:30:36.589208+00:00", "last_obs_date": "2026-07-09"}

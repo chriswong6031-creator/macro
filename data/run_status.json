@@ -1909,8 +1909,8 @@
       "series": "rrr",
       "last_obs": "2025-05-07",
       "cadence_days": 45,
-      "age_days": 427,
-      "detected_at": "2026-07-08T10:40:11.490310+00:00"
+      "age_days": 428,
+      "detected_at": "2026-07-09T11:30:31.075537+00:00"
     },
     {
       "group": "china_property",
