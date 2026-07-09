@@ -231,11 +231,18 @@ def _fetch_contract_quote(
     last = _safe_float(row.get("price"))
     mid  = round((bid + ask) / 2, 4) if bid is not None and ask is not None else None
 
-    # ts_utc: use trade_timestamp if available
+    # ts_utc: use trade_timestamp if available.
+    # trade_timestamp from ThetaData v3 carries fractional seconds, e.g.
+    # '2026-07-02T06:30:16.218' (ET-naive) — _to_utc_iso handles this via
+    # datetime.fromisoformat (Python 3.11+).
     ts_raw = row.get("trade_timestamp") or row.get("date")
     try:
         ts_utc = _to_utc_iso(ts_raw)
-    except Exception:  # noqa: BLE001
+    except Exception as _ts_exc:  # noqa: BLE001
+        log.warning(
+            "prophet_marks: could not parse trade_timestamp %r — using publish-time: %s",
+            ts_raw, _ts_exc,
+        )
         ts_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     return {
@@ -258,23 +265,43 @@ def _safe_float(v: Any) -> float | None:
 
 
 def _to_utc_iso(ts: Any) -> str:
-    """Convert a timestamp value to UTC ISO string."""
+    """Convert a timestamp value to UTC ISO string.
+
+    Handles:
+      - datetime objects (tz-aware or tz-naive; naive assumed ET)
+      - ISO-like strings including fractional seconds (e.g. '2026-07-02T06:30:16.218')
+        and TZ offsets (e.g. '...−04:00'), which is the real ThetaData trade_timestamp
+        format (confirmed collectors/thetadata.py line 1045).
+      - Bare date strings 'YYYY-MM-DD' (treated as midnight ET).
+
+    Naive strings are treated as ET before converting to UTC.
+    """
     if ts is None:
         raise ValueError("null timestamp")
     if isinstance(ts, datetime):
         if ts.tzinfo is None:
-            # Assume ET
+            # Assume ET (ThetaData timestamps are ET-naive)
             ts = ts.replace(tzinfo=ET)
         return ts.astimezone(timezone.utc).isoformat(timespec="seconds")
-    s = str(ts)
-    # Try ISO parse
-    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
-        try:
-            dt = datetime.strptime(s[:len(fmt) + 5].strip(), fmt.replace("%S", "%S"))
+    s = str(ts).strip()
+    if not s:
+        raise ValueError("empty timestamp string")
+    # Primary path: datetime.fromisoformat handles fractional seconds and TZ offsets
+    # on Python 3.11+ (this repo runs 3.12).  Naive strings are treated as ET.
+    try:
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
             dt = dt.replace(tzinfo=ET)
-            return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
-        except ValueError:
-            pass
+        return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
+    except ValueError:
+        pass
+    # Fallback: bare date 'YYYY-MM-DD' (fromisoformat handles this, but be explicit)
+    try:
+        dt = datetime.strptime(s[:10], "%Y-%m-%d")
+        dt = dt.replace(tzinfo=ET)
+        return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
+    except ValueError:
+        pass
     raise ValueError(f"cannot parse timestamp: {ts!r}")
 
 

@@ -9,6 +9,11 @@
 # 09:30 ET or after 16:00 ET log "outside RTH" and exit 0 cleanly.  The loop here
 # exits when the system clock passes 16:05 ET to avoid running the script indefinitely.
 #
+# TIMEZONE ASSUMPTION: `date +%H` and the StartCalendarInterval in the plist both use
+# the Mac system timezone.  This script assumes the system is set to America/New_York.
+# (Matches the established com.mastermind.liveflow.plist convention.)  If the system
+# timezone ever changes, the 09:25 start and 16:05 cutoff will shift silently.
+#
 # PYTHONPATH must include the repo root (set in the plist EnvironmentVariables).
 
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
