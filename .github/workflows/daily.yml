@@ -2149,6 +2149,18 @@ jobs:
           cat /tmp/causal_frontier.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_causal_frontier::rc=$rc (non-fatal)"
           exit 0
+      - name: build causal confluence audit (CHF W6 nightly, CHF-R10)
+        # Anti-mirage auditor: deterministic rule application over committed
+        # artifacts. Zero R-ORTH recomputation (RUL-ORTH-9); zero LLM content.
+        # Reads: causal_feature_inventory.json, confluence_graph.json,
+        #        covariance_spine.json, causal_priors.yml, causal_mechanisms.jsonl.
+        # Outputs: data/neuralweb/causal_confluence_audit.json. Non-fatal.
+        run: |
+          set +e
+          python -m scripts.build_causal_confluence_audit > /tmp/causal_audit.log 2>&1; rc=$?
+          cat /tmp/causal_audit.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_causal_confluence_audit::rc=$rc (non-fatal)"
+          exit 0
       - name: run causal battery (CHF W3 weekly, CHF-R8, Tuesday gate, K<=40)
         # Weekly bounded battery over top-K unexplored/accruing frontier cells.
         # Tuesday-gated (date +%u == 2): no-op on other days.

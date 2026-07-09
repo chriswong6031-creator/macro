@@ -25,7 +25,8 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, config_store,
+from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, causal_lab,
+               config_store,
                content, context_lobe, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
                neural_web,
@@ -262,6 +263,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(long_hold.panel())
             if path == "/api/context_lobe":
                 return self._json(context_lobe.panel())
+            if path == "/api/causal_lab":
+                return self._json(causal_lab.panel())
             if path == "/api/neural_web":
                 return self._json(neural_web.panel())
             if path == "/api/neural_web/lobes":

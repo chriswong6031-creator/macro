@@ -854,6 +854,8 @@ def _assign_group(lobe_id: str, owner_program: str) -> str:
         "hypothesis-inbox", "machine-registry", "research-queue", "governance-ledger",
     }:
         return "cortex"
+    if lid.startswith("causal-") or lid.startswith("site-causal-"):
+        return "cortex"
     if lid.startswith("reflex-") or lid.startswith("ops-push-") or lid.startswith("cortex-attention-"):
         return "reflexes"
     if lid.startswith("factor-") or lid.startswith("site-factor-"):

@@ -1,0 +1,30 @@
+{
+  "schema": "neuralweb.causal_confluence_audit.v1",
+  "artifact_id": "causal-confluence-audit",
+  "asof": "2026-07-09T19:47:28Z",
+  "authority": {
+    "tier": "shadow",
+    "display_only": true,
+    "annotate_only": true,
+    "not_a_signal": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "scored_path_surfaces": [],
+    "description": "CHF-R10 anti-mirage auditor output. Directed annotations only — no R-ORTH recomputation, no statistics, no LLM-originated content. Rule IDs: CHF-R10-DE (duplicate exposure), CHF-R10-SPS (shared parent suspect), CHF-R10-CR (collider risk). Absent inputs produce empty sections, never phantom annotations."
+  },
+  "duplicate_exposure": [],
+  "shared_parent_suspect": [],
+  "collider_risk": [],
+  "counts": {
+    "duplicate_exposure": 0,
+    "shared_parent_suspect": 0,
+    "collider_risk": 0,
+    "total": 0
+  },
+  "gap_notes": [
+    "shared_parent_suspect: covariance_spine.json has no cluster data — section empty (clusters is empty list; this is expected until enough lobes are measurable)"
+  ],
+  "produced_by": "engine.neuralweb.causal_audit.build_audit"
+}

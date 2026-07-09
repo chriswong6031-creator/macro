@@ -1934,6 +1934,16 @@ modules:
           copies). Inputs: causal_feature_inventory.json, causal_edges.jsonl,
           causal_nulls.jsonl. Outputs: causal_frontier.json,
           causal_surprise_queue.jsonl, causal_lab_state.json (×2). Non-fatal.
+      - id: build_causal_confluence_audit
+        module: scripts.build_causal_confluence_audit
+        note: >
+          CHF W6 — nightly anti-mirage auditor (CHF-R10). Deterministic rule
+          application over committed artifacts; zero R-ORTH recomputation
+          (RUL-ORTH-9); zero LLM content (RUL-ORTH-11). Reads
+          causal_feature_inventory.json, confluence_graph.json,
+          covariance_spine.json, causal_priors.yml, causal_mechanisms.jsonl.
+          Outputs data/neuralweb/causal_confluence_audit.json. Runs after
+          build_causal_frontier (lab state must be current). Non-fatal.
       - id: build_causal_edges
         module: scripts.build_causal_edges
         note: >
