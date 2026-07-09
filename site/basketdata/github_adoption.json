@@ -1,0 +1,199 @@
+{
+  "schema": "theme_adoption.v1",
+  "as_of": "2026-07-09",
+  "generated_at": "2026-07-09T20:57:26.010876+00:00",
+  "authority": {
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "is_context_only": true,
+    "framing": "developer_adoption_mindshare_context",
+    "rotation_calls": false,
+    "short_calls": false,
+    "coverage_caveat": "Only 17 tickers with flagship public OSS repos covered. Closed-source SaaS and API-only AI labs are blind spots. 19-day history as of 2026-07-09 — expanding nightly.",
+    "history_note": "Momentum signals are coarse with <90d history. Do not promote to a scored factor until ~2026-09-17."
+  },
+  "coverage_stats": {
+    "total_rows": 289,
+    "unique_tickers": 17,
+    "date_range_min": "2026-06-20",
+    "date_range_max": "2026-07-09",
+    "history_days": 19
+  },
+  "npm_pypi_note": "npm/PyPI adoption descoped: no collectors exist in collectors/. Future wave: add npm_downloads.py and pypi_stats.py collectors.",
+  "history_note": "Momentum signals are coarse with <90d history. Do not promote to a scored factor until ~2026-09-17.",
+  "honesty_header": "Developer-adoption signals from a 17-ticker curated OSS universe. 19-day history (expanding). Basket-level z-scores are coarse. Not a buy signal. Not a scored factor. Display/context only.",
+  "baskets": {
+    "ai_infra": {
+      "basket_id": "ai_infra",
+      "star_velocity_7d_z": 0.716,
+      "n_covered": 2,
+      "n_basket_total": 24,
+      "covered_tickers": [
+        "AMD",
+        "NVDA"
+      ],
+      "coverage_note": "2/24 basket tickers have GitHub data; velocity window: 7d. History: ~19d (expanding).",
+      "coverage_note_zh": "篮子成员24个，其中2个有GitHub数据；速度窗口：7天；历史长度：约19天（持续扩展）。"
+    },
+    "ai_neoclouds": {
+      "basket_id": "ai_neoclouds",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 10,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 10 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子10个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "ai_semiconductors": {
+      "basket_id": "ai_semiconductors",
+      "star_velocity_7d_z": 0.716,
+      "n_covered": 2,
+      "n_basket_total": 12,
+      "covered_tickers": [
+        "AMD",
+        "NVDA"
+      ],
+      "coverage_note": "2/12 basket tickers have GitHub data; velocity window: 7d. History: ~19d (expanding).",
+      "coverage_note_zh": "篮子成员12个，其中2个有GitHub数据；速度窗口：7天；历史长度：约19天（持续扩展）。"
+    },
+    "critical_minerals": {
+      "basket_id": "critical_minerals",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 11,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 11 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子11个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "cybersecurity": {
+      "basket_id": "cybersecurity",
+      "star_velocity_7d_z": 2.162,
+      "n_covered": 1,
+      "n_basket_total": 10,
+      "covered_tickers": [
+        "NET"
+      ],
+      "coverage_note": "1/10 basket tickers have GitHub data; velocity window: 7d. History: ~19d (expanding).",
+      "coverage_note_zh": "篮子成员10个，其中1个有GitHub数据；速度窗口：7天；历史长度：约19天（持续扩展）。"
+    },
+    "data_center_power": {
+      "basket_id": "data_center_power",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 8,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 8 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子8个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "defense": {
+      "basket_id": "defense",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 21,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 21 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子21个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "managed_care": {
+      "basket_id": "managed_care",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 9,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 9 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子9个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "memory_storage": {
+      "basket_id": "memory_storage",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 4,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 4 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子4个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "nuclear_power": {
+      "basket_id": "nuclear_power",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 9,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 9 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子9个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "obesity_glp1": {
+      "basket_id": "obesity_glp1",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 14,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 14 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子14个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "payments_fintech": {
+      "basket_id": "payments_fintech",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 21,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 21 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子21个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "power_grid": {
+      "basket_id": "power_grid",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 24,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 24 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子24个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "reshoring": {
+      "basket_id": "reshoring",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 16,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 16 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子16个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "robotics_automation": {
+      "basket_id": "robotics_automation",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 12,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 12 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子12个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "semicap_equipment": {
+      "basket_id": "semicap_equipment",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 16,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 16 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子16个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "space_economy": {
+      "basket_id": "space_economy",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 15,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 15 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子15个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    },
+    "uranium_miners": {
+      "basket_id": "uranium_miners",
+      "star_velocity_7d_z": null,
+      "n_covered": 0,
+      "n_basket_total": 10,
+      "covered_tickers": [],
+      "coverage_note": "No GitHub data for any of 10 basket tickers. Only 17 tickers have curated OSS repos (see data/github/repo_ticker.json). Non-tech themes have zero coverage by design.",
+      "coverage_note_zh": "篮子10个成员均无GitHub数据。仅17个成员具有精选开源仓库（见data/github/repo_ticker.json），非科技主题天然覆盖率为零。"
+    }
+  }
+}
