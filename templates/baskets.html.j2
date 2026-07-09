@@ -924,7 +924,7 @@
 
 <script src="lightweight-charts.js"></script>
 <script>
-const BASKETS = {{ baskets_json|safe }};
+var BASKETS = {{ baskets_json|safe }};
 const CHART   = {{ chart_json|safe }};
 const THEME   = BASKETS.theme_intel || null;
 const THEME_ALERTS = {{ theme_alerts_json|safe }};

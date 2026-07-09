@@ -681,7 +681,7 @@ function boot(){
   // fetch the cross-market links once, then re-render so the "same narrative elsewhere" chip
   // appears (display-only; absent file or no cross-ref simply leaves it out).
   fetch('../crossmarketdata/links.json',{cache:'no-store'}).then(r=>r.ok?r.json():null)
-    .then(cm=>{ if(cm){ XM=cm; render(); } }).catch(()=>{});
+    .then(cm=>{ if(cm){ XM=cm; render(); if(window._ftrTryInject) window._ftrTryInject(); } }).catch(()=>{});
 }
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 
@@ -861,6 +861,8 @@ function injectFtrWidgets(pulse, turnWatch){
 // Fetch pulse (basket_detail lives under site/basket/ so use ../ prefix)
 var _pulse=null, _tw=null;
 function tryInject(){injectFtrWidgets(_pulse,_tw);}
+// Expose so boot() can re-inject after XM re-render (Fix: XM re-render wipes #app.innerHTML)
+window._ftrTryInject = tryInject;
 fetch('../live/basket_pulse.json',{cache:'no-cache'})
   .then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){_pulse=d;tryInject();}).catch(function(){});
 fetch('../basketdata/turn_watch.json',{cache:'no-cache'})

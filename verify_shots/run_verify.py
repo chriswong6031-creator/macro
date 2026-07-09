@@ -387,6 +387,60 @@ def make_detail_router(html_bytes: bytes, pulse_data: dict, turn_watch_data: dic
     return handler
 
 
+# Minimal cross-market links fixture — non-empty so if(cm) fires and re-render is triggered
+MINIMAL_LINKS_JSON = {
+    "cybersecurity": [
+        {"id": "cn_cyber", "name": "China Cyber Basket", "overlap_pct": 0.22}
+    ]
+}
+
+
+def make_detail_router_with_xm(html_bytes: bytes, pulse_data: dict,
+                                turn_watch_data: dict, links_data: dict):
+    """Route handler for basket_detail page that also serves crossmarketdata/links.json.
+
+    This exercises the XM re-render race: boot() fetches links.json, gets a truthy
+    response, calls render() which wipes #app.innerHTML, and then must call
+    window._ftrTryInject() to restore the FTR widgets.
+    """
+    pulse_bytes = json.dumps(pulse_data).encode()
+    tw_bytes    = json.dumps(turn_watch_data).encode()
+    links_bytes = json.dumps(links_data).encode()
+
+    def handler(route):
+        url = route.request.url
+        path = url.split("?")[0].rstrip("/")
+
+        if path.endswith("/index.html") or path == FAKE_ORIGIN or path.endswith(".html"):
+            route.fulfill(status=200, content_type="text/html; charset=utf-8", body=html_bytes)
+        elif "basket_pulse.json" in path:
+            route.fulfill(status=200, content_type="application/json", body=pulse_bytes)
+        elif "turn_watch.json" in path:
+            route.fulfill(status=200, content_type="application/json", body=tw_bytes)
+        elif "crossmarketdata/links.json" in path:
+            route.fulfill(status=200, content_type="application/json", body=links_bytes)
+        elif path.endswith(".js"):
+            if not _serve_js(route, path):
+                route.fulfill(status=200, content_type="text/javascript", body=b"/* ok */")
+        else:
+            route.fulfill(status=404, content_type="application/json", body=b"null")
+    return handler
+
+
+def open_detail_page_with_xm(context, html: str, pulse, tw, links=None):
+    """Open basket_detail page with XM re-render scenario (links.json served)."""
+    page = context.new_page()
+    console_errors: list[str] = []
+    page.on("console", lambda m: console_errors.append(m.text) if m.type == "error" else None)
+
+    links_data = links if links is not None else MINIMAL_LINKS_JSON
+    page.route("**/*", make_detail_router_with_xm(html.encode(), pulse, tw, links_data))
+    page.goto(f"{FAKE_ORIGIN}/index.html", wait_until="domcontentloaded")
+    # Wait longer: boot() render + XM fetch + XM render + _ftrTryInject + FTR fetches
+    page.wait_for_timeout(3000)
+    return page, console_errors
+
+
 def open_baskets_page(context, html: str, pulse, tw, sp=None, baskets=None):
     """Open the baskets page in a new tab with full fetch interception."""
     page = context.new_page()
@@ -712,6 +766,41 @@ def run():
         shot_paths["detail_390"] = shot
         print(f"  Screenshot: {shot}")
         ctx_d390.close()
+
+        # ════════════════════════════════════════════════════════════════
+        # FIXTURE 5: basket_detail — XM re-render race
+        # Serves links.json so boot() triggers XM=cm; render() which wipes #app.
+        # After fix, window._ftrTryInject() re-injects FTR widgets.
+        # ════════════════════════════════════════════════════════════════
+        print("\n=== FIXTURE 5: basket_detail XM re-render race ===")
+
+        ctx_xm = browser.new_context(viewport={"width": 1440, "height": 900})
+        pg_xm, xm_errs = open_detail_page_with_xm(
+            ctx_xm, detail_html, SHOCK_PULSE, SHOCK_TURN_WATCH, MINIMAL_LINKS_JSON
+        )
+        all_console_errors["detail_xm_1440"] = xm_errs
+
+        # 5a. ftr-live-strip survives XM re-render
+        xm_strip = pg_xm.query_selector(".ftr-live-strip")
+        check("5a.xm_rerender_live_strip_survives", xm_strip is not None,
+              "found" if xm_strip else "NOT FOUND — destroyed by XM re-render")
+
+        # 5b. Anatomy panel survives XM re-render
+        xm_anat = pg_xm.query_selector(".ftr-w8-anatomy-section")
+        check("5b.xm_rerender_anatomy_survives", xm_anat is not None,
+              "found" if xm_anat else "NOT FOUND — destroyed by XM re-render")
+
+        # 5c. Zero new console errors (harness-404s from other unfetched files excluded)
+        xm_real = [e for e in xm_errs
+                   if KNOWN_SPURIOUS_SUBSTR not in e and HARNESS_404_SUBSTR not in e]
+        check("5c.xm_zero_new_console_errors", len(xm_real) == 0,
+              f"NEW: {xm_real!r}" if xm_real else "none")
+
+        shot = SHOTS_DIR / "basket_detail_ftr2_desktop.png"
+        pg_xm.screenshot(path=str(shot), full_page=True)
+        shot_paths["detail_xm_1440"] = shot
+        print(f"  Screenshot: {shot}")
+        ctx_xm.close()
 
         browser.close()
 
