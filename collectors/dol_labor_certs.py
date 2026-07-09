@@ -99,13 +99,21 @@ _LCA_COLS = {
     "WAGE_UNIT_OF_PAY": "_wage_unit",
 }
 _PERM_COLS = {
+    # DOL changed the PERM disclosure layout at FY2026: EMP_BUSINESS_NAME /
+    # PRIMARY_WORKSITE_STATE / JOB_OPP_WAGE_* replaced the FY<=2025 names
+    # (verified live against PERM FY2026_Q2 and FY2025_Q1, 2026-07-09).
+    # Generations are disjoint; when multiple candidates map to one canonical
+    # name, _normalize_df keeps the first present (dict order = newest first).
+    "EMP_BUSINESS_NAME": "employer_name",
     "EMPLOYER_NAME": "employer_name",
     "JOB_TITLE": "job_title",
+    "PRIMARY_WORKSITE_STATE": "worksite_state",
     "WORKSITE_STATE": "worksite_state",
     "DECISION_DATE": "decision_date",
     "CASE_STATUS": "case_status",
-    # PERM has WAGE_OFFER_FROM + WAGE_OFFER_UNIT_OF_PAY
+    "JOB_OPP_WAGE_FROM": "_wage_raw",
     "WAGE_OFFER_FROM": "_wage_raw",
+    "JOB_OPP_WAGE_PER": "_wage_unit",
     "WAGE_OFFER_UNIT_OF_PAY": "_wage_unit",
 }
 
@@ -277,8 +285,12 @@ def _normalize_df(raw_df: pd.DataFrame, program: str, col_map: dict,
     5. Add program + file_published.
     """
     # 1. Column selection — tolerant
-    available = {col: mapped for col, mapped in col_map.items()
-                 if col in raw_df.columns}
+    available: dict = {}
+    seen_canonical: set = set()
+    for col, mapped in col_map.items():
+        if col in raw_df.columns and mapped not in seen_canonical:
+            available[col] = mapped
+            seen_canonical.add(mapped)
     if "DECISION_DATE" not in available and "decision_date" not in raw_df.columns:
         log.warning("No DECISION_DATE column found in %s file — skipping", program.upper())
         return pd.DataFrame(columns=STORE_COLS)
@@ -288,7 +300,9 @@ def _normalize_df(raw_df: pd.DataFrame, program: str, col_map: dict,
 
     # 2. Filter to certified only
     if "case_status" in df.columns:
-        df = df[df["case_status"].str.strip().str.upper() == "CERTIFIED"].copy()
+        # startswith captures "Certified", "Certified - Expired", "Certified -
+        # Withdrawn" — all were certified at decision time (hiring-intent basis).
+        df = df[df["case_status"].str.strip().str.upper().str.startswith("CERTIFIED")].copy()
 
     # 3. Annualize wage
     wage_col = "_wage_raw"
@@ -321,7 +335,7 @@ def _normalize_df(raw_df: pd.DataFrame, program: str, col_map: dict,
 
     # Drop rows missing core fields
     df = df[
-        df.get("employer_name", pd.Series([""] * len(df))).str.len() > 0
+        df.get("employer_name", pd.Series([""] * len(df), index=df.index)).str.len() > 0
     ]
 
     # Select and reorder output columns
@@ -459,7 +473,14 @@ def collect(
                 # file_published = today (we record when we ingested it)
                 file_published = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-                df = download_and_normalize(program, fy, q, tmp_dir, file_published)
+                try:
+                    df = download_and_normalize(program, fy, q, tmp_dir, file_published)
+                except Exception as exc:  # noqa: BLE001
+                    # Layout drift or parse bug in ONE file must not void the
+                    # whole run (2026-07-09 incident: FY2026 PERM layout change
+                    # crashed normalize and lost the successful LCA ingest).
+                    log.error("%s: normalize failed (%s) — skipping program", key, exc)
+                    break
                 if df is None:
                     # Not yet available (404) — skip to older quarters (they are MORE
                     # likely to be published, not less).  DOL publishes 4-8 weeks after
