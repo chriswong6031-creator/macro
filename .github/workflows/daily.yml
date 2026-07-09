@@ -500,6 +500,7 @@ jobs:
           python -m scripts.backfill_regime_stamps > /tmp/backfill_regime_stamps.log 2>&1; rc=$?
           cat /tmp/backfill_regime_stamps.log
           [ "$rc" -ne 0 ] && echo "::warning title=backfill_regime_stamps::rc=$rc (non-fatal)"
+          exit 0  # PR-2 fix: missing exit 0 caused [ "$rc" -ne 0 ] to exit 1 when rc=0, skipping all downstream kernel steps
       - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
         # AFTER build_site: reads site/factordata/us_standouts.json (just written).
         # Originates new prophet.trade_plan/v1 envelopes, runs the management engine
@@ -875,6 +876,10 @@ jobs:
         # data/neuralweb/spine_index.parquet + envelope sidecar. AFTER grade_us_board
         # (all graders incl. qledger grading in collect have run); BEFORE radar_plus block.
         # Exit 0 on partial gaps; 1 only on write failure. Resilient wrapper.
+        # if: always() — PR-2 fix: backfill_regime_stamps had a shell bug that caused it to
+        # exit 1 silently, skipping all downstream kernel steps; add guard so these run
+        # even if an upstream optional step fails.
+        if: always()
         run: |
           set +e
           python -m scripts.build_spine_index > /tmp/spine_index.log 2>&1; rc=$?
@@ -887,6 +892,7 @@ jobs:
         # Display-first: zero behavior-changing consumers; the quarterly FDR batch (PR2)
         # is the only path to behavior. Input: spine_index.parquet (only dependency).
         # Resilient wrapper: exits 0 on empty/thin data; 1 only on write failure.
+        if: always()
         run: |
           set +e
           python -m scripts.build_kernel_estimates > /tmp/kernel_estimates.log 2>&1; rc=$?
@@ -899,6 +905,7 @@ jobs:
         # and NW engine firing independence. Display-only; four independently-guarded
         # blocks; always exits 0. Writes data/neuralweb/covariance_spine.json +
         # site/neuralwebdata/covariance_spine.json + history parquet.
+        if: always()
         run: |
           set +e
           python -m scripts.build_covariance_spine > /tmp/covariance_spine.log 2>&1; rc=$?
@@ -910,6 +917,7 @@ jobs:
         # (lagging_signals.json). Both are display-only diagnostics; zero behavior-changing
         # consumers. Runs AFTER build_kernel_estimates (kernel_families reads its parquet).
         # Resilient wrapper: each sub-step fail-open; exits 0 unless both steps fail.
+        if: always()
         run: |
           set +e
           python -m scripts.build_kernel_diagnostics > /tmp/kernel_diagnostics.log 2>&1; rc=$?
@@ -926,6 +934,7 @@ jobs:
         # so a crashed job is distinguishable from a successful all-null result.
         # Expected honest outcome: all families null (track_record IC rises;
         # radar/us_board have <3 graded horizons).  Resilient wrapper (exit 0).
+        if: always()
         run: |
           set +e
           python -m scripts.build_kernel_half_lives > /tmp/kernel_half_lives.log 2>&1; rc=$?
@@ -1227,6 +1236,15 @@ jobs:
         # Benchmark: 2.29s on the full US universe (~1722 names, 2026-07-06).
         # Fail-soft: missing optional inputs degrade gracefully; never blocks the commit.
         run: python -m scripts.build_bottom_sensors || echo "::warning::build_bottom_sensors failed (non-fatal - keeping last committed bottom sensors)"
+      - name: mature bottom sensors shadow (Amendment-3 forward audit — display-only)
+        if: always()
+        # PR-2 wiring: grades elapsable decline_geometry/underwater_state descriptor snapshots
+        # against realized forward returns (Amendment 3 structural shadow, RUL-28).
+        # Runs AFTER build_bottom_sensors so today's snapshot is available.
+        # Output: site/shadow/bottom_sensors_geometry_audit.json (display-only; covered by
+        # 'git add site/' in 'commit engine outputs' below). Benchmark: 0.6s (2026-07-09).
+        # Fail-soft: empty until ~1-3 months of snapshots mature; always exits 0.
+        run: python -m scripts.mature_bottom_sensors_shadow || echo "::warning::mature_bottom_sensors_shadow failed (non-fatal)"
       - name: LT-4 thesis funnel history append (PR-A2 — nightly longitudinal store)
         if: always()
         # LT-4 thesis funnel longitudinal history — append-only per (ticker, snapshot_date).
@@ -1618,8 +1636,8 @@ jobs:
           git add site/neuralwebdata/factor_intelligence_state.json
           git add data/factordata/factor_state_history.jsonl
           git add data/factordata/fire_coordinates.jsonl
-          git add data/neuralweb/factor_contradictions.jsonl
-          git add data/reflexes/factor_attention/firings.jsonl
+          git add data/neuralweb/factor_contradictions.jsonl || true  # dormant until panel backfill ≥60d; absent = expected
+          git add data/reflexes/factor_attention/firings.jsonl || true  # absent until first factor_attention firing
           git add site/factordata/dna_class.json
           if git diff --cached --quiet; then echo "no factor intelligence changes"; exit 0; fi
           git commit -m "factor-intelligence: nightly state artifact + pool $(date -u +%F)"

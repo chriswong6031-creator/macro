@@ -621,6 +621,102 @@ class TestA2EarnIn:
         assert probation["granted"] is False
         assert probation["schema"] == "neuralweb.cortex_probation.v1"
 
+    # ── PR-2: synthetic / dry-run exclusion tests ─────────────────────────────
+
+    def test_synthetic_ticker_firing_excluded_from_load(self):
+        """_load_firings must silently exclude SYNTHETIC_TICKER rows (append-only: row stays in file)."""
+        from scripts.grade_cortex_attention import _load_firings, _is_synthetic
+        root = _tmp_root()
+        firings_path = root / "data" / "reflexes" / "cortex_attention" / "firings.jsonl"
+        firings_path.parent.mkdir(parents=True, exist_ok=True)
+
+        synthetic_row = {
+            "claim_id": "synthetic-001",
+            "reflex": "cortex_attention",
+            "trigger_key": "SYNTHETIC_TICKER",
+            "scope_key": "SYNTHETIC_TICKER",
+            "asof": "2026-07-04",
+            "horizon_d": 5,
+            "direction": 1,
+            "falsifier": "SYNTHETIC_TICKER moves >2% within 5 days (dry-run synthetic item)",
+        }
+        real_row = {
+            "claim_id": "real-001",
+            "reflex": "cortex_attention",
+            "trigger_key": "SPY",
+            "scope_key": "SPY",
+            "asof": "2026-07-04",
+            "horizon_d": 5,
+            "direction": 1,
+            "falsifier": "SPY must rally >2%",
+        }
+        with firings_path.open("w", encoding="utf-8") as fh:
+            fh.write(json.dumps(synthetic_row) + "\n")
+            fh.write(json.dumps(real_row) + "\n")
+
+        # _is_synthetic correctly identifies the synthetic row
+        assert _is_synthetic(synthetic_row) is True
+        assert _is_synthetic(real_row) is False
+
+        # _load_firings returns only the real row
+        rows = _load_firings(root)
+        assert len(rows) == 1, f"expected 1 real row, got {len(rows)}"
+        assert rows[0]["claim_id"] == "real-001"
+
+        # Ledger file still has both rows (append-only law)
+        raw_lines = [l for l in firings_path.read_text().splitlines() if l.strip()]
+        assert len(raw_lines) == 2, "ledger must retain both rows — never delete"
+
+    def test_synthetic_grade_excluded_from_probation_n(self):
+        """A grades.jsonl with only a SYNTHETIC_TICKER grade produces n=0 in probation."""
+        from scripts.grade_cortex_attention import _load_grades
+        root = _tmp_root()
+        grades_path = root / "data" / "reflexes" / "cortex_attention" / "grades.jsonl"
+        grades_path.parent.mkdir(parents=True, exist_ok=True)
+
+        synthetic_grade = {
+            "schema": "reflex.cortex_attention.grade.v1",
+            "claim_id": "synthetic-001",
+            "graded_at": "2026-07-09",
+            "symbol": "SYNTHETIC_TICKER",
+            "outcome_hit": False,
+        }
+        with grades_path.open("w", encoding="utf-8") as fh:
+            fh.write(json.dumps(synthetic_grade) + "\n")
+
+        grades = _load_grades(root)
+        assert len(grades) == 0, f"expected 0 real grades (synthetic excluded), got {len(grades)}"
+
+    def test_real_rows_still_counted_alongside_synthetic(self):
+        """When firings include both real and synthetic rows, only real rows enter grading."""
+        from scripts.grade_cortex_attention import grade_attention
+        root = _tmp_root()
+        firings_path = root / "data" / "reflexes" / "cortex_attention" / "firings.jsonl"
+        firings_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Synthetic row (horizon elapsed → would be graded if not excluded)
+        synthetic = {
+            "claim_id": "synth-999",
+            "trigger_key": "SYNTHETIC_TICKER",
+            "scope_key": "SYNTHETIC_TICKER",
+            "asof": "2026-01-01",
+            "horizon_d": 5,
+            "direction": 1,
+            "falsifier": "SYNTHETIC_TICKER (dry-run synthetic item)",
+        }
+        with firings_path.open("w", encoding="utf-8") as fh:
+            fh.write(json.dumps(synthetic) + "\n")
+
+        today = date(2026, 7, 4)
+        summary = grade_attention(root=str(root), dry_run=True, today=today)
+
+        # Synthetic row must not enter the grading pipeline
+        assert summary["total_firings"] == 0, (
+            f"synthetic firing must be excluded; total_firings={summary['total_firings']}"
+        )
+        assert summary["matured_today"] == 0
+        assert summary["a2_earn_in"]["n"] == 0
+
     def test_cortex_reads_probation_json(self):
         """Cortex _check_constitution reads probation.json as single source."""
         from engine.neuralweb.cortex import _check_constitution
