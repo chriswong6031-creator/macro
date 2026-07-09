@@ -14,8 +14,11 @@ function applyTheme() {
 }
 
 function renderTopbar() {
+  const brain = state.view === 'brain';
   $('#wsName').textContent = activeWs().name;
-  document.title = activeWs().name + ' — Slate';
+  document.title = brain ? 'Brain — Slate' : activeWs().name + ' — Slate';
+  $$('#viewSeg .seg-btn').forEach(b => b.classList.toggle('active', (state.view || 'tasks') === b.dataset.view));
+  $$('#brainTabs .seg-btn').forEach(b => b.classList.toggle('active', brainTab === b.dataset.tab));
 }
 
 function renderCanvas() {
@@ -25,6 +28,7 @@ function renderCanvas() {
   canvas.style.height = CANVAS_H + 'px';
   canvas.textContent = '';
   for (const b of ws.boards) canvas.appendChild(boardEl(b));
+  $('#hint').textContent = 'Double-click anywhere to start a board';
   $('#hint').hidden = ws.boards.length > 0;
   const vp = $('#viewport');
   vp.scrollLeft = ws.scroll.x || 0;
@@ -32,6 +36,10 @@ function renderCanvas() {
 }
 
 function rerenderBoard(boardId) {
+  // state is already mutated by the caller; in Brain view there is no tasks DOM to
+  // patch (renderCanvas rebuilds it on switch), and appending here would leak a
+  // board into the Brain canvas
+  if (state.view === 'brain') return;
   const b = findBoard(boardId);
   const old = $('.board[data-id="' + boardId + '"]');
   if (!b) { if (old) old.remove(); return; }
@@ -57,7 +65,7 @@ function rerenderBoard(boardId) {
     $('#canvas').appendChild(fresh);
   }
   if (draft) openComposer(fresh, b, draft);
-  $('#hint').hidden = activeWs().boards.length > 0;
+  if (state.view !== 'brain') $('#hint').hidden = activeWs().boards.length > 0;
 }
 
 function boardEl(b) {
@@ -206,9 +214,16 @@ function doneCardEl(c, board) {
   return root;
 }
 
-/* full re-render */
+/* full re-render, dispatching on the active view */
 function renderAll() {
   applyTheme();
+  document.body.dataset.view = state.view || 'tasks';
+  document.body.dataset.tab = state.view === 'brain' ? brainTab : 'board';
   renderTopbar();
-  renderCanvas();
+  if (state.view === 'brain') {
+    renderBrain();
+  } else {
+    lastBrainTabRendered = null; // next brain entry is a fresh tab entry
+    renderCanvas();
+  }
 }

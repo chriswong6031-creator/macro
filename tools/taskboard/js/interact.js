@@ -43,6 +43,10 @@ function bringToFront(boardNode) {
   vp.addEventListener('scroll', debounce(saveScroll, 300));
 
   function saveScroll() {
+    if (state.view === 'brain') { // brain scroll is session-only, and never clobbers workspace scroll
+      if (brainTab === 'board') { brainScroll.x = vp.scrollLeft; brainScroll.y = vp.scrollTop; }
+      return;
+    }
     const ws = activeWs();
     ws.scroll.x = vp.scrollLeft;
     ws.scroll.y = vp.scrollTop;
@@ -50,6 +54,7 @@ function bringToFront(boardNode) {
   }
 
   canvas.addEventListener('dblclick', (e) => {
+    if (state.view === 'brain') return; // the Brain board creates notes instead (js/brain.js)
     if (e.target !== canvas) return;
     const r = canvas.getBoundingClientRect();
     const x = clamp(e.clientX - r.left - BOARD_W / 2, 8, CANVAS_W - BOARD_W - 8);
@@ -57,6 +62,11 @@ function bringToFront(boardNode) {
     createBoardAt(x, y);
   });
 })();
+
+/* while a drag is live, stop touch gestures from scrolling underneath it */
+const suppressTouchScroll = (e) => e.preventDefault();
+function lockTouchScroll() { document.addEventListener('touchmove', suppressTouchScroll, { passive: false }); }
+function unlockTouchScroll() { document.removeEventListener('touchmove', suppressTouchScroll); }
 
 function createBoardAt(x, y) {
   const b = newBoard('', x, y);
@@ -213,22 +223,42 @@ function stopAutoscroll() {
     const cardNode = e.target.closest('.card');
     if (!cardNode || cardNode.classList.contains('done-card')) return;
     if (e.target.closest('button, a, input, textarea')) return;
-    press = { cardNode, x: e.clientX, y: e.clientY };
+    press = { cardNode, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY };
+    if (e.pointerType === 'touch') {
+      // touch: long-press to lift a card; quick swipes stay native scrolls
+      press.timer = setTimeout(() => {
+        if (press && !drag) {
+          startCardDrag({ clientX: press.lx, clientY: press.ly });
+          if (navigator.vibrate) navigator.vibrate(8);
+        }
+      }, 330);
+    }
   });
 
   window.addEventListener('pointermove', (e) => {
     if (press && !drag) {
-      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) >= DRAG_THRESHOLD) startCardDrag(e);
+      press.lx = e.clientX; press.ly = e.clientY;
+      const dist = Math.hypot(e.clientX - press.x, e.clientY - press.y);
+      if (press.timer) { // touch press pending: movement means the user is scrolling
+        if (dist >= 8) { clearTimeout(press.timer); press = null; }
+        return;
+      }
+      if (dist >= DRAG_THRESHOLD) startCardDrag(e);
       return;
     }
     if (drag) moveCardDrag(e);
   });
 
   window.addEventListener('pointerup', (e) => {
+    if (press && press.timer) clearTimeout(press.timer);
     if (drag) endCardDrag(e);
     press = null;
   });
-  window.addEventListener('pointercancel', () => { if (drag) cancelCardDrag(); press = null; });
+  window.addEventListener('pointercancel', () => {
+    if (press && press.timer) clearTimeout(press.timer);
+    if (drag) cancelCardDrag();
+    press = null;
+  });
 
   function startCardDrag(e) {
     const cardNode = press.cardNode;
@@ -255,6 +285,7 @@ function stopAutoscroll() {
       w: rect.width,
     };
     document.body.classList.add('dragging-any');
+    lockTouchScroll();
     positionGhost(e);
     press = null;
   }
@@ -324,6 +355,7 @@ function stopAutoscroll() {
     ghost.addEventListener('transitionend', finish, { once: true });
     setTimeout(finish, 220); // safety net
     document.body.classList.remove('dragging-any');
+    unlockTouchScroll();
     stopAutoscroll();
     drag = null;
   }
@@ -332,6 +364,7 @@ function stopAutoscroll() {
     drag.ghost.remove();
     rerenderBoard(drag.fromBoard.id);
     document.body.classList.remove('dragging-any');
+    unlockTouchScroll();
     stopAutoscroll();
     drag = null;
   }

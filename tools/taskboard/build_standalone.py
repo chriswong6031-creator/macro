@@ -26,7 +26,7 @@ def main() -> None:
 
     html = re.sub(r'<link rel="stylesheet" href="([^"]+)">', inline_css, html)
     html = re.sub(r'<script src="([^"]+)"></script>', inline_js, html)
-    assert "stylesheet" not in html and "js/" not in html.split("<body>")[1], "unresolved refs remain"
+    assert 'rel="stylesheet"' not in html and "<script src=" not in html, "unresolved refs remain"
     OUT.write_text(html, encoding="utf-8")
     print(f"wrote {OUT} ({OUT.stat().st_size / 1024:.0f} KB)")
 

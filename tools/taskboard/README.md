@@ -1,6 +1,7 @@
-# Slate — personal task boards
+# Slate — personal task boards + Brain
 
-A single-user, local-first Trello-style board. No accounts, no network, no teams:
+A single-user, local-first, responsive web app: Trello-style task boards plus a
+"Brain" for writing down learned truths. No accounts, no network, no teams:
 everything lives in your browser (state in localStorage, attachments in IndexedDB).
 
 ## Use it
@@ -25,7 +26,17 @@ python3 -m http.server 8123   # then open http://localhost:8123
   the board's `n done` ledger. Expand the ledger to restore or clear.
 - **Attachments** — drop images/files onto any card (collapsed or expanded). Images show as
   thumbnails (click for a lightbox), files as chips (hover shows the name, click opens/downloads).
-- **Backups** — gear menu → Export/Import backup (single JSON including attachments).
+- **Brain** (topbar switcher) — a two-part notebook for personal learned truths:
+  - **Board**: an ephemeral capture canvas. Double-click (or the pen button) to write a
+    note and file it under a topic — the note is saved into that topic *instantly*
+    ("shadow push", with a little fly-to-Library animation), while the card stays on the
+    board for the rest of the session. Refreshing or closing wipes the board only.
+  - **Library**: permanent panes, one per topic, holding every saved note. Click a note
+    to edit, re-file, or delete it (with undo); rename/delete topics from the pane menu.
+- **Backups** — gear menu → Export/Import backup (single JSON including attachments
+  and the Brain).
+- **Responsive** — phone/tablet friendly: bottom-sheet modals, compact topbar,
+  double-tap to create, long-press to drag cards, drag boards by their header.
 - Light/dark theme, undo toasts for every destructive action.
 
 ## Files

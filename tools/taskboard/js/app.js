@@ -402,11 +402,12 @@ function openSettings() {
           }
           const prev = JSON.parse(JSON.stringify(state));
           for (const [id, dataUrl] of Object.entries(payload.files || {})) await filePut(id, dataUrl);
-          state = st;
+          state = migrateState(st); // normalizes shape so renderers can't throw on a crafted payload
           saveNow();
-          renderAll();
+          // register the undo BEFORE rendering — even if a render fails, the restore path exists
           undoableToast('Backup imported — replaced ' + prev.ws.length +
             (prev.ws.length === 1 ? ' workspace' : ' workspaces'), () => { state = prev; });
+          renderAll();
         } catch (e) {
           console.error(e);
           toast('Could not read that file', { tone: 'danger' });
@@ -429,6 +430,17 @@ function openSettings() {
   renderAll();
   $('#wsSwitcher').addEventListener('click', openWsSwitcher);
   $('#settingsBtn').addEventListener('click', openSettings);
+  $$('#viewSeg .seg-btn').forEach(b => b.addEventListener('click', () => {
+    if ((state.view || 'tasks') === b.dataset.view) return;
+    state.view = b.dataset.view;
+    save();
+    renderAll();
+  }));
+  $$('#brainTabs .seg-btn').forEach(b => b.addEventListener('click', () => {
+    if (brainTab === b.dataset.tab) return;
+    brainTab = b.dataset.tab;
+    renderAll();
+  }));
   $('#themeBtn').addEventListener('click', () => {
     state.theme = state.theme === 'dark' ? 'light' : 'dark';
     save();
