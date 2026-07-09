@@ -1,0 +1,557 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+
+{% block title %}{{ t('Technical Lab', '技术实验室') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  /* ── layout ── */
+  .tl-hero { margin: 26px auto 10px; max-width: 1060px; }
+  .tl-hero h1 { font-size: 26px; margin: 6px 0 4px; }
+  .tl-sub { color: var(--muted); font-size: 13px; max-width: 820px; }
+  .tl-meta { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+
+  /* ── controls ── */
+  .tl-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    max-width: 1060px; margin: 14px auto 0; }
+  .tl-mode-wrap { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .tl-mode-btn { padding: 6px 16px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    background: var(--panel2); color: var(--muted); border: none; transition: background .15s, color .15s; }
+  .tl-mode-btn.active { background: var(--link); color: #fff; }
+  .tl-sig-select { padding: 6px 10px; font-size: 12.5px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--panel); color: var(--text);
+    min-width: 220px; cursor: pointer; }
+  .tl-search { padding: 6px 10px; font-size: 12.5px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--panel); color: var(--text); width: 140px; }
+
+  /* ── sample notice ── */
+  .tl-sample-banner { max-width: 1060px; margin: 10px auto 0;
+    background: #e0973a22; border: 1px solid #e0973a55; border-radius: 10px;
+    padding: 10px 14px; font-size: 12.5px; color: #c77a1f; }
+  html[data-theme="dark"] .tl-sample-banner { color: #e0973a; }
+
+  /* ── card chrome ── */
+  .tl-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; margin: 14px auto 0; max-width: 1060px; }
+  .tl-card h2 { font-size: 15px; margin: 0 0 4px; display: flex; align-items: center;
+    gap: 7px; flex-wrap: wrap; }
+  .tl-card .h-note { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .tl-empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+
+  /* ── screener table ── */
+  table.tl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.tl th { text-align: left; color: var(--muted); font-weight: 600;
+    border-bottom: 1px solid var(--line); padding: 6px 8px; white-space: nowrap; }
+  table.tl td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  table.tl tr:last-child td { border-bottom: none; }
+  table.tl tr.tl-row:hover { background: var(--panel2); cursor: pointer; }
+  td.tl-num, th.tl-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tl-tk { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tl-name { color: var(--muted); font-size: 10.5px; }
+  .mut { color: var(--muted); }
+  .mut2 { color: var(--muted); font-size: 10.5px; }
+
+  /* ── score gauge ── */
+  .tl-gauge-wrap { display: inline-flex; align-items: center; gap: 7px; min-width: 110px; }
+  .tl-gauge { position: relative; flex: 1; min-width: 60px; height: 7px; border-radius: 4px;
+    background: var(--panel2); overflow: hidden; }
+  .tl-gauge i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--link); }
+  .tl-gauge.g-hi i  { background: #1f9a55; }
+  .tl-gauge.g-mod i { background: #5b8def; }
+  .tl-gauge.g-lo i  { background: var(--muted); }
+  .tl-gauge.g-neg i { background: #d23f3f; }
+  html[data-theme="dark"] .tl-gauge.g-hi i  { background: #3fc07e; }
+  html[data-theme="dark"] .tl-gauge.g-neg i { background: #ef6a6a; }
+  .tl-score { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12.5px; }
+
+  /* ── band chips ── */
+  .band-chip { display: inline-block; padding: 1px 7px; border-radius: 5px;
+    font-size: 10px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+  .band-strong { background: #1f9a5522; color: #1f9a55; }
+  .band-high   { background: #1f9a5511; color: #1f9a55; }
+  .band-mod    { background: #5b8def22; color: #5b8def; }
+  .band-low    { background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
+  .band-avoid  { background: #d23f3f22; color: #d23f3f; }
+  .band-none   { background: var(--panel2); color: var(--muted); }
+  html[data-theme="dark"] .band-strong { color: #3fc07e; }
+  html[data-theme="dark"] .band-high   { color: #3fc07e; }
+  html[data-theme="dark"] .band-avoid  { color: #ef6a6a; }
+
+  /* ── glyph direction ── */
+  .glyph-up   { color: #1f9a55; } html[data-theme="dark"] .glyph-up   { color: #3fc07e; }
+  .glyph-down { color: #d23f3f; } html[data-theme="dark"] .glyph-down { color: #ef6a6a; }
+  .glyph-neu  { color: var(--muted); }
+
+  /* ── lab profile card ── */
+  .tl-lab-card { max-width: 1060px; margin: 14px auto 0; }
+  .tl-lab-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 10px; }
+  @media (max-width: 680px) { .tl-lab-grid { grid-template-columns: repeat(2,1fr); } }
+  .tl-lab-stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; }
+  .tl-lab-stat .lk { font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); }
+  .tl-lab-stat .lv { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums;
+    margin-top: 4px; }
+  .tl-lab-stat .lb { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+  .tl-lab-caveat { font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+  /* ── inline WR bar SVG ── */
+  .tl-wr-bar { display: inline-flex; align-items: center; gap: 6px; }
+  .tl-wr-bar svg { flex: none; }
+  .tl-wr-txt { font-size: 11px; color: var(--muted); }
+
+  /* ── per-stock profile ── */
+  .tl-profile-panel { display: none; max-width: 1060px; margin: 14px auto 0; }
+  .tl-profile-panel.active { display: block; }
+  .tl-profile-header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 12px; }
+  .tl-profile-ticker { font-size: 22px; font-weight: 800; }
+  .tl-profile-name { font-size: 14px; color: var(--muted); }
+  .tl-profile-back { font-size: 12px; color: var(--link); cursor: pointer; margin-left: auto; }
+  .tl-confl { display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+    padding: 4px 12px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); }
+  .tl-confl .cn { font-size: 18px; font-weight: 800; color: var(--link); }
+  .tl-perf-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+  .tl-perf-cell { background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
+    padding: 8px 12px; min-width: 100px; }
+  .tl-perf-cell .pk { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .tl-perf-cell .pv { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .tl-sig-list { display: flex; flex-direction: column; gap: 4px; }
+  .tl-sig-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    border-radius: 8px; background: var(--panel2); font-size: 12.5px; }
+  .tl-sig-row.state-on  { background: #1f9a5511; }
+  .tl-sig-row.state-off { opacity: .55; }
+  html[data-theme="dark"] .tl-sig-row.state-on { background: #3fc07e11; }
+  .tl-sig-age { font-size: 10.5px; color: var(--muted); margin-left: auto; }
+
+  /* ── family section headers ── */
+  .tl-family-h { font-size: 10px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); padding: 10px 0 4px; margin-top: 6px; }
+
+  /* ── r-pos / r-neg already in base; local extensions ── */
+  .r-pos { color: #1f9a55; font-weight: 600; }
+  .r-neg { color: #d23f3f; font-weight: 600; }
+  html[data-theme="dark"] .r-pos { color: #3fc07e; }
+  html[data-theme="dark"] .r-neg { color: #ef6a6a; }
+
+  /* ── eyebrow ── */
+  p.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+{% endblock %}
+
+{% block content %}
+{# ── Hero ── #}
+<section class="tl-hero">
+  <p class="eyebrow">🔬 {{ t('Research · Display only', '研究 · 仅供展示') }}</p>
+  <h1>{{ t('Technical Lab', '技术实验室') }}</h1>
+  <p class="tl-sub">{{ t(
+    'Signal screener + descriptive backtest profiles. Choose a signal from the dropdown to see which stocks are currently firing it (Screener mode) or to read its historical profile (Lab mode). Drill into any ticker for a per-stock signal breakdown. All data is display-only, research framing — not a trade recommendation.',
+    '信号筛选器 + 描述性回测档案。从下拉菜单选择信号，可查看当前触发该信号的股票（筛选模式）或其历史特征档案（实验室模式）。点击任意标的查看个股信号分解。所有数据仅供展示与研究，不构成交易建议。'
+  ) }}</p>
+  <div class="tl-meta">
+    <span class="chip tag-equities">{{ t('Technical Signals', '技术信号') }}</span>
+    {% if not is_sample %}
+      <span class="chip">{{ t('Screener', '筛选器') }}: {{ generated_utc }}</span>
+      <span class="chip">{{ n_signals }} {{ t('signals', '信号') }}</span>
+      {% if universe_n_screener %}<span class="chip">{{ universe_n_screener }} {{ t('universe', '覆盖标的') }}</span>{% endif %}
+    {% else %}
+      <span class="chip">{{ t('Sample data — nightly generation pending', '样本数据 — 等待夜间生成') }}</span>
+    {% endif %}
+  </div>
+</section>
+
+{% if is_sample %}
+<div class="tl-sample-banner">
+  ⚠️ {{ t(
+    'Data files (site/factordata/tech_screener.json, tech_lab.json) are absent — showing sample fixture. Real data will populate after the first nightly run.',
+    '数据文件（tech_screener.json, tech_lab.json）尚未生成，当前显示样本。首次夜间运行后将填充真实数据。'
+  ) }}
+</div>
+{% endif %}
+
+{# ── Controls ── #}
+<div class="tl-controls" id="tl-controls">
+  <div class="tl-mode-wrap">
+    <button class="tl-mode-btn active" id="btn-screener" onclick="tlSetMode('screener')">
+      {{ t('Screener', '筛选') }}
+    </button>
+    <button class="tl-mode-btn" id="btn-lab" onclick="tlSetMode('lab')">
+      {{ t('Lab', '实验室') }}
+    </button>
+  </div>
+  <select class="tl-sig-select" id="tl-sig-select" onchange="tlSelectSignal(this.value)">
+    <option value="COMPOSITE">{{ t('★ Composite (all signals)', '★ 综合评分（全部信号）') }}</option>
+    {% for group in signal_groups %}
+    <optgroup label="{{ group.family | replace('_',' ') | title }}">
+      {% for sig in group.signals %}
+      {% if sig.id != 'COMPOSITE' %}
+      <option value="{{ sig.id }}">{{ sig.get('display_en', sig.id) }}{% if sig.get('display_zh') %} / {{ sig.display_zh }}{% endif %}</option>
+      {% endif %}
+      {% endfor %}
+    </optgroup>
+    {% endfor %}
+  </select>
+  <input class="tl-search" id="tl-ticker-search" type="text"
+    placeholder="Search ticker… / 搜索标的…"
+    oninput="tlSearchTicker(this.value)"
+    data-tip-en="Search for a stock to see its signal profile"
+    data-tip-zh="搜索个股查看其信号档案">
+</div>
+
+{# ── Screener panel ── #}
+<div class="tl-card" id="tl-screener-panel">
+  <h2 id="tl-screener-title">
+    ★ {{ t('Composite — Top Buy-Signal Names', '综合 — 最佳买入信号标的') }}
+    <span class="h-note" id="tl-screener-count"></span>
+  </h2>
+  <div id="tl-screener-body">
+    <p class="tl-empty" id="tl-screener-loading" style="padding:14px 0">{{ t('Loading…', '加载中…') }}</p>
+    <table class="tl" id="tl-screener-table" style="display:none">
+      <thead><tr>
+        <th>#</th>
+        <th>{{ t('Ticker', '标的') }}</th>
+        <th>{{ t('Name', '名称') }}</th>
+        <th class="tl-num">{{ t('Score', '评分') }}</th>
+        <th>{{ t('Band', '区间') }}</th>
+        <th class="tl-num">{{ t('Price', '价格') }}</th>
+        <th>{{ t('Action', '操作') }}</th>
+      </tr></thead>
+      <tbody id="tl-screener-tbody">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Lab panel ── #}
+<div class="tl-card" id="tl-lab-panel" style="display:none">
+  <h2 id="tl-lab-title">
+    🔬 {{ t('Signal Profile', '信号档案') }}
+    <span class="h-note">— {{ t('descriptive · survivor universe · not a §5.9 verdict', '描述性 · 幸存者宇宙 · 非§5.9认证结论') }}</span>
+  </h2>
+  <div id="tl-lab-body">
+    <p class="tl-empty" id="tl-lab-loading" style="padding:14px 0">{{ t('Loading…', '加载中…') }}</p>
+    <div class="tl-lab-grid" id="tl-lab-grid" style="display:none">
+    </div>
+    <p class="tl-lab-caveat" id="tl-lab-caveat">
+      {{ universe_caveat or t(
+        'Survivor mega-caps only; descriptive statistics, not a forward verdict. Display-only research.',
+        '仅覆盖幸存者大盘股；为描述性统计，非前瞻性结论。仅供研究展示。'
+      ) }}
+    </p>
+  </div>
+</div>
+
+{# ── Per-stock profile panel (drill-in) ── #}
+<div class="tl-card tl-profile-panel" id="tl-profile-panel">
+  <div class="tl-profile-header">
+    <span class="tl-profile-ticker" id="prof-ticker"></span>
+    <span class="tl-profile-name" id="prof-name"></span>
+    <span class="tl-profile-back" onclick="tlCloseProfile()">
+      ← {{ t('Back to list', '返回列表') }}
+    </span>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+    <div class="tl-confl">
+      <span class="cn" id="prof-active-buy">—</span>
+      <span>{{ t('/ active buy signals', '/ 活跃买入信号') }}</span>
+      <span id="prof-active-total" class="mut"></span>
+    </div>
+    <div class="tl-confl" id="prof-score-wrap">
+      <span class="cn" id="prof-score">—</span>
+      <span>{{ t('score', '评分') }}</span>
+      <span class="band-chip" id="prof-band"></span>
+    </div>
+  </div>
+  <div class="tl-perf-row" id="prof-perf-row"></div>
+  <div class="tl-sig-list" id="prof-sig-list"></div>
+  <p class="mut2" style="margin-top:8px">
+    {{ t('Signal list shows all tracked signals (active = currently firing, greyed = not firing). Age = bars since first fire.',
+         '信号列表显示所有已跟踪信号（活跃=当前触发，灰色=未触发）。年龄=首次触发后的K线数。') }}
+  </p>
+</div>
+
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function() {
+  // ── runtime state ──
+  var SIGS = {};
+  var STKS = {};
+  var _loaded = false;
+
+  // current state
+  var _mode   = 'screener';
+  var _sigId  = 'COMPOSITE';
+  var _search = '';
+
+  // ── mode toggle ──
+  window.tlSetMode = function(m) {
+    _mode = m;
+    document.getElementById('btn-screener').classList.toggle('active', m === 'screener');
+    document.getElementById('btn-lab').classList.toggle('active', m === 'lab');
+    document.getElementById('tl-screener-panel').style.display = m === 'screener' ? '' : 'none';
+    document.getElementById('tl-lab-panel').style.display      = m === 'lab'      ? '' : 'none';
+    _render();
+  };
+
+  // ── signal select ──
+  window.tlSelectSignal = function(id) {
+    _sigId = id;
+    tlCloseProfile();
+    _render();
+  };
+
+  // ── ticker search → open profile ──
+  window.tlSearchTicker = function(v) {
+    _search = v.trim().toUpperCase();
+    if (_search && STKS[_search]) {
+      tlOpenProfile(_search);
+    }
+  };
+
+  // ── open per-stock profile ──
+  window.tlOpenProfile = function(tk) {
+    var s = STKS[tk];
+    if (!s) return;
+    document.getElementById('prof-ticker').textContent = tk;
+    document.getElementById('prof-name').textContent   = s.name || '';
+    document.getElementById('prof-active-buy').textContent   = s.active_buy   != null ? s.active_buy   : '—';
+    document.getElementById('prof-active-total').textContent = s.active_total != null ? '/ ' + s.active_total + ' total' : '';
+    document.getElementById('prof-score').textContent = s.score != null ? (s.score > 0 ? '+' : '') + s.score.toFixed(1) : '—';
+    var bandEl = document.getElementById('prof-band');
+    bandEl.textContent = s.band || '—';
+    bandEl.className = 'band-chip ' + _bandClass(s.band);
+
+    // perf row
+    var perfRow = document.getElementById('prof-perf-row');
+    perfRow.innerHTML = '';
+    [['7d','perf_7d'],['30d','perf_30d'],['12m','perf_12m']].forEach(function(p) {
+      var v = s[p[1]];
+      var cls = v == null ? '' : (v >= 0 ? 'r-pos' : 'r-neg');
+      perfRow.innerHTML += '<div class="tl-perf-cell"><div class="pk">' + p[0] + '</div>' +
+        '<div class="pv ' + cls + '">' + _pct(v) + '</div></div>';
+    });
+
+    // signal list
+    var sl = document.getElementById('prof-sig-list');
+    sl.innerHTML = '';
+    (s.signals || []).forEach(function(sig) {
+      var dirCls = sig.direction > 0 ? 'glyph-up' : sig.direction < 0 ? 'glyph-down' : 'glyph-neu';
+      var rowCls = sig.state ? 'state-on' : 'state-off';
+      sl.innerHTML += '<div class="tl-sig-row ' + rowCls + '">' +
+        '<span class="' + dirCls + '">' + _glyph(sig.glyph) + '</span>' +
+        '<span>' + (sig.display_en || sig.id) + '</span>' +
+        (sig.age_days ? '<span class="tl-sig-age">' + sig.age_days + 'd</span>' : '') +
+        '</div>';
+    });
+
+    document.getElementById('tl-profile-panel').classList.add('active');
+  };
+
+  window.tlCloseProfile = function() {
+    document.getElementById('tl-profile-panel').classList.remove('active');
+    document.getElementById('tl-ticker-search').value = '';
+    _search = '';
+  };
+
+  // ── helpers ──
+  function _bandClass(band) {
+    var b = (band || '').toLowerCase();
+    if (b === 'strong buy') return 'band-strong';
+    if (b === 'buy') return 'band-high';
+    if (b === 'hold') return 'band-low';
+    if (b === 'sell' || b === 'strong sell') return 'band-avoid';
+    return 'band-none';
+  }
+  function _glyph(g) {
+    var m = { arrow_up:'▲', arrow_down:'▼', cross_up:'↗', cross_down:'↘',
+      star_gold:'★', star_red:'★', circle_green:'●', circle_red:'●',
+      band:'▬', line:'─', double_bottom:'W', double_top:'M' };
+    return m[g] || '○';
+  }
+  function _gaugeClass(score) {
+    if (score == null) return 'g-lo';
+    if (score >= 7)  return 'g-hi';
+    if (score >= 3)  return 'g-mod';
+    if (score >= 0)  return 'g-lo';
+    return 'g-neg';
+  }
+  function _pct(v) { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }  // v is a 0-1 ratio
+  function _wr(v)  { return v != null ? Math.round(v * 100) + '%' : '—'; }
+  function _fmtNum(v, dec) { return v != null ? v.toFixed(dec != null ? dec : 1) : '—'; }
+
+  // ── screener render ──
+  function _renderScreener() {
+    var sig = SIGS[_sigId];
+    var tickers, title, dir, glyph, countWord;
+    if (_sigId === 'COMPOSITE') {
+      tickers = Object.keys(STKS).map(function(tk) { var s = STKS[tk];
+        return { ticker: tk, name: s.name, price: s.price, score: s.score, band: s.band }; })
+        .filter(function(r) { return r.score != null; })
+        .sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+      title = 'Composite — Top Names by Score'; dir = 1; glyph = 'star_gold'; countWord = ' names';
+    } else {
+      tickers = (sig && sig.tickers) ? sig.tickers : [];
+      title = sig ? (sig.display_en + (sig.display_zh && sig.display_zh !== sig.display_en ? ' / ' + sig.display_zh : '')) : _sigId;
+      dir = sig ? sig.direction : 0; glyph = sig ? sig.glyph : null; countWord = ' firing';
+    }
+    document.getElementById('tl-screener-title').innerHTML =
+      '<span class="' + (dir > 0 ? 'glyph-up' : dir < 0 ? 'glyph-down' : 'glyph-neu') + '">' +
+      _glyph(glyph) + '</span> ' + title +
+      ' <span class="h-note" id="tl-screener-count"></span>';
+    document.getElementById('tl-screener-count').textContent = tickers.length + countWord;
+
+    var tbody = document.getElementById('tl-screener-tbody');
+    if (!tickers.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="tl-empty" style="padding:14px 0">—</td></tr>';
+      return;
+    }
+    tbody.innerHTML = tickers.map(function(r, i) {
+      var sc = r.score != null ? r.score : null;
+      // score is on -10..+10 scale; normalise to 0-100% for bar
+      var pct = sc != null ? Math.max(0, Math.min(100, (sc + 10) / 20 * 100)) : 50;
+      var gCls = _gaugeClass(sc);
+      return '<tr class="tl-row" onclick="tlOpenProfile(\'' + r.ticker + '\')">' +
+        '<td class="mut">' + (i+1) + '</td>' +
+        '<td><span class="tl-tk">' + r.ticker + '</span></td>' +
+        '<td><span class="tl-name">' + (r.name || '') + '</span></td>' +
+        '<td class="tl-num">' +
+          '<div class="tl-gauge-wrap">' +
+          '<div class="tl-gauge ' + gCls + '"><i style="width:' + pct.toFixed(0) + '%"></i></div>' +
+          '<span class="tl-score">' + (sc != null ? (sc >= 0 ? '+' : '') + sc.toFixed(1) : '—') + '</span>' +
+          '</div>' +
+        '</td>' +
+        '<td><span class="band-chip ' + _bandClass(r.band) + '">' + (r.band || '—') + '</span></td>' +
+        '<td class="tl-num">' + (r.price != null ? '$' + r.price.toFixed(2) : '—') + '</td>' +
+        '<td><span style="color:var(--link);cursor:pointer;font-size:11.5px" onclick="event.stopPropagation();tlOpenProfile(\'' + r.ticker + '\')">→ profile</span></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ── lab render ──
+  function _wrBar(wr, base, width) {
+    width = width || 80;
+    var h = 12;
+    var bx = base != null ? (base * width) : 0;
+    var wx = wr != null ? (wr * width) : 0;
+    var edge = wr != null && base != null ? ((wr - base) * 100).toFixed(1) : null;
+    var edgeCls = edge != null ? (parseFloat(edge) >= 4 ? 'r-pos' : parseFloat(edge) <= -4 ? 'r-neg' : 'mut') : '';
+    return '<div class="tl-wr-bar">' +
+      '<svg width="' + width + '" height="' + h + '" viewBox="0 0 ' + width + ' ' + h + '">' +
+        '<rect x="0" y="3" width="' + width + '" height="6" rx="3" fill="var(--panel2)"/>' +
+        (base != null ? '<rect x="0" y="3" width="' + bx.toFixed(1) + '" height="6" rx="3" fill="var(--muted)" opacity=".4"/>' : '') +
+        (wr != null ? '<rect x="0" y="3" width="' + wx.toFixed(1) + '" height="6" rx="3" fill="#5b8def"/>' : '') +
+        (base != null ? '<line x1="' + bx.toFixed(1) + '" y1="0" x2="' + bx.toFixed(1) + '" y2="' + h + '" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2,2"/>' : '') +
+      '</svg>' +
+      (edge != null ? '<span class="tl-wr-txt ' + edgeCls + '">' + (parseFloat(edge) >= 0 ? '+' : '') + edge + 'pp edge</span>' : '') +
+      '</div>';
+  }
+
+  function _renderLab() {
+    var sig = SIGS[_sigId];
+    var lab = sig && sig.lab;
+    document.getElementById('tl-lab-title').innerHTML =
+      '🔬 ' + (sig ? (sig.display_en || _sigId) : _sigId) + ' — <span class="h-note">descriptive profile</span>';
+
+    var grid = document.getElementById('tl-lab-grid');
+    if (!lab) {
+      grid.innerHTML = '<p class="tl-empty">' + (sig ? 'No lab profile for this signal yet.' : 'Select a signal.') + '</p>';
+      return;
+    }
+    var cells = [
+      { k: 'Win Rate 21d', b: _wrBar(lab.wr_21d, lab.base_wr), note: _wr(lab.wr_21d) + ' vs base ' + _wr(lab.base_wr) },
+      { k: 'Mean Return 21d', v: _pct(lab.mean_21d != null ? lab.mean_21d : null), note: 'base ' + _pct(lab.base_mean != null ? lab.base_mean : null) },
+      { k: 'MFE/MAE', v: lab.mfe_mae_med != null ? lab.mfe_mae_med.toFixed(2) + '×' : '—', note: 'median favourable/adverse' },
+      { k: 'Durable Rate', v: _wr(lab.durable_rate), note: 'held above entry 15d' },
+      { k: 'Median Lag', v: lab.median_lag_pct != null ? (lab.median_lag_pct * 100).toFixed(1) + '%' : '—', note: 'above 60d low at fire' },
+      { k: 'Days Since Low', v: lab.days_since_low_med != null ? Math.round(lab.days_since_low_med) + 'd' : '—', note: 'median' },
+      { k: 'Up-Tape %', v: _wr(lab.up_tape_pct), note: 'SPX up on fire day' },
+      { k: 'Fires / Months', v: (lab.n_fires || '—') + ' / ' + (lab.n_months || '—'), note: 'in sample' },
+      { k: 'WR pre-2010', v: _wr(lab.wr_pre2010), note: lab.wr_pre2010 != null ? 'older regime' : 'no data' },
+      { k: 'WR post-2010', v: _wr(lab.wr_post2010), note: 'modern regime' },
+    ];
+    grid.innerHTML = cells.map(function(c) {
+      return '<div class="tl-lab-stat"><div class="lk">' + c.k + '</div>' +
+        '<div class="lv">' + (c.b || c.v || '—') + '</div>' +
+        (c.note ? '<div class="lb">' + c.note + '</div>' : '') +
+        '</div>';
+    }).join('');
+  }
+
+  // ── top-level render ──
+  function _render() {
+    if (!_loaded) return;
+    if (_mode === 'screener') _renderScreener();
+    else _renderLab();
+  }
+
+  // ── show error state ──
+  function _showError(msg) {
+    var loadingS = document.getElementById('tl-screener-loading');
+    var loadingL = document.getElementById('tl-lab-loading');
+    if (loadingS) loadingS.textContent = msg;
+    if (loadingL) loadingL.textContent = msg;
+  }
+
+  // ── hide loading indicators, show table ──
+  function _showReady() {
+    var loadingS = document.getElementById('tl-screener-loading');
+    var tableEl  = document.getElementById('tl-screener-table');
+    var loadingL = document.getElementById('tl-lab-loading');
+    var gridEl   = document.getElementById('tl-lab-grid');
+    if (loadingS) loadingS.style.display = 'none';
+    if (tableEl)  tableEl.style.display  = '';
+    if (loadingL) loadingL.style.display = 'none';
+    if (gridEl)   gridEl.style.display   = '';
+  }
+
+  // ── async data load: fetch both JSONs, merge client-side ──
+  Promise.all(
+    ['factordata/tech_screener.json', 'factordata/tech_lab.json']
+      .map(function(url) { return fetch(url).then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' loading ' + url);
+        return r.json();
+      }); })
+  ).then(function(results) {
+    var screener = results[0];
+    var lab      = results[1];
+
+    var screenerSignals = screener.signals || {};
+    var labSignals      = lab.signals      || {};
+    var merged = {};
+
+    // Attach each lab profile onto its matching screener signal
+    Object.keys(screenerSignals).forEach(function(sid) {
+      merged[sid] = Object.assign({}, screenerSignals[sid], { lab: labSignals[sid] || null });
+    });
+    // Lab-only signals (no screener tickers yet)
+    Object.keys(labSignals).forEach(function(sid) {
+      if (!merged[sid]) {
+        var s = labSignals[sid];
+        merged[sid] = {
+          display_en: s.display_en || sid,
+          display_zh: s.display_en || sid,
+          family: s.family || 'other',
+          direction: s.direction || 0,
+          glyph: '○',
+          n_firing: 0,
+          tickers: [],
+          lab: s,
+        };
+      }
+    });
+
+    SIGS = merged;
+    STKS = screener.stocks || {};
+    _loaded = true;
+    _showReady();
+    _render();
+  }).catch(function(err) {
+    _showError('Data unavailable — ' + (err && err.message ? err.message : String(err)));
+  });
+
+})();
+</script>
+{% endblock %}

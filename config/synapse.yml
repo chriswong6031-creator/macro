@@ -7887,6 +7887,34 @@ artifacts:
       authority booleans all False. No additional logic beyond mirroring the
       data artifact.
 
+  # --- 1 consumer (NW context feed — DARK) ---
+  # DARK: registered + plumbed but NOT consumed by any scored/Article-2 surface.
+  # Nothing flows until a signal earns confirmer tier via an Article-3 gauntlet.
+  # GATE: promotion to confirmer requires §3 gauntlet pass (n_dates>=25,
+  # Wilson CI > 0 vs matched control). LLMs may only de-escalate calibrated
+  # keys — never originate signals, scores, or escalations.
+  site-factordata-tech-lab:
+    path: site/factordata/tech_lab.json
+    format: json
+    producer: scripts/build_tech_lab_data.py
+    known_extra_writers: []
+    owner_program: tech-internals
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_utc
+    freshness_sla_hours: 30
+    schema: tech_lab.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/query.py
+    notes: >
+      DARK NW context feed (tech-signal suite W2). adapt_tech_signals in
+      engine/neuralweb/query.py registers per-signal descriptive fire-metrics as
+      direction=0 / is_context=True spine rows; no Article-2 surface consumes
+      them until an Article-3 gauntlet passes. Display-only.
 
   # ============================================================
   # R5 MACRO CONTEXT RAIL — 14 artifacts (nw-macro-rail PR #1635)
@@ -8090,6 +8118,16 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - engine/neuralweb/query.py
+    external_consumers: []
+    notes: >
+      DARK (NW context feed — Wave-2 tech-signal suite). Display-only descriptive
+      fire-metrics from engine.tech_catalog over the mega-cap survivor universe.
+      Registered and plumbed into the NW spine index as direction=0 / is_context=True
+      rows; NOT consumed by any Article-2 surface (alert_triage, board_ordering,
+      top_setups, attention_queue, push_floor). Promotion gate: Article-3 gauntlet
+      with n_dates>=25 and Wilson CI lower-bound > 0 vs matched control. Until that
+      gate fires, these rows are pure display context.
       - engine/neuralweb/world_state.py
     external_consumers: []
     notes: >

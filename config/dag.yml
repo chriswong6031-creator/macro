@@ -139,6 +139,9 @@ lanes:
         note: DT-NW-1 — aggregate per-ticker dt_contra chip state into NW display artifact (display-only, seconds)
       - id: build_congress
         module: scripts.build_congress
+      - id: build_tech_lab
+        module: scripts.build_tech_lab
+        note: StockInvest Technical Lab hub render (display-only); data-gen build_tech_lab_data runs off the render path
       - id: build_foresight
         module: scripts.build_foresight
       - id: backfill_regime_stamps
