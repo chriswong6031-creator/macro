@@ -77,6 +77,12 @@
       "at": "2026-07-07T22:31:03.049619+00:00",
       "activated": false,
       "importance": null
+    },
+    "https://www.whitehouse.gov/?p=44638": {
+      "id": "wh-2026-07-09-fact-sheet-president-donald-j-trump-secures-historic-defense-investment-from-nat",
+      "at": "2026-07-09T05:05:18.546861+00:00",
+      "activated": false,
+      "importance": null
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
