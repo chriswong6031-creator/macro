@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-08",
+  "as_of": "2026-07-09",
   "freshness": "dead",
   "tape": [
     {
@@ -2793,6 +2793,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "8403.HK",
+      "date": "2026-04-10",
+      "category": "placement",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "9958.HK",
       "date": "2026-04-10",
       "category": "placement",
@@ -2808,24 +2817,6 @@
       "title_en": "ANNOUNCEMENT POLL RESULTS OF THE FIRST EXTRAORDINARY SHAREHOLDERS' MEETING OF 2026 HELD ON 10 APRIL 2026",
       "official_flag": true,
       "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8403.HK",
-      "date": "2026-04-10",
-      "category": "placement",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1725.HK",
-      "date": "2026-04-09",
-      "category": "placement",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER SPECIFIC MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
       "buyback_flag": false
     }
   ],
