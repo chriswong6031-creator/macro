@@ -12,7 +12,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "^HSTECH",
@@ -24,7 +31,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "0700.HK",
@@ -36,7 +50,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "9988.HK",
@@ -48,7 +69,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "9618.HK",
@@ -60,7 +88,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "3690.HK",
@@ -72,7 +107,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "1810.HK",
@@ -84,7 +126,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "9888.HK",
@@ -96,7 +145,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "1024.HK",
@@ -108,7 +164,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "0981.HK",
@@ -120,7 +183,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     },
     {
       "ticker": "0388.HK",
@@ -132,7 +202,14 @@
       "total_outstanding": null,
       "bull_bear_ratio": null,
       "leverage_state": "no_data",
-      "data_note": "store empty"
+      "data_note": "store empty",
+      "magnet_below": false,
+      "magnet_above": false,
+      "nearest_magnet_pct": null,
+      "magnet_clusters": [],
+      "call_level_coverage": 0.0,
+      "total_outstanding_with_call": 0,
+      "total_outstanding_without_call": 0
     }
   ],
   "banner": {
@@ -141,5 +218,6 @@
   },
   "cbbc_total_contracts": 0,
   "dw_total_contracts": 0,
+  "sld_call_levels_in_store": 0,
   "display_only": true
 }
