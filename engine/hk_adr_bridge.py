@@ -228,6 +228,40 @@ def _adr_pct_on_date(adr_close: pd.Series, us_date: date) -> float | None:
     return (curr_close / prev_close - 1.0) * 100.0
 
 
+def _best_adr_date(adr_series_map: dict[str, "pd.Series | None"],
+                   target_date: date) -> "tuple[date, bool]":
+    """Return the best ADR date to use and whether it is an exact match.
+
+    Strategy:
+    1. If any series has a bar on ``target_date``, return (target_date, True).
+    2. Otherwise fall back to the most-recent bar date that is <= target_date
+       across all series, return (that date, False).
+
+    This prevents the off-by-one blank-out when the pipeline runs before the
+    US-close step has committed the current-date bar: we surface the latest
+    available overnight move (T-1) rather than returning null for everything.
+    """
+    ts_target = pd.Timestamp(target_date)
+    # Check exact match first
+    for s in adr_series_map.values():
+        if s is not None and ts_target in s.index:
+            return target_date, True
+    # Fallback: latest available date <= target_date
+    best: date | None = None
+    for s in adr_series_map.values():
+        if s is None or len(s) == 0:
+            continue
+        valid = s.index[s.index <= ts_target]
+        if len(valid) == 0:
+            continue
+        candidate = valid.max().date()
+        if best is None or candidate > best:
+            best = candidate
+    if best is not None:
+        return best, False
+    return target_date, False  # no data at all — caller handles None gaps
+
+
 def _freshness_badge(series: pd.Series | None, expected: date) -> dict:
     """Staleness badge for an ADR series."""
     if series is None or len(series) == 0:
@@ -286,6 +320,18 @@ def snapshot(
     # HK closes at 08:00 UTC; US closes at ~20:00-21:00 UTC on the same date.
     # So the US close on `hk_session_date` is AFTER the HK close and BEFORE the
     # next HK open (01:30 UTC next calendar day) → implies next HK session's open.
+    #
+    # Off-by-one fix (2026-07-08): When the nightly pipeline runs at ~08:30 UTC on
+    # date T+1, hk_session_date resolves to T (the completed HK session on T).  The
+    # ADR data store contains the US close for T (written overnight by the US-close
+    # step).  Requiring adr_date == hk_session_date is correct in that case.
+    #
+    # However, if the pipeline runs during the US trading session or before the US
+    # close has been committed, the ADR store's latest bar is T-1, not T — causing
+    # ALL bellwethers to show "ADR implied —" even though data is fresh (just one
+    # session behind).  Fix: fall back to the most-recent ADR bar date that is <=
+    # hk_session_date when the exact session-date bar is absent, so we always surface
+    # the latest available overnight move rather than returning null.
     adr_date: date = hk_session_date
 
     # Load all ADR series we need (de-duped tickers)
@@ -296,6 +342,18 @@ def snapshot(
     adr_series: dict[str, pd.Series | None] = {}
     for ticker in all_adr_tickers:
         adr_series[ticker] = _load_adr(ticker, data_root)
+
+    # Off-by-one fix: resolve the best available ADR date.  If the exact
+    # hk_session_date bar exists in any series, use it (normal path).  Otherwise
+    # fall back to the most-recent available bar date <= hk_session_date so we
+    # always surface the latest overnight move rather than returning blanks.
+    adr_date, _adr_date_exact = _best_adr_date(adr_series, hk_session_date)
+    if not _adr_date_exact and adr_date != hk_session_date:
+        log.info(
+            "hk_adr_bridge: exact ADR bar for %s not found; using most-recent "
+            "available date %s (off-by-one fallback — pipeline ran before US close "
+            "was committed)", hk_session_date, adr_date
+        )
 
     # Freshness: each ADR is fresh relative to the expected NYSE close
     # (we use the same lag thresholds as hk_freshness but against the ADR date)

@@ -35,6 +35,10 @@ from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 casca
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 from scripts.build_hk import tv_symbol  # noqa: E402
+from collectors.hk_names_zh import load_names_zh as _load_names_zh  # noqa: E402
+
+# Loaded once at module level — a small committed JSON, no I/O on re-import.
+_HK_NAMES_ZH: dict[str, str] = _load_names_zh()
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("hk_library")
@@ -883,9 +887,11 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                 _dist_200dma = round(float(_price) / float(_ma200) - 1.0, 4)
         except Exception:  # noqa: BLE001
             pass
+        _tk_name_zh = _HK_NAMES_ZH.get(t)
         enriched.append({
             "ticker": t,
             "name": r.get("name") or rec.get("name"),
+            "name_zh": _tk_name_zh,
             "sector": r.get("sector") or rec.get("sector"),
             "sector_zh": r.get("sector_zh"),
             "price": _price,

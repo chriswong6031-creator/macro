@@ -105,8 +105,9 @@ def _adr_force(adr_bridge: dict | None) -> dict:
         # Deliberate freshness policy: only "stale" and "dead" → neutral.
         # "degraded" (e.g. one ADR missing) is treated as live — best available.
         if fresh in ("stale", "dead"):
+            _fresh_zh = "数据已过期" if fresh == "stale" else "数据不可用"
             return _neutral(key, name_en, name_zh,
-                            f"data {fresh}", f"数据{fresh}")
+                            f"data {fresh}", _fresh_zh)
         if gap is None:
             return _neutral(key, name_en, name_zh, "no gap data", "无隐含跳空数据")
         gap = float(gap)
@@ -190,7 +191,8 @@ def _narrative_force(hk_narrative: dict | None) -> dict:
         # Deliberate freshness policy: "stale"/"missing" → neutral; "degraded" → live.
         # A degraded GDELT pull (some entities stale) still yields useful volume signals.
         if fresh in ("stale", "missing"):
-            return _neutral(key, name_en, name_zh, f"data {fresh}", f"数据{fresh}")
+            _fresh_zh = "数据已过期" if fresh == "stale" else "暂无数据"
+            return _neutral(key, name_en, name_zh, f"data {fresh}", _fresh_zh)
         entities = hk_narrative.get("entities") or []
         if not entities:
             return _neutral(key, name_en, name_zh, "no entities", "无实体数据")
@@ -359,7 +361,8 @@ def _cbbc_force(cbbc_map: dict | None) -> dict:
             return _neutral(key, name_en, name_zh, "no data", "无数据")
         fresh = cbbc_map.get("freshness", "")
         if fresh in ("stale", "dead", "missing"):
-            return _neutral(key, name_en, name_zh, f"data {fresh}", f"数据{fresh}")
+            _cbbc_fresh_zh = {"stale": "数据已过期", "dead": "数据不可用", "missing": "暂无数据"}.get(fresh, "暂无数据")
+            return _neutral(key, name_en, name_zh, f"data {fresh}", _cbbc_fresh_zh)
 
         bellwethers = cbbc_map.get("bellwethers") or []
         if not bellwethers:
@@ -387,12 +390,38 @@ def _cbbc_force(cbbc_map: dict | None) -> dict:
                           f"{bull_crowd}/{total} 龙头多方拥挤 — 散户追高")
         # Mixed
         dominant_state = max(state_counts, key=lambda k: state_counts[k])
+        _ds_zh = {
+            "bear_skew_froth": "极端空方偏斜", "bear_skew": "空方偏斜",
+            "bull_skew_froth": "极端多方偏斜", "bull_skew": "多方偏斜",
+            "balanced": "均衡", "no_data": "无数据",
+        }.get(dominant_state, dominant_state)
         return _state(key, name_en, name_zh, "watch",
                       f"CBBC balanced ({dominant_state})",
-                      f"CBBC 平衡（{dominant_state}）")
+                      f"CBBC 平衡（{_ds_zh}）")
     except Exception as e:  # noqa: BLE001
         log.debug("hk_command_panel: cbbc force failed (%s)", e)
         return _neutral(key, name_en, name_zh, "compute error", "计算错误")
+
+
+def _peg_state_zh(peg_state: str) -> str:
+    """Translate peg state strings to Chinese — used to avoid English leaking into detail_zh."""
+    s = str(peg_state).lower()
+    if "strong" in s:
+        return " 联汇强方"
+    if "weak" in s:
+        if "outflow" in s or "out" in s:
+            return " 联汇弱方（资金流出）"
+        return " 联汇弱方"
+    if "easy" in s:
+        return " 联汇宽松"
+    if "stress" in s or "tight" in s:
+        return " 联汇偏紧"
+    if "outflow" in s:
+        return " 资金流出"
+    if "inflow" in s:
+        return " 资金流入"
+    # Fallback: keep original for unknown states rather than leaking English
+    return f" 联汇 {peg_state}"
 
 
 def _funding_peg_force(funding: dict | None, latest: dict | None) -> dict:
@@ -436,30 +465,32 @@ def _funding_peg_force(funding: dict | None, latest: dict | None) -> dict:
                 liq_label = "tight"
                 base_state = "stress"
 
-            peg_note = f" peg {peg_state}" if peg_state else ""
+            peg_note_en = f" peg {peg_state}" if peg_state else ""
+            peg_note_zh = _peg_state_zh(peg_state) if peg_state else ""
             if base_state == "confirm":
                 return _state(key, name_en, name_zh, "confirm",
-                              f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note}",
-                              f"港元流动性充裕（AB分位 {pctile}%）{peg_note}")
+                              f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note_en}",
+                              f"港元流动性充裕（AB分位 {pctile}%）{peg_note_zh}")
             if base_state == "stress":
                 return _state(key, name_en, name_zh, "stress",
-                              f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note}",
-                              f"港元流动性偏紧（AB分位 {pctile}%）{peg_note}")
+                              f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note_en}",
+                              f"港元流动性偏紧（AB分位 {pctile}%）{peg_note_zh}")
             return _state(key, name_en, name_zh, "neutral",
-                          f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note}",
-                          f"港元流动性中性（AB分位 {pctile}%）{peg_note}")
+                          f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note_en}",
+                          f"港元流动性中性（AB分位 {pctile}%）{peg_note_zh}")
 
         # Fallback: peg_state only
         if peg_state:
             ps = str(peg_state).lower()
+            _peg_zh = _peg_state_zh(peg_state)
             if "strong" in ps or "easy" in ps:
                 return _state(key, name_en, name_zh, "confirm",
-                              f"peg {peg_state}", f"联汇 {peg_state}")
+                              f"peg {peg_state}", f"联汇{_peg_zh}")
             if "weak" in ps or "stress" in ps or "tight" in ps:
                 return _state(key, name_en, name_zh, "stress",
-                              f"peg {peg_state}", f"联汇 {peg_state}")
+                              f"peg {peg_state}", f"联汇{_peg_zh}")
             return _state(key, name_en, name_zh, "watch",
-                          f"peg {peg_state}", f"联汇 {peg_state}")
+                          f"peg {peg_state}", f"联汇{_peg_zh}")
 
         return _neutral(key, name_en, name_zh, "no funding data", "无资金数据")
     except Exception as e:  # noqa: BLE001
@@ -488,14 +519,14 @@ def _global_risk_force(latest: dict | None) -> dict:
         if "risk-on" in state_str or "risk_on" in state_str:
             return _state(key, name_en, name_zh, "confirm",
                           f"global Risk-on ({risk_state or gv_state})",
-                          f"全球风险偏好（{risk_state or gv_state}）")
+                          "全球风险偏好")
         if "risk-off" in state_str or "risk_off" in state_str:
             return _state(key, name_en, name_zh, "stress",
                           f"global Risk-off ({risk_state or gv_state})",
-                          f"全球避险（{risk_state or gv_state}）")
+                          "全球避险")
         return _state(key, name_en, name_zh, "watch",
                       f"global mixed ({risk_state or gv_state})",
-                      f"全球混合（{risk_state or gv_state}）")
+                      "全球风险混合")
     except Exception as e:  # noqa: BLE001
         log.debug("hk_command_panel: global_risk force failed (%s)", e)
         return _neutral(key, name_en, name_zh, "compute error", "计算错误")
@@ -539,16 +570,22 @@ def _build_catalyst_tape(
         if filing_bus:
             tape = filing_bus.get("tape") or []
             for ev in tape[:3]:
+                _tk = ev.get("ticker", "?")
+                _nm_en = ev.get("name_en") or ev.get("name") or None
+                _nm_zh = ev.get("name_zh") or None
                 rows.append({
                     "date": ev.get("date") or ev.get("filing_date") or "—",
+                    "ticker": _tk,
+                    "name_en": _nm_en,
+                    "name_zh": _nm_zh,
                     "source": "filing",
                     "source_zh": "公告",
                     "text_en": (
-                        f"{ev.get('ticker','?')} · {ev.get('type_label','filing')} "
+                        f"{ev.get('type_label','filing')} "
                         f"{ev.get('description','') or ''}"
                     ).strip(),
                     "text_zh": (
-                        f"{ev.get('ticker','?')} · {ev.get('type_label_zh','公告')} "
+                        f"{ev.get('type_label_zh','公告')} "
                         f"{ev.get('description_zh','') or ev.get('description','') or ''}"
                     ).strip(),
                 })
@@ -559,16 +596,18 @@ def _build_catalyst_tape(
     try:
         if catalyst_strip:
             for cat in catalyst_strip[:3]:
+                _tk = cat.get("ticker", "?")
+                _nm_en = cat.get("name_en") or cat.get("name") or None
+                _nm_zh = cat.get("name_zh") or None
                 rows.append({
                     "date": cat.get("date") or "—",
+                    "ticker": _tk,
+                    "name_en": _nm_en,
+                    "name_zh": _nm_zh,
                     "source": "catalyst",
                     "source_zh": "催化剂",
-                    "text_en": (
-                        f"{cat.get('ticker','?')} · {cat.get('event','catalyst')}"
-                    ),
-                    "text_zh": (
-                        f"{cat.get('ticker','?')} · {cat.get('event_zh','') or cat.get('event','催化剂')}"
-                    ),
+                    "text_en": cat.get("event", "catalyst"),
+                    "text_zh": cat.get("event_zh") or cat.get("event") or "催化剂",
                 })
     except Exception as e:  # noqa: BLE001
         log.debug("hk_command_panel: catalyst strip failed (%s)", e)
@@ -578,21 +617,23 @@ def _build_catalyst_tape(
         if hk_narrative:
             for ent in (hk_narrative.get("entities") or []):
                 if ent.get("narrative_state") == "attention_spike":
+                    _az = ent.get("attention_shock_z")
                     rows.append({
                         "date": ent.get("as_of_date") or "—",
+                        "ticker": ent.get("ticker") or None,
+                        "name_en": ent.get("name_en") or None,
+                        "name_zh": ent.get("name_zh") or None,
                         "source": "narrative",
                         "source_zh": "舆情",
                         "text_en": (
-                            f"{ent.get('name_en','?')} attention spike "
-                            f"z={ent.get('attention_shock_z','?'):.1f}"
-                            if isinstance(ent.get("attention_shock_z"), (int, float))
-                            else f"{ent.get('name_en','?')} attention spike"
+                            f"attention spike z={_az:.1f}"
+                            if isinstance(_az, (int, float))
+                            else "attention spike"
                         ),
                         "text_zh": (
-                            f"{ent.get('name_zh','?')} 关注度峰值 "
-                            f"z={ent.get('attention_shock_z','?'):.1f}"
-                            if isinstance(ent.get("attention_shock_z"), (int, float))
-                            else f"{ent.get('name_zh','?')} 关注度峰值"
+                            f"关注度峰值 z={_az:.1f}"
+                            if isinstance(_az, (int, float))
+                            else "关注度峰值"
                         ),
                     })
     except Exception as e:  # noqa: BLE001
@@ -620,6 +661,7 @@ def _build_scorecards(setups: dict | None) -> tuple[list[dict], list[dict]]:
             entry = {
                 "ticker": row.get("ticker", "?"),
                 "name": row.get("name") or "",
+                "name_zh": row.get("name_zh") or None,
                 "state": state,
                 "confluence_n": len(row.get("confluence_signals") or []),
                 "signals": row.get("confluence_signals") or [],
