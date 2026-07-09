@@ -117,6 +117,14 @@ _CYCLE_PATTERN_STANDING_LAW = (
     "position_sizing are forbidden consumers."
 )
 
+_THEMATIC_STATE_STANDING_LAW = (
+    "thematic_state is DISPLAY/CONTEXT ONLY (TIL W5). "
+    "Nothing here may originate a signal, raise a score, gate, size, or rank. "
+    "Falsifier-fired flags are context observations — not trade triggers. "
+    "Pathway data: loser legs are AVOID-shaped evidence, never short calls "
+    "(TI-R5 fence). No runtime shock-to-beneficiary escalation."
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -697,6 +705,85 @@ def _summarize_cycle_pattern(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_thematic_state(repo: Path) -> tuple[dict, str | None]:
+    """TIL W5 NW citizenship: compact thematic-state context.
+
+    Reads data/neuralweb/theme_state.json (primary) and
+    site/neuralwebdata/theme_thesis.json (for falsifier counts).
+    Both produced nightly by scripts/build_thematic_state.py.
+
+    Counts-only pattern (mirrors _summarize_cycle_pattern discipline):
+    stage distribution, fired falsifiers, stale-legs count, and a
+    short noteworthy list (falsifier fired OR non-WATCH stage).
+    Full per-theme payload stays in the artifact (read_theme_state
+    cortex/ask_brain tool). Display/context only; may never originate,
+    score, or escalate.
+    """
+    state = _read_json(repo / "data" / "neuralweb" / "theme_state.json")
+    if not state:
+        return {}, "data/neuralweb/theme_state.json absent or unreadable"
+
+    themes: list = state.get("themes") or []
+    stale_legs: list = state.get("stale_legs") or []
+
+    # Stage counts (normalize: strip text/fingerprint suffix)
+    stage_counts: dict[str, int] = {}
+    for th in themes:
+        if not isinstance(th, dict):
+            continue
+        stage = (th.get("foresight") or {}).get("stage") or "UNKNOWN"
+        stage_key = stage.split(" ")[0]
+        stage_counts[stage_key] = stage_counts.get(stage_key, 0) + 1
+
+    # Falsifier data from site/neuralwebdata/theme_thesis.json
+    n_falsifiers_fired = 0
+    fired_list: list[dict] = []
+    thesis_path = repo / "site" / "neuralwebdata" / "theme_thesis.json"
+    if thesis_path.exists():
+        try:
+            raw_thesis = _read_json(thesis_path)
+            if raw_thesis:
+                n_falsifiers_fired = raw_thesis.get("n_falsifier_fired") or 0
+                for t in (raw_thesis.get("theses") or []):
+                    if not isinstance(t, dict):
+                        continue
+                    tid = t.get("theme_id", "")
+                    for f in (t.get("falsifiers") or []):
+                        if isinstance(f, dict) and f.get("fired"):
+                            fired_list.append({"theme_id": tid, "falsifier_id": f.get("id")})
+        except Exception:  # noqa: BLE001
+            pass
+
+    # Noteworthy: falsifier fired OR non-WATCH stage (cap to 6 for size)
+    noteworthy: list[dict] = []
+    fired_ids = {r["theme_id"] for r in fired_list}
+    for th in themes:
+        if not isinstance(th, dict):
+            continue
+        tid = th.get("theme_id", "")
+        stage = (th.get("foresight") or {}).get("stage") or "UNKNOWN"
+        stage_key = stage.split(" ")[0]
+        reasons = []
+        if tid in fired_ids:
+            reasons.append("falsifier_fired")
+        if stage_key not in ("WATCH", "UNKNOWN"):
+            reasons.append(f"stage={stage_key}")
+        if reasons and len(noteworthy) < 6:
+            noteworthy.append({"theme_id": tid, "reason": ", ".join(reasons)})
+
+    lobe: dict = {
+        "as_of": state.get("as_of"),
+        "n_themes": state.get("n_themes") or len(themes),
+        "stage_counts": stage_counts,
+        "n_falsifiers_fired": n_falsifiers_fired,
+        "falsifiers_fired": fired_list,
+        "n_stale_legs": len(stale_legs),
+        "noteworthy": noteworthy,
+        "standing_law": _THEMATIC_STATE_STANDING_LAW,
+    }
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -709,6 +796,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "macro_weather": _summarize_macro_weather,
     "claim_reliability": _summarize_claim_reliability,
     "cycle_pattern": _summarize_cycle_pattern,
+    "thematic_state": _summarize_thematic_state,
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -722,6 +810,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "macro_weather": ["macro-snapshots-latest"],
     "claim_reliability": ["site-qledger-track-record"],
     "cycle_pattern": ["cycle-pattern-state"],
+    "thematic_state": ["theme-state"],
 }
 
 

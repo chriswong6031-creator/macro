@@ -146,6 +146,41 @@ def _load_mechanism_pathways(root: Path) -> dict | None:
     return None
 
 
+def _build_thematic_line(root: Path) -> dict:
+    """TIL W5: compact thematic-state line for the daily brief.
+
+    Reads data/neuralweb/theme_state.json + site/neuralwebdata/theme_thesis.json.
+    Mirrors the mechanism_pathways fail-open discipline: absent → available=False.
+    Display/context only; never a trade trigger.
+    """
+    state = _read_json(root / "data" / "neuralweb" / "theme_state.json")
+    if not state:
+        return {"available": False, "note": "theme_state.json not yet built"}
+    thesis_path = root / "site" / "neuralwebdata" / "theme_thesis.json"
+    n_falsifiers_fired = 0
+    if thesis_path.exists():
+        thesis = _read_json(thesis_path)
+        if thesis:
+            n_falsifiers_fired = thesis.get("n_falsifier_fired") or 0
+    themes: list = state.get("themes") or []
+    stage_counts: dict[str, int] = {}
+    for th in themes:
+        if not isinstance(th, dict):
+            continue
+        stage = (th.get("foresight") or {}).get("stage") or "UNKNOWN"
+        stage_counts[stage.split(" ")[0]] = stage_counts.get(stage.split(" ")[0], 0) + 1
+    return {
+        "available": True,
+        "as_of": state.get("as_of"),
+        "n_themes": state.get("n_themes") or len(themes),
+        "stage_counts": stage_counts,
+        "n_falsifiers_fired": n_falsifiers_fired,
+        "n_stale_legs": len(state.get("stale_legs") or []),
+        "display_only": True,
+        "is_context_only": True,
+    }
+
+
 def _load_history(root: Path) -> list[dict]:
     p = root / "data" / "neuralweb" / "daily_brief_history.jsonl"
     if not p.exists():
@@ -1015,6 +1050,14 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
             "(CN-SYS W6 not yet merged or asia-close step not run)"
         )
 
+    # ---- thematic line (TIL W5) — fail-open ----
+    thematic_line = _build_thematic_line(root)
+    if not thematic_line.get("available"):
+        gaps_noted.append(
+            "thematic_line: data/neuralweb/theme_state.json absent "
+            "(run scripts/build_thematic_state.py to populate)"
+        )
+
     return {
         "schema": SCHEMA,
         "produced_at": now,
@@ -1030,6 +1073,7 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
         "candidate_watch": candidate_watch,
         "evidence_clock": evidence_clock,
         "china_market_state": china_market_state,  # CN-SYS W7 wiring line
+        "thematic_line": thematic_line,  # TIL W5 wiring line
         "caveats": _CAVEATS,
         "_gaps": gaps_noted,
     }
