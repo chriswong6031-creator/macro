@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-07-09T08:06:55.731679+00:00",
+  "produced_at": "2026-07-09T08:10:31.324788+00:00",
   "as_of": "2026-07-02",
   "overall_status": "degraded",
   "lobes": [
@@ -1811,8 +1811,8 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-07-08T07:31:46+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-07-09T08:10:24+00:00",
     "run_status": {
       "status": "degraded",
       "degraded": true,
@@ -1824,7 +1824,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "transient",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcpCaiyDNkiTdx8qQQ5JY'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccr9LTKtXN3vvBdmQj8zA'}"
         },
         {
           "provider": "oauth",
@@ -1832,14 +1832,14 @@
           "attempted": true,
           "ok": false,
           "error_type": "transient",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcpCat4QKEH3pjwpWvk8d'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccr9LeEijuXNMTWTeu2ky'}"
         }
       ],
       "tool_call_batches": 0,
       "individual_tool_calls": 0,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-07-08T07:26:56Z"
+      "context_as_of": "2026-07-09T08:06:25Z"
     },
     "probation": {
       "granted": false,

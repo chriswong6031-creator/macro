@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-09T08:06:56.453197+00:00",
+  "produced_at": "2026-07-09T08:10:31.407980+00:00",
   "as_of": "2026-07-02",
   "status": "degraded",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
@@ -431,7 +431,7 @@
   },
   "evidence_clock": {
     "available": true,
-    "as_of": "2026-07-08",
+    "as_of": "2026-07-09",
     "counts": {
       "overdue": 6,
       "due": 10,
@@ -441,14 +441,14 @@
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 200,
+      "accruing": 208,
       "n_acknowledged": 0
     },
     "top_due": {
       "clock_id": "qledger:placebo",
       "due_at": "2026-06-22"
     },
-    "morning_line": "6 overdue, 10 due, 1 missing, 1 stale, 2 blocked, 200 accruing. Top due: qledger:placebo."
+    "morning_line": "6 overdue, 10 due, 1 missing, 1 stale, 2 blocked, 208 accruing. Top due: qledger:placebo."
   },
   "china_market_state": {
     "available": true,
