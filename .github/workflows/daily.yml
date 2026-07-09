@@ -596,6 +596,10 @@ jobs:
           COLLECT_LANE: nightly  # lane sentinel: basket_turn_watch.stamp_ledger + other engine
                                  # nightly-only ledger writers check COLLECT_LANE==nightly before
                                  # writing; render/earlyclose/asia-close lanes leave it unset → no-op.
+          # FTR W10: build_baskets.py calls notify_turn_events at the end of main().
+          # Without these env vars the hook hits dark mode (no webhook → exit 0).
+          DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           set +e
           ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
@@ -1487,6 +1491,11 @@ jobs:
           # them — same as the force-tracked stock-search libraries. -f overrides the
           # ignore; || true so an empty/absent dir (feature off) never fails the commit.
           git add -f site/stockbrief 2>/dev/null || true
+          # FTR W10: persist nightly dedup state so the first intraday tick of the same day
+          # does not double-fire an IGNITION/shock alert that the nightly already sent.
+          # notify_state.json is site/live/ (gitignored); force-add with || true so an
+          # absent file (no alert fired, dark mode) never fails the commit.
+          git add -f site/live/notify_state.json 2>/dev/null || true
           # China stock-search library: gitignored like the other markets' libraries —
           # force-add it so the committed-tree deploy ships every indexed A-share detail
           # JSON, not just the old tracked subset.
@@ -2078,6 +2087,90 @@ jobs:
             echo "cortex push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push cortex after 5 attempts (non-fatal — downstream reads last committed)"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # CHF W3 — Causal Hypothesis Factory: nightly drift + weekly bounded battery
+  # CHF-R11: runs AFTER engine (needs: engine, if: always(), timeout-minutes: 45)
+  # Never writes asia-owned paths. Never touches Article-2 surfaces. Never reads
+  # kernel cells. Entry-quality target family gated on REPLAY_BOARDED_PATH var.
+  # ──────────────────────────────────────────────────────────────────────────
+  causal:
+    needs: engine
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 45
+    env:
+      REPLAY_BOARDED_PATH: ${{ vars.REPLAY_BOARDED_PATH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: build causal feature inventory (CHF W1 refresh, nightly)
+        # Refreshes config/causal_priors.yml kill-mask mirror and
+        # data/neuralweb/causal_feature_inventory.json. Non-fatal (exits 0).
+        run: |
+          set +e
+          python -m scripts.build_causal_inventory > /tmp/causal_inventory.log 2>&1; rc=$?
+          cat /tmp/causal_inventory.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_causal_inventory::rc=$rc (non-fatal)"
+          exit 0
+      - name: build causal frontier + surprise queue + lab state (CHF W3 nightly, CHF-R8)
+        # Drift-only step: no batteries, no TrialLedger writes, no LLM.
+        # Produces: causal_frontier.json, causal_surprise_queue.jsonl,
+        #           causal_lab_state.json (data/ + site/ copies). Non-fatal.
+        run: |
+          set +e
+          python -m scripts.build_causal_frontier > /tmp/causal_frontier.log 2>&1; rc=$?
+          cat /tmp/causal_frontier.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_causal_frontier::rc=$rc (non-fatal)"
+          exit 0
+      - name: run causal battery (CHF W3 weekly, CHF-R8, Tuesday gate, K<=40)
+        # Weekly bounded battery over top-K unexplored/accruing frontier cells.
+        # Tuesday-gated (date +%u == 2): no-op on other days.
+        # CHF-R5 estimator suite: HAC, cross-ticker permutation, lag placebo,
+        # time-shift placebo (DT-R14), circular block bootstrap, era split (DT-R16).
+        # Non-fatal (exits 0 even if battery fails).
+        run: |
+          set +e
+          if [ "$(date +%u)" = "2" ]; then
+            python -m scripts.build_causal_edges --weekly > /tmp/causal_edges.log 2>&1; rc=$?
+            cat /tmp/causal_edges.log
+            [ "$rc" -ne 0 ] && echo "::warning title=build_causal_edges::rc=$rc (non-fatal)"
+          else
+            echo "causal battery: skipping (not Tuesday, date +%u=$(date +%u))"
+          fi
+          exit 0
+      - name: commit causal outputs (CHF-R11 narrow git-add)
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # CHF-R11 narrow git-add block (pre-written in masterplan)
+          git add data/neuralweb/causal_feature_inventory.json 2>/dev/null || true
+          git add data/neuralweb/causal_edges.jsonl data/neuralweb/causal_nulls.jsonl 2>/dev/null || true
+          git add data/neuralweb/causal_mechanisms.jsonl 2>/dev/null || true
+          git add data/neuralweb/causal_frontier.json data/neuralweb/causal_surprise_queue.jsonl 2>/dev/null || true
+          git add data/neuralweb/causal_confluence_audit.json 2>/dev/null || true
+          git add data/neuralweb/causal_lab_state.json site/neuralwebdata/causal_lab_state.json 2>/dev/null || true
+          git add data/trial_ledger.jsonl 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no causal output changes"; exit 0; fi
+          git commit -m "causal: frontier drift + lab state $(date -u +%F)"
+          # Retry-rebase push loop with --autostash (stranded-data law #1823)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash origin main && git push; then
+              echo "pushed causal outputs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "causal push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push causal outputs after 5 attempts (non-fatal — downstream reads last committed)"
 
   # Light advisory job: generates docs/ACTIVE_BUILD_MAP.md and
   # data/governance/active_builds.json — a map of open PRs, file collisions,

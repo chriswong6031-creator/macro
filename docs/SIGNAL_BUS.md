@@ -12,6 +12,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | active-build-map | 1 |
 | btc-vector | 5 |
+| causal-hypothesis-factory | 6 |
 | china-alpha | 10 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
@@ -59,7 +60,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 178 |
+| display | 184 |
 | infrastructure | 77 |
 | scored | 4 |
 | shadow | 46 |
@@ -68,7 +69,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 293 |
+| git | 299 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -89,6 +90,17 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-override-ledger | `data/vector/override_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | btc-regime-ledger | `data/vector/regime_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | btc-impulse-ledger | `data/vector/impulse_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+
+### causal-hypothesis-factory
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| causal-nulls | `data/neuralweb/causal_nulls.jsonl` | jsonl | weekly | display | 2 | 0 |
+| causal-edges | `data/neuralweb/causal_edges.jsonl` | jsonl | weekly | display | 1 | 0 |
+| causal-frontier | `data/neuralweb/causal_frontier.json` | json | daily-engine | display | 1 | 0 |
+| causal-lab-state | `data/neuralweb/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
+| causal-surprise-queue | `data/neuralweb/causal_surprise_queue.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| site-causal-lab-state | `site/neuralwebdata/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
 
 ### china-alpha
 
@@ -579,18 +591,18 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-theme-thesis | `site/neuralwebdata/theme_thesis.json` | json | daily-engine | display | 4 | 0 |
+| theme-state | `data/neuralweb/theme_state.json` | json | daily-engine | display | 4 | 0 |
 | qledger-falsifier-evaluations | `data/qledger/falsifier_evaluations.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| site-theme-pathways | `site/neuralwebdata/theme_pathways.json` | json | daily-engine | display | 1 | 0 |
 | theme-phase-history | `data/neuralweb/theme_phase_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | theme-placebo-tape | `data/foresight/theme_placebo_tape.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | theme-thesis-ledger | `data/neuralweb/theme_thesis_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | foresight-earliness-grades | `data/foresight/earliness_grades.json` | json | daily-engine | display | 0 | 0 |
 | site-theme-asymmetry | `site/neuralwebdata/theme_asymmetry.json` | json | daily-engine | display | 0 | 0 |
-| site-theme-pathways | `site/neuralwebdata/theme_pathways.json` | json | daily-engine | display | 0 | 0 |
 | site-theme-state | `site/neuralwebdata/theme_state.json` | json | daily-engine | display | 0 | 0 |
-| site-theme-thesis | `site/neuralwebdata/theme_thesis.json` | json | daily-engine | display | 0 | 0 |
 | theme-asymmetry | `data/neuralweb/theme_asymmetry.json` | json | daily-engine | display | 0 | 0 |
 | theme-pathways | `data/neuralweb/theme_pathways.json` | json | daily-engine | display | 0 | 0 |
-| theme-state | `data/neuralweb/theme_state.json` | json | daily-engine | display | 0 | 0 |
 
 ### us-stocks-prebreakout
 

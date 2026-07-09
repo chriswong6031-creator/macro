@@ -4,3 +4,14 @@
 # but this guarantees no alert row can be silently dropped even on an unexpected
 # concurrent push.
 data/whitehouse/alerts.jsonl merge=union
+
+# Causal hypothesis factory ledgers are append-only JSONL files.  The trial
+# ledger (trial_ledger.jsonl) is written by BOTH the cortex nightly job and the
+# new CHF causal job on the same night; a rebase conflict in the push-retry loop
+# would silently drop causal rows and under-count CHF-R3 width.  All five causal
+# JSONL files carry union merge to prevent any row loss on concurrent pushes.
+data/trial_ledger.jsonl merge=union
+data/neuralweb/causal_edges.jsonl merge=union
+data/neuralweb/causal_nulls.jsonl merge=union
+data/neuralweb/causal_surprise_queue.jsonl merge=union
+data/neuralweb/causal_mechanisms.jsonl merge=union

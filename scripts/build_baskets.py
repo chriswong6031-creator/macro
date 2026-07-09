@@ -304,6 +304,15 @@ def main() -> int:
     except Exception as _btw_exc:  # noqa: BLE001 — additive, never fatal
         log.warning("::warning::basket_turn_watch hook failed: %s", _btw_exc)
 
+    # FTR W10 — Discord alerts for turn-watch IGNITION / shock activation / tape disagreement.
+    # Placed after basket_turn_watch so turn_watch.json is fresh.
+    # Own try/except — exit-0 always (FT-R13 / FT-R5 contract).
+    try:
+        from scripts.notify_turn_events import run as _notify_turn_events
+        _notify_turn_events()
+    except Exception as _nte_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("::warning::notify_turn_events hook failed: %s", _nte_exc)
+
     # FT-R8 — surface-freshness sentinel: assert first-class artifacts carry today's
     # NYSE session.  Warn-only (exits 0 always); annotations appear in the job summary.
     try:
