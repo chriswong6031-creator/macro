@@ -39,6 +39,7 @@ curated, not generated. Do not build an extractor.
 | LLM classification of narrative-only shock types (tariff/regulatory/cyber/edge/consumer) into calibrated keys | FORBIDDEN — no deterministic price basis; A7 ORIGINATE ban | TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
 | Held-position ledger / live position monitor / held-risk engine inside Macro Dashboard (Codex held-position memo placement) | FORBIDDEN — build lives in Mastermind repo; restates NWC-U4/NWP-U18/RUL-F3.2. Fused per-position risk score also struck | PRD-R1/PRD-R2, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md` |
 | Causal DAG → alpha score → trade / portfolio construction from discovered graphs | FORBIDDEN — CHF is proposal/audit tier only; Article 1/2 | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
+| Administration-timing predictor / policy-intent classifier (forecasting WHEN a policy lever fires; LLM-emitted geopolitical re-escalation probabilities) | FORBIDDEN — intent unfalsifiable; conditions-framing only | PS-R1/PS-R4, `POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md` |
 | LLM numeric confidence anywhere in CHF surfaces | FORBIDDEN — RF-16 extension | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
 
 ## 2. Killed / refuted signal families and theses
