@@ -22,6 +22,7 @@ from engine.htf_durability import (
     _biweekly_close,
     _hook_triggered,
     _monthly_phase_allows_durable,
+    _monthly_rolled_from_above,
     _stoch_in_extreme,
     compute,
     htf_divergence,
@@ -120,6 +121,44 @@ class TestBiweeklyPITSafe:
             "Fixed-epoch anchor failed: different start dates produce different 2W bars"
         )
 
+    def test_mid_history_gap_pit_safety(self) -> None:
+        """FIX 7: a mid-history pair that has only one weekly bar (data gap) must be
+        SKIPPED entirely — not emitted as a provisional bar that could change when the
+        missing week's data later arrives.
+
+        Method: construct a series that is missing a complete week in the middle (so
+        a W-FRI pair has only 1 bar). Verify the incomplete mid-history pair is absent
+        from the output. Before FIX 7 it was included with the single available bar.
+        """
+        # Create a daily series with a full week missing (June 6-10, 2005)
+        # This ensures W-FRI pair_id=141 (June 3 + June 10) has only the June 3 bar.
+        idx_before = pd.date_range("2005-01-03", "2005-06-01", freq="B")
+        idx_after  = pd.date_range("2005-06-14", "2007-01-01", freq="B")
+        idx = idx_before.append(idx_after)
+        rng = np.random.default_rng(7)
+        vals = 100.0 * np.cumprod(1 + rng.normal(0.0003, 0.009, len(idx)))
+        prices_gapped = pd.Series(vals, index=idx)
+
+        bw_gapped = _biweekly_close(prices_gapped)
+
+        # The June 3 date is the last (only) bar of the incomplete pair 141.
+        # FIX 7: it must NOT appear as a completed bar in the 2W output.
+        incomplete_pair_end = pd.Timestamp("2005-06-03")
+        assert incomplete_pair_end not in bw_gapped.index, (
+            "FIX 7 violated: mid-history incomplete pair must be ABSENT from 2W output, "
+            f"but {incomplete_pair_end.date()} was emitted (value={bw_gapped.get(incomplete_pair_end)})"
+        )
+
+        # Pairs before and after the gap must still be present
+        prior_pair_end = pd.Timestamp("2005-05-27")  # pair before the gap
+        after_pair_end = pd.Timestamp("2005-06-24")  # pair after the gap
+        assert prior_pair_end in bw_gapped.index, (
+            f"Prior pair ({prior_pair_end.date()}) should still be in output"
+        )
+        assert after_pair_end in bw_gapped.index, (
+            f"Post-gap pair ({after_pair_end.date()}) should still be in output"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Test 2: Monthly-phase veto
@@ -187,6 +226,77 @@ class TestMonthlyVeto:
             "spark_hist": [-1.0, -1.5, -2.0, -2.5],  # falling histogram
         }
         assert _monthly_phase_allows_durable(falling_state) is False
+
+
+# ---------------------------------------------------------------------------
+# Test: _monthly_rolled_from_above (FIX 1 helper)
+# ---------------------------------------------------------------------------
+
+class TestMonthlyRolledFromAbove:
+    """Unit tests for the FIX 1 helper: detecting 'basing-after-rollover' topping."""
+
+    def test_rolled_from_above_true_when_spark_had_positive_and_now_negative(self) -> None:
+        """spark_hist had positive values and current (last) is negative -> True."""
+        s = {"spark_hist": [0.5, 1.2, 1.0, 0.3, -0.1, -0.5, -0.8, -0.6, -0.7, -0.9]}
+        assert _monthly_rolled_from_above(s) is True
+
+    def test_rolled_from_above_false_when_always_negative(self) -> None:
+        """spark_hist never went positive -> not a rollover from above."""
+        s = {"spark_hist": [-2.0, -1.5, -1.0, -0.8, -0.6, -0.7, -0.9, -1.1, -0.8, -0.7]}
+        assert _monthly_rolled_from_above(s) is False
+
+    def test_rolled_from_above_false_when_currently_positive(self) -> None:
+        """Current hist > 0 -> still in uptrend, not rolled over."""
+        s = {"spark_hist": [0.1, 0.5, 1.0, 1.5, 2.0]}
+        assert _monthly_rolled_from_above(s) is False
+
+    def test_rolled_from_above_false_on_empty(self) -> None:
+        """Empty or missing spark_hist -> False (safe default)."""
+        assert _monthly_rolled_from_above({}) is False
+        assert _monthly_rolled_from_above({"spark_hist": []}) is False
+        assert _monthly_rolled_from_above({"spark_hist": [None]}) is False
+
+    def test_basing_after_rollover_routes_to_top_side(self) -> None:
+        """An engine.compute call on a topping fixture must route to primary_side=top.
+
+        We verify this via the stack_score sign (top-side = <= 0) and regime.
+        """
+        prices = _topping_prices(1200)
+        result = compute(prices, market="ROLLOVER_TEST")
+        # The topping fixture's monthly ends in 'basing' after rolling from above
+        assert result["monthly_phase"] == "basing", (
+            "Topping fixture should show monthly_phase=basing (not strictly falling)"
+        )
+        assert result["htf_momentum_regime"] == "TOP-RISK", (
+            f"Basing-after-rollover must yield TOP-RISK, got {result['htf_momentum_regime']}"
+        )
+        assert result["stack_score"] <= 0, (
+            f"TOP-RISK stack_score must be <= 0, got {result['stack_score']}"
+        )
+
+    def test_bottom_setup_requires_positive_stack(self) -> None:
+        """FIX 4: BOTTOM-SETUP must only fire when stack_score > 0.
+
+        A 'basing' monthly that has NEVER had a positive hist (genuine accumulation base)
+        combined with a rising weekly can produce primary_side=bottom, but must still
+        require real bottom hooks in the stack_score (not just confluence points) to
+        get BOTTOM-SETUP.
+        """
+        # Use the declining series — monthly has only negative hist
+        # (never had positive peak, so _monthly_rolled_from_above=False)
+        prices = _declining_prices(1200)
+        result = compute(prices, market="FIX4_TEST")
+
+        regime = result["htf_momentum_regime"]
+        score  = result["stack_score"]
+        grade  = result["durability_grade"]
+
+        # If regime is BOTTOM-SETUP, stack_score MUST be > 0
+        if regime == "BOTTOM-SETUP":
+            assert score > 0, (
+                f"BOTTOM-SETUP must have stack_score > 0 (real bottom hooks), "
+                f"got stack={score}, grade={grade}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -261,36 +371,55 @@ class TestFrontRun:
 # ---------------------------------------------------------------------------
 
 class TestLiveTestCases:
-    """Synthetic live test cases per synthesis spec."""
+    """Synthetic live test cases per synthesis spec.
+
+    All assertions are UNCONDITIONAL — no vacuous conditionals.  The fixtures are
+    deterministic (fixed seeds) so the classifications must be stable.
+    """
 
     def test_us_china_topping_scenario(self) -> None:
-        """Synthetic US/China topping -> TOP-RISK or at least not BOTTOM-SETUP."""
+        """Synthetic US/China topping -> TOP-RISK with a top-side grade (A′..D′).
+
+        FIX 1 regression: monthly 'basing' after rolling from an uptrend must
+        route to primary_side='top', not fall through to BOTTOM.
+        FIX 3 regression: TOP-RISK must have stack_score <= 0 (top-side only).
+        """
         prices = _topping_prices(1200)
         result = compute(prices, market="US_SYNTH")
 
         regime = result["htf_momentum_regime"]
         grade  = result["durability_grade"]
-        # Topping scenario should show either TOP-RISK or neutral with negative score
-        # (the exact classification depends on current bar state, but should NOT be BOTTOM-SETUP)
-        # We accept TOP-RISK or NEUTRAL with negative/zero stack for a topping series
-        score = result["stack_score"]
-        monthly_phase = result["monthly_phase"]
+        score  = result["stack_score"]
 
-        # Key invariant: when monthly is rolling/falling (topping), grade should be top-grade
-        if monthly_phase in ("rolling", "falling"):
-            assert regime in ("TOP-RISK", "NEUTRAL"), (
-                f"Topping monthly ({monthly_phase}) should not produce BOTTOM-SETUP, "
-                f"got {regime}"
-            )
+        # UNCONDITIONAL: this fixture always ends with a topping monthly posture.
+        assert regime == "TOP-RISK", (
+            f"US/China topping fixture MUST yield TOP-RISK — "
+            f"monthly basing-after-rollover not detected as top. "
+            f"Got regime={regime}, grade={grade}, monthly_phase={result['monthly_phase']}"
+        )
+        # Top-side grade (A_prime..D_prime), NOT a bottom grade
+        assert grade in ("A_prime", "B_prime", "C_prime", "D_prime"), (
+            f"TOP-RISK must carry a prime grade, got {grade}"
+        )
+        # FIX 3: stack_score must be <= 0 (top-leaning), never positive for TOP-RISK
+        assert score <= 0, (
+            f"TOP-RISK stack_score must be <= 0 (only top-side hooks scored), got {score}"
+        )
 
     def test_hk_weekly_bounce_under_falling_monthly_is_grade_D(self) -> None:
-        """HK current bounce: weekly hooks under falling monthly -> grade D TRAP-PRONE."""
+        """HK weekly bounce under a falling monthly -> grade D (TRAP-PRONE-BOUNCE).
+
+        The monthly never peaked above zero here (pure bear from the start),
+        so _monthly_rolled_from_above is False and primary_side resolves via
+        the weekly direction. The weekly bounce causes primary_side='bottom',
+        but the monthly veto caps at grade D.
+        """
         # Construct a declining series (simulating HK sell-off + dead-cat bounce)
-        # Long declining trend (1200 bars) ensures monthly is in downtrend
+        # Pure decline from the start — monthly hist is always negative (never positive peak)
         rng = np.random.default_rng(888)
         idx = pd.date_range("2005-01-03", periods=1200, freq="B")
 
-        # Primary decline for 1100 bars
+        # Primary decline for 1100 bars (monthly hist stays negative throughout)
         decline = np.cumprod(1 + rng.normal(-0.0004, 0.009, 1100))
         # Short bounce for last 100 bars (weekly hook, but monthly still falling)
         bounce = np.cumprod(1 + rng.normal(0.0006, 0.008, 100))
@@ -303,26 +432,30 @@ class TestLiveTestCases:
         regime = result["htf_momentum_regime"]
         monthly_phase = result["monthly_phase"]
 
-        # The monthly phase should still be falling/basing (not yet turned)
-        assert monthly_phase not in ("rising",), (
+        # Monthly must still be in downtrend (not yet turned)
+        assert monthly_phase not in ("rising", "turning", "bear_recovering"), (
             f"Expected monthly still in downtrend after short bounce, got {monthly_phase}"
         )
-        # Grade must be D or D_prime (both are trap-prone; D=bottom trap, D_prime=top trap)
-        # The bounce in this synthetic series started after a long decline —
-        # the engine may read it as either a failed bottom (D) or a failing top (D_prime),
-        # but NEVER a grade A/B/C durable move.
+        # UNCONDITIONAL: grade must be D (bottom trap) — the bounce in this
+        # synthetic series is too short to lift the monthly.
+        # D_prime is also acceptable if the engine reads the roll-off as top-side trap.
         assert grade in ("D", "D_prime"), (
             f"HK short bounce under falling monthly must be grade D or D_prime (TRAP-PRONE), "
             f"got {grade}"
         )
+        # UNCONDITIONAL: must NOT be BOTTOM-SETUP (that requires grade A/B + stack > 0)
         assert regime in ("TRAP-PRONE-BOUNCE", "NEUTRAL", "TOP-RISK"), (
-            f"HK short bounce under falling monthly should not be BOTTOM-SETUP, "
+            f"HK short bounce under falling monthly must not be BOTTOM-SETUP, "
             f"got {regime}"
         )
 
     def test_liquidity_mechanical_and_topping_gives_not_momentum_confirmed(self) -> None:
-        """Mechanical liquidity + HTF topping -> liquidity_reframe=not_momentum_confirmed."""
-        # Topping prices
+        """Mechanical liquidity + HTF topping -> liquidity_reframe=not_momentum_confirmed.
+
+        FIX 2 regression: htf_topping uses the SAME condition as the TOP-RISK
+        regime gate — whenever regime=TOP-RISK, mechanical liquidity must fire
+        not_momentum_confirmed. No per-grade carve-outs.
+        """
         prices = _topping_prices(1200)
 
         # Mechanical liquidity: fed_share < 0.5, so mechanical=True
@@ -340,24 +473,19 @@ class TestLiveTestCases:
 
         result = compute(prices, market="US_LQ_TEST", liquidity_quality_dict=lq_dict)
 
-        # If HTF is topping AND liquidity is mechanical, reframe should be not_momentum_confirmed
-        # Check the topping condition first
-        grade = result["durability_grade"]
-        regime = result["htf_momentum_regime"]
+        regime  = result["htf_momentum_regime"]
         reframe = result["liquidity_reframe"]
-        monthly_phase = result["monthly_phase"]
 
-        if regime == "TOP-RISK" and grade in ("A_prime", "B_prime", "C_prime"):
-            assert reframe == "not_momentum_confirmed", (
-                f"Mechanical liquidity + topping should give not_momentum_confirmed, "
-                f"got {reframe}"
-            )
-        # Even if regime not fully TOP-RISK yet, mechanical + HTF rolling should
-        # produce at least mechanical_fragile
-        if lq_dict["composition"]["mechanical"] and monthly_phase in ("rolling", "falling"):
-            assert reframe in ("not_momentum_confirmed", "mechanical_fragile"), (
-                f"Mechanical liq + rolling monthly should produce fragile reframe, got {reframe}"
-            )
+        # UNCONDITIONAL: the topping fixture always yields TOP-RISK (FIX 1 guarantee)
+        assert regime == "TOP-RISK", (
+            f"Topping fixture must yield TOP-RISK for liquidity test, got {regime}"
+        )
+        # UNCONDITIONAL: TOP-RISK + mechanical_liquidity -> not_momentum_confirmed
+        # No per-grade conditional here — FIX 2 unified the htf_topping predicate.
+        assert reframe == "not_momentum_confirmed", (
+            f"regime=TOP-RISK + mechanical liquidity MUST yield not_momentum_confirmed, "
+            f"got {reframe}"
+        )
 
     def test_liquidity_reframe_benign_when_no_topping(self) -> None:
         """Non-topping + non-mechanical liquidity -> reframe stays benign."""

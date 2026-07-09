@@ -1,12 +1,31 @@
 """HTF momentum DURABILITY engine — front-running secular tops & bottoms.
 
-Display / context tier. De-escalation-only authority. Never originates buy/sell.
+Display / context tier. De-escalation authority only. Never originates buy/sell.
+PRIMARY use: top-side de-escalation (BOTTOM-SETUP is display-tier context that
+accrues and never upgrades risk-on; BOTTOM-SETUP requires real stack support).
 Additive dict output — caller passes into the regime read; does NOT mutate it.
 
 Design (approved multi-team-adversarial synthesis, 2026-07-08):
   P0 — per-market monthly/2W/weekly indicator stack
   P1 — durability grading with monthly-phase veto (A–D / A′–D′)
   P2 — liquidity-card reframe (mechanical + HTF-topping -> not_momentum_confirmed)
+
+Side resolution priority (Step 4):
+  1. monthly rolling/falling => TOP
+  2. monthly basing after rolling from above zero (spark_hist had positive values,
+     current is negative) => TOP  [FIX 1: basing-after-rollover is still a top]
+  3. monthly turning/rising/bear_recovering => BOTTOM
+  4. fallback to weekly direction for genuine basing (never above zero) / unknown
+
+Stack scoring (Step 4, FIX 3):
+  Score ONLY the resolved side — do not mix opposing-side hooks. This prevents a
+  situation where a single TF satisfies both macd_curl_up and macd_approaching_dn,
+  causing an incoherent net stack that conflicts with the regime label.
+
+BOTTOM-SETUP contract (FIX 4):
+  Requires grade A or B AND stack_score > 0 (real bottom-side hook stack present).
+  The bottom-caller is display-tier context that accrues forward outcomes; it NEVER
+  originates a risk-on upgrade. Leading signal is always the TOP/de-escalation side.
 
 Anti-patterns explicitly forbidden:
   - MACD hist zero-cross as a trigger (banned; tracked as telemetry only)
@@ -121,10 +140,22 @@ def _biweekly_close(daily_close: pd.Series) -> pd.Series:
     for pid in unique_pairs:
         mask = pair_ids == pid
         if mask.sum() < 2:
-            # incomplete pair — only skip if it's the most recent (no future bars yet)
+            # Incomplete pair.
             if pid == unique_pairs[-1]:
+                # Most-recent period: future week hasn't arrived yet — skip entirely.
+                # This is the PIT-safe exclusion: the incomplete current period must
+                # never appear as a completed bar.
                 continue
-            # Historical incomplete pair (gap in data) — include the single bar
+            # FIX 7 — Mid-history gap-fill PIT edge:
+            # A mid-history pair with only one weekly bar is a data gap (a missing
+            # Friday close). Including it emits a bar that a later backfill would
+            # change: if the missing week's close arrives, the pair's "last bar"
+            # could change. To stay PIT-safe, we SKIP mid-history single-bar pairs
+            # rather than emitting a provisional value that may be revised.
+            # NOTE: this means a data gap (missing Friday) silently drops the 2W bar
+            # for that pair. Callers requiring dense 2W series should ensure
+            # the underlying daily data has no multi-week gaps.
+            continue
         bars = weekly[mask]
         result_dates.append(bars.index[-1])
         result_vals.append(float(bars.iloc[-1]))
@@ -297,6 +328,32 @@ def _monthly_phase_topping(monthly_s: dict) -> bool:
     from engine.cycles import _tf_phase
     phase = _tf_phase(monthly_s)
     return phase in ("rolling", "falling")
+
+
+def _monthly_rolled_from_above(monthly_s: dict) -> bool:
+    """True if the monthly histogram PREVIOUSLY peaked above zero and is now below zero.
+
+    This catches the 'basing-after-rollover' case: a market that was in a
+    multi-month/year uptrend (hist > 0) and has since rolled below zero, but whose
+    histogram is no longer strictly falling (so _tf_phase returns 'basing', not
+    'falling'). That 'basing' phase is the CONTINUATION of the topping pattern —
+    the market has NOT turned bullish, it merely stopped accelerating downward.
+
+    Detection: spark_hist (most-recent-last) has ANY positive value AND the current
+    (last) value is negative. The spark window (≤20 bars) is the relevant lookback;
+    a genuinely bottomed market that is now turning up has macd_curl_up / turning
+    phase, which takes priority in the primary_side routing.
+
+    Returns False when monthly_s is empty or spark_hist is not available.
+    """
+    spark = monthly_s.get("spark_hist") or []
+    if len(spark) < 2:
+        return False
+    current_hist = spark[-1]
+    if current_hist is None or current_hist >= 0:
+        return False  # still above zero — not a rollover
+    # Any bar in the spark window was positive -> rolled from above
+    return any(x is not None and x > 0 for x in spark)
 
 
 # ---------------------------------------------------------------------------
@@ -557,14 +614,32 @@ def compute(
     # ------------------------------------------------------------------
     # Step 4: determine operative side (TOP or BOTTOM) and compute stack_score
     # Weights: M=3, 2W=2, W=1; range [-6, +6]
+    #
+    # SIDE RESOLUTION RULES (FIX 1 + FIX 3):
+    #   1. Monthly rolling/falling  => TOP (explicit topping phase)
+    #   2. Monthly "basing" after rolling from above zero => TOP
+    #      (rolled-from-above catches the basing-after-rollover case where
+    #       _tf_phase returns "basing" but hist was previously positive)
+    #   3. Monthly turning/rising/bear_recovering => BOTTOM
+    #   4. Monthly basing (never had positive hist, i.e. genuine base) =>
+    #      fall back to weekly direction
+    #   5. Monthly unknown => fall back to weekly direction
+    #
+    # After resolving side, score ONLY that side (FIX 3: do not let opposing
+    # hooks partially cancel; a single TF can satisfy both macd_curl_up and
+    # macd_approaching_dn, which would pollute a net stack_score).
     # ------------------------------------------------------------------
-    # Determine primary side from the monthly phase
+    m_rolled_from_above = _monthly_rolled_from_above(m_s) if m_s else False
+
     if m_phase in ("rolling", "falling"):
+        primary_side = "top"
+    elif m_phase == "basing" and m_rolled_from_above:
+        # Monthly rolled from an uptrend into sub-zero basing — still TOP territory
         primary_side = "top"
     elif m_phase in ("turning", "rising", "bear_recovering"):
         primary_side = "bottom"
     else:
-        # Monthly basing/unknown — check weekly direction
+        # Monthly basing (genuine, never above zero) or unknown — check weekly
         if w_phase in ("rolling", "falling"):
             primary_side = "top"
         elif w_phase in ("turning", "rising", "bear_recovering"):
@@ -572,19 +647,20 @@ def compute(
         else:
             primary_side = "neutral"
 
-    # Score each TF for both sides — keep signed stack_score
-    m_score_b  = _tf_score(m_s,  div_m,  "bottom") * _W_M
-    tw_score_b = _tf_score(tw_s, div_2w, "bottom") * _W_2W
-    w_score_b  = _tf_score(w_s,  div_w,  "bottom") * _W_W
-    stack_score_b = m_score_b + tw_score_b + w_score_b  # +6 = maximum bullish
-
-    m_score_t  = _tf_score(m_s,  div_m,  "top") * _W_M
-    tw_score_t = _tf_score(tw_s, div_2w, "top") * _W_2W
-    w_score_t  = _tf_score(w_s,  div_w,  "top") * _W_W
-    stack_score_t = m_score_t + tw_score_t + w_score_t  # -6 = maximum bearish
-
-    # Net signed score: positive = bottom setup, negative = top risk
-    stack_score = stack_score_b + stack_score_t
+    # Score ONLY the resolved side — never mix opposing hooks (FIX 3).
+    # stack_score sign convention: negative = top-leaning, positive = bottom-leaning.
+    if primary_side == "top":
+        m_score_t  = _tf_score(m_s,  div_m,  "top") * _W_M
+        tw_score_t = _tf_score(tw_s, div_2w, "top") * _W_2W
+        w_score_t  = _tf_score(w_s,  div_w,  "top") * _W_W
+        stack_score = m_score_t + tw_score_t + w_score_t   # ≤0
+    elif primary_side == "bottom":
+        m_score_b  = _tf_score(m_s,  div_m,  "bottom") * _W_M
+        tw_score_b = _tf_score(tw_s, div_2w, "bottom") * _W_2W
+        w_score_b  = _tf_score(w_s,  div_w,  "bottom") * _W_W
+        stack_score = m_score_b + tw_score_b + w_score_b   # ≥0
+    else:
+        stack_score = 0
     # Clamp to [-6, +6]
     stack_score = max(-6, min(6, stack_score))
 
@@ -603,8 +679,12 @@ def compute(
     any_bottom_hook = m_hook_bottom or tw_hook_bottom or w_hook_bottom
     any_top_hook    = m_hook_top    or tw_hook_top    or w_hook_top
 
-    # bars_to_macd_cross telemetry: prefer 2W, then W (weekly = 5 days/bar)
-    bars_to_cross_raw: float | None = tw_s.get("macd_bars_to_cross") or w_s.get("macd_bars_to_cross")
+    # bars_to_macd_cross telemetry: prefer 2W, then W (weekly = 5 days/bar).
+    # FIX 6: use explicit is-not-None guard — a legit ETA of 0.0 (crossing this bar)
+    # must not be skipped by a falsy `or` short-circuit.
+    _btc_2w = tw_s.get("macd_bars_to_cross")
+    _btc_w  = w_s.get("macd_bars_to_cross")
+    bars_to_cross_raw: float | None = _btc_2w if _btc_2w is not None else _btc_w
     bars_to_macd_cross: int | None = int(round(bars_to_cross_raw)) if bars_to_cross_raw is not None else None
 
     # ------------------------------------------------------------------
@@ -656,9 +736,18 @@ def compute(
 
     # ------------------------------------------------------------------
     # Step 7: monthly-phase veto + durability grade
+    #
+    # For TOP side: monthly_allows_top is True when the monthly confirms topping.
+    # _monthly_phase_topping covers "rolling"/"falling" phases.
+    # The "basing-after-rollover" case is already resolved to primary_side="top"
+    # by _monthly_rolled_from_above in Step 4, so we treat it as confirming
+    # topping here (monthly_allows_top = True when primary_side == "top").
     # ------------------------------------------------------------------
     monthly_allows_durable = _monthly_phase_allows_durable(m_s) if m_s else False
     monthly_is_topping     = _monthly_phase_topping(m_s) if m_s else False
+    # For grading: if we resolved primary_side=top (including via rolled_from_above),
+    # the monthly IS in a topping posture for grading purposes.
+    monthly_allows_top = monthly_is_topping or (primary_side == "top" and m_rolled_from_above)
 
     if primary_side == "bottom":
         conf_pts, conf_detail = _confluence_points(
@@ -669,29 +758,41 @@ def compute(
         conf_pts, conf_detail = _confluence_points(
             "top", stack_score, m_s, w_s, tw_s, div_m, div_2w, div_w, external_organs
         )
-        # For tops: monthly_allows = monthly is in topping phase
-        durability_grade = _assign_grade("top", stack_score, monthly_is_topping, conf_pts)
+        durability_grade = _assign_grade("top", stack_score, monthly_allows_top, conf_pts)
     else:
         conf_pts, conf_detail = 0, {}
         durability_grade = "D"
 
     # ------------------------------------------------------------------
     # Step 8: HTF momentum regime label
+    #
+    # TOP-RISK: any top-side grade (A′..D′) when primary_side=top. The full
+    #   range is TOP-RISK because the operator primary need is topping detection —
+    #   even a D_prime (low-confluence topping) is a risk-flag, not neutral.
+    #   We gate on stack_score <= 0 OR any_top_hook for D_prime to avoid noise
+    #   (FIX 3: stack_score on the top side is now unipolar ≤0).
+    #
+    # BOTTOM-SETUP: grade A or B AND stack_score > 0 (real bottom-side hook stack).
+    #   (FIX 4: gate on actual stack support — not just external confluence points.)
+    #   Bottom-side is display-tier context; never originates a risk-on upgrade.
+    #
+    # TRAP-PRONE-BOUNCE: bottom D — monthly veto active.
     # ------------------------------------------------------------------
-    if primary_side == "top" and durability_grade in ("A_prime", "B_prime"):
+    if primary_side == "top" and durability_grade in ("A_prime", "B_prime", "C_prime"):
         htf_regime = "TOP-RISK"
-    elif primary_side == "bottom" and durability_grade in ("A", "B"):
+    elif primary_side == "top" and durability_grade == "D_prime":
+        # Low-confluence top: only flag TOP-RISK if stack is top-leaning or hook present
+        htf_regime = "TOP-RISK" if (stack_score <= 0 or any_top_hook) else "NEUTRAL"
+    elif primary_side == "bottom" and durability_grade in ("A", "B") and stack_score > 0:
+        # FIX 4: require real stack support for BOTTOM-SETUP
         htf_regime = "BOTTOM-SETUP"
     elif primary_side == "bottom" and durability_grade == "D":
         htf_regime = "TRAP-PRONE-BOUNCE"
-    elif primary_side == "top" and durability_grade in ("C_prime", "D_prime"):
-        # Rolling over but not confirmed
-        htf_regime = "TOP-RISK" if (stack_score <= -3 or any_top_hook) else "NEUTRAL"
     else:
         htf_regime = "NEUTRAL"
 
-    # Honest note: bottom-caller is structurally weaker (monthly veto mutes real washout lows)
-    # Lead comes from TOP/de-escalation detection — that is the primary use case.
+    # Honest note: bottom-caller is display-tier context only; lead is TOP/de-escalation.
+    # Bottom-SETUP requires stack_score > 0 (real bottom-side hooks, not just confluence).
 
     # ------------------------------------------------------------------
     # Step 9: read label (display-only, additive context)
@@ -705,7 +806,11 @@ def compute(
     lq_mechanical = bool(lq.get("composition", {}).get("mechanical"))
     lq_label      = lq.get("label", "unknown")
     lq_expanding  = lq_label in ("benign-expansion", "stress-expansion")
-    htf_topping   = htf_regime in ("TOP-RISK",) and durability_grade in ("A_prime", "B_prime", "C_prime")
+    # FIX 2: htf_topping uses the SAME condition as the TOP-RISK regime assignment.
+    # Whenever htf_regime == "TOP-RISK" (regardless of grade), mechanical liquidity
+    # must fire not_momentum_confirmed. Do NOT separately gate on grade here —
+    # that created a gap where D_prime TOP-RISK got liquidity_reframe=benign.
+    htf_topping   = (htf_regime == "TOP-RISK")
 
     # surface_score: 1.0 if lq expanding benign, lower for stress/mechanical
     if lq_label == "benign-expansion":
@@ -772,7 +877,7 @@ def compute(
             "Display-only, context tier. De-escalation authority only — "
             "never originates buy/sell signals. Bottom-caller is structurally "
             "weaker than TOP/de-escalation due to monthly-phase veto. "
-            "Accrues forward outcomes for later phase validation."
+            "Accrues forward outcomes for later assessment."
         ),
     }
 
