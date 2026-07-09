@@ -926,6 +926,49 @@ checks:
       gate prevents the engine lane from persisting fresh-looking canonical
       state off a calendar-stale store — and self-heals the daily lane.
 
+  - law_id: ops.surface_freshness
+    summary: >
+      First-class display surfaces (allocation, baskets, oracle_state,
+      sector_pulse) must not silently serve stale as_of dates. The sentinel
+      compares each artifact's as_of stamp against lib/nyse_calendar's expected
+      session and prints a ::warning:: annotation per stale surface
+      (2026-07-06→09 incident: data/allocation froze for 3 sessions inside an
+      exit-0-always sub-build while the allocation page kept rendering the old
+      leader; FTR masterplan FT-R8).
+    source_ref:
+      - scripts/check_surface_freshness.py
+      - lib/nyse_calendar.py
+      - research/FAST_TURN_TWO_SPEED_TAPE_MASTERPLAN_BY_FABLE.md
+      - "PR #2039 (FTR W0)"
+    severity: warn
+    check_script: scripts/check_surface_freshness.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: hook
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: hook
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Invoked from inside scripts/build_baskets.py main() (the build_allocation
+        hook pattern — no dedicated workflow step; PAT lacks workflow scope),
+        so wiring is lane:hook via the workflows that run build_baskets.
+      - >-
+        Warn-only by design (exit 0 always) — a stale surface must not block the
+        rest of the site build; the teeth are the "::warning::" annotation plus
+        the site/allocationdata/freshness.json stale stamp that W3 renders as a
+        visible STALE chip.
+    owner_program: fast-turn
+    notes: >
+      FT-R8 freshness contract, first leg: build_allocation snapshot write was
+      unbundled from the alerts try/except (candidate structural cause) and the
+      wrapper now annotates failures; this sentinel catches whatever class of
+      freeze comes next, on every surface it audits.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry
