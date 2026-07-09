@@ -220,6 +220,113 @@ fetch('policy_lever.json',{cache:'no-cache'})
 </section>
 {% endif %}
 
+<!-- ══════════════════════════════════════════════════════════════════════
+     FTR W3: Tape Panel (allocation page) — live complex read + movers + disagreement
+     Composes with W1 shock banner above. Display/de-escalation only (FT-R1, FT-R2).
+     FT-R12: suppressed when stale; FT-R3: T+1 fade note inline.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="ftr-alloc-tape-panel" style="display:none;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin:10px 0">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+    <span id="ftr-alloc-session-pill" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:16px"></span>
+    <span style="font-size:13px;font-weight:700;color:var(--text)">{{ t('Live Basket Tape','实时篮子行情') }}</span>
+    <span style="font-size:11px;color:var(--muted)">{{ t('15-min delayed','15分钟延迟') }}</span>
+    <span id="ftr-alloc-cx-chip" style="margin-left:auto"></span>
+    <span id="ftr-alloc-asof" style="font-size:11px;color:var(--muted)"></span>
+  </div>
+  <div id="ftr-alloc-movers" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px"></div>
+  <div id="ftr-alloc-disagree" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
+  <div style="margin-top:6px;font-size:10.5px;color:var(--muted);font-style:italic">{{ t(
+    'T+1 violent-flip base rate: 58% fade (n=26) · not a directional signal · display only',
+    'T+1剧烈反转基础概率：58%消退（n=26）· 非方向信号 · 仅展示') }}</div>
+</div>
+<script>
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function L(en,zh){return'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>';}
+function fmtPct(v){if(v==null)return'—';return(v>=0?'+':'')+v.toFixed(2)+'%';}
+var SESSION_LABELS={pre:{cls:'pre',en:'PREMARKET',zh:'盘前'},rth:{cls:'rth',en:'LIVE · RTH',zh:'实盘'},post:{cls:'post',en:'POST-MARKET',zh:'盘后'},closed:{cls:'closed',en:'CLOSED',zh:'休市'}};
+var SESSION_COLORS={pre:'rgba(79,140,255,.12),rgba(79,140,255,.32),var(--link)',rth:'rgba(35,192,138,.14),rgba(35,192,138,.38),var(--up)',post:'rgba(139,147,167,.10),var(--line),var(--muted)',closed:'rgba(139,147,167,.08),var(--line),var(--muted)'};
+fetch('live/basket_pulse.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();})
+  .then(function(pulse){
+    var panel=document.getElementById('ftr-alloc-tape-panel');
+    if(!panel||!pulse)return;
+    panel.style.display='';
+    var session=pulse.session||'closed';
+    var stale=(pulse.baskets||[]).every(function(b){return b.stale;});
+    if(stale||session==='closed'){panel.style.opacity='0.65';}
+    // Session pill
+    var pillEl=document.getElementById('ftr-alloc-session-pill');
+    if(pillEl){
+      var si=SESSION_LABELS[session]||SESSION_LABELS.closed;
+      var sc=SESSION_COLORS[session]||SESSION_COLORS.closed;
+      var cols=sc.split(',');
+      pillEl.style.background=cols[0]||'';
+      pillEl.style.border='1px solid '+(cols[1]||'var(--line)');
+      pillEl.style.color=cols[2]||'var(--muted)';
+      pillEl.innerHTML=L(esc(si.en),esc(si.zh));
+    }
+    // as-of
+    var asofEl=document.getElementById('ftr-alloc-asof');
+    if(asofEl&&pulse.as_of_utc){
+      var ts=new Date(pulse.as_of_utc).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+      asofEl.innerHTML=L('as of '+esc(ts),'截至 '+esc(ts));
+    }
+    // AI-capex complex chip
+    var cxEl=document.getElementById('ftr-alloc-cx-chip');
+    if(cxEl&&!stale){
+      var cx=(pulse.complexes||[]).find(function(c){return c.complex_id==='ai_capex';});
+      if(cx&&cx.live_ew_chg_pct!=null){
+        var chg=cx.live_ew_chg_pct; var isG=chg>=0;
+        cxEl.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:7px;background:'+(isG?'rgba(35,192,138,.10)':'rgba(255,92,108,.07)')+';border:1px solid '+(isG?'rgba(35,192,138,.28)':'rgba(255,92,108,.25)')+';">'
+          +'<span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">'+L('AI-Capex','AI资本开支')+'</span>'
+          +'<span style="font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:'+(isG?'var(--up)':'var(--down)')+'">'+fmtPct(chg)+'</span>'
+          +(cx.only_green_complex?'<span style="font-size:10px;color:'+(isG?'var(--up)':'var(--down)')+'">'+L('only green complex','唯一上涨复合板块')+'</span>':'')
+          +'</span>';
+      }
+    }
+    // Top 3 movers vs strategic leader
+    var live=(pulse.baskets||[]).filter(function(b){return b.live_ew_chg_pct!=null&&b.tape_rank!=null;});
+    var stratLeaderName='{{d.headline.name if d.headline else ""}}';
+    var stratLeaderId='{{d.headline.id if d.headline else ""}}';
+    if(!stale&&live.length){
+      live.sort(function(a,b){return b.tape_rank-a.tape_rank;});
+      var n=live.length;
+      var top3=live.slice(0,3),bot3=live.slice(-3).reverse();
+      function mrow(b,rank){return '<div style="display:flex;align-items:center;gap:6px;padding:2px 0">'
+        +'<span style="font-size:10px;color:var(--muted);width:22px">#'+rank+'</span>'
+        +'<span style="flex:1;font-weight:500">'+(b.id||b.id)+'</span>'
+        +'<span style="font-weight:700;font-variant-numeric:tabular-nums;color:'+(b.live_ew_chg_pct>=0?'var(--up)':'var(--down)')+'">'+fmtPct(b.live_ew_chg_pct)+'</span>'
+        +'</div>';}
+      var moversEl=document.getElementById('ftr-alloc-movers');
+      if(moversEl){
+        moversEl.innerHTML='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--up);margin-bottom:4px">'+L('Top 3 leaders','前3领涨')+'</div>'
+          +top3.map(function(b){return mrow(b,b.tape_rank);}).join('')+'</div>'
+          +'<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--down);margin-bottom:4px">'+L('Bottom 3 laggards','后3领跌')+'</div>'
+          +bot3.map(function(b){return mrow(b,b.tape_rank);}).join('')+'</div>';
+      }
+      // Disagreement vs strategic leader
+      if(stratLeaderId){
+        var lb=live.find(function(b){return b.id===stratLeaderId;});
+        if(lb){
+          var leadRank=lb.tape_rank;
+          var isLeaderLagging=leadRank!=null&&leadRank<n*0.33;
+          if(isLeaderLagging){
+            var dEl=document.getElementById('ftr-alloc-disagree');
+            if(dEl)dEl.innerHTML='<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;background:rgba(251,146,60,.10);border:1px solid rgba(251,146,60,.38);color:var(--amber,#fb923c)">'
+              +L('tape rank #'+leadRank+' of '+n+' · strategic leader at tape rank #'+leadRank+' — discount; slow construction by design',
+                 '行情排名 #'+leadRank+'（共'+n+'）· 战略领跑者当前行情排名 #'+leadRank+' — 酌情折扣；结构性慢信号')
+              +'</span>';
+          }
+        }
+      }
+    }
+  }).catch(function(){/* absent file → panel stays hidden */});
+})();
+</script>
+
 {% if d.allocation.crash_overlay.active %}
 <div class="banner crash">⚠ <b>{{ t('Momentum-crash state', '动量崩盘状态') }}</b> — {{ t(
 	  'broad trend is broken and volatility is high. Exposure is cut to cash.',
