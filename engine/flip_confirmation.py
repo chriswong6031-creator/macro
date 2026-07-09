@@ -1,6 +1,6 @@
 """engine/flip_confirmation.py — T+1 sector-flip confirmation lens.
 
-Policy-Shock Regime program §4 W1-C (PR #2003).
+Policy-Shock Regime program §4 W1-C (PR #2008).
 
 A violent one-day sector-leadership flip is detected when the daily return
 spread between the defensive composite (equal-weight XLP/XLU/XLV) and the
@@ -10,27 +10,34 @@ trailing 252-day history of the same spread.
 The NIGHT AFTER a flip this module computes four T+1 attribution legs:
   spread_persistence  — sign of next-day spread (same direction? + magnitude)
   absorption_delta    — change in market_drivers absorption_pctile day-over-day
-  leadership_continuity — did the winning composite also win T+1?
+  leadership_continuity — did the winning composite also win T+1? (recorded field)
   breadth_follow_through — omitted honestly (no intraday breadth series available)
 
-Verdict vocabulary (descriptive only, never a recommendation):
-  CONFIRMED — spread_persistence same direction AND leadership_continuity
-  FADED     — spread_persistence opposite direction (regardless of magnitude)
-  MIXED     — all other combos (same direction but partial, missing legs)
+Verdict vocabulary v1.1 — 3-way taxonomy on z-scale follow-through
+(descriptive only, never a recommendation):
+  CONFIRMED — sign(t1_spread)==sign(event_spread) AND |t1_z| >= 0.5
+  MIXED     — sign(t1_spread)==sign(event_spread) AND |t1_z| < 0.5
+               (leadership continued but follow-through weak)
+  FADED     — opposite sign (regardless of magnitude)
 
-Ledger: data/flip_confirmation/events.jsonl — append-only, keep-first per event
-date. NIGHTLY is the sole writer.
+Ledger: data/flip_confirmation/events.jsonl — append-only, keep-first per
+event date. NIGHTLY is the sole writer. LEDGER STARTS EMPTY AT SHIP DATE
+(2026-07-09) — only events on or after SHIP_DATE are written here.
+The 2024→ historical scan is in-memory only, embedded in the site artifact.
 
 qledger family: flip_confirmation.v1
   scope: macro, key = "def_vs_off_spread"
   bench: XLP (defensive composite proxy; grader prices the composite leg)
   direction: +1 when defensive wins the flip, -1 when offense wins
-  horizons: 5d + 21d (graded by qledger at both; 63d not registered —
-             the T+1 descriptive verdict is the near-term claim)
+  horizons: 5d + 21d (graded by qledger at both; one claim row per horizon)
+  timestamp_quality: CRAWL_BOUNDED (the z-score fires when the bar closes;
+    that closing price IS the event — no look-ahead, immediately gradeable)
 
 Historical descriptive scan: detect_since() sweeps 2024→ and returns all
 flip events with their T+1 verdicts for the UI base-rate table. This is
 labeled DESCRIPTIVE and never constitutes a registered claim.
+
+Amendment PS-A2 (2026-07-09): see research/POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md §4 W1-C.
 """
 from __future__ import annotations
 
@@ -54,6 +61,10 @@ OFFENSE   = ("SMH", "XLK")           # equal-weight offense composite
 Z_THRESH   = 2.5     # |z| >= this → flip event
 Z_WINDOW   = 252     # history used for z-score normalisation
 Z_MINPER   = 126     # min_periods so early history is excluded gracefully
+
+# SHIP_DATE: ledger (events.jsonl) and qledger writes start here.
+# Events before this date appear in the descriptive scan (site artifact) only.
+SHIP_DATE = "2026-07-09"
 
 LEDGER_DIR  = ("data", "flip_confirmation")
 LEDGER_NAME = "events.jsonl"
@@ -92,7 +103,15 @@ def _composites() -> tuple[pd.Series, pd.Series] | tuple[None, None]:
 # ── core computation ───────────────────────────────────────────────────────────
 
 def _spread_z(def_comp: pd.Series, off_comp: pd.Series) -> tuple[pd.Series, pd.Series]:
-    """1-day return spread (defensive − offense) and its rolling z-score."""
+    """1-day return spread (defensive − offense) and its rolling z-score.
+
+    NOTE: the rolling window is trailing-inclusive of the current bar, meaning
+    the event-day bar itself is included in the mean/std used to normalise it.
+    This is conservative (self-inclusion slightly deflates extreme z-values) and
+    introduces no look-ahead (the bar is already closed when we compute). The
+    event set is identical to the window-excluded alternative on all historical
+    test dates; this choice is documented, not changed. (Amendment PS-A2.)
+    """
     def_ret = def_comp.pct_change()
     off_ret  = off_comp.pct_change()
     spread   = def_ret - off_ret
@@ -127,21 +146,24 @@ def _absorption_delta(event_date: pd.Timestamp,
         return None
 
 
-def _verdict_for_t1(*, event_z: float, t1_spread: float,
-                    leadership_continuity: bool) -> str:
-    """Descriptive vocabulary: CONFIRMED | FADED | MIXED.
+def _verdict_for_t1(*, event_z: float, t1_spread: float, t1_z: float) -> str:
+    """Descriptive vocabulary v1.1: CONFIRMED | MIXED | FADED.
 
-    CONFIRMED: the winning side continued (leadership_continuity) AND the
-               spread kept the same sign (spread_persistence positive).
-    FADED:     the spread reversed sign (opposite direction next day).
-    MIXED:     leadership continued but the spread magnitude shrunk, or
-               any partial-data edge case.
+    3-way taxonomy on z-scale follow-through (PS-A2, 2026-07-09):
+      CONFIRMED — sign(t1_spread)==sign(event_spread) AND |t1_z| >= 0.5
+                  (leadership continued with measurable follow-through)
+      MIXED     — sign(t1_spread)==sign(event_spread) AND |t1_z| < 0.5
+                  (leadership continued but follow-through weak / subdued)
+      FADED     — opposite sign (reversal, regardless of magnitude)
+
+    t1_z is the T+1 spread z-score from the same rolling apparatus used for
+    event detection, looked up at the T+1 bar date.
     """
     same_sign = (event_z > 0 and t1_spread > 0) or (event_z < 0 and t1_spread < 0)
-    if same_sign and leadership_continuity:
-        return "CONFIRMED"
     if not same_sign:
         return "FADED"
+    if abs(t1_z) >= 0.5:
+        return "CONFIRMED"
     return "MIXED"
 
 
@@ -172,20 +194,25 @@ def _build_event(event_date: pd.Timestamp,
     if len(later) == 0:
         return event   # flip happened today — T+1 not yet available
 
-    t1_date  = later[0]
+    t1_date   = later[0]
     t1_spread = float(spread.loc[t1_date])
     t1_dir    = "defensive" if t1_spread > 0 else "offense"
     leadership_continuity = (t1_dir == direction)
+
+    # T+1 z-score from the same rolling apparatus (PS-A2 v1.1 verdict rule)
+    t1_z_val = float(z.loc[t1_date]) if t1_date in z.index else 0.0
+
     abs_delta = _absorption_delta(event_date, t1_date)
 
     verdict = _verdict_for_t1(
         event_z=z_val,
         t1_spread=t1_spread,
-        leadership_continuity=leadership_continuity,
+        t1_z=t1_z_val,
     )
 
     event["t1_attribution"] = {
         "t1_date": t1_date.date().isoformat(),
+        "t1_z": round(t1_z_val, 4),
         "spread_persistence": {
             "same_direction": leadership_continuity,
             "magnitude": round(abs(t1_spread), 4),
@@ -237,7 +264,7 @@ def snapshot() -> dict[str, Any]:
         spread, z = _spread_z(def_comp, off_comp)
         asof = spread.index[-1].date().isoformat()
 
-        # full descriptive scan since 2024
+        # full descriptive scan since 2024 (in-memory only; never writes data/)
         all_events = detect_since("2024-01-01")
 
         # base rate counts (events where T+1 was available, i.e. verdict is not None)
@@ -308,15 +335,24 @@ def _load_ledger(path: Path) -> dict[str, dict]:
 def append_ledger(events: list[dict], root: Path | None = None) -> int:
     """Append new events to the ledger (keep-first per event_date).
 
+    Only writes events with event_date >= SHIP_DATE.
     Returns the number of NEW rows written.
     """
     path = _ledger_path(root)
     existing = _load_ledger(path)
     written = 0
+    ship_ts = pd.Timestamp(SHIP_DATE).date()
     with path.open("a", encoding="utf-8") as fh:
         for ev in events:
             key = str(ev.get("event_date", ""))
             if not key or key in existing:
+                continue
+            # forward-only: skip any event before the ship date
+            try:
+                ev_date = date.fromisoformat(key)
+            except ValueError:
+                continue
+            if ev_date < ship_ts:
                 continue
             fh.write(json.dumps(ev, ensure_ascii=False, default=_json_default) + "\n")
             existing[key] = ev
@@ -327,7 +363,9 @@ def append_ledger(events: list[dict], root: Path | None = None) -> int:
 # ── qledger registration ───────────────────────────────────────────────────────
 
 def register_claims(events: list[dict], root: Path | None = None) -> list[dict]:
-    """Register one qledger claim per flip event.
+    """Register two qledger claims per flip event (5d + 21d horizons).
+
+    Only registers events with event_date >= SHIP_DATE (forward-only accrual).
 
     Claim design:
       desk    : flip_confirmation.v1
@@ -335,45 +373,52 @@ def register_claims(events: list[dict], root: Path | None = None) -> list[dict]:
       bench   : XLP  (defensive composite proxy — the claim tests whether the
                 defensive side outperforms; XLP is the largest / most-liquid leg)
       direction: +1 when defensive wins, -1 when offense wins
-      horizons: 5d + 21d (T+1 confirmed → spread persistence over the week/month)
-      timestamp_quality: SNAPSHOT_DATE (the z-score is computed on the same bar
-                         as the event; no look-ahead but it is the snapshot day)
+      horizons: 5d + 21d (one claim row per horizon per event)
+      timestamp_quality: CRAWL_BOUNDED — the z-score fires when the daily bar
+                closes; the closing price IS the event (no look-ahead, no
+                embargo needed). CRAWL_BOUNDED claims are gradeable=True so
+                the standard qledger grading machinery matures them at 5d/21d.
 
     Macro scope REQUIRES a named bench (D4 validation rule). We use XLP as the
     machine-checkable observable: it tracks the defensive composite, and the
     grader can verify whether XLP outperformed XLK/SMH over the grading horizon.
-
-    NOTE: SNAPSHOT_DATE claims are display-only per qledger.TIMESTAMP_QUALITY —
-    they accrue as claim rows but the grader's embargo check marks them
-    `gradeable=False`. We register them to populate the family ledger so the
-    track-record chip shows the accrual count. Forward-graded rows (from the
-    daily verdict alignment check) will use CRAWL_BOUNDED once that harness
-    is built (a follow-on wave of this program).
     """
     from engine import qledger as q  # local import — avoids circular at module level
 
+    ship_ts = pd.Timestamp(SHIP_DATE).date()
     claims_in = []
     for ev in events:
         asof = ev.get("event_date")
         if not asof:
             continue
+        # forward-only: skip historical events (descriptive scan only)
+        try:
+            ev_date = date.fromisoformat(str(asof))
+        except ValueError:
+            continue
+        if ev_date < ship_ts:
+            continue
+
         direction = 1 if ev.get("direction") == "defensive" else -1
-        claims_in.append(q.make_claim(
-            desk=QLEDGER_DESK,
-            asof=asof,
-            scope_type="macro",
-            scope_key="def_vs_off_spread",
-            direction=direction,
-            horizon_d=21,       # primary grading clock: 21d spread persistence
-            timestamp_quality="SNAPSHOT_DATE",
-            bench="XLP",        # D4 requirement: macro claims must name a bench
-            claim_family=QLEDGER_FAMILY,
-            extra={
-                "z": ev.get("z"),
-                "flip_direction": ev.get("direction"),
-                "verdict": ev.get("verdict"),
-            },
-        ))
+        extra = {
+            "z": ev.get("z"),
+            "flip_direction": ev.get("direction"),
+            "verdict": ev.get("verdict"),
+        }
+        # one claim row per horizon (5d and 21d)
+        for horizon in (5, 21):
+            claims_in.append(q.make_claim(
+                desk=QLEDGER_DESK,
+                asof=asof,
+                scope_type="macro",
+                scope_key="def_vs_off_spread",
+                direction=direction,
+                horizon_d=horizon,
+                timestamp_quality="CRAWL_BOUNDED",
+                bench="XLP",        # D4 requirement: macro claims must name a bench
+                claim_family=QLEDGER_FAMILY,
+                extra=extra,
+            ))
     if not claims_in:
         return []
     return q.register_batch(claims_in, root=root, dedupe=True)
@@ -382,13 +427,19 @@ def register_claims(events: list[dict], root: Path | None = None) -> list[dict]:
 # ── nightly entry point ────────────────────────────────────────────────────────
 
 def nightly_run(root: Path | None = None) -> dict[str, Any]:
-    """Nightly build step: detect events, append ledger, register qledger claims.
+    """Nightly build step: detect events >= SHIP_DATE, append ledger, register
+    gradeable qledger claims at 5d + 21d horizons.
+
+    The 2024→ descriptive scan is run once for the summary stats but events
+    before SHIP_DATE are NEVER written to data/; they appear only in the site
+    artifact (flip_confirmation_data.json `descriptive_scan` block).
 
     Called by scripts/build_flip_confirmation.py.
     Returns a summary dict for the build log.
     """
     try:
-        events = detect_since("2024-01-01")  # descriptive scan; ledger starts empty at ship
+        # full descriptive scan for stats; ledger/claims filtered to >= SHIP_DATE
+        events = detect_since("2024-01-01")
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": str(exc), "n_events": 0, "n_written": 0}
 

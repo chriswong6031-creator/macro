@@ -1,6 +1,6 @@
 """Tests for engine/flip_confirmation.py — T+1 sector-flip confirmation lens.
 
-Policy-Shock Regime program §4 W1-C (PR #2003).
+Policy-Shock Regime program §4 W1-C (PR #2008, PS-A2).
 
 All tests are hermetic: synthetic price series monkeypatched onto the store
 layer, tmp_path for ledger and qledger stores. No live data, no network,
@@ -31,10 +31,15 @@ def _make_prices(start: str = "2022-01-01", n: int = 400,
 
 def _make_store(*, def_drift: float = 0.0, off_drift: float = 0.0,
                 n: int = 400, inject_flip: bool = False,
-                flip_day_offset: int = 300) -> dict:
+                flip_day_offset: int = 300,
+                t1_continuation: bool = True) -> dict:
     """Return a synthetic store dict keyed by ticker.
 
     When inject_flip=True, inserts a large defensive spike on flip_day_offset.
+    When t1_continuation=True, T+1 (flip_day_offset+1) also has a mild
+    defensive continuation (same-sign, |z| >= 0.5 → CONFIRMED territory).
+    When t1_continuation=False, T+1 has defensive continuation but at a very
+    small magnitude (same-sign, |z| < 0.5 → MIXED territory).
     """
     store: dict[str, pd.Series] = {}
     tickers = ["XLP", "XLU", "XLV", "SMH", "XLK"]
@@ -49,10 +54,20 @@ def _make_store(*, def_drift: float = 0.0, off_drift: float = 0.0,
         for ticker in ("XLP", "XLU", "XLV"):
             arr = store[ticker].values.copy()
             arr[idx_pos] = arr[idx_pos - 1] * 1.08
+            if t1_continuation:
+                # mild continuation on T+1 (small positive for defensive)
+                arr[idx_pos + 1] = arr[idx_pos] * 1.005
+            else:
+                # tiny continuation on T+1 — same sign but very small move
+                arr[idx_pos + 1] = arr[idx_pos] * 1.0002
             store[ticker] = pd.Series(arr, index=store[ticker].index)
         for ticker in ("SMH", "XLK"):
             arr = store[ticker].values.copy()
             arr[idx_pos] = arr[idx_pos - 1] * 0.92
+            if t1_continuation:
+                arr[idx_pos + 1] = arr[idx_pos] * 0.995
+            else:
+                arr[idx_pos + 1] = arr[idx_pos] * 0.9998
             store[ticker] = pd.Series(arr, index=store[ticker].index)
 
     return store
@@ -77,6 +92,22 @@ def patch_store(monkeypatch):
 def patch_store_no_flip(monkeypatch):
     """Monkeypatch with NO injected flip (all returns within ±1σ window)."""
     store = _make_store(inject_flip=False)
+
+    def _mock_close(ticker: str) -> pd.Series | None:
+        s = store.get(ticker)
+        if s is None:
+            return None
+        return pd.DataFrame({"close": s})["close"]
+
+    monkeypatch.setattr("engine.flip_confirmation._close", _mock_close)
+    return store
+
+
+@pytest.fixture
+def patch_store_mixed(monkeypatch):
+    """Monkeypatch: flip injected but T+1 has same-sign with tiny magnitude
+    (designed to produce a MIXED verdict where |t1_z| < 0.5)."""
+    store = _make_store(inject_flip=True, flip_day_offset=300, t1_continuation=False)
 
     def _mock_close(ticker: str) -> pd.Series | None:
         s = store.get(ticker)
@@ -129,29 +160,96 @@ def test_spread_z_flip_detected(patch_store):
     assert flip_mask.any(), "Expected at least one flip event after injecting a spike"
 
 
-# ── verdict logic ─────────────────────────────────────────────────────────────
+# ── verdict logic v1.1 (PS-A2) ───────────────────────────────────────────────
 
-@pytest.mark.parametrize("event_z, t1_spread, leadership, expected", [
-    # Defensive flip, same direction next day → CONFIRMED
-    (3.0,  0.02,  True,  "CONFIRMED"),
-    # Offense flip, same direction next day → CONFIRMED
-    (-3.0, -0.02, True,  "CONFIRMED"),
+@pytest.mark.parametrize("event_z, t1_spread, t1_z, expected", [
+    # Defensive flip, same direction, strong t1_z → CONFIRMED
+    (3.0,  0.02,   1.2,  "CONFIRMED"),
+    # Offense flip, same direction, strong t1_z → CONFIRMED
+    (-3.0, -0.02, -0.8,  "CONFIRMED"),
+    # Defensive flip, same direction, weak t1_z (< 0.5) → MIXED
+    (3.0,  0.005,  0.3,  "MIXED"),
+    # Offense flip, same direction, weak t1_z (< 0.5) → MIXED
+    (-3.0, -0.005,-0.2,  "MIXED"),
     # Defensive flip, reversed next day → FADED
-    (3.0,  -0.02, False, "FADED"),
+    (3.0,  -0.02, -1.0,  "FADED"),
     # Offense flip, reversed next day → FADED
-    (-3.0,  0.02, False, "FADED"),
-    # Same direction but leadership says True (edge case shouldn't arise) → CONFIRMED
-    (3.0,  0.001, True,  "CONFIRMED"),
-    # Minimal positive spread, but leadership False → FADED
-    (3.0,  -0.001, False, "FADED"),
+    (-3.0,  0.02,  0.9,  "FADED"),
+    # Exact boundary: |t1_z| == 0.5 → CONFIRMED (>= threshold)
+    (3.0,  0.01,   0.5,  "CONFIRMED"),
+    # Just below boundary: |t1_z| = 0.49 → MIXED
+    (3.0,  0.01,   0.49, "MIXED"),
+    # Strong reversal: t1_z > 0 but event_z < 0 (opposite signs) → FADED
+    (-3.0,  0.02,  0.8,  "FADED"),
 ])
-def test_verdict_logic(event_z, t1_spread, leadership, expected):
+def test_verdict_logic(event_z, t1_spread, t1_z, expected):
+    """All three verdict states are reachable through the v1.1 taxonomy."""
     result = fc._verdict_for_t1(
         event_z=event_z,
         t1_spread=t1_spread,
-        leadership_continuity=leadership,
+        t1_z=t1_z,
     )
     assert result == expected
+
+
+def test_confirmed_reachable_via_pipeline(patch_store, monkeypatch):
+    """CONFIRMED is reachable via the real pipeline (same-sign + |t1_z| >= 0.5)."""
+    monkeypatch.setattr("engine.flip_confirmation._absorption_delta",
+                        lambda *a, **k: None)
+    events = fc.detect_since("2022-01-01")
+    verdicts = {e["verdict"] for e in events if e["verdict"] is not None}
+    # With the default store (t1_continuation=True), expect CONFIRMED present
+    assert "CONFIRMED" in verdicts, (
+        f"CONFIRMED not found in pipeline verdicts: {verdicts}; events: {len(events)}"
+    )
+
+
+def test_mixed_reachable_via_pipeline(patch_store_mixed, monkeypatch):
+    """MIXED is reachable via the real pipeline (same-sign + |t1_z| < 0.5).
+
+    Uses the patch_store_mixed fixture where T+1 has a tiny same-sign move
+    that should produce |t1_z| < 0.5.
+    """
+    monkeypatch.setattr("engine.flip_confirmation._absorption_delta",
+                        lambda *a, **k: None)
+    events = fc.detect_since("2022-01-01")
+    graded = [e for e in events if e["verdict"] is not None]
+    verdicts = {e["verdict"] for e in graded}
+    # MIXED is produced when same-sign continuation is very weak
+    assert "MIXED" in verdicts, (
+        f"MIXED not found in pipeline verdicts: {verdicts}. "
+        f"t1_z values: {[e['t1_attribution'].get('t1_z') for e in graded if e['t1_attribution']]}"
+    )
+
+
+def test_faded_reachable_via_pipeline(monkeypatch):
+    """FADED is reachable via the real pipeline (opposite sign on T+1)."""
+    # Build a store where T+1 flips to opposite direction
+    store = _make_store(inject_flip=True, flip_day_offset=300)
+    # Override T+1 for defensive tickers to go DOWN (offense wins T+1)
+    idx_pos = 301
+    for ticker in ("XLP", "XLU", "XLV"):
+        arr = store[ticker].values.copy()
+        arr[idx_pos] = arr[idx_pos - 1] * 0.97  # defensive drops on T+1
+        store[ticker] = pd.Series(arr, index=store[ticker].index)
+    for ticker in ("SMH", "XLK"):
+        arr = store[ticker].values.copy()
+        arr[idx_pos] = arr[idx_pos - 1] * 1.02  # offense rallies on T+1
+        store[ticker] = pd.Series(arr, index=store[ticker].index)
+
+    def _mock_close(ticker: str) -> pd.Series | None:
+        s = store.get(ticker)
+        if s is None:
+            return None
+        return pd.DataFrame({"close": s})["close"]
+
+    monkeypatch.setattr("engine.flip_confirmation._close", _mock_close)
+    monkeypatch.setattr("engine.flip_confirmation._absorption_delta",
+                        lambda *a, **k: None)
+
+    events = fc.detect_since("2022-01-01")
+    verdicts = {e["verdict"] for e in events if e["verdict"] is not None}
+    assert "FADED" in verdicts, f"FADED not found in verdicts: {verdicts}"
 
 
 # ── build_event ────────────────────────────────────────────────────────────────
@@ -172,6 +270,8 @@ def test_build_event_with_t1(patch_store):
     # T+1 should be populated (flip is not the last bar)
     assert ev["t1_attribution"] is not None
     assert ev["verdict"] in ("CONFIRMED", "FADED", "MIXED")
+    # t1_z should be present in attribution
+    assert "t1_z" in ev["t1_attribution"]
 
 
 def test_build_event_no_t1(patch_store):
@@ -236,10 +336,12 @@ def test_snapshot_structure(patch_store, monkeypatch):
 
 # ── ledger ────────────────────────────────────────────────────────────────────
 
-def test_append_ledger_keep_first(tmp_path):
+def test_append_ledger_keep_first(tmp_path, monkeypatch):
+    # Override SHIP_DATE so test events (with future dates) pass the filter
+    monkeypatch.setattr("engine.flip_confirmation.SHIP_DATE", "2026-07-09")
     events = [
-        {"event_date": "2024-07-17", "z": 4.4, "direction": "defensive", "verdict": "FADED"},
-        {"event_date": "2024-07-24", "z": 3.6, "direction": "defensive", "verdict": "CONFIRMED"},
+        {"event_date": "2026-07-17", "z": 4.4, "direction": "defensive", "verdict": "FADED"},
+        {"event_date": "2026-07-24", "z": 3.6, "direction": "defensive", "verdict": "CONFIRMED"},
     ]
     n = fc.append_ledger(events, root=tmp_path)
     assert n == 2
@@ -252,16 +354,93 @@ def test_append_ledger_keep_first(tmp_path):
     p = tmp_path / "data" / "flip_confirmation" / "events.jsonl"
     rows = [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
     assert len(rows) == 2
-    assert rows[0]["event_date"] == "2024-07-17"
+    assert rows[0]["event_date"] == "2026-07-17"
 
 
-def test_append_ledger_new_event(tmp_path):
-    ev1 = [{"event_date": "2024-07-17", "z": 4.4, "direction": "defensive", "verdict": "FADED"}]
+def test_append_ledger_new_event(tmp_path, monkeypatch):
+    monkeypatch.setattr("engine.flip_confirmation.SHIP_DATE", "2026-07-09")
+    ev1 = [{"event_date": "2026-07-17", "z": 4.4, "direction": "defensive", "verdict": "FADED"}]
     fc.append_ledger(ev1, root=tmp_path)
 
-    ev2 = [{"event_date": "2024-09-03", "z": 3.7, "direction": "defensive", "verdict": "CONFIRMED"}]
+    ev2 = [{"event_date": "2026-09-03", "z": 3.7, "direction": "defensive", "verdict": "CONFIRMED"}]
     n = fc.append_ledger(ev2, root=tmp_path)
     assert n == 1
+
+
+def test_append_ledger_blocks_pre_ship_date(tmp_path, monkeypatch):
+    """Events before SHIP_DATE must NOT be written to the ledger."""
+    monkeypatch.setattr("engine.flip_confirmation.SHIP_DATE", "2026-07-09")
+    events = [
+        # before SHIP_DATE — must be blocked
+        {"event_date": "2024-07-17", "z": 4.4, "direction": "defensive", "verdict": "FADED"},
+        {"event_date": "2026-07-02", "z": 3.0, "direction": "defensive", "verdict": "FADED"},
+        # on/after SHIP_DATE — must be written
+        {"event_date": "2026-07-09", "z": 3.1, "direction": "defensive", "verdict": "CONFIRMED"},
+        {"event_date": "2026-07-24", "z": 3.6, "direction": "defensive", "verdict": "MIXED"},
+    ]
+    n = fc.append_ledger(events, root=tmp_path)
+    assert n == 2, f"Expected 2 rows written (post-ship-date only), got {n}"
+
+    p = tmp_path / "data" / "flip_confirmation" / "events.jsonl"
+    rows = [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+    assert len(rows) == 2
+    dates = {r["event_date"] for r in rows}
+    assert "2024-07-17" not in dates
+    assert "2026-07-02" not in dates
+    assert "2026-07-09" in dates
+    assert "2026-07-24" in dates
+
+
+# ── register_claims — forward-only and gradeable ──────────────────────────────
+
+def test_register_claims_blocks_pre_ship_date(tmp_path, monkeypatch):
+    """Claims for events before SHIP_DATE must not be registered."""
+    monkeypatch.setattr("engine.flip_confirmation.SHIP_DATE", "2026-07-09")
+    events = [
+        {"event_date": "2024-07-17", "z": 4.4, "direction": "defensive", "verdict": "FADED"},
+        {"event_date": "2026-07-09", "z": 3.1, "direction": "defensive", "verdict": "CONFIRMED"},
+    ]
+    registered = fc.register_claims(events, root=tmp_path)
+    # Only the post-ship-date event should produce claims (2 horizons → 2 rows)
+    open_claims = [r for r in registered if r.get("status") == "open"]
+    assert len(open_claims) == 2, (
+        f"Expected 2 open claims (5d + 21d for the post-ship event), got {len(open_claims)}"
+    )
+    for c in open_claims:
+        assert c["timestamp_quality"] == "CRAWL_BOUNDED"
+        assert c["asof"] == "2026-07-09"
+
+
+def test_register_claims_gradeable_quality(tmp_path, monkeypatch):
+    """Forward claims must use CRAWL_BOUNDED (gradeable=True)."""
+    monkeypatch.setattr("engine.flip_confirmation.SHIP_DATE", "2026-07-09")
+    from engine import qledger as q
+    events = [
+        {"event_date": "2026-07-09", "z": 3.1, "direction": "defensive", "verdict": "CONFIRMED"},
+    ]
+    registered = fc.register_claims(events, root=tmp_path)
+    for c in registered:
+        tq = c.get("timestamp_quality")
+        assert tq == "CRAWL_BOUNDED", f"Expected CRAWL_BOUNDED, got {tq!r}"
+        # Verify gradeable=True per the qledger enum
+        assert q.TIMESTAMP_QUALITY[tq][1] is True, (
+            f"{tq} is not gradeable per qledger.TIMESTAMP_QUALITY"
+        )
+
+
+def test_register_claims_two_horizons_per_event(tmp_path, monkeypatch):
+    """Each post-ship event should produce exactly 2 claim rows (5d + 21d)."""
+    monkeypatch.setattr("engine.flip_confirmation.SHIP_DATE", "2026-07-09")
+    events = [
+        {"event_date": "2026-07-09", "z": 3.1, "direction": "defensive", "verdict": "CONFIRMED"},
+        {"event_date": "2026-07-11", "z": 2.8, "direction": "offense", "verdict": "FADED"},
+    ]
+    registered = fc.register_claims(events, root=tmp_path)
+    open_claims = [r for r in registered if r.get("status") == "open"]
+    # 2 events × 2 horizons = 4 open claims
+    assert len(open_claims) == 4, f"Expected 4 open claims, got {len(open_claims)}"
+    horizons = sorted({c["horizon_d"] for c in open_claims})
+    assert horizons == [5, 21]
 
 
 # ── nightly_run ────────────────────────────────────────────────────────────────
@@ -279,6 +458,25 @@ def test_nightly_run_ok(patch_store, tmp_path, monkeypatch):
     assert summary["confirmed"] + summary["faded"] + summary["mixed"] == summary["n_events"] - (
         summary["n_events"] - sum([summary["confirmed"], summary["faded"], summary["mixed"]])
     )
+
+
+def test_nightly_run_no_backdated_writes(patch_store, tmp_path, monkeypatch):
+    """nightly_run must NOT write historical events to the ledger."""
+    monkeypatch.setattr("engine.flip_confirmation._absorption_delta",
+                        lambda *a, **k: None)
+    monkeypatch.setattr("engine.flip_confirmation.register_claims",
+                        lambda *a, **k: [])
+    # SHIP_DATE is 2026-07-09; synthetic store starts 2022-01-01 → all historical
+    # (synthetic events will all be pre-ship-date), so ledger must stay empty
+    summary = fc.nightly_run(root=tmp_path)
+    assert summary["ok"] is True
+    ledger_path = tmp_path / "data" / "flip_confirmation" / "events.jsonl"
+    # Either doesn't exist or is empty (no pre-ship rows written)
+    if ledger_path.exists():
+        content = ledger_path.read_text().strip()
+        assert content == "", (
+            f"Ledger should be empty for pre-ship events; got: {content[:200]}"
+        )
 
 
 def test_nightly_run_missing_prices(monkeypatch, tmp_path):

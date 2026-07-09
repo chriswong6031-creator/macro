@@ -129,6 +129,8 @@ Producer: new `engine/flip_confirmation.py` + nightly build step.
   did the T+1 verdict align with the subsequent spread direction. Forward accrual only.
 - Display block near the market_drivers card on the US market-state surface, EN/ZH.
 
+**Amendment PS-A2 (2026-07-09, logged per PS-R9):** Opus review of PR #2008 found (a) the v1 build backfilled the events ledger + qledger from 2024 and re-backfilled nightly with ungradeable SNAPSHOT_DATE claims, contradicting forward-only accrual — fixed: ship-date cutoff 2026-07-09 on all data/ writes, 2024→ scan is site-artifact descriptive only, forward claims registered gradeable at 5d/21d; (b) the CONFIRMED/FADED/MIXED taxonomy was degenerate (MIXED unreachable) — fixed: v1.1 verdict rule CONFIRMED = same-sign AND |t1_z| >= 0.5, MIXED = same-sign AND |t1_z| < 0.5, FADED = opposite sign. Minor: event-day z windows are trailing-inclusive of the current bar (conservative, no look-ahead; event set identical when excluded) — documented, not changed.
+
 ### W1-D (PR-5) — D4 doctrine copy + policy staleness + desk cadence
 
 - Port the doctrine text from §7 VERBATIM (EN/ZH) onto the Neural Web doctrine surface
