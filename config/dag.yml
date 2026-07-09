@@ -1086,6 +1086,8 @@ lanes:
         module: scripts.build_live_overlay
       - id: build_risk_state
         module: scripts.build_risk_state
+      - id: build_basket_pulse
+        module: scripts.build_basket_pulse
 
   # ── weekly.yml / weekly-report ──────────────────────────────────────────
   - workflow: .github/workflows/weekly.yml
@@ -1285,12 +1287,13 @@ divergences:
 
   - lanes: [intraday-fastpath]
     differs: >
-      Only 3 steps (refresh_regime_if_stale, build_live_overlay, build_risk_state); all
-      nightly band modules absent.
+      Only 4 steps (refresh_regime_if_stale, build_live_overlay, build_risk_state,
+      build_basket_pulse); all nightly band modules absent.
     reason: >
       Documented in intraday-fastpath.yml header: the fast/slow split — only price-driven
-      leaves run every 30 min during RTH; the slow regime/conviction/brain layer stays in
-      the nightly. The three steps are the complete fast path by design.
+      leaves run every 30 min during RTH (basket_pulse also premarket from 07:00 ET);
+      the slow regime/conviction/brain layer stays in the nightly. The four steps are
+      the complete fast path by design (FTR W2, masterplan FT-R5).
     evidence: intraday-fastpath.yml:1-17
 
   - lanes: [sentinel, commodity-sentinel, whitehouse-sentinel]
