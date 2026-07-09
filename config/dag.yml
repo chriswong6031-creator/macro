@@ -1857,3 +1857,32 @@ modules:
       tier only (horizon_role=context); candidates NEVER rank or score anything
       (R-CI5, R-CI6, Article 2). Dedupe against oracle/species/machine/trial-ledger
       + own archive (dead-stays-dead). Decay after 60 days.
+
+  # ── daily.yml / causal ───────────────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: causal
+    steps:
+      - id: build_causal_inventory
+        module: scripts.build_causal_inventory
+        note: >
+          CHF W3 — nightly feature inventory refresh (CHF-R4). Reads
+          config/causal_priors.yml and all registered feature stores.
+          Outputs data/neuralweb/causal_feature_inventory.json and refreshes
+          the compiled kill-mask mirror. Non-fatal (always exits 0).
+      - id: build_causal_frontier
+        module: scripts.build_causal_frontier
+        note: >
+          CHF W3 — nightly drift-only step (CHF-R8). No batteries. Builds
+          frontier coverage map, surprise queue, and lab state (data/ + site/
+          copies). Inputs: causal_feature_inventory.json, causal_edges.jsonl,
+          causal_nulls.jsonl. Outputs: causal_frontier.json,
+          causal_surprise_queue.jsonl, causal_lab_state.json (×2). Non-fatal.
+      - id: build_causal_edges
+        module: scripts.build_causal_edges
+        note: >
+          CHF W3 — weekly bounded battery (CHF-R8, K≤40). Tuesday-gated
+          (date +%u == 2); no-op on other days. Runs CHF-R5 estimator suite
+          (HAC, cross-ticker permutation, lag placebo, time-shift placebo
+          DT-R14, circular block bootstrap, era split DT-R16) over top-K
+          unexplored/accruing frontier cells. Writes causal_edges.jsonl +
+          causal_nulls.jsonl + data/trial_ledger.jsonl. Non-fatal.

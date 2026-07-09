@@ -1,0 +1,65 @@
+{
+  "schema": "neuralweb.causal_lab_state.v1",
+  "asof": "2026-07-09T19:04:08Z",
+  "heartbeat": {
+    "program": "CHF",
+    "wave": "W3",
+    "status": "live",
+    "description": "Causal Hypothesis Factory \u2014 deterministic edge scout, null library, frontier coverage map, and surprise queue. All artifacts are display-tier; no authority surfaces."
+  },
+  "funnel": {
+    "edges_by_verdict": {
+      "insufficient_power": 3,
+      "null": 1
+    },
+    "total_edges": 4,
+    "nulls_count": 4,
+    "mechanisms_by_status": {},
+    "total_mechanisms": 0
+  },
+  "causal_scan": {
+    "cumulative_width": 24,
+    "description": "Cumulative distinct cells logged to the causal_scan TrialLedger family. Printed on every surface per CHF-R3 launder-proof multiplicity law."
+  },
+  "frontier": {
+    "total_cells": 42,
+    "cells_by_state": {
+      "unexplored": 41,
+      "null_basin": 1
+    },
+    "target_families": [
+      "regime_risk",
+      "entry_quality"
+    ],
+    "environments": [
+      "full",
+      "high_vol_regime",
+      "low_vol_regime"
+    ],
+    "value_heuristic_formula": "score = UNEXPLORED_BONUS(10 if unexplored) + DATA_PRESENT_BONUS(5 if present) + ERA_BREADTH_BONUS(min(era_coverage_len, 4) * 1.0) - NULL_BASIN_PENALTY(20 if null_basin) - KILLED_PENALTY(100 if killed)"
+  },
+  "surprise_queue": {
+    "size": 0,
+    "stalest_source": "",
+    "stalest_source_asof": ""
+  },
+  "drift_events": [],
+  "llm_lane": {
+    "status": "awaiting_phase_a",
+    "description": "LLM brainstorm lane is INACTIVE. Phase-A gate requires: >= 1 operator-triggered cycle with >= 5 schema-valid cards filed, >= 1 candidate through exit (a) or (b), and zero guard violations. Then operator may flip auto_loop: true in config/causal_llm.yml."
+  },
+  "data_absent_notes": [
+    "entry_quality target family unavailable: replay_boarded.parquet not found (set REPLAY_BOARDED_PATH env var to runner-local path)"
+  ],
+  "authority": {
+    "tier": "shadow",
+    "display_only": true,
+    "not_a_signal": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "scored_path_surfaces": [],
+    "description": "CHF artifacts are epistemic infrastructure \u2014 causal-candidate screened, not gauntleted. No surface may rank, gate, size, or escalate any money-path decision."
+  }
+}
