@@ -136,6 +136,14 @@ def build_envelope(campaigns_raw: list[dict], session_date: str, asof: str) -> d
         # Ensure 'note' key is present (nullable)
         if "note" not in campaign:
             campaign["note"] = None
+        # UI types dte/ask_share as non-nullable numbers; the aggregator emits
+        # None for dte (missing session_date) and ask_share (zero mapped
+        # premium). Coerce to the contract's safe values: dte 0, ask_share 0.5
+        # (the "contested/no signal" anchor — same meaning as side=mixed).
+        if campaign.get("dte") is None:
+            campaign["dte"] = 0
+        if campaign.get("ask_share") is None:
+            campaign["ask_share"] = 0.5
         campaigns.append(campaign)
 
     return {

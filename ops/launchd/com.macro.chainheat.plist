@@ -9,17 +9,28 @@
   Chain Heat card never shows a spinner off-hours.
 
   INSTALL (as the mac user, not root):
+    # 1. Create TCC-safe deploy worktree (launchd cannot exec ~/Documents):
+    git -C "/Users/chriswong/Documents/Cluade/Macro Dashboard" worktree add \
+        -B ops/chainheat-deploy /Users/chriswong/chainheat-ops-wt origin/main
+    cp "/Users/chriswong/Documents/Cluade/Macro Dashboard/.env" \
+        /Users/chriswong/chainheat-ops-wt/.env
+    # 2. Copy and load:
     cp ops/launchd/com.macro.chainheat.plist ~/Library/LaunchAgents/
-    launchctl load ~/Library/LaunchAgents/com.macro.chainheat.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.macro.chainheat.plist
 
   UNINSTALL:
-    launchctl unload ~/Library/LaunchAgents/com.macro.chainheat.plist
+    launchctl bootout gui/$(id -u)/com.macro.chainheat
     rm ~/Library/LaunchAgents/com.macro.chainheat.plist
 
   DO NOT load directly from the repo path — copy first.
 
+  DEPLOY WORKTREE:
+    ~/chainheat-ops-wt  (TCC-safe; launchd denied ~/Documents exec)
+    run_with_env.sh + .env live there; WorkingDirectory points there.
+    Keep up-to-date: git -C ~/chainheat-ops-wt pull --ff-only
+
   ENV FILE:
-    R2 credentials loaded from /Users/chriswong/Documents/Cluade/Macro Dashboard/.env
+    R2 credentials loaded from /Users/chriswong/chainheat-ops-wt/.env
     via run_with_env.sh.  Required vars: R2_ENDPOINT, R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY, R2_BUCKET.
 
@@ -31,11 +42,11 @@
     tail -f /tmp/chainheat.stdout.log /tmp/chainheat.stderr.log
 
   MANUAL SMOKE (local JSON, no publish):
-    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    cd /Users/chriswong/chainheat-ops-wt
     python -m scripts.build_chain_heat --no-publish
 
   MANUAL PUBLISH:
-    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    cd /Users/chriswong/chainheat-ops-wt
     python -m scripts.build_chain_heat
 -->
 <plist version="1.0">
@@ -45,16 +56,16 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_with_env.sh</string>
-    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/.env</string>
+    <string>/Users/chriswong/chainheat-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/chainheat-ops-wt/.env</string>
     <string>/opt/homebrew/Caskroom/miniconda/base/bin/python</string>
     <string>-m</string>
     <string>scripts.build_chain_heat</string>
   </array>
 
-  <!-- Working directory must be the MAIN checkout (not a worktree). -->
+  <!-- Working directory: TCC-safe deploy worktree under $HOME (launchd denied ~/Documents exec). -->
   <key>WorkingDirectory</key>
-  <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+  <string>/Users/chriswong/chainheat-ops-wt</string>
 
   <!--
     StartCalendarInterval: every 5 min during RTH (09:30–16:15 ET) plus one
