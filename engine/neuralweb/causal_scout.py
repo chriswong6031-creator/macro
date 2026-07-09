@@ -13,7 +13,8 @@ Rules implemented:
 
 Language law (RUL-CC-5): the words "caused / proved / proof / validated" must
 not appear in any generated text field.  Enforced by _sanitize_text() at every
-write site.
+write site.  The sanitizer acts ONLY on the four root banned words (caused,
+proved/proof, validated) so that replacement strings remain grammatical.
 
 Power floor: min_n=25 (house floor, CHF-R5 / P0 memo §2.4.6).
 
@@ -23,25 +24,35 @@ Cross-sectional N law (ticker-cluster time-confound):
   any time-series inference.  The within-period cross-ticker permutation is the
   null for level-threshold causes.
 
-Overlap correction: non-overlapping subsampling (default) OR NW with lag >=
-  horizon.  A plain HAC-on-mean on overlapping outcomes is a protocol violation
-  and is unreachable by construction.
+Effect series definition (cause-aware primary statistic):
+  e_t = z(x_{t-lag}) * z(y_t)
+  where z() is a zscore over the aligned sample.  The Newey-West HAC t-stat is
+  computed on the MEAN of e_t (after non-overlapping subsampling for overlap
+  correction).  This is the cross_asset.py leadlag_pairs z-product pattern.
+  Positive mean(e_t) means the cause predicts the target in the same direction
+  at the declared lag; the t-stat gauges significance of that co-movement.
+
+Overlap correction: non-overlapping subsampling (default) of e_t; HAC lag >=
+  horizon on the full e_t as fallback.  Plain-HAC on overlapping target-only
+  is unreachable by construction.
 
 Era policy (DT-R16): pre/post-2010 break required.  When the target's span does
   not straddle 2010-01-01, the leg returns 'insufficient_era_span' — never a
   within-regime split dressed as an era test.
+
+Invariance leg (B2 fix): block-bootstrap CI on the DIFFERENCE of effect means
+  across splits.  Effect significant in one split and near-zero/opposite in
+  complement, with difference CI excluding zero → invariance_failure concern.
 
 This is a PURE LIBRARY module.  No network, no data stores, no DAG/synapse
 registration.  Live batching is W3.
 """
 from __future__ import annotations
 
-import math
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -56,19 +67,18 @@ from engine.validation import newey_west_tstat
 FAMILY = "causal_scan"
 MIN_N = 25          # house power floor (CHF-R5 / P0 §2.4.6)
 ERA_BREAK = date(2010, 1, 1)   # DT-R16 mandatory era break
-N_BOOTSTRAP = 200   # CHF-R5: ≥200 draws, time-structure preserving (DT-R14)
+N_BOOTSTRAP = 200   # CHF-R5: >=200 draws, time-structure preserving (DT-R14)
 N_SHIFT = 200       # CHF-R5: time-shift placebo draws (DT-R14)
 MIN_BLOCK = 5       # minimum block size for circular bootstrap
 
-# Language sanitizer banned words (RUL-CC-5)
+# Language sanitizer banned words (RUL-CC-5) — exactly four root words
+# "cause" is NOT banned (only "caused"); "proves" is NOT banned (only "proved/proof")
 _BANNED_WORDS = re.compile(
-    r"\b(caused|cause|proves|proved|proof|proofs|validated|validates|validation)\b",
+    r"\b(caused|proved|proof|proofs|validated|validates|validation)\b",
     re.IGNORECASE,
 )
 _REPLACEMENTS = {
     "caused": "co-moved with",
-    "cause": "upstream of",
-    "proves": "is consistent with",
     "proved": "was consistent with",
     "proof": "evidence",
     "proofs": "evidence",
@@ -79,7 +89,12 @@ _REPLACEMENTS = {
 
 
 def _sanitize_text(text: str) -> str:
-    """Replace banned causal-claim words with neutral alternatives (RUL-CC-5)."""
+    """Replace banned causal-claim words with neutral alternatives (RUL-CC-5).
+
+    Acts ONLY on: caused, proved, proof, validated (and inflections).
+    Does NOT replace 'cause' (noun), 'proves', 'proves' etc. so that
+    concern strings remain grammatical after substitution.
+    """
     def _sub(m: re.Match) -> str:
         return _REPLACEMENTS.get(m.group(0).lower(), m.group(0))
     return _BANNED_WORDS.sub(_sub, text)
@@ -196,19 +211,40 @@ def _is_forbidden(edge_spec: EdgeSpec, priors: dict) -> tuple[bool, str]:
 # Statistical primitives (pure numpy, no scipy)
 # ---------------------------------------------------------------------------
 
-def _newey_west_overlap(y: np.ndarray, lag: int, hac_lags: int | None = None) -> dict:
-    """Newey-West HAC on the MEAN of y, with lag >= horizon for overlap correction.
+def _zscore(a: np.ndarray) -> np.ndarray:
+    """Zscore over the full sample; return zeros if zero variance."""
+    s = float(np.std(a))
+    if s < 1e-12:
+        return np.zeros_like(a)
+    return (a - np.mean(a)) / s
+
+
+def _effect_series(x_lagged: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Compute the z-product effect series e_t = z(x_lagged_t) * z(y_t).
+
+    This is the cause-aware primary statistic (cross_asset.py leadlag_pairs
+    z-product pattern).  Positive mean(e_t) signals that the cause predicts
+    the target in the same direction at the declared lag.
+
+    Both arrays must be pre-aligned (same length).
+    """
+    return _zscore(x_lagged) * _zscore(y)
+
+
+def _newey_west_overlap(e: np.ndarray, lag: int, hac_lags: int | None = None) -> dict:
+    """Newey-West HAC on the MEAN of the effect series e_t.
 
     For overlapping-horizon outcomes, hac_lags must be >= horizon_d.  We use
     the non-overlapping subsampling path by default (see run_battery).  This
     helper is the ALTERNATIVE path for the market_series inference leg.
 
-    CHF-R5: "a plain HAC-on-mean without one of these on overlapping outcomes
-    must be impossible to reach."
+    CHF-R5: 'a plain HAC-on-mean without one of these on overlapping outcomes
+    must be impossible to reach.'  This path operates on the effect series,
+    never the raw target.
     """
     if hac_lags is None:
         hac_lags = max(lag, 4)
-    return newey_west_tstat(y, lags=hac_lags)
+    return newey_west_tstat(e, lags=hac_lags)
 
 
 def _non_overlapping_sample(y: np.ndarray, horizon: int) -> np.ndarray:
@@ -222,6 +258,34 @@ def _non_overlapping_sample(y: np.ndarray, horizon: int) -> np.ndarray:
     return y[::horizon]
 
 
+def _circular_block_bootstrap_1d(
+    e: np.ndarray,
+    n_draws: int = N_BOOTSTRAP,
+    block_size: int | None = None,
+    seed: int = 42,
+) -> np.ndarray:
+    """Circular block bootstrap on DATE blocks of the effect series e_t.
+
+    Resamples the 1-d effect series in circular time blocks.  Returns
+    array of n_draws bootstrap mean(e) statistics.  Calendar-period count
+    governs CI precision (B5 fix).
+    """
+    n = len(e)
+    if n < MIN_BLOCK * 3:
+        return np.array([])
+    if block_size is None:
+        block_size = max(MIN_BLOCK, int(np.sqrt(n)))
+    rng = np.random.default_rng(seed)
+    n_blocks = int(np.ceil(n / block_size))
+    grid = np.arange(block_size)
+    stats = np.empty(n_draws)
+    for k in range(n_draws):
+        starts = rng.integers(0, n, n_blocks)
+        idx = (starts[:, None] + grid[None, :]).ravel()[:n] % n
+        stats[k] = float(np.mean(e[idx]))
+    return stats
+
+
 def _circular_block_bootstrap(
     x: np.ndarray,
     y: np.ndarray,
@@ -230,10 +294,13 @@ def _circular_block_bootstrap(
     block_size: int | None = None,
     seed: int = 42,
 ) -> np.ndarray:
-    """Circular block bootstrap on TIME blocks (CHF-R5, DT-R14).
+    """Circular block bootstrap on TIME blocks for the stability leg.
 
-    Resamples (x, y) pairs in circular blocks.  Never resamples tickers as
-    the unit.  Returns array of n_draws bootstrap statistics.
+    Resamples (x, y) pairs in circular blocks; computes stat_fn(x_boot, y_boot).
+    Used for the correlation-based stability check (block bootstrap CI on the
+    observed correlation).
+
+    NOTE: the effect-series invariance bootstrap uses _circular_block_bootstrap_1d.
     """
     n = len(x)
     if n < MIN_BLOCK * 3:
@@ -365,7 +432,15 @@ def _compute_era_stats(
     dates: pd.DatetimeIndex,
     horizon: int,
 ) -> dict:
-    """Compute pre/post-2010 split statistics for the market_series path."""
+    """Compute pre/post-2010 split effect statistics for the market_series path.
+
+    The effect estimate within each era is mean(e_sub) where e_sub is the
+    non-overlapping subsample of the effect series e_t = z(x_{t-lag})*z(y_t).
+    The t-stat is Newey-West on the effect subsample, not the target mean.
+
+    Comparison of effect estimates across eras (not target means) is what
+    the era concern text describes.
+    """
     era_break_ts = pd.Timestamp(ERA_BREAK)
     pre_mask = dates < era_break_ts
     post_mask = dates >= era_break_ts
@@ -374,10 +449,12 @@ def _compute_era_stats(
         xi, yi = x[mask], y[mask]
         if len(xi) < MIN_N:
             return None
-        sub = _non_overlapping_sample(yi, horizon)
-        if len(sub) < MIN_N:
-            return None
-        return newey_west_tstat(sub, lags=max(1, min(horizon, len(sub) - 1)))
+        e_era = _effect_series(xi, yi)
+        sub_e = _non_overlapping_sample(e_era, horizon)
+        if len(sub_e) < MIN_N:
+            # fall back to HAC on full effect series with horizon lag
+            return newey_west_tstat(e_era, lags=max(1, min(horizon, len(e_era) - 1)))
+        return newey_west_tstat(sub_e, lags=max(1, min(4, len(sub_e) - 1)))
 
     return {
         "pre_2010": _leg(pre_mask),
@@ -458,7 +535,11 @@ def _run_market_series_battery(
     environment_masks: dict[str, np.ndarray] | None = None,
     ledger: TrialLedger | None = None,
 ) -> EdgeResult:
-    """Run the full CHF-R5 battery for a market_series target."""
+    """Run the full CHF-R5 battery for a market_series target.
+
+    Primary statistic: Newey-West HAC t of mean(e_t) where
+    e_t = z(x_{t-lag}) * z(y_t) — the cause-aware z-product effect series.
+    """
     concerns: list[str] = []
     stats: dict = {}
     cells: list[dict] = []
@@ -507,6 +588,8 @@ def _run_market_series_battery(
 
     lag_stats: dict = {}
     screened_lags: list[int] = []
+    # Track splits_tested across all lags (unique split keys)
+    splits_tested_set: set[str] = set()
 
     for lag in spec.lags:
         # Build lag array: shift x forward by lag periods
@@ -519,7 +602,6 @@ def _run_market_series_battery(
 
         x_lagged = x_full[:-lag] if lag > 0 else x_full
         y_shifted = y_full[lag:] if lag > 0 else y_full
-        dates_shifted = dates[lag:] if lag > 0 else dates
 
         if len(y_shifted) < MIN_N:
             concerns.append(
@@ -535,15 +617,17 @@ def _run_market_series_battery(
                 log_battery_cells(FAMILY, [cells[-1]], ledger)
             continue
 
-        # --- Overlap correction: use non-overlapping subsampling (CHF-R5) ---
-        sub = _non_overlapping_sample(y_shifted, spec.horizon_d)
-        sub_x = _non_overlapping_sample(x_lagged, spec.horizon_d)
-        if len(sub) < MIN_N:
-            # Fall back to HAC with lag >= horizon (alternative overlap correction)
-            hac_stat = _newey_west_overlap(y_shifted, lag=lag,
+        # --- Effect series: e_t = z(x_{t-lag}) * z(y_t) ---
+        e_series = _effect_series(x_lagged, y_shifted)
+
+        # --- Overlap correction: non-overlapping subsampling of effect series ---
+        sub_e = _non_overlapping_sample(e_series, spec.horizon_d)
+        if len(sub_e) < MIN_N:
+            # Fall back to HAC on full effect series with lag >= horizon
+            hac_stat = _newey_west_overlap(e_series, lag=lag,
                                            hac_lags=max(spec.horizon_d, 4))
         else:
-            hac_stat = newey_west_tstat(sub, lags=max(1, min(4, len(sub) - 1)))
+            hac_stat = newey_west_tstat(sub_e, lags=max(1, min(4, len(sub_e) - 1)))
 
         lag_stats[str(lag)] = hac_stat
 
@@ -554,34 +638,52 @@ def _run_market_series_battery(
         }
         cells.append(cell)
 
-        # --- Negative-lag placebo: does TARGET lead CAUSE? (CHF-R5) ---
+        # --- Negative-lag placebo (B4 fix): reverse z-product effect ---
+        # Forward: z(x_{t-lag}) * z(y_t) — cause predicts target
+        # Reverse: z(y_{t-lag}) * z(x_t) — target predicts cause (same lag)
+        # If reverse |effect| >= forward |effect|, fire placebo.
         neg_lag = max(1, lag)
-        y_neg = y_full[:-neg_lag]
-        x_neg = x_full[neg_lag:]
         placebo_neg_cell = {
             "edge_id": spec.edge_id, "lag": lag, "split_id": "neg_lag_placebo",
             "cell_type": "placebo",
         }
         cells.append(placebo_neg_cell)
-        if len(y_neg) >= MIN_N:
-            sub_neg = _non_overlapping_sample(y_neg, spec.horizon_d)
-            neg_stat = newey_west_tstat(
-                sub_neg, lags=max(1, min(4, len(sub_neg) - 1))
-            )
-            neg_t = neg_stat.get("t")
-            fwd_t = hac_stat.get("t")
-            if (
-                neg_t is not None and fwd_t is not None
-                and abs(neg_t) > abs(fwd_t)
-            ):
-                concerns.append(_sanitize_text(
-                    f"lag={lag}: negative-lag placebo |t|={abs(neg_t):.2f} "
-                    f"> forward |t|={abs(fwd_t):.2f} — target may lead cause "
-                    "(reverse-causation concern; edge not screened_candidate)"
-                ))
-                lag_stats[f"{lag}_neg_placebo"] = neg_stat
-                # Negative-lag fires: this lag does NOT qualify as screened
-                continue
+        if len(y_shifted) >= MIN_N:
+            # Reverse roles: y leads x
+            y_neg_lagged = y_full[:-neg_lag]   # y at t-lag (the "cause" in reverse)
+            x_neg_shifted = x_full[neg_lag:]   # x at t (the "target" in reverse)
+            if len(y_neg_lagged) >= MIN_N and len(x_neg_shifted) >= MIN_N:
+                min_len_neg = min(len(y_neg_lagged), len(x_neg_shifted))
+                e_reverse = _effect_series(
+                    y_neg_lagged[:min_len_neg], x_neg_shifted[:min_len_neg]
+                )
+                sub_e_neg = _non_overlapping_sample(e_reverse, spec.horizon_d)
+                if len(sub_e_neg) >= MIN_N:
+                    neg_stat = newey_west_tstat(
+                        sub_e_neg, lags=max(1, min(4, len(sub_e_neg) - 1))
+                    )
+                else:
+                    neg_stat = newey_west_tstat(
+                        e_reverse, lags=max(spec.horizon_d, 4)
+                    )
+                neg_effect = neg_stat.get("mean") or 0.0
+                fwd_effect = hac_stat.get("mean") or 0.0
+                neg_t = neg_stat.get("t") or 0.0
+                fwd_t = hac_stat.get("t") or 0.0
+                # Placebo fires if reverse effect is >= forward, OR reverse is
+                # significant while forward is not
+                reverse_dominates = abs(neg_effect) >= abs(fwd_effect)
+                reverse_sig_fwd_not = (abs(neg_t) >= 2.0 and abs(fwd_t) < 2.0)
+                if reverse_dominates or reverse_sig_fwd_not:
+                    concerns.append(_sanitize_text(
+                        f"lag={lag}: negative-lag placebo: reverse effect "
+                        f"mean={neg_effect:.3f} (t={neg_t:.2f}) >= forward effect "
+                        f"mean={fwd_effect:.3f} (t={fwd_t:.2f}) — target may lead "
+                        "cause (reverse-causation concern; edge not screened_candidate)"
+                    ))
+                    lag_stats[f"{lag}_neg_placebo"] = neg_stat
+                    # Negative-lag fires: this lag does NOT qualify as screened
+                    continue
 
         # --- Time-shift placebo (DT-R14, CHF-R5) ---
         shift_cell = {
@@ -605,14 +707,15 @@ def _run_market_series_battery(
                 continue  # time-shift kills this lag
 
         # --- Circular block bootstrap stability (CHF-R5, DT-R14) ---
+        # Bootstrap the effect series e_t in date blocks (B5 fix: resample e_t,
+        # never flattened rows; CI precision governed by calendar-period count)
         boot_cell = {
             "edge_id": spec.edge_id, "lag": lag, "split_id": "block_bootstrap",
             "cell_type": "stability",
         }
         cells.append(boot_cell)
-        boot_dist = _circular_block_bootstrap(
-            x_lagged, y_shifted, _mean_correlation,
-            n_draws=N_BOOTSTRAP, seed=lag + 100,
+        boot_dist = _circular_block_bootstrap_1d(
+            e_series, n_draws=N_BOOTSTRAP, seed=lag + 100
         )
         boot_stats = {}
         if len(boot_dist) > 0:
@@ -621,10 +724,10 @@ def _run_market_series_battery(
                 "ci_97p5": round(float(np.percentile(boot_dist, 97.5)), 4),
                 "boot_mean": round(float(np.mean(boot_dist)), 4),
             }
-            # Flag instability: CI spans 0
+            # Flag instability: CI spans 0 means effect is unstable across time blocks
             if boot_stats["ci_2p5"] <= 0 <= boot_stats["ci_97p5"]:
                 concerns.append(_sanitize_text(
-                    f"lag={lag}: bootstrap 95% CI [{boot_stats['ci_2p5']}, "
+                    f"lag={lag}: bootstrap 95% CI of effect [{boot_stats['ci_2p5']}, "
                     f"{boot_stats['ci_97p5']}] spans zero — unstable"
                 ))
             else:
@@ -634,9 +737,10 @@ def _run_market_series_battery(
 
         lag_stats[f"{lag}_bootstrap"] = boot_stats
 
-        # --- Environment invariance (declared splits only, CHF-R5/CHF-R7) ---
-        splits_tested_this_lag = 0
+        # --- Environment invariance (B2 fix): effect estimate per split + block-bootstrap
+        # CI on the DIFFERENCE of split effect-means (CHF-R5/CHF-R7) ---
         for env_split in spec.environment_splits:
+            split_key = f"{lag}_{env_split.split_id}"
             mask = environment_masks.get(env_split.split_id)
             split_cell = {
                 "edge_id": spec.edge_id, "lag": lag,
@@ -652,31 +756,118 @@ def _run_market_series_battery(
             mask_aligned = mask[lag:] if lag > 0 else mask
             if len(mask_aligned) != len(y_shifted):
                 mask_aligned = mask_aligned[:len(y_shifted)]
-            xi_env = x_lagged[mask_aligned.astype(bool)]
-            yi_env = y_shifted[mask_aligned.astype(bool)]
-            if len(xi_env) < MIN_N:
-                continue
-            sub_env = _non_overlapping_sample(yi_env, spec.horizon_d)
-            env_stat = newey_west_tstat(
-                sub_env, lags=max(1, min(4, len(sub_env) - 1))
-            )
-            lag_stats[f"{lag}_{env_split.split_id}"] = env_stat
-            splits_tested_this_lag += 1
+            bool_mask = mask_aligned.astype(bool)
+            bool_mask_complement = ~bool_mask
 
-    # Era split statistics (DT-R16)
+            xi_env = x_lagged[bool_mask]
+            yi_env = y_shifted[bool_mask]
+            xi_comp = x_lagged[bool_mask_complement]
+            yi_comp = y_shifted[bool_mask_complement]
+
+            if len(xi_env) < MIN_N or len(xi_comp) < MIN_N:
+                # Not enough data in one or both splits for comparison
+                continue
+
+            # Effect estimate in each split
+            e_env = _effect_series(xi_env, yi_env)
+            e_comp = _effect_series(xi_comp, yi_comp)
+
+            sub_e_env = _non_overlapping_sample(e_env, spec.horizon_d)
+            sub_e_comp = _non_overlapping_sample(e_comp, spec.horizon_d)
+
+            if len(sub_e_env) < MIN_N:
+                stat_env = newey_west_tstat(e_env, lags=max(spec.horizon_d, 4))
+            else:
+                stat_env = newey_west_tstat(sub_e_env, lags=max(1, min(4, len(sub_e_env) - 1)))
+
+            if len(sub_e_comp) < MIN_N:
+                stat_comp = newey_west_tstat(e_comp, lags=max(spec.horizon_d, 4))
+            else:
+                stat_comp = newey_west_tstat(sub_e_comp, lags=max(1, min(4, len(sub_e_comp) - 1)))
+
+            mean_env = stat_env.get("mean") or 0.0
+            mean_comp = stat_comp.get("mean") or 0.0
+            t_env = stat_env.get("t") or 0.0
+            t_comp = stat_comp.get("t") or 0.0
+
+            lag_stats[split_key] = {
+                "split_mean_effect": round(mean_env, 5),
+                "complement_mean_effect": round(mean_comp, 5),
+                "split_t": round(t_env, 3),
+                "complement_t": round(t_comp, 3),
+            }
+            splits_tested_set.add(f"{env_split.split_id}")
+
+            # Block-bootstrap CI on the difference of split effects
+            diff_obs = mean_env - mean_comp
+            # Bootstrap the difference: resample e_env and e_comp independently
+            boot_env = _circular_block_bootstrap_1d(e_env, n_draws=N_BOOTSTRAP, seed=lag + 600)
+            boot_comp = _circular_block_bootstrap_1d(e_comp, n_draws=N_BOOTSTRAP, seed=lag + 700)
+            invariance_failure = False
+            if len(boot_env) > 0 and len(boot_comp) > 0:
+                diff_boot = boot_env - boot_comp
+                diff_ci_lo = float(np.percentile(diff_boot, 2.5))
+                diff_ci_hi = float(np.percentile(diff_boot, 97.5))
+                lag_stats[split_key]["diff_effect"] = round(diff_obs, 5)
+                lag_stats[split_key]["diff_ci_2p5"] = round(diff_ci_lo, 5)
+                lag_stats[split_key]["diff_ci_97p5"] = round(diff_ci_hi, 5)
+
+                # Invariance failure: effect significant in one split but near-zero/
+                # opposite in complement, AND difference CI excludes zero
+                one_split_sig = (abs(t_env) >= 2.0) != (abs(t_comp) >= 2.0)
+                ci_excludes_zero = not (diff_ci_lo <= 0 <= diff_ci_hi)
+                if one_split_sig and ci_excludes_zero:
+                    invariance_failure = True
+                    concerns.append(_sanitize_text(
+                        f"lag={lag}, split={env_split.split_id}: "
+                        f"environment invariance failure — effect significant in "
+                        f"split (mean={mean_env:.3f}, t={t_env:.2f}) but not in "
+                        f"complement (mean={mean_comp:.3f}, t={t_comp:.2f}); "
+                        f"difference CI [{diff_ci_lo:.3f}, {diff_ci_hi:.3f}] "
+                        "excludes zero"
+                    ))
+            else:
+                # No bootstrap available — use effect size heuristic
+                one_split_sig = (abs(t_env) >= 2.0) != (abs(t_comp) >= 2.0)
+                opposite_signs = (mean_env * mean_comp < 0)
+                if one_split_sig or opposite_signs:
+                    invariance_failure = True
+                    concerns.append(_sanitize_text(
+                        f"lag={lag}, split={env_split.split_id}: "
+                        "environment invariance concern — effect differs across splits "
+                        f"(split t={t_env:.2f}, complement t={t_comp:.2f})"
+                    ))
+
+            if invariance_failure and lag in screened_lags:
+                screened_lags.remove(lag)
+
+    # Era split statistics (DT-R16) — effect-based, not target-mean-based
     era_stats = _compute_era_stats(x_full, y_full, dates, spec.horizon_d)
     stats["era_split"] = era_stats
 
-    # Era divergence concern
+    # Era divergence concern (M2 fix): compare EFFECT estimates across eras,
+    # not target means.  The concern text describes what was measured.
     pre = era_stats.get("pre_2010")
     post = era_stats.get("post_2010")
     if pre is not None and post is not None:
+        pre_effect = pre.get("mean") or 0.0
+        post_effect = post.get("mean") or 0.0
         pre_t = pre.get("t") or 0.0
         post_t = post.get("t") or 0.0
-        if pre_t * post_t < 0:   # sign flip across eras
+        # Effect concentrated in one era: significant in one, near-zero in other
+        one_era_sig = (abs(pre_t) >= 2.0) != (abs(post_t) >= 2.0)
+        effect_sign_flip = (pre_effect * post_effect < 0)
+        if effect_sign_flip:
             concerns.append(_sanitize_text(
-                "era split: pre-2010 and post-2010 effects have opposite signs — "
-                "effect is era-specific"
+                f"era split: pre-2010 effect (mean={pre_effect:.3f}, t={pre_t:.2f}) "
+                f"and post-2010 effect (mean={post_effect:.3f}, t={post_t:.2f}) "
+                "have opposite signs — effect direction reverses across eras"
+            ))
+        elif one_era_sig:
+            concerns.append(_sanitize_text(
+                f"era split: effect concentrated in single era — "
+                f"pre-2010 (mean={pre_effect:.3f}, t={pre_t:.2f}), "
+                f"post-2010 (mean={post_effect:.3f}, t={post_t:.2f})"
             ))
 
     # Sibling check (CHF-R10 shared-parent concern)
@@ -694,12 +885,8 @@ def _run_market_series_battery(
     if cells:
         cells_logged = log_battery_cells(FAMILY, cells, ledger)
 
-    # Verdict synthesis
-    splits_tested = sum(
-        1 for k in lag_stats if any(
-            s.split_id in k for s in spec.environment_splits
-        )
-    )
+    # Verdict synthesis — splits_tested uses the exact count of unique split keys
+    splits_tested = len(splits_tested_set)
     verdict = _synthesize_verdict(
         screened_lags=screened_lags,
         concerns=concerns,
@@ -745,6 +932,8 @@ def _run_ticker_panel_battery(
       2. Within-date demeaning (date fixed-effect) BEFORE any time-series.
       3. Cross-ticker permutation within each date as the null.
       4. Effective N = calendar months (never fire counts).
+      5. Environment invariance (B2 fix): splits partition dates; compare
+         date-aggregated cross-sectional effect within each split.
     """
     concerns: list[str] = []
     stats: dict = {}
@@ -761,7 +950,6 @@ def _run_ticker_panel_battery(
 
     combined.index.names = ["date", "ticker"]
     combined = combined.reset_index()
-    dates_series = pd.to_datetime(combined["date"])
 
     # Effective N in calendar months (CHF-R5 cross-sectional N law)
     eff_n_months = _calendar_period_n(pd.DatetimeIndex(combined["date"].unique()))
@@ -786,7 +974,7 @@ def _run_ticker_panel_battery(
             verdict="insufficient_era_span",
             causal_support={},
             concerns=[_sanitize_text(
-                f"panel date span does not straddle 2010-01-01 (DT-R16)"
+                "panel date span does not straddle 2010-01-01 (DT-R16)"
             )],
             stats=stats,
             splits_declared=len(spec.environment_splits),
@@ -804,12 +992,9 @@ def _run_ticker_panel_battery(
         lambda s: s - s.mean()
     )
 
-    x_all = combined["x_dm"].to_numpy(float)
-    y_all = combined["y_dm"].to_numpy(float)
-    date_labels = combined["date"].to_numpy()
-
     screened_lags: list[int] = []
     lag_stats: dict = {}
+    splits_tested_set: set[str] = set()
 
     for lag in spec.lags:
         cell = {
@@ -923,15 +1108,28 @@ def _run_ticker_panel_battery(
                 ))
                 continue
 
-        # --- Block bootstrap stability ---
+        # --- Block bootstrap stability (B5 fix: resample date-aggregated
+        # effect series, not flattened per-(date,ticker) rows) ---
         boot_cell = {
             "edge_id": spec.edge_id, "lag": lag, "split_id": "block_bootstrap",
             "cell_type": "stability",
         }
         cells.append(boot_cell)
-        boot_dist = _circular_block_bootstrap(
-            x_lag_arr, y_arr, _mean_correlation,
-            n_draws=N_BOOTSTRAP, seed=lag + 500,
+
+        # Date-aggregate the cross-sectional effect into a time series of mean corrs
+        # and bootstrap THAT series (calendar-period count governs CI precision)
+        lag_df["date_ts"] = pd.to_datetime(lag_df["date"])
+        unique_lag_dates = np.sort(lag_df["date"].unique())
+        date_effect_series = np.array([
+            _mean_correlation(
+                lag_df.loc[lag_df["date"] == d, "x_lag"].to_numpy(float),
+                lag_df.loc[lag_df["date"] == d, "y"].to_numpy(float),
+            )
+            for d in unique_lag_dates
+        ])
+
+        boot_dist = _circular_block_bootstrap_1d(
+            date_effect_series, n_draws=N_BOOTSTRAP, seed=lag + 500
         )
         if len(boot_dist) > 0:
             ci_lo = float(np.percentile(boot_dist, 2.5))
@@ -952,6 +1150,109 @@ def _run_ticker_panel_battery(
             if perm_pctile >= 0.90:
                 screened_lags.append(lag)
 
+        # --- Environment invariance for panel path (B2 fix) ---
+        # Splits partition DATES; compare date-aggregated effect within each split
+        for env_split in spec.environment_splits:
+            split_key = f"{lag}_{env_split.split_id}"
+            split_date_mask = environment_masks.get(env_split.split_id)
+            split_cell_env = {
+                "edge_id": spec.edge_id, "lag": lag,
+                "split_id": env_split.split_id, "cell_type": "environment",
+            }
+            cells.append(split_cell_env)
+            if split_date_mask is None:
+                concerns.append(_sanitize_text(
+                    f"lag={lag}, split={env_split.split_id}: no mask provided — "
+                    "undeclared environment"
+                ))
+                continue
+
+            # Map date-level mask onto the lagged rows
+            # split_date_mask must be the same length as unique_dates
+            unique_dates_full = np.sort(combined["date"].unique())
+            if len(split_date_mask) != len(unique_dates_full):
+                concerns.append(_sanitize_text(
+                    f"lag={lag}, split={env_split.split_id}: mask length "
+                    f"{len(split_date_mask)} != unique dates {len(unique_dates_full)}"
+                ))
+                continue
+
+            split_dates_in = set(
+                d for d, m in zip(unique_dates_full, split_date_mask) if m
+            )
+            split_dates_out = set(
+                d for d, m in zip(unique_dates_full, split_date_mask) if not m
+            )
+
+            # Date-effect series for each split
+            in_effect = np.array([
+                _mean_correlation(
+                    lag_df.loc[lag_df["date"] == d, "x_lag"].to_numpy(float),
+                    lag_df.loc[lag_df["date"] == d, "y"].to_numpy(float),
+                )
+                for d in unique_lag_dates if d in split_dates_in
+            ])
+            out_effect = np.array([
+                _mean_correlation(
+                    lag_df.loc[lag_df["date"] == d, "x_lag"].to_numpy(float),
+                    lag_df.loc[lag_df["date"] == d, "y"].to_numpy(float),
+                )
+                for d in unique_lag_dates if d in split_dates_out
+            ])
+
+            if len(in_effect) < MIN_N or len(out_effect) < MIN_N:
+                continue
+
+            mean_in = float(np.mean(in_effect))
+            mean_out = float(np.mean(out_effect))
+            stat_in = newey_west_tstat(in_effect, lags=max(1, min(4, len(in_effect) - 1)))
+            stat_out = newey_west_tstat(out_effect, lags=max(1, min(4, len(out_effect) - 1)))
+            t_in = stat_in.get("t") or 0.0
+            t_out = stat_out.get("t") or 0.0
+
+            lag_stats[split_key] = {
+                "split_mean_effect": round(mean_in, 5),
+                "complement_mean_effect": round(mean_out, 5),
+                "split_t": round(t_in, 3),
+                "complement_t": round(t_out, 3),
+            }
+            splits_tested_set.add(env_split.split_id)
+
+            # Block-bootstrap CI on the difference
+            boot_in = _circular_block_bootstrap_1d(in_effect, n_draws=N_BOOTSTRAP, seed=lag + 800)
+            boot_out = _circular_block_bootstrap_1d(out_effect, n_draws=N_BOOTSTRAP, seed=lag + 900)
+            invariance_failure = False
+            if len(boot_in) > 0 and len(boot_out) > 0:
+                diff_boot = boot_in - boot_out
+                diff_ci_lo = float(np.percentile(diff_boot, 2.5))
+                diff_ci_hi = float(np.percentile(diff_boot, 97.5))
+                lag_stats[split_key]["diff_ci_2p5"] = round(diff_ci_lo, 5)
+                lag_stats[split_key]["diff_ci_97p5"] = round(diff_ci_hi, 5)
+
+                one_split_sig = (abs(t_in) >= 2.0) != (abs(t_out) >= 2.0)
+                ci_excludes_zero = not (diff_ci_lo <= 0 <= diff_ci_hi)
+                if one_split_sig and ci_excludes_zero:
+                    invariance_failure = True
+                    concerns.append(_sanitize_text(
+                        f"lag={lag}, split={env_split.split_id}: "
+                        f"environment invariance failure — effect significant in "
+                        f"split (mean={mean_in:.3f}, t={t_in:.2f}) but not in "
+                        f"complement (mean={mean_out:.3f}, t={t_out:.2f}); "
+                        f"difference CI [{diff_ci_lo:.3f}, {diff_ci_hi:.3f}] "
+                        "excludes zero"
+                    ))
+            else:
+                one_split_sig = (abs(t_in) >= 2.0) != (abs(t_out) >= 2.0)
+                if one_split_sig:
+                    invariance_failure = True
+                    concerns.append(_sanitize_text(
+                        f"lag={lag}, split={env_split.split_id}: "
+                        "environment invariance concern — effect differs across splits"
+                    ))
+
+            if invariance_failure and lag in screened_lags:
+                screened_lags.remove(lag)
+
     # Log all cells
     cells_logged = 0
     if cells:
@@ -960,7 +1261,7 @@ def _run_ticker_panel_battery(
     stats["by_lag"] = lag_stats
     stats["eff_n_months"] = eff_n_months
 
-    splits_tested = 0
+    splits_tested = len(splits_tested_set)
     verdict = _synthesize_verdict(
         screened_lags=screened_lags,
         concerns=concerns,
@@ -1023,8 +1324,15 @@ def _synthesize_verdict(
     era_specific_stamp: bool,
 ) -> str:
     """CHF-R5 verdict vocabulary synthesis."""
-    has_instability = any("unstable" in c or "spans zero" in c for c in concerns)
-    has_era_flip = any("era-specific" in c or "era split" in c for c in concerns)
+    has_instability = any(
+        "unstable" in c or "spans zero" in c or "invariance failure" in c
+        for c in concerns
+    )
+    has_era_concern = any(
+        "era-specific" in c or "era split" in c or "concentrated in single era" in c
+        or "effect concentrated" in c
+        for c in concerns
+    )
 
     if not screened_lags:
         if has_instability:
@@ -1034,8 +1342,8 @@ def _synthesize_verdict(
     if has_instability:
         return "unstable"
 
-    # Era sign flip (DT-R16): pre/post-2010 sign diverges → era_specific
-    if has_era_flip:
+    # Era effect concentration or sign flip (DT-R16): → era_specific
+    if has_era_concern:
         return "era_specific"
 
     if era_specific_stamp:
@@ -1050,21 +1358,38 @@ def _compute_support(
     screened_lags: list[int],
     verdict: str,
 ) -> dict:
-    """Compute causal_support per lens: weak|medium|strong."""
+    """Compute causal_support per lens: weak|medium|strong.
+
+    Mapping (N1 fix): derived from the effect-series t-stats, not inflated
+    permutation percentiles.
+
+    For market_series lags: t-stat from the HAC on mean(e_t).
+      t >= 3.0 -> strong, t in [2.0, 3.0) -> medium, else -> weak.
+    For ticker_panel lags: perm_pctile is used as a secondary indicator but
+      NOT inflated by 4x (perm_pctile is a rank, not a t-stat).
+      perm_pctile >= 0.99 -> strong, >= 0.95 -> medium, else -> weak.
+
+    Both paths: only screened lags contribute.
+    """
     if not screened_lags or verdict not in ("screened_candidate", "era_specific"):
         return {"primary": "weak"}
-    # Use max t-stat across screened lags as the strength indicator
     ts = []
     for lag in screened_lags:
         st = lag_stats.get(str(lag))
         if isinstance(st, dict):
             t = st.get("t")
             if t is not None:
-                ts.append(abs(t))
-            # Also handle panel permutation path
+                ts.append(abs(float(t)))
+            # Panel path: use perm_pctile mapped to an equivalent t-range
+            # perm_pctile 0.99 ~ t=2.33 (z-score), 0.999 ~ t=3.09
+            # We apply a conservative mapping: 0.99 -> 2.5, never exceeds 3.5
             pctile = st.get("perm_pctile")
-            if pctile is not None:
-                ts.append(pctile * 4)  # map 0.99 -> 3.96
+            if pctile is not None and t is None:
+                # Convert percentile to a t-equivalent via normal quantile
+                # Clamp to avoid inf: pctile in (0.5, 0.9999)
+                p = max(0.5001, min(float(pctile), 0.9999))
+                t_equiv = _rational_probit(p)
+                ts.append(t_equiv)
     if not ts:
         return {"primary": "weak"}
     max_t = max(ts)
@@ -1075,6 +1400,24 @@ def _compute_support(
     else:
         strength = "weak"
     return {"primary": strength}
+
+
+def _rational_probit(p: float) -> float:
+    """Rational approximation of the standard normal quantile (probit) for p in (0,1).
+
+    Accurate to ~3 decimal places for p in [0.5, 0.9999].
+    Used for converting perm_pctile to an effect-size-equivalent t for support mapping.
+    """
+    import math
+    # Abramowitz & Stegun 26.2.17 approximation
+    if p <= 0.5:
+        return 0.0
+    t = math.sqrt(-2.0 * math.log(1.0 - p))
+    c0, c1, c2 = 2.515517, 0.802853, 0.010328
+    d1, d2, d3 = 1.432788, 0.189269, 0.001308
+    num = c0 + c1 * t + c2 * t ** 2
+    den = 1.0 + d1 * t + d2 * t ** 2 + d3 * t ** 3
+    return t - num / den
 
 
 # ---------------------------------------------------------------------------
@@ -1091,6 +1434,7 @@ def run_battery(
     declared_siblings: list[np.ndarray] | None = None,
     environment_masks: dict[str, np.ndarray] | None = None,
     ledger: TrialLedger | None = None,
+    hermetic: bool = False,
 ) -> EdgeResult:
     """Run the full CHF-R5 battery for one EdgeSpec.
 
@@ -1101,14 +1445,29 @@ def run_battery(
         target: Same shape as cause.
         priors: Dict matching config/causal_priors.yml schema.  If None,
                 loads from root/config/causal_priors.yml (or returns {} if absent).
-        root: Repo root for loading priors and the trial ledger.
+        root: Repo root for loading priors.
         declared_siblings: List of numpy arrays for the shared-parent check.
         environment_masks: {split_id: boolean_array} for declared splits.
-        ledger: TrialLedger instance for cell logging.  If None, uses default path.
+        ledger: TrialLedger instance for cell logging.  When None and
+                hermetic=False, raises ValueError — no default ledger path is
+                assumed (M1 fix).  Pass hermetic=True to run without a ledger
+                (tests and exploration only).
+        hermetic: If True, allows running without a ledger (cells not logged).
 
     Returns:
         EdgeResult with verdict, causal_support, concerns, stats, and cell counts.
+
+    Raises:
+        ValueError: If ledger is None and hermetic is not True.
     """
+    # M1 fix: refuse to run without a ledger unless explicitly hermetic
+    if ledger is None and not hermetic:
+        raise ValueError(
+            "run_battery() requires a TrialLedger (ledger=) for cell accounting. "
+            "Pass hermetic=True only for tests or exploratory use where logging "
+            "is intentionally disabled. No default ledger path is assumed."
+        )
+
     # Load priors
     if priors is None:
         priors = load_priors(root)

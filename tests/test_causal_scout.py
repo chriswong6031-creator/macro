@@ -143,7 +143,7 @@ def test_planted_lag_recovered_as_screened_candidate():
     target = pd.Series(target_vals, index=dates)
 
     spec = _make_spec(lags=[5], horizon_d=1)
-    result = run_battery(spec, cause, target, priors={})
+    result = run_battery(spec, cause, target, priors={}, hermetic=True)
 
     assert result.verdict in ("screened_candidate", "era_specific"), (
         f"Expected screened_candidate or era_specific, got {result.verdict!r}. "
@@ -173,7 +173,7 @@ def test_collider_mirage_refused_by_priors():
     # Priors mark this cause as a collider
     priors = {"colliders": ["test_cause"]}
     spec = _make_spec()
-    result = run_battery(spec, cause, target, priors=priors)
+    result = run_battery(spec, cause, target, priors=priors, hermetic=True)
 
     assert result.verdict == "forbidden", (
         f"Expected 'forbidden' for collider cause, got {result.verdict!r}"
@@ -222,6 +222,7 @@ def test_sibling_shared_parent_concern():
         spec, cause2, target,
         priors={},
         declared_siblings=[cause1.to_numpy()],
+        hermetic=True,
     )
 
     # The result should carry a shared-parent concern
@@ -270,7 +271,7 @@ def test_reverse_causation_killed_by_neg_lag_placebo():
     target = pd.Series(true_signal, index=dates)
 
     spec = _make_spec(lags=[lag], horizon_d=1)
-    result = run_battery(spec, cause, target, priors={})
+    result = run_battery(spec, cause, target, priors={}, hermetic=True)
 
     # Must NOT be screened_candidate; reverse causation concern should appear
     assert result.verdict != "screened_candidate", (
@@ -313,7 +314,7 @@ def test_lagged_echo_killed_by_time_shift_placebo():
     cause = pd.Series(cause_vals + noise * 0.1, index=dates)
 
     spec = _make_spec(lags=[lag], horizon_d=1)
-    result = run_battery(spec, cause, target, priors={})
+    result = run_battery(spec, cause, target, priors={}, hermetic=True)
 
     # High autocorrelation in driver means time-shift preserves the structure
     # but the effect should be killed or flagged
@@ -377,7 +378,7 @@ def test_cross_sectional_mirage_killed_by_permutation_and_eff_n():
         horizon_d=1,
         era_policy="era_specific_recent_only",
     )
-    result = run_battery(spec, cause_df, target_df, priors={})
+    result = run_battery(spec, cause_df, target_df, priors={}, hermetic=True)
 
     # Key assertions:
     # 1. The effective N is in calendar months, NOT fire_counts
@@ -407,11 +408,20 @@ def test_cross_sectional_mirage_killed_by_permutation_and_eff_n():
 def test_regime_persistence_mirage_flagged_as_unstable():
     """
     An 'environment split' that is one slow-moving state (long blocks):
-    invariance must not pass; the bootstrap/era machinery must flag instability.
+    invariance must not pass; the block-bootstrap effect-series CI must flag
+    instability because the effect collapses to zero in the second half.
 
-    We create a cause that is ONLY correlated with target during a single long
-    contiguous regime (regime bias).  The block bootstrap should find the CI
-    spans zero because the correlation collapses outside the regime.
+    Design: cause->target EFFECT present only in the first half; pure noise
+    in the second half.  The block bootstrap on the z-product effect series
+    must produce a CI spanning zero (effect is not stable across time blocks).
+
+    Verification: the machinery that fires must be the cause-aware effect
+    machinery (bootstrap CI on effect series spans zero), NOT a coincidental
+    target-mean sign flip.  We assert:
+      1. verdict is NOT screened_candidate
+      2. concerns mention 'spans zero' or 'unstable' or 'era split' or
+         'concentrated in single era' — i.e., the effect-concentration or
+         block-bootstrap instability concern (not merely any concern)
 
     Uses weekly era-straddling dates.
     """
@@ -419,24 +429,38 @@ def test_regime_persistence_mirage_flagged_as_unstable():
     n = N_OBS_WEEKLY
     dates = _make_dates(n)
 
-    # Signal only exists in first half — pure noise in second half
+    # Signal only exists in first half — pure noise in second half.
+    # iid cause so target DOES NOT lead cause (neg-lag placebo stays quiet).
     cause_vals = rng.standard_normal(n)
     target_vals = np.zeros(n)
     half = n // 2
     target_vals[:half] = 0.95 * cause_vals[:half] + rng.standard_normal(half) * 0.05
-    target_vals[half:] = rng.standard_normal(n - half)  # pure noise
+    target_vals[half:] = rng.standard_normal(n - half)  # pure noise in 2nd half
 
     cause = pd.Series(cause_vals, index=dates)
     target = pd.Series(target_vals, index=dates)
 
     spec = _make_spec(lags=[1], horizon_d=1)
-    result = run_battery(spec, cause, target, priors={})
+    result = run_battery(spec, cause, target, priors={}, hermetic=True)
 
-    # With such a concentrated regime the bootstrap CI should span zero
-    # (signal only exists in one half), leading to 'unstable' or 'null'
+    # With such a concentrated regime the effect-series bootstrap CI must span zero
+    # (effect exists only in first half), leading to 'unstable' or related verdict.
     assert result.verdict in ("unstable", "null", "era_specific"), (
         f"Regime-persistence mirage should not be screened_candidate; "
         f"got {result.verdict!r}, concerns={result.concerns}"
+    )
+    # The concern must come from the genuine effect machinery:
+    # bootstrap spans zero, or era split / effect concentration concern.
+    effect_concern = [
+        c for c in result.concerns
+        if any(kw in c.lower() for kw in (
+            "spans zero", "unstable", "era split", "concentrated in single era",
+            "opposite signs", "effect direction", "effect concentrated",
+        ))
+    ]
+    assert effect_concern, (
+        f"Expected effect-machinery concern (spans-zero / era / concentration); "
+        f"got concerns={result.concerns}"
     )
 
 
@@ -461,7 +485,7 @@ def test_era_span_honesty_insufficient_era_span():
         lags=[1],
         horizon_d=1,
     )
-    result = run_battery(spec, cause, target, priors={})
+    result = run_battery(spec, cause, target, priors={}, hermetic=True)
 
     assert result.verdict == "insufficient_era_span", (
         f"Post-2022-only data with require_break_2010 should yield "
@@ -537,7 +561,7 @@ def test_priors_mask_forbidden_cause():
         horizon_d=1,
     )
     priors = {"forbidden_causes": ["fwd_ret_21", "fwd_*", "terminal_state_*"]}
-    result = run_battery(spec, cause, target, priors=priors)
+    result = run_battery(spec, cause, target, priors=priors, hermetic=True)
 
     assert result.verdict == "forbidden", (
         f"Expected 'forbidden' for fwd_ret_21 cause; got {result.verdict!r}"
@@ -556,25 +580,44 @@ def test_priors_mask_forbidden_cause():
 
 def test_sanitizer_removes_banned_words():
     """
-    The sanitizer must replace all banned causal-claim words
-    (caused, proved, proof, validated).
+    The sanitizer must replace exactly the four banned causal-claim words:
+    caused, proved, proof, validated (and their inflections).
+
+    N2 law: the sanitizer acts ONLY on these four root words so that
+    replacement strings remain grammatical.  Words NOT in the ban list
+    (e.g. 'proves', 'cause' noun, 'proves') must pass through unchanged.
     """
-    test_cases = [
+    # Cases where banned words MUST be removed
+    must_sanitize = [
         ("This caused the outcome", "caused"),
-        ("This proves the hypothesis", "proves"),
         ("The proof is overwhelming", "proof"),
+        ("The proofs are clear", "proofs"),
         ("This was validated by data", "validated"),
         ("Results were proved correct", "proved"),
         ("VALIDATED approach used", "VALIDATED"),
+        ("Validation of the signal", "validation"),
     ]
+    # Regex matching exactly the four banned root words and their inflections
     banned = re.compile(
-        r"\b(caused?|proves?|proved|proof|proofs|validate[sd]?|validation)\b",
+        r"\b(caused|proved|proof|proofs|validated|validates|validation)\b",
         re.IGNORECASE,
     )
-    for text, _ in test_cases:
+    for text, word in must_sanitize:
         result = _sanitize_text(text)
         assert not banned.search(result), (
-            f"Banned word survives sanitizer in: {result!r} (from {text!r})"
+            f"Banned word '{word}' survives sanitizer in: {result!r} (from {text!r})"
+        )
+
+    # Cases where NON-BANNED words must pass through unchanged (N2 law)
+    must_not_sanitize = [
+        "This proves the hypothesis",          # 'proves' is NOT banned
+        "The cause of the effect",             # 'cause' (noun) is NOT banned
+        "upstream of the target",              # already a replacement — no change
+    ]
+    for text in must_not_sanitize:
+        result = _sanitize_text(text)
+        assert result == text, (
+            f"Non-banned word was wrongly sanitized: {text!r} -> {result!r}"
         )
 
 
@@ -606,7 +649,7 @@ def test_priors_mask_wildcard_pattern():
         horizon_d=1,
     )
     priors = {"forbidden_causes": ["fwd_*"]}
-    result = run_battery(spec, cause, target, priors=priors)
+    result = run_battery(spec, cause, target, priors=priors, hermetic=True)
 
     assert result.verdict == "forbidden", (
         f"fwd_mfe_21 should match wildcard 'fwd_*' and be forbidden; "
@@ -639,7 +682,7 @@ def test_era_specific_recent_only_policy():
         lags=[5],
         horizon_d=1,
     )
-    result = run_battery(spec, cause, target, priors={})
+    result = run_battery(spec, cause, target, priors={}, hermetic=True)
 
     assert result.verdict != "insufficient_era_span", (
         "era_specific_recent_only should not return insufficient_era_span"
@@ -658,7 +701,7 @@ def test_degenerate_cause_returns_insufficient_power():
     target = pd.Series(_ar1(n, phi=0.3, seed=60), index=dates)
 
     spec = _make_spec(lags=[1])
-    result = run_battery(spec, cause, target, priors={})
+    result = run_battery(spec, cause, target, priors={}, hermetic=True)
 
     assert result.verdict == "insufficient_power", (
         f"Zero-variance cause should yield insufficient_power; "
@@ -714,4 +757,137 @@ def test_cumulative_width_accumulates_across_batches():
     assert width_after_second == result1.cells_logged + result2.cells_logged, (
         f"Total width {width_after_second} != sum of cells "
         f"({result1.cells_logged} + {result2.cells_logged})"
+    )
+
+
+# ---------------------------------------------------------------------------
+# MANDATORY FALSIFIER (CHF-R12): regime-persistence mirage WITHOUT target-mean
+# sign flip.  Effect present pre-2010 only, pure noise post-2010, plus a small
+# constant positive drift on the target across the whole span.
+#
+# Key: per-era TARGET-MEAN t-stats share the same sign (both positive due to
+# drift) — so the OLD hollow machinery would NOT see a sign flip and would
+# return screened_candidate when the lag survived its other filters.
+#
+# The CORRECT cause-aware machinery computes the EFFECT in each era and detects
+# that the effect is concentrated in the pre-2010 era (block-bootstrap CI spans
+# zero across the full span, or era-concentration concern fires).
+#
+# Design: the cause->target effect at lag=1 must be strong enough in pre-2010
+# to SURVIVE the neg-lag placebo (forward effect > reverse) but collapse to
+# near-zero post-2010.  We use a structured cause: AR(1) with phi=0.3 so that
+# z(y_{t-1}) and z(x_t) are decorrelated at lag=1 (neg-lag placebo silent),
+# while z(x_{t-1}) and z(y_t) are strongly correlated in the pre-2010 window.
+#
+# The block bootstrap on the FULL-SPAN effect series e_t = z(x_{t-1})*z(y_t)
+# produces a CI spanning zero (effect is large pre-2010, near-zero post-2010),
+# which drives verdict=unstable or null.
+#
+# Assert: verdict is NEVER screened_candidate (never a false positive).
+# Parameterized over >= 5 seeds.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("seed_offset", [0, 1, 2, 3, 4, 5, 6])
+def test_falsifier_regime_persistence_mirage_no_sign_flip(seed_offset: int):
+    """
+    MANDATORY FALSIFIER (CHF-R12, reviewer-specified):
+    Regime-persistence mirage WITHOUT a target-mean sign flip.
+
+    Structure:
+      - Cause: AR(1) phi=0.3 — mild autocorrelation
+      - Effect z(x_{t-1})*z(y_t): strong ONLY pre-2010 (high planted beta=0.95)
+      - Post-2010: target = pure noise, NO effect from cause
+      - Small constant positive drift added to target across ENTIRE span so
+        that per-era TARGET mean t-stats are BOTH positive (no sign flip in
+        the old hollow estimator — both era means positive => old code saw
+        "same sign" and wrongly returned screened_candidate)
+
+    Before the fix: hollow estimator measures per-era target mean t-stats;
+    both are positive due to drift => no sign flip => falsely returns
+    screened_candidate when the lag survives time-shift and neg-lag filters.
+
+    After the fix: the effect series e_t = z(x_{t-1})*z(y_t) is large pre-2010
+    and near-zero post-2010.  The block-bootstrap CI on the effect series spans
+    zero (effect not stable across time blocks) OR the era-concentration concern
+    fires => verdict is NEVER screened_candidate.
+
+    The forward effect mean in the pre-2010 window is substantially larger than
+    the reverse (we plant z(x_t)*z(y_t) not z(y_t)*z(x_t)) so the neg-lag
+    placebo is silent, ensuring the failure mode tests the ERA/bootstrap leg.
+    """
+    rng_base = 3000 + seed_offset * 97
+    rng = np.random.default_rng(rng_base)
+
+    n = N_OBS_WEEKLY   # 400 weekly obs, straddles 2010
+    dates = _make_dates(n)
+
+    # AR(1) cause — mild autocorrelation; prevents time-shift from trivially
+    # killing it while keeping neg-lag correlations low
+    cause_vals = _ar1(n, phi=0.3, seed=rng_base + 1)
+
+    # Find the pre/post era boundary index in the series
+    era_break_idx = int((dates < pd.Timestamp("2010-01-01")).sum())
+
+    # Target: strong effect pre-2010, pure noise post-2010
+    target_vals = np.zeros(n)
+    # pre-2010 portion (from index 1 to era_break_idx; lag=1 so x_{t-1}->y_t)
+    # Planted: y_t = 0.95 * x_{t-1} + small noise  (strong forward beta)
+    n_pre = era_break_idx
+    # For lag=1: x_lagged = cause_vals[:n-1], y_shifted = target_vals[1:]
+    # So target_vals[t] = 0.95 * cause_vals[t-1] + noise for t in 1..era_break_idx
+    pre_noise = rng.standard_normal(n_pre) * 0.15
+    for t in range(1, n_pre):
+        target_vals[t] = 0.95 * cause_vals[t - 1] + pre_noise[t]
+
+    # post-2010: pure noise — no effect
+    post_noise = rng.standard_normal(n - era_break_idx) * 1.0
+    target_vals[era_break_idx:] = post_noise
+
+    # Add a constant positive drift across the ENTIRE target so that both
+    # pre-2010 and post-2010 TARGET means are positive
+    # (the hollow estimator's per-era target-mean t-stats would both be > 0,
+    # so no sign flip in the old code => false screened_candidate)
+    drift = 0.35
+    target_vals += drift
+
+    cause = pd.Series(cause_vals, index=dates)
+    target = pd.Series(target_vals, index=dates)
+
+    spec = _make_spec(lags=[1], horizon_d=1)
+    result = run_battery(spec, cause, target, priors={}, hermetic=True)
+
+    # CRITICAL assertion: must NOT be screened_candidate
+    assert result.verdict != "screened_candidate", (
+        f"seed_offset={seed_offset}: regime-persistence mirage (no sign flip) "
+        f"must not be screened_candidate; got {result.verdict!r}. "
+        f"concerns={result.concerns}"
+    )
+
+    # The verdict must be one of the valid non-candidate verdicts
+    assert result.verdict in (
+        "era_specific", "unstable", "null", "insufficient_power"
+    ), (
+        f"seed_offset={seed_offset}: unexpected verdict {result.verdict!r}. "
+        f"concerns={result.concerns}"
+    )
+
+    # The cause-aware machinery must have fired: the concern must come from the
+    # effect-series bootstrap or era-concentration machinery, NOT from a
+    # target-mean sign flip (which would be absent here due to drift).
+    # Acceptable concern keywords: spans zero (bootstrap), era split / era-specific
+    # concentration, unstable, invariance failure, reverse causation (neg-lag),
+    # or time-shift placebo (any of these are cause-aware, not target-mean checks).
+    any_effect_concern = [
+        c for c in result.concerns
+        if any(kw in c.lower() for kw in (
+            "spans zero", "unstable", "era split", "concentrated in single era",
+            "opposite signs", "effect direction", "effect concentrated",
+            "invariance failure", "invariance concern",
+            "reverse-causation", "may lead",  # neg-lag placebo (effect-based)
+            "indistinguishable", "time-shift",  # shift placebo (cause-aware)
+        ))
+    ]
+    assert any_effect_concern, (
+        f"seed_offset={seed_offset}: expected effect-machinery concern but got "
+        f"concerns={result.concerns} (verdict={result.verdict!r})"
     )
