@@ -614,7 +614,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| dol-certs-store | `data/dol_certs/certs.parquet` | parquet | collect | display | 0 | 0 |
+| dol-certs-store | `data/dol_certs/certs.parquet` | parquet | collect | display | 1 | 0 |
 | hiring-velocity | `data/dol_certs/hiring_velocity.json` | json | collect | display | 0 | 0 |
 | site-hiring-intent | `site/basketdata/hiring_intent.json` | json | collect | display | 0 | 0 |
 

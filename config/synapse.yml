@@ -9036,41 +9036,6 @@ artifacts:
     freshness_sla_hours: 2160
     schema: dol_certs.v1
     tier: display
-  causal-brainstorm-runs:
-    path: data/neuralweb/causal_brainstorm_runs.jsonl
-    format: jsonl
-    producer: scripts/run_causal_brainstorm.py
-    known_extra_writers: []
-    owner_program: causal-hypothesis-factory
-    cadence: weekly
-    storage: git
-    asof_field: ts
-    freshness_sla_hours: 200
-    schema: implicit
-    tier: infrastructure
-    horizon_role: context
-    weights: none
-    scored_path_surfaces: []
-    consumers: []
-    external_consumers: []
-    notes: >
-      CHF W5 LLM brainstorm run log. Appended each run (pack-only or full mode);
-      stores pack_id, run_status, token counts, truncated raw LLM replies, and
-      trigger metadata for provenance. Infrastructure tier; never signals, never
-      ranks, never gates any money-path surface. Absent until first brainstorm run.
-
-  causal-llm-lane:
-    path: data/neuralweb/causal_llm_lane.json
-    format: json
-    producer: scripts/run_causal_brainstorm.py
-    known_extra_writers: []
-    owner_program: causal-hypothesis-factory
-    cadence: weekly
-    storage: git
-    asof_field: asof
-    freshness_sla_hours: 200
-    schema: implicit
-    tier: infrastructure
     horizon_role: context
     weights: none
     scored_path_surfaces: []
@@ -9154,6 +9119,45 @@ artifacts:
       FENCE: separate display leg — never folded into fused_obs_z.
       Stale/absent-store honest null: when dol-certs-store is absent
       all baskets carry cert_velocity_z=null with explanatory coverage_note.
+  causal-brainstorm-runs:
+    path: data/neuralweb/causal_brainstorm_runs.jsonl
+    format: jsonl
+    producer: scripts/run_causal_brainstorm.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: weekly
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 200
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CHF W5 LLM brainstorm run log. Appended each run (pack-only or full mode);
+      stores pack_id, run_status, token counts, truncated raw LLM replies, and
+      trigger metadata for provenance. Infrastructure tier; never signals, never
+      ranks, never gates any money-path surface. Absent until first brainstorm run.
+
+  causal-llm-lane:
+    path: data/neuralweb/causal_llm_lane.json
+    format: json
+    producer: scripts/run_causal_brainstorm.py
+    known_extra_writers: []
+    owner_program: causal-hypothesis-factory
+    cadence: weekly
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 200
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
       - engine/neuralweb/causal_frontier.py
     external_consumers: []
     notes: >
