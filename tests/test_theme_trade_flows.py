@@ -91,8 +91,8 @@ class TestYoYMath:
 
     def test_negative_yoy(self):
         from engine.theme_trade_flows import _compute_yoy
-        # Values decline 30% over a year
-        rows = _monthly_rows("854140", "2023-01", 24, 2_000_000.0, yoy_growth_pct=-30.0)
+        # Values decline 30% over a year (using solar PV cell HS2022 code 854142)
+        rows = _monthly_rows("854142", "2023-01", 24, 2_000_000.0, yoy_growth_pct=-30.0)
         series = pd.Series(
             {r["stat_month"]: r["value_usd"] for r in rows}
         )
@@ -132,69 +132,95 @@ class TestYoYMath:
 class TestAccelMath:
 
     def test_positive_accel(self):
-        """Accelerating imports: 3m rate > 12m rate → positive accel.
+        """Accelerating imports: 3m YoY rate > 12m YoY rate → positive accel.
 
-        The accel formula is: rate_3m - rate_12m where:
-          rate_3m  = (v[-1] - v[-4]) / v[-4] * 100  (last 3 months span)
-          rate_12m = (v[-1] - v[-13]) / v[-13] * 100 (12 months span)
+        New seasonality-safe formula (fixed 2026-07-09):
+          rate_3m  = avg(series[-3:]) / avg(series[-15:-12]) - 1  (YoY of recent 3m avg)
+          rate_12m = series[-1] / series[-13] - 1                  (full-year YoY)
+          accel    = rate_3m - rate_12m
 
-        For accel > 0: v[-4] must be relatively HIGH vs v[-13] (meaning the
-        period from month -13 to month -4 was already rising), AND v[-1] must
-        be high enough that rate from v[-4] exceeds the full-year rate from v[-13].
-        Concretely: need v[-4] > v[-13] AND the ratio (v[-1]/v[-4]) > (v[-1]/v[-13]).
-        That means v[-4] < v[-1] AND v[-13] < v[-4] — a steadily rising series
-        where recent pace outstrips historical pace.
+        Both sides compare like calendar months, so seasonal effects cancel.
+        Requires 15 months minimum.
 
-        Fixture: exponentially growing series at 60% annual rate (strong acceleration
-        vs a low base). After 13+ months of compound growth, the rate over the last
-        3 months is faster in absolute pct terms from the higher base.
+        For accel > 0: avg_recent/avg_prior > v_end/v_13
 
-        Actually for 3m rate > 12m rate with same endpoint:
-          (v_end - v_4) / v_4 > (v_end - v_13) / v_13
-          => v_end/v_4 - 1 > v_end/v_13 - 1
-          => v_end/v_4 > v_end/v_13
-          => v_13 > v_4   (more recent starting point is LOWER than older starting point)
+        Fixture design: months 1-2 are low, month 3 is high (so v_13 = month 3 is
+        above avg of months 1-3). Months 13-15 are all high and equal. This makes
+        rate_12m (v_end/v_13) smaller than rate_3m (avg_recent/avg_prior), producing
+        positive accel.
 
-        This means: 3m start (v[-4]) must be LOWER than 12m start (v[-13]).
-        i.e., the series must have DECLINED from month -13 to month -4, then surged.
-        Or more simply: a V-shape where the trough is around month -4.
+        Concrete numbers:
+          months 1-2 (indices 0,1): 500_000   → avg_prior = (500k+500k+2M)/3 = 1M
+          month  3   (index 2):    2_000_000  → v_13 = 2M
+          months 4-12:              any values (irrelevant to the formula)
+          months 13-15 (indices 12-14): 3_000_000 each → avg_recent = 3M; v_end = 3M
+          rate_3m  = 3M/1M - 1 = 200%
+          rate_12m = 3M/2M - 1 = 50%
+          accel    = 150% > 0 ✓
         """
         from engine.theme_trade_flows import _compute_accel
 
-        # V-shape: high → low → high. For series with 13 months:
-        # months[-13] = 2M (high start), months[-4] = 0.5M (trough), months[-1] = 3M (surge end)
-        # rate_3m = (3M - 0.5M)/0.5M*100 = 500%
-        # rate_12m = (3M - 2M)/2M*100 = 50%
-        # accel = 500 - 50 = 450 (positive)
         rows = []
-        start = pd.Period("2023-01", freq="M")
-        n = 13
+        start = pd.Period("2022-01", freq="M")
+        n = 15
         for i in range(n):
             p = start + i
-            # V-shape: index 0 = 2M, index 9 = 0.5M (trough at -4), index 12 = 3M
-            if i <= 9:
-                v = 2_000_000.0 - i * 150_000.0  # declining: 2M → 0.65M
+            if i < 2:
+                v = 500_000.0          # months 1-2: low
+            elif i == 2:
+                v = 2_000_000.0        # month 3: high (this becomes v_13)
+            elif i < 12:
+                v = 1_000_000.0        # months 4-12: middle (irrelevant to formula)
             else:
-                v = 500_000.0 + (i - 9) * 833_333.0  # recovering
-            rows.append({"stat_month": str(p), "value_usd": max(v, 100_000.0)})
+                v = 3_000_000.0        # months 13-15: high (recent acceleration)
+            rows.append({"stat_month": str(p), "value_usd": v})
 
         series = pd.Series({r["stat_month"]: r["value_usd"] for r in rows})
-        assert len(series) >= 13
+        assert len(series) == 15
+
+        # Verify expected fixture values
+        assert series.iloc[-15:-12].mean() == pytest.approx(1_000_000.0), "avg_prior should be 1M"
+        assert series.iloc[-13] == pytest.approx(2_000_000.0), "v_13 (month 3) should be 2M"
+        assert series.iloc[-3:].mean() == pytest.approx(3_000_000.0), "avg_recent should be 3M"
+        assert series.iloc[-1] == pytest.approx(3_000_000.0), "v_end should be 3M"
 
         accel = _compute_accel(series)
-        assert accel is not None
+        assert accel is not None, (
+            "Expected non-None accel for 15-month series"
+        )
         assert accel > 0, (
-            f"Expected positive accel for V-shape (recent 3m rate > full 12m rate), "
+            f"Expected positive accel: rate_3m=200% > rate_12m=50% → accel=+150pp, "
             f"got {accel:.2f}. "
-            f"v[-13]={series.iloc[-13]:.0f}, v[-4]={series.iloc[-4]:.0f}, v[-1]={series.iloc[-1]:.0f}"
+            f"avg_recent={series.iloc[-3:].mean():.0f}, "
+            f"avg_prior={series.iloc[-15:-12].mean():.0f}, "
+            f"v_end={series.iloc[-1]:.0f}, v_13={series.iloc[-13]:.0f}"
         )
 
     def test_insufficient_data_returns_none(self):
+        """Fewer than 15 months → None (requires 15 for like-month YoY-vs-YoY)."""
         from engine.theme_trade_flows import _compute_accel
         rows = _monthly_rows("854231", "2024-01", 10, 1_000_000.0)
         series = pd.Series({r["stat_month"]: r["value_usd"] for r in rows})
         accel = _compute_accel(series)
         assert accel is None
+
+    def test_13_months_insufficient_for_accel(self):
+        """13 months insufficient (need 15); old formula needed 13 — new needs 15."""
+        from engine.theme_trade_flows import _compute_accel
+        rows = _monthly_rows("854231", "2024-01", 13, 1_000_000.0)
+        series = pd.Series({r["stat_month"]: r["value_usd"] for r in rows})
+        accel = _compute_accel(series)
+        assert accel is None
+
+    def test_15_months_sufficient_for_accel(self):
+        """Exactly 15 months with flat data → accel computes (near zero)."""
+        from engine.theme_trade_flows import _compute_accel
+        rows = _monthly_rows("854231", "2024-01", 15, 1_000_000.0)
+        series = pd.Series({r["stat_month"]: r["value_usd"] for r in rows})
+        accel = _compute_accel(series)
+        # Flat series: rate_3m ≈ 0%, rate_12m ≈ 0%, accel ≈ 0
+        assert accel is not None
+        assert abs(accel) < 1.0, f"Expected near-zero accel for flat series, got {accel:.4f}"
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +233,7 @@ class TestSignLogic:
         """rising_imports_confirms + positive YoY → confirmation='confirms'."""
         from engine.theme_trade_flows import _sign_reading
         confirmation, band = _sign_reading(
-            yoy_pct=25.0, accel=5.0, expected_direction="rising_imports_confirms"
+            yoy_pct=25.0, expected_direction="rising_imports_confirms"
         )
         assert confirmation == "confirms"
         assert band == "large"
@@ -216,7 +242,7 @@ class TestSignLogic:
         """rising_imports_confirms + negative YoY → confirmation='contradicts'."""
         from engine.theme_trade_flows import _sign_reading
         confirmation, band = _sign_reading(
-            yoy_pct=-15.0, accel=-3.0, expected_direction="rising_imports_confirms"
+            yoy_pct=-15.0, expected_direction="rising_imports_confirms"
         )
         assert confirmation == "contradicts"
         assert band == "moderate"
@@ -226,7 +252,7 @@ class TestSignLogic:
         (import decline = domestic substitution)."""
         from engine.theme_trade_flows import _sign_reading
         confirmation, band = _sign_reading(
-            yoy_pct=-25.0, accel=-5.0, expected_direction="falling_imports_confirms"
+            yoy_pct=-25.0, expected_direction="falling_imports_confirms"
         )
         assert confirmation == "confirms"
         assert band == "large"
@@ -236,7 +262,7 @@ class TestSignLogic:
         (imports still rising = substitution not happening)."""
         from engine.theme_trade_flows import _sign_reading
         confirmation, band = _sign_reading(
-            yoy_pct=12.0, accel=2.0, expected_direction="falling_imports_confirms"
+            yoy_pct=12.0, expected_direction="falling_imports_confirms"
         )
         assert confirmation == "contradicts"
         assert band == "moderate"
@@ -245,7 +271,7 @@ class TestSignLogic:
         """YoY below threshold (< 5%) → neutral regardless of direction."""
         from engine.theme_trade_flows import _sign_reading
         confirmation, band = _sign_reading(
-            yoy_pct=3.0, accel=1.0, expected_direction="rising_imports_confirms"
+            yoy_pct=3.0, expected_direction="rising_imports_confirms"
         )
         assert confirmation == "neutral"
         assert band is None
@@ -253,20 +279,20 @@ class TestSignLogic:
     def test_none_yoy_is_neutral(self):
         from engine.theme_trade_flows import _sign_reading
         confirmation, band = _sign_reading(
-            yoy_pct=None, accel=None, expected_direction="rising_imports_confirms"
+            yoy_pct=None, expected_direction="rising_imports_confirms"
         )
         assert confirmation == "neutral"
         assert band is None
 
     def test_magnitude_bands(self):
         from engine.theme_trade_flows import _sign_reading
-        _, band = _sign_reading(25.0, 0.0, "rising_imports_confirms")
+        _, band = _sign_reading(25.0, "rising_imports_confirms")
         assert band == "large"
 
-        _, band = _sign_reading(15.0, 0.0, "rising_imports_confirms")
+        _, band = _sign_reading(15.0, "rising_imports_confirms")
         assert band == "moderate"
 
-        _, band = _sign_reading(7.0, 0.0, "rising_imports_confirms")
+        _, band = _sign_reading(7.0, "rising_imports_confirms")
         assert band == "small"
 
     def test_confirmation_enum_valid(self):
@@ -275,7 +301,7 @@ class TestSignLogic:
         valid = {"confirms", "contradicts", "neutral"}
         for yoy in [None, -50.0, -3.0, 3.0, 50.0]:
             for direction in ["rising_imports_confirms", "falling_imports_confirms"]:
-                confirmation, _ = _sign_reading(yoy, None, direction)
+                confirmation, _ = _sign_reading(yoy, direction)
                 assert confirmation in valid, (
                     f"Invalid confirmation {confirmation!r} for yoy={yoy} dir={direction}"
                 )
@@ -298,13 +324,17 @@ class TestHonestNull:
         themes = result.get("themes", {})
         assert len(themes) > 0, "Should have theme entries even when parquet absent"
 
+        valid_null_confirmations = {"neutral", "mixed_direction"}
         for theme_id, theme_data in themes.items():
             assert theme_data["n_codes_with_data"] == 0, (
                 f"Theme {theme_id} should have 0 codes with data when parquet absent"
             )
             assert theme_data["yoy_pct"] is None
             assert theme_data["accel_3m_vs_12m"] is None
-            assert theme_data["confirmation"] == "neutral"
+            assert theme_data["confirmation"] in valid_null_confirmations, (
+                f"Theme {theme_id} confirmation must be 'neutral' or 'mixed_direction' when absent, "
+                f"got {theme_data['confirmation']!r}"
+            )
             assert theme_data["coverage_note"], "Coverage note must explain absence"
 
     def test_coverage_stats_parquet_absent_flag(self, monkeypatch):
@@ -408,11 +438,43 @@ class TestOutputSchema:
         with mock.patch.object(ttf, "_load_parquet", return_value=None):
             result = ttf.compute_theme_trade_flows(write_nw=False, write_site=False)
         required = {"theme_id", "n_codes_configured", "n_codes_with_data",
-                    "confirmation", "coverage_note", "coverage_note_zh"}
+                    "confirmation", "coverage_note", "coverage_note_zh",
+                    "is_mixed_direction", "direction_legs"}
         for theme_id, theme_data in result["themes"].items():
             missing = required - set(theme_data.keys())
             assert not missing, (
                 f"Theme {theme_id} missing required fields: {missing}"
+            )
+
+    def test_mixed_direction_themes_flagged(self, monkeypatch):
+        """Themes with mixed expected_direction codes must be flagged is_mixed_direction=True."""
+        from engine import theme_trade_flows as ttf
+        with mock.patch.object(ttf, "_load_parquet", return_value=None):
+            result = ttf.compute_theme_trade_flows(write_nw=False, write_site=False)
+        # solar, rare_earth_critical_min, copper_steel_electrify have mixed directions
+        mixed_themes = {"solar", "rare_earth_critical_min", "copper_steel_electrify"}
+        for theme_id in mixed_themes:
+            tdata = result["themes"].get(theme_id)
+            if tdata is not None:
+                assert tdata["is_mixed_direction"] is True, (
+                    f"Theme {theme_id} should be flagged is_mixed_direction=True "
+                    f"(has both rising and falling codes)"
+                )
+                assert tdata["confirmation"] == "mixed_direction", (
+                    f"Theme {theme_id} should have confirmation='mixed_direction', "
+                    f"got {tdata['confirmation']!r}"
+                )
+
+    def test_uniform_direction_themes_not_mixed(self, monkeypatch):
+        """Themes with all same expected_direction must NOT be flagged as mixed."""
+        from engine import theme_trade_flows as ttf
+        with mock.patch.object(ttf, "_load_parquet", return_value=None):
+            result = ttf.compute_theme_trade_flows(write_nw=False, write_site=False)
+        # ai_semiconductors is all rising_imports_confirms
+        ai_theme = result["themes"].get("ai_semiconductors")
+        if ai_theme is not None:
+            assert ai_theme["is_mixed_direction"] is False, (
+                "ai_semiconductors should not be flagged as mixed-direction"
             )
 
 
@@ -490,12 +552,16 @@ class TestEndToEnd:
 
     def test_falling_imports_theme(self, tmp_path, monkeypatch):
         """
-        Solar code 854140 (falling_imports_confirms): import decline should confirm.
-        15 months with -25% YoY → expected confirmation='confirms'.
+        Solar code 854142 HS2022 (falling_imports_confirms): import decline should confirm.
+        15 months with -25% YoY → falling_imports_confirms leg confirmation='confirms'.
+
+        Solar is a MIXED-DIRECTION theme (854142/854143=falling, 280461=rising), so:
+          - theme-level confirmation = 'mixed_direction' (not directly readable)
+          - direction_legs['falling_imports_confirms'] has the per-leg read
         """
         from engine import theme_trade_flows as ttf
 
-        rows = _monthly_rows("854140", "2023-05", 15, 2_000_000.0, yoy_growth_pct=-25.0)
+        rows = _monthly_rows("854142", "2023-05", 15, 2_000_000.0, yoy_growth_pct=-25.0)
         df = pd.DataFrame(rows, columns=[
             "hs_code", "stat_month", "value_usd", "quantity", "quantity_unit", "ingested_at"
         ])
@@ -505,13 +571,25 @@ class TestEndToEnd:
 
         solar_theme = result["themes"].get("solar")
         assert solar_theme is not None
+
+        # Solar is mixed-direction: top-level confirmation must be 'mixed_direction'
+        assert solar_theme["is_mixed_direction"] is True, (
+            "Solar theme must be flagged as mixed-direction (has rising + falling codes)"
+        )
+        assert solar_theme["confirmation"] == "mixed_direction", (
+            f"Expected 'mixed_direction' for solar top-level, got {solar_theme['confirmation']!r}"
+        )
+
         if solar_theme["n_codes_with_data"] >= 1:
-            assert solar_theme["yoy_pct"] is not None
-            # Negative YoY for falling_imports_confirms → should confirm
-            if abs(solar_theme["yoy_pct"]) >= 5.0:
-                assert solar_theme["confirmation"] == "confirms", (
-                    f"Expected 'confirms' for solar with -25% YoY, got {solar_theme['confirmation']!r}"
-                )
+            # The falling_imports_confirms leg should show confirms for -25% YoY
+            legs = solar_theme.get("direction_legs", {})
+            falling_leg = legs.get("falling_imports_confirms")
+            if falling_leg and falling_leg["yoy_pct"] is not None:
+                if abs(falling_leg["yoy_pct"]) >= 5.0:
+                    assert falling_leg["confirmation"] == "confirms", (
+                        f"Expected falling_leg confirmation='confirms' for solar with -25% YoY, "
+                        f"got {falling_leg['confirmation']!r}"
+                    )
 
     def test_no_composite_across_themes(self, monkeypatch):
         """Each theme must have its own independent metrics — no cross-theme composite."""

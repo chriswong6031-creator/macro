@@ -76,25 +76,40 @@ codes:
       Materials, Vacuumschmelze, etc.). Rising imports = dependency persists.
 
   # ── SOLAR ─────────────────────────────────────────────────────────────────
-  - hs_code: "854140"
-    label_en: "Photovoltaic cells (solar cells, unassembled)"
-    label_zh: "光伏电池（未封装）"
+  # HS2022 NOTE (effective 2022-01): heading 8541 was restructured.
+  #   Pre-2022 (HS2017): 854140 = photovoltaic cells (assembled + unassembled);
+  #                       854150 = DOES NOT EXIST as a valid HS6 subheading.
+  #   HS2022 onwards:     854141 = LED; 854142 = unassembled PV cells;
+  #                       854143 = assembled PV modules/panels.
+  # Census API serves data by the code valid at time of import filing. Querying
+  # 854142/854143 will therefore return data from 2022-01 onwards only.
+  # Coverage note must be honest: series starts 2022-01 for these codes.
+  # The pre-2022 predecessor was 854140 (unassembled) — not included here because
+  # mixing old+new codes in the same theme without a crosswalk splice would produce
+  # a false level shift (different scope: pre-2022 854140 included both cells types).
+  - hs_code: "854142"
+    label_en: "Photovoltaic cells (solar cells, unassembled) — HS2022"
+    label_zh: "光伏电池（未封装，HS2022编码）"
     theme_id: solar
     expected_direction: falling_imports_confirms
     rationale: >
       Solar cell imports from SE Asia proxy for US domestic-manufacturing gap.
       Falling imports as US fab capacity (First Solar, Qcells, etc.) ramps =
       domestic-substitution evidence per the onshoring thesis.
+      HS2022 code (effective 2022-01); predecessor was 854140 under HS2017.
+      Series coverage starts 2022-01 — pre-2022 gap is structural, not missing data.
 
-  - hs_code: "854150"
-    label_en: "Solar modules / panels (assembled)"
-    label_zh: "太阳能电池板（已封装模组）"
+  - hs_code: "854143"
+    label_en: "Solar modules / panels (assembled) — HS2022"
+    label_zh: "太阳能电池板（已封装模组，HS2022编码）"
     theme_id: solar
     expected_direction: falling_imports_confirms
     rationale: >
       Panel imports are the dominant US solar supply source today. Import deceleration
       as US + allied capacity scales = substitution evidence. CAUTION: tariff timing
       distorts short-window reads (stockpiling ahead of tariff cliffs).
+      HS2022 code (effective 2022-01); 854150 was never a valid HS6 subheading.
+      Series coverage starts 2022-01 — pre-2022 gap is structural, not missing data.
 
   - hs_code: "280461"
     label_en: "Silicon — polysilicon (electronic grade)"

@@ -10,9 +10,11 @@ Framing (R-TIL-9, spec PR-W8):
   Physical-flow leg for onshoring/substitution themes — parallel to JODI/EIA.
 
   Sign convention (expected_direction field in config):
-    rising_imports_confirms  → confirmation = positive YoY / positive accel
-    falling_imports_confirms → confirmation = NEGATIVE YoY / negative accel
+    rising_imports_confirms  → confirmation = positive YoY
+    falling_imports_confirms → confirmation = NEGATIVE YoY
                                (import decline = domestic substitution progress)
+  Note: accel_3m_vs_12m is a context metric (recent pace vs year pace) and does
+  not directly drive confirmation — confirmation is YoY-only per _sign_reading.
   Confirmation reads:
     "confirms"     — direction of signal matches expected_direction
     "contradicts"  — direction opposes expected_direction
@@ -167,39 +169,55 @@ def _compute_yoy(series: pd.Series) -> Optional[float]:
 
 def _compute_accel(series: pd.Series) -> Optional[float]:
     """
-    Compute 3m-vs-12m growth-rate acceleration.
-    3m annualized rate minus 12m rate, in percentage-point terms.
-    Returns None if insufficient data (< 13 months).
+    Compute 3m-vs-12m growth-rate acceleration using like-month YoY comparisons.
+
+    CONSTRUCTION (seasonality-safe):
+      rate_3m  = YoY of the most recent 3-month block:
+                 avg(series[-3:]) / avg(series[-15:-12]) - 1  (× 100)
+      rate_12m = full 12m YoY: series[-1] / series[-13] - 1 (× 100)
+      accel    = rate_3m - rate_12m  (percentage-point difference)
+
+    Both legs compare the same calendar-month windows shifted by one year, so
+    seasonal effects cancel (Lunar-New-Year troughs, quarter-end spikes, etc.
+    appear symmetrically in numerator and denominator of each YoY).
+
+    Requires at least 15 months (3 current + 3 prior-year for rate_3m,
+    plus 12m span for rate_12m which anchors at -13).
+
+    Returns None if insufficient data or zero denominators.
     """
-    if series is None or len(series) < 13:
+    if series is None or len(series) < 15:
         return None
     series = series.dropna().sort_index()
-    if len(series) < 13:
+    if len(series) < 15:
         return None
 
-    # 3-month sum (most recent 3 months)
-    v3_end = series.iloc[-1]
-    v3_start = series.iloc[-4]  # 3 months ago
-    if v3_start == 0 or pd.isna(v3_start) or pd.isna(v3_end):
+    # Recent 3-month average (last 3 months)
+    avg_recent = series.iloc[-3:].mean()
+    # Same 3 months one year earlier
+    avg_prior = series.iloc[-15:-12].mean()
+    if avg_prior == 0 or pd.isna(avg_prior) or pd.isna(avg_recent):
         return None
-    rate_3m = float((v3_end - v3_start) / abs(v3_start) * 100.0)
+    rate_3m = float((avg_recent - avg_prior) / abs(avg_prior) * 100.0)
 
-    # 12-month rate
+    # Full 12m YoY (endpoint vs same month last year)
+    v_end = series.iloc[-1]
     v12_start = series.iloc[-13]
-    if v12_start == 0 or pd.isna(v12_start):
+    if v12_start == 0 or pd.isna(v12_start) or pd.isna(v_end):
         return None
-    rate_12m = float((v3_end - v12_start) / abs(v12_start) * 100.0)
+    rate_12m = float((v_end - v12_start) / abs(v12_start) * 100.0)
 
     return float(rate_3m - rate_12m)
 
 
 def _sign_reading(
     yoy_pct: Optional[float],
-    accel: Optional[float],
     expected_direction: str,
 ) -> tuple[str, Optional[str]]:
     """
-    Convert raw metrics to signed confirmation read.
+    Convert YoY metric to signed confirmation read.
+    Confirmation is driven by YoY direction only; accel_3m_vs_12m is a
+    separate context metric and does not drive confirmation.
 
     Returns:
       (confirmation, magnitude_band)
@@ -304,7 +322,7 @@ def _rollup_theme(
 
         yoy = _compute_yoy(series)
         accel = _compute_accel(series)
-        confirmation, band = _sign_reading(yoy, accel, expected_dir)
+        confirmation, band = _sign_reading(yoy, expected_dir)
 
         # Weight by recent import value (12-month average as proxy)
         weight = float(series.iloc[-12:].mean()) if n_months >= 12 else float(series.mean())
@@ -325,36 +343,109 @@ def _rollup_theme(
             "n_months": n_months,
         })
 
-    # Theme-level metrics (value-weighted across codes)
-    theme_yoy: Optional[float] = None
-    theme_accel: Optional[float] = None
-    theme_confirmation = "neutral"
-    theme_band: Optional[str] = None
+    # Theme-level metrics — per-direction sub-rollups.
+    #
+    # MIXED-DIRECTION THEMES (e.g., solar, rare_earth_critical_min,
+    # copper_steel_electrify): some codes use rising_imports_confirms
+    # (demand/build-out evidence) and others use falling_imports_confirms
+    # (domestic-substitution evidence). A single value-weighted YoY averaged
+    # across both directions conflates two independent confirmation signals and
+    # can be wrong-signed whenever one direction dominates by import value.
+    #
+    # Fix: compute separate per-direction sub-rollups, each with its own
+    # value-weighted YoY and confirmation. Expose as `direction_legs` dict.
+    # The top-level `confirmation` is set to "mixed_direction" for these themes
+    # to prevent display code from treating it as a simple confirms/contradicts.
 
-    # Use the theme's dominant expected_direction for the theme-level read
-    # (all codes in a theme should share the same direction; if mixed, use plurality)
+    # Accumulate per-direction weighted sums
+    dir_wt: dict[str, float] = {}
+    dir_yoy_sum: dict[str, float] = {}
+    dir_accel_sum: dict[str, float] = {}
     direction_counts: dict[str, int] = {}
+
     for cd in code_details:
         d = cd.get("expected_direction", "rising_imports_confirms")
         direction_counts[d] = direction_counts.get(d, 0) + 1
-    theme_direction = max(direction_counts, key=direction_counts.get) if direction_counts else "rising_imports_confirms"
 
-    if total_weight > 0:
-        theme_yoy = weighted_yoy_sum / total_weight
-        theme_accel = weighted_accel_sum / total_weight if total_weight > 0 else None
-        theme_confirmation, theme_band = _sign_reading(theme_yoy, theme_accel, theme_direction)
+    is_mixed = len(direction_counts) > 1
+
+    # Per-direction weighted accumulators (built from code_details using
+    # the same weights as the per-code loop above — re-derive here for clarity)
+    for code_cfg2 in theme_codes:
+        hs_code2 = str(code_cfg2["hs_code"]).strip()
+        expected_dir2 = code_cfg2.get("expected_direction", "rising_imports_confirms")
+        code_rows2 = df[df["hs_code"] == hs_code2] if not df.empty else pd.DataFrame()
+        if code_rows2.empty:
+            continue
+        series2 = (
+            code_rows2.dropna(subset=["value_usd"])
+            .groupby("stat_month")["value_usd"]
+            .sum()
+            .sort_index()
+        )
+        nm2 = len(series2)
+        yoy2 = _compute_yoy(series2)
+        accel2 = _compute_accel(series2)
+        weight2 = float(series2.iloc[-12:].mean()) if nm2 >= 12 else float(series2.mean())
+        if weight2 > 0 and yoy2 is not None:
+            dir_wt[expected_dir2] = dir_wt.get(expected_dir2, 0.0) + weight2
+            dir_yoy_sum[expected_dir2] = dir_yoy_sum.get(expected_dir2, 0.0) + yoy2 * weight2
+        if weight2 > 0 and accel2 is not None:
+            dir_accel_sum[expected_dir2] = dir_accel_sum.get(expected_dir2, 0.0) + accel2 * weight2
+
+    # Build per-direction leg objects
+    direction_legs: dict[str, dict] = {}
+    for d, wt in dir_wt.items():
+        if wt <= 0:
+            continue
+        leg_yoy = dir_yoy_sum[d] / wt
+        leg_accel_raw = dir_accel_sum.get(d)
+        leg_accel = (leg_accel_raw / wt) if leg_accel_raw is not None else None
+        leg_conf, leg_band = _sign_reading(leg_yoy, d)
+        direction_legs[d] = {
+            "expected_direction": d,
+            "yoy_pct": round(leg_yoy, 2),
+            "accel_3m_vs_12m": round(leg_accel, 2) if leg_accel is not None else None,
+            "confirmation": leg_conf,
+            "magnitude_band": leg_band,
+        }
+
+    # Top-level summary fields
+    if is_mixed:
+        # Mixed-direction theme: per-leg reads are the authoritative signals.
+        # Top-level yoy_pct/confirmation are flagged as unreliable (mixed).
+        theme_yoy: Optional[float] = None
+        theme_accel: Optional[float] = None
+        theme_confirmation = "mixed_direction"
+        theme_band: Optional[str] = None
+        theme_direction = "mixed"
+    else:
+        # Uniform-direction theme: single weighted rollup is valid.
+        theme_direction = list(direction_counts.keys())[0] if direction_counts else "rising_imports_confirms"
+        if total_weight > 0:
+            theme_yoy = weighted_yoy_sum / total_weight
+            theme_accel = weighted_accel_sum / total_weight if total_weight > 0 else None
+            theme_confirmation, theme_band = _sign_reading(theme_yoy, theme_direction)
+        else:
+            theme_yoy = None
+            theme_accel = None
+            theme_confirmation = "neutral"
+            theme_band = None
 
     # Coverage notes
     n_configured = len(theme_codes)
+    mixed_note = " Mixed-direction theme: see direction_legs for per-leg reads." if is_mixed else ""
     cov_note_en = (
         f"{codes_with_data}/{n_configured} HS codes have data"
         + (f"; most recent month: {max_month}" if max_month else "")
         + (". No data — run census_trade collector with CENSUS_API_KEY." if codes_with_data == 0 else "")
+        + mixed_note
     )
     cov_note_zh = (
         f"已配置{n_configured}个HS编码中{codes_with_data}个有数据"
         + (f"；最新数据月份：{max_month}" if max_month else "")
         + ("；无数据——请设置CENSUS_API_KEY并运行普查贸易数据采集器。" if codes_with_data == 0 else "。")
+        + ("混合方向主题：请查看direction_legs了解各方向读数。" if is_mixed else "")
     )
 
     return {
@@ -363,6 +454,8 @@ def _rollup_theme(
         "n_codes_with_data": codes_with_data,
         "stat_month_max": max_month,
         "expected_direction": theme_direction,
+        "is_mixed_direction": is_mixed,
+        "direction_legs": direction_legs,
         "yoy_pct": round(theme_yoy, 2) if theme_yoy is not None else None,
         "accel_3m_vs_12m": round(theme_accel, 2) if theme_accel is not None else None,
         "confirmation": theme_confirmation,
@@ -412,15 +505,26 @@ def compute_theme_trade_flows(
         if df is None or df.empty:
             # No data at all — emit honest null for every theme
             n = len(theme_codes)
+            # Detect mixed direction from config even when parquet is absent
+            dir_set = {c.get("expected_direction", "rising_imports_confirms") for c in theme_codes}
+            is_mixed_null = len(dir_set) > 1
+            dominant_dir = (
+                "mixed" if is_mixed_null
+                else (theme_codes[0].get("expected_direction", "rising_imports_confirms") if theme_codes else "rising_imports_confirms")
+            )
             themes_out[theme_id] = {
                 "theme_id": theme_id,
                 "n_codes_configured": n,
                 "n_codes_with_data": 0,
                 "stat_month_max": None,
-                "expected_direction": theme_codes[0].get("expected_direction", "rising_imports_confirms") if theme_codes else None,
+                "expected_direction": dominant_dir,
+                "is_mixed_direction": is_mixed_null,
+                "direction_legs": {},
                 "yoy_pct": None,
                 "accel_3m_vs_12m": None,
-                "confirmation": "neutral",
+                # Mixed-direction themes report "mixed_direction" even when null
+                # so display code does not try to read a single confirmation.
+                "confirmation": "mixed_direction" if is_mixed_null else "neutral",
                 "magnitude_band": None,
                 "code_detail": [],
                 "coverage_note": (
@@ -507,6 +611,8 @@ def _build_site_projection(nw: dict) -> dict:
             "n_codes_configured": t.get("n_codes_configured"),
             "n_codes_with_data": t.get("n_codes_with_data"),
             "stat_month_max": t.get("stat_month_max"),
+            "is_mixed_direction": t.get("is_mixed_direction", False),
+            "direction_legs": t.get("direction_legs", {}),
             "yoy_pct": t.get("yoy_pct"),
             "accel_3m_vs_12m": t.get("accel_3m_vs_12m"),
             "confirmation": t.get("confirmation"),
