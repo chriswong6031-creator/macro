@@ -1937,3 +1937,14 @@ modules:
           DT-R14, circular block bootstrap, era split DT-R16) over top-K
           unexplored/accruing frontier cells. Writes causal_edges.jsonl +
           causal_nulls.jsonl + data/trial_ledger.jsonl. Non-fatal.
+      - id: run_causal_brainstorm
+        module: scripts.run_causal_brainstorm
+        note: >
+          CHF W5 — weekly LLM brainstorm runner (CHF-R8/R17). Tuesday-gated
+          (date +%u == 2); no-op on other days. Checks auto_loop in
+          config/causal_llm.yml (false at birth → pack-only degradation for
+          scheduled trigger). Requires ANTHROPIC_API_KEY service-key for
+          scheduled LLM calls (W-AUTO identity law — never CLAUDE_CODE_OAUTH_TOKEN).
+          Full mode: generator→skeptic→compiler→ingest (ISO-week idempotent,
+          ≤3 cards/week). Writes causal_mechanisms.jsonl, causal_brainstorm_runs.jsonl,
+          causal_llm_lane.json, governance.jsonl. Non-fatal (exit 0 always).

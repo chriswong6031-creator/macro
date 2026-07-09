@@ -535,6 +535,42 @@ def run_drift_monitor(root: Path, edges: list[dict]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# LLM lane status reader (W5 wire-up)
+# ---------------------------------------------------------------------------
+
+def _load_llm_lane_status(root: Path) -> dict:
+    """Return llm_lane status block for lab_state.
+
+    Reads data/neuralweb/causal_llm_lane.json when present (written by
+    scripts/run_causal_brainstorm.py). Falls back to the constant
+    'awaiting_phase_a' description when the file is absent.
+    """
+    lane_path = root / "data" / "neuralweb" / "causal_llm_lane.json"
+    if lane_path.exists():
+        try:
+            import json as _json  # noqa: PLC0415
+            doc = _json.loads(lane_path.read_text(encoding="utf-8"))
+            return {
+                "status": doc.get("status", "awaiting_phase_a"),
+                "asof": doc.get("asof"),
+                "description": doc.get("reason", ""),
+            }
+        except Exception:  # noqa: BLE001
+            pass  # fall through to default
+
+    return {
+        "status": "awaiting_phase_a",
+        "description": (
+            "LLM brainstorm lane is INACTIVE. "
+            "Phase-A gate requires: >= 1 operator-triggered cycle "
+            "with >= 5 schema-valid cards filed, >= 1 candidate through "
+            "exit (a) or (b), and zero guard violations. "
+            "Then operator may flip auto_loop: true in config/causal_llm.yml."
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Lab state builder
 # ---------------------------------------------------------------------------
 
@@ -631,16 +667,7 @@ def build_lab_state(
             "stalest_source_asof": stalest_asof,
         },
         "drift_events": drift_events,
-        "llm_lane": {
-            "status": "awaiting_phase_a",
-            "description": (
-                "LLM brainstorm lane is INACTIVE. "
-                "Phase-A gate requires: >= 1 operator-triggered cycle "
-                "with >= 5 schema-valid cards filed, >= 1 candidate through "
-                "exit (a) or (b), and zero guard violations. "
-                "Then operator may flip auto_loop: true in config/causal_llm.yml."
-            ),
-        },
+        "llm_lane": _load_llm_lane_status(root),
         "data_absent_notes": data_absent_notes,
         "authority": {
             "tier": "shadow",

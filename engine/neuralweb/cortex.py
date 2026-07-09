@@ -118,6 +118,8 @@ _READ_TOOLS = frozenset({
     "read_context_candidates",
     # TIL W5 NW citizenship: thematic state read tools (display/context only)
     "read_theme_state",
+    # CHF W5: read-only causal mechanism cards + screened edges + null count
+    "read_causal_candidates",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -1112,6 +1114,134 @@ def _tool_read_context_candidates(root: Path, params: dict) -> dict:
     return result
 
 
+def _tool_read_causal_candidates(root: Path, _params: dict) -> dict:
+    """Read CHF W5 causal mechanism cards (inbox/skeptic_passed) + screened edges + null count.
+
+    Returns top-10 mechanism cards with status in {inbox, skeptic_passed} (fields:
+    mechanism_id, claim_en, causal_graph, falsifiers, test_spec), top-10 screened
+    causal edges from causal_edges.jsonl, and the null-library count.
+
+    DISPLAY-ONLY ceiling (CHF-R1/CHF-R17): cards are inert proposal material.
+    Staking a card via stake_hypothesis counts against the normal 3/week cortex budget.
+    LLM actors (the cortex) may NEVER transition a card's status — only script or
+    human actors may do so. is_context_only always true. Fails open when absent.
+    """
+    _MAX_CARDS = 10
+    _MAX_EDGES = 10
+
+    result: dict = {
+        "is_context_only": True,
+        "display_only": True,
+        "mandate": (
+            "causal cards are INERT PROPOSAL MATERIAL (CHF-R17). "
+            "Staking one via stake_hypothesis counts against the normal 3/week budget. "
+            "The cortex may NEVER transition a card's status; only script/human actors may."
+        ),
+        "mechanism_cards": [],
+        "total_actionable_cards": 0,
+        "screened_edges": [],
+        "total_screened_edges": 0,
+        "null_library_count": 0,
+        "gaps": [],
+    }
+
+    # ---- Load mechanism cards ----
+    cards_path = _data(root, "neuralweb", "causal_mechanisms.jsonl")
+    if not cards_path.exists():
+        result["gaps"].append(
+            "data/neuralweb/causal_mechanisms.jsonl: absent — "
+            "run_causal_brainstorm has not filed any cards yet"
+        )
+    else:
+        try:
+            actionable: list[dict] = []
+            with cards_path.open(encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        card = json.loads(line)
+                        if card.get("status") in ("inbox", "skeptic_passed"):
+                            actionable.append(card)
+                    except Exception:  # noqa: BLE001
+                        pass
+
+            result["total_actionable_cards"] = len(actionable)
+
+            # Sort by filed_at descending, cap at _MAX_CARDS
+            actionable.sort(key=lambda c: c.get("filed_at", ""), reverse=True)
+            top_cards = actionable[:_MAX_CARDS]
+
+            # Return only the load-bearing fields (not full raw card)
+            result["mechanism_cards"] = [
+                {
+                    "mechanism_id": c.get("mechanism_id"),
+                    "status": c.get("status"),
+                    "family": c.get("family"),
+                    "claim_en": c.get("claim_en"),
+                    "causal_graph": c.get("causal_graph"),
+                    "falsifiers": c.get("falsifiers"),
+                    "test_spec": c.get("test_spec"),
+                    "filed_at": c.get("filed_at"),
+                    "filing_week": c.get("filing_week"),
+                }
+                for c in top_cards
+            ]
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(
+                f"data/neuralweb/causal_mechanisms.jsonl: unreadable — {exc}"
+            )
+
+    # ---- Load screened candidate edges ----
+    edges_path = _data(root, "neuralweb", "causal_edges.jsonl")
+    if not edges_path.exists():
+        result["gaps"].append(
+            "data/neuralweb/causal_edges.jsonl: absent — "
+            "build_causal_edges has not run yet"
+        )
+    else:
+        try:
+            screened: list[dict] = []
+            with edges_path.open(encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        edge = json.loads(line)
+                        if edge.get("verdict") == "screened_candidate":
+                            screened.append(edge)
+                    except Exception:  # noqa: BLE001
+                        pass
+
+            result["total_screened_edges"] = len(screened)
+            result["screened_edges"] = screened[:_MAX_EDGES]
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(
+                f"data/neuralweb/causal_edges.jsonl: unreadable — {exc}"
+            )
+
+    # ---- Null library count ----
+    nulls_path = _data(root, "neuralweb", "causal_nulls.jsonl")
+    if nulls_path.exists():
+        try:
+            count = sum(
+                1 for line in nulls_path.open(encoding="utf-8")
+                if line.strip()
+            )
+            result["null_library_count"] = count
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(f"data/neuralweb/causal_nulls.jsonl: unreadable — {exc}")
+    else:
+        result["gaps"].append(
+            "data/neuralweb/causal_nulls.jsonl: absent — "
+            "no nulls accumulated yet"
+        )
+
+    return result
+
+
 def dispatch_tool(
     tool_name: str,
     tool_params: dict,
@@ -1165,6 +1295,9 @@ def dispatch_tool(
     elif tool_name == "read_theme_state":
         # TIL W5 NW citizenship: thematic-state compact read (display/context only)
         return _tool_read_theme_state(root, tool_params)
+    elif tool_name == "read_causal_candidates":
+        # CHF W5: read causal mechanism cards + screened edges + null count
+        return _tool_read_causal_candidates(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1439,6 +1572,22 @@ def _tool_schemas() -> list[dict]:
                 "required": [],
             },
         },
+        # --- CHF W5: read causal mechanism cards + screened edges + null count ---
+        {
+            "name": "read_causal_candidates",
+            "description": (
+                "Read CHF W5 causal mechanism cards (status=inbox or skeptic_passed) "
+                "and top screened edges from causal_edges.jsonl. "
+                "Returns: top-10 mechanism cards (claim, causal_graph, falsifiers, test_spec), "
+                "top-10 screened_candidate edges, and null-library count. "
+                "DISPLAY-ONLY ceiling (CHF-R1/CHF-R17): cards are INERT PROPOSAL MATERIAL. "
+                "Staking one via stake_hypothesis counts against the normal 3/week budget. "
+                "The cortex may NEVER transition a card's status — only script or human actors may. "
+                "Forbidden: treating cards as signals, scores, escalations, or ranks. "
+                "is_context_only: true. Fails open with structured gaps when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -1542,14 +1691,20 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (17): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (18): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
            read_factor_state, list_factor_contradictions, explain_factor_context,
            read_cycle_pattern_state, read_mechanism_pathways,
-           read_context_candidates
+           read_context_candidates, read_causal_candidates
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
+
+CAUSAL CANDIDATES (CHF W5): read_causal_candidates returns inert CHF mechanism cards
+(inbox/skeptic_passed) and screened causal edges. Cards are PROPOSAL MATERIAL ONLY.
+Staking one via stake_hypothesis counts against the normal 3/week budget — no extra budget.
+You may NEVER transition a card's status; only script or human actors may do so (CHF-R17).
+Forbidden: treating cards as signals, escalations, or confidence-ranked items.
 
 CYCLE-PATTERN CEILING: read_cycle_pattern_state is display/context only. Cite turn-hazard
 probabilities ONLY with their cell verdict (PASS = validated vs KM; PRIOR = KM base rate).

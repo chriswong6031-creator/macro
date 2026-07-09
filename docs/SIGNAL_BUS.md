@@ -12,7 +12,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | active-build-map | 1 |
 | btc-vector | 5 |
-| causal-hypothesis-factory | 6 |
+| causal-hypothesis-factory | 8 |
 | china-alpha | 10 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
@@ -62,7 +62,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 190 |
-| infrastructure | 77 |
+| infrastructure | 79 |
 | scored | 4 |
 | shadow | 46 |
 
@@ -70,7 +70,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 303 |
+| git | 305 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -99,6 +99,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | causal-nulls | `data/neuralweb/causal_nulls.jsonl` | jsonl | weekly | display | 2 | 0 |
 | causal-edges | `data/neuralweb/causal_edges.jsonl` | jsonl | weekly | display | 1 | 0 |
 | causal-frontier | `data/neuralweb/causal_frontier.json` | json | daily-engine | display | 1 | 0 |
+| causal-llm-lane | `data/neuralweb/causal_llm_lane.json` | json | weekly | infrastructure | 1 | 0 |
+| causal-brainstorm-runs | `data/neuralweb/causal_brainstorm_runs.jsonl` | jsonl | weekly | infrastructure | 0 | 0 |
 | causal-lab-state | `data/neuralweb/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
 | causal-surprise-queue | `data/neuralweb/causal_surprise_queue.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | site-causal-lab-state | `site/neuralwebdata/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
@@ -612,7 +614,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| dol-certs-store | `data/dol_certs/certs.parquet` | parquet | collect | display | 1 | 0 |
+| dol-certs-store | `data/dol_certs/certs.parquet` | parquet | collect | display | 0 | 0 |
 | hiring-velocity | `data/dol_certs/hiring_velocity.json` | json | collect | display | 0 | 0 |
 | site-hiring-intent | `site/basketdata/hiring_intent.json` | json | collect | display | 0 | 0 |
 
