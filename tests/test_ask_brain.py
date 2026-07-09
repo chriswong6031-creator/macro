@@ -209,8 +209,8 @@ def test_read_tool_schemas_no_write_tools():
     assert "read_mechanism_pathways" in names
     # TIL W5 NW citizenship thematic state tool must also be present
     assert "read_theme_state" in names
-    # 7 original + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 1 theme = 17 total read tools
-    assert len(names) == 17
+    # 7 original + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme (state/thesis/pathways) + 1 liquidity + 1 china-packet + 1 context-candidates? = 21 total read tools (see _ASK_READ_TOOLS)
+    assert len(names) == 21
 
 
 def test_dispatch_refuses_write_tools():
@@ -1476,8 +1476,8 @@ def test_read_tool_schemas_count_and_options_tools_present():
     # TIL W5 NW citizenship thematic-state read tool present
     assert "read_theme_state" in names
     # Total count: 7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 1 theme = 17
-    assert len(schemas) == 17, (
-        f"Expected 17 read tools, got {len(schemas)}: {sorted(names)}"
+    assert len(schemas) == 21, (
+        f"Expected 21 read tools, got {len(schemas)}: {sorted(names)}"
     )
     # Write tools absent
     for write_tool in ("flag_attention", "write_memo", "stake_hypothesis"):
