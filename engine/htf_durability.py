@@ -776,17 +776,27 @@ def compute(
     #   (FIX 4: gate on actual stack support — not just external confluence points.)
     #   Bottom-side is display-tier context; never originates a risk-on upgrade.
     #
-    # TRAP-PRONE-BOUNCE: bottom D — monthly veto active.
+    # TRAP-PRONE-BOUNCE: bottom D caused by monthly veto (monthly_allows_durable=False).
+    #   DO NOT label TRAP-PRONE-BOUNCE for grade D caused ONLY by low confluence while
+    #   the monthly allows durable (rising/turning monthly) — that is a weak setup but
+    #   not a veto-driven trap. A rising-monthly low-confluence bottom D must be NEUTRAL.
+    #   (FIX A: separate the two grade-D causes to avoid contradicting "veto active /
+    #   falling monthly" language when monthly is actually rising.)
     # ------------------------------------------------------------------
     if primary_side == "top" and durability_grade in ("A_prime", "B_prime", "C_prime"):
         htf_regime = "TOP-RISK"
     elif primary_side == "top" and durability_grade == "D_prime":
-        # Low-confluence top: only flag TOP-RISK if stack is top-leaning or hook present
+        # Low-confluence top: only flag TOP-RISK if stack is top-leaning or hook present.
+        # For any top-resolved market, stack_score is unipolar ≤ 0 (FIX 3), so this
+        # branch is always TOP-RISK in practice. The else "NEUTRAL" is unreachable but
+        # retained as a defensive fallback (dead code by construction for top side).
         htf_regime = "TOP-RISK" if (stack_score <= 0 or any_top_hook) else "NEUTRAL"
     elif primary_side == "bottom" and durability_grade in ("A", "B") and stack_score > 0:
         # FIX 4: require real stack support for BOTTOM-SETUP
         htf_regime = "BOTTOM-SETUP"
-    elif primary_side == "bottom" and durability_grade == "D":
+    elif primary_side == "bottom" and durability_grade == "D" and not monthly_allows_durable:
+        # TRAP-PRONE-BOUNCE: grade D caused by the monthly-phase veto firing.
+        # Monthly is NOT allowing durable (falling/basing/rolling phase).
         htf_regime = "TRAP-PRONE-BOUNCE"
     else:
         htf_regime = "NEUTRAL"
@@ -922,8 +932,10 @@ def _build_read(side: str, regime: str, grade: str, score: int, stage: str, m_ph
         return (f"HTF bottom setup — monthly left downtrend, "
                 f"grade {grade}, stack {score:+d}. Display-tier accrual.")
     if regime == "TRAP-PRONE-BOUNCE":
-        return ("Weekly hook under falling monthly — TRAP-PRONE BOUNCE (grade D). "
-                "Monthly veto active: do not escalate.")
+        # Monthly veto IS active here (TRAP-PRONE-BOUNCE only fires when
+        # monthly_allows_durable=False — FIX A guarantees this).
+        return (f"Weekly hook under monthly-phase veto ({m_phase}) — "
+                "TRAP-PRONE BOUNCE (grade D). Monthly veto active: do not escalate.")
     return f"HTF neutral — side={side}, phase={m_phase}, stack={score:+d}."
 
 

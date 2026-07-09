@@ -45,8 +45,23 @@ def _make_prices(n: int, seed: int = 42, trend: float = 0.0001,
 
 
 def _declining_prices(n: int = 1200) -> pd.Series:
-    """Long downtrending series — forces monthly to 'falling' phase."""
+    """Long downtrending series with monthly MACD in basing phase.
+
+    NOTE: due to the random-walk nature of MACD on a noisy series, _make_prices
+    with a moderate decline does NOT reliably force monthly_phase='falling'.
+    Use _basing_monthly_prices() for veto tests that need monthly_allows_durable=False.
+    """
     return _make_prices(n, trend=-0.0006, vol=0.008)
+
+
+def _basing_monthly_prices(n: int = 1200) -> pd.Series:
+    """Very-low-volatility persistent decline that forces monthly MACD into a
+    genuine 'basing' phase (spark_hist always-negative, never rolled from above).
+    seed=13 produces: monthly_phase='basing', monthly_veto_active=True,
+    primary_side='bottom' (weekly hook via fallback), grade=D.
+    This is the correct fixture for monthly-veto tests.
+    """
+    return _make_prices(n, seed=13, trend=-0.0002, vol=0.001)
 
 
 def _topping_prices(n: int = 1200) -> pd.Series:
@@ -168,35 +183,50 @@ class TestMonthlyVeto:
     """A weekly bull-hook under a falling monthly must produce grade D."""
 
     def test_declining_monthly_caps_at_grade_D(self) -> None:
-        """Long downtrend (falling monthly) -> any bottom hook is grade D (TRAP-PRONE)."""
-        prices = _declining_prices(1200)
+        """Basing monthly (veto active) caps bottom grade at D (TRAP-PRONE-BOUNCE).
+
+        Uses _basing_monthly_prices (seed=13, low-vol decline) which reliably
+        produces monthly_phase='basing' with monthly_allows_durable=False.
+        The assert is UNCONDITIONAL — no phase guard needed.
+        """
+        prices = _basing_monthly_prices()
         result = compute(prices, market="TEST_VETO")
 
-        # Monthly in downtrend => monthly_veto_active might be True
-        # AND if there is a bottom hook, grade must be D
         grade = result["durability_grade"]
         monthly_phase = result["monthly_phase"]
-
-        if monthly_phase in ("falling", "basing", "rolling", "unknown"):
-            # Monthly veto active for bottom grading
-            assert grade == "D", (
-                f"Monthly phase={monthly_phase} should cap grade at D, got {grade}"
-            )
+        # UNCONDITIONAL: seed=13 fixture always yields monthly basing/veto-active.
+        assert monthly_phase in ("basing", "falling", "rolling"), (
+            f"_basing_monthly_prices fixture must yield a veto-active monthly phase, "
+            f"got {monthly_phase}"
+        )
+        # UNCONDITIONAL: basing monthly veto caps grade at D
+        assert grade == "D", (
+            f"Monthly phase={monthly_phase} (veto active) should cap grade at D, got {grade}"
+        )
+        # UNCONDITIONAL: monthly_veto_active must be True
+        assert result["monthly_veto_active"] is True, (
+            f"monthly_veto_active must be True when monthly={monthly_phase} (veto fixture)"
+        )
 
     def test_veto_flag_set_when_bottom_hook_under_falling_monthly(self) -> None:
-        """monthly_veto_active should be True when weekly hooks but monthly is falling."""
-        # Create a declining series with enough history to see monthly falling
-        prices = _declining_prices(1200)
+        """monthly_veto_active must be True when monthly is basing (veto-active fixture).
+
+        UNCONDITIONAL: _basing_monthly_prices always yields monthly_veto_active=True
+        for primary_side=bottom (no inner phase guard needed).
+        """
+        prices = _basing_monthly_prices()
         result = compute(prices, market="TEST_VETO2")
 
-        monthly_phase = result["monthly_phase"]
-        if monthly_phase in ("falling", "basing"):
-            # If we have a bottom hook attempt, veto should be active
-            stage = result["stage"]
-            if stage in ("front_run", "armed"):
-                assert result["monthly_veto_active"] is True, (
-                    "monthly_veto_active should be True when monthly is falling"
-                )
+        # UNCONDITIONAL: veto fixture always has monthly_veto_active=True
+        assert result["monthly_veto_active"] is True, (
+            f"monthly_veto_active must be True for basing-monthly veto fixture; "
+            f"got monthly_phase={result['monthly_phase']}, stage={result['stage']}"
+        )
+        # UNCONDITIONAL: regime must be TRAP-PRONE-BOUNCE (D + veto)
+        assert result["htf_momentum_regime"] == "TRAP-PRONE-BOUNCE", (
+            f"Basing monthly + bottom hook must yield TRAP-PRONE-BOUNCE, "
+            f"got {result['htf_momentum_regime']}"
+        )
 
     def test_monthly_allows_durable_for_rising_phase(self) -> None:
         """_monthly_phase_allows_durable returns True for turning/rising phases."""
@@ -226,6 +256,44 @@ class TestMonthlyVeto:
             "spark_hist": [-1.0, -1.5, -2.0, -2.5],  # falling histogram
         }
         assert _monthly_phase_allows_durable(falling_state) is False
+
+    def test_rising_monthly_low_confluence_D_is_not_trap_prone(self) -> None:
+        """FIX A: grade D caused by low confluence with rising monthly must NOT be
+        TRAP-PRONE-BOUNCE and must NOT claim 'veto active' / 'falling monthly'.
+
+        Seeds 6 and 50 both reproduce: monthly_phase='rising', monthly_veto_active=False,
+        grade=D (low confluence), yet the old code labelled them TRAP-PRONE-BOUNCE with
+        the read string 'Weekly hook under falling monthly — Monthly veto active'.
+        After FIX A, grade D is TRAP-PRONE-BOUNCE ONLY when monthly_allows_durable=False.
+        A low-confluence D with rising monthly must be NEUTRAL.
+        """
+        for seed in (6, 50):
+            prices = _make_prices(1200, seed=seed)
+            result = compute(prices, market=f"FIX_A_SEED{seed}")
+
+            # UNCONDITIONAL: both seeds give monthly_phase='rising', veto=False
+            assert result["monthly_phase"] == "rising", (
+                f"seed={seed}: expected monthly_phase=rising, got {result['monthly_phase']}"
+            )
+            assert result["monthly_veto_active"] is False, (
+                f"seed={seed}: expected monthly_veto_active=False, "
+                f"got {result['monthly_veto_active']}"
+            )
+            # FIX A: rising monthly + grade D must NOT be TRAP-PRONE-BOUNCE
+            assert result["htf_momentum_regime"] != "TRAP-PRONE-BOUNCE", (
+                f"seed={seed}: rising monthly + grade D must NOT be TRAP-PRONE-BOUNCE "
+                f"(monthly veto not active). Got {result['htf_momentum_regime']}"
+            )
+            # FIX A: read string must not claim veto/falling-monthly
+            read = result["read"]
+            assert "veto active" not in read.lower(), (
+                f"seed={seed}: read must not claim 'veto active' when monthly is rising. "
+                f"read={read!r}"
+            )
+            assert "falling monthly" not in read.lower(), (
+                f"seed={seed}: read must not claim 'falling monthly' when monthly is rising. "
+                f"read={read!r}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -277,26 +345,27 @@ class TestMonthlyRolledFromAbove:
     def test_bottom_setup_requires_positive_stack(self) -> None:
         """FIX 4: BOTTOM-SETUP must only fire when stack_score > 0.
 
-        A 'basing' monthly that has NEVER had a positive hist (genuine accumulation base)
-        combined with a rising weekly can produce primary_side=bottom, but must still
-        require real bottom hooks in the stack_score (not just confluence points) to
-        get BOTTOM-SETUP.
+        Uses seed=42, trend=0.0005 which deterministically produces BOTTOM-SETUP
+        with stack_score=6 and grade=B. Assert is UNCONDITIONAL — no regime guard.
+        (Prior version used _declining_prices which never reached BOTTOM-SETUP,
+        making the assert vacuous.)
         """
-        # Use the declining series — monthly has only negative hist
-        # (never had positive peak, so _monthly_rolled_from_above=False)
-        prices = _declining_prices(1200)
+        prices = _make_prices(1200, seed=42, trend=0.0005)
         result = compute(prices, market="FIX4_TEST")
 
         regime = result["htf_momentum_regime"]
         score  = result["stack_score"]
         grade  = result["durability_grade"]
 
-        # If regime is BOTTOM-SETUP, stack_score MUST be > 0
-        if regime == "BOTTOM-SETUP":
-            assert score > 0, (
-                f"BOTTOM-SETUP must have stack_score > 0 (real bottom hooks), "
-                f"got stack={score}, grade={grade}"
-            )
+        # UNCONDITIONAL: this fixture always yields BOTTOM-SETUP
+        assert regime == "BOTTOM-SETUP", (
+            f"seed=42 trend=0.0005 fixture must yield BOTTOM-SETUP, got {regime}"
+        )
+        # UNCONDITIONAL: BOTTOM-SETUP must have positive stack (real bottom hooks)
+        assert score > 0, (
+            f"BOTTOM-SETUP must have stack_score > 0 (real bottom hooks), "
+            f"got stack={score}, grade={grade}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -356,14 +425,22 @@ class TestFrontRun:
         assert _hook_triggered(approaching_state, "bottom") is True
 
     def test_bars_to_macd_cross_is_positive_for_approaching(self) -> None:
-        """When approaching, bars_to_macd_cross should be a positive integer (telemetry)."""
-        prices = _make_prices(1200, seed=50)
+        """When approaching, bars_to_macd_cross should be a non-negative integer (telemetry).
+
+        seed=0 produces bars_to_macd_cross=1 (approaching state active). Assert is
+        UNCONDITIONAL — no None guard needed since the fixture deterministically has the
+        approaching state. (Prior version used seed=50 which gives btc=None, so the
+        assert never ran — vacuous.)
+        """
+        prices = _make_prices(1200, seed=0)
         result = compute(prices, market="TEST_FRONTRUN")
-        # bars_to_macd_cross can be None (no approaching state) or a positive int
         btc = result["bars_to_macd_cross"]
-        if btc is not None:
-            assert isinstance(btc, int)
-            assert btc >= 0
+        # UNCONDITIONAL: seed=0 always produces an approaching state (btc=1)
+        assert btc is not None, (
+            "seed=0 fixture must produce bars_to_macd_cross (approaching state active)"
+        )
+        assert isinstance(btc, int), f"bars_to_macd_cross must be int, got {type(btc)}"
+        assert btc >= 0, f"bars_to_macd_cross must be non-negative, got {btc}"
 
 
 # ---------------------------------------------------------------------------
@@ -488,9 +565,16 @@ class TestLiveTestCases:
         )
 
     def test_liquidity_reframe_benign_when_no_topping(self) -> None:
-        """Non-topping + non-mechanical liquidity -> reframe stays benign."""
-        # Rising prices
-        prices = _make_prices(1200, trend=0.0005, seed=10)
+        """Non-topping + non-mechanical liquidity -> reframe is always benign.
+
+        FIX B: the prior version guarded on `if monthly_phase in ("rising","turning")`,
+        but the fixture (seed=10, trend=0.0005) resolved to monthly_phase="falling" and
+        the assert never executed (vacuous).  This version uses seed=15, trend=0.001
+        which produces monthly_phase="rising", regime="NEUTRAL" (after FIX A; previously
+        incorrectly TRAP-PRONE-BOUNCE), and liquidity_reframe="benign".  The assert is
+        UNCONDITIONAL — no phase guard.
+        """
+        prices = _make_prices(1200, trend=0.001, seed=15)
         lq_dict = {
             "label": "benign-expansion",
             "composition": {
@@ -499,11 +583,20 @@ class TestLiveTestCases:
             },
         }
         result = compute(prices, market="US_BENIGN", liquidity_quality_dict=lq_dict)
-        # With rising monthly and non-mechanical lq, reframe should be benign
-        if result["monthly_phase"] in ("rising", "turning"):
-            assert result["liquidity_reframe"] == "benign", (
-                f"Rising non-mechanical lq should be benign, got {result['liquidity_reframe']}"
-            )
+
+        # UNCONDITIONAL: fixture is deterministic and must NOT be TOP-RISK.
+        assert result["htf_momentum_regime"] != "TOP-RISK", (
+            f"Non-topping fixture (seed=15 trend=0.001) must not be TOP-RISK, "
+            f"got regime={result['htf_momentum_regime']}, "
+            f"monthly_phase={result['monthly_phase']}"
+        )
+        # UNCONDITIONAL: non-topping + non-mechanical lq => benign reframe.
+        assert result["liquidity_reframe"] == "benign", (
+            f"Non-topping + non-mechanical liquidity MUST yield benign reframe, "
+            f"got {result['liquidity_reframe']} "
+            f"(regime={result['htf_momentum_regime']}, "
+            f"monthly_phase={result['monthly_phase']})"
+        )
 
     def test_output_schema_complete(self) -> None:
         """All required output keys must be present and non-null-sentinel."""
