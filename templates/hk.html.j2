@@ -667,12 +667,7 @@
   {% set _cp_chase_n = _cpv.chase_risk_n if _cpv.chase_risk_n is defined else 0 %}
   {% set _cp_total = _cpv.of if _cpv.of is defined else 8 %}
   <div class="panel span12" id="hk-command-panel" style="border-top:2px solid var(--line);padding-bottom:16px;">
-    {# ----- 1. FRESHNESS STRIP ----- #}
-    <div class="cp-fresh {% if _cpfs.verdict == 'ok' %}cpf-ok{% elif _cpfs.verdict == 'stale' %}cpf-stale{% elif _cpfs.verdict == 'degraded' %}cpf-warn{% else %}cpf-unknown{% endif %}" style="margin-bottom:12px;padding:6px 10px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;">
-      <span class="cp-fresh-dot" style="width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:{% if _cpfs.verdict == 'ok' %}var(--up){% elif _cpfs.verdict == 'stale' %}var(--down){% elif _cpfs.verdict == 'degraded' %}var(--warn){% else %}var(--muted){% endif %};"></span>
-      <span class="l-en">{{ _cpfs.label_en if _cpfs.label_en else '—' }}</span>
-      <span class="l-zh">{{ _cpfs.label_zh if _cpfs.label_zh else '—' }}</span>
-    </div>
+    {# NOTE: Freshness banner lives at #hk-freshness-banner (top of page). No duplicate strip here. #}
 
     {# ----- 2. COMBUSTIBILITY VERDICT CARD ----- #}
     <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px;margin-bottom:16px;">
@@ -692,45 +687,57 @@
           <span class="l-zh">参考，非买卖信号</span>
         </p>
         {# Bottom-arming meter #}
-        <div style="margin-bottom:8px;">
-          <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;margin-bottom:3px;">
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;">
             <span style="color:var(--up);">
-              <span class="l-en">Bottom arming</span><span class="l-zh">底部酝酿</span>
+              ▲ <span class="l-en">Bottom arming</span><span class="l-zh">底部酝酿</span>
             </span>
-            <span style="font-variant-numeric:tabular-nums;">{{ _cp_bottom_n }}/{{ _cp_total }}</span>
+            <span style="font-variant-numeric:tabular-nums;color:var(--up);">{{ _cp_bottom_n }}/{{ _cp_total }}</span>
           </div>
-          <div style="height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;">
-            <div style="height:100%;border-radius:3px;background:var(--up);width:{{ ((_cp_bottom_n / _cp_total) * 100)|int }}%;transition:width .3s;"></div>
+          <div style="height:10px;border-radius:5px;background:var(--panel2);overflow:hidden;border:1px solid var(--line);">
+            <div style="height:100%;border-radius:5px;background:var(--up);width:{{ ((_cp_bottom_n / _cp_total) * 100)|int }}%;transition:width .4s ease;"></div>
           </div>
         </div>
         {# Chase-risk meter #}
         <div>
-          <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;margin-bottom:3px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;">
             <span style="color:var(--down);">
-              <span class="l-en">Chase risk</span><span class="l-zh">追涨风险</span>
+              ▼ <span class="l-en">Chase risk</span><span class="l-zh">追涨风险</span>
             </span>
-            <span style="font-variant-numeric:tabular-nums;">{{ _cp_chase_n }}/{{ _cp_total }}</span>
+            <span style="font-variant-numeric:tabular-nums;color:var(--down);">{{ _cp_chase_n }}/{{ _cp_total }}</span>
           </div>
-          <div style="height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;">
-            <div style="height:100%;border-radius:3px;background:var(--down);width:{{ ((_cp_chase_n / _cp_total) * 100)|int }}%;transition:width .3s;"></div>
+          <div style="height:10px;border-radius:5px;background:var(--panel2);overflow:hidden;border:1px solid var(--line);">
+            <div style="height:100%;border-radius:5px;background:var(--down);width:{{ ((_cp_chase_n / _cp_total) * 100)|int }}%;transition:width .4s ease;"></div>
           </div>
         </div>
       </div>
 
       {# ----- 3. FORCE STACK — 8 rows ----- #}
+      {# Icon map keyed to force.key — small inline glyphs, no external deps #}
+      {% set _force_icons = {
+        'adr_bridge':   '🌐',
+        'tech_impulse': '💻',
+        'narrative':    '📰',
+        'southbound':   '🔴',
+        'breadth':      '📊',
+        'cbbc':         '⚖',
+        'funding_peg':  '💰',
+        'global_risk':  '🌍'
+      } %}
       <div style="flex:1;min-width:280px;">
-        <p class="note" style="margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em;font-size:11px;">
+        <p class="note" style="margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em;font-size:11px;">
           <span class="l-en">Force Stack · 8 organs</span>
           <span class="l-zh">力量堆栈 · 8 项</span>
         </p>
         {% if _cpforces %}
-        <div style="display:flex;flex-direction:column;gap:5px;">
+        <div style="display:flex;flex-direction:column;gap:6px;">
           {% for force in _cpforces %}
           {% set _fst = force.state if force.state else 'neutral' %}
           {% set _fclr = 'var(--up)' if _fst == 'confirm' else ('var(--down)' if _fst == 'stress' else ('var(--warn)' if _fst == 'watch' else 'var(--muted)')) %}
-          <div class="cp-force-row" style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:7px;background:var(--panel2);">
-            <span class="cp-force-dot" style="width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:{{ _fclr }};"></span>
-            <span style="flex:0 0 130px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          {% set _ficon = _force_icons.get(force.key, '◆') %}
+          <div class="cp-force-row" style="display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);">
+            <span style="flex:0 0 auto;font-size:14px;line-height:1;">{{ _ficon }}</span>
+            <span style="flex:0 0 120px;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
               <span class="l-en">{{ force.name_en if force.name_en else '—' }}</span>
               <span class="l-zh">{{ force.name_zh if force.name_zh else '—' }}</span>
             </span>
@@ -738,7 +745,7 @@
               <span class="l-en">{{ force.detail_en if force.detail_en else '—' }}</span>
               <span class="l-zh">{{ force.detail_zh if force.detail_zh else '—' }}</span>
             </span>
-            <span class="chip" style="font-size:11px;white-space:nowrap;--c:{{ _fclr }};">
+            <span class="chip" style="font-size:11px;font-weight:700;white-space:nowrap;flex:0 0 auto;--c:{{ _fclr }};">
               <span class="l-en">{{ _fst }}</span>
               <span class="l-zh">{% if _fst == 'confirm' %}确认{% elif _fst == 'stress' %}承压{% elif _fst == 'watch' %}观察{% else %}中性{% endif %}</span>
             </span>
@@ -763,16 +770,26 @@
           <span class="l-en">Bottom Watch</span><span class="l-zh">底部观察</span>
         </p>
         {% if _cpbw %}
+        <div data-showmore="7">
         {% for r in _cpbw %}
         <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;">
-          <span style="font-weight:700;flex:0 0 auto;">{{ r.ticker }}</span>
-          {% if r.name %}<span class="note" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</span>{% endif %}
+          <a href="hk_lookup.html#{{ r.ticker }}"
+             title="Open {{ r.ticker }} terminal"
+             style="font-weight:800;flex:0 0 auto;color:inherit;text-decoration:none;cursor:pointer;"
+             onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ r.ticker }}</a>
+          {% if r.name %}
+          <span class="note" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <span class="l-en">{{ r.name }}</span>
+            <span class="l-zh">{{ r.name_zh if r.name_zh else r.name }}</span>
+          </span>
+          {% endif %}
           <span class="chip c-up" style="font-size:10px;flex:0 0 auto;">{{ r.confluence_n }}</span>
           {% if r.knife_risk %}<span class="chip c-warn" style="font-size:10px;flex:0 0 auto;">
             <span class="l-en">knife</span><span class="l-zh">刀锋</span>
           </span>{% endif %}
         </div>
         {% endfor %}
+        </div>
         <p class="note" style="margin:6px 0 0;font-size:10.5px;">
           <span class="l-en">unconfirmed · high-risk · knife chip = falling knife risk</span>
           <span class="l-zh">未确认 · 高风险 · 刀锋 = 下跌趋势中风险</span>
@@ -792,8 +809,16 @@
         {% if _cpcw %}
         {% for r in _cpcw %}
         <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;">
-          <span style="font-weight:700;flex:0 0 auto;">{{ r.ticker }}</span>
-          {% if r.name %}<span class="note" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</span>{% endif %}
+          <a href="hk_lookup.html#{{ r.ticker }}"
+             title="Open {{ r.ticker }} terminal"
+             style="font-weight:800;flex:0 0 auto;color:inherit;text-decoration:none;cursor:pointer;"
+             onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ r.ticker }}</a>
+          {% if r.name %}
+          <span class="note" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <span class="l-en">{{ r.name }}</span>
+            <span class="l-zh">{{ r.name_zh if r.name_zh else r.name }}</span>
+          </span>
+          {% endif %}
           <span class="chip c-down" style="font-size:10px;flex:0 0 auto;">
             <span class="l-en">chase risk</span><span class="l-zh">追涨</span>
           </span>
@@ -820,7 +845,7 @@
         <span class="l-en">Catalyst Tape</span>
         <span class="l-zh">催化剂追踪</span>
       </p>
-      <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="display:flex;flex-direction:column;gap:4px;" data-showmore="6">
         {% for ev in _cpct %}
         <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--line);">
           <span style="flex:0 0 80px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;">{{ ev.date if ev.date else '—' }}</span>
@@ -828,6 +853,12 @@
             <span class="l-en">{{ ev.source if ev.source else '—' }}</span>
             <span class="l-zh">{{ ev.source_zh if ev.source_zh else ev.source if ev.source else '—' }}</span>
           </span>
+          {% if ev.ticker %}
+          <a href="hk_lookup.html#{{ ev.ticker }}"
+             title="Open {{ ev.ticker }} terminal"
+             style="font-weight:800;flex:0 0 auto;color:inherit;text-decoration:none;cursor:pointer;"
+             onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ ev.ticker }}</a>
+          {% endif %}
           <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
             <span class="l-en">{{ ev.text_en if ev.text_en else '—' }}</span>
             <span class="l-zh">{{ ev.text_zh if ev.text_zh else ev.text_en if ev.text_en else '—' }}</span>
@@ -840,10 +871,11 @@
   </div>
   {% endif %}{# /mode != stocks — HK command panel #}
 
-  {# ===================== ADR OVERNIGHT BRIDGE — display-only context organ =====================
+  {# ===================== ADR OVERNIGHT BRIDGE — macro-mode only =====================
      Shows what US-listed ADRs/ETFs did AFTER the HK close, implying next HK session open.
-     CONTEXT, NOT A SIGNAL / 参考，非买卖信号. Rendered in BOTH macro and stocks modes.
+     CONTEXT, NOT A SIGNAL / 参考，非买卖信号.
      Gracefully absent (no render) when adr_bridge is None or names list is empty. #}
+  {% if mode != 'stocks' %}
   {% if adr_bridge and adr_bridge.names %}
   {% set _ab = adr_bridge %}
   {% set _comp = _ab.composite if _ab.composite else {} %}
@@ -923,11 +955,14 @@
     {% endif %}
   </div>
   {% endif %}{# end adr_bridge panel #}
+  {% endif %}{# /mode != stocks — adr-bridge-panel #}
 
-  {# ===================== CBBC / WARRANT LEVERAGE MAP — display-only context organ =====================
+  {# ===================== CBBC / WARRANT LEVERAGE MAP — macro-mode only =====================
      Surfaces HK retail-leverage froth + issuer-hedging magnet zones. Per-bellwether bull/bear chip
      + leverage_state label. CONTEXT, NOT A SIGNAL / 参考，非买卖信号.
-     Gracefully absent when cbbc_map is None or has no bellwethers with data. #}
+     Shows accruing state when no data yet (never "data dead"). #}
+  {% if mode != 'stocks' %}
+  {# CBBC panel: render always in macro mode — show accruing state when no data yet #}
   {% if cbbc_map and cbbc_map.bellwethers %}
   {% set _cm = cbbc_map %}
   {% set _cm_fresh = _cm.freshness if _cm.freshness else 'unknown' %}
@@ -1015,13 +1050,32 @@
     </div>
     {% endif %}
   </div>
+  {% else %}
+  {# CBBC data not yet available — accruing state #}
+  <div class="panel span12" id="cbbc-leverage-panel">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px;">
+      <h2 style="margin:0;font-size:13px;">
+        <span class="l-en">CBBC Leverage Map</span>
+        <span class="l-zh">牛熊证杠杆图</span>
+      </h2>
+      <span class="chip c-muted" style="font-size:11px;">
+        <span class="l-en">accruing</span><span class="l-zh">累积中</span>
+      </span>
+    </div>
+    <p class="note" style="color:var(--muted);font-size:12px;margin:0;">
+      <span class="l-en">Accruing — first data expected on tonight's run.</span>
+      <span class="l-zh">累积中 — 预计今晚首次更新。</span>
+    </p>
+  </div>
   {% endif %}{# end cbbc-leverage panel #}
+  {% endif %}{# /mode != stocks — cbbc-leverage-panel #}
 
-  {# ===================== CORPORATE CATALYSTS — HKEXnews filing bus (display-only) =====================
+  {# ===================== CORPORATE CATALYSTS — macro-mode only =====================
      Surfaces per-name recent corporate events: buyback / results / mandate / shareholder change.
      DISPLAY-ONLY context tape. Deterministic classification only — NOT a buy/sell signal.
      / 公司催化 — 港交所公告分类记录（仅供参考，非买卖信号）。确定性分类。
-     Gracefully absent when filing_bus is None or tape is empty. #}
+     Shows accruing state when no data yet. #}
+  {% if mode != 'stocks' %}
   {% if filing_bus and (filing_bus.tape or filing_bus.bellwethers) %}
   {% set _fb = filing_bus %}
   {% set _fb_fresh = _fb.freshness if _fb.freshness else 'unknown' %}
@@ -1149,24 +1203,32 @@
     </div>
     {% endif %}
 
-    {# Recent-event alert tape (last 30 events across all names) #}
-    {% set _tape_slice = (_fb.tape[:30]) if _fb.tape else [] %}
-    {% if _tape_slice %}
+    {# Recent-event alert tape — show all tape events, gated by showmore #}
+    {% set _tape_all = _fb.tape if _fb.tape else [] %}
+    {% if _tape_all %}
     <div style="margin-top:4px;">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
                   letter-spacing:.04em;margin-bottom:6px;">
         <span class="l-en">Recent filings (90d tape)</span>
         <span class="l-zh">近期公告（90天记录）</span>
       </div>
-      {% for ev in _tape_slice %}
+      <div data-showmore="6">
+      {% for ev in _tape_all %}
       {% set _ev_cls = 'alert-high' if ev.dilution_flag else ('alert-info' if ev.buyback_flag else ('alert-info' if ev.category == 'results' else 'alert-warn' if ev.category in ('mandate','placement') else '')) %}
       <div class="alert {{ _ev_cls }}" style="padding:7px 11px;margin:5px 0;">
         <div class="alert-head" style="flex-wrap:wrap;gap:6px;">
           <span class="alert-ico">{{ '🔴' if ev.dilution_flag else ('🟢' if ev.buyback_flag else ('📊' if ev.category == 'results' else ('⚠' if ev.category in ('mandate','placement') else '📋'))) }}</span>
           {{ _cat_chip(ev.category, ev.dilution_flag, ev.buyback_flag) }}
-          <b style="font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            {{ ev.ticker }}
-          </b>
+          <a href="hk_lookup.html#{{ ev.ticker }}"
+             title="Open {{ ev.ticker }} terminal"
+             style="font-size:12.5px;font-weight:800;color:inherit;text-decoration:none;flex:0 0 auto;cursor:pointer;"
+             onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ ev.ticker }}</a>
+          {% if ev.name_en or ev.name_zh %}
+          <span style="font-size:11.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);">
+            <span class="l-en">{{ ev.name_en if ev.name_en else '' }}</span>
+            <span class="l-zh">{{ ev.name_zh if ev.name_zh else (ev.name_en if ev.name_en else '') }}</span>
+          </span>
+          {% endif %}
           <span style="font-size:11px;color:var(--muted);white-space:nowrap;">{{ ev.date }}</span>
         </div>
         <div class="alert-detail" style="margin-top:4px;font-size:11.5px;">
@@ -1174,12 +1236,7 @@
         </div>
       </div>
       {% endfor %}
-      {% if _fb.tape | length > 30 %}
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">
-        <span class="l-en">… {{ (_fb.tape | length) - 30 }} more events in the 90d tape</span>
-        <span class="l-zh">… 90天记录中还有 {{ (_fb.tape | length) - 30 }} 条公告</span>
       </div>
-      {% endif %}
     </div>
     {% else %}
     <div style="font-size:12.5px;color:var(--muted);">
@@ -1193,11 +1250,30 @@
       <span class="l-zh">来源：港交所新闻标题分类系统（无需密钥的官方数据）。仅使用确定性关键词分类，无大模型评分。</span>
     </div>
   </div>
+  {% else %}
+  {# Filing bus not yet available — accruing state #}
+  <div class="panel span12" id="filing-bus-panel">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px;">
+      <h2 style="margin:0;font-size:13px;">
+        <span class="l-en">Corporate Catalysts</span>
+        <span class="l-zh">公司催化</span>
+      </h2>
+      <span class="chip c-muted" style="font-size:11px;">
+        <span class="l-en">accruing</span><span class="l-zh">累积中</span>
+      </span>
+    </div>
+    <p class="note" style="color:var(--muted);font-size:12px;margin:0;">
+      <span class="l-en">Accruing — first data expected on tonight's run.</span>
+      <span class="l-zh">累积中 — 预计今晚首次更新。</span>
+    </p>
+  </div>
   {% endif %}{# end filing-bus panel #}
+  {% endif %}{# /mode != stocks — filing-bus-panel #}
 
-  {# ── GDELT Narrative Pulse / 舆情脉搏 ─────────────────────────────────────
+  {# ── GDELT Narrative Pulse — macro-mode only ─────────────────────────────
      Display-only context organ. No signal, no edge. Weakest evidence tier.
-     Gracefully absent when hk_narrative is None or entities is empty. #}
+     Shows accruing state when no data yet. #}
+  {% if mode != 'stocks' %}
   {% if hk_narrative and hk_narrative.entities %}
   {% set _hn = hk_narrative %}
   {% set _hn_fresh = _hn.freshness if _hn.freshness else 'unknown' %}
@@ -1236,7 +1312,8 @@
         <span class="l-zh">最弱证据层，仅供参考</span>
       </span>
       <span class="chip" style="--c:var(--{% if _hn_fresh == 'ok' %}up{% elif _hn_fresh == 'degraded' %}warn{% else %}down{% endif %});font-size:10px;">
-        {{ _hn_fresh }}
+        <span class="l-en">{{ _hn_fresh }}</span>
+        <span class="l-zh">{% if _hn_fresh == 'ok' %}正常{% elif _hn_fresh == 'degraded' %}降级{% elif _hn_fresh == 'stale' %}落后{% elif _hn_fresh == 'dead' %}缺失{% else %}{{ _hn_fresh }}{% endif %}</span>
       </span>
     </div>
 
@@ -1310,7 +1387,25 @@
       <span class="l-zh">来源：GDELT DOC 2.0 API（无需密钥）。仅统计英文报道；实体识别精度有限。全部指标为确定性计算，无大模型评分。</span>
     </div>
   </div>
+  {% else %}
+  {# Narrative pulse not yet available — accruing state #}
+  <div class="panel span12" id="narrative-pulse-panel">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px;">
+      <h2 style="margin:0;font-size:13px;">
+        <span class="l-en">Narrative Pulse</span>
+        <span class="l-zh">舆情脉搏</span>
+      </h2>
+      <span class="chip c-muted" style="font-size:11px;">
+        <span class="l-en">accruing</span><span class="l-zh">累积中</span>
+      </span>
+    </div>
+    <p class="note" style="color:var(--muted);font-size:12px;margin:0;">
+      <span class="l-en">Accruing — first data expected on tonight's run.</span>
+      <span class="l-zh">累积中 — 预计今晚首次更新。</span>
+    </p>
+  </div>
   {% endif %}{# end narrative-pulse panel #}
+  {% endif %}{# /mode != stocks — narrative-pulse-panel #}
 
   {% if mode == 'stocks' %}
   <!-- ===================== HK STOCK DESK — command-center hero ===================== -->

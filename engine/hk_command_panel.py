@@ -395,6 +395,27 @@ def _cbbc_force(cbbc_map: dict | None) -> dict:
         return _neutral(key, name_en, name_zh, "compute error", "计算错误")
 
 
+def _peg_state_zh(peg_state: str) -> str:
+    """Translate peg state strings to Chinese — used to avoid English leaking into detail_zh."""
+    s = str(peg_state).lower()
+    if "strong" in s:
+        return " 联汇强方"
+    if "weak" in s:
+        if "outflow" in s or "out" in s:
+            return " 联汇弱方（资金流出）"
+        return " 联汇弱方"
+    if "easy" in s:
+        return " 联汇宽松"
+    if "stress" in s or "tight" in s:
+        return " 联汇偏紧"
+    if "outflow" in s:
+        return " 资金流出"
+    if "inflow" in s:
+        return " 资金流入"
+    # Fallback: keep original for unknown states rather than leaking English
+    return f" 联汇 {peg_state}"
+
+
 def _funding_peg_force(funding: dict | None, latest: dict | None) -> dict:
     """Force 7: Funding / peg — HKMA aggregate balance + peg stress."""
     key = "funding_peg"
@@ -436,18 +457,19 @@ def _funding_peg_force(funding: dict | None, latest: dict | None) -> dict:
                 liq_label = "tight"
                 base_state = "stress"
 
-            peg_note = f" peg {peg_state}" if peg_state else ""
+            peg_note_en = f" peg {peg_state}" if peg_state else ""
+            peg_note_zh = _peg_state_zh(peg_state) if peg_state else ""
             if base_state == "confirm":
                 return _state(key, name_en, name_zh, "confirm",
-                              f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note}",
-                              f"港元流动性充裕（AB分位 {pctile}%）{peg_note}")
+                              f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note_en}",
+                              f"港元流动性充裕（AB分位 {pctile}%）{peg_note_zh}")
             if base_state == "stress":
                 return _state(key, name_en, name_zh, "stress",
-                              f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note}",
-                              f"港元流动性偏紧（AB分位 {pctile}%）{peg_note}")
+                              f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note_en}",
+                              f"港元流动性偏紧（AB分位 {pctile}%）{peg_note_zh}")
             return _state(key, name_en, name_zh, "neutral",
-                          f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note}",
-                          f"港元流动性中性（AB分位 {pctile}%）{peg_note}")
+                          f"HK liquidity {liq_label} (AB pctile {pctile}%){peg_note_en}",
+                          f"港元流动性中性（AB分位 {pctile}%）{peg_note_zh}")
 
         # Fallback: peg_state only
         if peg_state:

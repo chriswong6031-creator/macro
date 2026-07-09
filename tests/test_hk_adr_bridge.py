@@ -837,3 +837,93 @@ class TestLedgerLaneGuard:
         assert ledger_before == ledger_after, (
             "grade() must not modify ledger outside asia-close lane"
         )
+
+
+# ---------------------------------------------------------------------------
+# (l) Off-by-one ADR date fallback (fix 2026-07-08)
+# When the pipeline runs before the US close is committed for hk_session_date,
+# the ADR store's most-recent bar is hk_session_date-1.  The engine must fall
+# back to that bar and return non-null implied gaps (not "ADR implied —").
+# ---------------------------------------------------------------------------
+
+class TestAdrOffByOneFallback:
+    """Tests for the off-by-one fix: use most-recent available ADR bar when
+    the exact session-date bar is absent (pipeline ran before US close landed)."""
+
+    def _make_stubs_one_behind(self, tmp_path: Path,
+                                session_date: str = "2026-07-08",
+                                adr_date: str = "2026-07-07") -> None:
+        """ADR data has its latest bar on adr_date (one session behind session_date)."""
+        all_tickers = {p.adr_ticker for p in BRIDGE.ALL_PAIRS}
+        for ticker in all_tickers:
+            _make_adr_parquet(tmp_path, ticker, {
+                "2026-07-06": 100.0,
+                adr_date: 103.0,   # +3%, but NOT present for session_date
+            })
+        for pair in BRIDGE.ALL_PAIRS:
+            _make_hk_parquet(tmp_path, pair.hk_ticker, {
+                "2026-07-02": 100.0,
+                "2026-07-03": 101.0,
+            })
+
+    def test_fallback_gives_non_null_gaps(self, tmp_path):
+        """When ADR bar for hk_session_date is absent but T-1 bar exists,
+        implied gaps must be non-null (fallback to T-1 bar used)."""
+        # ADR latest = 2026-07-07; session = 2026-07-08 (no ADR bar for 07-08)
+        self._make_stubs_one_behind(tmp_path, "2026-07-08", "2026-07-07")
+        snap = BRIDGE.snapshot(
+            hk_session_date=date(2026, 7, 8),
+            data_root=tmp_path,
+            now=datetime(2026, 7, 8, 9, 0, tzinfo=timezone.utc),
+        )
+        direct_gaps = [
+            n["implied_open_gap_pct"]
+            for n in snap["names"]
+            if n["hk_ticker"] in {"9988.HK", "9888.HK", "9618.HK", "9961.HK"}
+        ]
+        # After fallback, all direct pairs should have non-null gaps
+        null_count = sum(1 for g in direct_gaps if g is None)
+        assert null_count == 0, (
+            f"Off-by-one fallback failed: {null_count} of {len(direct_gaps)} "
+            f"direct pairs still have null gaps when ADR data is one day behind. "
+            f"Gaps: {direct_gaps}"
+        )
+
+    def test_fallback_adr_date_is_latest_available(self, tmp_path):
+        """The resolved adr_date must be the most-recent available bar, not the
+        requested session_date (which has no bar in this scenario)."""
+        self._make_stubs_one_behind(tmp_path, "2026-07-08", "2026-07-07")
+        snap = BRIDGE.snapshot(
+            hk_session_date=date(2026, 7, 8),
+            data_root=tmp_path,
+            now=datetime(2026, 7, 8, 9, 0, tzinfo=timezone.utc),
+        )
+        # adr_date should be 2026-07-07 (the fallback), not 2026-07-08
+        assert snap["adr_date"] == "2026-07-07", (
+            f"Expected adr_date=2026-07-07 (fallback), got {snap['adr_date']!r}"
+        )
+
+    def test_exact_date_bar_takes_priority(self, tmp_path):
+        """When the exact session-date ADR bar IS present, it should be used
+        (not the fallback). adr_date == hk_session_date."""
+        all_tickers = {p.adr_ticker for p in BRIDGE.ALL_PAIRS}
+        for ticker in all_tickers:
+            _make_adr_parquet(tmp_path, ticker, {
+                "2026-07-07": 100.0,
+                "2026-07-08": 105.0,   # exact bar present for session_date
+            })
+        _stub_all_hk(tmp_path)
+        snap = BRIDGE.snapshot(
+            hk_session_date=date(2026, 7, 8),
+            data_root=tmp_path,
+            now=datetime(2026, 7, 8, 22, 0, tzinfo=timezone.utc),
+        )
+        assert snap["adr_date"] == "2026-07-08", (
+            f"Exact bar present but adr_date={snap['adr_date']!r}, expected 2026-07-08"
+        )
+        # All direct pair gaps should be non-null and +5%
+        for n in snap["names"]:
+            if n.get("adr_source") == "direct":
+                pct = n["implied_open_gap_pct"]
+                assert pct is not None, f"{n['hk_ticker']} has null gap despite exact bar"
+                assert abs(pct - 5.0) < 0.01, f"{n['hk_ticker']} gap={pct}, expected 5.0%"
