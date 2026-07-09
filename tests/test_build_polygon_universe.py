@@ -239,6 +239,143 @@ class TestBuild:
 
 
 # ---------------------------------------------------------------------------
+# Regex / us_like filter — hyphen-form tickers must not be dropped
+# ---------------------------------------------------------------------------
+
+class TestUsLikeFilter:
+    """Regression lock for the BRK-B / BF-B filter bug.
+
+    constituents.parquet stores class-B shares with hyphens; the us_like regex
+    must pass them through so _fetch_mcap (which normalises '-' -> '.') runs.
+    """
+
+    def _us_like(self, tickers: list[str]) -> list[str]:
+        import re
+        return [t for t in tickers if re.match(r"^[A-Z]{1,5}([.\-][AB])?$", t)]
+
+    def test_hyphen_class_b_passes(self):
+        """BRK-B and BF-B must survive the filter (were silently dropped before fix)."""
+        assert "BRK-B" in self._us_like(["BRK-B"])
+        assert "BF-B" in self._us_like(["BF-B"])
+
+    def test_dot_class_b_still_passes(self):
+        """Dot-form (BRK.B) must continue to work."""
+        assert "BRK.B" in self._us_like(["BRK.B"])
+
+    def test_class_a_hyphen_passes(self):
+        assert "BRK-A" in self._us_like(["BRK-A"])
+
+    def test_plain_tickers_still_pass(self):
+        for t in ["AAPL", "NVDA", "GOOGL", "MSFT", "BRK"]:
+            assert t in self._us_like([t]), f"{t!r} should pass"
+
+    def test_crypto_and_intl_still_rejected(self):
+        """Non-US suffixes must still be filtered."""
+        for bad in ["BTC-USD", "ETH-USD", "SPY.MX", "AAPL.L", "ZZZZ123"]:
+            assert bad not in self._us_like([bad]), f"{bad!r} should be rejected"
+
+    def test_build_includes_hyphen_tickers_in_mcap_fetch(self, monkeypatch, tmp_path):
+        """End-to-end: BRK-B in GICS map must reach fetch_mcaps, not be filtered."""
+        import scripts.build_polygon_universe as bpu
+
+        fetched: list[str] = []
+
+        def fake_fetch_mcaps(tickers, checkpoint, dry_run=False):
+            fetched.extend(tickers)
+            return {t: 1e11 for t in tickers}
+
+        monkeypatch.setattr(bpu, "_cache_path", lambda: tmp_path / "ref.parquet")
+        monkeypatch.setattr(bpu, "_checkpoint_path", lambda: tmp_path / "ckpt.json")
+        monkeypatch.setattr(bpu, "build_gics_map",
+                            lambda: {"BRK-B": "Financials", "BF-B": "Consumer Staples",
+                                     "AAPL": "Information Technology"})
+        monkeypatch.setattr(bpu, "fetch_mcaps", fake_fetch_mcaps)
+        monkeypatch.setattr(bpu, "_load_checkpoint", lambda: {})
+        monkeypatch.setattr(bpu, "_save_checkpoint", lambda cp: None)
+
+        bpu.build(force=True)
+        assert "BRK-B" in fetched, "BRK-B was filtered out before fetch_mcaps"
+        assert "BF-B" in fetched, "BF-B was filtered out before fetch_mcaps"
+        assert "AAPL" in fetched
+
+
+# ---------------------------------------------------------------------------
+# No-regress write guard
+# ---------------------------------------------------------------------------
+
+class TestNoRegressGuard:
+    """build() must keep the existing cache when new data has materially fewer caps."""
+
+    def _patch_base(self, monkeypatch, tmp_path, gics, mcaps):
+        import scripts.build_polygon_universe as bpu
+        cache_path = tmp_path / "reference.parquet"
+        monkeypatch.setattr(bpu, "_cache_path", lambda: cache_path)
+        monkeypatch.setattr(bpu, "_checkpoint_path", lambda: tmp_path / "ckpt.json")
+        monkeypatch.setattr(bpu, "build_gics_map", lambda: dict(gics))
+        monkeypatch.setattr(bpu, "fetch_mcaps",
+                            lambda tickers, checkpoint, dry_run=False:
+                                {t: mcaps.get(t) for t in tickers})
+        monkeypatch.setattr(bpu, "_load_checkpoint", lambda: {})
+        monkeypatch.setattr(bpu, "_save_checkpoint", lambda cp: None)
+        return cache_path
+
+    def test_guard_keeps_good_cache_on_degraded_run(self, monkeypatch, tmp_path):
+        import scripts.build_polygon_universe as bpu
+        import pandas as pd
+
+        # Use realistic all-alpha tickers so they survive the us_like filter
+        _NAMES = ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA", "JPM", "V", "XOM"]
+        good_gics = {t: "Financials" for t in _NAMES}
+        good_mcaps = {t: float((i + 1) * 1e11) for i, t in enumerate(_NAMES)}
+        cache_path = self._patch_base(monkeypatch, tmp_path, good_gics, good_mcaps)
+        bpu.build(force=True)
+        assert cache_path.exists()
+        prev = pd.read_parquet(cache_path, columns=["market_cap_usd"])
+        assert prev["market_cap_usd"].notna().sum() == len(_NAMES), "pre-condition: good cache"
+
+        # Now simulate a degraded run: same GICS but all-null mcaps (no API key)
+        monkeypatch.setattr(bpu, "build_gics_map", lambda: dict(good_gics))
+        monkeypatch.setattr(bpu, "fetch_mcaps",
+                            lambda tickers, checkpoint, dry_run=False:
+                                {t: None for t in tickers})
+        result = bpu.build(force=True)
+
+        # Guard should have kept the good cache
+        assert result["market_cap_usd"].notna().sum() == len(_NAMES), (
+            "Guard should have kept the good cache, not overwritten with all-null")
+
+    def test_guard_allows_write_when_no_prior_cache(self, monkeypatch, tmp_path):
+        import scripts.build_polygon_universe as bpu
+
+        gics = {"AAPL": "Information Technology"}
+        cache_path = self._patch_base(monkeypatch, tmp_path, gics, {"AAPL": None})
+        bpu.build(force=True)
+        assert cache_path.exists(), "Should write even when all-null if no prior cache"
+
+    def test_guard_allows_small_decrease(self, monkeypatch, tmp_path):
+        """A <10% drop (e.g. delists) must not trigger the guard."""
+        import scripts.build_polygon_universe as bpu
+        import pandas as pd
+
+        # Use realistic all-alpha tickers so they survive the us_like filter
+        _NAMES = ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA", "JPM", "V", "XOM"]
+        good_gics = {t: "Financials" for t in _NAMES}
+        good_mcaps = {t: float((i + 1) * 1e11) for i, t in enumerate(_NAMES)}
+        cache_path = self._patch_base(monkeypatch, tmp_path, good_gics, good_mcaps)
+        bpu.build(force=True)
+
+        # 9 caps on re-run (one delist) — within 10% tolerance
+        new_mcaps = {t: (v if i < 9 else None) for i, (t, v) in enumerate(good_mcaps.items())}
+        monkeypatch.setattr(bpu, "build_gics_map", lambda: dict(good_gics))
+        monkeypatch.setattr(bpu, "fetch_mcaps",
+                            lambda tickers, checkpoint, dry_run=False:
+                                {t: new_mcaps.get(t) for t in tickers})
+        result = bpu.build(force=True)
+        assert result["market_cap_usd"].notna().sum() == 9, (
+            "A <10% drop should be allowed through the guard")
+
+
+# ---------------------------------------------------------------------------
 # Smoke-tests against the real reference.parquet (skipped in CI)
 # ---------------------------------------------------------------------------
 

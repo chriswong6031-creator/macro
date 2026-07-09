@@ -164,7 +164,7 @@ def _fetch_mcap(ticker: str, key: str, base_url: str) -> float | None:
             data = json.loads(r.read())
         res = (data or {}).get("results") or {}
         mc = res.get("market_cap")
-        return float(mc) if mc else None
+        return float(mc) if mc is not None else None
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return None   # not found — normal for non-US/delisted
@@ -263,8 +263,10 @@ def build(
     # 3. Decide which tickers to fetch caps for:
     #    - all tickers with a known GICS label (the ones the heatmap cares about)
     #    - exclude crypto / international suffixes (no /reference endpoint data)
+    #    - accept both hyphen form (BRK-B, BF-B stored in constituents.parquet) and
+    #      dot form (BRK.B) — _fetch_mcap normalises '-' -> '.' before calling Polygon
     import re
-    us_like = [t for t in gics if re.match(r"^[A-Z]{1,5}(\.[AB])?$", t)]
+    us_like = [t for t in gics if re.match(r"^[A-Z]{1,5}([.\-][AB])?$", t)]
     log.info("build_polygon_universe: %d US-like tickers in GICS map", len(us_like))
 
     # 4. Fetch market caps (rate-limited, checkpointed)
@@ -297,7 +299,26 @@ def build(
         log.info("build_polygon_universe: --dry-run, skipping write")
         return df
 
-    # 7. Write atomically via temp file
+    # 7. No-regress guard: never overwrite a good cache with a materially worse one.
+    #    If an existing parquet has more non-null market caps than the new frame
+    #    (allowing a 10% tolerance for delists), keep the existing one.
+    new_non_null = int(df["market_cap_usd"].notna().sum())
+    if cache.exists():
+        try:
+            prev = pd.read_parquet(cache, columns=["market_cap_usd"])
+            prev_non_null = int(prev["market_cap_usd"].notna().sum())
+            if prev_non_null > 0 and new_non_null < prev_non_null * 0.9:
+                log.warning(
+                    "build_polygon_universe: REGRESSION GUARD — new frame has %d non-null "
+                    "market caps vs %d in existing cache (%.0f%%). Keeping existing cache.",
+                    new_non_null, prev_non_null,
+                    100.0 * new_non_null / prev_non_null,
+                )
+                return pd.read_parquet(cache)
+        except Exception as e:  # noqa: BLE001
+            log.warning("build_polygon_universe: could not read previous cache for guard: %s", e)
+
+    # 8. Write atomically via temp file
     cache.parent.mkdir(parents=True, exist_ok=True)
     tmp = cache.with_suffix(".tmp.parquet")
     df.to_parquet(tmp)
