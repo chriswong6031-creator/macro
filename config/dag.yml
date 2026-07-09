@@ -405,6 +405,9 @@ lanes:
       - id: build_neuralweb_health
         module: scripts.build_neuralweb_health
         note: non-fatal; PR-C NW lobe-status surface — two-phase (engine job = previous_run cortex; cortex job --refresh-cortex = current_run); after all NW lobe producers
+      - id: check_nw_health_escalation
+        module: scripts.check_nw_health_escalation
+        note: non-fatal; M3 escalation organ — reads health.json + daily_brief_history.jsonl; dispatches ops alert when >=3 consecutive degraded nights; runs after build_neuralweb_health in ENGINE job
       - id: build_neuralweb_brief
         module: scripts.build_neuralweb_brief
         note: non-fatal; PR-D NW daily brief surface — engine phase writes phase='engine' after health; cortex job --finalize writes phase='final' + upserts history row
