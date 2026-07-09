@@ -201,6 +201,14 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
   padding: 4px 10px 4px 8px; cursor: pointer; transition: all .18s var(--ease); }
 .mini-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 .mini-chip:hover { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--panel2)); transform: translateY(-1px); }
+/* large fields (thematic baskets): clamp the where-they-stand map behind a "see more" */
+.xc-map-clamp { max-height: 220px; overflow: hidden; position: relative;
+  -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent); mask-image: linear-gradient(180deg, #000 62%, transparent); }
+.xc-map-clamp.xc-map-open { max-height: none; -webkit-mask-image: none; mask-image: none; }
+.xc-more { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; padding: 5px 12px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em; color: var(--link); font-variant-numeric: tabular-nums;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; transition: all .18s var(--ease); }
+.xc-more:hover { border-color: var(--link); background: color-mix(in srgb, var(--link) 12%, var(--panel2)); }
 
 .cyc-how { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
 .cyc-how li { font-size: 12.5px; line-height: 1.5; color: var(--muted); padding-left: 18px; position: relative; }

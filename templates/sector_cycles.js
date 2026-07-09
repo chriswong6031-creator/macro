@@ -1482,6 +1482,12 @@
         '<span class="sc-lead-rs ' + (rs >= 0 ? "pos" : "neg") + '">' + (rs >= 0 ? "+" : "") + rs + '%</span></div>';
     }).join("") + (lead.length > leadCap ? '<div class="sc-lead-more">+ ' + (lead.length - leadCap) + ' ' + L("more", "更多") + '</div>' : "");
 
+    // long fields dominate the panel (US baskets ~46, China Shenwan sectors ~31,
+    // China baskets ~22) — clamp the "where they stand" map to a compact height
+    // behind a "see more" toggle. Gate purely on count so ANY long list collapses
+    // (sectors OR baskets, US or China), while short ones (US's 11 sectors) stay open.
+    var manyItems = activeList().length > 14;
+
     def.innerHTML = '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L(unitEC() + " rotation · ", unitZ() + "轮动 · ")) + META.asOf + '</div>' +
@@ -1493,7 +1499,7 @@
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Where the ", "各") + noun + L(" stand", "所处位置") + '</div>' +
-        '<div class="xc-map">' +
+        '<div class="xc-map' + (manyItems ? ' xc-map-clamp' : '') + '" id="sc-xc-map">' +
           row(L("Topping · late", "见顶 · 晚期"), buckets.Peak, L("thin cushion", "缓冲薄弱")) +
           row(L("Trending", "上行中"), buckets.Expansion, L("healthy up-trend", "健康上行")) +
           row(L("Rolling over", "回落中"), buckets.Downturn, L("declining", "下行中")) +
@@ -1502,6 +1508,8 @@
                 "目前没有处于入场良机的" + (baskets ? "篮子" : unitZ()) + "。")) +
           row(L("Bottoming", "筑底中"), buckets.Trough, L("washed-out", "超卖")) +
         '</div>' +
+        (manyItems ? '<button type="button" class="xc-more" id="sc-xc-more" aria-expanded="false" aria-controls="sc-xc-map">' +
+          L("See all " + activeList().length + " ▾", "展开全部 " + activeList().length + " ▾") + '</button>' : '') +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Leadership · RS vs ", "领涨 · 相对") + benchLabel() + L(" (63d)", "(63日)") + '</div>' +
@@ -1520,6 +1528,16 @@
       b.addEventListener("click", function () { setFocus(b.getAttribute("data-id")); });
       if (b.classList.contains("sc-lead-nm")) keyActivate(b);   // mini-chip is a native <button>
     });
+    var xcMore = def.querySelector("#sc-xc-more"), xcMap = def.querySelector("#sc-xc-map");
+    if (xcMore && xcMap) {
+      xcMore.addEventListener("click", function () {
+        var open = xcMap.classList.toggle("xc-map-open");
+        xcMore.setAttribute("aria-expanded", open ? "true" : "false");
+        xcMore.textContent = open
+          ? L("See less ▴", "收起 ▴")
+          : L("See all " + activeList().length + " ▾", "展开全部 " + activeList().length + " ▾");
+      });
+    }
     def.classList.add("show");
   }
 
