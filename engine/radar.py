@@ -34,6 +34,7 @@ from engine.theme_activity import (  # re-exported primitives (shared with the f
     ACCEL_DOWN, ACCEL_UP, LAG_MONTHS, MIN_BASE_USD, MIN_COVERED, RECENT_MONTHS,
     YOY_LAG, Z_CLAMP, robust_z,
 )
+from engine import theme_warn as _theme_warn
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -165,8 +166,19 @@ def compute_radar(baskets_payload: dict, obligations: pd.DataFrame | None = None
         log.info("radar: no theme cleared real-activity coverage floors")
         return None
 
+    # WARN velocity parallel leg (display/confluence only; NEVER enters fused_obs_z).
+    # Tolerant — absent store / map -> all null; never blocks the radar.
+    # Pass as_of so the 90-day window is keyed off the same reference date as the
+    # rest of the radar payload, not wall-clock run time.
     mem = _membership(root)
     asof = asof or baskets_payload.get("as_of") or datetime.now(timezone.utc).date().isoformat()
+    try:
+        warn_leg = _theme_warn.compute_warn_activity(
+            baskets_payload, root=root, as_of=pd.Timestamp(asof).to_pydatetime()
+        )
+    except Exception as _warn_exc:  # noqa: BLE001
+        log.debug("theme_warn: skipped (%s)", _warn_exc)
+        warn_leg = {}
 
     rows = []
     for b in baskets_payload["baskets"]:
@@ -195,6 +207,8 @@ def compute_radar(baskets_payload: dict, obligations: pd.DataFrame | None = None
         state = _state(obs_dir, con_dir)
         accel = rad.get("fused_accel")
         note_en, note_zh = _note(state, accel, rel, primary.get("covered") or [], rad.get("sources") or [])
+        # WARN parallel leg — display/confluence context; NEVER modifies fused_obs_z
+        warn_basket = warn_leg.get(b["id"]) or {}
         flags.append({
             "id": f"{asof}-{b['id']}",
             "basket": b["id"], "name": b.get("name"), "name_zh": b.get("name_zh"),
@@ -210,6 +224,21 @@ def compute_radar(baskets_payload: dict, obligations: pd.DataFrame | None = None
             },
             "consensus": {"rel_60d": round(rel, 4), "z": round(cz, 3), "dir": con_dir},
             "news": rad.get("news"),
+            # warn: SEPARATE loser-cohort/disruption leg (AVOID-shaped evidence only;
+            # display + confluence context; never folded into fused_obs_z)
+            "warn": {
+                "warn_z": warn_basket.get("warn_z"),
+                "warn_workers_90d": warn_basket.get("warn_workers_90d"),
+                "warn_count_90d": warn_basket.get("warn_count_90d"),
+                "warn_yoy_ratio": warn_basket.get("warn_yoy_ratio"),
+                "matched_tickers": warn_basket.get("matched_tickers", []),
+                "n_matched": warn_basket.get("n_matched", 0),
+                "coverage_note": warn_basket.get("coverage_note"),
+                "coverage_note_zh": warn_basket.get("coverage_note_zh"),
+                "is_context_only": True,
+                "may_rank": False,
+                "may_gate": False,
+            } if warn_basket else None,
             "note": note_en, "note_zh": note_zh,
         })
 
