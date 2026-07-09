@@ -1,0 +1,668 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{#
+  Pick Lab — candidate stock-pick engine evaluation (display_only, ACCRUING).
+  Spec: research/PICK_LAB_MASTERPLAN_BY_FABLE.md §6.
+  Data: site/labdata/pick_lab.json + pick_lab_longhold.json (built nightly).
+  Authority: display_only (PL-R1, PL-R10). No scoring/gating/promotion here.
+  The word "validated" never appears (CI-guarded).
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Pick Lab — Mastermind</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.5}
+  a{text-decoration:none;color:inherit}
+  .pl-wrap{max-width:1360px;margin:0 auto;padding:0 20px 70px}
+
+  /* ── page header ── */
+  .pl-hd{padding:18px 0 10px}
+  .pl-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+  .pl-title{font-size:clamp(22px,3vw,32px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+  .pl-sub{color:var(--muted);font-size:13px;max-width:88ch}
+  .pl-asof{color:var(--muted);font-size:12px;margin-top:4px}
+  .pl-regime{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .rg-chip{font-size:12px;border:1px solid var(--line);border-radius:8px;padding:3px 10px;color:var(--muted)}
+  .rg-chip b{color:var(--text)}
+
+  /* ── tabs ── */
+  .pl-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 16px}
+  .tabbtn{padding:9px 18px;font:inherit;font-size:13.5px;font-weight:700;border:1.5px solid var(--line);
+    background:var(--panel);color:var(--muted);border-radius:10px;cursor:pointer;transition:.15s}
+  .tabbtn.on{background:var(--panel2,var(--panel));color:var(--text);border-color:var(--muted)}
+
+  /* ── scoreboard tab ── */
+  .sb-note{font-size:12px;color:var(--muted);margin:0 0 12px;padding:10px 13px;
+    border:1px solid var(--line);border-left:3px solid var(--link);border-radius:10px;background:var(--panel)}
+  .sb-note b{color:var(--text)}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.sb-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.sb-tbl th{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);
+    color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.sb-tbl td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.sb-tbl th:first-child,table.sb-tbl td:first-child{text-align:left}
+  table.sb-tbl th.l,table.sb-tbl td.l{text-align:left}
+  table.sb-tbl tr.row-random{background:color-mix(in srgb,var(--muted) 7%,transparent);border-top:2px solid var(--line)}
+  table.sb-tbl tr.row-random td{color:var(--muted);font-style:italic}
+  table.sb-tbl tr.row-inverse td.name-cell{color:var(--warn)}
+  .pos{color:var(--up)} .neg{color:var(--down)} .neu{color:var(--muted)}
+  .family-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;
+    border:1px solid var(--line);color:var(--muted);margin-right:4px}
+  .badge-accruing{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
+    color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+  .badge-active{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--up) 50%,var(--line));
+    color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
+  .sb-yardstick-label{font-size:10px;color:var(--muted);margin-left:4px}
+
+  /* ── empty state hero ── */
+  .pl-empty{text-align:center;padding:60px 20px 80px;color:var(--muted)}
+  .pl-empty-icon{font-size:48px;margin-bottom:14px}
+  .pl-empty h2{font-size:20px;font-weight:700;color:var(--text);margin:0 0 8px}
+  .pl-empty p{max-width:52ch;margin:0 auto;font-size:14px;line-height:1.6}
+
+  /* ── pick cards ── */
+  .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:13px;margin-top:10px}
+  .pick-card{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--panel);
+    border-left:3px solid var(--info,#4c8bf5)}
+  .pick-card:hover{border-color:var(--muted);background:var(--panel2,var(--panel))}
+  .pick-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .pick-rank{font-size:11px;color:var(--muted);font-weight:600;min-width:22px}
+  .pick-tk{font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .pick-close{font-size:13px;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .pick-sector{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .pick-why{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0}
+  .why-chip{font-size:11px;padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted);background:transparent}
+  .why-chip.accent{color:var(--text);border-color:var(--muted)}
+  .pick-feats{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .pick-feats span b{color:var(--text)}
+
+  /* ── book section header ── */
+  .book-section{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+  .book-section:first-child{border-top:none;padding-top:0;margin-top:0}
+  .book-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .book-name{font-size:16px;font-weight:750}
+  .book-sb{font-size:12px;color:var(--muted)}
+  .no-picks{font-size:13px;color:var(--muted);padding:14px 0;font-style:italic}
+
+  /* ── recent fires table ── */
+  .fires-hd{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+  table.fires-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  table.fires-tbl th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.fires-tbl td{padding:5px 8px;border-bottom:1px solid var(--line)}
+  table.fires-tbl tr:last-child td{border-bottom:none}
+
+  /* ── lane cards (OTR / TP) ── */
+  .lane-section{margin-top:22px}
+  .lane-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .lane-title{font-size:14.5px;font-weight:750}
+  .lane-warn{font-size:11.5px;padding:3px 9px;border-radius:7px;font-weight:700;
+    background:color-mix(in srgb,var(--down) 14%,transparent);
+    border:1px solid color-mix(in srgb,var(--down) 40%,var(--line));color:var(--down)}
+  .lane-info{font-size:11.5px;padding:3px 9px;border-radius:7px;font-weight:700;
+    background:color-mix(in srgb,var(--info,#4c8bf5) 14%,transparent);
+    border:1px solid color-mix(in srgb,var(--info,#4c8bf5) 40%,var(--line));color:var(--info,#4c8bf5)}
+
+  /* ── all-books chip selector ── */
+  .book-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .book-chip{font-size:12.5px;padding:6px 13px;border:1.5px solid var(--line);border-radius:9px;
+    background:transparent;color:var(--muted);cursor:pointer;font-weight:600;transition:.13s}
+  .book-chip.on{background:var(--panel2,var(--panel));color:var(--text);border-color:var(--muted)}
+  .book-chip .fam{font-size:10px;font-weight:700;color:var(--muted);margin-left:4px}
+
+  /* ── long-hold tab ── */
+  .lh-banner{margin:0 0 16px;padding:13px 16px;border:1.5px solid color-mix(in srgb,var(--info,#4c8bf5) 40%,var(--line));
+    border-radius:12px;background:color-mix(in srgb,var(--info,#4c8bf5) 7%,var(--panel))}
+  .lh-banner-title{font-size:13.5px;font-weight:700;margin:0 0 4px}
+  .lh-banner-sub{font-size:12.5px;color:var(--muted)}
+  .lh-firewall{margin-top:10px;font-size:11.5px;color:var(--muted);
+    padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2,var(--panel))}
+
+  /* ── method tab ── */
+  .method-body{max-width:78ch;line-height:1.7}
+  .method-body h3{font-size:14.5px;font-weight:720;margin:20px 0 6px;color:var(--text)}
+  .method-body p{color:var(--muted);font-size:13.5px;margin:0 0 10px}
+  .method-body ul{color:var(--muted);font-size:13px;padding-left:18px;margin:0 0 10px}
+  .method-body ul li{margin:4px 0}
+  .method-body .law{border-left:3px solid var(--link);padding:10px 14px;
+    background:color-mix(in srgb,var(--link) 7%,var(--panel));border-radius:0 9px 9px 0;
+    margin:12px 0;font-size:13px;color:var(--muted)}
+  .method-body .law b{color:var(--text)}
+
+  /* ── responsive ── */
+  @media(max-width:700px){
+    .pl-wrap{padding:0 12px 60px}
+    table.sb-tbl{font-size:11.5px}
+  }
+</style>
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+<div class="pl-wrap">
+
+  <!-- ── Page header ── -->
+  <div class="pl-hd">
+    <p class="pl-eyebrow">{{ t('Pick Lab · Display-only · ACCRUING', 'Pick Lab · 仅展示 · 累积中') }}</p>
+    <h1 class="pl-title">🧪 {{ t('Candidate Pick Engines', '候选选股引擎') }}</h1>
+    <p class="pl-sub">{{ t('23 shadow books running on forward ledgers — measured against a random-control yardstick before any book earns operator attention. All data is display-only; nothing here drives live selection or gating.', '23个影子书在前向账本上运行 — 在任何书获得操作员关注之前，均与随机控制基准对比衡量。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。') }}</p>
+    {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
+    {% if not empty and regime %}
+    <div class="pl-regime">
+      {% if regime.calm is not none %}<span class="rg-chip">{{ t('Calm', '平静') }} <b>{{ "%.0f"|format(regime.calm * 100) }}%</b></span>{% endif %}
+      {% if regime.stress is not none %}<span class="rg-chip">{{ t('Stress', '压力') }} <b>{{ "%.0f"|format(regime.stress * 100) }}%</b></span>{% endif %}
+      {% if regime.liquidity is not none %}<span class="rg-chip">{{ t('Liquidity', '流动性') }} <b>{{ regime.liquidity }}</b></span>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Tab buttons ── -->
+  <div class="pl-tabs" role="tablist">
+    <button class="tabbtn on" data-tab="scoreboard" role="tab">{{ t('Scoreboard', '记分板') }}</button>
+    <button class="tabbtn" data-tab="velocity" role="tab">{{ t('1D Velocity', '1日动能') }}</button>
+    <button class="tabbtn" data-tab="allbooks" role="tab">{{ t('All Books', '全部书本') }}</button>
+    <button class="tabbtn" data-tab="longhold" role="tab">{{ t('Long-Hold Grid', '长持网格') }}</button>
+    <button class="tabbtn" data-tab="method" role="tab">{{ t('Method', '方法') }}</button>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- TAB 1: SCOREBOARD                                                 -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="scoreboard" style="display:block">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">🧪</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('The lab runs nightly. The scoreboard will appear here after the first snapshot is taken and the first picks are fired. Check back tomorrow.', '实验室每晚运行。首次快照拍摄并触发第一批选择后，记分板将出现在这里。明天再来查看。') }}</p>
+    </div>
+    {% else %}
+    <div class="sb-note">
+      <b>{{ t('How to read this table:', '如何阅读此表：') }}</b>
+      {{ t('All 20 entry books are measured against the Random Control yardstick (pinned at bottom). ACCRUING = fewer than 25 fires across 3 months — do not act on these numbers yet; they are honest samples, not evidence. The ruler for Family C (washout) is absolute reversion-capture, not SPY-excess.', '所有20个入场书均与随机控制基准（固定在底部）进行比较。ACCRUING = 3个月内少于25次触发 — 暂不据此行动；这些是诚实样本，而非证据。C族（洗盘）的标尺是绝对均值回归捕获，而非SPY超额。') }}
+    </div>
+    <div class="tbl-scroll">
+      <table class="sb-tbl" aria-label="{{ t('Scoreboard', '记分板') }}">
+        <thead>
+          <tr>
+            <th class="l">{{ t('Book', '书本') }}</th>
+            <th>{{ t('Fam', '族') }}</th>
+            <th>{{ t('Status', '状态') }}</th>
+            <th>{{ t('N fires', 'N触发') }}</th>
+            <th>{{ t('N open', 'N开放') }}</th>
+            <th>{{ t('Dates', '日期') }}</th>
+            <th>{{ t('Mo span', '月跨') }}</th>
+            <th>{{ t('WR21 abs', 'WR21绝对') }}</th>
+            <th>{{ t('WR21 exc', 'WR21超额') }}</th>
+            <th>{{ t('Med exc21', '中位超额21') }}</th>
+            <th>{{ t('MFE med', 'MFE中位') }}</th>
+            <th>{{ t('MAE med', 'MAE中位') }}</th>
+            <th>{{ t('Asym', '非对称') }}</th>
+            <th>{{ t('NAV exc cum', 'NAV累积超额') }}</th>
+            <th>{{ t('Max DD', '最大回撤') }}</th>
+            <th>{{ t('vs Rand', '对比随机') }}</th>
+            <th>{{ t('vs Univ', '对比全市场') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in scoreboard %}
+          <tr class="{{ 'row-random' if row.is_random else ('row-inverse' if row.is_inverse else '') }}">
+            <td class="name-cell l" style="white-space:normal;min-width:160px">
+              <span class="family-badge">{{ row.family }}</span>
+              <span class="l-en">{{ row.name_en }}</span>
+              <span class="l-zh">{{ row.name_zh }}</span>
+              {% if row.is_random %}<span class="sb-yardstick-label">{{ t('(yardstick)', '(基准)') }}</span>{% endif %}
+              {% if row.is_inverse %}<span class="sb-yardstick-label">{{ t('(AVOID — inverse)', '(规避 — 反向)') }}</span>{% endif %}
+            </td>
+            <td>{{ row.family }}</td>
+            <td>
+              <span class="{{ row.status_badge.css }}">
+                <span class="l-en">{{ row.status_badge.label_en }}</span>
+                <span class="l-zh">{{ row.status_badge.label_zh }}</span>
+              </span>
+            </td>
+            <td>{{ row.n_fires_fmt }}</td>
+            <td>{{ row.n_open_fmt }}</td>
+            <td>{{ row.n_dates_fmt }}</td>
+            <td>{{ row.months_span_fmt }}</td>
+            <td class="{{ 'pos' if row.wr21_abs is not none and row.wr21_abs >= 0.5 else '' }}">{{ row.wr21_abs_fmt }}</td>
+            <td class="{{ 'pos' if row.wr21_excess is not none and row.wr21_excess > 0 else ('neg' if row.wr21_excess is not none and row.wr21_excess < 0 else '') }}">{{ row.wr21_excess_fmt }}</td>
+            <td class="{{ 'pos' if row.med_excess21 is not none and row.med_excess21 > 0 else ('neg' if row.med_excess21 is not none and row.med_excess21 < 0 else '') }}">{{ row.med_excess21_fmt }}</td>
+            <td>{{ row.mfe_med_fmt }}</td>
+            <td>{{ row.mae_med_fmt }}</td>
+            <td>{{ row.asym_fmt }}</td>
+            <td class="{{ 'pos' if row.nav_excess_cum is not none and row.nav_excess_cum > 0 else ('neg' if row.nav_excess_cum is not none and row.nav_excess_cum < 0 else '') }}">{{ row.nav_excess_cum_fmt }}</td>
+            <td class="neg">{{ row.max_dd_fmt }}</td>
+            <td class="{{ 'pos' if row.vs_random_lift is not none and row.vs_random_lift > 0 else ('neg' if row.vs_random_lift is not none and row.vs_random_lift < 0 else '') }}">{{ row.vs_random_lift_fmt }}</td>
+            <td class="{{ 'pos' if row.vs_universe_lift is not none and row.vs_universe_lift > 0 else ('neg' if row.vs_universe_lift is not none and row.vs_universe_lift < 0 else '') }}">{{ row.vs_universe_lift_fmt }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 2: 1D VELOCITY                                                -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="velocity" style="display:none">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">⚡</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('1D velocity picks will appear here after the first nightly build completes.', '首次夜间构建完成后，1日动能选择将出现在这里。') }}</p>
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--muted);margin:0 0 16px;max-width:88ch">
+      {{ t('Books 1–4 price the flagship gate\'s speed cost — names whose 1D oscillators crossed before the 2D/3D gate prints. First operator read clock: 2026-08-20. Family A ruler: 21-day SPY-excess.', '书1–4定价旗舰门控的速度成本 — 1日振荡器在2D/3D门印发前穿越的名称。第一次操作员读取时钟：2026-08-20。A族标尺：21日SPY超额。') }}
+    </p>
+
+    <!-- 4 velocity books -->
+    {% for book in velocity_books %}
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">{{ book.name_en }}</span>
+          <span class="l-zh">{{ book.name_zh }}</span>
+        </span>
+        {% if book.sb %}
+        <span class="book-sb">
+          {{ t('N', 'N') }}={{ book.sb.n_fires_fmt }}
+          · {{ t('WR21 exc', 'WR21超额') }} {{ book.sb.wr21_excess_fmt }}
+          · <span class="{{ book.sb.status_badge.css }}">
+              <span class="l-en">{{ book.sb.status_badge.label_en }}</span>
+              <span class="l-zh">{{ book.sb.status_badge.label_zh }}</span>
+            </span>
+        </span>
+        {% endif %}
+      </div>
+      {% if book.picks_today %}
+      <div class="pick-grid">
+        {% for p in book.picks_today %}
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}<span class="why-chip accent">{{ chip }}</span>{% endfor %}
+          </div>
+          {% endif %}
+          {% if p.features %}
+          <div class="pick-feats">
+            {% for k, v in p.features.items() %}<span><b>{{ k }}</b> {{ v }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No picks today for this book.', '今日此书无选择。') }}</p>
+      {% endif %}
+
+      {% if book.recent_fires %}
+      <p class="fires-hd">{{ t('Recent graded fires', '近期已评级触发') }}</p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th>{{ t('Ticker', '代码') }}</th>
+          <th>{{ t('Fire date', '触发日期') }}</th>
+          <th>{{ t('21d exc', '21日超额') }}</th>
+          <th>{{ t('Status', '状态') }}</th>
+        </tr></thead>
+        <tbody>
+          {% for f in book.recent_fires %}
+          <tr>
+            <td>{{ f.ticker }}</td>
+            <td>{{ f.fire_date }}</td>
+            <td class="{{ 'pos' if f.ret21_excess is not none and f.ret21_excess > 0 else ('neg' if f.ret21_excess is not none and f.ret21_excess < 0 else '') }}">{{ f.ret21_excess_fmt }}</td>
+            <td>{{ f.matured_label }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- On the Run lane -->
+    <div class="lane-section" style="margin-top:32px;padding-top:24px;border-top:1px solid var(--line)">
+      <div class="lane-hd">
+        <span class="lane-title">{{ t('On the Run Stocks', '热门板块个股') }}</span>
+        <span class="lane-info">{{ t('on_the_run sector context · Book 7', '热门板块背景 · 书7') }}</span>
+      </div>
+      {% if otr_stocks %}
+      <div class="pick-grid">
+        {% for p in otr_stocks %}
+        <div class="pick-card" style="border-left-color:var(--up)">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}<span class="why-chip accent">{{ chip }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No on-the-run names today.', '今日无热门板块个股。') }}</p>
+      {% endif %}
+    </div>
+
+    <!-- Take Profits / Topping lane (NOT buys) -->
+    <div class="lane-section" style="margin-top:24px">
+      <div class="lane-hd">
+        <span class="lane-title">{{ t('Take Profits / Topping Stocks', '止盈/见顶个股') }}</span>
+        <span class="lane-warn">{{ t('NOT buys — avoid / exit context', '非买入 — 规避/退出背景') }}</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+        {{ t('Book 19 (Topping Avoid, INVERSE) — cycle_state TOP WATCH / ROLLING OVER or high RSI in take-profit sectors. Scored as avoid-accuracy: expected negative 21d excess. Do NOT treat these as buy signals.', '书19（顶部规避，反向）— 周期状态TOP WATCH / ROLLING OVER或止盈板块高RSI。评分为规避准确性：预期负21日超额。切勿将这些视为买入信号。') }}
+      </p>
+      {% if tp_stocks %}
+      <div class="pick-grid">
+        {% for p in tp_stocks %}
+        <div class="pick-card" style="border-left-color:var(--down)">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}<span class="why-chip" style="color:var(--down)">{{ chip }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No topping names in the avoid list today.', '今日规避列表中无见顶名称。') }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 3: ALL BOOKS                                                  -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="allbooks" style="display:none">
+    {% if empty %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">📚</div>
+      <h2>{{ t('First accrual tonight', '今晚首次累积') }}</h2>
+      <p>{{ t('All 20 entry books will appear here after the first nightly build.', '首次夜间构建后，所有20个入场书将出现在这里。') }}</p>
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
+      {{ t('Select a book to view today\'s picks and recently graded fires.', '选择一本书查看今日选择和最近评级触发。') }}
+    </p>
+    <!-- book chip selector -->
+    <div class="book-chips" id="ab-chips">
+      {% for book in all_books %}
+      <button class="book-chip {{ 'on' if loop.first else '' }}" data-ab="{{ book.engine_id }}">
+        <span class="l-en">{{ book.name_en }}</span>
+        <span class="l-zh">{{ book.name_zh }}</span>
+        <span class="fam">{{ book.family }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <!-- per-book panels -->
+    {% for book in all_books %}
+    <div class="ab-panel" id="ab-{{ book.engine_id }}" style="display:{{ 'block' if loop.first else 'none' }}">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">{{ book.family }}</span>
+          <span class="l-en">{{ book.name_en }}</span>
+          <span class="l-zh">{{ book.name_zh }}</span>
+        </span>
+        {% if book.sb %}
+        <span class="book-sb">
+          {{ t('N fires', 'N触发') }}={{ book.sb.n_fires_fmt }}
+          · {{ t('WR21 exc', 'WR21超额') }} {{ book.sb.wr21_excess_fmt }}
+          · <span class="{{ book.sb.status_badge.css }}">
+              <span class="l-en">{{ book.sb.status_badge.label_en }}</span>
+              <span class="l-zh">{{ book.sb.status_badge.label_zh }}</span>
+            </span>
+        </span>
+        {% endif %}
+      </div>
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        {{ t('Ruler', '标尺') }}: {{ book.sb.ruler if book.sb else '—' }}
+      </p>
+
+      {% if book.picks_today %}
+      <div class="pick-grid">
+        {% for p in book.picks_today %}
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}<span class="why-chip accent">{{ chip }}</span>{% endfor %}
+          </div>
+          {% endif %}
+          {% if p.features %}
+          <div class="pick-feats">
+            {% for k, v in p.features.items() %}<span><b>{{ k }}</b> {{ v }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No picks today for this book.', '今日此书无选择。') }}</p>
+      {% endif %}
+
+      {% if book.recent_fires %}
+      <p class="fires-hd">{{ t('Recent graded fires', '近期已评级触发') }}</p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th>{{ t('Ticker', '代码') }}</th>
+          <th>{{ t('Fire date', '触发日期') }}</th>
+          <th>{{ t('21d exc ret', '21日超额回报') }}</th>
+          <th>{{ t('Status', '状态') }}</th>
+        </tr></thead>
+        <tbody>
+          {% for f in book.recent_fires %}
+          <tr>
+            <td>{{ f.ticker }}</td>
+            <td>{{ f.fire_date }}</td>
+            <td class="{{ 'pos' if f.ret21_excess is not none and f.ret21_excess > 0 else ('neg' if f.ret21_excess is not none and f.ret21_excess < 0 else '') }}">{{ f.ret21_excess_fmt }}</td>
+            <td>{{ f.matured_label }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="fires-hd" style="font-style:italic">{{ t('No graded fires yet for this book.', '此书尚无已评级触发。') }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 4: LONG-HOLD GRID                                            -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="longhold" style="display:none">
+    <div class="lh-banner">
+      <p class="lh-banner-title">{{ t('First maturation ETA', '首次到期预计时间') }}: <b>{{ first_maturation_eta }}</b> (126 {{ t('trading days', '交易日') }})</p>
+      <p class="lh-banner-sub">{{ t('Long-hold grids accrue at a 126/252-day horizon. No verdict language before maturation. Ruler: 126d/252d sector-relative + SPY-excess, descriptive only.', '长持网格以126/252日地平线累积。到期前无结论语言。标尺：126日/252日板块相对+SPY超额，仅描述性。') }}</p>
+      <div class="lh-firewall">
+        ⚠️ <b>{{ t('Firewall', '防火墙') }}:</b>
+        {{ t('Long-hold grids are display-only and never feed entry surfaces (PL-R6). Promotion of any LH grid belongs to the long-hold program (G1), not this lab.', '长持网格仅供展示，永不进入入场界面（PL-R6）。任何LH网格的晋升属于长持项目（G1），而非本实验室。') }}
+      </div>
+    </div>
+
+    {% if lh_as_of %}<p style="font-size:12px;color:var(--muted);margin:0 0 12px">{{ t('As of', '截至') }} {{ lh_as_of }}</p>{% endif %}
+
+    {% for book in lh_books %}
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">LH</span>
+          <span class="l-en">{{ book.name_en }}</span>
+          <span class="l-zh">{{ book.name_zh }}</span>
+        </span>
+        <span class="badge-accruing">
+          <span class="l-en">ACCRUING</span>
+          <span class="l-zh">累积中</span>
+        </span>
+      </div>
+
+      {% if book.picks_today %}
+      <div class="pick-grid">
+        {% for p in book.picks_today %}
+        <div class="pick-card" style="border-left-color:var(--info,#4c8bf5)">
+          <div class="pick-top">
+            <span class="pick-rank">#{{ p.rank }}</span>
+            <span class="pick-tk">{{ p.ticker }}</span>
+            <span class="pick-close">{{ p.close_fmt }}</span>
+          </div>
+          {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
+          {% if p.why %}
+          <div class="pick-why">
+            {% for chip in p.why %}<span class="why-chip accent">{{ chip }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-picks">{{ t('No long-hold picks today for this grid.', '今日此网格无长持选择。') }}</p>
+      {% endif %}
+
+      {% if book.recent_fires %}
+      <p class="fires-hd">{{ t('Recent long-hold fires', '近期长持触发') }}</p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th>{{ t('Ticker', '代码') }}</th>
+          <th>{{ t('Fire date', '触发日期') }}</th>
+          <th>{{ t('Status', '状态') }}</th>
+        </tr></thead>
+        <tbody>
+          {% for f in book.recent_fires %}
+          <tr>
+            <td>{{ f.ticker }}</td>
+            <td>{{ f.fire_date }}</td>
+            <td>{{ f.matured_label }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB 5: METHOD                                                      -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="method" style="display:none">
+    <div class="method-body">
+      <h3>{{ t('What this lab measures', '本实验室测量什么') }}</h3>
+      <p>{{ t('23 frozen candidate pick engines run in parallel on forward ledgers. Each book fires picks nightly; those picks are graded when the horizon elapses. Nothing here drives live selection. The purpose is evidence accrual: let the data tell us which constructions are worth a formal gauntlet.', '23个冻结候选选股引擎在前向账本上并行运行。每本书每晚触发选择；当地平线经过时，这些选择被评级。这里没有任何内容驱动实时选股。目的是证据累积：让数据告诉我们哪些构造值得正式考验。') }}</p>
+
+      <h3>{{ t('Rulers (per family, pre-declared — PL-R3)', '标尺（每族，预先声明 — PL-R3）') }}</h3>
+      <ul>
+        <li>{{ t('Families A, B, D, E, F: primary ruler = 21-trading-day SPY-excess (win rate + median excess). 5/10/63d recorded as descriptive ladder.', 'A、B、D、E、F族：主标尺 = 21交易日SPY超额（胜率+中位超额）。5/10/63日记录为描述性阶梯。') }}</li>
+        <li>{{ t('Family C (Washout/Reversion): primary ruler = 21-session absolute reversion-capture + MFE/MAE asymmetry. 63d excess is the wrong ruler here.', 'C族（洗盘/均值回归）：主标尺 = 21节绝对均值回归捕获 + MFE/MAE非对称。63日超额在此为错误标尺。') }}</li>
+        <li>{{ t('Book 19 (Topping Avoid, INVERSE): scored as avoid-accuracy — expected negative 21d excess.', '书19（顶部规避，反向）：评分为规避准确性 — 预期负21日超额。') }}</li>
+        <li>{{ t('Long-hold grids: 126d and 252d sector-relative + SPY-excess, descriptive only.', '长持网格：126日和252日板块相对+SPY超额，仅描述性。') }}</li>
+      </ul>
+
+      <h3>{{ t('Controls (PL-R5)', '控制变量（PL-R5）') }}</h3>
+      <p>{{ t('Every book is measured against two yardsticks: (1) the Random Control book (12 uniform-random liquid names, deterministic seed per day), visible in the scoreboard; and (2) the universe buy-anytime base rate. Every headline number is lift over both, not raw win rate.', '每本书均与两个基准进行比较：（1）随机控制书（12个均匀随机流动名称，每日确定性种子），在记分板中可见；以及（2）全市场随时买入基准率。每个标题数字是相对于两者的提升，而非原始胜率。') }}</p>
+
+      <h3>{{ t('ACCRUING floor (PL-R4)', '累积下限（PL-R4）') }}</h3>
+      <div class="law">
+        <b>{{ t('No verdict language before n≥25 fires spanning ≥3 calendar months and ≥6 distinct fire dates.', '在n≥25次触发跨越≥3个日历月和≥6个不同触发日期之前，无结论语言。') }}</b>
+        {{ t('Until then, the status badge reads ACCRUING. Even past the floor, this page shows descriptive summaries only.', '在此之前，状态徽章显示ACCRUING。即使超过下限，此页面也仅显示描述性摘要。') }}
+      </div>
+
+      <h3>{{ t('What promotion would take (PL-R1)', '晋升所需条件（PL-R1）') }}</h3>
+      <p>{{ t('Promotion of any book beyond display-tier requires the existing gauntlet: n≥25 fires across ≥3 months, a time-preserving placebo (no ticker-cluster CIs without time control), and pre-registered outcome gates. The lab contributes forward evidence only. Operator daily review (PL-R8) is a sanctioned selection heuristic for gauntlet slots — never promotion evidence by itself.', '任何书超越展示层级的晋升都需要现有的考验：跨越≥3个月的n≥25次触发，时间保留安慰剂（没有无时间控制的代码集群置信区间），以及预先注册的结果门控。实验室仅提供前向证据。操作员每日审查（PL-R8）是考验槽位的制裁选择启发式 — 本身从不是晋升证据。') }}</p>
+
+      <h3>{{ t('Frozen configs (PL-R2)', '冻结配置（PL-R2）') }}</h3>
+      <p>{{ t('Every book registers a frozen config + config_hash at ship time. Any parameter change ships as engine_id-v2 with a fresh ledger. Ledgers are never edited or re-scored in place.', '每本书在发布时注册一个冻结配置+config_hash。任何参数更改以engine_id-v2发布，带有新账本。账本永不就地编辑或重新评分。') }}</p>
+
+      <h3>{{ t('Candidate families', '候选族') }}</h3>
+      <ul>
+        <li><b>A — 1D Velocity:</b> {{ t('4 books pricing the flagship gate\'s speed cost on fast movers. Clock: 2026-08-20.', '4本书定价旗舰门控在快速移动者上的速度成本。时钟：2026-08-20。') }}</li>
+        <li><b>B — Momentum:</b> {{ t('4 books (breakout-vol, residual-momentum, OTR pullback, high-base squeeze).', '4本书（突破量能、残差动能、OTR回调、高位基建盘整）。') }}</li>
+        <li><b>C — Washout/Reversion:</b> {{ t('3 books; absolute reversion ruler, not SPY-excess.', '3本书；绝对均值回归标尺，而非SPY超额。') }}</li>
+        <li><b>D — EDGE/Quality:</b> {{ t('3 books (EDGE pure, EDGE×1D, quality pullback).', '3本书（纯EDGE、EDGE×1日、优质回调）。') }}</li>
+        <li><b>E — Context/Personality:</b> {{ t('2 books (beta-squeeze, revision-accel).', '2本书（Beta压缩、预测加速上修）。') }}</li>
+        <li><b>F — Ablations + Control:</b> {{ t('4 books including flagship-nogate, flagship-T3/T4, topping-avoid (INVERSE), and the random control yardstick.', '4本书，包括旗舰无门控、旗舰T3/T4、顶部规避（反向）和随机控制基准。') }}</li>
+        <li><b>LH — Long-Hold:</b> {{ t('3 grids (compounder, EDGE durability, washout survivor). Firewalled from entry surfaces.', '3个网格（复利、EDGE耐久、洗盘幸存）。与入场界面隔离。') }}</li>
+      </ul>
+
+      {% if method_note %}
+      <h3>{{ t('Notes from last run', '上次运行说明') }}</h3>
+      <p>{{ method_note }}</p>
+      {% endif %}
+
+      <p style="margin-top:20px;font-size:11.5px;color:var(--muted)">
+        {{ t('Authority: display_only. All rows carry authority: "display_only" per PL-R10.', '授权：仅展示。所有行按照PL-R10携带授权："display_only"。') }}
+        · {{ t('Built', '生成时间') }} {{ built }}
+      </p>
+    </div>
+  </section>
+
+</div><!-- .pl-wrap -->
+
+<!-- ── inline tab-switch JS ── -->
+<script>
+(function () {
+  'use strict';
+  /* main tab switcher */
+  var tabs = document.querySelectorAll('.pl-tabs .tabbtn');
+  var panels = document.querySelectorAll('[data-tab-panel]');
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-tab');
+      tabs.forEach(function (b) { b.classList.remove('on'); });
+      panels.forEach(function (p) { p.style.display = 'none'; });
+      btn.classList.add('on');
+      var panel = document.querySelector('[data-tab-panel="' + id + '"]');
+      if (panel) panel.style.display = 'block';
+    });
+  });
+  /* All Books chip selector */
+  var chips = document.querySelectorAll('#ab-chips .book-chip');
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var id = chip.getAttribute('data-ab');
+      chips.forEach(function (c) { c.classList.remove('on'); });
+      document.querySelectorAll('.ab-panel').forEach(function (p) { p.style.display = 'none'; });
+      chip.classList.add('on');
+      var panel = document.getElementById('ab-' + id);
+      if (panel) panel.style.display = 'block';
+    });
+  });
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 {
   "meta": {
-    "span": "2015-01-01..2026-07-05",
-    "rows": 4204,
-    "index_rows": 4094,
+    "span": "2015-01-01..2026-07-07",
+    "rows": 4206,
+    "index_rows": 4096,
     "split_date": "2021-01-01",
     "start_date": "2015-01-01",
     "horizons_d": [
@@ -128,34 +128,34 @@
   ],
   "ic_table": {
     "h30d": {
-      "full_ic": 0.1227,
+      "full_ic": 0.1226,
       "pre_ic": 0.1433,
-      "post_ic": 0.0622,
+      "post_ic": 0.0619,
       "nw_t": 10.004,
       "nw_p": 0.0,
-      "n_full": 4064,
+      "n_full": 4066,
       "n_pre": 1902,
-      "n_post": 2012
+      "n_post": 2014
     },
     "h90d": {
-      "full_ic": 0.3059,
+      "full_ic": 0.3061,
       "pre_ic": 0.2784,
       "post_ic": 0.2631,
       "nw_t": 8.723,
       "nw_p": 0.0,
-      "n_full": 4004,
+      "n_full": 4006,
       "n_pre": 1902,
-      "n_post": 2012
+      "n_post": 2014
     },
     "h180d": {
       "full_ic": 0.1754,
       "pre_ic": 0.1204,
-      "post_ic": 0.0782,
+      "post_ic": 0.0778,
       "nw_t": 7.762,
       "nw_p": 0.0,
-      "n_full": 3914,
+      "n_full": 3916,
       "n_pre": 1902,
-      "n_post": 2012
+      "n_post": 2014
     },
     "note": "Time-series rank IC (Spearman between the composite index and the forward h-day return, computed over the full time series). NOT the cross-sectional rank_ic() which is a per-date multi-name tool and the WRONG tool for a single index. Pre-half embargoed by 180 rows to prevent label leakage across the 2021-01-01 split boundary. Newey-West t-stat corrects for serial correlation from overlapping windows."
   },
@@ -175,8 +175,8 @@
           "n": 1105
         },
         "2024-now": {
-          "ic": 0.1418,
-          "n": 908
+          "ic": 0.1424,
+          "n": 910
         }
       },
       "worst_ic": -0.0715,
@@ -198,8 +198,8 @@
           "n": 1105
         },
         "2024-now": {
-          "ic": -0.085,
-          "n": 908
+          "ic": -0.0852,
+          "n": 910
         }
       },
       "worst_ic": -0.2482,
@@ -208,8 +208,8 @@
     }
   },
   "cpcv": {
-    "mean_ic": 0.2128,
-    "std_ic": 0.1702,
+    "mean_ic": 0.213,
+    "std_ic": 0.1716,
     "n_paths": 15,
     "k_folds": 6,
     "horizon_d": 90,
@@ -218,65 +218,65 @@
   },
   "allocation_backtest": {
     "cagr_net": 33.3,
-    "hodl_cagr": 64.6,
+    "hodl_cagr": 64.7,
     "sharpe_net": 1.19,
     "hodl_sharpe": 1.08,
     "maxdd_pct": -41.1,
     "hodl_maxdd_pct": -83.8,
     "time_in_market": 100.0,
     "cost_bps": 10.0,
-    "sharpe_daily": 0.062172,
-    "skew": -0.1877,
-    "kurt": 19.855,
-    "n_obs": 4094
+    "sharpe_daily": 0.062213,
+    "skew": -0.1878,
+    "kurt": 19.8641,
+    "n_obs": 4096
   },
   "allocation_bootstrap": {
     "sharpe_ci": [
-      0.56,
+      0.57,
       1.19,
-      1.81
+      1.8
     ],
     "maxdd_ci_pct": [
-      -59.0,
+      -58.6,
       -37.1,
-      -24.4
+      -25.0
     ],
     "sharpe_gt0_prob": 1.0,
     "block": 21,
     "B": 3000,
-    "n": 4094
+    "n": 4096
   },
   "deflated_sharpe": {
-    "dsr": 0.976,
-    "sr_daily": 0.062172,
+    "dsr": 0.9762,
+    "sr_daily": 0.062213,
     "sr_annual": 1.19,
-    "sr0_daily": 0.030811,
+    "sr0_daily": 0.030804,
     "sr0_annual": 0.59,
     "n_trials": 22,
-    "T": 4094,
+    "T": 4096,
     "skew": -0.188,
-    "kurt": 19.855,
+    "kurt": 19.864,
     "verdict": "SURVIVES multiple-testing (DSR\u22650.90)",
     "note": "DSR = P(true Sharpe > 0) deflated for n_trials=22 (machine-counted from choice_ledger), sample length T, skew and kurtosis. Expected result: DSR far below 0.90 \u2014 the composite is display-only by design. This harness exists to measure and document that, not to promote it."
   },
   "pit_m2": {
     "ok": true,
-    "ic_revised_90d": 0.3059,
+    "ic_revised_90d": 0.3061,
     "ic_pit_90d": 0.284,
     "delta_ic": -0.022,
-    "m2_score_shift_days": 4143,
+    "m2_score_shift_days": 4145,
     "m2_score_shift_pct_of_sample": 99.2,
     "n_month_ends_walked": 138,
     "note": "PIT bounded to M2SL (US leg of global_m2_yoy) \u2014 the only leg that is both revision-prone and in the vintage store. Other legs are market data (never revised) or z-scores (self-averaging). PIT can only make the macro IC equal-or-WORSE: revised data reflects information not knowable in real time and is upward-biased. Delta IC = PIT \u2212 revised; negative means PIT is worse (expected)."
   },
   "out_of_regime_post2024": {
-    "n": 817,
+    "n": 819,
     "since": "2024-01-11",
-    "ic_90d": 0.1418,
+    "ic_90d": 0.1423,
     "ic_90d_bootstrap_ci": [
-      -0.081,
-      0.14,
-      0.352
+      -0.077,
+      0.141,
+      0.357
     ],
     "note": "Post-2024 (ETF/flow-driven regime) subsample: one partial cycle, un-validatable. The 'etf' leg is tagged context-tier and is REPORT-ONLY \u2014 it can DEMOTE but never PROMOTE the composite. Wide CIs are expected; this block exists to show the honest IC number and interval, not to promote it."
   },

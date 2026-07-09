@@ -472,6 +472,14 @@ jobs:
           # (us_stocks_v2.html) + the shadow JSON — nothing live consumes it. main() swallows all
           # failures and returns 0, so this can NEVER break the render.
           run_py "buy board 2.0 shadow (build_stock_board_v2)" scripts.build_stock_board_v2
+          # Pick Lab nightly runner — AFTER build_stock_board_v2 (producer-core snapshot already
+          # written by build_stock_library, which runs inside build_site above). Enriches the
+          # snapshot from tonight's regime/latest.json, fires all 23 books with refire lockout,
+          # grades matured picks from the breadth close caches, computes scoreboards, and writes
+          # site/labdata/pick_lab.json + pick_lab_longhold.json + renders site/us_stocks_lab.html.
+          # Outputs are covered by the existing `git add data/ site/` commit step.
+          # main() swallows all failures and returns 0, so this can NEVER break the render.
+          run_py "pick lab nightly runner (build_pick_lab)" scripts.build_pick_lab
           # Reflexivity overlay — W4, Signal Commons. Runs AFTER build_stock_board_v2 (reads
           # us_standouts_v2.json) and AFTER build_site (reads factor_betas.json). Writes
           # site/factordata/reflexivity_overlay.json — display-only duplicate-exposure read.

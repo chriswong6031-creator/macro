@@ -8460,3 +8460,86 @@ artifacts:
       no reordering, no sizing. Written nightly by build_nightly() and intraday
       by build_intraday() (PS-R7: intraday writes site/ only). Staged by the
       daily.yml engine job commit and the intraday-fastpath.yml commit step.
+
+  # --- Pick Lab (spec PICK_LAB_MASTERPLAN_BY_FABLE.md §4/§5) ---
+  pick-lab-snapshots:
+    path: data/pick_lab/snapshots/
+    format: parquet
+    producer: scripts/build_stock_library.py
+    known_extra_writers:
+      - "scripts/build_pick_lab.py — writes enriched snapshot back via write_snapshot (PL-R7b)"
+    owner_program: pick-lab
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: engine.pick_lab.snapshot.SNAPSHOT_COLUMNS
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_pick_lab.py
+    external_consumers: []
+    notes: >
+      Pick Lab producer-core snapshot tape. Monthly parquet partitions
+      (data/pick_lab/snapshots/<YYYY-MM>.parquet). One row per ticker per asof date
+      across the full scored universe. PIT by construction (PL-R7): written once
+      per night by build_stock_library; enriched (sector_phase/stage/bucket +
+      calm/stress/liquidity_overlay) and persisted back by build_pick_lab (PL-R7b).
+      Display-only; authority='display_only' on every row. Never feeds a scored
+      or alert surface.
+
+  pick-lab-entry-ledger:
+    path: site/labdata/pick_lab.json
+    format: json
+    producer: scripts/build_pick_lab.py
+    known_extra_writers: []
+    owner_program: pick-lab
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/pick_lab/render.py
+    external_consumers: []
+    notes: >
+      Pick Lab entry-books site artifact (horizon_role=tactical_entry — the entry
+      side of the PL-R6 firewall). Contains scoreboard (all 20 entry books),
+      picks_today per book, recent_fires with h=21 grade outcomes, context lanes
+      (on_the_run_stocks / take_profits_stocks), and regime summary scalar.
+      All rows carry authority='display_only' (PL-R1/PL-R10). Status ACCRUING
+      until n≥25 fires / ≥3 months / ≥6 distinct fire dates (PL-R4 floor).
+      plab_random_ctrl pinned as yardstick row. Consumed only by render.py →
+      site/us_stocks_lab.html. Fully firewalled from hold_thesis surfaces (PL-R6).
+
+  pick-lab-longhold-ledger:
+    path: site/labdata/pick_lab_longhold.json
+    format: json
+    producer: scripts/build_pick_lab.py
+    known_extra_writers: []
+    owner_program: pick-lab
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/pick_lab/render.py
+    external_consumers: []
+    notes: >
+      Pick Lab long-hold grids site artifact (PL-R6 firewall). Contains the 3 LH
+      books (plab_lh_compounder / plab_lh_edge_durability / plab_lh_washout_survivor),
+      their picks_today, recent_fires, and per-book scoreboards at h=126/252.
+      FIREWALLED from all entry surfaces — no scored_path_surfaces, not consumed by
+      any tactical_entry module. horizon_role=hold_thesis. First maturation ETA ~2027-01
+      (126 sessions × 1.4 calendar-day factor). authority='display_only' throughout.

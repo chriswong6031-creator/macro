@@ -123,6 +123,9 @@ lanes:
         module: scripts.build_site
       - id: build_stock_board_v2
         module: scripts.build_stock_board_v2
+      - id: build_pick_lab
+        module: scripts.build_pick_lab
+        note: Pick Lab nightly runner — enriches snapshot, fires 23 books, grades, writes site/labdata/pick_lab.json + pick_lab_longhold.json + renders us_stocks_lab.html (never-break contract)
       - id: build_reflexivity_overlay
         module: scripts.build_reflexivity_overlay
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
