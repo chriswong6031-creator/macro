@@ -2516,6 +2516,15 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     tpl = env.get_template("sector.html.j2")
     outdir = site / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
+    # Policy-shock de-escalation state (PS-R3: display de-escalation only — no sizing/reordering)
+    _shock_path = site / "live" / "shock_state.json"
+    _shock_state: dict | None = None
+    try:
+        if _shock_path.exists():
+            import json as _jsss
+            _shock_state = _jsss.loads(_shock_path.read_text())
+    except Exception as _sse:  # noqa: BLE001 — additive, never fatal
+        log.warning("shock_state unavailable for sector pages (%s)", _sse)
 
     import json as _json2
     summaries: dict[str, dict] = {}
@@ -2643,7 +2652,8 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
             str(ec.index.max().date()), days=_adays, max_events=_amax)
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
-                          alerts=feed, generated_utc=generated)
+                          alerts=feed, generated_utc=generated,
+                          shock_state=_shock_state)
         write_page(outdir / f"{fund}.html", html)
         summaries[fund] = {"state": res["ladder"]["state"],
                            "label": res["ladder"]["label"],
@@ -3274,6 +3284,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("mtf monitor failed: %s", e)
         mtf_data = None
+    # Policy-shock de-escalation state for dashboard fresh-entry caution chip
+    # (PS-R3: display de-escalation only — no reordering, no sizing)
+    _dash_shock_state: dict | None = None
+    try:
+        _dsp = site / "live" / "shock_state.json"
+        if _dsp.exists():
+            import json as _dsj
+            _dash_shock_state = _dsj.loads(_dsp.read_text())
+    except Exception as _dse:  # noqa: BLE001 — additive, never fatal
+        log.warning("shock_state unavailable for dashboard (%s)", _dse)
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -3337,6 +3357,7 @@ def main() -> int:
         fear_greed=_fear_greed_view(),    # Fear/Greed composite dial (display-only, P1.2)
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
         dispersion_regime=_dispersion_regime_view(),  # L3 selection-regime chip (NW Rails W2 PR-4, display-only)
+        shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /
