@@ -88,27 +88,40 @@
   .sbt-chip.soft { background:color-mix(in srgb,var(--up) 7%,transparent);
               color:color-mix(in srgb,var(--up) 72%,var(--muted)); }
   .sbt-legend { margin:0 0 10px; font-size:11px; text-transform:none; }
-  /* ---- standout-stock cards (ported from the US dashboard) ------------------- */
+  /* ---- standout-stock cards — zoned V2 architecture ------------------- */
   /* Dynamic columns: ~240px min → ~4-5 cards per row on a normal laptop, more on an ultrawide
      screen, fewer as the viewport narrows. auto-fill does the responsive work — no fixed count. */
   .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; margin-top:11px; }
-  /* mobile: 2-up (paired with the 3-row cap via data-showmore-rows + theme.js). Tighter padding
-     buys card width; slightly larger type keeps the ticker / price / verdict readable. */
+  /* mobile: 2-up (paired with the 3-row cap via data-showmore-rows + theme.js). */
   @media (max-width:680px){
     .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
-    .nbgrid[data-showmore-rows] .nbcard{ padding:7px 8px 8px; gap:3px; }
-    .nbgrid[data-showmore-rows] .nb-tk{ font-size:15px; }
-    .nbgrid[data-showmore-rows] .nb-px{ font-size:13px; }
-    .nbgrid[data-showmore-rows] .nb-nm{ font-size:10.5px; }
-    .nbgrid[data-showmore-rows] .nb-verdict{ font-size:11px; }
-    .nbgrid[data-showmore-rows] .nb-state{ font-size:10.5px; }
-    /* let the header wrap so the signal badge + price drop to a new line instead of being
-       clipped by the card's overflow:hidden when the column is this narrow. */
-    .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+    .nbgrid[data-showmore-rows] .nbcard{ padding:0; gap:0; }
+    .nbgrid[data-showmore-rows] .nb-tk{ font-size:14px; }
+    .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
+    .nbgrid[data-showmore-rows] .nb-nm{ font-size:10px; }
+    .nbgrid[data-showmore-rows] .nb-verdict{ font-size:9.5px; }
+    .nbgrid[data-showmore-rows] .nb-state{ font-size:8.5px; }
+    .nbgrid[data-showmore-rows] .nb-id{ padding:6px 8px 5px; gap:3px; }
+    .nbgrid[data-showmore-rows] .nb-act{ padding:5px 8px 5px; gap:4px; }
+    .nbgrid[data-showmore-rows] .nb-ctx{ padding:3px 8px 5px; font-size:8px; }
+    .nbgrid[data-showmore-rows] .nb-conv-top{ padding:4px 7px; }
+    .nbgrid[data-showmore-rows] .nb-conv-top .nb-verdict{ font-size:9.5px; }
+    .nbgrid[data-showmore-rows] .nb-conv-top .nb-cscore{ font-size:11px; }
+    .nbgrid[data-showmore-rows] .nb-entry{ padding:4px 7px 5px; }
+    /* On 2-up narrow cards the buy zone + cycle STAY VISIBLE (primary action info —
+       adjudicated; the judged V2 mockup hid them and that was ruled a blocker).
+       They compact instead: smaller type, tighter gaps, window text dropped. */
+    .nbgrid[data-showmore-rows] .nbe-zone{ gap:4px; margin-top:2px; }
+    .nbgrid[data-showmore-rows] .nbe-zone .nbe-px{ font-size:10px; }
+    .nbgrid[data-showmore-rows] .nbe-zone .nbe-pct{ font-size:8px; }
+    .nbgrid[data-showmore-rows] .nbe-cyc{ font-size:7.5px; gap:3px; flex-wrap:wrap; }
+    .nbgrid[data-showmore-rows] .nbe-status{ font-size:9px; }
+    .nbgrid[data-showmore-rows] .nb-asof{ display:none; } /* secondary freshness note only */
+    .nbgrid[data-showmore-rows] .nb-rip-nm{ font-size:9.5px; }
   }
   a.nbcard { background:var(--panel2,var(--panel)); border:1px solid var(--line); border-radius:10px;
-             padding:9px 11px 10px; border-left:3px solid var(--muted); display:flex;
-             flex-direction:column; gap:4px; min-width:0; overflow:hidden;
+             padding:0; border-left:3px solid var(--muted); display:flex;
+             flex-direction:column; gap:0; min-width:0; overflow:hidden;
              transition:transform .12s, box-shadow .12s, border-color .12s; }
   /* every flex child may shrink below its content width AND never exceed the card —
      this is what stops a long verdict / chip row from blowing the card (and with it
@@ -117,13 +130,75 @@
   a.nbcard:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.22); border-color:var(--link); }
   .nbcard.nb-up { border-left-color:var(--up); } .nbcard.nb-down { border-left-color:var(--down); }
   .nbcard.nb-caution { border-left-color:var(--warn); }
-  .nb-top { display:flex; align-items:baseline; gap:6px; }
-  .nb-tk { font-weight:800; font-size:14px; color:var(--text); }
-  .nb-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
-  .nb-px { font-weight:700; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .nb-sub { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:10px; color:var(--muted); min-width:0; }
-  .nb-sub > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-  .nb-sub .nb-offh { margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+  /* ── IDENTITY ZONE ─────────────────────────────────────────────────────── */
+  .nb-id { padding:8px 11px 7px; background:color-mix(in srgb,var(--muted) 7%,transparent);
+           border-bottom:1px solid var(--line); border-radius:7px 7px 0 0;
+           display:flex; flex-direction:column; gap:4px; min-width:0; }
+  html[data-theme="light"] .nb-id { background:color-mix(in srgb,var(--muted) 5%,transparent); }
+  /* row 0: stage badge + gate badge */
+  .nb-badges { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; }
+  /* size the shared gate badge for this page only */
+  .nbcard .sig-gate { font-size:9px; white-space:nowrap; }
+  /* why-ranked chip de-emphasized in badges row */
+  .nb-badges .nb-why { font-size:7.5px; opacity:.7; }
+  /* row 1: ticker + price */
+  .nb-tkrow { display:flex; align-items:baseline; justify-content:space-between; gap:6px; min-width:0; }
+  .nb-tk { font-weight:800; font-size:15px; color:var(--text); }
+  /* row 2: full name — own full-width line */
+  .nb-nm { font-size:11.5px; font-weight:600; color:var(--text); white-space:nowrap;
+           overflow:hidden; text-overflow:ellipsis; max-width:100%; line-height:1.3; display:block; }
+  /* row 3: sector + off-high */
+  .nb-secrow { display:flex; align-items:center; gap:5px; min-width:0; font-size:10px; color:var(--muted); }
+  .nb-sec { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1 1 auto; }
+  .nb-offh { margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; flex:none; font-size:9.5px; }
+
+  .nb-px { font-weight:700; font-size:13.5px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; flex:none; }
+
+  /* ── ACTION ZONE ─────────────────────────────────────────────────────────── */
+  .nb-act { padding:7px 11px 7px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  /* sparkline inside action zone */
+  .nb-act .nch { margin:0; border-radius:4px; }
+  /* The fused READY score + verdict + entry gauge block */
+  .nb-conv { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+             overflow:hidden; min-width:0; display:flex; flex-direction:column; gap:0;
+             /* keep old margin for compat */ margin:0; }
+  /* top sub-row: score + verdict */
+  .nb-conv-top { display:flex; align-items:flex-start; gap:7px; padding:5px 8px 5px;
+                 border-bottom:1px solid var(--line); min-width:0; }
+  .nb-conv-top .nb-cscore { flex:none; }
+  .nb-conv-top .nb-verdict { flex:1 1 auto; min-width:0; font-size:10.5px; }
+
+  /* RAN card modifier: muted gate badge */
+  .nb-stage-ran-card .sig-gate { filter:grayscale(.75); opacity:.55; }
+
+  /* Entry gauge fused inside conv block */
+  .nb-conv .nb-entry { margin:0; border:none; border-radius:0; background:transparent;
+                       padding:5px 8px 6px; border-left:3px solid var(--muted); }
+  .nb-conv .nbe-buy_now, .nb-conv .nbe-partial { border-left-color:var(--up); background:color-mix(in srgb,var(--up) 5%,transparent); }
+  .nb-conv .nbe-buy_soon, .nb-conv .nbe-watch { border-left-color:var(--g-cold,var(--link)); }
+  .nb-conv .nbe-wait_pullback, .nb-conv .nbe-hold { border-left-color:var(--warn); }
+  .nb-conv .nbe-extended, .nb-conv .nbe-topping { border-left-color:var(--warn); }
+  .nb-conv .nbe-exit, .nb-conv .nbe-avoid, .nb-conv .nbe-blocked { border-left-color:var(--down); background:color-mix(in srgb,var(--down) 5%,transparent); }
+
+  /* ── CONTEXT STRIP ──────────────────────────────────────────────────────── */
+  .nb-ctx { padding:4px 11px 6px; display:flex; align-items:center; gap:4px 5px; flex-wrap:wrap;
+            min-width:0; font-size:9px; color:var(--muted);
+            border-top:1px solid var(--line);
+            background:color-mix(in srgb,var(--muted) 3%,transparent);
+            border-radius:0 0 7px 7px; }
+  /* state chip in context strip */
+  .nb-ctx .nb-state { font-size:8.5px; padding:1px 5px; border-radius:6px; letter-spacing:.02em; }
+  .nb-up .nb-ctx .nb-state { color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel)); }
+  .nb-down .nb-ctx .nb-state { color:var(--down); background:color-mix(in srgb,var(--down) 14%,var(--panel)); }
+  .nb-caution .nb-ctx .nb-state { color:var(--warn); background:color-mix(in srgb,var(--warn) 14%,var(--panel)); }
+  /* condition chips smaller in context strip */
+  .nb-ctx .nb-washout, .nb-ctx .nb-coiled, .nb-ctx .nb-ext { font-size:7.5px; padding:1px 4px; }
+  /* caution button compact in context strip */
+  .nb-ctx .nb-cau { margin-top:0; }
+  .nb-ctx .nb-cau-btn { font-size:8px; height:16px; padding:0 4px 0 3px; }
+  /* signal as-of pushed right */
+  .nb-asof { font-size:8px; color:var(--muted); margin-left:auto; white-space:nowrap; opacity:.75; }
   .nb-washout { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
                 background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); }
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
@@ -131,13 +206,11 @@
   .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 20%,transparent)}
   .nb-ext { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
             background:color-mix(in srgb,var(--orange) 15%,transparent); color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 42%,transparent); }
-  .nbcard .nch { background:transparent; margin:4px 0 2px; width:100%; height:42px; border-radius:5px; }
-  .nb-bot { display:flex; align-items:center; flex-wrap:wrap; gap:5px 6px; margin-top:1px; }
+  .nbcard .nch { background:transparent; margin:0; width:100%; height:42px; border-radius:4px; }
+  /* nb-state defaults (overridden per-dir in context strip above) */
   .nb-state { font-size:10px; font-weight:800; letter-spacing:.02em; padding:1px 7px; border-radius:8px; }
-  .nb-up .nb-state { color:var(--up); background:color-mix(in srgb,var(--up) 15%,var(--panel)); }
-  .nb-down .nb-state { color:var(--down); background:color-mix(in srgb,var(--down) 15%,var(--panel)); }
-  .nb-caution .nb-state { color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,var(--panel)); }
-  /* ---- Entry-timing gauge (the SECOND gauge — ported from the US dashboard) ---- */
+  /* ---- Entry-timing gauge (inside nb-conv fused block) ---- */
+  /* standalone nb-entry (outside nb-conv) still possible on non-zoned cards — keep base rules */
   .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px;
               background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--muted); }
   .nbe-buy_now, .nbe-partial { border-left-color:var(--up);
@@ -160,12 +233,13 @@
   .nbe-px { font-weight:800; font-size:11px; color:var(--text); font-variant-numeric:tabular-nums; }
   .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
   .nbe-cyc { font-size:8.5px; color:var(--muted); margin-top:3px; display:flex;
-             align-items:center; gap:4px; font-variant-numeric:tabular-nums; }
-  .nbe-bar { display:inline-block; width:42px; height:3px; border-radius:2px;
+             align-items:center; gap:5px; font-variant-numeric:tabular-nums; min-width:0; }
+  .nbe-cyc > span:first-child { flex:none; white-space:nowrap; }
+  /* slim progress bar stretches to fill the row (V3 graft) */
+  .nbe-bar { display:inline-block; flex:1 1 auto; min-width:24px; height:3px; border-radius:2px;
              background:var(--line); overflow:hidden; }
   .nbe-bf { display:block; height:100%; background:var(--g-cold); }
-  /* ---- unified Conviction Profile on each standout card (ported from the US dashboard) ---- */
-  .nb-conv { display:flex; align-items:center; gap:7px; margin:5px 0 1px; min-width:0; }
+  /* ---- Conviction Profile score + verdict ---- */
   .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
                min-width:30px; flex:none; text-align:center; padding:1px 5px; border-radius:8px;
                border:1px solid var(--line); color:var(--text); }
@@ -238,7 +312,7 @@
   /* Stage badge — top-left of each card (loudest element on the card) */
   .nb-stage { display:inline-flex; align-items:center; font-size:8.5px; font-weight:800;
               letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:9px;
-              white-space:nowrap; margin-bottom:3px; }
+              white-space:nowrap; }
   .nb-stage.stg-entry { color:#fff; background:var(--up);
                          box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 60%,transparent); }
   .nb-stage.stg-ran   { color:var(--muted); background:color-mix(in srgb,var(--muted) 12%,var(--panel));
@@ -246,28 +320,39 @@
   /* why_ranked chip — small, beside rank indicator on ENTRY cards */
   .nb-why { font-size:8px; color:var(--muted); padding:1px 5px; border-radius:6px;
              border:1px solid var(--line); white-space:nowrap; cursor:help; }
-  /* RAN card: muted score, prominent detail string */
-  .nb-ran-detail { font-size:10px; color:var(--muted); line-height:1.35; margin:3px 0 1px;
-                   padding:4px 7px; border-radius:7px;
+  /* RAN card: muted score, prominent detail string — sits between identity zone and action zone */
+  .nb-ran-detail { font-size:10px; color:var(--muted); line-height:1.35; margin:0;
+                   padding:5px 11px;
                    background:color-mix(in srgb,var(--down) 7%,var(--panel));
-                   border:1px solid color-mix(in srgb,var(--down) 20%,var(--line)); }
+                   border-bottom:1px solid color-mix(in srgb,var(--down) 20%,var(--line)); }
   /* RAN card modifier: de-emphasise score display */
   .nb-stage-ran-card .nb-cscore { opacity:.45; }
-  /* ── RIPENING SHELF: compact cards (NOT full nbcard) ────────────────────── */
+  /* ── RIPENING SHELF: compact zoned cards (NOT full nbcard) ─────────────── */
   .nb-rip-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:7px; margin-top:8px; }
   .nb-rip-card { background:var(--panel); border:1px solid var(--line); border-radius:9px;
-                 padding:8px 10px; display:flex; flex-direction:column; gap:3px; min-width:0;
-                 border-left:3px solid color-mix(in srgb,var(--warn) 55%,var(--line)); }
-  .nb-rip-top { display:flex; align-items:baseline; gap:5px; }
+                 min-width:0; border-left:3px solid color-mix(in srgb,var(--warn) 55%,var(--line));
+                 overflow:hidden; display:flex; flex-direction:column; }
+  /* ripening identity zone */
+  .nb-rip-id { padding:6px 9px 5px;
+               background:color-mix(in srgb,var(--warn) 5%,color-mix(in srgb,var(--muted) 5%,var(--panel)));
+               border-bottom:1px solid color-mix(in srgb,var(--warn) 18%,var(--line));
+               display:flex; flex-direction:column; gap:3px; min-width:0; }
+  html[data-theme="light"] .nb-rip-id { background:color-mix(in srgb,var(--warn) 6%,var(--panel)); }
+  .nb-rip-top { display:flex; align-items:baseline; gap:5px; min-width:0; }
   .nb-rip-tk { font-weight:800; font-size:13px; color:var(--text); }
-  .nb-rip-nm { font-size:9.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis;
-               white-space:nowrap; flex:1; min-width:0; }
-  .nb-rip-imm { font-size:8.5px; font-weight:800; color:var(--warn); flex:none; }
+  .nb-rip-imm { font-size:8.5px; font-weight:800; color:var(--warn); flex:none; margin-left:auto; }
+  /* name on its own full-width line */
+  .nb-rip-nm { font-size:10.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis;
+               white-space:nowrap; max-width:100%; display:block; }
+  /* ripening body */
+  .nb-rip-body { padding:5px 9px 7px; display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .nb-rip-secrow { display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:9px; color:var(--muted); }
   .nb-rip-chips { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
   .nb-rip-chip { font-size:8px; font-weight:700; padding:1px 5px; border-radius:6px; overflow-wrap:anywhere; max-width:100%;
                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel));
                  border:1px solid color-mix(in srgb,var(--warn) 38%,var(--line)); }
   .nb-rip-sec { font-size:9px; color:var(--muted); }
+  .nb-rip-range { font-size:8px; color:var(--muted); margin-left:auto; }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
@@ -513,14 +598,14 @@
       {% if items %}
       <div class="act-col {{ cls }} lst-wrap">
         <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
-        <div class="lst-collapse is-collapsed">
+        <div class="lst-collapse lst-cap4 is-collapsed">
         {% for it in items %}
         <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
           <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
         </div>
         {% endfor %}
         </div>
-        {% if items|length > 5 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
+        {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
       </div>
       {% endif %}
       {% endmacro %}
@@ -1343,69 +1428,89 @@
     {% for n in _entry_rows %}
       {% set _d = n.dir or 'caution' %}
       <a class="nbcard nb-{{ _d }}" href="china_lookup.html#{{ n.ticker }}">
-        {# stage badge (loudest element) + why_ranked chip #}
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span class="nb-stage stg-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
-          {% if n.get('why_ranked') %}<span class="nb-why" data-tip-en="Why it ranks here: {{ n.get('why_ranked','') }}" data-tip-zh="此处排序原因：{{ n.get('why_ranked','') }}">{{ n.get('why_ranked') }}</span>{% endif %}
-        </div>
-        <div class="nb-top">
-          <span class="nb-tk">{{ n.ticker }}</span>
-          <span class="nb-nm">{{ nm(n.name) }}</span>
-          {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
-          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
-        </div>
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout" data-tip-en="Washed out on the 2-week chart and turning back up — usually a more durable bottom than a daily bounce." data-tip-zh="2周线已洗盘并回升——通常比日线反弹更稳的底部。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}" data-tip-en="Volatility squeezed tight — a big move is loading." data-tip-zh="波动被极度压缩——大行情正在酝酿。"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext" data-tip-en="Already run up a lot — higher chase risk, so it is ranked lower." data-tip-zh="已经大涨——追高风险较大，故排名靠后。">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
-        {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
-        {% set c = n.conviction %}
-        {% if c %}
-        <div class="nb-conv">
-          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Buy-readiness 0–100 — how ready it looks to buy, not a win-rate." data-tip-zh="买入就绪度0–100——看起来离买点有多近，并非胜率。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
-          <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
-        </div>
-        {% set es = n.entry_signal %}
-        {% if es %}
-        {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended, with the
-           actual buy-zone price + cycle position. The WHEN/AT-WHAT-PRICE the conviction score
-           must never be mistaken for. Market-agnostic (reads the cycle/ladder + vol). #}
-        <div class="nb-entry nbe-{{ es.status }}" data-tip-en="Entry timing — when and at what price to buy. {{ es.action }}" data-tip-zh="入场时机——何时、以何价买入。{{ es.action_zh or es.action }}">
-          <div class="nbe-head">
-            <span class="nbe-dot a{{ es.act_level }}"></span>
-            <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+        {# ── IDENTITY ZONE ─────────────────────────────────────────────────── #}
+        <div class="nb-id">
+          {# row 0: stage badge (loudest element) + gate badge + why_ranked chip #}
+          <div class="nb-badges">
+            <span class="nb-stage stg-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
+            {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
+            {% if n.get('why_ranked') and not (n.washout_2w and n.get('why_ranked') == '2W-washout') %}<span class="nb-why" data-tip-en="Why it ranks here: {{ n.get('why_ranked','') }}" data-tip-zh="此处排序原因：{{ n.get('why_ranked','') }}">{{ n.get('why_ranked') }}</span>{% endif %}
           </div>
-          {% if es.buy_zone and es.buy_zone.high is not none %}
-          <div class="nbe-zone">
-            <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
-            <span class="nbe-px">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
-            {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
+          {# row 1: ticker + price #}
+          <div class="nb-tkrow">
+            <span class="nb-tk">{{ n.ticker }}</span>
+            {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          </div>
+          {# row 2: full name — own full-width line #}
+          <div class="nb-nm">{{ nm(n.name) }}</div>
+          {# row 3: sector left + off-52w-high right #}
+          <div class="nb-secrow">
+            <span class="nb-sec">{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>
+            {% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}
+          </div>
+        </div>
+        {# ── ACTION ZONE ─────────────────────────────────────────────────────── #}
+        <div class="nb-act">
+          {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
+          {% set c = n.conviction %}
+          {% set es = n.entry_signal %}
+          {% if c %}
+          {# Fused READY-score + verdict + entry-gauge block #}
+          <div class="nb-conv">
+            <div class="nb-conv-top">
+              {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Buy-readiness 0–100 — how ready it looks to buy, not a win-rate." data-tip-zh="买入就绪度0–100——看起来离买点有多近，并非胜率。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
+              <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+            </div>
+            {% if es %}
+            {# ENTRY-timing gauge: buy now / wait for the pullback / extended, with the
+               actual buy-zone price + cycle position. Market-agnostic (reads the cycle/ladder + vol). #}
+            <div class="nb-entry nbe-{{ es.status }}" data-tip-en="Entry timing — when and at what price to buy. {{ es.action }}" data-tip-zh="入场时机——何时、以何价买入。{{ es.action_zh or es.action }}">
+              <div class="nbe-head">
+                <span class="nbe-dot a{{ es.act_level }}"></span>
+                <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+              </div>
+              {% if es.buy_zone and es.buy_zone.high is not none %}
+              <div class="nbe-zone">
+                <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
+                <span class="nbe-px">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
+                {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
+              </div>
+              {% endif %}
+              {% if es.cycle_pos and es.cycle_pos.dc_day is not none %}
+              <div class="nbe-cyc">
+                <span>{{ t('cycle day', '周期第') }} {{ es.cycle_pos.dc_day }}{{ t('', '天') }}/{{ es.cycle_pos.dc_band[0] }}–{{ es.cycle_pos.dc_band[1] }}</span>
+                <span class="nbe-bar"><span class="nbe-bf" style="width:{{ [es.cycle_pos.pct_through or 0, 100]|min }}%"></span></span>
+                {% if es.timing and es.timing.opens_in_days_lo is not none and es.status not in ['buy_now','partial'] %}<span>· {{ t('window', '窗口') }} ~{{ es.timing.opens_in_days_lo }}{% if es.timing.opens_in_days_hi and es.timing.opens_in_days_hi != es.timing.opens_in_days_lo %}–{{ es.timing.opens_in_days_hi }}{% endif %}d</span>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
-          {% if es.cycle_pos and es.cycle_pos.dc_day is not none %}
-          <div class="nbe-cyc">
-            <span>{{ t('cycle day', '周期第') }} {{ es.cycle_pos.dc_day }}{{ t('', '天') }}/{{ es.cycle_pos.dc_band[0] }}–{{ es.cycle_pos.dc_band[1] }}</span>
-            <span class="nbe-bar"><span class="nbe-bf" style="width:{{ [es.cycle_pos.pct_through or 0, 100]|min }}%"></span></span>
-            {% if es.timing and es.timing.opens_in_days_lo is not none and es.status not in ['buy_now','partial'] %}<span>· {{ t('window', '窗口') }} ~{{ es.timing.opens_in_days_lo }}{% if es.timing.opens_in_days_hi and es.timing.opens_in_days_hi != es.timing.opens_in_days_lo %}–{{ es.timing.opens_in_days_hi }}{% endif %}d</span>{% endif %}
-          </div>
-          {% endif %}
         </div>
-        {% endif %}
-        {% endif %}
-        <div class="nb-bot">
+        {# ── CONTEXT STRIP ─────────────────────────────────────────────────── #}
+        <div class="nb-ctx">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
-          {# freshness: show the signal's own bar date only when it trails the board date #}
-          {% set _sig_asof = (n.signal or {}).get('asof') %}
-          {% if _sig_asof and setups.as_of and _sig_asof < setups.as_of %}<span class="muted" style="font-size:9px" data-tip-en="This signal is from {{ _sig_asof }}, a bar or two behind today's board (the 3-day bucket was not complete yet). Prices are current." data-tip-zh="该信号基于 {{ _sig_asof }}，比看板日期早一两个交易日（3日周期桶尚未收盘）。价格为最新。"><span class="l-en">signal as of {{ _sig_asof }}</span><span class="l-zh">信号截至 {{ _sig_asof }}</span></span>{% endif %}
-          {# CN-SYS W8 — per-name microstructure chips (limit_state / chase_veto).
-             Source: site/chinastatedata/microstructure.json → cn_micro_by_ticker[n.ticker].
-             Context only — not a sort key (CN-SYS-R3, R7). Degrade silently if packet absent. #}
+          {# condition chips #}
+          {% if n.washout_2w %}<span class="nb-washout" data-tip-en="Washed out on the 2-week chart and turning back up — usually a more durable bottom than a daily bounce." data-tip-zh="2周线已洗盘并回升——通常比日线反弹更稳的底部。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}
+          {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}" data-tip-en="Volatility squeezed tight — a big move is loading." data-tip-zh="波动被极度压缩——大行情正在酝酿。"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
+          {% if n.extension and n.extension.extended %}<span class="nb-ext" data-tip-en="Already run up a lot — higher chase risk, so it is ranked lower." data-tip-zh="已经大涨——追高风险较大，故排名靠后。">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}
+          {# microstructure chips (limit_state / chase_veto) — CN-SYS-R3 #}
           {% set _mpkt = cn_micro_by_ticker.get(n.ticker) if cn_micro_by_ticker else none %}
           {% if _mpkt %}
             {% set _ls = _mpkt.get('limit_state') %}
             {% set _cv = (_mpkt.get('chase_veto') or {}) %}
             {% if _ls and _ls != 'open' %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)" data-tip-en="Microstructure: limit state={{ _ls }}. Context only — CN-SYS-R3." data-tip-zh="市场结构：涨跌停状态={{ _ls }}。仅供参考 — CN-SYS-R3。"><span class="l-en">{{ _ls }}</span><span class="l-zh">{{ _ls }}</span></span>{% endif %}
-            {% if _cv.get('flag') %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--down) 13%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)" data-tip-en="Chase veto: {{ _cv.get('reason') or 'limit-up context (CN-SYS-R3)' }}" data-tip-zh="追涨否决：{{ _cv.get('reason') or '涨停背景（CN-SYS-R3）' }}"><span class="l-en">chase ⚑</span><span class="l-zh">追涨 ⚑</span></span>{% endif %}
+            {# CN-SYS-R3: chase-veto ZH tooltip uses generic Chinese reason #}
+            {% if _cv.get('flag') %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--down) 13%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)" data-tip-en="Chase veto: {{ _cv.get('reason') or 'limit-up context (CN-SYS-R3)' }}" data-tip-zh="追涨否决：近期涨幅过大（追高风险）— CN-SYS-R3"><span class="l-en">chase ⚑</span><span class="l-zh">追涨 ⚑</span></span>{% endif %}
           {% endif %}
+          {# caution popover #}
+          {% set c = n.conviction %}
+          {% if c and c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
+          {# freshness: signal as-of pushed to the right #}
+          {% set _sig_asof = (n.signal or {}).get('asof') %}
+          {% if _sig_asof and setups.as_of and _sig_asof < setups.as_of %}<span class="nb-asof" data-tip-en="This signal is from {{ _sig_asof }}, a bar or two behind today's board (the 3-day bucket was not complete yet). Prices are current." data-tip-zh="该信号基于 {{ _sig_asof }}，比看板日期早一两个交易日（3日周期桶尚未收盘）。价格为最新。"><span class="l-en">signal as of {{ _sig_asof }}</span><span class="l-zh">信号截至 {{ _sig_asof }}</span></span>{% endif %}
         </div>
-        {% if c and c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
       </a>
     {% endfor %}
     </div>
@@ -1419,56 +1524,75 @@
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal live — entry passed; wait for pullback. Shown for honesty, not action — do not chase.</span><span class="l-zh">信号有效但入场时机已过；等待回调。出于诚实展示 — 不要追涨。</span></span>
     </div>
-    <div class="nbgrid" data-showmore-rows="3">
+    <div class="nbgrid" data-showmore-rows="1">
     {% for n in _ran_late_rows %}
       {% set _d = 'caution' %}
       <a class="nbcard nb-{{ _d }} nb-stage-ran-card" href="china_lookup.html#{{ n.ticker }}">
-        {# W1-C stage badge — muted family for RAN_LATE #}
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span class="nb-stage stg-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
+        {# ── IDENTITY ZONE (RAN) ──────────────────────────────────────────── #}
+        <div class="nb-id">
+          {# row 0: stage badge (muted RAN) + gate badge (muted via CSS) #}
+          <div class="nb-badges">
+            <span class="nb-stage stg-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
+            {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
+          </div>
+          {# row 1: ticker + price #}
+          <div class="nb-tkrow">
+            <span class="nb-tk">{{ n.ticker }}</span>
+            {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          </div>
+          {# row 2: full name — own full-width line #}
+          <div class="nb-nm">{{ nm(n.name) }}</div>
+          {# row 3: sector + off-high #}
+          <div class="nb-secrow">
+            <span class="nb-sec">{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>
+            {% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}
+          </div>
         </div>
-        <div class="nb-top">
-          <span class="nb-tk">{{ n.ticker }}</span>
-          <span class="nb-nm">{{ nm(n.name) }}</span>
-          {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
-          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
-        </div>
-        {# Prominent detail string — what happened: sublabel from rule 2 #}
+        {# Prominent honesty sublabel — DIRECTLY under identity zone (W1-C rule 2) #}
         {% set _sl = n.get('stage_sublabel') %}
         {% if _sl %}
         <div class="nb-ran-detail"><span class="l-en">{{ _sl }}</span><span class="l-zh">{{ n.get('stage_sublabel_zh') or '信号有效但入场时机已过；等待回调' }}</span></div>
         {% endif %}
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}</div>
-        {% set c = n.conviction %}
-        {% if c %}
-        <div class="nb-conv">
-          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Score muted — this name is on the RAN/LATE shelf: entry timing passed." data-tip-zh="评分已淡化 — 此股处于信号已过板块，入场时机已过。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
-          <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
-        </div>
-        {% set es = n.entry_signal %}
-        {% if es %}
-        {% if n.get('muted_entry') %}
-        {# F6 adjudicated design: entry gauge was open (buy_now/partial) but name is overextended.
-           Extension beats the timing gauge — render a neutral muted line, no green class, no Buy-now.
-           Dual-span per i18n rules. #}
-        <div class="nb-entry nbe-wait_pullback" data-tip-en="Entry gauge open but name is extended — not actionable here. Wait for pullback." data-tip-zh="入场量表打开但股票已延伸 — 当前不可操作，等待回调。">
-          <div class="nbe-head">
-            <span class="nbe-dot a1"></span>
-            <span class="nbe-status"><span class="l-en">gauge open — but extended; not actionable</span><span class="l-zh">量表打开 — 但已延伸；当前不可操作</span></span>
+        {# ── ACTION ZONE (RAN) ────────────────────────────────────────────── #}
+        <div class="nb-act">
+          {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
+          {% set c = n.conviction %}
+          {% set es = n.entry_signal %}
+          {% if c %}
+          <div class="nb-conv">
+            <div class="nb-conv-top">
+              {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Score muted — this name is on the RAN/LATE shelf: entry timing passed." data-tip-zh="评分已淡化 — 此股处于信号已过板块，入场时机已过。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
+              <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+            </div>
+            {% if es %}
+            {% if n.get('muted_entry') %}
+            {# F6 adjudicated design: entry gauge was open (buy_now/partial) but name is overextended.
+               Extension beats the timing gauge — render a neutral muted line, no green class, no Buy-now.
+               Dual-span per i18n rules. #}
+            <div class="nb-entry nbe-wait_pullback" data-tip-en="Entry gauge open but name is extended — not actionable here. Wait for pullback." data-tip-zh="入场量表打开但股票已延伸 — 当前不可操作，等待回调。">
+              <div class="nbe-head">
+                <span class="nbe-dot a1"></span>
+                <span class="nbe-status"><span class="l-en">gauge open — but extended; not actionable</span><span class="l-zh">量表打开 — 但已延伸；当前不可操作</span></span>
+              </div>
+            </div>
+            {% else %}
+            <div class="nb-entry nbe-{{ es.status }}" data-tip-en="Entry timing — {{ es.action }}" data-tip-zh="入场时机——{{ es.action_zh or es.action }}">
+              <div class="nbe-head">
+                <span class="nbe-dot a{{ es.act_level }}"></span>
+                <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+              </div>
+            </div>
+            {% endif %}
+            {% endif %}
           </div>
+          {% endif %}
         </div>
-        {% else %}
-        <div class="nb-entry nbe-{{ es.status }}" title="Entry timing — {{ es.action }}">
-          <div class="nbe-head">
-            <span class="nbe-dot a{{ es.act_level }}"></span>
-            <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
-          </div>
-        </div>
-        {% endif %}
-        {% endif %}
-        {% endif %}
-        <div class="nb-bot">
+        {# ── CONTEXT STRIP (RAN) ──────────────────────────────────────────── #}
+        <div class="nb-ctx">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
+          {% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}
+          {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}
+          {% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}
         </div>
       </a>
     {% endfor %}
@@ -1487,21 +1611,31 @@
     <div class="nb-rip-grid" data-showmore-rows="3">
     {% for r in _rip %}
     <div class="nb-rip-card">
-      <div class="nb-rip-top">
-        <span class="nb-rip-tk">{{ r.get('ticker','') }}</span>
+      {# ── RIPENING identity zone ──────────────────────────────────────── #}
+      <div class="nb-rip-id">
+        {# top row: ticker (bold) + imminence chip right #}
+        <div class="nb-rip-top">
+          <span class="nb-rip-tk">{{ r.get('ticker','') }}</span>
+          {% if r.get('imminence') is not none %}<span class="nb-rip-imm" data-tip-en="2W-MACD bars to cross" data-tip-zh="2周MACD距交叉周期数">~{{ '%.1f'|format(r.get('imminence')) }}{{ t('W','周') }}</span>{% endif %}
+        </div>
+        {# name on its own full-width line #}
         <span class="nb-rip-nm">{{ nm(r.get('name','')) }}</span>
-        {% if r.get('imminence') is not none %}<span class="nb-rip-imm" data-tip-en="2W-MACD bars to cross" data-tip-zh="2周MACD距交叉周期数">~{{ '%.1f'|format(r.get('imminence')) }}{{ t('W','周') }}</span>{% endif %}
       </div>
-      <span class="nb-rip-sec">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</span>
-      {% set _rs = r.get('reasons') %}
-      {% if _rs %}
-      <div class="nb-rip-chips">
-        {% for reason in (_rs if _rs is iterable and _rs is not string else _rs.split(',')) %}
-        <span class="nb-rip-chip">{{ reason | trim }}</span>
-        {% endfor %}
+      {# ── RIPENING body ───────────────────────────────────────────────── #}
+      <div class="nb-rip-body">
+        <div class="nb-rip-secrow">
+          <span class="nb-rip-sec">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</span>
+          {% if r.get('spot_pct_in_range') is not none %}<span class="nb-rip-range"><span class="l-en">range {{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span><span class="l-zh">区间位置{{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span></span>{% endif %}
+        </div>
+        {% set _rs = r.get('reasons') %}
+        {% if _rs %}
+        <div class="nb-rip-chips">
+          {% for reason in (_rs if _rs is iterable and _rs is not string else _rs.split(',')) %}
+          <span class="nb-rip-chip">{{ reason | trim }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
-      {% if r.get('spot_pct_in_range') is not none %}<span style="font-size:8.5px;color:var(--muted)"><span class="l-en">range {{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span><span class="l-zh">区间位置{{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span></span>{% endif %}
     </div>
     {% endfor %}
     </div>
@@ -1516,7 +1650,7 @@
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal fired and aged out — shown for honesty, not action. Do not chase.</span><span class="l-zh">信号已触发并过期 — 出于诚实展示，不可追涨。</span></span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px" data-showmore="8">
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px" data-showmore="1">
     {% for r in _ran %}
     <div style="display:flex;align-items:flex-start;gap:9px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:10.5px">
       <div style="flex:none;min-width:90px">
