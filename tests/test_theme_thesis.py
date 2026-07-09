@@ -565,6 +565,42 @@ class TestFalsifierEvaluation:
         result = evaluator._eval_falsifier(spec, {}, theme_state, "ai_semiconductors")
         assert result["state"] == evaluator.STATE_ARMED
 
+    def test_wildcard_field_lt_uses_min_aggregation(self, evaluator):
+        """lt-check wildcard must aggregate via min(): 'any basket score fell
+        below 30' fires when the WEAKEST member breaches even while the
+        strongest is healthy. A fixed max() aggregation silently never fires
+        this case (post-review fix on PR-C)."""
+        spec = {
+            "id": "test_wildcard_lt",
+            "rule_en": "any basket score below 30",
+            "check": {
+                "kind": "threshold",
+                "source_artifact": "data/neuralweb/theme_state.json",
+                "field": "basket_intel[*].score",
+                "op": "lt",
+                "threshold": 30,
+                "window_d": None,
+            },
+            "qualitative": False,
+        }
+        # Weakest basket 22 < 30 breaches; strongest 88 healthy.
+        # min-aggregation → FIRED; the old max() bug reported ARMED here.
+        theme_state = self._make_theme_state(
+            "ai_semiconductors",
+            basket_intel=[{"score": 88}, {"score": 22}],
+        )
+        result = evaluator._eval_falsifier(spec, {}, theme_state, "ai_semiconductors")
+        assert result["state"] == evaluator.STATE_FIRED, (
+            "lt wildcard must fire on the minimum value across members"
+        )
+        # And ARMED when no member breaches.
+        theme_state_ok = self._make_theme_state(
+            "ai_semiconductors",
+            basket_intel=[{"score": 88}, {"score": 45}],
+        )
+        result_ok = evaluator._eval_falsifier(spec, {}, theme_state_ok, "ai_semiconductors")
+        assert result_ok["state"] == evaluator.STATE_ARMED
+
 
 # ---------------------------------------------------------------------------
 # 4. Append-only + content-hash idempotence

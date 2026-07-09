@@ -181,8 +181,8 @@ def _eval_falsifier(
             "detail": f"theme {theme_id!r} absent from {source!r}",
         }
 
-    # Resolve field value
-    value = _resolve_field(theme_dict, field)
+    # Resolve field value (op-aware wildcard aggregation)
+    value = _resolve_field(theme_dict, field, op)
 
     if value is None:
         return {
@@ -213,12 +213,17 @@ def _eval_falsifier(
     }
 
 
-def _resolve_field(theme_dict: dict, field: str) -> Any:
+def _resolve_field(theme_dict: dict, field: str, op: str | None = None) -> Any:
     """Resolve a dot-path or wildcard field from a theme dict.
 
     Supports:
       - simple key: "revision_breadth"
-      - wildcard list scan: "basket_intel[*].crowding"  → min value across list
+      - wildcard list scan: "basket_intel[*].crowding" → op-aware worst-case
+        aggregation: an "any member breaches" semantic requires min() for
+        lt/lte checks (fires if the LOWEST value breaches) and max() for
+        gt/gte checks (fires if the HIGHEST value breaches). A fixed max()
+        would silently never fire lt-checks unless the strongest member
+        weakened — the exact silent-failure a falsifier must not have.
 
     Returns None if the field is absent or all values are None.
     """
@@ -237,9 +242,10 @@ def _resolve_field(theme_dict: dict, field: str) -> Any:
         ]
         if not values:
             return None
-        # Return the worst-case (max for crowding, etc.)
+        # Op-aware worst case: lt/lte → min (any value below), gt/gte → max.
+        agg = min if op in ("lt", "lte") else max
         try:
-            return max(float(v) for v in values)
+            return agg(float(v) for v in values)
         except (TypeError, ValueError):
             return None
     else:
