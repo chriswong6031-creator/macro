@@ -17,8 +17,10 @@ DOCTRINE
   fields anywhere.
 - Forward ledger starts at ship date; no backfilled gradeable claims (FT-R9).
   Backscan = site-artifact descriptive only.
-- Nightly writer: the US_LANE gate in stamp_ledger() ensures only the nightly
-  lane writes to data/ (house law: nightly is the sole advancer of data/ ledgers).
+- Nightly writer: the COLLECT_LANE gate in stamp_ledger() ensures only the nightly
+  engine lane writes to data/ (house law: nightly is the sole advancer of data/ ledgers).
+  COLLECT_LANE=nightly is set on daily.yml's engine-job parallel step env; US_LANE is
+  accepted as a legacy alias for tests.
 - Idempotent re-runs: keep-first per (date, basket_id).
 - 2-session hysteresis on state downgrade (TI-R3 shape).
 
@@ -123,8 +125,14 @@ _LEDGER_FILE = "ledger.jsonl"
 
 
 def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly US lane (US_LANE=nightly)."""
-    return os.environ.get("US_LANE", "").lower() == "nightly"
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    parallel step (and mirroring the collect-job's lane sentinel).  US_LANE is
+    accepted as a legacy alias so existing tests continue to work.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 
 def _ledger_path(data_root: Path | None = None) -> Path:
@@ -176,11 +184,11 @@ def stamp_ledger(
 ) -> int:
     """Append rows for baskets in WATCH/IGNITION (plus downgrades).
 
-    Idempotent: keep-first per (date, basket_id). Gated by US_LANE=nightly.
+    Idempotent: keep-first per (date, basket_id). Gated by COLLECT_LANE=nightly (US_LANE alias accepted).
     Returns count of appended rows.
     """
     if not _ledger_advance_enabled():
-        log.debug("basket_turn_watch.stamp_ledger: skipped (US_LANE != nightly)")
+        log.debug("basket_turn_watch.stamp_ledger: skipped (COLLECT_LANE != nightly)")
         return 0
     if not watch_rows:
         return 0
@@ -200,9 +208,10 @@ def stamp_ledger(
                 "k":            w.get("k"),
                 "legs":         w.get("legs", {}),
                 "as_of":        today_str,
-                # Forward outcome fields — blank at fire time, graded forward
-                "fwd_21d_ew_vs_spy": None,
-                "graded_at":    None,
+                # FT-R9: no per-basket forward-return fields — grading unit is the
+                # catalyst-day cohort (co-firing baskets share members; per-event
+                # forward returns inflate N per DT-R14/ticker-cluster-time-confound).
+                # W9 grader will grade cohorts, not individual rows.
             })
             existing.add(key)
             appended += 1
@@ -300,13 +309,11 @@ def _theme_sibling_map(baskets_meta: dict) -> dict[str, frozenset[str]]:
                 tid = t.get("id") or t.get("foresight_id")
                 if not tid:
                     continue
-                # Theme id may be a basket id directly (crosswalk uses basket ids as theme ids)
-                # Also check the 'baskets' sub-list if present
-                for bid in (t.get("baskets") or []):
+                # crosswalk schema uses 'basket_ids' (verified: config/theme_crosswalk.yml).
+                # 'baskets' key does NOT exist — silently returned empty for all 18 themes
+                # making leg 5 fire-impossible for 41/46 baskets (fixed: use basket_ids).
+                for bid in (t.get("basket_ids") or []):
                     crosswalk_themes[bid] = tid
-                # When theme id matches a basket id (TIL W0 pattern)
-                if tid in baskets_meta:
-                    crosswalk_themes.setdefault(tid, tid)
     except Exception as e:  # noqa: BLE001
         log.debug("basket_turn_watch: crosswalk load failed: %s", e)
 
@@ -545,12 +552,22 @@ def _leg_shock_relative_bid(
     """Leg 6: binary flag — shock primary active AND SPY down AND rs_z > 0.
 
     BINARY presence/absence only (FT-R3). No ranking, no beneficiary fields.
+
+    NOTE: The contract spec mentioned 'geopolitical family' as a qualifying shock type,
+    but the market_drivers taxonomy has NO 'geopolitical' driver or family (verified in
+    engine/market_drivers.py — DRIVERS keys include oil_shock with family='inflation';
+    'geopolitical' is absent).  The 'family' sub-key is also absent from the emitted
+    market_drivers block's top-level dict.  Until the taxonomy is extended upstream to
+    include a geopolitical driver, this leg gates solely on primary=='oil_shock'.
+    The _SHOCK_FAMILIES constant is retained as a stub for when the taxonomy is extended.
     """
     if market_drivers is None or rs_z is None or spy_ret is None:
         return False
     primary = market_drivers.get("primary", "")
-    family = market_drivers.get("family", "")
-    if primary not in _SHOCK_PRIMARY_KEYS and family not in _SHOCK_FAMILIES:
+    # NOTE: family-based matching is currently inoperative — the emitted market_drivers
+    # block has no top-level 'family' key and 'geopolitical' is not a valid driver family.
+    # Gate solely on primary key for now.
+    if primary not in _SHOCK_PRIMARY_KEYS:
         return False
     if spy_ret >= 0:
         return False
@@ -562,22 +579,36 @@ def _leg_shock_relative_bid(
 # ---------------------------------------------------------------------------
 
 def _prior_state_for(basket_id: str, ledger_rows: list[dict]) -> str | None:
-    """Return the most recent state for basket_id from the ledger."""
+    """Return the last WATCH or IGNITION state for basket_id from the ledger.
+
+    Skips DOWNGRADE rows so that the hysteresis hold continues to count from the
+    original WATCH/IGNITION event, not from the intervening DOWNGRADE rows.  Without
+    this, a DOWNGRADE row written on day+1 poisons the lookup on day+2 (prior_state ==
+    'DOWNGRADE' → not in ('WATCH', 'IGNITION') → hold ends after 1 session instead of 2).
+    """
     for row in reversed(ledger_rows):
         if row.get("basket_id") == basket_id:
-            return row.get("state")
+            s = row.get("state")
+            if s in ("WATCH", "IGNITION"):
+                return s
     return None
 
 
 def _days_since_last_state(basket_id: str, ledger_rows: list[dict], today_str: str) -> int:
-    """Return sessions since the last ledger row for basket_id (0 if today, -1 if none)."""
+    """Return trading sessions since the last WATCH/IGNITION ledger row for basket_id.
+
+    Skips DOWNGRADE rows — the hysteresis window should be measured from the original
+    WATCH/IGNITION event so that consecutive DOWNGRADE rows don't shorten the hold.
+    Returns -1 if no WATCH/IGNITION row exists for basket_id.
+    """
     from lib import nyse_calendar
     for row in reversed(ledger_rows):
-        if row.get("basket_id") == basket_id:
+        if row.get("basket_id") == basket_id and row.get("state") in ("WATCH", "IGNITION"):
             try:
                 last_date = date.fromisoformat(row["date"])
                 today_date = date.fromisoformat(today_str)
-                # Count trading sessions between last_date and today_date
+                # Count trading sessions between last_date and today_date (inclusive of
+                # each day after last_date, up to but not including today).
                 sessions = 0
                 d = last_date
                 while d < today_date:

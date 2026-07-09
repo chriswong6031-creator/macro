@@ -292,9 +292,20 @@ class TestShockRelativeBid:
         md = {"primary": "oil_shock", "family": "neutral"}
         assert BTW._leg_shock_relative_bid(rs_z=0.5, market_drivers=md, spy_ret=-0.02) is True
 
-    def test_fires_on_geopolitical_family(self):
+    def test_geopolitical_family_inoperative(self):
+        """Geopolitical family matching is currently inoperative.
+
+        The market_drivers taxonomy has no 'geopolitical' driver or family
+        (verified: engine/market_drivers.py DRIVERS — oil_shock has family='inflation';
+        'geopolitical' is absent; emitted market_drivers block has no top-level 'family' key).
+        Until the taxonomy is extended upstream, leg 6 only gates on primary=='oil_shock'.
+        This test documents the known inoperative state so any future taxonomy extension
+        that enables it will surface here.
+        """
         md = {"primary": "other", "family": "geopolitical"}
-        assert BTW._leg_shock_relative_bid(rs_z=1.0, market_drivers=md, spy_ret=-0.01) is True
+        # Family-based match is inoperative — returns False (not True as the original spec
+        # intended), because 'geopolitical' does not exist in the upstream taxonomy.
+        assert BTW._leg_shock_relative_bid(rs_z=1.0, market_drivers=md, spy_ret=-0.01) is False
 
     def test_does_not_fire_when_spy_flat(self):
         md = {"primary": "oil_shock"}
@@ -562,7 +573,8 @@ class TestLedgerIdempotency:
         rows = BTW.load_ledger(tmp_path)
         assert len(rows) == 1
         assert rows[0]["basket_id"] == "mag7"
-        assert rows[0]["fwd_21d_ew_vs_spy"] is None
+        # FT-R9: per-basket forward-return fields are NOT seeded (grading unit is cohort).
+        assert "fwd_21d_ew_vs_spy" not in rows[0]
 
     def test_multiple_baskets_same_date(self, tmp_path):
         """Two different basket_ids on the same date → both written."""
@@ -584,22 +596,36 @@ class TestLedgerIdempotency:
         assert len(rows) == 2
 
 
-# ── (10) US_LANE gate ─────────────────────────────────────────────────────────
+# ── (10) lane gate (COLLECT_LANE + legacy US_LANE alias) ─────────────────────
 
 class TestUsLaneGate:
-    def test_stamp_skipped_without_us_lane(self, tmp_path):
-        """Without US_LANE=nightly the ledger is not written."""
+    def test_stamp_skipped_without_lane_sentinel(self, tmp_path):
+        """Without COLLECT_LANE or US_LANE set to nightly the ledger is not written."""
         (tmp_path / "basket_turn").mkdir(parents=True, exist_ok=True)
         row = {"basket_id": "mag7", "state": "WATCH", "k": 2, "legs": {}, "as_of": _TODAY}
+        os.environ.pop("COLLECT_LANE", None)
         os.environ.pop("US_LANE", None)
         n = BTW.stamp_ledger([row], as_of=_TODAY, data_root=tmp_path)
         assert n == 0
         assert not (tmp_path / "basket_turn" / "ledger.jsonl").exists()
 
-    def test_stamp_written_with_us_lane_nightly(self, tmp_path):
-        """With US_LANE=nightly the ledger IS written."""
+    def test_stamp_written_with_collect_lane_nightly(self, tmp_path):
+        """With COLLECT_LANE=nightly (production sentinel from daily.yml engine step) the ledger IS written."""
         (tmp_path / "basket_turn").mkdir(parents=True, exist_ok=True)
         row = {"basket_id": "mag7", "state": "WATCH", "k": 2, "legs": {}, "as_of": _TODAY}
+        os.environ.pop("US_LANE", None)
+        os.environ["COLLECT_LANE"] = "nightly"
+        try:
+            n = BTW.stamp_ledger([row], as_of=_TODAY, data_root=tmp_path)
+        finally:
+            os.environ.pop("COLLECT_LANE", None)
+        assert n == 1
+
+    def test_stamp_written_with_us_lane_nightly(self, tmp_path):
+        """US_LANE=nightly legacy alias still works (used in tests; not set by workflow)."""
+        (tmp_path / "basket_turn").mkdir(parents=True, exist_ok=True)
+        row = {"basket_id": "mag7", "state": "WATCH", "k": 2, "legs": {}, "as_of": _TODAY}
+        os.environ.pop("COLLECT_LANE", None)
         os.environ["US_LANE"] = "nightly"
         try:
             n = BTW.stamp_ledger([row], as_of=_TODAY, data_root=tmp_path)
