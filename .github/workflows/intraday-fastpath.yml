@@ -97,13 +97,24 @@ jobs:
           git show origin/live-data:quotes.json > /tmp/quotes_live.json 2>/dev/null || echo '{"quotes":{}}' > /tmp/quotes_live.json
           LIVE_QUOTES_PATH=/tmp/quotes_live.json python -m scripts.build_basket_pulse || \
             echo "::warning::basket_pulse build failed (non-fatal)"
+      - name: notify turn events (FTR W10 — Discord alerts on IGNITION / shock / tape disagreement)
+        # Evaluates three event sources (turn_watch.json, shock_state.json, basket_pulse.json)
+        # and sends Discord messages via DISCORD_WEBHOOK_WATCHLIST.
+        # Absent webhook → dark mode (exit 0). Own try/except inside the script.
+        # Dedup: site/live/notify_state.json (site-only write, FT-R5). Staged below.
+        env:
+          DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python -m scripts.notify_turn_events || \
+            echo "::warning::notify_turn_events failed (non-fatal)"
       - name: commit live overlay + risk-state + refreshed regime as-of
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # Stage the served live artifacts (site/live/* is gitignored -> force-track, like site/stockdata)
           # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
-          git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live_config.js
+          git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live_config.js site/live/notify_state.json
           git add -f data/regime/latest.json data/market_state/latest.json
           # W6a SENTINEL STAGING LAW: regime_stale_selfheal writes to data/reflexes/
           # when it fires. Stage the directory so a self-heal firing commit is never

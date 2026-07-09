@@ -1088,6 +1088,13 @@ lanes:
         module: scripts.build_risk_state
       - id: build_basket_pulse
         module: scripts.build_basket_pulse
+      - id: notify_turn_events
+        module: scripts.notify_turn_events
+        note: >
+          FTR W10 — Discord alerts for turn-watch IGNITION / shock activation /
+          tape disagreement (FT-R13 copy contract). Exit-0-always; dark by default
+          when DISCORD_WEBHOOK_WATCHLIST is absent. Dedup state in
+          site/live/notify_state.json (site-only write, FT-R5).
 
   # ── weekly.yml / weekly-report ──────────────────────────────────────────
   - workflow: .github/workflows/weekly.yml
@@ -1287,13 +1294,15 @@ divergences:
 
   - lanes: [intraday-fastpath]
     differs: >
-      Only 4 steps (refresh_regime_if_stale, build_live_overlay, build_risk_state,
-      build_basket_pulse); all nightly band modules absent.
+      Only 5 steps (refresh_regime_if_stale, build_live_overlay, build_risk_state,
+      build_basket_pulse, notify_turn_events); all nightly band modules absent.
     reason: >
       Documented in intraday-fastpath.yml header: the fast/slow split — only price-driven
       leaves run every 30 min during RTH (basket_pulse also premarket from 07:00 ET);
-      the slow regime/conviction/brain layer stays in the nightly. The four steps are
-      the complete fast path by design (FTR W2, masterplan FT-R5).
+      the slow regime/conviction/brain layer stays in the nightly. Step 5 (notify_turn_events,
+      FTR W10) is additive: exit-0-always alert dispatch that evaluates already-computed
+      display states (FT-R13). The five steps are the complete fast path by design
+      (FTR W2/W10, masterplan FT-R5).
     evidence: intraday-fastpath.yml:1-17
 
   - lanes: [sentinel, commodity-sentinel, whitehouse-sentinel]
