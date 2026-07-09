@@ -73,10 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 311, (
-        f"Expected 311 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 314, (
+        f"Expected 314 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (tech-lab suite added site-factordata-tech-lab = 310->311;"
+        " (FTR W9 fix-round added basket-turn-cohort-grades = 313->314;"
+        " FTR W9 added basket-turn-cohort-claims-log, tape-disagreement-ledger = 311->313;"
+        " tech-lab suite added site-factordata-tech-lab = 310->311;"
         " CHF-W3 added causal-edges, causal-nulls, causal-frontier,"
         " causal-surprise-queue, causal-lab-state, site-causal-lab-state = 304->310;"
         " FTR W4 added site-basket-turn-watch = 303->304;"

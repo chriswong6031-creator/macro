@@ -24,7 +24,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | engine-fix | 16 |
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
-| fast-turn | 1 |
+| fast-turn | 4 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | institutional-sector-intelligence | 2 |
@@ -60,7 +60,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 184 |
+| display | 187 |
 | infrastructure | 77 |
 | scored | 4 |
 | shadow | 46 |
@@ -69,7 +69,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 299 |
+| git | 302 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -221,6 +221,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | site-basket-turn-watch | `site/basketdata/turn_watch.json` | json | daily-engine | display | 1 | 0 |
+| basket-turn-cohort-claims-log | `data/basket_turn/cohort_claims_log.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| basket-turn-cohort-grades | `data/basket_turn/cohort_grades.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| tape-disagreement-ledger | `data/basket_turn/disagreement_ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### hk-canada
 

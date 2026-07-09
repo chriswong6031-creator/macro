@@ -704,6 +704,21 @@ jobs:
         # which could run inside cl_china only because both its deps lived in that one cluster).
         # Additive (the builder returns 0 on any failure), so it can never break the deploy.
         run: python -m scripts.build_sector_central
+      - name: FTR W9 grading pack (basket_turn.v1 cohort claims + tape_disagreement.v1)
+        # basket_turn.v1: one qledger claim per IGNITION-day cohort (equal-weight basket EW vs
+        # SPY, 21d horizon, expected-NULL forward meter per FT-R9). Reads
+        # data/basket_turn/ledger.jsonl (written by basket_turn_watch in cl_baskets → build_baskets).
+        # tape_disagreement.v1: disagreement-day records (basket IGNITION while slow reco not in
+        # {enter,accumulate}), outcome tracking with explicit right-censoring at +10/+21 sessions.
+        # Both families gated on COLLECT_LANE=nightly. Keep-first idempotent. Exit-0-always.
+        # Runs AFTER the parallel band (cl_baskets writes the source ledger).
+        continue-on-error: true
+        run: |
+          set +e
+          python -m scripts.build_basket_turn_grading > /tmp/basket_turn_grading.log 2>&1; rc=$?
+          cat /tmp/basket_turn_grading.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_basket_turn_grading::rc=$rc (non-fatal)"
+          exit 0
       - name: Polygon reference-universe cache (GICS sector + market cap for heatmap manifest)
         # Builds data/polygon_universe/reference.parquet — ticker → GICS sector + USD market cap.
         # Consumed by the charting-app's ingest/build_universe.py when it rebuilds the

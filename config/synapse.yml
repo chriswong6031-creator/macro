@@ -2122,6 +2122,92 @@ artifacts:
     external_consumers: []
     notes: "FTR W4. K-of-N confluence (6 legs) per US basket. Disclosure: sector-level standalone washout-to-turn printed NULL (Oracle P8 P-W1/S-W3); this construction is display-tier expected-NULL forward meter (FT-R9). authority.may_rank/gate/size/escalate=false."
 
+  # FTR W9 — basket_turn.v1 cohort qledger claims ledger
+  basket-turn-cohort-claims-log:
+    path: data/basket_turn/cohort_claims_log.jsonl
+    format: jsonl
+    producer: scripts/build_basket_turn_grading.py
+    known_extra_writers: []
+    owner_program: fast-turn
+    cadence: daily-engine
+    storage: git
+    asof_field: cohort_id
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      FTR W9. basket_turn.v1 qledger family — ONE 21d claim per IGNITION-day cohort
+      (co-firing baskets grouped; equal-weight basket EW vs SPY at 21d horizon; pre-declared
+      horizon_role; expected-NULL registration per FT-R9). Keep-first per cohort_id.
+      Gated on COLLECT_LANE=nightly. No backfill — first claims from ship date 2026-07-09.
+      Registration note (verbatim FT-R9): sector-level standalone washout→turn construction
+      printed NULL (Oracle P8 P-W1/S-W3); this K-of-N confluence family tests whether
+      basket-granularity multi-leg confluence differs. Promotion question earliest 2027,
+      n≥8 distinct shock episodes. Placebo: deferred to first grading read 2026-10-15.
+      authority.may_rank/gate/size/escalate=false.
+
+  # FTR W9 — basket_turn.v1 cohort grades (written by grade_cohorts in engine/basket_turn_cohort.py)
+  basket-turn-cohort-grades:
+    path: data/basket_turn/cohort_grades.jsonl
+    format: jsonl
+    producer: scripts/build_basket_turn_grading.py
+    known_extra_writers: []
+    owner_program: fast-turn
+    cadence: daily-engine
+    storage: git
+    asof_field: cohort_date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      FTR W9. basket_turn.v1 cohort grades — one row per cohort once 21 trading
+      sessions have elapsed since the IGNITION cohort date. Outcome is
+      cohort_beat_spy / cohort_lagged_spy / insufficient_data (keep-first per
+      cohort_date). Gated on COLLECT_LANE=nightly. First grades expected at the
+      2026-10-15 read (21 sessions after ship date 2026-07-09).
+      authority.may_rank/gate/size/escalate=false.
+
+  # FTR W9 — tape_disagreement.v1 survival ledger
+  tape-disagreement-ledger:
+    path: data/basket_turn/disagreement_ledger.jsonl
+    format: jsonl
+    producer: scripts/build_basket_turn_grading.py
+    known_extra_writers: []
+    owner_program: fast-turn
+    cadence: daily-engine
+    storage: git
+    asof_field: event_date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      FTR W9. tape_disagreement.v1 — disagreement-day records: basket IGNITION while
+      slow reco NOT IN {enter, accumulate} (deterministic, from committed artifacts only).
+      Outcome tracking: slow_state_flipped / tape_faded / unresolved at +10 and
+      +21 sessions, with explicit right-censoring. Analysis convention: Kaplan-Meier
+      survival estimation (analysis pass at 2026-10-15 clock). Nightly writer appends
+      new events (keep-first per basket+date) and updates outcome columns as windows mature.
+      Allocation-headline flips are structurally ≥22 sessions (SKIP_D=21): this family is a
+      LATENCY METER for basket-level reco, not an allocation-flip predictor.
+      Placebo: deferred to first grading read 2026-10-15 (wire existing random-basket +
+      time-shifted sampler when qledger placebo extension is available; R-TIL-6 pattern).
+      Gated on COLLECT_LANE=nightly. No backfill. authority.may_rank/gate/size/escalate=false.
+
   # --- 4 consumers ---
   site-radar-ticker:
     path: site/basketdata/radar_ticker.json
