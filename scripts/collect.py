@@ -202,6 +202,7 @@ def all_adapters() -> dict:
         ("hk_universe", "collectors.hk_universe", "HkUniverseAdapter"),  # expanded HSCI universe (~537 names) deep OHLCV (R2: data/hk_stocks_ext/) — H4 reversal + breadth ignition (masterplan §3 H4, §8 W1)
         ("hk_placements", "collectors.hk_placements", "HkPlacementsAdapter"),  # H-PLC (§3, W1c): HKEX placing/rights/open-offer headline events (2007->) — ripe-list dilution risk gate + post-placement drift accrual
         ("hk_cbbc", "collectors.hk_cbbc", "HkCbbcAdapter"),  # H-CBB (W1 data-plane): HKEX CBBC+DW daily outstanding — leverage-map + magnet-zone context organ (display-only, accrues forward ledger)
+        ("hk_cbbc_sld", "collectors.hk_cbbc_sld", "HkCbbcSldAdapter"),  # H-CBB-W2: SLD PDF mandatory-call-price harvest — feeds magnet-cluster computation in engine/hk_cbbc.py (display-only)
         ("hk_hkexnews", "collectors.hk_hkexnews", "HkHkexnewsAdapter"),  # H-FBus (W1 data-plane): HKEXnews headline-category filing bus — buyback/results/mandate/shareholder event tape (display-only, accrues forward ledger)
         ("hk_gdelt", "collectors.hk_gdelt", "HkGdeltAdapter"),          # H-NAR (W1 data-plane): GDELT DOC 2.0 vol+tone for HK platform-tech bellwethers — narrative/attention-shock context organ (display-only, accrues forward ledger)
         ("massive_stock_day", "collectors.massive_stock_day", "MassiveStockDayAdapter"),  # whole-market US daily OHLCV nightly incremental (R2: data/massive_stock_day/) — Setup-Species §7 W0.6a
