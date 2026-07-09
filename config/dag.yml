@@ -201,6 +201,21 @@ lanes:
       # serial post-band
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_basket_turn_grading
+        module: scripts.build_basket_turn_grading
+        note: >
+          FTR W9 grading pack (non-fatal, exit-0-always). Two families:
+          (1) basket_turn.v1 — one 21d qledger claim per IGNITION-day cohort
+          (equal-weight basket EW vs SPY; expected-NULL forward meter FT-R9;
+          keep-first per cohort-date; gated on COLLECT_LANE=nightly);
+          (2) tape_disagreement.v1 — disagreement-day records (IGNITION while
+          slow reco not in {enter,accumulate}), outcome tracking with explicit
+          right-censoring at +10/+21 sessions, Kaplan-Meier analysis convention.
+          Runs AFTER the parallel band (cl_baskets → build_baskets →
+          basket_turn_watch → data/basket_turn/ledger.jsonl must be present).
+          inputs: [data/basket_turn/ledger.jsonl, site/basketdata/baskets.json]
+          outputs: [data/basket_turn/disagreement_ledger.jsonl,
+                    data/qledger/claims.jsonl (via register_batch)]
       - id: build_polygon_universe
         module: scripts.build_polygon_universe
       - id: mirror_flow_idx
