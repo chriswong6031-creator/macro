@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-08",
-  "generated_utc": "2026-07-09T10:01:18Z",
+  "generated_utc": "2026-07-09T11:35:40Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
@@ -43,16 +43,16 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "EBAY",
+          "ticker": "STT",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.20<0.2",
           "shared_groups": [],
-          "same_earnings_week": true
+          "same_earnings_week": false
         },
         {
-          "ticker": "STT",
+          "ticker": "JXN",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -123,51 +123,6 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as DINO \u2014 energy_complex, Energy (similarity 67%).",
       "why_zh": "\u4e0e DINO \u62bc\u6ce8\u76f8\u540c \u2014 energy_complex\u3001Energy\uff08\u76f8\u4f3c\u5ea6 67%\uff09\u3002"
-    },
-    "EBAY": {
-      "verdict": "new",
-      "max_similarity": 0.0,
-      "basis": "membership-only:r2=0.08<0.2",
-      "nearest": [
-        {
-          "ticker": "DINO",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.20<0.2",
-          "shared_groups": [],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "MPC",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.08<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "STT",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.08<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-29",
-        "same_week_peers": [
-          "DINO",
-          "PM"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer DINO at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 DINO\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
     "STT": {
       "verdict": "duplicate",
@@ -319,6 +274,51 @@
       "why_en": "Same bet as JXN \u2014 Financials (similarity 100%).",
       "why_zh": "\u4e0e JXN \u62bc\u6ce8\u76f8\u540c \u2014 Financials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
+    "EBAY": {
+      "verdict": "new",
+      "max_similarity": 0.0,
+      "basis": "membership-only:r2=0.08<0.2",
+      "nearest": [
+        {
+          "ticker": "DINO",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.20<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "MPC",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.08<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "STT",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.08<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-29",
+        "same_week_peers": [
+          "DINO",
+          "PM"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Distinct bet \u2014 nearest peer DINO at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 DINO\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+    },
     "PEP": {
       "verdict": "duplicate",
       "max_similarity": 1.0,
@@ -438,11 +438,11 @@
           "same_earnings_week": true
         },
         {
-          "ticker": "EBAY",
+          "ticker": "STT",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.08<0.2",
+          "factor_basis": "beta-read-thin:r2=0.07<0.2",
           "shared_groups": [],
           "same_earnings_week": false
         }
@@ -574,13 +574,6 @@
         "sector:Energy"
       ]
     },
-    "DINO__EBAY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.20<0.2",
-      "shared_groups": []
-    },
     "DINO__STT": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -596,6 +589,13 @@
       "shared_groups": []
     },
     "DINO__NATL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.20<0.2",
+      "shared_groups": []
+    },
+    "DINO__EBAY": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -637,13 +637,6 @@
       "factor_basis": "beta-read-thin:r2=0.20<0.2",
       "shared_groups": []
     },
-    "MPC__EBAY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
     "MPC__STT": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.4583,
@@ -663,6 +656,13 @@
       "factor_cosine": 0.4425,
       "combined": 0.4425,
       "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "MPC__EBAY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
       "shared_groups": []
     },
     "MPC__PEP": {
@@ -700,62 +700,6 @@
       "factor_basis": "beta-read-thin:r2=0.05<0.2",
       "shared_groups": []
     },
-    "EBAY__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
-    "EBAY__JXN": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
-    "EBAY__NATL": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
-    "EBAY__PEP": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
-    "EBAY__PM": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
-    "EBAY__NYT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
-    "EBAY__GILD": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
-    "EBAY__PEN": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.08<0.2",
-      "shared_groups": []
-    },
     "STT__JXN": {
       "membership_jaccard": 0.5,
       "factor_cosine": 0.9724,
@@ -773,6 +717,13 @@
       "shared_groups": [
         "sector:Financials"
       ]
+    },
+    "STT__EBAY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
     },
     "STT__PEP": {
       "membership_jaccard": 0.0,
@@ -818,6 +769,13 @@
         "sector:Financials"
       ]
     },
+    "JXN__EBAY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
     "JXN__PEP": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -853,6 +811,13 @@
       "factor_basis": "beta-read-thin:r2=0.05<0.2",
       "shared_groups": []
     },
+    "NATL__EBAY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
     "NATL__PEP": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -886,6 +851,41 @@
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.05<0.2",
+      "shared_groups": []
+    },
+    "EBAY__PEP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
+    "EBAY__PM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
+    "EBAY__NYT": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
+    "EBAY__GILD": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
+    "EBAY__PEN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
       "shared_groups": []
     },
     "PEP__PM": {
