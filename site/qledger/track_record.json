@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-08T11:23:20.609005+00:00",
+  "generated_at": "2026-07-09T06:59:41.893513+00:00",
   "grade_horizons": [
     5,
     21,
@@ -187,11 +187,11 @@
     },
     "21": {
       "fallback_no_ticker": {
-        "n_grades": 7,
+        "n_grades": 32,
         "mean_abs_excess": 0.0
       },
       "overall": {
-        "n_grades": 7,
+        "n_grades": 32,
         "mean_abs_excess": 0.0
       }
     },
@@ -203,13 +203,13 @@
     }
   },
   "counts": {
-    "n_claims": 10915,
-    "n_grades": 6679,
+    "n_claims": 10973,
+    "n_grades": 6704,
     "n_placebo": 342,
     "n_rejected": 0,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 3899
+      "next_bar": 3924
     },
     "n_claims_unstamped_regime": 5773
   },
@@ -476,7 +476,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-08T11:23:23.230725+00:00",
+  "ladder_states_at": "2026-07-09T06:59:44.481037+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1219,5 +1219,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-08T11:23:29.015996+00:00"
+  "promotion_readiness_at": "2026-07-09T06:59:50.029584+00:00"
 }

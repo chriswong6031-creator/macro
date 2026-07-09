@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-08",
+ "as_of": "2026-07-09",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
