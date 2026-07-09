@@ -347,12 +347,17 @@ def make_release_id(release: str, period: str, sequence: str = "first") -> str:
     Examples: 'CPI:2026-06:first', 'NFP:2026-07:first', 'CLAIMS:2026-07-11:first'
     """
     label_map = {
-        "cpi_headline": "CPI",
-        "cpi_core": "CPI_CORE",
-        "nfp": "NFP",
-        "claims": "CLAIMS",
-        "ahe": "AHE",
-        "awh": "AWH",
+        "cpi_headline":    "CPI",
+        "cpi_core":        "CPI_CORE",
+        "nfp":             "NFP",
+        "claims":          "CLAIMS",
+        "ahe":             "AHE",
+        "awh":             "AWH",
+        # MRI-R23: new targets (Round 2a)
+        "pce_headline":    "PCE",
+        "pce_core":        "PCE_CORE",
+        "ppi_finaldemand": "PPI",
+        "retail_sales":    "RETAIL",
     }
     label = label_map.get(release, release.upper())
     return f"{label}:{period}:{sequence}"
@@ -593,10 +598,27 @@ def project_release(
             knowable_series_fn=knowable_series,
             min_quantile_obs=MIN_QUANTILE_OBS,
         )
+    elif release == "pce_headline":
+        # MRI-R23: PCE headline (PCEPI MoM SA) — engine/release_targets_v11.py
+        from engine.release_targets_v11 import project_pce_headline
+        result = project_pce_headline(asof, root, ref_month=ref_month)
+    elif release == "pce_core":
+        # MRI-R23: PCE core (PCEPILFE MoM SA) — engine/release_targets_v11.py
+        from engine.release_targets_v11 import project_pce_core
+        result = project_pce_core(asof, root, ref_month=ref_month)
+    elif release == "ppi_finaldemand":
+        # MRI-R23: PPI Final Demand (PPIFIS MoM SA) — engine/release_targets_v11.py
+        from engine.release_targets_v11 import project_ppi_finaldemand
+        result = project_ppi_finaldemand(asof, root, ref_month=ref_month)
+    elif release == "retail_sales":
+        # MRI-R23: retail_sales scaffold — no_data until RSAFS on disk
+        from engine.release_targets_v11 import project_retail_sales
+        result = project_retail_sales(asof, root, ref_month=ref_month)
     else:
         raise ValueError(
             f"Unknown release type: {release!r}. "
-            "Use 'cpi_headline', 'cpi_core', 'nfp', 'claims', 'ahe', or 'awh'."
+            "Use 'cpi_headline', 'cpi_core', 'nfp', 'claims', 'ahe', 'awh', "
+            "'pce_headline', 'pce_core', 'ppi_finaldemand', or 'retail_sales'."
         )
 
     # Attach schema v2 fields
@@ -616,6 +638,21 @@ def project_release(
                 pass
         elif release == "nfp":
             _period = f"{asof.year}-{asof.month:02d}"
+        elif release in ("pce_headline", "pce_core", "ppi_finaldemand"):
+            # Best-effort: derive from last knowable print of the own series
+            _own_map = {
+                "pce_headline": "PCEPI",
+                "pce_core": "PCEPILFE",
+                "ppi_finaldemand": "PPIFIS",
+            }
+            try:
+                ip = knowable_series(vintages, _own_map[release], asof)
+                if not ip.empty:
+                    last_p = pd.Timestamp(ip["period"].iloc[-1])
+                    next_p = (last_p.to_period("M") + 1).to_timestamp()
+                    _period = f"{next_p.year}-{next_p.month:02d}"
+            except Exception:
+                pass
 
     if _period is not None:
         result["release_id"] = make_release_id(release, _period)
@@ -810,6 +847,9 @@ def _project_cpi(
         "release": release,
         "asof": asof.isoformat(),
         "inputs_hash": compute_inputs_hash(feats),
+        # input_manifest: the feature values used for this projection (MRI-R26 honesty, rework-2a).
+        # Additive metadata — never read back by scoring or interval computation.
+        "input_manifest": {k: v for k, v in feats.items()},
         "point": round(point, 4) if point is not None else None,
         "p10": quantiles["p10"],
         "p25": quantiles["p25"],
@@ -890,7 +930,8 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
     feature_names = [
         "nfp_change_lag1", "nfp_change_lag2", "nfp_change_lag3",
         "claims_survey_week_icsa", "claims_survey_week_ccsa",
-        "withheld_tax_yoy", "awhman_mom", "adp_change",
+        "withheld_tax_yoy", "awhman_mom",
+        # adp_change reserved for the Track-M challenger (MRI-R21/R27); excluded from champion to keep RESULTS_V2 frozen
     ]
 
     # All initial PAYEMS prints knowable at asof
@@ -1069,6 +1110,8 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
         "release": "nfp",
         "asof": asof.isoformat(),
         "inputs_hash": compute_inputs_hash(feats),
+        # input_manifest: feature values used for this projection (MRI-R26 honesty, rework-2a).
+        "input_manifest": {k: v for k, v in feats.items()},
         "point": round(point, 2) if point is not None else None,
         "p10": quantiles["p10"],
         "p25": quantiles["p25"],
@@ -1344,7 +1387,8 @@ def _wf_nfp_full(vintages: pd.DataFrame, root: Path) -> dict:
     feature_names = [
         "nfp_change_lag1", "nfp_change_lag2", "nfp_change_lag3",
         "claims_survey_week_icsa", "claims_survey_week_ccsa",
-        "withheld_tax_yoy", "awhman_mom", "adp_change",
+        "withheld_tax_yoy", "awhman_mom",
+        # adp_change reserved for the Track-M challenger (MRI-R21/R27); excluded from champion to keep RESULTS_V2 frozen
     ]
 
     all_series = knowable_series(vintages, "PAYEMS", date(2099, 1, 1))

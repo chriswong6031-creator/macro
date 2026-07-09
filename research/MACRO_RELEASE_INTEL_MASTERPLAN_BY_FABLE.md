@@ -574,3 +574,61 @@ The producer (`scripts/build_release_forecast.py`) and the engine dispatch
 Every science/integration wave gets an Opus stats/red-team review before merge;
 Sonnet builds, Opus reviews, Fable adjudicates & merges. Forward gates (§7) and
 come-backs (C-8 committee, C-9 challenger promotion) are unchanged.
+
+### 11.3 Wave-10 close-out — shipped 2026-07-08 (8 PRs)
+
+Charter #1960 · foundation #1962 · Track M #1967 · Track N #1966 · Track CB
+#1969 · integration-2a #1970 · integration-2b #1971 · UI #1972. All display-only,
+benchmark-only, zero authority; §7 forward gates unchanged. Outcomes of record:
+
+- **Foundation (#1962).** Materialized keyless GASREGW / CUSR0000SAF11 / WPU01 /
+  WPU012 / ADPMNUSNERSA — **gasoline was silently absent from the champion CPI
+  model** (dead file path). ADP latent-bug fixed (was reading a nonexistent
+  `ADPNFRPRIVSA.parquet`): now the SA `ADPMNUSNERSA`, contemporaneous
+  `level[M]−level[M-1]` in thousands, declared `revision_optimistic` — but held
+  **OUT of the champion** `feature_names` (champion kept byte-frozen, RESULTS_V2
+  intact) and reserved for the Track-M challenger. `engine/release_provenance.py`
+  = input-snapshot receipts + coverage flags.
+- **Track M — v3_factor challenger (#1967).** Per-step PCA-top-3 (numpy SVD) →
+  ridge on [factors + naive anchor]. cpi_headline / cpi_core / nfp all clear the
+  naive kill rule (shadow-eligible) but **all trail the champion**; nfp is
+  sub-naive on the full window with a catastrophic 2020-recovery error →
+  annotated "do not read as an improvement". Shadowed on the ledger; champion
+  keeps the card; promotion gated at C-9 (n≥6 forward).
+- **Track N — new targets (#1966).** pce_headline / pce_core / ppi_finaldemand
+  all **MODEL** (beat naive, both windows), PIT-clean after sticky/median/flex
+  were moved to ALFRED first-print (a review-caught leak). retail_sales ships as
+  an honest **`no_data` scaffold** (RSAFS parquet + retail calendar not yet on
+  disk); attempt-1 clock starts only when they accrue. ppi carries a thin-history
+  caveat (vintages from 2014).
+- **Track CB — BLS component bridge (#1969, MRI-R25).** Relative-importance
+  weighted bridge (5 nowcastable blocks ≈ 60-65% of basket; the rest prior-only
+  at conf 0.0). After an Opus-caught partition correction (core_goods
+  double-count + food-in-core + true 100-weight partition + a real reconciliation
+  residual replacing a tautological zero), **cpi_headline bridge beats naive and
+  edges the champion (0.154 vs 0.159 full)** → shadow-eligible; **cpi_core stayed
+  NULL** even after the fix → family closed (2-attempt cap). The correction did
+  not rescue the verdict that mattered — evidence it was a bug fix, not mining.
+  Weights keyless (BLS flat file, FREDGRAPH_UA), PIT-refreshed each January.
+- **Provenance / coverage (2a #1970).** Per-prediction input-snapshot receipts;
+  four honest coverage flags (weight_coverage / fresh_proxy_coverage /
+  non_vintaged_share / model_maturity). A review-and-probe-caught denominator bug
+  (projections never enumerated their vintaged legs → non_vintaged_share=1.0 for
+  mostly-vintaged models) was fixed at the source: every projection now emits
+  `vintaged_legs` + `input_manifest`.
+- **Shadow tracks (2b #1971).** v3_factor + cpi_bridge frozen nightly on the
+  forward ledger (row_type `shadow_projection`, 5-tuple idempotency key incl.
+  `model`), attached to the artifact for the modal, scored per (release, model)
+  vs the same first-print. Champion rows untouched.
+- **UI (Round 3 #1972, MRI-R24).** Simple card (name+countdown, our projection,
+  expectation-read + trend-lean chips, confidence) + on-click detail modal
+  (interval, benchmarks, champion 4-block attribution DISTINCT from the bridge
+  7-block waterfall, coverage chip, confidence composition, surprise/reaction/
+  quirk, revision risk, v3_factor + cpi_bridge shadows, policy backdrop, track
+  record). Bilingual, theme.js, live-path integration render test. Browser-QA'd.
+
+**Live shadow clocks (C-9 challenger-promotion candidates, n≥6 forward scored):**
+v3_factor (cpi_headline / cpi_core / nfp) and cpi_bridge (cpi_headline). Champion
+keeps every card until a promotion adjudication cites forward evidence. C-8
+committee still deferred (MRI-R14). PCE/PPI attempt-2 only via adjudication;
+retail attempt-1 pending data accrual.

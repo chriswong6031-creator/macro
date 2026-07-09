@@ -44,16 +44,35 @@ _LEDGER_RELPATH = "data/release_forecast/forward_ledger.jsonl"
 _LATEST_RELPATH = "data/release_forecast/latest.json"
 _SCOREBOARD_RELPATH = "data/release_forecast/scoreboard.json"
 _SITE_RELPATH = "site/macrodata/release_forecast.json"
+# MRI-R26: provenance snapshots dir (one JSON per prediction_id)
+_INPUT_SNAPSHOTS_RELPATH = "data/release_forecast/input_snapshots"
 
-# Ledger key fields (idempotency guard)
-_LEDGER_KEY = ("release", "period", "row_type", "asof_night")
+# Ledger key fields (idempotency guard).
+# Round-2b: extended with "model" so champion (model=None) and shadow rows coexist
+# without collision. Champion rows have model=None (unchanged); shadows carry model string.
+_LEDGER_KEY = ("release", "period", "row_type", "asof_night", "model")
 
-# Releases tracked by MRI v1+v2
+# Shadow model targets: which release_types each shadow model covers
+_SHADOW_V3_TARGETS = {"cpi_headline", "cpi_core", "nfp"}
+_SHADOW_BRIDGE_TARGETS = {"cpi_headline"}  # cpi_core bridge killed/closed (MRI-R25)
+
+# MRI-R21: NFP v3_factor warning (trails champion; sub-naive on full 2010+ window)
+_NFP_V3_WARNING = (
+    "trails champion; sub-naive on full-window backtest (2010+ MAE v3=527.9 vs naive=459.8), "
+    "catastrophic 2020-recovery error — do not read as an improvement "
+    "(MRI-R21 shadow, champion keeps the card)"
+)
+
+# Releases tracked by MRI v1+v2 (Round 2a: PCE/PPI/retail added MRI-R23)
 _TRACKED_RELEASES = [
-    ("cpi_headline", "cpi", "inflation"),
-    ("cpi_core",     "cpi", "inflation"),
-    ("nfp",          "nfp", "growth"),
-    ("claims",       "claims", "growth"),
+    ("cpi_headline",    "cpi",    "inflation"),
+    ("cpi_core",        "cpi",    "inflation"),
+    ("nfp",             "nfp",    "growth"),
+    ("claims",          "claims", "growth"),
+    ("pce_headline",    "pce",    "inflation"),
+    ("pce_core",        "pce",    "inflation"),
+    ("ppi_finaldemand", "ppi",    "inflation"),
+    ("retail_sales",    "retail", "growth"),
 ]
 
 # MRI-R22: expectation-read band threshold (must match engine/release_market_context.py)
@@ -185,6 +204,37 @@ def _find_upcoming_releases(today: date, horizon_days: int = 40) -> list[dict]:
                 "period": period_str,
                 "regime_axis": "growth",
             })
+        elif etype == "PCE":
+            # PCE release covers the prior month (same offset as CPI)
+            ref_month = date(ev_date.year, ev_date.month, 1)
+            ref_m1 = (pd.Timestamp(ref_month) - pd.offsets.MonthBegin(1)).date()
+            period_str = f"{ref_m1.year}-{ref_m1.month:02d}"
+            upcoming.append({
+                "release_type": "pce_headline",
+                "release": "pce",
+                "release_date": ev_date.isoformat(),
+                "period": period_str,
+                "regime_axis": "inflation",
+            })
+            upcoming.append({
+                "release_type": "pce_core",
+                "release": "pce",
+                "release_date": ev_date.isoformat(),
+                "period": period_str,
+                "regime_axis": "inflation",
+            })
+        elif etype == "PPI":
+            # PPI release covers the prior month
+            ref_month = date(ev_date.year, ev_date.month, 1)
+            ref_m1 = (pd.Timestamp(ref_month) - pd.offsets.MonthBegin(1)).date()
+            period_str = f"{ref_m1.year}-{ref_m1.month:02d}"
+            upcoming.append({
+                "release_type": "ppi_finaldemand",
+                "release": "ppi",
+                "release_date": ev_date.isoformat(),
+                "period": period_str,
+                "regime_axis": "inflation",
+            })
 
     # Synthesize next-Thursday claims if event_calendar doesn't emit CLAIMS events
     # (CLAIMS events may not be in the static CY2026 fallback)
@@ -193,6 +243,19 @@ def _find_upcoming_releases(today: date, horizon_days: int = 40) -> list[dict]:
         # Next Thursday within horizon
         upcoming_claims = _next_thursday_claims(today, horizon_days)
         upcoming.extend(upcoming_claims)
+
+    # MRI-R23: retail_sales scaffold — no calendar entry; emit no_data stub always.
+    # Attempt clock (#1 of 2) has NOT started; RSAFS parquet absent (2026-07-08).
+    # The stub ships the machinery so provenance/coverage flows through without a date.
+    upcoming.append({
+        "release_type": "retail_sales",
+        "release": "retail",
+        "release_date": None,  # unknown until RSAFS calendar wired
+        "period": None,        # unknown
+        "regime_axis": "growth",
+        "no_data": True,
+        "no_data_reason": "no_data_rsafs_absent",
+    })
 
     return upcoming
 
@@ -361,6 +424,19 @@ def _run_projection(
                 release_type, asof, root,
                 period=period_str, release_date=release_date,
             )
+        elif release_type in ("pce_headline", "pce_core", "ppi_finaldemand"):
+            # MRI-R23: new inflation targets — route to release_targets_v11 via project_release
+            ref_month = date.fromisoformat(period_str + "-01") if period_str else None
+            return project_release(
+                release_type, asof, root, ref_month=ref_month,
+                period=period_str, release_date=release_date,
+            )
+        elif release_type == "retail_sales":
+            # MRI-R23: retail scaffold — no_data until RSAFS on disk
+            return project_release(
+                release_type, asof, root,
+                period=period_str, release_date=release_date,
+            )
         else:
             return project_release(release_type, asof, root)
     except Exception as e:
@@ -440,8 +516,10 @@ def _build_upcoming_block(
         # market_implied stays null (come-back C-2)
 
         # Determine target (for display)
-        if rt in ("cpi_headline", "cpi_core"):
+        if rt in ("cpi_headline", "cpi_core", "pce_headline", "pce_core", "ppi_finaldemand"):
             target = "mom_sa_pct"
+        elif rt in ("retail_sales",):
+            target = "mom_sa_pct"  # once RSAFS accrues; no_data for now
         else:
             target = "change_thousands"
 
@@ -476,8 +554,20 @@ def _build_upcoming_block(
             "benchmark_set": proj.get("benchmark_set", {}),
             "surprise_skew": proj.get("surprise_skew", {}) if not _is_bmo else {},
             "pit": proj.get("pit_provenance", {}),
+            # input_manifest: feature values from projection — passed to _attach_provenance
+            # so compute_coverage_flags sees real feature names in its denominator (MRI-R26 rework-2a).
+            "input_manifest": proj.get("input_manifest") or {},
             "regime_axis": ev["regime_axis"],
             "policy_backdrop": policy_backdrop,
+            # Champion attribution (4 ridge blocks: energy/shelter/core_persistence/pipeline).
+            # Null for benchmark_only mode. Used by UI "Component attribution" section distinct
+            # from the cpi_bridge waterfall shadow (MRI-R26 rework-ui).
+            "components": proj.get("components") if not _is_bmo else None,
+            # Confidence v2 — richer breakdown than scalar confidence.
+            "confidence_v2": proj.get("confidence_v2"),
+            "confidence_components_v2": proj.get("confidence_components_v2"),
+            # NFP revision risk (None for all non-NFP release types).
+            "revision_risk": proj.get("revision_risk"),
         }
         out.append(row)
 
@@ -506,6 +596,8 @@ def _load_ledger(ledger_path: Path) -> list[dict]:
 
 
 def _ledger_key(row: dict) -> tuple:
+    # "model" key defaults to None for champion rows (backward-compatible with pre-2b ledger rows
+    # that lack the key). Shadow rows carry an explicit model string.
     return tuple(row.get(f) for f in _LEDGER_KEY)
 
 
@@ -524,6 +616,380 @@ def _append_ledger_rows(ledger_path: Path, new_rows: list[dict]) -> None:
         for row in to_write:
             fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
     log.info("ledger: appended %d new rows", len(to_write))
+
+
+def _attach_provenance(
+    upcoming_block: list[dict],
+    ledger_path: Path,
+    snapshots_dir: Path,
+    dry_run: bool = False,
+) -> None:
+    """MRI-R26: attach input_snapshot and coverage flags to each upcoming item in-place.
+
+    For each item:
+      1. Reconstruct a minimal projection dict from the item for snapshot/coverage.
+      2. Call engine.release_provenance.build_input_snapshot → write to snapshots_dir/<prediction_id>.json
+         (fail-open: IO error → no file, log only).
+      3. Set item["input_snapshot_ref"] to the relative path string.
+      4. Call engine.release_provenance.compute_coverage_flags → attach four flags as
+         item["coverage_flags"].
+
+    AUTHORITY CONTRACT (MRI-R26 / MRI-R2 / MRI-R3):
+      - Coverage flags are METADATA ONLY.
+      - They NEVER appear in / influence point/interval/skew/confidence.
+      - Nothing in this function reads coverage values back into any projection field.
+
+    Fail-open: any error → log, continue (no field attached or null).
+    """
+    try:
+        from engine.release_provenance import build_input_snapshot, compute_coverage_flags
+    except Exception as exc:
+        log.warning("release_provenance import failed — provenance enrichment skipped: %s", exc)
+        return
+
+    for item in upcoming_block:
+        rt = item.get("release_type", "")
+        pit = item.get("pit") or {}
+
+        # Pre-compute prediction_id in the same way as _build_projection_ledger_rows
+        # so the snapshot filename matches the ledger row.
+        _period_str = item.get("period") or ""
+        _pred_id_for_snap = ""
+        _asof_night_str = date.today().isoformat()
+        try:
+            from engine.release_forecast import make_release_id, make_prediction_id
+            if rt and _period_str:
+                _release_id = make_release_id(rt, _period_str)
+                _pred_id_for_snap = make_prediction_id(_release_id, _asof_night_str)
+        except Exception:
+            pass
+
+        # Build a minimal projection dict for the provenance module.
+        # The provenance module reads pit_provenance, input_manifest, and optionally _features.
+        # input_manifest: real feature values stored on the item row (rework-2a MRI-R26 fix);
+        # these are used by _declared_legs to count vintaged legs in the denominator.
+        proj_for_prov: dict = {
+            "release": rt,
+            "asof": _asof_night_str,
+            "pit_provenance": pit,
+            "inputs_hash": pit.get("inputs_hash") or "",
+            "input_manifest": item.get("input_manifest") or {},
+            "display_only": True,
+            "authority": False,
+            "prediction_id": _pred_id_for_snap,
+        }
+
+        # 1. Input snapshot
+        try:
+            snapshot = build_input_snapshot(proj_for_prov)
+            pred_id = snapshot.get("prediction_id") or ""
+            # Write to disk (fail-open)
+            ref_path: str | None = None
+            if pred_id and not dry_run:
+                try:
+                    snapshots_dir.mkdir(parents=True, exist_ok=True)
+                    # Sanitize prediction_id for use as filename
+                    safe_name = pred_id.replace(":", "_").replace("/", "_")
+                    snap_file = snapshots_dir / f"{safe_name}.json"
+                    with open(snap_file, "w", encoding="utf-8") as fh:
+                        json.dump(snapshot, fh, indent=2, default=str)
+                    # Store relative path (from repo root)
+                    try:
+                        ref_path = str(snap_file.relative_to(snapshots_dir.parent.parent.parent))
+                    except ValueError:
+                        ref_path = str(snap_file)
+                except Exception as exc_io:
+                    log.debug("provenance snapshot write failed for %s: %s", pred_id, exc_io)
+            item["input_snapshot_ref"] = ref_path
+        except Exception as exc:
+            log.debug("build_input_snapshot failed for %s: %s", rt, exc)
+            item["input_snapshot_ref"] = None
+
+        # 2. Coverage flags — DISPLAY-ONLY METADATA; must not feed back into projections
+        try:
+            flags = compute_coverage_flags(proj_for_prov, ledger_path)
+            # AUTHORITY WALL: copy only the four declared flags; never touch point/interval/skew
+            item["coverage_flags"] = {
+                "weight_coverage":      flags.get("weight_coverage"),
+                "fresh_proxy_coverage": flags.get("fresh_proxy_coverage"),
+                "non_vintaged_share":   flags.get("non_vintaged_share"),
+                "model_maturity":       flags.get("model_maturity"),
+            }
+        except Exception as exc:
+            log.debug("compute_coverage_flags failed for %s: %s", rt, exc)
+            item["coverage_flags"] = None
+
+
+def _run_shadow_v3(
+    release_type: str,
+    asof: date,
+    root: Path,
+    period_str: str | None,
+    release_date_obj: date | None,
+) -> dict | None:
+    """Call project_release_v3 for a supported release_type. Fail-open: returns None on error.
+
+    Supports: cpi_headline, cpi_core, nfp. All others return None immediately.
+    DISPLAY-ONLY: result carries display_only=True, authority=False.
+    """
+    if release_type not in _SHADOW_V3_TARGETS:
+        return None
+    try:
+        from engine.release_forecast_v3 import project_release_v3
+        ref_month: date | None = None
+        if period_str and release_type in ("cpi_headline", "cpi_core"):
+            try:
+                ref_month = date.fromisoformat(period_str + "-01")
+            except Exception:
+                pass
+        result = project_release_v3(
+            release_type, asof, root,
+            ref_month=ref_month,
+            period=period_str,
+            release_date=release_date_obj,
+        )
+        return result
+    except Exception as e:
+        log.warning("shadow v3_factor(%s, %s) failed — skipping: %s", release_type, asof, e)
+        return None
+
+
+def _run_shadow_bridge(
+    release_type: str,
+    asof: date,
+    root: Path,
+    period_str: str | None,
+) -> dict | None:
+    """Call compute_cpi_bridge for cpi_headline only. Fail-open: returns None on error.
+
+    cpi_core bridge is killed/closed (MRI-R25). Any other release_type returns None.
+    DISPLAY-ONLY: result carries display_only=True, authority=False.
+    """
+    if release_type not in _SHADOW_BRIDGE_TARGETS:
+        return None
+    try:
+        from engine.release_cpi_bridge import compute_cpi_bridge
+        ref_month: date | None = None
+        if period_str:
+            try:
+                ref_month = date.fromisoformat(period_str + "-01")
+            except Exception:
+                pass
+        result = compute_cpi_bridge(
+            asof=asof,
+            root=root,
+            ref_month=ref_month,
+            release=release_type,
+        )
+        return result
+    except Exception as e:
+        log.warning("shadow cpi_bridge(%s, %s) failed — skipping: %s", release_type, asof, e)
+        return None
+
+
+def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date) -> None:
+    """Attach item["shadows"] to each upcoming item that has shadow models. In-place.
+
+    Only cpi_headline, cpi_core, nfp receive shadows. pce/ppi/claims/retail do not.
+    Each shadow entry is display_only=True.
+    Fail-open: a shadow that errors is simply skipped (logged in _run_shadow_*).
+    """
+    for item in upcoming_block:
+        rt = item.get("release_type", "")
+        if rt not in (_SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS):
+            continue
+
+        period_str = item.get("period")
+        release_date_str = item.get("release_date")
+        release_date_obj: date | None = None
+        if release_date_str:
+            try:
+                release_date_obj = date.fromisoformat(release_date_str)
+            except Exception:
+                pass
+
+        shadows: dict = {}
+
+        # v3_factor shadow
+        if rt in _SHADOW_V3_TARGETS:
+            try:
+                v3_result = _run_shadow_v3(rt, today, root, period_str, release_date_obj)
+            except Exception as _e:
+                log.warning("_attach_shadows v3_factor(%s) raised — skipping: %s", rt, _e)
+                v3_result = None
+            if v3_result is not None:
+                entry: dict = {
+                    "display_only": True,
+                    "point": v3_result.get("point"),
+                    "p10": v3_result.get("p10"),
+                    "p25": v3_result.get("p25"),
+                    "p50": v3_result.get("p50"),
+                    "p75": v3_result.get("p75"),
+                    "p90": v3_result.get("p90"),
+                    "confidence": v3_result.get("confidence"),
+                    "input_completeness": v3_result.get("input_completeness"),
+                }
+                if rt == "nfp":
+                    entry["warning"] = _NFP_V3_WARNING
+                shadows["v3_factor"] = entry
+
+        # cpi_bridge shadow (cpi_headline only)
+        if rt in _SHADOW_BRIDGE_TARGETS:
+            try:
+                bridge_result = _run_shadow_bridge(rt, today, root, period_str)
+            except Exception as _e:
+                log.warning("_attach_shadows cpi_bridge(%s) raised — skipping: %s", rt, _e)
+                bridge_result = None
+            if bridge_result is not None:
+                shadows["cpi_bridge"] = {
+                    "display_only": True,
+                    "point": bridge_result.get("point"),
+                    "components": bridge_result.get("components"),
+                    "prior_driven_share": bridge_result.get("prior_driven_share"),
+                    "coverage_residual_pp": bridge_result.get("coverage_residual_pp"),
+                    "weight_coverage": bridge_result.get("weight_coverage"),
+                    "confidence": bridge_result.get("confidence"),
+                }
+
+        if shadows:
+            item["shadows"] = shadows
+
+
+def _build_shadow_ledger_rows(
+    today: date,
+    upcoming_block: list[dict],
+    root: Path,
+) -> list[dict]:
+    """Build shadow_projection ledger rows for tonight's run.
+
+    One row per (release_type, model) that has a shadow. Champion projection rows
+    (row_type="projection") are NOT touched by this function.
+
+    Row shape mirrors champion projection rows with additions:
+      - row_type = "shadow_projection"
+      - model = "v3_factor" | "cpi_bridge"
+      - prediction_id includes model slug
+      - cpi_bridge carries components, coverage_residual_pp, prior_driven_share
+    """
+    from engine.release_forecast import make_release_id, make_prediction_id
+    asof_night = today.isoformat()
+    rows = []
+
+    for item in upcoming_block:
+        release_type = item.get("release_type")
+        period_str = item.get("period")
+        release_date_str = item.get("release_date")
+
+        if release_type not in (_SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS):
+            continue
+
+        release_date_obj: date | None = None
+        if release_date_str:
+            try:
+                release_date_obj = date.fromisoformat(release_date_str)
+            except Exception:
+                pass
+
+        try:
+            _release_id = make_release_id(release_type, period_str)
+        except Exception:
+            _release_id = None
+
+        _horizon_days: int | None = None
+        if release_date_obj:
+            try:
+                _horizon_days = (release_date_obj - today).days
+            except Exception:
+                pass
+
+        # v3_factor shadow row
+        if release_type in _SHADOW_V3_TARGETS:
+            try:
+                v3_result = _run_shadow_v3(release_type, today, root, period_str, release_date_obj)
+            except Exception as _e:
+                log.warning("_build_shadow_ledger v3_factor(%s) raised — skipping: %s", release_type, _e)
+                v3_result = None
+            if v3_result is not None:
+                try:
+                    _pred_id = make_prediction_id(
+                        _release_id, f"{asof_night}:v3_factor"
+                    ) if _release_id else None
+                except Exception:
+                    _pred_id = None
+
+                row: dict = {
+                    "schema": 2,
+                    "row_type": "shadow_projection",
+                    "model": "v3_factor",
+                    "asof_night": asof_night,
+                    "release": release_type,
+                    "period": period_str,
+                    "release_date": release_date_str,
+                    "release_id": _release_id,
+                    "prediction_id": _pred_id,
+                    "horizon_days": _horizon_days,
+                    "projection_point": v3_result.get("point"),
+                    "projection_p10": v3_result.get("p10"),
+                    "projection_p25": v3_result.get("p25"),
+                    "projection_p50": v3_result.get("p50"),
+                    "projection_p75": v3_result.get("p75"),
+                    "projection_p90": v3_result.get("p90"),
+                    "confidence": v3_result.get("confidence"),
+                    "input_completeness": v3_result.get("input_completeness"),
+                    "display_only": True,
+                    "authority": False,
+                }
+                if release_type == "nfp":
+                    row["warning"] = _NFP_V3_WARNING
+                rows.append(row)
+            else:
+                log.debug("shadow_projection v3_factor skipped for %s/%s (None result)", release_type, period_str)
+
+        # cpi_bridge shadow row (cpi_headline only)
+        if release_type in _SHADOW_BRIDGE_TARGETS:
+            try:
+                bridge_result = _run_shadow_bridge(release_type, today, root, period_str)
+            except Exception as _e:
+                log.warning("_build_shadow_ledger cpi_bridge(%s) raised — skipping: %s", release_type, _e)
+                bridge_result = None
+            if bridge_result is not None:
+                try:
+                    _pred_id_br = make_prediction_id(
+                        _release_id, f"{asof_night}:cpi_bridge"
+                    ) if _release_id else None
+                except Exception:
+                    _pred_id_br = None
+
+                row_br: dict = {
+                    "schema": 2,
+                    "row_type": "shadow_projection",
+                    "model": "cpi_bridge",
+                    "asof_night": asof_night,
+                    "release": release_type,
+                    "period": period_str,
+                    "release_date": release_date_str,
+                    "release_id": _release_id,
+                    "prediction_id": _pred_id_br,
+                    "horizon_days": _horizon_days,
+                    "projection_point": bridge_result.get("point"),
+                    "projection_p10": None,  # bridge is point-only
+                    "projection_p25": None,
+                    "projection_p50": None,
+                    "projection_p75": None,
+                    "projection_p90": None,
+                    "confidence": bridge_result.get("confidence"),
+                    "components": bridge_result.get("components"),
+                    "coverage_residual_pp": bridge_result.get("coverage_residual_pp"),
+                    "prior_driven_share": bridge_result.get("prior_driven_share"),
+                    "weight_coverage": bridge_result.get("weight_coverage"),
+                    "display_only": True,
+                    "authority": False,
+                }
+                rows.append(row_br)
+            else:
+                log.debug("shadow_projection cpi_bridge skipped for %s/%s (None result)", release_type, period_str)
+
+    return rows
 
 
 def _build_projection_ledger_rows(
@@ -560,6 +1026,7 @@ def _build_projection_ledger_rows(
         row = {
             "schema": 2,
             "row_type": "projection",
+            "model": None,  # Champion rows: model=None; shadows carry explicit model string
             "asof_night": asof_night,
             "release": release_type,
             "period": period_str,
@@ -595,6 +1062,13 @@ def _build_projection_ledger_rows(
             "expectation_read": item.get("expectation_read"),
             # freeze sigma_scale_pp for scoring: needed to re-derive bands at score time
             "sigma_scale_pp": (item.get("surprise_skew") or {}).get("sigma_scale_pp"),
+            # MRI-R26: provenance coverage flags (display-only metadata; never influence projections)
+            "coverage_weight_coverage":      (item.get("coverage_flags") or {}).get("weight_coverage"),
+            "coverage_fresh_proxy_coverage": (item.get("coverage_flags") or {}).get("fresh_proxy_coverage"),
+            "coverage_non_vintaged_share":   (item.get("coverage_flags") or {}).get("non_vintaged_share"),
+            "coverage_model_maturity":       (item.get("coverage_flags") or {}).get("model_maturity"),
+            # MRI-R26: reference to on-disk input snapshot (path string or None)
+            "input_snapshot_ref":            item.get("input_snapshot_ref"),
         }
         rows.append(row)
     return rows
@@ -747,18 +1221,38 @@ def _check_release_day_capture(
     """Check if any tracked (release, period) has printed today and not yet been scored.
 
     Returns a list of new 'scored' rows to append.
+
+    Round-2b extension: also scores frozen shadow_projection rows for each (release, period)
+    that prints. Shadow scored rows carry model="v3_factor"|"cpi_bridge", row_type="scored".
+    Idempotency key includes model (None for champion, string for shadows).
+    Fail-open: shadow scoring failures are logged and skipped.
     """
     scored_rows = []
     asof_night = today.isoformat()
 
-    # Find projection rows in the ledger that don't yet have a corresponding scored row
-    # keyed on (release, period)
-    existing_scored_keys: set[tuple[str, str]] = {
-        (r["release"], r["period"])
+    # Find scored rows already in ledger — keyed on (release, period, model)
+    # model=None for champion, model=str for shadows.
+    existing_scored_keys: set[tuple] = {
+        (r["release"], r["period"], r.get("model"))
         for r in existing_ledger
         if r.get("row_type") == "scored"
     }
 
+    # Also track which (release, period) pairs have a printable actual value already computed
+    # so we only look it up once per (release, period).
+    _actual_cache: dict[tuple[str, str], float | None] = {}
+
+    def _get_actual(release_type: str, period_str: str, release_date_str: str) -> float | None:
+        key = (release_type, period_str)
+        if key not in _actual_cache:
+            raw_print = _get_initial_print(root, release_type, period_str, release_date_str)
+            if raw_print is None:
+                _actual_cache[key] = None
+            else:
+                _actual_cache[key] = _compute_actual_from_print(release_type, raw_print, root, period_str)
+        return _actual_cache[key]
+
+    # --- Champion scoring (row_type="projection", model=None) ---
     for proj_row in existing_ledger:
         if proj_row.get("row_type") != "projection":
             continue
@@ -770,8 +1264,8 @@ def _check_release_day_capture(
         if not release_type or not period_str or not release_date_str:
             continue
 
-        # Already scored?
-        if (release_type, period_str) in existing_scored_keys:
+        # Already scored for champion?
+        if (release_type, period_str, None) in existing_scored_keys:
             continue
 
         # Check if the release date has passed
@@ -783,15 +1277,10 @@ def _check_release_day_capture(
         if today < release_date:
             continue  # not yet released
 
-        # Try to get initial print
-        raw_print = _get_initial_print(root, release_type, period_str, release_date_str)
-        if raw_print is None:
-            log.debug("no initial print found for %s/%s as of %s", release_type, period_str, asof_night)
-            continue
-
-        actual = _compute_actual_from_print(release_type, raw_print, root, period_str)
+        # Try to get actual
+        actual = _get_actual(release_type, period_str, release_date_str)
         if actual is None:
-            log.debug("could not convert initial print to target variable for %s/%s", release_type, period_str)
+            log.debug("no actual found for %s/%s as of %s", release_type, period_str, asof_night)
             continue
 
         # Frozen T-1 projection (latest projection row for this release/period,
@@ -884,13 +1373,14 @@ def _check_release_day_capture(
         scored_row = {
             "schema": 2,
             "row_type": "scored",
+            "model": None,  # champion
             "asof_night": asof_night,
             "release": release_type,
             "period": period_str,
             "release_date": release_date_str,
             "actual": actual,
             "actual_first": actual,  # schema v2: capture = initial print, revision rows track drift
-            "raw_initial_print": raw_print,
+            "raw_initial_print": _actual_cache.get((release_type, period_str)),
             "frozen_asof_night": t1_proj.get("asof_night"),
             "frozen_projection_point": proj_point,
             "frozen_projection_p10": proj_p10,
@@ -909,6 +1399,93 @@ def _check_release_day_capture(
         }
         scored_rows.append(scored_row)
         log.info("scored: %s/%s — actual=%.4f vs proj=%.4f", release_type, period_str, actual, proj_point or float("nan"))
+
+    # --- Round-2b: Shadow scoring (row_type="shadow_projection") ---
+    # For each shadow_projection row in the ledger that has printed, emit a scored row
+    # tagged with the shadow's model. Forward-only.
+    for shadow_row in existing_ledger:
+        if shadow_row.get("row_type") != "shadow_projection":
+            continue
+
+        shadow_model = shadow_row.get("model")
+        if not shadow_model:
+            continue
+
+        release_type = shadow_row.get("release")
+        period_str = shadow_row.get("period")
+        release_date_str = shadow_row.get("release_date")
+
+        if not release_type or not period_str or not release_date_str:
+            continue
+
+        # Already scored for this shadow model?
+        if (release_type, period_str, shadow_model) in existing_scored_keys:
+            continue
+
+        # Check if the release date has passed
+        try:
+            release_date = date.fromisoformat(release_date_str)
+        except ValueError:
+            continue
+
+        if today < release_date:
+            continue  # not yet released
+
+        # Reuse actual from cache (computed for champion path or compute fresh)
+        actual = _get_actual(release_type, period_str, release_date_str)
+        if actual is None:
+            continue
+
+        # Find most recent T-1 shadow_projection for this (release, period, model)
+        shadow_candidates = [
+            r for r in existing_ledger
+            if r.get("row_type") == "shadow_projection"
+            and r.get("model") == shadow_model
+            and r.get("release") == release_type
+            and r.get("period") == period_str
+            and r.get("asof_night", "") < release_date_str
+        ]
+        if not shadow_candidates:
+            log.debug("no T-1 shadow (%s) found for %s/%s", shadow_model, release_type, period_str)
+            continue
+
+        t1_shadow = max(shadow_candidates, key=lambda r: r.get("asof_night", ""))
+        shadow_point = t1_shadow.get("projection_point")
+        shadow_p10 = t1_shadow.get("projection_p10")
+        shadow_p90 = t1_shadow.get("projection_p90")
+
+        shadow_surprise = (
+            round(actual - shadow_point, 4)
+            if shadow_point is not None
+            else None
+        )
+
+        shadow_interval_hit: bool | None = None
+        if shadow_p10 is not None and shadow_p90 is not None:
+            shadow_interval_hit = bool(shadow_p10 <= actual <= shadow_p90)
+
+        scored_shadow_row: dict = {
+            "schema": 2,
+            "row_type": "scored",
+            "model": shadow_model,
+            "asof_night": asof_night,
+            "release": release_type,
+            "period": period_str,
+            "release_date": release_date_str,
+            "actual": actual,
+            "actual_first": actual,
+            "frozen_asof_night": t1_shadow.get("asof_night"),
+            "frozen_projection_point": shadow_point,
+            "frozen_projection_p10": shadow_p10,
+            "frozen_projection_p90": shadow_p90,
+            "our_surprise": shadow_surprise,
+            "interval_hit": shadow_interval_hit,
+        }
+        scored_rows.append(scored_shadow_row)
+        log.info(
+            "scored shadow (%s): %s/%s — actual=%.4f vs shadow_proj=%.4f",
+            shadow_model, release_type, period_str, actual, shadow_point or float("nan"),
+        )
 
     return scored_rows
 
@@ -1227,6 +1804,10 @@ def _build_scoreboard(
     Schema v2 adds: interval_50_coverage (p25-p75 band hits), mae_vs_actual_latest
     (from revision rows where present), reaction summary (mean |dgs10_h0_bp|
     for hot/cold rows when n>=3, else null).
+
+    Round-2b: shadow scored rows (model!=None) are grouped in a separate
+    by_shadow section keyed by (release, model). Champion (model=None) rows
+    remain in by_release as before.
     """
     scored = [r for r in ledger if r.get("row_type") == "scored"]
     revision_rows = [r for r in ledger if r.get("row_type") == "revision"]
@@ -1248,35 +1829,52 @@ def _build_scoreboard(
         key = (r.get("release", ""), r.get("period", ""))
         reaction_by_key[key] = r
 
-    # Per release-type aggregation
+    def _new_agg() -> dict:
+        return {
+            "n": 0,
+            "our_abs_errors": [],
+            "naive_abs_errors": [],
+            "trailing_abs_errors": [],
+            "ar_abs_errors": [],
+            "cleveland_abs_errors": [],
+            "interval_hits": [],       # p10-p90
+            "interval_50_hits": [],    # p25-p75
+            "skew_hits": [],
+            "revision_errors": [],     # |proj - actual_latest|
+            "reaction_dgs10_h0_abs": [],  # |dgs10_h0_bp| for hot/cold rows
+            "expectation_hits": [],    # MRI-R22: expectation_read hit/miss
+        }
+
+    # Per release-type aggregation (champion rows, model=None)
     per_release: dict[str, dict] = {}
+    # Per (release, model) aggregation (shadow rows, model!=None)
+    per_shadow: dict[tuple[str, str], dict] = {}
+
     for row in scored:
         rt = row.get("release", "unknown")
-        if rt not in per_release:
-            per_release[rt] = {
-                "n": 0,
-                "our_abs_errors": [],
-                "naive_abs_errors": [],
-                "trailing_abs_errors": [],
-                "ar_abs_errors": [],
-                "cleveland_abs_errors": [],
-                "interval_hits": [],       # p10-p90
-                "interval_50_hits": [],    # p25-p75
-                "skew_hits": [],
-                "revision_errors": [],     # |proj - actual_latest|
-                "reaction_dgs10_h0_abs": [],  # |dgs10_h0_bp| for hot/cold rows
-                "expectation_hits": [],    # MRI-R22: expectation_read hit/miss
-            }
-        g = per_release[rt]
+        model = row.get("model")  # None for champion, "v3_factor"/"cpi_bridge" for shadows
+
+        if model is None:
+            # Champion row
+            if rt not in per_release:
+                per_release[rt] = _new_agg()
+            g = per_release[rt]
+        else:
+            # Shadow row
+            shadow_key = (rt, model)
+            if shadow_key not in per_shadow:
+                per_shadow[shadow_key] = _new_agg()
+            g = per_shadow[shadow_key]
+
         g["n"] += 1
 
         actual = row.get("actual")
-        actual_first = row.get("actual_first") or actual
         proj = row.get("frozen_projection_point")
 
         if actual is not None and proj is not None:
             g["our_abs_errors"].append(abs(actual - proj))
 
+        # Champion-only fields (bench surprises, skew, expectation) — shadows won't have these
         for bench_key, err_key in [
             ("surprise_vs_naive", "naive_abs_errors"),
             ("surprise_vs_trailing", "trailing_abs_errors"),
@@ -1307,29 +1905,27 @@ def _build_scoreboard(
             g["expectation_hits"].append(bool(eh))
 
         # mae_vs_actual_latest: use revision data if available
-        key = (rt, row.get("period", ""))
-        actual_latest = revision_latest.get(key)
+        rev_key = (rt, row.get("period", ""))
+        actual_latest = revision_latest.get(rev_key)
         if actual_latest is not None and proj is not None:
             g["revision_errors"].append(abs(actual_latest - proj))
 
-        # Reaction summary: |dgs10_h0_bp| for hot/cold rows
-        # hot = actual > benchmark_median, cold = actual < benchmark_median
-        react = reaction_by_key.get(key)
-        if react is not None:
-            skew_tag = row.get("surprise_skew_tag") or row.get("skew_hit")
-            # Use the actual vs naive to determine hot/cold
-            bench_naive = row.get("benchmark_naive_prior")
-            is_hot_or_cold = (
-                actual is not None and bench_naive is not None
-                and abs(actual - bench_naive) > 0
-            )
-            if is_hot_or_cold:
-                dgs_h0 = react.get("dgs10_h0_bp")
-                if dgs_h0 is not None:
-                    g["reaction_dgs10_h0_abs"].append(abs(dgs_h0))
+        # Reaction summary (champion only; shadow rows unlikely to have reaction data)
+        if model is None:
+            react = reaction_by_key.get(rev_key)
+            if react is not None:
+                bench_naive = row.get("benchmark_naive_prior")
+                is_hot_or_cold = (
+                    actual is not None and bench_naive is not None
+                    and abs(actual - bench_naive) > 0
+                )
+                if is_hot_or_cold:
+                    dgs_h0 = react.get("dgs10_h0_bp")
+                    if dgs_h0 is not None:
+                        g["reaction_dgs10_h0_abs"].append(abs(dgs_h0))
 
-    release_stats: dict[str, dict] = {}
-    for rt, g in per_release.items():
+    def _agg_to_stats(rt: str, g: dict, model_label: str | None = None) -> dict:
+        """Convert accumulator to scoreboard stats entry."""
         n = g["n"]
         k_interval = sum(g["interval_hits"])
         n_interval = len(g["interval_hits"])
@@ -1343,15 +1939,14 @@ def _build_scoreboard(
         def _mae(errs: list[float]) -> float | None:
             return round(float(np.mean(errs)), 4) if errs else None
 
-        # Reaction summary: only report when n>=3
         reaction_dgs10_mean_abs = None
         if len(g["reaction_dgs10_h0_abs"]) >= 3:
             reaction_dgs10_mean_abs = round(float(np.mean(g["reaction_dgs10_h0_abs"])), 2)
 
-        # Claims uses mae_trailing_4w label; all others use mae_trailing_3m
         trailing_label = "mae_trailing_4w" if rt == "claims" else "mae_trailing_3m"
         _entry: dict = {
             "n": n,
+            "model": model_label,
             "mae_ours": _mae(g["our_abs_errors"]),
             "mae_naive_prior": _mae(g["naive_abs_errors"]),
             trailing_label: _mae(g["trailing_abs_errors"]),
@@ -1361,18 +1956,14 @@ def _build_scoreboard(
             "mae_vs_actual_latest": _mae(g["revision_errors"]),
             "p10_p90_coverage": round(k_interval / n_interval, 4) if n_interval > 0 else None,
             "p10_p90_coverage_n": n_interval,
-            # interval_50_coverage: p25-p75 band (approximates Codex [50%,75%] interval_60)
-            # Note: this approximates interval_60 coverage; labeled clearly per MRI-R13
             "interval_50_coverage": round(k_interval_50 / n_interval_50, 4) if n_interval_50 > 0 else None,
             "interval_50_coverage_n": n_interval_50,
             "interval_50_coverage_note": "p25-p75 band; approximates Codex 60% interval (MRI-R13)",
             "skew_hit_rate": round(k_skew / n_skew, 4) if n_skew > 0 else None,
             "skew_hit_rate_n": n_skew,
             "skew_hit_rate_wilson_ci": _wilson(k_skew, n_skew),
-            # Reaction usefulness descriptor (MRI-R17)
             "reaction_mean_abs_dgs10_h0_bp": reaction_dgs10_mean_abs,
             "reaction_n": len(g["reaction_dgs10_h0_abs"]),
-            # MRI-R22: expectation read hit rate (reported-only; null until data accrues)
             "expectation_read_hit_rate": round(k_exp / n_exp, 4) if n_exp > 0 else None,
             "expectation_read_hit_rate_n": n_exp,
             "expectation_read_hit_rate_note": (
@@ -1381,7 +1972,7 @@ def _build_scoreboard(
                 "Display-only (MRI-R22). Null until data accrues."
             ),
         }
-        if rt == "claims":
+        if rt == "claims" and model_label is None:
             _entry["block_note"] = (
                 "MRI-R9: weekly claims residuals have strong autocorrelation. "
                 "Reported MAE and coverage are computed on individual weekly prints; "
@@ -1389,7 +1980,16 @@ def _build_scoreboard(
                 "Era-split results in research/release_forecast/CLAIMS_BACKTEST.md are "
                 "the authoritative reference."
             )
-        release_stats[rt] = _entry
+        return _entry
+
+    release_stats: dict[str, dict] = {}
+    for rt, g in per_release.items():
+        release_stats[rt] = _agg_to_stats(rt, g, model_label=None)
+
+    # Shadow scoreboard: keyed as "<release>:<model>"
+    shadow_stats: dict[str, dict] = {}
+    for (rt, mdl), g in per_shadow.items():
+        shadow_stats[f"{rt}:{mdl}"] = _agg_to_stats(rt, g, model_label=mdl)
 
     return {
         "schema": "release_forecast_scoreboard.v2",
@@ -1397,6 +1997,7 @@ def _build_scoreboard(
         "forward_accrual_began": accrual_start,
         "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8).",
         "by_release": release_stats,
+        "by_shadow": shadow_stats,  # Round-2b: per-(release, model) shadow track records
     }
 
 
@@ -1591,12 +2192,29 @@ def build(root: Path, dry_run: bool = False) -> dict:
     existing_ledger = _load_ledger(ledger_path)
     log.info("loaded %d existing ledger rows", len(existing_ledger))
 
-    # 5. Build today's projection ledger rows
+    # 3b. MRI-R26: attach provenance (input_snapshot + coverage_flags) to each upcoming item.
+    # Must run AFTER enrichments so prediction_id is present; BEFORE ledger rows so flags freeze.
+    snapshots_dir = root / _INPUT_SNAPSHOTS_RELPATH
+    _attach_provenance(upcoming_block, ledger_path, snapshots_dir, dry_run=dry_run)
+    log.info("provenance: coverage flags and snapshot refs attached to %d items", len(upcoming_block))
+
+    # 3c. Round-2b: attach shadow projections to upcoming items (display-only, additive).
+    # Fail-open per model: errors logged in _run_shadow_*/helpers, never break the build.
+    _attach_shadows_to_items(upcoming_block, root, today)
+    shadow_counts = {item.get("release_type", "?"): len(item.get("shadows", {}))
+                     for item in upcoming_block if item.get("shadows")}
+    log.info("shadow projections attached: %s", shadow_counts)
+
+    # 5. Build today's projection ledger rows (champion, model=None)
     proj_ledger_rows = _build_projection_ledger_rows(today, upcoming_block, policy_backdrop)
 
-    # 6. Release-day capture (check if any tracked release printed)
+    # 5b. Round-2b: Build shadow_projection ledger rows (model="v3_factor"|"cpi_bridge")
+    shadow_ledger_rows = _build_shadow_ledger_rows(today, upcoming_block, root)
+    log.info("shadow ledger rows built: %d", len(shadow_ledger_rows))
+
+    # 6. Release-day capture (check if any tracked release printed) — includes shadow scoring
     scored_rows = _check_release_day_capture(today, root, existing_ledger)
-    log.info("release-day capture: %d new scored rows", len(scored_rows))
+    log.info("release-day capture: %d new scored rows (champion + shadow)", len(scored_rows))
 
     # 6a. Revision sweep (schema v2)
     combined_for_revision = existing_ledger + scored_rows
@@ -1615,12 +2233,13 @@ def build(root: Path, dry_run: bool = False) -> dict:
     ]
     accrual_start = min(all_proj_nights) if all_proj_nights else today.isoformat()
 
-    # 8. Scoreboard from all scored + revision + reaction rows
+    # 8. Scoreboard from all scored + revision + reaction rows (champion + shadow)
     all_ledger_for_scoreboard = existing_ledger + scored_rows + revision_rows + reaction_rows
     scoreboard = _build_scoreboard(all_ledger_for_scoreboard, accrual_start)
 
-    # 9. Build last_scored for latest.json (most recent scored row per release_type)
-    all_scored = [r for r in existing_ledger if r.get("row_type") == "scored"] + scored_rows
+    # 9. Build last_scored for latest.json (most recent scored row per release_type, champion only)
+    all_scored = [r for r in existing_ledger if r.get("row_type") == "scored" and r.get("model") is None] + \
+                 [r for r in scored_rows if r.get("model") is None]
     last_scored_by_rt: dict[str, dict] = {}
     for row in all_scored:
         rt = row.get("release", "")
@@ -1638,7 +2257,7 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "can_size": False,
             "can_trade": False,
         },
-        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity", "quirk_flags", "expectation_read"],
+        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity", "quirk_flags", "expectation_read", "coverage_flags", "input_snapshot_ref", "shadows"],
         "upcoming": upcoming_block,
         "last_scored": last_scored,
         "scoreboard_ref": "data/release_forecast/scoreboard.json",
@@ -1659,8 +2278,8 @@ def build(root: Path, dry_run: bool = False) -> dict:
             json.dump(latest, fh, indent=2, default=str)
         log.info("wrote %s", site_path)
 
-        # Append all new rows to ledger
-        all_new_rows = proj_ledger_rows + scored_rows + revision_rows + reaction_rows
+        # Append all new rows to ledger (champion + shadow projection rows + scored + revision + reaction)
+        all_new_rows = proj_ledger_rows + shadow_ledger_rows + scored_rows + revision_rows + reaction_rows
         _append_ledger_rows(ledger_path, all_new_rows)
 
         # Write scoreboard

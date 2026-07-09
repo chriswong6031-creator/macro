@@ -650,6 +650,196 @@
   </div>
   {% endif %}
 
+  {# ===================== HK COMMAND PANEL — top-of-page synthesis (macro mode only) =====================
+     Fuses 7 Neural Web organs into one combustibility view.
+     DISPLAY-ONLY CONTEXT — NOT a buy/sell signal. Deterministic tally, no LLM score.
+     "context, not a signal / 参考，非买卖信号"
+     Renders even when organs are empty (honest empty states). #}
+  {% if mode != 'stocks' %}
+  {% set _cp = command_panel if command_panel else {} %}
+  {% set _cpv = _cp.verdict if _cp.verdict else {} %}
+  {% set _cpfs = _cp.freshness_strip if _cp.freshness_strip else {} %}
+  {% set _cpforces = _cp.force_stack if _cp.force_stack else [] %}
+  {% set _cpbw = _cp.bottom_watch if _cp.bottom_watch else [] %}
+  {% set _cpcw = _cp.chase_watch if _cp.chase_watch else [] %}
+  {% set _cpct = _cp.catalyst_tape if _cp.catalyst_tape else [] %}
+  {% set _cp_bottom_n = _cpv.bottom_arming_n if _cpv.bottom_arming_n is defined else 0 %}
+  {% set _cp_chase_n = _cpv.chase_risk_n if _cpv.chase_risk_n is defined else 0 %}
+  {% set _cp_total = _cpv.of if _cpv.of is defined else 8 %}
+  <div class="panel span12" id="hk-command-panel" style="border-top:2px solid var(--line);padding-bottom:16px;">
+    {# ----- 1. FRESHNESS STRIP ----- #}
+    <div class="cp-fresh {% if _cpfs.verdict == 'ok' %}cpf-ok{% elif _cpfs.verdict == 'stale' %}cpf-stale{% elif _cpfs.verdict == 'degraded' %}cpf-warn{% else %}cpf-unknown{% endif %}" style="margin-bottom:12px;padding:6px 10px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;">
+      <span class="cp-fresh-dot" style="width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:{% if _cpfs.verdict == 'ok' %}var(--up){% elif _cpfs.verdict == 'stale' %}var(--down){% elif _cpfs.verdict == 'degraded' %}var(--warn){% else %}var(--muted){% endif %};"></span>
+      <span class="l-en">{{ _cpfs.label_en if _cpfs.label_en else '—' }}</span>
+      <span class="l-zh">{{ _cpfs.label_zh if _cpfs.label_zh else '—' }}</span>
+    </div>
+
+    {# ----- 2. COMBUSTIBILITY VERDICT CARD ----- #}
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px;margin-bottom:16px;">
+      <div class="cp-verdict" style="flex:0 0 auto;min-width:220px;">
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+          <h2 style="margin:0;font-size:14px;">
+            <span class="l-en">{{ _cpv.label_en if _cpv.label_en else '—' }}</span>
+            <span class="l-zh">{{ _cpv.label_zh if _cpv.label_zh else '—' }}</span>
+          </h2>
+          <span class="note">
+            <span class="l-en">{{ _cp_bottom_n }}/{{ _cp_total }} forces confirming</span>
+            <span class="l-zh">{{ _cp_bottom_n }}/{{ _cp_total }} 力量共振</span>
+          </span>
+        </div>
+        <p class="note" style="margin:0 0 8px;font-size:11px;color:var(--muted);">
+          <span class="l-en">context, not a signal</span>
+          <span class="l-zh">参考，非买卖信号</span>
+        </p>
+        {# Bottom-arming meter #}
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;margin-bottom:3px;">
+            <span style="color:var(--up);">
+              <span class="l-en">Bottom arming</span><span class="l-zh">底部酝酿</span>
+            </span>
+            <span style="font-variant-numeric:tabular-nums;">{{ _cp_bottom_n }}/{{ _cp_total }}</span>
+          </div>
+          <div style="height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;">
+            <div style="height:100%;border-radius:3px;background:var(--up);width:{{ ((_cp_bottom_n / _cp_total) * 100)|int }}%;transition:width .3s;"></div>
+          </div>
+        </div>
+        {# Chase-risk meter #}
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;margin-bottom:3px;">
+            <span style="color:var(--down);">
+              <span class="l-en">Chase risk</span><span class="l-zh">追涨风险</span>
+            </span>
+            <span style="font-variant-numeric:tabular-nums;">{{ _cp_chase_n }}/{{ _cp_total }}</span>
+          </div>
+          <div style="height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;">
+            <div style="height:100%;border-radius:3px;background:var(--down);width:{{ ((_cp_chase_n / _cp_total) * 100)|int }}%;transition:width .3s;"></div>
+          </div>
+        </div>
+      </div>
+
+      {# ----- 3. FORCE STACK — 8 rows ----- #}
+      <div style="flex:1;min-width:280px;">
+        <p class="note" style="margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em;font-size:11px;">
+          <span class="l-en">Force Stack · 8 organs</span>
+          <span class="l-zh">力量堆栈 · 8 项</span>
+        </p>
+        {% if _cpforces %}
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          {% for force in _cpforces %}
+          {% set _fst = force.state if force.state else 'neutral' %}
+          {% set _fclr = 'var(--up)' if _fst == 'confirm' else ('var(--down)' if _fst == 'stress' else ('var(--warn)' if _fst == 'watch' else 'var(--muted)')) %}
+          <div class="cp-force-row" style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:7px;background:var(--panel2);">
+            <span class="cp-force-dot" style="width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:{{ _fclr }};"></span>
+            <span style="flex:0 0 130px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              <span class="l-en">{{ force.name_en if force.name_en else '—' }}</span>
+              <span class="l-zh">{{ force.name_zh if force.name_zh else '—' }}</span>
+            </span>
+            <span style="flex:1;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              <span class="l-en">{{ force.detail_en if force.detail_en else '—' }}</span>
+              <span class="l-zh">{{ force.detail_zh if force.detail_zh else '—' }}</span>
+            </span>
+            <span class="chip" style="font-size:11px;white-space:nowrap;--c:{{ _fclr }};">
+              <span class="l-en">{{ _fst }}</span>
+              <span class="l-zh">{% if _fst == 'confirm' %}确认{% elif _fst == 'stress' %}承压{% elif _fst == 'watch' %}观察{% else %}中性{% endif %}</span>
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="note" style="color:var(--muted);">
+          <span class="l-en">Force stack unavailable — organs loading or empty.</span>
+          <span class="l-zh">力量堆栈不可用 — 器官正在加载或为空。</span>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ----- 4. BOTTOM-WATCH / CHASE-WATCH SCORECARDS ----- #}
+    {% if _cpbw or _cpcw %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      {# Bottom Watch #}
+      <div style="background:var(--panel2);border-radius:9px;padding:10px 12px;">
+        <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:var(--up);">
+          <span class="l-en">Bottom Watch</span><span class="l-zh">底部观察</span>
+        </p>
+        {% if _cpbw %}
+        {% for r in _cpbw %}
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;">
+          <span style="font-weight:700;flex:0 0 auto;">{{ r.ticker }}</span>
+          {% if r.name %}<span class="note" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</span>{% endif %}
+          <span class="chip c-up" style="font-size:10px;flex:0 0 auto;">{{ r.confluence_n }}</span>
+          {% if r.knife_risk %}<span class="chip c-warn" style="font-size:10px;flex:0 0 auto;">
+            <span class="l-en">knife</span><span class="l-zh">刀锋</span>
+          </span>{% endif %}
+        </div>
+        {% endfor %}
+        <p class="note" style="margin:6px 0 0;font-size:10.5px;">
+          <span class="l-en">unconfirmed · high-risk · knife chip = falling knife risk</span>
+          <span class="l-zh">未确认 · 高风险 · 刀锋 = 下跌趋势中风险</span>
+        </p>
+        {% else %}
+        <p class="note" style="color:var(--muted);">
+          <span class="l-en">No bottom-watch candidates.</span>
+          <span class="l-zh">无底部观察候选股。</span>
+        </p>
+        {% endif %}
+      </div>
+      {# Chase Watch #}
+      <div style="background:var(--panel2);border-radius:9px;padding:10px 12px;">
+        <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:var(--down);">
+          <span class="l-en">Chase Watch</span><span class="l-zh">追涨风险观察</span>
+        </p>
+        {% if _cpcw %}
+        {% for r in _cpcw %}
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;">
+          <span style="font-weight:700;flex:0 0 auto;">{{ r.ticker }}</span>
+          {% if r.name %}<span class="note" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</span>{% endif %}
+          <span class="chip c-down" style="font-size:10px;flex:0 0 auto;">
+            <span class="l-en">chase risk</span><span class="l-zh">追涨</span>
+          </span>
+        </div>
+        {% endfor %}
+        <p class="note" style="margin:6px 0 0;font-size:10.5px;">
+          <span class="l-en">extended — do not chase</span>
+          <span class="l-zh">过热 — 勿追涨</span>
+        </p>
+        {% else %}
+        <p class="note" style="color:var(--muted);">
+          <span class="l-en">No chase-risk names.</span>
+          <span class="l-zh">无追涨风险个股。</span>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# ----- 5. CATALYST TAPE ----- #}
+    {% if _cpct %}
+    <div>
+      <p class="note" style="margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em;font-size:11px;">
+        <span class="l-en">Catalyst Tape</span>
+        <span class="l-zh">催化剂追踪</span>
+      </p>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        {% for ev in _cpct %}
+        <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--line);">
+          <span style="flex:0 0 80px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;">{{ ev.date if ev.date else '—' }}</span>
+          <span class="chip c-info" style="font-size:10px;flex:0 0 auto;">
+            <span class="l-en">{{ ev.source if ev.source else '—' }}</span>
+            <span class="l-zh">{{ ev.source_zh if ev.source_zh else ev.source if ev.source else '—' }}</span>
+          </span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <span class="l-en">{{ ev.text_en if ev.text_en else '—' }}</span>
+            <span class="l-zh">{{ ev.text_zh if ev.text_zh else ev.text_en if ev.text_en else '—' }}</span>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}{# /mode != stocks — HK command panel #}
+
   {# ===================== ADR OVERNIGHT BRIDGE — display-only context organ =====================
      Shows what US-listed ADRs/ETFs did AFTER the HK close, implying next HK session open.
      CONTEXT, NOT A SIGNAL / 参考，非买卖信号. Rendered in BOTH macro and stocks modes.

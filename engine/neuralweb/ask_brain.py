@@ -145,6 +145,19 @@ _OPTIONS_TRIGGER_TERMS = re.compile(
     r"|\b\d{1,2}dte\b|\bodte\b",
 )
 
+# Liquidity plumbing trigger terms — checked after factor/China, before options/generic.
+# Matches questions about Fed balance sheet, Treasury supply, RRP, net liquidity.
+_LIQUIDITY_PLUMBING_TRIGGER_TERMS = re.compile(
+    r"(?i)\b("
+    r"fed\s+balance\s+sheet|walcl|rrp|reverse\s+repo|net\s+liquidity|netliq|"
+    r"tga|treasury\s+general\s+account|treasury\s+(supply|drain|issuance)|"
+    r"liquidity\s+(plumbing|quality|overlay|tailwind|headwind|state)|"
+    r"reserve\s+(scarcity|balance)|swap\s+line|fima|"
+    r"benign\s+expansion|mechanical\s+tailwind|stress\s+expansion|orderly\s+drain"
+    r")\b",
+    re.IGNORECASE,
+)
+
 # Prompt-injection reject patterns
 _INJECTION_PATTERNS = [
     # Canonical phrase variants: "ignore [all] [the/your/previous/prior] instructions",
@@ -184,6 +197,8 @@ _ASK_READ_TOOLS = frozenset({
     "read_mechanism_pathways",
     # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
     "read_china_decision_packet",
+    # Liquidity plumbing packet (shadow tier, context/entry-quality only)
+    "read_liquidity_plumbing",
 })
 
 # Customer-facing system prompt
@@ -353,6 +368,11 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     # (assembles the Codex §11.2 packet from committed artifacts, context_only tier).
     if _CHINA_TRIGGER_TERMS.search(question):
         return _BUDGET_CHINA, ["read_world_state", "read_china_decision_packet"]
+
+    # Liquidity plumbing path — checked after China, before options and generic branches.
+    # Seeds: read_world_state (liquidity_plumbing sub-block) + read_liquidity_plumbing.
+    if _LIQUIDITY_PLUMBING_TRIGGER_TERMS.search(q):
+        return _BUDGET_REGIME, ["read_world_state", "read_liquidity_plumbing"]
 
     # Options path (RO-7) — checked after factor, before generic contradictions/regime
     # so "options contradictions" and "skew" questions don't bleed into generic branches
@@ -549,6 +569,177 @@ def assemble_china_decision_packet(root: "Path | None" = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Liquidity Plumbing decision packet assembler
+# ---------------------------------------------------------------------------
+
+def assemble_liquidity_plumbing_decision_packet(root: "Path | None" = None) -> dict:
+    """Assemble a concise liquidity_plumbing decision packet from the committed artifact.
+
+    Authority: shadow tier, context/entry-quality only.
+    - DE-ESCALATION authority only: may explain, attend, de-escalate.
+    - May NEVER originate a signal, raise a score/rank, or escalate.
+    - The only entry tailwind exposed is the ALREADY-MEASURED cycle-ladder 21d
+      nudge (engine/cycles.py untouched); this packet surfaces its quality context.
+    - Funding and foreign_dollar blocks are null in Phase 1 (no data yet).
+
+    Sections returned:
+        state           — headline state label
+        summary         — one-line plain-language quality-caveated summary
+        entry_effect    — direction/quality/basis/use (context only, no new signal)
+        quantity        — net liquidity level and trend context
+        quality         — composition label + stress flags
+        rrp             — buffer state
+        treasury        — TGA and supply pressure context
+        gaps            — honest null notes (funding/foreign_$ pending)
+        authority       — fixed constants (score_raise=False always)
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    lp_path = root / "data" / "neuralweb" / "liquidity_plumbing.json"
+    if not lp_path.exists():
+        return {
+            "available": False,
+            "schema": "liquidity_plumbing_decision_packet.v1",
+            "note": (
+                "data/neuralweb/liquidity_plumbing.json absent — "
+                "run scripts/build_liquidity_plumbing.py to populate"
+            ),
+            "authority": {
+                "entry_tailwind": "measured_near_term_only",
+                "score_raise": False,
+                "explain": True,
+                "attend": True,
+                "deescalate": True,
+                "hard_gate": False,
+            },
+        }
+
+    try:
+        raw = json.loads(lp_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "available": False,
+            "schema": "liquidity_plumbing_decision_packet.v1",
+            "note": f"read error: {exc}",
+            "authority": {"score_raise": False, "hard_gate": False},
+        }
+
+    if not isinstance(raw, dict):
+        return {
+            "available": False,
+            "schema": "liquidity_plumbing_decision_packet.v1",
+            "note": "artifact is not a dict",
+            "authority": {"score_raise": False, "hard_gate": False},
+        }
+
+    # Strip envelope keys so only payload fields are read
+    try:
+        from engine.neuralweb.envelope import strip_envelope  # noqa: PLC0415
+        payload = strip_envelope(raw)
+    except Exception:  # noqa: BLE001
+        payload = raw
+
+    headline = payload.get("headline") or {}
+    quantity = payload.get("quantity") or {}
+    quality = payload.get("quality") or {}
+    rrp = payload.get("rrp") or {}
+    fed = payload.get("fed") or {}
+    treasury = payload.get("treasury") or {}
+    entry_effect = payload.get("entry_effect") or {}
+    authority_raw = payload.get("authority") or {}
+    gaps = payload.get("gaps") or []
+    degraded = payload.get("degraded", False)
+
+    # Build concise entry effect note respecting authority limits
+    ee_direction = entry_effect.get("direction") or "unknown"
+    ee_quality = entry_effect.get("quality") or "unknown"
+    ee_basis = entry_effect.get("measured_basis") or "cycle_ladder_21d_odds"
+    ee_use = (
+        entry_effect.get("use")
+        or "support existing buy setup, never originate one"
+    )
+
+    # Quality caveat: if tailwind but degraded or low-quality, surface it
+    quality_caveat = ""
+    if degraded:
+        quality_caveat = " (data degraded — interpret with caution)"
+    elif ee_quality == "low_quality_tailwind":
+        quality_caveat = " (low-quality tailwind — mechanical or stress-driven; not benign)"
+
+    entry_effect_note = (
+        f"direction={ee_direction}, quality={ee_quality}{quality_caveat}. "
+        f"Basis: {ee_basis}. Use: {ee_use}."
+    )
+
+    return {
+        "available": True,
+        "schema": "liquidity_plumbing_decision_packet.v1",
+        "asof": payload.get("asof"),
+        # State and summary
+        "state": headline.get("state"),
+        "summary": headline.get("summary"),
+        # Entry effect — context/quality context only, no new signal
+        "entry_effect": {
+            "direction": ee_direction,
+            "quality": ee_quality,
+            "note": entry_effect_note,
+        },
+        # Quantity context
+        "quantity": {
+            "netliq_bn": quantity.get("netliq_bn"),
+            "netliq_chg_20d_bn": quantity.get("netliq_chg_20d_bn"),
+            "netliq_chg_65d_bn": quantity.get("netliq_chg_65d_bn"),
+            "netliq_pctile_expanding": quantity.get("netliq_pctile_expanding"),
+            "overlay": quantity.get("overlay"),
+        },
+        # Quality context
+        "quality": {
+            "label": quality.get("label"),
+            "fed_share": quality.get("fed_share"),
+            "mechanical": quality.get("mechanical"),
+            "stress_confirming": quality.get("stress_confirming"),
+        },
+        # RRP buffer
+        "rrp": {
+            "rrp_bn": rrp.get("rrp_bn"),
+            "rrp_chg_20d_bn": rrp.get("rrp_chg_20d_bn"),
+            "buffer_state": rrp.get("buffer_state"),
+        },
+        # Fed
+        "fed": {
+            "assets_bn": fed.get("assets_bn"),
+            "assets_chg_20d_bn": fed.get("assets_chg_20d_bn"),
+            "policy_stance": fed.get("policy_stance"),
+            "asof": fed.get("asof"),
+        },
+        # Treasury supply context
+        "treasury": {
+            "tga_bn": treasury.get("tga_bn"),
+            "tga_chg_20d_bn": treasury.get("tga_chg_20d_bn"),
+            "net_issuance_20d_bn": treasury.get("net_issuance_20d_bn"),
+            "coupon_supply_pressure": treasury.get("coupon_supply_pressure"),
+        },
+        # Gaps (honest null notes — funding/foreign_$ pending)
+        "gaps": gaps,
+        "degraded": degraded,
+        # Authority block — constants, never raises a score
+        "authority": {
+            "entry_tailwind": authority_raw.get("entry_tailwind", "measured_near_term_only"),
+            "score_raise": False,   # house-law constant — NEVER raise a score
+            "explain": True,
+            "attend": True,
+            "deescalate": True,
+            "hard_gate": False,
+        },
+        "display_only": True,
+        "is_context_only": True,
+    }
+
+
+# ---------------------------------------------------------------------------
 # CN-SYS W7 — read_china_decision_packet tool handler
 # ---------------------------------------------------------------------------
 
@@ -563,6 +754,27 @@ def _tool_read_china_decision_packet(root: Path, _params: dict) -> dict:
     (CN-SYS-R1 / R13 / R14).
     """
     return assemble_china_decision_packet(root=root)
+
+
+# ---------------------------------------------------------------------------
+# Liquidity Plumbing — read_liquidity_plumbing tool handler
+# ---------------------------------------------------------------------------
+
+def _tool_read_liquidity_plumbing(root: Path, _params: dict) -> dict:
+    """Tool handler: assemble and return the liquidity_plumbing decision packet.
+
+    Wraps assemble_liquidity_plumbing_decision_packet() for the ask-brain
+    read-only tool dispatcher.  Params are ignored — the packet is
+    deterministic from committed artifacts; no user-controlled inputs.
+
+    Authority: shadow tier, context/entry-quality only.
+    - score_raise is ALWAYS False (house-law constant).
+    - hard_gate is ALWAYS False.
+    - Entry effect is context/quality context for EXISTING buy setups only;
+      never originates a new signal or rank raise.
+    - Funding/foreign_dollar blocks are null (Phase 1 — not yet integrated).
+    """
+    return assemble_liquidity_plumbing_decision_packet(root=root)
 
 
 # ---------------------------------------------------------------------------
@@ -801,6 +1013,9 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
     elif tool_name == "read_china_decision_packet":
         # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
         return _tool_read_china_decision_packet(root, tool_params)
+    elif tool_name == "read_liquidity_plumbing":
+        # Liquidity plumbing packet (shadow tier, context/entry-quality only)
+        return _tool_read_liquidity_plumbing(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 

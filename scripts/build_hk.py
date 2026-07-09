@@ -976,6 +976,34 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk scoreboard persist failed (%s); skipping", e)
 
+        # HK Command Panel — top-of-page synthesis fusing the 7 Neural Web organs.
+        # DISPLAY-ONLY. Deterministic tally — no LLM score, no buy/sell signal.
+        # Additive; its own try/except resets ONLY vm["command_panel"] (follows the
+        # organ pattern; do NOT repeat the CBBC mis-nesting). Never blocks the build.
+        try:
+            from engine import hk_command_panel as _cp
+            vm["command_panel"] = _cp.compute(
+                freshness=freshness,
+                adr_bridge=vm.get("adr_bridge"),
+                market_drivers=latest.get("market_drivers"),
+                hk_narrative=vm.get("hk_narrative"),
+                internals=vm.get("internals"),
+                breadth=vm.get("breadth"),
+                cbbc_map=vm.get("cbbc_map"),
+                funding=vm.get("funding"),
+                latest=latest,
+                filing_bus=vm.get("filing_bus"),
+                catalyst_strip=vm.get("catalyst_strip"),
+                setups=vm.get("setups"),
+            )
+            log.info("hk command panel: verdict=%s bottom=%d chase=%d",
+                     (vm["command_panel"].get("verdict") or {}).get("label_en", "?"),
+                     (vm["command_panel"].get("verdict") or {}).get("bottom_arming_n", 0),
+                     (vm["command_panel"].get("verdict") or {}).get("chase_risk_n", 0))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk command panel failed (%s); skipping", e)
+            vm["command_panel"] = None
+
         # W6 TRACK-RECORD panel (§7.4) — the program's public-accountability centerpiece.
         # Reads the standout-board forward scorecard and renders the honest 'accruing' state
         # (or graded hit-rates + rank-IC once the min-IC-dates gate clears). View-model only;

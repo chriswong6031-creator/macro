@@ -496,6 +496,48 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     </div>
   </div>
 
+  <!-- 8. LIQUIDITY PLUMBING LOBE -->
+  <div class="panel section-lazy" id="cm_liqplumb_section">
+    <div class="panel-head">
+      <h1>{{ t('Liquidity Plumbing', '流动性管道') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('Quantity and quality of the liquidity backdrop — Fed balance sheet, reverse-repo buffer, and Treasury cash. Context-tier only; authority is de-escalation and attention. It cannot originate a signal or raise any score.',
+      '流动性背景的数量与质量——美联储资产负债表、逆回购缓冲及财政部现金。仅为背景层；权限为降级与关注，不得发起信号或提升任何评分。') }}
+    </div>
+    <div class="cm-loading" id="liqplumb_loading">{{ t('Loading liquidity plumbing…', '加载流动性管道中…') }}</div>
+    <div id="cm_liqplumb_content" style="display:none">
+
+      <!-- Headline state row -->
+      <div id="liqplumb_headline" style="margin-bottom:14px"></div>
+
+      <!-- Quantity / Quality / RRP / TGA mini-grid -->
+      <div id="liqplumb_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:14px"></div>
+
+      <!-- Pending note (Phase 3/5) -->
+      <div style="font-size:11.5px;color:var(--muted);background:color-mix(in srgb,var(--warn) 8%,var(--panel2));
+                  border-left:3px solid color-mix(in srgb,var(--warn) 35%,transparent);
+                  border-radius:2px 8px 8px 2px;padding:7px 11px;line-height:1.55;">
+        <span class="l-en"><strong>Pending (Phase 3/5):</strong> funding-scarcity spreads (EFFR−IORB, SOFR−IORB, SRF/discount-window) and foreign-dollar integration (H.4.1 swap lines, FIMA repo) are not yet collected — those blocks are null and will be added in later phases.</span>
+        <span class="l-zh"><strong>待接入（第 3/5 阶段）：</strong>融资稀缺利差（EFFR−IORB、SOFR−IORB、SRF/贴现窗口）及外元整合（H.4.1 互换额度、FIMA 回购）尚未采集——相关块为空，将在后续阶段补充。</span>
+      </div>
+
+      <!-- Gaps list (shown only if non-empty) -->
+      <div id="liqplumb_gaps" style="display:none;margin-top:10px;font-size:11px;color:var(--muted)"></div>
+
+      <!-- asof footer -->
+      <div id="liqplumb_asof" style="margin-top:10px;font-size:11px;color:var(--muted)"></div>
+    </div>
+    <div id="liqplumb_absent" style="display:none">
+      <p class="cm-empty">
+        <span class="l-en">Liquidity plumbing data not yet available — accruing from the next nightly build.</span>
+        <span class="l-zh">流动性管道数据尚未生成，将于下次每日构建后可用。</span>
+      </p>
+    </div>
+  </div>
+
 </div><!-- #cm_content -->
 
 <script src="supabase.js"></script>
@@ -573,6 +615,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     loadMechanismPathways();
     loadMemo();
     loadKernelFamilies();
+    loadLiquidityPlumbing();
     setupQuickTries();
   }
 
@@ -3349,6 +3392,201 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         + '</div>';
     });
     grid.innerHTML = html || '<p class="cm-empty">No kernel data.</p>';
+  }
+
+  // ── Liquidity Plumbing lobe card ──────────────────────────────────────────
+  // Reads neuralwebdata/liquidity_plumbing.json (produced by build_liquidity_plumbing.py,
+  // schema neuralweb.liquidity_plumbing.v1). Fails open: absent artifact → "not yet
+  // available" notice. Authority: DE-ESCALATION ONLY; no score raise.
+  function loadLiquidityPlumbing() {
+    var loadEl    = document.getElementById('liqplumb_loading');
+    var contentEl = document.getElementById('cm_liqplumb_content');
+    var absentEl  = document.getElementById('liqplumb_absent');
+    if (!loadEl) return;
+    loadEl.style.display = 'block';
+
+    fetch('neuralwebdata/liquidity_plumbing.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        loadEl.style.display = 'none';
+        renderLiquidityPlumbing(d);
+        contentEl.style.display = '';
+      })
+      .catch(function () {
+        loadEl.style.display = 'none';
+        absentEl.style.display = '';
+      });
+  }
+
+  function renderLiquidityPlumbing(d) {
+    var escT = function (s) {
+      return String(s == null ? '—' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    };
+    var fmt1 = function (v) { return v == null ? '—' : (v >= 0 ? '+' : '') + v.toFixed(0) + ' bn'; };
+    var fmtBn = function (v) { return v == null ? '—' : '$' + Number(v).toFixed(0) + 'bn'; };
+    var fmtPct = function (v) { return v == null ? '—' : (v * 100).toFixed(0) + 'p'; };
+
+    // ── State-label → human-readable (EN/ZH) ─────────────────────────────────
+    var STATE_EN = {
+      'benign_liquidity_tailwind':    'Benign Tailwind',
+      'mechanical_liquidity_tailwind':'Mechanical Tailwind',
+      'stress_liquidity_expansion':   'Stress Expansion',
+      'neutral_with_buffer':          'Neutral — Buffer Intact',
+      'neutral_hollow':               'Neutral — Hollow',
+      'orderly_drain':                'Orderly Drain',
+      'data_degraded':                'Data Degraded'
+    };
+    var STATE_ZH = {
+      'benign_liquidity_tailwind':    '良性顺风',
+      'mechanical_liquidity_tailwind':'机械性顺风',
+      'stress_liquidity_expansion':   '压力扩张',
+      'neutral_with_buffer':          '中性 — 缓冲充足',
+      'neutral_hollow':               '中性 — 缓冲耗尽',
+      'orderly_drain':                '有序收缩',
+      'data_degraded':                '数据降级'
+    };
+    // State → CSS color variable name
+    var STATE_COLOR = {
+      'benign_liquidity_tailwind':    'var(--up)',
+      'mechanical_liquidity_tailwind':'var(--warn)',
+      'stress_liquidity_expansion':   'var(--warn)',
+      'neutral_with_buffer':          'var(--muted)',
+      'neutral_hollow':               'var(--muted)',
+      'orderly_drain':                'var(--down)',
+      'data_degraded':                'var(--muted)'
+    };
+
+    var hl = d.headline || {};
+    var state     = hl.state || 'data_degraded';
+    var summary   = hl.summary || '';
+    var stateEnLabel = STATE_EN[state] || escT(state);
+    var stateZhLabel = STATE_ZH[state] || escT(state);
+    var stateColor   = STATE_COLOR[state] || 'var(--muted)';
+
+    // Headline row
+    var headEl = document.getElementById('liqplumb_headline');
+    if (headEl) {
+      headEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">'
+        + '<span style="font-size:16px;font-weight:800;color:' + stateColor + '">'
+        + '<span class="l-en">' + escT(stateEnLabel) + '</span>'
+        + '<span class="l-zh">' + escT(stateZhLabel) + '</span>'
+        + '</span>'
+        + (d.degraded ? '<span style="font-size:11px;font-weight:700;color:var(--warn);padding:2px 8px;border-radius:5px;background:color-mix(in srgb,var(--warn) 12%,var(--panel2))">'
+            + '<span class="l-en">DEGRADED</span><span class="l-zh">数据降级</span></span>' : '')
+        + '</div>'
+        + (summary ? '<div style="font-size:13px;color:var(--muted);line-height:1.55">' + escT(summary) + '</div>' : '');
+    }
+
+    // Quantity / Quality / RRP / TGA mini-grid
+    var qty = d.quantity || {};
+    var ql  = d.quality  || {};
+    var rrp = d.rrp      || {};
+    var trs = d.treasury || {};
+
+    // Entry effect context (cycle_ladder basis — display only, no score raise)
+    var eff = d.entry_effect || {};
+    var effDir   = eff.direction || 'unknown';
+    var effQual  = eff.quality   || 'unknown';
+    var effBasis = eff.measured_basis || '';
+
+    var EFF_DIR_EN  = { tailwind:'Tailwind', headwind:'Headwind', neutral:'Neutral', unknown:'Unknown' };
+    var EFF_DIR_ZH  = { tailwind:'顺风', headwind:'逆风', neutral:'中性', unknown:'未知' };
+    var EFF_DIR_COL = { tailwind:'var(--up)', headwind:'var(--down)', neutral:'var(--muted)', unknown:'var(--muted)' };
+
+    var RRP_BUF_EN  = { abundant:'Abundant', adequate:'Adequate', exhausted:'Exhausted', unknown:'Unknown' };
+    var RRP_BUF_ZH  = { abundant:'充裕', adequate:'充分', exhausted:'耗尽', unknown:'未知' };
+    var RRP_BUF_COL = { abundant:'var(--up)', adequate:'var(--up)', exhausted:'var(--down)', unknown:'var(--muted)' };
+
+    var cards = [
+      {
+        fieldEn: 'Net Liquidity', fieldZh: '净流动性',
+        valEn:   fmtBn(qty.netliq_bn),
+        subEn:   '20d: ' + fmt1(qty.netliq_chg_20d_bn),
+        color:   qty.netliq_chg_20d_bn == null ? 'var(--muted)' :
+                   (qty.netliq_chg_20d_bn >= 0 ? 'var(--up)' : 'var(--down)')
+      },
+      {
+        fieldEn: 'Quality', fieldZh: '质量',
+        valEn:   escT(ql.label || '—'),
+        subEn:   (ql.mechanical != null ? (ql.mechanical ? 'mechanical' : 'organic') : '—')
+               + (ql.fed_share != null ? ' · fed share ' + (ql.fed_share * 100).toFixed(0) + '%' : ''),
+        color:   'var(--muted)'
+      },
+      {
+        fieldEn: 'RRP Buffer', fieldZh: '逆回购缓冲',
+        valEn:   '<span class="l-en">' + escT(RRP_BUF_EN[rrp.buffer_state] || '—') + '</span>'
+               + '<span class="l-zh">' + escT(RRP_BUF_ZH[rrp.buffer_state] || '—') + '</span>',
+        subEn:   fmtBn(rrp.rrp_bn) + (rrp.rrp_chg_20d_bn != null ? ' · 20d: ' + fmt1(rrp.rrp_chg_20d_bn) : ''),
+        color:   RRP_BUF_COL[rrp.buffer_state] || 'var(--muted)',
+        rawHtml: true
+      },
+      {
+        fieldEn: 'TGA', fieldZh: '财政部账户',
+        valEn:   fmtBn(trs.tga_bn),
+        subEn:   '20d: ' + fmt1(trs.tga_chg_20d_bn),
+        color:   trs.tga_chg_20d_bn == null ? 'var(--muted)' :
+                   (trs.tga_chg_20d_bn < 0 ? 'var(--up)' : 'var(--down)')
+      },
+      {
+        fieldEn: 'Entry Effect', fieldZh: '入场效应',
+        valEn:   '<span class="l-en">' + escT(EFF_DIR_EN[effDir] || effDir) + '</span>'
+               + '<span class="l-zh">' + escT(EFF_DIR_ZH[effDir] || effDir) + '</span>',
+        subEn:   escT(effQual) + (effBasis ? ' · ' + escT(effBasis) : ''),
+        color:   EFF_DIR_COL[effDir] || 'var(--muted)',
+        rawHtml: true,
+        note:    true   // carries the "cycle_ladder only, context" caveat
+      }
+    ];
+
+    var gridEl = document.getElementById('liqplumb_grid');
+    if (gridEl) {
+      var html = '';
+      cards.forEach(function (c) {
+        html += '<div class="kf-card">'
+          + '<div class="kf-name" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:5px">'
+          + '<span class="l-en">' + c.fieldEn + '</span>'
+          + '<span class="l-zh">' + (c.fieldZh || c.fieldEn) + '</span>'
+          + '</div>'
+          + '<div style="font-size:18px;font-weight:800;color:' + c.color + ';line-height:1.1">'
+          + (c.rawHtml ? c.valEn : escT(c.valEn))
+          + '</div>'
+          + '<div style="font-size:11px;color:var(--muted);margin-top:3px">' + escT(c.subEn) + '</div>'
+          + (c.note ? '<div style="font-size:10px;color:var(--muted);opacity:.75;margin-top:3px">'
+              + '<span class="l-en">cycle-ladder 21d basis only; context, no score raise</span>'
+              + '<span class="l-zh">仅基于周期阶梯21日；背景参考，不提升评分</span>'
+              + '</div>' : '')
+          + '</div>';
+      });
+      gridEl.innerHTML = html;
+    }
+
+    // Gaps list
+    var gaps = Array.isArray(d.gaps) ? d.gaps : [];
+    var gapsEl = document.getElementById('liqplumb_gaps');
+    if (gapsEl) {
+      if (gaps.length) {
+        gapsEl.innerHTML = '<span class="l-en"><strong>Data gaps:</strong> ' + escT(gaps.join(' · ')) + '</span>'
+          + '<span class="l-zh"><strong>数据缺口：</strong>' + escT(gaps.join(' · ')) + '</span>';
+        gapsEl.style.display = '';
+      } else {
+        gapsEl.style.display = 'none';
+      }
+    }
+
+    // asof
+    var asofEl = document.getElementById('liqplumb_asof');
+    if (asofEl) {
+      var asofVal = d.asof || (d.fed && d.fed.asof) || null;
+      asofEl.innerHTML = asofVal
+        ? '<span class="l-en">As of ' + escT(asofVal) + ' · display-only context · authority: de-escalation only</span>'
+          + '<span class="l-zh">截至 ' + escT(asofVal) + ' · 仅供展示 · 权限：仅可降级</span>'
+        : '<span class="l-en">As of date unavailable</span><span class="l-zh">截至日期不可用</span>';
+    }
   }
 
 })();

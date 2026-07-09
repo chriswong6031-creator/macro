@@ -1,0 +1,186 @@
+# CPI Relative Importance Weights — December 2025 basis (in effect Jan–Dec 2026)
+#
+# Source: https://www.bls.gov/cpi/tables/relative-importance/2025.htm
+# Table 1 (2024 Weights): Relative importance of components in the Consumer Price Indexes
+# U.S. city average, December 2025. CPI-U (All Urban Consumers).
+# Basis: 2024 expenditure weights; in effect for the January–December 2026 CPI.
+#
+# Fetch method: keyless HTTP GET with User-Agent 'BLS-DataFetch/1.0 (research)'
+#   (standard python-requests UA returns 403; custom descriptive UA returns 200)
+# Fetch status: SUCCESS (fetched 2026-07-08)
+# Source annotation: fetched from BLS official table; values transcribed verbatim.
+# All-items denominator: 100.000
+
+meta:
+  weight_year_effective: 2026
+  basis: "December 2025 relative importance (2024 expenditure weights)"
+  source_url: "https://www.bls.gov/cpi/tables/relative-importance/2025.htm"
+  last_updated: "2026-07-08"
+  index: "CPI-U (All Urban Consumers), U.S. city average"
+  fetch_method: "HTTP GET with User-Agent 'BLS-DataFetch/1.0 (research)'"
+  fetch_status: "success"
+  all_items_denominator: 100.000
+  note: >
+    Weights are frozen for Jan–Dec 2026. Refresh each January using collectors/bls_cpi_weights.py.
+    PIT-rule: treat as revision_optimistic for the weight leg (not ALFRED-vintaged).
+
+# ============================================================
+# TOP-LEVEL CATEGORIES
+# ============================================================
+
+all_items: 100.000
+food_and_beverages: 14.539
+food: 13.698
+food_at_home: 8.325
+food_away_from_home: 5.373
+alcoholic_beverages: 0.840
+housing: 44.469
+shelter: 35.625
+rent_of_primary_residence: 7.840
+owners_equivalent_rent: 26.204
+lodging_away_from_home: 1.289
+fuels_and_utilities: 5.465
+household_energy: 3.974
+electricity: 2.375
+utility_gas_service: 1.003
+fuel_oil_and_other_fuels: 0.234
+water_sewer_trash: 1.049
+household_furnishings_and_operations: 3.378
+apparel: 2.368
+transportation: 16.316
+private_transportation: 14.832
+new_used_motor_vehicles: 7.204
+new_vehicles: 3.838
+used_cars_and_trucks: 2.759
+motor_fuel: 2.981
+gasoline_all_types: 2.895
+motor_vehicle_insurance: 2.754
+public_transportation: 1.485
+airline_fares: 0.881
+medical_care: 8.423
+medical_care_commodities: 1.489
+medical_care_services: 6.935
+recreation: 5.137
+education_and_communication: 5.846
+other_goods_and_services: 2.902
+
+# ============================================================
+# SPECIAL AGGREGATE INDEXES (from BLS table)
+# ============================================================
+
+commodities: 35.994
+commodities_less_food_and_beverages: 21.456
+commodities_less_food_and_energy: 19.176
+durables: 10.831
+nondurables: 25.163
+services: 64.006
+rent_of_shelter: 35.333
+transportation_services: 6.315
+other_services: 9.845
+energy: 6.383
+energy_commodities: 3.120
+all_items_less_food: 86.302
+all_items_less_shelter: 64.375
+all_items_less_food_and_energy: 79.919
+
+# ============================================================
+# BRIDGE BLOCK WEIGHTS (as used in engine/release_cpi_bridge.py)
+# Key = block name, value = RI weight used in bridge calculation
+# ============================================================
+
+bridge_blocks:
+
+  # Block 1: Energy — gasoline + electricity
+  energy:
+    total_weight: 6.383
+    gasoline_weight: 2.895
+    electricity_weight: 2.375
+    other_energy_weight: 1.113  # motor fuel ex-gasoline + household energy ex-electricity
+    note: >
+      Gasoline from GASREGW (reference-month avg); electricity from APU000072610.
+      Other energy (fuel oil, gas service, other motor fuel) = prior_only at the block level.
+      Bridge uses gasoline + electricity as modelled sub-blocks; weights from BLS table.
+
+  # Block 2: Shelter (OER + rent of primary + lodging)
+  shelter:
+    total_weight: 35.625
+    rent_of_primary_residence: 7.840
+    owners_equivalent_rent: 26.204
+    lodging_away_from_home: 1.289
+    note: >
+      Full shelter basket (35.625) used for nowcast contribution.
+      Lodging-away-from-home is prior_only in practice (no free proxy) but weight is
+      included in shelter_total since shelter_nowcast covers the OER+rent core.
+      The bridge applies shelter_nowcast to the total shelter weight for simplicity;
+      gap noted in provenance.
+
+  # Block 3: Food at Home
+  food_at_home:
+    total_weight: 8.325
+    note: >
+      PPI WPU01 (farm products) as directional signal; CUSR0000SAF11 for prior MoM.
+      revision_optimistic for both sources.
+
+  # Block 4: Core Goods (commodities less food and energy)
+  core_goods:
+    total_weight: 19.176
+    note: >
+      PPIFIS + PPIFES pipeline momentum. ALFRED-vintaged (PIT-safe).
+      Covers: new vehicles, used vehicles, apparel, medical commodities, other core goods.
+
+  # Block 5: Core Services ex-Shelter
+  core_services_ex_shelter:
+    total_weight: 44.294  # all_items_less_food_and_energy - shelter = 79.919 - 35.625
+    note: >
+      Approximated as all-items-less-food-and-energy minus shelter.
+      CUSR0000SASLE persistence. revision_optimistic.
+      WARNING: this weight overlaps with core_goods (19.176). The sum of all five
+      modelled block weights EXCEEDS 100 due to this overlap. The bridge applies
+      a scale factor so that modelled contributions are capped at the modelled
+      basket share. See engine/release_cpi_bridge.py for reconciliation logic.
+
+  # Prior-only blocks (confidence = 0.0)
+  food_away_from_home:
+    total_weight: 5.373
+    prior_only: true
+  alcoholic_beverages:
+    total_weight: 0.840
+    prior_only: true
+  new_vehicles:
+    total_weight: 3.838
+    prior_only: true
+    note: "Manheim auction data is paid; no free PIT proxy"
+  used_vehicles:
+    total_weight: 2.759
+    prior_only: true
+    note: "Manheim auction data is paid; no free PIT proxy"
+  airline_fares:
+    total_weight: 0.881
+    prior_only: true
+    note: "No free real-time booking data"
+  lodging_away_from_home_standalone:
+    total_weight: 1.289
+    prior_only: true
+    note: "STR data is paid; no free PIT proxy"
+  medical_care:
+    total_weight: 8.423
+    prior_only: true
+    note: "No free monthly high-frequency proxy"
+  apparel:
+    total_weight: 2.368
+    prior_only: true
+  recreation:
+    total_weight: 5.137
+    prior_only: true
+  education_and_communication:
+    total_weight: 5.846
+    prior_only: true
+  other_goods_and_services:
+    total_weight: 2.902
+    prior_only: true
+  motor_vehicle_insurance:
+    total_weight: 2.754
+    prior_only: true
+  other_transportation:
+    total_weight: 0.749  # public_transportation ex-airline = 1.485 - 0.881 + private ex-vehicles
+    prior_only: true

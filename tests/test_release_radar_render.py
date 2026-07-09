@@ -325,17 +325,27 @@ def test_v2_revision_risk_line_function_defined():
 
 # ---- All helpers are called from renderCard ----
 
-def test_v2_all_helpers_wired_into_rendercard():
-    """All 6 v2 helpers are called inside renderCard."""
+def test_v2_all_helpers_wired_into_rendermodal():
+    """MRI-R24: All 6 v2 helpers are called inside renderModal (detail modal); renderCard is compact.
+
+    The MRI-R24 redesign moves detail helpers out of renderCard and into renderModal.
+    renderCard shows only: name+countdown, projection point, 2 chips, confidence.
+    """
     src = _rr_section_src()
-    # Find renderCard function body (from its definition to the next top-level function)
+    # renderModal contains all detail helpers
+    rm_start = src.find("function renderModal(")
+    rm_end = src.find("\n    /* ---- modal open", rm_start) if rm_start >= 0 else -1
+    assert rm_start >= 0, "renderModal not found (MRI-R24 required)"
+    modal_body = src[rm_start:rm_end] if rm_end > rm_start else src[rm_start:rm_start + 10000]
+    for fn in ("componentsBar(", "confidenceBar(", "marketImpliedRow(", "surpriseDistGauge(", "reactionSensRow(", "revisionRiskLine("):
+        assert fn in modal_body, f"{fn} not called inside renderModal"
+    # renderCard must NOT call the heavy detail helpers (it is compact)
     rc_start = src.find("function renderCard(")
-    # Next top-level function after renderCard
-    rc_end = src.find("\n    /* main render */", rc_start) if rc_start >= 0 else -1
+    rc_end = src.find("function renderModal(", rc_start) if rc_start >= 0 else -1
     assert rc_start >= 0, "renderCard not found"
     card_body = src[rc_start:rc_end] if rc_end > rc_start else src[rc_start:rc_start + 5000]
-    for fn in ("componentsBar(", "confidenceBar(", "marketImpliedRow(", "surpriseDistGauge(", "reactionSensRow(", "revisionRiskLine("):
-        assert fn in card_body, f"{fn} not called inside renderCard"
+    for fn in ("componentsBar(", "confidenceBar(", "surpriseDistGauge(", "reactionSensRow(", "revisionRiskLine("):
+        assert fn not in card_body, f"{fn} must not appear in compact renderCard (moved to renderModal in MRI-R24)"
 
 
 # ---- Fail-open: null fields produce no output ----
@@ -472,24 +482,26 @@ def test_v2_residual_bar_labeled_plug_residual():
     assert "残差" in src, "ZH '残差' annotation missing from componentsBar"
 
 
-def test_v2_benchmark_only_card_suppresses_v2_helpers():
-    """In benchmark_only mode, v2 component/confidence/sensitivity helpers are suppressed."""
+def test_v2_benchmark_only_suppressed_in_rendermodal():
+    """MRI-R24: In benchmark_only mode, v2 component/confidence/sensitivity helpers are suppressed in renderModal."""
     src = _rr_section_src()
-    # Find the renderCard body
-    rc_start = src.find("function renderCard(")
-    rc_end = src.find("\n    /* main render */", rc_start) if rc_start >= 0 else -1
-    card_body = src[rc_start:rc_end] if rc_end > rc_start else src[rc_start:rc_start + 5000]
-    # All 5 non-market-implied helpers must be gated with !isBenchmarkOnly
+    # Find the renderModal body
+    rm_start = src.find("function renderModal(")
+    rm_end = src.find("\n    /* ---- modal open", rm_start) if rm_start >= 0 else -1
+    assert rm_start >= 0, "renderModal not found"
+    modal_body = src[rm_start:rm_end] if rm_end > rm_start else src[rm_start:rm_start + 10000]
+    # All 5 non-market-implied helpers must be gated with !isBenchmarkOnly check.
+    # Search for the nearest preceding 'if (' statement which should contain the guard.
     for call in ("componentsBar(", "confidenceBar(", "surpriseDistGauge(", "reactionSensRow(", "revisionRiskLine("):
-        # Find the line that calls this function
-        call_idx = card_body.find(call)
+        call_idx = modal_body.find(call)
         if call_idx < 0:
-            pytest.fail(f"{call} not found in renderCard body")
-        # The expression containing it should include isBenchmarkOnly guard
-        # Check the surrounding line (go back ~80 chars for the ternary prefix)
-        snippet = card_body[max(0, call_idx - 80):call_idx + len(call)]
+            pytest.fail(f"{call} not found in renderModal body")
+        # Walk back to the nearest 'if (' — the guard can be up to ~600 chars away
+        if_idx = modal_body.rfind("if (", 0, call_idx)
+        snippet = modal_body[if_idx:call_idx + len(call)] if if_idx >= 0 else modal_body[max(0, call_idx - 600):call_idx + len(call)]
         assert "isBenchmarkOnly" in snippet, (
-            f"{call} is not gated by isBenchmarkOnly in renderCard: {snippet!r}"
+            f"{call} is not gated by isBenchmarkOnly in renderModal — "
+            f"nearest if: {snippet[:120]!r}"
         )
 
 
