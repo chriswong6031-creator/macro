@@ -3881,6 +3881,13 @@
     <h2>{{ t('What to act on now', '当前可操作') }}
       {{ help('One row per GICS sector. 🏛 = the cap-weighted price-cycle timing read (descriptive structure — measured per-state stats show no state→return ordering; the drawdown path and context are the honest content). 🧩 chip = the equal-weight basket read when it disagrees with the cap-weighted cycle — different instrument: breadth vs mega-cap; both shown because they measure different things. The reduce side (trim/avoid, ✓) rides the backtested trend/deterioration drawdown-control gate — the one measured edge on this board, a risk timer not a return forecast. When that gate fires it outranks the cycle read — an extended (no-chase) sector is pulled into the reduce side rather than left on the run, so the ON THE RUN lane can be legitimately empty. ON THE RUN = in favour / extended but no clean entry — do not chase; add on pullback; hold if already long. Narrative baskets (Memory & Storage, Payments, …) are the finer-resolution rows — they carry the actual trade idea behind a blurry GICS label. ★ = in the narrative-rotation model book. Click any name for the full breakdown.', '每行对应一个 GICS 板块。🏛 = 市值加权价格周期判读（描述性结构 — 各状态的实测统计显示无状态→收益排序关系；回撤路径与情境是诚实的内容）。🧩 标签 = 等权篮子判读与市值加权周期不一致时显示 — 不同工具：广度 vs 龙头股；两者同时显示因为它们衡量不同的东西。减仓侧（止盈／回避，✓）依托经回测的趋势／恶化回撤控制门槛 — 这是本板块唯一经实测的优势，是风险计时器而非收益预测。该门槛触发时优先于周期判读——已延伸（勿追高）的板块会被移入减仓侧而非留在顺势运行栏，因此顺势运行栏可能为空，属正常现象。顺势运行 = 看好但无干净入场 — 勿追高；等回调加仓；已持有则持有。叙事篮子（内存与存储、支付等）是更精细分辨率的行 — 携带 GICS 模糊标签背后的真实交易逻辑。★ = 在叙事轮动模型组合中。点击任意名称查看完整拆解。') }}
     </h2>
+    {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
+       no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
+    {% if shock_state is defined and shock_state and shock_state.get('active') %}
+    <div style="margin:6px 0 10px;padding:8px 12px;border-radius:8px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));font-size:13px;font-weight:600">
+      ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
+    </div>
+    {% endif %}
     {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
        lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
        and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the

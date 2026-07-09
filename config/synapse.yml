@@ -8350,8 +8350,9 @@ artifacts:
       event_date (keep-first). T+1 attribution included: spread_persistence,
       leadership_continuity, absorption_delta, verdict (CONFIRMED|FADED|MIXED).
       DISPLAY-ONLY: descriptive vocabulary, never recommended. qledger family
-      flip_confirmation.v1 registers parallel claims with SNAPSHOT_DATE embargo
-      (display-only accrual). Nightly is the sole writer.
+      flip_confirmation.v1 registers one CRAWL_BOUNDED (gradeable) claim per
+      CONFIRMED/FADED event at horizon_d=21 on the XLP-vs-XLK proxy (MIXED
+      abstains); chassis grades 5d+21d. Nightly is the sole writer.
 
   flip-confirmation-snapshot:
     path: site/flip_confirmation_data.json
@@ -8376,3 +8377,58 @@ artifacts:
       on the macro.html market-state surface. Contains last_event, base_rates
       (confirmed/faded/mixed counts since 2024), and the full descriptive_scan list.
       Read by _flip_confirmation_view() in build_site.py. DISPLAY-ONLY.
+
+  # --- policy-shock W2-E (PR-6 / D3) ---
+  shock-deescalation-firings:
+    path: data/reflexes/shock_deescalation/firings.jsonl
+    format: jsonl
+    producer: engine/shock_deescalation.py
+    known_extra_writers: []
+    owner_program: policy-shock
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/shock_deescalation.py
+    notes: >
+      Policy-shock W2-E firings ledger. Single-writer: only
+      engine/shock_deescalation.py:build_nightly() appends rows (keep-first per
+      date). Intraday path reads this file but NEVER writes it (PS-R7). Shadow
+      tier, direction=0 (de-escalation only — PS-R3). Graded for operational
+      quality; PS-R8: no directional gauntlet before n>=8 episodes.
+      Would-have-fired backscan: 2026-06-25 + 2026-07-07 (descriptive only;
+      ledger starts empty at ship date). Created lazily on first nightly firing.
+
+  shock-deescalation-state:
+    path: site/live/shock_state.json
+    format: json
+    producer: engine/shock_deescalation.py
+    known_extra_writers:
+      - "scripts/build_risk_state.py — intraday fast-path calls build_intraday() site/ only"
+    owner_program: policy-shock
+    cadence: daily-engine
+    storage: git
+    asof_field: since
+    freshness_sla_hours: 30
+    schema: shock_deescalation.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/subsector_rotation.html.j2
+      - templates/sector.html.j2
+      - templates/dashboard.html.j2
+    notes: >
+      Cross-cutting shock de-escalation flag. Schema: {active, score, since,
+      expires, reason, reason_zh, trigger_reason, primary_driver, note, note_zh,
+      schema, would_have_fired}. PS-R3: consumers display only — no direction,
+      no reordering, no sizing. Written nightly by build_nightly() and intraday
+      by build_intraday() (PS-R7: intraday writes site/ only). Staged by the
+      daily.yml engine job commit and the intraday-fastpath.yml commit step.

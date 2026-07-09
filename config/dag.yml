@@ -98,6 +98,14 @@ lanes:
         note: non-fatal
       - id: engine_run
         module: engine.run
+      - id: build_shock_deescalation
+        module: engine.shock_deescalation
+        note: >
+          Policy-shock W2-E de-escalation protocol (PS-R7/PS-R9) — runs after engine.run
+          so market_drivers.append_log has already advanced the coherence columns in
+          data/regime/market_drivers_log.parquet. Writes data/reflexes/shock_deescalation/
+          firings.jsonl (keep-first per date) + site/live/shock_state.json. Non-fatal:
+          any error degrades to active=False without breaking the build.
       - id: build_spvector
         module: scripts.build_spvector
       - id: factor_ic_scorecard
