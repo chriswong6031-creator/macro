@@ -320,42 +320,6 @@
   .mtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .mtf-card .mtf-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; color: var(--text); }
 
-  /* ---- Regime Time Machine (ported from the macro dashboard) ---------------- */
-  #time-machine .tm-wrap { position: relative; margin: 4px 0 2px; }
-  .tm-canvas { display: block; width: 100%; height: 56px; cursor: ew-resize; border-radius: 8px; touch-action: none; }
-  .tm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: transparent; margin: 2px 0 0; cursor: ew-resize; }
-  .tm-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line); }
-  .tm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); box-shadow: 0 1px 4px rgba(0,0,0,.35); }
-  .tm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); }
-  .tm-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 8px 0 12px; }
-  .tm-presets { display: inline-flex; flex-wrap: wrap; gap: 6px; }
-  .tm-btn { font: inherit; font-size: 12px; font-weight: 600; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 11px; cursor: pointer; }
-  .tm-btn:hover { border-color: var(--link); }
-  .tm-play { display: inline-flex; align-items: center; gap: 7px; }
-  .tm-play-ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent var(--text); }
-  .tm-play.is-playing .tm-play-ico { width: 9px; height: 11px; border: none; border-left: 3px solid var(--text); border-right: 3px solid var(--text); }
-  .tm-readout { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
-  .tm-asof { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
-  .tm-date { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .tm-state-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 10px; }
-  .tm-state-tag.is-live { color: color-mix(in srgb, var(--up) 85%, var(--text)); background: color-mix(in srgb, var(--up) 16%, var(--panel)); }
-  .tm-state-tag.is-hist { color: var(--muted); background: color-mix(in srgb, var(--muted) 16%, var(--panel)); }
-  .tm-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-  .tm-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 12px 0 4px; }
-  @media (max-width: 640px) { .tm-gauges { grid-template-columns: 1fr; } }
-  .tm-glabel { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
-  .tm-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .tm-flag { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: color-mix(in srgb, var(--c) 16%, var(--panel)); color: color-mix(in srgb, var(--c) 82%, var(--text)); }
-  .tm-nowarn { font-size: 12px; color: var(--muted); }
-  /* shared badge / kv / gauge primitives the time-machine readout needs */
-  .badge { display: inline-block; padding: 3px 11px; border-radius: 11px; font-weight: 700; font-size: 12.5px; }
-  .badge.quad-Q1 { background: var(--q1); color: #fff; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
-  .badge.quad-Q3 { background: var(--q3); color: #fff; } .badge.quad-Q4 { background: var(--q4); color: #fff; }
-  .badge.state-STABLE { background: color-mix(in srgb, var(--muted) 16%, var(--panel)); color: color-mix(in srgb, var(--muted) 82%, var(--text)); }
-  .kv { font-size: 12.5px; color: var(--muted); } .kv b { color: var(--text); font-variant-numeric: tabular-nums; }
-  .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
-  .gauge i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); transform: translate(-50%,-50%); }
-
   /* ---- gauges / dials / tiles for the new internals panels ------------------ */
   .dial { position: relative; height: 9px; border-radius: 5px; margin: 6px 0 3px;
           background: linear-gradient(90deg, var(--up), var(--warn) 55%, var(--down)); }
@@ -1057,52 +1021,6 @@
   </div>
   {% endif %}
 
-  <!-- ===================== REGIME TIME MACHINE ===================== -->
-  {% if lifespan_rows %}
-  <div class="panel span12" id="time-machine" data-timeline="china_regime_timeline.json">
-    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
-      {{ help("Drag the playhead across ~20 years of A-share history and the readout rewinds the regime CORE to that day — quadrant, growth/inflation scores, agreement, PBoC liquidity and the business cycle. China’s engine doesn’t track transition/warning flags, so those stay blank. Hit ▶ to watch the quad ribbon flip at every major turn — 2008, the 2015 bubble, 2018, 2020.", "拖动播放头横扫约 20 年 A 股历史，下方读数会把周期核心回退到那一天 — 象限、增长／通胀分数、一致度、央行流动性与商业周期。中国引擎不追踪转换／预警旗，故此处留空。点击 ▶ 观看周期色带在每个重大转折处翻转 — 2008、2015 泡沫、2018、2020。") }}
-    </h2>
-    <div class="tm-wrap">
-      <canvas id="tm-canvas" class="tm-canvas"></canvas>
-      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0" aria-label="Scrub regime history">
-    </div>
-    <div class="tm-controls">
-      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause" title="Play / pause"><span class="tm-play-ico"></span></button>
-      <span class="tm-presets">
-        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
-        <button class="tm-btn" data-tm-jump="2015-06-12">{{ t('2015 bubble', '2015 泡沫') }}</button>
-        <button class="tm-btn" data-tm-jump="2018-12-28">{{ t('2018 bear', '2018 熊市') }}</button>
-        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
-      </span>
-    </div>
-    <div class="tm-readout">
-      <div class="tm-asof">
-        <span class="tm-date" id="tm-date">—</span>
-        <span class="tm-state-tag is-live" id="tm-tag">—</span>
-      </div>
-      <div class="tm-badges">
-        <span class="badge" id="tm-quad">—</span>
-        <span class="badge" id="tm-trans">—</span>
-        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
-        <span class="kv">{{ t('cycle', '商业周期') }} <b id="tm-cyc">—</b></span>
-        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
-      </div>
-      <div class="tm-gauges">
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="sub" id="tm-g-v">—</span></div>
-          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
-        </div>
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="sub" id="tm-i-v">—</span></div>
-          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
-        </div>
-      </div>
-      <div class="tm-flags" id="tm-flags"></div>
-    </div>
-  </div>
-  {% endif %}
-
   <!-- ===================== CHINA MACRO CALENDAR (display-only, no news API) ===================== -->
   {% if event_strip or calendar %}
   <div class="panel span12" id="china-calendar">
@@ -1173,12 +1091,14 @@
     {% endif %}
     <div class="section-title">{{ t('China news intelligence', '中国新闻情报流') }}{% if CN.news and CN.news.n_raw %} <span class="muted">({{ CN.news.n_kept }}/{{ CN.news.n_raw }} · {{ CN.news.n_official or 0 }} official · {{ CN.news.n_news_rss or 0 }} RSS · {{ CN.news.n_wire or 0 }} GDELT · {{ CN.news.n_high_impact or 0 }} high)</span>{% endif %}{% if CNS.dominant_channel %} <span class="muted">· {{ CNS.dominant_channel }}</span>{% endif %} <span class="muted" style="text-transform:none">· <a href="china_news.html">{{ t('open full feed →', '打开完整新闻流 →') }}</a></span></div>
     {% if CN.news and CN.news.headlines %}
+      <div data-showmore="5">
       {% for h in CN.news.headlines %}
       {% set tl = CN.theme_label.get(h.theme, [h.theme, h.theme]) %}
       {% if h.url %}<a class="cn-item" href="{{ h.url }}" target="_blank" rel="noopener">{% else %}<span class="cn-item">{% endif %}<span class="cn-theme">{{ t(tl[0], tl[1]) }}</span><span class="cn-title"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>{% if h.time %}<span class="cn-when">{{ h.time }}</span>{% endif %}
         <span class="cn-intel"><span class="cn-pill cn-imp-{{ h.importance }}"><b>{{ h.importance_score }}</b>/100 · {{ h.importance }}</span>{% if h.source_name %}<span class="cn-pill">{{ h.source_name }}{% if h.source_tier %} · {{ h.source_tier }}{% endif %}</span>{% endif %}{% for c in h.channels[:4] %}<span class="cn-pill">{{ c }}</span>{% endfor %}{% for tk in h.tickers[:5] %}<span class="cn-pill cn-tk">{{ tk }}</span>{% endfor %}</span>
       {% if h.url %}</a>{% else %}</span>{% endif %}
       {% endfor %}
+      </div>
     {% else %}
       <p class="note" style="text-transform:none">{{ t('No macro flashes right now — the flash fetch is off (default) or temporarily unavailable.', '暂无宏观快讯 —— 快讯抓取已关闭（默认）或暂不可用。') }}</p>
     {% endif %}
@@ -1331,7 +1251,7 @@
         <th>{{ t('%ile', '分位') }}</th>
         <th class="l">{{ t('Cycle state', '周期状态') }}</th>
       </tr></thead>
-      <tbody>
+      <tbody data-showmore="6">
       {% for s in sectors %}
         <tr>
           <td class="l"><a href="sectors/{{ s.ticker }}.html">{{ td(s.name) }}</a></td>
@@ -2164,7 +2084,6 @@ window.__CHART_SWAP__ = {
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
 <script src="mtf.js"></script>
-<script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
 <script>
   // keep tooltips on-screen: flip below near the top of the viewport, and anchor to
