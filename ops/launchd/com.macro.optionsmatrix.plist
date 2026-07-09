@@ -5,9 +5,9 @@
   com.macro.optionsmatrix.plist — launchd agent for the nightly options-matrix builder.
 
   Runs run_options_matrix.sh (which gates on SPY EOD store freshness, then executes
-  `python -m scripts.build_options_matrix --publish`) on weekdays at 19:00 local time.
+  `python -m scripts.build_options_matrix --publish`) on weekdays at 16:00 local (19:00 ET).
 
-  19:00 gives the ThetaData nightly writer ~3h of headroom after the 16:00 ET close
+  16:00 local (19:00 ET) gives the ThetaData nightly writer ~3h of headroom after the 16:00 ET close
   and ~2h after the optionshub lane (16:45). The runner script will sleep-retry up to
   6 × 20 min (2 h) if the store is not yet fresh, so even a delayed nightly write
   (reaching the store around 18:45) will be caught before any real work starts.
@@ -41,14 +41,14 @@
     source /Users/chriswong/flow-ops-wt/.env
     set +a
     MATRIX_FRESHNESS_BYPASS=1 MATRIX_NO_PUBLISH=1 \
-      "/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_options_matrix.sh"
+      "/Users/chriswong/flow-ops-wt/ops/launchd/run_options_matrix.sh"
 
   MANUAL RUN (full, with R2 publish — same as nightly launchd):
     set -a
     source /Users/chriswong/flow-ops-wt/.env
     set +a
     MATRIX_FRESHNESS_BYPASS=1 \
-      "/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_options_matrix.sh"
+      "/Users/chriswong/flow-ops-wt/ops/launchd/run_options_matrix.sh"
 
   LOG TAILING:
     tail -f /tmp/optionsmatrix.stdout.log /tmp/optionsmatrix.stderr.log
@@ -66,9 +66,9 @@
   -->
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
     <string>/Users/chriswong/flow-ops-wt/.env</string>
-    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_options_matrix.sh</string>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_options_matrix.sh</string>
   </array>
 
   <!--
@@ -79,34 +79,34 @@
   <string>/Users/chriswong/flow-ops-wt</string>
 
   <!--
-    Start weekdays at 19:00 local time.
+    Start weekdays at 16:00 local (19:00 ET).
     System timezone should be America/New_York (or adjust Hour/Minute).
   -->
   <key>StartCalendarInterval</key>
   <array>
     <dict>
       <key>Weekday</key><integer>1</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>0</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>2</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>0</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>3</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>0</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>4</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>0</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>5</integer>
-      <key>Hour</key><integer>19</integer>
+      <key>Hour</key><integer>16</integer>
       <key>Minute</key><integer>0</integer>
     </dict>
   </array>
@@ -114,7 +114,7 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>PYTHONPATH</key>
-    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+    <string>/Users/chriswong/flow-ops-wt</string>
     <!--
       THETADATA_STORE is sourced from .env via run_with_env.sh above.
       Set it here too so the freshness-gate Python snippet can find the store
