@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.mastermind.flowenrich.plist — launchd agent for the flow enrichment publisher.
+
+  Runs build_flow_enrich every 5 minutes during RTH weekdays (StartInterval=300).
+  Offset from the poller's 2-minute cadence: ~90s gap from poller fires means
+  the enricher sees the freshest feed each cycle.
+
+  The job is NOT RTH-gated by the script itself (it simply re-publishes from the
+  last complete session when fired off-hours). ThrottleInterval=60 prevents
+  crash-loops.
+
+  INSTALL (run as the mac user, not root):
+    cp ops/launchd/com.mastermind.flowenrich.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.mastermind.flowenrich.plist
+
+  UNINSTALL:
+    launchctl unload ~/Library/LaunchAgents/com.mastermind.flowenrich.plist
+    rm ~/Library/LaunchAgents/com.mastermind.flowenrich.plist
+
+  DO NOT load this plist directly from the repo. Copy first.
+
+  ENV FILE:
+    R2 credentials (R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY /
+    R2_BUCKET) are sourced from ~/flow-ops-wt/.env via run_with_env.sh.
+    NEVER inline secrets here.
+
+  WORKING DIRECTORY:
+    ~/flow-ops-wt — the live checkout tracked to origin/main.
+    run `git -C ~/flow-ops-wt pull --ff-only` after each macro repo merge.
+
+  LOG TAILING:
+    tail -f /tmp/flowenrich.stdout.log /tmp/flowenrich.stderr.log
+
+  MANUAL SMOKE:
+    set -a; source ~/flow-ops-wt/.env; set +a
+    cd ~/flow-ops-wt
+    python -m scripts.build_flow_enrich --no-publish --verbose
+
+  OFF-HOURS BEHAVIOUR:
+    Off-hours runs re-read the last available feed_current.json from R2 and
+    republish enrich_current.json with the asof timestamp updated. The envelope's
+    asof will differ from the feed's asof, which is honest: the enrichment was
+    recomputed at the new time but the source data is unchanged.
+-->
+<plist version="1.0">
+<dict>
+
+  <key>Label</key>
+  <string>com.mastermind.flowenrich</string>
+
+  <!--
+    run_with_env.sh sources .env before executing the Python module.
+    Args: <env_file> <python_bin> -m <module> [flags...]
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/flow-ops-wt/.env</string>
+    <string>/opt/homebrew/Caskroom/miniconda/base/bin/python</string>
+    <string>-m</string>
+    <string>scripts.build_flow_enrich</string>
+  </array>
+
+  <!-- Working directory: live checkout of the macro repo. -->
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/flow-ops-wt</string>
+
+  <!--
+    StartInterval=300: fire every 5 minutes.
+    Combined with the poller's 120s cadence and the ~90s launchd scheduling
+    jitter, the enricher reliably sees a fresh feed each cycle during RTH.
+    Off-hours runs are cheap (just an R2 GET + enrichment recompute).
+  -->
+  <key>StartInterval</key>
+  <integer>300</integer>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!--
+      Secrets are sourced from .env by run_with_env.sh above.
+      NEVER set R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY here.
+    -->
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/flow-ops-wt</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/flowenrich.stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/flowenrich.stderr.log</string>
+
+  <!--
+    ThrottleInterval=60: if the job exits in under 10s (crash/misconfiguration),
+    launchd waits 60s before retrying — prevents crash-loop from hammering R2.
+  -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+  <!-- Do NOT keep alive: StartInterval handles periodic re-firing. -->
+  <key>KeepAlive</key>
+  <false/>
+
+</dict>
+</plist>
