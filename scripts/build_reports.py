@@ -53,6 +53,34 @@ def _tag(key: str, en: str, zh: str) -> dict:
 # ---------------------------------------------------------------------------
 REPORTS: list[dict] = [
     {
+        "slug": "report_relapse_jul8",
+        "template": "report_relapse_jul8.html.j2",
+        "date": "2026-07-08",
+        "read_min": 18,
+        "title_en": "The Relapse",
+        "title_zh": "复燃",
+        "dek_en": "A tactical companion to The Second Act. The Iran war restarted six weeks early, "
+                  "the disinflation glide path took a torpedo, and Hong Kong ripped 3% into a "
+                  "global risk-off tape — none of it breaks the 18-month map; it bends the "
+                  "schedule. We re-mark our own odds in public, then convert the week's tape into "
+                  "a ranked seven-idea buy list with entry timing, sizing, and the exact tripwire "
+                  "that proves each wrong: energy that now pays carry, the China platform leg with "
+                  "the 1260H caveat, Act II power into weakness, the first Mag-7 trough tranche, "
+                  "gold, Bitcoin, and copper — while memory-chip strength stays something you sell.",
+        "dek_zh": "《第二幕》的战术姊妹篇。伊朗战争提前六周复燃、反通胀滑翔路径中了一枚鱼雷，而恒指却顶着"
+                  "全球避险盘面大涨 3%——这一切都没有推翻 18 个月的路线图，只是弯曲了时间表。本文先公开"
+                  "重估我们自己的概率，再把本周盘面转译为一张排序的七点买入清单，附入场时点、仓位与每个"
+                  "观点被证伪的确切绊线：现在开始付息的能源、附 1260H 警示的中国平台、趁弱建仓的第二幕"
+                  "电力、Mag-7 第一批低谷仓、黄金、比特币与铜——而存储芯片的强势，仍然只能用来卖出。",
+        "tags": [
+            _tag("equities", "Equities", "股票"),
+            _tag("energy", "Energy", "能源"),
+            _tag("china", "China", "中国"),
+            _tag("macro", "Macro", "宏观"),
+            _tag("crypto", "Crypto", "加密"),
+        ],
+    },
+    {
         "slug": "report_second_act",
         "template": "report_second_act.html.j2",
         "date": "2026-07-02",
