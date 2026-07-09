@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-08T07:31:53.145507+00:00",
+  "produced_at": "2026-07-09T08:06:56.453197+00:00",
   "as_of": "2026-07-02",
   "status": "degraded",
-  "phase": "final",
+  "phase": "engine",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
@@ -13,52 +13,80 @@
   },
   "what_changed": [
     {
-      "kind": "lobe_row_count_changed",
-      "id": "spine-index",
-      "summary": "lobe spine-index row count changed: 291907 → 291944 (0%)",
+      "kind": "lobe_new",
+      "id": "site-china-cycle-phase",
+      "summary": "lobe site-china-cycle-phase appeared in scope",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_new",
+      "id": "site-china-market-state",
+      "summary": "lobe site-china-market-state appeared in scope",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "kernel-families",
+      "summary": "lobe kernel-families status: fresh → stale",
+      "severity": "warn",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "kernel-half-lives",
+      "summary": "lobe kernel-half-lives status: fresh → stale",
+      "severity": "warn",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "lagging-signals",
+      "summary": "lobe lagging-signals status: fresh → stale",
+      "severity": "warn",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "reflex-firings-regime-selfheal",
+      "summary": "lobe reflex-firings-regime-selfheal status: missing → fresh",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
     {
       "kind": "lobe_row_count_changed",
       "id": "mechanism-pathways-history",
-      "summary": "lobe mechanism-pathways-history row count changed: 1 → 2 (100%)",
+      "summary": "lobe mechanism-pathways-history row count changed: 2 → 3 (50%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_new",
+      "id": "liquidity-plumbing",
+      "summary": "lobe liquidity-plumbing appeared in scope",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_new",
+      "id": "causal-feature-inventory",
+      "summary": "lobe causal-feature-inventory appeared in scope",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_refresh",
+      "id": "evidence-clock",
+      "summary": "lobe evidence-clock refreshed: as_of 2026-07-07 → 2026-07-08, rows 201 → 220",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
     {
       "kind": "lobe_status_changed",
-      "id": "evidence-clock",
-      "summary": "lobe evidence-clock status: fresh_partial → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "evidence-clock",
-      "summary": "lobe evidence-clock row count changed: 186 → 201 (8%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_new",
-      "id": "context-risk",
-      "summary": "lobe context-risk appeared in scope",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_new",
-      "id": "site-context-risk",
-      "summary": "lobe site-context-risk appeared in scope",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_new",
-      "id": "context-candidates",
-      "summary": "lobe context-candidates appeared in scope",
-      "severity": "info",
+      "id": "nasdaq-internals",
+      "summary": "lobe nasdaq-internals status: fresh → stale",
+      "severity": "warn",
       "evidence_path": "data/neuralweb/health.json"
     }
   ],
@@ -87,14 +115,28 @@
       "severity": "watch"
     },
     {
-      "id": "reflex-firings-pattern",
-      "as_of": null,
-      "age_hours": null,
-      "freshness_sla_hours": 9999,
-      "severity": "watch"
+      "id": "kernel-families",
+      "as_of": "2026-07-07T15:18:29Z",
+      "age_hours": 40.81,
+      "freshness_sla_hours": 30,
+      "severity": "warn"
     },
     {
-      "id": "reflex-firings-regime-selfheal",
+      "id": "kernel-half-lives",
+      "as_of": "2026-07-07T15:18:32Z",
+      "age_hours": 40.81,
+      "freshness_sla_hours": 30,
+      "severity": "warn"
+    },
+    {
+      "id": "lagging-signals",
+      "as_of": "2026-07-07T15:18:30Z",
+      "age_hours": 40.81,
+      "freshness_sla_hours": 30,
+      "severity": "warn"
+    },
+    {
+      "id": "reflex-firings-pattern",
       "as_of": null,
       "age_hours": null,
       "freshness_sla_hours": 9999,
@@ -192,6 +234,13 @@
       "severity": "watch"
     },
     {
+      "id": "nasdaq-internals",
+      "as_of": "2026-07-07T08:40:45.613433+00:00",
+      "age_hours": 47.44,
+      "freshness_sla_hours": 30,
+      "severity": "warn"
+    },
+    {
       "id": "context-candidates",
       "as_of": null,
       "age_hours": null,
@@ -201,7 +250,7 @@
   ],
   "why_the_tape_moved": {
     "available": true,
-    "as_of": "2026-07-08",
+    "as_of": "2026-07-09",
     "primary": {
       "family": "equity-leadership",
       "direction": "AI/semis unwind — tech-led de-rating",
@@ -209,14 +258,14 @@
       "coherence": "supported",
       "evidence_legs": [
         "semis RS",
-        "growth vs value",
-        "cap-weight vs equal-weight"
+        "tech vs utilities",
+        "growth vs value"
       ],
       "stale_legs_count": 0
     },
     "alternates": [
-      "crypto",
-      "rates"
+      "inflation",
+      "crypto"
     ]
   },
   "operator_attention": [
@@ -234,14 +283,26 @@
     },
     {
       "priority": 2,
-      "area": "reflex-firings-pattern",
-      "summary": "lobe reflex-firings-pattern is watch — age Noneh vs SLA 9999h",
+      "area": "kernel-families",
+      "summary": "lobe kernel-families is warn — age 40.81h vs SLA 30h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
-      "area": "reflex-firings-regime-selfheal",
-      "summary": "lobe reflex-firings-regime-selfheal is watch — age Noneh vs SLA 9999h",
+      "area": "kernel-half-lives",
+      "summary": "lobe kernel-half-lives is warn — age 40.81h vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "lagging-signals",
+      "summary": "lobe lagging-signals is warn — age 40.81h vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "reflex-firings-pattern",
+      "summary": "lobe reflex-firings-pattern is watch — age Noneh vs SLA 9999h",
       "action_type": "inspect"
     },
     {
@@ -324,6 +385,12 @@
     },
     {
       "priority": 2,
+      "area": "nasdaq-internals",
+      "summary": "lobe nasdaq-internals is warn — age 47.44h vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
       "area": "context-candidates",
       "summary": "lobe context-candidates is watch — age Noneh vs SLA 36h",
       "action_type": "inspect"
@@ -335,9 +402,21 @@
       "action_type": "ops_fix"
     },
     {
+      "priority": 2,
+      "area": "dag_conformance",
+      "summary": "producer scripts/build_causal_inventory.py not declared in daily.yml — update config/dag.yml",
+      "action_type": "ops_fix"
+    },
+    {
       "priority": 3,
       "area": "confluence-graph",
       "summary": "lobe confluence-graph has gaps: stable edges (Tier-S): data/oracle/graph_s.json absent — gitignored/Mac-local on this run, stable edges (Tier-M): data/oracle/graph_m.json absent — gitignored/Mac-local on this run",
+      "action_type": "follow_up"
+    },
+    {
+      "priority": 3,
+      "area": "liquidity-plumbing",
+      "summary": "lobe liquidity-plumbing has gaps: funding scarcity spreads not integrated (Phase 3), H.4.1 swap/FIMA not integrated (Phase 5)",
       "action_type": "follow_up"
     },
     {
@@ -370,6 +449,21 @@
       "due_at": "2026-06-22"
     },
     "morning_line": "6 overdue, 10 due, 1 missing, 1 stale, 2 blocked, 200 accruing. Top due: qledger:placebo."
+  },
+  "china_market_state": {
+    "available": true,
+    "as_of": "2026-07-08",
+    "phase": "POLICY_PUT",
+    "phase_confidence": 0.75,
+    "who_controls": "offshore",
+    "policy_impulse": "targeted_support",
+    "top_contradiction": {
+      "a": "southbound_z=2.04 (inflow)",
+      "b": "broker_rs=-0.0465 (negative)",
+      "detail": "HK/offshore buying but domestic broker sector underperforming CSI300 — cross-market split"
+    },
+    "data_gaps_count": 5,
+    "display_only": true
   },
   "caveats": [
     "deterministic: all text is template-filled from structured artifact values; no LLM or NLP",

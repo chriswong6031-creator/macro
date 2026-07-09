@@ -1,19 +1,19 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.372,
+  "roro": 0.364,
   "cap_recent": true,
-  "fear_built": 0.406,
-  "roro_velocity": 0.071,
-  "vel_pctile": 0.643,
+  "fear_built": 0.411,
+  "roro_velocity": -0.236,
+  "vel_pctile": 0.109,
   "legs_up": 1,
   "legs_total": 7,
   "flipped_legs": [
-    "skew"
+    "hy_oas"
   ],
-  "days_since_last_snap": 17,
-  "fear_rebuilding": false,
-  "vix_term": 0.847,
+  "days_since_last_snap": 18,
+  "fear_rebuilding": true,
+  "vix_term": null,
   "status": "dormant",
   "gates": {
     "velocity": false,
@@ -24,9 +24,9 @@
   "min_legs": 4,
   "flipped_legs_named": [
     {
-      "key": "skew",
-      "en": "SKEW (tail pricing)",
-      "zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7"
+      "key": "hy_oas",
+      "en": "HY credit spread",
+      "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee"
     }
   ],
   "magnitude_band": null

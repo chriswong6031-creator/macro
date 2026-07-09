@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-09T05:49:56.056787+00:00",
+  "generated_utc": "2026-07-09T07:14:09.821521+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,11 +749,12 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 7,
-      "alt_weighted": 2.5,
+      "alt_score": 8,
+      "alt_weighted": 2.75,
       "alt_channels": [
         "13f_add",
         "affiliation",
+        "cnbc_pick",
         "github_momentum",
         "hf_model_momentum",
         "patent_cluster",
@@ -800,11 +801,10 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.5,
+      "alt_score": 3,
+      "alt_weighted": 1.25,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "hf_model_momentum",
         "special_situation"
       ],
@@ -848,11 +848,12 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.8,
+      "alt_score": 5,
+      "alt_weighted": 2.05,
       "alt_channels": [
         "13f_add",
         "affiliation",
+        "cnbc_pick",
         "special_situation",
         "trump"
       ],
@@ -896,11 +897,10 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.65,
+      "alt_score": 3,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "patent_cluster",
         "trump"
       ],
@@ -937,11 +937,10 @@
       ],
       "n_actors": 3,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.3,
+      "alt_score": 3,
+      "alt_weighted": 1.05,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "retail_buzz",
         "special_situation"
       ],
@@ -1000,12 +999,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.45,
+      "alt_score": 7,
+      "alt_weighted": 2.7,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
+        "cnbc_pick",
         "github_momentum",
         "gov_contract",
         "patent_cluster"
@@ -1096,13 +1096,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.3,
+      "alt_score": 5,
+      "alt_weighted": 2.05,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
-        "cnbc_pick",
         "hf_model_momentum",
         "special_situation"
       ],
@@ -1271,6 +1270,27 @@
         "title": "Institution",
         "shares": 421013782
       }
+    },
+    {
+      "ticker": "OXY",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.15,
+      "alt_channels": [
+        "affiliation",
+        "unusual_options"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "AXP",
@@ -1540,26 +1560,6 @@
         {
           "actor": "Ro Khanna",
           "kind": "politician",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
-      "ticker": "OXY",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
           "rel": "AFFILIATES_WITH",
           "provenance": "DISCLOSED",
           "qualitative": true

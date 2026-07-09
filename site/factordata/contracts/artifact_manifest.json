@@ -1,6 +1,6 @@
 {
  "schema": "artifact_manifest/v1",
- "as_of": "2026-07-07",
+ "as_of": "2026-07-09",
  "cadence_basis": "trading_calendar",
  "note": "Per-artifact expected freshness in TRADING-calendar days. A consumer compares the artifact's as_of against `today` counting only trading days; older than expected_max_age_td \u21d2 abstain + flag (fail-closed on genuine staleness, audit #9). Benign weekend/holiday lag is NOT stale because the cadence excludes non-trading days.",
  "artifacts": [
