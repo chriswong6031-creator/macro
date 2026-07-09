@@ -39,6 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 25 |
+| policy-shock | 2 |
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
 | sector-pulse | 3 |
@@ -53,7 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 164 |
+| display | 166 |
 | infrastructure | 72 |
 | scored | 4 |
 | shadow | 45 |
@@ -62,7 +63,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 273 |
+| git | 275 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -434,6 +435,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |
+
+### policy-shock
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| flip-confirmation-events | `data/flip_confirmation/events.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| flip-confirmation-snapshot | `site/flip_confirmation_data.json` | json | daily-engine | display | 1 | 0 |
 
 ### qualitative-intelligence
 
