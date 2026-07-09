@@ -429,7 +429,8 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
                         for >= `base_min_days` consecutive sessions AND the
                         `drawdown_window`-day max-drawdown <= `drawdown_min`.
                         v1.1: additionally the absolute net close-to-close
-                        return over the last `base_min_days` sessions must be
+                        return over the in-band window — min(days_in_base,
+                        4 x base_min_days) sessions — must be
                         <= `base_flat_max_abs_return` (flatness gate — a
                         genuine base is ±few %, an ongoing decline is −10%+).
     days_in_base      : consecutive sessions meeting the basing PRICE-BAND
@@ -454,7 +455,8 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
     drawdown_window = int(acfg.get("drawdown_window_d", 120))
     drawdown_min   = float(acfg.get("drawdown_min", -0.15))
     stoch_curl_lookback = int(acfg.get("stoch_curl_lookback", 3))
-    # v1.1: flatness gate — basing requires net return over base_min_days <= this
+    # v1.1: flatness gate — basing requires |net return| over the in-band window
+    # (min(days_in_base, 4 x base_min_days) sessions) <= this
     base_flat_max_abs_return = float(acfg.get("base_flat_max_abs_return", 0.06))
     # v1.1: scale-invariant minimum per-diff for the MACD rising test
     # each positive diff must exceed (macd_rise_min_frac × rolling mean |histogram|)
@@ -545,8 +547,9 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
 
     # --- basing: close within `base_pct` of the `base_window`-day low
     #     for >= `base_min_days` consecutive sessions AND 120d drawdown <= -15%
-    #     v1.1: additionally the net return over the last base_min_days sessions
-    #     must be <= base_flat_max_abs_return in absolute value (flatness gate).
+    #     v1.1: additionally the net return over the in-band window — the last
+    #     min(days_in_base, 4 x base_min_days) sessions — must be
+    #     <= base_flat_max_abs_return in absolute value (flatness gate).
     low_60 = close.rolling(base_window, min_periods=base_window).min()
     in_base_band = (close <= low_60 * (1 + base_pct))
 

@@ -1,6 +1,6 @@
 # Policy-Shock Regime Program — masterplan by Fable
 
-Status: **CHARTERED — BUILD AUTHORIZED** (operator-ratified 2026-07-09)
+Status: **BUILD COMPLETE** (chartered, built, reviewed, integration-audited — all on 2026-07-09)
 Author: Fable main-loop session, 2026-07-09
 Adjudication substrate: 5-lane census + 2 independent Opus critics (workflow `wf_c16c451d-3f8`),
 `docs/ACTIVE_BUILD_MAP.md` (2026-07-09 gen), `research/DO_NOT_REBUILD.md`, `config/ruling_graph.yml` queries.
@@ -188,7 +188,10 @@ policy_lever = {
   → ARMED; exactly one of the two → ELEVATED; else QUIET.
 - `data/whitehouse/alerts.jsonl` is SACRED single-writer (the sentinel) — this builder reads
   only, never writes, never rotates.
-- The word "intent" may not appear in card copy (PS-R1); no probabilities anywhere (PS-R4).
+- Card copy may not READ or ATTRIBUTE intent (PS-R1); the canonical framing disclaimer
+  ("not intent, not timing") is the required exemption. **Amendment PS-A3 (2026-07-09,
+  close-out):** the original literal-token ban self-contradicted the mandated framing
+  string; the ban is on intent-classification, not the token. No probabilities anywhere (PS-R4).
 - Synapse/NW registration as display-only context artifact.
 - UI quality bar: browser-verify the rendered card against prod-shaped data and screenshot
   (Playwright direct; the preview browser is known to hang on index).
@@ -247,3 +250,42 @@ conviction may never be laundered into sizing.*
 - Bilingual EN/ZH for every user-facing string.
 - Commit → push → open PR (base main) with a body citing this masterplan §; do NOT merge —
   the orchestrator adjudicates and merges.
+
+## §9 Build record (close-out, 2026-07-09)
+
+Seven PRs, all merged same-day: #2003 (W0 masterplan + kill-registry row), #2005 (W1-D
+doctrine + staleness chip + desk cadence 7d→3d), #2006 (W1-A repricing_coherence + intraday
+pass), #2007 (W1-B technical_arming v1.1), #2008 (W1-C flip-confirmation lens + qledger
+family), #2015 (W2-E shock de-escalation protocol), #2016 (W2-F policy-lever card).
+Every build PR was adversarially reviewed (Opus) before merge; a program-level integration
+audit ran on the assembled main.
+
+**Amendments logged:** PS-A1 (flatness gate + MACD epsilon after review proved v1 armed on
+falling knives — 15.5% false-arm rate on monotone-decline seeds), PS-A2 (ship-date
+forward-only ledger + priceable XLP-vs-XLK claim proxy + real 3-way verdict after review
+proved v1 claims could never grade and MIXED was unreachable), PS-A3 (intent-token exemption
+for the canonical framing disclaimer).
+
+**Outcomes of record:**
+- Would-have-fired backscan (descriptive): 2026-06-25 ELEVATED(50, two-consecutive-ELEVATED
+  with flip), 2026-07-07 SHOCK(75, state==SHOCK) — the eve of the reversal that motivated
+  the program. Firings ledger starts empty 2026-07-09; forward accrual only.
+- Flip-confirmation base rates 2024→ (descriptive, 26 events): 6 CONFIRMED / 15 FADED /
+  5 MIXED — violent sector flips fade ~58% of the time; the chase is the minority outcome.
+  Latest event 2026-07-02 (defensive, z=3.00) → FADED.
+- Policy-lever card first print (2026-07-09): QUIET — favored complex (SMH/SOXX returns-EW)
+  drawdown −12.8% (above the −15% line post-bounce), oil lever NOT armed (v1.1 flatness
+  16.8% over the in-band window: the June decline never formed a genuine base; the reversal
+  was event-driven, not technical). Honest print: the put already fired; conditions reset.
+- Integration audit: one assembled-state BLOCKER found and fixed in this close-out PR (the
+  flip card shipped with zero CSS — never rendered together in any per-PR CI); conformance
+  battery green at synapse pin 294; forward-only law verified; all three dashboard blocks
+  coexist (shock banner + lever card + flip card) without collision.
+
+**Known pre-existing red (NOT this program):** tests/test_template_items_footgun.py fails on
+main flagging namespace-attribute false positives in dashboard/news templates (PR #1548 era)
+— spun off to its own lane.
+
+**Clocks (restated from §5):** 2026-08-09 first-month firings sanity review; 2026-10-09
+grading review + threshold amendment window; promotion question earliest 2027 at n>=8
+episodes (PS-R8).
