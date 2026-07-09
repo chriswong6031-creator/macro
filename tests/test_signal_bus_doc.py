@@ -73,10 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 291, (
-        f"Expected 291 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 293, (
+        f"Expected 293 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (policy-shock W2-E added shock-deescalation-firings,"
+        " (policy-shock W1-C added flip-confirmation-events, flip-confirmation-snapshot = 291->293;"
+        "(policy-shock W2-E added shock-deescalation-firings,"
         " shock-deescalation-state = 289->291;"
         " PR-4 M2 added attention-deterministic + site-attention-deterministic = 287->289;"
         " PR-3 review-fix added nw-health-run-history = 286->287;"

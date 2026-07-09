@@ -1563,6 +1563,24 @@ def _dispersion_regime_view() -> dict | None:
         return None
 
 
+def _flip_confirmation_view() -> dict | None:
+    """T+1 sector-flip confirmation lens snapshot (Policy-Shock W1-C).
+
+    Reads engine.flip_confirmation.snapshot() — the detect-since-2024 descriptive
+    scan plus the last flip event with T+1 verdict.  DISPLAY-ONLY; never scored.
+    Returns None (never raises) so the card is hidden when data is unavailable.
+    """
+    try:
+        from engine import flip_confirmation as _fc
+        snap = _fc.snapshot()
+        if not snap or snap.get("error") or not snap.get("last_event"):
+            return None
+        return snap
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("flip_confirmation_view failed (%s)", e)
+        return None
+
+
 def _sector_heat_view() -> dict | None:
     """Compact sector-heat strip for the macro.html dashboard: up to 4 heating themes
     and up to 4 cooling/broken themes, each with a link to baskets.html#theme-<id>.
@@ -3357,6 +3375,7 @@ def main() -> int:
         fear_greed=_fear_greed_view(),    # Fear/Greed composite dial (display-only, P1.2)
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
         dispersion_regime=_dispersion_regime_view(),  # L3 selection-regime chip (NW Rails W2 PR-4, display-only)
+        flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
         shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled

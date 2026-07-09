@@ -1869,6 +1869,45 @@
       </section>
       {% endif %}
 
+    {# ── Sector-flip confirmation lens (Policy-Shock W1-C) ──
+       Descriptive read of the last violent sector flip and historical base rates.
+       Gated on flip_confirmation.last_event existing; never fatal, never scored. #}
+    {% if flip_confirmation and flip_confirmation.last_event %}
+    {% set FC = flip_confirmation %}
+    {% set FEV = FC.last_event %}
+    {% set _fdir_en = 'defensive' if FEV.direction == 'defensive' else 'offense' %}
+    {% set _fdir_zh = '防御' if FEV.direction == 'defensive' else '进攻' %}
+    {% set _fvc = 'var(--up)' if FEV.verdict == 'CONFIRMED' else ('var(--down)' if FEV.verdict == 'FADED' else 'var(--muted)') %}
+    {% set _fvc_none = 'var(--muted)' %}
+    {% set _fv_en = FEV.verdict if FEV.verdict else 'Pending' %}
+    {% set _fv_zh = {'CONFIRMED':'已确认','FADED':'已消退','MIXED':'混合','Pending':'待定'}.get(_fv_en, _fv_en) %}
+    <section class="ms-flip" id="flip-confirmation">
+      <div class="flip-head">
+        <span class="flip-label">{{ t('Sector-flip confirmation','板块翻转确认') }}</span>
+        {{ help('A violent one-day sector-leadership flip is when the defensive composite (XLP/XLU/XLV) vs offense composite (SMH/XLK) daily spread exceeds |z| ≥ 2.5 vs trailing 252d. The next day\'s tape reads CONFIRMED (same direction), FADED (reversed), or MIXED. Descriptive only — describes what the tape did, never recommends a trade. Base rates since 2024 answer the chase-or-fade question with data.', '当防御复合体（XLP/XLU/XLV）对进攻复合体（SMH/XLK）的单日收益差超过 |z| ≥ 2.5（相对于252日历史）时触发板块翻转。次日表现读作：已确认（同向）、已消退（反向）或混合。纯描述性 — 描述实际走势，从不推荐操作。2024年以来的基率用数据回答"追入还是淡出"的问题。') }}
+        <span class="flip-asof muted">· {{ t('as of', '截至') }} {{ FC.asof }}</span>
+      </div>
+      <div class="flip-body">
+        <div class="flip-event">
+          <span class="flip-date">{{ FEV.event_date }}</span>
+          <span class="flip-dir">{{ t(_fdir_en, _fdir_zh) }}</span>
+          <span class="flip-z muted">z={{ FEV.z }}</span>
+          <span class="flip-verdict" style="color:{{ _fvc if FEV.verdict else _fvc_none }}">{{ t(_fv_en, _fv_zh) }}</span>
+        </div>
+        {% if FC.base_rates %}
+        {% set BR = FC.base_rates %}
+        <div class="flip-rates">
+          <span class="flip-rate-label">{{ t('2024→ base rates (descriptive)','2024→ 基率（描述性）') }}</span>
+          <span class="flip-stat">{{ BR.n_events }} {{ t('flips','次翻转') }}</span>
+          <span class="flip-stat up">{{ BR.confirmed }} {{ t('confirmed','确认') }}</span>
+          <span class="flip-stat down">{{ BR.faded }} {{ t('faded','消退') }}</span>
+          {% if BR.mixed %}<span class="flip-stat muted">{{ BR.mixed }} {{ t('mixed','混合') }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
     <div class="ms-divider">{{ t('Macro backdrop — the growth × inflation regime','宏观背景 — 增长 × 通胀周期') }}</div>
     {% endif %}{# /market_state #}
 

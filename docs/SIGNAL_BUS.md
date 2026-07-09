@@ -39,7 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 25 |
-| policy-shock | 2 |
+| policy-shock | 4 |
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
 | sector-pulse | 3 |
@@ -54,7 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 167 |
+| display | 169 |
 | infrastructure | 74 |
 | scored | 4 |
 | shadow | 46 |
@@ -63,7 +63,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 279 |
+| git | 281 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -445,6 +445,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | shock-deescalation-state | `site/live/shock_state.json` | json | daily-engine | display | 3 | 0 |
+| flip-confirmation-events | `data/flip_confirmation/events.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| flip-confirmation-snapshot | `site/flip_confirmation_data.json` | json | daily-engine | display | 1 | 0 |
 | shock-deescalation-firings | `data/reflexes/shock_deescalation/firings.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 
 ### qualitative-intelligence

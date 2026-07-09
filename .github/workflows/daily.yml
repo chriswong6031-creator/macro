@@ -507,6 +507,21 @@ jobs:
           cat /tmp/backfill_regime_stamps.log
           [ "$rc" -ne 0 ] && echo "::warning title=backfill_regime_stamps::rc=$rc (non-fatal)"
           exit 0  # PR-2 fix: missing exit 0 caused [ "$rc" -ne 0 ] to exit 1 when rc=0, skipping all downstream kernel steps
+      - name: Sector-flip confirmation lens (Policy-Shock W1-C)
+        # Detects violent defensive/offense spread flips (|z| >= 2.5 vs 252d), appends the
+        # keep-first event ledger at data/flip_confirmation/events.jsonl, registers one
+        # CRAWL_BOUNDED (gradeable) qledger claim per CONFIRMED/FADED event at horizon_d=21
+        # on the priceable XLP-vs-XLK proxy pair (chassis grades at 5d + 21d automatically;
+        # MIXED events abstain). Emits site/flip_confirmation_data.json for the market-state card.
+        # AFTER engine.run (market_drivers_log.parquet must be updated for absorption_delta)
+        # and AFTER backfill_regime_stamps (qledger consistency). Non-fatal.
+        continue-on-error: true
+        run: |
+          set +e
+          python -m scripts.build_flip_confirmation > /tmp/flip_confirmation.log 2>&1; rc=$?
+          cat /tmp/flip_confirmation.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_flip_confirmation::rc=$rc (non-fatal)"
+          exit 0
       - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
         # AFTER build_site: reads site/factordata/us_standouts.json (just written).
         # Originates new prophet.trade_plan/v1 envelopes, runs the management engine
