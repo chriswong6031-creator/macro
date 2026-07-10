@@ -1,0 +1,118 @@
+# config/nw_information_domains.yml — Curated NW-scope information-domain universe
+#
+# The Uncovered-Domain Scout (engine/metabolism/scout.py) uses this file as the
+# reference universe of information domains the organism ASPIRES to cover.  A
+# domain is flagged as a coverage gap ONLY when it has ZERO active covering
+# lobes across >= min_uncovered_cycles distinct scout cycles — never on a single
+# whim (masterplan §4 V2-C: "auto-charter from a *recurring coverage gap*").
+#
+# COVERAGE is determined by SIGNATURE MATCH, not by the coarse `information_domain`
+# tag in lobe_charters.yml (in production that tag is nearly always "context").
+# A domain is COVERED iff at least one ACTIVE charter's identity string
+# (lobe_id + information_domain + owner_program + notes, lowercased) contains any
+# of the domain's `coverage_match` substrings.  `evidence_match` is an OPTIONAL
+# demand signal matched against open insight_bus rows — it enriches a proposal's
+# rationale and priority but is NEVER a gate (the gate is persistence).
+#
+# IMMUTABLE (R-V2-8): a loop-authored PR may NOT add, remove, or edit a domain.
+# Expanding the proposable universe is an authority-shaped act reserved to the
+# operator — a loop that could add domains could manufacture its own charter
+# mandate (originating an escalation, which R-AUT-1 / R-V2-9 forbid).  This file
+# is pinned in config/grader_manifest.yml and fenced in
+# scripts/check_self_mod_fence.py.
+#
+# INERT: the scout only PROPOSES display-tier charters through the normal
+# gauntlet.  Promotion to confirmer/scored/authority remains T2 + gauntlet +
+# operator, unconditionally (R-V2-3).  A charter proposal changes nothing until
+# the operator taps it.
+#
+# SEED NOTE: every domain below is CURRENTLY covered by the production roster, so
+# an armed scout stays silent (silence = health).  The operator adds genuinely
+# aspirational / uncovered domains here; those fire only after the persistence
+# gate is met.
+#
+# Schema: nw_information_domains.v1
+schema: nw_information_domains.v1
+generated_at: "2026-07-10"
+owner_program: metabolism-phase-v2c
+
+defaults:
+  # Distinct scout cycles a domain must be observed uncovered before a charter
+  # proposal is emitted.  Overridable per-domain.
+  min_uncovered_cycles: 3
+
+domains:
+  - domain_id: context_synthesis
+    label: "Context synthesis (attention / cortex / confluence)"
+    description: >
+      Per-ticker and cross-market context accrual — the attention lattice,
+      cortex firings/grades, confluence graph, and context-risk surfaces.
+    coverage_match: ["context", "attention", "cortex", "confluence"]
+    evidence_match: ["context", "attention", "cortex"]
+
+  - domain_id: causal_discovery
+    label: "Causal discovery / hypothesis factory"
+    description: >
+      Causal edge scouting, mechanism pathways, hypothesis inbox, and the
+      causal lab family.
+    coverage_match: ["causal", "mechanism", "hypothesis"]
+    evidence_match: ["causal", "mechanism", "hypothesis"]
+
+  - domain_id: tactical_entry
+    label: "Tactical entry timing (bottom sensors / options entry)"
+    description: >
+      Bottom-sensor entry-quality organs and the options entry gate/state.
+    coverage_match: ["bottom-sensors", "entry", "options-entry"]
+    evidence_match: ["entry", "bottom", "washout"]
+
+  - domain_id: factor_intelligence
+    label: "Factor / kernel intelligence"
+    description: >
+      Factor-intelligence state, factor contradictions, and the kernel family
+      (families / half-lives / estimates / decisions).
+    coverage_match: ["factor", "kernel"]
+    evidence_match: ["factor", "kernel"]
+
+  - domain_id: thematic_intelligence
+    label: "Thematic intelligence (themes / theses / pathways)"
+    description: >
+      Theme state, thesis ledger, asymmetry, pathways, and the theme-clinical /
+      options-witness / trade-flows witnesses.
+    coverage_match: ["theme"]
+    evidence_match: ["theme", "thesis", "thematic"]
+
+  - domain_id: china_market
+    label: "China market structure"
+    description: >
+      China cycle-phase and market-state surfaces.
+    coverage_match: ["china"]
+    evidence_match: ["china", "hk", "a-share"]
+
+  - domain_id: risk_regime
+    label: "Risk / regime state & reflexes"
+    description: >
+      Context-risk, risk-radar review, and the regime/commodity/pattern reflex
+      family.
+    coverage_match: ["risk", "regime", "reflex"]
+    evidence_match: ["risk", "regime", "reflex", "shock"]
+
+  - domain_id: liquidity_microstructure
+    label: "Liquidity & market microstructure"
+    description: >
+      Liquidity plumbing, the feeds plane, and index/internals surfaces.
+    coverage_match: ["liquidity", "plumbing", "nasdaq", "internals"]
+    evidence_match: ["liquidity", "internals", "breadth"]
+
+  - domain_id: rotation_leadership
+    label: "Rotation / leadership standouts"
+    description: >
+      US standouts, golden-signal, and covariance/spine leadership surfaces.
+    coverage_match: ["standouts", "golden", "covariance", "spine"]
+    evidence_match: ["rotation", "leadership", "standout"]
+
+  - domain_id: ops_health
+    label: "Operational health & push sanity"
+    description: >
+      Neural-web health runs and the ops-push sanity/dedup/freeze family.
+    coverage_match: ["ops-push", "health", "nw-health"]
+    evidence_match: ["health", "ops", "push", "sanity"]

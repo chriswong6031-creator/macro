@@ -67,6 +67,10 @@ IMMUTABLE_PATTERNS: list[str] = [
     "config/metabolism_schedule.yml",
     # V2-D additions (R-V2-8)
     "config/ux_simplicity_rules.yml",
+    # V2-C Unit 6 addition (R-V2-8): the Uncovered-Domain Scout's reference
+    # universe. A loop that could add domains could manufacture its own charter
+    # mandate — expanding the proposable universe is operator-only.
+    "config/nw_information_domains.yml",
     # tap.py holds the T2 safe-default table (conservative timeout actions); a
     # loop-authored branch must NOT flip e.g. promote_lobe's default to 'promote'.
     # Fenced so the docstring's immutability claim is structural, not honor-system.
