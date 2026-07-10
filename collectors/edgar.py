@@ -656,6 +656,34 @@ def fetch_panel(force: bool = False, max_age_days: int = 7,
         log.warning("share quality pass failed (%s) — panel ships unrepaired", e)
         sq_audit = {"error": str(e)}
 
+    # Flow-column unit-artifact pass: repair/null rows whose income-statement /
+    # cash-flow values are scale typos (×1e3 or ×1e6 low) — e.g. ED ni fy2021-25,
+    # ANET ni fy2021-25, TECH op_income fy2013 (see collectors/edgar_flow_quality.py).
+    # Cross-source lane uses statements.parquet for confirmation; flank lane works
+    # without statements. Additive + never fatal: on any failure the panel ships as
+    # fetched, with flow_quality absent from _panel_meta.json.
+    fq_audit: dict = {}
+    try:
+        from collectors.edgar_flow_quality import apply_flow_quality
+        # Load statements for xsrc lane (optional — proceed with None on failure)
+        fq_stmt = None
+        _stmt_p = config.data_dir() / "edgar" / "statements.parquet"
+        if _stmt_p.exists():
+            try:
+                fq_stmt = pd.read_parquet(
+                    _stmt_p,
+                    columns=["ticker", "fy", "ni", "revenue", "cfo",
+                             "op_income", "gross_profit"])
+            except Exception as _e:  # noqa: BLE001
+                log.warning("flow_quality: statements.parquet load failed (%s) "
+                            "— xsrc lane skipped", _e)
+        panel, fq_audit = apply_flow_quality(panel, statements=fq_stmt)
+        (config.data_dir() / "edgar" / "_flow_quality_audit.json").write_text(
+            json.dumps(fq_audit, indent=0))
+    except Exception as e:  # noqa: BLE001 — quality pass must not block the panel
+        log.warning("flow quality pass failed (%s) — panel ships unrepaired", e)
+        fq_audit = {"error": str(e)}
+
     panel.to_parquet(panel_p)
     all_numeric = PANEL_NUMERIC + [f for f in PANEL_STATEMENTS_JOIN if f in panel.columns]
     _panel_meta_path().write_text(json.dumps({
@@ -668,6 +696,11 @@ def fetch_panel(force: bool = False, max_age_days: int = 7,
         "share_quality": {k: sq_audit[k] for k in
                           ("rows_flagged", "tickers_flagged", "by_flag",
                            "repaired", "nulled", "error") if k in sq_audit},
+        # Flow-column quality: per-col scale-artifact counts; mirrors = ni_prior
+        # rows updated to match a repaired ni.
+        "flow_quality": {k: fq_audit[k] for k in
+                         ("rows_flagged", "tickers_flagged", "by_flag",
+                          "repaired", "nulled", "mirrors", "error") if k in fq_audit},
     }))
     log.info("edgar panel: %d rows, %d tickers, FY%d..%d",
              len(panel), panel["ticker"].nunique(), panel["fy"].min(), panel["fy"].max())

@@ -25,5 +25,20 @@
     },
     "repaired": 79,
     "nulled": 242
+  },
+  "flow_quality": {
+    "applied": "2026-07-10T19:07:28.999417+00:00",
+    "rows_flagged": 102,
+    "tickers_flagged": 26,
+    "by_flag": {
+      "ni:xsrc_scale": 80,
+      "ni:xsrc_cohort": 4,
+      "ni:flank_scale": 16,
+      "dividends:flank_scale": 1,
+      "op_income:flank_scale": 1
+    },
+    "repaired": 102,
+    "nulled": 0,
+    "mirrors": 80
   }
 }
