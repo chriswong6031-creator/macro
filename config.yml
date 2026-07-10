@@ -5632,6 +5632,28 @@ options_screener:
   enabled: true                    # re-enabled by operator 2026-07-06 (runs alongside the Terminal Options Hub)
 
 # --------------------------------------------------------------------------- #
+# intraday_flow — Intraday Flow Tracker (IFT A1/A2).
+# Washout-to-continuation leaders board over the configured basket universe.
+# All metrics deterministic; zero LLM. Intraday cadence writes site/live/ only
+# (HOUSE-U5). Forward ledger accrues nightly. Kill-switch: enabled: false
+# removes the nav entry, page, and nightly build step.
+# --------------------------------------------------------------------------- #
+intraday_flow:
+  enabled: true
+  universe_baskets:
+    - mag7
+    - ai_infra
+    - ai_software
+    - ai_semiconductors
+    - semicap_equipment
+    - reshoring
+    - defense
+    - power_grid
+  rvol_confirm: 1.30          # RVOL_tod threshold for L3 (mirrors engine/impulse.py)
+  durability_min: 0.60        # minimum share for L4 vol_durable + L5 flow_bid
+  washout_lookback: 10        # days for L1 washout_recent (bb_lower_reclaim)
+
+# --------------------------------------------------------------------------- #
 # flow_desk — Market Tide / Group Flow dashboard page (P3.1).
 # Re-enabled by operator 2026-07-06 — EOD dashboard view runs alongside the
 # Terminal Options Hub (which owns the intraday surfaces).

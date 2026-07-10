@@ -118,11 +118,18 @@ def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
         if ts is None:                                    # day/prev (or trade w/o t)
             ts = (datetime.fromtimestamp(row["updated"] / 1e9, tz=timezone.utc)
                   if row.get("updated") else now)
+        # Day volume, high, low from the day bucket (zero-extra-request: already fetched).
+        day_vol = day.get("v")
+        day_hi = day.get("h")
+        day_lo = day.get("l")
         out[sym] = {
             "price": round(float(price), 4), "quote_ts": ts.isoformat(),
             "source": "polygon", "price_basis": basis, "delay_min": _delay_min(ts, now),
             "prev_close": round(float(prev["c"]), 4) if prev.get("c") else None,
             "currency": "USD",
+            "day_volume": int(day_vol) if day_vol is not None else None,
+            "day_high": round(float(day_hi), 4) if day_hi is not None else None,
+            "day_low": round(float(day_lo), 4) if day_lo is not None else None,
         }
     return out
 
@@ -140,12 +147,19 @@ def parse_yahoo_spark(payload: dict, now: datetime | None = None) -> dict:
             continue
         ts_s = meta.get("regularMarketTime")
         ts = datetime.fromtimestamp(ts_s, tz=timezone.utc) if ts_s else now
+        # Volume, high, low from same meta object — zero extra requests.
+        day_vol = meta.get("regularMarketVolume")
+        day_hi = meta.get("regularMarketDayHigh")
+        day_lo = meta.get("regularMarketDayLow")
         out[sym] = {
             "price": round(float(price), 4), "quote_ts": ts.isoformat(),
             "source": "yahoo", "price_basis": "regular", "delay_min": _delay_min(ts, now),
             "prev_close": (round(float(meta["previousClose"]), 4)
                            if meta.get("previousClose") is not None else None),
             "currency": meta.get("currency"),
+            "day_volume": int(day_vol) if day_vol is not None else None,
+            "day_high": round(float(day_hi), 4) if day_hi is not None else None,
+            "day_low": round(float(day_lo), 4) if day_lo is not None else None,
         }
     return out
 

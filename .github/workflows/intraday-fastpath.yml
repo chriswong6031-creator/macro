@@ -112,6 +112,25 @@ jobs:
           fi
           python -m scripts.build_sp500_heatmap || \
             echo "::warning::sp500 heatmap live refresh failed (non-fatal; nightly payload keeps serving)"
+      - name: restore intraday bars cache (read-only — no save; fastpath reads but never writes data/)
+        # Mirrors the intraday-` restore-key used by intraday.yml and daily.yml.
+        # Restore-only: this job never writes back (HOUSE-U5 — intraday writes site/live/ only).
+        uses: actions/cache/restore@v4
+        with:
+          path: data/intraday
+          key: intraday-${{ github.run_id }}-fastpath-readonly
+          restore-keys: intraday-
+      - name: intraday flow fastpath (site/live/flow_pulse.json — all ticks)
+        # Computes VWAP, volume durability, higher-lows from today's cached hourly bars.
+        # Zero data/ writes (HOUSE-U5). Exit-0-always — never breaks the deploy.
+        run: |
+          set +e
+          python -m scripts.build_intraday_flow --mode fastpath
+          rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning::build_intraday_flow fastpath failed (rc=$rc, non-fatal)"
+          fi
+          exit 0
       - name: basket pulse (all ticks — pre|RTH|post session; site/live/basket_pulse.json)
         # Consumes the already-fetched live-quotes snapshot from the live-data branch.
         # Runs on EVERY tick (07:00 ET through the post-close ticks), not just RTH, so the premarket
@@ -140,13 +159,14 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           # Stage the served live artifacts (site/live/* is gitignored -> force-track, like site/stockdata)
           # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
-          git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live_config.js
+          git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live/flow_pulse.json site/live_config.js
           # S&P heatmap live refresh (tracked file; guard for the premarket ticks that skip the build)
           git add site/marketdata/sp500_heatmap.json 2>/dev/null || true
           # TS-U0: stage the lastgood sidecar so it survives the next checkout and
           # is available to the post-close tick's last_rth serve path. Guard with
           # || true since it may not exist on a tick that produced no live/delayed compute.
           git add -f site/live/basket_pulse_lastgood.json 2>/dev/null || true
+          git add -f site/live/flow_pulse_lastgood.json 2>/dev/null || true
           # notify_state.json is only written when an alert actually fires (or webhook is absent on
           # first tick — dark mode never creates the file). Guard with || true so a missing file on
           # the common no-event / dark-mode tick does NOT abort the commit step under bash -eo pipefail.
