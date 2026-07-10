@@ -46,7 +46,7 @@ class TestSessionDateBoundaries:
         return local.astimezone(timezone.utc)
 
     def test_in_session_before_close(self):
-        """19:59 ET on a session day (post-close) → that session day (already closed at 16:00)."""
+        """19:59 ET on a session day → that session day (ET calendar date is a session day)."""
         ts = self._et(2026, 7, 9, 19, 59)
         assert session_date(ts) == date(2026, 7, 9)
 
@@ -63,28 +63,36 @@ class TestSessionDateBoundaries:
         assert session_date(ts) == date(2026, 7, 9)
 
     def test_pre_open_next_et_day(self):
-        """00:30 ET on 2026-07-10 (Friday) before market open → last session = 2026-07-09.
+        """00:30 ET on 2026-07-10 (Friday) → 2026-07-10 (session day, no time cutoff).
 
-        2026-07-10 is a session day but it hasn't opened yet (00:30 < 16:00), so the
-        most recently completed session is 2026-07-09.
+        2026-07-10 is a session day. session_date() returns the ET calendar date when
+        that date is a session day, regardless of time-of-day (no 16:00 cutoff).
+        The whole ET calendar day is the session stamp for that session.
         """
         ts = self._et(2026, 7, 10, 0, 30)
-        assert session_date(ts) == date(2026, 7, 9)
+        assert cal.is_session(date(2026, 7, 10)), "Precondition: 2026-07-10 is a session"
+        assert session_date(ts) == date(2026, 7, 10)
 
     def test_evening_past_utc_midnight(self):
         """20:57 ET on 2026-07-09 = 00:57 UTC on 2026-07-10 → session date is 2026-07-09."""
         ts = self._et(2026, 7, 9, 20, 57)
         assert session_date(ts) == date(2026, 7, 9)
 
-    def test_at_close_boundary(self):
-        """16:00 ET exactly is the close — session is completed; returns today.
-        15:59 ET is pre-close — returns prior session.
+    def test_rth_window_returns_session_day(self):
+        """RTH timestamps on a session day always return that session day (no time cutoff).
+
+        Covers the intraday fastpath cron window (*/30 11-20 UTC = 07:00-16:00 ET):
+        09:30 ET, 14:00 ET, and 15:59 ET on 2026-07-09 all return 2026-07-09.
+        This is the core fix: the 16:00 cutoff was making intraday runs on session day
+        D return D-1 for the entire RTH window (07:00-15:59 ET).
         """
-        ts_before = self._et(2026, 7, 9, 15, 59)
+        for hour, minute in [(9, 30), (14, 0), (15, 59)]:
+            ts = self._et(2026, 7, 9, hour, minute)
+            assert session_date(ts) == date(2026, 7, 9), (
+                f"Expected 2026-07-09 at {hour:02d}:{minute:02d} ET, session_date returned wrong value"
+            )
+        # 16:00 ET (at close) also returns today
         ts_at = self._et(2026, 7, 9, 16, 0)
-        # Before 16:00 ET on a session day: prior session
-        assert session_date(ts_before) == date(2026, 7, 8)
-        # At 16:00 ET: this session is now complete
         assert session_date(ts_at) == date(2026, 7, 9)
 
     def test_weekend_resolves_to_friday(self):
@@ -110,7 +118,7 @@ class TestSessionDateBoundaries:
         """Naive datetimes are treated as UTC (pipeline convention).
 
         2026-07-10T00:01 naive = 20:01 ET on 2026-07-09 (past UTC midnight but same ET day).
-        The ET date is 2026-07-09, and 20:01 ET > 16:00 ET (close), so session = 2026-07-09.
+        The ET date is 2026-07-09 (a session day), so session_date() returns 2026-07-09.
         """
         ts_naive = datetime(2026, 7, 10, 0, 1)  # no tzinfo — treated as UTC
         assert session_date(ts_naive) == date(2026, 7, 9)
@@ -120,16 +128,16 @@ class TestSessionDateBoundaries:
         result = session_date(None)
         assert isinstance(result, date)
 
-    def test_monday_pre_open_resolves_to_friday(self):
-        """00:30 ET on a Monday → prior Friday session.
+    def test_monday_pre_open_returns_monday(self):
+        """00:30 ET on a Monday → that Monday (session day, no time cutoff).
 
-        2026-07-13 is a Monday (session day). At 00:30 ET the session hasn't opened
-        (00:30 < 16:00), so the most recently completed session is Friday 2026-07-10.
+        2026-07-13 is a Monday (session day). session_date() returns the ET calendar
+        date when it is a session day, regardless of time-of-day. No 16:00 cutoff.
         """
         # 2026-07-13 is a Monday
         ts = self._et(2026, 7, 13, 0, 30)
         assert cal.is_session(date(2026, 7, 13)), "Precondition: 2026-07-13 is a session"
-        assert session_date(ts) == date(2026, 7, 10)
+        assert session_date(ts) == date(2026, 7, 13)
 
 
 # ── (B) basket_turn_watch as_of uses session_date ──────────────────────────────
@@ -207,6 +215,48 @@ class TestNotifyTurnEventsSessionDate:
         result = NTE.run(today_str="2026-07-09", dry_run=True)
         assert result == 0
         assert not bad_date_called, "_session_date should not be called when today_str is provided"
+
+    def test_dedup_key_uses_session_date_not_prior_day(self, monkeypatch):
+        """RTH intraday IGNITION on session day D deduplicates under D, not D-1.
+
+        Regression test for the intraday-dedup regression: when session_date() returned
+        D-1 during RTH hours, an IGNITION on session day D would get dedup key
+        'ignition|<basket>|D-1'. If the prior session (D-1) had already fired an alert,
+        today's alert would be suppressed. With the fix, the key uses D.
+        """
+        import scripts.notify_turn_events as NTE
+
+        # Pin session date to 2026-07-09 (simulates intraday run at 10:00 ET on 07-09)
+        pinned_today = date(2026, 7, 9)
+        monkeypatch.setattr(NTE, "_session_date", lambda: pinned_today)
+
+        # Seed state with a PRIOR DAY key for the same basket (simulates an alert from 07-08)
+        prior_day_key = "ignition|TEST_BASKET|2026-07-08"
+        prior_state = {prior_day_key: True}
+
+        # Build a minimal turn_watch payload with TEST_BASKET in IGNITION
+        turn_watch = {
+            "as_of": "2026-07-09",
+            "baskets": [
+                {"basket_id": "TEST_BASKET", "state": "IGNITION", "k": 2, "legs": {"leg_a": True, "leg_b": True}},
+            ],
+        }
+
+        # Call the IGNITION detector directly
+        alerts = NTE._detect_ignition_transitions(turn_watch, prior_state, pinned_today.isoformat())
+        assert len(alerts) == 1, (
+            "IGNITION on 2026-07-09 should fire — prior day key '...2026-07-08' must not suppress it"
+        )
+        basket_id, msg = alerts[0]
+        assert basket_id == "TEST_BASKET"
+
+        # After marking fired, same call should be suppressed
+        NTE._mark_fired(prior_state, "ignition", "TEST_BASKET", pinned_today.isoformat())
+        alerts_after = NTE._detect_ignition_transitions(turn_watch, prior_state, pinned_today.isoformat())
+        assert len(alerts_after) == 0, "Second call on same day must be suppressed by dedup"
+        # The dedup key in state must use today's date, not prior day
+        today_key = f"ignition|TEST_BASKET|{pinned_today.isoformat()}"
+        assert today_key in prior_state, f"Expected '{today_key}' in state after firing"
 
 
 # ── (D) earlyclose stamp logic (unit test of the inline Python) ───────────────
