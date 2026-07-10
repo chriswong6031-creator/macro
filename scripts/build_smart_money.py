@@ -149,6 +149,19 @@ def _build_initiations(sm: dict, tracker: dict) -> list[dict]:
     return result
 
 
+# Index / sector / commodity ETFs are excluded from the CROSS-STOCK consensus and
+# crowding boards (GS-style single-stock convention): an SPY line is cash parking,
+# not a stock pick, and it distorts holder counts. Fund-book views (accordion,
+# rotation) still show them — this filter applies only to the cross-sectional boards.
+_INDEX_ETFS = frozenset({
+    "SPY", "IVV", "VOO", "QQQ", "IWM", "DIA", "VTI", "RSP", "MDY", "IJR", "IJH",
+    "EEM", "EFA", "VEA", "VWO", "FXI", "KWEB", "EWJ", "EWZ", "INDA",
+    "XLB", "XLC", "XLE", "XLF", "XLI", "XLK", "XLP", "XLRE", "XLU", "XLV", "XLY",
+    "SMH", "SOXX", "XBI", "IBB", "KRE", "XOP", "XME", "GDX", "GDXJ", "ARKK",
+    "GLD", "SLV", "USO", "UNG", "TLT", "IEF", "SHY", "HYG", "LQD", "AGG", "BND",
+})
+
+
 def _build_grand_portfolio(sm: dict) -> list[dict]:
     """Issuer-collapsed consensus board sorted by aggregate $."""
     if not sm:
@@ -156,8 +169,12 @@ def _build_grand_portfolio(sm: dict) -> list[dict]:
     by_ticker = sm.get("by_ticker", {})
     most_held = sm.get("most_held", [])
     out = []
+    n_etf_skipped = 0
     for m in most_held:
         ticker = m.get("ticker", "")
+        if ticker in _INDEX_ETFS:
+            n_etf_skipped += 1
+            continue
         bt = by_ticker.get(ticker, {})
         trend = bt.get("trend", {})
         holders_series = trend.get("holders_series", []) if trend else []
@@ -190,6 +207,9 @@ def _build_grand_portfolio(sm: dict) -> list[dict]:
             "asof": bt.get("as_of", ""),
         })
     out.sort(key=lambda r: -(r.get("agg_value_usd") or 0))
+    if n_etf_skipped:
+        log.info("grand_portfolio: %d index-ETF lines excluded from cross-stock board",
+                 n_etf_skipped)
     return out
 
 
@@ -249,6 +269,8 @@ def _build_crowding(sm: dict) -> list[dict]:
     ticker_dte_map: dict[str, float | None] = {}
     for m in most_held:
         ticker = m.get("ticker", "")
+        if ticker in _INDEX_ETFS:
+            continue
         bt = by_ticker.get(ticker, {})
         holders = [h for h in bt.get("holders", []) if h.get("action") != "exit"]
         as_of = bt.get("as_of", "")
@@ -525,10 +547,31 @@ def main() -> int:
         "filed_pending": clock.get("filed_pending", []),
     }
 
+    # Balanced display slice: the wire itself is newest-first across ALL axes, so a
+    # naive top-60 render would show only the fast axes (daily insider/13dg) between
+    # 13F filing windows. wire_display keeps the newest 20 rows PER normalized axis
+    # (13f incl. amendments / 13dg / insider), merged newest-first — additive key,
+    # display concern only.
+    def _axis_norm(r: dict) -> str:
+        ax = r.get("axis") or ""
+        if ax.startswith("form4"):
+            return "insider"
+        if ax == "13f" and r.get("type") == "13f_amendment":
+            return "13fa"     # amendments are dated later than the originals and
+                              # would otherwise crowd out every rotation delta
+        return ax
+    _DISPLAY_CAPS = {"13f": 20, "13fa": 8, "13dg": 20, "insider": 20}
+    wire_display: list[dict] = []
+    for ax_key, cap in _DISPLAY_CAPS.items():
+        ax_rows = [r for r in wire if _axis_norm(r) == ax_key]
+        wire_display.extend(ax_rows[:cap])
+    wire_display.sort(key=lambda r: r.get("date", ""), reverse=True)
+
     desk: dict = {
         "built": built,
         "freshness": freshness_block,
         "wire": wire,
+        "wire_display": wire_display,
         "initiations": initiations,
         "grand_portfolio": grand_portfolio,
         "crowding": crowding,

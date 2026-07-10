@@ -478,18 +478,26 @@ class TestWireCapAndDedup:
             })
         return rows
 
-    def test_wire_cap_trims_to_250(self, monkeypatch):
-        """build_wire must emit at most 250 rows."""
+    def test_wire_per_axis_caps(self, monkeypatch):
+        """build_wire caps each axis separately (13f=80, 13dg=60, insider=60) so a
+        chatty daily axis can never starve the quarterly 13F axis out of the wire."""
         import engine.ownership_event_wire as wire_mod
-        # Inject 400 rows by overriding the axis functions
-        big_rows = self._make_13dg_rows(400)
-        monkeypatch.setattr(wire_mod, "_13f_rows", lambda funds: [])
-        monkeypatch.setattr(wire_mod, "_13dg_rows", lambda **kw: big_rows)
+        big_dg = self._make_13dg_rows(400)
+        big_13f = [{"date": f"2026-05-{(i % 28) + 1:02d}", "axis": "13f", "type": "13f",
+                    "slug": "x", "fund": "X", "ticker": f"T{i}", "issuer": "",
+                    "action": "new", "magnitude": 2.0, "unit": "pct_book",
+                    "asof_note": "filed"} for i in range(200)]
+        monkeypatch.setattr(wire_mod, "_13f_rows", lambda funds: big_13f)
+        monkeypatch.setattr(wire_mod, "_13dg_rows", lambda **kw: big_dg)
         monkeypatch.setattr(wire_mod, "_insider_rows", lambda roster: [])
         monkeypatch.setattr(wire_mod, "_roster_tickers", lambda funds: set())
         from engine.ownership_event_wire import build_wire
         wire, clock = build_wire({})
-        assert len(wire) == 250
+        n_13f = sum(1 for r in wire if r["axis"] == "13f")
+        n_dg = sum(1 for r in wire if r["axis"] == "13dg")
+        assert n_13f == 80          # 13f keeps its own slice despite 400 13dg rows
+        assert n_dg == 60
+        assert len(wire) == 140
 
     def test_13dg_dedup_keeps_newest(self):
         """Duplicate (filer, ticker, form) entries keep only the newest date."""

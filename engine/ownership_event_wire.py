@@ -649,21 +649,27 @@ def build_wire(funds: dict[str, dict],
     except Exception:  # noqa: BLE001
         log.warning("insider axis failed — continuing without it", exc_info=True)
 
-    # CONCATENATE — never blend. Each axis is already typed separately.
+    # PER-AXIS caps, then concatenate — never blend. A single global newest-first
+    # cap starves the slow axis: between filing windows the 13F deltas (all dated
+    # ~May 15) would be entirely displaced by daily insider clusters, leaving the
+    # 13F filter empty. Each axis keeps its own newest slice; insider clusters are
+    # additionally ranked by |net_usd| so the 60 biggest clusters survive, not the
+    # 60 most recent micro-prints.
+    _CAP_13F, _CAP_13DG, _CAP_INSIDER = 80, 60, 60
+    n_before = (len(wire_13f), len(wire_13dg), len(wire_insider))
+    wire_13f = sorted(wire_13f, key=lambda r: r.get("date", ""), reverse=True)[:_CAP_13F]
+    wire_13dg = sorted(wire_13dg, key=lambda r: r.get("date", ""), reverse=True)[:_CAP_13DG]
+    wire_insider = sorted(wire_insider,
+                          key=lambda r: abs(r.get("net_usd") or 0),
+                          reverse=True)[:_CAP_INSIDER]
     all_rows = wire_13f + wire_13dg + wire_insider
 
     # Sort descending by date (reverse-chronological), preserving within-date order
     all_rows.sort(key=lambda r: r.get("date", ""), reverse=True)
-
-    # Cap emitted wire at 250 rows (newest first); log count of dropped rows
-    _WIRE_CAP = 250
-    if len(all_rows) > _WIRE_CAP:
-        dropped = len(all_rows) - _WIRE_CAP
-        log.info("build_wire: wire cap applied — emitting %d rows, dropped %d "
-                 "(total before cap: %d; 13f=%d 13dg=%d insider=%d)",
-                 _WIRE_CAP, dropped, len(all_rows),
-                 len(wire_13f), len(wire_13dg), len(wire_insider))
-        all_rows = all_rows[:_WIRE_CAP]
+    log.info("build_wire: per-axis caps — emitting %d rows "
+             "(13f %d->%d, 13dg %d->%d, insider %d->%d)",
+             len(all_rows), n_before[0], len(wire_13f),
+             n_before[1], len(wire_13dg), n_before[2], len(wire_insider))
 
     # Build fund_filings for the clock (latest period_end / filing_date per slug)
     fund_filings: dict[str, dict] = {}

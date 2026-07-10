@@ -242,6 +242,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {#- ===== set desk shorthand ===== -#}
 {% set d_fresh = desk.get('freshness') or {} %}
 {% set d_wire = desk.get('wire') or [] %}
+{% set d_wire_show = desk.get('wire_display') or d_wire[:60] %}
 {% set d_gp = desk.get('grand_portfolio') or [] %}
 {% set d_crowd = desk.get('crowding') or [] %}
 {% set d_init = desk.get('initiations') or [] %}
@@ -313,7 +314,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {# ======================================================================== #}
 <div class="sm-sec">
   <h2>{{ t('Ownership event wire','持仓事件播报') }}</h2>
-  <span class="h-note">{{ t('newest 60 of ' ~ (d_wire | length) ~ ' events across all axes — each row carries its own clock', '全轴事件最新60条（共' ~ (d_wire | length) ~ '条）——每行带独立时间戳') }}</span>
+  <span class="h-note">{{ t('newest events per axis (of ' ~ (d_wire | length) ~ ' in the feed) — each row carries its own clock', '各轴最新事件（数据流共' ~ (d_wire | length) ~ '条）——每行带独立时间戳') }}</span>
 </div>
 
 <div class="filters" id="wire-filters">
@@ -325,11 +326,13 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 </div>
 
 <div class="sm-card">
-  <p class="wire-count">{{ t('Showing 60 of ' ~ (d_wire | length) ~ ' — full feed in data/wire','展示60条，共' ~ (d_wire | length) ~ '条，完整记录见数据文件') }}</p>
+  <p class="wire-count">{{ t('Showing ' ~ (d_wire_show | length) ~ ' of ' ~ (d_wire | length) ~ ' (balanced per axis) — full feed in the data file','展示' ~ (d_wire_show | length) ~ '条，共' ~ (d_wire | length) ~ '条（按轴均衡）——完整记录见数据文件') }}</p>
   <ul class="wire" id="wire-list">
-  {% for row in d_wire[:60] %}
-    {% set ax = row.get('axis') or '' %}
-    {% set axis_class = 'axis-' ~ ax %}
+  {% for row in d_wire_show %}
+    {% set ax_raw = row.get('axis') or '' %}
+    {% set is_amend = row.get('type') == '13f_amendment' %}
+    {% set ax = 'insider' if ax_raw[:5] == 'form4' else ('13fa' if is_amend else ax_raw) %}
+    {% set axis_class = 'axis-form4' if ax == 'insider' else ('axis-13f' if ax == '13fa' else 'axis-' ~ ax) %}
     {% if ax == '13f' %}{% set axis_label = '13F' %}
     {% elif ax == '13fa' %}{% set axis_label = '13F/A' %}
     {% elif ax == '13dg' %}{% set axis_label = row.get('type') or '13D/G' %}
@@ -348,10 +351,15 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
     {% elif action == 'flip' %}{% set desc_en = fund ~ ' converts 13G → 13D (passive → active)' %}
     {% elif action in ('new','add') %}{% set desc_en = fund ~ ' ' ~ action ~ ((' ' ~ (mag | string) ~ unit) if mag else '') %}
     {% elif action in ('trim','exit') %}{% set desc_en = fund ~ ' ' ~ action ~ ((' ' ~ (mag | string) ~ unit) if mag else '') %}
+    {% elif ax == 'insider' %}
+      {% set nb = row.get('n_buys') or 0 %}{% set ns = row.get('n_sells') or 0 %}
+      {% set net = row.get('net_usd') or 0 %}
+      {% set net_mn = (net / 1000000) | round(1) %}
+      {% set desc_en = 'insider cluster — ' ~ nb ~ ' buy' ~ ('s' if nb != 1 else '') ~ ', ' ~ ns ~ ' sell' ~ ('s' if ns != 1 else '') ~ ', net ' ~ ('+' if net >= 0 else '−') ~ '$' ~ (net_mn | abs) ~ 'M' %}
     {% else %}{% set desc_en = fund ~ ' ' ~ action %}{% endif %}
 
     {% set asof_note = row.get('asof_note') or '' %}
-    {% set ax_tier = 'green' if ax in ('13dg','insider','short') else ('amber' if ax == 'short_interest' else 'red') %}
+    {% set ax_tier = 'green' if ax in ('13dg','insider','short') else ('amber' if ax == '13fa' else ('amber' if ax == 'short_interest' else 'red')) %}
 
     <li data-axis="{{ ax }}">
       <span class="wd num">{{ row.get('date') or '' }}</span>
@@ -539,7 +547,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {# ======================================================================== #}
 <div class="sm-sec">
   <h2>{{ t('Grand portfolio','总持仓组合') }}</h2>
-  <span class="h-note">{{ t('what the tracked cohort owns, share-class collapsed — sorted by aggregate $ (a size fact, not a ranking)','所追踪队列持有的仓位，合并股票类别——按总美元金额排序（反映规模，非排名）') }}</span>
+  <span class="h-note">{{ t('what the tracked cohort owns, share-class collapsed, index/sector ETFs excluded — sorted by aggregate $ (a size fact, not a ranking)','所追踪队列持有的仓位，合并股票类别、剔除指数/行业ETF——按总美元金额排序（反映规模，非排名）') }}</span>
 </div>
 
 <div class="sm-card">
@@ -815,7 +823,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {# Inline ticker index for autocomplete (small subset — only tickers from gp+crowding+initiations) #}
 {# Build index dicts via Jinja2 loops (no dict comprehension syntax in Jinja2) #}
 {% set _idx_ns = namespace(sm={}, crowd={}) %}
-{% for row in (d_gp + d_crowd) %}
+{% for row in (d_gp + d_crowd + d_init) %}
   {% if row.ticker %}
     {% set _ = _idx_ns.sm.update({row.ticker: (row.issuer or row.ticker)}) %}
   {% endif %}
