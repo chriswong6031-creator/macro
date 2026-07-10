@@ -584,7 +584,7 @@ def generate_results_md(summary: dict) -> str:
     lines.append("")
     lines.append("Wave-10 verdict assessment vs strongest naive (see 'Vs Strongest Naive' sections above for exact numbers):")
     lines.append("- **cpi_headline**: champion beat naive_prior in full and 2021+ windows. Expanding_mean may be slightly harder benchmark — see table above.")
-    lines.append("- **cpi_core**: champion was borderline vs naive_prior in 2021+. Per MRI-R28: pce_core (~ties expanding_mean) carries an honesty caveat; verdicts stand. See 'Vs Strongest Naive' section above.")
+    lines.append("- **cpi_core**: champion was borderline vs naive_prior in 2021+. Vs strongest naive: beats in full window (margin=+0.0055) but lags in 2021+ (margin=-0.0089, LAGS). Honesty caveat for cpi_core: model lags expanding_mean in 2021+; verdicts stand. See 'Vs Strongest Naive' section above.")
     lines.append("- **nfp**: champion beat naive in full (2010+) window; check 2021+ vs expanding_mean above.")
     lines.append("- **claims**: see 2021+ vs strongest naive above.")
     lines.append("")

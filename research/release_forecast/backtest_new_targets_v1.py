@@ -561,7 +561,7 @@ def _write_results_md(summary: dict) -> None:
     lines.append("- sticky/median/flex CPI sourced from ALFRED first-prints (PIT fix 2026-07-08); GASREGW declared unrevised in provenance.")
     lines.append("- PPI thin history: kill rule applied as written; no relaxation for thin history.")
     lines.append("- Round 2 will wire surviving targets into engine/release_forecast.py dispatch.")
-    lines.append("- expanding_mean = REPORTED (non-binding, MRI-R28b). Walk-forward expanding mean of target's first-print MoM history, strictly no-lookahead.")
+    lines.append("- expanding_mean = REPORTED (non-binding, MRI-R28b). Walk-forward expanding mean of target's first-print MoM history, strictly no-lookahead. Slightly underestimates the true expanding mean (excludes burn-in records in training that precede the first prediction) but is strictly no-lookahead.")
     lines.append("")
     lines.append("---")
     lines.append("")
