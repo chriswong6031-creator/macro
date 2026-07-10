@@ -1059,3 +1059,514 @@ class TestFullBuildIntegration:
         result = producer.build(tmp_path, dry_run=True)
         assert "shadows" in result.get("enrichments", []), \
             f"'shadows' must be in enrichments list, got {result.get('enrichments')}"
+
+
+# ===========================================================================
+# 9. FIX 1 — frozen_projection_p25/p75 in scored rows; all 5 pinball legs
+# ===========================================================================
+
+class TestFrozenP25P75:
+    """Fix 1: frozen_projection_p25/p75 must be frozen into scored rows so all 5
+    pinball legs accumulate on REAL scored rows (not hand-built fixtures).
+    """
+
+    def _build_projection_row_with_p25_p75(
+        self,
+        release_type: str = "cpi_headline",
+        period: str = "2026-06",
+        asof_night: str = "2026-07-01",
+        release_date: str = "2026-07-10",
+    ) -> dict:
+        """A projection ledger row that includes p25 and p75 quantiles."""
+        return {
+            "schema": 2,
+            "row_type": "projection",
+            "model": None,
+            "asof_night": asof_night,
+            "release": release_type,
+            "period": period,
+            "release_date": release_date,
+            "projection_point": 0.28,
+            "projection_p10": 0.10,
+            "projection_p25": 0.20,   # p25 present in projection row
+            "projection_p75": 0.36,   # p75 present in projection row
+            "projection_p90": 0.46,
+            "benchmark_naive_prior": 0.24,
+            "benchmark_trailing_3m": 0.25,
+            "benchmark_ar_model": 0.26,
+            "benchmark_cleveland": 0.30,
+            "cutoff_label": "T-1",
+        }
+
+    def _build_shadow_row_with_p25_p75(
+        self,
+        release_type: str = "cpi_headline",
+        period: str = "2026-06",
+        asof_night: str = "2026-07-01",
+        release_date: str = "2026-07-10",
+    ) -> dict:
+        """A shadow_projection ledger row that includes p25 and p75 quantiles."""
+        return {
+            "schema": 2,
+            "row_type": "shadow_projection",
+            "model": "v3_factor",
+            "asof_night": asof_night,
+            "release": release_type,
+            "period": period,
+            "release_date": release_date,
+            "projection_point": 0.25,
+            "projection_p10": 0.12,
+            "projection_p25": 0.18,   # p25 present
+            "projection_p75": 0.32,   # p75 present
+            "projection_p90": 0.42,
+            "cutoff_label": "T-1",
+        }
+
+    def test_scored_champion_row_has_frozen_p25_p75(self, tmp_path, monkeypatch):
+        """_check_release_day_capture: champion scored row must carry frozen_projection_p25/p75.
+
+        This is a live-path test through _check_release_day_capture on a fixture ledger
+        (not a hand-built scored row). The p25/p75 fields must be frozen FROM the picked
+        T-1 projection row.
+        """
+        import scripts.build_release_forecast as producer
+
+        ledger = [self._build_projection_row_with_p25_p75()]
+        actual_val = 0.30
+
+        monkeypatch.setattr(producer, "_get_initial_print",
+                            lambda root, rt, period, rd_str: 100.30)
+        monkeypatch.setattr(producer, "_compute_actual_from_print",
+                            lambda rt, raw, root, period: actual_val)
+
+        today = date(2026, 7, 14)  # after release_date 2026-07-10
+        scored = producer._check_release_day_capture(today, tmp_path, ledger)
+
+        assert len(scored) == 1, f"Expected 1 scored row, got {len(scored)}"
+        sr = scored[0]
+        assert sr.get("row_type") == "scored"
+        assert sr.get("model") is None  # champion
+
+        # p25 and p75 must be frozen from the T-1 projection row
+        assert sr.get("frozen_projection_p25") == pytest.approx(0.20, abs=1e-9), (
+            f"Expected frozen_projection_p25=0.20, got {sr.get('frozen_projection_p25')!r}"
+        )
+        assert sr.get("frozen_projection_p75") == pytest.approx(0.36, abs=1e-9), (
+            f"Expected frozen_projection_p75=0.36, got {sr.get('frozen_projection_p75')!r}"
+        )
+
+    def test_scored_shadow_row_has_frozen_p25_p75(self, tmp_path, monkeypatch):
+        """_check_release_day_capture: shadow scored row must carry frozen_projection_p25/p75."""
+        import scripts.build_release_forecast as producer
+
+        ledger = [self._build_shadow_row_with_p25_p75()]
+        actual_val = 0.28
+
+        monkeypatch.setattr(producer, "_get_initial_print",
+                            lambda root, rt, period, rd_str: 100.28)
+        monkeypatch.setattr(producer, "_compute_actual_from_print",
+                            lambda rt, raw, root, period: actual_val)
+
+        today = date(2026, 7, 14)
+        scored = producer._check_release_day_capture(today, tmp_path, ledger)
+
+        v3_rows = [r for r in scored if r.get("model") == "v3_factor"]
+        assert len(v3_rows) == 1, f"Expected 1 v3_factor scored row, got {len(v3_rows)}"
+        sr = v3_rows[0]
+
+        assert sr.get("frozen_projection_p25") == pytest.approx(0.18, abs=1e-9), (
+            f"Expected frozen_projection_p25=0.18, got {sr.get('frozen_projection_p25')!r}"
+        )
+        assert sr.get("frozen_projection_p75") == pytest.approx(0.32, abs=1e-9), (
+            f"Expected frozen_projection_p75=0.32, got {sr.get('frozen_projection_p75')!r}"
+        )
+
+    def test_all_5_pinball_legs_contribute_via_check_release_day_capture(
+        self, tmp_path, monkeypatch
+    ):
+        """All 5 pinball legs (p10,p25,p50,p75,p90) accumulate in scoreboard from a
+        ledger scored via _check_release_day_capture (not hand-built scored rows).
+
+        This is the live-path test mandated by Fix 1.
+        """
+        import scripts.build_release_forecast as producer
+        from scripts.build_release_forecast import _build_scoreboard
+
+        ledger = [self._build_projection_row_with_p25_p75()]
+        actual_val = 0.30
+
+        monkeypatch.setattr(producer, "_get_initial_print",
+                            lambda root, rt, period, rd_str: 100.30)
+        monkeypatch.setattr(producer, "_compute_actual_from_print",
+                            lambda rt, raw, root, period: actual_val)
+
+        today = date(2026, 7, 14)
+        scored = producer._check_release_day_capture(today, tmp_path, ledger)
+        assert len(scored) == 1
+
+        # Build scoreboard with the live scored row
+        sb = _build_scoreboard(scored, accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"].get("cpi_headline")
+        assert cpi_stats is not None, "cpi_headline must appear in scoreboard"
+
+        # pinball_loss_5q_n must be >= 1 (at least 1 row contributed)
+        assert cpi_stats.get("pinball_loss_5q_n", 0) >= 1, (
+            f"Expected pinball_loss_5q_n >= 1, got {cpi_stats.get('pinball_loss_5q_n')}"
+        )
+        # pinball_loss_5q must be a finite number (not None)
+        pb = cpi_stats.get("pinball_loss_5q")
+        assert pb is not None, (
+            "pinball_loss_5q must not be None when all 5 quantiles are present in the scored row"
+        )
+        assert isinstance(pb, (int, float)), f"pinball_loss_5q must be numeric, got {type(pb)}"
+
+        # Verify all 5 legs contribute: each individual quantile should be reachable
+        # by checking the frozen fields on the scored row
+        sr = scored[0]
+        for field in ("frozen_projection_p10", "frozen_projection_p25",
+                      "frozen_projection_point", "frozen_projection_p75",
+                      "frozen_projection_p90"):
+            assert sr.get(field) is not None, (
+                f"Expected {field} to be set on scored row for pinball leg, got None"
+            )
+
+
+# ===========================================================================
+# 10. FIX 3 — by_cutoff sub-map in scoreboard (MRI-R35)
+# ===========================================================================
+
+class TestByCutoffScoreboard:
+    """Fix 3: per-(release, model, cutoff_label) scoreboard split.
+
+    per_release and per_shadow blocks gain a by_cutoff sub-map
+    {T-1: {n, mae_ours, pinball_loss_5q}, early: {...}} each.
+    Totals must be backward-compatible.
+    """
+
+    def _scored_row_with_cutoff(
+        self,
+        release: str = "cpi_headline",
+        period: str = "2026-05",
+        actual: float = 0.25,
+        proj_point: float = 0.28,
+        proj_p10: float = 0.10,
+        proj_p25: float = 0.20,
+        proj_p75: float = 0.36,
+        proj_p90: float = 0.46,
+        cutoff_label: str = "T-1",
+        asof_night: str = "2026-06-15",
+        model: Any = None,
+    ) -> dict:
+        return {
+            "row_type": "scored",
+            "model": model,
+            "release": release,
+            "period": period,
+            "asof_night": asof_night,
+            "actual": actual,
+            "frozen_projection_point": proj_point,
+            "frozen_projection_p10": proj_p10,
+            "frozen_projection_p25": proj_p25,
+            "frozen_projection_p75": proj_p75,
+            "frozen_projection_p90": proj_p90,
+            "interval_hit": True,
+            "cutoff_label": cutoff_label,
+        }
+
+    def test_by_cutoff_present_in_by_release_entry(self):
+        """Each by_release entry must have a 'by_cutoff' sub-map."""
+        from scripts.build_release_forecast import _build_scoreboard
+
+        row = self._scored_row_with_cutoff(cutoff_label="T-1")
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"].get("cpi_headline")
+        assert cpi_stats is not None
+        assert "by_cutoff" in cpi_stats, (
+            f"by_cutoff sub-map missing from by_release entry: {list(cpi_stats)}"
+        )
+
+    def test_by_cutoff_t1_key_present_when_scored(self):
+        """by_cutoff must contain 'T-1' bucket when a T-1 scored row is present."""
+        from scripts.build_release_forecast import _build_scoreboard
+
+        row = self._scored_row_with_cutoff(cutoff_label="T-1")
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        by_cutoff = sb["by_release"]["cpi_headline"]["by_cutoff"]
+        assert "T-1" in by_cutoff, f"Expected 'T-1' in by_cutoff, got {list(by_cutoff)}"
+
+    def test_by_cutoff_early_key_present_when_scored(self):
+        """by_cutoff must contain 'early' bucket when an early scored row is present."""
+        from scripts.build_release_forecast import _build_scoreboard
+
+        row = self._scored_row_with_cutoff(cutoff_label="early")
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        by_cutoff = sb["by_release"]["cpi_headline"]["by_cutoff"]
+        assert "early" in by_cutoff, f"Expected 'early' in by_cutoff, got {list(by_cutoff)}"
+
+    def test_by_cutoff_n_counts_correct(self):
+        """by_cutoff n counts must match the number of rows per cutoff_label."""
+        from scripts.build_release_forecast import _build_scoreboard
+
+        row1 = self._scored_row_with_cutoff(period="2026-05", cutoff_label="T-1")
+        row2 = self._scored_row_with_cutoff(period="2026-06", cutoff_label="T-1", asof_night="2026-07-15")
+        row3 = self._scored_row_with_cutoff(period="2026-04", cutoff_label="early", asof_night="2026-05-15")
+        sb = _build_scoreboard([row1, row2, row3], accrual_start="2026-07-07")
+        by_cutoff = sb["by_release"]["cpi_headline"]["by_cutoff"]
+
+        assert by_cutoff["T-1"]["n"] == 2, (
+            f"Expected T-1 n=2, got {by_cutoff['T-1']['n']}"
+        )
+        assert by_cutoff["early"]["n"] == 1, (
+            f"Expected early n=1, got {by_cutoff['early']['n']}"
+        )
+
+    def test_by_cutoff_mae_ours_correct(self):
+        """by_cutoff mae_ours must equal mean |actual - proj| for that cutoff."""
+        from scripts.build_release_forecast import _build_scoreboard
+
+        # T-1 row: |0.25 - 0.28| = 0.03
+        row_t1 = self._scored_row_with_cutoff(
+            period="2026-05", actual=0.25, proj_point=0.28, cutoff_label="T-1"
+        )
+        # early row: |0.30 - 0.25| = 0.05
+        row_early = self._scored_row_with_cutoff(
+            period="2026-04", actual=0.30, proj_point=0.25, cutoff_label="early",
+            asof_night="2026-05-15"
+        )
+        sb = _build_scoreboard([row_t1, row_early], accrual_start="2026-07-07")
+        by_cutoff = sb["by_release"]["cpi_headline"]["by_cutoff"]
+
+        import pytest as _pytest
+        assert by_cutoff["T-1"]["mae_ours"] == _pytest.approx(0.03, abs=1e-4), (
+            f"T-1 mae_ours mismatch: {by_cutoff['T-1']['mae_ours']}"
+        )
+        assert by_cutoff["early"]["mae_ours"] == _pytest.approx(0.05, abs=1e-4), (
+            f"early mae_ours mismatch: {by_cutoff['early']['mae_ours']}"
+        )
+
+    def test_totals_unchanged_by_cutoff_split(self):
+        """Total n/mae_ours in the outer entry must not be affected by by_cutoff split."""
+        from scripts.build_release_forecast import _build_scoreboard
+
+        import pytest as _pytest
+        row1 = self._scored_row_with_cutoff(period="2026-05", actual=0.25, proj_point=0.28,
+                                            cutoff_label="T-1")
+        row2 = self._scored_row_with_cutoff(period="2026-06", actual=0.30, proj_point=0.25,
+                                            cutoff_label="early", asof_night="2026-07-15")
+        sb = _build_scoreboard([row1, row2], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+
+        # Total n = 2 (unchanged)
+        assert cpi_stats["n"] == 2, f"Total n must be 2, got {cpi_stats['n']}"
+        # Total mae_ours = mean(0.03, 0.05) = 0.04
+        assert cpi_stats["mae_ours"] == _pytest.approx(0.04, abs=1e-4), (
+            f"Total mae_ours must be 0.04, got {cpi_stats['mae_ours']}"
+        )
+
+    def test_by_cutoff_in_by_shadow(self):
+        """by_shadow entries also gain a by_cutoff sub-map (MRI-R35 covers shadow too)."""
+        from scripts.build_release_forecast import _build_scoreboard
+
+        shadow_row = self._scored_row_with_cutoff(
+            model="v3_factor", cutoff_label="T-1"
+        )
+        sb = _build_scoreboard([shadow_row], accrual_start="2026-07-07")
+
+        shadow_entry = sb["by_shadow"].get("cpi_headline:v3_factor")
+        assert shadow_entry is not None, "Shadow entry missing from by_shadow"
+        assert "by_cutoff" in shadow_entry, (
+            f"by_cutoff missing from shadow scoreboard entry: {list(shadow_entry)}"
+        )
+        assert "T-1" in shadow_entry["by_cutoff"], (
+            f"T-1 bucket missing from shadow by_cutoff: {list(shadow_entry['by_cutoff'])}"
+        )
+
+    def test_by_cutoff_empty_when_no_cutoff_label(self):
+        """If scored rows have no cutoff_label, by_cutoff is empty (not a crash)."""
+        from scripts.build_release_forecast import _build_scoreboard
+
+        row = {
+            "row_type": "scored",
+            "model": None,
+            "release": "cpi_headline",
+            "period": "2026-05",
+            "asof_night": "2026-06-15",
+            "actual": 0.25,
+            "frozen_projection_point": 0.28,
+            # cutoff_label intentionally absent
+        }
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        assert "by_cutoff" in cpi_stats
+        assert cpi_stats["by_cutoff"] == {}, (
+            f"by_cutoff must be empty when no cutoff_label on scored rows, got {cpi_stats['by_cutoff']}"
+        )
+
+    def test_pinball_loss_5q_in_by_cutoff(self):
+        """by_cutoff buckets must include pinball_loss_5q when quantiles are available."""
+        from scripts.build_release_forecast import _build_scoreboard
+        import pytest as _pytest
+
+        row = self._scored_row_with_cutoff(
+            actual=0.30, proj_point=0.28,
+            proj_p10=0.10, proj_p25=0.20, proj_p75=0.36, proj_p90=0.46,
+            cutoff_label="T-1",
+        )
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        by_cutoff = sb["by_release"]["cpi_headline"]["by_cutoff"]
+        t1 = by_cutoff.get("T-1", {})
+        assert "pinball_loss_5q" in t1, "by_cutoff T-1 must have pinball_loss_5q field"
+        # pinball_loss_5q is not None since all 5 quantiles present
+        assert t1["pinball_loss_5q"] is not None, (
+            "pinball_loss_5q must not be None when all 5 quantiles are present"
+        )
+
+
+# ===========================================================================
+# 11. FIX 4 — champion scored-row field equivalence test
+# ===========================================================================
+
+class TestChampionFieldEquivalence:
+    """Fix 4: run OLD selection semantics (strictly-pre-release T-1) and NEW path
+    on same fixture and assert identical scored-row field sets and values where
+    both produce a row.
+    """
+
+    def _build_pre_release_ledger(
+        self,
+        release_type: str = "cpi_headline",
+        period: str = "2026-06",
+        release_date: str = "2026-07-10",
+        pre_asof: str = "2026-07-01",   # strictly before release_date
+        rd_asof: str = "2026-07-10",    # same day as release_date
+    ) -> list[dict]:
+        """Return a ledger with TWO projection rows:
+        - One strictly-pre-release (asof_night < release_date) — this is what
+          both old and new semantics would pick as T-1.
+        - One release-day row (asof_night == release_date) — new path includes it
+          as a candidate but still prefers the strictly-pre-release row.
+        """
+        return [
+            {
+                "schema": 2,
+                "row_type": "projection",
+                "model": None,
+                "asof_night": pre_asof,
+                "release": release_type,
+                "period": period,
+                "release_date": release_date,
+                "projection_point": 0.28,
+                "projection_p10": 0.10,
+                "projection_p25": 0.20,
+                "projection_p75": 0.36,
+                "projection_p90": 0.46,
+                "benchmark_naive_prior": 0.24,
+                "benchmark_trailing_3m": 0.25,
+                "benchmark_ar_model": 0.26,
+                "benchmark_cleveland": 0.30,
+                "cutoff_label": "T-1",
+            },
+            {
+                "schema": 2,
+                "row_type": "projection",
+                "model": None,
+                "asof_night": rd_asof,   # release-day
+                "release": release_type,
+                "period": period,
+                "release_date": release_date,
+                "projection_point": 0.29,  # different value than pre-release
+                "projection_p10": 0.11,
+                "projection_p25": 0.21,
+                "projection_p75": 0.37,
+                "projection_p90": 0.47,
+                "benchmark_naive_prior": 0.24,
+                "benchmark_trailing_3m": 0.25,
+                "benchmark_ar_model": 0.26,
+                "benchmark_cleveland": 0.30,
+                "cutoff_label": "T-1",
+            },
+        ]
+
+    def test_old_and_new_semantics_produce_identical_scored_row_fields(
+        self, tmp_path, monkeypatch
+    ):
+        """OLD semantics (strictly-pre-release T-1 only) vs NEW path (release-day allowed
+        but pre-release preferred): when a strictly-pre-release row exists, both paths
+        select the same row and produce identical scored-row field sets and values.
+        """
+        import scripts.build_release_forecast as producer
+
+        ledger = self._build_pre_release_ledger()
+        release_date = date(2026, 7, 10)
+        actual_val = 0.30
+
+        monkeypatch.setattr(producer, "_get_initial_print",
+                            lambda root, rt, period, rd_str: 100.30)
+        monkeypatch.setattr(producer, "_compute_actual_from_print",
+                            lambda rt, raw, root, period: actual_val)
+
+        # --- New path (current code with Fix 1 + Fix 2 applied) ---
+        today = date(2026, 7, 14)
+        new_scored = producer._check_release_day_capture(today, tmp_path, ledger)
+
+        champ_new = [r for r in new_scored if r.get("model") is None]
+        assert len(champ_new) == 1, f"Expected 1 champion scored row, got {len(champ_new)}"
+        new_row = champ_new[0]
+
+        # --- Simulate OLD semantics: strictly-pre-release T-1 only ---
+        # Under old semantics, only rows with asof_night < release_date are candidates.
+        # Build a ledger that has ONLY the strictly-pre-release row.
+        old_ledger = [r for r in ledger if r.get("asof_night", "") < release_date.isoformat()]
+        old_scored = producer._check_release_day_capture(today, tmp_path, old_ledger)
+
+        champ_old = [r for r in old_scored if r.get("model") is None]
+        assert len(champ_old) == 1, f"Old semantics: expected 1 champion scored row, got {len(champ_old)}"
+        old_row = champ_old[0]
+
+        # Both must produce scored rows with identical field sets
+        assert set(new_row.keys()) == set(old_row.keys()), (
+            f"Field sets differ:\n  new-only={set(new_row)-set(old_row)}\n"
+            f"  old-only={set(old_row)-set(new_row)}"
+        )
+
+        # Key scoring fields must be identical
+        for field in (
+            "frozen_projection_point", "frozen_projection_p10", "frozen_projection_p25",
+            "frozen_projection_p75", "frozen_projection_p90",
+            "actual", "our_surprise", "interval_hit", "row_type", "model",
+            "release", "period", "release_date",
+        ):
+            assert new_row.get(field) == pytest.approx(old_row.get(field), abs=1e-9) if isinstance(old_row.get(field), float) else new_row.get(field) == old_row.get(field), (
+                f"Field {field!r} differs: new={new_row.get(field)!r} vs old={old_row.get(field)!r}"
+            )
+
+    def test_new_path_prefers_pre_release_over_release_day(
+        self, tmp_path, monkeypatch
+    ):
+        """When both strictly-pre-release and release-day rows exist, new path MUST
+        select the strictly-pre-release row (same as old semantics).
+        """
+        import scripts.build_release_forecast as producer
+
+        ledger = self._build_pre_release_ledger()
+
+        # The strictly-pre-release row has projection_point=0.28;
+        # the release-day row has projection_point=0.29.
+        # New path must select the pre-release row (projection_point=0.28).
+
+        actual_val = 0.30
+        monkeypatch.setattr(producer, "_get_initial_print",
+                            lambda root, rt, period, rd_str: 100.30)
+        monkeypatch.setattr(producer, "_compute_actual_from_print",
+                            lambda rt, raw, root, period: actual_val)
+
+        today = date(2026, 7, 14)
+        scored = producer._check_release_day_capture(today, tmp_path, ledger)
+        champ = [r for r in scored if r.get("model") is None]
+        assert len(champ) == 1
+        sr = champ[0]
+
+        # Must use the strictly-pre-release row (projection_point=0.28)
+        assert sr["frozen_projection_point"] == pytest.approx(0.28, abs=1e-9), (
+            f"Expected pre-release row's projection_point=0.28, got {sr['frozen_projection_point']}"
+        )

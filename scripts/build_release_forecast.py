@@ -1329,6 +1329,8 @@ def _check_release_day_capture(
         """Build a scored row for champion (model=None)."""
         proj_point = t1_proj.get("projection_point")
         proj_p10 = t1_proj.get("projection_p10")
+        proj_p25 = t1_proj.get("projection_p25")
+        proj_p75 = t1_proj.get("projection_p75")
         proj_p90 = t1_proj.get("projection_p90")
         proj_mode = t1_proj.get("projection_mode")
 
@@ -1398,6 +1400,8 @@ def _check_release_day_capture(
             "frozen_asof_night": t1_proj.get("asof_night"),
             "frozen_projection_point": proj_point,
             "frozen_projection_p10": proj_p10,
+            "frozen_projection_p25": proj_p25,
+            "frozen_projection_p75": proj_p75,
             "frozen_projection_p90": proj_p90,
             "our_surprise": our_surprise,
             "surprise_vs_naive": _sv(bench_naive),
@@ -1486,12 +1490,12 @@ def _check_release_day_capture(
                 log.debug("catch-up: no T-1 row for %s/%s", release_type, period_str)
                 continue
 
-            # MRI-R32c: check if this is a late back-projection case
-            # (the only row found is on or after release date)
-            has_pre_release = any(
-                r.get("asof_night", "") < release_date_str for r in all_proj
-            )
-            is_late = not has_pre_release
+            # MRI-R32c: late back-projection only when the selected T-1 row's asof_night
+            # is STRICTLY AFTER the release_date (projection was created post-print).
+            # Release-day rows (asof_night == release_date) are genuinely pre-print:
+            # the nightly runs 02:00 UTC (~10h before the 08:30 ET print), so they
+            # are NOT marked late — just annotated frozen_on_release_day by _pick_t1_row.
+            is_late = t1_proj.get("asof_night", "") > release_date_str
 
             sr = _score_champion(release_type, period_str, release_date_str, actual,
                                  t1_proj, frozen_on_rd, is_late)
@@ -1526,6 +1530,8 @@ def _check_release_day_capture(
 
             shadow_point = t1_shadow.get("projection_point")
             shadow_p10 = t1_shadow.get("projection_p10")
+            shadow_p25 = t1_shadow.get("projection_p25")
+            shadow_p75 = t1_shadow.get("projection_p75")
             shadow_p90 = t1_shadow.get("projection_p90")
 
             shadow_surprise = round(actual - shadow_point, 4) if shadow_point is not None else None
@@ -1546,6 +1552,8 @@ def _check_release_day_capture(
                 "frozen_asof_night": t1_shadow.get("asof_night"),
                 "frozen_projection_point": shadow_point,
                 "frozen_projection_p10": shadow_p10,
+                "frozen_projection_p25": shadow_p25,
+                "frozen_projection_p75": shadow_p75,
                 "frozen_projection_p90": shadow_p90,
                 "our_surprise": shadow_surprise,
                 "interval_hit": shadow_interval_hit,
@@ -1919,6 +1927,8 @@ def _build_scoreboard(
             # MRI-R31: pinball loss accumulators per quantile (p10,p25,p50,p75,p90)
             "pinball_p10": [], "pinball_p25": [], "pinball_p50": [],
             "pinball_p75": [], "pinball_p90": [],
+            # MRI-R35: per-cutoff_label accumulators (sub-agg, not output directly)
+            "_by_cutoff": {},
         }
 
     # Per release-type aggregation (champion rows, model=None)
@@ -2016,6 +2026,36 @@ def _build_scoreboard(
                     if dgs_h0 is not None:
                         g["reaction_dgs10_h0_abs"].append(abs(dgs_h0))
 
+        # MRI-R35: per-(release, model, cutoff_label) split — accumulate into sub-agg.
+        # Only n/MAE/pinball tracked per cutoff (lighter than full replication).
+        cutoff_label = row.get("cutoff_label")
+        if cutoff_label is not None:
+            if cutoff_label not in g["_by_cutoff"]:
+                g["_by_cutoff"][cutoff_label] = {
+                    "n": 0,
+                    "our_abs_errors": [],
+                    "pinball_p10": [], "pinball_p25": [], "pinball_p50": [],
+                    "pinball_p75": [], "pinball_p90": [],
+                }
+            cg = g["_by_cutoff"][cutoff_label]
+            cg["n"] += 1
+            if actual is not None and proj is not None:
+                cg["our_abs_errors"].append(abs(actual - proj))
+            # Pinball per cutoff
+            if actual is not None:
+                _pb_cut = {
+                    "pinball_p10": (row.get("frozen_projection_p10"), 0.10),
+                    "pinball_p25": (row.get("frozen_projection_p25"), 0.25),
+                    "pinball_p50": (row.get("frozen_projection_point"), 0.50),
+                    "pinball_p75": (row.get("frozen_projection_p75"), 0.75),
+                    "pinball_p90": (row.get("frozen_projection_p90"), 0.90),
+                }
+                for pb_key, (q_val, alpha) in _pb_cut.items():
+                    if q_val is not None:
+                        err = float(actual) - float(q_val)
+                        pb = err * alpha if err >= 0 else err * (alpha - 1.0)
+                        cg[pb_key].append(pb)
+
     def _agg_to_stats(rt: str, g: dict, model_label: str | None = None) -> dict:
         """Convert accumulator to scoreboard stats entry."""
         n = g["n"]
@@ -2097,6 +2137,28 @@ def _build_scoreboard(
                 "Era-split results in research/release_forecast/CLAIMS_BACKTEST.md are "
                 "the authoritative reference."
             )
+
+        # MRI-R35: by_cutoff sub-map {cutoff_label: {n, mae_ours, pinball_loss_5q}}
+        # Backward-compatible: totals above are unchanged; by_cutoff is additive.
+        by_cutoff: dict[str, dict] = {}
+        for cl, cg in (g.get("_by_cutoff") or {}).items():
+            def _pb5(cg: dict) -> float | None:
+                _pb_keys = ("pinball_p10", "pinball_p25", "pinball_p50", "pinball_p75", "pinball_p90")
+                if not any(cg.get(k) for k in _pb_keys):
+                    return None
+                return round(
+                    sum(
+                        float(np.mean(cg[k])) for k in _pb_keys if cg.get(k)
+                    ),
+                    4,
+                )
+            by_cutoff[cl] = {
+                "n": cg["n"],
+                "mae_ours": _mae(cg["our_abs_errors"]),
+                "pinball_loss_5q": _pb5(cg),
+            }
+        _entry["by_cutoff"] = by_cutoff
+
         return _entry
 
     release_stats: dict[str, dict] = {}

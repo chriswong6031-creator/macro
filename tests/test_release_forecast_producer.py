@@ -1604,8 +1604,16 @@ class TestCatchUpSweep:
             f"Expected 0 scored rows (period outside 120d lookback), got {len(scored)}"
         )
 
-    def test_catch_up_late_flag_when_no_pre_release(self, tmp_root: Path):
-        """MRI-R32c: when only release-day projection exists, scored row gets late=True."""
+    def test_catch_up_release_day_row_not_late(self, tmp_root: Path):
+        """MRI-R32b/R32c fix: when only a release-day projection exists (asof_night ==
+        release_date), the scored row must NOT have late=True.
+
+        The nightly pipeline runs 02:00 UTC (~10h before the 08:30 ET print), so a
+        release-day row is genuinely pre-print.  It receives frozen_on_release_day=True
+        for annotation, but late=True is reserved for projections created AFTER the
+        release printed (asof_night > release_date) — a case the current ledger filter
+        (asof_night <= release_date) prevents from entering the scoring window.
+        """
         _make_vintage_parquet(tmp_root, [
             {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
              "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
@@ -1620,12 +1628,13 @@ class TestCatchUpSweep:
         )
         today = date(2026, 7, 10)
         scored = _check_release_day_capture(today, tmp_root, [proj_row])
-        # MRI-R32b: release-day row is used; MRI-R32c: no pre-release → late=True
         assert len(scored) == 1
         sr = scored[0]
-        assert sr.get("late") is True, (
-            f"Expected late=True (only release-day projection exists), got late={sr.get('late')!r}"
+        # Release-day row is pre-print (02:00 UTC nightly) → NOT late
+        assert sr.get("late") is not True, (
+            f"Release-day row must NOT be marked late (it is pre-print), got late={sr.get('late')!r}"
         )
+        # But it SHOULD be annotated as frozen_on_release_day
         assert sr.get("frozen_on_release_day") is True, (
             "Expected frozen_on_release_day=True when asof_night == release_date"
         )
