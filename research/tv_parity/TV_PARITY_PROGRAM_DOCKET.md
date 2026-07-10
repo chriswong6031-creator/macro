@@ -131,3 +131,22 @@ ChartPanel-adjacent surfaces. Phase 0 ships immediately on disjoint-ish surfaces
     Watchlist" tooltip) + crosshair target ("Go to Symbol" → jumps chart) instead of +.
     Footer hint: "⇧+Click or ⇧+Enter to add symbol and close dialog". History = local
     ring buffer (~50), recorded on search commits and symbol navigations.
+
+## Phase 7 — right-click context suite (operator brief 2026-07-09 night, 5 TV screenshots)
+
+21. **Chart context menu** (TV structure, NO trading rows per operator): Reset chart
+    view ⌥R | ─ | Copy price <clicked price> · Paste ⌘V | ─ | Add alert on <SYM> at
+    <price>… ⌥A (opens our alert dialog PREFILLED: condition Price/Crossing/<clicked
+    value>) | ─ | Lock vertical cursor line by time (pins a dashed vertical line at the
+    clicked timestamp w/ a lock marker on the time axis; toggle; persists per layout) |
+    ─ | Table view · Object tree · Chart template ▸ | ─ | Remove N indicators (live
+    count) | ─ | Settings… (opens the Phase-2 modal).
+22. **Chart template ▸ submenu**: saved templates (click = apply indicator set +
+    settings) + "Save as template" → popup titled "Save template as" (name input,
+    Save/Cancel, overwrite confirm). Per-user persistence.
+23. **Table view**: replaces the chart region — "<Company> · Table view" header +
+    Back-to-chart; Download data (CSV); Date·TF | O/H/L/C | Change (+abs/+%) | Volume |
+    one column per ACTIVE indicator (∅ when absent); newest first; active TF.
+24. **Object tree**: right-rail tab listing the symbol node + every indicator with eye
+    toggles + remove; sub-pane grouping; Data-window tab only if crosshair plumbing is
+    free (no dead tab).
