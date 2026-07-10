@@ -1,0 +1,997 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% set ift = intraday_flow if intraday_flow else {} %}
+{% set leaders = ift.leaders if ift.leaders else [] %}
+{% set rvol_confirm = ift.rvol_confirm if ift.rvol_confirm is defined else 1.30 %}
+{% set dur_min = ift.durability_min if ift.durability_min is defined else 0.60 %}
+{% set washout_lb = ift.washout_lookback if ift.washout_lookback is defined else 10 %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intraday Flow Tracker · 盘中资金流追踪</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(40px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; font-weight:600; letter-spacing:.2px; }
+  h3 { font-size:12px; margin:0 0 6px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; }
+  .note { margin:8px 0 0; line-height:1.5; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .tabnum { font-variant-numeric:tabular-nums; }
+  .lag-tag { display:inline-block; font-size:10px; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--muted); vertical-align:middle; margin-left:4px; }
+  .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:3px; }
+
+  /* ── Filter / toolbar ─────────────────────────────────────────── */
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+  .chip { display:inline-block; font-size:11px; padding:3px 9px; border-radius:20px; border:1px solid var(--line); cursor:pointer; user-select:none; background:var(--panel2); color:var(--muted); transition:background .15s,border-color .15s,color .15s; }
+  .chip.active { background:var(--blue,#3b82f6); border-color:var(--blue,#3b82f6); color:#fff; }
+  .chip:hover:not(.active) { border-color:var(--muted); color:var(--text); }
+  .k-filter { display:flex; align-items:center; gap:4px; font-size:12px; }
+  .k-filter select { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:3px 8px; font-size:12px; cursor:pointer; }
+  .search-box { flex:1; min-width:120px; max-width:240px; }
+  .search-box input { width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:4px 10px; font-size:12px; outline:none; }
+  .search-box input:focus { border-color:var(--blue,#3b82f6); }
+  .stamp-row { margin-left:auto; font-size:11px; color:var(--muted); white-space:nowrap; }
+
+  /* ── Leaders table ────────────────────────────────────────────── */
+  .leaders-wrap { overflow-x:auto; }
+  table.leaders { width:100%; border-collapse:collapse; font-size:13px; }
+  table.leaders th { padding:7px 10px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); border-bottom:2px solid var(--line); cursor:pointer; white-space:nowrap; user-select:none; }
+  table.leaders th:hover { color:var(--text); }
+  table.leaders th .sort-ic { display:inline-block; margin-left:3px; opacity:.4; }
+  table.leaders th.sort-asc .sort-ic::after { content:"↑"; opacity:1; }
+  table.leaders th.sort-desc .sort-ic::after { content:"↓"; opacity:1; }
+  table.leaders th:not(.sort-asc):not(.sort-desc) .sort-ic::after { content:"↕"; }
+  table.leaders td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.leaders tr:last-child td { border-bottom:none; }
+  table.leaders tr:hover td { background:var(--panel2); }
+  .tk-link { font-weight:700; font-size:14px; color:var(--blue,#3b82f6); }
+  .tk-link:hover { text-decoration:underline; }
+  .price-cell { white-space:nowrap; }
+  .pct-chg { font-size:11px; margin-left:4px; }
+
+  /* ── Gauge / bars ─────────────────────────────────────────────── */
+  .gauge-wrap { display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .gauge-bar { width:52px; height:7px; background:var(--line); border-radius:4px; overflow:hidden; flex-shrink:0; }
+  .gauge-fill { height:100%; border-radius:4px; background:var(--blue,#3b82f6); transition:width .3s; }
+  .gauge-hi { background:var(--up); }
+  .gauge-med { background:var(--orange,#f97316); }
+  .gauge-lo { background:var(--muted); }
+  .gauge-val { font-size:12px; font-variant-numeric:tabular-nums; }
+  .range-pos { color:var(--up); } .range-neg { color:var(--down); }
+
+  /* ── Chips / badges ───────────────────────────────────────────── */
+  .chip-row { display:flex; flex-wrap:wrap; gap:3px; }
+  .badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 6px; border-radius:5px; border:1px solid; white-space:nowrap; }
+  .badge-green { color:var(--up); border-color:var(--up); }
+  .badge-red { color:var(--down); border-color:var(--down); }
+  .badge-blue { color:var(--blue,#3b82f6); border-color:var(--blue,#3b82f6); }
+  .badge-orange { color:var(--orange,#f97316); border-color:var(--orange,#f97316); }
+  .badge-muted { color:var(--muted); border-color:var(--line); }
+
+  /* ── Confluence K/7 ──────────────────────────────────────────── */
+  .kbar { display:inline-flex; gap:2px; vertical-align:middle; }
+  .kbar-dot { width:9px; height:9px; border-radius:50%; border:1px solid var(--line); background:var(--panel2); }
+  .kbar-dot.on { background:var(--up); border-color:var(--up); }
+  .k-label { font-size:12px; font-weight:700; margin-right:5px; }
+  .k-expand-btn { font-size:10px; cursor:pointer; color:var(--blue,#3b82f6); margin-left:5px; background:none; border:none; padding:0; }
+  .k-legs-row { display:none; font-size:11px; padding:4px 0 2px; }
+  .k-legs-row.open { display:flex; flex-wrap:wrap; gap:3px 6px; }
+  .leg-chip { display:inline-flex; align-items:center; gap:2px; font-size:10px; padding:1px 5px; border-radius:4px; border:1px solid var(--line); }
+  .leg-on { border-color:var(--up); color:var(--up); }
+  .leg-off { color:var(--muted); }
+
+  /* ── Risk ladder ──────────────────────────────────────────────── */
+  .risk-mini { font-size:11px; color:var(--muted); white-space:nowrap; }
+  .risk-mini .level { display:inline-block; }
+  .risk-mini .level + .level::before { content:"·"; margin:0 4px; }
+
+  /* ── Direction / velocity arrow ──────────────────────────────── */
+  .arrow { display:inline-block; font-size:14px; line-height:1; }
+  .arrow-up { color:var(--up); }
+  .arrow-dn { color:var(--down); }
+  .arrow-flat { color:var(--muted); }
+
+  /* ── Dur bar ─────────────────────────────────────────────────── */
+  .dur-bar { width:42px; height:7px; background:var(--line); border-radius:4px; overflow:hidden; display:inline-block; vertical-align:middle; }
+  .dur-fill { height:100%; border-radius:4px; }
+
+  /* ── Playbook accordion ──────────────────────────────────────── */
+  .playbook-section { border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:8px; }
+  .playbook-hd { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; cursor:pointer; font-weight:600; font-size:13px; user-select:none; }
+  .playbook-hd:hover { background:var(--panel2); }
+  .playbook-hd .caret { font-size:11px; color:var(--muted); transition:transform .2s; }
+  .playbook-section.open .playbook-hd .caret { transform:rotate(90deg); }
+  .playbook-body { display:none; padding:10px 14px; font-size:13px; line-height:1.6; border-top:1px solid var(--line); }
+  .playbook-section.open .playbook-body { display:block; }
+  .playbook-body ul { margin:6px 0 0 18px; padding:0; }
+  .playbook-body li { margin-bottom:3px; }
+
+  /* ── Options flow block ──────────────────────────────────────── */
+  .flow-ncp { font-size:12px; font-variant-numeric:tabular-nums; }
+  .stale-note { font-size:10px; color:var(--muted); font-style:italic; }
+
+  /* ── Empty / loading states ──────────────────────────────────── */
+  .loading-row td { color:var(--muted); font-style:italic; text-align:center; padding:24px; }
+  .no-data { color:var(--muted); padding:20px; text-align:center; }
+
+  @media (max-width:800px) {
+    table.leaders { font-size:12px; }
+    table.leaders th, table.leaders td { padding:6px 7px; }
+    .gauge-bar { width:36px; }
+    .dur-bar { width:30px; }
+  }
+</style>
+</head>
+<body class="page-intraday-flow">
+
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<!-- Header panel -->
+<div class="panel">
+  <div class="topline">
+    <h1>📊 {{ t('Intraday Flow Tracker', '盘中资金流追踪') }}</h1>
+    <span class="lag-tag">{{ t('≈15-min delayed bars', '≈15分钟延迟价格') }}</span>
+    <span class="lag-tag soft-tag">{{ t('~options direction soft', '~期权方向软性') }}</span>
+  </div>
+  <p class="muted sm note">{{ t(
+    "Washout-to-continuation leaders board — volume durability · RVOL vs time-of-day · VWAP context · ~net call premium tape activity &amp; options-flow persistence. All metrics deterministic; no scores; annotates only. Reference levels are not trade advice.",
+    "洗盘-延续型领涨股看板 — 成交量持续性 · RVOL与时段基准对比 · VWAP上下 · ~净看涨权利金资金活跃度与期权流动性持续性。所有指标均为确定性计算；无评分；仅作参考标注。参考价位不构成交易建议。") }}</p>
+  <div class="topline" style="margin-top:8px">
+    <span class="xs muted">{{ t('Universe:', '覆盖：') }} <span id="ift-universe-note">{{ ift.n_leaders if ift.n_leaders else 0 }} {{ t('leaders', '只领涨股') }}</span></span>
+    <span class="xs muted" id="ift-built">{{ t('Nightly base:', '夜间基础数据：') }} {{ ift.as_of if ift.as_of else '—' }}</span>
+    <span class="xs muted" id="ift-quotes-stamp">{{ t('Quotes:', '报价：') }} <span class="l-en">loading…</span><span class="l-zh">加载中…</span></span>
+    <span class="xs muted" id="ift-pulse-stamp">{{ t('Pulse:', '脉冲：') }} <span class="l-en">loading…</span><span class="l-zh">加载中…</span></span>
+    <span class="xs muted" id="ift-flow-stamp">{{ t('Options tape:', '期权带：') }} <span class="l-en">off-hours</span><span class="l-zh">非交易时段</span></span>
+  </div>
+</div>
+
+<!-- Toolbar: basket filters + K filter + search -->
+<div class="panel" style="padding:10px 16px">
+  <div class="toolbar">
+    <span class="chip active" data-basket="all">{{ t('All', '全部') }}</span>
+    <span class="chip" data-basket="mag7">Mag7</span>
+    <span class="chip" data-basket="ai_infra">{{ t('AI Infra', 'AI基础') }}</span>
+    <span class="chip" data-basket="ai_software">{{ t('AI Software', 'AI软件') }}</span>
+    <span class="chip" data-basket="ai_semiconductors">{{ t('AI Semis', 'AI芯片') }}</span>
+    <span class="chip" data-basket="semicap_equipment">{{ t('Semicap', '设备') }}</span>
+    <span class="chip" data-basket="reshoring">{{ t('Reshoring', '回流') }}</span>
+    <span class="chip" data-basket="defense">{{ t('Defense', '国防') }}</span>
+    <span class="chip" data-basket="power_grid">{{ t('Power Grid', '电网') }}</span>
+    <div class="k-filter">
+      <label for="k-sel" class="muted xs">K≥</label>
+      <select id="k-sel">
+        <option value="0">{{ t('Any', '任意') }}</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+      </select>
+    </div>
+    <div class="search-box">
+      {# Never put dual-language spans inside an attribute — the class="" quotes break
+         the tag (see theme.js nav-search comment). EN in placeholder, ZH in data-ph-zh. #}
+      <input type="text" id="ift-search" placeholder="Ticker search…" data-ph-zh="搜索代码…" autocomplete="off">
+    </div>
+    <span class="stamp-row xs muted" id="sort-label">{{ t('Sorted by RVOL ↓', '按RVOL排序↓') }}</span>
+  </div>
+</div>
+
+<!-- Leaders table -->
+<div class="panel">
+  <div class="leaders-wrap">
+    <table class="leaders" id="leaders-table">
+      <thead>
+        <tr>
+          <th data-col="ticker" class="col-ticker">{{ t('Ticker', '代码') }}<span class="sort-ic"></span></th>
+          <th data-col="last" class="col-last">{{ t('Last / %Chg', '最新/涨跌') }}<span class="sort-ic"></span></th>
+          <th data-col="rvol" class="sort-desc col-rvol">{{ t('RVOL', 'RVOL时段') }}{{ help('RVOL_tod = cumulative day volume ÷ (ADV20 × expected share at this time of day). ≥1.30 triggers L3.', 'RVOL_tod=当日累计成交量÷(ADV20×当前时段预期占比)。≥1.30触发L3。') }}<span class="sort-ic"></span></th>
+          <th data-col="range_pos" class="col-range">{{ t('Day Range', '日内区间') }}<span class="sort-ic"></span></th>
+          <th data-col="vwap_delta" class="col-vwap">{{ t('vs VWAP', '对VWAP') }}<span class="sort-ic"></span></th>
+          <th data-col="vol_dur" class="col-voldur">{{ t('Vol Dur', '量持续') }}{{ help('Share of today\'s hourly bars closing upper-half with volume ≥ time-of-day baseline. ≥0.60 triggers L4.', '今日小时K收盘在上半段且成交量≥时段基准的比例。≥0.60触发L4。') }}<span class="sort-ic"></span></th>
+          <th data-col="ncp" class="col-ncp">{{ t('~NCP / Flow', '~净看涨权利金/流速') }}{{ help('~net call premium is SOFT direction — approximate (minute tick-rule signing, RUL-F3.12). Flow velocity = slope of cumulative NCP vs session pace.', '~净看涨权利金方向软性近似（逐分钟打单，RUL-F3.12）。流速=累计NCP斜率vs当日均速。') }}<span class="sort-ic"></span></th>
+          <th data-col="setup" class="col-setup">{{ t('Setup / Chips', '布局/标签') }}</th>
+          <th data-col="k" class="col-k">{{ t('K/7', '汇聚K/7') }}{{ help('Boolean confluence count: L1 washout_recent · L2 reclaim · L3 rvol_elevated · L4 vol_durable · L5 flow_bid(~soft) · L6 upturn_organ · L7 leader_quality. No weighted score.', '布尔汇聚计数：L1洗盘近期·L2收复·L3放量·L4量持续·L5资金偏多(~软性)·L6上升器官·L7领涨质量。无加权分数。') }}<span class="sort-ic"></span></th>
+          <th data-col="risk" class="col-risk">{{ t('Ref Levels', '参考价位') }}{{ help('Reference levels only — not trade advice. Entry stop from nightly entry_signal; session VWAP from fastpath; session low from price bars.', '仅供参考，不构成交易建议。入场止损来自夜间entry_signal；VWAP来自实时快速路径；日内低点来自价格数据。') }}</th>
+        </tr>
+      </thead>
+      <tbody id="leaders-body">
+        <tr class="loading-row"><td colspan="10"><span class="l-en">Loading leaders…</span><span class="l-zh">加载中…</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="xs muted" style="margin-top:8px;text-align:right" id="count-label"></p>
+</div>
+
+<!-- Playbook accordion -->
+<div class="panel">
+  <h2>{{ t('Playbook — Washout to Continuation', '操盘手册 — 洗盘至延续') }}
+    <span class="lag-tag">{{ t('field guide', '实战指南') }}</span>
+  </h2>
+
+  <div class="playbook-section open">
+    <div class="playbook-hd">
+      <span>{{ t('1 · Universe &amp; leadership screen', '1 · 覆盖范围与领涨筛选') }}</span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">This board covers the Mag7, AI infrastructure, AI software, AI semiconductor, semicap equipment, reshoring, defense, and power-grid baskets — names with demonstrated institutional sponsorship and options liquidity. The goal is not to find cheap stocks; it is to find tape-active leaders that have absorbed selling and are showing durable re-accumulation. Only the <em>leader quality</em> universe is relevant — trap-prone names (failed-breakout-trap chip) are deprioritized.</p>
+      <p class="l-zh">本看板覆盖Mag7、AI基础设施、AI软件、AI半导体、半导体设备、回流制造、国防与电网篮子——这些标的具有机构持续性参与和期权流动性。目标不是寻找廉价股，而是寻找经历卖压洗盘后表现出持续吸筹的活跃领涨股。只关注<em>领涨质量</em>标的——回踩陷阱型标的（trap-prone标签）优先级降低。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span>{{ t('2 · Washout context — what makes a setup valid', '2 · 洗盘背景 — 何为有效布局') }}</span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">A valid washout context requires at least one of: a Bollinger-lower-band reclaim within the past {{ washout_lb }} sessions (L1a), or a 21-day max drawdown ≤ −12% with recovery already begun (L1b). Without prior compression or selling, a high RVOL reading is just noise. The washout gives the continuation move its structural floor — the stop goes <em>below</em> the washout structure, not below the current bar.</p>
+      <p class="l-zh">有效的洗盘背景要求满足至少一项：过去{{ washout_lb }}个交易日内收复布林下轨（L1a），或21日最大回撤≤−12%且已开始修复（L1b）。没有前期压缩或卖压，高RVOL读数只是噪声。洗盘为延续走势提供了结构性底部——止损应设在<em>洗盘结构下方</em>，而非当前K线下方。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span>{{ t('3 · Volume &amp; RVOL — durable accumulation vs noise', '3 · 成交量与RVOL — 持续吸筹vs噪声') }}</span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">RVOL_tod compares today's cumulative volume to ADV20 × the expected time-of-day volume share from trailing 20 sessions. A reading ≥ {{ rvol_confirm }}× (L3) is elevated. Volume durability (L4) requires ≥ {{ (dur_min * 100)|int }}% of today's hourly bars to close in their upper half with above-baseline volume — this distinguishes a sustained bid from a single spike. Higher-lows count confirms price is not giving back each bar's gain. RVOL alone is insufficient; it must arrive with durability.</p>
+      <p class="l-zh">RVOL_tod将今日累计成交量与ADV20×过去20个交易日该时段平均成交占比的乘积对比。读数≥{{ rvol_confirm }}×（L3）为放量。成交量持续性（L4）要求今日≥{{ (dur_min * 100)|int }}%的小时K收盘在上半段且成交量高于时段基准——这区分了持续买盘与单次放量。Higher-lows计数确认价格未在每根K线后回吐涨幅。RVOL单独不够，必须配合持续性。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span>{{ t('4 · Options tape — tape activity &amp; flow persistence (~soft)', '4 · 期权带 — 活跃度与流动持续性（~软性）') }}</span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">The options flow block shows tape activity and options-flow persistence. <em>Direction reads are SOFT</em> — ~net call premium (NCP) is signed by minute tick-rule, not NBBO, so the call/put direction is approximate. Flow durability = share of 5-min windows with NCP &gt; 0 + the longest positive streak. This is a confluence input, not a standalone signal, and is not used as an entry trigger in isolation. The bias badge counts (WHALE, FRESH, Z_OUTLIER, etc.) are deterministic; 0DTE is bucket-labeled only, never highlighted.</p>
+      <p class="l-zh">期权资金块展示期权活跃度与流动持续性。<em>方向读数为软性近似</em>——~净看涨权利金（NCP）通过逐分钟打单规则定向，非NBBO，因此看涨/看跌方向为近似值。流动持续性=NCP&gt;0的5分钟窗口占比+最长正向连续条数。这是汇聚输入，非独立信号，不单独用于入场触发。偏好标签计数（WHALE、FRESH、Z_OUTLIER等）为确定性计算；0DTE仅做桶分类标注，不特别强调。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span>{{ t('5 · Confluence K/7 &amp; entry timing', '5 · 汇聚K/7与入场时机') }}</span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">K is a simple count of 7 independent boolean legs — no weighting, no score. Higher K means more conditions align simultaneously; it does not imply outcome probability. Useful timing: K rises intraday as more legs activate. The ideal sequence is L1 (washout context) + L6 (mtf_upturn) already set from nightly, then L3+L4 (volume) and L2 (reclaim above VWAP &amp; prevClose) confirm intraday, optionally with L5 (~flow bid). Let the runners run — do not tighten stops into natural retracements on a durable leader.</p>
+      <p class="l-zh">K是7个独立布尔腿的简单计数——无加权、无评分。K值越高表示更多条件同时满足；不代表结果概率。实用时机：K值在盘中随更多腿激活而上升。理想顺序：L1（洗盘背景）+L6（多周期上行器官）已由夜间确认，然后L3+L4（成交量）和L2（收复VWAP及前收）盘中确认，可选配L5（~资金偏多）。让盈利跑——不要在持续领涨股的正常回踩中收紧止损。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span>{{ t('6 · Reference levels &amp; trap-prone names', '6 · 参考价位与回踩陷阱型标的') }}</span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">Reference levels (stop, VWAP, session low + ATR%) are computed from nightly entry_signal and intraday fastpath data — <em>they are reference only, not advice</em>. Stop comes from nightly structure; revisit it if the setup changes materially intraday. Trap-prone names (failed_breakout_trap = true) show a red <strong>trap-prone 回踩陷阱</strong> chip and are deprioritized — these names have a track record of faking breakouts and retesting lows repeatedly. Use them only if the full K/7 is elevated AND washout is recent and deep.</p>
+      <p class="l-zh">参考价位（止损、VWAP、日内低点+ATR%）由夜间entry_signal和盘中快速路径数据计算——<em>仅供参考，不构成交易建议</em>。止损来自夜间结构；若盘中布局出现重大变化应重新评估。回踩陷阱型标的（failed_breakout_trap=true）显示红色<strong>trap-prone 回踩陷阱</strong>标签并降低优先级——这些标的有反复假突破、一再测试低点的历史。只有在K/7完全满足且洗盘近期且幅度深时才考虑。</p>
+    </div>
+  </div>
+
+  <p class="xs muted" style="margin-top:10px">
+    {{ t('~NCP direction is SOFT — approximate (minute tick-rule signing, not NBBO). All metrics deterministic; no LLM. Reference levels are not trade advice. Display-tier only.',
+         '~NCP方向为软性近似（逐分钟打单，非NBBO）。所有指标均为确定性计算；无LLM参与。参考价位不构成交易建议。仅展示层。') }}
+  </p>
+</div>
+
+<!-- Inline JS — data loads, polling, table render -->
+<script>
+(function(){
+'use strict';
+
+// ── Config injected from nightly build ────────────────────────────────────
+var BASE_DATA = {{ intraday_flow | tojson if intraday_flow else '{}' }};
+var RVOL_CONFIRM = BASE_DATA.rvol_confirm || 1.30;
+var DUR_MIN = BASE_DATA.durability_min || 0.60;
+var WASHOUT_LB = BASE_DATA.washout_lookback || 10;
+var LEADERS_BY_TK = {};    // ticker -> leader record (nightly base)
+var leaders = BASE_DATA.leaders || [];
+
+// ── Global live state ──────────────────────────────────────────────────────
+var quoteState = {};        // ticker -> {price, changePct, prevClose, day_volume, day_high, day_low}
+var pulseState = {};        // ticker -> {vwap, vol_durability, higher_lows, cum_vol}
+var flowState = {};         // ticker -> {ncp, flow_dur, vel_arrow, badges, session_tier}
+var flowMeta = {};          // {asof, mode}
+
+// ── Sorting state ─────────────────────────────────────────────────────────
+var sortCol = 'rvol', sortDir = -1;  // default: RVOL desc
+
+// ── Filter state ─────────────────────────────────────────────────────────
+var activeBasket = 'all';
+var kMin = 0;
+var searchQ = '';
+
+// ── Build ticker index ────────────────────────────────────────────────────
+leaders.forEach(function(l){ LEADERS_BY_TK[l.ticker] = l; });
+
+// ── URL helpers ───────────────────────────────────────────────────────────
+function snapUrl() {
+  // Mirror live.js: use LIVE_SNAPSHOT_URL (window.LIVE_SNAPSHOT_URL = 'live/quotes.json')
+  return window.LIVE_SNAPSHOT_URL || 'live/quotes.json';
+}
+function pulseUrl() { return 'live/flow_pulse.json'; }
+function r2Url(path) {
+  var base = (window.DATA_BASE || '').replace(/\/+$/, '');
+  if (!base) return null;
+  return base + '/' + path;
+}
+
+// ── Confluence legs computation ────────────────────────────────────────────
+function computeLegs(leader, quote, pulse, flow) {
+  var ticker = leader.ticker;
+
+  // L1: washout_recent — engine def: bb_lower_reclaim_days <= washout_lookback
+  //     OR (drawdown_21d_pct <= -12% AND recovery_begun).
+  // base.json carries bb_lower_reclaim_days / drawdown_21d_pct / recovery_begun when
+  // the stockdata reader surfaces them; when absent, L1 is null (not counted).
+  var L1 = null;
+  // WASHOUT_LB comes from BASE_DATA.washout_lookback (nightly config) or defaults to 10.
+  if (leader.bb_lower_reclaim_days != null) {
+    L1 = leader.bb_lower_reclaim_days <= WASHOUT_LB;
+  } else if (leader.drawdown_21d_pct != null && leader.recovery_begun != null) {
+    L1 = leader.drawdown_21d_pct <= -0.12 && leader.recovery_begun;
+  }
+  // Fallback proxy when structured fields absent: entry_signal.status keyword or
+  // vol_squeeze.coiled — clearly marked as a proxy so it accrues as confluence input.
+  if (L1 === null) {
+    var hasWashoutProxy = false;
+    if (leader.entry_signal && leader.entry_signal.status) {
+      var st = (leader.entry_signal.status || '').toLowerCase();
+      hasWashoutProxy = st.indexOf('washout') >= 0 || st.indexOf('reclaim') >= 0 ||
+                        st.indexOf('bounce') >= 0 || st.indexOf('buy') >= 0;
+    }
+    if (!hasWashoutProxy && leader.vol_squeeze && leader.vol_squeeze.coiled) {
+      hasWashoutProxy = true;
+    }
+    // Only set to true on proxy — never to false (absent ≠ false per engine semantics).
+    if (hasWashoutProxy) L1 = true;
+  }
+
+  // L2: reclaim — price > VWAP AND price > prevClose
+  var L2 = false;
+  if (quote && quote.price && pulse && pulse.vwap) {
+    L2 = quote.price > pulse.vwap && quote.price > (leader.prev_close || 0);
+  }
+
+  // L3: rvol_elevated
+  var rvol = computeRvol(leader, quote);
+  var L3 = rvol !== null && rvol >= RVOL_CONFIRM;
+
+  // L4: vol_durable
+  var volDur = pulse ? (pulse.vol_durability != null ? pulse.vol_durability : null) : null;
+  var L4 = volDur !== null && volDur >= DUR_MIN;
+
+  // L5: flow_bid (~soft) — cum NCP > 0 AND flow durability >= DUR_MIN
+  var L5 = false;
+  if (flow) {
+    var ncpPos = flow.ncp != null && flow.ncp > 0;
+    var flowDurOk = flow.flow_dur != null && flow.flow_dur >= DUR_MIN;
+    L5 = ncpPos && flowDurOk;
+  }
+
+  // L6: upturn_organ — qualifying mtf_upturn states (UPTURN_WATCH or UPTURN_CONFIRMED).
+  // Mirror engine._UPTURN_QUALIFYING; use state string as primary key.
+  // K >= 2 matches engine.mtf_upturn.STATE_WATCH_K (=2). UPTURN_MOMENTUM is not a
+  // valid mtf_upturn state and is excluded here to match the engine qualifying set.
+  var L6 = false;
+  if (leader.mtf_upturn_state) {
+    var mst = (leader.mtf_upturn_state || '').toUpperCase();
+    L6 = mst === 'UPTURN_WATCH' || mst === 'UPTURN_CONFIRMED';
+  } else if (leader.mtf_upturn_K != null) {
+    L6 = leader.mtf_upturn_K >= 2;  // STATE_WATCH_K = 2 in engine/mtf_upturn.py
+  }
+
+  // L7: leader_quality — NOT failed_breakout_trap.
+  // Mirror engine semantics: null/absent = data unknown → absent (not counted in K).
+  // Only true when field is explicitly false (i.e. confirmed NOT a trap).
+  var L7 = leader.failed_breakout_trap === false ? true : null;
+
+  var legs = [L1, L2, L3, L4, L5, L6, L7];
+  // Mirror engine K semantics: count only true legs; null = absent (not counted).
+  var K = legs.filter(function(v){ return v === true; }).length;
+  return { legs: legs, K: K };
+}
+
+// ── RVOL computation ──────────────────────────────────────────────────────
+function computeRvol(leader, quote) {
+  // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
+  if (!quote || !quote.vol || !leader.adv20_shares) return null;
+  var curve = leader.vol_share_curve;
+  if (!curve || !curve.length) return null;
+
+  // Estimate time-of-day fraction: use hour index = proportional position in curve
+  var now = new Date();
+  var etOff = -5 * 60;  // ET is UTC-5 (approx; ignores DST)
+  var mkt_open = 9 * 60 + 30;  // 9:30 ET in minutes
+  var mkt_close = 16 * 60;
+  var tzOff = now.getTimezoneOffset();
+  var localMins = now.getHours() * 60 + now.getMinutes();
+  // Convert local to ET approx
+  var etMins = localMins + tzOff + etOff;
+  var elapsed = etMins - mkt_open;
+  if (elapsed < 0) elapsed = 0;
+  var total = mkt_close - mkt_open;
+  var frac = Math.min(elapsed / total, 1.0);
+
+  // vol_share_curve is CUMULATIVE (each entry = cumulative fraction through end of hour i).
+  // Read the single value at the current index — do NOT sum.
+  var n = curve.length;
+  var cumIdx = Math.min(Math.floor(frac * n), n - 1);
+  var cumShare = curve[cumIdx] || 0;
+
+  if (cumShare <= 0) return null;
+  return quote.vol / (leader.adv20_shares * cumShare);
+}
+
+// ── Day range position computation ────────────────────────────────────────
+function computeRangePos(quote) {
+  if (!quote) return null;
+  // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
+  var lo = quote.lo, hi = quote.hi, px = quote.price;
+  if (lo == null || hi == null || px == null) return null;
+  var rng = hi - lo;
+  if (rng <= 0) return null;
+  return (px - lo) / rng;
+}
+
+// ── VWAP delta computation ────────────────────────────────────────────────
+function computeVwapDelta(quote, pulse) {
+  if (!quote || !quote.price || !pulse || !pulse.vwap) return null;
+  return (quote.price - pulse.vwap) / pulse.vwap * 100;
+}
+
+// ── Format helpers ────────────────────────────────────────────────────────
+function fmtNum(v, dec) {
+  if (v == null || isNaN(v)) return '—';
+  return Number(v).toFixed(dec != null ? dec : 2);
+}
+function fmtPct(v) {
+  if (v == null || isNaN(v)) return '—';
+  return (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%';
+}
+function fmtDollar(v) {
+  if (v == null || isNaN(v)) return '—';
+  return '$' + Number(v).toFixed(2);
+}
+function fmtK(n, suffix) {
+  if (n == null) return '—';
+  n = Number(n);
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(1) + 'M' + (suffix||'');
+  if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1) + 'K' + (suffix||'');
+  return n.toFixed(0) + (suffix||'');
+}
+function posNeg(v, threshold) {
+  threshold = threshold || 0;
+  if (v == null || isNaN(v)) return '';
+  return v > threshold ? 'pos' : (v < -threshold ? 'neg' : '');
+}
+function durColor(v, min) {
+  if (v == null) return 'gauge-lo';
+  return v >= min ? 'gauge-hi' : (v >= min * 0.7 ? 'gauge-med' : 'gauge-lo');
+}
+
+// ── Build a row ───────────────────────────────────────────────────────────
+function buildRow(leader) {
+  var tk = leader.ticker;
+  var quote = quoteState[tk] || null;
+  var pulse = pulseState[tk] || null;
+  var flow = flowState[tk] || null;
+  var rvol = computeRvol(leader, quote);
+  var rangePos = computeRangePos(quote);
+  var vwapDelta = computeVwapDelta(quote, pulse);
+  var conf = computeLegs(leader, quote, pulse, flow);
+  var K = conf.K, legs = conf.legs;
+  var entry = leader.entry_signal || {};
+  var opt = leader.options_entry || {};
+
+  // Ticker cell
+  var tkCell = '<td><a class="tk-link" href="stock.html#'+tk+'">'+tk+'</a></td>';
+
+  // Price cell
+  var px = quote && quote.price != null ? fmtDollar(quote.price) : '—';
+  var chg = quote && quote.changePct != null ? fmtPct(quote.changePct) : '';
+  var chgCls = quote && quote.changePct != null ? posNeg(quote.changePct) : '';
+  var priceCell = '<td class="price-cell tabnum"><span class="nb-px" data-sym="'+tk+'" data-mkt="us">'+px+'</span><span class="pct-chg '+chgCls+'">'+chg+'</span></td>';
+
+  // RVOL cell
+  var rvolPct = rvol != null ? Math.min(rvol / 3, 1) * 100 : 0;
+  var rvolCls = rvol != null && rvol >= RVOL_CONFIRM ? 'gauge-hi' : (rvol != null && rvol >= 0.8 ? 'gauge-med' : 'gauge-lo');
+  var rvolStr = rvol != null ? fmtNum(rvol, 2)+'×' : '—';
+  var rvolCell = '<td><div class="gauge-wrap">'
+    + '<div class="gauge-bar"><div class="gauge-fill '+rvolCls+'" style="width:'+rvolPct.toFixed(1)+'%"></div></div>'
+    + '<span class="gauge-val">' + rvolStr + '</span>'
+    + '</div></td>';
+
+  // Day range cell
+  var rpStr = rangePos != null ? (rangePos * 100).toFixed(0) + '%' : '—';
+  var rpCls = rangePos != null ? (rangePos > 0.65 ? 'pos' : (rangePos < 0.35 ? 'neg' : '')) : '';
+  var rangeCell = '<td class="tabnum '+rpCls+'">'+rpStr+'</td>';
+
+  // VWAP delta cell
+  var vdStr = vwapDelta != null ? fmtPct(vwapDelta) : '—';
+  var vdCls = posNeg(vwapDelta);
+  var vwapCell = '<td class="tabnum '+vdCls+'">'+vdStr+'</td>';
+
+  // Vol durability cell
+  var volDur = pulse ? pulse.vol_durability : null;
+  var durPct = volDur != null ? Math.min(volDur, 1) * 100 : 0;
+  var durCls = durColor(volDur, DUR_MIN);
+  var durStr = volDur != null ? (volDur * 100).toFixed(0) + '%' : '—';
+  var hlStr = pulse && pulse.higher_lows != null ? ' HL:' + pulse.higher_lows : '';
+  var volDurCell = '<td>'
+    + '<div class="gauge-wrap">'
+    + '<div class="dur-bar"><div class="dur-fill '+durCls+'" style="width:'+durPct.toFixed(1)+'%"></div></div>'
+    + '<span class="gauge-val">'+durStr+'</span>'
+    + '</div>'
+    + (hlStr ? '<div class="xs muted">'+hlStr+'</div>' : '')
+    + '</td>';
+
+  // NCP / flow cell (~soft)
+  var ncpVal = flow && flow.ncp != null ? flow.ncp : null;
+  var ncpStr = ncpVal != null ? (ncpVal >= 0 ? '+' : '') + fmtK(ncpVal, '') : '—';
+  var ncpCls = ncpVal != null ? posNeg(ncpVal) : '';
+  var flowDur = flow && flow.flow_dur != null ? flow.flow_dur : null;
+  var velArrow = flow ? (flow.vel_arrow || 'flat') : 'flat';
+  var arrowHtml = velArrow === 'up' ? '<span class="arrow arrow-up">↑</span>'
+    : (velArrow === 'down' ? '<span class="arrow arrow-dn">↓</span>'
+    : '<span class="arrow arrow-flat">→</span>');
+  var flowDurStr = flowDur != null ? (flowDur * 100).toFixed(0) + '%' : '—';
+  var flowDurCls = durColor(flowDur, DUR_MIN);
+  var ncpBadge = flow && flow.session_tier ? '<span class="badge badge-blue" style="margin-left:4px">'+flow.session_tier+'</span>' : '';
+  var ncpCell = '<td class="flow-ncp">'
+    + '<span class="'+ncpCls+'">~'+ncpStr+'</span>'
+    + arrowHtml
+    + '<span class="soft-tag">~soft</span>'
+    + '<br><div class="gauge-wrap" style="margin-top:2px">'
+    + '<div class="dur-bar"><div class="dur-fill '+flowDurCls+'" style="width:'+((flowDur||0)*100).toFixed(1)+'%"></div></div>'
+    + '<span class="gauge-val">'+flowDurStr+'</span>'
+    + '</div>'
+    + ncpBadge
+    + '</td>';
+
+  // Setup chips
+  var chips = [];
+  var squeeze = leader.vol_squeeze || {};
+  if (squeeze.coiled) chips.push('<span class="badge badge-orange">squeeze</span>');
+  if (squeeze.state === 'EXPANSION') chips.push('<span class="badge badge-green">squeeze→expand</span>');
+  if (leader.stair_step_leader === true) chips.push('<span class="badge badge-green"><span class="l-en">clean leader</span><span class="l-zh">稳步领涨</span></span>');
+  if (leader.failed_breakout_trap === true) chips.push('<span class="badge badge-red"><span class="l-en">trap-prone 回踩陷阱</span><span class="l-zh">回踩陷阱</span></span>');
+  if (leader.current_mode) chips.push('<span class="badge badge-muted">'+leader.current_mode+'</span>');
+  if (leader.mtf_upturn_state) chips.push('<span class="badge badge-blue">'+leader.mtf_upturn_state+'</span>');
+  var flowBadges = flow && flow.badges ? flow.badges : [];
+  flowBadges.slice(0, 3).forEach(function(b){
+    chips.push('<span class="badge badge-blue">'+b+'</span>');
+  });
+  if (opt.gamma_regime) {
+    var grc = opt.gamma_regime === 'long' ? 'badge-green' : (opt.gamma_regime === 'short' ? 'badge-red' : 'badge-muted');
+    chips.push('<span class="badge '+grc+'">GEX:'+opt.gamma_regime+'</span>');
+  }
+  var setupCell = '<td><div class="chip-row">'+chips.join('')+'</div></td>';
+
+  // K/7 cell with expandable legs
+  var legNames = ['L1 washout','L2 reclaim','L3 rvol','L4 vol dur','L5 ~flow bid','L6 upturn','L7 quality'];
+  var legNamesZh = ['L1 洗盘','L2 收复','L3 RVOL','L4 量持续','L5 ~资金偏多','L6 上升','L7 质量'];
+  var kColor = K >= 5 ? 'pos' : (K >= 3 ? '' : 'muted');
+  var dotsHtml = '<div class="kbar">' + legs.map(function(on){
+    return '<div class="kbar-dot '+(on?'on':'')+'"></div>';
+  }).join('') + '</div>';
+  var legHtmlEn = legs.map(function(on, i){
+    return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNames[i]+'">'
+      +(on?'✓':'✗')+' '+legNames[i]+'</span>';
+  }).join('');
+  // Use English leg names in title= attribute even for ZH chips — localized title=
+  // would render in the wrong language regardless of the active l-en/l-zh toggle
+  // (static check_title_i18n guard; i18n intent is the dual-span label itself).
+  var legHtmlZh = legs.map(function(on, i){
+    return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNames[i]+'">'
+      +(on?'✓':'✗')+' '+legNamesZh[i]+'</span>';
+  }).join('');
+  var kCell = '<td><span class="k-label '+kColor+'">'+K+'/7</span>'
+    + dotsHtml
+    + '<button class="k-expand-btn" onclick="toggleLegs(this)" title="Expand legs">+</button>'
+    + '<div class="k-legs-row"><span class="l-en">'+legHtmlEn+'</span><span class="l-zh">'+legHtmlZh+'</span></div>'
+    + '</td>';
+
+  // Risk ladder cell
+  var stopPx = entry.stop != null ? fmtDollar(entry.stop) : null;
+  var vwapPx = pulse && pulse.vwap != null ? fmtDollar(pulse.vwap) : null;
+  var loPx = quote && quote.lo != null ? fmtDollar(quote.lo) : null;
+  var atrPct = entry.atr_pct != null ? entry.atr_pct.toFixed(2) + '%' : (leader.atr14_pct != null ? (leader.atr14_pct * 100).toFixed(2) + '%' : null);
+  var riskParts = [];
+  if (stopPx) riskParts.push('<span class="level"><span class="l-en">stop</span><span class="l-zh">止损</span>: <span class="neg">'+stopPx+'</span></span>');
+  if (vwapPx) riskParts.push('<span class="level">VWAP: '+vwapPx+'</span>');
+  if (loPx) riskParts.push('<span class="level"><span class="l-en">low</span><span class="l-zh">低点</span>: '+loPx+'</span>');
+  if (atrPct) riskParts.push('<span class="level">ATR: '+atrPct+'</span>');
+  var riskCell = '<td class="risk-mini">'
+    + (riskParts.length ? riskParts.join('') : '<span class="muted">—</span>')
+    + '</td>';
+
+  return '<tr data-ticker="'+tk+'" data-rvol="'+(rvol||0)+'" data-k="'+K+'"'
+    + ' data-last="'+(quote && quote.price||0)+'" data-range-pos="'+(rangePos||0)+'"'
+    + ' data-vwap-delta="'+(vwapDelta||0)+'" data-vol-dur="'+(pulse && pulse.vol_durability||0)+'"'
+    + ' data-ncp="'+(ncpVal||0)+'" data-baskets="'+getBaskets(tk)+'">'
+    + tkCell + priceCell + rvolCell + rangeCell + vwapCell + volDurCell + ncpCell + setupCell + kCell + riskCell
+    + '</tr>';
+}
+
+// ── Basket lookup ─────────────────────────────────────────────────────────
+var tkBasketMap = {};
+(function(){
+  // Per-ticker basket membership is written by the nightly builder into each
+  // leader record's "baskets" field.
+  leaders.forEach(function(l){
+    tkBasketMap[l.ticker] = (l.baskets || []).join(' ') || 'all';
+  });
+})();
+
+function getBaskets(tk) {
+  return tkBasketMap[tk] || 'all';
+}
+
+// ── Sort helpers ──────────────────────────────────────────────────────────
+var COL_ATTR = {
+  ticker: 'data-ticker', last: 'data-last', rvol: 'data-rvol',
+  range_pos: 'data-range-pos', vwap_delta: 'data-vwap-delta',
+  vol_dur: 'data-vol-dur', ncp: 'data-ncp', k: 'data-k'
+};
+
+function sortTable() {
+  var tbody = document.getElementById('leaders-body');
+  if (!tbody) return;
+  var rows = [].slice.call(tbody.querySelectorAll('tr[data-ticker]'));
+  var attr = COL_ATTR[sortCol] || 'data-rvol';
+  rows.sort(function(a, b) {
+    var av = a.getAttribute(attr) || '0';
+    var bv = b.getAttribute(attr) || '0';
+    var aNum = isNaN(av) ? av : Number(av);
+    var bNum = isNaN(bv) ? bv : Number(bv);
+    if (aNum < bNum) return sortDir;
+    if (aNum > bNum) return -sortDir;
+    return 0;
+  });
+  rows.forEach(function(r){ tbody.appendChild(r); });
+  // Update sort indicators
+  var ths = document.querySelectorAll('table.leaders th[data-col]');
+  ths.forEach(function(th){
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.getAttribute('data-col') === sortCol) {
+      th.classList.add(sortDir < 0 ? 'sort-desc' : 'sort-asc');
+    }
+  });
+  document.getElementById('sort-label').textContent = 'Sorted by ' + sortCol + (sortDir < 0 ? ' ↓' : ' ↑');
+}
+
+// ── Filter / search ───────────────────────────────────────────────────────
+function applyFilter() {
+  var tbody = document.getElementById('leaders-body');
+  if (!tbody) return;
+  var rows = [].slice.call(tbody.querySelectorAll('tr[data-ticker]'));
+  var visible = 0;
+  rows.forEach(function(r){
+    var tk = r.getAttribute('data-ticker') || '';
+    var k = Number(r.getAttribute('data-k') || 0);
+    var baskets = r.getAttribute('data-baskets') || 'all';
+    var show = true;
+    if (activeBasket !== 'all' && baskets.indexOf(activeBasket) < 0 && baskets !== 'all') show = false;
+    if (kMin > 0 && k < kMin) show = false;
+    if (searchQ && tk.indexOf(searchQ.toUpperCase()) < 0) show = false;
+    r.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  var lbl = document.getElementById('count-label');
+  if (lbl) lbl.textContent = visible + ' shown of ' + rows.length + ' leaders';
+}
+
+// ── Full table render ─────────────────────────────────────────────────────
+function renderTable() {
+  var tbody = document.getElementById('leaders-body');
+  if (!tbody) return;
+  var html = '';
+  leaders.forEach(function(l){ html += buildRow(l); });
+  tbody.innerHTML = html || '<tr class="loading-row"><td colspan="10"><span class="l-en">No data loaded yet</span><span class="l-zh">暂无数据</span></td></tr>';
+  sortTable();
+  applyFilter();
+  // Re-run lang sync (hidden spans)
+  if (window.__mmLang) window.__mmLang();
+}
+
+// ── Partial update — patch price/gauge cells without full re-render ────────
+function patchPriceCells() {
+  var tbody = document.getElementById('leaders-body');
+  if (!tbody) return;
+  var rows = tbody.querySelectorAll('tr[data-ticker]');
+  rows.forEach(function(tr){
+    var tk = tr.getAttribute('data-ticker');
+    var leader = LEADERS_BY_TK[tk];
+    if (!leader) return;
+    var quote = quoteState[tk];
+    var pulse = pulseState[tk];
+    var flow = flowState[tk];
+    // Price
+    var pxEl = tr.querySelector('.nb-px[data-sym]');
+    if (pxEl && quote && quote.price != null) pxEl.textContent = '$' + Number(quote.price).toFixed(2);
+    var chgEl = tr.querySelector('.pct-chg');
+    if (chgEl && quote && quote.changePct != null) {
+      var chg = Number(quote.changePct);
+      chgEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+      chgEl.className = 'pct-chg ' + (chg >= 0 ? 'pos' : 'neg');
+    }
+    // Update row data-attrs for sorting
+    if (quote) {
+      if (quote.price != null) tr.setAttribute('data-last', quote.price);
+      var rvol = computeRvol(leader, quote);
+      if (rvol != null) tr.setAttribute('data-rvol', rvol);
+      var rp = computeRangePos(quote);
+      if (rp != null) tr.setAttribute('data-range-pos', rp);
+    }
+    if (pulse) {
+      var vd = computeVwapDelta(quote, pulse);
+      if (vd != null) tr.setAttribute('data-vwap-delta', vd);
+      if (pulse.vol_durability != null) tr.setAttribute('data-vol-dur', pulse.vol_durability);
+    }
+    if (flow) {
+      if (flow.ncp != null) tr.setAttribute('data-ncp', flow.ncp);
+    }
+    // K
+    var conf = computeLegs(leader, quote, pulse, flow);
+    tr.setAttribute('data-k', conf.K);
+  });
+  sortTable();
+  applyFilter();
+}
+
+// ── Quotes fetch ──────────────────────────────────────────────────────────
+var quotesInflight = false;
+function fetchQuotes() {
+  if (quotesInflight) return;
+  quotesInflight = true;
+  var url = snapUrl();
+  fetch(url, {cache: 'no-cache'}).then(function(r){ return r.json(); })
+    .then(function(data){
+      quotesInflight = false;
+      var q = data.quotes || {};
+      Object.keys(q).forEach(function(tk){ quoteState[tk] = q[tk]; });
+      var stamp = document.getElementById('ift-quotes-stamp');
+      if (stamp) {
+        var asof = data.asof || data.ts;
+        var delayMin = (data.meta && data.meta.delayed_min) || 15;
+        stamp.innerHTML = '<span class="l-en">as of '+(asof||'?')+' · '+delayMin+'-min delayed bars</span>'
+          + '<span class="l-zh">截至 '+(asof||'?')+' · '+delayMin+'分钟延迟</span>';
+      }
+      patchPriceCells();
+    }).catch(function(e){
+      quotesInflight = false;
+    });
+}
+
+// ── Flow pulse fetch ──────────────────────────────────────────────────────
+var pulseInflight = false;
+function fetchPulse() {
+  if (pulseInflight) return;
+  pulseInflight = true;
+  fetch(pulseUrl(), {cache: 'no-cache'}).then(function(r){ return r.json(); })
+    .then(function(data){
+      pulseInflight = false;
+      var tickers = data.tickers || [];
+      tickers.forEach(function(t){ pulseState[t.ticker] = t; });
+      var stamp = document.getElementById('ift-pulse-stamp');
+      if (stamp) {
+        var asof = data.as_of || '?';
+        var stale = data.stale ? ' · stale' : '';
+        stamp.innerHTML = '<span class="l-en">as of '+asof+stale+'</span>'
+          + '<span class="l-zh">截至 '+asof+stale+'</span>';
+      }
+      patchPriceCells();
+    }).catch(function(e){
+      pulseInflight = false;
+    });
+}
+
+// ── R2 live flow fetch ────────────────────────────────────────────────────
+var flowInflight = false;
+function fetchFlow() {
+  if (flowInflight) return;
+  var enrichUrl = r2Url('live_flow/enrich_current.json');
+  var tickerUrl = r2Url('live_flow/tide_current.json');
+  if (!enrichUrl) return;
+
+  flowInflight = true;
+  // Fetch enrich_current for per-ticker badges + session tier
+  Promise.all([
+    fetch(enrichUrl, {cache: 'no-cache'}).then(function(r){ return r.json(); }).catch(function(){ return null; }),
+    tickerUrl ? fetch(tickerUrl, {cache: 'no-cache'}).then(function(r){ return r.json(); }).catch(function(){ return null; }) : Promise.resolve(null)
+  ]).then(function(results){
+    flowInflight = false;
+    var enrich = results[0];
+    var tide = results[1];
+
+    // Parse enrich: schema live_flow.enrich/v1 — per-ticker enriched events
+    if (enrich && enrich.tickers) {
+      Object.keys(enrich.tickers).forEach(function(root){
+        var te = enrich.tickers[root] || {};
+        var badges = [];
+        if (te.badge_counts) {
+          var bc = te.badge_counts;
+          ['WHALE','FRESH','Z_OUTLIER','SIZE_VS_OI','REPEAT_HITTER'].forEach(function(b){
+            if (bc[b] && bc[b] > 0) badges.push(b + '×' + bc[b]);
+          });
+        }
+        var existing = flowState[root] || {};
+        flowState[root] = Object.assign(existing, {
+          badges: badges,
+          session_tier: te.session_tier || null
+        });
+      });
+    }
+    // Try per-ticker NCP from tide
+    if (tide && tide.tickers) {
+      Object.keys(tide.tickers).forEach(function(root){
+        var te = tide.tickers[root] || {};
+        var existing = flowState[root] || {};
+        flowState[root] = Object.assign(existing, {
+          ncp: te.cum_ncp != null ? te.cum_ncp : (existing.ncp || null),
+          flow_dur: te.flow_dur != null ? te.flow_dur : (existing.flow_dur || null),
+          vel_arrow: te.vel_arrow || existing.vel_arrow || 'flat'
+        });
+      });
+    }
+
+    // Determine asof from meta
+    var asof = (enrich && enrich.meta && enrich.meta.asof) || (tide && tide.meta && tide.meta.asof) || null;
+    var isRTH = isMarketHours();
+    var stamp = document.getElementById('ift-flow-stamp');
+    if (stamp) {
+      if (!isRTH) {
+        stamp.innerHTML = '<span class="l-en">off-hours · last: '+(asof||'—')+'</span>'
+          + '<span class="l-zh">非交易时段 · 最后: '+(asof||'—')+'</span>';
+      } else {
+        stamp.innerHTML = '<span class="l-en">as of '+(asof||'?')+'</span>'
+          + '<span class="l-zh">截至 '+(asof||'?')+'</span>';
+      }
+    }
+
+    patchPriceCells();
+  }).catch(function(){
+    flowInflight = false;
+  });
+}
+
+function isMarketHours() {
+  var now = new Date();
+  var utcH = now.getUTCHours(), utcM = now.getUTCMinutes();
+  var etH = utcH - 5;  // approx ET (no DST correction)
+  if (etH < 0) etH += 24;
+  var etMins = etH * 60 + utcM;
+  // 9:25 - 16:05 ET
+  return etMins >= (9 * 60 + 25) && etMins <= (16 * 60 + 5);
+}
+
+// ── Playbook accordion ────────────────────────────────────────────────────
+document.querySelectorAll('.playbook-hd').forEach(function(hd){
+  hd.addEventListener('click', function(){
+    var sec = hd.parentElement;
+    sec.classList.toggle('open');
+  });
+});
+
+// ── Sort click ────────────────────────────────────────────────────────────
+document.querySelectorAll('table.leaders th[data-col]').forEach(function(th){
+  th.addEventListener('click', function(){
+    var col = th.getAttribute('data-col');
+    if (col === sortCol) { sortDir = -sortDir; }
+    else { sortCol = col; sortDir = -1; }
+    sortTable();
+  });
+});
+
+// ── Basket filter chips ───────────────────────────────────────────────────
+document.querySelectorAll('.chip[data-basket]').forEach(function(chip){
+  chip.addEventListener('click', function(){
+    document.querySelectorAll('.chip[data-basket]').forEach(function(c){ c.classList.remove('active'); });
+    chip.classList.add('active');
+    activeBasket = chip.getAttribute('data-basket');
+    applyFilter();
+  });
+});
+
+// ── K filter ──────────────────────────────────────────────────────────────
+var kSel = document.getElementById('k-sel');
+if (kSel) kSel.addEventListener('change', function(){
+  kMin = Number(kSel.value);
+  applyFilter();
+});
+
+// ── Search ────────────────────────────────────────────────────────────────
+var searchEl = document.getElementById('ift-search');
+if (searchEl) searchEl.addEventListener('input', function(){
+  searchQ = searchEl.value.trim();
+  applyFilter();
+});
+// lang-aware placeholder (theme.js handles .nav-search only; page inputs do it themselves)
+if (searchEl) (function(){
+  var en = searchEl.placeholder, zh = searchEl.getAttribute('data-ph-zh') || en;
+  function setPh(){ searchEl.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? zh : en; }
+  setPh();
+  document.addEventListener('langchange', setPh);
+})();
+
+// ── Leg expand/collapse ───────────────────────────────────────────────────
+window.toggleLegs = function(btn) {
+  var row = btn.parentElement.querySelector('.k-legs-row');
+  if (!row) return;
+  row.classList.toggle('open');
+  btn.textContent = row.classList.contains('open') ? '−' : '+';
+};
+
+// ── Polling timers ────────────────────────────────────────────────────────
+function startPolling() {
+  fetchQuotes();
+  fetchPulse();
+  fetchFlow();
+  setInterval(fetchQuotes, 60 * 1000);   // every 60s
+  setInterval(fetchPulse, 5 * 60 * 1000); // every 5 min
+  // Flow: every 3 min during RTH only
+  setInterval(function(){
+    if (isMarketHours()) fetchFlow();
+  }, 3 * 60 * 1000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+renderTable();
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startPolling);
+  } else {
+    startPolling();
+  }
+}
+
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

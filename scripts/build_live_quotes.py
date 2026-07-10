@@ -157,7 +157,12 @@ def _to_ms(quote_ts: str | None) -> int | None:
 
 def to_worker_quotes(raw: dict) -> dict:
     """engine.live_quotes {sym: {price, quote_ts, source, price_basis, prev_close,
-    currency, delay_min}} -> the Worker /quotes shape live.js consumes."""
+    currency, delay_min, day_volume, day_high, day_low}} -> the Worker /quotes shape.
+
+    New fields (IFT A1): vol, hi, lo — from the same Yahoo/Polygon batch response,
+    zero extra requests.  Size estimate: +~68KB over full ~1942-symbol universe
+    (343KB projected vs 500KB budget) — fields carried for all symbols.
+    """
     out: dict[str, dict] = {}
     for sym, q in (raw or {}).items():
         if not q or q.get("price") is None:
@@ -166,7 +171,7 @@ def to_worker_quotes(raw: dict) -> dict:
         prev = q.get("prev_close")
         prev = round(float(prev), 4) if prev is not None else None
         chg = round((price / prev - 1) * 100, 2) if prev else None
-        out[sym] = {
+        entry: dict = {
             "price": price,
             "ts": _to_ms(q.get("quote_ts")),
             "source": q.get("source"),
@@ -176,6 +181,18 @@ def to_worker_quotes(raw: dict) -> dict:
             "currency": q.get("currency"),
             "delayMin": q.get("delay_min"),     # measured age of THIS quote (honest, per-symbol)
         }
+        # IFT A1: intraday volume + range from same batch response.
+        # Keys kept short (vol/hi/lo) to minimise payload bytes.
+        dv = q.get("day_volume")
+        dh = q.get("day_high")
+        dl = q.get("day_low")
+        if dv is not None:
+            entry["vol"] = dv
+        if dh is not None:
+            entry["hi"] = dh
+        if dl is not None:
+            entry["lo"] = dl
+        out[sym] = entry
     return out
 
 

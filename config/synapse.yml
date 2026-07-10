@@ -10540,3 +10540,92 @@ artifacts:
       currently exists — accrue_forward does NOT write this file).  Consumed
       by engine/signal_lab.py build_scorecard() to render the lane status
       chip on site/signal_lab.html.
+
+  # ── IFT A3 — Intraday Flow Tracker artifacts ────────────────────────────────
+
+  intraday-flow-base:
+    path: site/flowtracker/base.json
+    format: json
+    producer: scripts/build_intraday_flow.py
+    known_extra_writers: []
+    owner_program: intraday-flow-tracker
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: intraday_flow_base.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/intraday_flow.html.j2
+    external_consumers: []
+    notes: >
+      IFT A1/A3. Nightly EOD context blob for the Intraday Flow Tracker leaders board
+      (site/intraday_flow.html). Per-leader: ADV20, hourly vol-share curve, ATR14,
+      prevClose, washout context, mtf_upturn state/K, vol_squeeze, personality
+      (stair_step_leader / failed_breakout_trap), entry_signal (stop/buy_zone/atr_pct),
+      options_entry context (gamma_regime, dist_to_flip_pct, walls), premium baselines.
+      Universe: config intraday_flow.universe_baskets resolved via
+      data/baskets/membership.json intersected with gex_symbols().
+      Display-tier only; never reorders any authority surface (CONST-ART2).
+      authority.may_rank/gate/size/escalate=false.
+
+  intraday-flow-pulse:
+    path: site/live/flow_pulse.json
+    format: json
+    producer: scripts/build_intraday_flow.py
+    known_extra_writers: []
+    owner_program: intraday-flow-tracker
+    cadence: intraday
+    storage: git  # committed via git add -f site/live/ in intraday-fastpath.yml; R2 mirror optional
+    asof_field: as_of
+    freshness_sla_hours: 1
+    schema: flow_pulse.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/intraday_flow.html.j2
+    external_consumers: []
+    notes: >
+      IFT A1/A3. 30-min fastpath artifact: per-leader intraday session metrics
+      computed from data/intraday/<T>.parquet today-bars. Fields per ticker:
+      vwap (hourly-bar approximation), vol_durability (share of today's hourly
+      bars in upper half with volume >= time-of-day baseline), higher_lows count,
+      cum_vol, bars_today. Written to site/live/ + R2 only (HOUSE-U5 — zero
+      data/ writes intraday). Sidecar: flow_pulse_lastgood.json (last good
+      snapshot while market is open). Display/context tier; not a signal.
+      authority.may_rank/gate/size/escalate=false.
+
+  intraday-flow-ledger:
+    path: data/intraday_flow/ledger.parquet
+    format: parquet
+    producer: scripts/build_intraday_flow.py
+    known_extra_writers: []
+    owner_program: intraday-flow-tracker
+    cadence: daily-engine
+    storage: git
+    asof_field: session
+    freshness_sla_hours: 30
+    schema: intraday_flow_ledger.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      IFT A3. Forward ledger: one row per (session, ticker) for every leader in the
+      IFT universe. Columns: session, ticker, built_utc, L1..L7 booleans (EOD context
+      only — intraday legs L3/L4/L5 are null at stamp time), K, close, mtf_upturn_state,
+      mtf_upturn_K, failed_breakout_trap, rvol_tod_close, cum_ncp,
+      flow_durability_eod, fwd_ret_1d, fwd_ret_5d, fwd_ret_10d, fwd_ret_21d.
+      Forward returns stamped by subsequent nightlies as horizons mature.
+      Append-only per (session, ticker); keep-first on re-runs (idempotent).
+      Gated on COLLECT_LANE=nightly (HOUSE-U5 — nightly is sole data/ advancer).
+      Display-tier until a future pre-registered promotion gauntlet; a null
+      retains legs as confluence inputs per house law.
+      authority.may_rank/gate/size/escalate=false.

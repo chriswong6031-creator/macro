@@ -1,0 +1,1252 @@
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intraday Flow Tracker · 盘中资金流追踪</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(40px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; font-weight:600; letter-spacing:.2px; }
+  h3 { font-size:12px; margin:0 0 6px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; }
+  .note { margin:8px 0 0; line-height:1.5; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .tabnum { font-variant-numeric:tabular-nums; }
+  .lag-tag { display:inline-block; font-size:10px; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--muted); vertical-align:middle; margin-left:4px; }
+  .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:3px; }
+
+  /* ── Filter / toolbar ─────────────────────────────────────────── */
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+  .chip { display:inline-block; font-size:11px; padding:3px 9px; border-radius:20px; border:1px solid var(--line); cursor:pointer; user-select:none; background:var(--panel2); color:var(--muted); transition:background .15s,border-color .15s,color .15s; }
+  .chip.active { background:var(--blue,#3b82f6); border-color:var(--blue,#3b82f6); color:#fff; }
+  .chip:hover:not(.active) { border-color:var(--muted); color:var(--text); }
+  .k-filter { display:flex; align-items:center; gap:4px; font-size:12px; }
+  .k-filter select { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:3px 8px; font-size:12px; cursor:pointer; }
+  .search-box { flex:1; min-width:120px; max-width:240px; }
+  .search-box input { width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:4px 10px; font-size:12px; outline:none; }
+  .search-box input:focus { border-color:var(--blue,#3b82f6); }
+  .stamp-row { margin-left:auto; font-size:11px; color:var(--muted); white-space:nowrap; }
+
+  /* ── Leaders table ────────────────────────────────────────────── */
+  .leaders-wrap { overflow-x:auto; }
+  table.leaders { width:100%; border-collapse:collapse; font-size:13px; }
+  table.leaders th { padding:7px 10px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); border-bottom:2px solid var(--line); cursor:pointer; white-space:nowrap; user-select:none; }
+  table.leaders th:hover { color:var(--text); }
+  table.leaders th .sort-ic { display:inline-block; margin-left:3px; opacity:.4; }
+  table.leaders th.sort-asc .sort-ic::after { content:"↑"; opacity:1; }
+  table.leaders th.sort-desc .sort-ic::after { content:"↓"; opacity:1; }
+  table.leaders th:not(.sort-asc):not(.sort-desc) .sort-ic::after { content:"↕"; }
+  table.leaders td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.leaders tr:last-child td { border-bottom:none; }
+  table.leaders tr:hover td { background:var(--panel2); }
+  .tk-link { font-weight:700; font-size:14px; color:var(--blue,#3b82f6); }
+  .tk-link:hover { text-decoration:underline; }
+  .price-cell { white-space:nowrap; }
+  .pct-chg { font-size:11px; margin-left:4px; }
+
+  /* ── Gauge / bars ─────────────────────────────────────────────── */
+  .gauge-wrap { display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .gauge-bar { width:52px; height:7px; background:var(--line); border-radius:4px; overflow:hidden; flex-shrink:0; }
+  .gauge-fill { height:100%; border-radius:4px; background:var(--blue,#3b82f6); transition:width .3s; }
+  .gauge-hi { background:var(--up); }
+  .gauge-med { background:var(--orange,#f97316); }
+  .gauge-lo { background:var(--muted); }
+  .gauge-val { font-size:12px; font-variant-numeric:tabular-nums; }
+  .range-pos { color:var(--up); } .range-neg { color:var(--down); }
+
+  /* ── Chips / badges ───────────────────────────────────────────── */
+  .chip-row { display:flex; flex-wrap:wrap; gap:3px; }
+  .badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 6px; border-radius:5px; border:1px solid; white-space:nowrap; }
+  .badge-green { color:var(--up); border-color:var(--up); }
+  .badge-red { color:var(--down); border-color:var(--down); }
+  .badge-blue { color:var(--blue,#3b82f6); border-color:var(--blue,#3b82f6); }
+  .badge-orange { color:var(--orange,#f97316); border-color:var(--orange,#f97316); }
+  .badge-muted { color:var(--muted); border-color:var(--line); }
+
+  /* ── Confluence K/7 ──────────────────────────────────────────── */
+  .kbar { display:inline-flex; gap:2px; vertical-align:middle; }
+  .kbar-dot { width:9px; height:9px; border-radius:50%; border:1px solid var(--line); background:var(--panel2); }
+  .kbar-dot.on { background:var(--up); border-color:var(--up); }
+  .k-label { font-size:12px; font-weight:700; margin-right:5px; }
+  .k-expand-btn { font-size:10px; cursor:pointer; color:var(--blue,#3b82f6); margin-left:5px; background:none; border:none; padding:0; }
+  .k-legs-row { display:none; font-size:11px; padding:4px 0 2px; }
+  .k-legs-row.open { display:flex; flex-wrap:wrap; gap:3px 6px; }
+  .leg-chip { display:inline-flex; align-items:center; gap:2px; font-size:10px; padding:1px 5px; border-radius:4px; border:1px solid var(--line); }
+  .leg-on { border-color:var(--up); color:var(--up); }
+  .leg-off { color:var(--muted); }
+
+  /* ── Risk ladder ──────────────────────────────────────────────── */
+  .risk-mini { font-size:11px; color:var(--muted); white-space:nowrap; }
+  .risk-mini .level { display:inline-block; }
+  .risk-mini .level + .level::before { content:"·"; margin:0 4px; }
+
+  /* ── Direction / velocity arrow ──────────────────────────────── */
+  .arrow { display:inline-block; font-size:14px; line-height:1; }
+  .arrow-up { color:var(--up); }
+  .arrow-dn { color:var(--down); }
+  .arrow-flat { color:var(--muted); }
+
+  /* ── Dur bar ─────────────────────────────────────────────────── */
+  .dur-bar { width:42px; height:7px; background:var(--line); border-radius:4px; overflow:hidden; display:inline-block; vertical-align:middle; }
+  .dur-fill { height:100%; border-radius:4px; }
+
+  /* ── Playbook accordion ──────────────────────────────────────── */
+  .playbook-section { border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:8px; }
+  .playbook-hd { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; cursor:pointer; font-weight:600; font-size:13px; user-select:none; }
+  .playbook-hd:hover { background:var(--panel2); }
+  .playbook-hd .caret { font-size:11px; color:var(--muted); transition:transform .2s; }
+  .playbook-section.open .playbook-hd .caret { transform:rotate(90deg); }
+  .playbook-body { display:none; padding:10px 14px; font-size:13px; line-height:1.6; border-top:1px solid var(--line); }
+  .playbook-section.open .playbook-body { display:block; }
+  .playbook-body ul { margin:6px 0 0 18px; padding:0; }
+  .playbook-body li { margin-bottom:3px; }
+
+  /* ── Options flow block ──────────────────────────────────────── */
+  .flow-ncp { font-size:12px; font-variant-numeric:tabular-nums; }
+  .stale-note { font-size:10px; color:var(--muted); font-style:italic; }
+
+  /* ── Empty / loading states ──────────────────────────────────── */
+  .loading-row td { color:var(--muted); font-style:italic; text-align:center; padding:24px; }
+  .no-data { color:var(--muted); padding:20px; text-align:center; }
+
+  @media (max-width:800px) {
+    table.leaders { font-size:12px; }
+    table.leaders th, table.leaders td { padding:6px 7px; }
+    .gauge-bar { width:36px; }
+    .dur-bar { width:30px; }
+  }
+</style>
+</head>
+<body class="page-intraday-flow">
+
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<!-- Header panel -->
+<div class="panel">
+  <div class="topline">
+    <h1>📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span></h1>
+    <span class="lag-tag"><span class="l-en">≈15-min delayed bars</span><span class="l-zh">≈15分钟延迟价格</span></span>
+    <span class="lag-tag soft-tag"><span class="l-en">~options direction soft</span><span class="l-zh">~期权方向软性</span></span>
+  </div>
+  <p class="muted sm note"><span class="l-en">Washout-to-continuation leaders board — volume durability · RVOL vs time-of-day · VWAP context · ~net call premium tape activity &amp; options-flow persistence. All metrics deterministic; no scores; annotates only. Reference levels are not trade advice.</span><span class="l-zh">洗盘-延续型领涨股看板 — 成交量持续性 · RVOL与时段基准对比 · VWAP上下 · ~净看涨权利金资金活跃度与期权流动性持续性。所有指标均为确定性计算；无评分；仅作参考标注。参考价位不构成交易建议。</span></p>
+  <div class="topline" style="margin-top:8px">
+    <span class="xs muted"><span class="l-en">Universe:</span><span class="l-zh">覆盖：</span> <span id="ift-universe-note">116 <span class="l-en">leaders</span><span class="l-zh">只领涨股</span></span></span>
+    <span class="xs muted" id="ift-built"><span class="l-en">Nightly base:</span><span class="l-zh">夜间基础数据：</span> 2026-07-10T17:14:00.655527+00:00</span>
+    <span class="xs muted" id="ift-quotes-stamp"><span class="l-en">Quotes:</span><span class="l-zh">报价：</span> <span class="l-en">loading…</span><span class="l-zh">加载中…</span></span>
+    <span class="xs muted" id="ift-pulse-stamp"><span class="l-en">Pulse:</span><span class="l-zh">脉冲：</span> <span class="l-en">loading…</span><span class="l-zh">加载中…</span></span>
+    <span class="xs muted" id="ift-flow-stamp"><span class="l-en">Options tape:</span><span class="l-zh">期权带：</span> <span class="l-en">off-hours</span><span class="l-zh">非交易时段</span></span>
+  </div>
+</div>
+
+<!-- Toolbar: basket filters + K filter + search -->
+<div class="panel" style="padding:10px 16px">
+  <div class="toolbar">
+    <span class="chip active" data-basket="all"><span class="l-en">All</span><span class="l-zh">全部</span></span>
+    <span class="chip" data-basket="mag7">Mag7</span>
+    <span class="chip" data-basket="ai_infra"><span class="l-en">AI Infra</span><span class="l-zh">AI基础</span></span>
+    <span class="chip" data-basket="ai_software"><span class="l-en">AI Software</span><span class="l-zh">AI软件</span></span>
+    <span class="chip" data-basket="ai_semiconductors"><span class="l-en">AI Semis</span><span class="l-zh">AI芯片</span></span>
+    <span class="chip" data-basket="semicap_equipment"><span class="l-en">Semicap</span><span class="l-zh">设备</span></span>
+    <span class="chip" data-basket="reshoring"><span class="l-en">Reshoring</span><span class="l-zh">回流</span></span>
+    <span class="chip" data-basket="defense"><span class="l-en">Defense</span><span class="l-zh">国防</span></span>
+    <span class="chip" data-basket="power_grid"><span class="l-en">Power Grid</span><span class="l-zh">电网</span></span>
+    <div class="k-filter">
+      <label for="k-sel" class="muted xs">K≥</label>
+      <select id="k-sel">
+        <option value="0"><span class="l-en">Any</span><span class="l-zh">任意</span></option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+      </select>
+    </div>
+    <div class="search-box">
+      
+      <input type="text" id="ift-search" placeholder="Ticker search…" data-ph-zh="搜索代码…" autocomplete="off">
+    </div>
+    <span class="stamp-row xs muted" id="sort-label"><span class="l-en">Sorted by RVOL ↓</span><span class="l-zh">按RVOL排序↓</span></span>
+  </div>
+</div>
+
+<!-- Leaders table -->
+<div class="panel">
+  <div class="leaders-wrap">
+    <table class="leaders" id="leaders-table">
+      <thead>
+        <tr>
+          <th data-col="ticker" class="col-ticker"><span class="l-en">Ticker</span><span class="l-zh">代码</span><span class="sort-ic"></span></th>
+          <th data-col="last" class="col-last"><span class="l-en">Last / %Chg</span><span class="l-zh">最新/涨跌</span><span class="sort-ic"></span></th>
+          <th data-col="rvol" class="sort-desc col-rvol"><span class="l-en">RVOL</span><span class="l-zh">RVOL时段</span><span class="help">?<span class="tip"><span class="l-en">RVOL_tod = cumulative day volume ÷ (ADV20 × expected share at this time of day). ≥1.30 triggers L3.</span><span class="l-zh">RVOL_tod=当日累计成交量÷(ADV20×当前时段预期占比)。≥1.30触发L3。</span></span></span><span class="sort-ic"></span></th>
+          <th data-col="range_pos" class="col-range"><span class="l-en">Day Range</span><span class="l-zh">日内区间</span><span class="sort-ic"></span></th>
+          <th data-col="vwap_delta" class="col-vwap"><span class="l-en">vs VWAP</span><span class="l-zh">对VWAP</span><span class="sort-ic"></span></th>
+          <th data-col="vol_dur" class="col-voldur"><span class="l-en">Vol Dur</span><span class="l-zh">量持续</span><span class="help">?<span class="tip"><span class="l-en">Share of today's hourly bars closing upper-half with volume ≥ time-of-day baseline. ≥0.60 triggers L4.</span><span class="l-zh">今日小时K收盘在上半段且成交量≥时段基准的比例。≥0.60触发L4。</span></span></span><span class="sort-ic"></span></th>
+          <th data-col="ncp" class="col-ncp"><span class="l-en">~NCP / Flow</span><span class="l-zh">~净看涨权利金/流速</span><span class="help">?<span class="tip"><span class="l-en">~net call premium is SOFT direction — approximate (minute tick-rule signing, RUL-F3.12). Flow velocity = slope of cumulative NCP vs session pace.</span><span class="l-zh">~净看涨权利金方向软性近似（逐分钟打单，RUL-F3.12）。流速=累计NCP斜率vs当日均速。</span></span></span><span class="sort-ic"></span></th>
+          <th data-col="setup" class="col-setup"><span class="l-en">Setup / Chips</span><span class="l-zh">布局/标签</span></th>
+          <th data-col="k" class="col-k"><span class="l-en">K/7</span><span class="l-zh">汇聚K/7</span><span class="help">?<span class="tip"><span class="l-en">Boolean confluence count: L1 washout_recent · L2 reclaim · L3 rvol_elevated · L4 vol_durable · L5 flow_bid(~soft) · L6 upturn_organ · L7 leader_quality. No weighted score.</span><span class="l-zh">布尔汇聚计数：L1洗盘近期·L2收复·L3放量·L4量持续·L5资金偏多(~软性)·L6上升器官·L7领涨质量。无加权分数。</span></span></span><span class="sort-ic"></span></th>
+          <th data-col="risk" class="col-risk"><span class="l-en">Ref Levels</span><span class="l-zh">参考价位</span><span class="help">?<span class="tip"><span class="l-en">Reference levels only — not trade advice. Entry stop from nightly entry_signal; session VWAP from fastpath; session low from price bars.</span><span class="l-zh">仅供参考，不构成交易建议。入场止损来自夜间entry_signal；VWAP来自实时快速路径；日内低点来自价格数据。</span></span></span></th>
+        </tr>
+      </thead>
+      <tbody id="leaders-body">
+        <tr class="loading-row"><td colspan="10"><span class="l-en">Loading leaders…</span><span class="l-zh">加载中…</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="xs muted" style="margin-top:8px;text-align:right" id="count-label"></p>
+</div>
+
+<!-- Playbook accordion -->
+<div class="panel">
+  <h2><span class="l-en">Playbook — Washout to Continuation</span><span class="l-zh">操盘手册 — 洗盘至延续</span>
+    <span class="lag-tag"><span class="l-en">field guide</span><span class="l-zh">实战指南</span></span>
+  </h2>
+
+  <div class="playbook-section open">
+    <div class="playbook-hd">
+      <span><span class="l-en">1 · Universe &amp; leadership screen</span><span class="l-zh">1 · 覆盖范围与领涨筛选</span></span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">This board covers the Mag7, AI infrastructure, AI software, AI semiconductor, semicap equipment, reshoring, defense, and power-grid baskets — names with demonstrated institutional sponsorship and options liquidity. The goal is not to find cheap stocks; it is to find tape-active leaders that have absorbed selling and are showing durable re-accumulation. Only the <em>leader quality</em> universe is relevant — trap-prone names (failed-breakout-trap chip) are deprioritized.</p>
+      <p class="l-zh">本看板覆盖Mag7、AI基础设施、AI软件、AI半导体、半导体设备、回流制造、国防与电网篮子——这些标的具有机构持续性参与和期权流动性。目标不是寻找廉价股，而是寻找经历卖压洗盘后表现出持续吸筹的活跃领涨股。只关注<em>领涨质量</em>标的——回踩陷阱型标的（trap-prone标签）优先级降低。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span><span class="l-en">2 · Washout context — what makes a setup valid</span><span class="l-zh">2 · 洗盘背景 — 何为有效布局</span></span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">A valid washout context requires at least one of: a Bollinger-lower-band reclaim within the past 10 sessions (L1a), or a 21-day max drawdown ≤ −12% with recovery already begun (L1b). Without prior compression or selling, a high RVOL reading is just noise. The washout gives the continuation move its structural floor — the stop goes <em>below</em> the washout structure, not below the current bar.</p>
+      <p class="l-zh">有效的洗盘背景要求满足至少一项：过去10个交易日内收复布林下轨（L1a），或21日最大回撤≤−12%且已开始修复（L1b）。没有前期压缩或卖压，高RVOL读数只是噪声。洗盘为延续走势提供了结构性底部——止损应设在<em>洗盘结构下方</em>，而非当前K线下方。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span><span class="l-en">3 · Volume &amp; RVOL — durable accumulation vs noise</span><span class="l-zh">3 · 成交量与RVOL — 持续吸筹vs噪声</span></span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">RVOL_tod compares today's cumulative volume to ADV20 × the expected time-of-day volume share from trailing 20 sessions. A reading ≥ 1.3× (L3) is elevated. Volume durability (L4) requires ≥ 60% of today's hourly bars to close in their upper half with above-baseline volume — this distinguishes a sustained bid from a single spike. Higher-lows count confirms price is not giving back each bar's gain. RVOL alone is insufficient; it must arrive with durability.</p>
+      <p class="l-zh">RVOL_tod将今日累计成交量与ADV20×过去20个交易日该时段平均成交占比的乘积对比。读数≥1.3×（L3）为放量。成交量持续性（L4）要求今日≥60%的小时K收盘在上半段且成交量高于时段基准——这区分了持续买盘与单次放量。Higher-lows计数确认价格未在每根K线后回吐涨幅。RVOL单独不够，必须配合持续性。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span><span class="l-en">4 · Options tape — tape activity &amp; flow persistence (~soft)</span><span class="l-zh">4 · 期权带 — 活跃度与流动持续性（~软性）</span></span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">The options flow block shows tape activity and options-flow persistence. <em>Direction reads are SOFT</em> — ~net call premium (NCP) is signed by minute tick-rule, not NBBO, so the call/put direction is approximate. Flow durability = share of 5-min windows with NCP &gt; 0 + the longest positive streak. This is a confluence input, not a standalone signal, and is not used as an entry trigger in isolation. The bias badge counts (WHALE, FRESH, Z_OUTLIER, etc.) are deterministic; 0DTE is bucket-labeled only, never highlighted.</p>
+      <p class="l-zh">期权资金块展示期权活跃度与流动持续性。<em>方向读数为软性近似</em>——~净看涨权利金（NCP）通过逐分钟打单规则定向，非NBBO，因此看涨/看跌方向为近似值。流动持续性=NCP&gt;0的5分钟窗口占比+最长正向连续条数。这是汇聚输入，非独立信号，不单独用于入场触发。偏好标签计数（WHALE、FRESH、Z_OUTLIER等）为确定性计算；0DTE仅做桶分类标注，不特别强调。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span><span class="l-en">5 · Confluence K/7 &amp; entry timing</span><span class="l-zh">5 · 汇聚K/7与入场时机</span></span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">K is a simple count of 7 independent boolean legs — no weighting, no score. Higher K means more conditions align simultaneously; it does not imply outcome probability. Useful timing: K rises intraday as more legs activate. The ideal sequence is L1 (washout context) + L6 (mtf_upturn) already set from nightly, then L3+L4 (volume) and L2 (reclaim above VWAP &amp; prevClose) confirm intraday, optionally with L5 (~flow bid). Let the runners run — do not tighten stops into natural retracements on a durable leader.</p>
+      <p class="l-zh">K是7个独立布尔腿的简单计数——无加权、无评分。K值越高表示更多条件同时满足；不代表结果概率。实用时机：K值在盘中随更多腿激活而上升。理想顺序：L1（洗盘背景）+L6（多周期上行器官）已由夜间确认，然后L3+L4（成交量）和L2（收复VWAP及前收）盘中确认，可选配L5（~资金偏多）。让盈利跑——不要在持续领涨股的正常回踩中收紧止损。</p>
+    </div>
+  </div>
+
+  <div class="playbook-section">
+    <div class="playbook-hd">
+      <span><span class="l-en">6 · Reference levels &amp; trap-prone names</span><span class="l-zh">6 · 参考价位与回踩陷阱型标的</span></span>
+      <span class="caret">▸</span>
+    </div>
+    <div class="playbook-body">
+      <p class="l-en">Reference levels (stop, VWAP, session low + ATR%) are computed from nightly entry_signal and intraday fastpath data — <em>they are reference only, not advice</em>. Stop comes from nightly structure; revisit it if the setup changes materially intraday. Trap-prone names (failed_breakout_trap = true) show a red <strong>trap-prone 回踩陷阱</strong> chip and are deprioritized — these names have a track record of faking breakouts and retesting lows repeatedly. Use them only if the full K/7 is elevated AND washout is recent and deep.</p>
+      <p class="l-zh">参考价位（止损、VWAP、日内低点+ATR%）由夜间entry_signal和盘中快速路径数据计算——<em>仅供参考，不构成交易建议</em>。止损来自夜间结构；若盘中布局出现重大变化应重新评估。回踩陷阱型标的（failed_breakout_trap=true）显示红色<strong>trap-prone 回踩陷阱</strong>标签并降低优先级——这些标的有反复假突破、一再测试低点的历史。只有在K/7完全满足且洗盘近期且幅度深时才考虑。</p>
+    </div>
+  </div>
+
+  <p class="xs muted" style="margin-top:10px">
+    <span class="l-en">~NCP direction is SOFT — approximate (minute tick-rule signing, not NBBO). All metrics deterministic; no LLM. Reference levels are not trade advice. Display-tier only.</span><span class="l-zh">~NCP方向为软性近似（逐分钟打单，非NBBO）。所有指标均为确定性计算；无LLM参与。参考价位不构成交易建议。仅展示层。</span>
+  </p>
+</div>
+
+<!-- Inline JS — data loads, polling, table render -->
+<script>
+(function(){
+'use strict';
+
+// ── Config injected from nightly build ────────────────────────────────────
+var BASE_DATA = {"as_of": "2026-07-10T17:14:00.655527+00:00", "built_utc": "2026-07-10T17:14:00.655527+00:00", "direction_note": "~net call premium direction is SOFT \u2014 approximate (minute tick-rule signing, RUL-F3.12)", "durability_min": 0.6, "leaders": [{"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["mag7"], "bb_lower_reclaim_days": 7, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0875, "entry_signal": {"atr_pct": 1.68, "buy_zone": {"high": 294.4, "low": 287.0, "pct_from_spot": -1.3}, "spot": 294.4, "status": "await_confluence", "stop": 275.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.74, "gamma_regime": "long", "walls": null}, "prev_close": 294.38, "recovery_begun": true, "stair_step_leader": null, "ticker": "AAPL", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.78, "buy_zone": null, "spot": 144.5, "status": "blocked", "stop": 144.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 144.5, "recovery_begun": null, "stair_step_leader": null, "ticker": "ACLS", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.29, "buy_zone": {"high": 214.1, "low": 202.2, "pct_from_spot": -5.3}, "spot": 219.7, "status": "extended", "stop": 193.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.0, "gamma_regime": "long", "walls": null}, "prev_close": 219.72, "recovery_begun": null, "stair_step_leader": null, "ticker": "ADBE", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.84, "buy_zone": {"high": 296.2, "low": 281.1, "pct_from_spot": -7.3}, "spot": 311.3, "status": "extended", "stop": 294.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -7.37, "gamma_regime": "short", "walls": null}, "prev_close": 311.27, "recovery_begun": null, "stair_step_leader": null, "ticker": "AEIS", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 34, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0262, "entry_signal": {"atr_pct": 0.97, "buy_zone": {"high": 135.1, "low": 133.1, "pct_from_spot": -0.7}, "spot": 135.1, "status": "await_confluence", "stop": 123.8}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 8.68, "gamma_regime": "long", "walls": null}, "prev_close": 135.05, "recovery_begun": true, "stair_step_leader": null, "ticker": "AEP", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 6.44, "buy_zone": {"high": 418.8, "low": 386.5, "pct_from_spot": -6.5}, "spot": 430.9, "status": "topping", "stop": 317.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 6.14, "gamma_regime": "long", "walls": null}, "prev_close": 430.86, "recovery_begun": null, "stair_step_leader": null, "ticker": "ALAB", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "semicap_equipment"], "bb_lower_reclaim_days": 68, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.2331, "entry_signal": {"atr_pct": 6.12, "buy_zone": {"high": 638.8, "low": 580.3, "pct_from_spot": -6.4}, "spot": 650.9, "status": "extended", "stop": 448.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -5.4, "gamma_regime": "short", "walls": null}, "prev_close": 650.91, "recovery_begun": true, "stair_step_leader": null, "ticker": "AMAT", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1115, "entry_signal": {"atr_pct": 4.56, "buy_zone": {"high": 535.6, "low": 518.1, "pct_from_spot": -2.6}, "spot": 540.9, "status": "hold", "stop": 452.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.19, "gamma_regime": "long", "walls": null}, "prev_close": 540.88, "recovery_begun": true, "stair_step_leader": null, "ticker": "AMD", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.4, "buy_zone": {"high": 234.6, "low": 229.7, "pct_from_spot": -1.1}, "spot": 234.6, "status": "buy_soon", "stop": 221.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.98, "gamma_regime": "long", "walls": null}, "prev_close": 234.62, "recovery_begun": null, "stair_step_leader": null, "ticker": "AME", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["mag7"], "bb_lower_reclaim_days": 16, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0773, "entry_signal": {"atr_pct": 2.04, "buy_zone": {"high": 240.6, "low": 236.3, "pct_from_spot": -1.3}, "spot": 241.7, "status": "extended", "stop": 227.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 7.54, "gamma_regime": "long", "walls": null}, "prev_close": 241.7, "recovery_begun": true, "stair_step_leader": null, "ticker": "AMZN", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.15, "buy_zone": {"high": 160.0, "low": 152.4, "pct_from_spot": -2.4}, "spot": 160.0, "status": "buy_soon", "stop": 151.8}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 6.67, "gamma_regime": "long", "walls": null}, "prev_close": 159.99, "recovery_begun": null, "stair_step_leader": null, "ticker": "ANET", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": 38, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1027, "entry_signal": {"atr_pct": 2.13, "buy_zone": {"high": 165.6, "low": 157.9, "pct_from_spot": -6.1}, "spot": 172.2, "status": "extended", "stop": 138.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 172.22, "recovery_begun": false, "stair_step_leader": null, "ticker": "APH", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.92, "buy_zone": {"high": 527.1, "low": 496.1, "pct_from_spot": -2.9}, "spot": 527.1, "status": "buy_now", "stop": 445.9}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 16.93, "gamma_regime": "long", "walls": null}, "prev_close": 527.06, "recovery_begun": null, "stair_step_leader": null, "ticker": "APP", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.9, "buy_zone": {"high": 337.5, "low": 307.6, "pct_from_spot": -4.4}, "spot": 337.5, "status": "buy_soon", "stop": 302.7}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -8.37, "gamma_regime": "short", "walls": null}, "prev_close": 337.47, "recovery_begun": null, "stair_step_leader": null, "ticker": "ARM", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 7.48, "buy_zone": {"high": 85.27, "low": 77.9, "pct_from_spot": -5.2}, "spot": 86.1, "status": "extended", "stop": 65.62}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.18, "gamma_regime": "long", "walls": null}, "prev_close": 86.1, "recovery_begun": null, "stair_step_leader": null, "ticker": "ASTS", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.94, "buy_zone": {"high": 190.9, "low": 176.7, "pct_from_spot": -3.7}, "spot": 190.9, "status": "partial", "stop": 136.7}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 8.57, "gamma_regime": "long", "walls": null}, "prev_close": 190.89, "recovery_begun": null, "stair_step_leader": null, "ticker": "AVAV", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": 19, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1224, "entry_signal": {"atr_pct": 2.8, "buy_zone": null, "spot": 369.3, "status": "blocked", "stop": 365.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -3.24, "gamma_regime": "short", "walls": null}, "prev_close": 369.34, "recovery_begun": true, "stair_step_leader": null, "ticker": "AVGO", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": 34, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0623, "entry_signal": {"atr_pct": 1.65, "buy_zone": {"high": 215.0, "low": 211.4, "pct_from_spot": -2.5}, "spot": 218.6, "status": "wait_pullback", "stop": 209.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 8.27, "gamma_regime": "long", "walls": null}, "prev_close": 218.58, "recovery_begun": true, "stair_step_leader": null, "ticker": "BA", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.7, "buy_zone": {"high": 187.8, "low": 184.6, "pct_from_spot": -2.5}, "spot": 191.1, "status": "extended", "stop": 183.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.74, "gamma_regime": "long", "walls": null}, "prev_close": 191.06, "recovery_begun": null, "stair_step_leader": null, "ticker": "BWXT", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": null, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "short", "walls": null}, "prev_close": null, "recovery_begun": null, "stair_step_leader": null, "ticker": "CAMT", "vol_share_curve": null, "vol_squeeze": null}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1172, "entry_signal": {"atr_pct": 3.45, "buy_zone": {"high": 961.6, "low": 961.6, "pct_from_spot": -3.0}, "spot": 991.4, "status": "wait_pullback", "stop": 856.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -0.07, "gamma_regime": "short", "walls": null}, "prev_close": 991.41, "recovery_begun": true, "stair_step_leader": null, "ticker": "CAT", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": null, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -1.31, "gamma_regime": "short", "walls": null}, "prev_close": 221.27, "recovery_begun": null, "stair_step_leader": null, "ticker": "CBRS", "vol_share_curve": null, "vol_squeeze": null}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 33, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1417, "entry_signal": {"atr_pct": 2.08, "buy_zone": null, "spot": 236.5, "status": "blocked", "stop": 236.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "short", "walls": null}, "prev_close": 236.5, "recovery_begun": true, "stair_step_leader": null, "ticker": "CEG", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.26, "buy_zone": null, "spot": 422.5, "status": "blocked", "stop": 422.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -9.24, "gamma_regime": "short", "walls": null}, "prev_close": 422.46, "recovery_begun": null, "stair_step_leader": null, "ticker": "CIEN", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.53, "buy_zone": null, "spot": 333.4, "status": "blocked", "stop": 333.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -12.61, "gamma_regime": "short", "walls": null}, "prev_close": 333.36, "recovery_begun": null, "stair_step_leader": null, "ticker": "COHR", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.65, "buy_zone": {"high": 59.27, "low": 54.25, "pct_from_spot": -4.2}, "spot": 59.27, "status": "buy_soon", "stop": 49.81}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 59.27, "recovery_begun": null, "stair_step_leader": null, "ticker": "COHU", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 6.7, "buy_zone": {"high": 259.1, "low": 233.1, "pct_from_spot": -5.0}, "spot": 259.1, "status": "buy_soon", "stop": 206.9}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 0.89, "gamma_regime": "long", "walls": null}, "prev_close": 259.09, "recovery_begun": null, "stair_step_leader": null, "ticker": "CRDO", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.93, "buy_zone": {"high": 163.8, "low": 156.1, "pct_from_spot": -3.7}, "spot": 166.1, "status": "extended", "stop": 150.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 5.87, "gamma_regime": "long", "walls": null}, "prev_close": 166.11, "recovery_begun": null, "stair_step_leader": null, "ticker": "CRM", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0414, "entry_signal": {"atr_pct": 1.67, "buy_zone": {"high": 178.7, "low": 174.6, "pct_from_spot": -8.9}, "spot": 194.0, "status": "extended", "stop": 161.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 20.93, "gamma_regime": "long", "walls": null}, "prev_close": 193.98, "recovery_begun": false, "stair_step_leader": null, "ticker": "CRWD", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.55, "buy_zone": null, "spot": 85.68, "status": "blocked", "stop": 85.68}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -9.96, "gamma_regime": "short", "walls": null}, "prev_close": 85.68, "recovery_begun": null, "stair_step_leader": null, "ticker": "CRWV", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.09, "buy_zone": {"high": 754.0, "low": 754.0, "pct_from_spot": -0.8}, "spot": 760.2, "status": "extended", "stop": 718.8}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 0.8, "gamma_regime": "long", "walls": null}, "prev_close": 760.23, "recovery_begun": null, "stair_step_leader": null, "ticker": "CW", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0247, "entry_signal": {"atr_pct": 0.66, "buy_zone": {"high": 67.79, "low": 67.12, "pct_from_spot": -0.5}, "spot": 67.79, "status": "buy_soon", "stop": 64.61}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 67.79, "recovery_begun": true, "stair_step_leader": null, "ticker": "D", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.18, "buy_zone": {"high": 260.4, "low": 251.8, "pct_from_spot": -1.6}, "spot": 260.4, "status": "buy_soon", "stop": 220.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 14.19, "gamma_regime": "long", "walls": null}, "prev_close": 260.36, "recovery_begun": null, "stair_step_leader": null, "ticker": "DDOG", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": 29, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0606, "entry_signal": {"atr_pct": 1.61, "buy_zone": {"high": 608.9, "low": 592.8, "pct_from_spot": -4.3}, "spot": 627.6, "status": "hold", "stop": 529.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 6.5, "gamma_regime": "long", "walls": null}, "prev_close": 627.63, "recovery_begun": false, "stair_step_leader": null, "ticker": "DE", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.02, "buy_zone": {"high": 394.3, "low": 376.5, "pct_from_spot": -2.3}, "spot": 394.3, "status": "buy_soon", "stop": 317.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 10.06, "gamma_regime": "long", "walls": null}, "prev_close": 394.32, "recovery_begun": null, "stair_step_leader": null, "ticker": "DELL", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.51, "buy_zone": {"high": 213.7, "low": 208.9, "pct_from_spot": -1.1}, "spot": 213.7, "status": "buy_soon", "stop": 207.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -4.03, "gamma_regime": "short", "walls": null}, "prev_close": 213.71, "recovery_begun": null, "stair_step_leader": null, "ticker": "DOV", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": null, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 14.38, "gamma_regime": "long", "walls": null}, "prev_close": null, "recovery_begun": null, "stair_step_leader": null, "ticker": "DRS", "vol_share_curve": null, "vol_squeeze": null}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 24, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.028, "entry_signal": {"atr_pct": 0.74, "buy_zone": {"high": 125.8, "low": 124.4, "pct_from_spot": -0.5}, "spot": 125.8, "status": "buy_soon", "stop": 119.9}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.37, "gamma_regime": "long", "walls": null}, "prev_close": 125.77, "recovery_begun": true, "stair_step_leader": null, "ticker": "DUK", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.5, "buy_zone": null, "spot": 774.7, "status": "blocked", "stop": 774.7}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 6.46, "gamma_regime": "long", "walls": null}, "prev_close": 774.66, "recovery_begun": null, "stair_step_leader": null, "ticker": "EME", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.41, "buy_zone": {"high": 139.1, "low": 137.1, "pct_from_spot": -0.7}, "spot": 139.1, "status": "buy_soon", "stop": 137.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 8.38, "gamma_regime": "long", "walls": null}, "prev_close": 139.05, "recovery_begun": null, "stair_step_leader": null, "ticker": "EMR", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 6.54, "buy_zone": {"high": 146.7, "low": 132.3, "pct_from_spot": -4.9}, "spot": 146.7, "status": "buy_soon", "stop": 125.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 146.66, "recovery_begun": null, "stair_step_leader": null, "ticker": "ENTG", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring", "power_grid"], "bb_lower_reclaim_days": 32, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.092, "entry_signal": {"atr_pct": 2.88, "buy_zone": {"high": 412.3, "low": 394.5, "pct_from_spot": -2.2}, "spot": 412.3, "status": "buy_soon", "stop": 375.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 0.32, "gamma_regime": "long", "walls": null}, "prev_close": 412.31, "recovery_begun": true, "stair_step_leader": null, "ticker": "ETN", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.11, "buy_zone": {"high": 48.6, "low": 47.79, "pct_from_spot": -0.8}, "spot": 48.6, "status": "await_confluence", "stop": 44.88}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 21.0, "gamma_regime": "long", "walls": null}, "prev_close": 48.6, "recovery_begun": null, "stair_step_leader": null, "ticker": "FAST", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.02, "buy_zone": {"high": 1671.3, "low": 1601.3, "pct_from_spot": -6.0}, "spot": 1741.3, "status": "extended", "stop": 1719.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -11.97, "gamma_regime": "short", "walls": null}, "prev_close": 1741.3, "recovery_begun": null, "stair_step_leader": null, "ticker": "FIX", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 7.77, "buy_zone": {"high": 114.0, "low": 104.4, "pct_from_spot": -11.6}, "spot": 123.6, "status": "extended", "stop": 115.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "short", "walls": null}, "prev_close": 123.59, "recovery_begun": null, "stair_step_leader": null, "ticker": "FORM", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": 23, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.057, "entry_signal": {"atr_pct": 1.56, "buy_zone": {"high": 362.9, "low": 354.4, "pct_from_spot": -1.2}, "spot": 362.9, "status": "await_confluence", "stop": 337.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 10.64, "gamma_regime": "long", "walls": null}, "prev_close": 362.86, "recovery_begun": true, "stair_step_leader": null, "ticker": "GD", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0598, "entry_signal": {"atr_pct": 1.37, "buy_zone": {"high": 365.5, "low": 347.9, "pct_from_spot": -4.9}, "spot": 374.9, "status": "topping", "stop": 314.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 13.13, "gamma_regime": "long", "walls": null}, "prev_close": 374.94, "recovery_begun": false, "stair_step_leader": null, "ticker": "GE", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 19, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0884, "entry_signal": {"atr_pct": 4.23, "buy_zone": {"high": 1092.1, "low": 1015.2, "pct_from_spot": -7.1}, "spot": 1134.3, "status": "hold", "stop": 866.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 2.82, "gamma_regime": "long", "walls": null}, "prev_close": 1134.35, "recovery_begun": false, "stair_step_leader": null, "ticker": "GEV", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 7.1, "buy_zone": {"high": 196.8, "low": 175.8, "pct_from_spot": -5.3}, "spot": 196.8, "status": "buy_soon", "stop": 168.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -8.7, "gamma_regime": "short", "walls": null}, "prev_close": 196.79, "recovery_begun": null, "stair_step_leader": null, "ticker": "GLW", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring", "power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.06, "buy_zone": {"high": 252.7, "low": 239.1, "pct_from_spot": -2.7}, "spot": 252.7, "status": "buy_soon", "stop": 239.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 252.66, "recovery_begun": null, "stair_step_leader": null, "ticker": "GNRC", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["mag7", "ai_software"], "bb_lower_reclaim_days": 8, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0961, "entry_signal": {"atr_pct": 1.7, "buy_zone": {"high": 358.5, "low": 352.6, "pct_from_spot": -1.6}, "spot": 361.2, "status": "extended", "stop": 337.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 6.65, "gamma_regime": "long", "walls": null}, "prev_close": 361.21, "recovery_begun": true, "stair_step_leader": null, "ticker": "GOOGL", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.45, "buy_zone": {"high": 342.8, "low": 336.7, "pct_from_spot": -5.5}, "spot": 359.7, "status": "extended", "stop": 309.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 12.46, "gamma_regime": "long", "walls": null}, "prev_close": 359.7, "recovery_begun": null, "stair_step_leader": null, "ticker": "HEI", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.49, "buy_zone": {"high": 288.8, "low": 281.6, "pct_from_spot": -2.2}, "spot": 291.5, "status": "extended", "stop": 277.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.26, "gamma_regime": "long", "walls": null}, "prev_close": 291.5, "recovery_begun": null, "stair_step_leader": null, "ticker": "HII", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": 42, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1296, "entry_signal": {"atr_pct": 2.29, "buy_zone": {"high": 222.6, "low": 217.4, "pct_from_spot": -3.4}, "spot": 227.8, "status": "wait_pullback", "stop": 216.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 12.3, "gamma_regime": "long", "walls": null}, "prev_close": 227.8, "recovery_begun": true, "stair_step_leader": null, "ticker": "HON", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.66, "buy_zone": {"high": 487.1, "low": 467.7, "pct_from_spot": -2.0}, "spot": 487.1, "status": "buy_soon", "stop": 462.9}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 16.37, "gamma_regime": "long", "walls": null}, "prev_close": 487.1, "recovery_begun": null, "stair_step_leader": null, "ticker": "HUBB", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": 22, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0559, "entry_signal": {"atr_pct": 1.53, "buy_zone": {"high": 266.0, "low": 266.0, "pct_from_spot": -0.5}, "spot": 267.4, "status": "extended", "stop": 246.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 4.14, "gamma_regime": "long", "walls": null}, "prev_close": 267.41, "recovery_begun": true, "stair_step_leader": null, "ticker": "HWM", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": 50, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.113, "entry_signal": {"atr_pct": 2.24, "buy_zone": {"high": 286.2, "low": 276.6, "pct_from_spot": -1.7}, "spot": 286.2, "status": "partial", "stop": 249.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 11.2, "gamma_regime": "long", "walls": null}, "prev_close": 286.25, "recovery_begun": true, "stair_step_leader": null, "ticker": "IBM", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.37, "buy_zone": {"high": 98.22, "low": 90.31, "pct_from_spot": -4.0}, "spot": 98.22, "status": "buy_soon", "stop": 62.91}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 98.22, "recovery_begun": null, "stair_step_leader": null, "ticker": "ICHR", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.0, "buy_zone": {"high": 263.8, "low": 263.8, "pct_from_spot": -4.2}, "spot": 275.4, "status": "extended", "stop": 255.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 7.82, "gamma_regime": "long", "walls": null}, "prev_close": 275.35, "recovery_begun": null, "stair_step_leader": null, "ticker": "INTU", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.57, "buy_zone": {"high": 79.82, "low": 76.95, "pct_from_spot": -2.7}, "spot": 80.59, "status": "hold", "stop": 70.07}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 80.59, "recovery_begun": null, "stair_step_leader": null, "ticker": "IR", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.19, "buy_zone": {"high": 272.8, "low": 267.9, "pct_from_spot": -0.9}, "spot": 272.8, "status": "await_confluence", "stop": 244.3}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 19.82, "gamma_regime": "long", "walls": null}, "prev_close": 272.76, "recovery_begun": null, "stair_step_leader": null, "ticker": "ITW", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.2825, "entry_signal": {"atr_pct": 6.72, "buy_zone": {"high": 260.6, "low": 242.6, "pct_from_spot": -5.5}, "spot": 266.2, "status": "extended", "stop": 192.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -22.84, "gamma_regime": "short", "walls": null}, "prev_close": 266.19, "recovery_begun": true, "stair_step_leader": null, "ticker": "KLAC", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.21, "buy_zone": {"high": 121.3, "low": 115.5, "pct_from_spot": -2.4}, "spot": 121.3, "status": "buy_soon", "stop": 97.99}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 20.22, "gamma_regime": "long", "walls": null}, "prev_close": 121.33, "recovery_begun": null, "stair_step_leader": null, "ticker": "KLIC", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.05, "buy_zone": {"high": 53.97, "low": 50.28, "pct_from_spot": -5.8}, "spot": 55.35, "status": "extended", "stop": 46.32}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 2.87, "gamma_regime": "long", "walls": null}, "prev_close": 55.35, "recovery_begun": null, "stair_step_leader": null, "ticker": "KTOS", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.36, "buy_zone": {"high": 103.9, "low": 103.9, "pct_from_spot": -4.5}, "spot": 108.8, "status": "extended", "stop": 100.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 9.44, "gamma_regime": "long", "walls": null}, "prev_close": 108.84, "recovery_begun": null, "stair_step_leader": null, "ticker": "LDOS", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.58, "buy_zone": {"high": 158.7, "low": 151.1, "pct_from_spot": -6.9}, "spot": 166.3, "status": "wait_pullback", "stop": 146.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -9.12, "gamma_regime": "short", "walls": null}, "prev_close": 166.34, "recovery_begun": null, "stair_step_leader": null, "ticker": "LEU", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.84, "buy_zone": {"high": 299.7, "low": 291.6, "pct_from_spot": -2.1}, "spot": 302.1, "status": "extended", "stop": 285.8}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 5.62, "gamma_regime": "long", "walls": null}, "prev_close": 302.07, "recovery_begun": null, "stair_step_leader": null, "ticker": "LHX", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.39, "buy_zone": null, "spot": 728.3, "status": "blocked", "stop": 728.3}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -16.78, "gamma_regime": "short", "walls": null}, "prev_close": 728.32, "recovery_begun": null, "stair_step_leader": null, "ticker": "LITE", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": 10, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.104, "entry_signal": {"atr_pct": 2.11, "buy_zone": {"high": 518.2, "low": 507.8, "pct_from_spot": -1.7}, "spot": 521.8, "status": "extended", "stop": 491.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 4.06, "gamma_regime": "long", "walls": null}, "prev_close": 521.82, "recovery_begun": true, "stair_step_leader": null, "ticker": "LMT", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.2474, "entry_signal": {"atr_pct": 5.87, "buy_zone": {"high": 391.3, "low": 356.8, "pct_from_spot": -4.4}, "spot": 391.3, "status": "buy_soon", "stop": 303.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -16.7, "gamma_regime": "short", "walls": null}, "prev_close": 391.26, "recovery_begun": true, "stair_step_leader": null, "ticker": "LRCX", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["mag7", "ai_software"], "bb_lower_reclaim_days": 16, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0955, "entry_signal": {"atr_pct": 2.31, "buy_zone": {"high": 578.5, "low": 566.0, "pct_from_spot": -6.6}, "spot": 612.9, "status": "extended", "stop": 542.9}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 7.31, "gamma_regime": "long", "walls": null}, "prev_close": 612.91, "recovery_begun": true, "stair_step_leader": null, "ticker": "META", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.72, "buy_zone": {"high": 365.6, "low": 334.2, "pct_from_spot": -4.3}, "spot": 365.6, "status": "buy_soon", "stop": 301.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -4.42, "gamma_regime": "short", "walls": null}, "prev_close": 365.56, "recovery_begun": null, "stair_step_leader": null, "ticker": "MKSI", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.1, "buy_zone": null, "spot": 1288.2, "status": "blocked", "stop": 1288.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -16.38, "gamma_regime": "short", "walls": null}, "prev_close": 1288.16, "recovery_begun": null, "stair_step_leader": null, "ticker": "MPWR", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.76, "buy_zone": {"high": 126.2, "low": 121.0, "pct_from_spot": -2.1}, "spot": 126.2, "status": "await_confluence", "stop": 105.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 126.21, "recovery_begun": null, "stair_step_leader": null, "ticker": "MRCY", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": 0, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.2572, "entry_signal": {"atr_pct": 5.77, "buy_zone": {"high": 272.0, "low": 248.5, "pct_from_spot": -4.3}, "spot": 272.0, "status": "buy_soon", "stop": 198.7}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -3.85, "gamma_regime": "short", "walls": null}, "prev_close": 272.05, "recovery_begun": true, "stair_step_leader": null, "ticker": "MRVL", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["mag7", "ai_software"], "bb_lower_reclaim_days": 16, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1431, "entry_signal": {"atr_pct": 2.24, "buy_zone": {"high": 371.7, "low": 371.7, "pct_from_spot": -3.3}, "spot": 384.3, "status": "extended", "stop": 352.8}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.7, "gamma_regime": "long", "walls": null}, "prev_close": 384.28, "recovery_begun": true, "stair_step_leader": null, "ticker": "MSFT", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": 67, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.2266, "entry_signal": {"atr_pct": 6.88, "buy_zone": {"high": 1032.3, "low": 925.7, "pct_from_spot": -5.2}, "spot": 1032.3, "status": "buy_soon", "stop": 864.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -10.99, "gamma_regime": "short", "walls": null}, "prev_close": 1032.28, "recovery_begun": true, "stair_step_leader": null, "ticker": "MU", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.72, "buy_zone": {"high": 229.2, "low": 209.5, "pct_from_spot": -4.3}, "spot": 229.2, "status": "buy_soon", "stop": 208.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -21.97, "gamma_regime": "short", "walls": null}, "prev_close": 229.18, "recovery_begun": null, "stair_step_leader": null, "ticker": "NBIS", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.23, "buy_zone": {"high": 290.4, "low": 285.0, "pct_from_spot": -0.9}, "spot": 290.4, "status": "buy_soon", "stop": 277.8}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 12.67, "gamma_regime": "long", "walls": null}, "prev_close": 290.38, "recovery_begun": null, "stair_step_leader": null, "ticker": "NDSN", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 31, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0258, "entry_signal": {"atr_pct": 0.72, "buy_zone": {"high": 86.18, "low": 86.18, "pct_from_spot": -0.2}, "spot": 86.37, "status": "extended", "stop": 83.05}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.04, "gamma_regime": "long", "walls": null}, "prev_close": 86.37, "recovery_begun": true, "stair_step_leader": null, "ticker": "NEE", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 1, "state": "COMPRESSED"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.02, "buy_zone": {"high": 246.3, "low": 238.8, "pct_from_spot": -1.5}, "spot": 246.3, "status": "buy_now", "stop": 209.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 12.01, "gamma_regime": "long", "walls": null}, "prev_close": 246.31, "recovery_begun": null, "stair_step_leader": null, "ticker": "NET", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.85, "buy_zone": {"high": 529.4, "low": 511.9, "pct_from_spot": -5.2}, "spot": 549.0, "status": "extended", "stop": 496.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 4.75, "gamma_regime": "long", "walls": null}, "prev_close": 549.01, "recovery_begun": null, "stair_step_leader": null, "ticker": "NOC", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.08, "buy_zone": {"high": 106.3, "low": 101.4, "pct_from_spot": -2.3}, "spot": 106.3, "status": "partial", "stop": 89.52}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 9.4, "gamma_regime": "long", "walls": null}, "prev_close": 106.32, "recovery_begun": null, "stair_step_leader": null, "ticker": "NOW", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 17, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0848, "entry_signal": {"atr_pct": 2.09, "buy_zone": {"high": 135.2, "low": 135.2, "pct_from_spot": -4.0}, "spot": 140.8, "status": "wait_pullback", "stop": 120.7}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 140.8, "recovery_begun": true, "stair_step_leader": null, "ticker": "NRG", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["mag7", "ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": 7, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0938, "entry_signal": {"atr_pct": 1.9, "buy_zone": {"high": 193.8, "low": 190.1, "pct_from_spot": -2.8}, "spot": 197.6, "status": "extended", "stop": 192.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 0.08, "gamma_regime": "long", "walls": null}, "prev_close": 197.58, "recovery_begun": true, "stair_step_leader": null, "ticker": "NVDA", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.2, "buy_zone": {"high": 476.5, "low": 450.3, "pct_from_spot": -7.8}, "spot": 502.6, "status": "extended", "stop": 475.8}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -22.04, "gamma_regime": "short", "walls": null}, "prev_close": 502.6, "recovery_begun": null, "stair_step_leader": null, "ticker": "NVMI", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.68, "buy_zone": null, "spot": 52.45, "status": "blocked", "stop": 50.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -17.33, "gamma_regime": "short", "walls": null}, "prev_close": 52.45, "recovery_begun": null, "stair_step_leader": null, "ticker": "OKLO", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 1, "state": "COMPRESSED"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 6.13, "buy_zone": {"high": 307.6, "low": 279.3, "pct_from_spot": -4.6}, "spot": 307.6, "status": "buy_soon", "stop": 253.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 10.97, "gamma_regime": "long", "walls": null}, "prev_close": 307.58, "recovery_begun": null, "stair_step_leader": null, "ticker": "ONTO", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.3378, "entry_signal": {"atr_pct": 3.11, "buy_zone": null, "spot": 142.5, "status": "blocked", "stop": 142.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -5.42, "gamma_regime": "short", "walls": null}, "prev_close": 142.5, "recovery_begun": true, "stair_step_leader": null, "ticker": "ORCL", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1033, "entry_signal": {"atr_pct": 2.72, "buy_zone": {"high": 305.5, "low": 305.5, "pct_from_spot": -13.2}, "spot": 352.0, "status": "topping", "stop": 248.5}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 352.04, "recovery_begun": false, "stair_step_leader": null, "ticker": "PANW", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 34, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0438, "entry_signal": {"atr_pct": 1.2, "buy_zone": {"high": 16.57, "low": 16.27, "pct_from_spot": -0.9}, "spot": 16.57, "status": "buy_soon", "stop": 16.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 16.57, "recovery_begun": true, "stair_step_leader": null, "ticker": "PCG", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": 24, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0513, "entry_signal": {"atr_pct": 1.5, "buy_zone": {"high": 928.4, "low": 928.4, "pct_from_spot": -3.7}, "spot": 963.8, "status": "hold", "stop": 823.3}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 4.43, "gamma_regime": "long", "walls": null}, "prev_close": 963.81, "recovery_begun": false, "stair_step_leader": null, "ticker": "PH", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": 8, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.214, "entry_signal": {"atr_pct": 3.35, "buy_zone": {"high": 118.7, "low": 118.7, "pct_from_spot": -5.6}, "spot": 125.7, "status": "extended", "stop": 107.3}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 5.93, "gamma_regime": "long", "walls": null}, "prev_close": 125.73, "recovery_begun": true, "stair_step_leader": null, "ticker": "PLTR", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.63, "buy_zone": null, "spot": 246.3, "status": "blocked", "stop": 246.3}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -17.78, "gamma_regime": "short", "walls": null}, "prev_close": 246.33, "recovery_begun": null, "stair_step_leader": null, "ticker": "POWL", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring", "power_grid"], "bb_lower_reclaim_days": 1, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1125, "entry_signal": {"atr_pct": 2.84, "buy_zone": null, "spot": 691.4, "status": "exit", "stop": 650.8}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -9.13, "gamma_regime": "short", "walls": null}, "prev_close": 691.4, "recovery_begun": true, "stair_step_leader": null, "ticker": "PWR", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.57, "buy_zone": null, "spot": 176.2, "status": "blocked", "stop": 176.2}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -4.86, "gamma_regime": "short", "walls": null}, "prev_close": 176.25, "recovery_begun": null, "stair_step_leader": null, "ticker": "QCOM", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 6.3, "buy_zone": {"high": 96.1, "low": 96.1, "pct_from_spot": -4.0}, "spot": 100.1, "status": "extended", "stop": 80.69}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -5.07, "gamma_regime": "short", "walls": null}, "prev_close": 100.07, "recovery_begun": null, "stair_step_leader": null, "ticker": "RKLB", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.89, "buy_zone": {"high": 471.7, "low": 458.3, "pct_from_spot": -1.4}, "spot": 471.7, "status": "buy_soon", "stop": 440.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 23.9, "gamma_regime": "long", "walls": null}, "prev_close": 471.7, "recovery_begun": null, "stair_step_leader": null, "ticker": "ROK", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": 70, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0558, "entry_signal": {"atr_pct": 1.59, "buy_zone": {"high": 191.8, "low": 187.2, "pct_from_spot": -1.2}, "spot": 191.8, "status": "await_confluence", "stop": 172.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 7.75, "gamma_regime": "long", "walls": null}, "prev_close": 191.78, "recovery_begun": true, "stair_step_leader": null, "ticker": "RTX", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "ai_semiconductors"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 5.44, "buy_zone": {"high": 25.74, "low": 24.26, "pct_from_spot": -8.2}, "spot": 27.22, "status": "watch", "stop": 27.22}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 0.19, "gamma_regime": "long", "walls": null}, "prev_close": 27.22, "recovery_begun": null, "stair_step_leader": null, "ticker": "SMCI", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 4.24, "buy_zone": {"high": 9.72, "low": 9.29, "pct_from_spot": -6.4}, "spot": 10.15, "status": "wait_pullback", "stop": 9.29}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -13.15, "gamma_regime": "short", "walls": null}, "prev_close": 10.15, "recovery_begun": null, "stair_step_leader": null, "ticker": "SMR", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 2.24, "buy_zone": {"high": 261.2, "low": 252.4, "pct_from_spot": -1.7}, "spot": 261.2, "status": "buy_soon", "stop": 175.3}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 261.19, "recovery_begun": null, "stair_step_leader": null, "ticker": "SNOW", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 24, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.021, "entry_signal": {"atr_pct": 0.8, "buy_zone": {"high": 93.94, "low": 93.94, "pct_from_spot": -1.2}, "spot": 95.12, "status": "hold", "stop": 89.03}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 7.29, "gamma_regime": "long", "walls": null}, "prev_close": 95.12, "recovery_begun": true, "stair_step_leader": null, "ticker": "SO", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 24, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0308, "entry_signal": {"atr_pct": 0.84, "buy_zone": {"high": 91.16, "low": 91.16, "pct_from_spot": -0.2}, "spot": 91.37, "status": "extended", "stop": 86.51}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 4.69, "gamma_regime": "long", "walls": null}, "prev_close": 91.37, "recovery_begun": true, "stair_step_leader": null, "ticker": "SRE", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.22, "buy_zone": {"high": 1348.5, "low": 1323.8, "pct_from_spot": -0.9}, "spot": 1348.5, "status": "await_confluence", "stop": 1206.3}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.84, "gamma_regime": "long", "walls": null}, "prev_close": 1348.49, "recovery_begun": null, "stair_step_leader": null, "ticker": "TDG", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.22, "buy_zone": {"high": 633.4, "low": 625.6, "pct_from_spot": -3.5}, "spot": 652.1, "status": "extended", "stop": 601.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 4.72, "gamma_regime": "long", "walls": null}, "prev_close": 652.08, "recovery_begun": null, "stair_step_leader": null, "ticker": "TDY", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 6.68, "buy_zone": {"high": 369.1, "low": 347.6, "pct_from_spot": -2.9}, "spot": 369.1, "status": "buy_soon", "stop": 347.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -10.7, "gamma_regime": "short", "walls": null}, "prev_close": 369.09, "recovery_begun": null, "stair_step_leader": null, "ticker": "TER", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.57, "buy_zone": {"high": 364.7, "low": 345.1, "pct_from_spot": -2.7}, "spot": 364.7, "status": "buy_soon", "stop": 336.6}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 9.57, "gamma_regime": "long", "walls": null}, "prev_close": 364.67, "recovery_begun": null, "stair_step_leader": null, "ticker": "TLN", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["mag7"], "bb_lower_reclaim_days": 17, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0876, "entry_signal": {"atr_pct": 2.41, "buy_zone": {"high": 425.3, "low": 409.9, "pct_from_spot": -1.8}, "spot": 425.3, "status": "buy_soon", "stop": 375.1}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 6.3, "gamma_regime": "long", "walls": null}, "prev_close": 425.3, "recovery_begun": true, "stair_step_leader": null, "ticker": "TSLA", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["defense"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.38, "buy_zone": {"high": 91.04, "low": 89.59, "pct_from_spot": -2.4}, "spot": 92.5, "status": "extended", "stop": 86.4}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "long", "walls": null}, "prev_close": 92.5, "recovery_begun": null, "stair_step_leader": null, "ticker": "TXT", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 6.81, "buy_zone": {"high": 106.5, "low": 95.6, "pct_from_spot": -5.1}, "spot": 106.5, "status": "buy_soon", "stop": 82.07}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.48, "gamma_regime": "long", "walls": null}, "prev_close": 106.48, "recovery_begun": null, "stair_step_leader": null, "ticker": "UCTT", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["reshoring"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 1.73, "buy_zone": {"high": 1088.8, "low": 1088.8, "pct_from_spot": -0.9}, "spot": 1098.6, "status": "wait_pullback", "stop": 1049.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 1.25, "gamma_regime": "long", "walls": null}, "prev_close": 1098.59, "recovery_begun": null, "stair_step_leader": null, "ticker": "URI", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["semicap_equipment"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 6.46, "buy_zone": {"high": 57.49, "low": 57.25, "pct_from_spot": -0.2}, "spot": 57.49, "status": "buy_soon", "stop": 57.25}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": null, "gamma_regime": "short", "walls": null}, "prev_close": 57.49, "recovery_begun": null, "stair_step_leader": null, "ticker": "VECO", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_infra", "power_grid"], "bb_lower_reclaim_days": 18, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.1604, "entry_signal": {"atr_pct": 5.09, "buy_zone": {"high": 295.6, "low": 279.7, "pct_from_spot": -7.6}, "spot": 311.4, "status": "wait_pullback", "stop": 280.9}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": -0.03, "gamma_regime": "short", "walls": null}, "prev_close": 311.42, "recovery_begun": true, "stair_step_leader": null, "ticker": "VRT", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["power_grid"], "bb_lower_reclaim_days": 33, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": -0.0997, "entry_signal": {"atr_pct": 2.47, "buy_zone": {"high": 153.2, "low": 147.5, "pct_from_spot": -1.8}, "spot": 153.2, "status": "buy_soon", "stop": 138.3}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 3.03, "gamma_regime": "long", "walls": null}, "prev_close": 153.16, "recovery_begun": true, "stair_step_leader": null, "ticker": "VST", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "NONE"}}, {"adv20_shares": null, "atr14_pct": null, "baselines": null, "baskets": ["ai_software"], "bb_lower_reclaim_days": null, "built": "2026-07-10", "current_mode": null, "drawdown_21d_pct": null, "entry_signal": {"atr_pct": 3.11, "buy_zone": {"high": 135.4, "low": 129.1, "pct_from_spot": -2.3}, "spot": 135.4, "status": "buy_now", "stop": 113.0}, "failed_breakout_trap": null, "mtf_upturn_K": null, "mtf_upturn_state": null, "options_entry": {"dist_to_flip_pct": 7.42, "gamma_regime": "long", "walls": null}, "prev_close": 135.4, "recovery_begun": null, "stair_step_leader": null, "ticker": "WDAY", "vol_share_curve": null, "vol_squeeze": {"coiled": false, "days_compressed": 0, "state": "EXPANSION"}}], "n_leaders": 116, "rvol_confirm": 1.3, "schema": "intraday_flow_base.v1", "universe_baskets": ["mag7", "ai_infra", "ai_software", "ai_semiconductors", "semicap_equipment", "reshoring", "defense", "power_grid"], "washout_lookback": 10};
+var RVOL_CONFIRM = BASE_DATA.rvol_confirm || 1.30;
+var DUR_MIN = BASE_DATA.durability_min || 0.60;
+var WASHOUT_LB = BASE_DATA.washout_lookback || 10;
+var LEADERS_BY_TK = {};    // ticker -> leader record (nightly base)
+var leaders = BASE_DATA.leaders || [];
+
+// ── Global live state ──────────────────────────────────────────────────────
+var quoteState = {};        // ticker -> {price, changePct, prevClose, day_volume, day_high, day_low}
+var pulseState = {};        // ticker -> {vwap, vol_durability, higher_lows, cum_vol}
+var flowState = {};         // ticker -> {ncp, flow_dur, vel_arrow, badges, session_tier}
+var flowMeta = {};          // {asof, mode}
+
+// ── Sorting state ─────────────────────────────────────────────────────────
+var sortCol = 'rvol', sortDir = -1;  // default: RVOL desc
+
+// ── Filter state ─────────────────────────────────────────────────────────
+var activeBasket = 'all';
+var kMin = 0;
+var searchQ = '';
+
+// ── Build ticker index ────────────────────────────────────────────────────
+leaders.forEach(function(l){ LEADERS_BY_TK[l.ticker] = l; });
+
+// ── URL helpers ───────────────────────────────────────────────────────────
+function snapUrl() {
+  // Mirror live.js: use LIVE_SNAPSHOT_URL (window.LIVE_SNAPSHOT_URL = 'live/quotes.json')
+  return window.LIVE_SNAPSHOT_URL || 'live/quotes.json';
+}
+function pulseUrl() { return 'live/flow_pulse.json'; }
+function r2Url(path) {
+  var base = (window.DATA_BASE || '').replace(/\/+$/, '');
+  if (!base) return null;
+  return base + '/' + path;
+}
+
+// ── Confluence legs computation ────────────────────────────────────────────
+function computeLegs(leader, quote, pulse, flow) {
+  var ticker = leader.ticker;
+
+  // L1: washout_recent — engine def: bb_lower_reclaim_days <= washout_lookback
+  //     OR (drawdown_21d_pct <= -12% AND recovery_begun).
+  // base.json carries bb_lower_reclaim_days / drawdown_21d_pct / recovery_begun when
+  // the stockdata reader surfaces them; when absent, L1 is null (not counted).
+  var L1 = null;
+  // WASHOUT_LB comes from BASE_DATA.washout_lookback (nightly config) or defaults to 10.
+  if (leader.bb_lower_reclaim_days != null) {
+    L1 = leader.bb_lower_reclaim_days <= WASHOUT_LB;
+  } else if (leader.drawdown_21d_pct != null && leader.recovery_begun != null) {
+    L1 = leader.drawdown_21d_pct <= -0.12 && leader.recovery_begun;
+  }
+  // Fallback proxy when structured fields absent: entry_signal.status keyword or
+  // vol_squeeze.coiled — clearly marked as a proxy so it accrues as confluence input.
+  if (L1 === null) {
+    var hasWashoutProxy = false;
+    if (leader.entry_signal && leader.entry_signal.status) {
+      var st = (leader.entry_signal.status || '').toLowerCase();
+      hasWashoutProxy = st.indexOf('washout') >= 0 || st.indexOf('reclaim') >= 0 ||
+                        st.indexOf('bounce') >= 0 || st.indexOf('buy') >= 0;
+    }
+    if (!hasWashoutProxy && leader.vol_squeeze && leader.vol_squeeze.coiled) {
+      hasWashoutProxy = true;
+    }
+    // Only set to true on proxy — never to false (absent ≠ false per engine semantics).
+    if (hasWashoutProxy) L1 = true;
+  }
+
+  // L2: reclaim — price > VWAP AND price > prevClose
+  var L2 = false;
+  if (quote && quote.price && pulse && pulse.vwap) {
+    L2 = quote.price > pulse.vwap && quote.price > (leader.prev_close || 0);
+  }
+
+  // L3: rvol_elevated
+  var rvol = computeRvol(leader, quote);
+  var L3 = rvol !== null && rvol >= RVOL_CONFIRM;
+
+  // L4: vol_durable
+  var volDur = pulse ? (pulse.vol_durability != null ? pulse.vol_durability : null) : null;
+  var L4 = volDur !== null && volDur >= DUR_MIN;
+
+  // L5: flow_bid (~soft) — cum NCP > 0 AND flow durability >= DUR_MIN
+  var L5 = false;
+  if (flow) {
+    var ncpPos = flow.ncp != null && flow.ncp > 0;
+    var flowDurOk = flow.flow_dur != null && flow.flow_dur >= DUR_MIN;
+    L5 = ncpPos && flowDurOk;
+  }
+
+  // L6: upturn_organ — qualifying mtf_upturn states (UPTURN_WATCH or UPTURN_CONFIRMED).
+  // Mirror engine._UPTURN_QUALIFYING; use state string as primary key.
+  // K >= 2 matches engine.mtf_upturn.STATE_WATCH_K (=2). UPTURN_MOMENTUM is not a
+  // valid mtf_upturn state and is excluded here to match the engine qualifying set.
+  var L6 = false;
+  if (leader.mtf_upturn_state) {
+    var mst = (leader.mtf_upturn_state || '').toUpperCase();
+    L6 = mst === 'UPTURN_WATCH' || mst === 'UPTURN_CONFIRMED';
+  } else if (leader.mtf_upturn_K != null) {
+    L6 = leader.mtf_upturn_K >= 2;  // STATE_WATCH_K = 2 in engine/mtf_upturn.py
+  }
+
+  // L7: leader_quality — NOT failed_breakout_trap.
+  // Mirror engine semantics: null/absent = data unknown → absent (not counted in K).
+  // Only true when field is explicitly false (i.e. confirmed NOT a trap).
+  var L7 = leader.failed_breakout_trap === false ? true : null;
+
+  var legs = [L1, L2, L3, L4, L5, L6, L7];
+  // Mirror engine K semantics: count only true legs; null = absent (not counted).
+  var K = legs.filter(function(v){ return v === true; }).length;
+  return { legs: legs, K: K };
+}
+
+// ── RVOL computation ──────────────────────────────────────────────────────
+function computeRvol(leader, quote) {
+  // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
+  if (!quote || !quote.vol || !leader.adv20_shares) return null;
+  var curve = leader.vol_share_curve;
+  if (!curve || !curve.length) return null;
+
+  // Estimate time-of-day fraction: use hour index = proportional position in curve
+  var now = new Date();
+  var etOff = -5 * 60;  // ET is UTC-5 (approx; ignores DST)
+  var mkt_open = 9 * 60 + 30;  // 9:30 ET in minutes
+  var mkt_close = 16 * 60;
+  var tzOff = now.getTimezoneOffset();
+  var localMins = now.getHours() * 60 + now.getMinutes();
+  // Convert local to ET approx
+  var etMins = localMins + tzOff + etOff;
+  var elapsed = etMins - mkt_open;
+  if (elapsed < 0) elapsed = 0;
+  var total = mkt_close - mkt_open;
+  var frac = Math.min(elapsed / total, 1.0);
+
+  // vol_share_curve is CUMULATIVE (each entry = cumulative fraction through end of hour i).
+  // Read the single value at the current index — do NOT sum.
+  var n = curve.length;
+  var cumIdx = Math.min(Math.floor(frac * n), n - 1);
+  var cumShare = curve[cumIdx] || 0;
+
+  if (cumShare <= 0) return null;
+  return quote.vol / (leader.adv20_shares * cumShare);
+}
+
+// ── Day range position computation ────────────────────────────────────────
+function computeRangePos(quote) {
+  if (!quote) return null;
+  // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
+  var lo = quote.lo, hi = quote.hi, px = quote.price;
+  if (lo == null || hi == null || px == null) return null;
+  var rng = hi - lo;
+  if (rng <= 0) return null;
+  return (px - lo) / rng;
+}
+
+// ── VWAP delta computation ────────────────────────────────────────────────
+function computeVwapDelta(quote, pulse) {
+  if (!quote || !quote.price || !pulse || !pulse.vwap) return null;
+  return (quote.price - pulse.vwap) / pulse.vwap * 100;
+}
+
+// ── Format helpers ────────────────────────────────────────────────────────
+function fmtNum(v, dec) {
+  if (v == null || isNaN(v)) return '—';
+  return Number(v).toFixed(dec != null ? dec : 2);
+}
+function fmtPct(v) {
+  if (v == null || isNaN(v)) return '—';
+  return (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%';
+}
+function fmtDollar(v) {
+  if (v == null || isNaN(v)) return '—';
+  return '$' + Number(v).toFixed(2);
+}
+function fmtK(n, suffix) {
+  if (n == null) return '—';
+  n = Number(n);
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(1) + 'M' + (suffix||'');
+  if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1) + 'K' + (suffix||'');
+  return n.toFixed(0) + (suffix||'');
+}
+function posNeg(v, threshold) {
+  threshold = threshold || 0;
+  if (v == null || isNaN(v)) return '';
+  return v > threshold ? 'pos' : (v < -threshold ? 'neg' : '');
+}
+function durColor(v, min) {
+  if (v == null) return 'gauge-lo';
+  return v >= min ? 'gauge-hi' : (v >= min * 0.7 ? 'gauge-med' : 'gauge-lo');
+}
+
+// ── Build a row ───────────────────────────────────────────────────────────
+function buildRow(leader) {
+  var tk = leader.ticker;
+  var quote = quoteState[tk] || null;
+  var pulse = pulseState[tk] || null;
+  var flow = flowState[tk] || null;
+  var rvol = computeRvol(leader, quote);
+  var rangePos = computeRangePos(quote);
+  var vwapDelta = computeVwapDelta(quote, pulse);
+  var conf = computeLegs(leader, quote, pulse, flow);
+  var K = conf.K, legs = conf.legs;
+  var entry = leader.entry_signal || {};
+  var opt = leader.options_entry || {};
+
+  // Ticker cell
+  var tkCell = '<td><a class="tk-link" href="stock.html#'+tk+'">'+tk+'</a></td>';
+
+  // Price cell
+  var px = quote && quote.price != null ? fmtDollar(quote.price) : '—';
+  var chg = quote && quote.changePct != null ? fmtPct(quote.changePct) : '';
+  var chgCls = quote && quote.changePct != null ? posNeg(quote.changePct) : '';
+  var priceCell = '<td class="price-cell tabnum"><span class="nb-px" data-sym="'+tk+'" data-mkt="us">'+px+'</span><span class="pct-chg '+chgCls+'">'+chg+'</span></td>';
+
+  // RVOL cell
+  var rvolPct = rvol != null ? Math.min(rvol / 3, 1) * 100 : 0;
+  var rvolCls = rvol != null && rvol >= RVOL_CONFIRM ? 'gauge-hi' : (rvol != null && rvol >= 0.8 ? 'gauge-med' : 'gauge-lo');
+  var rvolStr = rvol != null ? fmtNum(rvol, 2)+'×' : '—';
+  var rvolCell = '<td><div class="gauge-wrap">'
+    + '<div class="gauge-bar"><div class="gauge-fill '+rvolCls+'" style="width:'+rvolPct.toFixed(1)+'%"></div></div>'
+    + '<span class="gauge-val">' + rvolStr + '</span>'
+    + '</div></td>';
+
+  // Day range cell
+  var rpStr = rangePos != null ? (rangePos * 100).toFixed(0) + '%' : '—';
+  var rpCls = rangePos != null ? (rangePos > 0.65 ? 'pos' : (rangePos < 0.35 ? 'neg' : '')) : '';
+  var rangeCell = '<td class="tabnum '+rpCls+'">'+rpStr+'</td>';
+
+  // VWAP delta cell
+  var vdStr = vwapDelta != null ? fmtPct(vwapDelta) : '—';
+  var vdCls = posNeg(vwapDelta);
+  var vwapCell = '<td class="tabnum '+vdCls+'">'+vdStr+'</td>';
+
+  // Vol durability cell
+  var volDur = pulse ? pulse.vol_durability : null;
+  var durPct = volDur != null ? Math.min(volDur, 1) * 100 : 0;
+  var durCls = durColor(volDur, DUR_MIN);
+  var durStr = volDur != null ? (volDur * 100).toFixed(0) + '%' : '—';
+  var hlStr = pulse && pulse.higher_lows != null ? ' HL:' + pulse.higher_lows : '';
+  var volDurCell = '<td>'
+    + '<div class="gauge-wrap">'
+    + '<div class="dur-bar"><div class="dur-fill '+durCls+'" style="width:'+durPct.toFixed(1)+'%"></div></div>'
+    + '<span class="gauge-val">'+durStr+'</span>'
+    + '</div>'
+    + (hlStr ? '<div class="xs muted">'+hlStr+'</div>' : '')
+    + '</td>';
+
+  // NCP / flow cell (~soft)
+  var ncpVal = flow && flow.ncp != null ? flow.ncp : null;
+  var ncpStr = ncpVal != null ? (ncpVal >= 0 ? '+' : '') + fmtK(ncpVal, '') : '—';
+  var ncpCls = ncpVal != null ? posNeg(ncpVal) : '';
+  var flowDur = flow && flow.flow_dur != null ? flow.flow_dur : null;
+  var velArrow = flow ? (flow.vel_arrow || 'flat') : 'flat';
+  var arrowHtml = velArrow === 'up' ? '<span class="arrow arrow-up">↑</span>'
+    : (velArrow === 'down' ? '<span class="arrow arrow-dn">↓</span>'
+    : '<span class="arrow arrow-flat">→</span>');
+  var flowDurStr = flowDur != null ? (flowDur * 100).toFixed(0) + '%' : '—';
+  var flowDurCls = durColor(flowDur, DUR_MIN);
+  var ncpBadge = flow && flow.session_tier ? '<span class="badge badge-blue" style="margin-left:4px">'+flow.session_tier+'</span>' : '';
+  var ncpCell = '<td class="flow-ncp">'
+    + '<span class="'+ncpCls+'">~'+ncpStr+'</span>'
+    + arrowHtml
+    + '<span class="soft-tag">~soft</span>'
+    + '<br><div class="gauge-wrap" style="margin-top:2px">'
+    + '<div class="dur-bar"><div class="dur-fill '+flowDurCls+'" style="width:'+((flowDur||0)*100).toFixed(1)+'%"></div></div>'
+    + '<span class="gauge-val">'+flowDurStr+'</span>'
+    + '</div>'
+    + ncpBadge
+    + '</td>';
+
+  // Setup chips
+  var chips = [];
+  var squeeze = leader.vol_squeeze || {};
+  if (squeeze.coiled) chips.push('<span class="badge badge-orange">squeeze</span>');
+  if (squeeze.state === 'EXPANSION') chips.push('<span class="badge badge-green">squeeze→expand</span>');
+  if (leader.stair_step_leader === true) chips.push('<span class="badge badge-green"><span class="l-en">clean leader</span><span class="l-zh">稳步领涨</span></span>');
+  if (leader.failed_breakout_trap === true) chips.push('<span class="badge badge-red"><span class="l-en">trap-prone 回踩陷阱</span><span class="l-zh">回踩陷阱</span></span>');
+  if (leader.current_mode) chips.push('<span class="badge badge-muted">'+leader.current_mode+'</span>');
+  if (leader.mtf_upturn_state) chips.push('<span class="badge badge-blue">'+leader.mtf_upturn_state+'</span>');
+  var flowBadges = flow && flow.badges ? flow.badges : [];
+  flowBadges.slice(0, 3).forEach(function(b){
+    chips.push('<span class="badge badge-blue">'+b+'</span>');
+  });
+  if (opt.gamma_regime) {
+    var grc = opt.gamma_regime === 'long' ? 'badge-green' : (opt.gamma_regime === 'short' ? 'badge-red' : 'badge-muted');
+    chips.push('<span class="badge '+grc+'">GEX:'+opt.gamma_regime+'</span>');
+  }
+  var setupCell = '<td><div class="chip-row">'+chips.join('')+'</div></td>';
+
+  // K/7 cell with expandable legs
+  var legNames = ['L1 washout','L2 reclaim','L3 rvol','L4 vol dur','L5 ~flow bid','L6 upturn','L7 quality'];
+  var legNamesZh = ['L1 洗盘','L2 收复','L3 RVOL','L4 量持续','L5 ~资金偏多','L6 上升','L7 质量'];
+  var kColor = K >= 5 ? 'pos' : (K >= 3 ? '' : 'muted');
+  var dotsHtml = '<div class="kbar">' + legs.map(function(on){
+    return '<div class="kbar-dot '+(on?'on':'')+'"></div>';
+  }).join('') + '</div>';
+  var legHtmlEn = legs.map(function(on, i){
+    return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNames[i]+'">'
+      +(on?'✓':'✗')+' '+legNames[i]+'</span>';
+  }).join('');
+  // Use English leg names in title= attribute even for ZH chips — localized title=
+  // would render in the wrong language regardless of the active l-en/l-zh toggle
+  // (static check_title_i18n guard; i18n intent is the dual-span label itself).
+  var legHtmlZh = legs.map(function(on, i){
+    return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNames[i]+'">'
+      +(on?'✓':'✗')+' '+legNamesZh[i]+'</span>';
+  }).join('');
+  var kCell = '<td><span class="k-label '+kColor+'">'+K+'/7</span>'
+    + dotsHtml
+    + '<button class="k-expand-btn" onclick="toggleLegs(this)" title="Expand legs">+</button>'
+    + '<div class="k-legs-row"><span class="l-en">'+legHtmlEn+'</span><span class="l-zh">'+legHtmlZh+'</span></div>'
+    + '</td>';
+
+  // Risk ladder cell
+  var stopPx = entry.stop != null ? fmtDollar(entry.stop) : null;
+  var vwapPx = pulse && pulse.vwap != null ? fmtDollar(pulse.vwap) : null;
+  var loPx = quote && quote.lo != null ? fmtDollar(quote.lo) : null;
+  var atrPct = entry.atr_pct != null ? entry.atr_pct.toFixed(2) + '%' : (leader.atr14_pct != null ? (leader.atr14_pct * 100).toFixed(2) + '%' : null);
+  var riskParts = [];
+  if (stopPx) riskParts.push('<span class="level"><span class="l-en">stop</span><span class="l-zh">止损</span>: <span class="neg">'+stopPx+'</span></span>');
+  if (vwapPx) riskParts.push('<span class="level">VWAP: '+vwapPx+'</span>');
+  if (loPx) riskParts.push('<span class="level"><span class="l-en">low</span><span class="l-zh">低点</span>: '+loPx+'</span>');
+  if (atrPct) riskParts.push('<span class="level">ATR: '+atrPct+'</span>');
+  var riskCell = '<td class="risk-mini">'
+    + (riskParts.length ? riskParts.join('') : '<span class="muted">—</span>')
+    + '</td>';
+
+  return '<tr data-ticker="'+tk+'" data-rvol="'+(rvol||0)+'" data-k="'+K+'"'
+    + ' data-last="'+(quote && quote.price||0)+'" data-range-pos="'+(rangePos||0)+'"'
+    + ' data-vwap-delta="'+(vwapDelta||0)+'" data-vol-dur="'+(pulse && pulse.vol_durability||0)+'"'
+    + ' data-ncp="'+(ncpVal||0)+'" data-baskets="'+getBaskets(tk)+'">'
+    + tkCell + priceCell + rvolCell + rangeCell + vwapCell + volDurCell + ncpCell + setupCell + kCell + riskCell
+    + '</tr>';
+}
+
+// ── Basket lookup ─────────────────────────────────────────────────────────
+var tkBasketMap = {};
+(function(){
+  // Per-ticker basket membership is written by the nightly builder into each
+  // leader record's "baskets" field.
+  leaders.forEach(function(l){
+    tkBasketMap[l.ticker] = (l.baskets || []).join(' ') || 'all';
+  });
+})();
+
+function getBaskets(tk) {
+  return tkBasketMap[tk] || 'all';
+}
+
+// ── Sort helpers ──────────────────────────────────────────────────────────
+var COL_ATTR = {
+  ticker: 'data-ticker', last: 'data-last', rvol: 'data-rvol',
+  range_pos: 'data-range-pos', vwap_delta: 'data-vwap-delta',
+  vol_dur: 'data-vol-dur', ncp: 'data-ncp', k: 'data-k'
+};
+
+function sortTable() {
+  var tbody = document.getElementById('leaders-body');
+  if (!tbody) return;
+  var rows = [].slice.call(tbody.querySelectorAll('tr[data-ticker]'));
+  var attr = COL_ATTR[sortCol] || 'data-rvol';
+  rows.sort(function(a, b) {
+    var av = a.getAttribute(attr) || '0';
+    var bv = b.getAttribute(attr) || '0';
+    var aNum = isNaN(av) ? av : Number(av);
+    var bNum = isNaN(bv) ? bv : Number(bv);
+    if (aNum < bNum) return sortDir;
+    if (aNum > bNum) return -sortDir;
+    return 0;
+  });
+  rows.forEach(function(r){ tbody.appendChild(r); });
+  // Update sort indicators
+  var ths = document.querySelectorAll('table.leaders th[data-col]');
+  ths.forEach(function(th){
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.getAttribute('data-col') === sortCol) {
+      th.classList.add(sortDir < 0 ? 'sort-desc' : 'sort-asc');
+    }
+  });
+  document.getElementById('sort-label').textContent = 'Sorted by ' + sortCol + (sortDir < 0 ? ' ↓' : ' ↑');
+}
+
+// ── Filter / search ───────────────────────────────────────────────────────
+function applyFilter() {
+  var tbody = document.getElementById('leaders-body');
+  if (!tbody) return;
+  var rows = [].slice.call(tbody.querySelectorAll('tr[data-ticker]'));
+  var visible = 0;
+  rows.forEach(function(r){
+    var tk = r.getAttribute('data-ticker') || '';
+    var k = Number(r.getAttribute('data-k') || 0);
+    var baskets = r.getAttribute('data-baskets') || 'all';
+    var show = true;
+    if (activeBasket !== 'all' && baskets.indexOf(activeBasket) < 0 && baskets !== 'all') show = false;
+    if (kMin > 0 && k < kMin) show = false;
+    if (searchQ && tk.indexOf(searchQ.toUpperCase()) < 0) show = false;
+    r.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  var lbl = document.getElementById('count-label');
+  if (lbl) lbl.textContent = visible + ' shown of ' + rows.length + ' leaders';
+}
+
+// ── Full table render ─────────────────────────────────────────────────────
+function renderTable() {
+  var tbody = document.getElementById('leaders-body');
+  if (!tbody) return;
+  var html = '';
+  leaders.forEach(function(l){ html += buildRow(l); });
+  tbody.innerHTML = html || '<tr class="loading-row"><td colspan="10"><span class="l-en">No data loaded yet</span><span class="l-zh">暂无数据</span></td></tr>';
+  sortTable();
+  applyFilter();
+  // Re-run lang sync (hidden spans)
+  if (window.__mmLang) window.__mmLang();
+}
+
+// ── Partial update — patch price/gauge cells without full re-render ────────
+function patchPriceCells() {
+  var tbody = document.getElementById('leaders-body');
+  if (!tbody) return;
+  var rows = tbody.querySelectorAll('tr[data-ticker]');
+  rows.forEach(function(tr){
+    var tk = tr.getAttribute('data-ticker');
+    var leader = LEADERS_BY_TK[tk];
+    if (!leader) return;
+    var quote = quoteState[tk];
+    var pulse = pulseState[tk];
+    var flow = flowState[tk];
+    // Price
+    var pxEl = tr.querySelector('.nb-px[data-sym]');
+    if (pxEl && quote && quote.price != null) pxEl.textContent = '$' + Number(quote.price).toFixed(2);
+    var chgEl = tr.querySelector('.pct-chg');
+    if (chgEl && quote && quote.changePct != null) {
+      var chg = Number(quote.changePct);
+      chgEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+      chgEl.className = 'pct-chg ' + (chg >= 0 ? 'pos' : 'neg');
+    }
+    // Update row data-attrs for sorting
+    if (quote) {
+      if (quote.price != null) tr.setAttribute('data-last', quote.price);
+      var rvol = computeRvol(leader, quote);
+      if (rvol != null) tr.setAttribute('data-rvol', rvol);
+      var rp = computeRangePos(quote);
+      if (rp != null) tr.setAttribute('data-range-pos', rp);
+    }
+    if (pulse) {
+      var vd = computeVwapDelta(quote, pulse);
+      if (vd != null) tr.setAttribute('data-vwap-delta', vd);
+      if (pulse.vol_durability != null) tr.setAttribute('data-vol-dur', pulse.vol_durability);
+    }
+    if (flow) {
+      if (flow.ncp != null) tr.setAttribute('data-ncp', flow.ncp);
+    }
+    // K
+    var conf = computeLegs(leader, quote, pulse, flow);
+    tr.setAttribute('data-k', conf.K);
+  });
+  sortTable();
+  applyFilter();
+}
+
+// ── Quotes fetch ──────────────────────────────────────────────────────────
+var quotesInflight = false;
+function fetchQuotes() {
+  if (quotesInflight) return;
+  quotesInflight = true;
+  var url = snapUrl();
+  fetch(url, {cache: 'no-cache'}).then(function(r){ return r.json(); })
+    .then(function(data){
+      quotesInflight = false;
+      var q = data.quotes || {};
+      Object.keys(q).forEach(function(tk){ quoteState[tk] = q[tk]; });
+      var stamp = document.getElementById('ift-quotes-stamp');
+      if (stamp) {
+        var asof = data.asof || data.ts;
+        var delayMin = (data.meta && data.meta.delayed_min) || 15;
+        stamp.innerHTML = '<span class="l-en">as of '+(asof||'?')+' · '+delayMin+'-min delayed bars</span>'
+          + '<span class="l-zh">截至 '+(asof||'?')+' · '+delayMin+'分钟延迟</span>';
+      }
+      patchPriceCells();
+    }).catch(function(e){
+      quotesInflight = false;
+    });
+}
+
+// ── Flow pulse fetch ──────────────────────────────────────────────────────
+var pulseInflight = false;
+function fetchPulse() {
+  if (pulseInflight) return;
+  pulseInflight = true;
+  fetch(pulseUrl(), {cache: 'no-cache'}).then(function(r){ return r.json(); })
+    .then(function(data){
+      pulseInflight = false;
+      var tickers = data.tickers || [];
+      tickers.forEach(function(t){ pulseState[t.ticker] = t; });
+      var stamp = document.getElementById('ift-pulse-stamp');
+      if (stamp) {
+        var asof = data.as_of || '?';
+        var stale = data.stale ? ' · stale' : '';
+        stamp.innerHTML = '<span class="l-en">as of '+asof+stale+'</span>'
+          + '<span class="l-zh">截至 '+asof+stale+'</span>';
+      }
+      patchPriceCells();
+    }).catch(function(e){
+      pulseInflight = false;
+    });
+}
+
+// ── R2 live flow fetch ────────────────────────────────────────────────────
+var flowInflight = false;
+function fetchFlow() {
+  if (flowInflight) return;
+  var enrichUrl = r2Url('live_flow/enrich_current.json');
+  var tickerUrl = r2Url('live_flow/tide_current.json');
+  if (!enrichUrl) return;
+
+  flowInflight = true;
+  // Fetch enrich_current for per-ticker badges + session tier
+  Promise.all([
+    fetch(enrichUrl, {cache: 'no-cache'}).then(function(r){ return r.json(); }).catch(function(){ return null; }),
+    tickerUrl ? fetch(tickerUrl, {cache: 'no-cache'}).then(function(r){ return r.json(); }).catch(function(){ return null; }) : Promise.resolve(null)
+  ]).then(function(results){
+    flowInflight = false;
+    var enrich = results[0];
+    var tide = results[1];
+
+    // Parse enrich: schema live_flow.enrich/v1 — per-ticker enriched events
+    if (enrich && enrich.tickers) {
+      Object.keys(enrich.tickers).forEach(function(root){
+        var te = enrich.tickers[root] || {};
+        var badges = [];
+        if (te.badge_counts) {
+          var bc = te.badge_counts;
+          ['WHALE','FRESH','Z_OUTLIER','SIZE_VS_OI','REPEAT_HITTER'].forEach(function(b){
+            if (bc[b] && bc[b] > 0) badges.push(b + '×' + bc[b]);
+          });
+        }
+        var existing = flowState[root] || {};
+        flowState[root] = Object.assign(existing, {
+          badges: badges,
+          session_tier: te.session_tier || null
+        });
+      });
+    }
+    // Try per-ticker NCP from tide
+    if (tide && tide.tickers) {
+      Object.keys(tide.tickers).forEach(function(root){
+        var te = tide.tickers[root] || {};
+        var existing = flowState[root] || {};
+        flowState[root] = Object.assign(existing, {
+          ncp: te.cum_ncp != null ? te.cum_ncp : (existing.ncp || null),
+          flow_dur: te.flow_dur != null ? te.flow_dur : (existing.flow_dur || null),
+          vel_arrow: te.vel_arrow || existing.vel_arrow || 'flat'
+        });
+      });
+    }
+
+    // Determine asof from meta
+    var asof = (enrich && enrich.meta && enrich.meta.asof) || (tide && tide.meta && tide.meta.asof) || null;
+    var isRTH = isMarketHours();
+    var stamp = document.getElementById('ift-flow-stamp');
+    if (stamp) {
+      if (!isRTH) {
+        stamp.innerHTML = '<span class="l-en">off-hours · last: '+(asof||'—')+'</span>'
+          + '<span class="l-zh">非交易时段 · 最后: '+(asof||'—')+'</span>';
+      } else {
+        stamp.innerHTML = '<span class="l-en">as of '+(asof||'?')+'</span>'
+          + '<span class="l-zh">截至 '+(asof||'?')+'</span>';
+      }
+    }
+
+    patchPriceCells();
+  }).catch(function(){
+    flowInflight = false;
+  });
+}
+
+function isMarketHours() {
+  var now = new Date();
+  var utcH = now.getUTCHours(), utcM = now.getUTCMinutes();
+  var etH = utcH - 5;  // approx ET (no DST correction)
+  if (etH < 0) etH += 24;
+  var etMins = etH * 60 + utcM;
+  // 9:25 - 16:05 ET
+  return etMins >= (9 * 60 + 25) && etMins <= (16 * 60 + 5);
+}
+
+// ── Playbook accordion ────────────────────────────────────────────────────
+document.querySelectorAll('.playbook-hd').forEach(function(hd){
+  hd.addEventListener('click', function(){
+    var sec = hd.parentElement;
+    sec.classList.toggle('open');
+  });
+});
+
+// ── Sort click ────────────────────────────────────────────────────────────
+document.querySelectorAll('table.leaders th[data-col]').forEach(function(th){
+  th.addEventListener('click', function(){
+    var col = th.getAttribute('data-col');
+    if (col === sortCol) { sortDir = -sortDir; }
+    else { sortCol = col; sortDir = -1; }
+    sortTable();
+  });
+});
+
+// ── Basket filter chips ───────────────────────────────────────────────────
+document.querySelectorAll('.chip[data-basket]').forEach(function(chip){
+  chip.addEventListener('click', function(){
+    document.querySelectorAll('.chip[data-basket]').forEach(function(c){ c.classList.remove('active'); });
+    chip.classList.add('active');
+    activeBasket = chip.getAttribute('data-basket');
+    applyFilter();
+  });
+});
+
+// ── K filter ──────────────────────────────────────────────────────────────
+var kSel = document.getElementById('k-sel');
+if (kSel) kSel.addEventListener('change', function(){
+  kMin = Number(kSel.value);
+  applyFilter();
+});
+
+// ── Search ────────────────────────────────────────────────────────────────
+var searchEl = document.getElementById('ift-search');
+if (searchEl) searchEl.addEventListener('input', function(){
+  searchQ = searchEl.value.trim();
+  applyFilter();
+});
+// lang-aware placeholder (theme.js handles .nav-search only; page inputs do it themselves)
+if (searchEl) (function(){
+  var en = searchEl.placeholder, zh = searchEl.getAttribute('data-ph-zh') || en;
+  function setPh(){ searchEl.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? zh : en; }
+  setPh();
+  document.addEventListener('langchange', setPh);
+})();
+
+// ── Leg expand/collapse ───────────────────────────────────────────────────
+window.toggleLegs = function(btn) {
+  var row = btn.parentElement.querySelector('.k-legs-row');
+  if (!row) return;
+  row.classList.toggle('open');
+  btn.textContent = row.classList.contains('open') ? '−' : '+';
+};
+
+// ── Polling timers ────────────────────────────────────────────────────────
+function startPolling() {
+  fetchQuotes();
+  fetchPulse();
+  fetchFlow();
+  setInterval(fetchQuotes, 60 * 1000);   // every 60s
+  setInterval(fetchPulse, 5 * 60 * 1000); // every 5 min
+  // Flow: every 3 min during RTH only
+  setInterval(function(){
+    if (isMarketHours()) fetchFlow();
+  }, 3 * 60 * 1000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+renderTable();
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startPolling);
+  } else {
+    startPolling();
+  }
+}
+
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

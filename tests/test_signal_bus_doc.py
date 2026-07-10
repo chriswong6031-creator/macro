@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 366, (
-        f"Expected 366 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 369, (
+        f"Expected 369 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (IFT added intraday-flow-base, intraday-flow-pulse,"
+        " intraday-flow-ledger = 366->369;"
         " (SF Lane D added signal-foundry-candidates, signal-foundry-results,"
         f" signal-foundry-forward, signal-foundry-lane-status = 362->366;"
         " (Metabolism V2-B unit-6 added metabolism-build-claims = 361->362;"
