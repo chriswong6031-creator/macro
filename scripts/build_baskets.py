@@ -320,6 +320,27 @@ def main() -> int:
     except Exception as _mtu_exc:  # noqa: BLE001 — additive, never fatal
         log.warning("::warning::mtf_upturn hook failed: %s", _mtu_exc)
 
+    # NAR-W1 — Flare Persistence organ (flare_persistence.v1). Reads raw tape witnesses
+    # (T1 altdata convergence, T2 call premium z, T3 GEX flip, T4 news bull ratio z).
+    # Placed beside mtf_upturn (TS-U2 pattern). Display-tier; own try/except — never fatal.
+    try:
+        from engine.flare_persistence import (
+            compute as _fpo_compute,
+            write_site_artifact as _fpo_write,
+        )
+        _fpo_result = _fpo_compute()
+        _fpo_path = _fpo_write(_fpo_result)
+        _fpo_n_primed = sum(
+            1 for r in _fpo_result.get("rows", []) if r.get("state") == "PRIMED"
+        )
+        log.info(
+            "flare_persistence: wrote %s (%d rows, %d PRIMED, elapsed=%.1fs)",
+            _fpo_path, len(_fpo_result.get("rows", [])), _fpo_n_primed,
+            _fpo_result.get("elapsed_s", 0),
+        )
+    except Exception as _fpo_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("::warning::flare_persistence hook failed: %s", _fpo_exc)
+
     # FTR W10 — Discord alerts for turn-watch IGNITION / shock activation / tape disagreement.
     # Placed after basket_turn_watch so turn_watch.json is fresh.
     # Own try/except — exit-0 always (FT-R13 / FT-R5 contract).

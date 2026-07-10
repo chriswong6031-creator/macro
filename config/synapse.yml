@@ -2218,6 +2218,59 @@ artifacts:
       ruler 21d excess-vs-SPY; promotion question earliest 2027.
       authority.may_rank/gate/size/escalate=false.
 
+  # NAR-W1 — flare_persistence.v1 site artifact (DISPLAY-ONLY)
+  stock-flare-persistence:
+    path: site/stockdata/flare_persistence.json
+    format: json
+    producer: engine/flare_persistence.py
+    known_extra_writers: []
+    owner_program: narrative-ignition
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: flare_persistence.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_baskets.py
+    external_consumers: []
+    notes: >
+      NAR-W1. Per-stock flare persistence organ. Reads raw tape witnesses:
+      T1 altdata convergence (>=3 channels on HIGH alert day),
+      T2 net call premium z (>=2 vs own 90d median/MAD baseline),
+      T3 GEX flip (regime long AND flipped within 10 sessions),
+      T4 news bull_ratio z (>=2 vs own 90d median/MAD baseline).
+      CUSUM S+ = max(0, S+_prev + z_day - 0.5); PRIMED at h=5 with >=2 witnesses.
+      States: DORMANT | PRIMED | FADING. ARMED/CONFIRMED-CANDIDATE reserved (later waves).
+      No intel_hub composite inputs (NAR-R1/RUL-N2). Display-only (NAR-R5).
+      authority.may_rank/gate/size/escalate=false.
+
+  # NAR-W1 — flare_persistence.v1 PIT history (append-only parquet)
+  stock-flare-persistence-history:
+    path: data/flare_persistence/state_hist.parquet
+    format: parquet
+    producer: engine/flare_persistence.py
+    known_extra_writers: []
+    owner_program: narrative-ignition
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: flare_persistence.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NAR-W1 PIT accrual store. Columns: ticker, date, state, s_plus,
+      witness_bitmap, w_t1..w_t4 (int 0/1), mag_t1..mag_t4 (float|null),
+      fetch_date. Append-only; deduped per (ticker, date).
+
   # W8-R7 — CN mtf_upturn_cn.v1 per-stock multi-timeframe upturn organ (CN lane)
   china-mtf-upturn:
     path: site/chinastockdata/mtf_upturn_cn.json
