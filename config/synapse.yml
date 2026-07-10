@@ -9840,6 +9840,7 @@ artifacts:
     producer: scripts/metabolism_journal.py
     known_extra_writers:
       - scripts/metabolism_verify.py
+      - scripts/metabolism_dispatch.py  # V2-B: freeze_<ts>.json entries on all-cooling
     owner_program: metabolism-phase-a
     cadence: on-demand
     storage: git
@@ -10066,3 +10067,42 @@ artifacts:
       human reason. Gate: K_WEEKS history + min_magnitude + regime_tag required
       before emitting AMBER/RED (else GREEN/accruing). Data-only in V2-A;
       front-page fragment ships in V2-D behind the UX gate. INERT, display-only.
+
+  # --- Metabolism Phase V2-B (sustainable runtime: multi-key + dispatcher) ---
+
+  metabolism-key-ledger:
+    path: data/metabolism/key_ledger.jsonl
+    format: jsonl
+    producer: engine/neuralweb/key_pool.py
+    known_extra_writers:
+      - scripts/metabolism_dispatch.py
+    owner_program: metabolism-phase-v2b
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: metabolism.key_ledger.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/key_pool.py
+      - scripts/metabolism_dispatch.py
+    external_consumers: []
+    notes: >
+      Metabolism V2-B multi-key OAuth pool belief-state ledger. Append-only;
+      one row per session: {ts, key_id, cycle_id, stage, est_tokens, outcome}.
+      key_id is a capability_id string (e.g. 'claude_code_oauth_1') — NEVER
+      a token value. Used by the dispatcher to compute 5h-window load + weekly
+      load per key and detect cooling. Calibrated on 429/rate_limited rows.
+      REDLINE: check_capability_redline.py scans this file (SCAN_IF_PRESENT).
+      STATELESS-CATTLE: all dispatcher state lives here; a fresh process resumes
+      from the ledger. INERT until AUTONOMY_PAUSED=false.
+
+  # NOTE: metabolism-dispatch-freeze writes to data/metabolism/journal/ (the
+  # same path owned by metabolism-journal). The freeze entries are extra-writer
+  # writes to that directory. They are documented in the metabolism-journal
+  # known_extra_writers and described in the metabolism-key-ledger notes.
+  # No separate path entry is registered here to avoid the duplicate-path
+  # violation; the dispatcher's freeze output is covered by metabolism-journal.

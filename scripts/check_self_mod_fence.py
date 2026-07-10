@@ -63,6 +63,8 @@ IMMUTABLE_PATTERNS: list[str] = [
     # V2-A additions (R-V2-8)
     "config/metabolism_anomaly.yml",
     "config/fable_mode_core.md",
+    # V2-B additions (R-V2-8)
+    "config/metabolism_schedule.yml",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────

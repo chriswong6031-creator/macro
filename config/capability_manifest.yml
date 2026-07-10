@@ -65,6 +65,81 @@ capabilities:
       Changes to the live site reach VPS only through the render tail, never a
       loop-direct shell command.
 
+  # ── Multi-key OAuth pool (Metabolism V2-B, R-V2-4) ───────────────────────
+  # REDLINE: secret_ref stores the env-var NAME only — never the value.
+  # Operator creates CLAUDE_CODE_OAUTH_TOKEN_1/2/3 as GH secrets.
+  # The pool (engine/neuralweb/key_pool.py) discovers which subset is present.
+  # With only _1 set, the pool serializes (no spread benefit — by design).
+
+  - capability_id: claude_code_oauth_1
+    kind: llm_oauth
+    secret_ref: CLAUDE_CODE_OAUTH_TOKEN_1
+    scope: >
+      Primary Metabolism OAuth key for the multi-key pool (V2-B).
+      Used by metabolism-dispatch to spread lobe activations across keys.
+      Operator places this key first; _2 and _3 added when available.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - metabolism-dispatch
+      - metabolism-propose
+      - metabolism-adjudicate
+      - metabolism-build
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      V2-B pool key 1 of 3. Pool works with 1 key present (degrades gracefully).
+      key_pool.py tracks session counts + est-tokens in data/metabolism/key_ledger.jsonl
+      (belief-state only; quota is unobservable). 429/usage-limit error triggers
+      mark_cooling(cool_kind=window|weekly); dispatcher skips cooling keys.
+
+  - capability_id: claude_code_oauth_2
+    kind: llm_oauth
+    secret_ref: CLAUDE_CODE_OAUTH_TOKEN_2
+    scope: >
+      Secondary Metabolism OAuth key for the multi-key pool (V2-B).
+      Added by operator when a second key is available for load distribution.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - metabolism-dispatch
+      - metabolism-propose
+      - metabolism-adjudicate
+      - metabolism-build
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      V2-B pool key 2 of 3. Optional — pool works with only _1 present.
+      Same ledger / cooling semantics as claude_code_oauth_1.
+
+  - capability_id: claude_code_oauth_3
+    kind: llm_oauth
+    secret_ref: CLAUDE_CODE_OAUTH_TOKEN_3
+    scope: >
+      Tertiary Metabolism OAuth key for the multi-key pool (V2-B).
+      Added by operator for maximum spread across a 5h window.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - metabolism-dispatch
+      - metabolism-propose
+      - metabolism-adjudicate
+      - metabolism-build
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      V2-B pool key 3 of 3. Optional — pool works with only _1 present.
+      Same ledger / cooling semantics as claude_code_oauth_1 and _2.
+
   # ── GitHub token (read/write for PR operations) ──────────────────────────
 
   - capability_id: github_token
