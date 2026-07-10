@@ -32,6 +32,55 @@ log = logging.getLogger(__name__)
 # column is vandalism / footnote junk and must not enter the universe.
 _TICKER_RE = re.compile(r"^[A-Z][A-Z0-9-]{0,5}$")
 
+# --- split-seam detection (2026-07-10 incident) -----------------------------
+# yfinance auto_adjust back-adjusts ONLY the window it downloads, so the tail
+# refresh (fresh 1mo window merged over the cached matrix) leaves every cached
+# row BEFORE that window on the old price basis after a stock split. The merged
+# series then carries a permanent fake step where the refresh window stopped
+# rewriting: KLAC's 10:1 split (2026-06-12) left $1,842.80 -> $180.90 across
+# 2026-05-11/12 (a fake -90.2% "day"); CRWD's 4:1 left a fake -75% day at
+# 2026-06-02. A poisoned column biases pct_above_50/200, 252d NH/NL, adv/dec
+# and everything reading the closes/OHLCV caches (trailing vol, beta) until the
+# lookback rolls past the seam (~10 months for the 200DMA).
+# lib.store.upsert(overwrite_overlap=True) solves this class for STORED series
+# but only inside the fresh window — the cache's pre-window history needs the
+# per-ticker repair in BreadthAdapter._merge_refreshed.
+_BASIS_TOL = 0.05    # cached-vs-fresh overlap disagreeing beyond this = stale basis.
+                     # Dividend re-adjustments shift the basis by the yield fraction
+                     # (< ~2% a quarter, must NOT trigger); splits shift it 2x-25x.
+_SEAM_LO, _SEAM_HI = 0.60, 1.65   # 1-day ratio bounds for the residual-seam scan:
+                     # catches every >=2:1 split seam in either direction. Genuine
+                     # ±40% news days (CNC -40% 2025-07, SATS +70% 2025-08) DO trip
+                     # it — for those the repair re-pull returns identical data, so
+                     # a false positive costs one batched download, never data.
+
+
+def seam_suspects(fresh: pd.DataFrame | None, cached: pd.DataFrame | None,
+                  merged: pd.DataFrame) -> list[str]:
+    """Tickers whose close history mixes price-adjustment bases (split seams).
+
+    Two independent detectors, union of both:
+    (a) basis break at the refresh boundary — cached vs fresh disagree by a
+        roughly constant factor over their overlap (a split since the last
+        refresh re-based the fresh window but not the cache);
+    (b) residual seams from PAST refreshes — a 1-day ratio in the merged
+        matrix outside [_SEAM_LO, _SEAM_HI] (scanned on a ffilled frame so a
+        seam across a data gap is still visible).
+    Pass fresh=None/cached=None to run only (b) on an existing cache."""
+    bad: set[str] = set()
+    if fresh is not None and cached is not None:
+        overlap = fresh.index.intersection(cached.index)
+        if len(overlap) >= 3:
+            common = fresh.columns.intersection(cached.columns)
+            f = fresh.loc[overlap, common]
+            ratio = (cached.loc[overlap, common] / f.where(f > 0)).median().dropna()
+            bad |= set(ratio.index[(ratio - 1).abs() > _BASIS_TOL])
+    filled = merged.ffill()
+    r = filled / filled.shift(1)
+    sus = ((r < _SEAM_LO) | (r > _SEAM_HI)).any()
+    bad |= set(sus.index[sus])
+    return sorted(bad)
+
 
 class BreadthAdapter(Adapter):
     name = "breadth"
@@ -123,6 +172,56 @@ class BreadthAdapter(Adapter):
         self._last_extras = {k: _wide(v) for k, v in extras.items() if v}
         return _wide(parts)
 
+    def _merge_refreshed(self, fresh: pd.DataFrame, cached: pd.DataFrame) -> pd.DataFrame:
+        """``fresh.combine_first(cached)`` + split-seam repair (see module comment).
+
+        Flagged tickers get their FULL live window re-downloaded (one batched
+        call) and the column replaced wholesale — correct whether the flag was
+        a real seam (stale basis replaced by a coherent adjusted history) or a
+        genuine ±40% news day (the re-pull returns identical data). The
+        re-pulled tickers' OHLCV extras are grafted over the fresh-window
+        extras so the _high/_low/_volume caches heal on the same run. If the
+        re-pull fails the poisoned columns are LEFT IN PLACE (loud warning):
+        the scan re-flags them next run, whereas truncating them would erase
+        the evidence and silently orphan the seam in the extras caches."""
+        merged = fresh.combine_first(cached)
+        bad = seam_suspects(fresh, cached, merged)
+        if not bad:
+            return merged
+        days = self.cfg["lookback_days_live"]
+        log.warning("%s: %d ticker(s) with mixed adjustment basis in the closes cache "
+                    "(split seam) — re-pulling full window: %s",
+                    self.name, len(bad), bad[:12])
+        fresh_extras = getattr(self, "_last_extras", {}) or {}
+        try:
+            repull = self._download_closes(bad, f"{max(1, days // 365 + 1)}y")
+        except Exception as e:  # noqa: BLE001 — repair must never kill the run
+            log.warning("%s: seam re-pull failed (%s) — cache kept as-is; the seam "
+                        "scan retries next run", self.name, e)
+            self._last_extras = fresh_extras
+            return merged
+        repull_extras = getattr(self, "_last_extras", {}) or {}
+        self._last_extras = fresh_extras
+        healed = [t for t in bad if t in repull.columns and repull[t].notna().any()]
+        for t in healed:
+            merged[t] = repull[t].reindex(merged.index)
+        if missed := sorted(set(bad) - set(healed)):
+            log.warning("%s: seam re-pull returned no data for %s — kept as-is, "
+                        "retried next run", self.name, missed[:12])
+        for k, w in list(fresh_extras.items()):
+            rw = repull_extras.get(k)
+            cols = [t for t in healed if rw is not None and t in rw.columns and t in w.columns]
+            if not cols:
+                continue
+            # union index: the grafted column must span the extras CACHE's rows,
+            # not just the 1mo fresh window, so combine_first in fetch() overrides
+            # the poisoned cached rows instead of keeping them
+            w = w.reindex(w.index.union(rw.index)).sort_index()
+            for t in cols:
+                w[t] = rw[t].reindex(w.index)
+            fresh_extras[k] = w
+        return merged
+
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         members = self.constituents_checked(self.constituents())
         tickers = members["symbol"].tolist()
@@ -137,7 +236,7 @@ class BreadthAdapter(Adapter):
                 age = (pd.Timestamp.utcnow().tz_localize(None) - cached.index.max()).days
                 if age <= 14:
                     fresh = self._download_closes(tickers, "1mo")
-                    closes = fresh.combine_first(cached)
+                    closes = self._merge_refreshed(fresh, cached)
             if closes is None:
                 days = self.cfg["lookback_days_live"]
                 closes = self._download_closes(tickers, f"{max(1, days // 365 + 1)}y")
