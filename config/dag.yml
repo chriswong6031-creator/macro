@@ -106,6 +106,45 @@ lanes:
           domestic-substitution (onshoring). No composite across themes.
           FENCE: SEPARATE display leg — never fused into fused_obs_z.
           Always exits 0 (tolerant; absent parquet → honest null written).
+      - id: collect_clinicaltrials_themes
+        module: collectors.clinicaltrials_themes
+        note: >
+          TIL W10 (PR-W10) ClinicalTrials.gov theme-level pipeline density ingest.
+          Off the render critical path. Runs nightly; FULL FETCH from 2018-01-01
+          on every run (no incremental mode — CT.gov v2 API exposes only current
+          study state; per-study update detection not feasible without full scan).
+          Deduplication by (modality_id, nct_id) keep-first prevents double-counting.
+          State file (ct_themes_state.json) records last-ingest date per modality
+          for monitoring only — does NOT gate fetch scope.
+          Fetches INDUSTRY-sponsored studies from the v2 API (keyless — verified
+          2026-07-09) for 9 curated modalities across 3 health-adjacent themes
+          (glp1_obesity, diagnostics_lifesci, medical_devices).
+          INDUSTRY filter: AREA[LeadSponsorClass]INDUSTRY.
+          Per-modality isolation: one bad modality never voids the run.
+          PIT law: keyed by studyFirstPostDate; ingest_date stored separately;
+          vocabulary_version stamps query definition.
+          PHASE NOTE: API returns only current phase (non-PIT for backfill rows).
+          Output: data/clinical_trials/modality_monthly.parquet (git-stored, small).
+          State: data/clinical_trials/ct_themes_state.json (monitoring only).
+          Env override: CLINICAL_THEMES_STORE.
+          Always exits 0 (tolerant).
+      - id: build_theme_clinical
+        module: engine.theme_clinical
+        note: >
+          TIL W10 (PR-W10) per-theme clinical-pipeline capital-commitment rollup.
+          Reads data/clinical_trials/modality_monthly.parquet (git-stored).
+          Pure in-memory aggregation, no network calls.
+          Like-month YoY law: all YoY comparisons use trailing-12m vs prior-12m
+          window (seasonal registration patterns cancel).
+          Produces:
+            data/neuralweb/theme_clinical.json   (git-tracked; NW artifact)
+            site/basketdata/clinical_pipeline.json (git-tracked; compact site)
+          Outputs: registration velocity YoY, enrollment-commitment trend,
+          phase-distribution read (phase at ingest — near-PIT for trailing-12m
+          registrations; backfill prior-window phase is upper-biased toward late
+          phase; cross-cohort comparison is confounded and not published as
+          "migration" signal). FENCE: SEPARATE display leg — never fused into
+          fused_obs_z. Always exits 0 (tolerant; absent parquet → honest null).
       - id: build_discovery_confluence
         module: scripts.build_discovery_confluence
         note: >
@@ -1498,6 +1537,22 @@ divergences:
       is cheap (pure in-memory) and exits 0 even without a parquet — safe
       to wire immediately once the collector secret is in place.
     evidence: "collectors/census_trade.py:docstring API VERIFIED NOTE"
+
+  - lanes: [collect]
+    differs: >
+      collectors.clinicaltrials_themes and engine.theme_clinical are declared in
+      dag.yml collect lane (TIL W10 PR-W10) but are NOT yet present in the live
+      .github/workflows/daily.yml collect job.
+    reason: >
+      New collect-lane steps (TIL W10 ClinicalTrials.gov theme-level pipeline
+      density). The dag.yml entries register the intended placement (collect lane,
+      after build_theme_trade_flows and before build_discovery_confluence). The
+      daily.yml wiring follows the same deferred pattern as W7/W8/W9: invoke
+      standalone first; workflow PR closes this divergence. No new secrets
+      required — ClinicalTrials.gov v2 API is keyless (verified 2026-07-09).
+      The engine step (build_theme_clinical) is cheap (pure in-memory) and
+      exits 0 even without a parquet — safe to wire immediately.
+    evidence: "collectors/clinicaltrials_themes.py:_STUDIES_URL VERIFIED LIVE 2026-07-09"
 
 # ---------------------------------------------------------------------------
 # MODULES — 25-module IO table from the W5a scout

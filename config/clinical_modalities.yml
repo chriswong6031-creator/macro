@@ -1,0 +1,201 @@
+# config/clinical_modalities.yml — Curated modality/indication → theme map (TIL W10)
+#
+# Rationale per row (TI-R2 shape: PR-reviewed, versioned membership + rationale).
+# Each row maps a ClinicalTrials.gov v2 query to a canonical theme_id from
+# config/theme_crosswalk.yml. The query drives the theme-level pipeline-density
+# pipeline (collectors/clinicaltrials_themes.py).
+#
+# PRECISION LAW: each query must return < ~2,000 INDUSTRY-sponsored studies
+# (tested live 2026-07-09 against clinicaltrials.gov/api/v2). Queries wider than
+# ~oncology-all-of-it are worthless for capital-commitment signal — a broad query
+# captures every oncology program regardless of mechanism, erasing the theme signal.
+#
+# LIVE HIT COUNT NOTE: live_hit_count_verified below was measured with the
+# INDUSTRY filter ONLY (AREA[LeadSponsorClass]INDUSTRY) — without the
+# studyFirstPostDate>=2018 filter the collector actually applies. The real
+# (date-filtered) counts are somewhat lower: e.g. glp1_named_agents 437 vs 692,
+# mRNA 360 vs 392, gene_editing_crispr 90 vs 94, obesity_device 120 vs 258.
+# All are well under the 2,000 precision cap. The INDUSTRY sponsor filter is
+# verified to work (692 INDUSTRY vs 1,026 all-sponsors for glp1_named_agents).
+# The counts here document query precision (not collector output volume).
+#
+# OVERALLSTATUS NOTE: The API is queried without an overallStatus filter;
+# WITHDRAWN and TERMINATED studies are counted in the denominator. For the
+# capital-commitment read, these are included as evidence of past investment.
+# The coverage_note in each modality output records the total INDUSTRY count.
+#
+# PHASE NOTE: API returns only current phase per study (no historical phase).
+# Phase columns in the parquet are phase-as-of-ingest. Near-PIT only for
+# trailing-12m registrations. Cross-cohort phase delta is confounded.
+# See engine/theme_clinical.py _compute_phase_distribution for full caveat.
+#
+# VERIFIED LIVE 2026-07-09:
+#   Endpoint: https://clinicaltrials.gov/api/v2/studies
+#   INDUSTRY filter: filter.advanced=AREA[LeadSponsorClass]INDUSTRY (verified)
+#   query.intr: intervention/drug/device name search (most precise for modality)
+#   query.cond: condition/indication search (for indication-led modalities)
+#   totalCount key: top-level, requires countTotal=true parameter
+#   Sponsor class field path: protocolSection.sponsorCollaboratorsModule.leadSponsor.class
+#   Enrollment field path: protocolSection.designModule.enrollmentInfo.count
+#   StudyFirstPostDate path: protocolSection.statusModule.studyFirstPostDateStruct.date
+#   Phase field path: protocolSection.designModule.phases (list; None or [])
+#
+# PIT LAW (W9): rows keyed by studyFirstPostDate (date API exposes for when study
+# was first posted). Ingest date recorded separately as ingest_date column.
+# No retroactive query-expansion without a vocabulary_version bump.
+#
+# Schema version: 1 (2026-07-09, TIL W10 PR-W10)
+#
+# Do NOT add LLM-derived signals, scores, or escalation fields — display-tier only.
+
+schema_version: 1
+date: "2026-07-09"
+vocabulary_version: "v1"
+note: >
+  9 modality rows across 3 canonical themes. Precision tested live: all hit
+  counts are under 1,000 INDUSTRY-sponsored studies (query.intr precision).
+  Cell therapy (CAR-T only: 784) and mRNA (392) are the highest-count rows and
+  are intentionally narrow vs the broader "cell therapy" (7,149) or "mRNA vaccine"
+  families — the narrow constructions are the meaningful capital-commitment signal.
+
+modalities:
+
+  # ── glp1_obesity theme ────────────────────────────────────────────────────
+
+  - modality_id: glp1_named_agents
+    theme_id: glp1_obesity
+    query_type: query.intr
+    query: "semaglutide OR tirzepatide OR liraglutide OR dulaglutide"
+    rationale: >
+      Named GLP-1/GIP agonist agents (Novo Nordisk, Eli Lilly, Pfizer pipeline).
+      These four names cover the dominant commercial + late-pipeline incretin
+      compounds. Hit count 692 (INDUSTRY, 2026-07-09). Precision: all hits are
+      directly in the incretin mechanism family. Expected read: rising new
+      registrations = capital commitment to obesity/metabolic pipeline expanding.
+    expected_read: "rising registrations = capital commitment"
+    live_hit_count_verified: 692
+    verified_date: "2026-07-09"
+
+  - modality_id: glp1_incretin_mechanism
+    theme_id: glp1_obesity
+    query_type: query.intr
+    query: "GLP-1 agonist OR GIP agonist OR incretin"
+    rationale: >
+      Mechanism-level GLP-1/GIP/incretin query. Captures pipeline compounds not
+      yet named above (earlier-stage entrants from smaller sponsors). Hit count 137
+      (INDUSTRY, 2026-07-09). Complementary to named-agent row; union with
+      glp1_named_agents covers the theme comprehensively without double-counting
+      at aggregation (deduplicated by NCT ID in collector).
+    expected_read: "rising registrations = capital commitment"
+    live_hit_count_verified: 137
+    verified_date: "2026-07-09"
+
+  # ── diagnostics_lifesci theme ──────────────────────────────────────────────
+
+  - modality_id: liquid_biopsy
+    theme_id: diagnostics_lifesci
+    query_type: query.intr
+    query: "liquid biopsy"
+    rationale: >
+      Liquid biopsy — ctDNA/cfDNA-based cancer detection (GRAIL, Foundation
+      Medicine, Guardant, Exact Sciences pipeline). Hit count 113 (INDUSTRY,
+      2026-07-09). Narrow, high-precision: all hits are diagnostic/screening
+      programs using blood-based tumor DNA. Rising registrations signal
+      capital commitment to non-invasive early-detection infrastructure
+      (a 12-24mo leading indicator of commercial diagnostic spend).
+    expected_read: "rising registrations = diagnostics capital commitment"
+    live_hit_count_verified: 113
+    verified_date: "2026-07-09"
+
+  - modality_id: radiopharmaceutical_radioligand
+    theme_id: diagnostics_lifesci
+    query_type: query.intr
+    query: "radiopharmaceutical OR radioligand"
+    rationale: >
+      Radiopharmaceutical and radioligand therapy (RLT) — includes PSMA-targeting
+      lutetium compounds, actinium programs, and diagnostic agents (Novartis,
+      Lantheus, RayzeBio pipeline). Hit count 179 (INDUSTRY, 2026-07-09).
+      Rising Phase-1→2→3 migration in RLT = major capital commitment signal
+      for the precision-oncology/diagnostics complex.
+    expected_read: "phase migration = late-stage commitment"
+    live_hit_count_verified: 179
+    verified_date: "2026-07-09"
+
+  - modality_id: gene_editing_crispr
+    theme_id: diagnostics_lifesci
+    query_type: query.intr
+    query: "CRISPR OR gene editing"
+    rationale: >
+      CRISPR/gene-editing interventional programs (Vertex/CRISPR Therapeutics,
+      Beam Therapeutics, Intellia pipeline). Hit count 94 (INDUSTRY, 2026-07-09).
+      Small but high-precision: a growing count of Phase-2/3 gene-editing trials
+      signals transition from proof-of-concept to commercial-scale investment.
+      Capital commitment indicator for the life-science tools complex.
+    expected_read: "rising phase-2/3 = commercial-scale commitment"
+    live_hit_count_verified: 94
+    verified_date: "2026-07-09"
+
+  - modality_id: adc_antibody_drug_conjugate
+    theme_id: diagnostics_lifesci
+    query_type: query.intr
+    query: "antibody-drug conjugate"
+    rationale: >
+      ADC (antibody-drug conjugate) programs — AstraZeneca/Daiichi, Pfizer,
+      Roche/Genentech, Gilead/Immunomedics pipeline. Hit count 525
+      (INDUSTRY, 2026-07-09). Largest diagnostics_lifesci row; ADCs are a major
+      capital-commitment indicator as they require both biotech and manufacturing
+      infra investment. Phase-3 acceleration = nearing-monetization signal.
+    expected_read: "rising phase-3 = nearing monetization"
+    live_hit_count_verified: 525
+    verified_date: "2026-07-09"
+
+  - modality_id: car_t_cell_therapy
+    theme_id: diagnostics_lifesci
+    query_type: query.intr
+    query: "CAR-T"
+    rationale: >
+      CAR-T cell therapy programs (Bristol Myers Squibb/Celgene, Novartis,
+      Kite/Gilead, Johnson & Johnson pipeline). Hit count 784 (INDUSTRY,
+      2026-07-09). Query is intentionally narrow (CAR-T only, not all cell
+      therapy) to preserve precision — the broader "cell therapy" query returns
+      7,149 hits with no theme signal. Phase migration from Phase-1 to Phase-2/3
+      is the relevant capital-commitment indicator (development cost ramp).
+    expected_read: "phase-2/3 migration = development cost commitment"
+    live_hit_count_verified: 784
+    verified_date: "2026-07-09"
+
+  # ── medical_devices theme ──────────────────────────────────────────────────
+
+  - modality_id: obesity_device
+    theme_id: medical_devices
+    query_type: combined
+    query_cond: "obesity"
+    query_intr: "device"
+    rationale: >
+      Medical device trials for obesity indication — bariatric devices, gastric
+      balloons, neurostimulation for weight management (Medtronic, ReShape
+      Lifesciences pipeline). Hit count 258 (INDUSTRY, 2026-07-09). This is a
+      meaningful sub-leg for the medical_devices theme: rising obesity-device
+      registrations confirm that the GLP-1 boom is also catalyzing adjacent
+      device R&D investment (capital commitment from device makers).
+    expected_read: "rising registrations = adjacency to GLP-1 boom"
+    live_hit_count_verified: 258
+    verified_date: "2026-07-09"
+
+  - modality_id: mrna_therapeutics
+    theme_id: diagnostics_lifesci
+    query_type: query.intr
+    query: "mRNA"
+    rationale: >
+      mRNA programs (all indications) — includes COVID-19 and flu vaccines
+      (which dominate the query as of 2026) plus oncology mRNA, rare disease
+      mRNA, and personalized cancer vaccines (Moderna, BioNTech pipeline).
+      Query is a broad catch-all: COVID-19 and flu vaccines are a large
+      fraction of the INDUSTRY sample. Hit count 392 (INDUSTRY, 2026-07-09;
+      date-filtered count ~360). Rising registrations = capital commitment
+      to the mRNA platform, including but not limited to post-COVID expansion.
+      For platform-infrastructure read (lipid-nanoparticle manufacturing,
+      sequence design, cold-chain), total mRNA volume is the relevant signal.
+    expected_read: "rising registrations = mRNA platform capital commitment"
+    live_hit_count_verified: 392
+    verified_date: "2026-07-09"

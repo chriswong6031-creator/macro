@@ -9418,3 +9418,72 @@ artifacts:
       Authority: all may_* false; is_context_only=true.
       Off render path (collect-lane step or standalone CLI).
       Honest null (all metrics null) when CENSUS_API_KEY not set.
+
+  # --- TIL W10 (PR-W10) — ClinicalTrials.gov theme-level pipeline density ---
+
+  neuralweb-theme-clinical:
+    path: data/neuralweb/theme_clinical.json
+    format: json
+    producer: engine/theme_clinical.py
+    known_extra_writers: []
+    owner_program: til-w10-clinical
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 2160
+    schema: theme_clinical.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W10 (PR-W10) internal NW artifact of per-theme clinical-pipeline
+      capital-commitment rollups.
+      Source: ClinicalTrials.gov v2 API (keyless — verified 2026-07-09;
+      INDUSTRY filter: AREA[LeadSponsorClass]INDUSTRY).
+      Per-modality: registration velocity YoY (like-month law), enrollment
+      commitment trend, phase-migration read (Phase-2+ share delta).
+      Themes covered: glp1_obesity / diagnostics_lifesci / medical_devices.
+      9 modality rows across 3 themes (hit counts all <= 1000; precision law).
+      Schema: {schema, as_of, generated_at, vocabulary_version, authority,
+      honesty_header, coverage_stats, api_note, themes{}}.
+      Per-theme: theme_registration_yoy_pct, theme_registration_velocity_read,
+      n_phase3_trailing12m, modalities{}.
+      Per-modality: registration_yoy_pct, velocity_read, magnitude_band,
+      enrollment_yoy_pct, phase_migration{read, delta_pp, share_phase2plus},
+      coverage_note EN/ZH.
+      PIT law: keyed by studyFirstPostDate; ingest_date stored separately;
+      vocabulary_version stamps query definition for history integrity.
+      No composite across themes. Not a scored factor. Display/context only.
+      Authority: all may_* false; is_context_only=true.
+      Off render path (collect-lane step or standalone CLI).
+      Honest null when modality_monthly.parquet absent.
+
+  site-clinical-pipeline:
+    path: site/basketdata/clinical_pipeline.json
+    format: json
+    producer: engine/theme_clinical.py
+    known_extra_writers: []
+    owner_program: til-w10-clinical
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 2160
+    schema: theme_clinical.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W10 (PR-W10) site projection of theme clinical-pipeline rollups
+      (compact format). Git-tracked; served to UI.
+      Schema identical to neuralweb-theme-clinical but per-modality detail
+      is compacted (phase_migration_read / phase_migration_delta_pp rather
+      than full phase_migration sub-dict).
+      Authority: all may_* false; is_context_only=true.
+      Off render path (collect-lane step or standalone CLI).
+      Honest null when modality_monthly.parquet absent.
