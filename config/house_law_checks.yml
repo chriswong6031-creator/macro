@@ -549,8 +549,11 @@ checks:
     allowlist: null
     ratchet: null
     known_limits:
-      - PR gate skips when the artifact is not touched by the PR (deploy-gate
-        twin in pages.yml covers every fresh render).
+      - PR gate skips when the artifact is not touched by the PR. Fresh renders
+        are graded warn-only by the builder's render-lane self-check
+        (scripts/build_stock_library.py, "board-contradictions self-check" log
+        line, added in PR 2171); the pages.yml twin is workflow_dispatch-only
+        and guards manual GitHub Pages mirror re-deploys, not nightly renders.
     owner_program: us-stocks-prebreakout
     notes: null
 
