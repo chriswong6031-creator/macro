@@ -379,6 +379,65 @@ def _winsor_z(s: pd.Series, cap: float) -> pd.Series:
     return ((s - mu) / sd).clip(-cap, cap)
 
 
+# Split-staleness guard on EDGAR share counts. The EDGAR frames cover-page
+# share count only updates on the issuer's next 10-Q/K, so for the weeks after
+# a stock split the live path multiplies a POST-split price by PRE-split shares
+# and understates mktcap by the split ratio (BKNG 25:1 2026-04-06 -> cap ~25x
+# low; KLAC 10:1 2026-06-12 -> ~10x; poisons mktcap_bn, value yields, si_pct
+# and every profile.mktcap_bn consumer downstream). The committed Polygon
+# reference the S&P 500 heatmap already trusts for tile sizing
+# (data/sp500_heatmap/reference.parquet, weekly nightly sweep) carries CURRENT
+# split-adjusted shares — prefer it when it materially disagrees with the
+# filing (>= _SHARES_DISAGREE_X either way, which also catches reverse splits
+# and large issuance EDGAR hasn't printed yet) and use it to fill names whose
+# frames serve no share count at all (META / BRK-B multi-class quirks).
+# S&P 500 coverage only; other names keep EDGAR shares and self-heal on the
+# issuer's next filing. LIVE PATH ONLY — the point-in-time panel must never
+# see today's share counts (that would be look-ahead).
+_SHARES_DISAGREE_X = 1.5
+
+
+def _reference_shares() -> pd.Series | None:
+    """ticker -> current shares outstanding from the Polygon reference cache.
+    None when the cache is absent (fresh checkout before the first nightly
+    sweep) or unusable — callers then keep the EDGAR share counts."""
+    p = config.data_dir() / "sp500_heatmap" / "reference.parquet"
+    if not p.exists():
+        return None
+    try:
+        ref = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001 — a broken cache must never break factors
+        log.warning("equity_factors: shares reference unreadable (%s)", e)
+        return None
+    if "shares" not in ref.columns:
+        return None
+    s = pd.to_numeric(ref["shares"], errors="coerce").dropna()
+    s = s[s > 0]
+    return s if not s.empty else None
+
+
+def _reconcile_shares(edgar: pd.Series) -> pd.Series:
+    """EDGAR cover-page shares, overridden by the Polygon reference where the
+    two materially disagree (stale post-split filing) or EDGAR has none."""
+    ref = _reference_shares()
+    if ref is None:
+        return edgar
+    ref = ref.reindex(edgar.index)
+    ratio = ref / edgar.where(edgar > 0)
+    stale = ratio.notna() & ((ratio >= _SHARES_DISAGREE_X)
+                             | (ratio <= 1.0 / _SHARES_DISAGREE_X))
+    fill = ref.notna() & ~(edgar > 0)          # NaN or non-positive filing count
+    take = stale | fill
+    if not take.any():
+        return edgar
+    worst = ratio[stale].sort_values(ascending=False)
+    log.info("equity_factors: %d share count(s) from Polygon reference "
+             "(%d stale vs filing, %d missing in EDGAR); largest gaps: %s",
+             int(take.sum()), int(stale.sum()), int(fill.sum()),
+             {t: round(float(r), 2) for t, r in worst.head(8).items()})
+    return edgar.where(~take, ref)
+
+
 def compute_factors(asof=None, universe: str = "broad") -> dict | None:
     """Build the factor table + leaderboards + leadership read. Returns None if
     the fundamentals cache is missing (caller logs and skips).
@@ -449,6 +508,9 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
     d = fund.copy()
     d = d[d.index.isin(last_px.index)]
     d["price"] = last_px.reindex(d.index)
+    if asof is None:
+        # live path only: PIT backtests must not see today's share counts
+        d["shares"] = _reconcile_shares(d["shares"])
     d["mktcap"] = d["price"] * d["shares"]
     d["vol"] = vol.reindex(d.index)
     d["beta"] = beta.reindex(d.index)
