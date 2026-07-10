@@ -723,18 +723,6 @@ def main() -> int:
             log.error("china act_now_v2 build failed (%s); skipping", _e)
             act_now_v2 = None
 
-        # ── W8-R7: load CN MTF upturn artifact for template ─────────────────
-        _mtf_upturn_cn: dict | None = None
-        try:
-            _mtf_cn_path = (
-                Path(config.load()["storage"]["site_dir"])
-                / "chinastockdata" / "mtf_upturn_cn.json"
-            )
-            if _mtf_cn_path.exists():
-                _mtf_upturn_cn = json.loads(_mtf_cn_path.read_text())
-        except Exception as _mtf_load_e:  # noqa: BLE001
-            log.debug("mtf_upturn_cn artifact load failed (%s) — panel will be absent", _mtf_load_e)
-
         vm = {
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -745,7 +733,7 @@ def main() -> int:
             "pref": latest.get("preference_check", {}),
             "actions": _china_action_board(sectors),
             "act_now_v2": act_now_v2,            # W8-R3: four-lane board (stocks mode)
-            "mtf_upturn_cn": _mtf_upturn_cn,     # W8-R7: CN per-stock MTF upturn panel
+            "mtf_upturn_cn": None,               # W8-R7: populated after library call below
             "health": _health_rows(),
             "index_health": _china_index_health(),  # macro-page index-health strip
             "alloc_card": _china_alloc_card(),       # China Income Vector button (blue card)
@@ -900,6 +888,12 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china stock library build failed (%s); skipping", e)
         vm["setups"] = setups
+        # W8-R7: populate mtf_upturn_cn from in-memory setups result (written by library
+        # during the call above).  Reading here — AFTER build_china_library.main() — ensures
+        # the current cycle's data is always used, even on the very first deploy when no
+        # pre-existing artifact file is present on disk.
+        if setups is not None:
+            vm["mtf_upturn_cn"] = setups.get("mtf_upturn_cn")  # full result dict or None
 
         # "Mean-reversion watch" — the VALIDATED A-share signal (3mo within-sector deep
         # dips, screened). Separate from the momentum-anchored setups; Phase 0 showed this

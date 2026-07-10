@@ -2327,14 +2327,10 @@ def main(alpha: dict | None = None) -> dict | None:
             len(_mtf_result.get("cohort", {}).get("watch", [])),
             _mtf_result.get("elapsed_s", 0.0),
         )
-        # Attach to setups for build_china.py consumption
+        # Attach FULL result to setups so build_china.py can pass it to the template
+        # directly (avoids re-reading the JSON file and eliminates the ordering hazard).
         if setups is not None:
-            setups["mtf_upturn_cn"] = {
-                "schema": _mtf_result.get("schema"),
-                "as_of": _mtf_result.get("as_of"),
-                "cohort": _mtf_result.get("cohort", {}),
-                "universe_n": _mtf_result.get("universe_n", 0),
-            }
+            setups["mtf_upturn_cn"] = _mtf_result
     except Exception as _mtf_e:  # noqa: BLE001 — additive, never fatal
         log.warning("W8-R7 mtf_upturn_cn failed (%s) — dashboard degrades without MTF panel", _mtf_e)
     # ── END W8-R7 CN MTF upturn organ ─────────────────────────────────────────

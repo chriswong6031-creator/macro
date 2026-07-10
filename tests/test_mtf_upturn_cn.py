@@ -318,6 +318,68 @@ class TestStateMachineParity:
         assert "confirmed" in result["cohort"]
         assert "watch" in result["cohort"]
 
+    def test_genuine_cross_path_state_equality(self):
+        """Feeding the same synthetic series through _compute_symbol (direct) and through
+        compute_cn (CN pipeline path) yields identical state, K, and legs.
+
+        This is the genuine anti-fork guarantee: if a future change introduces CN-specific
+        threshold constants or alters the call signature, this test will fail CI.
+        """
+        sym = "TEST.SS"
+        # Use an upturn series that reliably produces a non-trivial state so the comparison
+        # is meaningful (a flat series always gives state=NONE which would pass trivially).
+        s = _cross_series_daily_with_recent_cross(350)
+
+        # Direct call — the canonical reference
+        direct = _compute_symbol(sym, s, "NONE", 0)
+
+        # CN pipeline path — inject the same series as a single-column panel and mock the
+        # universe to contain only our test symbol.  No raw-store parquet exists, so the
+        # pipeline falls through to the panel column (price-source fallback path).
+        panel = pd.DataFrame({sym: s.values}, index=s.index)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch("lib.config.load") as mock_cfg, \
+                 patch("lib.config.data_dir") as mock_dd, \
+                 patch("engine.mtf_upturn._build_cn_universe") as mock_univ:
+                mock_cfg.return_value = {
+                    "storage": {
+                        "site_dir": str(Path(tmpdir) / "site"),
+                        "data_dir": str(Path(tmpdir) / "data"),
+                    }
+                }
+                mock_dd.return_value = Path(tmpdir) / "data"
+                mock_univ.return_value = {sym: ["board_buy"]}
+                cn_result = compute_cn(data_root=Path(tmpdir) / "data", panel=panel)
+
+        direct_state = direct["state"]
+        direct_k = direct["k"]
+        direct_legs = direct["legs"]
+
+        # The CN pipeline only records non-NONE members, but the direct call may return NONE.
+        # Assert equality of state and legs regardless of which bucket the result falls into.
+        if direct_state == "NONE":
+            # NONE members are not included in cn_result["members"] — verify absence
+            assert sym not in cn_result["members"], (
+                f"CN pipeline recorded {sym} as {cn_result['members'].get(sym)} "
+                f"but direct _compute_symbol returned NONE"
+            )
+        else:
+            assert sym in cn_result["members"], (
+                f"CN pipeline dropped {sym} (direct state={direct_state}, k={direct_k}) "
+                f"— both paths must call _compute_symbol with identical args"
+            )
+            cn_member = cn_result["members"][sym]
+            assert cn_member["state"] == direct_state, (
+                f"State mismatch: CN={cn_member['state']} direct={direct_state} — "
+                f"paths have diverged (CN-specific threshold or call-site change?)"
+            )
+            assert cn_member["k"] == direct_k, (
+                f"K mismatch: CN={cn_member['k']} direct={direct_k}"
+            )
+            assert cn_member["legs"] == direct_legs, (
+                f"Legs mismatch: CN={cn_member['legs']} direct={direct_legs}"
+            )
+
 
 # ---------------------------------------------------------------------------
 # 4. Ledger CN_LANE gate
