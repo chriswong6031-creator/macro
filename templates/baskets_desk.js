@@ -45,6 +45,45 @@ function actNowPulseBar(themes){
   if(cooling.length) parts.push(`<span class="pulse-grp">❄ ${L('Cooling','降温')}: ${links(cooling)}</span>`);
   return `<div class="pulse-bar">${parts.join('')}</div>`;
 }
+// ---- W8-R5 CN basket turn-state chips (display-tier, expected-NULL; FT-R9) ----
+// Tape-state chips are PURELY DESCRIPTIVE — no forward verbs, no entry signal.
+// FT-R1: fast-vs-slow disagreement is DISPLAYED, never auto-resolved or merged.
+
+const TAPE_STATE_LABEL = {
+  TURNING:   ['TURNING',  '拐头中'],
+  CONFIRMED: ['CONFIRMED','已确认'],
+  WASHED_OUT:['WASHED OUT','深度洗盘'],
+  BASING:    ['BASING',   '筑底中'],
+  FALLING:   ['FALLING',  '仍在下跌'],
+};
+const TAPE_TOOLTIP_EN = 'CN basket turn-watch (W8-R5): washout-lifecycle state — descriptive, not an entry signal. Expected-NULL forward meter (FT-R9).';
+const TAPE_TOOLTIP_ZH = 'CN篮子拐点观察（W8-R5）：洗盘生命周期状态 — 描述性，非入场信号。预期零值前瞻计量器（FT-R9）。';
+// tapeChip(t): returns a tape-state chip HTML string for the basket row t.
+// Returns '' when state is NONE/null/undefined.
+function tapeChip(t){
+  const ts = t && t.turn_state;
+  if(!ts || ts==='NONE') return '';
+  const lbl = TAPE_STATE_LABEL[ts];
+  if(!lbl) return '';
+  return `<span class="tape-chip ${ts}" data-tip-en="${esc(TAPE_TOOLTIP_EN)}" data-tip-zh="${esc(TAPE_TOOLTIP_ZH)}">${L(lbl[0],lbl[1])}</span>`;
+}
+// tapeChipOnRow(t): returns a tape-chip for use in act-now rows (same logic).
+function tapeChipOnRow(t){ return tapeChip(t); }
+
+// dualChip(t): returns the dual-read chip when reco is avoid/trim AND tape is
+// TURNING or CONFIRMED (FT-R1: disagreement displayed, NEVER merged/auto-resolved).
+// "AVOID (trend) · TURNING (tape)" — side-by-side, never fused.
+const DISAGREE_TAPE_STATES = new Set(['TURNING','CONFIRMED']);
+const DISAGREE_RECOS = new Set(['trim','avoid']);
+function dualChip(t){
+  if(!t || !DISAGREE_RECOS.has(t.reco) || !DISAGREE_TAPE_STATES.has(t.turn_state)) return '';
+  const recoLbl = t.reco==='avoid'?['AVOID','回避']:['TRIM','减仓'];
+  const tapeLbl = TAPE_STATE_LABEL[t.turn_state]||[t.turn_state,t.turn_state];
+  const tipEn = `FT-R1: trend reco (${t.reco}) disagrees with tape state (${t.turn_state}). Displayed side-by-side — NOT merged, NOT re-ranked. Washout turning = NOT an entry signal; trend is the primary read.`;
+  const tipZh = `FT-R1：趋势建议（${t.reco}）与带状态（${t.turn_state}）相悖。并排显示 — 不合并，不重排。洗盘拐头 ≠ 入场信号；趋势为主。`;
+  return `<span class="dual-chip" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"><span class="dc-trend">${L(recoLbl[0],recoLbl[1])}</span><span class="dc-sep">·</span><span class="dc-tape">${L(tapeLbl[0],tapeLbl[1])}</span></span>`;
+}
+
 // ---- Theme Rotation Desk --------------------------------------------------
 const LABEL_COLOR = {
   dominant:      ['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],
@@ -198,12 +237,17 @@ function themeCard(t){
     ? `<span class="tlabel" style="background:${lc[0]};border:1px solid ${lc[1]};color:${lc[2]}" title="contested — faster descriptive textures disagree with the validated label: ${esc(cTex.map(x=>x[0]).join(' | '))}. A shape/fragility read, not a forecast.">${L(t.label_en+' · contested',(t.label_zh||t.label_en)+' · 存在分歧')}</span>`
     : badge('tlabel',lc,t.label_en,t.label_zh);
   const W=(THEME&&THEME.weights)||{trend:.34,breadth:.22,impulse:.10,macro:.20,crowding:.14};
+  // W8-R5: tape-state chip for CN baskets (read turn_state field from payload).
+  // dualChip shown when trend reco (avoid/trim) disagrees with tape turning state.
+  const tc = tapeChip(t);
+  const dc = dualChip(t);
   return `<div class="tcard" id="theme-${t.id}" style="--tc:${lc[2]}">
     <div class="top">
-      ${labelChip}${heatDot(t)}
+      ${labelChip}${heatDot(t)}${tc}
       <a class="nm" href="${(window.BASKET_BASE||'basket/')}${t.id}.html" title="open full theme detail">${L(esc(t.name),esc(t.name_zh))}</a>
       <span class="sc">${t.score}<small>/100</small></span>
     </div>
+    ${dc?`<div class="txrow" style="margin:2px 0 4px">${dc}</div>`:''}
     <div class="subrow">
       <span>#${t.rank}</span>
       ${recoChip(t)}
@@ -290,6 +334,13 @@ function renderActNow(){
   }
   const a=THEME.act_now;
   const ACT={enter:['ENTER','建仓','#16a34a'],accumulate:['ACCUMULATE','加仓','#22c55e'],trim:['TRIM','减仓','#f97316'],avoid:['AVOID','回避','#ef4444']};
+  // W8-R5: build turn_state lookup from BASKETS payload (basket-level) and THEME.themes.
+  // Both sources carry the turn_state field after the build script annotates them.
+  const _turnById = {};
+  try{
+    (((typeof BASKETS!=='undefined'&&BASKETS)||{}).baskets||[]).forEach(b=>{ if(b&&b.id) _turnById[b.id]=b.turn_state||null; });
+    (THEME.themes||[]).forEach(t=>{ if(t&&t.id&&t.turn_state) _turnById[t.id]=t.turn_state; });
+  }catch(e){}
   const row=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];
     return `<a class="anrow" href="${(window.BASKET_BASE||'basket/')}${x.id}.html">
       <span class="anverb" style="color:${ac[2]};border-color:${ac[2]}">${L(ac[0],ac[1])}</span>
@@ -303,6 +354,18 @@ function renderActNow(){
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
       <span class="anwhy muted sm">${x.reason_en?L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)):esc((x.reasons||[]).join(' · '))}</span>
       <span class="ansc">${x.score}</span></a>`;};
+  // W8-R5: reduce/avoid rows get dual-chip when tape is TURNING/CONFIRMED (FT-R1).
+  const rowReduce=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];
+    const ts = _turnById[x.id]||null;
+    const hasDual = ts && DISAGREE_TAPE_STATES.has(ts);
+    const dc = hasDual ? dualChip({reco:x.action||'avoid',turn_state:ts}) : '';
+    const tc = (!hasDual && ts && ts!=='NONE') ? tapeChipOnRow({turn_state:ts}) : '';
+    return `<a class="anrow" href="${(window.BASKET_BASE||'basket/')}${x.id}.html">
+      <span class="anverb" style="color:${ac[2]};border-color:${ac[2]}">${L(ac[0],ac[1])}</span>
+      <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
+      ${dc||tc}
+      <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
+      <span class="ansc">${x.score}</span></a>`;};
   const buys=a.buy||[], wait=a.add_on_pullback||[], red=a.reduce||[];
   const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
   const anCol=(cls,head,arr,empty,rowFn)=>`<div class="ancol lst-wrap"><h4 class="anh ${cls}">${head} <span class="muted sm">(${arr.length})</span></h4>${arr.length?`<div class="anlist lst-collapse is-collapsed">${arr.map(rowFn||row).join('')}</div>${moreBtn(arr.length)}`:`<div class="muted sm" style="padding:10px 2px">${empty}</div>`}</div>`;
@@ -310,7 +373,7 @@ function renderActNow(){
   document.getElementById('actnow').innerHTML=pulseBar+`<div class="anwrap three">
     ${anCol('buy',`✅ ${L('Buy now (clean entry)','立即买入（干净入场）')}`,buys,L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。'))}
     ${anCol('wait',`⏳ ${L('In favour — no clean entry, wait for a pullback','看好 — 无干净入场点，等待回调')}`,wait,L('none','无'),rowWait)}
-    ${anCol('red',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,red,L('none','无'))}
+    ${anCol('red',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,red,L('none','无'),rowReduce)}
   </div>`;
 }
 // sleeve-size chip (validated drawdown-control channel; payload-gated so only markets that

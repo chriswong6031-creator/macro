@@ -175,6 +175,43 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("basket_freeze[china]: failed: %s", e)
 
+    # W8-R5 — CN basket turn-watch organ (display-tier, expected-NULL forward meter).
+    # Runs AFTER baskets.json is committed so compute_all() reads the just-written
+    # level series. Annotates each basket with its turn state and writes
+    # site/chinabasketdata/basket_turn_cn.json + appends ledger (CN_LANE=asia gate).
+    # Additive — never fatal.
+    try:
+        import time as _t
+        _t0 = _t.time()
+        from engine.china_basket_turn import run as _cn_turn_run
+        _turn_art = _cn_turn_run(data_root=config.ROOT, site_root=site)
+        _turn_elapsed = _t.time() - _t0
+        _turn_states = _turn_art.get("baskets", {})
+        _turn_dist = {}
+        for _s in _turn_states.values():
+            _st = _s.get("state", "NONE")
+            _turn_dist[_st] = _turn_dist.get(_st, 0) + 1
+        log.info("china_basket_turn: %d baskets in %.2fs — dist: %s",
+                 len(_turn_states), _turn_elapsed, _turn_dist)
+        # Annotate each curated basket row in the serialized payload for UI chips.
+        # Re-write baskets.json with turn_state attached to each basket.
+        try:
+            _bj_path = fdir / "baskets.json"
+            _bj = json.loads(_bj_path.read_text())
+            for _b in (_bj.get("baskets") or []):
+                _bid = _b.get("id")
+                if _bid and _bid in _turn_states:
+                    _b["turn_state"] = _turn_states[_bid].get("state", "NONE")
+                    _b["turn_dd_252"] = _turn_states[_bid].get("dd_252")
+                    _b["turn_hist_d"] = _turn_states[_bid].get("hist_d")
+                    _b["turn_slope_20d"] = _turn_states[_bid].get("slope_20d")
+                    _b["turn_evidence"] = _turn_states[_bid].get("evidence", [])
+            _bj_path.write_text(json.dumps(_bj, separators=(",", ":"), default=str))
+        except Exception as _ae:  # noqa: BLE001 — additive
+            log.warning("china_basket_turn: baskets.json annotation failed: %s", _ae)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china_basket_turn organ failed: %s", e)
+
     return 0
 
 

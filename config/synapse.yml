@@ -2122,6 +2122,67 @@ artifacts:
     external_consumers: []
     notes: "FTR W4. K-of-N confluence (6 legs) per US basket. Disclosure: sector-level standalone washout-to-turn printed NULL (Oracle P8 P-W1/S-W3); this construction is display-tier expected-NULL forward meter (FT-R9). authority.may_rank/gate/size/escalate=false."
 
+  # W8-R5 — CN basket turn-watch organ (washout lifecycle, display-tier, expected-NULL forward meter)
+  china-basket-turn-cn:
+    path: site/chinabasketdata/basket_turn_cn.json
+    format: json
+    producer: engine/china_basket_turn.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: basket_turn_cn.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers:
+      - scripts/build_baskets_china.py
+      - scripts/build_baskets_china_ths.py
+    external_consumers: []
+    notes: >
+      W8-R5. Per-basket (22 curated + 237 THS) washout-lifecycle state machine:
+      FALLING / WASHED_OUT / BASING / TURNING / CONFIRMED / NONE.
+      Hard-precedence cascade: FALLING vetoes all others (5d ret <= -6% OR MACD
+      hist negative-and-falling). Thresholds v1 frozen descriptively (FT-R9).
+      DISCLOSURE (FT-R9, verbatim): sector-level standalone washout-to-turn
+      triggers printed NULL (Oracle P8 P-W1/S-W3; DO_NOT_REBUILD §2
+      'Washout × turn') — this is a different construction (washout lifecycle at
+      basket granularity) shipped display-tier as an expected-NULL forward meter.
+      Not a revival claim. Backscan = site-artifact descriptive; forward ledger
+      (data/china_basket_turn/ledger.jsonl) starts at ship date. CN_LANE=asia
+      gate for all ledger writes (house law). Never reorders theme_scoring recos
+      (FT-R1). may_rank/gate/size/escalate=false.
+
+  # W8-R5 — CN basket turn forward ledger (PIT, append-only, asia-lane gated)
+  china-basket-turn-ledger:
+    path: data/china_basket_turn/ledger.jsonl
+    format: jsonl
+    producer: engine/china_basket_turn.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: basket_turn_cn.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers: []
+    external_consumers: []
+    notes: >
+      W8-R5. PIT forward ledger for CN basket turn states — one row per
+      (date, basket_id) per session. Append-only, keep-first on re-runs.
+      Gated on CN_LANE=asia (house law: nightly is sole advancer of data/).
+      Grading unit = catalyst-day cohort (DT-R14). Expected-NULL forward
+      meter (FT-R9); promotion question earliest 2027.
+
   # TS-U2 — mtf_upturn.v1 per-stock multi-timeframe upturn-confluence organ
   stock-mtf-upturn:
     path: site/stockdata/mtf_upturn.json
