@@ -91,6 +91,37 @@
   .xm-nm { font-weight:600; max-width:24ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .xm-sc { font-weight:740; font-variant-numeric:tabular-nums; }
   .xm-ar.pos { color:var(--up); } .xm-ar.neg { color:var(--down); } .xm-ar.muted { color:var(--muted); }
+  /* ── FTR W3: live strip in basket detail header ─────────────────────── */
+  .ftr-live-strip { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 12px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:9px; margin-top:8px; font-size:12.5px; }
+  .ftr-ls-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:2px 8px; border-radius:12px; }
+  .ftr-ls-pill.live { background:rgba(35,192,138,.14); border:1px solid rgba(35,192,138,.35); color:var(--up); }
+  .ftr-ls-pill.pre  { background:rgba(79,140,255,.12); border:1px solid rgba(79,140,255,.30); color:var(--link); }
+  .ftr-ls-pill.post,.ftr-ls-pill.closed { background:rgba(139,147,167,.08); border:1px solid var(--line); color:var(--muted); }
+  .ftr-ls-chg { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .ftr-ls-chg.up { color:var(--up); } .ftr-ls-chg.dn { color:var(--down); }
+  .ftr-ls-rank { font-size:12px; color:var(--muted); }
+  /* ── FTR W8: anatomy panel ────────────────────────────────────────────── */
+  .ftr-anatomy-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:8px; }
+  .ftr-anatomy-hd { padding:13px 16px 10px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:start; }
+  .ftr-ah-why { font-size:12px; color:var(--muted); line-height:1.45; max-width:38ch; }
+  .ftr-ah-why strong { color:var(--text); }
+  .ftr-ah-score { font-size:32px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1; text-align:center; }
+  .ftr-leg-list { padding:12px 16px; display:grid; gap:8px; }
+  .ftr-leg-row { display:grid; grid-template-columns:96px 1fr 56px 52px; align-items:center; gap:9px; }
+  .ftr-leg-lbl { font-size:11px; color:var(--muted); font-weight:500; }
+  .ftr-leg-wt  { font-size:9.5px; color:var(--muted); }
+  .ftr-leg-bar { height:8px; background:rgba(40,48,66,.9); border-radius:4px; overflow:hidden; position:relative; }
+  .ftr-leg-bar-ctr { position:absolute; left:50%; top:0; bottom:0; width:1px; background:rgba(139,147,167,.28); }
+  .ftr-leg-fill { position:absolute; top:0; bottom:0; border-radius:3px; }
+  .ftr-leg-fill.pos { left:50%; background:var(--up); }
+  .ftr-leg-fill.neg { right:50%; background:var(--down); }
+  .ftr-leg-fill.crowd { left:50%; background:var(--amber,#fb923c); }
+  .ftr-leg-val { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; text-align:right; }
+  .ftr-leg-src { font-size:10.5px; color:var(--muted); text-align:right; }
+  .ftr-anatomy-ft { padding:9px 16px; border-top:1px solid var(--line); background:rgba(251,146,60,.03);
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .ftr-crowd-note { background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.30); color:var(--amber,#fb923c); padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; }
   /* ---- sector-cycle mini-chart ---- */
   .cyc-readrow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:9px; }
   .cyc-pchip { font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:7px; }
@@ -383,6 +414,7 @@
             <a class="nav-mega-item" href="../policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="../whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="../signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="../tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
             <a class="nav-mega-item" href="../macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
             <a class="nav-mega-item" href="../factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
           </div>
@@ -451,11 +483,11 @@ fetch('../policy_lever.json',{cache:'no-cache'})
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-09 16:27 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-10 11:27 UTC</span>.
 </footer>
 
 <script>
-const DETAIL = {"basket":{"id":"managed_care","name":"Managed Care & Insurers","name_zh":"\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669","category":"Healthcare","thesis":"Health insurers tied to medical-cost trends, Medicare Advantage and policy changes.","weighting":"equal","created":"2023-05-09","n_members":9,"members":[{"symbol":"ALHC","name":"Alignment Healthcare, Inc.","added":"2023-05-09","rationale":"Alignment Healthcare \u2014 tech-driven Medicare-Advantage challenger","last":20.03,"ret_20d":0.3049,"ret_ytd":0.0142},{"symbol":"MOH","name":"Molina Healthcare","added":"2023-05-09","rationale":"Lean Medicaid managed-care operator","last":230.94,"ret_20d":0.164,"ret_ytd":0.3308},{"symbol":"OSCR","name":"OSCR","added":"2023-05-09","rationale":"Oscar Health \u2014 ACA-exchange insurer; the marketplace-growth play","last":30.81,"ret_20d":0.1249,"ret_ytd":1.1441},{"symbol":"HUM","name":"Humana","added":"2023-05-09","rationale":"Medicare-Advantage pure play \u2014 rate-notice levered","last":396.29,"ret_20d":0.1159,"ret_ytd":0.5587},{"symbol":"CVS","name":"CVS Health","added":"2023-05-09","rationale":"CVS Health \u2014 Aetna + Caremark PBM + pharmacy; integrated payer-provider","last":104.47,"ret_20d":0.0761,"ret_ytd":0.3389},{"symbol":"UNH","name":"UnitedHealth Group","added":"2023-05-09","rationale":"Scale + Optum; the MLR-cycle bellwether","last":425.6,"ret_20d":0.0528,"ret_ytd":0.3067},{"symbol":"CNC","name":"Centene Corporation","added":"2023-05-09","rationale":"Medicaid/exchange exposure","last":67.09,"ret_20d":0.0317,"ret_ytd":0.6304},{"symbol":"CI","name":"Cigna","added":"2023-05-09","rationale":"Evernorth PBM cash engine","last":289.73,"ret_20d":0.0004,"ret_ytd":0.0585},{"symbol":"ELV","name":"Elevance Health","added":"2023-05-09","rationale":"Blues franchise; Medicaid redetermination","last":416.08,"ret_20d":-0.0009,"ret_ytd":0.1991}],"changelog":[{"date":"2023-05-09","action":"create","note":"Seeded Managed Care & Insurers \u2014 6 equal-weight members from the S&P 1500 cache."},{"date":"2026-06-18","action":"add","note":"Expanded membership with on-thesis, liquid names (3 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: CVS, ALHC, OSCR."}],"reference":{"label":"XLV","name":"loose \u2014 broad health","corr":0.48,"rel_corr":0.54,"n":773},"missing":[],"partial":[],"perf":{"1d":{"ret":-0.01856624304771315,"rel":-0.015476813334708406},"5d":{"ret":0.01522723283434435,"rel":0.017061793785314805},"20d":{"ret":0.10123609120779209,"rel":0.0902780470997937},"60d":{"ret":0.5013310007664153,"rel":0.4042833448205003},"mtd":{"ret":0.01522723283434435,"rel":0.017061793785314805},"ytd":{"ret":0.41754246167780806,"rel":0.32146709093241777},"full":{"ret":0.6201262205990914,"rel":-0.18955477374321394}}},"members":[{"symbol":"ALHC","name":"Alignment Healthcare, Inc.","added":"2023-05-09","rationale":"Alignment Healthcare \u2014 tech-driven Medicare-Advantage challenger","last":20.03,"ret_20d":0.3049,"ret_ytd":0.0142,"conviction":{"score":27,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":44,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":18.78,"zone_high":19.41,"zone_pct":-4.7},"signal":null,"trust":"event-edge","spotlight":"tailwind","personality":{"chart":"volatile_momentum_vehicle","mode":null}},"on_board":false},{"symbol":"MOH","name":"Molina Healthcare","added":"2023-05-09","rationale":"Lean Medicaid managed-care operator","last":230.94,"ret_20d":0.164,"ret_ytd":0.3308,"conviction":{"score":3,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":25,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":212.0,"zone_high":225.9,"zone_pct":-5.2},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"failed_breakout_trap","mode":null}},"on_board":false},{"symbol":"OSCR","name":"OSCR","added":"2023-05-09","rationale":"Oscar Health \u2014 ACA-exchange insurer; the marketplace-growth play","last":30.81,"ret_20d":0.1249,"ret_ytd":1.1441,"conviction":{"score":3,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":22,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":29.41,"zone_high":30.3,"zone_pct":-3.1},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"basing_accumulator","mode":null}},"on_board":false},{"symbol":"HUM","name":"Humana","added":"2023-05-09","rationale":"Medicare-Advantage pure play \u2014 rate-notice levered","last":396.29,"ret_20d":0.1159,"ret_ytd":0.5587,"conviction":{"score":7,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":20,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"topping","act_level":0,"headline":"Topping \u2014 protect gains","headline_zh":"\u89c1\u9876 \u2014 \u4fdd\u62a4\u5229\u6da6","zone_low":377.7,"zone_high":389.6,"zone_pct":-3.2},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"mixed_chart","mode":null}},"on_board":false},{"symbol":"CVS","name":"CVS Health","added":"2023-05-09","rationale":"CVS Health \u2014 Aetna + Caremark PBM + pharmacy; integrated payer-provider","last":104.47,"ret_20d":0.0761,"ret_ytd":0.3389,"conviction":{"score":4,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":34,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":101.9,"zone_high":103.8,"zone_pct":-1.6},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"smooth_compounder_grind","mode":null}},"on_board":false},{"symbol":"UNH","name":"UnitedHealth Group","added":"2023-05-09","rationale":"Scale + Optum; the MLR-cycle bellwether","last":425.6,"ret_20d":0.0528,"ret_ytd":0.3067,"conviction":{"score":3,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":45,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":413.4,"zone_high":420.8,"zone_pct":-2.0},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"mixed_chart","mode":null}},"on_board":false},{"symbol":"CNC","name":"Centene Corporation","added":"2023-05-09","rationale":"Medicaid/exchange exposure","last":67.09,"ret_20d":0.0317,"ret_ytd":0.6304,"conviction":{"score":7,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":20,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"topping","act_level":0,"headline":"Topping \u2014 protect gains","headline_zh":"\u89c1\u9876 \u2014 \u4fdd\u62a4\u5229\u6da6","zone_low":64.56,"zone_high":65.77,"zone_pct":-2.9},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"mixed_chart","mode":null}},"on_board":false},{"symbol":"CI","name":"Cigna","added":"2023-05-09","rationale":"Evernorth PBM cash engine","last":289.73,"ret_20d":0.0004,"ret_ytd":0.0585,"conviction":{"score":46,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":60,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"buy_now","act_level":3,"headline":"Buy zone \u2014 entry open now","headline_zh":"\u4e70\u5165\u533a \u2014 \u5165\u573a\u7a97\u53e3\u5df2\u5f00\u542f","zone_low":283.6,"zone_high":289.7,"zone_pct":-1.1},"signal":{"tier":"T2","tier_sub":"shallow","ticks":0,"bars_to_cross":null,"provisional":false},"trust":"event-edge","spotlight":"tailwind","personality":{"chart":"failed_breakout_trap","mode":"stale_dead_money"}},"on_board":true},{"symbol":"ELV","name":"Elevance Health","added":"2023-05-09","rationale":"Blues franchise; Medicaid redetermination","last":416.08,"ret_20d":-0.0009,"ret_ytd":0.1991,"conviction":{"score":48,"band":"constructive","band_zh":"\u6b63\u5728\u7b51\u5e95","verdict":"Constructive \u2014 building a base","verdict_zh":"\u5efa\u8bbe\u6027 \u2014 \u6b63\u5728\u7b51\u5e95","cycle_blocked":false,"entry_pct":66,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"buy_soon","act_level":2,"headline":"Buy soon \u2014 on confirmation","headline_zh":"\u5373\u5c06\u4e70\u5165 \u2014 \u5f85\u786e\u8ba4","zone_low":404.7,"zone_high":416.1,"zone_pct":-1.4},"signal":null,"trust":"event-edge","spotlight":"tailwind","personality":{"chart":"mixed_chart","mode":"distribution"}},"on_board":false}],"theme":{"id":"managed_care","name":"Managed Care & Insurers","name_zh":"\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669","category":"Healthcare","score":61,"components":{"trend":0.437,"breadth":0.71,"impulse":-0.219,"macro":-0.185,"mtf":0.7,"volhole":-0.25,"crowding":0.75},"mtf":{"tf":{"D":{"sign":-1,"rsi14":64.0,"macd_pos":false,"cross_up":false,"cross_dn":true,"approaching_up":false,"approaching_dn":false,"days_to_cross":null,"spark_rsi":[77,73,69,69,71,72,70,74,78,74,74,76,76,76,74,64]},"3D":{"sign":1,"rsi14":74.0,"macd_pos":true,"cross_up":false,"cross_dn":false,"approaching_up":false,"approaching_dn":true,"days_to_cross":18,"spark_rsi":[70,72,75,75,72,68,68,73,79,79,74,75,78,79,80,74]},"W":{"sign":1,"rsi14":72.0,"macd_pos":true,"cross_up":false,"cross_dn":false,"approaching_up":false,"approaching_dn":false,"days_to_cross":null,"spark_rsi":[34,42,50,54,59,65,68,69,69,65,70,75,72,76,76,72]},"M":{"sign":1,"rsi14":66.0,"macd_pos":true,"cross_up":true,"cross_dn":false,"approaching_up":false,"approaching_dn":false,"days_to_cross":null,"spark_rsi":[56,50,54,40,48,50,48,50,51,50,48,42,58,59,66,66]}},"confluence":{"headline":"Aligned uptrend across timeframes","headline_zh":"\u5404\u5468\u671f\u4e00\u81f4\u5411\u4e0a","sub":"Short and long timeframes both point up \u2014 the highest-conviction trend-follow regime.","sub_zh":"\u77ed\u671f\u4e0e\u957f\u671f\u5747\u6307\u5411\u4e0a\u884c \u2014 \u4fe1\u5fc3\u6700\u9ad8\u7684\u987a\u52bf\u533a\u95f4\u3002","grade":"TREND-FOLLOW","grade_zh":"\u987a\u52bf","short_sign":1,"mid_sign":1,"long_sign":1,"per_tf":{"D":"down","3D":"up","W":"up","2W":"flat","ME":"up"}},"momentum_score":0.7,"trend_aligned":false,"ladder_state":"TURN SIGNALED","ladder_label":"BOTTOMING","ladder_label_zh":null,"regime":"neutral","as_of":"2026-07-08","n_bars":3145,"has_monthly":true},"tape":{"volhole":{"state":"COILED_DOWN","label_en":"Coiled, pressing the bottom","label_zh":"\u84c4\u52bf\uff0c\u903c\u8fd1\u4e0b\u6cbf","compressed":true,"bandwidth_pctile":0.103,"realized_vol_pctile":0.147,"pos_in_box":0.263,"to_upper_pct":3.85,"to_lower_pct":1.39,"breakout_up":false,"breakdown":false,"score":-0.25,"directional":true},"as_of":"2026-07-08","whale":{"accumulation":76.2,"trend_5d":20.6,"band":"soaring","label_en":"Accumulation high","label_zh":"\u5438\u7b79\u6c34\u5e73\u9ad8","rising":true,"directional":false},"flow":{"cmf":0.166,"net_flow_5d":-64877056.47991401,"net_flow_20d":12292236913.134184,"obv_rising":true,"dollar_vol":437527246.2890625,"dollar_vol_surge":0.06,"inflow":true,"label_en":"Net inflow (accumulation)","label_zh":"\u51c0\u6d41\u5165\uff08\u5438\u7b79\uff09","directional":false},"danny":{"score":61.9,"buy":false,"buy_strong":false,"sell":false,"ribbon":1,"above_poc":true,"directional":false},"danny_caveat":{"en":"Descriptive positioning readout only \u2014 no directional read. Time-controlled replication retired all contrarian claims (2026-07-06): the 2021+ survivorship-honest panel was all-null (DT-W1a), and on the 64y panel the one pooled survivor (accumulation-surge fade) is null in the modern era (2011-2026 CI spans zero) and survivor-flattered (DT-W2). Values describe where the name sits; they do not predict.","zh":"\u4ec5\u4e3a\u63cf\u8ff0\u6027\u4f4d\u7f6e\u8bfb\u6570 \u2014 \u65e0\u65b9\u5411\u6027\u5224\u65ad\u3002\u63a7\u5236\u65f6\u95f4\u56e0\u7d20\u7684\u590d\u68c0\u5df2\u4e8e2026-07-06\u9000\u5f79\u5168\u90e8\u9006\u5411\u89e3\u8bfb\uff1a2021\u5e74\u540e\u65e0\u5e78\u5b58\u504f\u5dee\u6837\u672c\u5168\u90e8\u65e0\u6548\u5e94\uff08DT-W1a\uff09\uff1b64\u5e74\u6837\u672c\u4e2d\u552f\u4e00\u5408\u5e76\u663e\u8457\u9879\uff08\u5438\u7b79\u6fc0\u589e\u540e\u8f6c\u5f31\uff09\u57282011-2026\u5e74\u4ee3\u4e3a\u96f6\u6548\u5e94\u4e14\u53d7\u5e78\u5b58\u504f\u5dee\u5938\u5927\uff08DT-W2\uff09\u3002\u6570\u503c\u4ec5\u63cf\u8ff0\u6240\u5904\u4f4d\u7f6e\uff0c\u4e0d\u6784\u6210\u9884\u6d4b\u3002"},"coverage":{"n_live":9,"n_with_volume":2,"coverage_pct":0.222}},"label":"neutral","label_en":"NEUTRAL","label_zh":"\u4e2d\u6027","reco":"hold","reco_en":"HOLD","reco_zh":"\u6301\u6709","reco_why_en":"In play but no fresh edge here \u2014 keep, don't chase.","reco_why_zh":"\u4ecd\u5728\u8fd0\u884c\u4f46\u6b64\u5904\u65e0\u65b0\u4f18\u52bf \u2014 \u6301\u6709\u52ff\u8ffd\u3002","regime_demoted":false,"chase_demoted":false,"reasons":["20d +9.0% vs S&P 500","all timeframes aligned up","coiled in a volatility hole","macro headwind (hiking, NFCI loose)"],"signal_strength":null,"flip_distance":{"route_a_bps":null,"route_b_pp":9.03,"route_a_sessions_est":null,"nearest_route":"b","note_en":"Rollover guard not armed \u2014 the other guard legs (net new highs / score / 20d momentum / breadth / long trend) do not currently line up. Descriptive \u2014 a shape read, not a forecast.","note_zh":"\u56de\u843d\u62a4\u680f\u672a\u5c31\u4f4d \u2014 \u5176\u4f59\u62a4\u680f\u6761\u4ef6\uff08\u51c0\u65b0\u9ad8/\u8bc4\u5206/20\u65e5\u52a8\u91cf/\u5e7f\u5ea6/\u957f\u671f\u8d8b\u52bf\uff09\u5f53\u524d\u672a\u540c\u65f6\u6ee1\u8db3\u3002\u63cf\u8ff0\u6027 \u2014 \u5f62\u6001\u8bfb\u6570\uff0c\u975e\u9884\u6d4b\u3002"},"rs_pctile":0.98,"accel_z":-0.167,"ext_abs":null,"long_sign":1,"perf":{"5d":{"rel":0.0171,"ret":0.0152},"20d":{"rel":0.0903,"ret":0.1012},"60d":{"rel":0.4032,"ret":0.5003},"ytd":{"rel":0.3205,"ret":0.4166}},"breadth":{"pct50":1.0,"pct200":1.0,"nh":0,"nl":0,"n":9},"impulse":{"up3":0,"down3":1,"net":-1,"n":9},"leadership":{"breadth":"broad","top":[{"ticker":"ALHC","name":"Alignment Healthcare, ","ret_20d":0.305,"share":0.35,"alpha":null},{"ticker":"MOH","name":"Molina Healthcare","ret_20d":0.164,"share":0.19,"alpha":null},{"ticker":"OSCR","name":"OSCR","ret_20d":0.125,"share":0.14,"alpha":null}]},"n_members":9,"textures":{"bull_age":{"in_bull":true,"days":60,"approx_months":2.9,"drawdown_from_peak":-0.0238,"from_52w_high":-0.0238,"stage":"building","stage_zh":"\u4e0a\u5347\u4e2d","directional":false},"overbought":{"rsi":65.9,"rs_pctile":0.98,"pct_extended":null,"value":0.865,"band":"overbought","band_zh":"\u8d85\u4e70","directional":false},"clean_entry":{"flag":false,"quality":0.35,"reasons":["breadth supportive","above 200d trend","shallow pullback"],"directional":false},"rollover_risk":{"risk":0.254,"band":"low","band_zh":"\u4f4e","reasons":["extended (RS 98%ile)","momentum rolling over"],"directional":false},"breadth_divergence":{"risk":0.0,"band":"low","band_zh":"\u4f4e","reasons":[],"directional":false,"basket_off_high":-0.0238,"member_dd_med":-0.0265,"pct_above_50":1.0,"share_below_50":0.0,"pinned":true,"grade":"descriptive","grade_note":"Descriptive texture \u2014 no separately measured forward-drawdown edge on the proxy; a narrowing lens, never a forecast."}},"adv":4,"dec":5,"net_ad":-1,"parent":"Healthcare","tags":["healthcare","insurers","managed-care"],"rank":9,"rank_5d":-3,"delta_5d":0.0171,"pulse_heat":"cooling","pulse_heat_grade":"unconfirmed","pulse_rank_delta_1d":-2,"pulse_rank_delta_5d":-5,"pulse_rank_delta_20d":null,"pulse_score_delta_5d":-10,"weights":{"trend":0.26,"breadth":0.18,"impulse":0.07,"macro":0.18,"mtf":0.16,"volhole":0.05,"crowding":0.1}},"act_now":{"status":"no_clean_entries","buys":[],"note_en":"Theme is in favour, but no member has a clean entry right now \u2014 most are extended or mid-trend. Wait for a pullback.","note_zh":"\u4e3b\u9898\u5c1a\u53ef\uff0c\u4f46\u5f53\u524d\u65e0\u6210\u5206\u80a1\u5177\u5907\u5e72\u51c0\u5165\u573a\u70b9 \u2014 \u591a\u6570\u5df2\u5ef6\u5c55\u6216\u5904\u4e8e\u8d8b\u52bf\u4e2d\u6bb5\u3002\u7b49\u5f85\u56de\u8c03\u3002"},"history":[{"date":"2026-06-18","value":51},{"date":"2026-06-22","value":63},{"date":"2026-06-23","value":65},{"date":"2026-06-24","value":62},{"date":"2026-06-25","value":68},{"date":"2026-06-26","value":71},{"date":"2026-06-29","value":69},{"date":"2026-06-30","value":66},{"date":"2026-07-01","value":72},{"date":"2026-07-02","value":69},{"date":"2026-07-06","value":66}],"timeline":[{"ts":"2026-06-22T00:00:00","type":"reco_change","severity":"medium","headline":"\u2191 Managed Care & Insurers: TRIM \u2192 HOLD","headline_zh":"\u2191 \u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669\uff1aTRIM \u2192 HOLD"}],"as_of":"2026-07-08","market_concentration":{"adv":111,"dec":390,"ad_ratio":0.28,"pct_above_50":64.1,"pct_above_200":64.4,"nh":6,"nl":1,"directional":false,"ad_3d":0.69,"ad_w":1.03,"ad_m":1.1,"verdict":"mixed","verdict_zh":"\u4e2d\u6027"},"stock_base":"../stock.html#","back":"../baskets.html","region":"us","bench_label":"S&P 500","bench_label_zh":"\u6807\u666e500"};
+const DETAIL = {"basket":{"id":"managed_care","name":"Managed Care & Insurers","name_zh":"\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669","category":"Healthcare","thesis":"Health insurers tied to medical-cost trends, Medicare Advantage and policy changes.","weighting":"equal","created":"2023-05-09","n_members":9,"members":[{"symbol":"OSCR","name":"OSCR","added":"2023-05-09","rationale":"Oscar Health \u2014 ACA-exchange insurer; the marketplace-growth play","last":31.2,"ret_20d":0.1462,"ret_ytd":1.1712},{"symbol":"MOH","name":"Molina Healthcare","added":"2023-05-09","rationale":"Lean Medicaid managed-care operator","last":232.09,"ret_20d":0.143,"ret_ytd":0.3374},{"symbol":"HUM","name":"Humana","added":"2023-05-09","rationale":"Medicare-Advantage pure play \u2014 rate-notice levered","last":397.76,"ret_20d":0.0978,"ret_ytd":0.5645},{"symbol":"ALHC","name":"Alignment Healthcare, Inc.","added":"2023-05-09","rationale":"Alignment Healthcare \u2014 tech-driven Medicare-Advantage challenger","last":21.03,"ret_20d":0.0953,"ret_ytd":0.0648},{"symbol":"CVS","name":"CVS Health","added":"2023-05-09","rationale":"CVS Health \u2014 Aetna + Caremark PBM + pharmacy; integrated payer-provider","last":102.81,"ret_20d":0.0592,"ret_ytd":0.3176},{"symbol":"UNH","name":"UnitedHealth Group","added":"2023-05-09","rationale":"Scale + Optum; the MLR-cycle bellwether","last":431.68,"ret_20d":0.0512,"ret_ytd":0.3254},{"symbol":"CNC","name":"Centene Corporation","added":"2023-05-09","rationale":"Medicaid/exchange exposure","last":67.6,"ret_20d":0.021,"ret_ytd":0.6428},{"symbol":"ELV","name":"Elevance Health","added":"2023-05-09","rationale":"Blues franchise; Medicaid redetermination","last":420.39,"ret_20d":-0.0055,"ret_ytd":0.2115},{"symbol":"CI","name":"Cigna","added":"2023-05-09","rationale":"Evernorth PBM cash engine","last":291.8,"ret_20d":-0.0108,"ret_ytd":0.066}],"changelog":[{"date":"2023-05-09","action":"create","note":"Seeded Managed Care & Insurers \u2014 6 equal-weight members from the S&P 1500 cache."},{"date":"2026-06-18","action":"add","note":"Expanded membership with on-thesis, liquid names (3 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: CVS, ALHC, OSCR."}],"reference":{"label":"XLV","name":"loose \u2014 broad health","corr":0.48,"rel_corr":0.54,"n":774},"missing":[],"partial":[],"perf":{"1d":{"ret":0.010530360613350664,"rel":0.0020651106107714146},"5d":{"ret":-0.013528167438825456,"rel":-0.021506621806338666},"20d":{"ret":0.0705282822954949,"rel":0.04801067573060225},"60d":{"ret":0.48404662112280517,"rel":0.38841909055674306},"mtd":{"ret":0.025917941700584146,"rel":0.01930278266607033},"ytd":{"ret":0.4324696949840132,"rel":0.32711577220359334},"full":{"ret":0.6371866411068214,"rel":-0.18781375527750765}}},"members":[{"symbol":"OSCR","name":"OSCR","added":"2023-05-09","rationale":"Oscar Health \u2014 ACA-exchange insurer; the marketplace-growth play","last":31.2,"ret_20d":0.1462,"ret_ytd":1.1712,"conviction":{"score":3,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":22,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":29.61,"zone_high":30.51,"zone_pct":-3.7},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"basing_accumulator","mode":null}},"on_board":false},{"symbol":"MOH","name":"Molina Healthcare","added":"2023-05-09","rationale":"Lean Medicaid managed-care operator","last":232.09,"ret_20d":0.143,"ret_ytd":0.3374,"conviction":{"score":3,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":25,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":213.5,"zone_high":229.0,"zone_pct":-4.7},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"failed_breakout_trap","mode":null}},"on_board":false},{"symbol":"HUM","name":"Humana","added":"2023-05-09","rationale":"Medicare-Advantage pure play \u2014 rate-notice levered","last":397.76,"ret_20d":0.0978,"ret_ytd":0.5645,"conviction":{"score":6,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":20,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"topping","act_level":0,"headline":"Topping \u2014 protect gains","headline_zh":"\u89c1\u9876 \u2014 \u4fdd\u62a4\u5229\u6da6","zone_low":379.5,"zone_high":393.3,"zone_pct":-2.9},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"mixed_chart","mode":null}},"on_board":false},{"symbol":"ALHC","name":"Alignment Healthcare, Inc.","added":"2023-05-09","rationale":"Alignment Healthcare \u2014 tech-driven Medicare-Advantage challenger","last":21.03,"ret_20d":0.0953,"ret_ytd":0.0648,"conviction":{"score":23,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":44,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"extended","act_level":0,"headline":"Extended \u2014 wait for a pullback","headline_zh":"\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4","zone_low":19.69,"zone_high":20.36,"zone_pct":-4.8},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"volatile_momentum_vehicle","mode":null}},"on_board":false},{"symbol":"CVS","name":"CVS Health","added":"2023-05-09","rationale":"CVS Health \u2014 Aetna + Caremark PBM + pharmacy; integrated payer-provider","last":102.81,"ret_20d":0.0592,"ret_ytd":0.3176,"conviction":{"score":40,"band":"neutral","band_zh":"\u89c2\u5bdf","verdict":"Constructive \u2014 building a base","verdict_zh":"\u5efa\u8bbe\u6027 \u2014 \u6b63\u5728\u7b51\u5e95","cycle_blocked":false,"entry_pct":58,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"buy_soon","act_level":2,"headline":"Buy soon \u2014 on confirmation","headline_zh":"\u5373\u5c06\u4e70\u5165 \u2014 \u5f85\u786e\u8ba4","zone_low":101.0,"zone_high":102.8,"zone_pct":-0.9},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"smooth_compounder_grind","mode":"distribution"}},"on_board":false},{"symbol":"UNH","name":"UnitedHealth Group","added":"2023-05-09","rationale":"Scale + Optum; the MLR-cycle bellwether","last":431.68,"ret_20d":0.0512,"ret_ytd":0.3254,"conviction":{"score":36,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":49,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"await_confluence","act_level":1,"headline":"Cycle turn \u2014 awaiting confluence cross","headline_zh":"\u5468\u671f\u62d0\u70b9 \u2014 \u7b49\u5f85\u5171\u632f\u4ea4\u53c9\u786e\u8ba4","zone_low":422.2,"zone_high":431.7,"zone_pct":-1.1},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"mixed_chart","mode":null}},"on_board":false},{"symbol":"CNC","name":"Centene Corporation","added":"2023-05-09","rationale":"Medicaid/exchange exposure","last":67.6,"ret_20d":0.021,"ret_ytd":0.6428,"conviction":{"score":6,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":19,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"topping","act_level":0,"headline":"Topping \u2014 protect gains","headline_zh":"\u89c1\u9876 \u2014 \u4fdd\u62a4\u5229\u6da6","zone_low":64.63,"zone_high":66.23,"zone_pct":-3.2},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"basing_accumulator","mode":null}},"on_board":false},{"symbol":"ELV","name":"Elevance Health","added":"2023-05-09","rationale":"Blues franchise; Medicaid redetermination","last":420.39,"ret_20d":-0.0055,"ret_ytd":0.2115,"conviction":{"score":41,"band":"neutral","band_zh":"\u89c2\u5bdf","verdict":"Constructive \u2014 building a base","verdict_zh":"\u5efa\u8bbe\u6027 \u2014 \u6b63\u5728\u7b51\u5e95","cycle_blocked":false,"entry_pct":66,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"await_confluence","act_level":1,"headline":"Cycle turn \u2014 awaiting confluence cross","headline_zh":"\u5468\u671f\u62d0\u70b9 \u2014 \u7b49\u5f85\u5171\u632f\u4ea4\u53c9\u786e\u8ba4","zone_low":409.2,"zone_high":420.4,"zone_pct":-1.3},"signal":null,"trust":"event-edge","spotlight":"neutral","personality":{"chart":"mixed_chart","mode":"distribution"}},"on_board":false},{"symbol":"CI","name":"Cigna","added":"2023-05-09","rationale":"Evernorth PBM cash engine","last":291.8,"ret_20d":-0.0108,"ret_ytd":0.066,"conviction":{"score":40,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":64,"valuation_band":null,"validation_status":"neutral_ic","entry":{"status":"buy_now","act_level":3,"headline":"Buy zone \u2014 entry open now","headline_zh":"\u4e70\u5165\u533a \u2014 \u5165\u573a\u7a97\u53e3\u5df2\u5f00\u542f","zone_low":286.1,"zone_high":291.8,"zone_pct":-1.0},"signal":{"tier":"T2","tier_sub":"shallow","ticks":0,"bars_to_cross":null,"provisional":false},"trust":"event-edge","spotlight":"neutral","personality":{"chart":"failed_breakout_trap","mode":"stale_dead_money"}},"on_board":false}],"theme":{"id":"managed_care","name":"Managed Care & Insurers","name_zh":"\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669","category":"Healthcare","score":59,"components":{"trend":0.163,"breadth":0.712,"impulse":0.219,"macro":-0.247,"mtf":0.7,"volhole":0.0,"crowding":0.76},"mtf":{"tf":{"D":{"sign":-1,"rsi14":66.0,"macd_pos":false,"cross_up":false,"cross_dn":true,"approaching_up":false,"approaching_dn":false,"days_to_cross":null,"spark_rsi":[73,69,69,71,72,70,74,78,74,74,76,76,76,74,64,66]},"3D":{"sign":1,"rsi14":74.0,"macd_pos":true,"cross_up":false,"cross_dn":false,"approaching_up":false,"approaching_dn":true,"days_to_cross":9,"spark_rsi":[72,75,75,72,68,68,73,79,79,74,75,78,79,80,74,74]},"W":{"sign":1,"rsi14":73.0,"macd_pos":true,"cross_up":false,"cross_dn":false,"approaching_up":false,"approaching_dn":false,"days_to_cross":null,"spark_rsi":[34,42,50,54,59,65,68,69,69,65,70,75,72,76,76,73]},"M":{"sign":1,"rsi14":66.0,"macd_pos":true,"cross_up":true,"cross_dn":false,"approaching_up":false,"approaching_dn":false,"days_to_cross":null,"spark_rsi":[56,50,54,40,48,50,48,50,51,50,48,42,58,59,66,66]}},"confluence":{"headline":"Aligned uptrend across timeframes","headline_zh":"\u5404\u5468\u671f\u4e00\u81f4\u5411\u4e0a","sub":"Short and long timeframes both point up \u2014 the highest-conviction trend-follow regime.","sub_zh":"\u77ed\u671f\u4e0e\u957f\u671f\u5747\u6307\u5411\u4e0a\u884c \u2014 \u4fe1\u5fc3\u6700\u9ad8\u7684\u987a\u52bf\u533a\u95f4\u3002","grade":"TREND-FOLLOW","grade_zh":"\u987a\u52bf","short_sign":1,"mid_sign":1,"long_sign":1,"per_tf":{"D":"down","3D":"up","W":"up","2W":"flat","ME":"up"}},"momentum_score":0.7,"trend_aligned":false,"ladder_state":"TURN SIGNALED","ladder_label":"BOTTOMING","ladder_label_zh":null,"regime":"neutral","as_of":"2026-07-09","n_bars":3146,"has_monthly":true},"tape":{"volhole":{"state":"IN_HOLE","label_en":"In the hole \u2014 compressed, coiling","label_zh":"\u5904\u4e8e\u6ce2\u52a8\u6d1e\u5185 \u2014 \u538b\u7f29\u84c4\u52bf","compressed":true,"bandwidth_pctile":0.103,"realized_vol_pctile":0.044,"pos_in_box":0.396,"to_upper_pct":3.13,"to_lower_pct":2.1,"breakout_up":false,"breakdown":false,"score":0.0,"directional":true},"as_of":"2026-07-09","whale":{"accumulation":69.8,"trend_5d":7.9,"band":"accumulating","label_en":"Accumulation elevated","label_zh":"\u5438\u7b79\u6c34\u5e73\u504f\u9ad8","rising":true,"directional":false},"flow":{"cmf":0.132,"net_flow_5d":-185780278.16415325,"net_flow_20d":7764211565.228803,"obv_rising":false,"dollar_vol":233159034.91783142,"dollar_vol_surge":0.06,"inflow":true,"label_en":"Net inflow (accumulation)","label_zh":"\u51c0\u6d41\u5165\uff08\u5438\u7b79\uff09","directional":false},"danny":{"score":62.4,"buy":false,"buy_strong":false,"sell":false,"ribbon":1,"above_poc":true,"directional":false},"danny_caveat":{"en":"Descriptive positioning readout only \u2014 no directional read. Time-controlled replication retired all contrarian claims (2026-07-06): the 2021+ survivorship-honest panel was all-null (DT-W1a), and on the 64y panel the one pooled survivor (accumulation-surge fade) is null in the modern era (2011-2026 CI spans zero) and survivor-flattered (DT-W2). Values describe where the name sits; they do not predict.","zh":"\u4ec5\u4e3a\u63cf\u8ff0\u6027\u4f4d\u7f6e\u8bfb\u6570 \u2014 \u65e0\u65b9\u5411\u6027\u5224\u65ad\u3002\u63a7\u5236\u65f6\u95f4\u56e0\u7d20\u7684\u590d\u68c0\u5df2\u4e8e2026-07-06\u9000\u5f79\u5168\u90e8\u9006\u5411\u89e3\u8bfb\uff1a2021\u5e74\u540e\u65e0\u5e78\u5b58\u504f\u5dee\u6837\u672c\u5168\u90e8\u65e0\u6548\u5e94\uff08DT-W1a\uff09\uff1b64\u5e74\u6837\u672c\u4e2d\u552f\u4e00\u5408\u5e76\u663e\u8457\u9879\uff08\u5438\u7b79\u6fc0\u589e\u540e\u8f6c\u5f31\uff09\u57282011-2026\u5e74\u4ee3\u4e3a\u96f6\u6548\u5e94\u4e14\u53d7\u5e78\u5b58\u504f\u5dee\u5938\u5927\uff08DT-W2\uff09\u3002\u6570\u503c\u4ec5\u63cf\u8ff0\u6240\u5904\u4f4d\u7f6e\uff0c\u4e0d\u6784\u6210\u9884\u6d4b\u3002"},"coverage":{"n_live":9,"n_with_volume":2,"coverage_pct":0.222}},"label":"fading","label_en":"FADING","label_zh":"\u9000\u6f6e","reco":"trim","reco_en":"TRIM","reco_zh":"\u51cf\u4ed3","reco_why_en":"Was strong, now rolling over off a high \u2014 take some risk off.","reco_why_zh":"\u66fe\u5f3a\u52bf\uff0c\u73b0\u81ea\u9ad8\u4f4d\u56de\u843d \u2014 \u9002\u5ea6\u964d\u4f4e\u98ce\u9669\u3002","regime_demoted":false,"chase_demoted":false,"reasons":["20d +4.8% vs S&P 500","decelerating","all timeframes aligned up","coiled in a volatility hole"],"signal_strength":{"grade":"backtested","kind":"risk","measured":true,"metric":"fwd 21d drawdown","mean_pct":-3.74,"t_hac":-9.65,"n":252,"en":"Backtested risk read \u2014 on 27y of clean sector history this label precedes deeper forward drawdowns (it is a risk timer, not a return forecast).","zh":"\u5df2\u56de\u6d4b\u7684\u98ce\u9669\u4fe1\u53f7 \u2014 \u572827\u5e74\u5e72\u51c0\u884c\u4e1a\u5386\u53f2\u4e0a\uff0c\u8be5\u6807\u7b7e\u9886\u5148\u4e8e\u66f4\u6df1\u7684\u524d\u5411\u56de\u64a4\uff08\u98ce\u9669\u8ba1\u65f6\u5668\uff0c\u975e\u6536\u76ca\u9884\u6d4b\uff09\u3002"},"flip_distance":{"route_a_bps":null,"route_b_pp":4.8,"route_a_sessions_est":null,"nearest_route":"b","note_en":"Rollover guard not armed \u2014 the other guard legs (net new highs / score / 20d momentum / breadth / long trend) do not currently line up. Descriptive \u2014 a shape read, not a forecast.","note_zh":"\u56de\u843d\u62a4\u680f\u672a\u5c31\u4f4d \u2014 \u5176\u4f59\u62a4\u680f\u6761\u4ef6\uff08\u51c0\u65b0\u9ad8/\u8bc4\u5206/20\u65e5\u52a8\u91cf/\u5e7f\u5ea6/\u957f\u671f\u8d8b\u52bf\uff09\u5f53\u524d\u672a\u540c\u65f6\u6ee1\u8db3\u3002\u63cf\u8ff0\u6027 \u2014 \u5f62\u6001\u8bfb\u6570\uff0c\u975e\u9884\u6d4b\u3002"},"rs_pctile":0.984,"accel_z":-0.727,"ext_abs":null,"long_sign":1,"perf":{"5d":{"rel":-0.0215,"ret":-0.0135},"20d":{"rel":0.048,"ret":0.0705},"60d":{"rel":0.3874,"ret":0.483},"ytd":{"rel":0.3261,"ret":0.4315}},"breadth":{"pct50":1.0,"pct200":1.0,"nh":1,"nl":0,"n":9},"impulse":{"up3":1,"down3":0,"net":1,"n":9},"leadership":{"breadth":"broad","top":[{"ticker":"OSCR","name":"OSCR","ret_20d":0.146,"share":0.23,"alpha":null},{"ticker":"MOH","name":"Molina Healthcare","ret_20d":0.143,"share":0.23,"alpha":null},{"ticker":"HUM","name":"Humana","ret_20d":0.098,"share":0.16,"alpha":null}]},"n_members":9,"textures":{"bull_age":{"in_bull":true,"days":61,"approx_months":2.9,"drawdown_from_peak":-0.0135,"from_52w_high":-0.0135,"stage":"building","stage_zh":"\u4e0a\u5347\u4e2d","directional":false},"overbought":{"rsi":67.9,"rs_pctile":0.984,"pct_extended":null,"value":0.898,"band":"overbought","band_zh":"\u8d85\u4e70","directional":false},"clean_entry":{"flag":false,"quality":0.35,"reasons":["breadth supportive","above 200d trend","shallow pullback"],"directional":false},"rollover_risk":{"risk":0.258,"band":"low","band_zh":"\u4f4e","reasons":["extended (RS 98%ile)","momentum rolling over","rolling off the high"],"directional":false},"breadth_divergence":{"risk":0.0,"band":"low","band_zh":"\u4f4e","reasons":[],"directional":false,"basket_off_high":-0.0135,"member_dd_med":-0.0216,"pct_above_50":1.0,"share_below_50":0.0,"pinned":true,"grade":"descriptive","grade_note":"Descriptive texture \u2014 no separately measured forward-drawdown edge on the proxy; a narrowing lens, never a forecast."}},"adv":8,"dec":1,"net_ad":7,"parent":"Healthcare","tags":["healthcare","insurers","managed-care"],"rank":14,"rank_5d":-5,"delta_5d":-0.0215,"pulse_heat":"cooling","pulse_heat_grade":"unconfirmed","pulse_rank_delta_1d":-6,"pulse_rank_delta_5d":-7,"pulse_rank_delta_20d":null,"pulse_score_delta_5d":-10,"weights":{"trend":0.26,"breadth":0.18,"impulse":0.07,"macro":0.18,"mtf":0.16,"volhole":0.05,"crowding":0.1}},"act_now":{"status":"theme_out_of_favour","buys":[],"note_en":"Theme is out of favour (fading) \u2014 no stock buys recommended here right now.","note_zh":"\u4e3b\u9898\u6682\u4e0d\u88ab\u9752\u7750\uff08\u9000\u6f6e\uff09\u2014 \u5f53\u524d\u4e0d\u5efa\u8bae\u4e70\u5165\u8be5\u4e3b\u9898\u4e2a\u80a1\u3002"},"history":[{"date":"2026-06-18","value":51},{"date":"2026-06-22","value":63},{"date":"2026-06-23","value":65},{"date":"2026-06-24","value":62},{"date":"2026-06-25","value":68},{"date":"2026-06-26","value":71},{"date":"2026-06-29","value":69},{"date":"2026-06-30","value":66},{"date":"2026-07-01","value":72},{"date":"2026-07-02","value":69},{"date":"2026-07-06","value":66},{"date":"2026-07-09","value":59}],"timeline":[{"ts":"2026-07-09T00:00:00","type":"theme_topping","severity":"high","headline":"\u26a0\ufe0f Managed Care & Insurers is topping out","headline_zh":"\u26a0\ufe0f \u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669 \u89c1\u9876\u56de\u843d"},{"ts":"2026-06-22T00:00:00","type":"reco_change","severity":"medium","headline":"\u2191 Managed Care & Insurers: TRIM \u2192 HOLD","headline_zh":"\u2191 \u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669\uff1aTRIM \u2192 HOLD"}],"as_of":"2026-07-09","market_concentration":{"adv":300,"dec":201,"ad_ratio":1.49,"pct_above_50":64.5,"pct_above_200":64.6,"nh":16,"nl":1,"directional":false,"ad_3d":0.86,"ad_w":1.03,"ad_m":1.15,"verdict":"broad","verdict_zh":"\u5e7f\u6cdb"},"stock_base":"../stock.html#","back":"../baskets.html","region":"us","bench_label":"S&P 500","bench_label_zh":"\u6807\u666e500"};
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 const BENCH = DETAIL.bench_label || 'S&P 500';          // regional benchmark label (CSI 300 / Hang Seng / S&P-TSX)
 const BENCHZ = DETAIL.bench_label_zh || BENCH;
@@ -805,7 +837,7 @@ function render(){
   const tierW=(c)=>{const s=c&&c.signal; return (s&&s.tier&&TIER_W[s.tier])||0;};
   const tierBadge=(c)=>{const s=c&&c.signal; if(!s||!s.tier) return '';
     const tip={T1:'T1 — 3D MACD-RSI × 3D StochRSI confluence, buy-filter endorsed (master confirmation).',
-      T2:'T2 — 2D MACD-RSI crossed + 3D StochRSI crossed (an early tier, fires before the 3D master).',
+      T2:'T2 — 2D MACD-RSI crossed + 3D StochRSI crossed — PRIME entry setup, historically fills at a lower median premium above the 20d trough than T1 CONFIRMED (measured, not a forward promise).',
       T3:'T3 — 3D StochRSI crossed, 2D MACD-RSI cross projected ~1-2 days (provisional, may repaint).',
       T4:'T4 — 2D MACD-RSI projected + 2D StochRSI crossed, above the 200-day MA (earliest tier).'}[s.tier]||'';
     return ` <span class="tier ${s.tier}" title="${tip}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};
@@ -907,11 +939,274 @@ function boot(){
   // fetch the cross-market links once, then re-render so the "same narrative elsewhere" chip
   // appears (display-only; absent file or no cross-ref simply leaves it out).
   fetch('../crossmarketdata/links.json',{cache:'no-store'}).then(r=>r.ok?r.json():null)
-    .then(cm=>{ if(cm){ XM=cm; render(); } }).catch(()=>{});
+    .then(cm=>{ if(cm){ XM=cm; render(); if(window._ftrTryInject) window._ftrTryInject(); } }).catch(()=>{});
 }
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+
+/* ── FTR W3: live strip in basket detail header + W8 anatomy panel ──────────
+   FT-R1: no slow state mutation. FT-R2: display/de-escalation. FT-R12: stale-gated.
+   FT-R3: T+1 fade note. FT-R8: graceful absent-file (fail-silent fetch). */
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function L(en,zh){return'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>';}
+function fmtPct(v,dec){if(v==null)return'—';var d=dec||2;return(v>=0?'+':'')+v.toFixed(d)+'%';}
+function cls(v){return v==null?'muted':v>=0?'up':'dn';}
+
+var BID = (DETAIL.basket||{}).id||'';
+var WEIGHTS = {trend:0.26,breadth:0.18,impulse:0.07,macro:0.18,mtf:0.16,volhole:0.05,crowding:0.10};
+var LEG_LABELS = {
+  trend:    [L('Trend','趋势'),    '5/20/60d rets'],
+  breadth:  [L('Breadth','广度'),  '% above 50d MA'],
+  impulse:  [L('Impulse','脉冲'),  '1d accel z'],
+  macro:    [L('Macro','宏观'),    'macro prior'],
+  mtf:      [L('MTF','多周期'),    'multi-timeframe'],
+  volhole:  [L('Vol-hole','波动洞'),'gap / cluster'],
+  crowding: [L('Crowding','拥挤度'),'rs_pctile'],
+};
+var LEG_ORDER = ['trend','breadth','impulse','macro','mtf','volhole','crowding'];
+
+// ── W8: Score anatomy panel HTML ──────────────────────────────────────────
+function anatomyPanelHtml(th){
+  if(!th||th.score==null) return '';
+  var comp = th.components||{};
+  var score = th.score;
+  var rsPct = th.rs_pctile;
+  var crowdPenActive = (rsPct!=null&&rsPct>=0.85)||comp.crowding>0.3;
+
+  // Why-this-score summary
+  var posParts=[], negParts=[];
+  LEG_ORDER.filter(k=>k!=='crowding').forEach(function(k){
+    var v=comp[k];
+    if(v==null||v===0) return;
+    if(v>0) posParts.push(LEG_LABELS[k][0]);
+    else negParts.push(LEG_LABELS[k][0]);
+  });
+  var macroAbsent = comp.macro==null||comp.macro===0;
+  var whyEn='';
+  if(posParts.length) whyEn+='<strong>'+posParts.map(function(p){return p.replace(/<[^>]*>/g,'');}).join(' + ')+'</strong> fired. ';
+  if(negParts.length) whyEn+='<span style="color:var(--down)">'+negParts.map(function(p){return p.replace(/<[^>]*>/g,'');}).join(' + ')+'</span> dragging. ';
+  if(macroAbsent) whyEn+='Macro leg absent — score renormalises over available legs. ';
+  if(crowdPenActive) whyEn+='<span style="color:var(--amber,#fb923c)">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ';
+
+  var html='<div class="ftr-anatomy-card">'
+    +'<div class="ftr-anatomy-hd">'
+    +'<div><div style="font-size:13px;font-weight:700">'+L('Score Anatomy','评分解剖')+'</div>'
+    +'<div class="ftr-ah-why">'+whyEn+'</div></div>'
+    +'<div style="text-align:center"><div class="ftr-ah-score" style="color:'+(score>=66?'var(--up)':score>=40?'var(--link)':'var(--down)')+'">'+score+'</div>'
+    +'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:3px">'+L('score','评分')+'</div></div>'
+    +'</div>'
+    +'<div class="ftr-leg-list">';
+
+  // Compute total weight for renorm (exclude absent macro)
+  var availW = LEG_ORDER.filter(function(k){return k!=='crowding'&&comp[k]!=null;}).reduce(function(a,k){return a+(WEIGHTS[k]||0);},0)+(WEIGHTS.crowding||0);
+  if(availW<=0) availW=1;
+
+  LEG_ORDER.forEach(function(k){
+    var v = comp[k];
+    var w = WEIGHTS[k]||0;
+    var isCrowd = k==='crowding';
+    var absent = v==null||(k==='macro'&&macroAbsent);
+    var contrib = absent?0:((v*(w/availW))||0);
+    var ll = LEG_LABELS[k]||[k,k];
+    // Bar fill: center=0, pos goes right, neg goes left; crowding amber
+    var barFillPct = absent?0:Math.min(50,Math.abs(v)*35);
+    var barClass = isCrowd?'crowd':(v>=0?'pos':'neg');
+    var valColor = absent?'var(--muted)':isCrowd?'var(--amber,#fb923c)':(v>=0?'var(--up)':'var(--down)');
+    var crowdStyle = isCrowd?'background:rgba(251,146,60,.04);border-radius:6px;padding:4px 0;':'';
+    html+='<div class="ftr-leg-row" style="'+crowdStyle+'">'
+      +'<div><div class="ftr-leg-lbl'+(isCrowd?' " style="color:var(--amber,#fb923c)':'"')+'>'+ll[0]+'</div>'
+      +'<div class="ftr-leg-wt'+(isCrowd?' " style="color:var(--amber,#fb923c)':'"')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
+      +'<div class="ftr-leg-bar"><div class="ftr-leg-bar-ctr"></div>'
+      +(absent?'':'<div class="ftr-leg-fill '+barClass+'" style="width:'+barFillPct.toFixed(1)+'%"></div>')
+      +'</div>'
+      +'<div class="ftr-leg-val" style="color:'+valColor+'">'+(absent?L('no prior','无先验'):((v>=0&&!isCrowd?'+':'')+v.toFixed(3)))+'</div>'
+      +'<div class="ftr-leg-src">'+esc(ll[1])+'</div>'
+      +'</div>';
+  });
+
+  html+='</div>';
+  // Footer
+  var ftNotes=[];
+  if(crowdPenActive) ftNotes.push('<span class="ftr-crowd-note">'+L('Crowding penalty: rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+' ≥ 0.85 — blocks ACCUMULATE','拥挤惩罚：rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+' ≥ 0.85 — 阻止增仓')+'</span>');
+  var nAvailLegs = Object.keys(comp).filter(function(k){return k!=='crowding'&&comp[k]!=null;}).length;
+  if(macroAbsent) ftNotes.push('<span style="font-size:11px;color:var(--muted)">'+L('Macro absent: score renormalises over '+nAvailLegs+' available legs. Adding a macro prior changes the calibrated score — requires W8b pre-registration (FT-R7).','宏观缺失：评分在现有腿上重新归一化。添加宏观先验会改变校准评分 — 需W8b预注册（FT-R7）。')+'</span>');
+  if(ftNotes.length) html+='<div class="ftr-anatomy-ft">'+ftNotes.join('')+'</div>';
+  html+='</div>';
+  return html;
+}
+
+// ── staleness banner (TS-R6): shown when basket detail as_of predates today's session
+function stalenessBannerHtml(detailAsOf){
+  if(!detailAsOf) return '';
+  // Compare detail as_of date to today in ET so 19:00–24:00 UTC (next UTC day) does
+  // not falsely flag a same-session as_of as stale.
+  var today=(function(){try{return new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});}catch(e){return new Date().toISOString().slice(0,10);}})();
+  if(detailAsOf>=today) return '';
+  // The page's data predates the current calendar day → session not yet ingested
+  return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;'
+    +'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.35);margin-bottom:10px">'
+    +'<span style="font-size:18px">⏳</span>'
+    +'<div><div style="font-weight:680;color:var(--warn)">'
+    +L('Data as of '+esc(detailAsOf)+' close — today\'s session not yet ingested (nightly pending)',
+       '数据截至 '+esc(detailAsOf)+' 收盘 — 今日行情尚未录入（等待夜间更新）')
+    +'</div></div></div>';
+}
+
+// ── verdict-evidence coherence chip (TS-R6)
+// Shown when the page verdict is DETERIORATING/AVOID but the same record's
+// mtf ladder reads BOTTOMING/TURN SIGNALED — a self-contradictory snapshot.
+function coherenceChipHtml(theme, detailAsOf){
+  if(!theme) return '';
+  var reco=(theme.reco||'').toLowerCase();
+  var weakRecos=['deteriorating','avoid','reduce','trim'];
+  if(weakRecos.indexOf(reco)<0) return '';
+  var mtf=theme.mtf||{};
+  var ladderState=(mtf.ladder_state||'').toUpperCase();
+  var ladderLabel=(mtf.ladder_label||'').toUpperCase();
+  // Coherence concern: verdict is bearish but ladder shows a bullish formation
+  var bullishLadders=['BOTTOMING','TURN SIGNALED','INFLECTING','EMERGING'];
+  var isBullishLadder=bullishLadders.some(function(s){
+    return ladderState.indexOf(s)>=0||ladderLabel.indexOf(s)>=0;
+  });
+  if(!isBullishLadder) return '';
+  var verdictDisp=(theme.reco_en||theme.reco||'').toUpperCase();
+  var ladderDisp=ladderLabel||ladderState;
+  var dateDisp=detailAsOf?' ('+detailAsOf+')'  :'';
+  return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-radius:8px;'
+    +'background:rgba(139,147,167,.08);border:1px solid var(--line);margin-bottom:10px">'
+    +'<span style="font-size:16px;flex:none">&#x2696;</span>'
+    +'<div><div style="font-weight:680;color:var(--muted)">'
+    +L('Mixed evidence: verdict '+esc(verdictDisp)+dateDisp+' vs timeframes '+esc(ladderDisp)+' — see anatomy panel',
+       '证据分歧：结论 '+esc(verdictDisp)+dateDisp+' 与多周期 '+esc(ladderDisp)+' 不一致 — 详见解剖面板')
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--muted);margin-top:3px">'
+    +L('The nightly scoring reflects the slower structural read; the MTF tape captures the shorter-term turn. Both are shown — do not merge them.',
+       '夜间评分反映较慢的结构性判断；多周期行情捕捉短期拐点。两者均已展示——请勿将其合并解读。')
+    +'</div></div></div>';
+}
+
+// ── W3: live strip HTML ────────────────────────────────────────────────────
+function liveStripHtml(pb, tw, totalBaskets, pulseMode){
+  if(!pb) return '';
+  var session = pb.session||'closed';
+  var mode = pulseMode||'live';
+  var chg = pb.live_ew_chg_pct;
+  var rank = pb.tape_rank;
+  var sessMap={pre:{cls:'pre',en:'PREMARKET',zh:'盘前'},rth:{cls:'live',en:'LIVE · RTH',zh:'实盘'},post:{cls:'post',en:'POST-MARKET',zh:'盘后'},closed:{cls:'closed',en:'CLOSED',zh:'休市'}};
+  var si = sessMap[session]||sessMap.closed;
+  var html='<div class="ftr-live-strip">'
+    +'<span class="ftr-ls-pill '+si.cls+'">'+L(esc(si.en),esc(si.zh))+'</span>';
+  // Show values in all modes when available (TS-R1 honest-delay law)
+  if(chg!=null){
+    html+='<span class="ftr-ls-chg '+(chg>=0?'up':'dn')+'">'+fmtPct(chg,2)+'</span>';
+    if(rank!=null) html+='<span class="ftr-ls-rank" style="color:var(--muted)">'+L('tape rank #'+rank+' of '+totalBaskets,'行情排名 #'+rank+' / '+totalBaskets)+'</span>';
+  }
+  // Mode pill for non-live reads
+  if(mode!=='live'){
+    var modeLabels={delayed:L('DELAYED','延迟数据'),last_rth:L('LAST SESSION','上一交易时段'),eod:L('EOD CLOSE','收盘价')};
+    var mLabel=modeLabels[mode]||L(mode.toUpperCase(),mode);
+    html+='<span style="display:inline-block;padding:1px 7px;border-radius:5px;font-size:9.5px;border:1px solid var(--line);color:var(--muted);margin-left:4px">'+mLabel+'</span>';
+  }
+  if(tw&&(tw.state==='WATCH'||tw.state==='IGNITION')){
+    var isIgn=tw.state==='IGNITION';
+    html+='<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
+      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(tw.state,tw.state)+'</span>'
+      +'<span style="font-size:11px;color:var(--muted)">'+(tw.k||0)+L('/6 legs','条腿')+'</span>';
+  }
+  html+='<span style="font-size:10.5px;color:var(--muted);margin-left:auto">'+L('15-min delayed','15分钟延迟')+'</span>';
+  html+='</div>';
+  return html;
+}
+
+// ── Fetch + inject ─────────────────────────────────────────────────────────
+function injectFtrWidgets(pulse, turnWatch){
+  var pb=null, tw=null, totalBaskets=0, pulseMode='live';
+  if(pulse){
+    var baskets=pulse.baskets||[];
+    pulseMode=pulse.mode||'live';
+    totalBaskets=baskets.filter(function(b){return b.tape_rank!=null;}).length;
+    pb=baskets.find(function(b){return b.id===BID;})||null;
+    // Override session from top-level
+    if(pb) pb.session=pulse.session||'closed';
+  }
+  if(turnWatch){
+    var twArr=turnWatch.baskets||[];
+    tw=twArr.find(function(b){return b.basket_id===BID;})||null;
+    if(tw&&tw.state!=='WATCH'&&tw.state!=='IGNITION') tw=null;
+  }
+
+  // Inject live strip after the hero panel in #app
+  var app=document.getElementById('app');
+  if(!app) return;
+  // Remove old injections to avoid duplicates
+  var oldStrip=app.querySelector('.ftr-live-strip');
+  if(oldStrip) oldStrip.remove();
+  var oldAnatomy=app.querySelector('.ftr-w8-anatomy-section');
+  if(oldAnatomy) oldAnatomy.remove();
+  var oldStaleBanner=app.querySelector('.ftr-stale-banner');
+  if(oldStaleBanner) oldStaleBanner.remove();
+  var oldCoherenceChip=app.querySelector('.ftr-coherence-chip');
+  if(oldCoherenceChip) oldCoherenceChip.remove();
+
+  var detailAsOf=(DETAIL.as_of||'').slice(0,10);
+
+  // Staleness banner: shown when basket data predates today's session (TS-R6)
+  var bannerHtml=stalenessBannerHtml(detailAsOf);
+  if(bannerHtml){
+    var bannerEl=document.createElement('div');
+    bannerEl.className='ftr-stale-banner';
+    bannerEl.innerHTML=bannerHtml;
+    var firstH2b=app.querySelector('h2');
+    if(firstH2b) app.insertBefore(bannerEl, firstH2b); else app.prepend(bannerEl);
+  }
+
+  // Verdict-evidence coherence chip (TS-R6)
+  var th2cohere=(DETAIL.theme||{});
+  var coherenceHtml=coherenceChipHtml(th2cohere, detailAsOf);
+  if(coherenceHtml){
+    var coherenceEl=document.createElement('div');
+    coherenceEl.className='ftr-coherence-chip';
+    coherenceEl.innerHTML=coherenceHtml;
+    var firstH2c=app.querySelector('h2');
+    if(firstH2c) app.insertBefore(coherenceEl, firstH2c); else app.prepend(coherenceEl);
+  }
+
+  // Insert live strip before first <h2> or at start of #app
+  var firstH2=app.querySelector('h2');
+  var stripEl=document.createElement('div');
+  stripEl.innerHTML=liveStripHtml(pb, tw, totalBaskets, pulseMode);
+  if(stripEl.firstChild){
+    if(firstH2) app.insertBefore(stripEl.firstChild, firstH2);
+    else app.appendChild(stripEl.firstChild);
+  }
+
+  // Insert anatomy panel after "Score composition" h2 (idx=02)
+  var h2s=app.querySelectorAll('h2');
+  var scoreH2=null;
+  h2s.forEach(function(h){if(h.textContent.indexOf('02')>-1&&(h.textContent.indexOf('Score')>-1||h.textContent.indexOf('评分')>-1)){scoreH2=h;}});
+  if(scoreH2){
+    // anatomy panel goes BEFORE the score composition section (before the h2 for idx 02)
+    var th2=(DETAIL.theme||{});
+    var anatEl=document.createElement('div');
+    anatEl.className='ftr-w8-anatomy-section';
+    anatEl.innerHTML='<h2><span class="idx">W8</span>'+L('Score Anatomy','评分解剖')+' <span class="chip" style="font-size:10px;padding:1px 6px">'+L('display-only','仅展示')+'</span></h2>'+anatomyPanelHtml(th2);
+    app.insertBefore(anatEl, scoreH2);
+  }
+}
+
+// Fetch pulse (basket_detail lives under site/basket/ so use ../ prefix)
+var _pulse=null, _tw=null;
+function tryInject(){injectFtrWidgets(_pulse,_tw);}
+// Expose so boot() can re-inject after XM re-render (Fix: XM re-render wipes #app.innerHTML)
+window._ftrTryInject = tryInject;
+fetch('../live/basket_pulse.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){_pulse=d;tryInject();}).catch(function(){});
+fetch('../basketdata/turn_watch.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){_tw=d;tryInject();}).catch(function(){});
+})();
 </script>
 <script src="../theme.js"></script>
-<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>
