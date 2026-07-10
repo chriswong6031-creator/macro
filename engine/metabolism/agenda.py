@@ -360,6 +360,7 @@ def build_agenda(
             "items": [],
             "rejected": [],
             "authority": AUTHORITY_BLOCK,
+            "grounding": {"unverified": True},
         }
 
 
@@ -477,6 +478,15 @@ def _build_agenda_inner(
         n_regular = max(0, max_docket_size - len(forced_items))
         items = forced_items + regular_items[:n_regular]
 
+    # 11. Grounding check (R-V3-5b) — informational annotation; NEVER blocks items
+    grounding: dict[str, Any] = {"unverified": True}
+    try:
+        from engine.metabolism import grounding as _grounding  # noqa: PLC0415
+        _payload = {"items": items, "rejected": rejected}
+        grounding = _grounding.validate_grounding(_payload, root=repo)
+    except Exception as _exc:  # noqa: BLE001
+        log.warning("agenda: grounding check failed (display-tier, non-fatal) — %s", _exc)
+
     return {
         "schema": SCHEMA,
         "cycle_id": cycle_id,
@@ -487,4 +497,5 @@ def _build_agenda_inner(
         "items": items,
         "rejected": rejected,
         "authority": AUTHORITY_BLOCK,
+        "grounding": grounding,
     }

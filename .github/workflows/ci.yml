@@ -953,6 +953,8 @@ jobs:
         run: python -m pytest tests/test_capability_broker.py -q
       - name: metabolism v2 suite (lifecycle tier-mirror + promotion fence + inertness)
         run: python -m pytest tests/test_metabolism.py tests/test_metabolism_v2a.py tests/test_metabolism_v2b.py tests/test_metabolism_v2c.py tests/test_metabolism_v2d.py -q
+      - name: metabolism v3 suite (memory + context + integration)
+        run: python -m pytest tests/test_metabolism_v3_memory.py tests/test_metabolism_v3_context.py tests/test_metabolism_v3_integration.py -q
       - name: self-mod fence selftest
         run: python3 scripts/check_self_mod_fence.py --selftest
       - name: grader manifest (fitness graders + immutable configs unchanged)

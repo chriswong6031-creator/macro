@@ -75,6 +75,11 @@ IMMUTABLE_PATTERNS: list[str] = [
     # loop-authored branch must NOT flip e.g. promote_lobe's default to 'promote'.
     # Fenced so the docstring's immutability claim is structural, not honor-system.
     "engine/metabolism/tap.py",
+    # V3 additions (R-V3-8 / R-V2-8): SLA config + reasoning-receipt schema.
+    # The loop must not loosen its own freshness alarms (SLA) or alter the
+    # pre-send-gate receipt contract (R-V3-1, R-V3-5a).
+    "config/metabolism_context_sla.yml",
+    "docs/METABOLISM_REASONING_RECEIPT.md",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────
