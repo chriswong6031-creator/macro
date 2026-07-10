@@ -177,6 +177,31 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("china THS baskets: latest.json emit failed (%s)", e)
 
+    # W8-R5 — CN basket turn-watch organ: annotate THS baskets_ths.json with turn states.
+    # The artifact was already written by build_baskets_china.py (curated builder runs first
+    # in the asia lane — see dag.yml). Here we re-read the committed artifact and annotate
+    # the THS basket rows, then re-write baskets_ths.json. Additive — never fatal.
+    try:
+        _ths_fdir = site / "chinabasketdata"
+        _ths_turn_path = _ths_fdir / "basket_turn_cn.json"
+        if _ths_turn_path.exists():
+            _ths_turn_art = json.loads(_ths_turn_path.read_text())
+            _ths_turn_states = _ths_turn_art.get("baskets", {})
+            _ths_bj_path = _ths_fdir / "baskets_ths.json"
+            if _ths_bj_path.exists():
+                _ths_bj = json.loads(_ths_bj_path.read_text())
+                for _b in (_ths_bj.get("baskets") or []):
+                    _bid = _b.get("id")
+                    if _bid and _bid in _ths_turn_states:
+                        _b["turn_state"] = _ths_turn_states[_bid].get("state", "NONE")
+                        _b["turn_dd_252"] = _ths_turn_states[_bid].get("dd_252")
+                        _b["turn_evidence"] = _ths_turn_states[_bid].get("evidence", [])
+                _ths_bj_path.write_text(json.dumps(_ths_bj, separators=(",", ":"), default=str))
+                log.info("china_basket_turn: annotated %d THS baskets with turn states",
+                         len(_ths_bj.get("baskets") or []))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china_basket_turn: THS baskets.json annotation failed: %s", e)
+
     return 0
 
 

@@ -890,8 +890,17 @@ lanes:
         module: scripts.build_hk
       - id: build_baskets_china
         module: scripts.build_baskets_china
+        note: >
+          Curated 22-basket CN page + theme desk + sector pulse. W8-R5: calls
+          engine.china_basket_turn.run() inline at end — writes
+          site/chinabasketdata/basket_turn_cn.json (schema basket_turn_cn.v1)
+          + appends data/china_basket_turn/ledger.jsonl (CN_LANE=asia gate).
+          Display-tier expected-NULL forward meter (FT-R9); ≤2 min.
       - id: build_baskets_china_ths
         module: scripts.build_baskets_china_ths
+        note: >
+          THS 237-basket CN page. W8-R5: reads basket_turn_cn.json (written by
+          build_baskets_china above) and annotates THS basket rows with turn states.
       - id: build_baskets_hk
         module: scripts.build_baskets_hk
       - id: build_cn_reversal_sleeve

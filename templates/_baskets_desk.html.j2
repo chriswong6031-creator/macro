@@ -208,6 +208,23 @@
     border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:8px 0 2px; font-size:12.5px; }
   .sleeve-chip .sl-main b { font-weight:680; }
   .sleeve-chip .sl-tag { font-size:10.5px; font-style:italic; }
+
+  /* ---- W8-R5 CN basket turn-state chips (display-tier, expected-NULL; FT-R1) ---- */
+  /* Tape-state chip: inline, descriptive, no forward verbs. */
+  .tape-chip { font-size:9.5px; font-weight:700; letter-spacing:.04em; padding:1px 6px;
+    border-radius:5px; white-space:nowrap; border:1px solid; margin-left:3px; cursor:default; }
+  .tape-chip.TURNING  { color:var(--up);   border-color:var(--up);   background:rgba(34,197,94,.10); }
+  .tape-chip.CONFIRMED{ color:var(--up);   border-color:var(--up);   background:rgba(34,197,94,.16); }
+  .tape-chip.WASHED_OUT{ color:var(--warn);border-color:var(--warn); background:rgba(251,146,60,.10); }
+  .tape-chip.BASING   { color:var(--warn); border-color:var(--warn); background:rgba(251,146,60,.08); }
+  .tape-chip.FALLING  { color:var(--down); border-color:var(--down); background:rgba(248,113,113,.10); }
+  /* Dual-read chip: when trend DISAGREES with tape turn (FT-R1 — never merged) */
+  .dual-chip { display:inline-flex; align-items:center; gap:3px; font-size:9.5px; font-weight:700;
+    letter-spacing:.03em; padding:1px 6px; border-radius:5px; border:1px solid var(--warn);
+    background:rgba(251,146,60,.10); color:var(--text); cursor:default; white-space:nowrap; }
+  .dual-chip .dc-trend { color:var(--down); }
+  .dual-chip .dc-sep   { color:var(--muted); font-weight:400; }
+  .dual-chip .dc-tape  { color:var(--up); }
 </style>
 <div class="nav-ctrls" style="justify-content:flex-end;margin:4px 0 0">
     <div class="bell" id="theme-bell">
