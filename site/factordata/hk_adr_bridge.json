@@ -10,12 +10,7 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "JD": {
-      "asof": "2026-07-09",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "FXI": {
+    "KWEB": {
       "asof": "2026-07-09",
       "lag_days": 1,
       "state": "fresh"
@@ -25,12 +20,12 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "PDD": {
+    "FXI": {
       "asof": "2026-07-09",
       "lag_days": 1,
       "state": "fresh"
     },
-    "BABA": {
+    "PDD": {
       "asof": "2026-07-09",
       "lag_days": 1,
       "state": "fresh"
