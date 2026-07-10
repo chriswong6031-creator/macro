@@ -551,3 +551,41 @@ whitehouse.alert:
     SHADOW lane: graded nightly vs placebo tape after n_dates>=25 accrues.
     is_context_only=True on every claim — this desk is display-only; activation
     feeds no score, size, or allocation.
+
+# ---------------------------------------------------------------------------
+# NARRATIVE IGNITION — source credibility + flare-state accrual (W4)
+# ---------------------------------------------------------------------------
+narrative_source_call.cred:
+  field: cred
+  artifact_glob: "data/narrative_flare/source_registry.json"
+  producer: engine/source_registry.py
+  claim_family: narrative_source_call
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    NAR-W4 §4.3. One qledger claim per (source_id, ticker) row in
+    data/narrative_flare/first_coverage.parquet (W3 writes it). Direction=0
+    (salience-only; UNSIGNED). Graded at D+20 trading days: |excess vs SPY|>5%
+    = hit. Beta-Bernoulli registry updates from resolved hits.
+    Skeptical seed alpha=2, beta=5 (NAR-R3: no hand-set weights).
+    SHADOW lane: accruing forward; first useful credibility weights ~25 resolved
+    calls per source (SemiAnalysis likely first). CONFIRMER gate: n_dates>=25,
+    Wilson CI-low>0 vs matched control (NAR-R5; no verdict this wave).
+
+narrative_flare_state.excess:
+  field: excess
+  artifact_glob: "data/narrative_flare/grading_summary.json"
+  producer: engine/source_registry.py
+  claim_family: narrative_flare_state
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    NAR-W4 §4.3. One qledger claim per (ticker, date) where state_hist.parquet
+    prints PRIMED or later. Grades at 21d and 63d: forward excess return vs SPY
+    recorded (descriptive accrual only — no pass/fail verdict this wave, NAR-R5).
+    Direction=0 (salience-only). CONFIRMER question earliest ~2026-10 (n_dates>=25
+    on the state family; masterplan §10).
