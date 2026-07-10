@@ -31,9 +31,35 @@
     url = url || JSON_URL;
     if (!_dataPromises[url]) {
       _dataPromises[url] = fetch(url, { cache: 'no-cache' })
-        .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); });
+        .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+        .then(function (d) { d._url = url; return d; });
     }
     return _dataPromises[url];
+  }
+  // In-page freshness: the intraday lane recommits the feed every ~30 min during
+  // US market hours, so an open dashboard re-pulls its map every 10 min (visible
+  // tabs only) and repaints in place when generated_utc advances. The shared
+  // data object is mutated so every mounted view of that url sees the update.
+  var REFRESH_MS = 10 * 60 * 1000;
+  var _refreshers = {};                 // url -> interval id
+  function startAutoRefresh(url) {
+    url = url || JSON_URL;
+    if (_refreshers[url]) return;
+    _refreshers[url] = setInterval(function () {
+      if (document.hidden) return;
+      fetch(url, { cache: 'no-cache' })
+        .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+        .then(function (fresh) {
+          return loadData(url).then(function (cur) {
+            if (!fresh || !fresh.tiles || !fresh.tiles.length) return;
+            if (!fresh.generated_utc || fresh.generated_utc === cur.generated_utc) return;
+            Object.keys(fresh).forEach(function (k) { cur[k] = fresh[k]; });
+            cur._url = url;
+            try { document.dispatchEvent(new CustomEvent('hm-refresh', { detail: { url: url } })); } catch (e) { /* no-op */ }
+          });
+        })
+        .catch(function () { /* transient — the committed payload keeps serving */ });
+    }, REFRESH_MS);
   }
 
   /* ---- per-timeframe colour-scale floors (set the bin widths). 1D keeps the
@@ -79,9 +105,28 @@
     if (bn >= 1) return sym + bn.toFixed(1) + 'B';
     return sym + Math.max(1, Math.round(v / 1e6)) + 'M';   // sub-billion (small-cap / turnover)
   }
+  // Proxy-sized maps (the US map whenever the cap caches are absent) carry
+  // unit-less tile sizes — never render those as a $ figure. Real-unit maps
+  // either size by true market cap or declare their unit via size_label_en.
+  function realSize(data) { return data.size_basis === 'marketcap' || !!data.size_label_en; }
   // tile display ticker: strip the exchange suffix so CN/HK/CA tiles read
   // "601398" / "0700" / "RY" not "601398.SS" (no-op for US tickers).
   function dispT(t) { return String(t).replace(/\.(SS|SZ|SH|HK|TO|V|TSX|NE|CN)$/i, ''); }
+  // "updated 13:35 ET" from generated_utc ("YYYY-MM-DD HH:MM", UTC) — the honest
+  // freshness read for a live-spliced payload, where `asof` still names the
+  // close-cache date the multi-day windows are anchored to.
+  function fmtUpdated(data) {
+    var g = String(data.generated_utc || '');
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(g)) return '';
+    var d = new Date(g.slice(0, 16).replace(' ', 'T') + ':00Z');
+    if (isNaN(d.getTime())) return '';
+    try {
+      var hm = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false
+      }).format(d);
+      return (isZh() ? '更新于 ' : 'updated ') + hm + ' ET';
+    } catch (e) { return ''; }
+  }
   function fitTextFont(width, text, avgEm, minPx, maxPx) {
     var n = String(text || '').length || 1;
     var fit = (Math.max(0, width) - 6) / (n * (avgEm || 0.7));
@@ -266,25 +311,32 @@
   function bandClass(b) {
     return b === 'high' ? 'b-high' : b === 'constructive' ? 'b-con' : b === 'low' ? 'b-low' : 'b-neu';
   }
+  // The bottom strip stays scannable: five canonical windows, not every
+  // timeframe the feed carries (12 columns crammed unreadably at 300px).
+  // Terse code labels so no column ever wraps ("Year to date" did).
+  var CARD_TFS = ['1D', '1W', '1M', 'YTD', '1Y'];
+  var CARD_TF_LAB = { '1D': ['1D', '1日'], '1W': ['1W', '1周'], '1M': ['1M', '1月'],
+                      'YTD': ['YTD', '年初至今'], '1Y': ['1Y', '1年'] };
   function cardBaseHtml(data, t) {
     var labs = sectorLabels(data);
     var lab = labs[t.sector] || { en: t.sector, zh: t.sector };
     var cur = t.perf[data._tf];
     var cls = cur == null ? '' : (cur >= 0 ? 'up' : 'dn');
-    var sub = t.industry && t.industry !== t.sector ? ' · ' + esc(t.industry) : '';
-    var cap = fmtCap(t.size, data.currency);
+    var cap = realSize(data) ? fmtCap(t.size, data.currency) : '';
     var nm = (isZh() && t.name_zh) ? t.name_zh : t.name;
     var strip = '';
     (data.timeframes || []).forEach(function (tf) {
+      if (CARD_TFS.indexOf(tf.key) === -1) return;
       var v = t.perf[tf.key];
       if (v == null || isNaN(v)) return;
-      strip += '<div class="hm-c-m"><span class="k">' + L(tf.en, tf.zh) + '</span>'
+      var kl = CARD_TF_LAB[tf.key] || [tf.en, tf.zh];
+      strip += '<div class="hm-c-m"><span class="k">' + L(kl[0], kl[1]) + '</span>'
         + '<span class="v ' + (v >= 0 ? 'up' : 'dn') + '">' + fmtPc(v) + '</span></div>';
     });
     return ''
       + '<div class="hm-c-hd">'
       +   '<div class="hm-c-id"><div class="hm-c-sym">' + esc(dispT(t.t)) + '</div>'
-      +     '<div class="hm-c-nm">' + esc(nm) + ' · ' + L(lab.en, lab.zh) + sub + '</div></div>'
+      +     '<div class="hm-c-nm">' + esc(nm) + ' · ' + L(lab.en, lab.zh) + '</div></div>'
       +   '<div class="hm-c-px"><div class="hm-c-pxv" data-px>' + (cap || '—') + '</div>'
       +     '<div class="hm-c-chg ' + cls + '">' + fmtPc(cur) + '</div></div>'
       + '</div>'
@@ -303,7 +355,10 @@
             '该标的暂无每晚分析 — 点击打开分析器查看完整拆解。') + '</div>';
       return;
     }
-    var tech = rec.tech || {}, conv = rec.conviction || {}, prof = rec.profile || {}, val = rec.valuation || {};
+    // Deliberately spare: our band + score + one-line verdict, then two facts
+    // (size, vs 200d). Everything else lives one click away in the analyzer —
+    // a hover card that needs reading isn't a hover card.
+    var tech = rec.tech || {}, conv = rec.conviction || {};
     if (pxEl && tech.price != null) {
       var pxSym = CUR_SYM[data.currency] || '$';
       pxEl.textContent = pxSym + (tech.price >= 100 ? Math.round(tech.price).toLocaleString()
@@ -322,41 +377,18 @@
       h += '</div>';
       if (verdict) h += '<div class="hm-c-verdict">' + esc(verdict) + '</div>';
     }
-    var chips = '';
-    (conv.drivers || []).slice(0, 3).forEach(function (d) {
-      chips += '<span class="hm-c-chip ok">✓ ' + esc(String(d)) + '</span>';
-    });
-    var cautions = isZh() && conv.cautions_zh ? conv.cautions_zh : conv.cautions;
-    (cautions || []).slice(0, 2).forEach(function (c) {
-      chips += '<span class="hm-c-chip warn">⚠ ' + esc(String(c)) + '</span>';
-    });
-    if (chips) h += '<div class="hm-c-chips">' + chips + '</div>';
-
     var meta = '';
     // Label the size value (e.g. "Mkt cap ¥2.54万亿", or "Avg turnover HK$14.8B"
     // for the HK map) so the number is never mistaken for something it isn't.
     var szLab = data.size_basis === 'equal' ? '' : lz(data.size_label_en, data.size_label_zh);
-    var szVal = fmtCap(t.size, data.currency);
+    var szVal = realSize(data) ? fmtCap(t.size, data.currency) : '';
     if (szLab && szVal) meta += '<span class="hm-c-tag">' + esc(szLab) + ' <b>' + szVal + '</b></span>';
-    var arch = prof.archetype || {};
-    if (arch.label) meta += '<span class="hm-c-tag">' + esc(lz(arch.label, arch.label_zh)) + '</span>';
-    var cheap = (val.trailing_pe && val.trailing_pe.cheap != null) ? val.trailing_pe.cheap
-      : (val.cheap != null ? val.cheap : null);
-    if (cheap != null) {
-      var cl = cheap >= 60 ? 'ok' : (cheap <= 35 ? 'warn' : '');
-      meta += '<span class="hm-c-tag ' + cl + '">' + (cheap >= 50
-        ? L('cheap vs sector', '相对板块便宜') : L('rich vs sector', '相对板块偏贵')) + '</span>';
-    }
     if (tech.pct_vs_200dma != null) {
       var p2 = +tech.pct_vs_200dma;
       meta += '<span class="hm-c-tag">' + L('vs 200d', '相对200日') + ' '
         + '<b class="' + (p2 >= 0 ? 'up' : 'dn') + '">' + (p2 > 0 ? '+' : '') + p2.toFixed(0) + '%</b></span>';
     }
-    if (tech.rsi14 != null) meta += '<span class="hm-c-tag">RSI <b>' + Math.round(tech.rsi14) + '</b></span>';
     if (meta) h += '<div class="hm-c-meta">' + meta + '</div>';
-
-    var desc = lz(prof.description, prof.description_zh);
-    if (desc) h += '<div class="hm-c-desc">' + esc(desc) + '</div>';
 
     body.innerHTML = h || '<div class="hm-c-stub">' + L('Open the analyzer for the full read.', '打开分析器查看完整解读。') + '</div>';
   }
@@ -448,7 +480,7 @@
         + '<span class="hm-mem-pc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
         + '<span class="hm-mem-t">' + esc(dispT(t.t)) + '</span>'
         + '<span class="hm-mem-n">' + esc(rnm) + '</span>'
-        + '<span class="hm-mem-cap">' + fmtCap(t.size, data.currency) + '</span></div>';
+        + '<span class="hm-mem-cap">' + (realSize(data) ? fmtCap(t.size, data.currency) : '') + '</span></div>';
     });
     if (more) body += '<div class="hm-mem-more">+' + more + ' ' + L('more', '更多') + '</div>';
     var szLab = data.size_basis === 'equal' ? '' : lz(data.size_label_en, data.size_label_zh);
@@ -547,6 +579,17 @@
     var tm = root.querySelector('.hm-tm');
     var firstLayout = true;
     var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var IN_OV = !!(root.closest && root.closest('.hm-ov'));
+    function mapHeight() {
+      // In the full-page overlay the treemap fills the viewport — the map IS
+      // the page (Finviz look, no scrolling). Standalone pages keep a bounded
+      // band and scroll normally.
+      if (IN_OV) {
+        var top = wrap.getBoundingClientRect ? wrap.getBoundingClientRect().top : 0;
+        return Math.max(420, window.innerHeight - top - 48);
+      }
+      return Math.max(560, Math.min(window.innerHeight - 140, 1280));
+    }
 
     var TF = data.default_tf || '1D';
     if (!(data.timeframes || []).some(function (tf) { return tf.key === TF && tf.available; })) {
@@ -614,13 +657,14 @@
     function updateRead() {
       var br = breadth(data.tiles, '1D');
       var live = data.source === 'polygon-live';
+      var when = live ? (fmtUpdated(data) || data.asof || '—') : (data.asof || '—');
       var srcEn, srcZh;
       if (IS_THEMES) {
         srcEn = 'Themes · ' + (data.asof || '—');
         srcZh = '主题 · ' + (data.asof || '—');
       } else {
-        srcEn = (live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—');
-        srcZh = (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—');
+        srcEn = (live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + when;
+        srcZh = (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + when;
       }
       readEl.innerHTML = '<span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
         + '<span class="hm-read-src">' + L(srcEn, srcZh) + '</span>'
@@ -629,12 +673,11 @@
 
     /* ----- treemap (desktop) ----- */
     function tileLabel(t, tw, th) {
-      // declutter: only names with a readable footprint carry a label; the
-      // rest are pure colour (Finviz/TradingView behaviour).
+      // Finviz rule: a tile carries a label ONLY when the full ticker fits at a
+      // readable size — never clipped, never squeezed below legibility. Tiles
+      // too small for that are pure colour (their name lives in the hover card
+      // and the sector member list).
       var pc = t.perf[TF];
-      var showSym = tw >= 26 && th >= 17;
-      var showPc = tw >= 44 && th >= 31;
-      if (!showSym) return '';
       // CN/HK maps opt into a company-name label (data.tile_label==='name') — a
       // bare 601398 / 0700 code is meaningless at a glance. Prefer the Chinese
       // name, fall back to the English name, then the ticker. US / Canada leave
@@ -644,19 +687,22 @@
       // needs a wider per-char budget than a 6-digit code to fit the same tile.
       var cjk = false; for (var _i = 0; _i < sym.length; _i++) { var _cc = sym.charCodeAt(_i); if (_cc >= 0x3400 && _cc <= 0x9fff) { cjk = true; break; } }
       var nch = sym.length || 1;
-      var fitF = (tw - 5) / (nch * (cjk ? 1.06 : 0.80));
-      var symF = Math.max(4.4, Math.min(tw / 3.7, th * 0.52, fitF, 22));
+      var fitF = (tw - 6) / (nch * (cjk ? 1.06 : 0.78));
+      var symF = Math.min(tw / 3.7, th * 0.52, fitF, 22);
+      if (symF < (cjk ? 8 : 7) || th < 15) return '';
+      var s = '<span class="sym' + (symF < 10 ? ' sm' : '') + '" style="font-size:' + symF.toFixed(1) + 'px">' + esc(sym) + '</span>';
       var pcText = fmtPc(pc);
-      var pcF = Math.max(5, Math.min(tw / 5.4, th * 0.34, fitTextFont(tw, pcText, 0.62, 5, 13), 13));
-      var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(sym) + '</span>';
-      if (showPc) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
+      var pcF = Math.min(tw / 5.4, th * 0.34, fitTextFont(tw, pcText, 0.62, 5, 13), 13);
+      if (tw >= 44 && th >= 32 && pcF >= 6.5) {
+        s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
+      }
       return s;
     }
     function layoutTree() {
       mode = 'tree'; root.classList.remove('hm-mobile');
       var animate = firstLayout && !REDUCE; firstLayout = false;
       tileEls = []; secPc = [];
-      var H = Math.max(560, Math.min(window.innerHeight - 140, 1280));
+      var H = mapHeight();
       wrap.style.height = H + 'px'; tm.style.height = H + 'px';
       var W = tm.clientWidth || wrap.clientWidth;
       if (W <= 0) { requestAnimationFrame(layoutTree); return; }
@@ -729,19 +775,21 @@
     function tileLabelThemes(t, tw, th) {
       var pc = t.perf[TF];
       var showName = tw >= 30 && th >= 16;
-      var showPc = tw >= 40 && th >= 28;
       if (!showName) return '';
       var nameF = Math.max(8.5, Math.min(tw / 6.2, th * 0.34, 15));
-      var pcF = Math.max(8, Math.min(tw / 6.0, th * 0.30, 12.5));
+      // same Finviz rule as stock tiles: the % renders only when it fits at a
+      // readable size — no forced floor pushing it past the tile edge.
+      var pcText = fmtPc(pc);
+      var pcF = Math.min(tw / 6.0, th * 0.30, fitTextFont(tw, pcText, 0.62, 5, 12.5), 12.5);
       var s = '<span class="thn" style="font-size:' + nameF.toFixed(1) + 'px">' + esc(t.name) + '</span>';
-      if (showPc) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + fmtPc(pc) + '</span>';
+      if (tw >= 40 && th >= 28 && pcF >= 7) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
       return s;
     }
     function layoutThemes() {
       mode = 'tree'; root.classList.remove('hm-mobile');
       var animate = firstLayout && !REDUCE; firstLayout = false;
       tileEls = []; secPc = [];
-      var H = Math.max(560, Math.min(window.innerHeight - 140, 1280));
+      var H = mapHeight();
       wrap.style.height = H + 'px'; tm.style.height = H + 'px';
       var W = tm.clientWidth || wrap.clientWidth;
       if (W <= 0) { requestAnimationFrame(layoutThemes); return; }
@@ -865,7 +913,7 @@
       mode = 'tree'; root.classList.remove('hm-mobile');
       var animate = firstLayout && !REDUCE; firstLayout = false;
       tileEls = []; secPc = []; _liveTickerIdx = {};
-      var H = Math.max(560, Math.min(window.innerHeight - 140, 1280));
+      var H = mapHeight();
       wrap.style.height = H + 'px'; tm.style.height = H + 'px';
       var W = tm.clientWidth || wrap.clientWidth;
       if (W <= 0) { requestAnimationFrame(layoutStocksFlat); return; }
@@ -1072,18 +1120,32 @@
     function onResize() { clearTimeout(rt); rt = setTimeout(function () { hideCard(); hideMembers(); layout(); }, 150); }
     function onTheme() { hideCard(); hideMembers(); if (mode === 'tree') recolor(); else layoutList(); updateLegend(); updateRead(); }
     function onLang() { buildTabs(); buildSort(); updateLegend(); updateRead(); hideCard(); hideMembers(); layout(); }
+    function onRefresh(e) {
+      if (e.detail && e.detail.url !== (data._url || JSON_URL)) return;
+      hideCard(); hideMembers();
+      // a refresh can flip timeframe availability (e.g. intraday windows crossing
+      // the coverage threshold) — never leave the selection on a dead tab.
+      if (!(data.timeframes || []).some(function (tf) { return tf.key === TF && tf.available; })) {
+        var first = (data.timeframes || []).filter(function (tf) { return tf.available; })[0];
+        if (first) { TF = first.key; data._tf = TF; }
+      }
+      buildTabs(); updateLegend(); updateRead(); layout();
+    }
     window.addEventListener('resize', onResize);
     document.addEventListener('themechange', onTheme);
     document.addEventListener('langchange', onLang);
+    document.addEventListener('hm-refresh', onRefresh);
 
     data._tf = TF;
     buildTabs(); buildSort(); updateLegend(); updateRead(); layout();
+    startAutoRefresh(data._url || JSON_URL);
 
     return {
       destroy: function () {
         window.removeEventListener('resize', onResize);
         document.removeEventListener('themechange', onTheme);
         document.removeEventListener('langchange', onLang);
+        document.removeEventListener('hm-refresh', onRefresh);
         tm.removeEventListener('mousemove', onMove);
         tm.removeEventListener('mouseleave', onLeave);
         tm.removeEventListener('click', onClick);
@@ -1109,16 +1171,13 @@
     root.setAttribute('data-hm-init', '1');
     root.classList.add('hm-scope', 'hm-sc');
     var labs = sectorLabels(data);
-    var live = data.source === 'polygon-live';
     var TF = '1D';                                    // the dashboard map is a 1D snapshot
     var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var head = ''
       + '<div class="hm-sc-hd">'
       +   '<div class="hm-sc-tit">' + L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图') + '</div>'
-      +   '<div class="hm-sc-meta"><span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
-      +     L((live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—') + ' · ' + data.n_tiles + ' names',
-              (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—') + ' · ' + data.n_tiles + ' 只') + '</div>'
+      +   '<div class="hm-sc-meta"></div>'
       +   '<button type="button" class="hm-sc-exp" aria-label="Expand heatmap">⤢ ' + L('Expand', '展开') + '</button>'
       + '</div>';
     var foot = ''
@@ -1128,6 +1187,14 @@
       + '</div>';
     root.innerHTML = head + '<div class="hm-sc-map"><div class="hm-sc-tm"></div></div>' + foot;
     root.querySelector('.hm-sc-exp').addEventListener('click', openOverlay);
+
+    function paintMeta() {
+      var live = data.source === 'polygon-live';
+      var when = live ? (fmtUpdated(data) || data.asof || '—') : (data.asof || '—');
+      root.querySelector('.hm-sc-meta').innerHTML = '<span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
+        + L((live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + when + ' · ' + data.n_tiles + ' names',
+            (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + when + ' · ' + data.n_tiles + ' 只');
+    }
 
     var mapBox = root.querySelector('.hm-sc-map');
     var tm = root.querySelector('.hm-sc-tm');
@@ -1140,22 +1207,19 @@
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     function tileLabel(t, tw, th) {
-      // only names with a readable footprint carry a label; the rest are pure
-      // colour (Finviz / TradingView / Perplexity behaviour).
-      if (tw < 24 || th < 15) return '';
-      // cap the font to the tile width so long tickers (CMCSA, GOOGL…) shrink to fit
-      // instead of overflowing — the old 8px floor forced 5-char symbols past narrow edges.
+      // Finviz rule, compact edition: the preview map labels only the tiles
+      // where the full ticker fits at a readable size — small tiles are pure
+      // colour (fewer names, zero clipping; hover / Expand carry the detail).
+      if (tw < 30 || th < 16) return '';
       var nch = (t.t || '').length || 1;
-      var fitF = (tw - 5) / (nch * 0.80);
-      // tighter divisor + lower floor so the small/narrow tiles render their ticker
-      // smaller (fitF already caps to width); larger tiles compute above the floor
-      // and keep their size.
-      var symF = clamp(Math.min(tw / 4.2, th * 0.5, fitF), 4.2, 18);
-      var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
-      if (tw >= 40 && th >= 29) {
+      var fitF = (tw - 6) / (nch * 0.78);
+      var symF = Math.min(tw / 4.2, th * 0.5, fitF, 18);
+      if (symF < 7) return '';
+      var s = '<span class="sym' + (symF < 10 ? ' sm' : '') + '" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
+      if (tw >= 46 && th >= 30) {
         var pcText = fmtPc(t.perf[TF]);
-        var pcF = clamp(Math.min(tw / 5.6, th * 0.32, fitTextFont(tw, pcText, 0.62, 4.8, 12)), 4.8, 12);
-        s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
+        var pcF = Math.min(tw / 5.6, th * 0.32, fitTextFont(tw, pcText, 0.62, 4.8, 12));
+        if (pcF >= 6) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
       }
       return s;
     }
@@ -1259,12 +1323,17 @@
     tm.addEventListener('mouseleave', onLeave);
     tm.addEventListener('click', onClick);
 
-    function paint() { paintMap(); paintLegend(); paintBreadth(); }
+    function paint() { paintMeta(); paintMap(); paintLegend(); paintBreadth(); }
     paint();
     var rt;
     window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { hideCard(); hideMembers(); paint(); }, 160); });
     document.addEventListener('themechange', function () { hideCard(); hideMembers(); paint(); });
     document.addEventListener('langchange', function () { hideCard(); hideMembers(); paint(); });
+    document.addEventListener('hm-refresh', function (e) {
+      if (e.detail && e.detail.url !== (data._url || JSON_URL)) return;
+      hideCard(); hideMembers(); paint();
+    });
+    startAutoRefresh(data._url || JSON_URL);
   }
 
   /* ====================================================================== */
@@ -1354,6 +1423,8 @@
       + '.hm-tile:hover{z-index:8;filter:brightness(1.06);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text) 78%,transparent);}'
       + '.hm-tile .sym,.hm-tile .pc{display:block;max-width:calc(100% - 3px);white-space:nowrap;overflow:hidden;text-overflow:clip;}'
       + '.hm-tile .sym{font-weight:800;letter-spacing:.2px;}'
+      // small tiles read better without the heavy weight; tracking off too
+      + '.hm-tile .sym.sm{font-weight:600;letter-spacing:0;}'
       + '.hm-tile .pc{font-weight:600;font-variant-numeric:tabular-nums;opacity:.95;margin-top:1px;}'
       // map-type switcher (multi-map host: S&P 500 ⇄ Themes …)
       + '.hm-maptype{display:inline-flex;gap:3px;margin:0 0 14px;padding:4px;border-radius:12px;background:color-mix(in srgb,var(--panel2) 60%,transparent);border:1px solid var(--hm-edge);}'
@@ -1390,17 +1461,12 @@
       + '.hm-c-band.b-low{color:var(--down);background:color-mix(in srgb,var(--down) 15%,transparent);border:1px solid color-mix(in srgb,var(--down) 34%,transparent);}'
       + '.hm-c-score{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);} .hm-c-score small{font-size:10.5px;color:var(--muted);font-weight:600;}'
       + '.hm-c-verdict{font-size:12.5px;font-weight:600;line-height:1.45;color:var(--text);}'
-      + '.hm-c-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}'
-      + '.hm-c-chip{font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);}'
-      + '.hm-c-chip.ok{color:var(--up);border-color:color-mix(in srgb,var(--up) 32%,var(--line));}'
-      + '.hm-c-chip.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 32%,var(--line));}'
-      + '.hm-c-meta{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:9px;font-size:11px;color:var(--muted);align-items:center;}'
+      + '.hm-c-meta{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:9px;font-size:11px;color:var(--muted);align-items:center;}'
       + '.hm-c-tag{display:inline-flex;align-items:center;gap:4px;} .hm-c-tag b{font-variant-numeric:tabular-nums;color:var(--text);}'
-      + '.hm-c-tag.ok b,.hm-c-tag.ok{color:var(--up);} .hm-c-tag.warn,.hm-c-tag.warn b{color:var(--warn);}'
-      + '.hm-c-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-top:9px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}'
       + '.hm-c-stub{font-size:11.5px;color:var(--muted);line-height:1.5;}'
-      + '.hm-c-strip{display:flex;flex-wrap:wrap;gap:0;margin-top:11px;padding-top:9px;border-top:1px solid var(--line);}'
-      + '.hm-c-m{flex:1 1 16.6%;text-align:center;min-width:34px;} .hm-c-m .k{display:block;font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;} .hm-c-m .v{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;}'
+      // five evenly-spread windows — room to breathe, never a 12-column cram
+      + '.hm-c-strip{display:flex;justify-content:space-between;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);}'
+      + '.hm-c-m{flex:1;text-align:center;min-width:0;} .hm-c-m .k{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;} .hm-c-m .v{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;}'
       + '.hm-c-foot{margin-top:10px;font-size:11px;font-weight:700;color:var(--link);}'
       // member popup (sector / subsector)
       + '.hm-mem{position:fixed;z-index:1200;left:0;top:0;width:286px;max-width:calc(100vw - 16px);background:color-mix(in srgb,var(--panel) 97%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));border-radius:13px;padding:0;box-shadow:0 8px 24px rgba(0,0,0,.34);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .13s,transform .13s;overflow:hidden;}'
@@ -1437,16 +1503,24 @@
       + '.hm-sc-blab{text-transform:uppercase;letter-spacing:.05em;font-weight:700;font-size:10px;white-space:nowrap;}'
       + '.hm-sc-bar{width:96px;height:7px;border-radius:4px;overflow:hidden;display:flex;background:var(--panel2);} .hm-sc-bar i{display:block;height:100%;} .hm-sc-bar i.up{background:var(--up);} .hm-sc-bar i.dn{background:var(--down);}'
       + '.hm-sc-bn{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;} .hm-sc-bn b.up{color:var(--up);} .hm-sc-bn b.dn{color:var(--down);}'
-      // overlay
-      + '.hm-ov{position:fixed;inset:0;z-index:1000;display:flex;align-items:stretch;justify-content:center;}'
-      + '.hm-ov-scrim{position:absolute;inset:0;background:rgba(4,6,10,.72);opacity:0;transition:opacity .3s;}'
+      // overlay — a full-page takeover, not a floating dialog: the map fills the
+      // viewport edge to edge (Finviz look) under a slim header strip. The body
+      // normally fits without scrolling (mapHeight sizes the treemap to the
+      // viewport); when it does overflow, the scrollbar is the site's thin
+      // themed one, never the OS default.
+      + '.hm-ov{position:fixed;inset:0;z-index:1000;display:flex;}'
+      + '.hm-ov-scrim{position:absolute;inset:0;background:rgba(4,6,10,.72);opacity:0;transition:opacity .28s;}'
       + '.hm-ov.open .hm-ov-scrim{opacity:1;}'
-      + '.hm-ov-panel{position:relative;margin:auto;width:min(1720px,96vw);height:min(95vh,1340px);background:var(--bg);border:1px solid var(--hm-edge);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s cubic-bezier(.2,.7,.3,1);}'
+      + '.hm-ov-panel{position:relative;width:100vw;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:scale(.985);transition:opacity .28s,transform .28s cubic-bezier(.2,.7,.3,1);}'
       + '.hm-ov.open .hm-ov-panel{opacity:1;transform:none;}'
-      + '.hm-ov-head{display:flex;align-items:center;padding:13px 18px;border-bottom:1px solid var(--line);flex:none;}'
-      + '.hm-ov-head .t{font-size:15px;font-weight:800;color:var(--text);}'
+      + '.hm-ov-head{display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--line);flex:none;}'
+      + '.hm-ov-head .t{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.01em;}'
       + '.hm-ov-x{margin-left:auto;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:14px;cursor:pointer;transition:background .15s;} .hm-ov-x:hover{background:var(--panel);}'
-      + '.hm-ov-body{flex:1;overflow:auto;padding:15px 18px 20px;}'
+      + '.hm-ov-body{flex:1;overflow:auto;padding:14px 18px 16px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;}'
+      + '.hm-ov-body::-webkit-scrollbar{width:10px;height:10px;}'
+      + '.hm-ov-body::-webkit-scrollbar-track{background:transparent;}'
+      + '.hm-ov-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;border:2px solid transparent;background-clip:content-box;}'
+      + '.hm-ov-body::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--text) 30%,var(--line));border-radius:8px;border:2px solid transparent;background-clip:content-box;}'
       // mobile
       + '.hm-mgrp{margin-bottom:14px;}'
       + '.hm-mhd{display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--panel2);border:1px solid var(--line);border-radius:10px 10px 0 0;border-bottom:0;}'
