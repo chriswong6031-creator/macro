@@ -10,5 +10,20 @@
   ],
   "capex_coverage": 7246,
   "pit_gate_applied": true,
-  "pit_gate_rows_nulled": 54
+  "pit_gate_rows_nulled": 54,
+  "share_quality": {
+    "applied": "2026-07-10T17:12:00.677748+00:00",
+    "rows_flagged": 321,
+    "tickers_flagged": 185,
+    "by_flag": {
+      "placeholder": 50,
+      "pre_public": 213,
+      "pre_public_tiny": 5,
+      "unit_extreme": 7,
+      "unit_level": 8,
+      "unit_scale": 38
+    },
+    "repaired": 79,
+    "nulled": 242
+  }
 }

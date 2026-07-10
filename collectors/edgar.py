@@ -148,16 +148,27 @@ def _annual(concept: str, year: int, unit: str = "USD") -> dict[int, float]:
     return {cik: v for cik, (v, _e) in _frame(_cfg()["base_url"], concept, f"CY{year}", unit).items()}
 
 
-def _shares(year: int) -> dict[int, float]:
-    """Shares outstanding: us-gaap balance scan, dei cover-page fallback."""
-    out = _latest_balance_shares(SHARES_USGAAP, year, _cfg()["base_url"])
+def _shares_by_source(year: int) -> tuple[dict[int, float], dict[int, float]]:
+    """(us-gaap balance-scan counts, dei cover-page counts) per CIK. Kept
+    separate so the panel can carry the DEI count as `shares_dei` — the
+    share-quality pass repairs wrong-fact us-gaap picks (ED fy2010-15 carries a
+    2.2e7 non-primary count while the DEI cover says ~2.9e8) from the same
+    filing family, which is PIT-legal."""
+    gaap = _latest_balance_shares(SHARES_USGAAP, year, _cfg()["base_url"])
     dei_base = _cfg()["shares_url"]
     best: dict[int, tuple[float, str]] = {}
     for q in ("Q4I", "Q3I", "Q2I", "Q1I"):
         for cik, (val, end) in _frame(dei_base, SHARES_DEI, f"CY{year}{q}", "shares").items():
             if cik not in best or end > best[cik][1]:
                 best[cik] = (val, end)
-    for cik, (val, _e) in best.items():
+    return gaap, {cik: v for cik, (v, _e) in best.items()}
+
+
+def _shares(year: int) -> dict[int, float]:
+    """Shares outstanding: us-gaap balance scan, dei cover-page fallback."""
+    gaap, dei = _shares_by_source(year)
+    out = dict(gaap)
+    for cik, val in dei.items():
         out.setdefault(cik, val)           # only fill gaps us-gaap missed
     return out
 
@@ -388,7 +399,11 @@ PANEL_NUMERIC = ["assets", "equity", "debt_lt", "shares", "ni", "gross_profit",
                  # and restore interest_coverage (was 0% coverage in W1 kill-test).
                  # PIT discipline is identical to existing FLOW fields: values are stamped
                  # with asof_date = period_end + reporting_lag_days (120d conservative proxy).
-                 "op_income", "interest_exp"]
+                 "op_income", "interest_exp",
+                 # DEI cover-page share count kept alongside the us-gaap pick so the
+                 # share-quality pass (collectors/edgar_share_quality.py) can repair
+                 # wrong-fact unit artifacts from the same filing family (PIT-legal).
+                 "shares_dei"]
 
 # LT-1c: capex is NOT available from the EDGAR frames API (it is a sub-line of the
 # cash-flow statement that the frames endpoint does not serve as a standalone concept).
@@ -543,8 +558,14 @@ def _year_fundamentals(year: int) -> dict[int, dict]:
     for key in ("equity", "debt_lt"):
         for cik, (val, _e) in bal[key].items():
             out.setdefault(cik, {})[key] = val
-    for cik, val in _shares(year).items():
+    gaap_sh, dei_sh = _shares_by_source(year)
+    merged_sh = dict(gaap_sh)
+    for cik, val in dei_sh.items():
+        merged_sh.setdefault(cik, val)
+    for cik, val in merged_sh.items():
         out.setdefault(cik, {})["shares"] = val
+    for cik, val in dei_sh.items():
+        out.setdefault(cik, {})["shares_dei"] = val
     for key, concept in FLOW.items():
         for cik, val in _annual(concept, year).items():
             out.setdefault(cik, {})[key] = val
@@ -618,6 +639,23 @@ def fetch_panel(force: bool = False, max_age_days: int = 7,
     if PANEL_STATEMENTS_JOIN:
         panel = _join_statements_fields(panel, PANEL_STATEMENTS_JOIN, reporting_lag_days=lag)
 
+    # Share-count unit-artifact pass: repair/null rows whose cover-page counts are
+    # scale typos, placeholder registrations, wrong-fact picks, or pre-public
+    # capital structures (13-1000x PIT mktcap corruption otherwise — see
+    # collectors/edgar_share_quality.py). Additive + never fatal: on any failure
+    # the panel ships as fetched, with shares_raw/share_flag absent.
+    sq_audit: dict = {}
+    try:
+        from collectors.edgar_share_quality import (
+            apply_share_quality, build_reference, suspicious_tickers)
+        ref = build_reference(suspicious_tickers(panel))
+        panel, sq_audit = apply_share_quality(panel, ref)
+        (config.data_dir() / "edgar" / "_share_quality_audit.json").write_text(
+            json.dumps(sq_audit, indent=0))
+    except Exception as e:  # noqa: BLE001 — quality pass must not block the panel
+        log.warning("share quality pass failed (%s) — panel ships unrepaired", e)
+        sq_audit = {"error": str(e)}
+
     panel.to_parquet(panel_p)
     all_numeric = PANEL_NUMERIC + [f for f in PANEL_STATEMENTS_JOIN if f in panel.columns]
     _panel_meta_path().write_text(json.dumps({
@@ -627,6 +665,9 @@ def fetch_panel(force: bool = False, max_age_days: int = 7,
         "n_tickers": int(panel["ticker"].nunique()),
         "statements_join_fields": PANEL_STATEMENTS_JOIN,
         "capex_coverage": int(panel["capex"].notna().sum()) if "capex" in panel.columns else 0,
+        "share_quality": {k: sq_audit[k] for k in
+                          ("rows_flagged", "tickers_flagged", "by_flag",
+                           "repaired", "nulled", "error") if k in sq_audit},
     }))
     log.info("edgar panel: %d rows, %d tickers, FY%d..%d",
              len(panel), panel["ticker"].nunique(), panel["fy"].min(), panel["fy"].max())
