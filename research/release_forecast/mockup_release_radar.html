@@ -838,7 +838,7 @@ h2{font-size:15px;font-weight:700;margin:0 0 4px}
         if (srcs.indexOf('cleveland_nowcast') !== -1) srcTag = 'CLE';
         else if (srcs.indexOf('kalshi') !== -1 || srcs.indexOf('polymarket') !== -1) srcTag = 'MKT';
         var valStr = useK ? fmtK(er.expectation_median) : fmtNum(er.expectation_median,2)+'pp';
-        return {val:valStr, labelEN:'exp 本方', labelZH:'exp 预期', src:srcTag};
+        return {val:valStr, labelEN:'exp', labelZH:'预期', src:srcTag};
       }
       var bs = item.benchmark_set || {};
       var benchKeys = isClaims
@@ -855,7 +855,7 @@ h2{font-size:15px;font-weight:700;margin:0 0 4px}
         ? (vals[vals.length/2-1]+vals[vals.length/2])/2
         : vals[Math.floor(vals.length/2)];
       var valStr = useK ? fmtK(med) : fmtNum(med,2)+'pp';
-      return {val:valStr, labelEN:'bench 基准', labelZH:'bench 基准', src:null};
+      return {val:valStr, labelEN:'bench', labelZH:'基准', src:null};
     }
 
     /* ---- MRI-R39a: compact card (operator directive 1-3) ---- */
@@ -942,7 +942,7 @@ h2{font-size:15px;font-weight:700;margin:0 0 4px}
           : '';
         numsRow = '<div class="rr-nums-row">'
           +'<div class="rr-num-col">'
-          +'<div class="rr-num-lbl"><span class="l-en">ours 本方</span><span class="l-zh">本方</span></div>'
+          +'<div class="rr-num-lbl"><span class="l-en">ours</span><span class="l-zh">本方</span></div>'
           +(oursVal==='—'
             ? '<div class="rr-num-dash">—</div>'
             : '<div class="rr-num-val">'+esc(oursVal)+'</div>')
@@ -1647,7 +1647,7 @@ h2{font-size:15px;font-weight:700;margin:0 0 4px}
           _smOpen = !_smOpen;
           smWrap.style.display = _smOpen ? '' : 'none';
           smBtn.innerHTML = _smOpen
-            ? '<span class="l-en">See less 收起</span><span class="l-zh">收起</span>'
+            ? '<span class="l-en">See less</span><span class="l-zh">收起</span>'
             : '<span class="l-en">See more ('+hiddenFinal.length+')</span><span class="l-zh">显示更多（'+hiddenFinal.length+'）</span>';
         });
       }
