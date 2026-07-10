@@ -1,20 +1,20 @@
 {
   "schema": "mastermind_nw_feedback.v2",
-  "generated_at": "2026-07-09T22:25:00Z",
+  "generated_at": "2026-07-10T12:25:00Z",
   "window_days": 14,
   "thesis_counts": {
-    "open": 24,
-    "closed_or_rebuilt": 31,
-    "total": 55
+    "open": 26,
+    "closed_or_rebuilt": 33,
+    "total": 59
   },
   "run_counts": {
     "hk_daily": {
-      "ok": 4,
+      "ok": 5,
       "error": 0,
       "other": 0
     },
     "china_daily": {
-      "ok": 4,
+      "ok": 5,
       "error": 0,
       "other": 0
     },
@@ -24,17 +24,17 @@
       "other": 0
     },
     "macro_refresh": {
-      "ok": 28,
+      "ok": 33,
       "error": 0,
       "other": 0
     },
     "watch_us_overnight": {
-      "ok": 10,
+      "ok": 13,
       "error": 0,
       "other": 0
     },
     "publish_macro_snapshot": {
-      "ok": 7,
+      "ok": 8,
       "error": 0,
       "other": 0
     },
@@ -44,47 +44,47 @@
       "other": 0
     },
     "watch_asia_overnight": {
-      "ok": 11,
+      "ok": 12,
       "error": 0,
       "other": 0
     },
     "daily_mark": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
     "daily_loop": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
     "autonomous_daily": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
     "etf_daily": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
     "heavyweight_daily": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
     "loop_maintenance": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
     "experiment_maturity": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
     "settle_brain_asia": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
@@ -119,7 +119,7 @@
         },
         "total": 19
       },
-      "rejected_decision_count": 141,
+      "rejected_decision_count": 136,
       "lock_conflict_count": 0,
       "stale_freeze_count": 14
     },
@@ -203,37 +203,37 @@
       {
         "book_id": "autonomous",
         "packet_accepted": 0,
-        "packet_rejected": 10
+        "packet_rejected": 11
       },
       {
         "book_id": "china",
         "packet_accepted": 0,
-        "packet_rejected": 17
+        "packet_rejected": 19
       },
       {
         "book_id": "etf",
         "packet_accepted": 0,
-        "packet_rejected": 10
+        "packet_rejected": 11
       },
       {
         "book_id": "flagship_judgment",
         "packet_accepted": 0,
-        "packet_rejected": 10
+        "packet_rejected": 11
       },
       {
         "book_id": "heavyweight",
         "packet_accepted": 0,
-        "packet_rejected": 2
+        "packet_rejected": 3
       },
       {
         "book_id": "hk",
         "packet_accepted": 0,
-        "packet_rejected": 10
+        "packet_rejected": 12
       }
     ],
     "rejection_error_classes": {
-      "expected_failure_mode": 59,
-      "falsifiers": 59
+      "expected_failure_mode": 67,
+      "falsifiers": 67
     }
   },
   "outcome_mix": {
@@ -243,11 +243,11 @@
   },
   "context_audit": {
     "state": "ok",
-    "n_present": 8,
+    "n_present": 9,
     "n_stale": 1,
     "n_absent": 0,
-    "n_runs_total": 9,
-    "context_seen_rate": 0.889
+    "n_runs_total": 10,
+    "context_seen_rate": 0.9
   },
   "metric_families": {
     "live": [
