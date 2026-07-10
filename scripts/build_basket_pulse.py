@@ -47,7 +47,7 @@ import logging
 import os
 import statistics
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -654,16 +654,39 @@ def build(
             lastgood = None
 
         if lastgood is not None:
-            # Serve the last good read with updated mode stamp
-            lastgood = dict(lastgood)
-            lastgood["mode"] = MODE_LAST_RTH
-            lastgood["built"] = now.strftime("%Y-%m-%d %H:%M:%S UTC")
-            # Preserve original as_of_quotes from lastgood; add a served_utc stamp
-            lastgood["served_utc"] = now.isoformat()
-            lastgood["session"] = session
-            log.info("serving lastgood sidecar (mode=last_rth) from %s",
-                     lastgood.get("as_of_utc", "?"))
-            return lastgood
+            # TS-U0 age guard: if the sidecar is older than the last completed NYSE
+            # session (e.g. intraday lane was down over a weekend/holiday), fall through
+            # to eod so we don't serve a multi-day-old read stamped "LAST SESSION".
+            sidecar_ok = False
+            try:
+                from lib import nyse_calendar  # lazy, avoids circular at module level
+                as_of_str = lastgood.get("as_of_utc") or lastgood.get("as_of_quotes")
+                if as_of_str:
+                    sidecar_date = datetime.fromisoformat(as_of_str).date()
+                    last_completed = nyse_calendar.expected_last_session(now)
+                    sidecar_ok = (sidecar_date >= last_completed)
+                    if not sidecar_ok:
+                        log.info(
+                            "lastgood sidecar date %s is older than last session %s — "
+                            "falling through to eod",
+                            sidecar_date, last_completed,
+                        )
+            except Exception as exc:  # noqa: BLE001
+                # If calendar check fails, be conservative and serve the sidecar anyway
+                log.debug("lastgood age-check error (serving anyway): %s", exc)
+                sidecar_ok = True
+
+            if sidecar_ok:
+                # Serve the last good read with updated mode stamp
+                lastgood = dict(lastgood)
+                lastgood["mode"] = MODE_LAST_RTH
+                lastgood["built"] = now.strftime("%Y-%m-%d %H:%M:%S UTC")
+                # Preserve original as_of_quotes from lastgood; add a served_utc stamp
+                lastgood["served_utc"] = now.isoformat()
+                lastgood["session"] = session
+                log.info("serving lastgood sidecar (mode=last_rth) from %s",
+                         lastgood.get("as_of_utc", "?"))
+                return lastgood
 
         # No sidecar → EOD fallback
         log.info("no lastgood sidecar — attempting EOD fallback (mode=eod)")

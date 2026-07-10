@@ -782,8 +782,9 @@ function anatomyPanelHtml(th){
 // ── staleness banner (TS-R6): shown when basket detail as_of predates today's session
 function stalenessBannerHtml(detailAsOf){
   if(!detailAsOf) return '';
-  // Compare detail as_of date to today in ET (best-effort: use local date)
-  var today=new Date().toISOString().slice(0,10);
+  // Compare detail as_of date to today in ET so 19:00–24:00 UTC (next UTC day) does
+  // not falsely flag a same-session as_of as stale.
+  var today=(function(){try{return new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});}catch(e){return new Date().toISOString().slice(0,10);}})();
   if(detailAsOf>=today) return '';
   // The page's data predates the current calendar day → session not yet ingested
   return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;'

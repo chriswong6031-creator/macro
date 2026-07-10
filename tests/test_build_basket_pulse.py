@@ -718,3 +718,129 @@ class TestGradedModes:
                 json.dumps(result, allow_nan=False)
             except Exception as e:
                 raise AssertionError(f"mode={label}: NaN in output: {e}") from e
+
+
+class TestSidecarDurability:
+    """TS-U0 blocker fix: sidecar must be in the fastpath staging set, and the
+    age guard must gate stale sidecars before serving last_rth."""
+
+    def _synthetic_membership(self, tmp_path: Path) -> Path:
+        m = {
+            "version": "test",
+            "baskets": _make_membership({
+                "basket_a": ["AA", "AB", "AC"],
+                "basket_b": ["BA", "BB"],
+            }),
+        }
+        p = tmp_path / "membership.json"
+        p.write_text(json.dumps(m))
+        return p
+
+    def test_lastgood_path_in_fastpath_staging(self):
+        """The sidecar filename must appear in the intraday-fastpath.yml staging block.
+
+        This is a durability guard: if the workflow doesn't force-stage the sidecar
+        it is wiped by actions/checkout at the next tick and last_rth never fires.
+        """
+        import re
+        wf = Path(__file__).parent.parent / ".github" / "workflows" / "intraday-fastpath.yml"
+        if not wf.exists():
+            pytest.skip("intraday-fastpath.yml not present in this checkout")
+        content = wf.read_text()
+        assert bp.LASTGOOD_FILENAME in content, (
+            f"{bp.LASTGOOD_FILENAME} must be force-staged in {wf.name}; "
+            "otherwise the sidecar is wiped by checkout and last_rth can never fire."
+        )
+
+    def test_stale_sidecar_falls_through_to_eod(self, tmp_path, monkeypatch):
+        """A sidecar older than the last completed NYSE session must NOT be served as
+        last_rth — it should fall through to eod to avoid implying stale numbers
+        are 'LAST SESSION'."""
+        # Sidecar dated 2026-07-01 (many days ago, always older than last session)
+        old_date = "2026-07-01T20:00:00+00:00"
+        lastgood = {
+            "schema": "basket_pulse.v1",
+            "as_of_utc": old_date,
+            "as_of_quotes": old_date,
+            "built": "2026-07-01 20:00:00 UTC",
+            "session": "rth",
+            "mode": bp.MODE_DELAYED,
+            "delay_min_median": 238.0,
+            "coverage_pct": 99.5,
+            "quotes_source": None,
+            "n_quotes_total": 5,
+            "stale_min": 20,
+            "baskets": [
+                {"id": "basket_a", "n_members": 3, "n_quoted": 3,
+                 "live_ew_chg_pct": 2.5, "cum_2d_pct": None, "tape_rank": 2,
+                 "stale": True, "delay_min": 238.0},
+            ],
+            "od_spread_print": None,
+            "shock_day_relative_bid": None,
+            "complexes": [],
+        }
+        sidecar_path = tmp_path / bp.LASTGOOD_FILENAME
+        sidecar_path.write_text(json.dumps(lastgood))
+
+        # Post-session on 2026-07-09 (sidecar is 8 days old — well beyond any holiday gap)
+        now = datetime(2026, 7, 9, 21, 0, tzinfo=timezone.utc)  # 17:00 ET
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text('{"quotes":{}}')
+        mem_path = self._synthetic_membership(tmp_path)
+
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_eod_basket_chg", lambda bid, mems: (None, None))
+
+        result = bp.build(
+            quotes_path=qs_path, membership_path=mem_path, now=now,
+            out_dir=tmp_path,
+        )
+        # Stale sidecar must be rejected; result must be eod, NOT last_rth
+        assert result["mode"] == bp.MODE_EOD, (
+            f"expected mode=eod when sidecar is multi-day stale, got {result['mode']!r}"
+        )
+
+    def test_fresh_sidecar_serves_last_rth(self, tmp_path, monkeypatch):
+        """A same-day sidecar is served as last_rth (age guard passes)."""
+        # Sidecar dated same day as the post-close tick (2026-07-09)
+        fresh_date = "2026-07-09T18:00:00+00:00"
+        lastgood = {
+            "schema": "basket_pulse.v1",
+            "as_of_utc": fresh_date,
+            "as_of_quotes": fresh_date,
+            "built": "2026-07-09 18:00:00 UTC",
+            "session": "rth",
+            "mode": bp.MODE_DELAYED,
+            "delay_min_median": 238.0,
+            "coverage_pct": 99.5,
+            "quotes_source": None,
+            "n_quotes_total": 5,
+            "stale_min": 20,
+            "baskets": [
+                {"id": "basket_a", "n_members": 3, "n_quoted": 3,
+                 "live_ew_chg_pct": 2.5, "cum_2d_pct": None, "tape_rank": 2,
+                 "stale": True, "delay_min": 238.0},
+            ],
+            "od_spread_print": None,
+            "shock_day_relative_bid": None,
+            "complexes": [],
+        }
+        sidecar_path = tmp_path / bp.LASTGOOD_FILENAME
+        sidecar_path.write_text(json.dumps(lastgood))
+
+        # Post-session on 2026-07-09 (after 17:00 ET = 21:00 UTC)
+        now = datetime(2026, 7, 9, 21, 0, tzinfo=timezone.utc)
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text('{"quotes":{}}')
+        mem_path = self._synthetic_membership(tmp_path)
+
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+
+        result = bp.build(
+            quotes_path=qs_path, membership_path=mem_path, now=now,
+            out_dir=tmp_path,
+        )
+        assert result["mode"] == bp.MODE_LAST_RTH, (
+            f"expected mode=last_rth for fresh same-day sidecar, got {result['mode']!r}"
+        )
+        assert result["baskets"][0]["live_ew_chg_pct"] == pytest.approx(2.5, abs=0.01)
