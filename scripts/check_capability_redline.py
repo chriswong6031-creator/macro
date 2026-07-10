@@ -73,6 +73,7 @@ SCAN_PATHS = [
 SCAN_IF_PRESENT = [
     "data/neuralweb/capability_audit.jsonl",
     "data/metabolism/key_ledger.jsonl",   # V2-B: key usage belief-state (NEVER a token value)
+    "data/metabolism/journal/*.json",     # V2-B: freeze/stage journals (committed; symmetry w/ ledger)
 ]
 
 # The ONLY env keys the broker may legitimately READ (non-secret attribution
