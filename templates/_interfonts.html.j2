@@ -1,0 +1,13 @@
+{#- Self-hosted Inter @font-face for STANDALONE pages that do not link theme.css
+    (pages extending report_base.html.j2 already get these via that link).
+    The 6 blocks are copied verbatim from the top of templates/theme.css — keep
+    the two in sync. Relative fonts/ URLs assume the page renders to the site
+    root; every current user does (all builders write flat site/*.html). -#}
+<style>
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
+</style>
