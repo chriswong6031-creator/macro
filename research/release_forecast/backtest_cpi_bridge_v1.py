@@ -122,6 +122,29 @@ def _compute_metrics(rows: list[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Expanding mean benchmark (MRI-R28b — REPORTED columns, non-binding)
+# ---------------------------------------------------------------------------
+
+def _attach_expanding_mean_bridge(aligned: list[dict]) -> None:
+    """Annotate aligned bridge rows with baseline_expanding_mean (no lookahead).
+
+    aligned rows are sorted by period. At row j, expanding_mean = mean of actuals[0:j].
+    For j=0, expanding_mean is None.
+    """
+    cum_sum = 0.0
+    cum_count = 0
+    for r in aligned:
+        if cum_count == 0:
+            r["baseline_expanding_mean"] = None
+        else:
+            r["baseline_expanding_mean"] = cum_sum / cum_count
+        actual = r.get("actual")
+        if actual is not None:
+            cum_sum += actual
+            cum_count += 1
+
+
+# ---------------------------------------------------------------------------
 # Main backtest runner
 # ---------------------------------------------------------------------------
 
@@ -182,6 +205,9 @@ def run_backtest(release: str, root: Path) -> dict:
             "champ_predicted": cr["predicted"],
         })
 
+    # Attach expanding_mean to aligned rows (MRI-R28b)
+    _attach_expanding_mean_bridge(aligned)
+
     # Slice by era (exclude COVID from era stats)
     def _slice(era_label: str) -> list[dict]:
         return [r for r in aligned if r["era"] == era_label and not r["is_covid"]]
@@ -203,7 +229,8 @@ def run_backtest(release: str, root: Path) -> dict:
             return {"n": 0, "mae_bridge": None, "rmse_bridge": None,
                     "mae_naive": None, "rmse_naive": None,
                     "mae_trailing3m": None, "rmse_trailing3m": None,
-                    "mae_champ": None, "rmse_champ": None}
+                    "mae_champ": None, "rmse_champ": None,
+                    "mae_expanding_mean": None}
         bridge_errors = [r["bridge_predicted"] - r["actual"]
                          for r in rows if r.get("bridge_predicted") is not None]
         naive_errors = [r["baseline_naive"] - r["actual"]
@@ -212,6 +239,9 @@ def run_backtest(release: str, root: Path) -> dict:
                       for r in rows if r.get("baseline_trailing3m") is not None]
         champ_errors = [r["champ_predicted"] - r["actual"]
                         for r in rows if r.get("champ_predicted") is not None]
+        expm_errors = [r["baseline_expanding_mean"] - r["actual"]
+                       for r in rows
+                       if r.get("baseline_expanding_mean") is not None and r.get("actual") is not None]
         return {
             "n": len(bridge_errors),
             "mae_bridge": _mae(bridge_errors),
@@ -222,6 +252,8 @@ def run_backtest(release: str, root: Path) -> dict:
             "rmse_trailing3m": _rmse(t3m_errors),
             "mae_champ": _mae(champ_errors),
             "rmse_champ": _rmse(champ_errors),
+            # REPORTED (non-binding) per MRI-R28b
+            "mae_expanding_mean": _mae(expm_errors),
         }
 
     era_stats: dict[str, dict] = {}
@@ -276,10 +308,11 @@ def run_backtest(release: str, root: Path) -> dict:
 
 def _print_era_table(era_stats: dict[str, dict], release: str) -> str:
     """Format era stats as a markdown table string."""
+    fmt = lambda x: f"{x:.4f}" if x is not None else "—"
     lines = [
         f"\n### {release} — era metrics\n",
-        "| Era | N | MAE bridge | MAE naive | MAE champ | MAE trail3m |",
-        "|---|---|---|---|---|---|",
+        "| Era | N | MAE bridge | MAE naive | MAE champ | MAE trail3m | MAE ExpandMean* |",
+        "|---|---|---|---|---|---|---|",
     ]
     for era_label in ["full", "pre_2010", "2010_2020", "2021_plus", "covid_separate"]:
         m = era_stats.get(era_label, {})
@@ -288,10 +321,12 @@ def _print_era_table(era_stats: dict[str, dict], release: str) -> str:
         mae_n = m.get("mae_naive")
         mae_c = m.get("mae_champ")
         mae_t = m.get("mae_trailing3m")
-        fmt = lambda x: f"{x:.4f}" if x is not None else "—"
+        mae_e = m.get("mae_expanding_mean")
         lines.append(
-            f"| {era_label} | {n} | {fmt(mae_b)} | {fmt(mae_n)} | {fmt(mae_c)} | {fmt(mae_t)} |"
+            f"| {era_label} | {n} | {fmt(mae_b)} | {fmt(mae_n)} | {fmt(mae_c)} | {fmt(mae_t)} | {fmt(mae_e)} |"
         )
+    lines.append("")
+    lines.append("\\* MAE ExpandMean = REPORTED (non-binding, MRI-R28b). Strongest naive = min(MAE naive, MAE trail3m, MAE ExpandMean).")
     return "\n".join(lines)
 
 
@@ -350,12 +385,38 @@ def write_results_md(
 
     # Kill rule headline
     kh = _k(hl_result)
+
+    def _sn_bridge(era_stats: dict, era_key: str) -> float | None:
+        """Strongest naive for bridge (min of naive, t3m, expanding_mean)."""
+        m = era_stats.get(era_key, {})
+        candidates = [m.get("mae_naive"), m.get("mae_trailing3m"), m.get("mae_expanding_mean")]
+        valid = [c for c in candidates if c is not None]
+        return min(valid) if valid else None
+
+    fmt4 = lambda x: f"{x:.4f}" if x is not None else "—"
+
+    hl_es = hl_result.get("era_stats", {})
+    sn_hl_full = _sn_bridge(hl_es, "full")
+    sn_hl_2021 = _sn_bridge(hl_es, "2021_plus")
+    hl_mae_full = hl_es.get("full", {}).get("mae_bridge")
+    hl_mae_2021 = hl_es.get("2021_plus", {}).get("mae_bridge")
+
+    core_es = core_result.get("era_stats", {})
+    sn_core_full = _sn_bridge(core_es, "full")
+    sn_core_2021 = _sn_bridge(core_es, "2021_plus")
+    core_mae_full = core_es.get("full", {}).get("mae_bridge")
+    core_mae_2021 = core_es.get("2021_plus", {}).get("mae_bridge")
+
     lines += [
         "### Kill Rule — cpi_headline",
         f"- Bridge MAE (full): {kh.get('bridge_mae_full')} vs naive: {kh.get('naive_mae_full')} → kill_full={kh.get('kill_full')}",
         f"- Bridge MAE (2021+): {kh.get('bridge_mae_2021')} vs naive: {kh.get('naive_mae_2021')} → kill_2021={kh.get('kill_2021')}",
         f"- **Kill rule triggered: {kh.get('triggered')}**",
         f"- **Verdict: {hl_result.get('verdict')}**",
+        "",
+        "### Vs Strongest Naive — cpi_headline (REPORTED, MRI-R28b)",
+        f"- Full: bridge MAE={fmt4(hl_mae_full)} vs strongest_naive={fmt4(sn_hl_full)} — margin={fmt4((sn_hl_full - hl_mae_full) if (sn_hl_full and hl_mae_full) else None)} ({'BEATS' if (sn_hl_full and hl_mae_full and hl_mae_full < sn_hl_full) else 'LAGS'})",
+        f"- 2021+: bridge MAE={fmt4(hl_mae_2021)} vs strongest_naive={fmt4(sn_hl_2021)} — margin={fmt4((sn_hl_2021 - hl_mae_2021) if (sn_hl_2021 and hl_mae_2021) else None)} ({'BEATS' if (sn_hl_2021 and hl_mae_2021 and hl_mae_2021 < sn_hl_2021) else 'LAGS'})",
         "",
         "---",
         "",
@@ -378,6 +439,10 @@ def write_results_md(
         f"- Bridge MAE (2021+): {kc.get('bridge_mae_2021')} vs naive: {kc.get('naive_mae_2021')} → kill_2021={kc.get('kill_2021')}",
         f"- **Kill rule triggered: {kc.get('triggered')}**",
         f"- **Verdict: {core_result.get('verdict')}**",
+        "",
+        "### Vs Strongest Naive — cpi_core (REPORTED, MRI-R28b)",
+        f"- Full: bridge MAE={fmt4(core_mae_full)} vs strongest_naive={fmt4(sn_core_full)} — margin={fmt4((sn_core_full - core_mae_full) if (sn_core_full and core_mae_full) else None)} ({'BEATS' if (sn_core_full and core_mae_full and core_mae_full < sn_core_full) else 'LAGS'})",
+        f"- 2021+: bridge MAE={fmt4(core_mae_2021)} vs strongest_naive={fmt4(sn_core_2021)} — margin={fmt4((sn_core_2021 - core_mae_2021) if (sn_core_2021 and core_mae_2021) else None)} ({'BEATS' if (sn_core_2021 and core_mae_2021 and core_mae_2021 < sn_core_2021) else 'LAGS'})",
         "",
         "---",
         "",
@@ -418,6 +483,22 @@ def write_results_md(
         "Per MRI-R25: A track failing the kill rule is NOT shadowed.",
         "The champion (frozen v2 ridge) keeps the card regardless.",
         "If shadow-eligible, nightly rows tagged `cpi_bridge` accrue for forward scoring.",
+        "",
+        "---",
+        "",
+        "## §12 Restatement (2026-07-10, MRI-R28/R29/F7)",
+        "",
+        "**MRI-R29 (bridge claim VOIDED):** The previous 'edges champion' verdict for this",
+        "backtest is VOIDED as a promotion argument per MRI-R29. The bridge reads latest-revised",
+        "sub-index parquets (audit F2), making its apparent edge revision-optimistic — this is",
+        "not a real-time advantage. Forward-ledger evidence is the only valid promotion basis.",
+        "",
+        "**expanding_mean benchmark** added to era tables above (REPORTED, non-binding per MRI-R28b).",
+        "Bridge verdicts (kill rule, shadow eligibility) stand unchanged — they were not",
+        "predicated on the 'edges champion' margin that MRI-R29 voids.",
+        "",
+        "**F7 fix:** This file is fully regenerated from current code (stale-numbers problem fixed).",
+        "Run date above reflects actual regeneration date.",
     ]
 
     md_path.write_text("\n".join(lines), encoding="utf-8")

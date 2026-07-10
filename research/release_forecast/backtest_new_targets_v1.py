@@ -137,7 +137,10 @@ def _compute_metrics(
     errors_accum: np.ndarray,
     min_q: int = MIN_QUANTILE_OBS,
 ) -> dict:
-    """Compute all metrics for a subset of walk-forward rows."""
+    """Compute all metrics for a subset of walk-forward rows.
+
+    Includes expanding_mean as REPORTED (non-binding) benchmark per MRI-R28b.
+    """
     if not rows:
         return {
             "n": 0,
@@ -145,6 +148,8 @@ def _compute_metrics(
             "mae_naive": None, "rmse_naive": None,
             "mae_trailing3m": None, "rmse_trailing3m": None,
             "mae_ar3": None, "rmse_ar3": None,
+            # REPORTED per MRI-R28b
+            "mae_expanding_mean": None, "rmse_expanding_mean": None,
             "coverage_p10_p90": None,
             "skew_hit_rate": None, "skew_wilson_ci": None, "skew_n": 0,
         }
@@ -154,11 +159,13 @@ def _compute_metrics(
     naive_preds = [r["baseline_naive"] for r in rows]
     t3m_preds = [r.get("baseline_trailing3m") for r in rows]
     ar3_preds = [r["baseline_ar3"] for r in rows]
+    expm_preds = [r.get("baseline_expanding_mean") for r in rows]
 
     model_errors = [a - p for a, p in zip(actuals, preds) if a is not None and p is not None]
     naive_errors = [a - n for a, n in zip(actuals, naive_preds) if a is not None and n is not None]
     t3m_errors = [a - t for a, t in zip(actuals, t3m_preds) if a is not None and t is not None]
     ar3_errors = [a - b for a, b in zip(actuals, ar3_preds) if a is not None and b is not None]
+    expm_errors = [a - e for a, e in zip(actuals, expm_preds) if a is not None and e is not None]
 
     # Quantile intervals from expanding residual history (use result_pos, not idx)
     p10s, p90s = [], []
@@ -186,11 +193,38 @@ def _compute_metrics(
         "rmse_trailing3m": round(_rmse(t3m_errors), 4) if _rmse(t3m_errors) is not None else None,
         "mae_ar3": round(_mae(ar3_errors), 4) if _mae(ar3_errors) is not None else None,
         "rmse_ar3": round(_rmse(ar3_errors), 4) if _rmse(ar3_errors) is not None else None,
+        # REPORTED (non-binding) per MRI-R28b
+        "mae_expanding_mean": round(_mae(expm_errors), 4) if _mae(expm_errors) is not None else None,
+        "rmse_expanding_mean": round(_rmse(expm_errors), 4) if _rmse(expm_errors) is not None else None,
         "coverage_p10_p90": cov,
         "skew_hit_rate": hit_rate,
         "skew_wilson_ci": ci,
         "skew_n": skew_n,
     }
+
+
+# ---------------------------------------------------------------------------
+# Expanding mean benchmark (MRI-R28b — REPORTED columns, non-binding)
+# ---------------------------------------------------------------------------
+
+def _attach_expanding_mean(results: list[dict]) -> None:
+    """Annotate each result row with baseline_expanding_mean (no lookahead).
+
+    At prediction step with result_pos=j, expanding_mean = mean of actuals
+    from strictly prior result rows (result_pos 0..j-1).
+    """
+    sorted_results = sorted(results, key=lambda r: r.get("result_pos", 0))
+    cum_sum = 0.0
+    cum_count = 0
+    for r in sorted_results:
+        if cum_count == 0:
+            r["baseline_expanding_mean"] = None
+        else:
+            r["baseline_expanding_mean"] = cum_sum / cum_count
+        actual = r.get("actual")
+        if actual is not None and not (isinstance(actual, float) and np.isnan(actual)):
+            cum_sum += actual
+            cum_count += 1
 
 
 # ---------------------------------------------------------------------------
@@ -231,6 +265,9 @@ def _run_one_target(release: str, wf: dict) -> dict:
             "verdict": "INSUFFICIENT_DATA",
             "metadata": metadata,
         }
+
+    # Attach expanding_mean benchmark (MRI-R28b, no lookahead)
+    _attach_expanding_mean(results)
 
     errors_accum = np.array([r["actual"] - r["predicted"] for r in results])
 
@@ -295,9 +332,9 @@ def _fmt_pct(v: float | None) -> str:
 
 def _era_table_md(era_metrics: dict, release: str) -> str:
     header = (
-        "| Era | n | MAE model | MAE naive | MAE t3m | MAE AR3 | "
+        "| Era | n | MAE model | MAE naive | MAE t3m | MAE AR3 | MAE ExpandMean* | "
         "RMSE model | RMSE naive | Coverage p10-p90 | Skew HR | Skew CI | Skew n |\n"
-        "|---|---|---|---|---|---|---|---|---|---|---|---|\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
     )
     rows = []
     era_order = ["full", "pre_2010", "2010_2020", "covid_months_2020_03_06",
@@ -312,11 +349,13 @@ def _era_table_md(era_metrics: dict, release: str) -> str:
         rows.append(
             f"| {era_label} | {m['n']} | {_fmt(m['mae_model'])} | {_fmt(m['mae_naive'])} | "
             f"{_fmt(m['mae_trailing3m'])} | {_fmt(m['mae_ar3'])} | "
+            f"{_fmt(m.get('mae_expanding_mean'))} | "
             f"{_fmt(m['rmse_model'])} | {_fmt(m['rmse_naive'])} | "
             f"{_fmt(m['coverage_p10_p90'])} | {_fmt(m['skew_hit_rate'])} | "
             f"{ci_str} | {m.get('skew_n', 0)} |"
         )
-    return header + "\n".join(rows)
+    footer = "\n\\* MAE ExpandMean = REPORTED (non-binding, MRI-R28b). Strongest naive = min(MAE naive, MAE t3m, MAE ExpandMean)."
+    return header + "\n".join(rows) + footer
 
 
 # ---------------------------------------------------------------------------
@@ -455,15 +494,36 @@ def _write_results_md(summary: dict) -> None:
             f"Full window: MAE model={_fmt(m_full.get('mae_model'))} vs "
             f"naive={_fmt(m_full.get('mae_naive'))} vs "
             f"trailing3m={_fmt(m_full.get('mae_trailing3m'))} vs "
-            f"AR3={_fmt(m_full.get('mae_ar3'))} (n={m_full.get('n', 0)})"
+            f"AR3={_fmt(m_full.get('mae_ar3'))} vs "
+            f"expanding_mean={_fmt(m_full.get('mae_expanding_mean'))} (n={m_full.get('n', 0)})"
         )
         lines.append(
             f"2021+ era: MAE model={_fmt(m_2021.get('mae_model'))} vs "
             f"naive={_fmt(m_2021.get('mae_naive'))} vs "
             f"trailing3m={_fmt(m_2021.get('mae_trailing3m'))} vs "
-            f"AR3={_fmt(m_2021.get('mae_ar3'))} (n={m_2021.get('n', 0)})"
+            f"AR3={_fmt(m_2021.get('mae_ar3'))} vs "
+            f"expanding_mean={_fmt(m_2021.get('mae_expanding_mean'))} (n={m_2021.get('n', 0)})"
         )
         lines.append("")
+
+        # Vs strongest naive (MRI-R28b)
+        def _sn(m_):
+            candidates = [m_.get("mae_naive"), m_.get("mae_trailing3m"), m_.get("mae_expanding_mean")]
+            valid = [c for c in candidates if c is not None]
+            return min(valid) if valid else None
+
+        sn_full = _sn(m_full)
+        sn_2021 = _sn(m_2021)
+        mae_model_full = m_full.get("mae_model")
+        mae_model_2021 = m_2021.get("mae_model")
+        if sn_full is not None and mae_model_full is not None:
+            margin_full = sn_full - mae_model_full
+            lines.append(f"Vs strongest naive (REPORTED, MRI-R28b) — Full: model={_fmt(mae_model_full)} vs sn={_fmt(sn_full)} => margin={_fmt(margin_full)} ({'BEATS' if margin_full > 0 else 'LAGS'})")
+        if sn_2021 is not None and mae_model_2021 is not None:
+            margin_2021 = sn_2021 - mae_model_2021
+            lines.append(f"Vs strongest naive (REPORTED, MRI-R28b) — 2021+: model={_fmt(mae_model_2021)} vs sn={_fmt(sn_2021)} => margin={_fmt(margin_2021)} ({'BEATS' if margin_2021 > 0 else 'LAGS'})")
+        lines.append("")
+
         lines.append("### Era Breakdown")
         lines.append("")
         lines.append(_era_table_md(res["era_metrics"], release))
@@ -501,6 +561,15 @@ def _write_results_md(summary: dict) -> None:
     lines.append("- sticky/median/flex CPI sourced from ALFRED first-prints (PIT fix 2026-07-08); GASREGW declared unrevised in provenance.")
     lines.append("- PPI thin history: kill rule applied as written; no relaxation for thin history.")
     lines.append("- Round 2 will wire surviving targets into engine/release_forecast.py dispatch.")
+    lines.append("- expanding_mean = REPORTED (non-binding, MRI-R28b). Walk-forward expanding mean of target's first-print MoM history, strictly no-lookahead.")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## §12 Restatement (2026-07-10, MRI-R28b)")
+    lines.append("")
+    lines.append("expanding_mean benchmark added to all era tables above (REPORTED, non-binding per MRI-R28b).")
+    lines.append("Track N verdicts stand as frozen. All §12 new tracks use the STRONGEST naive (min of naive_prior, trailing3m, expanding_mean) as kill benchmark.")
+    lines.append("See 'Vs strongest naive' lines per target above for exact margins.")
     lines.append("")
 
     with open(_RESULTS_MD, "w") as f:

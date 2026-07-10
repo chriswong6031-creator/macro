@@ -125,6 +125,8 @@ def _compute_metrics(
             "mae_naive": None, "rmse_naive": None,
             "mae_trailing3m": None, "rmse_trailing3m": None,
             "mae_ar3": None, "rmse_ar3": None,
+            # REPORTED per MRI-R28b
+            "mae_expanding_mean": None, "rmse_expanding_mean": None,
             "coverage_p10_p90": None,
             "skew_hit_rate": None, "skew_wilson_ci": None, "skew_n": 0,
         }
@@ -134,11 +136,13 @@ def _compute_metrics(
     naive_preds = [r["baseline_naive"] for r in rows]
     t3m_preds = [r.get("baseline_trailing3m") for r in rows]
     ar3_preds = [r.get("baseline_ar3") for r in rows]
+    expm_preds = [r.get("baseline_expanding_mean") for r in rows]
 
     model_errors = [a - p for a, p in zip(actuals, preds) if a is not None and p is not None]
     naive_errors = [a - n for a, n in zip(actuals, naive_preds) if a is not None and n is not None]
     t3m_errors = [a - t for a, t in zip(actuals, t3m_preds) if a is not None and t is not None]
     ar3_errors = [a - b for a, b in zip(actuals, ar3_preds) if a is not None and b is not None]
+    expm_errors = [a - e for a, e in zip(actuals, expm_preds) if a is not None and e is not None]
 
     # Build p10/p90 from accumulated residual history (use result_pos for strict past)
     p10s, p90s = [], []
@@ -166,11 +170,38 @@ def _compute_metrics(
         "rmse_trailing3m": round(_rmse(t3m_errors), 4) if _rmse(t3m_errors) is not None else None,
         "mae_ar3": round(_mae(ar3_errors), 4) if _mae(ar3_errors) is not None else None,
         "rmse_ar3": round(_rmse(ar3_errors), 4) if _rmse(ar3_errors) is not None else None,
+        # REPORTED (non-binding) per MRI-R28b
+        "mae_expanding_mean": round(_mae(expm_errors), 4) if _mae(expm_errors) is not None else None,
+        "rmse_expanding_mean": round(_rmse(expm_errors), 4) if _rmse(expm_errors) is not None else None,
         "coverage_p10_p90": cov,
         "skew_hit_rate": hit_rate,
         "skew_wilson_ci": ci,
         "skew_n": skew_n,
     }
+
+
+# ---------------------------------------------------------------------------
+# Expanding mean benchmark (MRI-R28b — REPORTED columns, non-binding)
+# ---------------------------------------------------------------------------
+
+def _attach_expanding_mean(results: list[dict]) -> None:
+    """Annotate each result row with baseline_expanding_mean (no lookahead).
+
+    At prediction step with result_pos=j, expanding_mean = mean of actuals
+    from strictly prior result rows (result_pos 0..j-1).
+    """
+    sorted_results = sorted(results, key=lambda r: r.get("result_pos", 0))
+    cum_sum = 0.0
+    cum_count = 0
+    for r in sorted_results:
+        if cum_count == 0:
+            r["baseline_expanding_mean"] = None
+        else:
+            r["baseline_expanding_mean"] = cum_sum / cum_count
+        actual = r.get("actual")
+        if actual is not None and not (isinstance(actual, float) and np.isnan(actual)):
+            cum_sum += actual
+            cum_count += 1
 
 
 def _check_kill_rule(metrics_full: dict, metrics_2021: dict) -> bool:
@@ -246,11 +277,17 @@ def run_backtest() -> dict:
         results_v3 = wf_v3["results"]
         print(f"  v3: {len(results_v3)} predictions")
 
+        # Attach expanding_mean benchmark (MRI-R28b)
+        _attach_expanding_mean(results_v3)
+
         # --- champion walk-forward ---
         print(f"  Running champion walk-forward: {release} ...")
         wf_champ = run_walk_forward_full(release, root)
         results_champ = wf_champ["results"]
         print(f"  champion: {len(results_champ)} predictions")
+
+        # Attach expanding_mean benchmark to champion rows too (MRI-R28b)
+        _attach_expanding_mean(results_champ)
 
         # Accumulated errors for quantile intervals
         errors_v3 = np.array([r["actual"] - r["predicted"] for r in results_v3])
@@ -344,8 +381,8 @@ def run_backtest() -> dict:
         # Era table — v3
         md_lines.append("### v3_factor Era-Split Metrics")
         md_lines.append("")
-        md_lines.append("| Era | n | MAE v3 | MAE Naive | MAE Trail3m | MAE AR3 | RMSE v3 | RMSE Naive | Cov p10-p90 | Skew HR | Wilson 95% CI | Skew n |")
-        md_lines.append("|-----|---|--------|-----------|-------------|---------|---------|------------|-------------|---------|---------------|--------|")
+        md_lines.append("| Era | n | MAE v3 | MAE Naive | MAE Trail3m | MAE AR3 | MAE ExpandMean* | RMSE v3 | RMSE Naive | Cov p10-p90 | Skew HR | Wilson 95% CI | Skew n |")
+        md_lines.append("|-----|---|--------|-----------|-------------|---------|-----------------|---------|------------|-------------|---------|---------------|--------|")
 
         era_rows = [
             (full_label, m_full_v3),
@@ -359,14 +396,18 @@ def run_backtest() -> dict:
         for era_name, m in era_rows:
             cov_str = f"{m['coverage_p10_p90']*100:.1f}%" if m['coverage_p10_p90'] is not None else "—"
             ci_str = str(m['skew_wilson_ci']) if m['skew_wilson_ci'] is not None else "—"
+            expm_str = f"{m['mae_expanding_mean']}" if m.get('mae_expanding_mean') is not None else "—"
             md_lines.append(
                 f"| {era_name} | {m['n']} "
                 f"| {m['mae_model'] or '—'} | {m['mae_naive'] or '—'} "
                 f"| {m['mae_trailing3m'] or '—'} | {m['mae_ar3'] or '—'} "
+                f"| {expm_str} "
                 f"| {m['rmse_model'] or '—'} | {m['rmse_naive'] or '—'} "
                 f"| {cov_str} | {m['skew_hit_rate'] or '—'} "
                 f"| {ci_str} | {m['skew_n']} |"
             )
+        md_lines.append("")
+        md_lines.append("\\* MAE ExpandMean = REPORTED (non-binding, MRI-R28b). Strongest naive = min(MAE Naive, MAE Trail3m, MAE ExpandMean).")
         md_lines.append("")
 
         # Kill rule detail
@@ -376,6 +417,24 @@ def run_backtest() -> dict:
         md_lines.append(f"- {fw_key}: MAE v3={m_full_v3['mae_model']} vs naive={m_full_v3['mae_naive']}")
         md_lines.append(f"- 2021+ slice: MAE v3={m_2021_v3['mae_model']} vs naive={m_2021_v3['mae_naive']}")
         md_lines.append(f"- Kill triggered: {'YES -> benchmark_only' if kill else 'NO -> shadow-eligible'}")
+        md_lines.append("")
+
+        # Vs strongest naive (REPORTED, MRI-R28b)
+        def _sn(m_):
+            candidates = [m_.get("mae_naive"), m_.get("mae_trailing3m"), m_.get("mae_expanding_mean")]
+            valid = [c for c in candidates if c is not None]
+            return min(valid) if valid else None
+
+        sn_full = _sn(m_full_v3)
+        sn_2021 = _sn(m_2021_v3)
+        md_lines.append("### Vs Strongest Naive (REPORTED, MRI-R28b)")
+        md_lines.append("")
+        if sn_full is not None and m_full_v3.get("mae_model") is not None:
+            margin_full = sn_full - m_full_v3["mae_model"]
+            md_lines.append(f"- {fw_key}: MAE v3={m_full_v3['mae_model']} vs strongest_naive={sn_full:.4f} — margin={margin_full:.4f} ({'BEATS' if margin_full > 0 else 'LAGS'})")
+        if sn_2021 is not None and m_2021_v3.get("mae_model") is not None:
+            margin_2021 = sn_2021 - m_2021_v3["mae_model"]
+            md_lines.append(f"- 2021+ slice: MAE v3={m_2021_v3['mae_model']} vs strongest_naive={sn_2021:.4f} — margin={margin_2021:.4f} ({'BEATS' if margin_2021 > 0 else 'LAGS'})")
         md_lines.append("")
 
         # Head-to-head vs champion
@@ -442,6 +501,14 @@ def run_backtest() -> dict:
     md_lines.append("- **claims_survey_week (NFP):** ICSA/CCSA vintages start 2009-05/2009-09. Absent pre-2009. Dropped via complete-case.")
     md_lines.append("- **withheld_tax_yoy (NFP):** Data starts 2023-02-14; YoY computable ~2024-02. Effectively absent for all historical backtest. Dropped.")
     md_lines.append("- **sticky/median/flex/ppi_fis:** ALFRED vintages start 2014-02/2014-03; absent pre-2014. Dropped. Pre-2014 v3 runs on own lags only (k≤3 features).")
+    md_lines.append("")
+    md_lines.append("---")
+    md_lines.append("")
+    md_lines.append("## §12 Restatement (2026-07-10, MRI-R28b)")
+    md_lines.append("")
+    md_lines.append("expanding_mean benchmark added to era tables above (REPORTED, non-binding per MRI-R28b).")
+    md_lines.append("V3_factor verdicts stand as frozen. All §12 new tracks use the STRONGEST naive (min of naive_prior, trailing3m, expanding_mean) as kill benchmark.")
+    md_lines.append("See 'Vs Strongest Naive' subsections per target above for exact margins.")
     md_lines.append("")
 
     # Write markdown
