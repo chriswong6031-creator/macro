@@ -1,0 +1,45 @@
+# Signal Foundry configuration (SF-R5, SF-R6)
+# Ships DARK: auto_loop: false AND SIGNAL_FOUNDRY_PAUSED fail-closed (unset => paused).
+# Operator arms by logging a ruling; in-session manual runs by Fable/operator are legal.
+
+auto_loop: false
+
+# Scheduled brainstorm lane arms ONLY when SIGNAL_FOUNDRY_PAUSED env var == exact string "false"
+# (unset or any other value => paused — fail-closed)
+kill_switch_env: SIGNAL_FOUNDRY_PAUSED
+
+# Weekly budgets (SF-R6, enforced in scripts/run_signal_foundry_brainstorm.py in PR-C)
+budgets:
+  filed_per_week: 5       # max new candidate specs filed per ISO week
+  runs_per_week: 10       # max harness runs per ISO week
+  run_wallclock_min: 30   # max wall-clock minutes per harness run job
+
+# LLM model routing (SF-R2, masterplan §3 — mirrors run_causal_brainstorm.py)
+# Machine generates specs; human reviews/promotes. Never fable for fan-outs.
+models:
+  generator: claude-sonnet-4-6        # proposes candidates from seeds
+  skeptic: claude-opus-4-8            # red-teams (novelty, identification, confound)
+  compiler: claude-haiku-4-5-20251001 # emits strict JSON spec
+
+# Scheduled LLM identity: OAuth-only (SF-R5, CHF-R8 mirror)
+identity:
+  oauth_only_scheduled: true
+
+# Artifact paths (SF-R10 write fence: Foundry writes ONLY data/signal_foundry/**)
+paths:
+  root: data/signal_foundry
+  candidates: data/signal_foundry/candidates.jsonl
+  results: data/signal_foundry/results
+  forward: data/signal_foundry/forward
+  promotions: data/signal_foundry/promotions.jsonl
+  blocklist: config/signal_foundry_blocklist.yml
+
+# Default pre-registered gates (specs may override; gate-freeze hash checked at run time)
+# These are the Foundry defaults; individual specs declare their own gates on filing.
+default_gates:
+  min_t_hac: 2.0    # minimum |HAC Newey-West t-stat| on effect series
+  fdr_q: 0.10       # BH-FDR q threshold (for multi-candidate promotion reads)
+  dsr: 0.90         # minimum Deflated Sharpe Ratio (Bailey-López de Prado)
+
+# Battery version (frozen; changes to harness require human-authored PR — SF-R2)
+battery_version: sf-battery-1

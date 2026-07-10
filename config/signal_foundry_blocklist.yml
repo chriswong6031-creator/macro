@@ -1,0 +1,284 @@
+# Signal Foundry blocklist — compiled from research/DO_NOT_REBUILD.md
+# Every entry was sourced from a real ruling/adjudication in the registry.
+# New entries MUST come from explicit DO_NOT_REBUILD.md rows or adjudication PRs.
+# Never invent kills not in the registry.
+
+# Format:
+# entries:
+#   - id: BL-NNN
+#     match:
+#       any_of:
+#         - <regex or substring pattern, case-insensitive>
+#     reason: <why this construction is forbidden>
+#     source: <PR/ruling reference from DO_NOT_REBUILD.md>
+
+entries:
+
+  # ------------------------------------------------------------------ #
+  # Section 1: Forbidden by ruling (design-level)                        #
+  # ------------------------------------------------------------------ #
+
+  - id: BL-001
+    match:
+      any_of:
+        - "llm.{0,30}(signal|score|escalat|originate)"
+        - "(signal|score|escalat).{0,30}llm.{0,30}(generat|creat|produc)"
+        - "machine.{0,30}(originat|generat).{0,30}(alpha|signal|score)"
+    reason: >
+      LLM-originated signals, scores, or escalations are FORBIDDEN.
+      LLMs may only de-escalate calibrated keys.
+    source: "House law (CLAUDE.md §Epistemics); Art. 1 / A7 ORIGINATE ban"
+
+  - id: BL-002
+    match:
+      any_of:
+        - "fused.{0,20}(shield|meta.router)"
+        - "meta.router.{0,30}(veto|override|signal)"
+        - "shield.{0,20}fus"
+    reason: >
+      Fused shield / meta-router over buy-decision vetoes is FORBIDDEN.
+    source: "FR-1/R3; Codex buy-decision docket adjudication (#1781)"
+
+  - id: BL-003
+    match:
+      any_of:
+        - "kernel.{0,30}condition"
+        - "condition.{0,30}kernel"
+    reason: >
+      Kernel conditioning before NW clocks arm (kernel-FDR 2026-10) is FORBIDDEN.
+    source: "Signal Commons rulings (2026-07-05)"
+
+  - id: BL-004
+    match:
+      any_of:
+        - "positioning.{0,20}fus"
+        - "fus.{0,20}positioning"
+        - "position.{0,30}(fused.{0,20}signal|signal.{0,20}score)"
+    reason: >
+      Positioning fusion — fusing positioning keys into signal scores — is ILLEGAL.
+    source: "Signal Commons rulings (2026-07-05)"
+
+  - id: BL-005
+    match:
+      any_of:
+        - "admin.{0,20}tim"
+        - "administration.{0,30}tim"
+        - "policy.{0,20}intent.{0,30}classif"
+        - "policy.{0,20}lever.{0,30}(forecast|predict).{0,30}when"
+        - "geopolit.{0,30}re.escal"
+    reason: >
+      Administration-timing predictors and policy-intent classifiers are FORBIDDEN —
+      intent is unfalsifiable; conditions-framing only.
+    source: "PS-R1/PS-R4, POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md"
+
+  - id: BL-006
+    match:
+      any_of:
+        - "causal.{0,20}dag.{0,30}(alpha|score|trade|portfolio|construct)"
+        - "causal.{0,20}graph.{0,30}(alpha|trade|portfolio)"
+        - "discovered.{0,20}graph.{0,30}(trade|portfolio)"
+    reason: >
+      Causal DAG → alpha score → trade/portfolio construction from discovered graphs
+      is FORBIDDEN — CHF is proposal/audit tier only (Article 1/2).
+    source: "CHF-R14, CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md"
+
+  - id: BL-007
+    match:
+      any_of:
+        - "llm.{0,30}(numeric|confidence|probability|score).{0,30}(chf|foundry|causal)"
+        - "llm.{0,30}asserted.{0,30}(confidence|probability)"
+        - "llm.{0,30}stated.{0,30}(confidence|probability|ic|sharpe)"
+    reason: >
+      LLM numeric confidence on any Foundry/CHF surface is FORBIDDEN — RF-16 extension.
+      Only harness-measured statistics are displayed.
+    source: "CHF-R14; RF-16"
+
+  - id: BL-008
+    match:
+      any_of:
+        - "short.{0,10}(side|lobe).{0,30}directional.{0,20}short"
+        - "directional.{0,20}short.{0,30}(signal|trade)"
+        - "short.{0,20}sell.{0,30}signal.{0,30}(from|via).{0,30}(nw|neural)"
+    reason: >
+      Short-side lobe as directional shorting is FORBIDDEN — L1 is AVOID-not-SHORT
+      evidence only.
+    source: "NW rails+lobes program (2026-07-06)"
+
+  - id: BL-009
+    match:
+      any_of:
+        - "rotation.{0,30}cycle.{0,30}(position|confluence|entry)"
+        - "cycle.{0,30}position.{0,30}rotation.{0,30}entry"
+    reason: >
+      Rotation × cycle-position entry-confluence is DON'T-TEST.
+    source: "Rotation×cycle confluence ruling (cycle intelligence program)"
+
+  - id: BL-010
+    match:
+      any_of:
+        - "held.{0,10}position.{0,20}(ledger|monitor|engine|risk)"
+        - "live.{0,10}position.{0,20}(monitor|engine|ledger)"
+        - "per.position.{0,20}(risk|score|fused)"
+    reason: >
+      Held-position ledger / live position monitor / held-risk engine inside Macro
+      Dashboard is FORBIDDEN — build lives in Mastermind repo (PRD-R1/PRD-R2).
+    source: "PRD-R1/PRD-R2, PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md"
+
+  - id: BL-011
+    match:
+      any_of:
+        - "midterm.{0,10}(blackout|gate|override)"
+        - "human.{0,20}override.{0,30}allocation"
+        - "override.{0,20}gate.{0,30}allocation"
+    reason: >
+      New human-override gates laundered into allocation() are FORBIDDEN
+      (pattern: midterm-blackout gate).
+    source: "BTC vector override audit D1–D5"
+
+  - id: BL-012
+    match:
+      any_of:
+        - "llm.{0,30}(classif|tag).{0,30}(tariff|regulat|cyber|consumer).{0,30}(shock|narrative)"
+        - "narrative.{0,30}shock.{0,30}(llm|machine).{0,30}(classif|tag)"
+    reason: >
+      LLM classification of narrative-only shock types (tariff/regulatory/cyber/consumer)
+      into calibrated keys is FORBIDDEN — no deterministic price basis; A7 ORIGINATE ban.
+    source: "TI-R1, TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md"
+
+  # ------------------------------------------------------------------ #
+  # Section 2: Killed signal families                                    #
+  # ------------------------------------------------------------------ #
+
+  - id: BL-013
+    match:
+      any_of:
+        - "insider.{0,20}(cross|interaction|product).{0,20}t2"
+        - "t2.{0,20}(cross|interaction|product).{0,20}insider"
+        - "insider.{0,30}t2.{0,30}(signal|factor|score)"
+    reason: >
+      Insider × T2 interaction is KILLED.
+    source: "Codex buy-decision docket adjudication (#1781)"
+
+  - id: BL-014
+    match:
+      any_of:
+        - "doi.{0,10}(signal|factor|score|delta.oi)"
+        - "delta.{0,5}open.{0,5}interest.{0,20}(signal|factor|score)"
+    reason: >
+      DOI (options delta-OI family) is DEAD.
+    source: "Options→NW entry-intelligence W-E1 gauntlet"
+
+  - id: BL-015
+    match:
+      any_of:
+        - "skew.{0,20}decel"
+        - "decel.{0,20}skew"
+    reason: >
+      Skew-deceleration is UNSUPPORTED.
+    source: "Options→NW entry-intelligence W-E1 gauntlet"
+
+  - id: BL-016
+    match:
+      any_of:
+        - "signed.{0,10}charm"
+        - "charm.{0,10}intensity"
+        - "charm.{0,20}(narrative|signal|score).{0,20}signed"
+    reason: >
+      Signed-charm / charm-intensity narratives are KILLED — vol/size confound,
+      trail-RV IC .5–.6.
+    source: "OPEX vanna/charm adjudication (2026-07-06)"
+
+  - id: BL-017
+    match:
+      any_of:
+        - "cn.{0,5}supply.{0,5}absorption"
+        - "china.{0,20}supply.{0,20}absorption.{0,20}(signal|price.only)"
+        - "supply.{0,20}absorption.{0,20}(price.only|momentum.proxy)"
+    reason: >
+      cn_supply_absorption family (incl. D4-01b staged re-entry) is CLOSED —
+      price-only absorption ≡ momentum; Stage-0 falsifier dead in both regimes.
+      Re-entry needs a fresh operator-ratified prereg (post-规 cell ~doubles by ~2028).
+    source: "D4-01b Stage 0, reports/d4-cn-supply-absorption-d401b-stage0.md"
+
+  - id: BL-018
+    match:
+      any_of:
+        - "cpi.{0,5}020"
+        - "cpi.{0,10}revision.{0,20}direction"
+        - "cpi.{0,20}(first|latest).{0,20}revision.{0,20}(moy|mom)"
+    reason: >
+      CPI revision-direction model is KILLED before attempt — CPI revisions are annual
+      seasonal-recalc only, tiny magnitude; no exploitable structure.
+    source: "MRI-R38, MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md §12.3"
+
+  - id: BL-019
+    match:
+      any_of:
+        - "buyback.{0,20}floor.{0,20}washout"
+        - "s11.{0,10}(phase|signal)"
+    reason: >
+      Buyback-floor washout (S11) is FALSIFIED.
+    source: "S11 phase-0 (#1782)"
+
+  - id: BL-020
+    match:
+      any_of:
+        - "election.{0,20}cycle.{0,20}(signal|standalone|factor)"
+        - "midterm.{0,20}cycle.{0,20}(signal|standalone|factor)"
+    reason: >
+      Election / midterm cycle as standalone signal is REFUTED — survives only as
+      US-only Risk-Radar modulator.
+    source: "Election-cycle modulator study"
+
+  - id: BL-021
+    match:
+      any_of:
+        - "washout.{0,20}(cross|interaction).{0,20}turn"
+        - "turn.{0,20}(cross|interaction).{0,20}washout"
+    reason: >
+      Washout × turn (2W operator seed) is KILLED — operator seed dies in test.
+    source: "Entry-stack Amendment-3 adjudication (#1747)"
+
+  - id: BL-022
+    match:
+      any_of:
+        - "ownership.{0,20}(pressure|positive.{0,20}breakaway)"
+        - "13f.{0,20}(positive|bullish).{0,20}(signal|breakaway|score)"
+    reason: >
+      13F/ownership as a POSITIVE breakaway signal is STRUCK — restates NEXTL-U13
+      (opposite sign to 3 filed verdicts); survives as context/crowding-hazard only.
+    source: "WA-R2, WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md"
+
+  - id: BL-023
+    match:
+      any_of:
+        - "rs.{0,10}(member.dispersion|dispersion.gate)"
+        - "member.dispersion.{0,20}rs.{0,10}gate"
+    reason: >
+      rs-based member-dispersion gates are DON'T-TEST — rs is zero-sum tautology (R-4).
+    source: "Healthcare member-dispersion adjudication"
+
+  # ------------------------------------------------------------------ #
+  # Section 3: Forbidden estimator methods                               #
+  # ------------------------------------------------------------------ #
+
+  - id: BL-024
+    match:
+      any_of:
+        - "ticker.{0,20}(cluster|bootstrap).{0,30}(ci|confidence).{0,20}without.{0,20}time"
+        - "ticker.{0,20}cluster.{0,30}bootstrap.{0,20}(uncorrected|raw|simple)"
+        - "cross.{0,20}sectional.{0,30}bootstrap.{0,30}no.{0,20}(time|date).{0,20}block"
+    reason: >
+      Ticker-cluster bootstrap CIs without time control are FORBIDDEN —
+      anti-conservative, effective N = months (DT-R14).
+    source: "DT-R14; TIME_CONFOUND_EXPOSURE_AUDIT (#1755)"
+
+  - id: BL-025
+    match:
+      any_of:
+        - "era.{0,20}pool.{0,30}(inference|test|ic|signal).{0,30}2010"
+        - "(inference|test|ic).{0,30}pool.{0,30}(pre|post).{0,20}2010.{0,30}without.{0,20}era.{0,20}split"
+    reason: >
+      Era-pooled inference across the 2010 regime break is FORBIDDEN without era split
+      (DT-R16).
+    source: "DT-R16 era-split law (#1751)"
