@@ -16,13 +16,26 @@
 
   function isZh() {
     try {
-      return (document.documentElement.lang || "").slice(0, 2) === "zh" ||
+      // the site marks Chinese mode with html[data-lang="zh"] (theme.js); the older
+      // documentElement.lang / body.lang-zh checks below are kept only as fallbacks.
+      var el = document.documentElement;
+      return (el.getAttribute("data-lang") || "").slice(0, 2) === "zh" ||
+             (el.lang || "").slice(0, 2) === "zh" ||
              document.body.classList.contains("lang-zh");
     } catch (e) { return false; }
   }
-  function label(disp) {
-    return isZh() ? (disp.label_zh || disp.label_en || disp.verdict)
-                  : (disp.label_en || disp.verdict);
+  /* Render a bilingual verdict as the site's dual l-en/l-zh span pair so it follows
+     the html[data-lang] CSS toggle — and keeps switching if the user changes language
+     AFTER the live feed patches the node. A single-language text node would freeze in
+     whatever language happened to be active at patch time. */
+  function setBL(el, en, zh) {
+    el.textContent = "";
+    var sEn = document.createElement("span"); sEn.className = "l-en"; sEn.textContent = en;
+    var sZh = document.createElement("span"); sZh.className = "l-zh"; sZh.textContent = zh;
+    el.appendChild(sEn); el.appendChild(sZh);
+  }
+  function verdictBL(el, disp) {
+    setBL(el, disp.label_en || disp.verdict, disp.label_zh || disp.label_en || disp.verdict);
   }
 
   /* macro.html — the Market State board */
@@ -32,7 +45,7 @@
     var disp = d.display || {};
     if (!disp.verdict) return;
     var arr = word.querySelector(".arr");
-    word.textContent = label(disp);
+    verdictBL(word, disp);
     if (arr) word.appendChild(arr);
     var sc = document.getElementById("ms-score");
     if (sc && disp.score != null) sc.textContent = disp.score;
@@ -72,7 +85,7 @@
     if (!el) return;
     var disp = d.display || {};
     if (!disp.verdict) return;
-    el.textContent = label(disp);
+    verdictBL(el, disp);
     var tone = { RISK_ON: "rg-on", MIXED: "rg-mix", RISK_OFF: "rg-off" }[disp.verdict] || "rg-mix";
     el.classList.remove("rg-on", "rg-mix", "rg-off");
     el.classList.add(tone);
