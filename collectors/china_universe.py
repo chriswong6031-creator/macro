@@ -44,6 +44,7 @@ import pandas as pd
 import yfinance as yf
 
 from collectors.base import Adapter
+from collectors.breadth import repair_seams
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -207,6 +208,21 @@ class ChinaUniverseAdapter(Adapter):
         wide = wide.loc[:, ~wide.columns.duplicated()]
         return wide.sort_index()
 
+    def _merge_refreshed(self, fresh: pd.DataFrame, prev: pd.DataFrame) -> pd.DataFrame:
+        """``_overwrite_overlap`` + split-seam repair (2026-07-10 KLAC class).
+
+        _overwrite_overlap makes the fresh pull own its OWN date span, which
+        erases the dividend-edge seam — but prev rows OLDER than the fresh
+        window are carried forward unchanged, so a split/bonus issue (10送10)
+        since the last refresh still leaves the pre-window history on the old
+        basis: a permanent fake step exactly at the fresh window's lower edge.
+        Flagged tickers are re-pulled over the full window and replaced
+        wholesale; never fatal (see collectors.breadth.repair_seams)."""
+        merged = _overwrite_overlap(fresh, prev)
+        merged, _ = repair_seams(merged, fresh, prev, self._download_closes,
+                                 name=self.name)
+        return merged
+
     # -- English name + sector (yfinance get_info, cached + bounded) ----------
     def _enrich(self, members: pd.DataFrame, prev: pd.DataFrame | None,
                 seed: dict | None = None) -> pd.DataFrame:
@@ -354,7 +370,9 @@ class ChinaUniverseAdapter(Adapter):
             # which keeps stale un-re-adjusted prev values at the refresh edge → a permanent basis
             # step that biases rev_z and can fabricate crosses). Only prev rows OLDER than the fresh
             # window are carried forward. See lib.store.upsert / masterplan §W6-CN fix 2.
-            closes = _overwrite_overlap(fresh, prev_closes)
+            # _merge_refreshed adds the split-seam repair on top: those carried-forward pre-window
+            # rows are exactly what a split re-bases out from under (#2120 KLAC class).
+            closes = self._merge_refreshed(fresh, prev_closes)
             if new:                                       # backfill deep history for new entrants
                 deep = self._download_closes(new, period)
                 closes = _overwrite_overlap(deep, closes)

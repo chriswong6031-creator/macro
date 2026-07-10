@@ -82,6 +82,62 @@ def seam_suspects(fresh: pd.DataFrame | None, cached: pd.DataFrame | None,
     return sorted(bad)
 
 
+_SEAM_SCAN_DAYS = 550   # residual-seam scan window for PERPETUAL caches (repair_seams):
+                        # a new seam can only form at a refresh boundary, i.e. within days
+                        # of the split, so ~18 months catches every operational seam with
+                        # margin — while keeping genuine deep-history crash days (1987/
+                        # 1997/2008 in the 40y hk_search matrix, one-off -50% earnings
+                        # days in the 5y+ search caches) from triggering a re-pull every
+                        # night forever. Legacy seams beyond the window are healed one-
+                        # shot by scripts/heal_breadth_split_seams.py (full-file scan).
+
+
+def repair_seams(merged: pd.DataFrame, fresh: pd.DataFrame | None,
+                 cached: pd.DataFrame | None, downloader, period: str | None = None,
+                 *, name: str = "closes",
+                 scan_days: int | None = _SEAM_SCAN_DAYS) -> tuple[pd.DataFrame, list[str]]:
+    """Split-seam repair for a merged wide-closes matrix; returns (merged, healed).
+
+    The reusable core of BreadthAdapter._merge_refreshed for the collectors that
+    merge an auto-adjusted fresh window over a cached matrix OUTSIDE the breadth
+    cache (canada/intl/china search closes.parquet, hk_search closes_deep):
+    every ticker flagged by seam_suspects gets its full window re-downloaded in
+    one batched ``downloader(tickers, period)`` call and its column replaced
+    WHOLESALE in ``merged`` (mutated in place and returned). period=None derives
+    the re-pull window from the merged span ("max" beyond 10y, else "<span>y"
+    like the one-shot healer). Correct whether the flag was a real seam or a
+    genuine ±40% news day (the re-pull returns identical data). Never fatal: on
+    a failed re-pull the poisoned columns are LEFT IN PLACE (loud warning) so
+    the scan re-flags them next run. ``healed`` lists the columns actually
+    replaced — empty when nothing was flagged or the re-pull failed."""
+    scan = merged
+    if scan_days is not None and len(merged.index):
+        scan = merged[merged.index >= merged.index.max() - pd.Timedelta(days=scan_days)]
+    bad = seam_suspects(fresh, cached, scan)
+    if not bad:
+        return merged, []
+    if period is None:
+        span_years = max(1, (merged.index.max() - merged.index.min()).days // 365 + 1)
+        period = "max" if span_years > 10 else f"{span_years}y"
+    log.warning("%s: %d ticker(s) with mixed adjustment basis in the closes cache "
+                "(split seam) — re-pulling %s: %s", name, len(bad), period, bad[:12])
+    try:
+        repull = downloader(bad, period)
+    except Exception as e:  # noqa: BLE001 — repair must never kill the run
+        log.warning("%s: seam re-pull failed (%s) — cache kept as-is; the seam "
+                    "scan retries next run", name, e)
+        return merged, []
+    if repull is None:
+        repull = pd.DataFrame()
+    healed = [t for t in bad if t in repull.columns and repull[t].notna().any()]
+    for t in healed:
+        merged[t] = repull[t].reindex(merged.index)
+    if missed := sorted(set(bad) - set(healed)):
+        log.warning("%s: seam re-pull returned no data for %s — kept as-is, "
+                    "retried next run", name, missed[:12])
+    return merged, healed
+
+
 class BreadthAdapter(Adapter):
     name = "breadth"
     group = "breadth"
