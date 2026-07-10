@@ -18,6 +18,10 @@ The weekly/2W legs reuse engine/htf_durability._biweekly_close for the
 epoch-anchored PIT-safe 2W resampler.
 
 DISPLAY-TIER LAW: no buy/act-now verbs. Fade base rate context is provided.
+
+Amendment log:
+  2026-07-10 U7: additive trend-state display fields (mid-trend visibility);
+               cross-window construction unchanged.
 """
 from __future__ import annotations
 
@@ -262,6 +266,96 @@ def _price_macd_hist(c: pd.Series) -> pd.Series:
 
 
 # ---------------------------------------------------------------------------
+# U7: Trend-state helpers (additive display fields; no construction change)
+# ---------------------------------------------------------------------------
+
+def _trend_for_hist(hist: pd.Series, cross_window: int) -> dict:
+    """Compute trend display fields from an already-computed MACD histogram series.
+
+    Returns {"pos": bool, "bars_since_cross": int|null} where:
+      pos            — current histogram > 0 (mid-trend indicator, not counted in K).
+      bars_since_cross — bars since the most recent bullish cross (hist goes from <=0 to >0)
+                         within the computed history.  null if none found.
+
+    cross_window is unused here (we search the full hist for the most recent cross);
+    it is retained as a parameter for documentation clarity.
+
+    NOTE: "bars_since_cross" is measured in bars of the *input* series (daily / weekly /
+    biweekly as appropriate), not calendar days.
+    """
+    h = hist.dropna()
+    if len(h) == 0:
+        return {"pos": False, "bars_since_cross": None}
+
+    pos = bool(float(h.iloc[-1]) > 0)
+
+    # Walk backwards to find the most recent bullish cross (<=0 → >0 transition)
+    bars_since: int | None = None
+    arr = h.values
+    n = len(arr)
+    for i in range(n - 1, 0, -1):
+        if arr[i] > 0 and arr[i - 1] <= 0:
+            bars_since = (n - 1) - i  # 0 means cross happened on the last bar
+            break
+
+    return {"pos": pos, "bars_since_cross": bars_since}
+
+
+def _build_trend_fields(close: pd.Series) -> dict:
+    """Build the 'trend' object for a ticker entry (additive display field, U7).
+
+    Returns:
+      {
+        "d":  {"pos": bool, "bars_since_cross": int|null},  # daily MACD(12,26,9)
+        "d3": {"pos": bool, "bars_since_cross": int|null},  # 3D MACD proxy
+        "w":  {"pos": bool, "bars_since_cross": int|null},  # weekly MACD
+        "w2": {"pos": bool, "bars_since_cross": int|null},  # 2W MACD
+      }
+
+    Computed entirely from already-used MACD series — no new data loads.
+    Each field is independent; cross_window semantics match each timeframe's
+    existing leg detection.
+    """
+    result: dict = {}
+
+    # Daily
+    try:
+        d_hist = _price_macd_hist(close).dropna()
+        result["d"] = _trend_for_hist(d_hist, D_MACD_WINDOW)
+    except Exception:
+        result["d"] = {"pos": False, "bars_since_cross": None}
+
+    # 3D proxy: use 3-bar rolling-close resampling, same approach as signal_frame
+    # but the pos/bars_since_cross only needs the 3D MACD histogram.
+    # signal_frame uses a different upstream (resampled 3D OHLCV); for the trend
+    # field we compute MACD on 3-bar forward-sampled closes as a representative proxy.
+    try:
+        c3 = close.resample("3B").last().dropna()
+        d3_hist = _price_macd_hist(c3).dropna()
+        result["d3"] = _trend_for_hist(d3_hist, D_MACD_WINDOW)
+    except Exception:
+        result["d3"] = {"pos": False, "bars_since_cross": None}
+
+    # Weekly
+    try:
+        weekly = close.resample("W-FRI").last().dropna()
+        w_hist = _price_macd_hist(weekly).dropna()
+        result["w"] = _trend_for_hist(w_hist, W_MACD_CROSS_WINDOW)
+    except Exception:
+        result["w"] = {"pos": False, "bars_since_cross": None}
+
+    # Biweekly
+    try:
+        biweekly = _biweekly_close(close)
+        w2_hist = _price_macd_hist(biweekly).dropna()
+        result["w2"] = _trend_for_hist(w2_hist, W2_MACD_CROSS_WINDOW)
+    except Exception:
+        result["w2"] = {"pos": False, "bars_since_cross": None}
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Leg computation
 # ---------------------------------------------------------------------------
 
@@ -417,6 +511,9 @@ def _compute_symbol(
     except Exception:
         htf_coverage = False
 
+    # U7: additive trend-state fields (display only; never counted in K)
+    trend = _build_trend_fields(close)
+
     # K = count of TRUE among {d_macd, d3_confluence, w_macd cross only, w2_macd}
     # 'approaching' does NOT count
     k = sum([d_macd, d3_conf, w_macd_cross, w2_macd])
@@ -446,6 +543,7 @@ def _compute_symbol(
             "w_macd": w_macd_status,  # "cross" | "approaching" | "none"
             "w2_macd": w2_macd,
         },
+        "trend": trend,  # U7: additive display fields; never affects K/state/legs
         "monthly_phase": month_phase,
         "htf_coverage": htf_coverage,
     }
@@ -630,6 +728,7 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
                 "state": state,
                 "k": k,
                 "legs": result["legs"],
+                "trend": result["trend"],  # U7: additive display fields
                 "monthly_phase": result["monthly_phase"],
                 "since": since_date,
                 "basket_ids": basket_ids,
@@ -653,6 +752,7 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
                 "state": "NONE",
                 "k": k,
                 "legs": result["legs"],
+                "trend": result["trend"],  # U7: additive display fields
                 "monthly_phase": result["monthly_phase"],
                 "since": None,
                 "basket_ids": basket_ids,
@@ -694,6 +794,9 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
         "tier": "display",
         "disclosure": DISCLOSURE,
         "fade_base_rate": FADE_BASE_RATE,
+        "amendments": [
+            "2026-07-10 U7: additive trend-state display fields (mid-trend visibility); cross-window construction unchanged",
+        ],
     }
 
 
@@ -1073,6 +1176,7 @@ def _compute_cn_inner(
                 "state": state,
                 "k": k,
                 "legs": result["legs"],
+                "trend": result["trend"],  # U7: additive display fields
                 "monthly_phase": result["monthly_phase"],
                 "htf_coverage": result["htf_coverage"],
                 "sources": source_tags,

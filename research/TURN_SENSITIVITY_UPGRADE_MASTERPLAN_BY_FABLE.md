@@ -83,6 +83,7 @@ Contract-first schema (U2↔U3): `site/stockdata/mtf_upturn.json` = `{schema:"mt
 
 ## §6 Clocks
 
+- **U7 2026-07-10:** additive trend-state display fields shipped (mid-trend visibility); cross-window construction unchanged.
 - **2026-07-16** — one-week read: mtf_upturn firing rates (board-noise check; thresholds amendment-logged), pulse mode distribution (how often live vs delayed vs last_rth), alert counts.
 - **2026-08-15** — joint with FTR clock: freshness sentinel zero-silent-stale, pulse p95.
 - **2026-10-09** — joint with FTR: turn_watch + mtf_upturn ledger n-counts; threshold re-derivation window.

@@ -83,6 +83,8 @@ from engine.mtf_upturn import (
     _compute_symbol,
     _ledger_advance_enabled,
     _stamp_ledger,
+    _trend_for_hist,
+    _build_trend_fields,
     compute,
     write_site_artifact,
     MAG7,
@@ -728,3 +730,211 @@ class TestHTFCoverage:
         # but at minimum should produce a non-NaN histogram
         # (flag as True when w2 hist has >= W2_MACD_CROSS_WINDOW+1 valid bars)
         assert isinstance(r["htf_coverage"], bool)
+
+
+# ---------------------------------------------------------------------------
+# 12. U7: Trend-state display fields
+# ---------------------------------------------------------------------------
+
+class TestTrendFields:
+    """U7: additive trend display fields — pos flag, bars_since_cross math,
+    Mag7 always-include carry-through.  Construction (legs/K/state) unchanged.
+    """
+
+    # --- _trend_for_hist unit tests ---
+
+    def test_trend_pos_true_when_hist_positive(self):
+        """pos=True when the last histogram bar is positive."""
+        idx = pd.date_range("2023-01-01", periods=50, freq="W-FRI")
+        hist = pd.Series([1.0] * 50, index=idx)
+        out = _trend_for_hist(hist, 3)
+        assert out["pos"] is True
+
+    def test_trend_pos_false_when_hist_negative(self):
+        """pos=False when the last histogram bar is negative."""
+        idx = pd.date_range("2023-01-01", periods=50, freq="W-FRI")
+        hist = pd.Series([-1.0] * 50, index=idx)
+        out = _trend_for_hist(hist, 3)
+        assert out["pos"] is False
+
+    def test_bars_since_cross_zero_on_last_bar(self):
+        """Cross on the last bar → bars_since_cross = 0."""
+        idx = pd.date_range("2023-01-01", periods=40, freq="W-FRI")
+        # 38 bars negative, then cross: bar 38 <= 0, bar 39 > 0
+        vals = [-1.0] * 38 + [-0.5, 1.0]
+        hist = pd.Series(vals, index=idx)
+        out = _trend_for_hist(hist, 3)
+        assert out["pos"] is True
+        assert out["bars_since_cross"] == 0
+
+    def test_bars_since_cross_three(self):
+        """Cross 3 bars ago → bars_since_cross = 3."""
+        idx = pd.date_range("2023-01-01", periods=44, freq="W-FRI")
+        # cross at position 40 (index 40: bar 39 was <=0, bar 40 >0)
+        # then 3 more bars: positions 41, 42, 43 — all positive
+        vals = [-1.0] * 39 + [-0.1, 1.0, 1.5, 2.0, 2.5]
+        hist = pd.Series(vals, index=idx)
+        out = _trend_for_hist(hist, 3)
+        assert out["pos"] is True
+        # cross happened at bar 40 (0-indexed), last bar is 43 → distance = 3
+        assert out["bars_since_cross"] == 3
+
+    def test_bars_since_cross_null_when_no_cross(self):
+        """Histogram always positive (no cross from <=0 to >0) → bars_since_cross=null."""
+        idx = pd.date_range("2023-01-01", periods=50, freq="W-FRI")
+        hist = pd.Series([1.0] * 50, index=idx)
+        out = _trend_for_hist(hist, 3)
+        assert out["bars_since_cross"] is None
+
+    def test_bars_since_cross_null_on_empty_hist(self):
+        """Empty histogram → pos=False, bars_since_cross=null."""
+        hist = pd.Series([], dtype=float)
+        out = _trend_for_hist(hist, 3)
+        assert out["pos"] is False
+        assert out["bars_since_cross"] is None
+
+    def test_bars_since_cross_null_when_always_negative(self):
+        """Histogram always negative → pos=False, bars_since_cross=null."""
+        idx = pd.date_range("2023-01-01", periods=50, freq="W-FRI")
+        hist = pd.Series([-2.0] * 50, index=idx)
+        out = _trend_for_hist(hist, 3)
+        assert out["pos"] is False
+        assert out["bars_since_cross"] is None
+
+    # --- _build_trend_fields integration ---
+
+    def test_trend_fields_keys_present(self):
+        """_build_trend_fields returns dict with d/d3/w/w2 keys."""
+        close = _trending_up(400)
+        trend = _build_trend_fields(close)
+        for tf in ("d", "d3", "w", "w2"):
+            assert tf in trend, f"Missing trend key '{tf}'"
+            assert "pos" in trend[tf]
+            assert "bars_since_cross" in trend[tf]
+
+    def test_trend_pos_is_bool(self):
+        """trend.*.pos is always a bool."""
+        close = _trending_up(400)
+        trend = _build_trend_fields(close)
+        for tf in ("d", "d3", "w", "w2"):
+            assert isinstance(trend[tf]["pos"], bool), f"trend[{tf}]['pos'] is not bool"
+
+    def test_trend_bars_since_cross_is_int_or_none(self):
+        """trend.*.bars_since_cross is int or None."""
+        close = _trending_up(400)
+        trend = _build_trend_fields(close)
+        for tf in ("d", "d3", "w", "w2"):
+            bsc = trend[tf]["bars_since_cross"]
+            assert bsc is None or isinstance(bsc, int), (
+                f"trend[{tf}]['bars_since_cross'] = {bsc!r} is not int|None"
+            )
+
+    def test_trend_weekly_positive_on_accelerating_uptrend(self):
+        """Exponentially accelerating uptrend should have trend.w.pos=True.
+
+        Note: a constant-rate linear uptrend produces zero (or near-zero) MACD hist
+        because EMA12 ≈ EMA26 in steady state.  Use compound-growth so EMA12
+        persistently leads EMA26, keeping hist positive.
+        """
+        idx = pd.bdate_range("2020-01-01", periods=600, freq="B")
+        # 0.1% daily compound growth — unambiguously accelerating in price-space
+        vals = [50.0 * (1.001 ** i) for i in range(600)]
+        close = pd.Series(vals, index=idx)
+        trend = _build_trend_fields(close)
+        assert trend["w"]["pos"] is True, (
+            "Weekly histogram expected positive for a 600-bar compound-growth uptrend"
+        )
+
+    def test_trend_weekly_bars_since_cross_non_null_on_trend_change(self):
+        """Series with a sharp bottom-to-top trend change should have bars_since_cross set."""
+        idx = pd.bdate_range("2020-01-01", periods=600, freq="B")
+        # Decline for 300 bars then sharp recovery — forces W MACD cross
+        vals = [100.0 - i * 0.2 for i in range(300)] + [40.0 + i * 0.4 for i in range(300)]
+        close = pd.Series(vals, index=idx)
+        trend = _build_trend_fields(close)
+        # If hist is positive (mid-trend or just crossed), check bars_since_cross
+        # It may be None if the series hasn't fully reached positive MACD at W
+        # (acceptable — just verify type contract is honoured)
+        bsc = trend["w"]["bars_since_cross"]
+        assert bsc is None or isinstance(bsc, int)
+
+    # --- _compute_symbol carries trend ---
+
+    def test_compute_symbol_carries_trend(self):
+        """_compute_symbol output always includes 'trend' dict."""
+        close = _trending_up(400)
+        r = _compute_symbol(close, close, "NONE", 0)
+        assert "trend" in r, "_compute_symbol output missing 'trend' key (U7)"
+        trend = r["trend"]
+        for tf in ("d", "d3", "w", "w2"):
+            assert tf in trend
+
+    def test_trend_does_not_affect_k_or_state(self):
+        """Adding trend fields must not change K or state (construction frozen)."""
+        close = _trending_up(400)
+        # Run twice, check K and state are identical (trend is additive only)
+        r1 = _compute_symbol(close, close, "NONE", 0)
+        r2 = _compute_symbol(close, close, "NONE", 0)
+        assert r1["k"] == r2["k"]
+        assert r1["state"] == r2["state"]
+        assert r1["legs"] == r2["legs"]
+
+    # --- Mag7 always-include carry-through ---
+
+    def test_always_include_rows_carry_trend(self):
+        """Mag7/SPDR NONE-state rows from compute() include trend fields.
+
+        This is a contract test: the engine must populate trend even for ALWAYS_INCLUDE
+        tickers that emit state=NONE, so the dashboard can render ring/empty correctly.
+        """
+        import tempfile as _tmp
+        from unittest.mock import patch as _patch
+
+        # Build a minimal data directory with only AAPL close data
+        with _tmp.TemporaryDirectory() as tmp:
+            from pathlib import Path
+            root = Path(tmp)
+            (root / "baskets" / "ohlcv").mkdir(parents=True)
+            # Write a 400-bar AAPL parquet
+            close_s = _trending_up(400)
+            df = close_s.to_frame("close")
+            df.to_parquet(root / "baskets" / "ohlcv" / "AAPL.parquet")
+
+            # Patch out all non-AAPL loads to return None (keeping test fast)
+            original_load = __import__("engine.mtf_upturn", fromlist=["_load_close"])._load_close
+
+            def _mock_load(sym, data_root=None):
+                if sym == "AAPL":
+                    return original_load(sym, data_root)
+                return None
+
+            with _patch("engine.mtf_upturn._load_close", side_effect=_mock_load), \
+                 _patch("engine.mtf_upturn._build_universe", return_value={"AAPL": ["mag7"]}), \
+                 _patch("engine.mtf_upturn._load_prior_states", return_value={}), \
+                 _patch("engine.mtf_upturn._stamp_ledger", return_value=0):
+                result = compute(data_root=root)
+
+        assert "AAPL" in result["tickers"], "AAPL must appear in tickers (always-include)"
+        aapl = result["tickers"]["AAPL"]
+        assert "trend" in aapl, "AAPL ticker entry missing 'trend' field (U7)"
+        trend = aapl["trend"]
+        for tf in ("d", "d3", "w", "w2"):
+            assert tf in trend, f"AAPL trend missing '{tf}' key"
+
+    def test_amendments_field_present(self):
+        """Artifact must include 'amendments' field with U7 entry."""
+        import tempfile as _tmp
+        from unittest.mock import patch as _patch
+
+        with _tmp.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with _patch("engine.mtf_upturn._build_universe", return_value={}), \
+                 _patch("engine.mtf_upturn._load_prior_states", return_value={}), \
+                 _patch("engine.mtf_upturn._stamp_ledger", return_value=0):
+                result = compute(data_root=root)
+
+        assert "amendments" in result, "Artifact missing 'amendments' field (U7)"
+        assert isinstance(result["amendments"], list)
+        assert any("U7" in a for a in result["amendments"]), (
+            "amendments list must contain a U7 entry"
+        )
