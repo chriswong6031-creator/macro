@@ -131,8 +131,6 @@
   .warn-banner { background:color-mix(in srgb,#f80 15%,var(--panel)); border:1px solid #c70;
     border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; color:#a50; }
   .warn-banner strong { color:#c70; }
-  /* A10: source-not-found chip */
-  .src-missing { font-size:9.5px; color:#a50; border:1px solid #c70; border-radius:4px; padding:0 4px; margin-left:3px; }
   /* A11: reset link */
   .filter-reset { font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; }
   .filter-reset:hover { color:var(--text); }
@@ -174,38 +172,38 @@
 </nav>
 
 {%- if warnings %}
-<div class=”warn-banner”>
+<div class="warn-banner">
   <strong>{{ t('Build warnings', '构建警告') }}:</strong>
   {% for w in warnings %}<div>{{ w }}</div>{% endfor %}
 </div>
 {%- endif %}
 
-<div class=”panel”>
-  <div class=”topline”>
+<div class="panel">
+  <div class="topline">
     <h1>🔬 {{ t('Signal Lab', '信号实验室') }}</h1>
-    <span class=”muted sm”>{{ t('Every signal, and whether it actually survives validation',
+    <span class="muted sm">{{ t('Every signal, and whether it actually survives validation',
                                 '每个信号，以及它是否真正通过验证') }}</span>
     {# A13: cross-link to China signal lab surface #}
-    <span class=”cross-link-chip”>{{ t('China signals:', '中国信号:') }}
-      <a href=”china_stocks_lab.html”>{{ t('China Signal Lab', '中国信号实验室') }}</a>
+    <span class="cross-link-chip">{{ t('China signals:', '中国信号:') }}
+      <a href="china_stocks_lab.html">{{ t('China Signal Lab', '中国信号实验室') }}</a>
     </span>
   </div>
   {# A12: pipeline legend #}
-  <div class=”pipeline-legend”>
-    <span class=”step”>{{ t('idea', '想法') }}</span>
-    <span class=”arrow”>→</span>
-    <span class=”step”>{{ t('phase-0 battery', 'Phase-0 验证') }}</span>
-    <span class=”arrow”>→</span>
-    <span class=”step”>{{ t('adjudication', '裁决') }}</span>
-    <span class=”arrow”>→</span>
-    <span class=”step”>{{ t('tier', '分级') }}</span>
-    <span style=”margin-left:8px”>·</span>
-    <a href=”factordata/signal_lab.json” style=”font-size:11px;color:var(--muted)”>{{ t('machine-readable payload', '机器可读数据') }} ↗</a>
+  <div class="pipeline-legend">
+    <span class="step">{{ t('idea', '想法') }}</span>
+    <span class="arrow">→</span>
+    <span class="step">{{ t('phase-0 battery', 'Phase-0 验证') }}</span>
+    <span class="arrow">→</span>
+    <span class="step">{{ t('adjudication', '裁决') }}</span>
+    <span class="arrow">→</span>
+    <span class="step">{{ t('tier', '分级') }}</span>
+    <span style="margin-left:8px">·</span>
+    <a href="factordata/signal_lab.json" style="font-size:11px;color:var(--muted)">{{ t('machine-readable payload', '机器可读数据') }} ↗</a>
   </div>
-  <p class=”lead” style=”margin:10px 0 0”>{{ t(
+  <p class="lead" style="margin:10px 0 0">{{ t(
      'What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.',
      '把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是”信号墓地”：那些我们测量后拒绝上线的信号。') }}</p>
-  <div class=”chips”>
+  <div class="chips">
     <span class="chip"><span class="dot d-scored"></span><b>{{ summary.scored }}</b> {{ t('scored','已计分') }}</span>
     <span class="chip"><span class="dot d-confirmer"></span><b>{{ summary.confirmer }}</b> {{ t('confirmer','确认项') }}</span>
     <span class="chip"><span class="dot d-display"></span><b>{{ summary.display }}</b> {{ t('display-only','仅展示') }}</span>
@@ -372,7 +370,7 @@
       '诚实的核心。每个因子 z 分对 ' ~ (factor_meta.horizon_d or 63) ~ '日前瞻收益的季度横截面秩相关 IC，完全时点（EDGAR 与价格截断至当时），区间 ' ~ (factor_meta.span or '—') ~ '（' ~ (factor_meta.rebalances or 0) ~ ' 个季度）。'
       ~ ('时点修正后，无一通过 10% 的 Benjamini-Hochberg FDR — 这正是拒绝前视的代价。'
          if not surv else
-         ('仅 ' ~ (snames|join(', ')) ~ ' 通过 10% 的 BH-FDR — 注意 IC 符号：负 IC 的“通过者”是反预测，不可交易。'))
+         ('仅 ' ~ (snames|join(', ')) ~ ' 通过 10% 的 BH-FDR — 注意 IC 符号：负 IC 的"通过者"是反预测，不可交易。'))
       ~ ('这是深度历史复检：价格面板含幸存者偏差（已退市名缺失 → 乐观上界），故仅展示个别勉强通过者，并不据此计分。浅窗口（2023-2025）的幸存者 SUE 在此崩塌至 IC≈0 — 这正是其被降级的数据层面原因。' if factor_meta.survivorship_biased else '')) }}</span>
   </div>
   <div class="scroll"><table>
@@ -467,14 +465,11 @@
             {% endfor %}
           </div>
           {% endif %}
-          {# A10: missing source refs chip #}
-          {% if r.get('source_refs') %}
-          {% for sref in r.source_refs %}
-          {% if not sref.exists %}
-          <span class="src-missing" title="source file not on branch">{{ sref.ref }} !</span>
-          {% endif %}
-          {% endfor %}
-          {% endif %}
+          {# A10: source refs audit — existence data available in r.source_refs for diagnostics;
+               src-missing UI chip suppressed: source field uses citation shorthands (e.g.
+               "insider-phase0/1.md", "spvector-phase1/2/3-audit/pit.md") that are not
+               repo-relative file paths, producing false-alarm red chips on well-sourced
+               signals. The audit remains in engine for structured tracking. #}
         </td>
         <td class="r {{ 'pos' if (r.ic or 0) > 0 else ('neg' if r.ic is not none and r.ic < 0) }}">{{ num(r.ic, 4, plus=True) }}</td>
         <td class="r">{{ num(r.t_hac, 2, plus=True) }}</td>
@@ -542,7 +537,7 @@
       <dt>{{ t('Deflated Sharpe (DSR)','去偏夏普 (DSR)') }}</dt>
       <dd>{{ t('A Sharpe ratio haircut for the number of strategies tried, plus return skew/kurtosis (López de Prado). It is the probability the true Sharpe is positive. Our bar is 0.90 — a backtest Sharpe that looks great but has DSR<0.90 is treated as luck.','按尝试的策略数量及收益偏度/峰度对夏普打折（López de Prado）。它是真实夏普为正的概率。门槛 0.90 — 回测夏普好看但 DSR<0.90 的，按运气处理。') }}</dd>
       <dt>{{ t('Point-in-time (leak-free)','时点（无泄漏）') }}</dt>
-      <dd>{{ t('Fundamentals are stamped at period-end + reporting lag; index membership is reconstructed as it was on each date; indicators are shifted so a backtest only ever sees what was knowable then. This is why the spreads are honestly weaker than a naive backtest.','基本面以”期末+披露滞后”打戳；指数成分按当日实际重建；指标移位，使回测只看到当时可知的信息。这正是价差诚实地弱于朴素回测的原因。') }}</dd>
+      <dd>{{ t('Fundamentals are stamped at period-end + reporting lag; index membership is reconstructed as it was on each date; indicators are shifted so a backtest only ever sees what was knowable then. This is why the spreads are honestly weaker than a naive backtest.','基本面以"期末+披露滞后"打戳；指数成分按当日实际重建；指标移位，使回测只看到当时可知的信息。这正是价差诚实地弱于朴素回测的原因。') }}</dd>
       <dt>{{ t('DSR Provenance badge','DSR 溯源标记') }}</dt>
       <dd>{{ t(
         'The green [n=... ledger-live] badge means the DSR n_trials count is sourced live from the persistent Trial Ledger maintained by calibrate_* scripts. Grey [frozen quote - exp ...] means the n_trials was hardcoded pending re-derivation -- treat the DSR as an approximation. Red [EXPIRED quote] means the expiry date has passed without re-derivation.',

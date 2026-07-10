@@ -19,9 +19,9 @@
         "screened": 500,
         "advanced": 48,
         "result_label": "1 family queued (FFIEC bank stress)",
-        "result_label_zh": "1个家族排队（FFIEC銀行压力）",
+        "result_label_zh": "1个家族排队（FFIEC银行压力）",
         "detail": "500 screened / 48 template advances collapsed to 4 feeds / 1 family queued: FFIEC bank-stress call-report ratios.",
-        "detail_zh": "500个筛选 / 48个模板候选合并为4个数据流 / 1个家族排队：FFIEC銀行压力报告比率。",
+        "detail_zh": "500个筛选 / 48个模板候选合并为4个数据流 / 1个家族排队：FFIEC银行压力报告比率。",
         "doc": "research/SIGNAL_LAB_FRONTIER_WAVE3_FABLE_ADJUDICATION_2026-07-06.md"
       },
       {

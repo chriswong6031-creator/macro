@@ -716,6 +716,27 @@
    ]
   },
   {
+   "match": "已验证、已上线的 masterminds GTAA",
+   "backing": "ZH counterpart of 'validated, served masterminds gtaa' (entry 94): cross-asset trend is the validated, live masterminds GTAA primary factor (W_REGIME 0.45; china-masterminds).",
+   "surfaces": [
+    "signal_lab"
+   ]
+  },
+  {
+   "match": "已验证渠道为同期共动",
+   "backing": "ZH counterpart of 'validated channel' (entry 76): LVMUY contemporaneous co-move channel validated as contemporaneous-only (not leading) in W4-C7 study (altdata_quiver, reports/intl-luxury-readthrough-phase0.md).",
+   "surfaces": [
+    "signal_lab"
+   ]
+  },
+  {
+   "match": "已验证的中国外部驱动雷达",
+   "backing": "ZH counterpart of 'validated china external-driver radar' (entry 95): engine/risk_radar_intl — the validated China external-driver radar (breadth collapse, US-rate shock, US-CN spread, USD). china-drawdown-edge-validated.",
+   "surfaces": [
+    "signal_lab"
+   ]
+  },
+  {
    "match": "calibrated, validated",
    "backing": "engine/risk_radar_intl.py — the calibrated, validated intl risk radar (drawdown-side).",
    "surfaces": [

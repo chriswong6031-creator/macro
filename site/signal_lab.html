@@ -5,6 +5,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><span class="l-en">Signal Lab — does each signal actually work?</span><span class="l-zh">信号实验室 — 每个信号真的有效吗？</span></title>
@@ -123,8 +124,6 @@
   .warn-banner { background:color-mix(in srgb,#f80 15%,var(--panel)); border:1px solid #c70;
     border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; color:#a50; }
   .warn-banner strong { color:#c70; }
-  /* A10: source-not-found chip */
-  .src-missing { font-size:9.5px; color:#a50; border:1px solid #c70; border-radius:4px; padding:0 4px; margin-left:3px; }
   /* A11: reset link */
   .filter-reset { font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; }
   .filter-reset:hover { color:var(--text); }
@@ -426,29 +425,29 @@
   </div>
 </nav>
 
-<div class=”panel”>
-  <div class=”topline”>
+<div class="panel">
+  <div class="topline">
     <h1>🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></h1>
-    <span class=”muted sm”><span class="l-en">Every signal, and whether it actually survives validation</span><span class="l-zh">每个信号，以及它是否真正通过验证</span></span>
+    <span class="muted sm"><span class="l-en">Every signal, and whether it actually survives validation</span><span class="l-zh">每个信号，以及它是否真正通过验证</span></span>
     
-    <span class=”cross-link-chip”><span class="l-en">China signals:</span><span class="l-zh">中国信号:</span>
-      <a href=”china_stocks_lab.html”><span class="l-en">China Signal Lab</span><span class="l-zh">中国信号实验室</span></a>
+    <span class="cross-link-chip"><span class="l-en">China signals:</span><span class="l-zh">中国信号:</span>
+      <a href="china_stocks_lab.html"><span class="l-en">China Signal Lab</span><span class="l-zh">中国信号实验室</span></a>
     </span>
   </div>
   
-  <div class=”pipeline-legend”>
-    <span class=”step”><span class="l-en">idea</span><span class="l-zh">想法</span></span>
-    <span class=”arrow”>→</span>
-    <span class=”step”><span class="l-en">phase-0 battery</span><span class="l-zh">Phase-0 验证</span></span>
-    <span class=”arrow”>→</span>
-    <span class=”step”><span class="l-en">adjudication</span><span class="l-zh">裁决</span></span>
-    <span class=”arrow”>→</span>
-    <span class=”step”><span class="l-en">tier</span><span class="l-zh">分级</span></span>
-    <span style=”margin-left:8px”>·</span>
-    <a href=”factordata/signal_lab.json” style=”font-size:11px;color:var(--muted)”><span class="l-en">machine-readable payload</span><span class="l-zh">机器可读数据</span> ↗</a>
+  <div class="pipeline-legend">
+    <span class="step"><span class="l-en">idea</span><span class="l-zh">想法</span></span>
+    <span class="arrow">→</span>
+    <span class="step"><span class="l-en">phase-0 battery</span><span class="l-zh">Phase-0 验证</span></span>
+    <span class="arrow">→</span>
+    <span class="step"><span class="l-en">adjudication</span><span class="l-zh">裁决</span></span>
+    <span class="arrow">→</span>
+    <span class="step"><span class="l-en">tier</span><span class="l-zh">分级</span></span>
+    <span style="margin-left:8px">·</span>
+    <a href="factordata/signal_lab.json" style="font-size:11px;color:var(--muted)"><span class="l-en">machine-readable payload</span><span class="l-zh">机器可读数据</span> ↗</a>
   </div>
-  <p class=”lead” style=”margin:10px 0 0”><span class="l-en">What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.</span><span class="l-zh">把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是”信号墓地”：那些我们测量后拒绝上线的信号。</span></p>
-  <div class=”chips”>
+  <p class="lead" style="margin:10px 0 0"><span class="l-en">What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.</span><span class="l-zh">把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是”信号墓地”：那些我们测量后拒绝上线的信号。</span></p>
+  <div class="chips">
     <span class="chip"><span class="dot d-scored"></span><b>6</b> <span class="l-en">scored</span><span class="l-zh">已计分</span></span>
     <span class="chip"><span class="dot d-confirmer"></span><b>23</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
     <span class="chip"><span class="dot d-display"></span><b>27</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
@@ -485,7 +484,7 @@
     </span>
     <span style="display:inline-block;margin:2px 8px 2px 0">
       <a href="/research/SIGNAL_LAB_FRONTIER_WAVE3_FABLE_ADJUDICATION_2026-07-06.md" style="color:inherit;text-decoration:underline dotted"><span class="l-en">W3</span><span class="l-zh">W3</span></a>
-      <span class="l-en">500 screened / 48 advanced → 1 family queued (FFIEC bank stress)</span><span class="l-zh">500筛选 / 48候选 → 1个家族排队（FFIEC銀行压力）</span>;
+      <span class="l-en">500 screened / 48 advanced → 1 family queued (FFIEC bank stress)</span><span class="l-zh">500筛选 / 48候选 → 1个家族排队（FFIEC银行压力）</span>;
     </span>
     <span style="display:inline-block;margin:2px 8px 2px 0">
       <a href="/research/SIGNAL_LAB_FRONTIER_WAVE4_FABLE_ADJUDICATION_2026-07-06.md" style="color:inherit;text-decoration:underline dotted"><span class="l-en">W4</span><span class="l-zh">W4</span></a>
@@ -865,7 +864,7 @@
 <div class="panel ">
   <div class="tierhead">
     <h2>🧮 <span class="l-en">US equity factor cross-section — leak-free, point-in-time</span><span class="l-zh">美股因子横截面 — 无泄漏、时点</span></h2>
-    <span class="bl"><span class="l-en">The honest centerpiece. Quarterly cross-sectional rank-IC of each factor z-score vs the 63d forward return, fully point-in-time (EDGAR + prices truncated to as-of), over 2011-03-31..2025-12-31 (60 quarters). Only Payout yield (+) survive BH-FDR at 10% — and mind the IC sign: a survivor with a NEGATIVE IC is anti-predictive, not tradeable. This is the DEEP-history re-test: the price panel is survivorship-biased (delisted names absent → an optimistic bound), so a lone, marginal survivor is shown — not promoted to a scored leg. SUE, the shallow-2023-2025 survivor, collapses to IC≈0 here — the data-level reason it was demoted.</span><span class="l-zh">诚实的核心。每个因子 z 分对 63日前瞻收益的季度横截面秩相关 IC，完全时点（EDGAR 与价格截断至当时），区间 2011-03-31..2025-12-31（60 个季度）。仅 Payout yield (+) 通过 10% 的 BH-FDR — 注意 IC 符号：负 IC 的“通过者”是反预测，不可交易。这是深度历史复检：价格面板含幸存者偏差（已退市名缺失 → 乐观上界），故仅展示个别勉强通过者，并不据此计分。浅窗口（2023-2025）的幸存者 SUE 在此崩塌至 IC≈0 — 这正是其被降级的数据层面原因。</span></span>
+    <span class="bl"><span class="l-en">The honest centerpiece. Quarterly cross-sectional rank-IC of each factor z-score vs the 63d forward return, fully point-in-time (EDGAR + prices truncated to as-of), over 2011-03-31..2025-12-31 (60 quarters). Only Payout yield (+) survive BH-FDR at 10% — and mind the IC sign: a survivor with a NEGATIVE IC is anti-predictive, not tradeable. This is the DEEP-history re-test: the price panel is survivorship-biased (delisted names absent → an optimistic bound), so a lone, marginal survivor is shown — not promoted to a scored leg. SUE, the shallow-2023-2025 survivor, collapses to IC≈0 here — the data-level reason it was demoted.</span><span class="l-zh">诚实的核心。每个因子 z 分对 63日前瞻收益的季度横截面秩相关 IC，完全时点（EDGAR 与价格截断至当时），区间 2011-03-31..2025-12-31（60 个季度）。仅 Payout yield (+) 通过 10% 的 BH-FDR — 注意 IC 符号：负 IC 的"通过者"是反预测，不可交易。这是深度历史复检：价格面板含幸存者偏差（已退市名缺失 → 乐观上界），故仅展示个别勉强通过者，并不据此计分。浅窗口（2023-2025）的幸存者 SUE 在此崩塌至 IC≈0 — 这正是其被降级的数据层面原因。</span></span>
   </div>
   <div class="scroll"><table>
     <thead><tr>
@@ -1061,13 +1060,6 @@
           </div>
           
           
-          
-          
-          
-          <span class="src-missing" title="source file not on branch">spvector-phase1/2/3-audit/pit.md !</span>
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -1138,11 +1130,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -1206,11 +1193,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r pos">+0.5310</td>
         <td class="r"><span class="muted">—</span></td>
@@ -1272,11 +1254,6 @@
             <span class="extra-chip"><span class="el">MOVE leg IC</span><span>0.168 (confirmed)</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -1344,11 +1321,6 @@
             <span class="extra-chip"><span class="el">standalone sleeve</span><span>≈ buy&hold (display row)</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -1428,11 +1400,6 @@
             <span class="extra-chip"><span class="el">provenance</span><span>pre-gate figure 0.9965 retired 2026-07; dual-track as of W1 N7</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -1543,11 +1510,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r pos">+0.0330</td>
         <td class="r">+3.01</td>
@@ -1607,13 +1569,6 @@
           
           
           
-          
-          
-          
-          <span class="src-missing" title="source file not on branch">insider-phase0/1.md !</span>
-          
-          
-          
         </td>
         <td class="r pos">+0.0289</td>
         <td class="r">+2.90</td>
@@ -1667,11 +1622,6 @@
             <span class="extra-chip"><span class="el">regime changes</span><span>149</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -1729,13 +1679,6 @@
           
           
           
-          
-          
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -1787,11 +1730,6 @@
             <span class="extra-chip"><span class="el">risk-on / off / neutral fwd-63d</span><span>+1.9% / +0.84% / +0.36%</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -1847,11 +1785,6 @@
           
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -1903,11 +1836,6 @@
             <span class="extra-chip"><span class="el">history</span><span>accruing (n small)</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -1971,11 +1899,6 @@
             <span class="extra-chip"><span class="el">caveat</span><span>tight fires ~5% days, 0 post-2012</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -2047,11 +1970,6 @@
             <span class="extra-chip"><span class="el">score impact</span><span>none — display-only</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -2126,11 +2044,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -2196,11 +2109,6 @@
             <span class="extra-chip"><span class="el">driver</span><span>gold/silver-ratio reversion ~0.61</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -2270,11 +2178,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -2340,11 +2243,6 @@
             <span class="extra-chip"><span class="el">Fed-put gate</span><span>LOWERS timed CAGR 12.5→12.0</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -2414,11 +2312,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r neg">-0.1660</td>
         <td class="r"><span class="muted">—</span></td>
@@ -2486,11 +2379,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r pos">+0.2180</td>
         <td class="r"><span class="muted">—</span></td>
@@ -2556,11 +2444,6 @@
             <span class="extra-chip"><span class="el">leave-one-crisis-out</span><span>INVERTS on COVID</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -2634,11 +2517,6 @@
             <span class="extra-chip"><span class="el">direction</span><span>coin-flip — NOT claimed</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -2718,11 +2596,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -2796,11 +2669,6 @@
             <span class="extra-chip"><span class="el">CAGR give-up</span><span>6.42% vs 7.91% B&H</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -2882,11 +2750,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -2964,15 +2827,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
-          <span class="src-missing" title="source file not on branch">reports/forex-reer-n1-phase0.md !</span>
-          
-          
-          
         </td>
         <td class="r pos">+0.0507</td>
         <td class="r"><span class="muted">—</span></td>
@@ -3042,11 +2896,6 @@
             <span class="extra-chip"><span class="el">V2 QE-rebalance verdict</span><span>NULL</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -3119,11 +2968,6 @@
             <span class="extra-chip"><span class="el">7 of 8 cells</span><span>NULL; promotion requires further accrual</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -3213,7 +3057,6 @@
           
           
           
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -3258,11 +3101,6 @@
             <a class="anchor-link" href="#sig-us-residual-alpha-momentum-ranking" title="anchor">¶</a>
           </div>
           <div class="mkt">US S&P1500 · 21d · discovery.html ranking (context)</div>
-          
-          
-          
-          
-          
           
           
           
@@ -3313,11 +3151,6 @@
           
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -3362,13 +3195,6 @@
             <a class="anchor-link" href="#sig-china-quality-roe-cross-section" title="anchor">¶</a>
           </div>
           <div class="mkt">China A · quarterly · china context</div>
-          
-          
-          
-          
-          
-          
-          <span class="src-missing" title="source file not on branch">china-quality-phase0.md !</span>
           
           
           
@@ -3419,13 +3245,6 @@
           
           
           
-          
-          
-          
-          <span class="src-missing" title="source file not on branch">china-value-phase0.md !</span>
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -3473,11 +3292,6 @@
           
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -3522,11 +3336,6 @@
             <a class="anchor-link" href="#sig-hk-total-return-momentum" title="anchor">¶</a>
           </div>
           <div class="mkt">HK · monthly · hk context</div>
-          
-          
-          
-          
-          
           
           
           
@@ -3583,11 +3392,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -3638,11 +3442,6 @@
             <a class="anchor-link" href="#sig-bitcoin-vector-confirmation-candidates-funding-z-oi-div-vrp" title="anchor">¶</a>
           </div>
           <div class="mkt">BTC · allocation · vector.html (context)</div>
-          
-          
-          
-          
-          
           
           
           
@@ -3701,13 +3500,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
-          
-          
         </td>
         <td class="r pos">+0.0005</td>
         <td class="r">+0.06</td>
@@ -3763,11 +3555,6 @@
           
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -3815,11 +3602,6 @@
           
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r">-2.32</td>
@@ -3864,11 +3646,6 @@
             <a class="anchor-link" href="#sig-narrative-regime-news-text-uncertainty" title="anchor">¶</a>
           </div>
           <div class="mkt">US macro · fwd vol · macro.html banner (×1.0)</div>
-          
-          
-          
-          
-          
           
           
           
@@ -3927,15 +3704,6 @@
             <span class="extra-chip"><span class="el">both</span><span>give up CAGR vs B&H</span></span>
             
           </div>
-          
-          
-          
-          
-          
-          
-          
-          <span class="src-missing" title="source file not on branch">-phase0.md !</span>
-          
           
           
         </td>
@@ -4005,11 +3773,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -4075,11 +3838,6 @@
             <span class="extra-chip"><span class="el">de-risk</span><span>~one 2008 crisis; causal variant VANISHES</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -4149,11 +3907,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -4221,7 +3974,6 @@
             <span class="extra-chip"><span class="el">crisis effective-N</span><span>1 (panel ~5y, 2022 bear only)</span></span>
             
           </div>
-          
           
           
         </td>
@@ -4295,11 +4047,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -4367,13 +4114,6 @@
             <span class="extra-chip"><span class="el">crisis-indep ES</span><span>−0.0095 (fails)</span></span>
             
           </div>
-          
-          
-          
-          
-          
-          <span class="src-missing" title="source file not on branch">reports/forex-reer-n1-phase0.md !</span>
-          
           
           
         </td>
@@ -4445,7 +4185,6 @@
           </div>
           
           
-          
         </td>
         <td class="r neg">-0.0640</td>
         <td class="r"><span class="muted">—</span></td>
@@ -4515,7 +4254,6 @@
             <span class="extra-chip"><span class="el">diverge-fire frequency</span><span>~3% of days (votes≥2 + equities calm)</span></span>
             
           </div>
-          
           
           
         </td>
@@ -4591,11 +4329,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r pos">+0.1570</td>
         <td class="r"><span class="muted">—</span></td>
@@ -4667,13 +4400,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -4737,13 +4463,6 @@
             <span class="extra-chip"><span class="el">lead/lag survivors</span><span>5 split-half stable, ALL lag-1 (timezone)</span></span>
             
           </div>
-          
-          
-          
-          
-          
-          
-          
           
           
         </td>
@@ -4819,11 +4538,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r neg">-0.0695</td>
         <td class="r"><span class="muted">—</span></td>
@@ -4895,7 +4609,6 @@
             <span class="extra-chip"><span class="el">governance</span><span>risk_radar_intl_audit.can_force (≥30 graded, ≥8 alerts, lift ≥1.25×)</span></span>
             
           </div>
-          
           
           
         </td>
@@ -4980,7 +4693,6 @@
           
           
           
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -5025,7 +4737,6 @@
             <a class="anchor-link" href="#sig-constructive-base-scanner-ibd-pivot" title="anchor">¶</a>
           </div>
           <div class="mkt">US S&P1500 · 21d · not shipped</div>
-          
           
           
           
@@ -5084,7 +4795,6 @@
           </div>
           
           
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -5140,11 +4850,6 @@
           
           
           
-          
-          
-          
-          
-          
         </td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r"><span class="muted">—</span></td>
@@ -5189,11 +4894,6 @@
             <a class="anchor-link" href="#sig-china-momentum-deep-history" title="anchor">¶</a>
           </div>
           <div class="mkt">China A · 21d · not shipped (reversal kept instead)</div>
-          
-          
-          
-          
-          
           
           
           
@@ -5244,7 +4944,6 @@
           
           
           
-          
         </td>
         <td class="r neg">-0.1600</td>
         <td class="r">-4.60</td>
@@ -5289,11 +4988,6 @@
             <a class="anchor-link" href="#sig-spvector-diversified-sleeves-spy-duration" title="anchor">¶</a>
           </div>
           <div class="mkt">US macro · allocation · not shipped</div>
-          
-          
-          
-          
-          
           
           
           
@@ -5352,11 +5046,6 @@
             <span class="extra-chip"><span class="el">split-half Sharpe</span><span>sign-flip</span></span>
             
           </div>
-          
-          
-          
-          
-          
           
           
         </td>
@@ -5428,13 +5117,6 @@
           </div>
           
           
-          
-          
-          
-          
-          
-          
-          
         </td>
         <td class="r neg">-0.0181</td>
         <td class="r">-1.01</td>
@@ -5498,7 +5180,7 @@
       <dt><span class="l-en">Deflated Sharpe (DSR)</span><span class="l-zh">去偏夏普 (DSR)</span></dt>
       <dd><span class="l-en">A Sharpe ratio haircut for the number of strategies tried, plus return skew/kurtosis (López de Prado). It is the probability the true Sharpe is positive. Our bar is 0.90 — a backtest Sharpe that looks great but has DSR<0.90 is treated as luck.</span><span class="l-zh">按尝试的策略数量及收益偏度/峰度对夏普打折（López de Prado）。它是真实夏普为正的概率。门槛 0.90 — 回测夏普好看但 DSR<0.90 的，按运气处理。</span></dd>
       <dt><span class="l-en">Point-in-time (leak-free)</span><span class="l-zh">时点（无泄漏）</span></dt>
-      <dd><span class="l-en">Fundamentals are stamped at period-end + reporting lag; index membership is reconstructed as it was on each date; indicators are shifted so a backtest only ever sees what was knowable then. This is why the spreads are honestly weaker than a naive backtest.</span><span class="l-zh">基本面以”期末+披露滞后”打戳；指数成分按当日实际重建；指标移位，使回测只看到当时可知的信息。这正是价差诚实地弱于朴素回测的原因。</span></dd>
+      <dd><span class="l-en">Fundamentals are stamped at period-end + reporting lag; index membership is reconstructed as it was on each date; indicators are shifted so a backtest only ever sees what was knowable then. This is why the spreads are honestly weaker than a naive backtest.</span><span class="l-zh">基本面以"期末+披露滞后"打戳；指数成分按当日实际重建；指标移位，使回测只看到当时可知的信息。这正是价差诚实地弱于朴素回测的原因。</span></dd>
       <dt><span class="l-en">DSR Provenance badge</span><span class="l-zh">DSR 溯源标记</span></dt>
       <dd><span class="l-en">The green [n=... ledger-live] badge means the DSR n_trials count is sourced live from the persistent Trial Ledger maintained by calibrate_* scripts. Grey [frozen quote - exp ...] means the n_trials was hardcoded pending re-derivation -- treat the DSR as an approximation. Red [EXPIRED quote] means the expiry date has passed without re-derivation.</span><span class="l-zh">绿色 [n=... ledger-live] 标记表示 DSR 的试验次数从持久试验账本（由 calibrate_* 脚本维护）实时读取。灰色 [frozen quote - exp ...] 表示试验次数为硬编码值，待重新推导--DSR 应视为近似值。红色 [EXPIRED quote] 表示到期日已过但尚未重新推导。</span></dd>
     </dl>
@@ -5509,8 +5191,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-10 13:14 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-10 13:14 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-10T00:00:00Z UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-10T00:00:00Z UTC</p>
 </div>
 
 <script src="theme.js"></script>
