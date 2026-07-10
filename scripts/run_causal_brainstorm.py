@@ -1,13 +1,17 @@
 """scripts/run_causal_brainstorm.py — CHF W5 LLM chain runner.
 
-Operator trigger + auto_loop gate + service-key identity + ISO-week idempotency.
+Operator trigger + auto_loop gate + OAuth identity + ISO-week idempotency.
 Mirrors the cortex job architecture (tool loop client pattern, provider waterfall,
 run_status dict, never-raise contract, exit 0 always except unexpected crash).
 
-CHF-R8: the LLM chain runs only when:
+CHF-R8 (as amended by operator ruling 2026-07-09 — masterplan §9): the LLM chain
+runs only when:
   (i)  trigger == 'operator'   — any available auth provider (full waterfall)
-  (ii) trigger == 'scheduled'  AND config auto_loop is true  AND
-       ANTHROPIC_API_KEY (service-key) provider is available.
+  (ii) trigger == 'scheduled'  AND config auto_loop is true  AND the
+       CLAUDE_CODE_OAUTH_TOKEN (oauth) provider is available. The operator
+       directed OAuth-ONLY identity for scheduled runs, superseding the
+       original service-key requirement; the ANTHROPIC_API_KEY provider is
+       explicitly excluded from the scheduled path.
 Without auth or gate: pack-only mode (operator-paste workflow).
 
 CHF-R17: LLM actor law — the chain is a mechanical rule-application pipeline.
@@ -120,32 +124,23 @@ def _write_lane_status(
 # ---------------------------------------------------------------------------
 
 def _build_scheduled_providers(cfg: dict) -> list[dict]:
-    """For scheduled trigger: ONLY the ANTHROPIC_API_KEY service-key provider.
+    """For scheduled trigger: ONLY the CLAUDE_CODE_OAUTH_TOKEN (oauth) provider.
 
-    Per W-AUTO identity line: scheduled auto-loop MUST use service-key identity,
-    NEVER user-OAuth (CLAUDE_CODE_OAUTH_TOKEN). This function explicitly excludes
-    oauth and deepseek providers.
+    Operator ruling 2026-07-09 (masterplan §9) overrides the original W-AUTO
+    service-key requirement for CHF: scheduled auto-loop runs on the user's
+    OAuth identity. The ANTHROPIC_API_KEY and deepseek providers are explicitly
+    EXCLUDED from the scheduled path — the operator directed "don't use api
+    key, use oauth". A missing/invalid OAuth token degrades to pack-only mode.
     """
     from engine import llm_auth  # noqa: PLC0415
-    from lib import config as _config  # noqa: PLC0415
-
-    env = cfg.get("api_key_env", "ANTHROPIC_API_KEY")
-    key = _config.secret(env)
-    if not key:
-        return []
-    key = llm_auth._sanitize_token(key, env)
-    if key is None:
-        return []
 
     model = cfg.get("model_roles", {}).get("generator", "claude-sonnet-4-6")
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=key)
-        return [{"name": "anthropic", "env_var": env, "cred": key,
-                 "client": client, "model": model}]
+        providers = llm_auth.build_providers(cfg, opus_model=model)
     except Exception as exc:  # noqa: BLE001
-        log.warning("run_causal_brainstorm: anthropic client init failed (%s)", exc)
+        log.warning("run_causal_brainstorm: provider build failed (%s)", exc)
         return []
+    return [p for p in providers if p.get("name") == "oauth"]
 
 
 def _build_operator_providers(cfg: dict, model_override: str | None = None) -> list[dict]:
@@ -163,7 +158,7 @@ def _build_providers_for_model(
     """Build providers selecting the right model from model_roles."""
     model = cfg.get("model_roles", {}).get(model_role)
     if trigger == "scheduled":
-        # Service-key only; swap the model
+        # OAuth only (operator ruling 2026-07-09); swap the model
         providers = _build_scheduled_providers(cfg)
         if providers and model:
             for p in providers:

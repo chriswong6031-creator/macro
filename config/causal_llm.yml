@@ -1,30 +1,30 @@
 # CHF-R8 autonomy gate — the operator risk-acceptance switch.
 #
-# auto_loop may be flipped ONLY by the operator after Phase-A is satisfied
-# (see phase_a block below). This file is the SOLE gate that enables scheduled
-# autonomous LLM brainstorm runs. Flipping it requires a one-line PR; this
-# masterplan document (research/CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md
-# §6 ops + CHF-R8) is the ruling that the flip requires nothing further.
+# auto_loop was flipped to true by DIRECT OPERATOR RULING on 2026-07-09
+# (chat directive: "set to auto loop"), superseding the Phase-A earn-in that
+# CHF-R8 originally required. The masterplan status log (§9 in
+# research/CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md) records the ruling.
 #
-# Scheduled runs REQUIRE service-key identity (ANTHROPIC_API_KEY repo secret).
-# They NEVER use CLAUDE_CODE_OAUTH_TOKEN per the W-AUTO identity line in the
-# Research Factory charter. The runner enforces this: when trigger=scheduled,
-# only the 'anthropic' provider with ANTHROPIC_API_KEY is accepted.
+# Identity (operator ruling 2026-07-09, same entry): scheduled runs use the
+# user's CLAUDE_CODE_OAUTH_TOKEN ("don't use api key, use oauth"). This
+# overrides the original W-AUTO service-key requirement for CHF. The runner
+# enforces it: when trigger=scheduled, ONLY the 'oauth' provider is accepted;
+# ANTHROPIC_API_KEY and deepseek are excluded from the scheduled path.
 #
 # NEVER change weekly_budget_cards or model_roles without a CHF ruling amendment.
 
 schema: causal_llm.v1
 
 # Gate — must be true for scheduled runs to invoke the LLM chain.
-auto_loop: false
+auto_loop: true
 
-# Phase-A completion criteria (operator fills in when gate is earned).
-# Until completed: every scheduled run degrades to pack-only mode.
+# Phase-A completion criteria — SUPERSEDED by the operator ruling above.
+# Kept for the record; the earn-in metrics still print on the lab state.
 phase_a:
   required_cards: 5           # ≥5 schema-valid cards filed from one full operator cycle
   required_exits: 1           # ≥1 candidate through exit (a) or (b)
-  completed: false            # operator sets true in the earn-in PR
-  notes: ''                   # operator annotation at flip time
+  completed: true             # operator ratified early (2026-07-09 chat directive)
+  notes: 'Operator-directed early flip 2026-07-09; Phase-A earn-in superseded by direct ratification. Identity switched to OAuth in the same ruling.'
 
 # Model roles (CHF-R17: LLM chain only — no cortex model changes).
 model_roles:
