@@ -1610,6 +1610,8 @@
   .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
   .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
   .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+  /* U7: ring state — running trend (histogram positive, no recent cross; does not count toward K) */
+  .dash-mtf-leg.trend { background:transparent; color:var(--up); border:1.5px solid color-mix(in srgb,var(--up) 50%,transparent); }
   .dash-mtf-legs { display:flex; gap:3px; align-items:center; }
   .dash-mtf-since { font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
   .dash-mtf-baskets { font-size:10px; color:var(--muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -6028,15 +6030,50 @@ function renderMtfTable(mtfUpturn){
     return;
   }
 
-  // Leg glyphs
-  function legEl(fired, isPartial, label){
-    var cls=fired?'on':(isPartial?'partial':'off');
-    return '<span class="dash-mtf-leg '+cls+'" title="'+esc(label)+'">'+esc(label.slice(0,2))+'</span>';
+  // Leg glyphs — 3 visual states (U7):
+  //   FILLED (on)   = leg fired: recent cross counts toward K
+  //   RING (trend)  = histogram positive but no recent cross — running trend, does not count toward K
+  //   EMPTY (off)   = histogram negative
+  function _trendTip(label, trendObj){
+    // Returns {en, zh} pair — callers emit data-tip-en/data-tip-zh (never title=)
+    if(!trendObj) return {en:label, zh:label};
+    var bsc=trendObj.bars_since_cross;
+    if(bsc!=null){
+      return {en:label+': crossed '+bsc+' bar'+(bsc===1?'':'s')+' ago, histogram positive',
+              zh:label+'：'+bsc+'根K线前金叉，柱状线为正'};
+    }
+    if(trendObj.pos){
+      return {en:label+': histogram positive (no recent cross)',zh:label+'：柱状线为正（无近期金叉）'};
+    }
+    return {en:label, zh:label};
   }
-  function wMacdEl(val){
-    if(val==='cross') return '<span class="dash-mtf-leg on">W</span>';
-    if(val==='approaching') return '<span class="dash-mtf-leg partial" style="border-style:dashed">W</span>';
-    return '<span class="dash-mtf-leg off">W</span>';
+  function _tipAttrs(tipObj){
+    // Render data-tip-en/zh attributes from a {en,zh} pair
+    return ' data-tip-en="'+esc(tipObj.en)+'" data-tip-zh="'+esc(tipObj.zh)+'"';
+  }
+  function legEl3(fired, trendObj, label){
+    // fired: recent cross (counts toward K); trendObj: {pos, bars_since_cross}
+    var pos=trendObj&&trendObj.pos;
+    var cls=fired?'on':(pos?'trend':'off');
+    var tip=(fired||pos)?_trendTip(label,trendObj):{en:label,zh:label};
+    return '<span class="dash-mtf-leg '+cls+'"'+_tipAttrs(tip)+'>'+esc(label.slice(0,2))+'</span>';
+  }
+  function wMacdEl3(val, trendObj){
+    // val: 'cross'|'approaching'|'none'; trendObj for W timeframe
+    var pos=trendObj&&trendObj.pos;
+    if(val==='cross'){
+      var tip=_trendTip('W',trendObj);
+      return '<span class="dash-mtf-leg on"'+_tipAttrs(tip)+'>W</span>';
+    }
+    if(val==='approaching'){
+      var approachTip={en:'W: approaching (histogram negative but rising, does not count toward K)',zh:'W：接近（柱状线为负但上升，不计入K值）'};
+      return '<span class="dash-mtf-leg partial" style="border-style:dashed"'+_tipAttrs(approachTip)+'>W</span>';
+    }
+    if(pos){
+      var tip2=_trendTip('W',trendObj);
+      return '<span class="dash-mtf-leg trend"'+_tipAttrs(tip2)+'>W</span>';
+    }
+    return '<span class="dash-mtf-leg off" data-tip-en="W" data-tip-zh="W">W</span>';
   }
 
   var html='<p class="muted" style="font-size:11px;margin:0 0 5px">'
@@ -6048,8 +6085,8 @@ function renderMtfTable(mtfUpturn){
     +'<th class="r">K</th>'
     +'<th>'+L('legs (D / 3D / W / 2W)','信号腿 (D / 3D / W / 2W)')
       +' <span class="help" style="vertical-align:middle">?<span class="tip">'
-      +'<span class="l-en">D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (solid=confirmed, dashed=approaching); 2W=biweekly MACD. Forward-graded meter; prior sector-level turn printed NULL (Oracle P8). Display context, not a signal.</span>'
-      +'<span class="l-zh">D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（实线=确认，虚线=接近）；2W=双周MACD。前瞻计量；板块级别拐点为NULL（Oracle P8）。展示参考，非信号。</span>'
+      +'<span class="l-en">Filled = leg fired (recent cross, counts toward K). Ring = histogram positive but no recent cross (running trend, does not count toward K). Empty = histogram negative. D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (dashed=approaching); 2W=biweekly MACD. Forward-graded meter; prior sector-level turn printed NULL (Oracle P8). Display context, not a signal.</span>'
+      +'<span class="l-zh">实心=腿触发（近期金叉，计入K值）。空心圆=柱状线为正但无近期金叉（趋势延续，不计入K值）。空心=柱状线为负。D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（虚线=接近）；2W=双周MACD。前瞻计量；板块级别拐点为NULL（Oracle P8）。展示参考，非信号。</span>'
       +'</span></span></th>'
     +'<th>'+L('monthly phase','月线阶段')+'</th>'
     +'<th>'+L('since','起始')+'</th>'
@@ -6059,6 +6096,7 @@ function renderMtfTable(mtfUpturn){
   rows.forEach(function(sym){
     var t=tickers[sym];
     var legs=t.legs||{};
+    var trend=t.trend||{};
     var stateCls=t.state==='UPTURN_CONFIRMED'?'confirmed':t.state==='UPTURN_WATCH'?'watch':'none';
     var stateLbl=t.state==='UPTURN_CONFIRMED'?L('CONFIRMED','已确认'):t.state==='UPTURN_WATCH'?L('WATCH','观察'):L('—','—');
     var basketStr=(t.basket_ids||[]).slice(0,3).join(', ')+(t.basket_ids&&t.basket_ids.length>3?'…':'');
@@ -6067,10 +6105,10 @@ function renderMtfTable(mtfUpturn){
       +'<td><span class="dash-mtf-badge '+stateCls+'">'+stateLbl+'</span></td>'
       +'<td class="r"><span class="dash-mtf-k">'+(t.k||0)+'</span></td>'
       +'<td><div class="dash-mtf-legs">'
-        +legEl(!!legs.d_macd,false,'D')
-        +legEl(!!legs.d3_confluence,false,'3D')
-        +wMacdEl(legs.w_macd||'none')
-        +legEl(!!legs.w2_macd,false,'2W')
+        +legEl3(!!legs.d_macd,trend.d||null,'D')
+        +legEl3(!!legs.d3_confluence,trend.d3||null,'3D')
+        +wMacdEl3(legs.w_macd||'none',trend.w||null)
+        +legEl3(!!legs.w2_macd,trend.w2||null,'2W')
       +'</div></td>'
       +'<td class="dash-mtf-phase">'+esc(t.monthly_phase||'—')+'</td>'
       +'<td class="dash-mtf-since">'+esc(t.since||'—')+'</td>'
