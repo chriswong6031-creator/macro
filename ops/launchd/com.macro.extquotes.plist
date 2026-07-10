@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.extquotes.plist — launchd agent for the ext-hours quote relay publisher.
+
+  Fires at 04:00 ET (pre-market open) and 16:00 ET (post-market open) on weekdays.
+  The runner script (run_ext_quotes_loop.sh) polls build_ext_quotes --publish every
+  2 minutes while inside an ext window; exits when the window closes.  launchd fires
+  it again at the next StartCalendarInterval.
+
+  This relay runs on the Mac (residential IP) and publishes to R2, bypassing Yahoo
+  429 errors that the VPS (DigitalOcean IP) encounters.  The hub fetches the R2 file
+  via the 'r2file' ext feed mode.
+
+  DO NOT touch the other flow lanes (com.mastermind.liveflow, com.mastermind.prophetmarks)
+  — this is an independent, additive job.
+
+  INSTALL (as the mac user — not root):
+    cp ops/launchd/com.macro.extquotes.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.macro.extquotes.plist
+
+  UNINSTALL:
+    launchctl unload ~/Library/LaunchAgents/com.macro.extquotes.plist
+    rm ~/Library/LaunchAgents/com.macro.extquotes.plist
+
+  DO NOT load this plist directly from the repo — copy first (launchd requires the
+  exact plist path when unloading).
+
+  ENV FILE:
+    R2 credentials sourced from /Users/chriswong/flow-ops-wt/.env via run_with_env.sh.
+    Required vars: R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+
+  LOG TAILING:
+    tail -f /tmp/extquotes.stdout.log /tmp/extquotes.stderr.log
+
+  MANUAL SMOKE (3 symbols, no publish):
+    set -a && source /Users/chriswong/flow-ops-wt/.env && set +a
+    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    python -m scripts.build_ext_quotes --smoke
+
+  MANUAL PUBLISH (one cycle):
+    set -a && source /Users/chriswong/flow-ops-wt/.env && set +a
+    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    python -m scripts.build_ext_quotes --publish
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.macro.extquotes</string>
+
+  <!--
+    run_with_env.sh sources .env then launches the loop script.
+    The loop polls build_ext_quotes --publish every 2 min during the ext window.
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/flow-ops-wt/.env</string>
+    <string>/bin/sh</string>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_ext_quotes_loop.sh</string>
+  </array>
+
+  <!-- Working directory = flow-ops-wt (launchd law: never ~/Documents). -->
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/flow-ops-wt</string>
+
+  <!--
+    Fire at 04:00 ET (pre-market open) and 16:00 ET (post-market open) on weekdays.
+    The runner loop self-exits when the window closes (09:30 or 20:00 ET).
+    System timezone must be America/New_York (matches prophetmarks convention).
+  -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <!-- Monday pre-market -->
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>4</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Monday post-market -->
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Tuesday pre-market -->
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>4</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Tuesday post-market -->
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Wednesday pre-market -->
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>4</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Wednesday post-market -->
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Thursday pre-market -->
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>4</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Thursday post-market -->
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Friday pre-market -->
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>4</integer><key>Minute</key><integer>0</integer></dict>
+    <!-- Friday post-market -->
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+    <!-- R2_* secrets sourced from .env via run_with_env.sh above. -->
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/extquotes.stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/extquotes.stderr.log</string>
+
+  <!-- Do NOT set KeepAlive: the runner self-exits after each window; launchd
+       respawns at the next StartCalendarInterval. -->
+  <key>KeepAlive</key>
+  <false/>
+
+  <!-- ThrottleInterval: if the job crashes in under 10 s, wait 60 s before retry. -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+</dict>
+</plist>
