@@ -2325,8 +2325,11 @@ artifacts:
       evidence live), then BASING. Ordering within zone: macd_bars_to_cross asc
       (Article-2 primary key retained), tiebreak = w1 cross bars_since asc, then
       stoch_2w asc. Zone thresholds v1 frozen descriptively, recalibrated at W6 (F3).
-      Display-tier visual regrouping only — NOT wired to alert_triage, top_setups,
-      board_ordering, or push_floor. authority.may_rank/gate/size/escalate=false.
+      Display-tier visual regrouping only. scored_path_surfaces:board_ordering
+      declared above pertains to the pre-existing buy shelf (top_setups keys) only;
+      the new ripening/ripening_falling keys carry NO scored path surface and are
+      NOT wired to alert_triage, board_ordering, or push_floor.
+      authority.may_rank/gate/size/escalate=false.
       Adjudication note: display-defect fix + display regrouping; primary imminence
       key retained; no rank-weight change; CN-SYS-R7 lane respected.
 

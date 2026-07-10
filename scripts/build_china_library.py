@@ -1669,7 +1669,6 @@ def main(alpha: dict | None = None) -> dict | None:
                 if _stoch is not None and _stoch <= 35:
                     _cv_tail = _cv.tail(80)
                     _cv2w = _cv_tail.resample("2W-FRI").last().dropna()
-                    from engine.cycles import _tf_state as _tfs_fn
                     # count sessions in this continuous washout spell from the daily close
                     # (simple: count tail sessions while stoch would stay <=35 — use 2W stoch
                     # continuity proxy: count sessions from most recent washout entry)
