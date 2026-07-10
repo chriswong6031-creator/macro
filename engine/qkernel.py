@@ -75,7 +75,7 @@ TIER2_TOKENS: tuple[str, ...] = (
     "tradingeconomics.com", "economictimes.indiatimes.com", "moneycontrol.com",
     # major CN business portals / wires (china_news_intel tier 2)
     "em", "sina", "ths", "futu", "cls", "jin10", "yicai", "caixin",
-    "eastmoney", "wallstreet",
+    "eastmoney", "wallstreet", "gelonghui",
 )
 TIER3_TOKENS: tuple[str, ...] = (
     "yahoo.com", "investing.com", "seekingalpha.com", "kitco.com",

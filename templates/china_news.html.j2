@@ -92,8 +92,8 @@
         {% if feature.summary %}
         <p class="dek"><span class="l-en">{{ feature.summary }}</span><span class="l-zh">{{ feature.summary_zh or feature.summary }}</span></p>
         {% else %}
-        <p class="dek">{{ t('Chinese-native financial media, official policy pages, Eastmoney flashes and global wire normalized into importance, channel and market-proxy tags.',
-          '中文财经媒体、官方政策页面、东方财富快讯与全球新闻线被统一为重要性、传导通道与市场代理标签。') }}</p>
+        <p class="dek">{{ t('Chinese-native flash wires, financial media, official policy pages and global wire normalized into importance, channel and market-proxy tags.',
+          '中文快讯线、财经媒体、官方政策页面与全球新闻线被统一为重要性、传导通道与市场代理标签。') }}</p>
         {% endif %}
         {% else %}
         <h1>{{ t('China macro tape is quiet right now.', '当前中国宏观新闻流较安静。') }}</h1>
@@ -128,8 +128,8 @@
         <div class="num">{{ news.n_official or 0 }}</div>
       </div>
       <div class="tile">
-        <div><div class="k">{{ t('Native + Global Wire', '中文源 + 全球新闻线') }}</div><div class="v">{{ (news.n_news_rss or 0) + (news.n_wire or 0) }} {{ t('items', '条') }}</div><div class="s">{{ t('Yicai · STCN · CNStock · SCMP · Caixin', '第一财经 · 证券时报 · 上海证券报 · SCMP · 财新') }}</div></div>
-        <div class="num">{{ (news.n_news_rss or 0) + (news.n_wire or 0) }}</div>
+        <div><div class="k">{{ t('Native + Global Wire', '中文源 + 全球新闻线') }}</div><div class="v">{{ (news.n_cn_wire or 0) + (news.n_news_rss or 0) + (news.n_wire or 0) }} {{ t('items', '条') }}</div><div class="s">{{ t('WSCN · Jin10 · GLH · Yicai · SCMP · Caixin', '华尔街见闻 · 金十 · 格隆汇 · 一财 · SCMP · 财新') }}</div></div>
+        <div class="num">{{ (news.n_cn_wire or 0) + (news.n_news_rss or 0) + (news.n_wire or 0) }}</div>
       </div>
       <div class="tile">
         <div><div class="k">{{ t('Kept Feed', '保留新闻') }}</div><div class="v">{{ heads|length }} {{ t('kept', '保留') }}</div><div class="s">{{ news.n_kept or 0 }}/{{ news.n_raw or 0 }} {{ t('raw candidates', '原始候选') }}</div></div>

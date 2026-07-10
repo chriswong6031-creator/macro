@@ -548,6 +548,13 @@ def _importance(title: str, summary: str = "", theme: str = "macro", source_tier
     if theme == "macro" and not hi and not med:
         score -= 8
         reasons.append("low title-level China macro specificity")
+    # Global-macro relays on the high-volume CN wires (波兰央行/巴西CPI/英国FCA…)
+    # are legitimate CONTEXT but must rank below on-the-ground China stories.
+    # Multiplicative (not additive) so stacked generic terms (央行+降息 in a
+    # Poland easing flash) can never out-rank an anchored China story.
+    if source in _GATED_SOURCES and not _is_china_anchored(blob):
+        score = int(score * 0.6)
+        reasons.append("global macro relay (non-China)")
     score = max(0, min(100, score))
     band = "high" if score >= 68 else "medium" if score >= 48 else "low"
     return score, band, reasons or ["context"]
@@ -590,6 +597,83 @@ def _norm_title(t: str) -> str:
     return re.sub(r"\s+", "", (t or ""))[:40]
 
 
+# Newsletter/digest URLs are multi-story roundups (e.g. SCMP's /plus/ vertical:
+# "Nvidia gets China boost, Iran ceasefire breaks, GDP release") — they stack
+# high-impact terms from several unrelated stories, out-scoring every real
+# headline, and must never be candidates (let alone the hero).
+_DIGEST_URL_TOKENS = ("scmp.com/plus/",)
+
+# High-volume realtime flash wires ALWAYS require a macro-theme keyword hit —
+# their tier must not grant the trusted-context theme-gate bypass that the
+# low-volume curated pages get (a wire pumps hundreds of off-topic flashes/day).
+_GATED_SOURCES = {"eastmoney", "cn_wire"}
+
+# China-relevance anchor for wire flashes. The native wires relay plenty of
+# global macro (波兰央行/巴西CPI/英国FCA…) that legitimately passes the macro-theme
+# gate as CONTEXT but must not lead the page or outrank on-the-ground China
+# stories. 央行/证监会-style tokens only anchor when NOT prefixed by a foreign
+# country (英国央行 is the Bank of England, not the PBoC).
+_FOREIGN_CB = re.compile(
+    r"(?:英国|美国|欧洲|欧元区|日本|韩国|澳洲|澳大利亚|新西兰|加拿大|波兰|俄罗斯|巴西|印度|"
+    r"土耳其|瑞士|瑞典|挪威|丹麦|墨西哥|阿根廷|南非|泰国|印尼|菲律宾|越南|马来西亚|"
+    r"哈萨克斯坦|沙特|以色列|伊朗|埃及)(?:央行|中央银行|证监会|财政部|统计局)")
+# Unambiguously-Chinese anchors — safe in any context.
+_CN_ANCHOR_STRONG = (
+    "中国", "中方", "我国", "A股", "沪深", "上证", "深证", "科创板", "创业板",
+    "北交所", "港股", "人民币", "人民银行", "中美", "北京", "上海", "深圳", "国务院",
+    "国常会", "政治局", "证监会", "银保监", "金融监管总局", "发改委", "工信部",
+    "商务部", "两会", "国资委", "中概", "沪指", "台海", "南海",
+    "China", "Chinese", "PBOC", "PBoC", "yuan", "renminbi", "Beijing", "A-share")
+# Institution tokens that DEFAULT to China's but get borrowed for foreign bodies
+# in relayed copy (英国央行 / a UK story calling HM Treasury 财政部) — trusted only
+# when NO foreign institution shares the story's context.
+_CN_ANCHOR_WEAK = ("央行", "中央银行", "财政部", "统计局", "全国")
+
+
+def _is_china_anchored(text: str) -> bool:
+    """True when a headline is about China (vs a global-macro relay on a CN wire).
+    Foreign-institution phrases (英国央行…) are neutralized before the scan; bare
+    央行/财政部-class tokens only anchor when the story has NO foreign-institution
+    context at all (a UK piece renders HM Treasury as plain 财政部). PURE."""
+    blob = text or ""
+    neut = _FOREIGN_CB.sub("", blob)
+    if any(tok in neut for tok in _CN_ANCHOR_STRONG):
+        return True
+    if _FOREIGN_CB.search(blob):
+        return False
+    return any(tok in neut for tok in _CN_ANCHOR_WEAK)
+
+
+def _is_digest_url(url: str) -> bool:
+    u = (url or "").lower()
+    return any(tok in u for tok in _DIGEST_URL_TOKENS)
+
+
+def _shingles2(title: str) -> set:
+    n = _norm_title(title)
+    return {n[i:i + 2] for i in range(len(n) - 1)} if len(n) >= 2 else set()
+
+
+def _promote_native_lead(kept: list[dict]) -> list[dict]:
+    """Move the top-ranked CHINA-ANCHORED Chinese-native item to the hero slot
+    (index 0), keeping the rest of the ranking stable. On-the-ground 中文 China
+    coverage should lead the page whenever any is present; a global-macro relay on
+    a CN wire (波兰央行…) or an English wire story never takes the hero on
+    term-density alone. Falls back to the top zh item, then no-op. PURE."""
+    pick = None
+    for i, h in enumerate(kept):
+        if h.get("source_lang") != "zh":
+            continue
+        if _is_china_anchored(f"{h.get('title', '')} {h.get('summary', '')}"):
+            pick = i
+            break
+        if pick is None:
+            pick = i                       # best zh fallback if none is anchored
+    if pick:
+        kept = [kept[pick]] + kept[:pick] + kept[pick + 1:]
+    return kept
+
+
 def filter_flashes(items: list[dict], cfg: dict | None = None) -> list[dict]:
     """Deterministic pipeline over raw flashes: macro-theme relevance gate + tag ->
     dedup -> recency rank -> top-N. PURE (takes {title,summary,url,time} dicts)."""
@@ -598,17 +682,28 @@ def filter_flashes(items: list[dict], cfg: dict | None = None) -> list[dict]:
     min_score = int(cfg.get("min_importance_score", 34))
     kept: list[dict] = []
     seen: set[str] = set()
+    kept_sh: list[set] = []
     for a in items:
         title = (a.get("title") or "").strip()
         summary = (a.get("summary") or "").strip()
+        if _is_digest_url(a.get("url", "")):
+            continue                                   # multi-story roundup -> dropped
         theme = classify_theme(title + " " + summary)
         trusted_context = a.get("source_tier") in {"official", "wire", "global_wire", "china_native"} or a.get("source") in {"official", "gdelt", "news_rss", "news_page", "cn_news_page"}
+        if a.get("source") in _GATED_SOURCES:
+            trusted_context = False                    # wires never bypass the gate
         if theme is None and not trusted_context:
             continue                                   # non-macro flash -> dropped
         theme = theme or a.get("theme") or "macro"
         key = _norm_title(title)
         if not key or key in seen:
-            continue                                   # dedup
+            continue                                   # dedup (exact normalized title)
+        # cross-wire near-dup: the same story lands on several wires with small
+        # title variants (波兰央行委员： vs 波兰央行委员Kotecki：) — collapse via
+        # 2-gram Jaccard against already-kept titles (first wire in wins).
+        sh = _shingles2(title)
+        if sh and any(csh and (len(sh & csh) / len(sh | csh)) >= 0.75 for csh in kept_sh):
+            continue
         source = a.get("source", "eastmoney")
         default_tier = "domestic_wire" if source == "eastmoney" else "china_native" if source == "cn_news_page" else "wire"
         enriched = enrich_item({"title": title, "summary": summary, "url": a.get("url", ""),
@@ -620,6 +715,7 @@ def filter_flashes(items: list[dict], cfg: dict | None = None) -> list[dict]:
         if enriched.get("importance_score", 0) < min_score:
             continue
         seen.add(key)
+        kept_sh.append(sh)
         kept.append(enriched)
     kept.sort(key=lambda h: (
         int(h.get("intelligence_score", h.get("importance_score", 0)) or 0),
@@ -1058,6 +1154,30 @@ def _fetch_news_feeds(cfg: dict, today: date | None = None) -> tuple[list[dict],
     return items, reason
 
 
+def _fetch_cn_wires(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
+    """Native CN JSON wires (华尔街见闻/金十/格隆汇) via the shared engine/cn_newswires
+    fetcher (its own per-day cache serves this panel AND the intel bus). Items map to
+    the page candidate shape: china_native tier, zh lang, REAL publisher timestamps
+    (so freshness ranking finally works for the native leg). Degrade-to-empty."""
+    if not cfg.get("use_cn_json_wires", True):
+        return [], None
+    try:
+        from engine import cn_newswires
+        raw = cn_newswires.fetch_all(today=today)
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_news: cn_newswires unavailable (%s)", e)
+        return [], "cn_wire_fetch_error"
+    items = []
+    for a in raw:
+        items.append({"title": a.get("title", ""), "summary": a.get("summary", ""),
+                      "url": a.get("url", ""), "time": a.get("time", ""),
+                      "source": "cn_wire",
+                      "source_name": a.get("source_name", a.get("source", "CN wire")),
+                      "source_tier": "china_native",
+                      "source_lang": a.get("source_lang", "zh")})
+    return items, (None if items else "cn_wire_no_headlines")
+
+
 def _gdelt_query(cfg: dict) -> str:
     terms = cfg.get("wire_query_terms") or GDELT_QUERY_TERMS
     # Query is intentionally broad; source allowlist + deterministic macro theme
@@ -1144,19 +1264,24 @@ def flash_headlines(today: date | None = None) -> dict | None:
     official, official_reason = _fetch_official_pages(cfg, today) if cfg.get("use_official_pages", True) else ([], None)
     news_rss, news_reason = _fetch_news_feeds(cfg, today) if cfg.get("use_news_feeds", True) else ([], None)
     wire, wire_reason = _fetch_wire_gdelt(cfg, today) if cfg.get("use_wire_gdelt", True) else ([], None)
-    kept = _attach_translations(filter_flashes(official + news_rss + wire + raw, cfg), cfg)
+    cn_wire, cn_wire_reason = _fetch_cn_wires(cfg, today)
+    kept = _attach_translations(filter_flashes(official + cn_wire + news_rss + wire + raw, cfg), cfg)
+    if cfg.get("native_lead", True):
+        kept = _promote_native_lead(kept)
     synth = _synthesis(kept)
-    return {"schema": SCHEMA, "is_context_only": True, "source": "official_pages+news_rss+gdelt_wire+eastmoney_global_em",
+    n_all = len(raw) + len(official) + len(news_rss) + len(wire) + len(cn_wire)
+    return {"schema": SCHEMA, "is_context_only": True, "source": "official_pages+cn_json_wires+news_rss+gdelt_wire+eastmoney_global_em",
             "fetched_at": datetime.now(timezone.utc).isoformat(),
-            "headlines": kept, "n_raw": len(raw) + len(official) + len(news_rss) + len(wire), "n_eastmoney": len(raw),
+            "headlines": kept, "n_raw": n_all, "n_eastmoney": len(raw),
             "n_official": len(official), "n_news_rss": len(news_rss), "n_wire": len(wire),
-            "n_total_candidates": len(raw) + len(official) + len(news_rss) + len(wire),
+            "n_cn_wire": len(cn_wire),
+            "n_total_candidates": n_all,
             "n_kept": len(kept),
             "n_high_impact": synth.get("high_impact_count", 0),
             "top_channels": synth.get("top_channels", []),
             "top_tickers": synth.get("top_tickers", []),
             "synthesis": synth,
-            "degraded_reason": (reason or official_reason or news_reason or wire_reason) if not kept else None}
+            "degraded_reason": (reason or official_reason or news_reason or wire_reason or cn_wire_reason) if not kept else None}
 
 
 # --------------------------------------------------------------------------- #

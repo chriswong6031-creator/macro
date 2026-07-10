@@ -117,7 +117,7 @@ HALF_LIFE_H = 48.0
 _TIER1 = ["news.cn", "xinhua", "chinadaily", "gov.cn", "pbc.gov.cn", "ndrc",
           "mofcom", "csrc", "stats.gov.cn", "cctv"]
 _TIER2_SRC = ["em", "sina", "ths", "futu", "cls", "jin10", "yicai", "caixin",
-              "eastmoney", "wallstreet"]
+              "eastmoney", "wallstreet", "gelonghui"]
 
 _HIGH_IMPACT_CAL = {"LPR", "MLF", "PMI", "CPI", "PPI", "CREDIT", "GDP", "FXRES", "ACTIVITY"}
 
@@ -570,6 +570,20 @@ def _fetch_wires(cfg: dict) -> list[dict]:
     return items
 
 
+def _fetch_json_wires(cfg: dict) -> list[dict]:
+    """Native CN JSON wires (华尔街见闻/金十/格隆汇) via the shared cn_newswires
+    fetcher — one cached fetch serves this bus AND the china_news page panel.
+    Degrade-to-empty; leaf-import safety."""
+    if not cfg.get("use_json_wires", True):
+        return []
+    try:
+        from engine import cn_newswires
+        return cn_newswires.fetch_all()
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_news_intel: cn_newswires unavailable (%s)", e)
+        return []
+
+
 def _fetch_rss(cfg: dict) -> list[dict]:
     import xml.etree.ElementTree as ET
     items: list[dict] = []
@@ -611,7 +625,7 @@ def _fetch_all(cfg: dict, today: date) -> tuple[list[dict], str | None]:
                 return blob.get("items", []), blob.get("degraded_reason")
         except Exception:  # noqa: BLE001
             pass
-    items = _fetch_wires(cfg) + _fetch_rss(cfg)
+    items = _fetch_wires(cfg) + _fetch_json_wires(cfg) + _fetch_rss(cfg)
     reason = None if items else "no_headlines"
     try:
         cache.write_text(json.dumps({"items": items, "degraded_reason": reason},
@@ -630,6 +644,8 @@ def _timestamp_quality(seendate: str, source: str) -> str:
     Rules (spec §2.5 / probe P2):
       • Empty / corrupted seendate (caught by _clean_time) → CRAWL_BOUNDED
       • RSS pubDate is a full RFC-822 timestamp (sub-day precision) → PUBLISHER_STATED
+      • cn_newswires JSON wires carry the vendor's sub-minute publish stamp
+        (unix epoch / Beijing wall clock, normalized to tz-aware ISO) → PUBLISHER_STATED
       • akshare wires provide a date at day-or-hour resolution → SNAPSHOT_DATE
         (day-level accuracy; we don't assert the exact publication minute)
     PURE."""
@@ -637,7 +653,7 @@ def _timestamp_quality(seendate: str, source: str) -> str:
         return "CRAWL_BOUNDED"
     # RSS carries sub-day pubDate (RFC-822 / ISO); akshare dates are typically
     # "YYYY-MM-DD" or "YYYY-MM-DD HH:MM" at best, so treat wire sources as SNAPSHOT.
-    if (source or "").lower() == "rss":
+    if (source or "").lower() in {"rss", "wallstreetcn", "jin10", "gelonghui"}:
         return "PUBLISHER_STATED"
     return "SNAPSHOT_DATE"
 

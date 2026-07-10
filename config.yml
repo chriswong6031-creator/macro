@@ -3110,6 +3110,8 @@ china_news:
   use_news_feeds: true            # SCMP/Nikkei RSS direct media leg
   use_news_pages: true            # Chinese-native pages (Yicai/STCN/CNStock/Sina/Eastmoney) + Caixin
   use_wire_gdelt: true            # Reuters/FT/SCMP/Caixin-style global wire via GDELT
+  use_cn_json_wires: true         # 华尔街见闻/金十/格隆汇 native JSON wires (engine/cn_newswires.py)
+  native_lead: true               # hero slot prefers the top Chinese-native story when one is kept
   news_window_days: 7
   wire_window_days: 5
   wire_max_records: 180
@@ -3160,6 +3162,7 @@ china_news_intel:
   rss_sources:                    # keyless English state-wire RSS (stdlib XML parse)
     - https://english.news.cn/rss/businessrss.xml
     - https://www.chinadaily.com.cn/rss/bizchina_rss.xml
+  use_json_wires: true            # + 华尔街见闻/金十/格隆汇 via engine/cn_newswires.py (shared cache)
   max_per_source: 60              # raw items pulled per wire before the theme gate
   max_show: 14                    # headlines shown in the feed after filtering
   sentiment_window: 90            # z-score window (days) for the media-sentiment index
@@ -3171,6 +3174,20 @@ china_news_intel:
   llm_model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic
   api_key_env: DEEPSEEK_API_KEY
+
+# Native CN flash-wire JSON fetchers (engine/cn_newswires.py) — 华尔街见闻 · 金十数据 ·
+# 格隆汇, each vendor's public keyless JSON endpoint (no akshare, no scraping). ONE
+# cached fetch serves both the china_news page panel and the china_news_intel PIT bus.
+# KEYLESS · CONTEXT-ONLY · degrade-to-empty. Live-probed 2026-07-10.
+cn_newswires:
+  enabled: true
+  sources:                        # registry keys in engine/cn_newswires.py (each degrades)
+    - wallstreetcn
+    - jin10
+    - gelonghui
+  max_per_source: 80              # normalized items kept per wire (pre theme-gate)
+  cache_dir: data/china_news/cn_wire_cache
+  cache_ttl_hours: 6
 
 # =============================================================================
 # Financial / sector / Mag-7 / thematic-basket news (engine/financial_news.py) — the
