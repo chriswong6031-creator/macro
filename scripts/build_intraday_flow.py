@@ -1,4 +1,4 @@
-"""scripts/build_intraday_flow.py — Intraday Flow Tracker builder (IFT A1).
+"""scripts/build_intraday_flow.py — Intraday Flow Tracker builder (IFT A1 + A3).
 
 Two modes:
 
@@ -37,6 +37,7 @@ import json
 import logging
 import os
 import sys
+import tempfile
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -60,6 +61,196 @@ _UPTURN_QUALIFYING = frozenset({"UPTURN_WATCH", "UPTURN_CONFIRMED"})
 
 # Minimum daily volume (shares) to compute meaningful vol-share curve.
 _MIN_ADV_SHARES = 500_000
+
+# Forward ledger — data/intraday_flow/ledger.parquet
+_LEDGER_DIR = "intraday_flow"
+_LEDGER_FILE = "ledger.parquet"
+# Horizons (calendar days) for forward return stamping.
+_FWD_HORIZONS: tuple[int, ...] = (1, 5, 10, 21)
+
+
+def _ledger_enabled() -> bool:
+    """True only when running in the nightly lane.
+
+    Mirrors mtf_upturn._ledger_advance_enabled() — gate: COLLECT_LANE=nightly.
+    Intraday lanes MUST NOT write data/ (HOUSE-U5).
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
+
+
+def _ledger_path(data_root: Path) -> Path:
+    return data_root / _LEDGER_DIR / _LEDGER_FILE
+
+
+def _load_ledger(data_root: Path) -> pd.DataFrame:
+    """Load ledger.parquet; return empty DataFrame with expected schema on miss."""
+    p = _ledger_path(data_root)
+    if not p.exists():
+        return pd.DataFrame()
+    try:
+        return pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_intraday_flow: ledger load failed (%s) — starting fresh", e)
+        return pd.DataFrame()
+
+
+def _write_ledger(df: pd.DataFrame, data_root: Path) -> None:
+    """Atomic write: temp-file + os.replace (mirrors mtf_upturn pattern)."""
+    p = _ledger_path(data_root)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=p.parent, prefix=".ift_ledger_tmp_", suffix=".parquet")
+    try:
+        os.close(fd)
+        df.to_parquet(tmp, index=False, engine="pyarrow")
+        os.replace(tmp, p)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+def _load_close_series(ticker: str, data_root: Path) -> pd.Series | None:
+    """Load daily close series for a ticker.
+
+    Search order: data/baskets/ohlcv/<T>.parquet → data/stocks/<T>.parquet.
+    Returns a DatetimeIndex float Series sorted ascending, or None on failure.
+    """
+    for base_dir in ("baskets/ohlcv", "stocks"):
+        p = data_root / base_dir / f"{ticker}.parquet"
+        if p.exists():
+            try:
+                df = pd.read_parquet(p)
+                df.index = pd.to_datetime(df.index)
+                s = df["close"].astype(float).dropna().sort_index()
+                if len(s) >= 5:
+                    return s
+            except Exception as e:  # noqa: BLE001
+                log.debug(
+                    "build_intraday_flow: close series %s/%s failed: %s",
+                    base_dir, ticker, e,
+                )
+    return None
+
+
+def _fwd_ret(
+    close_series: pd.Series,
+    entry_date: str,
+    horizon_d: int,
+) -> float | None:
+    """Compute forward return for a single horizon.
+
+    Entry: close on entry_date (or last bar on/before it).
+    Exit: close at most horizon_d calendar days later.
+    Returns None if data unavailable or the exit bar is not yet covered.
+    """
+    try:
+        ts = pd.Timestamp(entry_date)
+        end_ts = ts + pd.Timedelta(days=horizon_d)
+        if close_series.index.max() < end_ts:
+            return None  # exit day not yet covered — do not grade
+        before_entry = close_series[close_series.index <= ts]
+        if before_entry.empty:
+            return None
+        e0 = float(before_entry.iloc[-1])
+        if not e0:
+            return None
+        at_exit = close_series[close_series.index <= end_ts]
+        if at_exit.empty:
+            return None
+        e1 = float(at_exit.iloc[-1])
+        return round(e1 / e0 - 1.0, 6)
+    except Exception as e:  # noqa: BLE001
+        log.debug("build_intraday_flow: _fwd_ret(%s, %d) failed: %s", entry_date, horizon_d, e)
+        return None
+
+
+def _stamp_forward_returns(df: pd.DataFrame, data_root: Path) -> pd.DataFrame:
+    """For existing ledger rows with null forward returns, attempt to fill them.
+
+    Iterates unique tickers; loads price series once per ticker.
+    Only fills rows where the horizon has now matured.
+    Returns the updated DataFrame (modified in-place on the copy passed in).
+    """
+    if df.empty:
+        return df
+
+    for h in _FWD_HORIZONS:
+        col = f"fwd_ret_{h}d"
+        if col not in df.columns:
+            df[col] = None
+
+    for ticker in df["ticker"].unique():
+        mask = df["ticker"] == ticker
+        rows_for_ticker = df[mask]
+        # Skip if all horizons already stamped for all rows.
+        unfilled_cols = [
+            f"fwd_ret_{h}d" for h in _FWD_HORIZONS
+            if rows_for_ticker[f"fwd_ret_{h}d"].isna().any()
+        ]
+        if not unfilled_cols:
+            continue
+
+        close_s = _load_close_series(ticker, data_root)
+        if close_s is None:
+            continue
+
+        for idx in df[mask].index:
+            session = df.at[idx, "session"]
+            for h in _FWD_HORIZONS:
+                col = f"fwd_ret_{h}d"
+                if pd.isna(df.at[idx, col]):
+                    v = _fwd_ret(close_s, session, h)
+                    if v is not None:
+                        df.at[idx, col] = v
+
+    return df
+
+
+def _append_ledger_rows(
+    new_rows: list[dict],
+    data_root: Path,
+) -> int:
+    """Append new session rows + stamp any matured forward returns.
+
+    Idempotent: keep-first per (session, ticker). Nightly-gate checked by caller.
+
+    Returns the number of new rows actually appended.
+    """
+    if not new_rows:
+        return 0
+    try:
+        df = _load_ledger(data_root)
+
+        # Build existing key set.
+        if not df.empty and "session" in df.columns and "ticker" in df.columns:
+            existing = set(zip(df["session"].tolist(), df["ticker"].tolist()))
+        else:
+            existing = set()
+
+        fresh = [r for r in new_rows if (r.get("session"), r.get("ticker")) not in existing]
+
+        # Stamp forward returns on existing rows first.
+        df = _stamp_forward_returns(df, data_root)
+
+        if fresh:
+            new_df = pd.DataFrame(fresh)
+            # Ensure forward-return columns exist on the new slice (all null — not yet matured).
+            for h in _FWD_HORIZONS:
+                col = f"fwd_ret_{h}d"
+                if col not in new_df.columns:
+                    new_df[col] = None
+            # Stamp forward returns immediately (in case we're running on a stale/historic date).
+            new_df = _stamp_forward_returns(new_df, data_root)
+            df = pd.concat([df, new_df], ignore_index=True) if not df.empty else new_df
+
+        _write_ledger(df, data_root)
+        return len(fresh)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_intraday_flow: _append_ledger_rows failed: %s", e)
+        return 0
 
 
 # ── universe resolution ───────────────────────────────────────────────────────
@@ -531,6 +722,28 @@ def _run_nightly(cfg: dict, data_root: Path, site_root: Path, tpl_root: Path) ->
         out_path, len(leaders), out_path.stat().st_size,
     )
 
+    # ── Forward ledger (nightly-only, COLLECT_LANE gate) ──────────────────────
+    # Append one row per leader with EOD confluence legs + price snapshot.
+    # Subsequent runs stamp t+1/t+5/t+10/t+21 forward returns.
+    # Gated on COLLECT_LANE=nightly (HOUSE-U5 compliance).
+    _advance_ledger(leaders, data_root, site_root, as_of)
+
+    # ── run_status registration (P0.7 law) ────────────────────────────────────
+    try:
+        from lib import store as _store         # noqa: PLC0415
+        _rs = _store.read_status()
+        _rs.setdefault("sources", {})["intraday_flow_nightly"] = {
+            "status":     "ok",
+            "n_leaders":  len(leaders),
+            "base_json":  str(out_path),
+            "as_of":      as_of,
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
+        _store.write_status(_rs)
+        log.info("build_intraday_flow nightly: run_status updated")
+    except Exception as _rs_err:  # noqa: BLE001
+        log.debug("build_intraday_flow nightly: run_status write failed (non-fatal): %s", _rs_err)
+
     # Render HTML if template exists (stage A2 adds the template).
     tpl_path = tpl_root / "intraday_flow.html.j2"
     if not tpl_path.exists():
@@ -550,6 +763,107 @@ def _run_nightly(cfg: dict, data_root: Path, site_root: Path, tpl_root: Path) ->
         log.info("build_intraday_flow nightly: rendered %s", html_out)
     except Exception as e:  # noqa: BLE001
         log.warning("build_intraday_flow nightly: HTML render failed: %s", e)
+
+
+# ── ledger advance (nightly helper) ──────────────────────────────────────────
+
+def _advance_ledger(
+    leaders: list[dict],
+    data_root: Path,
+    site_root: Path,
+    as_of_utc: str,
+) -> None:
+    """Build ledger rows from the nightly leaders list and append.
+
+    Each row captures EOD leg booleans (computed from the base.json context),
+    K, close price, session date, and null forward-return slots.
+
+    Gate: COLLECT_LANE=nightly (HOUSE-U5). Falls back silently when the price
+    stores or confluence engine are absent.
+    """
+    if not _ledger_enabled():
+        log.debug(
+            "build_intraday_flow: ledger advance skipped "
+            "(COLLECT_LANE != nightly)"
+        )
+        return
+
+    try:
+        from engine.intraday_flow import confluence_legs  # noqa: PLC0415
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_intraday_flow: confluence_legs import failed: %s", e)
+        return
+
+    today_str = str(date.today())
+    new_rows: list[dict] = []
+
+    for rec in leaders:
+        ticker = rec.get("ticker")
+        if not ticker:
+            continue
+        try:
+            # Compute confluence legs from nightly EOD context.
+            # At nightly time there are no intraday bars, so intraday-only
+            # metrics (RVOL_tod, vol_durability, flow metrics) are null.
+            # The row captures the EOD setup snapshot; intraday metrics
+            # are left null and are the subject of future accrual research.
+            mtu_state = rec.get("mtf_upturn_state")
+            # L1 washout inputs: base.json may carry bb_lower_reclaim_days
+            # if the stockdata reader populates it; else both remain None.
+            legs = confluence_legs(
+                bb_lower_reclaim_days=rec.get("bb_lower_reclaim_days"),
+                drawdown_21d_pct=rec.get("drawdown_21d_pct"),
+                recovery_begun=rec.get("recovery_begun"),
+                # L2: at nightly, price == prev_close (no intraday VWAP).
+                price=rec.get("prev_close"),
+                prev_close=rec.get("prev_close"),
+                # L3/L4/L5 are intraday-only — leave as None.
+                rvol_tod_val=None,
+                vol_durability_val=None,
+                cum_ncp=None,
+                flow_durability_val=None,
+                # L6
+                mtf_upturn_state=mtu_state,
+                # L7
+                failed_breakout_trap=rec.get("failed_breakout_trap"),
+            )
+            row: dict[str, Any] = {
+                "session":        today_str,
+                "ticker":         ticker,
+                "built_utc":      as_of_utc,
+                # Confluence legs (EOD context; intraday legs null at stamp time)
+                "L1_washout_recent":  legs.L1_washout_recent,
+                "L2_reclaim":         legs.L2_reclaim,
+                "L3_rvol_elevated":   legs.L3_rvol_elevated,
+                "L4_vol_durable":     legs.L4_vol_durable,
+                "L5_flow_bid":        legs.L5_flow_bid,
+                "L6_upturn_organ":    legs.L6_upturn_organ,
+                "L7_leader_quality":  legs.L7_leader_quality,
+                "K":                  legs.K,
+                # EOD snapshot metrics
+                "close":              rec.get("prev_close"),
+                "mtf_upturn_state":   mtu_state,
+                "mtf_upturn_K":       rec.get("mtf_upturn_K"),
+                "failed_breakout_trap": rec.get("failed_breakout_trap"),
+                # Intraday metrics (null at nightly stamp; future research accrual).
+                "rvol_tod_close":     None,
+                "cum_ncp":            None,
+                "flow_durability_eod": None,
+            }
+            new_rows.append(row)
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_intraday_flow: ledger row for %s failed: %s", ticker, e)
+
+    if not new_rows:
+        log.info("build_intraday_flow: ledger advance: no rows to append")
+        return
+
+    appended = _append_ledger_rows(new_rows, data_root)
+    ledger_path = _ledger_path(data_root)
+    log.info(
+        "build_intraday_flow: ledger advance: %d new rows appended → %s",
+        appended, ledger_path,
+    )
 
 
 # ── fastpath mode ─────────────────────────────────────────────────────────────

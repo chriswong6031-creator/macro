@@ -1,4 +1,4 @@
-"""tests/test_intraday_flow.py — Unit tests for engine/intraday_flow.py (IFT A1).
+"""tests/test_intraday_flow.py — Unit tests for engine/intraday_flow.py (IFT A1+A3).
 
 Covers every public function with synthetic fixtures and edge cases.
 All tests are self-contained; no network, no disk I/O.
@@ -6,9 +6,12 @@ All tests are self-contained; no network, no disk I/O.
 from __future__ import annotations
 
 import math
+import os
 import sys
+import tempfile
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -525,3 +528,204 @@ class TestConfluenceLegsDataclass:
     def test_empty_dataclass(self):
         legs = ConfluenceLegs()
         assert legs.K == 0
+
+
+# ── Forward ledger helpers ────────────────────────────────────────────────────
+
+# Import ledger helpers from the builder script.
+import scripts.build_intraday_flow as _bif  # noqa: E402
+
+
+def _make_close_series(dates: list[str], prices: list[float]) -> pd.Series:
+    idx = pd.to_datetime(dates)
+    return pd.Series(prices, index=idx, dtype=float)
+
+
+def _make_ohlcv_parquet(tmp_dir: Path, ticker: str, dates: list[str], closes: list[float]) -> None:
+    """Write a minimal OHLCV parquet into tmp_dir/baskets/ohlcv/<ticker>.parquet."""
+    out = tmp_dir / "baskets" / "ohlcv"
+    out.mkdir(parents=True, exist_ok=True)
+    idx = pd.to_datetime(dates)
+    df = pd.DataFrame({"close": closes, "open": closes, "high": closes, "low": closes, "volume": [1_000_000] * len(dates)}, index=idx)
+    df.to_parquet(out / f"{ticker}.parquet")
+
+
+class TestFwdRet:
+    """Unit tests for _fwd_ret — forward return computation."""
+
+    def test_basic_return(self):
+        """Simple 5-day return: (105-100)/100 = 0.05."""
+        dates = ["2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05", "2024-01-06",
+                 "2024-01-07", "2024-01-08", "2024-01-09", "2024-01-10"]
+        prices = [100.0, 101.0, 102.0, 103.0, 104.0, 105.0, 106.0, 107.0, 108.0]
+        s = _make_close_series(dates, prices)
+        ret = _bif._fwd_ret(s, "2024-01-02", 5)
+        assert ret is not None
+        # entry = 100, exit = close on/before 2024-01-07 = 105
+        assert abs(ret - 0.05) < 1e-5
+
+    def test_not_matured_returns_none(self):
+        """Horizon not yet covered → None."""
+        dates = ["2024-01-02", "2024-01-03"]
+        prices = [100.0, 101.0]
+        s = _make_close_series(dates, prices)
+        # 5-day horizon from 2024-01-02 requires data through 2024-01-07
+        ret = _bif._fwd_ret(s, "2024-01-02", 5)
+        assert ret is None
+
+    def test_same_day_zero_return(self):
+        """1-day horizon when exit equals entry date → ~0."""
+        dates = ["2024-01-02", "2024-01-03", "2024-01-04"]
+        prices = [100.0, 100.0, 102.0]
+        s = _make_close_series(dates, prices)
+        # 1-day horizon: entry=100, exit=close on/before 2024-01-03=100
+        ret = _bif._fwd_ret(s, "2024-01-02", 1)
+        assert ret is not None
+        assert abs(ret) < 1e-5
+
+    def test_empty_series_returns_none(self):
+        s = pd.Series([], dtype=float)
+        s.index = pd.to_datetime([])
+        ret = _bif._fwd_ret(s, "2024-01-02", 5)
+        assert ret is None
+
+
+class TestAppendLedger:
+    """Tests for _append_ledger_rows — idempotent append + forward stamp."""
+
+    def _row(self, session: str, ticker: str, k: int = 3) -> dict:
+        return {
+            "session": session, "ticker": ticker, "K": k,
+            "L1_washout_recent": True, "L2_reclaim": True,
+            "L3_rvol_elevated": None, "L4_vol_durable": None,
+            "L5_flow_bid": None, "L6_upturn_organ": True,
+            "L7_leader_quality": None,
+            "close": 100.0, "mtf_upturn_state": "UPTURN_WATCH",
+            "mtf_upturn_K": 2, "failed_breakout_trap": False,
+            "rvol_tod_close": None, "cum_ncp": None, "flow_durability_eod": None,
+            "built_utc": "2024-01-02T22:00:00+00:00",
+        }
+
+    def test_fresh_append(self, tmp_path):
+        """Appending to an empty ledger writes a new parquet with one row."""
+        rows = [self._row("2024-01-02", "AAPL")]
+        n = _bif._append_ledger_rows(rows, tmp_path)
+        assert n == 1
+        df = _bif._load_ledger(tmp_path)
+        assert len(df) == 1
+        assert df["ticker"].iloc[0] == "AAPL"
+        assert df["session"].iloc[0] == "2024-01-02"
+
+    def test_idempotent_same_session(self, tmp_path):
+        """Re-running for the same (session, ticker) must not duplicate."""
+        row = self._row("2024-01-02", "AAPL")
+        _bif._append_ledger_rows([row], tmp_path)
+        n = _bif._append_ledger_rows([row], tmp_path)
+        assert n == 0  # nothing new appended
+        df = _bif._load_ledger(tmp_path)
+        assert len(df) == 1
+
+    def test_different_session_appends(self, tmp_path):
+        """Two different sessions for the same ticker both land in the ledger."""
+        _bif._append_ledger_rows([self._row("2024-01-02", "AAPL")], tmp_path)
+        n = _bif._append_ledger_rows([self._row("2024-01-03", "AAPL")], tmp_path)
+        assert n == 1
+        df = _bif._load_ledger(tmp_path)
+        assert len(df) == 2
+
+    def test_different_tickers_same_session(self, tmp_path):
+        """Two tickers in the same session both land."""
+        rows = [self._row("2024-01-02", "AAPL"), self._row("2024-01-02", "MSFT")]
+        n = _bif._append_ledger_rows(rows, tmp_path)
+        assert n == 2
+        df = _bif._load_ledger(tmp_path)
+        assert set(df["ticker"]) == {"AAPL", "MSFT"}
+
+    def test_missing_data_root_handled(self, tmp_path):
+        """Non-existent ledger dir created automatically."""
+        subdir = tmp_path / "deep" / "nested"
+        rows = [self._row("2024-01-02", "AAPL")]
+        n = _bif._append_ledger_rows(rows, subdir)
+        assert n == 1
+        assert _bif._ledger_path(subdir).exists()
+
+
+class TestStampForwardReturns:
+    """Tests for _stamp_forward_returns — fills fwd_ret columns on existing rows."""
+
+    def test_stamps_when_data_available(self, tmp_path):
+        """fwd_ret_1d/5d/10d/21d stamped when price series covers the exit bar."""
+        # Build an OHLCV parquet with 30 bars starting 2024-01-02.
+        import datetime
+        start = datetime.date(2024, 1, 2)
+        dates = [(start + datetime.timedelta(days=i)).isoformat() for i in range(30)]
+        prices = [100.0 + i for i in range(30)]
+        _make_ohlcv_parquet(tmp_path, "AAPL", dates, prices)
+
+        df = pd.DataFrame([{
+            "session": "2024-01-02", "ticker": "AAPL", "K": 3,
+            "fwd_ret_1d": None, "fwd_ret_5d": None,
+            "fwd_ret_10d": None, "fwd_ret_21d": None,
+        }])
+        df = _bif._stamp_forward_returns(df, tmp_path)
+
+        # fwd_ret_1d: entry=100, exit=close on 2024-01-03=101 → 0.01
+        assert df["fwd_ret_1d"].iloc[0] is not None
+        assert abs(df["fwd_ret_1d"].iloc[0] - 0.01) < 1e-4
+        # fwd_ret_5d: exit on 2024-01-07=105 → 0.05
+        assert df["fwd_ret_5d"].iloc[0] is not None
+        assert abs(df["fwd_ret_5d"].iloc[0] - 0.05) < 1e-4
+
+    def test_no_stamp_when_not_matured(self, tmp_path):
+        """fwd_ret_21d stays None when only 10 days of data available."""
+        import datetime
+        start = datetime.date(2024, 1, 2)
+        dates = [(start + datetime.timedelta(days=i)).isoformat() for i in range(10)]
+        prices = [100.0 + i for i in range(10)]
+        _make_ohlcv_parquet(tmp_path, "AAPL", dates, prices)
+
+        df = pd.DataFrame([{
+            "session": "2024-01-02", "ticker": "AAPL", "K": 3,
+            "fwd_ret_1d": None, "fwd_ret_5d": None,
+            "fwd_ret_10d": None, "fwd_ret_21d": None,
+        }])
+        df = _bif._stamp_forward_returns(df, tmp_path)
+        assert df["fwd_ret_21d"].iloc[0] is None
+
+    def test_does_not_overwrite_existing(self, tmp_path):
+        """Already-stamped values are preserved."""
+        import datetime
+        start = datetime.date(2024, 1, 2)
+        dates = [(start + datetime.timedelta(days=i)).isoformat() for i in range(30)]
+        prices = [100.0] * 30
+        _make_ohlcv_parquet(tmp_path, "AAPL", dates, prices)
+
+        df = pd.DataFrame([{
+            "session": "2024-01-02", "ticker": "AAPL", "K": 3,
+            "fwd_ret_1d": 0.999, "fwd_ret_5d": None,
+            "fwd_ret_10d": None, "fwd_ret_21d": None,
+        }])
+        df = _bif._stamp_forward_returns(df, tmp_path)
+        # fwd_ret_1d was already non-null — must not be overwritten.
+        assert abs(df["fwd_ret_1d"].iloc[0] - 0.999) < 1e-6
+
+
+class TestLedgerEnabled:
+    """Test the COLLECT_LANE gate."""
+
+    def test_disabled_when_env_absent(self, monkeypatch):
+        monkeypatch.delenv("COLLECT_LANE", raising=False)
+        monkeypatch.delenv("US_LANE", raising=False)
+        assert _bif._ledger_enabled() is False
+
+    def test_enabled_when_nightly(self, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        assert _bif._ledger_enabled() is True
+
+    def test_case_insensitive(self, monkeypatch):
+        monkeypatch.setenv("US_LANE", "NIGHTLY")
+        assert _bif._ledger_enabled() is True
+
+    def test_disabled_for_intraday(self, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "intraday")
+        assert _bif._ledger_enabled() is False
