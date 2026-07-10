@@ -1067,51 +1067,6 @@
   
   
 <section id="divergence-radar" class="panel pad" style="margin-top:10px"></section>
-<style>
-  #divergence-radar .dr-spot { display:grid; gap:9px; grid-template-columns:1fr; margin:6px 0 12px; }
-  @media (min-width:760px){ #divergence-radar .dr-spot.two { grid-template-columns:1fr 1fr; } }
-  #divergence-radar .dr-card { border:1px solid var(--line); border-left-width:3px; border-radius:9px;
-    padding:9px 11px; background:var(--panel2); }
-  #divergence-radar .dr-card.dr-pos { border-left-color:var(--up); }
-  #divergence-radar .dr-card.dr-neg { border-left-color:var(--warn); }
-  #divergence-radar .dr-card-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
-  #divergence-radar .dr-theme { font-size:14px; }
-  #divergence-radar .dr-badge { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px;
-    border:1px solid var(--line); white-space:nowrap; }
-  #divergence-radar .dr-badge.dr-pos { color:var(--up); border-color:var(--up); }
-  #divergence-radar .dr-badge.dr-neg { color:var(--warn); border-color:var(--warn); }
-  #divergence-radar .dr-badge.dr-cup { color:var(--up); opacity:.8; }
-  #divergence-radar .dr-badge.dr-cdn { color:var(--down); opacity:.8; }
-  #divergence-radar .dr-badge.dr-quiet { color:var(--muted); }
-  #divergence-radar .dr-life { font-size:10px; font-weight:700; padding:1px 7px; border-radius:999px;
-    border:1px solid var(--muted); white-space:nowrap; }
-  #divergence-radar .dr-life-sm { font-size:9.5px; font-weight:600; margin-top:1px; }
-  #divergence-radar .dr-srcs { display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin-bottom:6px; font-size:10.5px; }
-  #divergence-radar .dr-src { padding:1px 6px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; color:var(--muted); }
-  #divergence-radar .dr-note { font-size:12.5px; line-height:1.5; color:var(--text); margin-bottom:6px; }
-  #divergence-radar .dr-chips { display:flex; gap:6px 10px; flex-wrap:wrap; align-items:center; font-size:11.5px; color:var(--muted); }
-  #divergence-radar .dr-chip { white-space:nowrap; } #divergence-radar .dr-chip b { color:var(--text); }
-  #divergence-radar .dr-cov { font-size:10.5px; color:var(--muted); font-family:var(--mono,monospace); }
-  #divergence-radar .dr-calm { font-size:12.5px; color:var(--muted); background:var(--panel2);
-    border:1px dashed var(--line); border-radius:9px; padding:10px 12px; margin:6px 0 12px; }
-  #divergence-radar .dr-tblwrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  #divergence-radar .dr-tbl { width:100%; border-collapse:collapse; font-size:12px; min-width:420px; }
-  #divergence-radar .dr-tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:10.5px;
-    text-transform:uppercase; letter-spacing:.03em; padding:4px 8px; border-bottom:1px solid var(--line); }
-  #divergence-radar .dr-tbl td { padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:middle; }
-  #divergence-radar .dr-tbl .dr-num { font-variant-numeric:tabular-nums; white-space:nowrap; }
-  #divergence-radar .dr-mut { color:var(--muted); font-size:10.5px; }
-  #divergence-radar .dr-cav { font-size:10.5px; color:var(--muted); margin:8px 0 0; line-height:1.45; }
-  #divergence-radar .dr-nb { margin-top:12px; border-top:1px dashed var(--line); padding-top:10px; }
-  #divergence-radar .dr-nb-h { font-size:13px; font-weight:700; margin-bottom:6px; }
-  #divergence-radar .dr-nb-rot { font-size:12px; color:var(--text); background:var(--panel2);
-    border:1px solid var(--line); border-radius:8px; padding:7px 10px; margin-bottom:8px; }
-  #divergence-radar .dr-nb-row { padding:5px 0; border-bottom:1px solid var(--line); }
-  #divergence-radar .dr-nb-badge { font-size:10px; font-weight:700; padding:1px 7px; border-radius:999px;
-    border:1px solid var(--muted); margin-right:6px; }
-  #divergence-radar .dr-nb-theme { font-size:12.5px; margin-right:6px; }
-  #divergence-radar .dr-nb-why { font-size:11.5px; color:var(--text); line-height:1.5; margin-top:2px; }
-</style>
 <script src="radar_panel.js"></script>
 <script>renderDivergenceRadar({ base: "basketdata/" });</script>
 
@@ -1305,7 +1260,7 @@
 
   <footer>
     <span class="l-en">Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the S&amp;P 500. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.</span><span class="l-zh">仅供参考，非投资建议。篮子等权重，并以标普 500 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-10 14:12 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-10 15:40 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>
