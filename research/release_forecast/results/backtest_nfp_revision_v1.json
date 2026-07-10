@@ -1,0 +1,127 @@
+{
+  "run_date": "2026-07-10",
+  "spec": "research/release_forecast/PREREG_NFP_REVISION_V1.md",
+  "basis": "first_to_third",
+  "n_records": 353,
+  "n_wf_steps": 293,
+  "min_train_obs": 60,
+  "strength_threshold": 0.1,
+  "kill_rule": {
+    "verdict": "kill",
+    "kill_triggered": true,
+    "wilson_lb": 0.5375,
+    "majority_base_rate": 0.5467,
+    "hit_rate": 0.6008,
+    "n_directional": 238
+  },
+  "era_results": {
+    "pre_2010": {
+      "n_total": 97,
+      "n_directional": 74,
+      "n_hits": 39,
+      "hit_rate": 0.527,
+      "wilson_95_ci": [
+        0.4148,
+        0.6366
+      ],
+      "majority_base_rate": 0.5155,
+      "n_up_actual": 50,
+      "n_down_actual": 47,
+      "fp_baseline_hr": 0.4742,
+      "fp_baseline_n_dir": 97
+    },
+    "2010_2020": {
+      "n_total": 122,
+      "n_directional": 106,
+      "n_hits": 67,
+      "hit_rate": 0.6321,
+      "wilson_95_ci": [
+        0.5372,
+        0.7178
+      ],
+      "majority_base_rate": 0.6148,
+      "n_up_actual": 75,
+      "n_down_actual": 47,
+      "fp_baseline_hr": 0.4508,
+      "fp_baseline_n_dir": 122
+    },
+    "covid": {
+      "n_total": 4,
+      "n_directional": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6667,
+      "wilson_95_ci": [
+        0.2077,
+        0.9385
+      ],
+      "majority_base_rate": 0.75,
+      "n_up_actual": 1,
+      "n_down_actual": 3,
+      "fp_baseline_hr": 0.75,
+      "fp_baseline_n_dir": 4
+    },
+    "2020_recovery": {
+      "n_total": 6,
+      "n_directional": 6,
+      "n_hits": 4,
+      "hit_rate": 0.6667,
+      "wilson_95_ci": [
+        0.3,
+        0.9032
+      ],
+      "majority_base_rate": 0.6667,
+      "n_up_actual": 4,
+      "n_down_actual": 2,
+      "fp_baseline_hr": 0.3333,
+      "fp_baseline_n_dir": 6
+    },
+    "2021_plus": {
+      "n_total": 64,
+      "n_directional": 52,
+      "n_hits": 33,
+      "hit_rate": 0.6346,
+      "wilson_95_ci": [
+        0.4987,
+        0.752
+      ],
+      "majority_base_rate": 0.5469,
+      "n_up_actual": 29,
+      "n_down_actual": 35,
+      "fp_baseline_hr": 0.4844,
+      "fp_baseline_n_dir": 64
+    },
+    "full_non_covid": {
+      "n_total": 289,
+      "n_directional": 238,
+      "n_hits": 143,
+      "hit_rate": 0.6008,
+      "wilson_95_ci": [
+        0.5375,
+        0.661
+      ],
+      "majority_base_rate": 0.5467,
+      "n_up_actual": 158,
+      "n_down_actual": 131,
+      "fp_baseline_hr": 0.4637,
+      "fp_baseline_n_dir": 289
+    }
+  },
+  "feature_presence": {
+    "fp_surprise_vs_AR1": {
+      "n_present": 353,
+      "pct_present": 1.0
+    },
+    "sin_month": {
+      "n_present": 353,
+      "pct_present": 1.0
+    },
+    "cos_month": {
+      "n_present": 353,
+      "pct_present": 1.0
+    },
+    "icsa_4m_survey_week_change": {
+      "n_present": 198,
+      "pct_present": 0.561
+    }
+  }
+}
