@@ -1788,13 +1788,6 @@
       "probed_at": null,
       "elapsed_sec": 343.6,
       "checked_at": "2026-07-10T12:14:30.672248+00:00"
-    },
-    "intraday_flow_nightly": {
-      "status": "ok",
-      "n_leaders": 116,
-      "base_json": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/quirky-tereshkova-203edb/site/flowtracker/base.json",
-      "as_of": "2026-07-10T17:04:12.748312+00:00",
-      "checked_at": "2026-07-10T17:04:13.306563+00:00"
     }
   },
   "circuit_breaker": {

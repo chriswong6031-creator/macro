@@ -826,10 +826,16 @@ def _run_nightly(cfg: dict, data_root: Path, site_root: Path, tpl_root: Path) ->
     try:
         from lib import store as _store         # noqa: PLC0415
         _rs = _store.read_status()
+        # Repo-relative path only: run_status.json is a committed registry — an
+        # absolute path would leak the local checkout/worktree location.
+        try:
+            _bj = str(out_path.resolve().relative_to(Path(config.ROOT).resolve()))
+        except ValueError:
+            _bj = "/".join(out_path.parts[-2:])
         _rs.setdefault("sources", {})["intraday_flow_nightly"] = {
             "status":     "ok",
             "n_leaders":  len(leaders),
-            "base_json":  str(out_path),
+            "base_json":  _bj,
             "as_of":      as_of,
             "checked_at": datetime.now(timezone.utc).isoformat(),
         }
