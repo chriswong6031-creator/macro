@@ -516,6 +516,15 @@
   #panel_gex .gex-hole { margin:8px 0 2px; font-size:12.5px; color:var(--text);
     background:var(--panel2); border-radius:10px; padding:8px 12px; }
   #panel_gex .gex-hole b { color:var(--warn); }
+  /* Intraday flow panel */
+  #panel_iflow .iflow-grid { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }
+  #panel_iflow .iflow-asof { font-size:11px; color:var(--muted); margin-bottom:8px; }
+  #panel_iflow .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:2px; }
+  #panel_iflow .leg-chip { display:inline-flex; align-items:center; gap:2px; font-size:10px; padding:1px 5px; border-radius:4px; border:1px solid var(--line); }
+  #panel_iflow .leg-on { border-color:var(--up); color:var(--up); }
+  #panel_iflow .leg-off { color:var(--muted); }
+  #panel_iflow .iflow-legs { display:flex; flex-wrap:wrap; gap:3px 5px; margin-top:4px; }
+  #panel_iflow .iflow-link { display:inline-block; margin-top:10px; font-size:12px; color:var(--link,var(--blue,#3b82f6)); }
   /* Super-investors — fund grade + per-row as-of + holders trend sparkline */
   #panel_smartmoney .sm-grade { display:inline-block; font-size:10px; font-weight:800; padding:0 5px; border-radius:5px; vertical-align:middle; }
   #panel_smartmoney .sm-gA { color:var(--up); background:color-mix(in srgb,var(--up) 16%,transparent); }
@@ -737,6 +746,12 @@
     <div class="panel" id="panel_gex" style="display:none">
       <h2>🎯 {{ t('Options &amp; dealer gamma (GEX)', '期权与做市商Gamma') }}</h2>
       <div id="r_gex"></div>
+    </div>
+
+    <div class="panel" id="panel_iflow" style="display:none">
+      <h2>📊 {{ t('Intraday flow', '盘中资金流') }}</h2>
+      <div id="r_iflow_asof" class="iflow-asof"></div>
+      <div id="r_iflow"></div>
     </div>
 
     <div class="panel" id="panel_pos" style="display:none">
@@ -1419,6 +1434,7 @@
     } else show('panel_fac', false);
 
     renderGex(d);
+    renderIFlow(d.ticker);
 
     if (pos && (pos.short || pos.short_flow || pos.insider)) {
       var html = '';
@@ -2088,6 +2104,334 @@
       '<p class="srcline">' + lz('Cboe delayed chains (daily, not live flow) — a vol-regime + levels map. Context for TIMING and STOPS, never directional and not in this stock’s score.',
         'Cboe 延迟期权链（每日、非实时）— 波动率体制+价位地图。仅作择时与止损背景，无方向性，不计入本股评分。') + '</p>';
     show('panel_gex', true);
+  }
+
+  // ── Intraday flow panel (IFT PR-B) ─────────────────────────────────────────
+  // Reads: site/flowtracker/base.json (once, cached), site/live/flow_pulse.json,
+  // and R2 live_flow endpoints when DATA_BASE is set.
+  // Panel shown ONLY when the ticker is in base.json leaders; hidden otherwise.
+  // All direction reads ~-soft (RUL-F3.12). Display-only, never in the score.
+  var _iflowBase = null;         // cached leaders array
+  var _iflowBaseLoaded = false;  // true after first fetch (even if empty/error)
+  var _iflowPulse = {};          // ticker -> pulse row
+  var _iflowPulseAsof = null;
+  var _iflowFlow = {};           // ticker -> {ncp, flow_dur, badges, session_tier, asof}
+  var _iflowFlowAsof = null;
+  var _iflowLeaderMap = {};      // ticker -> leader record from base.json
+  var _iflowCur = null;         // ticker whose render is in flight (stale-ticker guard)
+
+  var IFLOW_RVOL_CONFIRM = 1.30;
+  var IFLOW_DUR_MIN = 0.60;
+  var IFLOW_WASHOUT_LB = 10;
+
+  function _iflowFmtNum(v, dec) {
+    if (v == null || isNaN(v)) return '—';
+    return Number(v).toFixed(dec != null ? dec : 2);
+  }
+  function _iflowFmtK(n) {
+    if (n == null) return '—';
+    n = Number(n);
+    if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(1) + 'M';
+    if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return n.toFixed(0);
+  }
+  function _iflowPosNeg(v) {
+    if (v == null || isNaN(v)) return '';
+    return v > 0 ? 'pos' : (v < 0 ? 'neg' : '');
+  }
+  function _etMinutes() {
+    var fmt = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit'});
+    var parts = fmt.formatToParts(new Date());
+    var h = 0, m = 0;
+    parts.forEach(function(p){ if (p.type === 'hour') h = parseInt(p.value, 10); else if (p.type === 'minute') m = parseInt(p.value, 10); });
+    return h * 60 + m;
+  }
+  function _iflowIsMarketHours() {
+    var etMins = _etMinutes();
+    return etMins >= (9 * 60 + 25) && etMins <= (16 * 60 + 5);
+  }
+
+  function _iflowComputeLegs(leader, pulse, flow) {
+    var washLb = IFLOW_WASHOUT_LB;
+    var durMin = IFLOW_DUR_MIN;
+
+    // L1: washout_recent
+    var L1 = null;
+    if (leader.bb_lower_reclaim_days != null) {
+      L1 = leader.bb_lower_reclaim_days <= washLb;
+    } else if (leader.drawdown_21d_pct != null && leader.recovery_begun != null) {
+      L1 = leader.drawdown_21d_pct <= -0.12 && leader.recovery_begun;
+    }
+    if (L1 === null && leader.entry_signal && leader.entry_signal.status) {
+      var st = (leader.entry_signal.status || '').toLowerCase();
+      if (st.indexOf('washout') >= 0 || st.indexOf('reclaim') >= 0 ||
+          st.indexOf('bounce') >= 0 || st.indexOf('buy') >= 0) L1 = true;
+    }
+    if (L1 === null && leader.vol_squeeze && leader.vol_squeeze.coiled) L1 = true;
+
+    // L2: reclaim — needs live quote; left null in static render
+    var L2 = null;
+
+    // L3: rvol_elevated — needs live quote; null when off-hours
+    var L3 = null;
+
+    // L4: vol_durable
+    var volDur = pulse ? (pulse.vol_durability != null ? pulse.vol_durability : null) : null;
+    var L4 = volDur !== null ? volDur >= durMin : null;
+
+    // L5: flow_bid (~soft)
+    var L5 = null;
+    if (flow && flow.ncp != null && flow.flow_dur != null) {
+      L5 = flow.ncp > 0 && flow.flow_dur >= durMin;
+    }
+
+    // L6: upturn_organ
+    var L6 = false;
+    if (leader.mtf_upturn_state) {
+      var mst = (leader.mtf_upturn_state || '').toUpperCase();
+      L6 = mst === 'UPTURN_WATCH' || mst === 'UPTURN_CONFIRMED';
+    } else if (leader.mtf_upturn_K != null) {
+      L6 = leader.mtf_upturn_K >= 2;
+    }
+
+    // L7: leader_quality — NOT failed_breakout_trap
+    var L7 = leader.failed_breakout_trap === false ? true : null;
+
+    var legs = [L1, L2, L3, L4, L5, L6, L7];
+    var K = legs.filter(function(v){ return v === true; }).length;
+    return { legs: legs, K: K };
+  }
+
+  function _iflowRenderPanel(t) {
+    if (t !== _iflowCur) return;
+    var leader = _iflowLeaderMap[t];
+    if (!leader) { show('panel_iflow', false); return; }
+
+    var pulse = _iflowPulse[t] || null;
+    var flow = _iflowFlow[t] || null;
+    var entry = leader.entry_signal || {};
+    var opt = leader.options_entry || {};
+    var squeeze = leader.vol_squeeze || {};
+    var conf = _iflowComputeLegs(leader, pulse, flow);
+    var K = conf.K, legs = conf.legs;
+
+    // --- As-of stamps ---
+    var asofParts = [];
+    if (_iflowPulseAsof) {
+      asofParts.push(lz('pulse: ', '流速: ') + _iflowPulseAsof + (_iflowPulse._stale ? ' · stale' : ''));
+    }
+    if (_iflowFlowAsof) {
+      var isRTH = _iflowIsMarketHours();
+      asofParts.push(lz(isRTH ? 'options: ' : 'options (off-hours): ', isRTH ? '期权: ' : '期权(非交易时段): ') + _iflowFlowAsof);
+    }
+    el('r_iflow_asof').textContent = asofParts.join(' · ') || lz('off-hours · nightly data shown', '非交易时段 · 显示夜间数据');
+
+    // --- Chip / KV grid ---
+    var chips = [];
+
+    // RVOL (from pulse cum_vol + base adv20 + vol_share_curve)
+    var rvolStr = '—';
+    if (pulse && pulse.cum_vol != null && leader.adv20_shares && leader.vol_share_curve && leader.vol_share_curve.length) {
+      var curve = leader.vol_share_curve;
+      var etMins2 = _etMinutes();
+      var mktOpen = 9 * 60 + 30, mktClose = 16 * 60;
+      var elapsed = etMins2 - mktOpen;
+      if (elapsed < 0) elapsed = 0;
+      var frac = Math.min(elapsed / (mktClose - mktOpen), 1.0);
+      var n = curve.length;
+      var cumIdx = Math.min(Math.floor(frac * n), n - 1);
+      var cumShare = curve[cumIdx] || 0;
+      if (cumShare > 0) {
+        var rvol = pulse.cum_vol / (leader.adv20_shares * cumShare);
+        var rvolCls = rvol >= IFLOW_RVOL_CONFIRM ? 'pos' : (rvol >= 0.8 ? '' : 'muted');
+        rvolStr = '<span class="' + rvolCls + '">' + rvol.toFixed(2) + '×</span>';
+      }
+    }
+    chips.push(gchip(lz('RVOL tod', 'RVOL时段'), rvolStr));
+
+    // VWAP delta % (vwap vs prev_close)
+    var vwapDeltaStr = '—';
+    if (pulse && pulse.vwap != null && leader.prev_close != null) {
+      var vd = (pulse.vwap - leader.prev_close) / leader.prev_close * 100;
+      var vdCls = vd > 0 ? 'pos' : (vd < 0 ? 'neg' : 'muted');
+      vwapDeltaStr = '<span class="' + vdCls + '">' + (vd >= 0 ? '+' : '') + vd.toFixed(2) + '%</span>';
+    }
+    chips.push(gchip('VWAP Δ', vwapDeltaStr));
+
+    // Volume durability
+    var durStr = '—';
+    if (pulse && pulse.vol_durability != null) {
+      var dur = pulse.vol_durability;
+      var durCls = dur >= IFLOW_DUR_MIN ? 'pos' : (dur >= IFLOW_DUR_MIN * 0.7 ? '' : 'muted');
+      durStr = '<span class="' + durCls + '">' + (dur * 100).toFixed(0) + '%</span>';
+    }
+    chips.push(gchip(lz('vol durability', '量持续'), durStr));
+
+    // Higher-lows count
+    var hlStr = pulse && pulse.higher_lows != null ? String(pulse.higher_lows) : '—';
+    chips.push(gchip(lz('higher-lows', '更高低点'), hlStr));
+
+    // ~NCP (soft direction)
+    var ncpVal = flow && flow.ncp != null ? flow.ncp : null;
+    var ncpStr = ncpVal != null
+      ? '<span class="' + _iflowPosNeg(ncpVal) + '">~' + (ncpVal >= 0 ? '+' : '') + _iflowFmtK(ncpVal) + '</span><span class="soft-tag">~soft</span>'
+      : lz('— (off-hours)', '—（非交易时段）');
+    chips.push(gchip(lz('~net call prem', '~净看涨权利金'), ncpStr));
+
+    // Flow session tier badge
+    var tierStr = (flow && flow.session_tier)
+      ? '<span class="alpha-entry">' + esc(flow.session_tier) + '</span>'
+      : '—';
+    chips.push(gchip(lz('session tier', '会话层级'), tierStr));
+
+    // Today badge counts
+    var badgeHtml = '—';
+    if (flow && flow.badges && flow.badges.length) {
+      badgeHtml = flow.badges.slice(0, 4).map(function(b){
+        return '<span class="alpha-entry ae-extended" style="margin-right:2px">' + esc(b) + '</span>';
+      }).join('');
+    }
+    chips.push(gchip(lz('badges', '标签'), badgeHtml));
+
+    // GEX regime from nightly
+    if (opt.gamma_regime) {
+      var grc = opt.gamma_regime === 'long' ? 'pos' : (opt.gamma_regime === 'short' ? 'neg' : 'muted');
+      var gFlip = opt.dist_to_flip_pct != null
+        ? ' <span class="muted">(' + (opt.dist_to_flip_pct >= 0 ? '+' : '') + _iflowFmtNum(opt.dist_to_flip_pct, 1) + '% to flip)</span>'
+        : '';
+      chips.push(gchip('GEX', '<span class="' + grc + '">' + esc(opt.gamma_regime) + '</span>' + gFlip));
+    }
+
+    // --- K/7 confluence ---
+    var legNamesEn = ['L1 washout', 'L2 reclaim', 'L3 rvol', 'L4 vol dur', 'L5 ~flow bid', 'L6 upturn', 'L7 quality'];
+    var legNamesZh = ['L1 洗盘', 'L2 收复', 'L3 RVOL', 'L4 量持续', 'L5 ~资金偏多', 'L6 上升', 'L7 质量'];
+    var kCls = K >= 5 ? 'pos' : (K >= 3 ? '' : 'muted');
+    var legHtmlEn = legs.map(function(on, i){
+      var cls = on === true ? 'leg-on' : 'leg-off';
+      return '<span class="leg-chip ' + cls + '" title="' + legNamesEn[i] + '">' + (on === true ? '✓' : (on === null ? '·' : '✗')) + ' ' + legNamesEn[i] + '</span>';
+    }).join('');
+    var legHtmlZh = legs.map(function(on, i){
+      var cls = on === true ? 'leg-on' : 'leg-off';
+      return '<span class="leg-chip ' + cls + '" title="' + legNamesEn[i] + '">' + (on === true ? '✓' : (on === null ? '·' : '✗')) + ' ' + legNamesZh[i] + '</span>';
+    }).join('');
+
+    // --- Setup chips ---
+    var setupChips = [];
+    if (squeeze.coiled) setupChips.push('<span class="alpha-entry ae-laggard">squeeze</span>');
+    if (squeeze.state === 'EXPANSION') setupChips.push('<span class="alpha-entry ae-confirmed">squeeze→expand</span>');
+    if (leader.stair_step_leader === true) setupChips.push('<span class="alpha-entry ae-confirmed">' + lz('clean leader', '稳步领涨') + '</span>');
+    if (leader.failed_breakout_trap === true) setupChips.push('<span class="alpha-entry ae-laggard">' + lz('trap-prone', '回踩陷阱') + '</span>');
+    if (leader.current_mode) setupChips.push('<span class="alpha-entry">' + esc(leader.current_mode) + '</span>');
+    if (leader.mtf_upturn_state) setupChips.push('<span class="alpha-entry ae-extended">' + esc(leader.mtf_upturn_state) + '</span>');
+
+    // --- Risk reference levels ---
+    var riskParts = [];
+    if (entry.stop != null) riskParts.push(lz('stop: ', '止损: ') + '<span class="neg">$' + _iflowFmtNum(entry.stop, 2) + '</span>');
+    if (pulse && pulse.vwap != null) riskParts.push('VWAP: $' + _iflowFmtNum(pulse.vwap, 2));
+    if (entry.atr_pct != null) riskParts.push('ATR: ' + _iflowFmtNum(entry.atr_pct, 2) + '%');
+
+    var html =
+      '<div class="iflow-grid glance">' + chips.join('') + '</div>' +
+      (setupChips.length ? '<div style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:4px">' + setupChips.join('') + '</div>' : '') +
+      '<div style="margin:4px 0 2px"><span class="muted" style="font-size:12px">' +
+        lz('K/7 confluence', 'K/7 汇聚') + ':</span> <b class="' + kCls + '" style="font-size:14px">' + K + '/7</b></div>' +
+      '<div class="iflow-legs"><span class="l-en">' + legHtmlEn + '</span><span class="l-zh">' + legHtmlZh + '</span></div>' +
+      (riskParts.length
+        ? '<p class="srcline" style="margin-top:8px">' + lz('Reference levels: ', '参考价位: ') + riskParts.join(' · ') + '</p>'
+        : '') +
+      '<p class="srcline">' +
+        lz('Volume durability is deterministic. RVOL_tod = cumulative day volume ÷ (ADV20 × expected share at this time of day). ~NCP direction is SOFT — approximate (RUL-F3.12). Display-only context; not in this stock\'s score.',
+           '成交量持续性为确定性计算。RVOL_tod=当日累计量÷(ADV20×时段预期占比)。~净看涨权利金方向为软性近似（RUL-F3.12）。仅作展示背景，不计入本股评分。') +
+      '</p>' +
+      '<a class="iflow-link" href="intraday_flow.html">' + lz('Open Intraday Flow Tracker →', '打开盘中资金流追踪 →') + '</a>';
+
+    el('r_iflow').innerHTML = html;
+    show('panel_iflow', true);
+  }
+
+  // Fetch base.json once per page load
+  function _iflowLoadBase(t, cb) {
+    if (_iflowBaseLoaded) { cb(); return; }
+    fetch('flowtracker/base.json', {cache: 'no-cache'})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        _iflowBaseLoaded = true;
+        if (d) {
+          var leaders = d.leaders || [];
+          IFLOW_RVOL_CONFIRM = d.rvol_confirm || 1.30;
+          IFLOW_DUR_MIN = d.durability_min || 0.60;
+          IFLOW_WASHOUT_LB = d.washout_lookback || 10;
+          leaders.forEach(function(l){ _iflowLeaderMap[l.ticker] = l; });
+        }
+        cb();
+      })
+      .catch(function(){
+        _iflowBaseLoaded = true;
+        cb();
+      });
+  }
+
+  function _iflowLoadPulse(t, cb) {
+    fetch('live/flow_pulse.json', {cache: 'no-cache'})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if (d) {
+          var tickers = d.tickers || [];
+          tickers.forEach(function(row){ _iflowPulse[row.ticker] = row; });
+          _iflowPulseAsof = d.as_of || null;
+          _iflowPulse._stale = !!d.stale;
+        }
+        cb();
+      })
+      .catch(function(){ cb(); });
+  }
+
+  function _iflowLoadFlow(t, cb) {
+    var base = (window.DATA_BASE || '').replace(/\/+$/, '');
+    if (!base) { cb(); return; }
+    var enrichUrl = base + '/live_flow/enrich_current.json';
+    var tickerUrl = base + '/live_flow/tickers/' + t + '.json';
+    Promise.all([
+      fetch(enrichUrl, {cache: 'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+      fetch(tickerUrl, {cache: 'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+    ]).then(function(results){
+      var enrich = results[0], tickerData = results[1];
+      var existing = _iflowFlow[t] || {};
+      if (tickerData) {
+        existing.ncp = tickerData.cum_ncp != null ? tickerData.cum_ncp : existing.ncp;
+        existing.flow_dur = tickerData.flow_dur != null ? tickerData.flow_dur : existing.flow_dur;
+      }
+      if (enrich && enrich.tickers && enrich.tickers[t]) {
+        var te = enrich.tickers[t];
+        var badges = [];
+        if (te.badge_counts) {
+          var bc = te.badge_counts;
+          ['WHALE','FRESH','Z_OUTLIER','SIZE_VS_OI','REPEAT_HITTER'].forEach(function(b){
+            if (bc[b] && bc[b] > 0) badges.push(b + '×' + bc[b]);
+          });
+        }
+        existing.badges = badges;
+        existing.session_tier = te.session_tier || null;
+      }
+      _iflowFlowAsof = (enrich && enrich.meta && enrich.meta.asof)
+        || (tickerData && tickerData.meta && tickerData.meta.asof)
+        || null;
+      _iflowFlow[t] = existing;
+      cb();
+    }).catch(function(){ cb(); });
+  }
+
+  function renderIFlow(t) {
+    _iflowCur = t;
+    show('panel_iflow', false);
+    _iflowLoadBase(t, function(){
+      if (!_iflowLeaderMap[t]) return;  // not a leader — leave hidden
+      _iflowLoadPulse(t, function(){
+        _iflowLoadFlow(t, function(){
+          _iflowRenderPanel(t);
+        });
+      });
+    });
   }
 
   // Contrarian fragility flag: crowded long + crowded short + extended. DISPLAY-ONLY,

@@ -436,6 +436,15 @@ function computeLegs(leader, quote, pulse, flow) {
   return { legs: legs, K: K };
 }
 
+// ── DST-correct ET helper (used by both computeRvol and isMarketHours) ───────
+function _etMinutes() {
+  var fmt = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit'});
+  var parts = fmt.formatToParts(new Date());
+  var h = 0, m = 0;
+  parts.forEach(function(p){ if (p.type === 'hour') h = parseInt(p.value, 10); else if (p.type === 'minute') m = parseInt(p.value, 10); });
+  return h * 60 + m;
+}
+
 // ── RVOL computation ──────────────────────────────────────────────────────
 function computeRvol(leader, quote) {
   // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
@@ -444,14 +453,9 @@ function computeRvol(leader, quote) {
   if (!curve || !curve.length) return null;
 
   // Estimate time-of-day fraction: use hour index = proportional position in curve
-  var now = new Date();
-  var etOff = -5 * 60;  // ET is UTC-5 (approx; ignores DST)
   var mkt_open = 9 * 60 + 30;  // 9:30 ET in minutes
   var mkt_close = 16 * 60;
-  var tzOff = now.getTimezoneOffset();
-  var localMins = now.getHours() * 60 + now.getMinutes();
-  // Convert local to ET approx
-  var etMins = localMins + tzOff + etOff;
+  var etMins = _etMinutes();
   var elapsed = etMins - mkt_open;
   if (elapsed < 0) elapsed = 0;
   var total = mkt_close - mkt_open;
@@ -901,11 +905,7 @@ function fetchFlow() {
 }
 
 function isMarketHours() {
-  var now = new Date();
-  var utcH = now.getUTCHours(), utcM = now.getUTCMinutes();
-  var etH = utcH - 5;  // approx ET (no DST correction)
-  if (etH < 0) etH += 24;
-  var etMins = etH * 60 + utcM;
+  var etMins = _etMinutes();
   // 9:25 - 16:05 ET
   return etMins >= (9 * 60 + 25) && etMins <= (16 * 60 + 5);
 }
