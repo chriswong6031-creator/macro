@@ -2,12 +2,169 @@
   "schema": "policy_intent_desk.v1",
   "is_context_only": true,
   "lens": "realpolitik",
-  "generated_at": "2026-07-10T07:41:43.562192+00:00",
+  "generated_at": "2026-07-10T08:08:43.743324+00:00",
   "state_asof": "2026-07-10",
   "model": "deepseek-v4-pro",
-  "regime_context": null,
-  "regime_context_zh": null,
-  "theses": [],
+  "regime_context": "The policy regime is a sequenced, optionality-building campaign to suppress real yields structurally without validating near-term cuts: Warsh's hawkish framework revamp earns credibility while Bessent's bill-heavy issuance, buybacks, and regulatory reforms hold down long-end supply. Consensus reads the hawkish repricing as outright restriction, but the revealed interest is to bank institutional cover for a post-midterm pivot\u2014making the staging phase a stealth set-up for duration even with 10y real yields at 2.29%.",
+  "regime_context_zh": "\u653f\u7b56\u4f53\u5236\u662f\u4e00\u4e2a\u5206\u9636\u6bb5\u3001\u591a\u5de5\u5177\u7684\u7ec4\u5408\u5e03\u5c40\uff0c\u5728\u4e0d\u501f\u52a9\u8fd1\u671f\u964d\u606f\u7684\u524d\u63d0\u4e0b\u7ed3\u6784\u6027\u538b\u4f4e\u5b9e\u9645\u6536\u76ca\u7387\uff1aWarsh \u7684\u9e70\u6d3e\u6846\u67b6\u91cd\u8bbe\u4e3a\u8054\u50a8\u8d62\u5f97\u4fe1\u8a89\uff0c\u800c Bessent \u901a\u8fc7\u56fd\u5e93\u5238\u4e3a\u4e3b\u7684\u53d1\u884c\u3001\u503a\u5238\u56de\u8d2d\u548c\u76d1\u7ba1\u6539\u9769\u6291\u5236\u957f\u7aef\u4f9b\u7ed9\u3002\u5e02\u573a\u5171\u8bc6\u628a\u9e70\u6d3e\u5b9a\u4ef7\u89e3\u8bfb\u4e3a\u7eaf\u7cb9\u7684\u7d27\u7f29\uff0c\u4f46\u771f\u6b63\u610f\u56fe\u662f\u4e3a\u4e2d\u671f\u9009\u4e3e\u540e\u7684\u8f6c\u5411\u79ef\u7d2f\u5236\u5ea6\u6027\u63a9\u62a4\u2014\u2014\u56e0\u6b64\uff0c\u5c3d\u7ba110\u5e74\u671f\u5b9e\u9645\u6536\u76ca\u7387\u9ad8\u8fbe2.29%\uff0c\u8fd9\u4e00\u5e03\u5c40\u9636\u6bb5\u5b9e\u9645\u4e0a\u4e3a\u4e45\u671f\u5934\u5bf8\u63d0\u4f9b\u4e86\u6f5c\u5728\u5916\u6ea2\u673a\u4f1a\u3002",
+  "theses": [
+    {
+      "id": "2026-07-10-080843-1",
+      "actor": "admin",
+      "subject": "TLT",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 126,
+      "thesis": "Treasury's bill-heavy issuance and yield-suppression language, combined with expected post-midterm easing, should drive long-end yields lower over the medium term despite near-term hawkishness. The real-yield suppression intent aligns with a structural TLT bid vs SPY.",
+      "thesis_zh": "\u8d22\u653f\u90e8\u4ee5\u56fd\u5e93\u5238\u4e3a\u4e3b\u7684\u53d1\u884c\u7b56\u7565\u548c\u538b\u4f4e\u6536\u76ca\u7387\u7684\u653f\u7b56\u8868\u8ff0\uff0c\u52a0\u4e0a\u4e2d\u671f\u9009\u4e3e\u540e\u653e\u677e\u7684\u9884\u671f\uff0c\u5e94\u5728\u4e2d\u671f\u5185\u538b\u964d\u957f\u7aef\u6536\u76ca\u7387\uff0c\u5f53\u524d\u9e70\u6d3e\u53ea\u662f\u77ed\u671f\u566a\u97f3\u3002\u5b9e\u9645\u6536\u76ca\u7387\u7cfb\u7edf\u6027\u538b\u4f4e\u7684\u76ee\u6807\u5bf9 TLT \u76f8\u5bf9 SPY \u6784\u6210\u7ed3\u6784\u6027\u5229\u597d\u3002",
+      "evidence": [
+        "Theater: Dollar/debt \u2014 'reinforces front-end Treasuries + the low-real-yield regime' (FACT)",
+        "Open prediction: No coupon auction-size increase at Aug 2026 refunding; bills remain shock absorber (INFERENCE)",
+        "Open prediction: Treasury keeps framing policy as keeping risk-free rate low (INFERENCE)",
+        "Admin thesis: 'administration wants the OUTCOME of lower real yields' (PRIOR)"
+      ],
+      "dissent": "If the hawkish staging overstays and the Fed actually hikes, real yields could push higher for longer, punishing long-duration before any pivot materializes.",
+      "dissent_zh": "\u5982\u679c\u9e70\u6d3e\u9636\u6bb5\u6301\u7eed\u65f6\u95f4\u8d85\u51fa\u9884\u671f\u4e14\u7f8e\u8054\u50a8\u771f\u7684\u52a0\u606f\uff0c\u5b9e\u9645\u6536\u76ca\u7387\u53ef\u80fd\u66f4\u4e45\u5730\u7ef4\u6301\u9ad8\u4f4d\uff0c\u5728\u8f6c\u5411\u5230\u6765\u4e4b\u524d\u4e25\u91cd\u635f\u5bb3\u4e45\u671f\u5934\u5bf8\u3002",
+      "falsifier": {
+        "text": "The market-implied probability of a December 2026 Fed rate cut rises above 50% but 10y real yield fails to decline below 2.0% within 60 days of that shift.",
+        "text_zh": "\u5e02\u573a\u9690\u542b\u76842026\u5e7412\u6708\u964d\u606f\u6982\u7387\u5347\u81f350%\u4ee5\u4e0a\uff0c\u4f46\u6b64\u540e60\u5929\u518510\u5e74\u671f\u5b9e\u9645\u6536\u76ca\u7387\u672a\u80fd\u8dcc\u78342.0%\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "TLT",
+          "vs": "SPY",
+          "via": "direct",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 126
+        }
+      },
+      "check_by": "2027-01-04"
+    },
+    {
+      "id": "2026-07-10-080843-2",
+      "actor": "admin",
+      "subject": "KBE",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 60,
+      "thesis": "Regulatory reforms to dealer intermediation and eSLR, alongside Treasury central-clearing expansion, will benefit regional banks by improving balance-sheet efficiency and market-making profitability. Admin aligns with this interest through bank-friendly adjustments.",
+      "thesis_zh": "\u4ea4\u6613\u5546\u4e2d\u4ecb\u4e1a\u52a1\u548c\u8865\u5145\u6760\u6746\u7387\uff08eSLR\uff09\u6539\u9769\uff0c\u53e0\u52a0\u56fd\u503a\u4e2d\u592e\u6e05\u7b97\u7684\u6269\u5c55\uff0c\u5c06\u901a\u8fc7\u6539\u5584\u8d44\u4ea7\u8d1f\u503a\u8868\u6548\u7387\u548c\u505a\u5e02\u76c8\u5229\u80fd\u529b\u4f7f\u533a\u57df\u94f6\u884c\u53d7\u76ca\u3002\u884c\u653f\u5f53\u5c40\u901a\u8fc7\u4e0e\u94f6\u884c\u53cb\u597d\u7684\u653f\u7b56\u8c03\u6574\u4e0e\u6b64\u5229\u76ca\u5bf9\u9f50\u3002",
+      "evidence": [
+        "Open prediction: Concrete eSLR-reform progress (a proposed or final rule) \u2013 this would be bank-positive (INFERENCE)",
+        "Open prediction: SEC advances Treasury central-clearing expansion (INFERENCE)",
+        "Rotation targeted: Financials / dealer banks (XLF, KBE) \u2014 FACT mechanism"
+      ],
+      "dissent": "If the Fed's hawkish stance leads to an inversion that squeezes net interest margins or if eSLR reform stalls, the rotation into banks could reverse sharply.",
+      "dissent_zh": "\u5982\u679c\u7f8e\u8054\u50a8\u7684\u9e70\u6d3e\u7acb\u573a\u5bfc\u81f4\u6536\u76ca\u7387\u66f2\u7ebf\u5012\u6302\u6324\u538b\u51c0\u606f\u5dee\uff0c\u6216\u8005 eSLR \u6539\u9769\u505c\u6ede\uff0c\u8d44\u91d1\u5411\u94f6\u884c\u80a1\u7684\u8f6e\u52a8\u53ef\u80fd\u6025\u5267\u9006\u8f6c\u3002",
+      "falsifier": {
+        "text": "No eSLR reform proposal or SEC central-clearing compliance milestone emerges before the Nov 2026 FOMC meeting.",
+        "text_zh": "\u57282026\u5e7411\u6708FOMC\u4f1a\u8bae\u524d\uff0c\u6ca1\u6709\u51fa\u73b0 eSLR \u6539\u9769\u63d0\u6848\u6216 SEC \u4e2d\u592e\u6e05\u7b97\u5408\u89c4\u91cc\u7a0b\u7891\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "KBE",
+          "vs": "SPY",
+          "via": "direct",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-10-02"
+    },
+    {
+      "id": "2026-07-10-080843-3",
+      "actor": "admin",
+      "subject": "SMR",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 60,
+      "thesis": "Nuclear-for-AI industrial policy is delivering tangible milestones with pilot reactors approaching criticality, validating the theme and attracting capital. SMR as a scorable small modular reactor proxy benefits from this momentum.",
+      "thesis_zh": "\u4ee5\u6838\u80fd\u652f\u6491 AI \u7684\u4ea7\u4e1a\u653f\u7b56\u6b63\u5728\u53d6\u5f97\u5b9e\u8d28\u6027\u8fdb\u5c55\uff0c\u8bd5\u9a8c\u53cd\u5e94\u5806\u63a5\u8fd1\u4e34\u754c\u72b6\u6001\uff0c\u9a8c\u8bc1\u4e86\u4e3b\u9898\u5e76\u5438\u5f15\u8d44\u672c\u6d41\u5165\u3002SMR \u4f5c\u4e3a\u53ef\u8bc4\u5206\u7684\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806\u6807\u7684\uff0c\u5c06\u53d7\u76ca\u4e8e\u8fd9\u4e00\u52bf\u5934\u3002",
+      "evidence": [
+        "Rotation targeted: Nuclear \u00b7 uranium \u00b7 HALEU/fuel cycle \u2014 FACT mechanism",
+        "Open prediction: At least one of the three pilot reactors reaches criticality (Antares Mark-0 partial-pass likely) \u2014 FACT/INFERENCE",
+        "Theater: NATO/Defense super-cycle \u2014 defense bid persists, parallel to strategic energy independence"
+      ],
+      "dissent": "Delays in regulatory approval, cost overruns, or a safety incident could derail the nuclear story just as speculative interest peaks.",
+      "dissent_zh": "\u76d1\u7ba1\u5ba1\u6279\u5ef6\u8fdf\u3001\u6210\u672c\u8d85\u652f\u6216\u5b89\u5168\u4e8b\u6545\u53ef\u80fd\u5728\u6295\u673a\u5174\u8da3\u9ad8\u5cf0\u671f\u6467\u6bc1\u6838\u80fd\u4e3b\u9898\u3002",
+      "falsifier": {
+        "text": "By year-end 2026, none of the three pilot reactors (including Antares Mark-0) has reached a sustained critical state, and the Department of Energy pauses further funding.",
+        "text_zh": "\u52302026\u5e74\u5e95\uff0c\u4e09\u5ea7\u8bd5\u9a8c\u53cd\u5e94\u5806\uff08\u5305\u62ec Antares Mark-0\uff09\u65e0\u4e00\u8fbe\u5230\u6301\u7eed\u4e34\u754c\u72b6\u6001\uff0c\u4e14\u80fd\u6e90\u90e8\u6682\u505c\u8fdb\u4e00\u6b65\u62e8\u6b3e\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "SMR",
+          "vs": "SPY",
+          "via": "direct",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-10-02"
+    },
+    {
+      "id": "2026-07-10-080843-4",
+      "actor": "fed",
+      "subject": "GLD",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "The hawkish staging phase keeps real yields elevated and the DXY at a 13-month high, creating a headwind for gold. Until the Fed signals a genuine pivot, the carry and dollar dynamics favor underweight GLD vs SPY.",
+      "thesis_zh": "\u9e70\u6d3e\u5e03\u5c40\u9636\u6bb5\u7ef4\u6301\u5b9e\u9645\u6536\u76ca\u7387\u9ad8\u4f01\uff0c\u7f8e\u5143\u6307\u6570\uff08DXY\uff09\u5904\u4e8e13\u4e2a\u6708\u9ad8\u4f4d\uff0c\u6784\u6210\u9ec4\u91d1\u7684\u9006\u98ce\u3002\u5728\u7f8e\u8054\u50a8\u53d1\u51fa\u771f\u6b63\u8f6c\u5411\u4fe1\u53f7\u4e4b\u524d\uff0c\u6301\u6709\u6210\u672c\u548c\u7f8e\u5143\u8d70\u52bf\u4f7f\u5f97 GLD \u76f8\u5bf9 SPY \u504f\u5411\u4f4e\u914d\u3002",
+      "evidence": [
+        "Market state: real 10y at 2.29%, DXY 13-mo high, gold < $4,000 (FACT)",
+        "Fed path gap: market \u2248 the Fed, dot 3.8%, market 3.88% \u2014 no imminent cut (FACT/INFERENCE)",
+        "Open prediction: Fed does NOT cut at July and September 2026 (hold or hike) \u2014 INFERENCE"
+      ],
+      "dissent": "A sudden Iran re-escalation or a sharp equity drawdown could trigger a safe-haven bid for gold, overriding the real-rate logic.",
+      "dissent_zh": "\u4f0a\u6717\u5c40\u52bf\u7a81\u7136\u518d\u5ea6\u5347\u7ea7\u6216\u80a1\u5e02\u5927\u5e45\u56de\u64a4\u53ef\u80fd\u89e6\u53d1\u907f\u9669\u4e70\u76d8\uff0c\u8986\u76d6\u5b9e\u9645\u5229\u7387\u903b\u8f91\u3002",
+      "falsifier": {
+        "text": "The Dec-2026 SOFR futures-implied rate drops below 3.7% (suggesting a cut) while gold fails to outperform SPY by more than 5% over the following 20 trading days.",
+        "text_zh": "2026\u5e7412\u6708SOFR\u671f\u8d27\u9690\u542b\u5229\u7387\u964d\u81f33.7%\u4ee5\u4e0b\uff08\u6697\u793a\u964d\u606f\uff09\uff0c\u800c\u6b64\u540e20\u4e2a\u4ea4\u6613\u65e5\u5185\u9ec4\u91d1\u672a\u80fd\u8dd1\u8d62SPY\u8d85\u8fc75%\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "GC_F",
+          "vs": "SPY",
+          "via": "direct",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-08-21"
+    },
+    {
+      "id": "2026-07-10-080843-5",
+      "actor": "admin",
+      "subject": "SMH",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 60,
+      "thesis": "The 25% advanced-chip tariff remains in force as part of industrialization strategy, protecting domestic semiconductor fabs and supporting onshoring. Even with a tech-war pause, the tariff wall gives SMH a policy-driven advantage.",
+      "thesis_zh": "25%\u7684\u5148\u8fdb\u82af\u7247\u5173\u7a0e\u4f5c\u4e3a\u518d\u5de5\u4e1a\u5316\u6218\u7565\u7684\u4e00\u73af\u7ee7\u7eed\u5b9e\u65bd\uff0c\u4fdd\u62a4\u56fd\u5185\u534a\u5bfc\u4f53\u5236\u9020\u5e76\u652f\u6301\u5728\u5cb8\u4ea7\u80fd\u3002\u5373\u4f7f\u4e2d\u7f8e\u79d1\u6280\u6218\u6682\u505c\uff0c\u5173\u7a0e\u58c1\u5792\u4e3a SMH \u63d0\u4f9b\u4e86\u653f\u7b56\u9a71\u52a8\u7684\u76f8\u5bf9\u4f18\u52bf\u3002",
+      "evidence": [
+        "Open prediction: The 25% advanced-chip tariff stays in force and/or the covered list expands \u2014 FACT/INFERENCE",
+        "Theater: China \u2014 tech war in a negotiated PAUSE; de-risking mandate still funds onshoring (INFERENCE)",
+        "Rotation targeted: Domestic semiconductors/fabs (SMH, SOXX) \u2014 FACT mechanism"
+      ],
+      "dissent": "A SCOTUS decision striking down the tariff authority or a broader trade settlement that rescinds the tariff would strip the protection premium and reverse the overweight thesis.",
+      "dissent_zh": "\u6700\u9ad8\u6cd5\u9662\u88c1\u5b9a\u5173\u7a0e\u6388\u6743\u8fdd\u5baa\u6216\u66f4\u5e7f\u6cdb\u7684\u8d38\u6613\u534f\u8bae\u53d6\u6d88\u8be5\u5173\u7a0e\uff0c\u5c06\u5265\u593a\u4fdd\u62a4\u6ea2\u4ef7\u5e76\u4f7f\u8d85\u914d\u903b\u8f91\u9006\u8f6c\u3002",
+      "falsifier": {
+        "text": "The 25% advanced-chip tariff is formally rescinded or suspended in an officially announced trade agreement before the end of Q3 2026.",
+        "text_zh": "\u57282026\u5e74\u7b2c\u4e09\u5b63\u5ea6\u7ed3\u675f\u524d\uff0c25%\u7684\u5148\u8fdb\u82af\u7247\u5173\u7a0e\u5728\u6b63\u5f0f\u5ba3\u5e03\u7684\u8d38\u6613\u534f\u8bae\u4e2d\u88ab\u64a4\u9500\u6216\u6682\u505c\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "SMH",
+          "vs": "SPY",
+          "via": "direct",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-10-02"
+    }
+  ],
   "track_record": {
     "schema": "ai_desk_track_record.v1",
     "as_of": "2026-07-07",
@@ -67,7 +224,7 @@
     "calibration_note_zh": "\u5c1a\u65e0\u5224\u65ad\u88ab\u8bc4\u5206 \u2014\u2014 \u5f85\u9996\u6279\u6838\u67e5\u65e5\u5230\u671f\u540e\u5f00\u59cb\u7d2f\u79ef\u6218\u7ee9\uff1b\u5728\u6b64\u4e4b\u524d\u7f6e\u4fe1\u4fdd\u6301\u514b\u5236\u3002"
   },
   "confidence": "low",
-  "degraded_reason": "no_client_or_key",
+  "degraded_reason": null,
   "disclaimer": "Policy intent desk \u2014 realpolitik, context only, never scored or sized. Each lean is a fallible, FALSIFIABLE judgement (proxy vs SPY, with a check-by date), not a trade or a position size. Intent is inferred from interests; treat it as a hypothesis with a track record, not an oracle.",
   "disclaimer_zh": "\u610f\u56fe\u53f0 \u2014\u2014 \u73b0\u5b9e\u653f\u6cbb\u3001\u4ec5\u4f9b\u53c2\u8003\uff0c\u4ece\u4e0d\u8bc4\u5206\u6216\u5b9a\u4ed3\u3002\u6bcf\u6761\u5224\u65ad\u90fd\u662f\u53ef\u8bc1\u4f2a\u3001\u4f1a\u51fa\u9519\u7684\u5224\u65ad\uff08\u4ee3\u7406\u6807\u7684 vs SPY\uff0c\u9644\u6838\u67e5\u65e5\u671f\uff09\uff0c\u5e76\u975e\u4ea4\u6613\u6216\u4ed3\u4f4d\u5927\u5c0f\u3002\u610f\u56fe\u7531\u5229\u76ca\u63a8\u65ad\u800c\u6765\uff1b\u8bf7\u5c06\u5176\u89c6\u4e3a\u6709\u6218\u7ee9\u8bb0\u5f55\u7684\u5047\u8bbe\uff0c\u800c\u975e\u795e\u8c15\u3002",
   "passport": {

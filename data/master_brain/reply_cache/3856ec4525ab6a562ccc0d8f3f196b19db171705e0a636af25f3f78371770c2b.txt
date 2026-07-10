@@ -1,0 +1,24 @@
+{
+  "stance": "The dominant cluster (Consumer Discretionary, Real Estate, Health Care, Financials) shows mixed internal cohesion; only Health Care and Real Estate exhibit genuine broad co-movement. The top correlated pair Industrials-Consumer Discretionary lacks internal cohesion, suggesting macro noise rather than a supply-chain theme.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "none",
+      "rationale": "Broad leadership (HHI 0.011, n=165) and cohering status, but low cohesion (0.203) and high relative strength indicate a genuine yet fragile group move.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "none",
+      "rationale": "Cohering with low HHI (0.017) and higher cohesion (0.419); internal co-movement is genuine but the sector is not a relative-strength leader (rs_pctile 0.413).",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "avoid",
+      "rationale": "In the dominant cluster but cohesion gate is false (0.238), so the correlation with Industrials is not backed by a cohering theme—risk of a false signal.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "If macro correlations suddenly spike, sectors with low cohesion can begin to co-move, breaking the current dispersion-driven structural read."
+}

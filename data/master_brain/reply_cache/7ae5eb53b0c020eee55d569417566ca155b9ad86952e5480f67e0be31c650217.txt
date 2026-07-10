@@ -1,0 +1,24 @@
+{
+  "stance": "Flow lens provides a cross-sectional concentration snapshot with no forward directional edge. Current concentrations show Health Care as the sole confirmed sector and Information Technology/Industrials cooling; all reads are non-predictive and display-only.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "overweight",
+      "rationale": "Flow stage is confirmed, rs_pctile 0.976, broad leadership, and cohesion is cohering (albeit low) – the lens highlights it as the sector with the strongest current concentration signature.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "rationale": "Flow stage is cooling with cohesion not cohering, indicating waning cross-sectional concentration despite elevated relative strength; no forward edge is implied.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "underweight",
+      "rationale": "Cooling stage, cohesion not cohering, suggesting flow concentration is declining; consistent with a sector rotating out of flow favour, but purely a descriptive note.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "The flow lens has no validated forward edge (rank-IC ~0); concentration staging is a coincident description and has historically failed to translate into reliable relative-return signals."
+}

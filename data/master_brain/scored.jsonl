@@ -1,1 +1,2 @@
 {"id": "mb-2026-06-18-1", "subject": "Bitcoin", "lean": "avoid", "conviction": "low", "kind": "rel_return", "check_by": "2026-07-02", "regime": "Goldilocks", "scored_at": "2026-07-05T08:02:15.791040+00:00", "outcome": "hit", "realized": -0.0198, "directionally_correct": true}
+{"id": "mb-2026-06-25-1", "subject": "Semiconductors", "lean": "underweight", "conviction": "medium", "kind": "rel_return", "check_by": "2026-07-09", "regime": "Goldilocks", "scored_at": "2026-07-10T08:43:46.168052+00:00", "outcome": "hit", "realized": -0.0695, "directionally_correct": true}

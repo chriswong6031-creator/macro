@@ -1,0 +1,50 @@
+{
+  "schema": "prophet.management_state/v1",
+  "id": "ARES-BULL-20260709",
+  "asof": "2026-07-10",
+  "phase": "invalidated",
+  "detection_phase": "invalidated",
+  "management_confidence": 8.0,
+  "raw_confidence": 8.0,
+  "delta_vs_base": -52.0,
+  "recommended_action": "invalidated",
+  "human_state": "Invalidated",
+  "components": {
+    "validity": 0.0,
+    "progress": 0.0,
+    "pace": 0.0,
+    "retention": 35.9,
+    "overlay": 47.0
+  },
+  "geometry": {
+    "dist_to_stop_r": -1.153,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 2.2,
+    "p1": -1.4357,
+    "p2": -0.7178,
+    "p3": null,
+    "move_r": -2.153,
+    "mfe_r": 0.0,
+    "mae_r": -2.153
+  },
+  "rr_ratio": 1.5,
+  "rr_grade": "ACCEPTABLE",
+  "change_reason": "",
+  "confidence_ceiling": 92,
+  "authority": "trade-management-only-NOT-pick-rank",
+  "authority_tier": "display",
+  "reliability": {
+    "management_confidence": "display \u2014 no forward ledger has passed yet",
+    "recommended_action": "display \u2014 narrate, not authoritative order",
+    "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
+  },
+  "_mfe": 0.0,
+  "_mae": -14.100001525878909,
+  "_max_p1": 0.0,
+  "_first_trigger_ts": null,
+  "_first_t1_ts": null,
+  "_first_t2_ts": null,
+  "days_elapsed": 1,
+  "tau": 0.0222
+}

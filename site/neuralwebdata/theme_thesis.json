@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-09",
-  "generated_at": "2026-07-09T19:22:14Z",
+  "as_of": "2026-07-10",
+  "generated_at": "2026-07-10T09:00:13Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -28,10 +28,10 @@
   "theses": [
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-10",
       "thesis_id": "ai_semiconductors.v1",
-      "content_hash": "sha256:edad986f6b9bde93d18f4f05eef652e27be8bd81dbb8490ab49521777a6e9996",
-      "prev_content_hash": "sha256:e38da0181a7d0e061bb9e204250f850009d86bd2c29ad9053f7e0acfa22b7437",
+      "content_hash": "sha256:62c785c3e23322cde69b6ebdfd8e8618ea41b9ab8d132fda5b2026ac93780fe5",
+      "prev_content_hash": "sha256:edad986f6b9bde93d18f4f05eef652e27be8bd81dbb8490ab49521777a6e9996",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -95,7 +95,7 @@
           "rule_en": "If revision_breadth for ai_semiconductors turns negative (net earnings downgrades exceed upgrades), the thesis that AI demand is above-cycle durable is weakening — watch for two consecutive negative breadth prints.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.946"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.937"
         },
         {
           "id": "ai_semi_f2",
@@ -109,7 +109,7 @@
           "rule_en": "If crowding on the ai_semiconductors or ai_infra basket exceeds 0.7 (z-score), the risk-adjusted opportunity is diminished — variant perception has become consensus.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.232"
+          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.603"
         },
         {
           "id": "ai_semi_f4",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-10",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:a88cb97d9f5f54d158a7f49fe4ff4ba731ff7572a34fd5db00923219368400d0",
-      "prev_content_hash": "sha256:f872c2aebf978b427843f5b05821e14bae20410e9a2c34b5a40eff3193a7e4eb",
+      "content_hash": "sha256:cee5edb532db1570ce945ac4553682438eca3fa08be652f8215d4c4628a3cef6",
+      "prev_content_hash": "sha256:a88cb97d9f5f54d158a7f49fe4ff4ba731ff7572a34fd5db00923219368400d0",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -534,7 +534,7 @@
           "rule_en": "If reshoring basket score falls below 30 or moves to 'avoid' label, the industrial-capex driver underpinning automation demand is weakening.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=46.0"
+          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=47.0"
         },
         {
           "id": "robo_f3",
@@ -980,10 +980,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-10",
       "thesis_id": "glp1_obesity.v1",
-      "content_hash": "sha256:ab3a8465f76535ff4922df78c7ad9749bc17b7ce560c327b9eaefeef9bc25db7",
-      "prev_content_hash": null,
+      "content_hash": "sha256:cfee0a5226fe15c192a44c150039a35c27393c2da5a91a78479d35fe330f5832",
+      "prev_content_hash": "sha256:ab3a8465f76535ff4922df78c7ad9749bc17b7ce560c327b9eaefeef9bc25db7",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1045,7 +1045,7 @@
           "rule_en": "If revision_breadth for glp1_obesity falls below 0.0, earnings estimates are being cut broadly — manufacturing ramp is not meeting demand curve.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.182"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.202"
         },
         {
           "id": "glp1_f2",
@@ -1149,10 +1149,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-10",
       "thesis_id": "diagnostics_lifesci.v1",
-      "content_hash": "sha256:8b101c7a6b5801c9a5766f5fba2d15a197b825fc40f06ef5e05f80a945503543",
-      "prev_content_hash": "sha256:f74e33bb257be4bf3ef451f5f536ec9311c517d36e5c2b150a8cc9e74ae33d7d",
+      "content_hash": "sha256:a9eac86f7299816e8ae8988f767338c7812318356e1336c3fec46c27d786a02a",
+      "prev_content_hash": "sha256:8b101c7a6b5801c9a5766f5fba2d15a197b825fc40f06ef5e05f80a945503543",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1206,7 +1206,7 @@
           "rule_en": "If revision_breadth for diagnostics_lifesci remains below 0.1 for two consecutive months, biopharma R&D capex recovery is not yet flowing through to tools demand.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.473"
+          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.486"
         },
         {
           "id": "diag_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-09T19:22:14Z",
-  "inputs_hash": "sha256:db2e2515fa945142985452c07e71ae7fa965529fb7568c1bc0b00492b5d55f4d",
+  "produced_at": "2026-07-10T09:00:13Z",
+  "inputs_hash": "sha256:b6397839975af9c378153b7fb75170ddab977fc6cc46bd63d4f2dabcfcdf47fd",
   "tier": "display"
 }

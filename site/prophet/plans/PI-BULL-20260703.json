@@ -1,0 +1,54 @@
+{
+  "schema": "prophet.trade_plan/v1",
+  "id": "PI-BULL-20260703",
+  "asof": "2026-07-10",
+  "asset": "PI",
+  "direction": "BULL",
+  "thesis": "PI \u2014 conviction 79/100 (neutral) Entry grade: solid. Drivers: entry; quality; tailwind. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+  "source_engines": [
+    "us_standouts_buy_lane",
+    "neural_web"
+  ],
+  "trigger": 147.2,
+  "entry": 144.4,
+  "invalidation": 88.6,
+  "targets": [
+    228.1,
+    311.8
+  ],
+  "horizon_days": 45,
+  "min_hold_days": 10,
+  "tranche": 1,
+  "option_contract": null,
+  "management_ref": "prophet/state/PI-BULL-20260703.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
+    "option_premium": "null \u2014 symbol not in ThetaData store"
+  },
+  "signal_date": "2026-07-03",
+  "what_to_do_now": [
+    "Watch for price to reach the trigger level ($147.20) before entering. No position until trigger is confirmed.",
+    "Keep size small on initial entry; the buy zone extends from trigger up to $228.10 (T1). There is no need to rush.",
+    "If trigger confirms, scale in gradually. Invalidation is $88.60; exit on a close below that level."
+  ],
+  "profit_plan": [
+    {
+      "level": 228.1,
+      "label": "T1",
+      "action": "Scale out 40%, trail stop to entry",
+      "status": "ACTIVE"
+    },
+    {
+      "level": 311.8,
+      "label": "T2",
+      "action": "Close remaining 60%, exit full position",
+      "status": "PENDING"
+    }
+  ],
+  "_signal_date": "2026-07-03",
+  "_conviction_score": 79,
+  "_act_level": 3,
+  "_r_unit": 55.8,
+  "_gate_go": false
+}

@@ -1,0 +1,54 @@
+{
+  "schema": "prophet.trade_plan/v1",
+  "id": "QCOM-BULL-20260709",
+  "asof": "2026-07-10",
+  "asset": "QCOM",
+  "direction": "BULL",
+  "thesis": "QCOM \u2014 conviction 67/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch; Narrative basket (AI Semiconductors) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+  "source_engines": [
+    "us_standouts_buy_lane",
+    "neural_web"
+  ],
+  "trigger": 195.2,
+  "entry": 191.1,
+  "invalidation": 177.4937,
+  "targets": [
+    211.5095,
+    231.919
+  ],
+  "horizon_days": 45,
+  "min_hold_days": 10,
+  "tranche": 1,
+  "option_contract": null,
+  "management_ref": "prophet/state/QCOM-BULL-20260709.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
+    "option_premium": "null \u2014 symbol not in ThetaData store"
+  },
+  "signal_date": "2026-07-09",
+  "what_to_do_now": [
+    "Watch for price to reach the trigger level ($195.20) before entering. No position until trigger is confirmed.",
+    "Keep size small on initial entry; the buy zone extends from trigger up to $211.51 (T1). There is no need to rush.",
+    "If trigger confirms, scale in gradually. Invalidation is $177.49; exit on a close below that level."
+  ],
+  "profit_plan": [
+    {
+      "level": 211.5095,
+      "label": "T1",
+      "action": "Scale out 40%, trail stop to entry",
+      "status": "ACTIVE"
+    },
+    {
+      "level": 231.919,
+      "label": "T2",
+      "action": "Close remaining 60%, exit full position",
+      "status": "PENDING"
+    }
+  ],
+  "_signal_date": "2026-07-09",
+  "_conviction_score": 67,
+  "_act_level": 1,
+  "_r_unit": 13.6063,
+  "_gate_go": false
+}

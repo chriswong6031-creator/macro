@@ -1,0 +1,31 @@
+{
+  "summary": "BTC in late-cycle markdown with fair valuation, bearish momentum, and crowded long positioning; global M2 expanding but net liquidity contracting, while stablecoin supply shrinks and miners capitulate — deterministic system signals DISTRIBUTE, reduce allocation.",
+  "regime_read": "Cycle phase is markdown (55% elapsed, 811 days post-halving), cphase on track for an Oct-2026 pivot. Valuation is fair (MVRV‑Z 0.32, NUPL 0.16, Mayer 0.86) — not distressed, so downside risk remains. Momentum is bearish and structure broken, though a positive impulse hints at short‑lived bounces. Leverage metrics are elevated: OI in the 63rd percentile, funding 5.4% annual, basis contango, and CME specs are extremely long (cot_z 3.27). Options display low vol (DVOL 8th %ile) and flat skew, implying complacency disproportionate to the trend.\n\nThe macro picture is mixed. Global liquidity regime is labeled ‘expanding’ (global M2 YoY +7.4%), but the net liquidity gauge is contracting (RoC –0.16%). Real yields are high (2.31%), and the stablecoin regime is contracting (z –1.31), while Coinbase premium remains positive. This backdrop traps BTC between a macro tailwind that has not yet translated into on‑chain flows and a bearish technical/positioning setup. The composite ‘DISTRIBUTE’ state, froth context, high‑risk index, and zero optimal allocation reflect this deterioration.",
+  "conflicts": [
+    "Global M2 YoY +7.4% (expanding) vs net liquidity contracting (–0.16% RoC): external liquidity is growing, but the marginal risk‑asset liquidity measure is shrinking — a headwind for BTC.",
+    "Coinbase premium solidly positive (1.0) and low miner sell (MPI 0.09) hint at spot demand, yet stablecoin regime is contracting (z –1.31) — implying the fiat ramp is drying up and spot demand may be fragile.",
+    "Bearish momentum and broken structure contrast with positive impulse and very low vol (DVOL 8th %ile) — typically precedes a large directional move, not a quiet consolidation.",
+    "Extreme long spec positioning (cot_z 3.27) against a fair valuation and markdown cycle phase — contrarian risk of a long capitulation flush if price breaks lower.",
+    "Hash‑ribbon capitulation (miner stress) alongside a fair MVRV‑Z 0.32 — historically, miner capitulation coincides with cycle bottoms, but valuation hasn't reached deep undervaluation yet.",
+    "ETF flows neutral with mixed on‑chain demand — no clear institutional catalyst to resolve the conflicting signals."
+  ],
+  "rotation_check": "The working thesis holds partially. Net liquidity contracting aligns with BTC’s markdown and bearish momentum, supporting the idea that prices fall when risk‑specific liquidity tightens. However, the strong global M2 expansion and ‘expanding’ liquidity regime should, under the thesis, act as a tailwind. The divergence shows that not all liquidity reaches BTC — stablecoin contraction and miner stress are acting as transmission bottlenecks. Reality currently tracks the net‑liquidity‑driven path, but if stablecoin conditions improve and global M2 finally feeds through, the thesis would predict a re‑rating; for now, the net liquidity signal dominates.",
+  "transmission": [
+    "Net liquidity contraction → sustained pressure on risk assets; BTC’s SPX correlation (0.35) could rise if equities correct.",
+    "Global M2 expansion → may eventually spur stablecoin minting and re‑ignite spot demand if stablecoin regime turns positive; watch the lag.",
+    "Stablecoin contraction → diminished fiat‑ramp buying power; positive Coinbase premium must persist to offset, else downside accelerates.",
+    "Crowded long specs (cot_z 3.27) + low vol → risk of sharp deleveraging cascade if price loses recent support, exposing liquidations.",
+    "Miner capitulation (hash ribbon) → could signal a cycle trough once hash rate recovers; time frame uncertain.",
+    "High real yield (2.31%) → elevates opportunity cost, capping upside until yields decline or a risk‑on liquidity event re‑prices BTC."
+  ],
+  "watch_items": [
+    "Net liquidity RoC turning positive or a decisive acceleration in global M2 that feeds into stablecoin growth.",
+    "Stablecoin regime shifting to flat/expanding and stbl_growth_z improving above –1.",
+    "A breakout above broken structural resistance with momentum turning positive — would challenge the bear regime.",
+    "COT z‑score retreating from extreme long territory, signaling a positioning flush.",
+    "MVRV‑Z declining into undervalued territory (<0) to provide a cycle valuation floor.",
+    "Hash ribbon exiting capitulation and Puell multiple recovering toward expansion.",
+    "Global macro shift: real yields falling, DXY breaking down, or a risk‑on impulse where BTC outperforms."
+  ],
+  "confidence": "medium"
+}

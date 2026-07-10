@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-09",
+  "as_of": "2026-07-10",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -25,30 +25,30 @@
   },
   "pathways": [
     {
-      "family": "equity-leadership",
-      "driver": "ai_semis",
+      "family": "china",
+      "driver": "china_stimulus",
       "pathway_role": "primary",
-      "as_of": "2026-07-09",
-      "direction_en": "AI/semis unwind — tech-led de-rating",
-      "direction_zh": "AI/半导体回吐 — 科技主导的回调",
+      "as_of": "2026-07-10",
+      "direction_en": "China risk-on — A-shares/HK & copper lead up",
+      "direction_zh": "中国偏好风险 — A股/港股与铜领涨",
       "confidence_ceiling": "context_only",
       "coverage_score": 1.0,
       "coherence": "supported",
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_ai_semis",
-          "as_of": "2026-07-09",
+          "node_id": "driver_china_stimulus",
+          "as_of": "2026-07-10",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "ai_semis",
+          "entity": "china_stimulus",
           "observation": {
-            "en": "AI/semis unwind — tech-led de-rating",
-            "zh": "AI/半导体回吐 — 科技主导的回调"
+            "en": "China risk-on — A-shares/HK & copper lead up",
+            "zh": "中国偏好风险 — A股/港股与铜领涨"
           },
-          "direction": -1,
-          "value": 1.16,
-          "z_or_percentile": 1.34,
+          "direction": 1,
+          "value": 0.9,
+          "z_or_percentile": 1.37,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
@@ -57,18 +57,18 @@
           ]
         },
         {
-          "node_id": "leg_ai_semis_0",
-          "as_of": "2026-07-09",
+          "node_id": "leg_china_stimulus_0",
+          "as_of": "2026-07-10",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "semis RS",
+          "entity": "Hong Kong",
           "observation": {
-            "en": "semis RS (-1.6σ)",
-            "zh": "半导体相对强度 (-1.6σ)"
+            "en": "Hong Kong (+2.2σ)",
+            "zh": "香港 (+2.2σ)"
           },
-          "direction": "negative",
-          "value": -1.6,
-          "z_or_percentile": -1.6,
+          "direction": "positive",
+          "value": 2.2,
+          "z_or_percentile": 2.2,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -77,18 +77,18 @@
           ]
         },
         {
-          "node_id": "leg_ai_semis_1",
-          "as_of": "2026-07-09",
+          "node_id": "leg_china_stimulus_1",
+          "as_of": "2026-07-10",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "tech vs utilities",
+          "entity": "China A-shares",
           "observation": {
-            "en": "tech vs utilities (-1.0σ)",
-            "zh": "科技对公用事业 (-1.0σ)"
+            "en": "China A-shares (+0.5σ)",
+            "zh": "中国A股 (+0.5σ)"
           },
-          "direction": "negative",
-          "value": -1.0,
-          "z_or_percentile": -1.0,
+          "direction": "positive",
+          "value": 0.5,
+          "z_or_percentile": 0.5,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -97,18 +97,18 @@
           ]
         },
         {
-          "node_id": "leg_ai_semis_2",
-          "as_of": "2026-07-09",
+          "node_id": "leg_china_stimulus_2",
+          "as_of": "2026-07-10",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "growth vs value",
+          "entity": "copper",
           "observation": {
-            "en": "growth vs value (-0.7σ)",
-            "zh": "成长对价值 (-0.7σ)"
+            "en": "copper (+0.3σ)",
+            "zh": "铜 (+0.3σ)"
           },
-          "direction": "negative",
-          "value": -0.7,
-          "z_or_percentile": -0.7,
+          "direction": "positive",
+          "value": 0.3,
+          "z_or_percentile": 0.3,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -119,36 +119,36 @@
       ],
       "edges": [
         {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_0",
+          "src_node": "driver_china_stimulus",
+          "dst_node": "leg_china_stimulus_0",
           "mechanism_type": "evidence_leg",
           "expected_lag": "same_day",
-          "expected_sign": "negative",
-          "observed_sign": "negative",
+          "expected_sign": "positive",
+          "observed_sign": "positive",
           "status": "measured",
           "evidence_refs": [
             "market_drivers.evidence_legs[0]"
           ]
         },
         {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_1",
+          "src_node": "driver_china_stimulus",
+          "dst_node": "leg_china_stimulus_1",
           "mechanism_type": "evidence_leg",
           "expected_lag": "same_day",
-          "expected_sign": "negative",
-          "observed_sign": "negative",
+          "expected_sign": "positive",
+          "observed_sign": "positive",
           "status": "measured",
           "evidence_refs": [
             "market_drivers.evidence_legs[1]"
           ]
         },
         {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_2",
+          "src_node": "driver_china_stimulus",
+          "dst_node": "leg_china_stimulus_2",
           "mechanism_type": "evidence_leg",
           "expected_lag": "same_day",
-          "expected_sign": "negative",
-          "observed_sign": "negative",
+          "expected_sign": "positive",
+          "observed_sign": "positive",
           "status": "measured",
           "evidence_refs": [
             "market_drivers.evidence_legs[2]"
@@ -157,11 +157,11 @@
       ]
     },
     {
-      "family": "inflation",
-      "driver": "oil_shock",
+      "family": "equity-leadership",
+      "driver": "ai_semis",
       "pathway_role": "alternate",
-      "as_of": "2026-07-09",
-      "direction_en": "oil spiking — energy leads, breakevens up",
+      "as_of": "2026-07-10",
+      "direction_en": "AI/semis leadership — narrow tech-led tape",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -169,17 +169,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_oil_shock",
-          "as_of": "2026-07-09",
+          "node_id": "driver_ai_semis",
+          "as_of": "2026-07-10",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "oil_shock",
+          "entity": "ai_semis",
           "observation": {
-            "en": "oil spiking — energy leads, breakevens up",
+            "en": "AI/semis leadership — narrow tech-led tape",
             "zh": ""
           },
           "direction": "",
-          "value": 0.86,
+          "value": 0.66,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -187,114 +187,17 @@
           "evidence_refs": [
             "market_drivers.primary"
           ]
-        },
-        {
-          "node_id": "transmission_sticky_inflation_order1",
-          "as_of": "2026-07-09",
-          "domain": "transmission",
-          "source_artifact": "data/transmission/latest.json",
-          "entity": "transmission channel",
-          "observation": {
-            "en": "Core PCE/CPI stuck above the 2% target → the market reprices the terminal rate higher (breakevens, policy path) → broad equities carry a valuation headwind.",
-            "zh": "核心PCE/CPI高于2%目标→市场上修终端利率（盈亏平衡、政策路径）→大盘股估值承压。"
-          },
-          "direction": "",
-          "value": null,
-          "z_or_percentile": null,
-          "source_tier": "context_only",
-          "lag_class": "same_day",
-          "pathway_role": "transmission_order_1",
-          "evidence_refs": [
-            "transmission.chains.sticky_inflation.order1"
-          ]
-        },
-        {
-          "node_id": "transmission_sticky_inflation_order2",
-          "as_of": "2026-07-09",
-          "domain": "transmission",
-          "source_artifact": "data/transmission/latest.json",
-          "entity": "transmission channel",
-          "observation": {
-            "en": "Higher-for-longer keeps real yields elevated → small caps and rate-sensitive borrowers are squeezed by financing cost.",
-            "zh": "更高更久使实际收益率维持高位→小盘股与利率敏感借款方被融资成本挤压。"
-          },
-          "direction": "",
-          "value": null,
-          "z_or_percentile": null,
-          "source_tier": "context_only",
-          "lag_class": "days_1_5",
-          "pathway_role": "transmission_order_2",
-          "evidence_refs": [
-            "transmission.chains.sticky_inflation.order2"
-          ]
-        },
-        {
-          "node_id": "transmission_sticky_inflation_order3",
-          "as_of": "2026-07-09",
-          "domain": "transmission",
-          "source_artifact": "data/transmission/latest.json",
-          "entity": "transmission channel",
-          "observation": {
-            "en": "PPI / ECI wage pressure compresses margins → defensives (staples, health care) relatively outperform.",
-            "zh": "PPI／就业成本（ECI）工资压力压缩利润率→防御板块（必需消费、医疗）相对跑赢。"
-          },
-          "direction": "",
-          "value": null,
-          "z_or_percentile": null,
-          "source_tier": "context_only",
-          "lag_class": "weeks_1_4",
-          "pathway_role": "transmission_order_3",
-          "evidence_refs": [
-            "transmission.chains.sticky_inflation.order3"
-          ]
         }
       ],
-      "edges": [
-        {
-          "src_node": "driver_oil_shock",
-          "dst_node": "transmission_sticky_inflation_order1",
-          "mechanism_type": "transmission_channel",
-          "expected_lag": "same_day",
-          "expected_sign": "",
-          "observed_sign": null,
-          "status": "measured",
-          "evidence_refs": [
-            "transmission.chains.sticky_inflation.order1"
-          ]
-        },
-        {
-          "src_node": "transmission_sticky_inflation_order1",
-          "dst_node": "transmission_sticky_inflation_order2",
-          "mechanism_type": "transmission_channel",
-          "expected_lag": "days_1_5",
-          "expected_sign": "",
-          "observed_sign": null,
-          "status": "measured",
-          "evidence_refs": [
-            "transmission.chains.sticky_inflation.order2"
-          ]
-        },
-        {
-          "src_node": "transmission_sticky_inflation_order2",
-          "dst_node": "transmission_sticky_inflation_order3",
-          "mechanism_type": "transmission_channel",
-          "expected_lag": "weeks_1_4",
-          "expected_sign": "",
-          "observed_sign": null,
-          "status": "measured",
-          "evidence_refs": [
-            "transmission.chains.sticky_inflation.order3"
-          ]
-        }
-      ],
+      "edges": [],
       "coverage_basis": "scare_trigger"
     },
     {
-      "family": "crypto",
-      "driver": "crypto_liquidity",
+      "family": "liquidity",
+      "driver": "liquidity_impulse",
       "pathway_role": "alternate",
-      "as_of": "2026-07-09",
-      "direction_en": "crypto liquidity surging — BTC/ETH lead up",
+      "as_of": "2026-07-10",
+      "direction_en": "net liquidity expanding — broad risk-on tailwind",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -302,17 +205,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_crypto_liquidity",
-          "as_of": "2026-07-09",
+          "node_id": "driver_liquidity_impulse",
+          "as_of": "2026-07-10",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "crypto_liquidity",
+          "entity": "liquidity_impulse",
           "observation": {
-            "en": "crypto liquidity surging — BTC/ETH lead up",
+            "en": "net liquidity expanding — broad risk-on tailwind",
             "zh": ""
           },
           "direction": "",
-          "value": 0.75,
+          "value": 0.58,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

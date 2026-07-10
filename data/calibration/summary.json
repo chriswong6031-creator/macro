@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-07",
+  "as_of": "2026-07-10",
   "desks": [
     {
       "name": "AI Desk",
@@ -18,7 +18,7 @@
       "name": "Policy Intent",
       "slug": "policy_intent",
       "scored": 0,
-      "open": 11,
+      "open": 16,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 154,
+      "open": 164,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -53,14 +53,14 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 2,
-      "open": 91,
-      "hit_rate": 0.5,
+      "scored": 3,
+      "open": 94,
+      "hit_rate": 0.333,
       "dir_accuracy": 0.0,
       "conviction_monotone": null,
       "regimes": [],
       "health": "cold",
-      "health_note": "only 2 scored \u2014 check-by windows still maturing; treat as provisional"
+      "health_note": "only 3 scored \u2014 check-by windows still maturing; treat as provisional"
     },
     {
       "name": "Demand Chain",
@@ -101,6 +101,12 @@
         "effective_n": 150
       },
       {
+        "family": "context_scan",
+        "itemized": 0,
+        "declared": 135,
+        "effective_n": 135
+      },
+      {
         "family": "rf.cycle_pattern.lattice_v0",
         "itemized": 0,
         "declared": 135,
@@ -129,6 +135,12 @@
         "itemized": 0,
         "declared": 54,
         "effective_n": 54
+      },
+      {
+        "family": "stock_personality_compat",
+        "itemized": 0,
+        "declared": 48,
+        "effective_n": 48
       },
       {
         "family": "business_cycle_recession_signal",
@@ -171,6 +183,12 @@
         "itemized": 10,
         "declared": 30,
         "effective_n": 30
+      },
+      {
+        "family": "causal_scan",
+        "itemized": 24,
+        "declared": 5,
+        "effective_n": 24
       },
       {
         "family": "china_validation",
@@ -227,6 +245,12 @@
         "effective_n": 17
       },
       {
+        "family": "d2_cn_export_share_nowcast",
+        "itemized": 16,
+        "declared": 0,
+        "effective_n": 16
+      },
+      {
         "family": "provisional_cn_blend",
         "itemized": 0,
         "declared": 16,
@@ -263,6 +287,12 @@
         "effective_n": 14
       },
       {
+        "family": "d2_rates_calendar_flows",
+        "itemized": 13,
+        "declared": 0,
+        "effective_n": 13
+      },
+      {
         "family": "baskets_abs_escape",
         "itemized": 3,
         "declared": 12,
@@ -296,6 +326,12 @@
         "family": "commodity_xsec_mom_phase0",
         "itemized": 0,
         "declared": 12,
+        "effective_n": 12
+      },
+      {
+        "family": "d2_cn_holder_sale_calendar",
+        "itemized": 12,
+        "declared": 0,
         "effective_n": 12
       },
       {
@@ -365,6 +401,12 @@
         "effective_n": 12
       },
       {
+        "family": "w2104_cmdi_conditioning",
+        "itemized": 12,
+        "declared": 0,
+        "effective_n": 12
+      },
+      {
         "family": "cycle_pattern_analog",
         "itemized": 0,
         "declared": 9,
@@ -398,6 +440,12 @@
         "family": "crypto_voltarget_phase0",
         "itemized": 0,
         "declared": 8,
+        "effective_n": 8
+      },
+      {
+        "family": "d2_comment_letter_release",
+        "itemized": 8,
+        "declared": 0,
         "effective_n": 8
       },
       {
@@ -533,6 +581,18 @@
         "effective_n": 8
       },
       {
+        "family": "w2051_housing_hf",
+        "itemized": 8,
+        "declared": 0,
+        "effective_n": 8
+      },
+      {
+        "family": "w5_trade_size_capitulation",
+        "itemized": 8,
+        "declared": 0,
+        "effective_n": 8
+      },
+      {
         "family": "long_hold.expect_drift",
         "itemized": 0,
         "declared": 7,
@@ -570,6 +630,18 @@
       },
       {
         "family": "w2096_nhtsa_defect",
+        "itemized": 6,
+        "declared": 0,
+        "effective_n": 6
+      },
+      {
+        "family": "w3_bank_callreport_stress",
+        "itemized": 6,
+        "declared": 0,
+        "effective_n": 6
+      },
+      {
+        "family": "w4_multistate_gaming_tape",
         "itemized": 6,
         "declared": 0,
         "effective_n": 6
@@ -647,6 +719,12 @@
         "effective_n": 4
       },
       {
+        "family": "w2153_itc337",
+        "itemized": 4,
+        "declared": 0,
+        "effective_n": 4
+      },
+      {
         "family": "long_hold.insider_sponsor_lh",
         "itemized": 0,
         "declared": 3,
@@ -693,10 +771,16 @@
         "itemized": 0,
         "declared": 1,
         "effective_n": 1
+      },
+      {
+        "family": "d2_russell_deletion_overshoot",
+        "itemized": 1,
+        "declared": 0,
+        "effective_n": 1
       }
     ],
-    "total_families": 102,
-    "total_effective_n": 2419
+    "total_families": 116,
+    "total_effective_n": 2720
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

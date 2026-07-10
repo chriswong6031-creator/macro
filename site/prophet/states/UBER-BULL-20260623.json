@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "UBER-BULL-20260623",
-  "asof": "2026-07-07",
+  "asof": "2026-07-10",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 68.0,
-  "raw_confidence": 68.0,
-  "delta_vs_base": 8.0,
+  "management_confidence": 65.2,
+  "raw_confidence": 61.8,
+  "delta_vs_base": 5.2,
   "recommended_action": "wait",
-  "human_state": "Awaiting Trigger",
+  "human_state": "Approaching Trigger",
   "components": {
     "validity": 100.0,
     "progress": 11.2,
-    "pace": 100.0,
+    "pace": 43.5,
     "retention": 50.0,
     "overlay": 47.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.136,
     "dist_to_t1_r": 1.364,
     "dist_to_t2_r": 2.864,
-    "horizon_pct_used": 0.0,
+    "horizon_pct_used": 37.8,
     "p1": 0.0905,
     "p2": 0.0453,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 0,
-  "tau": 0.0
+  "days_elapsed": 17,
+  "tau": 0.3778
 }

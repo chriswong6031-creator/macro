@@ -1,0 +1,18 @@
+{
+  "stance": "Flow lens highlights Health Care and Information Technology as apparent RS leaders, but both show low cohesion and are likely traps given the lens lacks predictive edge in calm markets.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "underweight",
+      "rationale": "Extreme RS (97.6%ile) driven by narrow biotech leadership (MRNA +60%) with low sector cohesion, suggesting a coincident, mean-reverting spike.",
+      "strength": "strong"
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "rationale": "High RS (93.7%ile) but cooling stage, low cohesion, and no stress regime to give the flow signal any forward edge, so reversal likely.",
+      "strength": "strong"
+    }
+  ],
+  "key_risk": "A sudden VIX spike would reactivate the flow lens's stress-conditional predictive edge, potentially extending these sector trends."
+}

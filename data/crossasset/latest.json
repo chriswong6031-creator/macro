@@ -1,7 +1,7 @@
 {
-  "date": "2026-07-07",
-  "regime": "risk-on trends",
-  "breadth": 0.4,
+  "date": "2026-07-10",
+  "regime": "mixed / no clear trend",
+  "breadth": 0.3,
   "favored": [
     "equity_us",
     "equity_sm",
@@ -10,16 +10,16 @@
     "dollar"
   ],
   "correlation": "concentrated",
-  "asof": "2026-07-07",
+  "asof": "2026-07-10",
   "flows": {
     "schema": "crossasset_flows.v1",
     "display_only": true,
     "correlation": {
       "verdict": "concentrated",
-      "absorption_pctile": 1.0,
+      "absorption_pctile": 0.96,
       "n_markets": 6
     },
-    "breadth": 0.4,
+    "breadth": 0.3,
     "trend_top": [
       {
         "asset": "equity_us",
@@ -55,12 +55,12 @@
     "intermarket": [
       {
         "pair": "copper_gold",
-        "ratio": 0.001,
+        "ratio": 0.002,
         "trend": "mid"
       },
       {
         "pair": "gold_silver",
-        "ratio": 67.65,
+        "ratio": 68.114,
         "trend": "mid"
       },
       {
@@ -70,7 +70,7 @@
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.181,
+        "ratio": 0.182,
         "trend": "mid"
       }
     ],
@@ -80,7 +80,7 @@
           "key": "rates_term",
           "label_en": "Rates term-spread (10y-3m)",
           "label_zh": "\u5229\u7387\u671f\u9650\u5229\u5dee (10\u5e74-3\u6708)",
-          "value": 0.8,
+          "value": 0.83,
           "unit": "%",
           "state": "positive carry"
         }
@@ -94,40 +94,40 @@
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.358,
-          "t": 5.109,
+          "r": 0.346,
+          "t": 4.791,
           "q": 0.0
         },
         {
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.302,
-          "t": 4.494,
+          "r": 0.299,
+          "t": 4.446,
           "q": 0.0
         },
         {
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.273,
-          "t": 4.081,
-          "q": 0.0
+          "r": 0.268,
+          "t": 4.041,
+          "q": 0.0038
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.277,
-          "t": 4.049,
+          "r": 0.273,
+          "t": 3.969,
           "q": 0.0038
         },
         {
           "leader": "Crypto",
           "follower": "China",
           "lag": 1,
-          "r": 0.222,
-          "t": 3.221,
+          "r": 0.22,
+          "t": 3.225,
           "q": 0.039
         }
       ]
@@ -139,10 +139,10 @@
       "total_usd_tn": 17.85
     },
     "funding_stress": {
-      "asof": "2026-07-02",
+      "asof": "2026-07-08",
       "state": "calm",
-      "score": 36.0,
-      "spread_bp": 1.0
+      "score": 24.0,
+      "spread_bp": -4.0
     },
     "note": "display-only regime read; TSMOM fails DSR (cross-asset-phase0), lead/lag=lag-1 timezone (cross-asset-leadlag-phase0) \u2014 not a strategy/hedge-ratio"
   }

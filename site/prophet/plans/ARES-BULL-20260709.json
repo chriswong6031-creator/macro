@@ -1,0 +1,54 @@
+{
+  "schema": "prophet.trade_plan/v1",
+  "id": "ARES-BULL-20260709",
+  "asof": "2026-07-10",
+  "asset": "ARES",
+  "direction": "BULL",
+  "thesis": "ARES \u2014 conviction 79/100 (neutral) Entry grade: solid. Drivers: entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+  "source_engines": [
+    "us_standouts_buy_lane",
+    "neural_web"
+  ],
+  "trigger": 123.6,
+  "entry": 121.7,
+  "invalidation": 115.1525,
+  "targets": [
+    131.5212,
+    141.3424
+  ],
+  "horizon_days": 45,
+  "min_hold_days": 10,
+  "tranche": 1,
+  "option_contract": null,
+  "management_ref": "prophet/state/ARES-BULL-20260709.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
+    "option_premium": "null \u2014 symbol not in ThetaData store"
+  },
+  "signal_date": "2026-07-09",
+  "what_to_do_now": [
+    "Watch for price to reach the trigger level ($123.60) before entering. No position until trigger is confirmed.",
+    "Keep size small on initial entry; the buy zone extends from trigger up to $131.52 (T1). There is no need to rush.",
+    "If trigger confirms, scale in gradually. Invalidation is $115.15; exit on a close below that level."
+  ],
+  "profit_plan": [
+    {
+      "level": 131.5212,
+      "label": "T1",
+      "action": "Scale out 40%, trail stop to entry",
+      "status": "ACTIVE"
+    },
+    {
+      "level": 141.3424,
+      "label": "T2",
+      "action": "Close remaining 60%, exit full position",
+      "status": "PENDING"
+    }
+  ],
+  "_signal_date": "2026-07-09",
+  "_conviction_score": 79,
+  "_act_level": 1,
+  "_r_unit": 6.5475,
+  "_gate_go": false
+}

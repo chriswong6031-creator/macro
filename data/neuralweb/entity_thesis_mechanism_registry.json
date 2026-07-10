@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-08",
+  "as_of": "2026-07-10",
   "authority": {
     "allowed_actions": [
       "display",
@@ -170,7 +170,7 @@
         "falsifier_coverage": 0.0,
         "fill_convention_split": {
           "asof_legacy_count": 280,
-          "next_bar_count": 92,
+          "next_bar_count": 104,
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
@@ -178,7 +178,7 @@
         "maturity_mix": {
           "graded_5d_count": 340,
           "graded_5d_share": 0.994152,
-          "matured_21d_count": 32,
+          "matured_21d_count": 44,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
@@ -316,7 +316,7 @@
       "falsifier_coverage": 0.013305,
       "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure",
       "n_claims": 10973,
-      "n_grades": 6704,
+      "n_grades": 6716,
       "n_with_falsifier": 146
     }
   },
@@ -324,12 +324,12 @@
   "counts": {
     "edges_by_kind": {
       "governed_by": 10,
-      "member_of_thesis": 6,
+      "member_of_thesis": 7,
       "mirrored_experiment": 19,
       "rf_candidate_of_mechanism": 7
     },
     "rows_by_type": {
-      "entity": 6,
+      "entity": 7,
       "mechanism": 8,
       "species_link": 22,
       "thesis": 2
@@ -352,7 +352,7 @@
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:JXN"
+      "src": "entity:US:EWBC"
     },
     {
       "dst": "thesis:financials",
@@ -361,7 +361,16 @@
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:NATL"
+      "src": "entity:US:HWM"
+    },
+    {
+      "dst": "thesis:financials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:JXN"
     },
     {
       "dst": "thesis:ai_infrastructure_capex_complex",
@@ -715,7 +724,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-07-09T08:06:54.461138+00:00",
+  "generated_utc": "2026-07-10T09:00:12.677820+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -904,7 +913,7 @@
   "rows": {
     "entity:US:AVGO": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-09",
+      "funnel_as_of": "2026-07-10",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:AVGO",
@@ -915,9 +924,35 @@
       ],
       "ticker": "AVGO"
     },
+    "entity:US:EWBC": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-10",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:EWBC",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:financials"
+      ],
+      "ticker": "EWBC"
+    },
+    "entity:US:HWM": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-10",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:HWM",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:financials"
+      ],
+      "ticker": "HWM"
+    },
     "entity:US:JXN": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-09",
+      "funnel_as_of": "2026-07-10",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:JXN",
@@ -928,22 +963,9 @@
       ],
       "ticker": "JXN"
     },
-    "entity:US:NATL": {
-      "authority": "display_only",
-      "funnel_as_of": "2026-07-09",
-      "funnel_state": "not_eligible",
-      "market": "US",
-      "registry_id": "entity:US:NATL",
-      "registry_type": "entity",
-      "source_paths": [],
-      "thesis_ids": [
-        "thesis:financials"
-      ],
-      "ticker": "NATL"
-    },
     "entity:US:NVDA": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-09",
+      "funnel_as_of": "2026-07-10",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:NVDA",
@@ -956,7 +978,7 @@
     },
     "entity:US:STT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-09",
+      "funnel_as_of": "2026-07-10",
       "funnel_state": "thesis_candidate_shadow",
       "market": "US",
       "registry_id": "entity:US:STT",
@@ -969,7 +991,7 @@
     },
     "entity:US:VRT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-09",
+      "funnel_as_of": "2026-07-10",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:VRT",
@@ -2685,16 +2707,17 @@
     },
     "thesis:financials": {
       "authority": "display_only",
-      "basis": "membership-jaccard",
+      "basis": "factor-cosine",
       "label": "Financials",
       "members": [
+        "EWBC",
+        "HWM",
         "JXN",
-        "NATL",
         "STT"
       ],
       "registry_id": "thesis:financials",
       "registry_type": "thesis",
-      "size": 3,
+      "size": 4,
       "source": "reflexivity_overlay.same_thesis_groups",
       "source_paths": [
         "site/factordata/reflexivity_overlay.json"
@@ -2716,7 +2739,7 @@
       "present": true
     },
     "data/neuralweb/governance.jsonl": {
-      "n": 27,
+      "n": 30,
       "present": true
     },
     "data/research/thesis_funnel_states.parquet": {
@@ -2736,7 +2759,7 @@
       "present": true
     },
     "data/trial_ledger.jsonl": {
-      "n": 1083,
+      "n": 1108,
       "present": true
     },
     "site/factordata/reflexivity_overlay.json": {
@@ -2816,6 +2839,12 @@
       "last_ts": "2026-07-02T03:11:22.382820+00:00",
       "n_config_hashes": 1,
       "n_trials": 1
+    },
+    "causal_scan": {
+      "first_ts": "2026-07-09T19:03:55.877800+00:00",
+      "last_ts": "2026-07-09T19:03:56.082595+00:00",
+      "n_config_hashes": 25,
+      "n_trials": 25
     },
     "china_validation": {
       "first_ts": "2026-06-21T15:50:22.228773+00:00",

@@ -1,16 +1,16 @@
 {
-  "date": "2026-07-06",
+  "date": "2026-07-09",
   "window_band": "OPEN",
-  "ipo_5y": -0.018487654781428775,
-  "spy_5y": 0.131163396524814,
-  "gap_5y": -0.1496510513062428,
-  "priced_90d": 112,
-  "spac_pct_90d": 48,
+  "ipo_5y": -0.020421774005272453,
+  "spy_5y": 0.1299440580019664,
+  "gap_5y": -0.15036583200723885,
+  "priced_90d": 113,
+  "spac_pct_90d": 50,
   "upcoming_n": 4,
   "verdict": "trails",
-  "lockups_approaching": 27,
-  "lockups_just_expired": 8,
-  "next_lockup": "BUDA",
-  "next_lockup_date": "2026-07-07",
-  "built": "2026-07-07 15:05 UTC"
+  "lockups_approaching": 25,
+  "lockups_just_expired": 7,
+  "next_lockup": "GCDT",
+  "next_lockup_date": "2026-07-12",
+  "built": "2026-07-10 08:40 UTC"
 }

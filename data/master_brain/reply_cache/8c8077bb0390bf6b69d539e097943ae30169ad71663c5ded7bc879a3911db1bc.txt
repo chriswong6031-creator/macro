@@ -1,0 +1,37 @@
+{
+  "summary": "China stimulus drives a risk-on Goldilocks tape, but narrow leadership, restrictive real rates, and BTC distribution call broad conviction into question.",
+  "regime_read": "The macro dashboard places us in Q1 (Goldilocks) with expanding liquidity and low macro risk. The dominant market driver is China stimulus, evidenced by strong z-scores in Hong Kong equities, China A-shares, and copper. This is a clear cross-asset risk-on fingerprint, but it does not blanket all assets. The US growth premium in FX favors the dollar, creating a headwind for commodities, EM, and equities. The bond desk shows a late-cycle, healthy but bear-flattening curve — real 10-year yields at 2.31% and restrictive — which pressures long-duration growth (QQQ, XLK) and small caps (IWM). The entry-quality breadth gauge is a calibration check: 72% of the deep US universe is above the 200-day, yet only 36% of fresh entries pass the buy filter. This says the rally is narrow, likely a rotation into select China-facing names, not a broad-based risk revival. Bitcoin sits in DISTRIBUTE with negative momentum and a high-risk regime, failing to confirm the liquidity tailwind.",
+  "conflicts": [
+    "Macro risk-on (Goldilocks) vs. bear flattening curve and restrictive real rates — the rates/credit family (leading) points to a late-cycle posture that pressures growth/tech, while equities read mid-cycle. The bond desk's reckoning diverges from the equity regime's phase.",
+    "Forex 'US growth premium' regime tilts USD-supportive, which the transmission dashboard marks as a headwind for gold, copper, EM equities, and SPY — all items favored by the China stimulus driver. The dollar is flat but trending up; this is a second-order pressure that can cap the risk-on move.",
+    "China's own domestic quad is Stagflation (Q3), with growth at 0.14 and inflation at 0.46. The stimulus-driven rally is taking place against a weak internal macro, limiting upside follow-through.",
+    "Hong Kong's quad is Growth-scare (Q4) and the peg is on the weak-side (outflow), even as the market driver flags HK at +2.2σ. This suggests a speculative squeeze against a stressed backdrop.",
+    "Entry-quality breadth is narrow (36% take-quality entries) while trend breadth is broad-up. This is a classic late-cycle or rotational signal — the tape is up on few names, not broad conviction, raising the risk of a sudden fade if the China catalyst disappears."
+  ],
+  "rotation_check": "The thesis expects US large-cap semis → software/growth → China/HK → crypto. Today’s driver puts China/HK in the leading spot, which matches the middle of the sequence. However, US growth/tech (semis, software) is under pressure from the bear flattening curve and rate/inflation transmission — real rates are a headwind for XLK and QQQ, and the style tilt is value over growth. Crypto is entirely absent; BTC is in DISTRIBUTE with negative momentum, not participating. The sequence appears stalled at a narrow China leg with the later-stage crypto handoff not materializing. Divergence from the full thesis is clear: the expansion is failing to cascade into broad risk assets.",
+  "transmission": [
+    "Restrictive real 10-year yield (2.31%) and sticky core PCE (3.4%) keep the discount-rate channel open against long-duration equities (SPY, XLK) and small caps (IWM), reinforcing value/large-cap outperformance.",
+    "USD strength, if sustained, feeds back as a headwind for gold, copper, and EM equities — exactly the assets the China stimulus driver is lifting. Watch for a break in the dollar trend that would release this cap.",
+    "Bear flattening curve (NTFS +0.67) compresses the growth-vs-value spread and pressures the most rate-sensitive tech names; the curve's favored list (XLV, XLP, XLE) is defensive/commodity oriented, not the risk-on growth complex.",
+    "Policy intel flags a ‘staging phase’ of hawkish credibility — real yields may stay elevated in the near term, starving the debasement trade (gold, silver, BTC) and keeping term premium sensitive assets on defense until a post-midterm pivot base is formed.",
+    "Credit is tight and EBP is negative — the bond deskdock canary is not squawking yet, so equity drawdown risk from this channel is suppressed, but if credit widens, the rotation thesis would degrade quickly."
+  ],
+  "watch_items": [
+    "China A-shares reversal — the macro driver invalidation is explicit; a fade in A-shares and loss of confirmation from HK/copper would deflate the entire risk-on read.",
+    "USD index and real 10-year yield jointly peaking — if DXY and real yields top together, it would mark the hawkish-credibility peak and open the door for a debasement/risk-asset pivot per the policy intel thesis.",
+    "Entry-quality breadth broadening — a rise in take-quality entries above 50% would validate a shift from narrow rotation to broad-based risk-on, upgrading confidence in the macro regime.",
+    "BTC transition from DISTRIBUTE to ACCUMULATE — a break above the high-risk regime with positive momentum and rising net liquidity would confirm the crypto handoff and support the broader rotation thesis.",
+    "JGB or other sovereign stress — any move out of the 'calm' sovereign frag state or a sudden rates-vol spike would be an early-warning independent of current equity price tape co-incidence."
+  ],
+  "confidence": "low",
+  "theses": [
+    {
+      "subject": "China equities",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The deterministic cross-asset driver names China stimulus as the primary force, with medium confidence and clear invalidation; the rate/inflation transmission also lists FXI as a tailwind. Conflicts (domestic stagflation, weak HK peg) cap conviction.",
+      "falsifier_text": "China A-shares reverses and the China fingerprint (HK, copper) stops confirming."
+    }
+  ]
+}

@@ -1,6 +1,5 @@
 {
   "ACLS": "ahead_of_consensus",
-  "ADBE": "ahead_of_consensus",
   "APP": "consensus_at_risk",
   "ATI": "consensus_at_risk",
   "AVAV": "ahead_of_consensus",
@@ -23,13 +22,10 @@
   "ORA": "ahead_of_consensus",
   "PANW": "ahead_of_consensus",
   "PCG": "ahead_of_consensus",
-  "PFE": "consensus_at_risk",
-  "QCOM": "ahead_of_consensus",
   "ROK": "consensus_at_risk",
   "SO": "ahead_of_consensus",
   "TLN": "ahead_of_consensus",
   "TMDX": "ahead_of_consensus",
-  "TMO": "ahead_of_consensus",
   "VST": "ahead_of_consensus",
   "WDC": "consensus_at_risk",
   "XYL": "ahead_of_consensus"

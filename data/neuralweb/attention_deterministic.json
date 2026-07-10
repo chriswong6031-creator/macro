@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-09",
+  "as_of": "2026-07-10",
   "item_count": 4,
   "counts_by_severity": {
     "P2": 2,
@@ -7,20 +7,20 @@
   },
   "items": [
     {
-      "kind": "lobe_sla_breach",
+      "kind": "contradiction_tension",
       "severity": "P2",
-      "summary_en": "Lobe 'nasdaq-internals' overdue: 47h old vs 30h SLA (1.6×)",
-      "summary_zh": "脉叶 'nasdaq-internals' 过期：47小时，SLA 30小时（1.6倍）",
-      "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-09"
+      "summary_en": "Tension: regime_vector-vs-risk_radar",
+      "summary_zh": "矛盾张力：regime_vector-vs-risk_radar",
+      "evidence_path": "site/neuralwebdata/confluence_graph.json",
+      "as_of": "2026-07-10"
     },
     {
-      "kind": "regime_indeterminate",
+      "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Regime indeterminate: Q1 confidence 23% (below 25% threshold)",
-      "summary_zh": "周期不明确：Q1 置信度 23%（低于25%阈值）",
-      "evidence_path": "data/neuralweb/world_state.json",
-      "as_of": "2026-07-09"
+      "summary_en": "Lobe 'nasdaq-internals' overdue: 72h old vs 30h SLA (2.4×)",
+      "summary_zh": "脉叶 'nasdaq-internals' 过期：72小时，SLA 30小时（2.4倍）",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-07-10"
     },
     {
       "kind": "cortex_degraded",
@@ -28,7 +28,7 @@
       "summary_en": "Cortex deliberation unavailable: model_unavailable",
       "summary_zh": "皮层审议当前不可用：model_unavailable",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-09"
+      "as_of": "2026-07-10"
     },
     {
       "kind": "evidence_clock_overdue",
@@ -36,7 +36,7 @@
       "summary_en": "6 evidence clock(s) overdue; top: qledger:placebo",
       "summary_zh": "6 个证据时钟逾期；最高优先级：qledger:placebo",
       "evidence_path": "data/neuralweb/evidence_clock.json",
-      "as_of": "2026-07-09"
+      "as_of": "2026-07-10"
     }
   ],
   "caveats": [
@@ -47,7 +47,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_attention_deterministic.py",
-  "produced_at": "2026-07-09T09:08:55Z",
-  "inputs_hash": "sha256:b1584f4e9fe403cc588e2c81bcf795443c6ccee184292073a89fd052d864a032",
+  "produced_at": "2026-07-10T09:00:17Z",
+  "inputs_hash": "sha256:4ed89027c9be572aade1b7f8079d8c32b857cd86aa9d0fad09edf3acc67b93fc",
   "tier": "display"
 }

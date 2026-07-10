@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-07-06",
+  "asof": "2026-07-09",
   "authority": {
     "entry_tailwind": "measured_near_term_only",
     "score_raise": false,
@@ -15,37 +15,37 @@
     "summary": "Net liquidity is technically expanding but RRP is near-exhausted or stress indicators are confirming — expansion quality is poor; treat with caution, not as a clean tailwind."
   },
   "fed": {
-    "assets_bn": 6724.564,
-    "assets_chg_20d_bn": 13.069,
+    "assets_bn": 6735.609,
+    "assets_chg_20d_bn": 10.212,
     "reserve_balances_bn": null,
-    "walcl_stale_days": 1,
-    "policy_stance": "hawkish",
+    "walcl_stale_days": 3,
+    "policy_stance": "neutral",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-07-06"
+    "asof": "2026-07-09"
   },
   "treasury": {
-    "tga_bn": 783.107,
-    "tga_chg_20d_bn": -42.433,
-    "net_issuance_20d_bn": 89.604,
+    "tga_bn": 749.244,
+    "tga_chg_20d_bn": -81.155,
+    "net_issuance_20d_bn": 110.235,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
-    "asof": "2026-07-06"
+    "asof": "2026-07-08"
   },
   "rrp": {
-    "rrp_bn": 2.719,
-    "rrp_chg_20d_bn": 1.958,
+    "rrp_bn": 5.772,
+    "rrp_chg_20d_bn": 5.385,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5945.002,
-    "netliq_chg_20d_bn": 59.808,
-    "netliq_chg_65d_bn": 46.061,
-    "netliq_pctile_expanding": 0.81852,
+    "netliq_bn": 5980.593,
+    "netliq_chg_20d_bn": 56.667,
+    "netliq_chg_65d_bn": 48.821,
+    "netliq_pctile_expanding": 0.835347,
     "overlay": "expanding"
   },
   "quality": {
     "label": "stress-expansion",
-    "fed_share": 0.15,
+    "fed_share": 0.17,
     "mechanical": true,
     "stress_confirming": false
   },
@@ -74,7 +74,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-07-08T12:58:53Z",
-  "inputs_hash": "sha256:1452320251edf118ec068d9f35393637862c22c1332accc03519a2e45fa61766",
+  "produced_at": "2026-07-10T08:57:57Z",
+  "inputs_hash": "sha256:204bac38d94e3bd71ac3d4d226db81f3e0cc7476862bb9b8c13decca8035c613",
   "tier": "shadow"
 }

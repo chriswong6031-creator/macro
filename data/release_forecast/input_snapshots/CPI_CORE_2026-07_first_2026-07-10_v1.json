@@ -1,0 +1,25 @@
+{
+  "prediction_id": "CPI_CORE:2026-07:first:2026-07-10:v1",
+  "asof": "2026-07-10",
+  "features": {
+    "cpi_core_mom_lag1": 0.20809544962627768,
+    "cpi_core_mom_lag2": 0.376460730477457,
+    "cpi_core_mom_lag3": 0.19579505385114437,
+    "sticky_mom_lag1": -36.68319746395559,
+    "median_mom_lag1": -25.677891952081122,
+    "flex_mom_lag1": -18.765262074225873,
+    "ppi_mom_lag1": 0.7431499846641376,
+    "shelter_nowcast": 0.255131183131693
+  },
+  "legs": {
+    "cpi_core_mom_lag1": "present",
+    "cpi_core_mom_lag2": "present",
+    "cpi_core_mom_lag3": "present",
+    "flex_mom_lag1": "present",
+    "median_mom_lag1": "present",
+    "ppi_mom_lag1": "present",
+    "shelter_nowcast": "revision_optimistic",
+    "sticky_mom_lag1": "present"
+  },
+  "inputs_hash": ""
+}
