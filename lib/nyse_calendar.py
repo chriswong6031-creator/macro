@@ -143,3 +143,62 @@ def expected_last_session(now: datetime | None = None) -> date:
     if is_session(today) and now_et.time() >= _CLOSE_PLUS_SETTLE:
         return today
     return last_session_on_or_before(today - timedelta(days=1))
+
+
+# Session close time (regular NYSE close, no settle buffer).
+# We use this as the dividing line: at or after this ET time on a session day,
+# the session is "completed" and the ET calendar date is the correct stamp.
+# Before this time on a session day, the prior session is the last completed one.
+_SESSION_CLOSE_ET = time(16, 0)
+
+
+def session_date(now_utc: datetime | None = None) -> date:
+    """Return the NYSE SESSION DATE that a UTC timestamp describes.
+
+    Semantics — returns the date of the MOST RECENTLY COMPLETED session:
+    -----------------------------------------------------------------------
+    A session is "completed" when the regular 16:00 ET close has passed.
+
+    • On a session day at or after 16:00 ET → return that session day.
+    • On a session day before 16:00 ET (pre-close, including overnight/pre-open)
+      → the session is not yet complete; return the PRIOR completed session.
+    • On a non-session day (weekend, holiday) → return the prior completed session.
+
+    Examples (2026-07-09 is a Thursday session; ET = UTC-4 in July):
+      • 14:00 ET 07-09 (18:00 UTC)           → 2026-07-08  (pre-close, prior session)
+      • 16:00 ET 07-09 (20:00 UTC)           → 2026-07-09  (just closed)
+      • 19:59 ET 07-09 (23:59 UTC 07-09)     → 2026-07-09  (evening, still same session)
+      • 20:57 ET 07-09 (00:57 UTC 07-10)     → 2026-07-09  (past UTC midnight, still same ET day)
+      • 00:30 ET 07-10 (04:30 UTC 07-10)     → 2026-07-09  (pre-open next ET day)
+      • 08:00 ET 07-10 (12:00 UTC 07-10)     → 2026-07-09  (pre-open, 07-10 not yet closed)
+      • Saturday any time                     → prior Friday (or last trading day)
+      • Holiday any time                      → last trading day before the holiday
+
+    This is the correct date to stamp in artifact `as_of` fields and state-dedup keys.
+    Using date.today() (UTC) or datetime.utcnow() breaks after ~00:00 UTC when ET is
+    still in the same session evening (TS-R2).
+
+    Parameters
+    ----------
+    now_utc : datetime | None
+        UTC-aware datetime to evaluate. If None, uses the current UTC wall clock.
+        Naive datetimes are treated as UTC (pipeline convention).
+
+    Returns
+    -------
+    date
+        The NYSE session date the timestamp describes (most recently completed session).
+    """
+    if now_utc is None:
+        now_utc = datetime.now(timezone.utc)
+    elif now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=timezone.utc)
+    now_et = now_utc.astimezone(ET)
+    today_et = now_et.date()
+    # If we are on a session day and the close has already passed, today IS the
+    # most recently completed session.
+    if is_session(today_et) and now_et.time() >= _SESSION_CLOSE_ET:
+        return today_et
+    # Otherwise (pre-close, non-session day), find the most recently completed session
+    # on or before the prior ET calendar day.
+    return last_session_on_or_before(today_et - timedelta(days=1))

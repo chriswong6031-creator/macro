@@ -60,6 +60,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from lib.nyse_calendar import session_date as _session_date
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -192,7 +194,7 @@ def stamp_ledger(
         return 0
     if not watch_rows:
         return 0
-    today_str = as_of or date.today().isoformat()
+    today_str = as_of or _session_date().isoformat()  # TS-R2: NYSE session date, not UTC wall-clock
     try:
         rows = load_ledger(data_root)
         existing = {(r.get("basket_id"), r.get("date")) for r in rows}
@@ -846,7 +848,7 @@ def compute(
         log.error("basket_turn_watch.compute crashed (%s) — returning empty result", e)
         return {
             "schema": "basket_turn_watch.v1",
-            "as_of": as_of or date.today().isoformat(),
+            "as_of": as_of or _session_date().isoformat(),  # TS-R2: NYSE session date
             "baskets": [],
             "authority": AUTHORITY,
             "disclosure": DISCLOSURE,
@@ -863,7 +865,7 @@ def _compute_inner(
     from lib import config
 
     if as_of is None:
-        as_of = date.today().isoformat()
+        as_of = _session_date().isoformat()  # TS-R2: NYSE session date, not UTC wall-clock
 
     # Load membership if not provided
     if baskets_meta is None:
