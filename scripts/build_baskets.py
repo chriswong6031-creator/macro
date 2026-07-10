@@ -341,6 +341,29 @@ def main() -> int:
     except Exception as _fpo_exc:  # noqa: BLE001 — additive, never fatal
         log.warning("::warning::flare_persistence hook failed: %s", _fpo_exc)
 
+    # NAR-W3 — Narrative Flare organ (narrative_flare.v1). Reads W2 collector stores
+    # (substack_posts, hn_mentions, edgar_8k_counts) + Polygon news counts; computes
+    # per-ticker narrative witnesses (news_count_z, similarity_gap, tfidf_novelty,
+    # kleinberg_burst, first_coverage). Writes site/narrativedata/flares.json.
+    # Placed beside flare_persistence (TS-U2 pattern). Display-tier; own try/except.
+    try:
+        from engine.narrative_flare import (
+            compute as _nfo_compute,
+            write_site_artifact as _nfo_write,
+        )
+        _nfo_result = _nfo_compute()
+        _nfo_path = _nfo_write(_nfo_result)
+        _nfo_n_present = sum(
+            1 for r in _nfo_result.get("rows", []) if r.get("present")
+        )
+        log.info(
+            "narrative_flare: wrote %s (%d rows, %d present, elapsed=%.1fs)",
+            _nfo_path, len(_nfo_result.get("rows", [])), _nfo_n_present,
+            _nfo_result.get("elapsed_s", 0),
+        )
+    except Exception as _nfo_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("::warning::narrative_flare hook failed: %s", _nfo_exc)
+
     # FTR W10 — Discord alerts for turn-watch IGNITION / shock activation / tape disagreement.
     # Placed after basket_turn_watch so turn_watch.json is fresh.
     # Own try/except — exit-0 always (FT-R13 / FT-R5 contract).

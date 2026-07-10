@@ -76,7 +76,8 @@ def test_all_artifact_ids_present():
     assert len(artifact_ids) == 350, (
         f"Expected 350 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (NAR-W1 added stock-flare-persistence, stock-flare-persistence-history = 347->349;"
+        " (NAR-W3 added stock-narrative-flares = 349->350;"
+        " NAR-W1 added stock-flare-persistence, stock-flare-persistence-history = 347->349;"
         " Metabolism V2-A added metabolism-organism-state, metabolism-insight-bus,"
         " metabolism-agenda, metabolism-trajectory = 339->343;"
         " (Metabolism Phase A added metabolism-journal, metabolism-til-fitness,"

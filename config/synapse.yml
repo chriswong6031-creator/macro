@@ -2271,6 +2271,38 @@ artifacts:
       witness_bitmap, w_t1..w_t4 (int 0/1), mag_t1..mag_t4 (float|null),
       fetch_date. Append-only; deduped per (ticker, date).
 
+  # NAR-W3 — narrative_flare.v1 site artifact (DISPLAY-ONLY)
+  stock-narrative-flares:
+    path: site/narrativedata/flares.json
+    format: json
+    producer: engine/narrative_flare.py
+    known_extra_writers: []
+    owner_program: narrative-ignition
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: narrative_flare.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_baskets.py
+    external_consumers: []
+    notes: >
+      NAR-W3. Per-ticker narrative witness organ. Deterministic math on W2 stores
+      (substack_posts, hn_mentions, edgar_8k_counts) + Polygon news counts.
+      Constructs: news_count_z (robust z vs 90d baseline, MIN_OBS=30, young-series honest);
+      similarity_gap (days since last channel appearance, novel flag at >90d or first-ever);
+      tfidf_novelty (1 - max cosine vs trailing 90d corpus, >= 10 prior docs required,
+      hand-rolled sklearn-free tf-idf); kleinberg_burst (2-state HMM s=2 gamma=1);
+      first_coverage (registry source covers ticker first time in 90d, nightly-gated).
+      Entity->ticker join: deterministic alias table; join_confidence=1.0/0.8/0.5 on every row.
+      Crowding hazard: hazard_pctile from wiki views or HN points level (NAR-R7).
+      Zero LLM (NAR-R4). Display-only (NAR-R5).
+      authority.may_rank/gate/size/escalate=false.
+
   # W8-R7 — CN mtf_upturn_cn.v1 per-stock multi-timeframe upturn organ (CN lane)
   china-mtf-upturn:
     path: site/chinastockdata/mtf_upturn_cn.json
