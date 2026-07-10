@@ -707,10 +707,33 @@ def main() -> int:
             forward_log_path = data_dir / "china_sector_cycles" / "forward_log.parquet"
             theme_intel = load_theme_intel(str(baskets_json_path))
             cycle_rows = load_cycle_rows(str(forward_log_path))
-            act_now_v2 = assemble_act_now(sectors, theme_intel, cycle_rows)
+            # W8-R7 rider: load basket_turn_cn artifact for bottoming-watch organ chips
+            _basket_turn_cn: dict | None = None
+            try:
+                _bt_cn_path = site_dir / "chinabasketdata" / "basket_turn_cn.json"
+                if _bt_cn_path.exists():
+                    _basket_turn_cn = json.loads(_bt_cn_path.read_text())
+            except Exception as _bte:  # noqa: BLE001
+                log.debug("basket_turn_cn load failed (%s) — rider omitted", _bte)
+            act_now_v2 = assemble_act_now(
+                sectors, theme_intel, cycle_rows,
+                basket_turn=_basket_turn_cn,
+            )
         except Exception as _e:  # noqa: BLE001 — additive, never fatal
             log.error("china act_now_v2 build failed (%s); skipping", _e)
             act_now_v2 = None
+
+        # ── W8-R7: load CN MTF upturn artifact for template ─────────────────
+        _mtf_upturn_cn: dict | None = None
+        try:
+            _mtf_cn_path = (
+                Path(config.load()["storage"]["site_dir"])
+                / "chinastockdata" / "mtf_upturn_cn.json"
+            )
+            if _mtf_cn_path.exists():
+                _mtf_upturn_cn = json.loads(_mtf_cn_path.read_text())
+        except Exception as _mtf_load_e:  # noqa: BLE001
+            log.debug("mtf_upturn_cn artifact load failed (%s) — panel will be absent", _mtf_load_e)
 
         vm = {
             "latest": latest,
@@ -722,6 +745,7 @@ def main() -> int:
             "pref": latest.get("preference_check", {}),
             "actions": _china_action_board(sectors),
             "act_now_v2": act_now_v2,            # W8-R3: four-lane board (stocks mode)
+            "mtf_upturn_cn": _mtf_upturn_cn,     # W8-R7: CN per-stock MTF upturn panel
             "health": _health_rows(),
             "index_health": _china_index_health(),  # macro-page index-health strip
             "alloc_card": _china_alloc_card(),       # China Income Vector button (blue card)

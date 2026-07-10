@@ -2218,6 +2218,68 @@ artifacts:
       ruler 21d excess-vs-SPY; promotion question earliest 2027.
       authority.may_rank/gate/size/escalate=false.
 
+  # W8-R7 — CN mtf_upturn_cn.v1 per-stock multi-timeframe upturn organ (CN lane)
+  china-mtf-upturn:
+    path: site/chinastockdata/mtf_upturn_cn.json
+    format: json
+    producer: engine/mtf_upturn.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: mtf_upturn_cn.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers:
+      - scripts/build_china.py
+    external_consumers: []
+    notes: >
+      W8-R7. CN per-stock K-of-N multi-timeframe upturn confluence organ (same legs
+      and thresholds as US TS-R3/TS-R4 organ). Universe: board buy + ripening shelf +
+      THS act-now theme members (deduped, capped ~400 names). Price sources:
+      data/china_stocks_raw/<ticker>.parquet (primary) fallback to
+      data/china_search/closes.parquet panel column. Legs: d_macd (daily MACD cross
+      <=5d), d3_confluence (house 3D MACD+StochRSI), w_macd (weekly MACD cross <=3
+      bars; approaching=display-only), w2_macd (2W epoch-anchored PIT-safe cross <=2
+      bars). States: UPTURN_CONFIRMED (K>=3 + htf cross), UPTURN_WATCH (K>=2).
+      Registered as expected-NULL forward meter (different construction from
+      sector-level standalone washout-to-turn which printed NULL — Oracle P8 P-W1/S-W3;
+      DO_NOT_REBUILD §2 'Washout x turn'). Accrues display-tier. Promotion question
+      for CN analog earliest 2027 (mirrors US TS-R3/TS-R4 ruling). Ledger gated
+      on CN_LANE=asia (CNPL-R8 pattern). authority.may_rank/gate/size/escalate=false.
+
+  # W8-R7 — CN mtf_upturn_cn forward ledger (PIT, append-only, asia-lane gated)
+  china-mtf-upturn-ledger:
+    path: data/mtf_upturn_cn/ledger.jsonl
+    format: jsonl
+    producer: engine/mtf_upturn.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: daily-engine
+    storage: git
+    asof_field: session
+    freshness_sla_hours: 30
+    schema: mtf_upturn_cn.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers: []
+    external_consumers: []
+    notes: >
+      W8-R7. PIT forward ledger for CN per-stock MTF upturn states — one row per
+      (session, symbol) per session. Append-only, keep-first on re-runs.
+      Gated on CN_LANE=asia (house law: nightly is sole advancer of data/).
+      Grading unit = catalyst-day cohort (DT-R14). Expected-NULL forward meter;
+      promotion question for CN analog earliest 2027 (mirrors US TS-R3/TS-R4).
+      authority.may_rank/gate/size/escalate=false.
+
   # FTR W9 — basket_turn.v1 cohort qledger claims ledger
   basket-turn-cohort-claims-log:
     path: data/basket_turn/cohort_claims_log.jsonl

@@ -458,3 +458,107 @@ class TestAsOfAndNotes:
     def test_note_on_absent_forward_log(self):
         r = assemble_act_now([], None, None)
         assert any("forward_log" in n for n in r["notes"])
+
+
+# ─────────────────── 9. W8-R7 rider — basket_turn organ chips ───────────────
+
+class TestBasketTurnOrganRider:
+    """Basket-turn organ rider (W8-R7): organ chips added to bottoming_watch rows."""
+
+    def _basket_turn(self, states: dict) -> dict:
+        """Minimal basket_turn_cn.json artifact dict."""
+        return {
+            "schema": "basket_turn_cn.v1",
+            "as_of": "2026-07-08",
+            "baskets": {
+                bid: {"state": state, "evidence": []}
+                for bid, state in states.items()
+            },
+        }
+
+    def test_organ_absent_when_basket_turn_none(self):
+        """No organ chips when basket_turn=None."""
+        rows = [_cycle_row("b-cn_baijiu", "Baijiu", "basket", "Trough", osc_slope=0.5)]
+        r = assemble_act_now([], None, rows, basket_turn=None)
+        row = r["lanes"]["bottoming_watch"][0]
+        assert row["organ_state"] is None
+        assert row["organ_chip_en"] is None
+
+    def test_turning_organ_chip_added(self):
+        """TURNING state in basket_turn adds organ chip to the bottoming row."""
+        rows = [_cycle_row("b-cn_baijiu", "Baijiu", "basket", "Trough", osc_slope=0.5)]
+        bt = self._basket_turn({"cn_baijiu": "TURNING"})
+        r = assemble_act_now([], None, rows, basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        assert len(bw) >= 1
+        baijiu_rows = [row for row in bw if row["id"] == "b-cn_baijiu"]
+        assert baijiu_rows, f"b-cn_baijiu not found in bottoming_watch: {[r['id'] for r in bw]}"
+        assert baijiu_rows[0]["organ_state"] == "TURNING"
+        assert "TURNING" in (baijiu_rows[0]["organ_chip_en"] or "")
+
+    def test_confirmed_organ_chip_added(self):
+        """CONFIRMED state in basket_turn adds organ chip."""
+        rows = [_cycle_row("cn_semis", "Semis", "basket", "Trough", osc_slope=1.2)]
+        bt = self._basket_turn({"cn_semis": "CONFIRMED"})
+        r = assemble_act_now([], None, rows, basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        semis_rows = [row for row in bw if row["id"] == "cn_semis"]
+        assert semis_rows
+        assert semis_rows[0]["organ_state"] == "CONFIRMED"
+        assert "CONFIRMED" in (semis_rows[0]["organ_chip_en"] or "")
+
+    def test_organ_adds_not_removes(self):
+        """Existing forward_log row stays even when organ state is WASHED_OUT (not TURNING)."""
+        rows = [_cycle_row("b-cn_baijiu", "Baijiu", "basket", "Trough", osc_slope=0.5)]
+        bt = self._basket_turn({"cn_baijiu": "WASHED_OUT"})
+        r = assemble_act_now([], None, rows, basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        # Row should still be in the lane (not removed)
+        assert any(row["id"] == "b-cn_baijiu" for row in bw)
+        baijiu_rows = [row for row in bw if row["id"] == "b-cn_baijiu"]
+        # WASHED_OUT gets organ_state but NOT the chip_en headline
+        assert baijiu_rows[0]["organ_state"] == "WASHED_OUT"
+
+    def test_organ_surfaces_new_turning_basket(self):
+        """TURNING basket not in forward_log is surfaced as a new bottoming row."""
+        # No cycle_rows (forward_log empty)
+        bt = self._basket_turn({"cn_pharma": "TURNING"})
+        r = assemble_act_now([], None, [], basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        pharma_rows = [row for row in bw if row["id"] == "cn_pharma"]
+        assert pharma_rows, "TURNING basket should be surfaced as new bottoming row"
+        assert pharma_rows[0]["organ_chip_en"] is not None
+        assert "TURNING" in pharma_rows[0]["organ_chip_en"]
+
+    def test_organ_no_buy_words_in_chip(self):
+        """Organ chips must not contain buy/accumulate/enter words (F1 law)."""
+        rows = [_cycle_row("b-cn_baijiu", "Baijiu", "basket", "Trough", osc_slope=0.5)]
+        bt = self._basket_turn({"cn_baijiu": "TURNING"})
+        r = assemble_act_now([], None, rows, basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        banned = {"buy", "accumulate", "enter"}
+        for row in bw:
+            for field in ["organ_chip_en", "organ_chip_zh", "name", "reco", "reco_en"]:
+                val = (row.get(field) or "").lower()
+                for word in banned:
+                    assert word not in val, (
+                        f"Banned word {word!r} found in {field}: {val!r}"
+                    )
+
+    def test_dual_read_unaffected_by_organ(self):
+        """Organ rider does not interfere with existing dual-read logic."""
+        ti = _theme_intel(
+            buy=[], pullback=[],
+            reduce=[_theme_item("cn_baijiu", "Baijiu", "白酒", 30, "reduce", "REDUCE", "减仓")],
+        )
+        rows = [_cycle_row("b-cn_baijiu", "Baijiu", "basket", "Trough", osc_slope=0.5)]
+        bt = self._basket_turn({"cn_baijiu": "TURNING"})
+        r = assemble_act_now([], ti, rows, basket_turn=bt)
+        # dual_read should still be set on the reduce_avoid row (FT-R1)
+        ra = r["lanes"]["reduce_avoid"]
+        baijiu_ra = [row for row in ra if row["id"] == "cn_baijiu"]
+        assert baijiu_ra
+        assert baijiu_ra[0]["dual_read"] is True
+        # Both lanes should contain the row
+        bw = r["lanes"]["bottoming_watch"]
+        assert any(row["id"] in ("b-cn_baijiu", "cn_baijiu") for row in bw)
