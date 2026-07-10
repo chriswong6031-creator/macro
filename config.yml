@@ -622,8 +622,8 @@ smart_money:
   # www.sec.gov/Archives ENFORCES SEC fair-access: the UA must carry a real
   # contact email or it 403s (data.sec.gov is laxer). Set this to YOUR email.
   user_agent: "Macro Dashboard 13F research longr2512@gmail.com"
-  history_quarters: 6          # snapshots kept per fund — 2 for the live quarter diff + deeper history for the multi-quarter accumulation trend (engine/smart_money.accumulation_trend)
-  backfill_quarters: 8         # --full-history depth
+  history_quarters: 12         # snapshots kept per fund — SM2-R6: deep history for multi-quarter accumulation trend
+  backfill_quarters: 13        # --full-history depth (SM2-R6)
   panel_top_n: 12              # holders shown per stock panel
   # 13F Smart-Money TRADE TRACKER (engine/manager_trades.py + scripts/build_smart_money.py)
   # — grades each fund's new/add/trim/exit moves by SPY-relative forward return from the
@@ -634,24 +634,343 @@ smart_money:
     board_top_n: 25            # rows on the best-trades / worst-trades boards
     featured_funds: [appaloosa]            # pinned "follow closely" — surfaced/starred on the leaderboard (Tepper)
     featured_pair: [appaloosa, pershing]   # marquee head-to-head: Tepper's semis rotation vs Ackman's Mag-7 concentration
+  # ---------------------------------------------------------------------------
+  # EXCLUDED from consensus/crowding math (SM2-R6 standing law):
+  #   RenTech (Medallion), Citadel Advisors, Millennium Management, Two Sigma,
+  #   DE Shaw, Jane Street, SIG — quant/market-maker books whose 13F reflects
+  #   hedging inventory and factor positions, not fundamental conviction.
+  #   These MUST NOT enter consensus holder counts or crowding tier math.
+  # Also excluded at adjudication:
+  #   avenue / silverpoint — stale filers (>18m since last 13F-HR)
+  #   fundsmith — UK-domiciled, no 13F obligation
+  #   tudor / moore — closed or noise (high-turnover macro, not conviction holders)
+  #   melvin — closed
+  # ---------------------------------------------------------------------------
   funds:
-    berkshire:   {cik: 1067983, name: "Berkshire Hathaway (Buffett)"}
-    scion:       {cik: 1649339, name: "Scion Asset Mgmt (Burry)"}
-    pershing:    {cik: 1336528, name: "Pershing Square (Ackman)"}
-    appaloosa:   {cik: 1656456, name: "Appaloosa (Tepper)"}
-    baupost:     {cik: 1061768, name: "Baupost Group (Klarman)"}
-    thirdpoint:  {cik: 1040273, name: "Third Point (Loeb)"}
-    duquesne:    {cik: 1536411, name: "Duquesne Family Office (Druckenmiller)"}
-    lonepine:    {cik: 1061165, name: "Lone Pine Capital"}
-    tigerglobal: {cik: 1167483, name: "Tiger Global (Coleman)"}
-    himalaya:    {cik: 1709323, name: "Himalaya Capital (Li Lu)"}
-    akre:        {cik: 1112520, name: "Akre Capital Management"}
-    gates:       {cik: 1166559, name: "Gates Foundation Trust"}
-    viking:      {cik: 1103804, name: "Viking Global (Halvorsen)"}
-    valueact:    {cik: 1418814, name: "ValueAct Capital"}
-    icahn:       {cik: 921669,  name: "Icahn (Carl Icahn)"}
-    pabrai:      {cik: 1549575, name: "Dalal Street (Mohnish Pabrai)"}
-    fairholme:   {cik: 1056831, name: "Fairholme Capital (Berkowitz)"}
+    # ---- existing 17 (now with full metadata) --------------------------------
+    berkshire:
+      cik: 1067983
+      name: "Berkshire Hathaway (Buffett)"
+      style: superinvestor_value
+      turnover_hint: low
+
+    scion:
+      cik: 1649339
+      name: "Scion Asset Mgmt (Burry)"
+      style: superinvestor_value
+      turnover_hint: med
+      status: closed
+
+    pershing:
+      cik: 1336528
+      name: "Pershing Square (Ackman)"
+      style: activist
+      turnover_hint: low
+
+    appaloosa:
+      cik: 1656456
+      name: "Appaloosa (Tepper)"
+      style: event_distressed
+      turnover_hint: med
+
+    baupost:
+      cik: 1061768
+      name: "Baupost Group (Klarman)"
+      style: superinvestor_value
+      turnover_hint: low
+
+    thirdpoint:
+      cik: 1040273
+      name: "Third Point (Loeb)"
+      style: activist
+      turnover_hint: med
+
+    duquesne:
+      cik: 1536411
+      name: "Duquesne Family Office (Druckenmiller)"
+      style: macro_satellite
+      turnover_hint: high
+      signal_quality: low
+
+    lonepine:
+      cik: 1061165
+      name: "Lone Pine Capital"
+      style: tiger_crossover
+      turnover_hint: high
+
+    tigerglobal:
+      cik: 1167483
+      name: "Tiger Global (Coleman)"
+      style: tiger_crossover
+      turnover_hint: high
+
+    himalaya:
+      cik: 1709323
+      name: "Himalaya Capital (Li Lu)"
+      style: superinvestor_value
+      turnover_hint: low
+
+    akre:
+      cik: 1112520
+      name: "Akre Capital Management"
+      style: quality_growth
+      turnover_hint: low
+
+    gates:
+      cik: 1166559
+      name: "Gates Foundation Trust"
+      style: superinvestor_value
+      turnover_hint: low
+
+    viking:
+      cik: 1103804
+      name: "Viking Global (Halvorsen)"
+      style: tiger_crossover
+      turnover_hint: med
+
+    valueact:
+      cik: 1418814
+      name: "ValueAct Capital"
+      style: activist
+      turnover_hint: low
+
+    icahn:
+      cik: 921669
+      name: "Icahn (Carl Icahn)"
+      style: activist
+      turnover_hint: low
+
+    pabrai:
+      cik: 1549575
+      name: "Dalal Street (Mohnish Pabrai)"
+      style: superinvestor_value
+      turnover_hint: low
+
+    fairholme:
+      cik: 1056831
+      name: "Fairholme Capital (Berkowitz)"
+      style: superinvestor_value
+      turnover_hint: low
+
+    # ---- new funds: superinvestor_value -------------------------------------
+    giverny:
+      cik: 1641864
+      name: "Giverny Capital"
+      style: superinvestor_value
+      turnover_hint: low
+
+    aquamarine:
+      cik: 1953324
+      name: "Aquamarine Zurich AG (Spier)"
+      style: superinvestor_value
+      turnover_hint: low
+
+    punchcard:
+      cik: 1631664
+      name: "Punch Card Management"
+      style: superinvestor_value
+      turnover_hint: low
+
+    altarock:
+      cik: 1631014
+      name: "AltaRock Partners"
+      style: superinvestor_value
+      turnover_hint: low
+
+    dorsey:
+      cik: 1671657
+      name: "Dorsey Asset Management"
+      style: superinvestor_value
+      turnover_hint: low
+
+    greenlea:
+      cik: 1766504
+      name: "Greenlea Lane Capital"
+      style: superinvestor_value
+      turnover_hint: low
+
+    # ensemble (CIK 1387366) removed 2026-07-10: stopped filing 13F-HR after 2024-11-12
+
+    # ---- new funds: quality_growth ------------------------------------------
+    tci:
+      cik: 1647251
+      name: "TCI Fund Management"
+      style: quality_growth
+      turnover_hint: low
+
+    egerton:
+      cik: 1581811
+      name: "Egerton Capital"
+      style: quality_growth
+      turnover_hint: low
+
+    ako:
+      cik: 1376879
+      name: "AKO Capital"
+      style: quality_growth
+      turnover_hint: low
+
+    polen:
+      cik: 1034524
+      name: "Polen Capital Management"
+      style: quality_growth
+      turnover_hint: low
+
+    durable:
+      cik: 1798849
+      name: "Durable Capital Partners"
+      style: quality_growth
+      turnover_hint: med
+
+    # ---- new funds: tiger_crossover -----------------------------------------
+    coatue:
+      cik: 1135730
+      name: "Coatue Management"
+      style: tiger_crossover
+      turnover_hint: high
+
+    d1capital:
+      cik: 1747057
+      name: "D1 Capital Partners"
+      style: tiger_crossover
+      turnover_hint: med
+
+    altimeter:
+      cik: 1541617
+      name: "Altimeter Capital"
+      style: tiger_crossover
+      turnover_hint: low
+
+    whalerock:
+      cik: 1387322
+      name: "Whale Rock Capital"
+      style: tiger_crossover
+      turnover_hint: high
+
+    dragoneer:
+      cik: 1602189
+      name: "Dragoneer Investment Group"
+      style: tiger_crossover
+      turnover_hint: med
+
+    lightstreet:
+      cik: 1569049
+      name: "Light Street Capital"
+      style: tiger_crossover
+      turnover_hint: high
+
+    # ---- new funds: activist ------------------------------------------------
+    elliott:
+      cik: 1791786
+      name: "Elliott Investment Management"
+      style: activist
+      turnover_hint: med
+
+    starboard:
+      cik: 1517137
+      name: "Starboard Value"
+      style: activist
+      turnover_hint: med
+
+    trian:
+      cik: 1345471
+      name: "Trian Fund Management"
+      style: activist
+      turnover_hint: low
+
+    jana:
+      cik: 1998597
+      name: "JANA Partners Management"
+      style: activist
+      turnover_hint: med
+
+    engaged:
+      cik: 1559771
+      name: "Engaged Capital"
+      style: activist
+      turnover_hint: med
+
+    sachem:
+      cik: 1582090
+      name: "Sachem Head Capital"
+      style: activist
+      turnover_hint: med
+
+    corvex:
+      cik: 1535472
+      name: "Corvex Management"
+      style: activist
+      turnover_hint: med
+
+    # effissimo (CIK 1570005) removed 2026-07-10: Singapore-domiciled fund (Japanese equities),
+    # no US 13F-HR filings found in EDGAR; CIK 1570005 is an ECM Feeder Fund unrelated entity
+
+    # ---- new funds: event_distressed ----------------------------------------
+    oaktree:
+      cik: 949509
+      name: "Oaktree Capital Management"
+      style: event_distressed
+      turnover_hint: high
+      signal_quality: low
+
+    mudrick:
+      cik: 1655183
+      name: "Mudrick Capital Management"
+      style: event_distressed
+      turnover_hint: high
+      signal_quality: low
+
+    # ---- new funds: sector_healthcare ---------------------------------------
+    bakerbros:
+      cik: 1263508
+      name: "Baker Bros. Advisors"
+      style: sector_healthcare
+      turnover_hint: low
+
+    racapital:
+      cik: 1346824
+      name: "RA Capital Management"
+      style: sector_healthcare
+      turnover_hint: med
+
+    perceptive:
+      cik: 1224962
+      name: "Perceptive Advisors"
+      style: sector_healthcare
+      turnover_hint: high
+
+    rtw:
+      cik: 1493215
+      name: "RTW Investments"
+      style: sector_healthcare
+      turnover_hint: med
+
+    casdin:
+      cik: 1534261
+      name: "Casdin Capital"
+      style: sector_healthcare
+      turnover_hint: med
+
+    # ---- new funds: sector_other --------------------------------------------
+    kimmeridge:
+      cik: 1706220
+      name: "Kimmeridge Energy Management"
+      style: sector_other
+      turnover_hint: med
+
+    basswood:
+      cik: 1085393
+      name: "Basswood Capital Management"
+      style: sector_other
+      turnover_hint: med
+
+    # ---- new funds: macro_satellite -----------------------------------------
+    soros:
+      cik: 1029160
+      name: "Soros Fund Management"
+      style: macro_satellite
+      turnover_hint: high
+      signal_quality: low
 
 engine_equity_factors:
   # leadership read: which factor's top-quintile has been beating its bottom-
