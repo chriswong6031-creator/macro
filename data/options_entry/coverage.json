@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-10T06:58:34.479677+00:00",
+  "generated_at": "2026-07-10T12:29:14.957503+00:00",
   "as_of": "2026-07-10",
   "absent_stores": [],
   "feature_coverage": {
@@ -9,9 +9,9 @@
     "features": [
       {
         "feature": "iv30",
-        "n_nonnull": 402,
+        "n_nonnull": 403,
         "n_total": 403,
-        "share_nonnull": 0.9975
+        "share_nonnull": 1.0
       },
       {
         "feature": "iv_rank_252",
@@ -33,9 +33,9 @@
       },
       {
         "feature": "ivspread_5d_chg",
-        "n_nonnull": 316,
+        "n_nonnull": 326,
         "n_total": 403,
-        "share_nonnull": 0.7841
+        "share_nonnull": 0.8089
       },
       {
         "feature": "skew",
@@ -51,27 +51,27 @@
       },
       {
         "feature": "net_doi",
-        "n_nonnull": 348,
+        "n_nonnull": 369,
         "n_total": 403,
-        "share_nonnull": 0.8635
+        "share_nonnull": 0.9156
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 321,
+        "n_nonnull": 329,
         "n_total": 403,
-        "share_nonnull": 0.7965
+        "share_nonnull": 0.8164
       },
       {
         "feature": "fresh_contracts",
-        "n_nonnull": 353,
+        "n_nonnull": 369,
         "n_total": 403,
-        "share_nonnull": 0.8759
+        "share_nonnull": 0.9156
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 324,
+        "n_nonnull": 319,
         "n_total": 403,
-        "share_nonnull": 0.804
+        "share_nonnull": 0.7916
       },
       {
         "feature": "zerodte_share",
@@ -93,27 +93,27 @@
       },
       {
         "feature": "dist_to_flip_pct",
-        "n_nonnull": 303,
+        "n_nonnull": 294,
         "n_total": 403,
-        "share_nonnull": 0.7519
+        "share_nonnull": 0.7295
       },
       {
         "feature": "wall_up_dist_pct",
-        "n_nonnull": 402,
+        "n_nonnull": 403,
         "n_total": 403,
-        "share_nonnull": 0.9975
+        "share_nonnull": 1.0
       },
       {
         "feature": "wall_down_dist_pct",
-        "n_nonnull": 402,
+        "n_nonnull": 403,
         "n_total": 403,
-        "share_nonnull": 0.9975
+        "share_nonnull": 1.0
       },
       {
         "feature": "max_pain_dist_pct",
-        "n_nonnull": 402,
+        "n_nonnull": 403,
         "n_total": 403,
-        "share_nonnull": 0.9975
+        "share_nonnull": 1.0
       },
       {
         "feature": "opex_days",
@@ -129,9 +129,9 @@
       },
       {
         "feature": "gex_confirm_verdict",
-        "n_nonnull": 402,
+        "n_nonnull": 403,
         "n_total": 403,
-        "share_nonnull": 0.9975
+        "share_nonnull": 1.0
       },
       {
         "feature": "evidence_quality",
@@ -167,9 +167,9 @@
     "ticker_coverage": {
       "n_tickers": 403,
       "n_rows": 403,
-      "n_tickers_ge75pct_features": 345,
-      "n_tickers_50to74pct_features": 44,
-      "n_tickers_lt50pct_features": 14
+      "n_tickers_ge75pct_features": 364,
+      "n_tickers_50to74pct_features": 26,
+      "n_tickers_lt50pct_features": 13
     }
   },
   "family_stamp_coverage": [
@@ -181,7 +181,8 @@
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
-        "2026-W26": 41
+        "2026-W26": 41,
+        "2026-W27": 8
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
@@ -195,15 +196,16 @@
     {
       "family": "S-DOI",
       "status": "building_history",
-      "n_cond": 0,
-      "n_base": 0,
+      "n_cond": 3,
+      "n_base": 4,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
-        "2026-W26": 41
+        "2026-W26": 41,
+        "2026-W27": 8
       },
-      "n_stamped_cond": 0,
-      "cond_hit_share": 0.0,
+      "n_stamped_cond": 7,
+      "cond_hit_share": 0.1273,
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "post-W-C history 0d < 14d minimum; n_post_wc_fires=0",
@@ -214,32 +216,34 @@
     {
       "family": "S-VOI",
       "status": "building_history",
-      "n_cond": 42,
-      "n_base": 4,
+      "n_cond": 47,
+      "n_base": 6,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
-        "2026-W26": 41
+        "2026-W26": 41,
+        "2026-W27": 8
       },
-      "n_stamped_cond": 46,
-      "cond_hit_share": 0.9787,
+      "n_stamped_cond": 53,
+      "cond_hit_share": 0.9636,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 42
+        "n_cond": 47
       }
     },
     {
       "family": "S-IVSPREAD-F",
       "status": "building_history",
-      "n_cond": 0,
-      "n_base": 0,
+      "n_cond": 3,
+      "n_base": 4,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
-        "2026-W26": 41
+        "2026-W26": 41,
+        "2026-W27": 8
       },
-      "n_stamped_cond": 0,
-      "cond_hit_share": 0.0,
+      "n_stamped_cond": 7,
+      "cond_hit_share": 0.1273,
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "post-W-C history 0d < 14d minimum; n_post_wc_fires=0",
@@ -250,15 +254,16 @@
     {
       "family": "S-SKEW_DECEL",
       "status": "building_history",
-      "n_cond": 0,
-      "n_base": 0,
+      "n_cond": 1,
+      "n_base": 6,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
-        "2026-W26": 41
+        "2026-W26": 41,
+        "2026-W27": 8
       },
-      "n_stamped_cond": 0,
-      "cond_hit_share": 0.0,
+      "n_stamped_cond": 8,
+      "cond_hit_share": 0.1455,
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "post-W-C history 0d < 14d minimum; n_post_wc_fires=0",
@@ -269,15 +274,16 @@
     {
       "family": "S-TOP_RISK",
       "status": "building_history",
-      "n_cond": 0,
-      "n_base": 0,
+      "n_cond": 4,
+      "n_base": 3,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
-        "2026-W26": 41
+        "2026-W26": 41,
+        "2026-W27": 8
       },
-      "n_stamped_cond": 0,
-      "cond_hit_share": 0.0,
+      "n_stamped_cond": 7,
+      "cond_hit_share": 0.1273,
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "post-W-C history 0d < 14d minimum; n_post_wc_fires=0",
@@ -289,14 +295,15 @@
       "family": "S-PIN_RISK",
       "status": "building_history",
       "n_cond": 0,
-      "n_base": 0,
+      "n_base": 8,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
-        "2026-W26": 41
+        "2026-W26": 41,
+        "2026-W27": 8
       },
-      "n_stamped_cond": 0,
-      "cond_hit_share": 0.0,
+      "n_stamped_cond": 8,
+      "cond_hit_share": 0.1455,
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "post-W-C history 0d < 14d minimum; n_post_wc_fires=0",
@@ -312,10 +319,11 @@
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
-        "2026-W26": 41
+        "2026-W26": 41,
+        "2026-W27": 8
       },
-      "n_stamped_cond": 46,
-      "cond_hit_share": 0.9787,
+      "n_stamped_cond": 53,
+      "cond_hit_share": 0.9636,
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "post-W-C history 0d < 14d minimum; n_post_wc_fires=0",
@@ -369,27 +377,27 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-07",
-          "age_days_from_today": 3,
-          "status": "STALE"
+          "latest_as_of": "2026-07-10",
+          "age_days_from_today": 0,
+          "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-07 15:17 UTC",
-          "age_days_from_today": 3,
-          "status": "STALE"
+          "latest_as_of": "2026-07-10 08:52 UTC",
+          "age_days_from_today": 0,
+          "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
-          "latest_as_of": "2026-06-24",
-          "age_days_from_today": 16,
+          "latest_as_of": "2026-06-30",
+          "age_days_from_today": 10,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-10T06:58:34.446400+00:00",
+      "generated_at": "2026-07-10T12:29:14.921864+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -399,7 +407,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-10T06:58:34.479668+00:00",
+    "generated_at_utc": "2026-07-10T12:29:14.957495+00:00",
     "as_of": "2026-07-10",
     "absent_stores": []
   }
