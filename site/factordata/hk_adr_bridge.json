@@ -5,22 +5,12 @@
   "expected_hk_session": "2026-07-10",
   "freshness_verdict": "ok",
   "adr_freshness": {
-    "JD": {
-      "asof": "2026-07-09",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "PDD": {
-      "asof": "2026-07-09",
-      "lag_days": 1,
-      "state": "fresh"
-    },
     "BABA": {
       "asof": "2026-07-09",
       "lag_days": 1,
       "state": "fresh"
     },
-    "KWEB": {
+    "JD": {
       "asof": "2026-07-09",
       "lag_days": 1,
       "state": "fresh"
@@ -31,6 +21,16 @@
       "state": "fresh"
     },
     "FXI": {
+      "asof": "2026-07-09",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "KWEB": {
+      "asof": "2026-07-09",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "PDD": {
       "asof": "2026-07-09",
       "lag_days": 1,
       "state": "fresh"
@@ -46,7 +46,7 @@
       "proxy_note": "",
       "implied_open_gap_pct": 1.98,
       "adr_move_pct": 1.98,
-      "hk_last_move_pct": 1.78,
+      "hk_last_move_pct": 0.47,
       "gap_context": "up",
       "disconnect_flag": false,
       "missing_reason": null,
@@ -65,9 +65,9 @@
       "proxy_note": "",
       "implied_open_gap_pct": -0.09,
       "adr_move_pct": -0.09,
-      "hk_last_move_pct": 0.36,
+      "hk_last_move_pct": -2.72,
       "gap_context": "flat",
-      "disconnect_flag": true,
+      "disconnect_flag": false,
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-09",
@@ -84,9 +84,9 @@
       "proxy_note": "",
       "implied_open_gap_pct": 0.4,
       "adr_move_pct": 0.4,
-      "hk_last_move_pct": 3.58,
+      "hk_last_move_pct": -0.65,
       "gap_context": "flat",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-09",
@@ -103,9 +103,9 @@
       "proxy_note": "",
       "implied_open_gap_pct": 1.35,
       "adr_move_pct": 1.35,
-      "hk_last_move_pct": 1.86,
+      "hk_last_move_pct": -1.82,
       "gap_context": "up",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-09",
@@ -122,9 +122,9 @@
       "proxy_note": "proxy, no direct ADR; Tencent OTC (TCEHY) too thin",
       "implied_open_gap_pct": 0.27,
       "adr_move_pct": 0.27,
-      "hk_last_move_pct": 0.09,
+      "hk_last_move_pct": -1.92,
       "gap_context": "flat",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-09",
@@ -141,9 +141,9 @@
       "proxy_note": "proxy, no direct ADR",
       "implied_open_gap_pct": 0.27,
       "adr_move_pct": 0.27,
-      "hk_last_move_pct": 3.43,
+      "hk_last_move_pct": -2.97,
       "gap_context": "flat",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-09",
@@ -160,9 +160,9 @@
       "proxy_note": "proxy, no direct ADR",
       "implied_open_gap_pct": 0.27,
       "adr_move_pct": 0.27,
-      "hk_last_move_pct": 4.44,
+      "hk_last_move_pct": -1.19,
       "gap_context": "flat",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-09",
@@ -179,9 +179,9 @@
       "proxy_note": "proxy, no direct ADR",
       "implied_open_gap_pct": 0.27,
       "adr_move_pct": 0.27,
-      "hk_last_move_pct": 2.5,
+      "hk_last_move_pct": -4.27,
       "gap_context": "flat",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-09",
@@ -198,9 +198,9 @@
       "proxy_note": "proxy, no direct ADR; ADR delisted",
       "implied_open_gap_pct": -0.09,
       "adr_move_pct": -0.09,
-      "hk_last_move_pct": -10.07,
+      "hk_last_move_pct": 10.22,
       "gap_context": "flat",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-09",

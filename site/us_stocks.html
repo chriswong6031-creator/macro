@@ -1175,7 +1175,12 @@
   .rm-tbl td.l, .rm-tbl th.l { text-align: left; }
   .rm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 
-  /* ── W8-R6: US Standout table view (mirrors CN implementation) ──────── */
+  /* ── W8-R6: US Standout table view (mirrors CN implementation) ────────
+     NOTE: These .st-* rules are NOT scoped to body.page-stocks (matching the
+     china.html.j2 pattern where the same rules are emitted unscoped).  The HTML
+     data block and JS init ARE gated (_su guard / mode != macro), so the rules
+     are dead CSS on macro.html — no functional impact.  Mirror this intentional
+     pattern when editing china.html.j2 to keep implementations in sync. */
   .st-view-toggle { display:inline-flex; gap:3px; padding:3px; border-radius:8px;
     background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
     border:1px solid var(--line); margin-left:10px; vertical-align:middle; }
@@ -1660,6 +1665,26 @@
   .dash-tape-body { display:grid; grid-template-columns:1fr 1fr; }
   @media(max-width:640px){ .dash-tape-body{ grid-template-columns:1fr; } }
   .dash-tape-t1 { padding:5px 16px 6px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); }
+.dash-mrow .mr-flow { font-size:9.5px; color:var(--muted); margin:0 6px 0 4px; white-space:nowrap; flex:none; }
+/* page-scoped fold (.act-fold) — the shared .lst-collapse plumbing assumes
+   one-element-per-item direct children; the TAKE PROFITS list is <a>+chip
+   sibling PAIRS and the sector-setups table hides rows behind an implicit
+   tbody, so both get their own cap rules + a tiny delegated toggler. */
+.act-fold.is-collapsed > a.actitem:nth-of-type(n+7), .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .ew-chip, .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .two-reads-chip, .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .ew-chip + .two-reads-chip { display:none; }
+.actcol .act-fold:not(:has(> a.actitem:nth-of-type(7))) ~ .lst-more.act-more { display:none; }
+#sectors table.act-fold.is-collapsed > tbody > tr:nth-child(n+8), #sectors table.act-fold.is-collapsed > tr:nth-child(n+8) { display:none; }
+.ftr-session-pill { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 9px; border-radius:16px; }
+.ftr-session-pill.live { background:rgba(35,192,138,.14); border:1px solid rgba(35,192,138,.38); color:var(--up); }
+.ftr-session-pill.pre  { background:rgba(79,140,255,.12); border:1px solid rgba(79,140,255,.32); color:var(--link); }
+.ftr-session-pill.post { background:rgba(139,147,167,.10); border:1px solid var(--line); color:var(--muted); }
+.ftr-session-pill.closed { background:rgba(139,147,167,.08); border:1px solid var(--line); color:var(--muted); }
+.ftr-session-pill .ftr-dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:ftr-pulse 1.4s ease-in-out infinite; }
+.ftr-session-pill.closed .ftr-dot, .ftr-session-pill.post .ftr-dot { animation:none; opacity:.5; }
+.ftr-cx-badge { display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:8px; background:rgba(35,192,138,.10); border:1px solid rgba(35,192,138,.28); }
+.ftr-cx-badge .cx-name { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; }
+.ftr-cx-badge .cx-val  { font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; }
+.ftr-cx-badge .cx-note { font-size:10.5px; opacity:.8; }
+@keyframes ftr-pulse { 0%,100%{opacity:1;} 50%{opacity:.45;} }
   .dash-tape-half { padding:7px 16px 9px; }
   .dash-tape-half:first-child { border-right:1px solid var(--line); }
   .dash-tape-half-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.07em; font-weight:700; margin-bottom:5px; }
@@ -1706,6 +1731,8 @@
   .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
   .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
   .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+  /* U7: ring state — running trend (histogram positive, no recent cross; does not count toward K) */
+  .dash-mtf-leg.trend { background:transparent; color:var(--up); border:1.5px solid color-mix(in srgb,var(--up) 50%,transparent); }
   .dash-mtf-legs { display:flex; gap:3px; align-items:center; }
   .dash-mtf-since { font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
   .dash-mtf-baskets { font-size:10px; color:var(--muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1937,6 +1964,7 @@
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
             <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
             <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
             <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
             <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
@@ -2037,7 +2065,7 @@
     
     
     
-    <div id="dash-tape-band" class="dash-tape-band" aria-label="<span class="l-en">Live basket tape</span><span class="l-zh">实时篮子行情</span>">
+    <div id="dash-tape-band" class="dash-tape-band" aria-label="Live basket tape">
       <div class="dash-tape-hd">
         <span id="dash-session-pill" class="ftr-session-pill closed">
           <span class="ftr-dot"></span>
@@ -2050,11 +2078,11 @@
       </div>
       <div class="dash-tape-body">
         <div class="dash-tape-half">
-          <div class="dash-tape-half-lbl top"><span class="l-en">Top 5 live leaders</span><span class="l-zh">前5领涨</span></div>
+          <div class="dash-tape-half-lbl top" id="dash-top-lbl"><span class="l-en">Top 5 live leaders</span><span class="l-zh">前5领涨</span></div>
           <div id="dash-top-movers"></div>
         </div>
         <div class="dash-tape-half">
-          <div class="dash-tape-half-lbl bot"><span class="l-en">Bottom 3 live laggards</span><span class="l-zh">后3领跌</span></div>
+          <div class="dash-tape-half-lbl bot" id="dash-bot-lbl"><span class="l-en">Bottom 3 live laggards</span><span class="l-zh">后3领跌</span></div>
           <div id="dash-bot-movers"></div>
         </div>
       </div>
@@ -2104,8 +2132,7 @@
       </div>
       <div class="actcol act-trim">
         <div class="acth">🟠 <span class="l-en">TAKE PROFITS / topping</span><span class="l-zh">止盈／做顶</span></div>
-        
-          <a class="actitem ai-theme" href="basket/data_center_power.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Data-Center Power &amp; Cooling"><span class="l-en">Data-Center Power &amp; Cooling</span><span class="l-zh">数据中心电力与散热</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+        <div class="act-fold is-collapsed">
         
           <a class="actitem ai-theme" href="basket/managed_care.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Managed Care &amp; Insurers"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
@@ -2123,6 +2150,8 @@
         
           <a class="actitem" href="basket/us_sector_utilities.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Utilities"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></b> <span class="muted">XLU</span><span class="actage">⏱ <span class="l-en">3d ago</span><span class="l-zh">3天前</span></span><span class="eqmini eq-up" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +55</span><span class="acttag"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
         
+        </div>
+        <button class="lst-more act-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
       </div>
       <div class="actcol act-hold lst-wrap">
         <div class="acth">⚪ <span class="l-en">HOLD / avoid</span><span class="l-zh">持有／回避</span></div>
@@ -2161,17 +2190,17 @@
         
           <div data-theme-id="uranium_miners"><a class="actitem ai-theme" href="basket/uranium_miners.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Uranium &amp; Nuclear Fuel"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
+          <div data-theme-id="defense"><a class="actitem ai-theme" href="basket/defense.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Defense &amp; Aerospace"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
           <div data-theme-id="retail"><a class="actitem ai-theme" href="basket/retail.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Retail"><span class="l-en">Retail</span><span class="l-zh">零售</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
           <div data-theme-id="critical_minerals"><a class="actitem ai-theme" href="basket/critical_minerals.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Critical Minerals &amp; Rare Earths"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
-        
-          <div data-theme-id="defense"><a class="actitem ai-theme" href="basket/defense.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Defense &amp; Aerospace"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
           <div data-theme-id="crypto"><a class="actitem ai-theme" href="basket/crypto.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Crypto &amp; Digital Assets"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
           <div data-theme-id="quantum_computing"><a class="actitem ai-theme" href="basket/quantum_computing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Quantum Computing"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
-          <div data-theme-id="housing"><a class="actitem ai-theme" href="basket/housing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Housing Chain"><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+          <div data-theme-id="defensives"><a class="actitem ai-theme" href="basket/defensives.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Defensives"><span class="l-en">Defensives</span><span class="l-zh">防御板块</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
           <a class="actitem" href="basket/us_sector_materials.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Materials"><span class="l-en">Materials</span><span class="l-zh">原材料</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
         
@@ -3683,7 +3712,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (4)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">4</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting warn</span><span class="l-zh">财务质量警示</span></span><span class="cau-row"><span class="l-en">Narrative basket (Industrials (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（工业（等权））正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.0% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -2.2 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -2.2 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting warn</span><span class="l-zh">财务质量警示</span></span><span class="cau-row"><span class="l-en">Narrative basket (Industrials (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（工业（等权））正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -2.2 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -2.2 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -5525,7 +5554,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Technology (Equal-Weight). Rank 23/46 (+5 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 信息技术（等权）。排名 23/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Technology (Equal-Weight). Rank 22/46 (+6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 信息技术（等权）。排名 22/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -6921,7 +6950,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">earnings in 5d — binary event, size down</span><span class="l-zh">5天后财报 — 二元事件，减仓</span></span><span class="cau-row"><span class="l-en">weak fundamentals</span><span class="l-zh">基本面偏弱</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+9.2% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +9.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">earnings in 5d — binary event, size down</span><span class="l-zh">5天后财报 — 二元事件，减仓</span></span><span class="cau-row"><span class="l-en">weak fundamentals</span><span class="l-zh">基本面偏弱</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+8.9% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +8.9%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -7189,7 +7218,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Non-AI Tech & Hardware) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（非AI科技与硬件）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+4.4% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +4.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Non-AI Tech & Hardware) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（非AI科技与硬件）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+4.3% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +4.3%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -7314,7 +7343,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Non-AI Tech & Hardware. Rank 21/46 (+5 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非AI科技与硬件。排名 21/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Non-AI Tech & Hardware. Rank 20/46 (+6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非AI科技与硬件。排名 20/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -7950,7 +7979,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Consumer Discretionary (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（非必需消费（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+8.9% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +8.9%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Consumer Discretionary (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（非必需消费（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+8.7% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +8.7%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -9350,7 +9379,7 @@
     <p class="muted" style="font-size:12.5px;margin:6px 0 4px">
       <b>1</b> <span class="l-en">on the buy side</span><span class="l-zh">在买入侧</span> · <b>6</b> <span class="l-en">extended / topping / below trend</span><span class="l-zh">过热／见顶／趋势下方</span>. <span class="l-en">Cross-sectionally the buy side has beaten the avoid side by ~0.8%/quarter (1998-2026). Use it to time rotation and to NOT chase extended leaders — never as a return forecast.</span><span class="l-zh">横截面上买入侧每季度约跑赢回避侧 0.8%（1998–2026）。用于把握轮动、避免追逐过热领先股——切勿当作收益预测。</span>
     </p>
-    <table>
+    <table class="act-fold is-collapsed">
       <tr>
         <th class="l"><span class="l-en">sector</span><span class="l-zh">板块</span></th>
         <th class="l"><span class="l-en">verdict</span><span class="l-zh">判断</span> <span class="help">?<span class="tip"><span class="l-en">BUY/SETUP = an entry above the 200-day; EXTENDED/TOPPING/SELL = late or distributing; BELOW TREND = a knife. Dots = conviction (how many of daily / 3-day MACD / 3-day StochRSI agree).</span><span class="l-zh">买入/预备＝200日线上方的入场；过热/见顶/卖出＝偏晚或派发中；趋势下方＝接飞刀。圆点＝信心（日线／3日 MACD／3日 StochRSI 中有几个一致）。</span></span></span></th>
@@ -9648,6 +9677,7 @@
       </tr>
       
     </table>
+            <button class="lst-more act-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
     <p class="muted" style="font-size:12px"><span class="l-en">Click any sector for its full drill-down: cycle position, multi-timeframe momentum, the confluence signal, and each top-10 holding analyzed individually.</span><span class="l-zh">点击任意板块查看完整下钻：周期位置、多时间尺度动量、共振信号，以及逐一分析的每个前十大持仓。</span></p>
   </div>
   
@@ -10207,8 +10237,9 @@ function modePillHtml(pulse){
   var asof  = pulse.as_of_quotes || pulse.as_of_utc;
   var asofStr='';
   if(asof){try{asofStr=asof.length<=10?asof:new Date(asof).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});}catch(e){asofStr=asof;}}
-  var pills={delayed:{en:'DELAYED',zh:'延迟数据',cls:'pre'},last_rth:{en:'LAST SESSION',zh:'上一交易时段',cls:'post'},eod:{en:'EOD CLOSE',zh:'收盘价',cls:'closed'}};
-  var p=pills[mode]||{en:mode.toUpperCase(),zh:mode,cls:'closed'};
+  var pills={delayed:{en:'DELAYED',zh:'延迟数据',cls:'pre'},last_rth:{en:'LAST SESSION',zh:'上一交易时段',cls:'post'},eod:{en:'EOD CLOSE',zh:'收盘价',cls:'closed'},settled:{en:'SETTLED CLOSE',zh:'当日收盘',cls:'closed'}};
+  var pillKey=(mode==='last_rth'&&pulse.settled_close)?'settled':mode;
+  var p=pills[pillKey]||{en:mode.toUpperCase(),zh:mode,cls:'closed'};
   var delayNote='';
   if(mode==='delayed'&&delay!=null){var h=Math.round(delay/60);delayNote=' · '+L('~'+h+'h delay','约'+h+'小时延迟');}
   var asofNote=asofStr?(' · '+L('as of '+esc(asofStr),'截至 '+esc(asofStr))):'';
@@ -10223,10 +10254,31 @@ function renderTapeBand(pulse){
   var mode    = pulse.mode||'live';
   // Session pill
   var info = SESSION_LABELS[session]||SESSION_LABELS.closed;
+  // A pulse built >12h ago describes a session that is no longer 'post' —
+  // show CLOSED rather than the frozen stamp (weekend/holiday serving).
+  var builtMs=Date.parse(pulse.as_of_utc||'');
+  if(isFinite(builtMs)&&(Date.now()-builtMs)>12*3600e3){
+    session='closed'; info=SESSION_LABELS.closed;
+    // a live/delayed file frozen >12h is a last-session read — relabel all chrome
+    if(mode==='live'||mode==='delayed'){ mode='last_rth'; pulse.mode='last_rth'; }
+  }
   var pill = document.getElementById('dash-session-pill');
   var lbl  = document.getElementById('dash-session-label');
   if(pill){ pill.className='ftr-session-pill '+info.cls; }
   if(lbl){ lbl.innerHTML=L(esc(info.en),esc(info.zh)); }
+  // '15-min delayed' is live-tape copy — the mode pill carries the honest label otherwise
+  var dly=document.getElementById('dash-tape-delay');
+  if(dly){ dly.style.display=(mode==='live')?'':'none'; }
+  var tl=document.getElementById('dash-top-lbl'), bl=document.getElementById('dash-bot-lbl');
+  if(tl&&bl){
+    var lbls;
+    if(mode==='eod'){ lbls=[L('Last session leaders (EOD)','上一交易日领涨（收盘）'),L('Last session laggards (EOD)','上一交易日领跌（收盘）')]; }
+    else if(mode==='last_rth'){ lbls=pulse.settled_close
+      ?[L('Session leaders — at the close','本交易日领涨 — 收盘'),L('Session laggards — at the close','本交易日领跌 — 收盘')]
+      :[L('Last session leaders','上一交易日领涨'),L('Last session laggards','上一交易日领跌')]; }
+    else { lbls=[L('Top 5 live leaders','前5领涨'),L('Bottom 3 live laggards','后3领跌')]; }
+    tl.innerHTML=lbls[0]; bl.innerHTML=lbls[1];
+  }
   // Mode pill + as-of
   var asofEl = document.getElementById('dash-tape-asof');
   if(asofEl){
@@ -10258,23 +10310,51 @@ function renderTapeBand(pulse){
   if(!topEl||!botEl) return;
   var live=(pulse.baskets||[]).filter(function(b){return b.live_ew_chg_pct!=null&&b.tape_rank!=null;});
   if(!live.length){
-    var noMsg='<span class="muted" style="font-size:11px">'+L('quotes loading…','报价加载中…')+'</span>';
+    var loading=(session==='pre'||session==='rth');
+    var noMsg='<span class="muted" style="font-size:11px">'
+      +(loading?L('quotes loading…','报价加载中…')
+               :L('No tape data for the last session.','上一交易时段暂无行情数据。'))
+      +'</span>';
     topEl.innerHTML=noMsg; botEl.innerHTML=noMsg; return;
   }
   live.sort(function(a,b){return b.tape_rank-a.tape_rank;});
   var top5=live.slice(0,5), bot3=live.slice(-3).reverse();
+  var flowShown=false, flowAsOf=pulse.day_flow_as_of||null;
+  function flowChip(b){
+    var f=b.day_flow; if(!f) return '';
+    var bits=[];
+    if(f.dollar_vol_surge!=null) bits.push('&#215;'+Number(f.dollar_vol_surge).toFixed(1)+' '+L('vol','量'));
+    if(f.cmf!=null) bits.push(f.cmf>0.05?L('net inflow','净流入'):(f.cmf<-0.05?L('net outflow','净流出'):L('balanced flow','资金流均衡')));
+    if(!bits.length) return '';
+    flowShown=true;
+    return '<span class="mr-flow">'+bits.join(' · ')+'</span>';
+  }
   function mRow(b){
     var chg=b.live_ew_chg_pct, isUp=chg>=0;
     var barW=Math.min(44,Math.abs(chg)*10);
     return '<div class="dash-mrow">'
       +'<span class="mr-rank">#'+b.tape_rank+'</span>'
       +'<span class="mr-name">'+esc(b.id)+'</span>'
+      +flowChip(b)
       +'<span class="mr-chg '+(isUp?'up':'dn')+'">'+fmtPct(chg)+'</span>'
       +'<div class="mr-bar '+(isUp?'up':'dn')+'" style="width:'+barW.toFixed(0)+'px"></div>'
       +'</div>';
   }
   topEl.innerHTML=top5.map(mRow).join('');
   botEl.innerHTML=bot3.map(mRow).join('');
+  // Flow footnote (descriptive-only law — DT-W1a/house finding; as-of stamped)
+  var fn=document.getElementById('dash-flow-note');
+  if(!fn){
+    fn=document.createElement('div'); fn.id='dash-flow-note'; fn.className='dash-tape-t1';
+    band.appendChild(fn);
+  }
+  if(flowShown){
+    var aoEn=flowAsOf?(' (as of '+esc(flowAsOf)+')'):'';
+    var aoZh=flowAsOf?('（截至 '+esc(flowAsOf)+'）'):'';
+    fn.innerHTML=L('Flow = nightly dollar-volume read'+aoEn+' — descriptive only, no measured forward edge.',
+                   '资金流 = 每晚美元成交量读数'+aoZh+' — 仅为描述，无已测得的前瞻优势。');
+    fn.style.display='';
+  } else { fn.style.display='none'; }
 }
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -10436,15 +10516,50 @@ function renderMtfTable(mtfUpturn){
     return;
   }
 
-  // Leg glyphs
-  function legEl(fired, isPartial, label){
-    var cls=fired?'on':(isPartial?'partial':'off');
-    return '<span class="dash-mtf-leg '+cls+'" title="'+esc(label)+'">'+esc(label.slice(0,2))+'</span>';
+  // Leg glyphs — 3 visual states (U7):
+  //   FILLED (on)   = leg fired: recent cross counts toward K
+  //   RING (trend)  = histogram positive but no recent cross — running trend, does not count toward K
+  //   EMPTY (off)   = histogram negative
+  function _trendTip(label, trendObj){
+    // Returns {en, zh} pair — callers emit data-tip-en/data-tip-zh (never title=)
+    if(!trendObj) return {en:label, zh:label};
+    var bsc=trendObj.bars_since_cross;
+    if(bsc!=null){
+      return {en:label+': crossed '+bsc+' bar'+(bsc===1?'':'s')+' ago, histogram positive',
+              zh:label+'：'+bsc+'根K线前金叉，柱状线为正'};
+    }
+    if(trendObj.pos){
+      return {en:label+': histogram positive (no recent cross)',zh:label+'：柱状线为正（无近期金叉）'};
+    }
+    return {en:label, zh:label};
   }
-  function wMacdEl(val){
-    if(val==='cross') return '<span class="dash-mtf-leg on">W</span>';
-    if(val==='approaching') return '<span class="dash-mtf-leg partial" style="border-style:dashed">W</span>';
-    return '<span class="dash-mtf-leg off">W</span>';
+  function _tipAttrs(tipObj){
+    // Render data-tip-en/zh attributes from a {en,zh} pair
+    return ' data-tip-en="'+esc(tipObj.en)+'" data-tip-zh="'+esc(tipObj.zh)+'"';
+  }
+  function legEl3(fired, trendObj, label){
+    // fired: recent cross (counts toward K); trendObj: {pos, bars_since_cross}
+    var pos=trendObj&&trendObj.pos;
+    var cls=fired?'on':(pos?'trend':'off');
+    var tip=(fired||pos)?_trendTip(label,trendObj):{en:label,zh:label};
+    return '<span class="dash-mtf-leg '+cls+'"'+_tipAttrs(tip)+'>'+esc(label.slice(0,2))+'</span>';
+  }
+  function wMacdEl3(val, trendObj){
+    // val: 'cross'|'approaching'|'none'; trendObj for W timeframe
+    var pos=trendObj&&trendObj.pos;
+    if(val==='cross'){
+      var tip=_trendTip('W',trendObj);
+      return '<span class="dash-mtf-leg on"'+_tipAttrs(tip)+'>W</span>';
+    }
+    if(val==='approaching'){
+      var approachTip={en:'W: approaching (histogram negative but rising, does not count toward K)',zh:'W：接近（柱状线为负但上升，不计入K值）'};
+      return '<span class="dash-mtf-leg partial" style="border-style:dashed"'+_tipAttrs(approachTip)+'>W</span>';
+    }
+    if(pos){
+      var tip2=_trendTip('W',trendObj);
+      return '<span class="dash-mtf-leg trend"'+_tipAttrs(tip2)+'>W</span>';
+    }
+    return '<span class="dash-mtf-leg off" data-tip-en="W" data-tip-zh="W">W</span>';
   }
 
   var html='<p class="muted" style="font-size:11px;margin:0 0 5px">'
@@ -10456,8 +10571,8 @@ function renderMtfTable(mtfUpturn){
     +'<th class="r">K</th>'
     +'<th>'+L('legs (D / 3D / W / 2W)','信号腿 (D / 3D / W / 2W)')
       +' <span class="help" style="vertical-align:middle">?<span class="tip">'
-      +'<span class="l-en">D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (solid=confirmed, dashed=approaching); 2W=biweekly MACD. Forward-graded meter; prior sector-level turn printed NULL (Oracle P8). Display context, not a signal.</span>'
-      +'<span class="l-zh">D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（实线=确认，虚线=接近）；2W=双周MACD。前瞻计量；板块级别拐点为NULL（Oracle P8）。展示参考，非信号。</span>'
+      +'<span class="l-en">Filled = leg fired (recent cross, counts toward K). Ring = histogram positive but no recent cross (running trend, does not count toward K). Empty = histogram negative. D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (dashed=approaching); 2W=biweekly MACD. Forward-graded meter; prior sector-level turn printed NULL (Oracle P8). Display context, not a signal.</span>'
+      +'<span class="l-zh">实心=腿触发（近期金叉，计入K值）。空心圆=柱状线为正但无近期金叉（趋势延续，不计入K值）。空心=柱状线为负。D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（虚线=接近）；2W=双周MACD。前瞻计量；板块级别拐点为NULL（Oracle P8）。展示参考，非信号。</span>'
       +'</span></span></th>'
     +'<th>'+L('monthly phase','月线阶段')+'</th>'
     +'<th>'+L('since','起始')+'</th>'
@@ -10467,6 +10582,7 @@ function renderMtfTable(mtfUpturn){
   rows.forEach(function(sym){
     var t=tickers[sym];
     var legs=t.legs||{};
+    var trend=t.trend||{};
     var stateCls=t.state==='UPTURN_CONFIRMED'?'confirmed':t.state==='UPTURN_WATCH'?'watch':'none';
     var stateLbl=t.state==='UPTURN_CONFIRMED'?L('CONFIRMED','已确认'):t.state==='UPTURN_WATCH'?L('WATCH','观察'):L('—','—');
     var basketStr=(t.basket_ids||[]).slice(0,3).join(', ')+(t.basket_ids&&t.basket_ids.length>3?'…':'');
@@ -10475,10 +10591,10 @@ function renderMtfTable(mtfUpturn){
       +'<td><span class="dash-mtf-badge '+stateCls+'">'+stateLbl+'</span></td>'
       +'<td class="r"><span class="dash-mtf-k">'+(t.k||0)+'</span></td>'
       +'<td><div class="dash-mtf-legs">'
-        +legEl(!!legs.d_macd,false,'D')
-        +legEl(!!legs.d3_confluence,false,'3D')
-        +wMacdEl(legs.w_macd||'none')
-        +legEl(!!legs.w2_macd,false,'2W')
+        +legEl3(!!legs.d_macd,trend.d||null,'D')
+        +legEl3(!!legs.d3_confluence,trend.d3||null,'3D')
+        +wMacdEl3(legs.w_macd||'none',trend.w||null)
+        +legEl3(!!legs.w2_macd,trend.w2||null,'2W')
       +'</div></td>'
       +'<td class="dash-mtf-phase">'+esc(t.monthly_phase||'—')+'</td>'
       +'<td class="dash-mtf-since">'+esc(t.since||'—')+'</td>'
@@ -10509,6 +10625,18 @@ fetchJson('stockdata/mtf_upturn.json',function(d){mtfUpturn=d;mtfDone=true;tryRe
 // Fail-open: if any fetch doesn't resolve, still render with what we have
 setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000);
 
+// See-more folds (TAKE PROFITS column + sector setups table). Page-scoped
+// .act-fold/.act-more — theme.js's .lst-wrap handler deliberately ignores these.
+document.addEventListener('click',function(e){
+  var btn=e.target&&e.target.closest?e.target.closest('.act-more'):null;
+  if(!btn)return;
+  var wrap=btn.closest('.actcol')||btn.closest('.panel');
+  var fold=wrap&&wrap.querySelector('.act-fold');
+  if(!fold)return;
+  var c=fold.classList.toggle('is-collapsed');
+  btn.setAttribute('aria-expanded',c?'false':'true');
+});
+
 })();
 </script>
 <script src="stocktable.js"></script>
@@ -10517,11 +10645,37 @@ setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000
    Mirrors the CN implementation (china.html.j2 StockTable init block).
    Safe no-op if stocktable data element is absent. */
 (function(){
-  var SECZH = {"Technology":"科技","Industrials":"工业","Basic Materials":"原材料","Financial Services":"金融","Consumer Cyclical":"可选消费","Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费","Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产"};
+  /* SECZH: keyed on GICS-style names as emitted by us_standouts producer
+     (Information Technology / Financials / Consumer Discretionary / Health Care …)
+     NOT Yahoo-style names (Technology / Financial Services / Consumer Cyclical / Healthcare).
+     Keep in sync with engine/entry_signal.py sector taxonomy. */
+  var SECZH = {
+    "Information Technology":"信息技术","Financials":"金融","Consumer Discretionary":"可选消费",
+    "Health Care":"医疗保健","Communication Services":"通信服务","Consumer Staples":"必需消费",
+    "Industrials":"工业","Energy":"能源","Materials":"原材料","Real Estate":"房地产",
+    "Utilities":"公用事业"
+  };
   var LANE_LABELS_EN = {"bottoming":"Bottoming","continuation":"Continuation","trend":"Trend","recovery":"Recovery","watch":"Watch"};
   var LANE_LABELS_ZH = {"bottoming":"筑底","continuation":"延续","trend":"趋势","recovery":"复苏","watch":"观察"};
-  var ENTRY_STATUS_EN = {"buy_now":"Buy now","partial":"Partial buy","wait":"Wait","extended":"Extended","watch":"Watch","avoid":"Avoid","topping":"Topping","blocked":"Blocked"};
-  var ENTRY_STATUS_ZH = {"buy_now":"立即买入","partial":"分批买入","wait":"等待","extended":"过热","watch":"观察","avoid":"回避","topping":"做顶","blocked":"封锁"};
+  /* ENTRY_STATUS maps: keyed on all values emitted by entry_signal.status producer.
+     Vocabulary: buy_now, partial, buy_soon, await_confluence, hold, wait_pullback,
+                 extended, watch, avoid, topping, blocked, exit.
+     Any unmapped key falls through to the raw token (visible bug) — extend both maps
+     when the producer vocabulary changes. */
+  var ENTRY_STATUS_EN = {
+    "buy_now":"Buy now","partial":"Partial buy",
+    "buy_soon":"Buy soon","await_confluence":"Await confluence",
+    "hold":"Hold","wait_pullback":"Wait — pullback",
+    "wait":"Wait","extended":"Extended",
+    "watch":"Watch","avoid":"Avoid","topping":"Topping","blocked":"Blocked","exit":"Exit"
+  };
+  var ENTRY_STATUS_ZH = {
+    "buy_now":"立即买入","partial":"分批买入",
+    "buy_soon":"即将买入","await_confluence":"等待共振",
+    "hold":"持有","wait_pullback":"等待回调",
+    "wait":"等待","extended":"过热",
+    "watch":"观察","avoid":"回避","topping":"做顶","blocked":"封锁","exit":"退出"
+  };
   var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;
 
   var cols = [
@@ -10562,7 +10716,7 @@ setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000
     { key:'entry_status', labelEn:'Entry', labelZh:'入场', default:true, sortable:true,
       fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
         var en = ENTRY_STATUS_EN[v]||v; var zh = ENTRY_STATUS_ZH[v]||v;
-        var cls = (v==='buy_now'||v==='partial')?'st-pos':(v==='extended'||v==='avoid'||v==='topping'||v==='blocked')?'st-neg':'';
+        var cls = (v==='buy_now'||v==='partial'||v==='buy_soon')?'st-pos':(v==='extended'||v==='avoid'||v==='topping'||v==='blocked'||v==='exit')?'st-neg':'';
         return '<span class="'+cls+'">'+b(esc(en),esc(zh))+'</span>'; },
       tip:{en:'Entry signal status from the cycle engine',zh:'周期引擎入场信号状态'} },
     { key:'factor_z', labelEn:'Factor Z', labelZh:'因子Z', default:false, sortable:true, right:true,

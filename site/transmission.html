@@ -9,6 +9,14 @@
 <script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
+</style>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Rate & Inflation Transmission — 2026-07-09</title>
 
@@ -555,6 +563,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
             <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
             <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
             <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
             <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
@@ -1186,7 +1195,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="note" style="margin-top:12px">
       <p>• <span class="l-en">Display-only — never scored. The repricing of rates/inflation is REACTIVE; the curve moves after the data and the Fed, it does not lead them.</span><span class="l-zh">仅供展示，从不计入评分。利率/通胀的重新定价是被动的；曲线在数据与美联储之后变动，而非领先。</span></p><p>• <span class="l-en">Rate-of-change beats level: the SPEED of a real-yield move breaks equities more than its level. Coefficients are the measured forward IC, not a promise.</span><span class="l-zh">变动速度比水平更重要：实际收益率移动的速度比其水平更能冲击股票。系数为已测得的前瞻IC，并非承诺。</span></p><p>• <span class="l-en">Scenario moves apply a historical beta to a hypothetical shock — they are regime-dependent illustrations, not predictions, and assume the shock persists one quarter.</span><span class="l-zh">情景中的涨跌幅是将历史beta应用于假设冲击——属于依赖状态的示意而非预测，且假设冲击持续一个季度。</span></p><p>• <span class="l-en">The real / nominal / breakeven 63d-change drivers are mechanically collinear (real = nominal − breakeven); do not treat them as independent confirmations.</span><span class="l-zh">实际／名义／盈亏平衡的63日变动驱动在机制上共线（实际＝名义−盈亏平衡）；不应视为相互独立的印证。</span></p>
       <p><b><span class="l-en">Data.</span><span class="l-zh">数据。</span></b> <span class="l-en">Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline &amp; core CPI, headline &amp; core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter &amp; core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests.</span><span class="l-zh">免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。</span></p>
-      <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1971-01-04 → 2026-07-09 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-10 11:27 UTC</p>
+      <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1971-01-04 → 2026-07-09 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-10 14:32 UTC</p>
     </div>
   </div>
 </div>

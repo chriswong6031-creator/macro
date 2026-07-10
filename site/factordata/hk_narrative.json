@@ -2,8 +2,8 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-07-10",
-  "generated_utc": "2026-07-10T11:27:14+00:00",
-  "freshness": "missing",
+  "generated_utc": "2026-07-10T14:31:48+00:00",
+  "freshness": "ok",
   "entities": [
     {
       "slug": "alibaba",
@@ -16,20 +16,20 @@
       "young": true,
       "n_obs": 0,
       "as_of_date": null,
-      "no_data_reason": "store missing or empty"
+      "no_data_reason": "young series: 0 < 20 obs"
     },
     {
       "slug": "tencent",
       "ticker": "0700.HK",
       "name_en": "Tencent",
       "name_zh": "\u817e\u8baf",
-      "attention_shock_z": null,
+      "attention_shock_z": 3.707,
       "tone_pctile": null,
-      "narrative_state": null,
-      "young": true,
-      "n_obs": 0,
-      "as_of_date": null,
-      "no_data_reason": "store missing or empty"
+      "narrative_state": "attention_spike",
+      "young": false,
+      "n_obs": 86,
+      "as_of_date": "2026-07-10",
+      "no_data_reason": null
     },
     {
       "slug": "meituan",
@@ -42,7 +42,7 @@
       "young": true,
       "n_obs": 0,
       "as_of_date": null,
-      "no_data_reason": "store missing or empty"
+      "no_data_reason": "young series: 0 < 20 obs"
     },
     {
       "slug": "xiaomi",
@@ -62,13 +62,13 @@
       "ticker": "9888.HK",
       "name_en": "Baidu",
       "name_zh": "\u767e\u5ea6",
-      "attention_shock_z": null,
+      "attention_shock_z": 1.349,
       "tone_pctile": null,
-      "narrative_state": null,
-      "young": true,
-      "n_obs": 0,
-      "as_of_date": null,
-      "no_data_reason": "store missing or empty"
+      "narrative_state": "quiet",
+      "young": false,
+      "n_obs": 86,
+      "as_of_date": "2026-07-10",
+      "no_data_reason": null
     },
     {
       "slug": "jdcom",
