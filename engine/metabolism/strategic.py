@@ -16,9 +16,14 @@ Both are:
 
 Classification thresholds (per organism_state.py convention):
   slope >  0.02  → compounding
-  slope < -0.02  → declining
+  slope < -0.02  → degrading
   -0.02 ≤ slope ≤ 0.02 → stagnating
   n < N_MIN      → accruing (insufficient-n)
+
+Vocabulary note: the label for a negative slope is ``degrading`` (matching the
+canonical constants in ``organism_state._LABEL_DEGRADING``).  The legacy alias
+``declining`` is NOT used here — unifying them ensures _select_biggest_gap
+receives the expected labels.
 
 N_MIN_TRAJECTORY = 3   (matches organism_state._N_MIN_TRAJECTORY)
 K_RECENT         = 10  (last K rows for slope window; configurable per call)
@@ -30,6 +35,14 @@ import logging
 import statistics
 from pathlib import Path
 from typing import Any
+
+from engine.metabolism.organism_state import (
+    _select_biggest_gap,
+    _LABEL_COMPOUNDING,
+    _LABEL_STAGNATING,
+    _LABEL_DEGRADING,
+    _LABEL_ACCRUING,
+)
 
 log = logging.getLogger(__name__)
 
@@ -103,16 +116,20 @@ def _classify_slope(
     n: int,
     n_min: int = N_MIN_TRAJECTORY,
 ) -> str:
-    """Map slope + n to a plain-language label."""
+    """Map slope + n to a plain-language label.
+
+    Uses the canonical label constants from organism_state to keep vocabulary
+    consistent (``degrading``, not ``declining``).
+    """
     if n < n_min:
-        return f"accruing(insufficient-n: {n}/{n_min})"
+        return f"{_LABEL_ACCRUING}(insufficient-n: {n}/{n_min})"
     if slope is None:
-        return "accruing(insufficient-n: no slope)"
+        return f"{_LABEL_ACCRUING}(insufficient-n: no slope)"
     if slope > SLOPE_POS_THRESH:
-        return "compounding"
+        return _LABEL_COMPOUNDING
     if slope < SLOPE_NEG_THRESH:
-        return "declining"
-    return "stagnating"
+        return _LABEL_DEGRADING
+    return _LABEL_STAGNATING
 
 
 def _compute_slope_from_deltas(
@@ -177,9 +194,13 @@ def build_trajectory_block(
         repo = _repo_root(root)
         rows = _load_trajectory_rows(repo, lobe=lobe)
 
-        # Also try lobe-specific fitness history if trajectory rows are sparse
+        # Fall back to organism-wide trajectory.jsonl if no per-lobe rows exist.
+        # Mark this clearly so the caller knows what was consulted.
+        used_organism_wide_fallback = False
         if not rows:
             rows = _load_trajectory_rows(repo, lobe=None)
+            if rows:
+                used_organism_wide_fallback = True
 
         n_rows = len(rows)
         slope, n_used = _compute_slope_from_deltas(rows, k=k)
@@ -206,6 +227,12 @@ def build_trajectory_block(
             f"- **History rows loaded:** {n_rows}",
         ]
 
+        if used_organism_wide_fallback:
+            lines.append(
+                "\n> _(organism-wide fallback — no per-lobe rows for this lobe; "
+                "figures reflect whole-organism trajectory, not lobe-specific history)_"
+            )
+
         if n_used < N_MIN_TRAJECTORY:
             lines.append(
                 f"\n> Accruing — {n_used} point(s) with valid fitness_delta; "
@@ -231,11 +258,15 @@ def build_strategic_gap(
 ) -> str:
     """Build a compact markdown strategic-gap block across all lobes.
 
-    Classifies each lobe compounding-vs-stagnating-vs-declining, then names
+    Classifies each lobe compounding-vs-stagnating-vs-degrading, then names
     the single biggest strategic gap (worst sustained slope lobe).
 
     Closes R-V2-1: "compounding vs stagnating lobes, trajectory slope, biggest
     strategic gap."
+
+    Gap picker: delegates to ``organism_state._select_biggest_gap`` to avoid
+    vocabulary drift.  Labels in the table use the canonical constants from
+    ``organism_state`` (``degrading``, not ``declining``).
 
     Parameters
     ----------
@@ -269,14 +300,15 @@ def build_strategic_gap(
                 "(honest null — no lobes in organism_state; accruing)"
             )
 
-        # Build per-lobe summary rows
+        # Build per-lobe summary rows using canonical label constants.
+        # _select_biggest_gap expects the same shape as organism_state lobe records.
         rows: list[dict[str, Any]] = []
         for lobe_id, lrec in lobes.items():
             if not isinstance(lrec, dict):
                 continue
             traj = lrec.get("trajectory") or {}
             slope = traj.get("slope")
-            label = traj.get("label", "accruing")
+            label = traj.get("label", _LABEL_ACCRUING)
             maturity = traj.get("maturity", "accruing")
             n_obs = traj.get("n_obs", 0)
             rows.append({
@@ -285,6 +317,8 @@ def build_strategic_gap(
                 "label": label,
                 "maturity": maturity,
                 "n_obs": n_obs,
+                # _select_biggest_gap reads trajectory.maturity from the lobe record
+                "trajectory": {"slope": slope, "label": label, "maturity": maturity},
             })
 
         if not rows:
@@ -293,27 +327,24 @@ def build_strategic_gap(
                 "(honest null — no composable lobe records; accruing)"
             )
 
-        # Sort: degrading < stagnating < compounding < accruing, then by slope asc
+        # Delegate gap selection to the canonical implementation in organism_state
+        # to keep vocabulary and ranking logic in one place.
+        biggest_gap: str = _select_biggest_gap(rows)
+
+        # Sort for display: degrading < stagnating < compounding < accruing, ties by slope asc
+        _label_order = {
+            _LABEL_DEGRADING: 0,
+            _LABEL_STAGNATING: 1,
+            _LABEL_COMPOUNDING: 2,
+            _LABEL_ACCRUING: 3,
+        }
+
         def _sort_key(r: dict) -> tuple:
-            label = r.get("label", "accruing")
+            label = r.get("label", _LABEL_ACCRUING)
             slope = r.get("slope") or 0.0
-            order = {
-                "degrading": 0,
-                "stagnating": 1,
-                "compounding": 2,
-                "accruing": 3,
-            }
-            return (order.get(label, 3), slope)
+            return (_label_order.get(label, 3), slope)
 
         rows_sorted = sorted(rows, key=_sort_key)
-
-        # Biggest gap = the worst (first after sort, only if maturity=ready)
-        mature_rows = [r for r in rows_sorted if r.get("maturity") == "ready"]
-        biggest_gap: str
-        if mature_rows:
-            biggest_gap = mature_rows[0]["lobe_id"]
-        else:
-            biggest_gap = "insufficient data (all lobes accruing)"
 
         # Label counts
         label_counts: dict[str, int] = {}

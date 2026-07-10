@@ -15,6 +15,26 @@ Fail-safe semantics (critical):
     - A loaded registry with a missing id → id appears in ``ungrounded``,
       ``ok=False`` (still informational).
 
+Grounding contract (exact scope — do not overstate):
+    LOBES:   Grounded from STRUCTURED fields only — ``lobe``, ``lobe_id``,
+             ``lobes`` keys in the payload dict, and ``claims[].lobe`` /
+             ``claims[].refs.lobes`` if present.  Free-text lobe mentions are
+             NOT grounded (too ambiguous; display-tier only).  A structured lobe
+             ref absent from config/synapse.yml artifacts → ``ungrounded``.
+    RULINGS: Grounded from BOTH structured fields (``ruling_id``, ``ruling``,
+             ``rulings`` keys) AND free text.  Free-text detection uses a
+             prefix-anchored candidate pattern derived at load time from the
+             actual ruling ids in config/ruling_graph.yml — only tokens whose
+             prefix matches a known ruling prefix are considered candidates, then
+             each candidate is membership-checked against the full id set.  A
+             known-prefix token that is NOT a real ruling id → ``ungrounded``.
+             Tokens without a known ruling prefix (tickers, macro vars, etc.) are
+             NOT treated as ruling references.
+    SENSORS: Grounded from structured fields only (``sensor``, ``sensor_id``,
+             ``sensors`` keys).  Requires fitness cards in
+             data/metabolism/fitness/; absent → sensors_ok=False (unverified for
+             sensors, not counted in top-level unverified flag).
+
 All functions: NEVER-RAISE.  No LLM.  No network.  No ``~/``.
 """
 from __future__ import annotations
@@ -24,6 +44,8 @@ import logging
 import re
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +60,7 @@ def _repo_root(root: Path | None = None) -> Path:
 # ── Registry loaders ───────────────────────────────────────────────────────────
 
 def _load_known_lobes(root: Path) -> tuple[set[str], bool]:
-    """Load known lobe/artifact ids from config/synapse.yml.
+    """Load known lobe/artifact ids from config/synapse.yml via yaml.safe_load.
 
     Returns (set_of_ids, loaded_ok).  set_of_ids is empty and loaded_ok=False
     when the file cannot be parsed — the caller must set unverified=True.
@@ -50,34 +72,20 @@ def _load_known_lobes(root: Path) -> tuple[set[str], bool]:
             log.warning("grounding._load_known_lobes: synapse.yml not found at %s", p)
             return set(), False
 
-        text = p.read_text(encoding="utf-8")
-        ids: set[str] = set()
+        data = yaml.safe_load(p.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            log.warning("grounding._load_known_lobes: synapse.yml parsed as non-dict")
+            return set(), False
 
-        # Parse the artifacts section: top-level keys under "artifacts:" that are
-        # not sub-keys (i.e. lines like "  artifact-name:").
-        # synapse.yml uses 2-space-indented artifact names as the dict keys.
-        # Pattern: line starting with exactly two spaces then a word-char-or-hyphen key
-        # followed by a colon (not inside a string value).
-        in_artifacts = False
-        for line in text.splitlines():
-            stripped = line.rstrip()
-            if stripped == "artifacts:":
-                in_artifacts = True
-                continue
-            if in_artifacts:
-                # Stop at a non-indented line that starts a new top-level section
-                if stripped and not stripped.startswith(" ") and not stripped.startswith("#"):
-                    break
-                # Artifact key: exactly 2-space indent, then identifier, then ":"
-                m = re.match(r"^  ([a-zA-Z][a-zA-Z0-9_.-]*)\s*:", stripped)
-                if m:
-                    ids.add(m.group(1))
+        artifacts = data.get("artifacts") or {}
+        if not isinstance(artifacts, dict):
+            log.warning("grounding._load_known_lobes: artifacts block not a dict in %s", p)
+            return set(), False
+
+        ids: set[str] = set(str(k) for k in artifacts.keys())
 
         if not ids:
-            log.warning(
-                "grounding._load_known_lobes: no artifact ids parsed from %s "
-                "(may be a YAML parse limitation)", p
-            )
+            log.warning("grounding._load_known_lobes: no artifact ids found in %s", p)
             return set(), False
 
         return ids, True
@@ -87,8 +95,53 @@ def _load_known_lobes(root: Path) -> tuple[set[str], bool]:
         return set(), False
 
 
+def _build_ruling_candidate_re(known_rulings: set[str]) -> re.Pattern[str] | None:
+    """Build a prefix-anchored regex to detect ruling-id candidates in free text.
+
+    Strategy: extract the alpha prefix of each ruling id (everything before the
+    first digit, e.g. ``RUL-CL-1`` → ``RUL-CL-``, ``DT-R11a`` → ``DT-R``).
+    Purely alpha ids (no digits, e.g. ``CONST-ARM``) are matched verbatim.
+    The returned pattern finds CANDIDATE tokens; the caller must then
+    membership-check each candidate against the full ``known_rulings`` set.
+    Returns None only if ``known_rulings`` is empty.  NEVER raises.
+    """
+    if not known_rulings:
+        return None
+
+    try:
+        prefixes: set[str] = set()
+        pure_alpha: set[str] = set()
+        for rid in known_rulings:
+            m = re.search(r"\d", rid)
+            if m:
+                prefixes.add(rid[: m.start()])
+            else:
+                pure_alpha.add(rid)
+
+        parts: list[str] = []
+        # Prefix pattern: prefix + at least one alphanumeric/hyphen/dot suffix
+        if prefixes:
+            sorted_pf = sorted(prefixes, key=len, reverse=True)
+            pf_alt = "|".join(re.escape(p) for p in sorted_pf)
+            parts.append(r"(?:" + pf_alt + r")[A-Za-z0-9][A-Za-z0-9_.-]*")
+        # Pure-alpha ids: verbatim match only
+        if pure_alpha:
+            sorted_pa = sorted(pure_alpha, key=len, reverse=True)
+            pa_alt = "|".join(re.escape(x) for x in sorted_pa)
+            parts.append(r"(?:" + pa_alt + r")")
+
+        if not parts:
+            return None
+
+        pattern = r"\b(?:" + "|".join(parts) + r")\b"
+        return re.compile(pattern)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("grounding._build_ruling_candidate_re: %s", exc)
+        return None
+
+
 def _load_known_rulings(root: Path) -> tuple[set[str], bool]:
-    """Load known ruling_ids from config/ruling_graph.yml.
+    """Load known ruling_ids from config/ruling_graph.yml via yaml.safe_load.
 
     Returns (set_of_ruling_ids, loaded_ok).  NEVER raises.
     """
@@ -98,21 +151,25 @@ def _load_known_rulings(root: Path) -> tuple[set[str], bool]:
             log.warning("grounding._load_known_rulings: ruling_graph.yml not found at %s", p)
             return set(), False
 
-        text = p.read_text(encoding="utf-8")
-        ids: set[str] = set()
+        data = yaml.safe_load(p.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            log.warning("grounding._load_known_rulings: ruling_graph.yml parsed as non-dict")
+            return set(), False
 
-        # Extract ruling_id values from lines like:
-        #   - ruling_id: RUL-CL-1
-        # or:
-        #   - ruling_id: "CYC-U4"
-        for m in re.finditer(
-            r'ruling_id\s*:\s*["\']?([A-Za-z0-9][-A-Za-z0-9_.]+)["\']?',
-            text,
-        ):
-            ids.add(m.group(1))
+        rulings = data.get("rulings") or []
+        if not isinstance(rulings, list):
+            log.warning("grounding._load_known_rulings: 'rulings' is not a list in %s", p)
+            return set(), False
+
+        ids: set[str] = set()
+        for item in rulings:
+            if isinstance(item, dict):
+                rid = item.get("ruling_id")
+                if isinstance(rid, str) and rid:
+                    ids.add(rid)
 
         if not ids:
-            log.warning("grounding._load_known_rulings: no ruling_ids parsed from %s", p)
+            log.warning("grounding._load_known_rulings: no ruling_ids found in %s", p)
             return set(), False
 
         return ids, True
@@ -162,24 +219,38 @@ def _load_known_sensors(root: Path) -> tuple[set[str], bool]:
 
 # ── Id extraction from payload ─────────────────────────────────────────────────
 
-_RULING_RE = re.compile(r'\b(RUL-CL-\d+|R-V[23]-\d+|NW-RUL-\d+|ESX-RUL-\d+|[A-Z]{2,6}-[A-Z]?\d+)\b')
 _LOBE_FIELD_KEYS = {"lobe", "lobe_id", "lobes"}
 _RULING_FIELD_KEYS = {"ruling_id", "ruling", "rulings"}
 _SENSOR_FIELD_KEYS = {"sensor", "sensor_id", "sensors"}
 
 
-def _extract_ids(payload: dict | str) -> dict[str, set[str]]:
+def _extract_ids(
+    payload: dict | str,
+    *,
+    known_rulings: set[str],
+    ruling_candidate_re: re.Pattern[str] | None,
+) -> dict[str, set[str]]:
     """Extract referenced ids from a payload.
 
-    Handles both structured dicts (field-name lookup) and free text
-    (regex sweep).
+    Lobe refs: structured fields ONLY (``lobe``, ``lobe_id``, ``lobes`` keys,
+    and ``claims[].lobe`` / ``claims[].refs.lobes`` if present).  Free-text
+    lobe mentions are NOT extracted — too ambiguous to parse reliably from prose.
+
+    Ruling refs: structured fields (``ruling_id``, ``ruling``, ``rulings``) AND
+    free text.  Free-text detection uses ``ruling_candidate_re``, which is built
+    from the actual ruling prefixes in the registry.  Every candidate token is
+    membership-checked against ``known_rulings``; only tokens that match a known
+    prefix are returned (false positives like tickers are silently dropped
+    because they don't share a prefix with any real ruling id).
+
+    Sensor refs: structured fields only (``sensor``, ``sensor_id``, ``sensors``).
 
     Returns
     -------
     dict with keys:
-        ``lobes``   — set of lobe/artifact id strings referenced
-        ``rulings`` — set of ruling_id strings referenced
-        ``sensors`` — set of sensor key strings referenced
+        ``lobes``   — set of lobe/artifact id strings referenced (structured only)
+        ``rulings`` — set of ruling_id candidate strings found (structured + free-text)
+        ``sensors`` — set of sensor key strings referenced (structured only)
     NEVER raises.
     """
     lobes: set[str] = set()
@@ -227,9 +298,20 @@ def _extract_ids(payload: dict | str) -> dict[str, set[str]]:
         else:
             free_text = str(payload)
 
-        # Regex sweep of free text for ruling-id-shaped tokens
-        for m in _RULING_RE.finditer(free_text):
-            rulings.add(m.group(1))
+        # Free-text sweep for ruling-id candidates using the prefix-anchored
+        # regex derived from the actual registry.  Each matched token is then
+        # membership-checked: a prefix-matching but unknown token is passed
+        # through (the caller will flag it as ungrounded).  Tokens without a
+        # known ruling prefix never match ruling_candidate_re, so tickers /
+        # macro variables never enter the ruling candidate set.
+        if ruling_candidate_re is not None:
+            for m in ruling_candidate_re.finditer(free_text):
+                token = m.group(0)
+                # Include if it's a real ruling (will pass grounding check) OR
+                # if it has a known prefix (will fail grounding check = ungrounded).
+                # known_rulings=empty means registry not loaded; skip.
+                if known_rulings:
+                    rulings.add(token)
 
     except Exception as exc:  # noqa: BLE001
         log.warning("grounding._extract_ids: %s", exc)
@@ -282,8 +364,16 @@ def validate_grounding(
         # spec says "ground only lobes+rulings and document that sensors are unchecked".
         # sensor unverified is tracked separately in registry_status.
 
+        # Build prefix-anchored ruling candidate regex from actual registry data.
+        # This is done AFTER loading so the regex reflects the real ruling id set.
+        ruling_candidate_re = _build_ruling_candidate_re(known_rulings) if rulings_ok else None
+
         # Extract referenced ids
-        refs = _extract_ids(payload)
+        refs = _extract_ids(
+            payload,
+            known_rulings=known_rulings,
+            ruling_candidate_re=ruling_candidate_re,
+        )
 
         ungrounded: list[dict[str, str]] = []
         checked = 0

@@ -22,10 +22,20 @@ All `claims[].source` values are validated by `grounding.validate_grounding`
   "cheapest_falsifier": "string — cheapest observation that could kill the current hypothesis",
   "falsifier_result": "string — what the falsifier actually returned",
   "positive_control": "string — what was run to confirm the instrument would have caught a failure",
+  "lobe": "string — (optional) structured lobe reference, checked against config/synapse.yml",
+  "refs": {
+    "lobes": ["string — structured lobe ids, each checked against config/synapse.yml"],
+    "rulings": ["string — ruling ids, each checked against config/ruling_graph.yml"]
+  },
   "claims": [
     {
       "claim": "string — a behavioral assertion made in this pass",
-      "source": "string — the specific observation grounding it (file:line, command, data path)"
+      "source": "string — the specific observation grounding it (file:line, command, data path)",
+      "lobe": "string — (optional) the lobe this claim pertains to, checked against registry",
+      "refs": {
+        "lobes": ["string — lobe ids referenced by this claim"],
+        "rulings": ["string — ruling ids referenced by this claim"]
+      }
     }
   ]
 }
@@ -56,14 +66,28 @@ All `claims[].source` values are validated by `grounding.validate_grounding`
   "cheapest_falsifier": "stat data/metabolism/organism_state.json",
   "falsifier_result": "File exists, mtime=2026-07-09T23:18:42Z, size=4.2KB — hypothesis confirmed.",
   "positive_control": "Renamed file to .bak, re-ran build_organism_state() — returned empty lobes with gap logged. Renamed back.",
+  "lobe": "til",
+  "refs": {
+    "lobes": ["til"],
+    "rulings": ["RUL-CL-1"]
+  },
   "claims": [
     {
       "claim": "The TIL lobe trajectory is accruing — fewer than 3 fitness_delta observations.",
-      "source": "data/metabolism/trajectory.jsonl — last 10 rows, lobe=til, all have fitness_delta=null (gate_reason: no delta)"
+      "source": "data/metabolism/trajectory.jsonl — last 10 rows, lobe=til, all have fitness_delta=null (gate_reason: no delta)",
+      "lobe": "til",
+      "refs": {
+        "lobes": ["til"],
+        "rulings": []
+      }
     },
     {
-      "claim": "grounding check returned ok=True, ungrounded=[].",
-      "source": "engine/metabolism/grounding.py:validate_grounding({'lobe': 'til', 'ruling_id': 'RUL-CL-1'}, root=repo)"
+      "claim": "grounding check returned ok=True, ungrounded=[] for RUL-CL-1.",
+      "source": "engine/metabolism/grounding.py:validate_grounding({'lobe_id': 'til', 'ruling_id': 'RUL-CL-1'}, root=repo)",
+      "refs": {
+        "lobes": ["til"],
+        "rulings": ["RUL-CL-1"]
+      }
     }
   ]
 }
@@ -73,12 +97,33 @@ All `claims[].source` values are validated by `grounding.validate_grounding`
 
 ## Validation
 
-- `grounding.validate_grounding(receipt, root=...)` checks every `claims[].source`
-  string for references to lobes (`config/synapse.yml`), ruling_ids
-  (`config/ruling_graph.yml`), and sensors (fitness cards).  Unrecognised ids
-  appear in the `ungrounded` list.
-- A receipt with `unverified=True` in the grounding result must be surfaced as
-  **"grounding unverified"**, not "grounding clean", in any downstream digest.
+`grounding.validate_grounding(receipt, root=...)` checks id references in the
+receipt.  The exact scope of what IS and IS NOT grounded is stated here:
+
+**Lobes** — grounded from **structured fields only**: `lobe`, `lobe_id`, `lobes`
+keys at the top level and inside `claims[]` and `refs`.  A lobe id found in a
+structured field is checked against `config/synapse.yml` artifacts.
+Free-text mentions of lobe names (e.g. "the til lobe is compounding") are **not**
+extracted or checked — prose is too ambiguous and display-only.
+
+**Ruling ids** — grounded from **both** structured fields (`ruling_id`, `ruling`,
+`rulings`) and **free text**.  Free-text detection uses a prefix-anchored pattern
+derived at load time from the actual ruling ids in `config/ruling_graph.yml`;
+only tokens whose prefix matches a known ruling prefix are candidates, and each
+is then membership-checked against the full id set.  A known-prefix token that
+is NOT a real id (e.g. a hallucinated `RUL-CL-9999`) is flagged as `ungrounded`.
+Tokens with no known ruling prefix (tickers, macro variables, etc.) are silently
+ignored — they never enter the ruling candidate set.
+
+**Sensors** — grounded from structured fields only (`sensor`, `sensor_id`,
+`sensors`).  Requires fitness cards in `data/metabolism/fitness/`; if absent,
+`sensors_loaded=False` in `registry_status` (not counted in top-level
+`unverified` flag — sensor grounding is best-effort only).
+
+A receipt with `unverified=True` in the grounding result must be surfaced as
+**"grounding unverified"**, not "grounding clean", in any downstream digest.
+Unrecognised ids appear in the `ungrounded` list; `ok=False` signals at least
+one ungrounded id from a successfully loaded registry.
 
 ---
 

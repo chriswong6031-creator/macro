@@ -1,11 +1,18 @@
 """tests/test_metabolism_v3_context.py — Hermetic tests for V3 W2 context substrate.
 
 Coverage:
-  A. strategic.build_trajectory_block — compounding / stagnating / declining / accruing
-  B. strategic.build_strategic_gap   — worst-slope lobe named as biggest gap
+  A. strategic.build_trajectory_block — compounding / stagnating / degrading / accruing
+                                        (vocabulary unified with organism_state._LABEL_DEGRADING)
+  B. strategic.build_strategic_gap   — worst-slope lobe named as biggest gap;
+                                       degrading beats stagnating; delegated to _select_biggest_gap
   C. grounding.validate_grounding    — known refs clean, bogus refs flagged,
                                        missing registry → unverified (no raise)
   D. NEVER-RAISE contract            — missing / corrupt inputs return safe fallback
+  E. Grounding contract (B1/B2/N3)   — YAML loaders authoritative; prefix-anchored ruling
+                                       detection; free-text lobe mentions NOT extracted;
+                                       known-prefix unknown ruling → ungrounded; tickers
+                                       (XLK-2/GDP-1/CPI-3/RUN-1) → NOT flagged as rulings
+  F. Organism-wide fallback marker   — honesty label when no per-lobe rows found
 
 All tests use tmp_path fixtures.  No real data dependencies.
 """
@@ -130,12 +137,14 @@ class TestBuildTrajectoryBlock:
         result = build_trajectory_block("til", root=tmp_path)
         assert "stagnating" in result, f"Expected 'stagnating' in:\n{result}"
 
-    def test_declining(self, tmp_path: Path) -> None:
-        """Falling deltas → declining."""
+    def test_degrading(self, tmp_path: Path) -> None:
+        """Falling deltas → degrading (canonical label from organism_state._LABEL_DEGRADING)."""
         # slope = mean(last-third) - mean(first-third) < -0.02
         self._write_traj(tmp_path, [0.10, 0.07, 0.03, -0.02, -0.06, -0.10])
         result = build_trajectory_block("til", root=tmp_path)
-        assert "declining" in result, f"Expected 'declining' in:\n{result}"
+        assert "degrading" in result, f"Expected 'degrading' in:\n{result}"
+        # The old alias 'declining' must NOT appear — unified vocabulary
+        assert "declining" not in result
 
     def test_accruing_single_point(self, tmp_path: Path) -> None:
         """One data point → honest accruing null, no invented trend."""
@@ -445,3 +454,278 @@ class TestNeverRaise:
         ids, ok = _load_known_sensors(tmp_path)
         assert isinstance(ids, set)
         assert ok is False
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# E. Grounding contract — B1/B2/N3 fixes
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestGroundingContract:
+    """Precise grounding contract: YAML loaders, prefix-anchored ruling detection,
+    structured-only lobe extraction, false-positive suppression."""
+
+    # ── N3: YAML loaders are authoritative ────────────────────────────────────
+
+    def test_yaml_loader_lobes_counts(self, tmp_path: Path) -> None:
+        """_load_known_lobes uses yaml.safe_load — returns all artifact keys."""
+        # Write a valid synapse with three artifacts
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        yaml_text = (
+            "meta:\n  schema_version: 1\n"
+            "artifacts:\n"
+            "  regime-latest:\n    tier: display\n    horizon_role: context\n"
+            "  breadth-breadth:\n    tier: display\n    horizon_role: context\n"
+            "  til-fitness:\n    tier: shadow\n    horizon_role: context\n"
+        )
+        (tmp_path / "config" / "synapse.yml").write_text(yaml_text, encoding="utf-8")
+        ids, ok = _load_known_lobes(tmp_path)
+        assert ok is True
+        assert ids == {"regime-latest", "breadth-breadth", "til-fitness"}
+
+    def test_yaml_loader_rulings_counts(self, tmp_path: Path) -> None:
+        """_load_known_rulings uses yaml.safe_load — returns all ruling_id values."""
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        yaml_text = (
+            "rulings:\n"
+            "  - ruling_id: RUL-CL-1\n    short_name: foo\n"
+            "  - ruling_id: CONST-ARM\n    short_name: bar\n"
+            "  - ruling_id: DT-R11a\n    short_name: baz\n"
+            "  - ruling_id: ESX-FV-B\n    short_name: qux\n"
+        )
+        (tmp_path / "config" / "ruling_graph.yml").write_text(yaml_text, encoding="utf-8")
+        ids, ok = _load_known_rulings(tmp_path)
+        assert ok is True
+        assert ids == {"RUL-CL-1", "CONST-ARM", "DT-R11a", "ESX-FV-B"}
+
+    # ── B2: prefix-anchored ruling detection ──────────────────────────────────
+
+    def test_known_prefix_real_id_ok(self, tmp_path: Path) -> None:
+        """Free-text token matching a known ruling id → grounded (ok=True)."""
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        # Write rulings with complex ids that old regex missed
+        yaml_text = (
+            "rulings:\n"
+            "  - ruling_id: CONST-ARM\n    short_name: c\n"
+            "  - ruling_id: DT-R11a\n    short_name: d\n"
+            "  - ruling_id: ESX-FV-B\n    short_name: e\n"
+            "  - ruling_id: NEXT3-U1\n    short_name: n\n"
+        )
+        (tmp_path / "config" / "ruling_graph.yml").write_text(yaml_text, encoding="utf-8")
+        # Write minimal synapse so lobes_ok=True (no lobe refs in payload)
+        (tmp_path / "config" / "synapse.yml").write_text(
+            "artifacts:\n  dummy:\n    tier: display\n    horizon_role: context\n",
+            encoding="utf-8",
+        )
+        for real_id in ["CONST-ARM", "DT-R11a", "ESX-FV-B", "NEXT3-U1"]:
+            result = validate_grounding(f"See {real_id} for details.", root=tmp_path)
+            assert result["ok"] is True, f"Expected ok=True for known id {real_id}: {result}"
+            assert result["ungrounded"] == [], f"Expected empty ungrounded for {real_id}: {result}"
+
+    def test_known_prefix_unknown_id_flagged(self, tmp_path: Path) -> None:
+        """Token with a known ruling prefix but no matching id → ungrounded, ok=False."""
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        # Register RUL-CL-1 only; RUL-CL-9999 is an invented hallucination
+        yaml_text = (
+            "rulings:\n"
+            "  - ruling_id: RUL-CL-1\n    short_name: real\n"
+        )
+        (tmp_path / "config" / "ruling_graph.yml").write_text(yaml_text, encoding="utf-8")
+        (tmp_path / "config" / "synapse.yml").write_text(
+            "artifacts:\n  dummy:\n    tier: display\n    horizon_role: context\n",
+            encoding="utf-8",
+        )
+        result = validate_grounding("Per RUL-CL-9999 this is hallucinated.", root=tmp_path)
+        assert result["ok"] is False, f"Expected ok=False for unknown ruling: {result}"
+        ids = [u["id"] for u in result["ungrounded"]]
+        assert "RUL-CL-9999" in ids, f"Expected RUL-CL-9999 in ungrounded: {result}"
+
+    def test_ticker_macro_tokens_not_flagged(self, tmp_path: Path) -> None:
+        """Tickers and macro var names (XLK-2, GDP-1, CPI-3, RUN-1) are NOT flagged."""
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        # Only register a RUL-CL-1 ruling; none of XLK/GDP/CPI/RUN prefixes are in registry
+        yaml_text = (
+            "rulings:\n"
+            "  - ruling_id: RUL-CL-1\n    short_name: real\n"
+        )
+        (tmp_path / "config" / "ruling_graph.yml").write_text(yaml_text, encoding="utf-8")
+        (tmp_path / "config" / "synapse.yml").write_text(
+            "artifacts:\n  dummy:\n    tier: display\n    horizon_role: context\n",
+            encoding="utf-8",
+        )
+        # These should NOT be treated as ruling references
+        result = validate_grounding(
+            "XLK-2 broke out; GDP-1 is watching CPI-3 and RUN-1.",
+            root=tmp_path,
+        )
+        assert result["ok"] is True, f"Expected ok=True — no known ruling prefix: {result}"
+        assert result["ungrounded"] == [], f"Expected empty ungrounded for tickers: {result}"
+
+    # ── B1: structured-only lobe grounding ────────────────────────────────────
+
+    def test_lobe_from_structured_field_grounded(self, tmp_path: Path) -> None:
+        """lobe_id in a structured dict field → checked and grounded if real."""
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "config" / "synapse.yml").write_text(
+            "artifacts:\n  til:\n    tier: display\n    horizon_role: context\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "config" / "ruling_graph.yml").write_text(
+            "rulings:\n  - ruling_id: RUL-CL-1\n    short_name: r\n",
+            encoding="utf-8",
+        )
+        payload = {"lobe_id": "til", "some_text": "the til lobe is compounding"}
+        result = validate_grounding(payload, root=tmp_path)
+        assert result["ok"] is True
+        assert result["ungrounded"] == []
+        # The lobe was grounded via the structured field
+        assert result["checked"] >= 1
+
+    def test_free_text_lobe_mention_not_extracted(self, tmp_path: Path) -> None:
+        """A lobe name mentioned only in free text is NOT extracted or checked.
+
+        Rationale: free-text lobe detection is too ambiguous and not part of
+        the grounding contract.  Only structured fields (lobe, lobe_id, lobes)
+        contribute to lobe grounding.
+        """
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "config" / "synapse.yml").write_text(
+            "artifacts:\n  regime-latest:\n    tier: display\n    horizon_role: context\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "config" / "ruling_graph.yml").write_text(
+            "rulings:\n  - ruling_id: RUL-CL-1\n    short_name: r\n",
+            encoding="utf-8",
+        )
+        # "til" mentioned in free text but NOT in a structured lobe field
+        # and "til" is NOT in the registry.  Should NOT be flagged as ungrounded.
+        result = validate_grounding(
+            "The til lobe is compounding and breadth-breadth is stagnating.",
+            root=tmp_path,
+        )
+        assert result["ok"] is True, (
+            f"Free-text lobe mentions must NOT be extracted or flagged: {result}"
+        )
+        ids = [u["id"] for u in result["ungrounded"]]
+        assert "til" not in ids, f"'til' should not be in ungrounded (free-text mention): {result}"
+
+    def test_bogus_structured_lobe_flagged(self, tmp_path: Path) -> None:
+        """lobe_id in structured field but NOT in registry → ungrounded."""
+        (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "config" / "synapse.yml").write_text(
+            "artifacts:\n  regime-latest:\n    tier: display\n    horizon_role: context\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "config" / "ruling_graph.yml").write_text(
+            "rulings:\n  - ruling_id: RUL-CL-1\n    short_name: r\n",
+            encoding="utf-8",
+        )
+        result = validate_grounding({"lobe_id": "hallucinated-lobe"}, root=tmp_path)
+        assert result["ok"] is False
+        ids = [u["id"] for u in result["ungrounded"]]
+        assert "hallucinated-lobe" in ids
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F. Organism-wide fallback honesty marker
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestOrganismWideFallback:
+    """When no per-lobe rows exist, the organism-wide fallback is labelled."""
+
+    def test_fallback_marker_appears_when_no_per_lobe_rows(self, tmp_path: Path) -> None:
+        """If trajectory.jsonl has rows for a DIFFERENT lobe only (so the per-lobe
+        query returns zero rows), fall back to organism-wide rows and emit a marker.
+
+        Note: rows WITHOUT a lobe field pass through the per-lobe filter (they are
+        treated as organism-wide and not excluded).  To force the fallback, we must
+        write rows that have an EXPLICIT lobe field set to a DIFFERENT lobe.
+        """
+        traj_path = tmp_path / "data" / "metabolism" / "trajectory.jsonl"
+        traj_path.parent.mkdir(parents=True, exist_ok=True)
+        rows = [
+            {
+                "schema": "metabolism.trajectory.v1",
+                "ts": f"2026-07-{i + 1:02d}T00:00:00+00:00",
+                "cycle_id": f"c{i}",
+                "lobe": "other-lobe",  # explicit different lobe → filtered out for "til"
+                "overall_signal": "GREEN",
+                "regime_tag": "expansion",
+                "fitness_delta": 0.05,
+                "gate_passed": False,
+                "gate_reason": "test",
+            }
+            for i in range(5)
+        ]
+        with traj_path.open("w", encoding="utf-8") as fh:
+            for row in rows:
+                fh.write(json.dumps(row) + "\n")
+
+        result = build_trajectory_block("til", root=tmp_path)
+        # Per-lobe query for "til" returns 0 rows; fallback to all rows triggers
+        assert "organism-wide fallback" in result, (
+            f"Expected organism-wide fallback marker in result:\n{result}"
+        )
+
+    def test_no_fallback_marker_when_per_lobe_rows_exist(self, tmp_path: Path) -> None:
+        """When per-lobe rows exist, the fallback marker is absent."""
+        traj_path = tmp_path / "data" / "metabolism" / "trajectory.jsonl"
+        traj_path.parent.mkdir(parents=True, exist_ok=True)
+        rows = [
+            {
+                "schema": "metabolism.trajectory.v1",
+                "ts": f"2026-07-{i + 1:02d}T00:00:00+00:00",
+                "cycle_id": f"c{i}",
+                "lobe": "til",  # has lobe field → filtered
+                "overall_signal": "GREEN",
+                "regime_tag": "expansion",
+                "fitness_delta": 0.05,
+                "gate_passed": False,
+                "gate_reason": "test",
+            }
+            for i in range(5)
+        ]
+        with traj_path.open("w", encoding="utf-8") as fh:
+            for row in rows:
+                fh.write(json.dumps(row) + "\n")
+
+        result = build_trajectory_block("til", root=tmp_path)
+        assert "organism-wide fallback" not in result, (
+            f"Fallback marker should be absent when per-lobe rows exist:\n{result}"
+        )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# G. N1+N2: degrading beats stagnating in gap ranking (vocabulary unification)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestDegradingVocabulary:
+    """The label 'degrading' (not 'declining') is emitted by _classify_slope
+    and correctly ranked as the worst class by _select_biggest_gap."""
+
+    def test_degrading_label_in_trajectory_block(self, tmp_path: Path) -> None:
+        """Clearly negative slope → 'degrading' label (canonical), not 'declining'."""
+        traj_path = tmp_path / "data" / "metabolism" / "trajectory.jsonl"
+        traj_path.parent.mkdir(parents=True, exist_ok=True)
+        _write_jsonl(traj_path, _make_trajectory_rows([0.10, 0.07, 0.03, -0.02, -0.06, -0.10]))
+        result = build_trajectory_block("til", root=tmp_path)
+        assert "degrading" in result, f"Expected 'degrading' in:\n{result}"
+        assert "declining" not in result, f"'declining' must NOT appear:\n{result}"
+
+    def test_degrading_lobe_outranks_stagnating_in_gap(self, tmp_path: Path) -> None:
+        """A clearly-worst 'degrading' lobe is named as the gap over a 'stagnating' one.
+
+        N1 fix: _select_biggest_gap expects 'degrading' not 'declining'; N2 fix:
+        the sort order respects degrading < stagnating.
+        """
+        state = _make_organism_state({
+            "stag-lobe": {"slope": -0.01, "label": "stagnating", "maturity": "ready"},
+            "deg-lobe": {"slope": -0.15, "label": "degrading", "maturity": "ready"},
+            "comp-lobe": {"slope": 0.10, "label": "compounding", "maturity": "ready"},
+        })
+        result = build_strategic_gap(organism_state=state, root=tmp_path)
+        assert "deg-lobe" in result, f"Expected 'deg-lobe' as biggest gap:\n{result}"
+        # The gap line must name deg-lobe, not stag-lobe
+        for line in result.splitlines():
+            if "Biggest gap" in line:
+                assert "deg-lobe" in line, f"Gap line should name deg-lobe: {line}"
+                break
