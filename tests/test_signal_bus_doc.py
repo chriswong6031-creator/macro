@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 339, (
-        f"Expected 339 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 343, (
+        f"Expected 343 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (china-w8f #2108 added china-mtf-upturn, china-mtf-upturn-ledger = 341->343;"
+        " china-w8d #2105 added china-basket-turn-cn, china-basket-turn-ledger = 339->341"
+        " — both merged without the pin bump, caught up in #2116;"
         " (Metabolism Phase A added metabolism-journal, metabolism-til-fitness,"
         " metabolism-verify, metabolism-budget-ledger, metabolism-digest = 334->339;"
         " Metabolism Phase 0 F3 added capability-manifest, capability-audit = 332->334;"

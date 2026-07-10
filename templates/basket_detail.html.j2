@@ -578,11 +578,16 @@ function render(){
   const TIER_W={T1:0.9,T2:1.0,T3:0.6,T4:0.4};
   const tierW=(c)=>{const s=c&&c.signal; return (s&&s.tier&&TIER_W[s.tier])||0;};
   const tierBadge=(c)=>{const s=c&&c.signal; if(!s||!s.tier) return '';
-    const tip={T1:'T1 — 3D MACD-RSI × 3D StochRSI confluence, buy-filter endorsed (master confirmation).',
-      T2:'T2 — 2D MACD-RSI crossed + 3D StochRSI crossed — PRIME entry setup, historically fills at a lower median premium above the 20d trough than T1 CONFIRMED (measured, not a forward promise).',
-      T3:'T3 — 3D StochRSI crossed, 2D MACD-RSI cross projected ~1-2 days (provisional, may repaint).',
-      T4:'T4 — 2D MACD-RSI projected + 2D StochRSI crossed, above the 200-day MA (earliest tier).'}[s.tier]||'';
-    return ` <span class="tier ${s.tier}" title="${tip}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};
+    // stage-name vocabulary v2 (W8-R4 #2099); wording mirrors _sig_badge.html.j2, popover via theme.js.
+    const tipEn={T1:'T1 CONFIRMED: master 3D confluence confirmed — 3D MACD-RSI × 3D StochRSI cross, buy-filter endorsed.',
+      T2:'T2 PRIME: 2D cross with 3D support — historically filled at a lower median premium above the 20d trough than CONFIRMED (measured, not a forward promise).',
+      T3:'T3 APPROACHING: 3D StochRSI already crossed and the 2D MACD-RSI cross is projected within ~1–2 days — an early prediction, not yet confirmed (provisional, may repaint).',
+      T4:'T4 FIRST SPARK: earliest read — 2D StochRSI crossed + 2D MACD projected, above the 200-day MA. Lowest confidence.'}[s.tier]||'';
+    const tipZh={T1:'T1 CONFIRMED（确认）：主层3日共振已确认——3日MACD-RSI×3日StochRSI交叉，买入过滤器已背书。',
+      T2:'T2 PRIME（最佳入场）：2日交叉叠加3日支撑——历史上于20日低点以上中位溢价低于CONFIRMED成交（实测数据，非前瞻承诺）。',
+      T3:'T3 APPROACHING（临近）：3日StochRSI已上穿，2日MACD-RSI预计在约1–2日内交叉——提前预判，尚未确认（暂定，可能重绘）。',
+      T4:'T4 FIRST SPARK（初现）：最早读数——2日StochRSI已上穿、2日MACD预投影且在200日均线上方。置信度最低。'}[s.tier]||'';
+    return ` <span class="tier ${s.tier}" data-tip-en="${tipEn}" data-tip-zh="${tipZh}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};
   const sortMembers=(items)=>{
     // default 'recommend' order: fresh-confluence names first (T1>T2>T3>T4), then the
     // conviction blend; other columns keep the plain numeric sort. Mirrors subsectors_china
