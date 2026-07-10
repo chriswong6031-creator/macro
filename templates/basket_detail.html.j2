@@ -579,7 +579,7 @@ function render(){
   const tierW=(c)=>{const s=c&&c.signal; return (s&&s.tier&&TIER_W[s.tier])||0;};
   const tierBadge=(c)=>{const s=c&&c.signal; if(!s||!s.tier) return '';
     const tip={T1:'T1 — 3D MACD-RSI × 3D StochRSI confluence, buy-filter endorsed (master confirmation).',
-      T2:'T2 — 2D MACD-RSI crossed + 3D StochRSI crossed (an early tier, fires before the 3D master).',
+      T2:'T2 — 2D MACD-RSI crossed + 3D StochRSI crossed — PRIME entry setup, historically fills at a lower median premium above the 20d trough than T1 CONFIRMED (measured, not a forward promise).',
       T3:'T3 — 3D StochRSI crossed, 2D MACD-RSI cross projected ~1-2 days (provisional, may repaint).',
       T4:'T4 — 2D MACD-RSI projected + 2D StochRSI crossed, above the 200-day MA (earliest tier).'}[s.tier]||'';
     return ` <span class="tier ${s.tier}" title="${tip}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};

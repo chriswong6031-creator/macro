@@ -448,7 +448,7 @@ The `T2 leads T1` framing from prior tooltip copy has been removed entirely (dis
 
 ### PRIME tooltip law (red-team blocker B3)
 
-The PRIME (T2) tooltip is **comparative and measurement-framed only**: "2D cross with 3D support — historically filled at a lower median premium above the 20d trough than CONFIRMED (measured, not a forward promise)." It does NOT claim T2 fills "nearest the low" (false — T4 fills nearer at 4.1% vs T2 7.7% above trough), does NOT claim excess edge (T2 US 21d CI straddles zero), and does NOT imply a forward return promise. ZH equivalent present.
+The PRIME (T2) tooltip is **comparative and measurement-framed only**: "2D cross with 3D support — historically filled at a lower median premium above the 20d trough than CONFIRMED (measured, not a forward promise)." It does NOT claim T2 fills "nearest the low" (false — T4 fills nearer than T2; the monotone fill-premium ladder is T1 ~10.9% > T2 ~7.5% > T3 > T4, per §8 line 241), does NOT claim excess edge (T2 US 21d CI straddles zero), and does NOT imply a forward return promise. ZH equivalent present.
 
 ### Repaint figures updated (T3 APPROACHING tooltip)
 
