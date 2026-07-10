@@ -194,14 +194,16 @@ class Edgar13FAdapter(Adapter):
     def _fetch_fund(self, slug: str, spec: dict, keep: int) -> int:
         cik = int(spec["cik"])
         name = spec.get("name", slug)
-        filings = self._list_13f(cik)
-        if not filings:
+        originals, amendments = self._list_13f(cik)
+        if not originals:
             log.info("13f %s (CIK %d): no 13F-HR filings", slug, cik)
             return 0
         d = self.dir / slug
         d.mkdir(parents=True, exist_ok=True)
         written = 0
-        for f in filings[:keep]:
+
+        # Originals stay at top-level: data/smart_money/<slug>/<period_end>.parquet
+        for f in originals[:keep]:
             period_end = f["period_end"]
             out = d / f"{period_end}.parquet"
             if out.exists():                       # immutable once filed; never refetch
@@ -211,28 +213,67 @@ class Edgar13FAdapter(Adapter):
                 snap.to_parquet(out)
                 written += 1
                 time.sleep(0.12)                   # SEC fair-access pacing
+
+        # Amendments go under amendments/ subdir (SM2-R7 PIT-honest snapshots).
+        # Only ingest amendments whose period_end is within the kept-quarters window.
+        # Engine default paths use d.glob("*.parquet") — top-level only — so
+        # amendments/ subdir CANNOT leak into engine scoring paths.
+        kept_periods = {f["period_end"] for f in originals[:keep]}
+        amend_dir = d / "amendments"
+        for f in amendments:
+            if f["period_end"] not in kept_periods:
+                continue                           # outside the retained window
+            period_end = f["period_end"]
+            filing_date = f.get("filing_date", "unknown")
+            amend_out = amend_dir / f"{period_end}__{filing_date}.parquet"
+            if amend_out.exists():                 # immutable; never refetch
+                continue
+            amend_dir.mkdir(parents=True, exist_ok=True)
+            snap = self._fetch_filing(cik, slug, name, f)
+            if snap is not None and not snap.empty:
+                snap.to_parquet(amend_out)
+                written += 1
+                time.sleep(0.12)
+
         return written
 
-    def _list_13f(self, cik: int) -> list[dict]:
-        """Most-recent-first list of this fund's 13F-HR filings:
-        [{accession, period_end, filing_date}]."""
+    def _list_13f(self, cik: int) -> tuple[list[dict], list[dict]]:
+        """Most-recent-first lists of this fund's 13F-HR and 13F-HR/A filings.
+
+        Returns (originals, amendments) where each entry is:
+            {accession, period_end, filing_date}
+
+        Originals (13F-HR) are the scoring anchors; amendments (13F-HR/A) are
+        ingested as separate PIT snapshots under an amendments/ subdir (SM2-R7).
+        13F-NT (notice of late filing) and other variants are excluded.
+        """
         data = _get_json(SUBMISSIONS.format(cik), edgar._cfg()["retries"])
         time.sleep(0.12)
         if not data:
-            return []
+            return [], []
         recent = (data.get("filings", {}) or {}).get("recent", {}) or {}
         forms = recent.get("form", [])
         accs = recent.get("accessionNumber", [])
         reps = recent.get("reportDate", [])
         fils = recent.get("filingDate", [])
-        out = []
+        originals: list[dict] = []
+        amendments: list[dict] = []
         for i, form in enumerate(forms):
-            if form != "13F-HR":                   # exclude 13F-NT (notice) & amendments
+            if form not in ("13F-HR", "13F-HR/A"):
                 continue
-            out.append({"accession": accs[i], "period_end": reps[i],
-                        "filing_date": fils[i] if i < len(fils) else ""})
-        # already newest-first in the submissions feed, but sort to be safe
-        return sorted(out, key=lambda r: r["period_end"], reverse=True)
+            entry = {
+                "accession": accs[i],
+                "period_end": reps[i],
+                "filing_date": fils[i] if i < len(fils) else "",
+            }
+            if form == "13F-HR":
+                originals.append(entry)
+            else:
+                amendments.append(entry)
+        # newest-first by period_end (filings feed is already newest-first, but sort to be safe)
+        originals = sorted(originals, key=lambda r: r["period_end"], reverse=True)
+        amendments = sorted(amendments, key=lambda r: r["period_end"], reverse=True)
+        return originals, amendments
 
     def _fetch_filing(self, cik: int, slug: str, name: str, f: dict) -> pd.DataFrame | None:
         acc_nodash = f["accession"].replace("-", "")
