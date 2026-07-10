@@ -6035,40 +6035,45 @@ function renderMtfTable(mtfUpturn){
   //   RING (trend)  = histogram positive but no recent cross — running trend, does not count toward K
   //   EMPTY (off)   = histogram negative
   function _trendTip(label, trendObj){
-    // Build tooltip with bars_since_cross if available
-    if(!trendObj) return label;
+    // Returns {en, zh} pair — callers emit data-tip-en/data-tip-zh (never title=)
+    if(!trendObj) return {en:label, zh:label};
     var bsc=trendObj.bars_since_cross;
     if(bsc!=null){
-      return L(label+': crossed '+bsc+' bar'+(bsc===1?'':'s')+' ago, histogram positive',
-               label+'：'+bsc+'根K线前金叉，柱状线为正');
+      return {en:label+': crossed '+bsc+' bar'+(bsc===1?'':'s')+' ago, histogram positive',
+              zh:label+'：'+bsc+'根K线前金叉，柱状线为正'};
     }
     if(trendObj.pos){
-      return L(label+': histogram positive (no recent cross)',label+'：柱状线为正（无近期金叉）');
+      return {en:label+': histogram positive (no recent cross)',zh:label+'：柱状线为正（无近期金叉）'};
     }
-    return label;
+    return {en:label, zh:label};
+  }
+  function _tipAttrs(tipObj){
+    // Render data-tip-en/zh attributes from a {en,zh} pair
+    return ' data-tip-en="'+esc(tipObj.en)+'" data-tip-zh="'+esc(tipObj.zh)+'"';
   }
   function legEl3(fired, trendObj, label){
     // fired: recent cross (counts toward K); trendObj: {pos, bars_since_cross}
     var pos=trendObj&&trendObj.pos;
     var cls=fired?'on':(pos?'trend':'off');
-    var tip=fired?_trendTip(label,trendObj):pos?_trendTip(label,trendObj):label;
-    return '<span class="dash-mtf-leg '+cls+'" title="'+esc(tip)+'">'+esc(label.slice(0,2))+'</span>';
+    var tip=(fired||pos)?_trendTip(label,trendObj):{en:label,zh:label};
+    return '<span class="dash-mtf-leg '+cls+'"'+_tipAttrs(tip)+'>'+esc(label.slice(0,2))+'</span>';
   }
   function wMacdEl3(val, trendObj){
     // val: 'cross'|'approaching'|'none'; trendObj for W timeframe
     var pos=trendObj&&trendObj.pos;
     if(val==='cross'){
       var tip=_trendTip('W',trendObj);
-      return '<span class="dash-mtf-leg on" title="'+esc(tip)+'">W</span>';
+      return '<span class="dash-mtf-leg on"'+_tipAttrs(tip)+'>W</span>';
     }
     if(val==='approaching'){
-      return '<span class="dash-mtf-leg partial" style="border-style:dashed" title="'+esc(L('W: approaching (histogram negative but rising, does not count toward K)','W：接近（柱状线为负但上升，不计入K值）'))+'">W</span>';
+      var approachTip={en:'W: approaching (histogram negative but rising, does not count toward K)',zh:'W：接近（柱状线为负但上升，不计入K值）'};
+      return '<span class="dash-mtf-leg partial" style="border-style:dashed"'+_tipAttrs(approachTip)+'>W</span>';
     }
     if(pos){
       var tip2=_trendTip('W',trendObj);
-      return '<span class="dash-mtf-leg trend" title="'+esc(tip2)+'">W</span>';
+      return '<span class="dash-mtf-leg trend"'+_tipAttrs(tip2)+'>W</span>';
     }
-    return '<span class="dash-mtf-leg off" title="'+esc('W')+'">W</span>';
+    return '<span class="dash-mtf-leg off" data-tip-en="W" data-tip-zh="W">W</span>';
   }
 
   var html='<p class="muted" style="font-size:11px;margin:0 0 5px">'
