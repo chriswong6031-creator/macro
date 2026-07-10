@@ -26,6 +26,7 @@ from engine.intraday_flow import (
     session_vwap,
     vol_share_curve,
     volume_durability,
+    washout_context,
 )
 
 
@@ -729,3 +730,119 @@ class TestLedgerEnabled:
     def test_disabled_for_intraday(self, monkeypatch):
         monkeypatch.setenv("COLLECT_LANE", "intraday")
         assert _bif._ledger_enabled() is False
+
+
+# ── washout_context ───────────────────────────────────────────────────────────
+
+def _make_daily_bars(closes: list[float], highs: list[float] | None = None, lows: list[float] | None = None) -> pd.DataFrame:
+    """Build a minimal daily-bars DataFrame for washout_context tests."""
+    n = len(closes)
+    dates = pd.date_range("2024-01-01", periods=n, freq="B")
+    if highs is None:
+        highs = [c * 1.02 for c in closes]
+    if lows is None:
+        lows = [c * 0.98 for c in closes]
+    return pd.DataFrame(
+        {"open": closes, "high": highs, "low": lows, "close": closes, "volume": [1_000_000] * n},
+        index=dates,
+    )
+
+
+class TestWashoutContext:
+    def test_decline_then_reclaim_has_small_reclaim_days(self):
+        """A decline below BB lower band followed by a reclaim should yield small reclaim_days."""
+        # Build a frame: steady baseline so BB bands are computed, then a sharp
+        # drop that triggers a lower-band wick + close above the band on the last bar.
+        # 30 bars at 100, then a sudden bar where low goes very low (below band) and
+        # close recovers above, then 2 normal bars after.
+        n_base = 30
+        closes = [100.0] * n_base
+        highs  = [102.0] * n_base
+        lows   = [98.0]  * n_base
+        # Insert a bb_lower_reclaim bar: low far below where lower band should be,
+        # close recovers above typical price.  With SMA20≈100, sd≈0.1, lower≈99.8.
+        # Force a real trigger by dropping the price significantly.
+        closes.extend([90.0, 90.5])   # sharp drop for two bars to push lower band
+        highs.extend([91.0, 91.5])
+        lows.extend([89.0, 89.5])
+        # Now the reclaim bar: low < lower band (which is now around 97 area after drop),
+        # but close comes back above it.
+        closes.append(100.5)   # close above baseline
+        highs.append(101.0)
+        lows.append(88.0)      # low well below recent lower band
+        # Two normal bars after the reclaim
+        closes.extend([100.5, 101.0])
+        highs.extend([102.0, 102.5])
+        lows.extend([99.0, 99.5])
+
+        df = _make_daily_bars(closes, highs, lows)
+        result = washout_context(df, lookback=90)
+
+        # The reclaim fired; sessions_since should be small (2 bars after the reclaim bar).
+        assert result["bb_lower_reclaim_days"] is not None
+        assert result["bb_lower_reclaim_days"] <= 5, (
+            f"Expected small reclaim_days, got {result['bb_lower_reclaim_days']}"
+        )
+        # Drawdown should be negative (the drop to 90 from 100 is significant).
+        assert result["drawdown_21d_pct"] is not None
+        assert result["drawdown_21d_pct"] < 0
+        # recovery_begun: latest close (101) > trough close (90) — True
+        assert result["recovery_begun"] is True
+
+    def test_monotonic_uptrend_no_reclaim(self):
+        """A steady uptrend never triggers a lower-band reclaim (price stays above band)."""
+        # 50 bars of steadily rising prices — should never wick below the lower band.
+        closes = [100.0 + i * 0.5 for i in range(50)]
+        highs  = [c + 1.0 for c in closes]
+        lows   = [c - 0.3 for c in closes]  # lows above the lower band in an uptrend
+        df = _make_daily_bars(closes, highs, lows)
+        result = washout_context(df, lookback=90)
+
+        # No bb_lower_reclaim event expected in a clean uptrend.
+        assert result["bb_lower_reclaim_days"] is None
+        # Drawdown in an uptrend is near 0 (each close is above the prior peak).
+        assert result["drawdown_21d_pct"] is not None
+        assert result["drawdown_21d_pct"] >= -0.05, (
+            f"Uptrend drawdown should be near 0, got {result['drawdown_21d_pct']}"
+        )
+
+    def test_too_short_frame_returns_all_none(self):
+        """A single-bar (or empty) frame yields all-None result."""
+        # Single bar — not enough for BB bands or 21d drawdown.
+        single = _make_daily_bars([100.0])
+        result = washout_context(single, lookback=90)
+        assert result["bb_lower_reclaim_days"] is None
+        assert result["drawdown_21d_pct"] is None
+        assert result["recovery_begun"] is None
+
+    def test_empty_frame_returns_all_none(self):
+        """Empty DataFrame returns all-None result without raising."""
+        empty = pd.DataFrame(columns=["open", "high", "low", "close", "volume"])
+        result = washout_context(empty, lookback=90)
+        assert result["bb_lower_reclaim_days"] is None
+        assert result["drawdown_21d_pct"] is None
+        assert result["recovery_begun"] is None
+
+    def test_none_frame_returns_all_none(self):
+        """None input returns all-None result without raising."""
+        result = washout_context(None, lookback=90)  # type: ignore[arg-type]
+        assert result["bb_lower_reclaim_days"] is None
+        assert result["drawdown_21d_pct"] is None
+        assert result["recovery_begun"] is None
+
+    def test_missing_columns_returns_all_none(self):
+        """DataFrame missing required columns returns all-None."""
+        df = pd.DataFrame({"close": [100.0, 101.0, 102.0]})
+        result = washout_context(df, lookback=90)
+        assert result["bb_lower_reclaim_days"] is None
+
+    def test_recovery_begun_false_when_still_declining(self):
+        """recovery_begun is False when the latest close is below the trough close."""
+        # 25 bars: steady then sharp decline at the end (no recovery).
+        closes = [100.0] * 20 + [95.0, 92.0, 90.0, 88.0, 86.0]
+        df = _make_daily_bars(closes)
+        result = washout_context(df, lookback=90)
+        assert result["drawdown_21d_pct"] is not None
+        assert result["drawdown_21d_pct"] < -0.05
+        # Latest close (86) is at the trough, so recovery_begun should be False.
+        assert result["recovery_begun"] is False

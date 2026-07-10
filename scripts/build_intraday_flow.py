@@ -50,6 +50,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
 from lib import config
+from engine.intraday_flow import washout_context as _washout_context
 
 log = logging.getLogger(__name__)
 
@@ -597,6 +598,68 @@ def _load_baselines(ticker: str, data_root: Path) -> dict | None:
         return None
 
 
+def _load_daily_bars(ticker: str, data_root: Path, site_root: Path) -> "pd.DataFrame | None":
+    """Load up to 120 sessions of daily OHLCV bars for a ticker.
+
+    Priority:
+      1. <data_root>/stocks/<T>.parquet  (columns: close, high, low, volume)
+      2. <site_root>/ohlc/<T>.json       (chart store, if present)
+      3. None (graceful absence)
+
+    Returns a DataFrame with at minimum close/high/low columns, date-ordered
+    ascending, tailed to the last 120 rows. The caller should further tail
+    before expensive computation.
+    """
+    # 1. Try daily parquet store.
+    parquet_path = data_root / "stocks" / f"{ticker}.parquet"
+    if parquet_path.exists():
+        try:
+            df = pd.read_parquet(parquet_path)
+            # Ensure date-ascending order.
+            if not df.index.is_monotonic_increasing:
+                df = df.sort_index()
+            return df.tail(120)
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_intraday_flow: daily bars parquet %s failed: %s", parquet_path, e)
+
+    # 2. Fall back to site/ohlc/<T>.json (chart store).
+    ohlc_path = site_root / "ohlc" / f"{ticker}.json"
+    if ohlc_path.exists():
+        try:
+            raw = json.loads(ohlc_path.read_text())
+            # Chart store schema: {"dates": [...], "o": [...], "h": [...], "l": [...], "c": [...], "v": [...]}
+            # or a list of {date, open, high, low, close, volume} dicts.
+            if isinstance(raw, list):
+                df = pd.DataFrame(raw)
+                rename = {}
+                for src, dst in [("date", "date"), ("o", "open"), ("h", "high"),
+                                  ("l", "low"), ("c", "close"), ("v", "volume")]:
+                    if src in df.columns and dst not in df.columns:
+                        rename[src] = dst
+                if rename:
+                    df = df.rename(columns=rename)
+                if "date" in df.columns:
+                    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+                    df = df.set_index("date").sort_index()
+            elif isinstance(raw, dict) and "c" in raw:
+                dates = raw.get("dates") or raw.get("t") or []
+                df = pd.DataFrame({
+                    "open":   raw.get("o", [None] * len(dates)),
+                    "high":   raw.get("h", [None] * len(dates)),
+                    "low":    raw.get("l", [None] * len(dates)),
+                    "close":  raw.get("c", [None] * len(dates)),
+                    "volume": raw.get("v", [None] * len(dates)),
+                }, index=pd.to_datetime(dates, errors="coerce"))
+                df = df.sort_index()
+            else:
+                return None
+            return df.tail(120) if not df.empty else None
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_intraday_flow: ohlc json %s failed: %s", ohlc_path, e)
+
+    return None
+
+
 def _load_mtf_upturn(ticker: str, site_root: Path) -> dict | None:
     """Load mtf_upturn context from site/stockdata/mtf_upturn.json."""
     p = site_root / "stockdata" / "mtf_upturn.json"
@@ -664,6 +727,22 @@ def _build_leader_record(
     else:
         rec["mtf_upturn_state"] = None
         rec["mtf_upturn_K"] = None
+
+    # Washout context — computed from daily bars when available; falls back
+    # to the sd.get() values already set by _extract_stockdata_context.
+    try:
+        daily_bars = _load_daily_bars(ticker, data_root, site_root)
+        if daily_bars is not None and not daily_bars.empty:
+            wctx = _washout_context(daily_bars.tail(120), lookback=90)
+            # Override sd fallback values with computed values (non-None wins).
+            if wctx.get("bb_lower_reclaim_days") is not None:
+                rec["bb_lower_reclaim_days"] = wctx["bb_lower_reclaim_days"]
+            if wctx.get("drawdown_21d_pct") is not None:
+                rec["drawdown_21d_pct"] = wctx["drawdown_21d_pct"]
+            if wctx.get("recovery_begun") is not None:
+                rec["recovery_begun"] = wctx["recovery_begun"]
+    except Exception as e:  # noqa: BLE001
+        log.debug("build_intraday_flow: washout_context for %s failed: %s", ticker, e)
 
     # Options entry context.
     rec["options_entry"] = _load_options_entry(ticker, data_root)

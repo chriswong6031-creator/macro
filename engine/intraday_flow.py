@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from engine import indicators
+from engine import bollinger_event_signals as _bes
 
 log = logging.getLogger(__name__)
 
@@ -523,3 +524,95 @@ def confluence_legs(
         L6_upturn_organ=l6,
         L7_leader_quality=l7,
     )
+
+
+# ── 9. Washout context (derived from daily bars) ──────────────────────────────
+
+def washout_context(
+    bars: pd.DataFrame,
+    lookback: int = 90,
+) -> dict:
+    """Compute washout context fields from a daily-bars DataFrame.
+
+    Reuses ``engine.bollinger_event_signals.bb_lower_reclaim`` for the band
+    event; computes trailing 21-session max drawdown from ``close``.
+
+    Args:
+        bars: Daily-bars DataFrame with columns ``high``, ``low``, ``close``
+            (and optionally ``open``, ``volume``); must be date-ordered
+            ascending.  The index may be a DatetimeIndex or any ordinal index.
+        lookback: Maximum number of trailing sessions to search for a
+            bb_lower_reclaim event (default 90, matching the caller's tail).
+
+    Returns:
+        Dict with keys:
+          - ``bb_lower_reclaim_days`` (int | None): sessions since the most
+            recent bb_lower_reclaim event within the lookback window; None
+            when the event never fired in the window.
+          - ``drawdown_21d_pct`` (float | None): trailing 21-session max
+            drawdown = min over the last 21 sessions of
+            (close / rolling-peak-close - 1), a negative float.  None when
+            fewer than 2 sessions are available.
+          - ``recovery_begun`` (bool | None): True when the most recent
+            close is above the close at the 21-session drawdown trough.
+            None when drawdown cannot be computed.
+
+    Defensive: returns all-None dict on empty/short/missing-column input.
+    """
+    null_result: dict = {
+        "bb_lower_reclaim_days": None,
+        "drawdown_21d_pct": None,
+        "recovery_begun": None,
+    }
+
+    if bars is None or bars.empty:
+        return null_result
+
+    required = {"close", "high", "low"}
+    if not required.issubset(bars.columns):
+        log.debug("washout_context: missing required columns (need high/low/close)")
+        return null_result
+
+    # Work on a tail of `lookback` sessions to keep compute cheap.
+    df = bars.tail(lookback).copy()
+    if len(df) < 2:
+        return null_result
+
+    result: dict = {
+        "bb_lower_reclaim_days": None,
+        "drawdown_21d_pct": None,
+        "recovery_begun": None,
+    }
+
+    # ── bb_lower_reclaim_days ─────────────────────────────────────────────────
+    try:
+        fired = _bes.bb_lower_reclaim(df)
+        # fired is a Series of {0.0, 1.0}; find the last 1.0 position.
+        fire_positions = [i for i, v in enumerate(fired.values) if v == 1.0]
+        if fire_positions:
+            last_fire_pos = fire_positions[-1]
+            # Sessions since the fire = (len - 1) - last_fire_pos
+            sessions_since = (len(df) - 1) - last_fire_pos
+            result["bb_lower_reclaim_days"] = int(sessions_since)
+    except Exception as e:  # noqa: BLE001
+        log.debug("washout_context: bb_lower_reclaim computation failed: %s", e)
+
+    # ── drawdown_21d_pct + recovery_begun ─────────────────────────────────────
+    try:
+        close = df["close"].astype(float)
+        window_21 = close.tail(21)
+        if len(window_21) >= 2:
+            rolling_peak = window_21.cummax()
+            drawdown_series = window_21 / rolling_peak - 1.0
+            min_dd = float(drawdown_series.min())
+            result["drawdown_21d_pct"] = round(min_dd, 4)
+
+            # recovery_begun: latest close > close at drawdown trough
+            trough_idx = int(drawdown_series.values.argmin())
+            trough_close = float(window_21.iloc[trough_idx])
+            latest_close = float(window_21.iloc[-1])
+            result["recovery_begun"] = bool(latest_close > trough_close)
+    except Exception as e:  # noqa: BLE001
+        log.debug("washout_context: drawdown computation failed: %s", e)
+
+    return result
