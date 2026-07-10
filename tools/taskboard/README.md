@@ -6,12 +6,20 @@ everything lives in your browser (state in localStorage, attachments in IndexedD
 
 ## Use it
 
-Open `Slate.html` (the bundled single file) directly in a browser — double-click it —
-or serve this folder and open `index.html`:
+Two ways, same app:
 
-```bash
-python3 -m http.server 8123   # then open http://localhost:8123
-```
+- **Web app (recommended)** — double-click `Start Slate.command` (or run
+  `python3 -m http.server 8123` in this folder) and open http://localhost:8123.
+  Served, Slate is a full PWA: install it from the browser's install button for a
+  standalone window, dock/home-screen icon, and offline support via a precached
+  service worker (cache rolls automatically whenever the sources change).
+- **Single file** — double-click `Slate.html`. Same app, no install/offline layer.
+
+Data is browser+origin-scoped, so the two forms keep separate data — pick one, or
+move between them with Export/Import. Two platform caveats: on iOS, a
+home-screen-installed PWA has its own storage container separate from Safari
+(export/import to move data in), and the PWA install splash/title bar always uses
+the light color — web manifests can't follow the in-app theme.
 
 ## What it does
 
@@ -33,6 +41,11 @@ python3 -m http.server 8123   # then open http://localhost:8123
     board for the rest of the session. Refreshing or closing wipes the board only.
   - **Library**: permanent panes, one per topic, holding every saved note. Click a note
     to edit, re-file, or delete it (with undo); rename/delete topics from the pane menu.
+- **Command palette** — ⌘K / Ctrl+K (or the magnifier) searches everything at once:
+  cards (titles, descriptions, tags — done ones too), boards, workspaces, Brain notes
+  and topics. Enter jumps straight there — switching workspace/view, scrolling to the
+  board or pane, pulsing it, and opening the right editor. Typed commands too:
+  new board, write a note, go to views, toggle dark mode, tidy, export.
 - **Backups** — gear menu → Export/Import backup (single JSON including attachments
   and the Brain).
 - **Responsive** — phone/tablet friendly: bottom-sheet modals, compact topbar,
@@ -42,8 +55,12 @@ python3 -m http.server 8123   # then open http://localhost:8123
 ## Files
 
 - `index.html` + `css/` + `js/` — modular source
-- `build_standalone.py` — inlines everything into `Slate.html`
+- `manifest.webmanifest`, `sw.js`, `icons/` — PWA layer (served form only)
+- `Start Slate.command` — double-clickable local server launcher (macOS)
+- `build_standalone.py` — stamps the service-worker cache version from a source
+  hash, then inlines everything into `Slate.html` (stripping the PWA layer)
 - `Slate.html` — the shippable single-file app (regenerate after editing source)
+- `verify_playwright.py` — end-to-end test suite (run against any of the 3 modes)
 
 Data is browser+origin-scoped: the `file://` copy and a served copy keep separate data.
 Use Export/Import to move between them.

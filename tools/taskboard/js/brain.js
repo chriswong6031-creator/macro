@@ -27,6 +27,7 @@ function renderBrain() {
   lastBrainTabRendered = brainTab;
   if (brainTab === 'library') renderLibrary(entering);
   else renderCaptureBoard();
+  if (entering) fadeIn($('#viewport'));
 }
 
 function renderCaptureBoard() {

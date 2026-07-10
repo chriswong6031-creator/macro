@@ -367,19 +367,23 @@ function openWsSwitcher() {
 }
 
 /* ---------- settings ---------- */
+async function exportBackup() {
+  const files = await fileAll();
+  const payload = { app: 'slate', v: 1, exported: new Date().toISOString(), state: state, files: files };
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'slate-backup-' + todayISO() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  toast('Backup exported');
+}
+
 function openSettings() {
   openPopover($('#settingsBtn'), (pop, close) => {
-    pop.appendChild(popItem('Export backup', ICONS.download, async () => {
+    pop.appendChild(popItem('Export backup', ICONS.download, () => {
       close();
-      const files = await fileAll();
-      const payload = { app: 'slate', v: 1, exported: new Date().toISOString(), state: state, files: files };
-      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'slate-backup-' + todayISO() + '.json';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-      toast('Backup exported');
+      exportBackup();
     }));
     pop.appendChild(popItem('Import backup', ICONS.upload, () => {
       close();
