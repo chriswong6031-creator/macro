@@ -50,10 +50,15 @@ The forward ledger is the sole judge of the value claim — this is exploratory.
 
 ## Head-to-Head: mf_energy vs Champion
 
-**Comparison basis:** mf_energy@early vs champion@early uses the SAME early asofs
-(release_date - 26 days) for both models — a fair apples-to-apples comparison.
-Champion@T-1 is shown as a reference for the standard-cutoff baseline.
-The early-cutoff comparison is DESCRIPTIVE; kill rule applies at T-1 only.
+**Comparison basis:** mf_energy@early vs champion@early uses the SAME early-asof
+convention (release_date - 26 days) for both models. CAVEAT: the two columns are
+NOT computed over an identical matched fold set — champion@early yields fewer
+valid folds (feature availability differs at early asofs), so the MAEs compare
+overlapping-but-unequal samples (mf_energy n=288 non-COVID vs champion@early
+n=228 matched). Read the deltas as indicative, not as a matched-pairs test; a
+matched-fold table is the W11-G integration follow-up. Champion@T-1 is shown as
+a reference for the standard-cutoff baseline. The early-cutoff comparison is
+DESCRIPTIVE; kill rule applies at T-1 only.
 
 | Metric | mf_energy@T-1 | mf_energy@early | champion@early | champion@T-1 (ref) |
 |--------|---------------|-----------------|----------------|--------------------|
@@ -94,5 +99,16 @@ Promotion to the card requires a program-level adjudication citing forward evide
 
 ## Alignment with PREREG_MF_ENERGY_V1.md
 
-All specs implemented as frozen. No deviations.
+One DECLARED implementation interpretation; all other specs implemented as
+frozen. The prereg §2.1(b) wording defines a remaining week's WTI input as
+"average daily WTI over trading days in that week where date <= D" — for a
+remaining week (which by definition starts AFTER the asof D), that set is
+empty, so the literal wording is unsatisfiable. The implementation uses the
+nearest causally-available proxy: the 7-day WTI window ending at asof (the
+latest observable WTI level) as the projected level for each remaining week.
+This is a strict subset of information available at D (no lookahead — tested
+by post-asof-spike invariance), is the natural reading of the spec's intent
+(project unpublished weeks from the latest observable WTI), and was NOT chosen
+by reference to results. Recorded here per §6; any alternative proxy would be
+a new spec attempt.
 This document constitutes the backtest-results record per §6 anti-mining law.
