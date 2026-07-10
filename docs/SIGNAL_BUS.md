@@ -13,7 +13,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | active-build-map | 1 |
 | btc-vector | 5 |
 | causal-hypothesis-factory | 9 |
-| china-alpha | 10 |
+| china-alpha | 14 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
 | china-system | 2 |
@@ -68,7 +68,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 201 |
+| display | 205 |
 | infrastructure | 84 |
 | scored | 4 |
 | shadow | 50 |
@@ -77,7 +77,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 325 |
+| git | 329 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -120,12 +120,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-sector-cycles-forward-log | `data/china_sector_cycles/forward_log.parquet` | parquet | asia-close | shadow | 6 | 0 |
 | site-china-standouts | `site/factordata/china_standouts.json` | json | asia-close | display | 3 | 1 |
 | name-score-calls | `data/name_score/us_calls.parquet` | parquet | daily-engine | shadow | 3 | 0 |
+| china-basket-turn-cn | `site/chinabasketdata/basket_turn_cn.json` | json | daily-engine | display | 2 | 0 |
 | china-board-ledger | `data/china_standout_track/board.parquet` | parquet | asia-close | shadow | 2 | 0 |
 | site-china-altdata-mastermind | `site/chinaaltdata/mastermind.json` | json | asia-close | display | 2 | 0 |
 | site-china-intel-briefing | `site/china_intel/briefing.json` | json | asia-close | display | 1 | 1 |
+| china-mtf-upturn | `site/chinastockdata/mtf_upturn_cn.json` | json | daily-engine | display | 1 | 0 |
 | china-radar-ledger | `data/china_radar/ledger.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | cn-reversal-sleeve-ledger | `data/cn_reversal_sleeve_track/sleeve.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | site-china-altdata-by-ticker | `site/chinaaltdata/by_ticker.json` | json | asia-close | display | 1 | 0 |
+| china-basket-turn-ledger | `data/china_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| china-mtf-upturn-ledger | `data/mtf_upturn_cn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | site-china-altdata-feed | `site/chinaaltdata/feed.json` | json | asia-close | display | 0 | 0 |
 
 ### china-intel-hub
