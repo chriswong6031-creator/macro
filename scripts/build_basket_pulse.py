@@ -71,6 +71,18 @@ MODE_DELAYED: str = "delayed"
 MODE_LAST_RTH: str = "last_rth"
 MODE_EOD: str = "eod"
 
+# ── TS-U5 settled-close recompute ────────────────────────────────────────────
+# A post-session quote may describe the DAY only when its basis pins the regular
+# session. Yahoo 'regular' = regularMarketPrice (never an AH print; require the
+# stamp at/after the bell so a delayed intraday print is not mistaken for the
+# settle). Polygon 'day' = today's session close. Polygon 'trade'/'minute' only
+# when printed at or within ~90s of the bell (closing auction); later prints are
+# extended-hours drift — the exact contamination this mode exists to reject.
+_SETTLE_TOL_MS: int = 90_000
+# Minimum fraction of quoted members that must pass the settle filter before a
+# settled-close recompute is claimed (else the sidecar serve stands).
+SETTLE_MIN_FRACTION: float = 0.60
+
 # ETFs for the offense/defense spread (print-only, no z claims, FT-R3)
 DEFENSE_ETFS: list[str] = ["XLP", "XLU", "XLV"]
 OFFENSE_ETFS: list[str] = ["SMH", "XLK"]
@@ -609,6 +621,188 @@ def _detect_mode(quotes: dict[str, Any], session: str, now_ms: int,
 
 # ── main build ─────────────────────────────────────────────────────────────────
 
+def _session_close_utc(now: datetime) -> datetime | None:
+    """16:00 ET of the current ET date as UTC, if it is a NYSE session day.
+
+    Half-day sessions close 13:00 ET; their settle stamps then never reach the
+    16:00 gate, so the settled recompute simply declines and the sidecar serve
+    (which by then already holds the 13:00 close) stands — honest degrade.
+    """
+    from zoneinfo import ZoneInfo
+    from lib import nyse_calendar
+
+    et = now.astimezone(ZoneInfo("America/New_York"))
+    if not nyse_calendar.is_session(et.date()):
+        return None
+    close_et = et.replace(hour=16, minute=0, second=0, microsecond=0)
+    return close_et.astimezone(timezone.utc)
+
+
+def _settle_quote_ok(q: dict[str, Any], close_ms: int) -> bool:
+    """True when this quote's price basis pins the completed regular session."""
+    basis = q.get("basis")
+    ts = q.get("ts")
+    if basis == "regular":
+        # regularMarketPrice; require the stamp at/after the bell (delayed feeds
+        # show intraday 'regular' prints until ~16:15 ET).
+        return ts is None or ts >= close_ms - 60_000
+    if basis == "day":
+        return True
+    if basis in ("trade", "minute"):
+        # only prints AT the bell (closing auction) — a pre-close delayed print
+        # is the frozen-tape problem this mode exists to replace, and a later
+        # print is extended-hours drift
+        return (ts is not None
+                and close_ms - _SETTLE_TOL_MS <= ts <= close_ms + _SETTLE_TOL_MS)
+    return False
+
+
+def _settled_ew_chg(members: list[str], quotes: dict[str, Any],
+                    close_ms: int) -> tuple[float | None, int, int]:
+    """EW day move over settle-clean member quotes.
+
+    Returns (ew_chg_pct or None, n_quoted, n_settle_ok). Coverage gate uses
+    MIN_COVERAGE over the full membership, same as the live path.
+    """
+    vals: list[float] = []
+    n_quoted = 0
+    for m in members:
+        q = quotes.get(m)
+        if not q or q.get("changePct") is None:
+            continue
+        n_quoted += 1
+        if not _settle_quote_ok(q, close_ms):
+            continue
+        vals.append(float(q["changePct"]))
+    n_ok = len(vals)
+    if not vals or n_ok < max(1, len(members) * MIN_COVERAGE):
+        return None, n_quoted, n_ok
+    return round(sum(vals) / len(vals), 3), n_quoted, n_ok
+
+
+def _settled_build(now: datetime, session: str, quotes: dict[str, Any],
+                   resolved_path: Path | None, baskets_meta: dict[str, Any],
+                   stale_min: int, now_ms: int) -> dict[str, Any] | None:
+    """Recompute the completed session's EW basket moves from settle-clean quotes.
+
+    Returns the full result dict (mode=last_rth + settled_close=True +
+    session_date, TS-R2) or None when the snapshot cannot honestly describe the
+    close — too few settle-basis records (e.g. the feed's US records still carry
+    extended-hours prints) or not a session day.
+    """
+    close_dt = _session_close_utc(now)
+    if close_dt is None:
+        return None
+    close_ms = int(close_dt.timestamp() * 1000)
+
+    baskets_data: list[dict[str, Any]] = []
+    n_quoted_total = 0
+    n_settled_total = 0
+    for basket_id, basket in baskets_meta.items():
+        members = _active_members(basket)
+        if not members:
+            continue
+        ew, n_quoted, n_ok = _settled_ew_chg(members, quotes, close_ms)
+        n_quoted_total += n_quoted
+        n_settled_total += n_ok
+        baskets_data.append({
+            "id": basket_id,
+            "n_members": len(members),
+            "n_quoted": n_quoted,
+            "live_ew_chg_pct": ew,
+            "cum_2d_pct": _cum_2d(basket_id, ew),
+            "tape_rank": None,
+            "stale": False,
+            "delay_min": None,
+        })
+    if not baskets_data or n_quoted_total == 0:
+        return None
+    if n_settled_total / n_quoted_total < SETTLE_MIN_FRACTION:
+        log.info("settled-close recompute declined — %d/%d quotes settle-basis",
+                 n_settled_total, n_quoted_total)
+        return None
+
+    rank_map = _tape_ranks(baskets_data)
+    for b in baskets_data:
+        b["tape_rank"] = rank_map.get(b["id"])
+
+    from zoneinfo import ZoneInfo
+    session_date = now.astimezone(ZoneInfo("America/New_York")).date().isoformat()
+    n_non_null = sum(1 for b in baskets_data if b["live_ew_chg_pct"] is not None)
+    log.info("settled-close recompute: %d baskets, %d/%d settle-basis quotes",
+             len(baskets_data), n_settled_total, n_quoted_total)
+    return {
+        "schema": "basket_pulse.v1",
+        "as_of_utc": now.isoformat(),
+        "as_of_quotes": close_dt.isoformat(),
+        "built": now.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "session": session,
+        "mode": MODE_LAST_RTH,
+        "settled_close": True,
+        "session_date": session_date,
+        "delay_min_median": None,
+        "coverage_pct": round(n_non_null / len(baskets_data) * 100, 1),
+        "quotes_source": str(resolved_path) if resolved_path else None,
+        "n_quotes_total": len(quotes),
+        "stale_min": stale_min,
+        "baskets": baskets_data,
+        "od_spread_print": None,
+        "shock_day_relative_bid": None,
+        "complexes": _compute_complexes(baskets_data, {}, now_ms, stale_min),
+    }
+
+
+def _load_theme_flow(path: Path | None = None) -> tuple[dict[str, dict], str | None]:
+    """Per-basket nightly stock-flow context from site/basketdata/baskets.json.
+
+    Plucks theme_intel.themes[].tape.flow (engine/basket_tape — dollar-volume
+    surge + CMF; directional:false, DT-W1a: descriptive only). ({}, None) on any
+    failure — additive, degrade-never-raise.
+    """
+    try:
+        if path is None:
+            from lib import config
+            path = (config.ROOT / config.load()["storage"]["site_dir"]
+                    / "basketdata" / "baskets.json")
+        data = json.loads(Path(path).read_text())
+    except Exception as e:  # noqa: BLE001
+        log.debug("theme flow unavailable: %s", e)
+        return {}, None
+    ti = data.get("theme_intel") or {}
+    out: dict[str, dict] = {}
+    for th in ti.get("themes") or []:
+        tape = th.get("tape") or {}
+        flow = tape.get("flow") or {}
+        if not flow or not th.get("id"):
+            continue
+        out[th["id"]] = {
+            "dollar_vol_surge": flow.get("dollar_vol_surge"),
+            "cmf": flow.get("cmf"),
+            "label_en": flow.get("label_en"),
+            "label_zh": flow.get("label_zh"),
+            "as_of": tape.get("as_of"),
+        }
+    return out, (ti.get("as_of") or data.get("as_of"))
+
+
+def _attach_day_flow(result: dict[str, Any]) -> None:
+    """Attach nightly stock-flow context to a post/closed pulse (rows gain
+    day_flow; top level gains day_flow_as_of). Descriptive only — the consuming
+    band prints the as-of stamp and the no-forward-edge note. Additive: absent
+    or malformed data leaves the result untouched."""
+    try:
+        flow_map, flow_as_of = _load_theme_flow()
+        if not flow_map:
+            return
+        for b in result.get("baskets") or []:
+            f = flow_map.get(b.get("id"))
+            if f:
+                b["day_flow"] = f
+        result["day_flow_as_of"] = flow_as_of
+    except Exception as e:  # noqa: BLE001
+        log.debug("day_flow attach skipped: %s", e)
+
+
 def build(
     *,
     quotes_path: Path | None = None,
@@ -647,6 +841,21 @@ def build(
 
     # ── last_rth / eod branch ─────────────────────────────────────────────────
     if mode == MODE_LAST_RTH:
+        # TS-U5: settled-close recompute — on a post-session tick the quotes
+        # snapshot (live-quotes keeps running after the bell) already carries
+        # the official settle for every member whose record pins the regular
+        # session. A recompute of the DAY's move beats serving a tape frozen
+        # at the last RTH tick (~15:30 ET on the delayed feed). Only the same
+        # evening (session == "post"): later runs risk vendor prevClose rolls.
+        if session == "post" and quotes:
+            settled = _settled_build(now, session, quotes, resolved_path,
+                                     baskets_meta, stale_min, now_ms)
+            if settled is not None:
+                if out_dir is not None:
+                    _save_lastgood(settled, out_dir)
+                _attach_day_flow(settled)
+                return settled
+
         # Try to load the lastgood sidecar
         if out_dir is not None:
             lastgood = _load_lastgood(out_dir)
@@ -684,6 +893,7 @@ def build(
                 # Preserve original as_of_quotes from lastgood; add a served_utc stamp
                 lastgood["served_utc"] = now.isoformat()
                 lastgood["session"] = session
+                _attach_day_flow(lastgood)
                 log.info("serving lastgood sidecar (mode=last_rth) from %s",
                          lastgood.get("as_of_utc", "?"))
                 return lastgood
@@ -718,7 +928,7 @@ def build(
         n_non_null = sum(1 for b in baskets_data if b["live_ew_chg_pct"] is not None)
         eod_bar_date = (max(set(bar_dates), key=bar_dates.count)
                         if bar_dates else None)
-        return {
+        eod_result: dict[str, Any] = {
             "schema": "basket_pulse.v1",
             "as_of_utc": now.isoformat(),
             "as_of_quotes": eod_bar_date,
@@ -735,6 +945,8 @@ def build(
             "shock_day_relative_bid": None,
             "complexes": _compute_complexes(baskets_data, {}, now_ms, stale_min),
         }
+        _attach_day_flow(eod_result)
+        return eod_result
 
     # ── live / delayed branch ─────────────────────────────────────────────────
     include_delayed = (mode == MODE_DELAYED)

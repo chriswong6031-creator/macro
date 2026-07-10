@@ -1544,6 +1544,26 @@
   .dash-tape-body { display:grid; grid-template-columns:1fr 1fr; }
   @media(max-width:640px){ .dash-tape-body{ grid-template-columns:1fr; } }
   .dash-tape-t1 { padding:5px 16px 6px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); }
+.dash-mrow .mr-flow { font-size:9.5px; color:var(--muted); margin:0 6px 0 4px; white-space:nowrap; flex:none; }
+/* page-scoped fold (.act-fold) — the shared .lst-collapse plumbing assumes
+   one-element-per-item direct children; the TAKE PROFITS list is <a>+chip
+   sibling PAIRS and the sector-setups table hides rows behind an implicit
+   tbody, so both get their own cap rules + a tiny delegated toggler. */
+.act-fold.is-collapsed > a.actitem:nth-of-type(n+7), .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .ew-chip, .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .two-reads-chip, .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .ew-chip + .two-reads-chip { display:none; }
+.actcol .act-fold:not(:has(> a.actitem:nth-of-type(7))) ~ .lst-more.act-more { display:none; }
+#sectors table.act-fold.is-collapsed > tbody > tr:nth-child(n+8), #sectors table.act-fold.is-collapsed > tr:nth-child(n+8) { display:none; }
+.ftr-session-pill { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 9px; border-radius:16px; }
+.ftr-session-pill.live { background:rgba(35,192,138,.14); border:1px solid rgba(35,192,138,.38); color:var(--up); }
+.ftr-session-pill.pre  { background:rgba(79,140,255,.12); border:1px solid rgba(79,140,255,.32); color:var(--link); }
+.ftr-session-pill.post { background:rgba(139,147,167,.10); border:1px solid var(--line); color:var(--muted); }
+.ftr-session-pill.closed { background:rgba(139,147,167,.08); border:1px solid var(--line); color:var(--muted); }
+.ftr-session-pill .ftr-dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:ftr-pulse 1.4s ease-in-out infinite; }
+.ftr-session-pill.closed .ftr-dot, .ftr-session-pill.post .ftr-dot { animation:none; opacity:.5; }
+.ftr-cx-badge { display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:8px; background:rgba(35,192,138,.10); border:1px solid rgba(35,192,138,.28); }
+.ftr-cx-badge .cx-name { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; }
+.ftr-cx-badge .cx-val  { font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; }
+.ftr-cx-badge .cx-note { font-size:10.5px; opacity:.8; }
+@keyframes ftr-pulse { 0%,100%{opacity:1;} 50%{opacity:.45;} }
   .dash-tape-half { padding:7px 16px 9px; }
   .dash-tape-half:first-child { border-right:1px solid var(--line); }
   .dash-tape-half-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.07em; font-weight:700; margin-bottom:5px; }
@@ -4260,7 +4280,7 @@
     {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
        Clones the FTR W3 operator-ratified idiom (baskets.html.j2 .ftr-tape-*). #}
     {% if mode == 'stocks' %}
-    <div id="dash-tape-band" class="dash-tape-band" aria-label="{{ t('Live basket tape','实时篮子行情') }}">
+    <div id="dash-tape-band" class="dash-tape-band" aria-label="Live basket tape">
       <div class="dash-tape-hd">
         <span id="dash-session-pill" class="ftr-session-pill closed">
           <span class="ftr-dot"></span>
@@ -4273,11 +4293,11 @@
       </div>
       <div class="dash-tape-body">
         <div class="dash-tape-half">
-          <div class="dash-tape-half-lbl top">{{ t('Top 5 live leaders','前5领涨') }}</div>
+          <div class="dash-tape-half-lbl top" id="dash-top-lbl">{{ t('Top 5 live leaders','前5领涨') }}</div>
           <div id="dash-top-movers"></div>
         </div>
         <div class="dash-tape-half">
-          <div class="dash-tape-half-lbl bot">{{ t('Bottom 3 live laggards','后3领跌') }}</div>
+          <div class="dash-tape-half-lbl bot" id="dash-bot-lbl">{{ t('Bottom 3 live laggards','后3领跌') }}</div>
           <div id="dash-bot-movers"></div>
         </div>
       </div>
@@ -4337,9 +4357,12 @@
       </div>
       <div class="actcol act-trim">
         <div class="acth">🟠 {{ t('TAKE PROFITS / topping', '止盈／做顶') }}</div>
+        <div class="act-fold is-collapsed">
         {% for x in action_board.take_profits %}
           {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" data-tip-en="{{ x.eq_tip }}" data-tip-zh="{{ x.get('eq_tip_zh') or x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'take_profits' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{{ ab_two_reads(x) }}{% endif %}
         {% else %}<p class="muted sm">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
+        </div>
+        <button class="lst-more act-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>
       </div>
       <div class="actcol act-hold lst-wrap">
         <div class="acth">⚪ {{ t('HOLD / avoid', '持有／回避') }}</div>
@@ -5282,7 +5305,7 @@
     <p class="muted" style="font-size:12.5px;margin:6px 0 4px">
       {% if sector_setups.n_buy or sector_setups.n_avoid %}<b>{{ sector_setups.n_buy }}</b> {{ t('on the buy side', '在买入侧') }} · <b>{{ sector_setups.n_avoid }}</b> {{ t('extended / topping / below trend', '过热／见顶／趋势下方') }}{% if sector_setups.n_tactical %} · <b>{{ sector_setups.n_tactical }}</b> {{ t('tactical oversold bounce', '战术超卖反弹') }}{% endif %}. {% endif %}{{ t('Cross-sectionally the buy side has beaten the avoid side by ~0.8%/quarter (1998-2026). Use it to time rotation and to NOT chase extended leaders — never as a return forecast.', '横截面上买入侧每季度约跑赢回避侧 0.8%（1998–2026）。用于把握轮动、避免追逐过热领先股——切勿当作收益预测。') }}
     </p>
-    <table>
+    <table class="act-fold is-collapsed">
       <tr>
         <th class="l">{{ t('sector', '板块') }}</th>
         <th class="l">{{ t('verdict', '判断') }} {{ help("BUY/SETUP = an entry above the 200-day; EXTENDED/TOPPING/SELL = late or distributing; BELOW TREND = a knife. Dots = conviction (how many of daily / 3-day MACD / 3-day StochRSI agree).", "买入/预备＝200日线上方的入场；过热/见顶/卖出＝偏晚或派发中；趋势下方＝接飞刀。圆点＝信心（日线／3日 MACD／3日 StochRSI 中有几个一致）。") }}</th>
@@ -5332,6 +5355,7 @@
       </tr>
       {% endfor %}
     </table>
+            <button class="lst-more act-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>
     <p class="muted" style="font-size:12px">{{ t('Click any sector for its full drill-down: cycle position, multi-timeframe momentum, the confluence signal, and each top-10 holding analyzed individually.', '点击任意板块查看完整下钻：周期位置、多时间尺度动量、共振信号，以及逐一分析的每个前十大持仓。') }}</p>
   </div>
   {% endif %}{# /sector_setups #}
@@ -5725,8 +5749,9 @@ function modePillHtml(pulse){
   var asof  = pulse.as_of_quotes || pulse.as_of_utc;
   var asofStr='';
   if(asof){try{asofStr=asof.length<=10?asof:new Date(asof).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});}catch(e){asofStr=asof;}}
-  var pills={delayed:{en:'DELAYED',zh:'延迟数据',cls:'pre'},last_rth:{en:'LAST SESSION',zh:'上一交易时段',cls:'post'},eod:{en:'EOD CLOSE',zh:'收盘价',cls:'closed'}};
-  var p=pills[mode]||{en:mode.toUpperCase(),zh:mode,cls:'closed'};
+  var pills={delayed:{en:'DELAYED',zh:'延迟数据',cls:'pre'},last_rth:{en:'LAST SESSION',zh:'上一交易时段',cls:'post'},eod:{en:'EOD CLOSE',zh:'收盘价',cls:'closed'},settled:{en:'SETTLED CLOSE',zh:'当日收盘',cls:'closed'}};
+  var pillKey=(mode==='last_rth'&&pulse.settled_close)?'settled':mode;
+  var p=pills[pillKey]||{en:mode.toUpperCase(),zh:mode,cls:'closed'};
   var delayNote='';
   if(mode==='delayed'&&delay!=null){var h=Math.round(delay/60);delayNote=' · '+L('~'+h+'h delay','约'+h+'小时延迟');}
   var asofNote=asofStr?(' · '+L('as of '+esc(asofStr),'截至 '+esc(asofStr))):'';
@@ -5741,10 +5766,31 @@ function renderTapeBand(pulse){
   var mode    = pulse.mode||'live';
   // Session pill
   var info = SESSION_LABELS[session]||SESSION_LABELS.closed;
+  // A pulse built >12h ago describes a session that is no longer 'post' —
+  // show CLOSED rather than the frozen stamp (weekend/holiday serving).
+  var builtMs=Date.parse(pulse.as_of_utc||'');
+  if(isFinite(builtMs)&&(Date.now()-builtMs)>12*3600e3){
+    session='closed'; info=SESSION_LABELS.closed;
+    // a live/delayed file frozen >12h is a last-session read — relabel all chrome
+    if(mode==='live'||mode==='delayed'){ mode='last_rth'; pulse.mode='last_rth'; }
+  }
   var pill = document.getElementById('dash-session-pill');
   var lbl  = document.getElementById('dash-session-label');
   if(pill){ pill.className='ftr-session-pill '+info.cls; }
   if(lbl){ lbl.innerHTML=L(esc(info.en),esc(info.zh)); }
+  // '15-min delayed' is live-tape copy — the mode pill carries the honest label otherwise
+  var dly=document.getElementById('dash-tape-delay');
+  if(dly){ dly.style.display=(mode==='live')?'':'none'; }
+  var tl=document.getElementById('dash-top-lbl'), bl=document.getElementById('dash-bot-lbl');
+  if(tl&&bl){
+    var lbls;
+    if(mode==='eod'){ lbls=[L('Last session leaders (EOD)','上一交易日领涨（收盘）'),L('Last session laggards (EOD)','上一交易日领跌（收盘）')]; }
+    else if(mode==='last_rth'){ lbls=pulse.settled_close
+      ?[L('Session leaders — at the close','本交易日领涨 — 收盘'),L('Session laggards — at the close','本交易日领跌 — 收盘')]
+      :[L('Last session leaders','上一交易日领涨'),L('Last session laggards','上一交易日领跌')]; }
+    else { lbls=[L('Top 5 live leaders','前5领涨'),L('Bottom 3 live laggards','后3领跌')]; }
+    tl.innerHTML=lbls[0]; bl.innerHTML=lbls[1];
+  }
   // Mode pill + as-of
   var asofEl = document.getElementById('dash-tape-asof');
   if(asofEl){
@@ -5776,23 +5822,51 @@ function renderTapeBand(pulse){
   if(!topEl||!botEl) return;
   var live=(pulse.baskets||[]).filter(function(b){return b.live_ew_chg_pct!=null&&b.tape_rank!=null;});
   if(!live.length){
-    var noMsg='<span class="muted" style="font-size:11px">'+L('quotes loading…','报价加载中…')+'</span>';
+    var loading=(session==='pre'||session==='rth');
+    var noMsg='<span class="muted" style="font-size:11px">'
+      +(loading?L('quotes loading…','报价加载中…')
+               :L('No tape data for the last session.','上一交易时段暂无行情数据。'))
+      +'</span>';
     topEl.innerHTML=noMsg; botEl.innerHTML=noMsg; return;
   }
   live.sort(function(a,b){return b.tape_rank-a.tape_rank;});
   var top5=live.slice(0,5), bot3=live.slice(-3).reverse();
+  var flowShown=false, flowAsOf=pulse.day_flow_as_of||null;
+  function flowChip(b){
+    var f=b.day_flow; if(!f) return '';
+    var bits=[];
+    if(f.dollar_vol_surge!=null) bits.push('&#215;'+Number(f.dollar_vol_surge).toFixed(1)+' '+L('vol','量'));
+    if(f.cmf!=null) bits.push(f.cmf>0.05?L('net inflow','净流入'):(f.cmf<-0.05?L('net outflow','净流出'):L('balanced flow','资金流均衡')));
+    if(!bits.length) return '';
+    flowShown=true;
+    return '<span class="mr-flow">'+bits.join(' · ')+'</span>';
+  }
   function mRow(b){
     var chg=b.live_ew_chg_pct, isUp=chg>=0;
     var barW=Math.min(44,Math.abs(chg)*10);
     return '<div class="dash-mrow">'
       +'<span class="mr-rank">#'+b.tape_rank+'</span>'
       +'<span class="mr-name">'+esc(b.id)+'</span>'
+      +flowChip(b)
       +'<span class="mr-chg '+(isUp?'up':'dn')+'">'+fmtPct(chg)+'</span>'
       +'<div class="mr-bar '+(isUp?'up':'dn')+'" style="width:'+barW.toFixed(0)+'px"></div>'
       +'</div>';
   }
   topEl.innerHTML=top5.map(mRow).join('');
   botEl.innerHTML=bot3.map(mRow).join('');
+  // Flow footnote (descriptive-only law — DT-W1a/house finding; as-of stamped)
+  var fn=document.getElementById('dash-flow-note');
+  if(!fn){
+    fn=document.createElement('div'); fn.id='dash-flow-note'; fn.className='dash-tape-t1';
+    band.appendChild(fn);
+  }
+  if(flowShown){
+    var aoEn=flowAsOf?(' (as of '+esc(flowAsOf)+')'):'';
+    var aoZh=flowAsOf?('（截至 '+esc(flowAsOf)+'）'):'';
+    fn.innerHTML=L('Flow = nightly dollar-volume read'+aoEn+' — descriptive only, no measured forward edge.',
+                   '资金流 = 每晚美元成交量读数'+aoZh+' — 仅为描述，无已测得的前瞻优势。');
+    fn.style.display='';
+  } else { fn.style.display='none'; }
 }
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -6026,6 +6100,18 @@ fetchJson('stockdata/mtf_upturn.json',function(d){mtfUpturn=d;mtfDone=true;tryRe
 
 // Fail-open: if any fetch doesn't resolve, still render with what we have
 setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000);
+
+// See-more folds (TAKE PROFITS column + sector setups table). Page-scoped
+// .act-fold/.act-more — theme.js's .lst-wrap handler deliberately ignores these.
+document.addEventListener('click',function(e){
+  var btn=e.target&&e.target.closest?e.target.closest('.act-more'):null;
+  if(!btn)return;
+  var wrap=btn.closest('.actcol')||btn.closest('.panel');
+  var fold=wrap&&wrap.querySelector('.act-fold');
+  if(!fold)return;
+  var c=fold.classList.toggle('is-collapsed');
+  btn.setAttribute('aria-expanded',c?'false':'true');
+});
 
 })();
 </script>
