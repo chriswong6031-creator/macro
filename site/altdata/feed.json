@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-09T23:57:23.886408+00:00",
-  "as_of": "2026-07-09",
+  "generated_utc": "2026-07-10T01:35:02.416011+00:00",
+  "as_of": "2026-07-10",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6199,8 +6199,8 @@
       },
       {
         "ticker": "MDLN",
-        "total_usd": 84526107.0,
-        "contracts": 20,
+        "total_usd": 84461107.0,
+        "contracts": 19,
         "agencies": 2,
         "accel_x": 1.01,
         "top_agency": "Department of Veterans Affairs"
@@ -6286,20 +6286,20 @@
         "top_agency": "National Aeronautics and Space Administration"
       },
       {
-        "ticker": "CDW",
-        "total_usd": 10931229.0,
-        "contracts": 38,
-        "agencies": 6,
-        "accel_x": 0.59,
-        "top_agency": "Department of Transportation"
-      },
-      {
         "ticker": "AXON",
         "total_usd": 10713250.0,
         "contracts": 8,
         "agencies": 3,
         "accel_x": 2.18,
         "top_agency": "Department of Homeland Security"
+      },
+      {
+        "ticker": "CDW",
+        "total_usd": 10407148.0,
+        "contracts": 34,
+        "agencies": 6,
+        "accel_x": 0.55,
+        "top_agency": "Department of Transportation"
       },
       {
         "ticker": "F",
@@ -6477,7 +6477,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 18,
         "items": "8.01"
       },
       {
@@ -6491,19 +6491,9 @@
         "items": "5.02, 7.01, 8.01"
       },
       {
-        "ticker": "PSKY",
-        "count": 5,
-        "items": "7.01, 8.01"
-      },
-      {
         "ticker": "BLD",
         "count": 4,
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "DELL",
-        "count": 4,
-        "items": "1.01, 2.03, 8.01"
       },
       {
         "ticker": "FOX",
@@ -6511,14 +6501,14 @@
         "items": "1.01, 2.03, 5.02, 7.01"
       },
       {
+        "ticker": "PSKY",
+        "count": 4,
+        "items": "7.01, 8.01"
+      },
+      {
         "ticker": "AES",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
-      },
-      {
-        "ticker": "ALGT",
-        "count": 3,
-        "items": "1.01, 2.03, 8.01"
       },
       {
         "ticker": "ASPI",
@@ -6539,6 +6529,11 @@
         "ticker": "AXP",
         "count": 3,
         "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "DELL",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
       },
       {
         "ticker": "DLR",
@@ -6596,9 +6591,14 @@
         "items": "1.01, 2.03, 8.01"
       },
       {
-        "ticker": "WRB",
-        "count": 3,
-        "items": "1.01, 2.03, 5.02, 8.01"
+        "ticker": "AEE",
+        "count": 2,
+        "items": "8.01"
+      },
+      {
+        "ticker": "ALGT",
+        "count": 2,
+        "items": "1.01, 2.03, 8.01"
       }
     ],
     "special_situations": [
@@ -47616,7 +47616,7 @@
           "gov_contract",
           "material_8k"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $211,758,926 awarded \u00b7 material_8k: 4 material 8-Ks (items 1.01, 2.03, 8.01)"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $211,758,926 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01)"
       },
       {
         "ticker": "GSK",
