@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 HK_TABLE_ROW_KEYS = [
     "ticker",
     "name",
+    "name_zh",       # bilingual name for ZH users
     "sector",
     "sector_zh",
     "price",
@@ -38,29 +39,32 @@ HK_TABLE_ROW_KEYS = [
     "ah_cheap",      # flattened from ah_value.cheap (bool)
     "group",
     "align_tier",
-    "dir",
     "washout_2w",    # bool
-    "entry_status",  # flattened from entry_signal.status
-    "buy_zone_lo",
-    "buy_zone_hi",
+    # NOTE: dir/entry_status/buy_zone_lo/buy_zone_hi removed — dead payload (no column consumes them)
 ]
 
-# Keys that must NOT be fabricated on HK rows (CN-specific enrichment)
-HK_ABSENT_KEYS = ["mcap", "cap_bucket", "days_since_signal", "stage", "zone", "tier"]
+# Keys that must NOT be fabricated on HK rows (CN-specific enrichment or removed dead payload)
+HK_ABSENT_KEYS = ["mcap", "cap_bucket", "days_since_signal", "stage", "zone", "tier",
+                  "dir", "entry_status", "buy_zone_lo", "buy_zone_hi"]
 
 
 def _serialize_hk_row(n: dict) -> dict:
     """Mirror the Jinja2 dict construction in hk.html.j2 W8-G data block.
     Produces the flat row dict exactly as the template does, null-safe.
+
+    Removed from payload (dead fields — no column consumes them):
+      dir, entry_status, buy_zone_lo, buy_zone_hi
+
+    Added:
+      name_zh — bilingual Chinese company name for ZH-mode users
     """
     conv = n.get("conviction") or {}
     sb = n.get("southbound") or {}
     ah = n.get("ah_value") or {}
-    es = n.get("entry_signal") or {}
-    bz = es.get("buy_zone") or {}
     return {
         "ticker":       n.get("ticker", ""),
         "name":         n.get("name") or "",
+        "name_zh":      n.get("name_zh") or "",
         "sector":       n.get("sector") or "",
         "sector_zh":    n.get("sector_zh") or "",
         "price":        n.get("price"),
@@ -74,11 +78,7 @@ def _serialize_hk_row(n: dict) -> dict:
         "ah_cheap":     bool(ah.get("cheap")),
         "group":        n.get("group") or "setting_up",
         "align_tier":   n.get("align_tier") or "",
-        "dir":          n.get("dir") or "flat",
         "washout_2w":   bool(n.get("washout_2w")),
-        "entry_status": es.get("status") or "",
-        "buy_zone_lo":  bz.get("low"),
-        "buy_zone_hi":  bz.get("high"),
     }
 
 
@@ -89,6 +89,7 @@ def _make_hk_buy_row(ticker: str = "0700.HK", group: str = "entry_open") -> dict
     return {
         "ticker": ticker,
         "name": f"{ticker} Name",
+        "name_zh": f"{ticker} 名称",
         "sector": "Technology",
         "sector_zh": "科技",
         "price": 345.60,
@@ -97,7 +98,7 @@ def _make_hk_buy_row(ticker: str = "0700.HK", group: str = "entry_open") -> dict
         "edge_z": 0.88,
         "group": group,
         "align_tier": "aligned",
-        "dir": "up",
+        "dir": "up",           # source field (consumed by grid cards), not serialized to table row
         "washout_2w": True,
         "conviction": {
             "score": 74,
@@ -159,9 +160,7 @@ class TestHKSerializationCompleteness:
         assert ser["ah_z"] is None
         assert ser["ah_cheap"] is False  # bool(None) = False
         assert ser["washout_2w"] is False
-        assert ser["entry_status"] == ""
-        assert ser["buy_zone_lo"] is None
-        assert ser["buy_zone_hi"] is None
+        assert ser["name_zh"] == ""
 
     def test_cn_fields_not_fabricated(self):
         """HK serialization must not produce CN-specific fields (mcap, cap_bucket, days_since_signal, etc.)."""
@@ -200,13 +199,24 @@ class TestHKSerializationCompleteness:
         assert ser["ah_z"] == pytest.approx(2.11)
         assert ser["ah_cheap"] is True
 
-    def test_entry_signal_extracted(self):
-        """entry_signal.status and buy_zone bounds are flattened."""
+    def test_name_zh_extracted(self):
+        """name_zh is present in serialized row for bilingual name column rendering."""
         row = _make_hk_buy_row()
         ser = _serialize_hk_row(row)
-        assert ser["entry_status"] == "buy_now"
-        assert ser["buy_zone_lo"] == pytest.approx(340.0)
-        assert ser["buy_zone_hi"] == pytest.approx(348.0)
+        assert ser["name_zh"] == "0700.HK 名称"
+
+    def test_name_zh_absent_defaults_to_empty(self):
+        """Missing name_zh field defaults to empty string (falls back to EN name in JS)."""
+        row = {"ticker": "0001.HK", "name": "CK Hutchison"}
+        ser = _serialize_hk_row(row)
+        assert ser["name_zh"] == ""
+
+    def test_dead_fields_absent(self):
+        """dir/entry_status/buy_zone_lo/buy_zone_hi must NOT appear in serialized row (removed as dead payload)."""
+        row = _make_hk_buy_row()
+        ser = _serialize_hk_row(row)
+        for dead in ("dir", "entry_status", "buy_zone_lo", "buy_zone_hi"):
+            assert dead not in ser, f"Dead field '{dead}' must not appear in serialized HK row"
 
     def test_group_defaults_to_setting_up(self):
         """Missing 'group' field defaults to 'setting_up' (not None)."""
@@ -293,21 +303,21 @@ class TestHKNullSafety:
         assert ser["ah_z"] is None
         assert ser["ah_cheap"] is False
 
-    def test_empty_entry_signal_dict_safe(self):
-        """An empty entry_signal dict does not raise; entry_status/buy zones return defaults."""
-        row = {"ticker": "X", "entry_signal": {}}
+    def test_entry_signal_field_not_in_output(self):
+        """entry_signal sub-dict is NOT serialized into the table row (removed as dead payload).
+        Source rows may still carry it for the grid-card rendering path — that is fine."""
+        row = {"ticker": "X", "entry_signal": {"status": "buy_soon",
+                                                "buy_zone": {"low": 10.0, "high": 12.0}}}
         ser = _serialize_hk_row(row)
-        assert ser["entry_status"] == ""
-        assert ser["buy_zone_lo"] is None
-        assert ser["buy_zone_hi"] is None
+        assert "entry_status" not in ser
+        assert "buy_zone_lo" not in ser
+        assert "buy_zone_hi" not in ser
 
-    def test_entry_signal_no_buy_zone(self):
-        """entry_signal without buy_zone returns None for lo/hi."""
-        row = {"ticker": "X", "entry_signal": {"status": "buy_soon"}}
+    def test_name_zh_empty_string_when_absent(self):
+        """name_zh absent on source row → empty string in serialized row (JS falls back to EN name)."""
+        row = {"ticker": "X", "name": "Test Corp"}
         ser = _serialize_hk_row(row)
-        assert ser["entry_status"] == "buy_soon"
-        assert ser["buy_zone_lo"] is None
-        assert ser["buy_zone_hi"] is None
+        assert ser["name_zh"] == ""
 
     def test_ah_cheap_false_when_missing(self):
         """ah_value.cheap absent → ah_cheap = False (not None)."""

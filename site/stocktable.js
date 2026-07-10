@@ -327,7 +327,7 @@
       var zones    = _uniq(rows.map(function(r){ return r.zone || ''; }).filter(Boolean));
       var tiers    = _uniq(rows.map(function(r){ return r.tier || ''; }).filter(Boolean));
       var sectors  = _uniq(rows.map(function(r){ return r.sector || ''; }).filter(Boolean));
-      var capBkts  = _uniq(rows.map(function(r){ return r.cap_bucket || 'unknown'; }));
+      var capBkts  = _uniq(rows.map(function(r){ return r.cap_bucket || ''; }).filter(Boolean));
 
       function sel(name, opts, labelEn, labelZh) {
         var html = '<select class="st-filter-sel" data-filter="' + name + '" aria-label="' + labelEn + '">';
@@ -343,11 +343,12 @@
                       .filter(function(t){ return tiers.indexOf(t) !== -1 || rows.some(function(r){ return (r.tier||'') === t; }); });
 
       var html = '<div class="st-filters">';
-      html += sel('stage', stageOpts, 'Stage', '阶段');
+      if (stageOpts.length > 0) html += sel('stage', stageOpts, 'Stage', '阶段');
       if (zoneOpts.length > 0) html += sel('zone', zoneOpts, 'Zone', '区域');
-      html += sel('tier', tierOpts.length > 0 ? tierOpts : tiers, 'Tier', '级别');
+      var tierList = tierOpts.length > 0 ? tierOpts : tiers;
+      if (tierList.length > 0) html += sel('tier', tierList, 'Tier', '级别');
       html += sel('sector', sectors, 'Sector', '板块');
-      html += sel('capBucket', capBkts.length > 0 ? capBkts : [], 'Cap', '市值');
+      if (capBkts.length > 0) html += sel('capBucket', capBkts, 'Cap', '市值');
       html += '<input class="st-filter-txt" type="text" data-filter="theme" placeholder="Theme search / 主题" style="min-width:120px">';
       html += '<label class="st-filter-chk"><input type="checkbox" data-filter="freshOnly"> ';
       html += bi('Fresh only (≤2d)', '仅新信号(≤2天)') + '</label>';

@@ -1887,6 +1887,7 @@
     {% set _hk_row = {
       'ticker':       _hn.ticker,
       'name':         _hn.name or '',
+      'name_zh':      _hn.get('name_zh') or '',
       'sector':       _hn.sector or '',
       'sector_zh':    _hn.sector_zh or '',
       'price':        _hn.get('price'),
@@ -1900,11 +1901,7 @@
       'ah_cheap':     true if _hk_ah.get('cheap') else false,
       'group':        _hn.get('group') or 'setting_up',
       'align_tier':   _hn.get('align_tier') or '',
-      'dir':          _hn.get('dir') or 'flat',
       'washout_2w':   true if _hn.get('washout_2w') else false,
-      'entry_status': _hk_es.get('status') or '',
-      'buy_zone_lo':  _hk_bz.get('low'),
-      'buy_zone_hi':  _hk_bz.get('high'),
     } %}
     {% set _ = _hk_st_rows.append(_hk_row) %}
   {% endfor %}
@@ -1927,8 +1924,10 @@
     {# THE ONE board-note (§7.2). Board mechanics only — the "screen, not a buy list" caveat
        lives once in the desk manifest above + the per-card tier badge. #}
     <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Aligned names first; near-aligned names are backfills. Rank is a screen, not a promise.', '共振个股优先；临近共振为补位。排名是筛选，不是承诺。') }}</p>
-    {# ── W8-G: count chips row (live-updated by JS when in table mode) ── #}
-    <div id="st-count-chips" style="display:none"></div>
+    {# ── W8-G: count chips row intentionally hidden — HK uses group taxonomy (entry_open/setting_up),
+       not the CN stage taxonomy (ENTRY/RAN_LATE/RIPENING/KNIFE). Kept in DOM so stocktable.js
+       _updateCountChips has a target, but never made visible (display:none both modes). ── #}
+    <div id="st-count-chips" style="display:none!important"></div>
 
     {# ── W8-G: table view mount point ─────────────────────────────────── #}
     <div id="stocktable-wrap"></div>
@@ -3084,7 +3083,8 @@
     { key:"name", labelEn:"Name", labelZh:"名称", default:true, sortable:true,
       fmt:function(v,r){
         if (!v) return '<span class="st-muted">—</span>';
-        return '<span class="l-en">' + esc(v||'') + '</span>';
+        var zh = r.name_zh || v;
+        return b(esc(v), esc(zh));
       }},
     { key:"sector", labelEn:"Sector", labelZh:"板块", default:true, sortable:true,
       fmt:function(v,r){
@@ -3166,12 +3166,11 @@
     if (!standouts) return;
     if (v === 'table') {
       standouts.classList.add('st-table-mode');
-      if (chipsEl) chipsEl.style.display = '';
+      /* HK: count-chips uses CN stage taxonomy — never shown (element stays display:none) */
       if (gbtn) gbtn.setAttribute('aria-selected','false');
       if (tbtn) tbtn.setAttribute('aria-selected','true');
     } else {
       standouts.classList.remove('st-table-mode');
-      if (chipsEl) chipsEl.style.display = 'none';
       if (gbtn) gbtn.setAttribute('aria-selected','true');
       if (tbtn) tbtn.setAttribute('aria-selected','false');
     }
