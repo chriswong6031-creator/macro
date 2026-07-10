@@ -223,7 +223,7 @@ class TestRunsPerWeekCap:
 
         run_count = [0]
 
-        def fake_run_spec(spec, repo_root="."):
+        def fake_run_spec(spec, repo_root=".", ledger_path=None):
             run_count[0] += 1
             return {"verdict": "null", "spec": spec, "stats": {}, "placebos": {},
                     "backtest": {}, "verdict_reasons": [], "battery_version": "sf-battery-1",
@@ -252,7 +252,7 @@ class TestRunsPerWeekCap:
 
         run_count = [0]
 
-        def fake_run_spec(spec, repo_root="."):
+        def fake_run_spec(spec, repo_root=".", ledger_path=None):
             run_count[0] += 1
             return {"verdict": "null", "spec": spec, "stats": {}, "placebos": {},
                     "backtest": {}, "verdict_reasons": [], "battery_version": "sf-battery-1",
@@ -291,7 +291,7 @@ class TestRunsPerWeekCap:
 
         run_count = [0]
 
-        def fake_run_spec(spec, repo_root="."):
+        def fake_run_spec(spec, repo_root=".", ledger_path=None):
             run_count[0] += 1
             return {"verdict": "null", "spec": spec, "stats": {}, "placebos": {},
                     "backtest": {}, "verdict_reasons": [], "battery_version": "sf-battery-1",
@@ -332,7 +332,7 @@ class TestRegisterBeforeRun:
                     registration_events.append(row["id"])
             return rows, n
 
-        def fake_run_spec(spec, repo_root="."):
+        def fake_run_spec(spec, repo_root=".", ledger_path=None):
             run_events.append(spec["id"])
             return {"verdict": "null", "spec": spec, "stats": {}, "placebos": {},
                     "backtest": {}, "verdict_reasons": [], "battery_version": "sf-battery-1",
@@ -361,7 +361,7 @@ class TestDryRun:
         _write_candidates(root, specs)
         original_content = (root / "data" / "signal_foundry" / "candidates.jsonl").read_text()
 
-        def fake_run_spec(spec, repo_root="."):
+        def fake_run_spec(spec, repo_root=".", ledger_path=None):
             return {"verdict": "null", "spec": spec, "stats": {}, "placebos": {},
                     "backtest": {}, "verdict_reasons": [], "battery_version": "sf-battery-1",
                     "ran_at": "2026-07-10", "ledger_n_at_run": 1}
@@ -390,7 +390,7 @@ class TestGovernanceEvents:
         ]
         _write_candidates(root, specs)
 
-        def fake_run_spec(spec, repo_root="."):
+        def fake_run_spec(spec, repo_root=".", ledger_path=None):
             return {"verdict": "null", "spec": spec, "stats": {}, "placebos": {},
                     "backtest": {}, "verdict_reasons": [], "battery_version": "sf-battery-1",
                     "ran_at": "2026-07-10", "ledger_n_at_run": 1}
@@ -412,7 +412,7 @@ class TestGovernanceEvents:
         ]
         _write_candidates(root, specs)
 
-        def fake_run_spec(spec, repo_root="."):
+        def fake_run_spec(spec, repo_root=".", ledger_path=None):
             return {"verdict": "null", "spec": spec, "stats": {}, "placebos": {},
                     "backtest": {}, "verdict_reasons": [], "battery_version": "sf-battery-1",
                     "ran_at": "2026-07-10", "ledger_n_at_run": 1}

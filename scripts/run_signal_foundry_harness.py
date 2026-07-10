@@ -313,7 +313,10 @@ def _run_batch(
             continue
 
         try:
-            result = run_spec(spec, repo_root=root)
+            # Thread the ledger under --root so isolated runs (tests/tmp trees)
+            # never write to a CWD-relative data/trial_ledger.jsonl (SF-R10).
+            result = run_spec(spec, repo_root=root,
+                              ledger_path=root / "data" / "trial_ledger.jsonl")
             run_elapsed = time.monotonic() - run_start
             verdict = result.get("verdict", "error")
             print(f"[run_signal_foundry_harness] {spec_id}: verdict={verdict} "

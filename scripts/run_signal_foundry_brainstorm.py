@@ -951,6 +951,17 @@ def _run_full_mode(
 
     # ---- Step 5: Two-key screen + file (SF-R7) ----
     candidates_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+    # SF-R6 HARD cap: a single run may not file past the weekly budget, even
+    # when the LLM chain returns more admitted specs than the remaining
+    # allowance (the pre-run GATE 3 only blocks the NEXT run).
+    filed_per_week = int((cfg.get("budgets") or {}).get("filed_per_week", 5))
+    already_filed = 0 if dry_run else _count_filed_this_week(candidates_path, iso_week)
+    remaining = max(0, filed_per_week - already_filed)
+    if len(final_specs) > remaining:
+        print(f"[run_signal_foundry_brainstorm] SF-R6 hard cap: truncating "
+              f"{len(final_specs)} specs to remaining weekly budget {remaining} "
+              f"({already_filed}/{filed_per_week} already filed, {iso_week})")
+        final_specs = final_specs[:remaining]
     n_admitted, n_rejected = _file_specs(
         final_specs,
         candidates_path=candidates_path,
