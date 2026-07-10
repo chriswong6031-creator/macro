@@ -10,9 +10,11 @@ network and no parquet. CONTEXT only — never imported by any scoring path.
 from __future__ import annotations
 
 import logging
+import pathlib
 from datetime import datetime, timezone
 
 import pandas as pd
+import yaml
 
 from collectors import edgar
 from lib import config
@@ -50,6 +52,62 @@ _DROP = edgar._SUFFIX | _EXTRA_DROP
 
 # share-count change beyond +/- this fraction => ADD / TRIM (else HOLD)
 _MOVE_FRAC = 0.10
+
+# --------------------------------------------------------------------------- #
+# Share-class equivalence — loaded once, applied everywhere                     #
+# --------------------------------------------------------------------------- #
+
+def _load_equiv_table() -> dict[str, str]:
+    """Load config/share_class_equiv.yml, returning {non-canonical: canonical} map.
+    Silent-degrades to empty dict if the file is absent."""
+    try:
+        root = pathlib.Path(__file__).resolve().parent.parent
+        p = root / "config" / "share_class_equiv.yml"
+        if not p.exists():
+            return {}
+        with open(p) as fh:
+            data = yaml.safe_load(fh) or {}
+        equiv: dict[str, str] = {}
+        for entry in data.get("equivalences", []):
+            t = str(entry.get("ticker", "")).strip().upper()
+            c = str(entry.get("canonical", "")).strip().upper()
+            if t and c and t != c:
+                equiv[t] = c
+        return equiv
+    except Exception:  # noqa: BLE001
+        log.debug("share_class_equiv.yml load failed — issuer dedup via CUSIP only")
+        return {}
+
+
+_EQUIV: dict[str, str] = {}  # populated lazily on first call to issuer_key
+
+
+def _get_equiv() -> dict[str, str]:
+    global _EQUIV
+    if not _EQUIV:
+        _EQUIV = _load_equiv_table()
+    return _EQUIV
+
+
+def issuer_key(ticker: str | None, cusip: str | None) -> str:
+    """Canonical share-class key for deduplication across 13F holders counts.
+
+    Collapses via the share_class_equiv.yml table first (e.g. GOOG -> GOOGL,
+    BRK.B -> BRK.A). Falls back to the 6-char CUSIP stem when two tickers share it
+    (same issuer, different series). Returns the canonical ticker or CUSIP stem as a
+    non-empty string suitable as a grouping key.
+
+    PURE (uses module-level cached table). Holder counts that call this must NEVER
+    double-count share classes — this is the contract tested in the BRK.A+BRK.B
+    fixture test in tests/test_smart_money.py.
+    """
+    eq = _get_equiv()
+    t = str(ticker or "").strip().upper()
+    if eq and t in eq:
+        t = eq[t]
+    c = str(cusip or "").strip().upper()
+    stem = c[:6] if len(c) >= 6 else ""
+    return t if t and t not in ("", "NAN", "NONE") else (stem or "UNKNOWN")
 
 # >= this many tracked funds currently holding a name flags it a cross-fund "VIP"
 # (broad super-investor consensus). Display context — never a scoring leg.
@@ -134,17 +192,164 @@ def cusip_ticker_seed() -> dict[str, str]:
     return out
 
 
-def full_cusip_map() -> dict[str, str]:
+def full_cusip_map() -> tuple[dict[str, str], dict]:
     """The full CUSIP→ticker resolver for 13F lines: the precise ARK seed FIRST,
     then the free OpenFIGI master (collectors/openfigi.py) layered underneath to
     unhide foreign/ADR/renamed/non-index lines the seed + name-match miss. Seed
-    wins on conflict (hand-verified)."""
+    wins on conflict (hand-verified).
+
+    Returns (cusip_map, coverage_meta) where coverage_meta = {
+        'openfigi_entries': int,   # 0 = OpenFIGI cache empty → WARNING logged
+        'ark_seed_entries': int,
+    }.
+    Callers that only need the map can do `cusip_map, _ = full_cusip_map()` or
+    for backward compat pass the result's first element.
+    """
     try:
         from collectors.openfigi import load_cusip_ticker
         figi = load_cusip_ticker()
     except Exception:  # noqa: BLE001 — never break resolution over an optional cache
         figi = {}
-    return {**figi, **cusip_ticker_seed()}      # seed overrides OpenFIGI on conflict
+
+    if len(figi) == 0:
+        log.warning("full_cusip_map: OpenFIGI cache contributed 0 entries — "
+                    "resolution falls back to ARK seed + name matching only; "
+                    "run collectors/openfigi.py to refresh the cache")
+
+    seed = cusip_ticker_seed()
+    combined = {**figi, **seed}  # seed overrides OpenFIGI on conflict
+    meta = {"openfigi_entries": len(figi), "ark_seed_entries": len(seed)}
+    return combined, meta
+
+
+# --------------------------------------------------------------------------- #
+# New SM2 pure helpers                                                          #
+# --------------------------------------------------------------------------- #
+
+def position_rank_and_tilt(snap: pd.DataFrame) -> pd.DataFrame:
+    """Attach within-fund position rank and tilt to a resolved snapshot.
+
+    rank     : 1 = largest position by value_usd; PURE, row-level.
+    tilt_pp  : pct_portfolio − mean(pct_portfolio) for the fund's resolved rows.
+               Positive = overweight vs average fund allocation; PURE.
+
+    Returns a copy of the frame with added columns [rank, tilt_pp].
+    Rows lacking value_usd or pct_portfolio get rank=None and tilt_pp=None.
+    """
+    out = snap.copy()
+    if "value_usd" not in out.columns:
+        out["rank"] = None
+        out["tilt_pp"] = None
+        return out
+    out = out.sort_values("value_usd", ascending=False).reset_index(drop=True)
+    out["rank"] = range(1, len(out) + 1)
+    if "pct_portfolio" in out.columns:
+        mean_pct = out["pct_portfolio"].mean()
+        out["tilt_pp"] = (out["pct_portfolio"] - mean_pct).round(3)
+    else:
+        out["tilt_pp"] = None
+    return out
+
+
+def window_dressing_flag(fund_snaps: list[tuple[str, str, pd.DataFrame]],
+                         ticker: str) -> str:
+    """Window-dressing persistence flag for a ticker in a fund's history.
+
+    'persisted'   : appeared in the LATEST quarter AND at least one prior quarter.
+    'one_quarter' : appeared in exactly one quarter that is NOT the latest.
+    'pending'     : appeared only in the latest quarter (persistence unknown yet).
+
+    'pending' is the correct label for any new position in the latest quarter since
+    we cannot yet determine whether it will persist. PURE.
+    """
+    if not fund_snaps:
+        return "pending"
+    tickers_by_q: list[set] = []
+    for _, _, snap in fund_snaps:
+        eq = snap[snap.get("sh_type", pd.Series(["SH"] * len(snap))) == "SH"]
+        if "ticker" in eq.columns:
+            tickers_by_q.append(set(eq["ticker"].dropna().astype(str)))
+        else:
+            tickers_by_q.append(set())
+    if not tickers_by_q:
+        return "pending"
+    latest_has = ticker in tickers_by_q[-1]
+    prior_count = sum(1 for s in tickers_by_q[:-1] if ticker in s)
+    if latest_has:
+        return "persisted" if prior_count >= 1 else "pending"
+    return "one_quarter" if prior_count == 1 else "persisted" if prior_count > 1 else "pending"
+
+
+def amendment_delta(slug: str) -> list[dict]:
+    """Position deltas between the original 13F-HR and any amendments (13F-HR/A).
+
+    Amendments are stored under data/smart_money/<slug>/amendments/<period_end>__<filing_date>.parquet
+    (same schema as the originals, may not exist — handled gracefully).
+
+    Returns a list of delta records [{ticker, cusip, issuer, pct_change_shares,
+    orig_filing_date, amendment_filing_date, period_end}] for changes >±20% in shares.
+    Empty list when no amendments directory exists or no material changes found.
+    """
+    d = config.data_dir() / "smart_money" / slug / "amendments"
+    if not d.exists():
+        return []
+    # Load originals index: period_end -> (filing_date, DataFrame)
+    orig_dir = config.data_dir() / "smart_money" / slug
+    originals: dict[str, tuple[str, pd.DataFrame]] = {}
+    for p in sorted(orig_dir.glob("*.parquet")):
+        try:
+            df = pd.read_parquet(p)
+            pe = p.stem
+            fd = _snapshot_filing_date(df)
+            originals[pe] = (fd, df)
+        except Exception:  # noqa: BLE001
+            continue
+
+    results: list[dict] = []
+    for ap in sorted(d.glob("*.parquet")):
+        # Filename: <period_end>__<filing_date>.parquet
+        stem = ap.stem
+        parts = stem.split("__", 1)
+        if len(parts) != 2:
+            continue
+        period_end, amend_filing_date = parts[0], parts[1]
+        if period_end not in originals:
+            continue
+        orig_fd, orig_df = originals[period_end]
+        try:
+            amend_df = pd.read_parquet(ap)
+        except Exception:  # noqa: BLE001
+            continue
+        # Compare shares by cusip
+        def _to_shares(df: pd.DataFrame) -> dict[str, tuple]:
+            eq = df[df.get("sh_type", pd.Series(["SH"] * len(df))) == "SH"]
+            g = eq.groupby("cusip", as_index=False).agg(
+                issuer=("issuer", "first"), shares=("shares", "sum"))
+            return {row["cusip"]: (row["issuer"], float(row["shares"]))
+                    for row in g.to_dict("records")}
+        orig_sh = _to_shares(orig_df)
+        amend_sh = _to_shares(amend_df)
+        all_cusips = set(orig_sh) | set(amend_sh)
+        for cusip in all_cusips:
+            o_issuer, o_shares = orig_sh.get(cusip, ("", 0.0))
+            a_issuer, a_shares = amend_sh.get(cusip, ("", 0.0))
+            if o_shares == 0 and a_shares == 0:
+                continue
+            if o_shares == 0:
+                pct_change = None  # new position in amendment
+            elif a_shares == 0:
+                pct_change = -100.0
+            else:
+                pct_change = round((a_shares - o_shares) / o_shares * 100.0, 1)
+            if pct_change is None or abs(pct_change) > 20.0:
+                results.append({
+                    "cusip": cusip, "issuer": a_issuer or o_issuer,
+                    "pct_change_shares": pct_change,
+                    "orig_filing_date": orig_fd,
+                    "amendment_filing_date": amend_filing_date,
+                    "period_end": period_end,
+                })
+    return results
 
 
 def resolve_tickers(df: pd.DataFrame, name_map: dict[str, str],
@@ -467,7 +672,7 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
     if not funds:
         return None
     name_map = name_ticker_map()
-    cusip_map = full_cusip_map()                 # ARK seed + free OpenFIGI master
+    cusip_map, _figi_meta = full_cusip_map()      # ARK seed + free OpenFIGI master
     top_n = int(cfg.get("panel_top_n", 12))
 
     by_ticker: dict[str, dict] = {}
@@ -496,13 +701,22 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
                              pct_portfolio=("pct_portfolio", "sum"),
                              value_usd=("value_usd", "sum"),
                              shares_change_pct=("shares_change_pct", "first")))
+        # per-fund coverage: resolved / total positions
+        n_resolved_count = int(len(resolved)) if not resolved.empty else 0
+        n_positions_count = int(len(diff))
+        coverage_pct = (round(100.0 * n_resolved_count / n_positions_count, 1)
+                        if n_positions_count else None)
         fund_rows.append({
             "slug": slug, "name": spec.get("name", slug), "period_end": period_end,
-            "n_positions": int(len(diff)), "n_resolved": int(len(resolved)),
+            "n_positions": n_positions_count, "n_resolved": n_resolved_count,
+            "resolution_coverage_pct": coverage_pct,
             "top": [{"ticker": t, "pct": round(float(p), 2)}
                     for t, p in resolved.sort_values("pct_portfolio", ascending=False)
                     .head(5)[["ticker", "pct_portfolio"]].itertuples(index=False)],
         })
+        # Attach position rank + within-fund tilt to the resolved frame before iterating
+        if not resolved.empty:
+            resolved = position_rank_and_tilt(resolved)
         for r in resolved.itertuples(index=False):
             t = r.ticker
             entry = {
@@ -512,6 +726,10 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
                 "shares_change_pct": (None if r.shares_change_pct is None
                                       or pd.isna(r.shares_change_pct)
                                       else float(r.shares_change_pct)),
+                "position_rank": (int(r.rank) if hasattr(r, "rank")
+                                  and r.rank is not None else None),
+                "tilt_pp": (round(float(r.tilt_pp), 3) if hasattr(r, "tilt_pp")
+                            and r.tilt_pp is not None else None),
             }
             by_ticker.setdefault(t, {"holders": []})["holders"].append(entry)
             ov = overlap.setdefault(t, {"ticker": t, "n_funds": 0, "funds": [],
@@ -577,4 +795,7 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
         "most_held": most_held,
         "manager_quality": mq,
         "by_ticker": by_ticker,
+        # OpenFIGI resolution metadata (n_resolved/n_positions per fund above;
+        # openfigi_entries=0 triggers a WARNING in full_cusip_map already)
+        "cusip_resolution": _figi_meta,
     }
