@@ -552,14 +552,26 @@ def resolve_two_key(
                 adv_key = "veto" if vetoed else "nonveto"
                 adv_nonveto = not vetoed
 
+            # R-AUT-6 enforcement: the two keys must come from TWO DISTINCT
+            # stateless runs. If the orchestrator and adversary rows collapse to
+            # the same run_id (a bug or a single run playing both roles), the
+            # "second key" is not genuine — deny, fail-closed. Unknown run_ids
+            # (either side missing/empty) also fail the distinctness test.
+            orch_run = str((orch or {}).get("after", {}).get("run_id") or "") if orch else ""
+            adv_run = str((adv or {}).get("after", {}).get("run_id") or "") if adv else ""
+            distinct_runs = bool(orch_run) and bool(adv_run) and orch_run != adv_run
+
             if tier == "T0":
                 authorized = orch_grant
-            else:  # T1 / T2 need both keys
-                authorized = orch_grant and (adv is not None) and adv_nonveto
+            else:  # T1 / T2 need both keys FROM DISTINCT RUNS
+                authorized = (
+                    orch_grant and (adv is not None) and adv_nonveto and distinct_runs
+                )
 
             keys = {
                 "orchestrator": "grant" if orch_grant else ("deny" if orch else "absent"),
                 "adversary": adv_key,
+                "distinct_runs": distinct_runs,
             }
             after = {"role": ROLE_TWO_KEY, "authorized": authorized, "tier": tier, "keys": keys}
             if not dry_run and not _ruled_in(all_rows, target, EVT_ADJUDICATION, ROLE_TWO_KEY):

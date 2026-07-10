@@ -308,12 +308,27 @@ def test_redline_scanner_passes_on_real_files():
     )
 
 
+def _stub_required_scan_paths(tmp):
+    """Create clean stubs for every SCAN_PATHS entry except the two the test
+    writes itself (manifest + broker). SCAN_PATHS is fail-closed on missing
+    files, so the metabolism writer modules (added post-review) must exist."""
+    from scripts.check_capability_redline import SCAN_PATHS
+    for rel in SCAN_PATHS:
+        if rel in ("config/capability_manifest.yml",
+                   "engine/neuralweb/capability_broker.py"):
+            continue
+        fp = tmp / rel
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        fp.write_text("# clean stub — references names only\n")
+
+
 def test_redline_scanner_flags_planted_fake_secret():
     """The redline scanner catches a planted fake secret in a fixture manifest."""
     with tempfile.TemporaryDirectory(prefix="broker_redline_test_") as tmpdir:
         tmp = Path(tmpdir)
         (tmp / "config").mkdir()
         (tmp / "engine" / "neuralweb").mkdir(parents=True)
+        _stub_required_scan_paths(tmp)
 
         # Plant a 40-char hex fake secret
         fake_secret = "d" * 5 + "1" * 35  # 40-char hex-like with digits
@@ -340,6 +355,7 @@ def test_redline_scanner_flags_secrets_reference():
         (tmp / "config").mkdir()
         (tmp / "engine" / "neuralweb").mkdir(parents=True)
 
+        _stub_required_scan_paths(tmp)
         (tmp / "config" / "capability_manifest.yml").write_text(
             "schema: capability_manifest.v1\n"
             "token: ${{ secrets.OAUTH_TOKEN }}\n"
