@@ -333,7 +333,7 @@ def _build_thesis(ticker: str, b: dict) -> str:
     if cautions:
         sanitized_c = [_sanitize_thesis_text(str(c)) for c in cautions[:2]]
         sentence3_parts.append(f"Cautions: {'; '.join(sanitized_c)}.")
-    trust = (conv.get("trust_tier") or {}).get("en", "")
+    trust = _sanitize_thesis_text((conv.get("trust_tier") or {}).get("en", ""))
     if trust:
         sentence3_parts.append(f"Trust tier: {trust}.")
     sentence3 = " ".join(sentence3_parts)
@@ -402,7 +402,7 @@ def _build_thesis_zh(ticker: str, b: dict) -> str:
     if cautions_zh:
         sanitized_c = [_sanitize_thesis_text_zh(str(c)) for c in cautions_zh[:2]]
         sentence3_parts.append(f"注意事项: {'; '.join(sanitized_c)}。")
-    trust_zh = (conv.get("trust_tier") or {}).get("zh", "")
+    trust_zh = _sanitize_thesis_text_zh((conv.get("trust_tier") or {}).get("zh", ""))
     if trust_zh:
         sentence3_parts.append(f"可信度: {trust_zh}。")
     sentence3 = " ".join(sentence3_parts)
