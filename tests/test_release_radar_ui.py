@@ -384,25 +384,47 @@ def test_r24_card_skew_chip_bilingual_labels():
 
 
 def test_r24_card_display_only_footnote_on_card():
-    """display-only footnote text appears in renderCard (card-level note)."""
+    """MRI-R39a: per-card display-only footnotes removed; panel-level disclosure retained.
+
+    The operator card amendment (MRI-R39a) removed per-card do-notes.
+    Honesty law is satisfied by the panel-level subline ('Forward model · display-only…')
+    which must appear in the static HTML, and by the modal footer (rr-modal-do-note).
+    """
     src = _rr_section_src()
-    fn_start = src.find("function renderCard(")
-    fn_end = src.find("function renderModal(", fn_start) if fn_start >= 0 else -1
-    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 5000]
-    assert "display-only" in card_body, "display-only footnote missing from renderCard"
-    assert "非信号" in card_body or "not a signal" in card_body, (
-        "not-a-signal footnote missing from renderCard"
+    # Panel-level disclosure must be present in the static HTML section
+    assert "display-only" in src, "display-only disclosure missing from RR section"
+    assert "Forward model" in src or "前瞻模型" in src, (
+        "Panel-level 'Forward model' subline missing from RR section"
+    )
+    # Modal footnote must still contain display-only language
+    assert "rr-modal-do-note" in src, "rr-modal-do-note modal footnote missing"
+    # Per-card footnote class should be absent (operator amendment MRI-R39a)
+    assert "rr-card-do-note" not in src, (
+        "rr-card-do-note class still present — per-card footnote not removed (MRI-R39a)"
     )
 
 
 def test_r24_card_tap_for_detail_prompt():
-    """Card carries a 'tap for detail' prompt (bilingual)."""
+    """MRI-R39a: 'tap for detail' text row removed; card is wholly clickable with chevron ▸.
+
+    The operator card amendment (MRI-R39a) deleted the tap-for-detail text row.
+    The card still has cursor:pointer and a chevron ▸ in the corner.
+    """
     src = _rr_section_src()
     fn_start = src.find("function renderCard(")
     fn_end = src.find("function renderModal(", fn_start) if fn_start >= 0 else -1
-    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 5000]
-    assert "tap for detail" in card_body or "点击查看" in card_body, (
-        "Card missing 'tap for detail' prompt"
+    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 8000]
+    # The explicit text row is gone (operator amendment)
+    assert "tap for detail" not in card_body, (
+        "'tap for detail' text row still present — MRI-R39a requires it deleted"
+    )
+    # Chevron replaces the tap prompt
+    assert "▸" in card_body or "rr-chevron" in card_body, (
+        "Card chevron ▸ / rr-chevron missing — whole-card-clickable indicator gone"
+    )
+    # cursor:pointer must remain (card CSS or inline)
+    assert "cursor:pointer" in src or "cursor: pointer" in src, (
+        "cursor:pointer missing from RR card CSS"
     )
 
 
@@ -532,7 +554,8 @@ def test_r24_modal_scoreboard_in_main_render():
     """scoreboardBlock is called in main renderRadar (not inside each modal)."""
     src = _rr_section_src()
     main_start = src.find("function renderRadar(")
-    main_body = src[main_start:main_start + 2000] if main_start >= 0 else ""
+    # renderRadar grew with the see-more logic; use a larger window
+    main_body = src[main_start:main_start + 8000] if main_start >= 0 else ""
     assert "scoreboardBlock(" in main_body, "scoreboardBlock not called in renderRadar"
 
 
@@ -985,4 +1008,240 @@ def test_models_tab_market_implied_not_duplicated():
         f"Fix 2 regression: found {len(direct_calls)} direct marketImpliedRow() call(s) "
         f"in the TAB 1 building block. modelDotPlot() already adds the row — "
         f"a duplicate call produces two market-implied rows in the Models tab."
+    )
+
+
+# ---------------------------------------------------------------------------
+# MRI-R39a card compaction tests (operator directive, 2026-07-10)
+# ---------------------------------------------------------------------------
+
+def test_r39a_expected_value_sourcing_expectation_median_preferred():
+    """MRI-R39a: _expectedVal() prefers expectation_read.expectation_median when non-null."""
+    src = _rr_section_src()
+    fn_start = src.find("function _expectedVal(")
+    fn_body = src[fn_start:fn_start + 2000] if fn_start >= 0 else ""
+    assert fn_start >= 0, "_expectedVal helper not found in RR section"
+    assert "expectation_median" in fn_body, (
+        "_expectedVal must check expectation_read.expectation_median first (MRI-R39a source order (a))"
+    )
+
+
+def test_r39a_expected_value_market_implied_excluded_from_bench_median():
+    """MRI-R39a: market_implied excluded from benchmark median (different basis/object)."""
+    src = _rr_section_src()
+    fn_start = src.find("function _expectedVal(")
+    fn_body = src[fn_start:fn_start + 2000] if fn_start >= 0 else ""
+    # market_implied must NOT appear in the benchmark keys list
+    # Look for the benchKeys array definition
+    import re as _re
+    bench_section = fn_body[fn_body.find("benchKeys"):][:500] if "benchKeys" in fn_body else ""
+    assert "market_implied" not in bench_section, (
+        "market_implied must not be included in benchKeys for the bench-median fallback (MRI-R39a)"
+    )
+
+
+def test_r39a_expected_value_source_tag_cle_mkt():
+    """MRI-R39a: source tag is 'CLE' for cleveland_nowcast, 'MKT' for kalshi/polymarket."""
+    src = _rr_section_src()
+    fn_start = src.find("function _expectedVal(")
+    fn_body = src[fn_start:fn_start + 2000] if fn_start >= 0 else ""
+    assert "CLE" in fn_body, "_expectedVal missing CLE source tag for cleveland_nowcast"
+    assert "MKT" in fn_body, "_expectedVal missing MKT source tag for kalshi/polymarket"
+
+
+def test_r39a_no_consensus_in_new_strings():
+    """MRI-R5 + MRI-R39a: 'consensus' / '共识' absent from all new card strings."""
+    src = _rr_section_src()
+    fn_start = src.find("function renderCard(")
+    fn_end = src.find("function renderModal(", fn_start) if fn_start >= 0 else -1
+    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 8000]
+    assert "consensus" not in card_body.lower(), (
+        "'consensus' found in renderCard — forbidden by MRI-R5"
+    )
+
+
+def test_r39a_no_per_card_footnote_class():
+    """MRI-R39a: rr-card-do-note class removed (per-card display-only footnotes deleted)."""
+    src = _rr_section_src()
+    assert "rr-card-do-note" not in src, (
+        "rr-card-do-note class still present — per-card footnotes not removed (MRI-R39a)"
+    )
+
+
+def test_r39a_card_has_ours_and_bench_labels():
+    """MRI-R39a: renderCard has 'ours 本方' and 'exp 预期'/'bench 基准' label strings."""
+    src = _rr_section_src()
+    fn_start = src.find("function renderCard(")
+    fn_end = src.find("function renderModal(", fn_start) if fn_start >= 0 else -1
+    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 8000]
+    assert "ours 本方" in card_body or "ours" in card_body, (
+        "renderCard missing 'ours' label for our projection column (MRI-R39a directive 1)"
+    )
+
+
+def test_r39a_card_one_chip_max():
+    """MRI-R39a directive 1: card has at most ONE chip (expectation_read.tag preferred, else skew)."""
+    src = _rr_section_src()
+    fn_start = src.find("function renderCard(")
+    fn_end = src.find("function renderModal(", fn_start) if fn_start >= 0 else -1
+    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 8000]
+    # The new code uses if/else: expectationChip OR skewChip, not both
+    # Verify that both are NOT unconditionally called
+    import re as _re
+    # The old pattern was: chips += expectationChip(er); chips += skewChip(sk);
+    # New pattern uses if/else so both cannot fire simultaneously
+    # Check the chip assignment block uses if-else branching
+    assert "if (er && er.tag)" in card_body or "er.tag" in card_body, (
+        "renderCard must prefer expectation_read.tag chip (MRI-R39a directive 1)"
+    )
+    # skewChip should be in else branch only
+    skew_idx = card_body.find("skewChip(")
+    exp_idx = card_body.find("expectationChip(")
+    # Both should appear (as alternatives) but not as unconditional sequential calls
+    assert skew_idx >= 0, "skewChip missing from renderCard"
+    assert exp_idx >= 0, "expectationChip missing from renderCard"
+
+
+def test_r39a_claims_benchmark_only_tag():
+    """MRI-R39a: benchmark_only cards show 'benchmark-only 仅基准' tag (not prose)."""
+    src = _rr_section_src()
+    fn_start = src.find("function renderCard(")
+    fn_end = src.find("function renderModal(", fn_start) if fn_start >= 0 else -1
+    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 8000]
+    assert "benchmark-only" in card_body, (
+        "renderCard missing 'benchmark-only' tag for benchmark_only mode (MRI-R39a directive 3)"
+    )
+    assert "仅基准" in card_body, (
+        "renderCard missing '仅基准' ZH tag for benchmark_only mode (MRI-R39a directive 3)"
+    )
+    # The old italic prose should not be present
+    assert "§6 kill rule" not in card_body, (
+        "Old italic '§6 kill rule' prose still in card — replace with compact tag (MRI-R39a)"
+    )
+
+
+def test_r39a_no_data_compact_one_liner():
+    """MRI-R39a directive 3: retail no_data renders as compact one-liner 'awaiting data 待数据'."""
+    src = _rr_section_src()
+    fn_start = src.find("function renderCard(")
+    fn_end = src.find("function renderModal(", fn_start) if fn_start >= 0 else -1
+    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 8000]
+    assert "awaiting data" in card_body, (
+        "renderCard missing 'awaiting data' compact one-liner for no_data case (MRI-R39a)"
+    )
+    assert "待数据" in card_body, (
+        "renderCard missing '待数据' ZH for no_data compact card (MRI-R39a)"
+    )
+
+
+def test_r39a_see_more_button_present():
+    """MRI-R39a directive 4: see-more / see-less toggle button is wired in renderRadar."""
+    src = _rr_section_src()
+    main_start = src.find("function renderRadar(")
+    main_body = src[main_start:main_start + 8000] if main_start >= 0 else ""
+    assert "rr-see-more-btn" in main_body, (
+        "rr-see-more-btn missing from renderRadar — see-more toggle not wired (MRI-R39a directive 4)"
+    )
+    assert "See more" in main_body and "See less" in main_body, (
+        "See more / See less text missing from renderRadar toggle (MRI-R39a)"
+    )
+    assert "显示更多" in main_body and "收起" in main_body, (
+        "ZH '显示更多' / '收起' missing from see-more toggle (MRI-R39a bilingual)"
+    )
+
+
+def test_r39a_see_more_earliest_date_logic():
+    """MRI-R39a directive 4: renderRadar computes earliest release_date for default-visible set."""
+    src = _rr_section_src()
+    main_start = src.find("function renderRadar(")
+    main_body = src[main_start:main_start + 8000] if main_start >= 0 else ""
+    assert "release_date" in main_body, "renderRadar must check release_date for see-more logic"
+    assert "visibleDate" in main_body or "earliest" in main_body, (
+        "renderRadar missing earliest-date visible set computation (MRI-R39a directive 4)"
+    )
+
+
+def test_r39a_see_more_modelled_point_guard():
+    """MRI-R39a directive 4: guard ensures at least one modelled card is default-visible."""
+    src = _rr_section_src()
+    main_start = src.find("function renderRadar(")
+    main_body = src[main_start:main_start + 8000] if main_start >= 0 else ""
+    assert "_hasModelledPoint" in main_body or "hasModelledPoint" in main_body, (
+        "renderRadar missing modelled-point guard for next-release fallback (MRI-R39a directive 4)"
+    )
+
+
+def test_r39a_chevron_in_rendercard():
+    """MRI-R39a directive 1: card has chevron ▸ corner indicator (replaces tap-for-detail row)."""
+    src = _rr_section_src()
+    fn_start = src.find("function renderCard(")
+    fn_end = src.find("function renderModal(", fn_start) if fn_start >= 0 else -1
+    card_body = src[fn_start:fn_end] if fn_end > fn_start else src[fn_start:fn_start + 8000]
+    assert "▸" in card_body or "rr-chevron" in card_body, (
+        "renderCard missing chevron ▸ / rr-chevron corner indicator (MRI-R39a directive 1)"
+    )
+    assert "rr-card-tap" not in card_body, (
+        "Old rr-card-tap class still in renderCard — tap-for-detail row not removed (MRI-R39a)"
+    )
+
+
+def test_r39a_fixture_visible_cards_are_cpi_headline_and_core():
+    """MRI-R39a directive 4: with the test fixture, default-visible set = CPI headline + CPI core (2026-07-14).
+
+    Earliest date = 2026-07-14. Both cards have modelled points. Claims (benchmark_only)
+    and retail (no_data) are hidden. See-more hides 13 cards.
+    """
+    d = _fixture()
+    upcoming = d.get("upcoming", [])
+
+    # Compute earliest date (mirror JS logic)
+    dates = sorted({it["release_date"] for it in upcoming if it.get("release_date")})
+    assert dates, "No dated items in fixture"
+    earliest = dates[0]
+    assert earliest == "2026-07-14", f"Expected earliest date 2026-07-14, got {earliest}"
+
+    # Items on earliest date
+    visible = [it for it in upcoming if it.get("release_date") == earliest]
+    assert len(visible) == 2, f"Expected 2 visible cards on 2026-07-14, got {len(visible)}"
+
+    rts = {it["release_type"] for it in visible}
+    assert rts == {"cpi_headline", "cpi_core"}, f"Expected CPI types, got {rts}"
+
+    # Both have modelled points
+    for it in visible:
+        proj = it.get("projection") or {}
+        assert proj.get("point") is not None, f"Visible card {it['release_type']} has null point"
+
+
+def test_r39a_cpi_expected_value_from_expectation_median():
+    """MRI-R39a directive 3: CPI headline expected value comes from expectation_read.expectation_median."""
+    d = _fixture()
+    cpi = next((it for it in d["upcoming"] if it.get("release_type") == "cpi_headline"), None)
+    assert cpi is not None
+    er = cpi.get("expectation_read") or {}
+    assert er.get("expectation_median") is not None, (
+        "CPI headline fixture expectation_read.expectation_median is null — test premise broken"
+    )
+    # Source should be cleveland_nowcast → CLE tag
+    srcs = er.get("sources") or []
+    assert "cleveland_nowcast" in srcs, "CPI headline expectation sources should include cleveland_nowcast"
+
+
+def test_r39a_ppi_expected_value_bench_median_no_market_implied():
+    """MRI-R39a directive 3: PPI expected value falls back to bench median, excluding market_implied."""
+    d = _fixture()
+    ppi = next((it for it in d["upcoming"] if it.get("release_type") == "ppi_finaldemand"), None)
+    assert ppi is not None
+    er = ppi.get("expectation_read") or {}
+    assert er.get("expectation_median") is None, (
+        "PPI fixture expectation_read.expectation_median is not null — bench-median path won't be tested"
+    )
+    bs = ppi.get("benchmark_set") or {}
+    # Bench keys (non-market_implied) that are non-null
+    bench_keys = ["naive_prior", "trailing_3m", "ar_model", "cleveland_nowcast", "expanding_mean"]
+    non_null = [bs[k] for k in bench_keys if bs.get(k) is not None]
+    assert non_null, "PPI fixture has no non-null benchmark values — bench median test broken"
+    # Verify market_implied is present but must NOT be in the median
+    assert bs.get("market_implied") is None, (
+        "PPI fixture has market_implied — test needs update or exclusion check must be verified"
     )

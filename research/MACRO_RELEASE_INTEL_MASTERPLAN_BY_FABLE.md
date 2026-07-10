@@ -887,3 +887,28 @@ caught estimator defects. Outcomes of record:
 Forward clocks: §7 gates unchanged; C-9 promotion now covers v3_factor +
 cpi_bridge + mf_energy (champion keeps every card); claims 2026-07-09
 catch-up verification on the next nightly; comebacks C-10..C-14 open.
+
+### MRI-R39a operator card amendment (2026-07-10)
+
+Binding operator rework of the Release Radar card layout (the 5-tab modal
+from MRI-R39/W11-H is unchanged). Four directives: (1) Compact two-number
+layout — line 1: release name + countdown chip right-aligned; line 2: OURS
+and EXPECTED columns side-by-side with large tabular-nums (ours 本方 / exp 预期
+or bench 基准 labels); line 3: ONE chip only (expectation_read.tag preferred,
+else surprise_skew.tag); chevron ▸ corner replaces "tap for detail" text row;
+no confidence on card (modal has it). (2) Per-card display-only footnotes
+removed; panel-level subline ("Forward model · display-only…") and modal
+footnote (rr-modal-do-note) unchanged — honesty law satisfied at panel level.
+(3) Expected column source order: (a) expectation_read.expectation_median when
+non-null, label "exp 预期", tiny CLE/MKT source tag; (b) else median of
+non-null same-basis benchmark_set values (naive_prior, trailing_3m/trailing_4w,
+ar_model, cleveland_nowcast, expanding_mean) — market_implied EXCLUDED
+(different basis/object), label "bench 基准". Benchmark_only cards (claims):
+ours column shows "—", bench-median in expected, compact "benchmark-only 仅基准"
+tag replaces italic §6 prose. No_data (retail): compact one-liner "awaiting
+data 待数据". NFP None-point: ours "—", expected shown if available.
+(4) Default-visible = ALL cards sharing the EARLIEST upcoming release_date;
+guard: if none of those have a modelled point, also show the next release_date
+that does. All other cards hidden behind "See more (N) 显示更多" / "See less
+收起" toggle (vanilla JS, session-only, ≥44px tap target). The word
+"consensus/共识" is banned from all card strings (MRI-R5 standing).
