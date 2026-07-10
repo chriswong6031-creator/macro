@@ -694,6 +694,24 @@ def main() -> int:
                 if ticker:
                     _micro_by_ticker[ticker] = pkt
 
+        # ── W8-R3: Act-Now v2 assembler ──────────────────────────────────────
+        act_now_v2 = None
+        try:
+            from engine.china_act_now import (  # noqa: PLC0415
+                assemble_act_now, load_cycle_rows, load_theme_intel,
+            )
+            cfg = config.load()
+            site_dir = Path(cfg["storage"]["site_dir"])
+            baskets_json_path = site_dir / "chinabasketdata" / "baskets.json"
+            data_dir = Path(cfg["storage"].get("data_dir", "data"))
+            forward_log_path = data_dir / "china_sector_cycles" / "forward_log.parquet"
+            theme_intel = load_theme_intel(str(baskets_json_path))
+            cycle_rows = load_cycle_rows(str(forward_log_path))
+            act_now_v2 = assemble_act_now(sectors, theme_intel, cycle_rows)
+        except Exception as _e:  # noqa: BLE001 — additive, never fatal
+            log.error("china act_now_v2 build failed (%s); skipping", _e)
+            act_now_v2 = None
+
         vm = {
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -703,6 +721,7 @@ def main() -> int:
             "pair": latest.get("pair_ratios", {}),
             "pref": latest.get("preference_check", {}),
             "actions": _china_action_board(sectors),
+            "act_now_v2": act_now_v2,            # W8-R3: four-lane board (stocks mode)
             "health": _health_rows(),
             "index_health": _china_index_health(),  # macro-page index-health strip
             "alloc_card": _china_alloc_card(),       # China Income Vector button (blue card)

@@ -575,7 +575,9 @@ function boot(){
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });
   initChartDefaults();
-  renderStory(); renderBTable(); renderChartCats(); renderChart(); renderCards(); renderDetails(); renderSemisChip(); updateCount();{% if not lite %} deskBoot();{% endif %}
+  renderStory(); renderBTable(); renderChartCats(); renderChart(); renderCards(); renderDetails(); renderSemisChip(); updateCount();{% if not lite %} deskBoot();
+  // W8b parity: cap "What to act on now" columns at 4 rows (matches PR #1992/#2010)
+  document.querySelectorAll('#actnow .anlist.lst-collapse').forEach(function(el){ el.classList.add('lst-cap4'); });{% endif %}
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
   {% if not lite %}if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);{% endif %}
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderAll(); });
