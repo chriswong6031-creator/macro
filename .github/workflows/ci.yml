@@ -24,6 +24,8 @@ on:
       - "scripts/check_conflict_markers.py"
       # template↔site sync guard: plain-copy page assets must byte-match their templates.
       - "scripts/check_template_site_sync.py"
+      # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
+      - "scripts/check_interfonts_sync.py"
       - "templates/**"
       - ".github/workflows/ci.yml"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
@@ -850,6 +852,15 @@ jobs:
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+      # ui.interfonts_theme_sync: templates/_interfonts.html.j2 carries the six
+      # Inter @font-face blocks copied verbatim from templates/theme.css (#2119,
+      # for standalone pages that don't link theme.css). A theme.css font edit
+      # that skips the partial silently de-fonts those pages — same drift class,
+      # same job.
+      - name: interfonts-sync selftest (gate fires on synthetic drift)
+        run: python3 scripts/check_interfonts_sync.py --selftest
+      - name: _interfonts partial @font-face blocks must match templates/theme.css
+        run: python3 scripts/check_interfonts_sync.py
 
   grader-manifest:
     # F1 (Metabolism Phase 0 / R-AUT-7): grader-immutability manifest guard.
