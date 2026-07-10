@@ -1,0 +1,83 @@
+# config/metabolism_anomaly.yml — Anomaly monitor thresholds (V2-A §3, R-V2-9).
+#
+# IMMUTABLE: this file is an operator-ratified policy document.
+# Loop-authored PRs may NOT modify it.  Changes require a T2 operator-tap.
+# Registered in config/grader_manifest.yml and scripts/check_self_mod_fence.py.
+#
+# All thresholds govern anomaly_monitor.py's robust-z detector:
+#   z = (latest - median) / (1.4826 * MAD)  over last K observations
+# An anomaly fires only when: |z| >= z_thresh AND n >= n_min
+# Below n_min → prints "accruing", never fires.
+#
+# Schema: metabolism_anomaly.v1
+schema: metabolism_anomaly.v1
+generated_at: "2026-07-10"
+owner_program: metabolism-phase-v2a
+
+# ── Global defaults (applied to any sensor not explicitly listed) ─────────────
+
+defaults:
+  # Lookback window (number of recent observations used for robust-z)
+  K: 20
+  # Minimum observations before anomaly detection fires
+  n_min: 5
+  # Robust-z threshold
+  z_thresh: 2.5
+  # Slope flip: minimum slope magnitude to flag a sustained reversal
+  slope_flip_min: 0.05
+  # Staleness SLA (hours) — override per-artifact via synapse.yml freshness_sla_hours
+  default_sla_hours: 48
+
+# ── Per-sensor overrides ──────────────────────────────────────────────────────
+
+sensors:
+  # TIL lobe sensors — all accruing until ~2026-10-15
+  til.front_run_lead:
+    K: 20
+    n_min: 10
+    z_thresh: 2.5
+    contract_band: null        # band not yet established (accruing)
+    notes: "Lead-days: accruing until first TIL check_by dates fire (~2026-10-15)"
+
+  til.placebo_hit_rate:
+    K: 20
+    n_min: 10
+    z_thresh: 2.5
+    contract_band: null
+    notes: "Placebo beat-rate: accruing until 2026-10-15"
+
+  til.falsifier_honesty:
+    K: 20
+    n_min: 5
+    z_thresh: 2.5
+    contract_band: null
+    notes: "Falsifier honesty: accruing until 2026-10-15"
+
+  til.live_leg_quality:
+    K: 20
+    n_min: 10
+    z_thresh: 2.5
+    contract_band: null
+    notes: "Live-leg quality: accruing until 2026-10-15"
+
+  # Whole-organism composite — only meaningful when ≥1 lobe has matured data
+  organism.composite_fitness:
+    K: 20
+    n_min: 5
+    z_thresh: 2.0
+    contract_band: null
+    notes: "Organism composite: accruing until multiple lobes mature"
+
+# ── Band definitions (for future contract-band break detection) ───────────────
+# When a lobe has a registered fitness contract, its expected band is recorded
+# here for anomaly_monitor to check.  Currently empty (Phase V2-A; contracts
+# fire ~2026-10-15).  V2-C will populate these as lobes mature.
+bands: {}
+
+# ── CI-red streak config ──────────────────────────────────────────────────────
+ci_red_streak:
+  # Number of consecutive CI failures before flagging
+  streak_threshold: 3
+  # Artifact path for CI status (if present)
+  ci_status_artifact: null   # set to a path if a CI status artifact exists
+  notes: "CI-red streak: skipped when ci_status_artifact is null"

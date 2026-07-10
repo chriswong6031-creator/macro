@@ -60,6 +60,9 @@ IMMUTABLE_PATTERNS: list[str] = [
     "scripts/check_grader_manifest.py",
     "settings.json",
     "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md",
+    # V2-A additions (R-V2-8)
+    "config/metabolism_anomaly.yml",
+    "config/fable_mode_core.md",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────

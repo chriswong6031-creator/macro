@@ -1,0 +1,132 @@
+name: metabolism-agenda
+# Metabolism Phase V2-A — Agenda-setter.  INERT by default.
+#
+# Reads organism_state + insight_bus + ruling_graph + ACTIVE_BUILD_MAP via
+# an Opus LLM call and emits a ranked data/metabolism/agenda/<cycle>.json.
+# INERTNESS: writes the agenda artifact ONLY — dispatches nothing, grants
+# nothing, opens no PR, touches no lobe roster.  The agenda is a PROPOSAL
+# consumed by later (still-inert) stages.
+#
+# KILL SWITCH — the AUTONOMY_PAUSED repo variable (R-AUT-2):
+#   gh variable set AUTONOMY_PAUSED --body true    # re-arm the pause (default-safe)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm the loop (operator-only)
+# Absent OR anything other than the literal 'false' → clean no-op.
+#
+# Double-gated: if: vars.AUTONOMY_PAUSED != 'true' in the job condition
+# AND the script itself re-checks AUTONOMY_PAUSED=='false' before proceeding.
+on:
+  schedule:
+    - cron: "45 9 * * *"   # daily 09:45 UTC, after organism_state build
+  workflow_dispatch:
+    inputs:
+      cycle_id:
+        description: "Cycle id (default: a fresh one is generated)"
+        type: string
+        default: ""
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # commit the agenda to a metabolism/* branch (never main)
+
+concurrency:
+  group: metabolism-agenda
+  cancel-in-progress: false
+
+jobs:
+  agenda:
+    # KILL SWITCH — absent variable → treated as paused (default-safe).
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: AGENDA (build organism_state → run all emitters → set agenda)
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          CYCLE_INPUT: ${{ github.event.inputs.cycle_id }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          # Runner-side pause re-check (double-gate: defends against race with var flip).
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
+            exit 0
+          fi
+
+          CYCLE_ID="${CYCLE_INPUT:-}"
+          if [ -z "$CYCLE_ID" ]; then
+            CYCLE_ID="$(python -c 'from scripts.metabolism_journal import new_cycle_id; print(new_cycle_id())')"
+          fi
+          echo "cycle_id=$CYCLE_ID"
+
+          # Step 1: Build organism_state (best-effort; agenda proceeds even if degraded)
+          python -m scripts.build_organism_state || echo "organism_state build degraded (continuing)"
+
+          # Step 2: Run all insight_bus emitters
+          python -c "
+import sys
+sys.path.insert(0, '.')
+from engine.metabolism.insight_bus import run_all_emitters
+from pathlib import Path
+rows = run_all_emitters(cycle_id='${CYCLE_ID}')
+print(f'Emitted {len(rows)} new insight_bus rows')
+" || echo "insight_bus emitters degraded (continuing)"
+
+          # Step 3: Run anomaly monitor
+          python -c "
+import sys
+sys.path.insert(0, '.')
+from engine.metabolism.anomaly_monitor import run_anomaly_monitor
+from pathlib import Path
+rows = run_anomaly_monitor(cycle_id='${CYCLE_ID}')
+print(f'Anomaly monitor: {len(rows)} new rows')
+" || echo "anomaly_monitor degraded (continuing)"
+
+          # Step 4: Build agenda (INERT — writes artifact only)
+          AGENDA="$(python -m scripts.metabolism_agenda --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
+          echo "agenda=$AGENDA"
+
+          # Step 5: Commit metabolism artifacts
+          BRANCH="metabolism/agenda-$CYCLE_ID"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          # Only metabolism artifacts travel here (never main, never scored paths)
+          git add data/metabolism 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no metabolism artifact changes — nothing to commit."
+            exit 0
+          fi
+          # Loop-Authored trailer (R-AUT-5) so the F2 fence can attribute this commit.
+          git commit -m "metabolism: AGENDA $CYCLE_ID [Phase V2-A — INERT]" \
+                     -m "Loop-Authored: agenda run=${GITHUB_RUN_ID:-local}"
+          git push -u origin "$BRANCH"
+          echo "AGENDA committed to $BRANCH"
