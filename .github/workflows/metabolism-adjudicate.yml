@@ -1,0 +1,121 @@
+name: metabolism-adjudicate
+# Metabolism Phase A (A5) — ADJUDICATE row-pair (the two-key, R-AUT-6).  INERT.
+#
+# Rules on a PROPOSE docket with THREE distinct-run_id passes and writes the
+# governance ROW-PAIR to data/neuralweb/governance.jsonl:
+#   1. orchestrator  → grant/deny rows
+#   2. adversary     → veto/non-veto rows + data/metabolism/adversary_ledger.jsonl
+#   3. resolve       → two-key resolution rows (T0=orch grant; T1/T2=orch grant
+#                      AND adversary non-veto)
+# It writes governance rows only.  It NEVER merges the proposal PR — that stays
+# gated on operator arming (AUTONOMY_PAUSED=false) and the BUILD pipeline.
+#
+# Triggering: workflow_dispatch over the propose branch (metabolism/propose-<id>).
+# Auto-chaining PROPOSE→ADJUDICATE is wired in Phase B (masterplan stage graph);
+# until then this runs on demand and as a paused-by-default scheduled no-op.
+on:
+  workflow_dispatch:
+    inputs:
+      cycle_id:
+        description: "Cycle id whose docket to adjudicate"
+        type: string
+        required: true
+      branch:
+        description: "Branch carrying the docket (default: metabolism/propose-<cycle_id>)"
+        type: string
+        default: ""
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # commit governance rows to the docket's branch
+  pull-requests: write
+
+concurrency:
+  group: metabolism-adjudicate-${{ github.event.inputs.cycle_id }}
+  cancel-in-progress: false
+
+jobs:
+  adjudicate:
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: ADJUDICATE (orchestrator + adversary + resolve → governance row-pair)
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          CYCLE_ID: ${{ github.event.inputs.cycle_id }}
+          BRANCH_INPUT: ${{ github.event.inputs.branch }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
+            exit 0
+          fi
+
+          BRANCH="${BRANCH_INPUT:-metabolism/propose-$CYCLE_ID}"
+          echo "cycle_id=$CYCLE_ID branch=$BRANCH"
+
+          # Check out the branch carrying the docket, if it differs from the default ref.
+          git fetch origin "$BRANCH" || echo "branch $BRANCH not on origin — using current ref"
+          git checkout "$BRANCH" 2>/dev/null || git checkout -B "$BRANCH" "origin/$BRANCH" 2>/dev/null || echo "staying on current ref"
+
+          DOCKET="data/metabolism/dockets/$CYCLE_ID.json"
+          if [ ! -f "$DOCKET" ]; then
+            echo "docket $DOCKET not found on this ref — clean no-op."
+            exit 0
+          fi
+
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Three DISTINCT-run_id passes (R-AUT-6 row-pair + two-key resolution).
+          python -m scripts.metabolism_adjudicate --cycle-id "$CYCLE_ID" --role orchestrator \
+            --docket-file "$DOCKET" --run-id "${GITHUB_RUN_ID}-orchestrator"
+          python -m scripts.metabolism_adjudicate --cycle-id "$CYCLE_ID" --role adversary \
+            --docket-file "$DOCKET" --run-id "${GITHUB_RUN_ID}-adversary"
+          python -m scripts.metabolism_adjudicate --cycle-id "$CYCLE_ID" --role resolve \
+            --docket-file "$DOCKET"
+
+          git add data/neuralweb/governance.jsonl data/metabolism 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no governance changes (already adjudicated — resume no-op)."
+            exit 0
+          fi
+          git commit -m "metabolism: ADJUDICATE row-pair $CYCLE_ID [Phase A]" \
+                     -m "Loop-Authored: til run=${GITHUB_RUN_ID:-local}"
+          # Rebase-autostash before push so a branch that advanced remotely between
+          # checkout and push can't brick the publish (house convention).
+          git pull --rebase --autostash origin "$BRANCH" 2>/dev/null || true
+          git push origin HEAD:"$BRANCH"
+          echo "ADJUDICATE row-pair written for $CYCLE_ID"

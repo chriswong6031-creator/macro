@@ -1,0 +1,128 @@
+name: metabolism-propose
+# Metabolism Phase A (A4) — PROPOSE lobe-brain (TIL pilot).  INERT by default.
+#
+# Reads the TIL fitness card + masterplan + case law and emits a structured
+# DOCKET (data/metabolism/dockets/<cycle_id>.json), each proposal carrying a
+# pre-committed fitness contract registered to the trial ledger (R-AUT-8).  It
+# then opens a DRAFT PR carrying the docket.  It NEVER merges anything.
+#
+# KILL SWITCH — the AUTONOMY_PAUSED repo variable (R-AUT-2):
+#   gh variable set AUTONOMY_PAUSED --body true    # (re)arm the pause (default-safe)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm the loop (operator-only)
+# Absent OR anything other than the literal 'false' → the job is a clean no-op.
+#
+# INERTNESS GUARANTEE:
+#   - Default-paused: nothing runs until the operator flips AUTONOMY_PAUSED=false.
+#   - The strongest action is a DRAFT PR against a metabolism/* branch carrying
+#     only data/metabolism artifacts (non-immutable) — never a merge, never a
+#     push to main, never a scored-path write.
+on:
+  schedule:
+    - cron: "30 9 * * *"   # daily 09:30 UTC, after the nightly render tail
+  workflow_dispatch:
+    inputs:
+      cycle_id:
+        description: "Cycle id (default: a fresh one is generated)"
+        type: string
+        default: ""
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # commit the docket to a metabolism/* branch (never main)
+  pull-requests: write   # open the DRAFT PR
+
+concurrency:
+  group: metabolism-propose
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    # KILL SWITCH — absent variable → treated as paused (default-safe).
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: PROPOSE (build docket + register contracts + draft PR)
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          CYCLE_INPUT: ${{ github.event.inputs.cycle_id }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          # Runner-side pause re-check (defends against a race with the var flip).
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
+            exit 0
+          fi
+
+          CYCLE_ID="${CYCLE_INPUT:-}"
+          if [ -z "$CYCLE_ID" ]; then
+            CYCLE_ID="$(python -c 'from scripts.metabolism_journal import new_cycle_id; print(new_cycle_id())')"
+          fi
+          echo "cycle_id=$CYCLE_ID"
+
+          # SENSE (A3): refresh the TIL fitness card the proposer reads. Best-effort.
+          python -m scripts.build_til_fitness || echo "SENSE fitness build degraded (continuing)"
+
+          # PROPOSE (A4): writes data/metabolism/dockets/<cycle>.json + registers contracts.
+          DOCKET="$(python -m scripts.metabolism_propose --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
+          echo "docket=$DOCKET"
+
+          # Only open a DRAFT PR when the docket carries at least one proposal.
+          N=$(python -c "import json,pathlib,sys; p=pathlib.Path('data/metabolism/dockets/'+sys.argv[1]+'.json'); print(len(json.loads(p.read_text()).get('proposals',[])) if p.exists() else 0)" "$CYCLE_ID")
+          echo "proposals=$N"
+          if [ "$N" -eq 0 ]; then
+            echo "empty docket — no draft PR this cycle (clean no-op)."
+            exit 0
+          fi
+
+          BRANCH="metabolism/propose-$CYCLE_ID"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          # Only metabolism artifacts + the (non-immutable) trial ledger travel here.
+          git add data/metabolism data/trial_ledger.jsonl 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no docket changes staged — nothing to propose."
+            exit 0
+          fi
+          # Loop-Authored trailer (R-AUT-5) so the F2 fence can attribute this PR.
+          git commit -m "metabolism: PROPOSE docket $CYCLE_ID [Phase A — DRAFT]" \
+                     -m "Loop-Authored: til run=${GITHUB_RUN_ID:-local}"
+          git push -u origin "$BRANCH"
+          gh pr create --draft \
+            --base main --head "$BRANCH" \
+            --title "metabolism: PROPOSE docket $CYCLE_ID ($N proposal(s)) [DRAFT]" \
+            --body "Autonomous PROPOSE docket for cycle \`$CYCLE_ID\` (INERT — draft only; the two-key ADJUDICATE + operator arming gate any merge). See \`data/metabolism/dockets/$CYCLE_ID.json\`." \
+            || echo "draft PR create skipped (may already exist)"
+          echo "PROPOSE draft PR opened for $CYCLE_ID"
