@@ -477,11 +477,33 @@ def _run_nightly(cfg: dict, data_root: Path, site_root: Path, tpl_root: Path) ->
     out_dir.mkdir(parents=True, exist_ok=True)
 
     as_of = datetime.now(timezone.utc).isoformat()
+
+    # Build per-ticker basket map for client-side filtering.
+    tk_baskets: dict[str, list[str]] = {}
+    basket_ids: list[str] = ift_cfg.get("universe_baskets", [])
+    mem_path = data_root / "baskets" / "membership.json"
+    if mem_path.exists():
+        try:
+            mem = json.loads(mem_path.read_text())
+            baskets_map = mem.get("baskets") or {}
+            for bid in basket_ids:
+                b = baskets_map.get(bid) or {}
+                for m in b.get("members") or []:
+                    t = m.get("ticker") if isinstance(m, dict) else m
+                    if t:
+                        t = str(t).upper()
+                        tk_baskets.setdefault(t, [])
+                        if bid not in tk_baskets[t]:
+                            tk_baskets[t].append(bid)
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_intraday_flow: basket map build failed: %s", e)
+
     leaders: list[dict] = []
 
     for ticker in universe:
         try:
             rec = _build_leader_record(ticker, data_root, site_root)
+            rec["baskets"] = tk_baskets.get(ticker, [])
             leaders.append(rec)
         except Exception as e:  # noqa: BLE001
             log.warning("build_intraday_flow nightly: %s failed (skipped): %s", ticker, e)

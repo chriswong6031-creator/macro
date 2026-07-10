@@ -74,6 +74,7 @@
         <a href="{{ NP }}alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
         <a href="{{ NP }}gex.html">🧲 {{ t('Options Desk', '期权台') }}<span class="d">{{ t('GEX · walls · vol surface', 'GEX · 墙 · 波动率曲面') }}</span></a>
         {% if flow_desk_enabled is not defined or flow_desk_enabled %}<a href="{{ NP }}flow_desk.html">🌊 {{ t('Group Flow Heatmap', '板块资金流热力图') }}<span class="d">{{ t('Market tide · sector premium z · top movers · ETF proxy', '资金潮汐 · 板块权利金Z · 净额排行 · ETF代理') }}</span></a>{% endif %}
+        {% if intraday_flow_enabled is not defined or intraday_flow_enabled %}<a href="{{ NP }}intraday_flow.html">📊 {{ t('Intraday Flow Tracker', '盘中资金流追踪') }}<span class="d">{{ t('Volume durability · RVOL · VWAP · ~options flow · K/7 confluence', '量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚') }}</span></a>{% endif %}
         {% if options_screener_enabled is not defined or options_screener_enabled %}<a href="{{ NP }}options_screener.html">📊 {{ t('Options Screener', '期权筛选台') }}<span class="d">{{ t('IV · IV-rank · GEX tier · flow · max-pain · 350+ names', 'IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的') }}</span></a>{% endif %}
         {% if darkpool_enabled is not defined or darkpool_enabled %}<a href="{{ NP }}darkpool.html">🌑 {{ t('Dark Pool Desk', '场外暗池台') }}<span class="d">{{ t('Off-exchange volume · short ratio · ATS venues', '场外成交量 · 融券比率 · ATS场所') }}</span></a>{% endif %}
       </div>
