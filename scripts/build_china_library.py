@@ -2032,7 +2032,98 @@ def main(alpha: dict | None = None) -> dict | None:
                 log.warning("W0.7 board-width guard: buy-count collapsed %d→%d (%.0f%% drop) — "
                             "stamping data_outage; banner will render",
                             _prev_buy_n, _new_buy_n, _drop_frac * 100)
-        # W8-R1/W1-B: attach RIPENING + FALLING + RAN arrays to the artifact (new keys; buy unchanged).
+        # ── W8-E: table-view enrichment ───────────────────────────────────────
+        # (a) NULL-SAFE real-mcap join: overlay Tushare total_mv_yi onto rows that
+        #     currently carry the placeholder-30.0 sentinel or are missing a cap.
+        #     cap_bucket: large>=500 / mid 100-500 / small<100 / null (unknown).
+        # (b) days_since_signal: days since first appearance in board.parquet.
+        #     Null-safe: if the store is absent the field is None ("—" in template).
+        # DISPLAY ONLY — no ordering change; no rank effect.
+        _MCAP_PLACEHOLDER = 30.0
+        _w8e_cap_bucket_log: dict[str, int] = {"large": 0, "mid": 0, "small": 0, "unknown": 0}
+
+        # Build a final real-cap lookup: prefer Tushare total_mv_yi (already in mktcap_by
+        # with placeholder-dropped names filled) — the variable is already populated above.
+        # For rows still at placeholder 30.0 sentinel, set mcap=None.
+        def _w8e_mcap(ticker: str) -> float | None:
+            v = mktcap_by.get(str(ticker))
+            if v is None:
+                return None
+            try:
+                fv = float(v)
+                return None if fv == _MCAP_PLACEHOLDER else fv
+            except (ValueError, TypeError):
+                return None
+
+        def _w8e_cap_bucket(mcap: float | None) -> str | None:
+            if mcap is None:
+                return None
+            if mcap >= 500:
+                return "large"
+            if mcap >= 100:
+                return "mid"
+            return "small"
+
+        # days_since_signal from board.parquet first-appearance date per ticker.
+        _w8e_first_seen: dict[str, str] = {}
+        try:
+            _brd_path = config.data_dir() / "china_standout_track" / "board.parquet"
+            if _brd_path.exists():
+                _brd_df = pd.read_parquet(_brd_path, columns=["date", "ticker"])
+                _w8e_first_seen = (
+                    _brd_df.groupby("ticker")["date"].min()
+                    .apply(str).to_dict()
+                )
+                log.info("W8-E days_since_signal: %d tickers in board ledger (range %s → %s)",
+                         len(_w8e_first_seen),
+                         min(_w8e_first_seen.values()) if _w8e_first_seen else "?",
+                         max(_w8e_first_seen.values()) if _w8e_first_seen else "?")
+        except Exception as _w8e_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("W8-E days_since_signal: board ledger unavailable (%s)", _w8e_e)
+
+        _w8e_today_str = str(as_of) if as_of else None
+
+        def _w8e_days_since(ticker: str) -> int | None:
+            fs = _w8e_first_seen.get(str(ticker))
+            if not fs or not _w8e_today_str:
+                return None
+            try:
+                d0 = pd.Timestamp(fs).date()
+                d1 = pd.Timestamp(_w8e_today_str).date()
+                return max(0, (d1 - d0).days)
+            except Exception:
+                return None
+
+        # Enrich all arrays: buy, ran, ripening, ripening_falling
+        _w8e_all_arrays = (
+            list(wide["buy"]) +
+            list(_ran_rows) +
+            list(_ripening_rows) +
+            list(_ripening_falling)
+        )
+        for _w8e_r in _w8e_all_arrays:
+            _tk = _w8e_r.get("ticker")
+            _mcap = _w8e_mcap(_tk) if _tk else None
+            _w8e_r["mcap"] = _mcap
+            _bucket = _w8e_cap_bucket(_mcap)
+            _w8e_r["cap_bucket"] = _bucket
+            _w8e_r["days_since_signal"] = _w8e_days_since(_tk) if _tk else None
+            _w8e_cap_bucket_log[_bucket or "unknown"] = _w8e_cap_bucket_log.get(_bucket or "unknown", 0) + 1
+
+        # Board header: honest cap-bucket composition (buy rows only)
+        _w8e_buy_large  = sum(1 for r in wide["buy"] if r.get("cap_bucket") == "large")
+        _w8e_buy_mid    = sum(1 for r in wide["buy"] if r.get("cap_bucket") == "mid")
+        _w8e_buy_small  = sum(1 for r in wide["buy"] if r.get("cap_bucket") == "small")
+        _w8e_buy_unk    = sum(1 for r in wide["buy"] if r.get("cap_bucket") is None)
+        wide["cap_composition"] = {
+            "large": _w8e_buy_large, "mid": _w8e_buy_mid,
+            "small": _w8e_buy_small, "unknown": _w8e_buy_unk,
+        }
+        setups["cap_composition"] = wide["cap_composition"]
+        log.info("W8-E enrichment: board cap composition large=%d mid=%d small=%d unknown=%d",
+                 _w8e_buy_large, _w8e_buy_mid, _w8e_buy_small, _w8e_buy_unk)
+
+        # ── W8-R1/W1-B: attach RIPENING + FALLING + RAN arrays to the artifact (new keys; buy unchanged).
         # Downstream consumers of `buy` keep working untouched — these are additive arrays.
         # ripening = READY + BASING (full scorecards); falling = FALLING sink (compact rows).
         wide["ripening"] = _ripening_rows
