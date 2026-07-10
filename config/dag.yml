@@ -1741,6 +1741,8 @@ modules:
       - data/china_search/*.parquet
     writes:
       - site/chinabasketdata/baskets.json
+      - site/chinabasketdata/basket_turn_cn.json
+      - data/china_basket_turn/ledger.jsonl
     impure: false
     needs_secrets: false
     event_driven: false

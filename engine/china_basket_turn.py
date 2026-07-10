@@ -32,19 +32,24 @@ States are evaluated in STRICT precedence order — first match wins:
    (MACD hist negative AND hist is falling — i.e. hist_d < 0)
    Rationale: a basket still in active price collapse cannot be at a bottom.
 
-2. WASHED_OUT (requires: NOT FALLING):
+2. TURNING (checked BEFORE WASHED_OUT — extends into partial recovery where the basket
+   may have started lifting off its trough while still near the 200d):
+   (dd_252 <= WASHOUT_DD_THRESH) AND
+   (stoch_reclaim >= STOCH_RECLAIM_THRESH with slope_20d >= 0  OR
+    hist_last >= 0 AND hist_d >= TURNING_HIST_CROSS)
+   Note: stoch reclaim requires slope_20d >= 0 as a downtrend guard — a basket whose
+   20d slope is still negative cannot label TURNING on stoch alone. hist_crossed_positive
+   additionally requires hist_last >= 0 (true zero-cross, not merely decelerating).
+
+3. CONFIRMED (requires: prev_state in TURNING/CONFIRMED for N=3+ sessions AND 20d slope
+   positive — nested check inside the TURNING branch):
+   days_in_turning >= CONFIRMED_MIN_DAYS  AND  slope_20d >= CONFIRMED_SLOPE_MIN
+
+4. WASHED_OUT (requires: NOT FALLING, NOT TURNING):
    drawdown_vs_252d_high <= WASHOUT_DD_THRESH  AND  below 200d MA  AND
    decline arrested (hist_d >= WASHOUT_HIST_ARREST — hist stabilizing, not falling hard)
 
-3. TURNING (requires: WASHED_OUT context — dd_252 qualifies regardless of current
-   hist to catch lagged recoveries):
-   (dd_252 <= WASHOUT_DD_THRESH) AND below_200d historically (above_200d_soft check)
-   AND (stoch_reclaim >= STOCH_RECLAIM_THRESH  OR  hist_d >= TURNING_HIST_CROSS)
-
-4. CONFIRMED (requires: TURNING held N=3+ sessions AND 20d slope positive):
-   days_in_turning >= CONFIRMED_MIN_DAYS  AND  slope_20d >= CONFIRMED_SLOPE_MIN
-
-5. BASING (requires: washout depth qualifies, not TURNING or CONFIRMED, no FALLING):
+5. BASING (requires: washout depth qualifies, not TURNING/CONFIRMED/WASHED_OUT, no FALLING):
    dd_252 <= WASHOUT_DD_THRESH  AND  not falling hard
 
 6. NONE — none of the above patterns match
@@ -296,12 +301,25 @@ def classify_basket(levels: pd.Series, prev_state: str | None = None,
     # 3. TURNING — checked BEFORE WASHED_OUT since it extends into partial recovery
     # (basket may be slightly above 200d already as it turns)
     stoch_reclaim = stoch_last is not None and stoch_last >= STOCH_RECLAIM_THRESH
-    hist_crossed_positive = hist_d is not None and hist_d >= TURNING_HIST_CROSS
+    # hist_crossed_positive requires the histogram itself to be non-negative (a true
+    # cross from below zero), not merely that hist_d >= 0 (which fires on any
+    # deceleration of a still-negative histogram). Without this guard, a basket in a
+    # steady near-linear decline whose histogram converges toward zero from below would
+    # land in TURNING while price is still falling. (FT-review fix #2.)
+    hist_crossed_positive = (
+        hist_d is not None and hist_d >= TURNING_HIST_CROSS
+        and hist_last is not None and hist_last >= 0.0
+    )
+    # Downtrend guard: if 20d slope is available and negative, the basket is still
+    # trending down and cannot be labelled TURNING on stoch alone. The stoch reclaim
+    # signal is valid only when slope is non-negative (or unavailable for short series).
+    slope_still_negative = slp20 is not None and slp20 < 0.0
+    stoch_reclaim_valid = stoch_reclaim and not slope_still_negative
     turning_context = dd_252 is not None and dd_252 <= WASHOUT_DD_THRESH  # still deep
-    turning_signals = stoch_reclaim or hist_crossed_positive
+    turning_signals = stoch_reclaim_valid or hist_crossed_positive
 
     if turning_context and turning_signals:
-        if stoch_reclaim:
+        if stoch_reclaim_valid:
             evidence.append(f"stoch_reclaim={round(stoch_last or 0, 3)}_>=_{STOCH_RECLAIM_THRESH}")
         if hist_crossed_positive:
             evidence.append(f"macd_hist_d_positive={round(hist_d or 0, 6)}")
@@ -398,6 +416,38 @@ def compute_all(data_root: Path | None = None) -> dict[str, Any]:
                   else ths_dates[-1] if ths_dates
                   else datetime.now(timezone.utc).strftime("%Y-%m-%d"))
 
+    # ── Read prior session state from the ledger ─────────────────────────────
+    # For each basket_id, find the most-recent ledger row with date < as_of_date
+    # and pass prev_state + days_in_state so CONFIRMED/hysteresis accrues honestly.
+    prior_state: dict[str, tuple[str, int]] = {}  # basket_id -> (state, days_in_state)
+    ledger_path = root / "data" / "china_basket_turn" / "ledger.jsonl"
+    if ledger_path.exists():
+        try:
+            # Keep only the latest row per basket_id that is strictly before as_of
+            latest_per_basket: dict[str, dict] = {}
+            for line in ledger_path.read_text().splitlines():
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                row_date = row.get("date", "")
+                bid = row.get("basket_id", "")
+                if not bid or not row_date:
+                    continue
+                if row_date >= as_of_date:
+                    continue  # only look back at prior sessions
+                prev = latest_per_basket.get(bid)
+                if prev is None or row_date > prev.get("date", ""):
+                    latest_per_basket[bid] = row
+            for bid, row in latest_per_basket.items():
+                prior_state[bid] = (
+                    row.get("state", "NONE"),
+                    row.get("days_in_state", 0),
+                )
+            log.debug("china_basket_turn: loaded prior state for %d baskets from ledger",
+                      len(prior_state))
+        except Exception as e:
+            log.warning("china_basket_turn: failed to read prior state from ledger: %s", e)
+
     results: dict[str, dict] = {}
 
     def _levels_to_series(dates: list[str], levels: list) -> pd.Series:
@@ -412,7 +462,8 @@ def compute_all(data_root: Path | None = None) -> dict[str, Any]:
             continue
         try:
             s = _levels_to_series(curated_dates, lvls)
-            cls_out = classify_basket(s)
+            ps, dis = prior_state.get(bid, (None, 0))
+            cls_out = classify_basket(s, prev_state=ps, days_in_state=dis)
             results[bid] = cls_out
         except Exception as e:
             log.warning("china_basket_turn: curated %s failed: %s", bid, e)
@@ -429,7 +480,8 @@ def compute_all(data_root: Path | None = None) -> dict[str, Any]:
             continue  # curated id collision (shouldn't happen, but guard)
         try:
             s = _levels_to_series(ths_dates, lvls)
-            cls_out = classify_basket(s)
+            ps, dis = prior_state.get(bid, (None, 0))
+            cls_out = classify_basket(s, prev_state=ps, days_in_state=dis)
             results[bid] = cls_out
         except Exception as e:
             log.warning("china_basket_turn: ths %s failed: %s", bid, e)

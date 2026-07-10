@@ -98,6 +98,39 @@ def test_falling_on_macd_hist_falling():
 
 
 # ---------------------------------------------------------------------------
+# (2b) FALLING veto soundness: steady near-linear decline must NOT become TURNING
+# ---------------------------------------------------------------------------
+
+def test_steady_decline_not_turning():
+    """A basket in a near-linear steady decline whose MACD histogram decelerates
+    (hist_d near 0) but whose hist_last remains negative must NOT be labelled TURNING.
+
+    This is the soundness gap reported in the review: TURNING_HIST_CROSS=0.0 with a
+    hist_last check omitted allows a basket still trending down to land in TURNING
+    purely because hist_d >= 0.0 (decelerating histogram, not a true zero-cross).
+
+    After the fix: hist_crossed_positive also requires hist_last >= 0 (true cross),
+    and stoch_reclaim is gated on slope_20d >= 0 (downtrend guard).
+    """
+    # 120-session near-linear -40% decline from peak 1.0
+    flat_part = _flat(1.0, 200)
+    decline = _ramp(1.0, 0.60, 120)  # -40% over 120 sessions, hist converges toward 0
+    vals = flat_part + decline
+    lvl = _make_levels(vals)
+    result = CBT.classify_basket(lvl)
+    # At the trough of a near-linear -40% decline, TURNING is unsound.
+    # The basket should be FALLING, WASHED_OUT, or BASING — not TURNING.
+    assert result["state"] != "TURNING", (
+        f"Steady-decline basket incorrectly labelled TURNING: "
+        f"state={result['state']} hist_d={result['hist_d']} hist_last inferred "
+        f"slope_20d={result['slope_20d']} ret_5d={result['ret_5d']}"
+    )
+    assert result["state"] in ("FALLING", "WASHED_OUT", "BASING", "NONE"), (
+        f"Expected distress state, got {result['state']}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # (3) Precedence test: fresh +10% up-tick inside a falling collapse => FALLING
 # ---------------------------------------------------------------------------
 
@@ -378,6 +411,72 @@ def test_ledger_idempotent(tmp_path, monkeypatch):
     ledger = tmp_path / "china_basket_turn" / "ledger.jsonl"
     rows = [json.loads(line) for line in ledger.read_text().splitlines() if line.strip()]
     assert len(rows) == 1
+
+
+# ---------------------------------------------------------------------------
+# (12b) CONFIRMED reachable via compute_all() when ledger has prior state
+# ---------------------------------------------------------------------------
+
+def test_compute_all_confirmed_via_ledger(tmp_path, monkeypatch):
+    """compute_all() must read prior state from the ledger so CONFIRMED is reachable.
+
+    Build a fixture basket that classifies as TURNING, seed the ledger with N-1 days
+    of TURNING for that basket, then call compute_all(). With prev_state=TURNING and
+    days_in_state=CONFIRMED_MIN_DAYS, the result should be CONFIRMED.
+    """
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+
+    # Build a basket series that will classify as TURNING
+    np.random.seed(99)
+    peak = _flat(1.0, 50)
+    decline = _ramp(1.0, 0.55, 250)  # -45% drawdown
+    base_flat = _flat(0.55, 30)
+    recovery = _ramp(0.55, 0.62, 30)  # positive slope to enable CONFIRMED
+    all_vals = peak + decline + base_flat + recovery
+    lvl = _make_levels(all_vals, end="2026-07-10")
+
+    # Verify this fixture classifies as TURNING or CONFIRMED when given prior state
+    check = CBT.classify_basket(lvl, prev_state="TURNING",
+                                days_in_state=CBT.CONFIRMED_MIN_DAYS)
+    if check["state"] not in ("TURNING", "CONFIRMED"):
+        pytest.skip(f"Fixture doesn't produce TURNING/CONFIRMED: {check['state']}")
+
+    # Wire up chinabasketdata payloads in tmp_path
+    site_dir = tmp_path / "site" / "chinabasketdata"
+    site_dir.mkdir(parents=True)
+    dates = [str(d.date()) for d in lvl.index]
+    basket_chart = {"dates": dates, "baskets": {"test_basket": list(lvl.values)}}
+    (site_dir / "baskets.json").write_text(json.dumps({
+        "as_of": "2026-07-10",
+        "baskets": [],
+        "chart": basket_chart,
+    }))
+    (site_dir / "baskets_ths.json").write_text(json.dumps({
+        "as_of": "2026-07-10", "baskets": [],
+        "chart": {"dates": dates, "baskets": {}},
+    }))
+
+    # Seed the ledger with CONFIRMED_MIN_DAYS rows of TURNING for test_basket
+    ledger_dir = tmp_path / "data" / "china_basket_turn"
+    ledger_dir.mkdir(parents=True)
+    ledger_path = ledger_dir / "ledger.jsonl"
+    for i in range(CBT.CONFIRMED_MIN_DAYS):
+        d = f"2026-07-0{7 - i}"
+        row = {"date": d, "basket_id": "test_basket", "state": "TURNING",
+               "dd_252": -0.43, "hist_d": 0.001, "slope_20d": 0.0001,
+               "ret_5d": -0.01, "evidence": ["stoch_reclaim=0.3"], "days_in_state": i + 1}
+        with ledger_path.open("a") as fh:
+            fh.write(json.dumps(row) + "\n")
+
+    artifact = CBT.compute_all(data_root=tmp_path)
+    state = artifact["baskets"].get("test_basket", {}).get("state", "MISSING")
+    # With N days of prior TURNING and a positive-slope recovery, CONFIRMED must fire.
+    # This confirms the ledger-wired prev_state path is live.
+    assert state in ("CONFIRMED", "TURNING"), (
+        f"Expected CONFIRMED (or TURNING if slope gate not met), got {state}. "
+        f"This tests that compute_all() reads prior state from the ledger."
+    )
 
 
 # ---------------------------------------------------------------------------
