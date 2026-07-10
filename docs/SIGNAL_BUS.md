@@ -55,6 +55,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
 | til-w7-hiring-intent | 3 |
+| til-w8-trade-flows | 2 |
 | til-w9-discovery-v2 | 3 |
 | us-stocks-prebreakout | 2 |
 
@@ -62,7 +63,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 194 |
+| display | 196 |
 | infrastructure | 79 |
 | scored | 4 |
 | shadow | 48 |
@@ -71,7 +72,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 311 |
+| git | 313 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -621,6 +622,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | dol-certs-store | `data/dol_certs/certs.parquet` | parquet | collect | display | 1 | 0 |
 | hiring-velocity | `data/dol_certs/hiring_velocity.json` | json | collect | display | 0 | 0 |
 | site-hiring-intent | `site/basketdata/hiring_intent.json` | json | collect | display | 0 | 0 |
+
+### til-w8-trade-flows
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| neuralweb-theme-trade-flows | `data/neuralweb/theme_trade_flows.json` | json | collect | display | 1 | 0 |
+| site-trade-flows | `site/basketdata/trade_flows.json` | json | collect | display | 0 | 0 |
 
 ### til-w9-discovery-v2
 

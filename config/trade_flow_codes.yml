@@ -1,0 +1,358 @@
+# config/trade_flow_codes.yml — Curated HS-code → theme mapping (TIL W8 PR-W8)
+#
+# SPEC: TI-R2 taxonomy shape — versioned membership, one-line rationale per row.
+#       PR-reviewed config; display/context tier only.
+#
+# SIGN LOGIC (expected_direction):
+#   rising_imports_confirms  — more imports corroborates demand growth / build-out
+#                              (theme needs foreign supply to expand)
+#   falling_imports_confirms — import decline corroborates domestic substitution /
+#                              onshoring success (theme thesis is US production
+#                              replacing imports, so a DROP is confirmatory)
+#
+# HS CODE NOTES (VERIFIED 2026-07-09 against Census variables.json):
+#   Census API accepts I_COMMODITY at 2/4/6/10 digit precision.
+#   We use 6-digit (HS6) for maximum cross-country comparability and
+#   to avoid HTS-10 revision fragility. Six digits is the WCO standard;
+#   10-digit codes are US-specific Schedule B extensions that change annually.
+#   Aggregation is performed in the collector (COMM_LVL=HS6).
+#
+# VERSION: 1 (2026-07-09, TIL W8 PR-W8)
+#
+# API DEPENDENCY: Census International Trade API (api.census.gov/data/timeseries/intltrade/imports/hs)
+#   Requires CENSUS_API_KEY env var. API is NOT keyless (verified 2026-07-09:
+#   keyless call returns 302 → missing_key.html; "A valid key must be included
+#   with each data API request"). Key signup: api.census.gov/data/key_signup.html.
+#   Ops ask: set CENSUS_API_KEY secret in repo; collector no-ops with honest null if absent.
+
+version: 1
+date: "2026-07-09"
+note: >
+  25–45 HS-code to theme mapping. Codes at HS6 granularity. Expected_direction
+  encodes the sign convention: rising_imports_confirms means more imports = more
+  evidence for the theme thesis; falling_imports_confirms means import decline =
+  domestic-substitution evidence. No composite across themes per spec.
+
+codes:
+
+  # ── RARE EARTH & CRITICAL MINERALS ────────────────────────────────────────
+  - hs_code: "280530"
+    label_en: "Rare-earth metals (lanthanum, cerium, praseodymium, etc.)"
+    label_zh: "稀土金属（镧、铈、镨等）"
+    theme_id: rare_earth_critical_min
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Raw rare-earth metals are overwhelmingly sourced from China; US import
+      volume is a direct read on supply-chain exposure. Rising imports confirm
+      build-out demand while domestic substitution is incomplete.
+
+  - hs_code: "284610"
+    label_en: "Cerium compounds"
+    label_zh: "铈化合物"
+    theme_id: rare_earth_critical_min
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Cerium-oxide polishing slurries are critical inputs for semiconductor wafer
+      finishing. Import growth confirms demand for advanced chip production capacity.
+
+  - hs_code: "284690"
+    label_en: "Rare-earth compounds (other, incl. neodymium, dysprosium)"
+    label_zh: "其他稀土化合物（含钕、镝）"
+    theme_id: rare_earth_critical_min
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Neodymium and dysprosium compounds are essential for NdFeB permanent magnets
+      used in EV motors and wind turbine generators. Import signal is a supply-chain
+      dependency indicator; rising = demand growth outpacing domestic sourcing.
+
+  - hs_code: "850511"
+    label_en: "Permanent magnets (incl. NdFeB and SmCo)"
+    label_zh: "永久磁铁（含钕铁硼、钐钴）"
+    theme_id: rare_earth_critical_min
+    expected_direction: falling_imports_confirms
+    rationale: >
+      Finished permanent magnets from China dominate global supply. A sustained
+      import decline signals onshoring success via US/Allied magnet fabs (MP
+      Materials, Vacuumschmelze, etc.). Rising imports = dependency persists.
+
+  # ── SOLAR ─────────────────────────────────────────────────────────────────
+  # HS2022 NOTE (effective 2022-01): heading 8541 was restructured.
+  #   Pre-2022 (HS2017): 854140 = photovoltaic cells (assembled + unassembled);
+  #                       854150 = DOES NOT EXIST as a valid HS6 subheading.
+  #   HS2022 onwards:     854141 = LED; 854142 = unassembled PV cells;
+  #                       854143 = assembled PV modules/panels.
+  # Census API serves data by the code valid at time of import filing. Querying
+  # 854142/854143 will therefore return data from 2022-01 onwards only.
+  # Coverage note must be honest: series starts 2022-01 for these codes.
+  # The pre-2022 predecessor was 854140 (unassembled) — not included here because
+  # mixing old+new codes in the same theme without a crosswalk splice would produce
+  # a false level shift (different scope: pre-2022 854140 included both cells types).
+  - hs_code: "854142"
+    label_en: "Photovoltaic cells (solar cells, unassembled) — HS2022"
+    label_zh: "光伏电池（未封装，HS2022编码）"
+    theme_id: solar
+    expected_direction: falling_imports_confirms
+    rationale: >
+      Solar cell imports from SE Asia proxy for US domestic-manufacturing gap.
+      Falling imports as US fab capacity (First Solar, Qcells, etc.) ramps =
+      domestic-substitution evidence per the onshoring thesis.
+      HS2022 code (effective 2022-01); predecessor was 854140 under HS2017.
+      Series coverage starts 2022-01 — pre-2022 gap is structural, not missing data.
+
+  - hs_code: "854143"
+    label_en: "Solar modules / panels (assembled) — HS2022"
+    label_zh: "太阳能电池板（已封装模组，HS2022编码）"
+    theme_id: solar
+    expected_direction: falling_imports_confirms
+    rationale: >
+      Panel imports are the dominant US solar supply source today. Import deceleration
+      as US + allied capacity scales = substitution evidence. CAUTION: tariff timing
+      distorts short-window reads (stockpiling ahead of tariff cliffs).
+      HS2022 code (effective 2022-01); 854150 was never a valid HS6 subheading.
+      Series coverage starts 2022-01 — pre-2022 gap is structural, not missing data.
+
+  - hs_code: "280461"
+    label_en: "Silicon — polysilicon (electronic grade)"
+    label_zh: "多晶硅（电子级）"
+    theme_id: solar
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Polysilicon is the upstream raw material for both solar wafers and
+      semiconductor crystal growth. Rising imports confirm active cell/wafer
+      production demand. Domestic polysilicon capacity (REC Silicon) is limited,
+      so imports track throughput until onshoring of upstream crystallisation lands.
+
+  # ── AI SEMICONDUCTORS ─────────────────────────────────────────────────────
+  - hs_code: "854231"
+    label_en: "Processors and controllers (incl. CPUs, GPUs, AI accelerators)"
+    label_zh: "处理器与控制器（含CPU/GPU/AI加速器）"
+    theme_id: ai_semiconductors
+    expected_direction: rising_imports_confirms
+    rationale: >
+      GPU and AI-accelerator imports (TSMC-fabbed, shipped from Taiwan/Asia) are
+      the most direct trade-flow signal for AI capex build-out. Rising imports =
+      data-center customers absorbing supply; used to cross-check NVDA revenue
+      trends with physical-flow data.
+
+  - hs_code: "854232"
+    label_en: "Memory chips (DRAM, HBM, NAND flash ICs)"
+    label_zh: "存储芯片（DRAM/HBM/NAND）"
+    theme_id: ai_semiconductors
+    expected_direction: rising_imports_confirms
+    rationale: >
+      HBM imports track AI system build-out; DRAM and NAND track broader compute
+      expansion. Rising imports confirm AI infrastructure demand across cloud
+      and enterprise. Overlaps with memory_storage theme but is included here
+      because AI accelerators are the primary demand driver.
+
+  - hs_code: "854233"
+    label_en: "Amplifiers and analog/mixed-signal ICs"
+    label_zh: "放大器与模拟/混合信号集成电路"
+    theme_id: ai_semiconductors
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Analog/power management ICs are required in every AI server rack. Import
+      volume of these supporting components cross-checks accelerator deployment
+      pace independently of GPU headline figures.
+
+  # ── SEMICONDUCTOR CAPITAL EQUIPMENT ───────────────────────────────────────
+  - hs_code: "848620"
+    label_en: "Machines for manufacturing semiconductor devices (lithography)"
+    label_zh: "半导体制造设备（光刻机等）"
+    theme_id: semicap_equipment
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Litho tool imports (ASML EUV/DUV, Nikon, Canon) are a direct read on US
+      fab capex. Rising imports confirm that Intel, TSMC AZ, Samsung TX are
+      equipping fabs. Export-control dynamics mean code-level directional shifts
+      are informative for supply-chain bifurcation thesis.
+
+  - hs_code: "848630"
+    label_en: "Machines for producing semiconductor wafers (deposition, etch, CMP)"
+    label_zh: "半导体晶圆制造设备（沉积/刻蚀/CMP）"
+    theme_id: semicap_equipment
+    expected_direction: rising_imports_confirms
+    rationale: >
+      CVD, ALD, etch, and CMP tools from AMAT/LAM/Tokyo Electron. Import surge
+      coincides with fab fit-out phases; corroborates WFE spending expectations.
+
+  - hs_code: "848640"
+    label_en: "Machines for assembly / test of semiconductor devices"
+    label_zh: "半导体封装/测试设备"
+    theme_id: semicap_equipment
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Advanced packaging (CoWoS, HBM stacking) and test equipment imports track
+      the back-end buildout that is supply-constrained for AI chips today.
+
+  # ── GRID ELECTRIFICATION ──────────────────────────────────────────────────
+  - hs_code: "850421"
+    label_en: "Liquid-dielectric transformers (>10 MVA — power grid)"
+    label_zh: "液体绝缘变压器（>10MVA，电网用）"
+    theme_id: grid_electrification
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Large power transformers (LPTs) have 1-2 year lead times; US domestic
+      capacity is limited. Import surge is the clearest real-time signal that
+      US utilities are ordering equipment to expand grid capacity for AI/EV load.
+
+  - hs_code: "850422"
+    label_en: "Liquid-dielectric transformers (630 kVA – 10 MVA)"
+    label_zh: "液体绝缘变压器（630kVA-10MVA）"
+    theme_id: grid_electrification
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Distribution transformers that connect substations to commercial/industrial
+      loads. Import demand is a second physical-flow leg for grid buildout alongside
+      the large-power-transformer code above.
+
+  - hs_code: "853590"
+    label_en: "Switchgear and circuit breakers (>1kV — transmission)"
+    label_zh: "高压开关设备与断路器（>1kV输电）"
+    theme_id: grid_electrification
+    expected_direction: rising_imports_confirms
+    rationale: >
+      High-voltage switchgear from Siemens, ABB, Schneider is a complementary
+      capital good to transformers in grid expansion. Rising imports cross-check
+      the transformer flow signal.
+
+  - hs_code: "854442"
+    label_en: "Electric conductors / cables (600V–1kV, fitted with connectors)"
+    label_zh: "电力电缆（600V-1kV，带接头）"
+    theme_id: grid_electrification
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Wiring and cable for distribution networks and data-center power delivery.
+      Import growth tracks electrical-infrastructure buildout driven by AI and EV
+      charging demand.
+
+  # ── NUCLEAR POWER ─────────────────────────────────────────────────────────
+  - hs_code: "284410"
+    label_en: "Natural uranium (ore and compounds)"
+    label_zh: "天然铀（矿石及化合物）"
+    theme_id: nuclear_power
+    expected_direction: rising_imports_confirms
+    rationale: >
+      US uranium imports directly track nuclear fuel procurement. The US has
+      minimal domestic mining capacity and relies heavily on Kazakhstan, Canada,
+      Australia. Rising imports signal fuel purchasing for existing and new
+      reactor cycles.
+
+  - hs_code: "284430"
+    label_en: "Uranium enriched in U-235 and compounds"
+    label_zh: "浓缩铀（U-235及其化合物）"
+    theme_id: nuclear_power
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Enriched uranium (fuel-grade LEU) import volumes are a direct operational
+      signal for nuclear fleet utilization and new reactor fueling schedules.
+      HALEU import dynamics inform SMR supply-chain readiness.
+
+  # ── COPPER & STEEL ELECTRIFICATION ────────────────────────────────────────
+  - hs_code: "740311"
+    label_en: "Refined copper cathodes"
+    label_zh: "精炼铜阴极"
+    theme_id: copper_steel_electrify
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Refined copper cathodes are the primary feedstock for EV wiring, grid cable,
+      transformer windings, and busbars. US is a net importer. Rising imports
+      confirm electrification demand build-out is consuming physical copper.
+
+  - hs_code: "720851"
+    label_en: "Hot-rolled steel coils and sheets (>3mm, structural)"
+    label_zh: "热轧钢卷和板（>3mm，结构用）"
+    theme_id: copper_steel_electrify
+    expected_direction: falling_imports_confirms
+    rationale: >
+      Section 232 tariffs and CHIPS/IRA-driven domestic capacity investments
+      create an onshoring dynamic: falling imports alongside flat domestic output
+      suggests substitution or demand softness; falling imports with rising
+      domestic output = onshoring success. Rising imports = domestic capacity
+      has not yet displaced foreign supply.
+
+  - hs_code: "720879"
+    label_en: "Hot-rolled steel plate (other)"
+    label_zh: "热轧钢板（其他）"
+    theme_id: copper_steel_electrify
+    expected_direction: falling_imports_confirms
+    rationale: >
+      Same onshoring logic as 720851. Steel plate used in grid infrastructure,
+      EV frames, and industrial equipment. Import decline = domestic substitution.
+
+  # ── GLP-1 / OBESITY / PHARMA ──────────────────────────────────────────────
+  - hs_code: "293339"
+    label_en: "Heterocyclic compounds with nitrogen heteroatom(s) — GLP-1 peptide APIs"
+    label_zh: "含氮杂环化合物（GLP-1多肽原料药）"
+    theme_id: glp1_obesity
+    expected_direction: rising_imports_confirms
+    rationale: >
+      GLP-1 drug substance (semaglutide, tirzepatide) is manufactured primarily in
+      Europe (Novo's Denmark/France sites, Lilly's Ireland). Import growth of
+      pharmaceutical intermediates in this HS family tracks GLP-1 production ramp.
+      Signal is noisy (covers many APIs) — used as confluence input, not standalone.
+
+  - hs_code: "300490"
+    label_en: "Medicaments in measured doses (finished pharmaceuticals)"
+    label_zh: "定量计量药品（成品药）"
+    theme_id: glp1_obesity
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Finished branded pharmaceuticals including GLP-1 injectables. Rising imports
+      track supply-chain expansion effort to bring offshore-manufactured doses into
+      the US distribution system ahead of demand surge.
+
+  # ── DIAGNOSTICS & LIFE SCIENCES ───────────────────────────────────────────
+  - hs_code: "902780"
+    label_en: "Instruments and apparatus for measuring/checking (lab instruments)"
+    label_zh: "实验室测量仪器（含诊断设备）"
+    theme_id: diagnostics_lifesci
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Life-science instruments (mass specs, flow cytometers, sequencers, etc.)
+      sourced globally (Roche DE, Danaher US/EU, Sysmex JP). Rising imports
+      track capital equipment buildout in diagnostics and biopharma research.
+
+  - hs_code: "382200"
+    label_en: "Diagnostic reagents and kits"
+    label_zh: "诊断试剂和试剂盒"
+    theme_id: diagnostics_lifesci
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Reagent and assay kit imports track lab diagnostic volume across clinical
+      and research settings. Rising imports confirm demand for diagnostics capacity
+      independent of domestic manufacturing capability.
+
+  # ── DEFENSE & AEROSPACE ───────────────────────────────────────────────────
+  - hs_code: "880240"
+    label_en: "Aircraft — civil (>15,000 kg empty weight, commercial + military transports)"
+    label_zh: "大型飞机（空机重量>15000千克）"
+    theme_id: defense_aerospace
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Large aircraft imports include both civil airliners (Airbus) and military
+      transport imports. While US is a net EXPORTER via Boeing, import patterns
+      track commercial delivery backlogs and multi-nation defence programs. Use
+      with caution: civil/military split is not available at this code.
+
+  - hs_code: "880330"
+    label_en: "Aircraft parts (other)"
+    label_zh: "飞机零部件（其他）"
+    theme_id: defense_aerospace
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Aircraft component imports (fuselages, nacelles, avionics, landing gear)
+      are a supply-chain depth signal for both Airbus procurement and US OEM
+      supply chains. Rising imports confirm active production pipelines.
+
+  # ── MEDICAL DEVICES ───────────────────────────────────────────────────────
+  - hs_code: "901890"
+    label_en: "Medical instruments and appliances (other)"
+    label_zh: "其他医疗器械"
+    theme_id: medical_devices
+    expected_direction: rising_imports_confirms
+    rationale: >
+      Broad medical device category covering surgical tools, monitoring equipment,
+      catheters, endoscopes. Import growth tracks hospital/ambulatory spending
+      recovery and procedure volume. Most complex devices are US-designed but
+      component-sourced internationally.
