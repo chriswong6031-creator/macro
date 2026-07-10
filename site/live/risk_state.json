@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-09 21:55:15 UTC",
+  "built": "2026-07-10 15:43:26 UTC",
   "session": {
     "region": "us",
-    "open": false,
-    "local_time": "2026-07-09 17:55 EDT"
+    "open": true,
+    "local_time": "2026-07-10 11:43 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -14,11 +14,19 @@
   "realtime": false,
   "nightly_asof": "2026-07-09",
   "polygon_status": "ok",
-  "n_live_symbols": 4,
+  "n_live_symbols": 12,
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": -0.06
+      "chg_pct": 0.21
+    },
+    {
+      "sym": "QQQ",
+      "chg_pct": 0.11
+    },
+    {
+      "sym": "VIX",
+      "chg_pct": -2.27
     }
   ],
   "display": {
@@ -42,7 +50,7 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 58,
+      "top_score": 60,
       "label_en": "Bubble / blow-off unwind",
       "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
@@ -59,8 +67,8 @@
   },
   "nightly": {
     "verdict": "RISK_ON",
-    "score": 78,
-    "raw_score": 78,
+    "score": 77,
+    "raw_score": 77,
     "color": "green",
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
@@ -103,7 +111,7 @@
     {
       "key": "breadth",
       "label_en": "Breadth & participation",
-      "score": 58,
+      "score": 59,
       "basis": "carried",
       "asof": "2026-07-09"
     },
@@ -124,9 +132,9 @@
   ],
   "legs_asof": {
     "tape_trend": "live",
-    "volatility": "2026-07-09",
+    "volatility": "live",
     "radar_fast": "live",
-    "credit_hy_oas": "2026-07-07",
+    "credit_hy_oas": "2026-07-08",
     "breadth": "2026-07-09",
     "liquidity": "2026-07-09",
     "macro_stress": "2026-07-09",
