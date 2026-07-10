@@ -93,6 +93,8 @@ from engine.flare_persistence import (
     write_site_artifact,
     _append_hist,
     _load_hist,
+    _ledger_advance_enabled,
+    _load_prior_states,
 )
 
 
@@ -759,3 +761,264 @@ class TestArtifactSchema:
         data = json.loads(out_path.read_text())
         assert data["schema"] == "flare_persistence.v1"
         assert data["authority"]["may_rank"] is False
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER-1: ledger-advance lane gate
+# ---------------------------------------------------------------------------
+
+class TestLedgerAdvanceLaneGate:
+    """(a) Ledger write suppressed when COLLECT_LANE unset or non-nightly;
+    write occurs only when COLLECT_LANE=nightly."""
+
+    def _make_hist_row(self, ticker: str = "META", ds: str = "2026-07-09") -> dict:
+        return {
+            "ticker": ticker, "date": ds, "state": STATE_DORMANT,
+            "s_plus": 1.0, "witness_bitmap": 0,
+            "w_t1": 0, "w_t2": 0, "w_t3": 0, "w_t4": 0,
+            "mag_t1": None, "mag_t2": None, "mag_t3": None, "mag_t4": None,
+            "fetch_date": ds,
+        }
+
+    def test_ledger_advance_disabled_when_collect_lane_unset(self, monkeypatch):
+        monkeypatch.delenv("COLLECT_LANE", raising=False)
+        monkeypatch.delenv("US_LANE", raising=False)
+        assert _ledger_advance_enabled() is False
+
+    def test_ledger_advance_disabled_when_collect_lane_render(self, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "render")
+        monkeypatch.delenv("US_LANE", raising=False)
+        assert _ledger_advance_enabled() is False
+
+    def test_ledger_advance_enabled_when_collect_lane_nightly(self, monkeypatch):
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        monkeypatch.delenv("US_LANE", raising=False)
+        assert _ledger_advance_enabled() is True
+
+    def test_no_parquet_written_without_nightly_lane(self, tmp_path, monkeypatch):
+        """compute() must NOT write state_hist.parquet when COLLECT_LANE != nightly."""
+        monkeypatch.delenv("COLLECT_LANE", raising=False)
+        monkeypatch.delenv("US_LANE", raising=False)
+
+        dr = _make_data_root(tmp_path)
+        import engine.flare_persistence as _fpe
+        import lib.config as _cfg
+        monkeypatch.setattr(_fpe, "_build_universe", lambda data_root, today: ["META"])
+        monkeypatch.setattr(_cfg, "data_dir", lambda: dr)
+        # Override process_ticker to avoid needing real data stores
+        monkeypatch.setattr(
+            _fpe, "_process_ticker",
+            lambda ticker, today, fetch_date_str, data_root, t1_index,
+                   news_df, prior_states, rows_out, hist_rows: (
+                rows_out.append({
+                    "ticker": ticker, "state": STATE_DORMANT,
+                    "s_plus": 0.0, "n_witnesses": 0,
+                    "witnesses": {}, "as_of": today.isoformat(),
+                    "fetch_date": fetch_date_str,
+                }),
+                hist_rows.append({
+                    "ticker": ticker, "date": today.isoformat(),
+                    "state": STATE_DORMANT, "s_plus": 0.0, "witness_bitmap": 0,
+                    "w_t1": 0, "w_t2": 0, "w_t3": 0, "w_t4": 0,
+                    "mag_t1": None, "mag_t2": None, "mag_t3": None, "mag_t4": None,
+                    "fetch_date": fetch_date_str,
+                }),
+            )
+        )
+        compute(data_root=dr)
+        hist_file = dr / "flare_persistence" / "state_hist.parquet"
+        assert not hist_file.exists(), "state_hist.parquet must NOT be written on non-nightly lanes"
+
+    def test_parquet_written_on_nightly_lane(self, tmp_path, monkeypatch):
+        """compute() must write state_hist.parquet when COLLECT_LANE=nightly."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        monkeypatch.delenv("US_LANE", raising=False)
+
+        dr = _make_data_root(tmp_path)
+        import engine.flare_persistence as _fpe
+        import lib.config as _cfg
+        monkeypatch.setattr(_fpe, "_build_universe", lambda data_root, today: ["META"])
+        monkeypatch.setattr(_cfg, "data_dir", lambda: dr)
+        monkeypatch.setattr(
+            _fpe, "_process_ticker",
+            lambda ticker, today, fetch_date_str, data_root, t1_index,
+                   news_df, prior_states, rows_out, hist_rows: (
+                rows_out.append({
+                    "ticker": ticker, "state": STATE_DORMANT,
+                    "s_plus": 0.0, "n_witnesses": 0,
+                    "witnesses": {}, "as_of": today.isoformat(),
+                    "fetch_date": fetch_date_str,
+                }),
+                hist_rows.append({
+                    "ticker": ticker, "date": today.isoformat(),
+                    "state": STATE_DORMANT, "s_plus": 0.0, "witness_bitmap": 0,
+                    "w_t1": 0, "w_t2": 0, "w_t3": 0, "w_t4": 0,
+                    "mag_t1": None, "mag_t2": None, "mag_t3": None, "mag_t4": None,
+                    "fetch_date": fetch_date_str,
+                }),
+            )
+        )
+        compute(data_root=dr)
+        hist_file = dr / "flare_persistence" / "state_hist.parquet"
+        assert hist_file.exists(), "state_hist.parquet must be written on nightly lane"
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER-2: same-day rerun must not double-advance S+
+# ---------------------------------------------------------------------------
+
+class TestSameDayNoDoubleAdvance:
+    """(b) Writing a today row then recomputing must not advance S+ further."""
+
+    def _make_hist_row(self, ticker: str, ds: str, s_plus: float = 6.0) -> dict:
+        return {
+            "ticker": ticker, "date": ds, "state": STATE_PRIMED,
+            "s_plus": s_plus, "witness_bitmap": 0b0011,
+            "w_t1": 1, "w_t2": 1, "w_t3": 0, "w_t4": 0,
+            "mag_t1": 3.0, "mag_t2": 2.5, "mag_t3": None, "mag_t4": None,
+            "fetch_date": ds,
+        }
+
+    def test_prior_excludes_today_row(self, tmp_path):
+        """_load_prior_states must exclude today's row — prior is last row with date < today."""
+        dr = _make_data_root(tmp_path)
+        today = date(2026, 7, 10)
+        yesterday = date(2026, 7, 9)
+
+        # Write yesterday row s_plus=4.0 and today row s_plus=6.0
+        _append_hist([self._make_hist_row("META", yesterday.isoformat(), s_plus=4.0)], dr)
+        _append_hist([self._make_hist_row("META", today.isoformat(), s_plus=6.0)], dr)
+
+        # _load_prior_states with today excluded => must see yesterday's 4.0
+        prior = _load_prior_states(dr, today=today)
+        assert "META" in prior
+        assert prior["META"]["s_plus"] == 4.0, (
+            f"Expected 4.0 (yesterday), got {prior['META']['s_plus']} — today row was not excluded"
+        )
+
+    def test_prior_without_today_arg_returns_latest(self, tmp_path):
+        """Without today arg (old compat call), last row is returned regardless."""
+        dr = _make_data_root(tmp_path)
+        today = date(2026, 7, 10)
+        yesterday = date(2026, 7, 9)
+
+        _append_hist([self._make_hist_row("META", yesterday.isoformat(), s_plus=4.0)], dr)
+        _append_hist([self._make_hist_row("META", today.isoformat(), s_plus=6.0)], dr)
+
+        prior = _load_prior_states(dr)  # no today arg
+        # Without today filter, latest (today's 6.0) is returned
+        assert prior["META"]["s_plus"] == 6.0
+
+    def test_same_day_rerun_does_not_double_advance(self, tmp_path, monkeypatch):
+        """Simulate a second same-day run: S+ must not advance off its own output.
+
+        We write a today row with s_plus=6.0, then call _load_prior_states(today=today)
+        and verify prior s_plus comes from the prior day (4.0), not today's (6.0).
+        The subsequent CUSUM step from 4.0 must produce a different (lower) result
+        than stepping from 6.0 would.
+        """
+        dr = _make_data_root(tmp_path)
+        today = date(2026, 7, 10)
+        yesterday = date(2026, 7, 9)
+
+        # Simulate first-run outputs
+        _append_hist([self._make_hist_row("META", yesterday.isoformat(), s_plus=4.0)], dr)
+        _append_hist([self._make_hist_row("META", today.isoformat(), s_plus=6.0)], dr)
+
+        # Second run: prior loaded with today excluded
+        prior = _load_prior_states(dr, today=today)
+        s_prior = prior["META"]["s_plus"]
+        assert s_prior == 4.0, f"Prior must be yesterday's 4.0, not today's 6.0; got {s_prior}"
+
+        # Advance from correct prior (4.0) — e.g. zero-witness day
+        s_next_correct = _advance_cusum(4.0, 0, trailing_mean=2.0, trailing_std=1.0)
+        # Advance from wrong prior (6.0, double-advance scenario)
+        s_next_wrong = _advance_cusum(6.0, 0, trailing_mean=2.0, trailing_std=1.0)
+        assert s_next_correct != s_next_wrong, "Sanity: correct vs wrong prior must differ"
+        # The fix ensures we use s_next_correct (from 4.0), not s_next_wrong (from 6.0)
+
+
+# ---------------------------------------------------------------------------
+# MAJOR: FADING routing — PRIMED loses conditions but s_plus still elevated
+# ---------------------------------------------------------------------------
+
+class TestFadingRouting:
+    """(c) PRIMED->FADING routing at s_plus in [FADING_DROP, FIRE_H) and at witness-drop;
+    FADING->PRIMED recovery when s_plus recovers >= FIRE_H with sufficient witnesses."""
+
+    def test_primed_to_fading_when_s_plus_in_fading_zone(self):
+        """PRIMED with s_plus in [FADING_DROP, FIRE_H) (below FIRE_H) => FADING, not DORMANT."""
+        drop = THRESHOLDS["CUSUM_FADING_DROP"]
+        fire = THRESHOLDS["CUSUM_FIRE_H"]
+        s_mid = (drop + fire) / 2  # e.g. 4.0 — above drop but below fire
+        # Witnesses dropped to 0 so PRIMED condition fails
+        state = _compute_state(s_plus=s_mid, n_witnesses_present=0, prior_state=STATE_PRIMED)
+        assert state == STATE_FADING, (
+            f"Expected FADING at s_plus={s_mid} (in fading zone), prior=PRIMED; got {state}"
+        )
+
+    def test_primed_to_fading_when_witness_drop_with_elevated_s_plus(self):
+        """PRIMED loses min witnesses but s_plus >= FIRE_H => FADING (not PRIMED, not DORMANT)."""
+        fire = THRESHOLDS["CUSUM_FIRE_H"]
+        min_w = THRESHOLDS["PRIMED_MIN_WITNESSES"]
+        # s_plus at fire level but witnesses = min_w - 1 (one short)
+        state = _compute_state(
+            s_plus=fire,
+            n_witnesses_present=min_w - 1,
+            prior_state=STATE_PRIMED,
+        )
+        assert state == STATE_FADING, (
+            f"Expected FADING when witnesses drop below min with s_plus={fire}, "
+            f"prior=PRIMED; got {state}"
+        )
+
+    def test_primed_to_dormant_when_s_plus_below_fading_drop(self):
+        """PRIMED with s_plus < CUSUM_FADING_DROP => FADING (s+ decayed), not DORMANT."""
+        drop = THRESHOLDS["CUSUM_FADING_DROP"]
+        # s_plus just below drop
+        state = _compute_state(
+            s_plus=drop - 0.1,
+            n_witnesses_present=0,
+            prior_state=STATE_PRIMED,
+        )
+        # Rule 2: prior=PRIMED AND s_plus < fading_drop => FADING
+        assert state == STATE_FADING, (
+            f"Expected FADING (prior=PRIMED, s_plus below drop={drop}); got {state}"
+        )
+
+    def test_truly_dormant_when_s_plus_near_zero(self):
+        """No prior PRIMED/FADING elevation + low s_plus => DORMANT."""
+        state = _compute_state(s_plus=0.5, n_witnesses_present=0, prior_state=STATE_DORMANT)
+        assert state == STATE_DORMANT
+
+    def test_fading_to_primed_recovery(self):
+        """FADING recovers to PRIMED when s_plus >= FIRE_H and witnesses >= min."""
+        fire = THRESHOLDS["CUSUM_FIRE_H"]
+        min_w = THRESHOLDS["PRIMED_MIN_WITNESSES"]
+        state = _compute_state(
+            s_plus=fire,
+            n_witnesses_present=min_w,
+            prior_state=STATE_FADING,
+        )
+        assert state == STATE_PRIMED
+
+    def test_fading_stays_fading_with_elevated_s_plus_insufficient_witnesses(self):
+        """FADING: s_plus >= FIRE_H but witnesses < min => stays FADING."""
+        fire = THRESHOLDS["CUSUM_FIRE_H"]
+        min_w = THRESHOLDS["PRIMED_MIN_WITNESSES"]
+        state = _compute_state(
+            s_plus=fire,
+            n_witnesses_present=min_w - 1,
+            prior_state=STATE_FADING,
+        )
+        assert state == STATE_FADING
+
+    def test_fading_to_dormant_when_s_plus_below_fading_drop_and_no_witnesses(self):
+        """FADING: s_plus drops below CUSUM_FADING_DROP with no witnesses => DORMANT."""
+        drop = THRESHOLDS["CUSUM_FADING_DROP"]
+        state = _compute_state(
+            s_plus=drop - 0.1,
+            n_witnesses_present=0,
+            prior_state=STATE_FADING,
+        )
+        assert state == STATE_DORMANT

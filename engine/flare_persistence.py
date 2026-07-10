@@ -462,22 +462,35 @@ def _compute_state(
 ) -> str:
     """State machine: DORMANT -> PRIMED -> FADING.
 
-    PRIMED: S+ >= CUSUM_FIRE_H AND n_witnesses_present >= PRIMED_MIN_WITNESSES.
-    FADING: was PRIMED, S+ decayed below CUSUM_FADING_DROP.
-    DORMANT: otherwise.
+    PRIMED:  S+ >= CUSUM_FIRE_H AND n_witnesses_present >= PRIMED_MIN_WITNESSES.
+    FADING:  (a) was PRIMED or FADING AND S+ >= CUSUM_FADING_DROP but PRIMED
+                 conditions no longer met (s_plus < FIRE_H or witnesses < min), OR
+             (b) was PRIMED AND S+ < CUSUM_FADING_DROP (same as before).
+    DORMANT: s_plus < CUSUM_FADING_DROP AND PRIMED/FADING conditions not met.
+
+    MAJOR fix: a PRIMED name that loses PRIMED conditions but retains
+    s_plus >= CUSUM_FADING_DROP must land on FADING, not DORMANT.
+    FADING with s_plus recovering >= FIRE_H and >= min witnesses re-enters PRIMED.
     """
     fire_h = THRESHOLDS["CUSUM_FIRE_H"]
     fading_drop = THRESHOLDS["CUSUM_FADING_DROP"]
     min_w = THRESHOLDS["PRIMED_MIN_WITNESSES"]
 
+    # 1. PRIMED: full conditions met (from any prior state)
     if s_plus >= fire_h and n_witnesses_present >= min_w:
         return STATE_PRIMED
+
+    # 2. FADING re-entry from PRIMED: S+ dropped below FADING_DROP (clear decay)
     if prior_state == STATE_PRIMED and s_plus < fading_drop:
         return STATE_FADING
-    if prior_state == STATE_FADING and s_plus >= fire_h and n_witnesses_present >= min_w:
-        return STATE_PRIMED
-    if prior_state == STATE_FADING and s_plus >= fading_drop:
+
+    # 3. PRIMED conditions lost but S+ still >= FADING_DROP => FADING
+    #    Covers: s_plus in [FADING_DROP, FIRE_H) or witnesses dropped below min
+    #    while s_plus is still elevated.
+    if prior_state in (STATE_PRIMED, STATE_FADING) and s_plus >= fading_drop:
         return STATE_FADING
+
+    # 4. DORMANT: S+ < FADING_DROP (no sustained elevation)
     return STATE_DORMANT
 
 
@@ -538,13 +551,38 @@ def _append_hist(
 
 
 # ---------------------------------------------------------------------------
+# Ledger-advance lane gate
+# ---------------------------------------------------------------------------
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — mirrors mtf_upturn._ledger_advance_enabled exactly.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
+
+
+# ---------------------------------------------------------------------------
 # Prior CUSUM state loading
 # ---------------------------------------------------------------------------
 
 
-def _load_prior_states(data_root: Path) -> dict[str, dict]:
-    """Return {ticker: {"s_plus": float, "state": str, "history": [n_present, ...]}} from hist."""
+def _load_prior_states(data_root: Path, today: date | None = None) -> dict[str, dict]:
+    """Return {ticker: {"s_plus": float, "state": str, "history": [n_present, ...]}} from hist.
+
+    BLOCKER-2 fix: excludes rows where date == today (session date) so that a
+    same-day rerun does not double-advance S+ off its own just-written output.
+    Prior = most recent row with date < today.
+    """
     hist = _load_hist(data_root)
+    if hist.empty:
+        return {}
+    # Exclude today's rows so prior = last row with date < today
+    if today is not None:
+        today_str = today.isoformat()
+        hist = hist[hist["date"].astype(str) != today_str]
     if hist.empty:
         return {}
     out: dict[str, dict] = {}
@@ -606,7 +644,7 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
 
     # Build universe
     universe = _build_universe(data_root, today)
-    prior_states = _load_prior_states(data_root)
+    prior_states = _load_prior_states(data_root, today=today)
 
     rows_out: list[dict] = []
     hist_rows: list[dict] = []
@@ -627,8 +665,10 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
         except Exception as e:  # noqa: BLE001 — NAR-R10: never crash pipeline
             log.warning("flare_persistence: %s compute failed: %s", ticker, e)
 
-    # Append PIT history
-    _append_hist(hist_rows, data_root)
+    # Append PIT history — ONLY on the nightly lane (COLLECT_LANE=nightly).
+    # Intraday lanes (render.yml, earlyclose.yml) discard data/ writes per house law.
+    if _ledger_advance_enabled():
+        _append_hist(hist_rows, data_root)
 
     # Sort: PRIMED > FADING > DORMANT, then by s_plus desc
     _STATE_ORDER = {STATE_PRIMED: 0, STATE_FADING: 1, STATE_DORMANT: 2}
