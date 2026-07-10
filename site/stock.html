@@ -2592,6 +2592,7 @@
   var _iflowFlow = {};           // ticker -> {ncp, flow_dur, badges, session_tier, asof}
   var _iflowFlowAsof = null;
   var _iflowLeaderMap = {};      // ticker -> leader record from base.json
+  var _iflowCur = null;         // ticker whose render is in flight (stale-ticker guard)
 
   var IFLOW_RVOL_CONFIRM = 1.30;
   var IFLOW_DUR_MIN = 0.60;
@@ -2612,12 +2613,15 @@
     if (v == null || isNaN(v)) return '';
     return v > 0 ? 'pos' : (v < 0 ? 'neg' : '');
   }
+  function _etMinutes() {
+    var fmt = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit'});
+    var parts = fmt.formatToParts(new Date());
+    var h = 0, m = 0;
+    parts.forEach(function(p){ if (p.type === 'hour') h = parseInt(p.value, 10); else if (p.type === 'minute') m = parseInt(p.value, 10); });
+    return h * 60 + m;
+  }
   function _iflowIsMarketHours() {
-    var now = new Date();
-    var utcH = now.getUTCHours(), utcM = now.getUTCMinutes();
-    var etH = utcH - 5;
-    if (etH < 0) etH += 24;
-    var etMins = etH * 60 + utcM;
+    var etMins = _etMinutes();
     return etMins >= (9 * 60 + 25) && etMins <= (16 * 60 + 5);
   }
 
@@ -2673,6 +2677,7 @@
   }
 
   function _iflowRenderPanel(t) {
+    if (t !== _iflowCur) return;
     var leader = _iflowLeaderMap[t];
     if (!leader) { show('panel_iflow', false); return; }
 
@@ -2702,9 +2707,7 @@
     var rvolStr = '—';
     if (pulse && pulse.cum_vol != null && leader.adv20_shares && leader.vol_share_curve && leader.vol_share_curve.length) {
       var curve = leader.vol_share_curve;
-      var now = new Date();
-      var etMins2 = (now.getUTCHours() - 5) * 60 + now.getUTCMinutes();
-      if (etMins2 < 0) etMins2 += 24 * 60;
+      var etMins2 = _etMinutes();
       var mktOpen = 9 * 60 + 30, mktClose = 16 * 60;
       var elapsed = etMins2 - mktOpen;
       if (elapsed < 0) elapsed = 0;
@@ -2824,14 +2827,16 @@
   function _iflowLoadBase(t, cb) {
     if (_iflowBaseLoaded) { cb(); return; }
     fetch('flowtracker/base.json', {cache: 'no-cache'})
-      .then(function(r){ return r.json(); })
+      .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
         _iflowBaseLoaded = true;
-        var leaders = d.leaders || [];
-        IFLOW_RVOL_CONFIRM = d.rvol_confirm || 1.30;
-        IFLOW_DUR_MIN = d.durability_min || 0.60;
-        IFLOW_WASHOUT_LB = d.washout_lookback || 10;
-        leaders.forEach(function(l){ _iflowLeaderMap[l.ticker] = l; });
+        if (d) {
+          var leaders = d.leaders || [];
+          IFLOW_RVOL_CONFIRM = d.rvol_confirm || 1.30;
+          IFLOW_DUR_MIN = d.durability_min || 0.60;
+          IFLOW_WASHOUT_LB = d.washout_lookback || 10;
+          leaders.forEach(function(l){ _iflowLeaderMap[l.ticker] = l; });
+        }
         cb();
       })
       .catch(function(){
@@ -2842,12 +2847,14 @@
 
   function _iflowLoadPulse(t, cb) {
     fetch('live/flow_pulse.json', {cache: 'no-cache'})
-      .then(function(r){ return r.json(); })
+      .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
-        var tickers = d.tickers || [];
-        tickers.forEach(function(row){ _iflowPulse[row.ticker] = row; });
-        _iflowPulseAsof = d.as_of || null;
-        _iflowPulse._stale = !!d.stale;
+        if (d) {
+          var tickers = d.tickers || [];
+          tickers.forEach(function(row){ _iflowPulse[row.ticker] = row; });
+          _iflowPulseAsof = d.as_of || null;
+          _iflowPulse._stale = !!d.stale;
+        }
         cb();
       })
       .catch(function(){ cb(); });
@@ -2859,8 +2866,8 @@
     var enrichUrl = base + '/live_flow/enrich_current.json';
     var tickerUrl = base + '/live_flow/tickers/' + t + '.json';
     Promise.all([
-      fetch(enrichUrl, {cache: 'no-cache'}).then(function(r){ return r.json(); }).catch(function(){ return null; }),
-      fetch(tickerUrl, {cache: 'no-cache'}).then(function(r){ return r.json(); }).catch(function(){ return null; })
+      fetch(enrichUrl, {cache: 'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+      fetch(tickerUrl, {cache: 'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
     ]).then(function(results){
       var enrich = results[0], tickerData = results[1];
       var existing = _iflowFlow[t] || {};
@@ -2889,6 +2896,7 @@
   }
 
   function renderIFlow(t) {
+    _iflowCur = t;
     show('panel_iflow', false);
     _iflowLoadBase(t, function(){
       if (!_iflowLeaderMap[t]) return;  // not a leader — leave hidden
