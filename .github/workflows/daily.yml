@@ -2180,12 +2180,13 @@ jobs:
       - name: run causal LLM brainstorm (CHF W5 weekly, Tuesday gate, auto_loop gate)
         # Weekly LLM brainstorm step (CHF-R8): runs AFTER build_causal_edges.
         # Tuesday-gated (date +%u == 2): no-op on other days.
-        # The runner checks auto_loop in config/causal_llm.yml; if false (default),
+        # The runner checks auto_loop in config/causal_llm.yml; if false,
         # degrades to pack-only mode (operator-paste workflow; no LLM calls).
-        # Requires ANTHROPIC_API_KEY service-key for scheduled LLM calls (W-AUTO identity law).
+        # Identity: CLAUDE_CODE_OAUTH_TOKEN ONLY (operator ruling 2026-07-09,
+        # overriding the W-AUTO service-key line for CHF — masterplan §9).
         # Non-fatal (exits 0 even if LLM chain fails — pack-only degradation is expected).
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           set +e
           if [ "$(date +%u)" = "2" ]; then

@@ -451,12 +451,13 @@ are serialized by the orchestrator.
 
 ## 6. Ops dependencies (loud)
 
-1. **`CLAUDE_CODE_OAUTH_TOKEN` is corrupted** (repo secret; "Connection error" at
-   turn 0 since 2026-07-04). Until the operator re-sets it, the cortex stakes
-   nothing (exit (a) volume is zero and printed as such).
-2. **Scheduled CHF auto-loop needs a SERVICE-KEY** (`ANTHROPIC_API_KEY` repo
-   secret) per the W-AUTO identity line — do not point the auto-loop at the
-   user-OAuth token even after it is fixed.
+1. ~~`CLAUDE_CODE_OAUTH_TOKEN` corrupted~~ **RESOLVED 2026-07-09**: the token
+   authenticates again (latest cortex run returns a real 429 rate-limit, not
+   the prior corrupted-header connection error). Rate-limited runs degrade to
+   pack-only and retry the next cycle by design.
+2. ~~Scheduled auto-loop needs a service-key~~ **SUPERSEDED by operator ruling
+   2026-07-09 (§9)**: scheduled runs use `CLAUDE_CODE_OAUTH_TOKEN` ONLY; the
+   `ANTHROPIC_API_KEY` provider is excluded from the scheduled path.
 3. `REPLAY_BOARDED_PATH` (runner-local absolute path) must be set as a repo
    variable for the entry_quality family; absent → honest `data_absent` null.
 4. Machine registry is empty today (zero cortex hypotheses ever registered) —
@@ -504,3 +505,13 @@ are serialized by the orchestrator.
 ## 9. Status log
 
 - 2026-07-09: W0 adjudicated (CHF-R1..R17), red-teamed, amended.
+- 2026-07-09: BUILD COMPLETE — W1..W6 merged (#1979, #1980, #1988, #1999,
+  #2050, #2051 + repo-unblock #1994). 283 causal-suite tests green on main.
+- 2026-07-09: **OPERATOR RULING (CHF-R8 amendment)** — direct chat directive:
+  (a) scheduled auto-loop identity is the user's `CLAUDE_CODE_OAUTH_TOKEN`
+  ("don't use api key, use oauth"), superseding the original W-AUTO
+  service-key requirement for CHF; the runner accepts ONLY the oauth provider
+  on the scheduled path and excludes `ANTHROPIC_API_KEY`/deepseek;
+  (b) `auto_loop: true` effective immediately — the Phase-A earn-in is
+  superseded by direct operator ratification (recorded in
+  `config/causal_llm.yml` phase_a.notes). Token health verified at flip time.

@@ -156,7 +156,7 @@ class TestGatingMatrix(unittest.TestCase):
         self,
         trigger: str,
         auto_loop: bool,
-        has_service_key: bool,
+        scheduled_oauth: bool,
         has_oauth: bool,
         tmp_path: Path,
     ) -> tuple[str, list[str]]:
@@ -179,7 +179,7 @@ class TestGatingMatrix(unittest.TestCase):
              patch("scripts.run_causal_brainstorm._build_fresh_pack",
                    return_value="=== TEST PACK ==="), \
              patch("scripts.run_causal_brainstorm._build_scheduled_providers",
-                   return_value=[_make_mock_provider()] if has_service_key else []), \
+                   return_value=[_make_mock_provider()] if scheduled_oauth else []), \
              patch("scripts.run_causal_brainstorm._build_operator_providers",
                    return_value=[_make_mock_provider()] if has_oauth else []), \
              patch("scripts.run_causal_brainstorm._run_full_mode",
@@ -203,7 +203,7 @@ class TestGatingMatrix(unittest.TestCase):
             lane_status, lines, full_called, rc = self._run_with_config(
                 trigger="scheduled",
                 auto_loop=False,
-                has_service_key=True,
+                scheduled_oauth=True,
                 has_oauth=False,
                 tmp_path=Path(tmp),
             )
@@ -212,18 +212,20 @@ class TestGatingMatrix(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(lane_status, "awaiting_phase_a")
 
-    def test_scheduled_no_service_key_pack_only(self):
-        """scheduled + auto_loop=True + no ANTHROPIC_API_KEY → pack-only."""
+    def test_scheduled_no_oauth_pack_only(self):
+        """scheduled + auto_loop=True + no OAuth on the scheduled path → pack-only
+        (operator ruling 2026-07-09: scheduled runs are OAuth-ONLY; other auth
+        present on the operator path must not leak into the scheduled path)."""
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             lane_status, lines, full_called, rc = self._run_with_config(
                 trigger="scheduled",
                 auto_loop=True,
-                has_service_key=False,
-                has_oauth=True,   # oauth present but must NOT be used for scheduled
+                scheduled_oauth=False,
+                has_oauth=True,   # operator-path auth present but scheduled path has no oauth
                 tmp_path=Path(tmp),
             )
-        self.assertFalse(full_called, "full mode must not be reached even with oauth present")
+        self.assertFalse(full_called, "full mode must not be reached without scheduled-path oauth")
         self.assertEqual(rc, 0)
         self.assertEqual(lane_status, "degraded_pack_only")
 
@@ -234,7 +236,7 @@ class TestGatingMatrix(unittest.TestCase):
             lane_status, lines, full_called, rc = self._run_with_config(
                 trigger="operator",
                 auto_loop=False,
-                has_service_key=False,
+                scheduled_oauth=False,
                 has_oauth=False,
                 tmp_path=Path(tmp),
             )
@@ -249,26 +251,57 @@ class TestGatingMatrix(unittest.TestCase):
             lane_status, lines, full_called, rc = self._run_with_config(
                 trigger="operator",
                 auto_loop=False,
-                has_service_key=False,
+                scheduled_oauth=False,
                 has_oauth=True,   # oauth is fine for operator trigger
                 tmp_path=Path(tmp),
             )
         self.assertTrue(full_called, "full mode must be called with operator trigger + auth")
         self.assertEqual(rc, 0)
 
-    def test_scheduled_auto_loop_true_and_service_key_full_mode(self):
-        """scheduled + auto_loop=True + service-key → full mode reached."""
+    def test_scheduled_auto_loop_true_and_oauth_full_mode(self):
+        """scheduled + auto_loop=True + OAuth available → full mode reached
+        (operator ruling 2026-07-09: OAuth is THE scheduled identity)."""
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             lane_status, lines, full_called, rc = self._run_with_config(
                 trigger="scheduled",
                 auto_loop=True,
-                has_service_key=True,
+                scheduled_oauth=True,
                 has_oauth=False,
                 tmp_path=Path(tmp),
             )
-        self.assertTrue(full_called, "full mode must be reached with scheduled + auto_loop + service-key")
+        self.assertTrue(full_called, "full mode must be reached with scheduled + auto_loop + oauth")
         self.assertEqual(rc, 0)
+
+    def test_scheduled_provider_builder_filters_to_oauth_only(self):
+        """The REAL _build_scheduled_providers must return ONLY the oauth
+        provider even when the waterfall offers anthropic/deepseek — the
+        operator ruling 2026-07-09 excludes ANTHROPIC_API_KEY from the
+        scheduled path entirely."""
+        import scripts.run_causal_brainstorm as runner
+
+        waterfall = [
+            {"name": "oauth", "model": "claude-sonnet-4-6"},
+            {"name": "anthropic", "model": "claude-sonnet-4-6"},
+            {"name": "deepseek", "model": "deepseek-chat"},
+        ]
+        with patch("engine.llm_auth.build_providers", return_value=waterfall):
+            providers = runner._build_scheduled_providers(
+                {"model_roles": {"generator": "claude-sonnet-4-6"}}
+            )
+        self.assertEqual([p["name"] for p in providers], ["oauth"])
+
+    def test_scheduled_provider_builder_empty_without_oauth(self):
+        """No oauth in the waterfall (e.g. only ANTHROPIC_API_KEY set) →
+        scheduled path gets ZERO providers → pack-only degradation."""
+        import scripts.run_causal_brainstorm as runner
+
+        waterfall = [{"name": "anthropic", "model": "claude-sonnet-4-6"}]
+        with patch("engine.llm_auth.build_providers", return_value=waterfall):
+            providers = runner._build_scheduled_providers(
+                {"model_roles": {"generator": "claude-sonnet-4-6"}}
+            )
+        self.assertEqual(providers, [])
 
 
 # ---------------------------------------------------------------------------
