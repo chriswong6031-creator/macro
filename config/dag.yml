@@ -1247,6 +1247,12 @@ lanes:
         module: scripts.build_live_overlay
       - id: build_risk_state
         module: scripts.build_risk_state
+      - id: build_sp500_heatmap
+        module: scripts.build_sp500_heatmap
+        note: >
+          Declared to match the live workflow (intraday-fastpath.yml:113); the step
+          was added live without a dag.yml entry (registry drift). Declaring it heals
+          test_dag_yml_matches_live_workflows.
       - id: build_basket_pulse
         module: scripts.build_basket_pulse
       - id: notify_turn_events
