@@ -55,6 +55,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
 | til-w10-clinical | 2 |
+| til-w11-options-witness | 2 |
 | til-w7-hiring-intent | 3 |
 | til-w8-trade-flows | 2 |
 | til-w9-discovery-v2 | 3 |
@@ -65,7 +66,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 199 |
+| display | 201 |
 | infrastructure | 79 |
 | scored | 4 |
 | shadow | 48 |
@@ -74,7 +75,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 316 |
+| git | 318 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -623,6 +624,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | neuralweb-theme-clinical | `data/neuralweb/theme_clinical.json` | json | collect | display | 0 | 0 |
 | site-clinical-pipeline | `site/basketdata/clinical_pipeline.json` | json | collect | display | 0 | 0 |
+
+### til-w11-options-witness
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| neuralweb-theme-options-witness | `data/neuralweb/theme_options_witness.json` | json | collect | display | 0 | 0 |
+| site-options-witness | `site/basketdata/options_witness.json` | json | collect | display | 0 | 0 |
 
 ### til-w7-hiring-intent
 

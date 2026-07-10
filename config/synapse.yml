@@ -9522,3 +9522,66 @@ artifacts:
       Authority: all may_* false; is_context_only=true.
       Off render path (collect-lane step or standalone CLI).
       Honest null when modality_monthly.parquet absent.
+
+  # --- TIL W11 (PR-W11) — Options-tape crowding-hazard witness ---
+
+  neuralweb-theme-options-witness:
+    path: data/neuralweb/theme_options_witness.json
+    format: json
+    producer: engine/theme_options_witness.py
+    known_extra_writers: []
+    owner_program: til-w11-options-witness
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: theme_options_witness.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W11 (PR-W11) internal NW artifact: per-theme options-tape crowding-hazard
+      witness. Three independent legs — (A) call-OI HHI concentration, (B) put/call
+      OI ratio (EXIT-CROWD L3 accrual vehicle), (C) IV premium vs realized-vol
+      (event-premium hazard). HAZARD framing only: high = crowded/fragile, never
+      bullish. No composite (R-TIL-3 / WA-R1). Positioning fusion ILLEGAL
+      (NEXTL-U13). Source: ThetaData EOD store (runner-local at theta-ops-wt;
+      THETADATA_STORE env). OI timing law: oi[t-1] applied throughout.
+      Coverage: 18 TIL canonical themes via theme_crosswalk.yml basket_ids.
+      Suppression: baskets < 40% member OI coverage emit null legs.
+      Schema: {schema, as_of, generated_at, authority, honesty_header,
+      coverage_stats, oi_timing_law, banned_constructs, themes{}}.
+      Per-theme: leg_a_call_oi_hhi, leg_b_pcr, leg_c_iv_premium, each with
+      value/value_z252/band/stale/note_en/note_zh/coverage_count/coverage_total.
+      Banned constructs: DOI family (dead W-E1), skew-deceleration (unsupported).
+      Authority: all may_* false; is_context_only=true.
+      Off render path (launchd ops-wt lane or standalone CLI).
+      Honest null artifact when ThetaData store absent — exit 0 always.
+
+  site-options-witness:
+    path: site/basketdata/options_witness.json
+    format: json
+    producer: engine/theme_options_witness.py
+    known_extra_writers: []
+    owner_program: til-w11-options-witness
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: theme_options_witness.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      TIL W11 (PR-W11) site projection of theme options-tape crowding-hazard witness
+      (compact format). Git-tracked; served to UI. Schema identical to
+      neuralweb-theme-options-witness but member ticker lists and input arrays are
+      omitted for bandwidth efficiency. Authority: all may_* false; is_context_only=true.
+      Off render path (launchd ops-wt lane or standalone CLI).
+      Honest null when ThetaData store absent.
