@@ -56,6 +56,9 @@ _LEDGER_KEY = ("release", "period", "row_type", "asof_night", "model")
 _SHADOW_V3_TARGETS = {"cpi_headline", "cpi_core", "nfp"}
 _SHADOW_BRIDGE_TARGETS = {"cpi_headline"}  # cpi_core bridge killed/closed (MRI-R25)
 
+# W11-G: mf_energy shadow (Track T, MRI-R36) — cpi_headline only
+_SHADOW_MF_ENERGY_TARGETS = {"cpi_headline"}
+
 # MRI-R21: NFP v3_factor warning (trails champion; sub-naive on full 2010+ window)
 _NFP_V3_WARNING = (
     "trails champion; sub-naive on full-window backtest (2010+ MAE v3=527.9 vs naive=459.8), "
@@ -809,16 +812,54 @@ def _run_shadow_bridge(
         return None
 
 
+def _run_shadow_mf_energy(
+    release_type: str,
+    asof: date,
+    root: Path,
+    period_str: str | None,
+    release_date_obj: date | None,
+) -> dict | None:
+    """Call project_release_mf for cpi_headline only. Fail-open: returns None on error.
+
+    W11-G task 1: mf_energy shadow (MRI-R36, Track T).
+    DISPLAY-ONLY: result carries display_only=True, authority=False, model='mf_energy'.
+    """
+    if release_type not in _SHADOW_MF_ENERGY_TARGETS:
+        return None
+    try:
+        from engine.release_mf_energy import project_release_mf
+        ref_month: date | None = None
+        if period_str:
+            try:
+                ref_month = date.fromisoformat(period_str + "-01")
+            except Exception:
+                pass
+        result = project_release_mf(
+            release=release_type,
+            asof=asof,
+            root=root,
+            ref_month=ref_month,
+            period=period_str,
+            cutoff_label="T-1",
+        )
+        return result
+    except Exception as e:
+        log.warning("shadow mf_energy(%s, %s) failed — skipping: %s", release_type, asof, e)
+        return None
+
+
 def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date) -> None:
     """Attach item["shadows"] to each upcoming item that has shadow models. In-place.
 
-    Only cpi_headline, cpi_core, nfp receive shadows. pce/ppi/claims/retail do not.
+    Only cpi_headline, cpi_core, nfp receive v3_factor; only cpi_headline receives
+    cpi_bridge and mf_energy. pce/ppi/claims/retail do not receive shadows.
     Each shadow entry is display_only=True.
     Fail-open: a shadow that errors is simply skipped (logged in _run_shadow_*).
     """
+    _all_shadow_targets = _SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS | _SHADOW_MF_ENERGY_TARGETS
     for item in upcoming_block:
         rt = item.get("release_type", "")
-        if rt not in (_SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS):
+        if rt not in _all_shadow_targets:
             continue
 
         period_str = item.get("period")
@@ -873,6 +914,27 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
                     "confidence": bridge_result.get("confidence"),
                 }
 
+        # W11-G task 1: mf_energy shadow (cpi_headline only, Track T MRI-R36)
+        if rt in _SHADOW_MF_ENERGY_TARGETS:
+            try:
+                mfe_result = _run_shadow_mf_energy(rt, today, root, period_str, release_date_obj)
+            except Exception as _e:
+                log.warning("_attach_shadows mf_energy(%s) raised — skipping: %s", rt, _e)
+                mfe_result = None
+            if mfe_result is not None:
+                shadows["mf_energy"] = {
+                    "display_only": True,
+                    "point": mfe_result.get("point"),
+                    "p10": mfe_result.get("p10"),
+                    "p25": mfe_result.get("p25"),
+                    "p50": mfe_result.get("p50"),
+                    "p75": mfe_result.get("p75"),
+                    "p90": mfe_result.get("p90"),
+                    "confidence": mfe_result.get("confidence"),
+                    "input_completeness": mfe_result.get("input_completeness"),
+                    "mf_energy_components": mfe_result.get("mf_energy_components"),
+                }
+
         if shadows:
             item["shadows"] = shadows
 
@@ -889,7 +951,7 @@ def _build_shadow_ledger_rows(
 
     Row shape mirrors champion projection rows with additions:
       - row_type = "shadow_projection"
-      - model = "v3_factor" | "cpi_bridge"
+      - model = "v3_factor" | "cpi_bridge" | "mf_energy"
       - prediction_id includes model slug
       - cpi_bridge carries components, coverage_residual_pp, prior_driven_share
     """
@@ -897,12 +959,13 @@ def _build_shadow_ledger_rows(
     asof_night = today.isoformat()
     rows = []
 
+    _all_shadow_targets = _SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS | _SHADOW_MF_ENERGY_TARGETS
     for item in upcoming_block:
         release_type = item.get("release_type")
         period_str = item.get("period")
         release_date_str = item.get("release_date")
 
-        if release_type not in (_SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS):
+        if release_type not in _all_shadow_targets:
             continue
 
         release_date_obj: date | None = None
@@ -1010,6 +1073,48 @@ def _build_shadow_ledger_rows(
                 rows.append(row_br)
             else:
                 log.debug("shadow_projection cpi_bridge skipped for %s/%s (None result)", release_type, period_str)
+
+        # W11-G task 1: mf_energy shadow row (cpi_headline only, Track T MRI-R36)
+        if release_type in _SHADOW_MF_ENERGY_TARGETS:
+            try:
+                mfe_result = _run_shadow_mf_energy(release_type, today, root, period_str, release_date_obj)
+            except Exception as _e:
+                log.warning("_build_shadow_ledger mf_energy(%s) raised — skipping: %s", release_type, _e)
+                mfe_result = None
+            if mfe_result is not None:
+                try:
+                    _pred_id_mfe = make_prediction_id(
+                        _release_id, f"{asof_night}:mf_energy"
+                    ) if _release_id else None
+                except Exception:
+                    _pred_id_mfe = None
+
+                row_mfe: dict = {
+                    "schema": 2,
+                    "row_type": "shadow_projection",
+                    "model": "mf_energy",
+                    "asof_night": asof_night,
+                    "release": release_type,
+                    "period": period_str,
+                    "release_date": release_date_str,
+                    "release_id": _release_id,
+                    "prediction_id": _pred_id_mfe,
+                    "horizon_days": _horizon_days,
+                    "projection_point": mfe_result.get("point"),
+                    "projection_p10": mfe_result.get("p10"),
+                    "projection_p25": mfe_result.get("p25"),
+                    "projection_p50": mfe_result.get("p50"),
+                    "projection_p75": mfe_result.get("p75"),
+                    "projection_p90": mfe_result.get("p90"),
+                    "confidence": mfe_result.get("confidence"),
+                    "input_completeness": mfe_result.get("input_completeness"),
+                    "mf_energy_components": mfe_result.get("mf_energy_components"),
+                    "display_only": True,
+                    "authority": False,
+                }
+                rows.append(row_mfe)
+            else:
+                log.debug("shadow_projection mf_energy skipped for %s/%s (None result)", release_type, period_str)
 
     return rows
 
@@ -1120,6 +1225,8 @@ def _build_projection_ledger_rows(
             "input_snapshot_ref":            item.get("input_snapshot_ref"),
             # MRI-R35: cutoff label — 'T-1' for nearest upcoming period, 'early' for later
             "cutoff_label": item.get("cutoff_label"),
+            # W11-G task 3: freeze print_integrity regime on ledger row (display-only)
+            "print_integrity_regime": item.get("print_integrity_regime"),
         }
         rows.append(row)
     return rows
@@ -2215,7 +2322,14 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
         return
 
     try:
-        from engine.release_quirks import compute_quirk_flags as _compute_quirk_flags
+        from engine.release_quirks import compute_quirk_flags as _cqf_raw
+        # W11-G: wrap so root is always passed (CRITICAL SIGNATURE FIX — MRI-R38c).
+        # The new Track S flags (active_strike, nfp_preliminary_benchmark, etc.)
+        # read data/ calendars + work-stoppages parquet.  Without root they SILENTLY
+        # use _repo_root() which may differ from our runtime root; with root they
+        # always read from the correct tree.
+        import functools as _ft
+        _compute_quirk_flags = _ft.partial(_cqf_raw, root=root)
     except Exception as exc:  # pragma: no cover
         log.warning("release_quirks import failed — quirk_flags enrichment skipped: %s", exc)
         _compute_quirk_flags = None
@@ -2335,6 +2449,108 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
         except Exception as exc:
             log.debug("quirk_flags enrichment failed for %s: %s", rt, exc)
             item["quirk_flags"] = []
+
+
+# ---------------------------------------------------------------------------
+# 8e-W11G. Print-integrity chip + NFP revision context (W11-G tasks 3 & 4)
+# ---------------------------------------------------------------------------
+
+def _attach_integrity_and_revision_context(
+    upcoming_block: list[dict],
+    root: Path,
+    today: date,
+) -> None:
+    """W11-G tasks 3 & 4: attach print_integrity and (for nfp) revision_context.
+
+    Task 3 — print-integrity chip (MRI-R38c):
+      Call engine.release_integrity.compute_print_integrity per release family.
+      Attach item["print_integrity"] = {regime, collection_rate_vs_5y,
+      cpi_median_se_trend, revision_streak}.  Also freeze regime on the
+      projection ledger (via item["print_integrity_regime"]).
+      Fail-open when the integrity parquet is absent.
+
+    Task 4 — NFP revision context (MRI-R37 descriptive remainder):
+      For nfp release_type only: attach item["revision_context"] = the
+      DESCRIPTIVE level-bias annotation from compute_revision_context()
+      PLUS a model_status line {track_r: 'killed_attempt_1', lean_display: false}
+      for honesty.  No lean direction is attached.
+      Fail-open.
+
+    AUTHORITY CONTRACT:
+      - print_integrity values are DISPLAY-ONLY METADATA.
+      - revision_context is DESCRIPTIVE only; no lean, no scoring.
+      - Nothing in this function reads these values back into projections.
+    """
+    try:
+        from engine.release_integrity import compute_print_integrity
+    except Exception as exc:
+        log.warning("release_integrity import failed — print_integrity enrichment skipped: %s", exc)
+        compute_print_integrity = None  # type: ignore[assignment]
+
+    try:
+        from engine.release_revision_model import compute_revision_context
+    except Exception as exc:
+        log.warning("release_revision_model import failed — revision_context enrichment skipped: %s", exc)
+        compute_revision_context = None  # type: ignore[assignment]
+
+    for item in upcoming_block:
+        rt = item.get("release_type", "")
+
+        # --- Task 3: print-integrity chip ---
+        if compute_print_integrity is not None:
+            try:
+                integrity = compute_print_integrity(
+                    release_type=rt,
+                    as_of=today,
+                    root=root,
+                )
+                item["print_integrity"] = {
+                    "regime": integrity.get("regime"),
+                    "collection_rate_vs_5y": integrity.get("collection_rate_vs_5y"),
+                    "cpi_median_se_trend": integrity.get("cpi_median_se_trend"),
+                    "revision_streak": integrity.get("revision_streak"),
+                    "source_years": integrity.get("source_years"),
+                    "as_of": integrity.get("as_of"),
+                    "display_only": True,
+                    "authority": False,
+                }
+                # Freeze regime for ledger (read back from integrity dict)
+                item["print_integrity_regime"] = integrity.get("regime")
+            except Exception as exc:
+                log.debug("print_integrity enrichment failed for %s: %s", rt, exc)
+                item["print_integrity"] = None
+                item["print_integrity_regime"] = None
+        else:
+            item["print_integrity"] = None
+            item["print_integrity_regime"] = None
+
+        # --- Task 4: NFP revision context (descriptive, no lean) ---
+        if rt == "nfp":
+            if compute_revision_context is not None:
+                try:
+                    ctx = compute_revision_context()
+                    # Attach descriptive level-bias annotation
+                    item["revision_context"] = {
+                        **ctx,
+                        # model_status block (honesty: Track R KILLED attempt 1 per §12.3)
+                        "model_status": {
+                            "track_r": "killed_attempt_1",
+                            "lean_display": False,
+                            "note": (
+                                "Track R revision-direction model (MRI-R37): kill rule triggered "
+                                "(Wilson LB <= majority-class base rate in walk-forward). "
+                                "No lean direction is displayed. "
+                                "Descriptive level-bias annotation is display-only (MRI-R37)."
+                            ),
+                        },
+                        "display_only": True,
+                        "authority": False,
+                    }
+                except Exception as exc:
+                    log.debug("revision_context enrichment failed for nfp: %s", exc)
+                    item["revision_context"] = None
+            else:
+                item["revision_context"] = None
 
 
 # ---------------------------------------------------------------------------
@@ -2467,6 +2683,31 @@ def _compute_capture_health(
     except Exception:
         pass
 
+    # W11-G task 5: extend enricher staleness with new W11-E sources
+    try:
+        ws_path = root / "data" / "bls_work_stoppages" / "stoppages.parquet"
+        if ws_path.exists():
+            mtime = ws_path.stat().st_mtime
+            health["enricher_staleness"]["work_stoppages_mtime"] = datetime.fromtimestamp(
+                mtime, tz=timezone.utc
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            health["enricher_staleness"]["work_stoppages_mtime"] = None
+    except Exception:
+        pass
+
+    try:
+        integrity_path = root / "data" / "bls_print_integrity" / "integrity.parquet"
+        if integrity_path.exists():
+            mtime = integrity_path.stat().st_mtime
+            health["enricher_staleness"]["print_integrity_mtime"] = datetime.fromtimestamp(
+                mtime, tz=timezone.utc
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            health["enricher_staleness"]["print_integrity_mtime"] = None
+    except Exception:
+        pass
+
     return health
 
 
@@ -2569,6 +2810,11 @@ def build(root: Path, dry_run: bool = False) -> dict:
     # 3a. PR-I enrichments — fail-open per field; any exception → null + log
     _enrich_upcoming_block(upcoming_block, root)
 
+    # 3a-W11G. Print-integrity chip (MRI-R38c) + NFP revision context (MRI-R37).
+    # Runs after PR-I so the full enrichment order is stable.
+    _attach_integrity_and_revision_context(upcoming_block, root, today)
+    log.info("integrity chip + revision context attached to %d items", len(upcoming_block))
+
     # 4. Load existing ledger
     ledger_path = root / _LEDGER_RELPATH
     existing_ledger = _load_ledger(ledger_path)
@@ -2580,12 +2826,13 @@ def build(root: Path, dry_run: bool = False) -> dict:
     _attach_provenance(upcoming_block, ledger_path, snapshots_dir, dry_run=dry_run)
     log.info("provenance: coverage flags and snapshot refs attached to %d items", len(upcoming_block))
 
-    # 3c. Round-2b: attach shadow projections to upcoming items (display-only, additive).
+    # 3c. Round-2b + W11-G: attach shadow projections to upcoming items (display-only, additive).
+    # Now includes mf_energy for cpi_headline (W11-G task 1).
     # Fail-open per model: errors logged in _run_shadow_*/helpers, never break the build.
     _attach_shadows_to_items(upcoming_block, root, today)
     shadow_counts = {item.get("release_type", "?"): len(item.get("shadows", {}))
                      for item in upcoming_block if item.get("shadows")}
-    log.info("shadow projections attached: %s", shadow_counts)
+    log.info("shadow projections attached (incl. mf_energy): %s", shadow_counts)
 
     # 3d. MRI-R35: assign cutoff_label to each upcoming item before ledger rows freeze them.
     _assign_cutoff_labels(upcoming_block)
@@ -2594,9 +2841,10 @@ def build(root: Path, dry_run: bool = False) -> dict:
     # 5. Build today's projection ledger rows (champion, model=None)
     proj_ledger_rows = _build_projection_ledger_rows(today, upcoming_block, policy_backdrop)
 
-    # 5b. Round-2b: Build shadow_projection ledger rows (model="v3_factor"|"cpi_bridge")
+    # 5b. Round-2b + W11-G: Build shadow_projection ledger rows
+    # (model="v3_factor"|"cpi_bridge"|"mf_energy")
     shadow_ledger_rows = _build_shadow_ledger_rows(today, upcoming_block, root)
-    log.info("shadow ledger rows built: %d", len(shadow_ledger_rows))
+    log.info("shadow ledger rows built: %d (incl. mf_energy)", len(shadow_ledger_rows))
 
     # 6. MRI-R32a: catch-up scoring sweep — score ANY unscored past-release projection
     # (champion + shadow) whose initial print is in vintages; 120d lookback, idempotent.
@@ -2671,6 +2919,8 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "surprise_distribution", "market_implied", "reaction_sensitivity",
             "quirk_flags", "expectation_read", "coverage_flags", "input_snapshot_ref",
             "shadows", "cutoff_label",
+            # W11-G additions
+            "print_integrity", "revision_context",
         ],
         "upcoming": upcoming_block,
         "last_scored": last_scored,
