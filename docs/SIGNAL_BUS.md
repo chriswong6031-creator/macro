@@ -38,7 +38,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2b | 1 |
 | metabolism-phase0 | 2 |
 | momoedge | 8 |
-| narrative-ignition | 2 |
+| narrative-ignition | 5 |
 | nasdaq-internals | 1 |
 | neural-web | 48 |
 | next3 | 3 |
@@ -71,8 +71,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 207 |
-| infrastructure | 85 |
+| display | 208 |
+| infrastructure | 87 |
 | scored | 4 |
 | shadow | 54 |
 
@@ -80,8 +80,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 336 |
-| gitignored-local | 8 |
+| git | 337 |
+| gitignored-local | 10 |
 | r2 | 6 |
 
 ## Artifacts by owner_program
@@ -392,7 +392,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | stock-flare-persistence | `site/stockdata/flare_persistence.json` | json | daily-engine | display | 1 | 0 |
+| stock-narrative-flares | `site/narrativedata/flares.json` | json | daily-engine | display | 1 | 0 |
+| narrative-first-coverage | `data/narrative_flare/first_coverage.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | stock-flare-persistence-history | `data/flare_persistence/state_hist.parquet` | parquet | daily-engine | display | 0 | 0 |
+| stock-narrative-witness-history | `data/narrative_flare/witness_hist.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 
 ### nasdaq-internals
 
