@@ -44,14 +44,30 @@ from pathlib import Path
 # ── Files scanned ────────────────────────────────────────────────────────────
 
 # Files that MUST exist and be clean (fail-closed if missing).
+# The metabolism PROPOSE/ADJUDICATE modules reference the OAuth capability by
+# NAME and write git artifacts (dockets, governance rows) — they must never
+# capture the VALUE. They are added here so the redline scanner covers them
+# (post-review, PR #2082 hardening). NOTE: engine/llm_auth.py is deliberately
+# NOT scanned — it is the single sanctioned boundary that reads the token value
+# to make the API call; scanning it would flag that legitimate read.
 SCAN_PATHS = [
     "config/capability_manifest.yml",
     "engine/neuralweb/capability_broker.py",
+    "engine/metabolism/propose.py",
+    "engine/metabolism/adjudicate.py",
+    "scripts/metabolism_propose.py",
+    "scripts/metabolism_adjudicate.py",
 ]
 
-# Git-committed artifacts that must be clean IF present (the audit tape is
-# written at run time and is NOT gitignored, so it is a committed redline
-# surface — scan it whenever it exists). Absence is fine (nothing to leak yet).
+# Git-committed artifacts that must be clean IF present (written at run time,
+# NOT gitignored → committed redline surfaces). Absence is fine. Entries may be
+# literal paths OR globs.
+# Only CONTROLLED-SCHEMA artifacts are scanned here. The general governance.jsonl,
+# dockets, and adversary_ledger are deliberately NOT scanned: they carry
+# legitimate high-entropy tokens (16-hex event_ids, run_ids, hashes, and
+# LLM-generated free text) that would false-positive. Their leak risk is instead
+# controlled at the source — the writer modules are in SCAN_PATHS above, so a
+# token VALUE cannot be captured into them in the first place.
 SCAN_IF_PRESENT = [
     "data/neuralweb/capability_audit.jsonl",
 ]
@@ -158,9 +174,14 @@ def scan(root: Path | None = None) -> list[dict]:
 
     # Scan-if-present: absence is fine (nothing to leak yet); presence must be clean.
     for rel_path in SCAN_IF_PRESENT:
-        abs_path = root / rel_path
-        if abs_path.exists():
-            findings.extend(_scan_file(abs_path, rel_path))
+        if any(ch in rel_path for ch in "*?["):
+            for abs_path in sorted(root.glob(rel_path)):
+                if abs_path.is_file():
+                    findings.extend(_scan_file(abs_path, str(abs_path.relative_to(root))))
+        else:
+            abs_path = root / rel_path
+            if abs_path.exists():
+                findings.extend(_scan_file(abs_path, rel_path))
 
     return findings
 
@@ -205,6 +226,20 @@ def selftest() -> int:
         tmp = Path(tmpdir)
         (tmp / "config").mkdir()
         (tmp / "engine" / "neuralweb").mkdir(parents=True)
+        (tmp / "engine" / "metabolism").mkdir(parents=True)
+        (tmp / "scripts").mkdir(parents=True)
+
+        # All SCAN_PATHS beyond the two under test must exist (fail-closed on
+        # missing). Stub the metabolism writer modules as clean files so the
+        # planted-secret cases exercise the entropy/value-capture logic rather
+        # than tripping the missing-file RuntimeError.
+        for rel in SCAN_PATHS:
+            if rel in ("config/capability_manifest.yml",
+                       "engine/neuralweb/capability_broker.py"):
+                continue
+            p = tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("# clean metabolism module stub — references names only\n")
 
         # Test 1: clean manifest passes
         (tmp / "config" / "capability_manifest.yml").write_text(

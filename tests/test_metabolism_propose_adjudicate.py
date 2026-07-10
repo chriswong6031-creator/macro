@@ -47,6 +47,11 @@ def _tmp_root() -> Path:
     return d
 
 
+def _docket_path(root, cycle_id):
+    from engine.metabolism.propose import docket_path
+    return docket_path(cycle_id, root)
+
+
 def _sample_proposal(title="Add unicode filename coverage test for the manifest scanner",
                      tier="T0", kind="test", sensor="live_leg_quality"):
     return {
@@ -193,11 +198,26 @@ class TestProposeCLIInert:
         from scripts.metabolism_propose import main
         from scripts.metabolism_journal import load_journal
         from engine.metabolism.propose import docket_path
+
+        # DISCRIMINATING GUARD (post-review): the pause gate must short-circuit
+        # BEFORE preflight/LLM work. Booby-trap check_auth so that if the pause
+        # gate is ever removed/reordered, execution reaches it and the test
+        # ERRORS — the plain noop_paused-status assertion is shared with the
+        # preflight-fail path and would pass even with the gate broken.
+        import scripts.preflight_claude_auth as _pf
+
+        def _boom(*a, **k):
+            raise AssertionError("check_auth reached while AUTONOMY_PAUSED — pause gate bypassed")
+        monkeypatch.setattr(_pf, "check_auth", _boom)
+
         root = _tmp_root()
         rc = main(["--cycle-id", "cycle-paused", "--root", str(root)])
         assert rc == 0
         j = load_journal("cycle-paused", root=root)
-        assert j["stages"]["propose"]["status"] == "noop_paused"
+        stage = j["stages"]["propose"]
+        assert stage["status"] == "noop_paused"
+        # Pause-SPECIFIC signal (not the shared preflight-fail note):
+        assert "preflight" not in (stage.get("note") or "").lower()
         # no docket written, no network, no contracts
         assert not docket_path("cycle-paused", root).exists()
         assert not (root / "data" / "trial_ledger.jsonl").exists()
@@ -433,16 +453,70 @@ class TestMisc:
         monkeypatch.delenv("AUTONOMY_PAUSED", raising=False)
         from scripts.metabolism_adjudicate import main
         from scripts.metabolism_journal import load_journal
+
+        # DISCRIMINATING GUARD (post-review): booby-trap preflight so a removed/
+        # reordered pause gate ERRORS instead of silently sharing the
+        # noop_paused terminal status with the preflight-fail path.
+        import scripts.preflight_claude_auth as _pf
+
+        def _boom(*a, **k):
+            raise AssertionError("check_auth reached while AUTONOMY_PAUSED — pause gate bypassed")
+        monkeypatch.setattr(_pf, "check_auth", _boom)
+
         root = _tmp_root()
         p = _docket_on_disk(root, "cyc-cli", [_sample_proposal()])
         rc = main(["--cycle-id", "cyc-cli", "--role", "orchestrator",
                    "--docket-file", str(p), "--root", str(root)])
         assert rc == 0
         j = load_journal("cyc-cli", root=root)
-        assert j["stages"]["adjudicate_orchestrator"]["status"] == "noop_paused"
+        stage = j["stages"]["adjudicate_orchestrator"]
+        assert stage["status"] == "noop_paused"
+        assert "preflight" not in (stage.get("note") or "").lower()  # pause-specific
         # no governance rows written while paused
         assert not (root / "data" / "neuralweb" / "governance.jsonl").exists()
 
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
+
+
+# ===========================================================================
+# R-AUT-6 — two keys must come from DISTINCT run_ids (post-review hardening)
+# ===========================================================================
+
+class TestRunIdDistinctness:
+    """A T1 must NOT authorize when the orchestrator and adversary rows carry
+    the SAME run_id (one run playing both keys defeats the second key)."""
+
+    def _plant_and_resolve(self, root, same_run: bool):
+        import engine.metabolism.adjudicate as adj
+        cycle_id = "cyc-runid"
+        prop = dict(_sample_proposal(title="Add a T1 engine leg for run-id distinctness", kind="engine"))
+        prop["tier"] = "T1"
+        docket_p = _docket_on_disk(root, cycle_id, [prop])
+        # build_docket derives the proposal_id (content-hash) — read the real one.
+        d = json.loads(Path(docket_p).read_text())
+        pid = d["proposals"][0]["proposal_id"]
+        target = adj._target(cycle_id, pid)
+        orch_run = "run-A"
+        adv_run = "run-A" if same_run else "run-B"
+        adj._append_governance(
+            adj.EVT_ADJUDICATION, target, authored_by="test:orch",
+            after={"role": adj.ROLE_ORCH, "decision": "grant", "run_id": orch_run},
+            evidence=None, note="test orch grant", root=root)
+        adj._append_governance(
+            adj.EVT_ADVERSARY, target, authored_by="test:adv",
+            after={"role": adj.ROLE_ADV, "veto": False, "run_id": adv_run},
+            evidence=None, note="test adv non-veto", root=root)
+        res = adj.resolve_two_key(cycle_id, docket_p, root=root, dry_run=True)
+        return res[pid]
+
+    def test_same_run_id_denies_t1(self, tmp_path):
+        r = self._plant_and_resolve(tmp_path, same_run=True)
+        assert r["authorized"] is False, "same run_id on both keys must DENY a T1"
+        assert r["keys"].get("distinct_runs") is False
+
+    def test_distinct_run_ids_authorize_t1(self, tmp_path):
+        r = self._plant_and_resolve(tmp_path, same_run=False)
+        assert r["authorized"] is True, "distinct run_ids + grant + non-veto must AUTHORIZE"
+        assert r["keys"].get("distinct_runs") is True
