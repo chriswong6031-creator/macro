@@ -60,7 +60,8 @@ def test_live_render_non_empty_matrix():
     """Builder renders with real data and produces a non-empty matrix."""
     html = _render(REPO_ROOT)
     assert "theme-row" in html, "expected at least one theme-row in rendered matrix"
-    assert "state_of_themes" not in html.split("<title>")[1].split("</title>")[0].lower() or True
+    # Header must show the theme count chip (real render, not just a shell)
+    assert "themes" in html and "stage-pill" in html
     # Ensure a stage chip appears
     assert "stage-pill" in html
 
@@ -96,8 +97,13 @@ def test_missing_theme_state_graceful():
         import scripts.build_state_of_themes as sot
         html = sot.render(root)
         assert "<!DOCTYPE html>" in html
-        # Should show empty-state (no theme-row)
-        assert "theme-row" not in html or True  # tolerant: either shows 0 rows or empty-state div
+        # With all artifacts missing, the honest empty-state MUST render and there
+        # must be NO data theme-rows (discriminating: fails if a shell leaks rows).
+        # data-theme-id= appears ONLY on a rendered data row (line 281), never in
+        # CSS/JS — a discriminating check that no shell rows leak.
+        assert "data-theme-id=" not in html, "empty-state must not render data rows"
+        assert ("No theme data available" in html or "暂无主题数据" in html), \
+            "empty-state div must render when no artifacts are present"
 
 
 def _make_root_with_only(artifact_name: str, content: dict) -> Path:

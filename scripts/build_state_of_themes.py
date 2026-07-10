@@ -218,8 +218,13 @@ def _compute_weekly_delta(history: list[dict]) -> tuple[list[str], list[str]]:
             continue
         curr_stage = latest.get("foresight_stage", "")
         prev_stage = prior.get("foresight_stage", "")
-        if curr_stage and prev_stage and curr_stage != prev_stage:
-            key = f"{theme_id}:{prev_stage}→{curr_stage}"
+        # Compare on the STRIPPED stage (drop the '(text)/(fingerprint)' evidence-tier
+        # suffix) so an evidence-tier change that leaves the stage the same does not
+        # surface a spurious 'PRECIPICE -> PRECIPICE' transition (post-review fix).
+        curr_base = _strip_tier_suffix(curr_stage)
+        prev_base = _strip_tier_suffix(prev_stage)
+        if curr_base and prev_base and curr_base != prev_base:
+            key = f"{theme_id}:{prev_base}→{curr_base}"
             if key not in seen_transitions:
                 seen_transitions.add(key)
                 label = (
