@@ -655,6 +655,134 @@
   #sb-ah-combined .sbah-pairs{margin-top:9px;width:100%;font-size:11px;border-collapse:collapse}
   #sb-ah-combined .sbah-pairs td{padding:2px 0;border-bottom:1px solid var(--line)}
   #sb-ah-combined .sbah-pairs td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+
+  /* ── W8-G: Standout table view (HK port of W8-E/W8-R6) ──────────────────── */
+  .st-view-toggle { display:inline-flex; gap:3px; padding:3px; border-radius:8px;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
+    border:1px solid var(--line); margin-left:10px; vertical-align:middle; }
+  .st-view-toggle button { font:inherit; font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid transparent; background:transparent; color:var(--muted);
+    padding:4px 9px; border-radius:5px; line-height:1; transition:all .12s; }
+  .st-view-toggle button[aria-selected="true"] { background:var(--panel); color:var(--text);
+    border-color:var(--line); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  #stocktable-wrap { display:none; }
+  #standouts.st-table-mode #stocktable-wrap { display:block; }
+  #standouts.st-table-mode .nb-grid-section { display:none; }
+
+  /* count chips row */
+  #st-count-chips { display:inline-flex; gap:5px; flex-wrap:wrap; align-items:center; margin:8px 0; }
+  .st-chip { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px;
+    border-radius:999px; white-space:nowrap; }
+  .st-chip-entry { background:color-mix(in srgb,var(--up) 14%,transparent);
+    color:var(--up); border:1px solid color-mix(in srgb,var(--up) 35%,transparent); }
+  .st-chip-ran { background:color-mix(in srgb,var(--muted) 12%,transparent);
+    color:var(--muted); border:1px solid var(--line); }
+  .st-chip-rip { background:color-mix(in srgb,var(--link) 12%,transparent);
+    color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
+  .st-chip-knife { background:color-mix(in srgb,var(--down) 12%,transparent);
+    color:var(--down); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
+
+  /* filter row */
+  .st-filters { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:8px 0 10px; }
+  .st-filter-sel { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:4px 8px; cursor:pointer;
+    min-width:90px; }
+  .st-filter-txt { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:4px 8px; outline:none; }
+  .st-filter-txt:focus { border-color:var(--link); }
+  .st-filter-chk { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px;
+    cursor:pointer; user-select:none; }
+  .st-reset-btn, .st-col-btn { font:inherit; font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid var(--line); background:var(--panel); color:var(--muted);
+    padding:4px 10px; border-radius:7px; white-space:nowrap; transition:color .12s; }
+  .st-reset-btn:hover, .st-col-btn:hover { color:var(--text); border-color:var(--link); }
+
+  /* table wrapper — horizontal scroll, sticky first col */
+  .st-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;
+    border:1px solid var(--line); border-radius:9px; }
+  .st-table { border-collapse:collapse; width:100%; font-size:12px;
+    font-variant-numeric:tabular-nums; }
+  .st-table thead { position:sticky; top:0; z-index:4;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 9%,var(--panel))); }
+  .st-table th { padding:7px 10px; font-size:11px; font-weight:700; color:var(--muted);
+    text-align:left; white-space:nowrap; border-bottom:2px solid var(--line);
+    user-select:none; }
+  .st-table th.st-sortable { cursor:pointer; }
+  .st-table th.st-sortable:hover { color:var(--text); }
+  .st-table td { padding:6px 10px; border-bottom:1px solid var(--line);
+    text-align:left; white-space:nowrap; vertical-align:middle; }
+  .st-table td.st-r, .st-table th.st-r { text-align:right; }
+  .st-table tbody tr:last-child td { border-bottom:none; }
+  .st-table tbody tr:hover td { background:color-mix(in srgb,var(--link) 5%,transparent); }
+
+  /* sticky first column */
+  .st-sticky-col { position:sticky; left:0; z-index:2;
+    background:var(--panel); }
+  thead .st-sticky-col { z-index:5;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 9%,var(--panel))); }
+
+  /* row accents by stage / group */
+  .st-row-entry td { background:color-mix(in srgb,var(--up) 4%,transparent); }
+  .st-row-entry td.st-sticky-col { background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .st-row-entry td:first-child { box-shadow:inset 3px 0 0 var(--up); }
+  .st-row-ran td:first-child { box-shadow:inset 3px 0 0 var(--muted); }
+  .st-row-ready td:first-child { box-shadow:inset 3px 0 0 var(--link); }
+  .st-row-basing td:first-child { box-shadow:inset 3px 0 0 color-mix(in srgb,var(--link) 45%,var(--muted)); }
+  .st-row-falling td:first-child { box-shadow:inset 3px 0 0 var(--down); }
+  .st-row-falling td { color:var(--muted); }
+
+  /* sort arrow */
+  .st-sarrow { font-size:8px; margin-left:2px; opacity:.28; }
+  .st-sarrow-idle { font-size:8px; }
+  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--link); }
+
+  /* cell colors */
+  .st-pos { color:var(--up); font-weight:600; }
+  .st-neg { color:var(--down); font-weight:600; }
+  .st-muted { color:var(--muted); }
+
+  /* column chooser panel */
+  .st-chooser-wrap { position:relative; }
+  .st-chooser { position:absolute; top:0; right:0; z-index:20; min-width:240px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 8px 28px rgba(0,0,0,.22); padding:0; overflow:hidden; }
+  .st-chooser-hidden .st-chooser { display:none; }
+  .st-chooser-hdr { display:flex; align-items:center; gap:8px; padding:10px 12px 8px;
+    border-bottom:1px solid var(--line); font-weight:700; font-size:12.5px; }
+  .st-chooser-note { font-size:10.5px; color:var(--muted); font-weight:400; margin-left:auto; }
+  .st-chooser-close { font:inherit; font-size:15px; cursor:pointer; background:none;
+    border:none; color:var(--muted); padding:0 2px; line-height:1; }
+  .st-chooser-list { max-height:340px; overflow-y:auto; padding:6px 0; }
+  .st-chooser-row { display:flex; align-items:center; gap:8px; padding:5px 12px;
+    cursor:grab; user-select:none; font-size:12px; }
+  .st-chooser-row:hover { background:var(--panel2,color-mix(in srgb,var(--muted) 7%,var(--panel))); }
+  .st-chooser-row.st-dragging { opacity:.5; }
+  .st-drag-handle { color:var(--muted); font-size:11px; flex:none; }
+  .st-chooser-footer { padding:8px 12px; border-top:1px solid var(--line); }
+  .st-chooser-reset { font:inherit; font-size:12px; cursor:pointer; background:none;
+    border:1px solid var(--line); border-radius:7px; padding:4px 10px; color:var(--muted); }
+  .st-chooser-reset:hover { color:var(--text); border-color:var(--link); }
+
+  /* th tooltip */
+  .st-th-tip { display:inline-flex; align-items:center; justify-content:center;
+    width:13px; height:13px; border-radius:50%; border:1px solid var(--muted);
+    color:var(--muted); font-size:9px; font-weight:700; cursor:help;
+    position:relative; vertical-align:1px; margin-left:3px; }
+  .st-th-tip::after { content:attr(data-tip-en); display:none; position:absolute;
+    bottom:150%; left:50%; transform:translateX(-50%); width:220px; max-width:90vw;
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:7px 10px; font-size:11px; font-weight:400; color:var(--text); text-align:left;
+    white-space:normal; box-shadow:var(--popover-shadow,0 3px 12px rgba(0,0,0,.18)); z-index:30; }
+  html[data-lang="zh"] .st-th-tip::after { content:attr(data-tip-zh); }
+  .st-th-tip:hover::after { display:block; }
+
+  /* mobile: table scrolls, first col sticky */
+  @media (max-width:680px) {
+    .st-table { font-size:11px; }
+    .st-table td, .st-table th { padding:5px 7px; }
+    .st-filters { gap:4px; }
+    .st-filter-sel { font-size:11px; min-width:70px; padding:3px 6px; }
+  }
 </style>
 </head>
 <body>
@@ -1747,14 +1875,66 @@
   </div>
   {% endif %}
   {% if mode == 'stocks' and setups and setups.buy %}
+  {# ── W8-G: JSON data block — feeds StockTable.init(); one row per buy name in system order ── #}
+  {% set _hk_st_rows = [] %}
+  {% for _hn in setups.buy %}
+    {% set _hk_conv = _hn.get('conviction') or {} %}
+    {% set _hk_sb = _hn.get('southbound') or {} %}
+    {% set _hk_ah = _hn.get('ah_value') or {} %}
+    {% set _hk_es = _hn.get('entry_signal') or {} %}
+    {% set _hk_bz = _hk_es.get('buy_zone') or {} %}
+    {% set _hk_al = _hk_conv.get('alignment') or {} %}
+    {% set _hk_row = {
+      'ticker':       _hn.ticker,
+      'name':         _hn.name or '',
+      'sector':       _hn.sector or '',
+      'sector_zh':    _hn.sector_zh or '',
+      'price':        _hn.get('price'),
+      'off_high':     _hn.get('off_high'),
+      'conviction':   _hk_conv.get('score'),
+      'alpha':        _hn.get('alpha'),
+      'edge_z':       _hn.get('edge_z'),
+      'sb_z':         _hk_sb.get('accum_z'),
+      'sb_own':       _hk_sb.get('own_pct'),
+      'ah_z':         _hk_ah.get('z'),
+      'ah_cheap':     true if _hk_ah.get('cheap') else false,
+      'group':        _hn.get('group') or 'setting_up',
+      'align_tier':   _hn.get('align_tier') or '',
+      'dir':          _hn.get('dir') or 'flat',
+      'washout_2w':   true if _hn.get('washout_2w') else false,
+      'entry_status': _hk_es.get('status') or '',
+      'buy_zone_lo':  _hk_bz.get('low'),
+      'buy_zone_hi':  _hk_bz.get('high'),
+    } %}
+    {% set _ = _hk_st_rows.append(_hk_row) %}
+  {% endfor %}
+  <script type="application/json" id="stocktable-data">
+  {
+    "rows": {{ _hk_st_rows | tojson }},
+    "as_of": {{ (setups.as_of or '') | tojson }}
+  }
+  </script>
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Top conviction — the HK Stock Desk', '⚡ 最高确信 — 港股研判台') }}
       <span class="note" style="text-transform:none">· {{ t('cycle-aligned bottoming · southbound flow + A/H value + beta-neutral RS', '周期共振筑底 · 南向资金 + A/H 价值 + 贝塔中性相对强度') }}</span>
       {{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by flow, A/H value and beta-neutral strength.", "显示周线、3日、日线开始转上的港股，再按资金流、A/H 价值与贝塔中性强度排序。") }}
+      {# W8-G: grid/table view toggle #}
+      <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
+        <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
+        <button id="st-btn-table" aria-selected="false" onclick="StockTable._setView('table')">☰ <span class="l-en">Table</span><span class="l-zh">表格</span></button>
+      </span>
     </h2>
     {# THE ONE board-note (§7.2). Board mechanics only — the "screen, not a buy list" caveat
        lives once in the desk manifest above + the per-card tier badge. #}
     <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Aligned names first; near-aligned names are backfills. Rank is a screen, not a promise.', '共振个股优先；临近共振为补位。排名是筛选，不是承诺。') }}</p>
+    {# ── W8-G: count chips row (live-updated by JS when in table mode) ── #}
+    <div id="st-count-chips" style="display:none"></div>
+
+    {# ── W8-G: table view mount point ─────────────────────────────────── #}
+    <div id="stocktable-wrap"></div>
+
+    {# ── W8-G: grid section (hidden in table mode by CSS .nb-grid-section) ── #}
+    <div class="nb-grid-section">
     <div class="nbgrid" data-showmore-rows="3">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -1846,6 +2026,7 @@
       </a>
     {% endfor %}
     </div>
+    </div>{# /nb-grid-section #}
     {% if setups.watch %}
     <div class="watch-strip">
       <p class="ws-h">👁 {{ t('On watch — strong edge, blocked entry (wait for a base)', '观察名单 — 优势强但入场受阻（等待筑底）') }}</p>
@@ -2857,6 +3038,160 @@
 <script src="mtf.js"></script>
 <script src="charts.js"></script>
 <script src="tablesort.js"></script>
+<script src="stocktable.js"></script>
+<script>
+/* W8-G: StockTable init — standout board table view (HK market).
+   Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent.
+   HK-specific columns: group, ticker, name, sector, price (HKD), off_high, conviction,
+   alpha (63d RS z), edge_z, sb_z (southbound accum z), ah_z (A/H value z), washout_2w.
+   No mcap/cap_bucket/days_since_signal/tier — not on HK rows. No stage/zone — HK uses group. */
+(function(){
+  if (!window.StockTable) return;  /* stocktable.js not loaded */
+  var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;
+
+  var GROUP_LABELS = {
+    "entry_open":  ["Entry open", "入场开启"],
+    "setting_up":  ["Setting up", "蓄势中"]
+  };
+  var ALIGN_LABELS = {
+    "aligned": ["Aligned", "共振"],
+    "near":    ["Near", "临近"]
+  };
+  var SECZH = {
+    "Technology":"科技","Industrials":"工业","Basic Materials":"原材料",
+    "Financial Services":"金融","Consumer Cyclical":"可选消费",
+    "Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费",
+    "Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产",
+    "Telecom & Utilities":"电信与公用事业","Consumer":"消费","Finance":"金融",
+    "Financial":"金融","Technology & Telecom":"科技与电信"
+  };
+
+  function groupBadge(group) {
+    var lbl = GROUP_LABELS[group] || [group || "—", group || "—"];
+    var cls = group === "entry_open" ? "st-chip-entry" : "st-chip-rip";
+    return '<span class="st-chip ' + cls + '">' + b(lbl[0], lbl[1]) + '</span>';
+  }
+
+  var cols = [
+    { key:"_group_display", labelEn:"Group", labelZh:"组别", default:true, sortable:false,
+      fmt:function(v,r){ return groupBadge(r.group); },
+      tip:{en:"Entry open = confluence buyable + in/near buy zone. Setting up = aligned but awaiting entry.",
+           zh:"入场开启 = 汇流可买入 + 位于买入区附近。蓄势中 = 已共振但等待入场。"} },
+    { key:"ticker", labelEn:"Ticker", labelZh:"代码", default:true, sortable:true,
+      fmt:function(v,r){
+        return '<b>' + esc(v||'') + '</b>';
+      }},
+    { key:"name", labelEn:"Name", labelZh:"名称", default:true, sortable:true,
+      fmt:function(v,r){
+        if (!v) return '<span class="st-muted">—</span>';
+        return '<span class="l-en">' + esc(v||'') + '</span>';
+      }},
+    { key:"sector", labelEn:"Sector", labelZh:"板块", default:true, sortable:true,
+      fmt:function(v,r){
+        if (!v) return '<span class="st-muted">—</span>';
+        var zh = r.sector_zh || SECZH[v] || v;
+        return b(esc(v), esc(zh));
+      }},
+    { key:"price", labelEn:"Price HK$", labelZh:"价格(港元)", default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' : fn(v,2); },
+      tip:{en:"Last close price in HKD",zh:"最近收盘价（港元）"} },
+    { key:"off_high", labelEn:"Off High", labelZh:"距高点", default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' : fp(v,1); },
+      tip:{en:"% off 52-week high",zh:"距52周高点百分比"} },
+    { key:"conviction", labelEn:"Score", labelZh:"评分", default:true, sortable:true, right:true,
+      fmt:function(v){
+        if (v==null) return '<span class="st-muted">—</span>';
+        var n = parseInt(v);
+        var cls = n>=70 ? 'st-pos' : n>=40 ? '' : 'st-neg';
+        return '<span class="' + cls + '">' + n + '</span>';
+      },
+      tip:{en:"HK conviction score — edge percentile (not a win-rate). Fused: southbound flow + A/H value + beta-neutral RS.",
+           zh:"港股确信评分 — 优势百分位（非胜率）。融合：南向资金 + A/H 价值 + 贝塔中性相对强度。"} },
+    { key:"alpha", labelEn:"3M RS z", labelZh:"3月相对强度z", default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' :
+        '<span class="' + (v>=0 ? 'st-pos' : 'st-neg') + '">' + fn(v,2) + '</span>'; },
+      tip:{en:"63-day relative return z-score within HK board universe (descriptive context, not a rank input)",
+           zh:"63日收益率z分数（港股看板宇宙内的描述性背景，非排序输入）"} },
+    { key:"edge_z", labelEn:"Edge z", labelZh:"综合优势z", default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' :
+        '<span class="' + (v>=0 ? 'st-pos' : 'st-neg') + '">' + fn(v,2) + '</span>'; },
+      tip:{en:"Fused HK edge z (southbound + A/H value + beta-neutral RS). Primary rank input.",
+           zh:"融合港股优势z（南向资金 + A/H价值 + 贝塔中性强度）。主要排序输入。"} },
+    { key:"sb_z", labelEn:"SB flow z", labelZh:"南向资金z", default:true, sortable:true, right:true,
+      fmt:function(v,r){
+        if (v==null) return '<span class="st-muted">—</span>';
+        var cls = v>=0.6 ? 'st-pos' : v<=-0.6 ? 'st-neg' : '';
+        var own = r.sb_own!=null ? ' <span class="st-muted">(' + fn(r.sb_own,1) + '%)</span>' : '';
+        return '<span class="' + cls + '">' + fn(v,2) + '</span>' + own;
+      },
+      tip:{en:"Southbound Connect accumulation z-score. Context only — H1 NO-GO (not a standalone edge).",
+           zh:"南向资金累积z分数。仅供参考 — H1未通过（不作为独立优势）。"} },
+    { key:"ah_z", labelEn:"A/H z", labelZh:"A/H价值z", default:true, sortable:true, right:true,
+      fmt:function(v,r){
+        if (v==null) return '<span class="st-muted">—</span>';
+        var cls = r.ah_cheap ? 'st-pos' : '';
+        return '<span class="' + cls + '">' + fn(v,2) + (r.ah_cheap ? ' <span style="font-size:9px">H</span>' : '') + '</span>';
+      },
+      tip:{en:"A/H value z — H-share cheap vs A-share twin when positive. Near-GO (DSR 0.879).",
+           zh:"A/H价值z — 正值表示H股相对A股孪生便宜。临近通过（DSR 0.879）。"} },
+    { key:"align_tier", labelEn:"Alignment", labelZh:"共振级别", default:false, sortable:true,
+      fmt:function(v){
+        if (!v) return '<span class="st-muted">—</span>';
+        var lbl = ALIGN_LABELS[v] || [v, v];
+        var cls = v==='aligned' ? 'st-pos' : '';
+        return '<span class="' + cls + '">' + b(lbl[0], lbl[1]) + '</span>';
+      },
+      tip:{en:"Aligned = weekly+3D+daily all turning up (PRIME/ARMED). Near = backfill.",
+           zh:"共振 = 周线+3日+日线均向上（精英/武装）。临近 = 补位。"} },
+    { key:"washout_2w", labelEn:"2W washout", labelZh:"双周洗盘", default:false, sortable:true,
+      fmt:function(v){ return v ? '<span class="st-pos">✓</span>' : '<span class="st-muted">—</span>'; },
+      tip:{en:"2-week StochRSI washout-reclaim cross (CN port, display context, no rank effect yet)",
+           zh:"双周随机RSI洗盘回升穿越（CN移植，展示背景，暂无排序效果）"} },
+  ];
+
+  /* use a non-colliding key for the derived group+display column */
+  cols[0].key = '_group_display_key';
+
+  /* ── view persistence ── */
+  var LS_VIEW = 'mdx_stocktable_hk_view';
+  var currentView = localStorage.getItem(LS_VIEW) || 'grid';
+
+  function applyView(v) {
+    currentView = v;
+    localStorage.setItem(LS_VIEW, v);
+    var standouts = document.getElementById('standouts');
+    var chipsEl   = document.getElementById('st-count-chips');
+    var gbtn = document.getElementById('st-btn-grid');
+    var tbtn = document.getElementById('st-btn-table');
+    if (!standouts) return;
+    if (v === 'table') {
+      standouts.classList.add('st-table-mode');
+      if (chipsEl) chipsEl.style.display = '';
+      if (gbtn) gbtn.setAttribute('aria-selected','false');
+      if (tbtn) tbtn.setAttribute('aria-selected','true');
+    } else {
+      standouts.classList.remove('st-table-mode');
+      if (chipsEl) chipsEl.style.display = 'none';
+      if (gbtn) gbtn.setAttribute('aria-selected','true');
+      if (tbtn) tbtn.setAttribute('aria-selected','false');
+    }
+  }
+
+  StockTable._setView = applyView;
+
+  /* ── init ── */
+  StockTable.init({
+    dataId:      'stocktable-data',
+    containerId: 'stocktable-wrap',
+    market:      'hk',
+    linkPattern: 'hk_lookup.html#{ticker}',
+    columns:     cols,
+  });
+
+  /* restore persisted view */
+  applyView(currentView);
+})();
+</script>
 <script>
 /* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
    Also corrects popover position (flip above/below, clamp to right edge). */
