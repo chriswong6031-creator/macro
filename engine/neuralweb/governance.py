@@ -36,6 +36,10 @@ EVENT-TYPE VOCABULARY
                                  (paper/deferred/rejected/scoped_build), article:null
     research_factory_challenge — Research Factory challenge packet written
                                  (advisory-only, RF-7), article:null
+    metabolism_adjudication    — Metabolism A5 orchestrator grant/deny + the
+                                 two-key resolution row (R-AUT-6), article:null
+    metabolism_adversary_review — Metabolism A5 adversary veto/non-veto row
+                                 (R-AUT-9), article:null
 
 SCHEMA (neuralweb.governance.v1)
 ---------------------------------
@@ -83,6 +87,12 @@ _VALID_EVENT_TYPES = frozenset({
     "research_factory_gate",
     # W4 (RF-12): challenge packets written by research_factory_challenge_pack.py
     "research_factory_challenge",
+    # Metabolism A5 (R-AUT-6): ADJUDICATE row-pairs. metabolism_adjudication
+    # carries both the orchestrator grant/deny and the two-key resolution;
+    # metabolism_adversary_review carries the adversary veto/non-veto.  All are
+    # display-tier (article:null) — the metabolism authors code, not signals.
+    "metabolism_adjudication",
+    "metabolism_adversary_review",
 })
 
 
