@@ -251,6 +251,22 @@ jobs:
 
           exit 0
 
+      # ── (e2) PUBLISH STOCKDATA TO R2 (TSU U9) ───────────────────────────────────────
+      # build_baskets (above) writes site/stockdata/mtf_upturn.json and the render
+      # refreshes per-name stockdata JSON — both are R2-served via dataUrl()/DATA_BASE,
+      # NOT git-committed. Without this step the browser data plane lags the provisional
+      # EOD by ~9h (until the nightly's publish). Content-hash skip → deltas only.
+      # --no-manifest is MANDATORY here: this lane holds a partial stockdata tree and
+      # the manifest rebuild would shrink the ~5000-name remote list (publish_r2 guard).
+      - name: publish stockdata to R2 (provisional EOD reaches the data plane)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.publish_r2 --dirs stockdata --no-manifest || echo "::warning::earlyclose R2 stockdata publish failed (non-fatal — data plane lands at nightly)"
+
       # ── (f) PROVISIONAL STAMP ARTIFACT ──────────────────────────────────────────────
       # Write site/live/earlyclose_stamp.json: {as_of, provisional: true}.
       # This is a 5-line inline step — no template changes (W3 territory).
