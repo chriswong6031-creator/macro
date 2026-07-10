@@ -132,7 +132,7 @@ volatility box.
 | Docs (this PR) | Macro Dashboard | docket copy + this adjudication | this PR |
 | DT-R18 | Macro Dashboard | 4 catalog families, 18 signals + tests, draft PR pending review | building |
 | DT-R19 | charting-app (local-only repo) | 8 Terminal indicators, branch `feat/dt-technicals-suite`, Playwright-verified | building |
-| DT-R21 | Macro Dashboard | PM0 execution dispatch | queued (EI program) |
+| DT-R21 | Macro Dashboard | PM0 execution dispatch | EXECUTED 2026-07-10 (EI-PM0 r4; PM2 survives display-only, PM1/PM3 falsified, PM4 redundant, PM5 data_blocked) |
 | DT-R22 | Macro Dashboard | void-box def-4 S-SQ registration | eligible, unregistered |
 | Docket Lane 5 | — | monthly exhaustion trim review | remains DEFERRED (DT-R8) |
 | Docket Lane 6 | Mastermind | concentration/held-book behavior | remains Mastermind-only (DT-R6) |

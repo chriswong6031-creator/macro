@@ -249,7 +249,7 @@ per-ticker `dt_contra` state to the NW as a governed artifact.
 
 | Item | Routed to | Action / clock |
 |---|---|---|
-| Price-memory bundled phase-0 (AVWAP/POC distance, shelves, gap maps, overhead supply, float turnover) | **EI program** (Signal Commons R2; gate condition met 2026-07-05) | Dispatch as ONE bundled phase-0 with one FDR budget; come-back 2026-07-20 |
+| Price-memory bundled phase-0 (AVWAP/POC distance, shelves, gap maps, overhead supply, float turnover) | **EI program** (Signal Commons R2; gate condition met 2026-07-05) | Dispatch as ONE bundled phase-0 with one FDR budget; come-back 2026-07-20 — **CLOSED 2026-07-10: executed (EI-PM0, r4); PM2 SURVIVES (display-only), PM1/PM3 falsified, PM4 redundant, PM5 data_blocked** |
 | Concentration / leader core book | Mastermind repo (portfolio construction) | Context note only; no clock |
 | Monthly sponsorship-decay trim input | Future L2 Exit&Trim charter | Contingent on DT-W1 REPLICATED; R1 governor + pooled replay family |
 | Void-box def 4 + retest/false-break states | S-SQ species (ESX) | Behind S-SQ phase-0 (already in post-Fable queue, RUL-P8) |
