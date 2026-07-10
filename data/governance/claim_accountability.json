@@ -1,9 +1,9 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-07-09T06:59:50.465079+00:00",
+  "generated_at": "2026-07-10T06:58:34.434470+00:00",
   "global": {
     "n_claims": 10973,
-    "n_grades": 6704,
+    "n_grades": 6716,
     "n_with_falsifier": 146,
     "falsifier_coverage": 0.013305,
     "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure"
@@ -164,13 +164,13 @@
       "maturity_mix": {
         "graded_5d_count": 340,
         "graded_5d_share": 0.994152,
-        "matured_21d_count": 32,
+        "matured_21d_count": 44,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 280,
-        "next_bar_count": 92,
+        "next_bar_count": 104,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -456,13 +456,13 @@
       "maturity_mix": {
         "graded_5d_count": 340,
         "graded_5d_share": 0.994152,
-        "matured_21d_count": 32,
+        "matured_21d_count": 44,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 280,
-        "next_bar_count": 92,
+        "next_bar_count": 104,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -593,7 +593,7 @@
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-07-09T06:59:41.893513+00:00",
+    "generated_at": "2026-07-10T06:58:25.997206+00:00",
     "grade_horizons": [
       5,
       21,
