@@ -41,6 +41,8 @@ curated, not generated. Do not build an extractor.
 | Causal DAG → alpha score → trade / portfolio construction from discovered graphs | FORBIDDEN — CHF is proposal/audit tier only; Article 1/2 | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
 | Administration-timing predictor / policy-intent classifier (forecasting WHEN a policy lever fires; LLM-emitted geopolitical re-escalation probabilities) | FORBIDDEN — intent unfalsifiable; conditions-framing only | PS-R1/PS-R4, `POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md` |
 | LLM numeric confidence anywhere in CHF surfaces | FORBIDDEN — RF-16 extension | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
+| Runtime LLM frame-tag / narrative-frame classification feeding any organ state or escalation-eligible key | FORBIDDEN — TI-R1/CONST-ART1 restated; char-span receipts validate the quote, not the classification; frame annotation is display-only | NAR-R4, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
+| Chatter-only promotion to a narrative candidate state (source-credibility-alone escalation without the cross-modal tape veto) | FORBIDDEN — single credible flare earns salience, never authority; veto unconditional | NAR-R2, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
 
 ## 2. Killed / refuted signal families and theses
 
