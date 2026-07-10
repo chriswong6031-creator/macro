@@ -981,3 +981,70 @@ class TestNeverRaise:
         from engine.metabolism.roster_governor import check_charter_budget
         result = check_charter_budget("any-lobe", root=root)
         assert isinstance(result, dict)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Post-review safety hardening (fail-closed adversary default + anti-cascade cap)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestDemotionSafetyDefaults:
+    def test_all_inputs_absent_blocks_by_default_no_adversary(self):
+        """FAIL-CLOSED: all_inputs_absent with NO explicit adversary_nonveto (default)
+        must BLOCK the demotion — a healthy-but-starved lobe is not auto-demoted."""
+        from engine.metabolism.verify import journal_breach, grade_demotion_ladder
+        root = _tmp_root()
+        lobe = "starved-lobe"
+        for _ in range(3):
+            journal_breach(lobe, breach_type="logic_breach", health_status="fresh", root=root)
+        with patch("engine.metabolism.lifecycle.transition") as mock_trans:
+            result = grade_demotion_ladder(lobe, "active", all_inputs_absent=True, root=root)
+        assert result["adversary_nonveto_blocked"] is True, "default must fail closed"
+        assert result["proposal"] is None
+        assert not mock_trans.called, "no demotion may be emitted without an adversary non-veto"
+
+    def test_all_inputs_absent_proceeds_only_with_explicit_nonveto(self):
+        """A genuine adversary non-veto (explicit True) allows the demotion to proceed."""
+        from engine.metabolism.verify import journal_breach, grade_demotion_ladder
+        root = _tmp_root()
+        lobe = "starved-but-adv-ok"
+        for _ in range(3):
+            journal_breach(lobe, breach_type="logic_breach", health_status="fresh", root=root)
+        with patch("engine.metabolism.lifecycle.transition") as mock_trans:
+            mock_trans.return_value = {"allowed": True, "reason": "t", "de_escalation": True,
+                                       "events_emitted": False, "docket_item_written": False, "t_level": "T1"}
+            result = grade_demotion_ladder(lobe, "active", all_inputs_absent=True,
+                                           adversary_nonveto=True, root=root)
+        assert result["adversary_nonveto_blocked"] is False
+        assert mock_trans.called
+
+    def test_probation_cap_holds_active_to_probation_demotion(self):
+        """ANTI-CASCADE: when probation is already at cap, a new active->probation
+        demotion is HELD (a feed outage cannot cascade the roster to probation)."""
+        from engine.metabolism.verify import journal_breach, grade_demotion_ladder
+        root = _tmp_root()
+        lobe = "would-demote"
+        for _ in range(3):
+            journal_breach(lobe, breach_type="logic_breach", health_status="fresh", root=root)
+        with patch("engine.metabolism.verify._load_max_probation", return_value=2), \
+             patch("engine.metabolism.lobe_registry.probation_count", return_value=2), \
+             patch("engine.metabolism.lifecycle.transition") as mock_trans:
+            result = grade_demotion_ladder(lobe, "active", root=root)
+        assert result.get("probation_cap_held") is True
+        assert result["proposal"] is None
+        assert not mock_trans.called, "demotion held by anti-cascade cap must emit nothing"
+
+    def test_probation_cap_allows_when_below(self):
+        """Below the probation cap, the demotion proceeds normally."""
+        from engine.metabolism.verify import journal_breach, grade_demotion_ladder
+        root = _tmp_root()
+        lobe = "ok-to-demote"
+        for _ in range(3):
+            journal_breach(lobe, breach_type="logic_breach", health_status="fresh", root=root)
+        with patch("engine.metabolism.verify._load_max_probation", return_value=5), \
+             patch("engine.metabolism.lobe_registry.probation_count", return_value=1), \
+             patch("engine.metabolism.lifecycle.transition") as mock_trans:
+            mock_trans.return_value = {"allowed": True, "reason": "t", "de_escalation": True,
+                                       "events_emitted": False, "docket_item_written": False, "t_level": "T1"}
+            result = grade_demotion_ladder(lobe, "active", root=root)
+        assert not result.get("probation_cap_held")
+        assert mock_trans.called

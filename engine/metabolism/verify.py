@@ -616,13 +616,24 @@ def _consecutive_counted_breaches(rows: list[dict]) -> int:
     return count
 
 
+def _load_max_probation(root: Path) -> int | None:
+    """Read max_probation_lobes from the IMMUTABLE metabolism_budget.yml. None on error."""
+    try:
+        import yaml  # noqa: PLC0415
+        cfg = yaml.safe_load((Path(root) / "config" / "metabolism_budget.yml").read_text())
+        v = (cfg or {}).get("max_probation_lobes")
+        return int(v) if v is not None else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def grade_demotion_ladder(
     lobe_id: str,
     current_lifecycle_state: str,
     *,
     regime_paused: bool = False,
     all_inputs_absent: bool = False,
-    adversary_nonveto: bool = True,
+    adversary_nonveto: bool = False,   # FAIL-CLOSED (R-V2-3): absent adversary → block
     root: str | Path | None = None,
 ) -> dict[str, Any]:
     """Evaluate the demotion ladder for a lobe and emit a lifecycle proposal if warranted.
@@ -634,8 +645,9 @@ def grade_demotion_ladder(
     DEMOTION SAFETY (R-V2-3):
       - Only counted=True rows (logic_breach, not health-excluded, not regime-paused)
         count toward the circuit breaker.
-      - all_inputs_absent → adversary non-veto required; if adversary_nonveto=False,
-        demotion is blocked.
+      - all_inputs_absent → the adversary must AFFIRMATIVELY non-veto (default
+        False = fail-closed); demotion of an all-inputs-absent lobe is blocked
+        unless the caller wires a genuine adversary non-veto.
       - regime_paused=True → no demotion emitted.
 
     Returns
@@ -707,6 +719,28 @@ def grade_demotion_ladder(
             return result
 
         from_state, to_state = edge
+
+        # ANTI-CASCADE CAP (R-V2-7): do not push a NEW lobe into probation once
+        # max_probation_lobes are already there — a feed outage that trips many
+        # active lobes at once must not cascade the whole roster to probation.
+        if to_state == "probation":
+            try:
+                from engine.metabolism.lobe_registry import probation_count  # noqa: PLC0415
+                cap = _load_max_probation(r)
+                cur = probation_count(root=r)
+                if cap is not None and cur >= cap:
+                    result["probation_cap_held"] = True
+                    log.info(
+                        "grade_demotion_ladder: %s active->probation HELD — probation "
+                        "count %d >= cap %d (anti-cascade)", lobe_id, cur, cap,
+                    )
+                    return result
+            except Exception as exc:  # noqa: BLE001
+                # Fail-closed: if we cannot verify the cap, do NOT emit the demotion.
+                log.warning("grade_demotion_ladder: probation-cap check failed (%s) — "
+                            "holding demotion (fail-closed)", exc)
+                result["probation_cap_held"] = True
+                return result
 
         # Emit lifecycle proposal (INERT)
         from engine.metabolism.lifecycle import transition  # noqa: PLC0415

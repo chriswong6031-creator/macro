@@ -228,6 +228,18 @@ def validate_tier_mirror(
     return result
 
 
+def probation_count(root: str | Path | None = None) -> int:
+    """Return the number of lobes currently in 'probation'. 0 on error (NEVER-RAISE).
+    Used by the anti-cascade demotion cap."""
+    try:
+        charter_result = load(root)
+        return sum(1 for c in charter_result["charters"].values()
+                   if c.get("lifecycle_state") == "probation")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("lobe_registry.probation_count: error: %s", exc)
+        return 0
+
+
 def active_nonscored_count(root: str | Path | None = None) -> int:
     """Return the number of active non-scored (display+shadow+confirmer) lobes.
 

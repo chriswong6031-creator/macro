@@ -1,4 +1,10 @@
-"""engine.metabolism.lifecycle — Lobe lifecycle state machine (V2-C, R-V2-3).
+"""
+SAFETY (the real load-bearing property): transition() NEVER writes a synapse
+tier anywhere — it only appends governance events + docket proposals under
+data/metabolism/. Promotion to scored/authority is impossible for the loop; it can
+only PROPOSE, and the gauntlet + operator T2 tap gate any real change. The tier=
+runtime guard is defense-in-depth on top of that structural fact.
+engine.metabolism.lifecycle — Lobe lifecycle state machine (V2-C, R-V2-3).
 
 THE FENCE: a pure deterministic allowed-transition table.  Every transition
 edge is tagged by its T-level (T1 = display-tier autonomous; T2 = requires
