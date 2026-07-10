@@ -143,3 +143,60 @@ def expected_last_session(now: datetime | None = None) -> date:
     if is_session(today) and now_et.time() >= _CLOSE_PLUS_SETTLE:
         return today
     return last_session_on_or_before(today - timedelta(days=1))
+
+
+def session_date(now_utc: datetime | None = None) -> date:
+    """Return the NYSE SESSION DATE that a UTC timestamp belongs to.
+
+    Semantics — returns the ET calendar date of the session IN PROGRESS or MOST
+    RECENTLY COMPLETED at the given instant:
+    -----------------------------------------------------------------------
+    • On a session day (any time during that ET calendar date) → return that date.
+      This covers pre-market, RTH, and post-market hours equally: the whole ET
+      calendar day is "the session day" for stamping and dedup purposes.
+    • On a non-session day (weekend, holiday) → return the prior completed session.
+
+    Examples (2026-07-09 is a Thursday session; ET = UTC-4 in July):
+      • 10:00 ET 07-09 (14:00 UTC)           → 2026-07-09  (RTH, in-progress session)
+      • 14:00 ET 07-09 (18:00 UTC)           → 2026-07-09  (RTH, in-progress session)
+      • 16:00 ET 07-09 (20:00 UTC)           → 2026-07-09  (just closed)
+      • 19:59 ET 07-09 (23:59 UTC 07-09)     → 2026-07-09  (evening, still same ET day)
+      • 20:57 ET 07-09 (00:57 UTC 07-10)     → 2026-07-09  (past UTC midnight, same ET day)
+      • 00:30 ET 07-10 (04:30 UTC 07-10)     → 2026-07-10  (new ET calendar day, session day)
+      • Saturday any time                     → prior Friday (or last trading day)
+      • Holiday any time                      → last trading day before the holiday
+
+    WHY NO 16:00 CUTOFF: The intraday fastpath (*/30 11-20 UTC Mon-Fri = 07:00-16:30 ET)
+    tape-watches the CURRENT session. session_date() at 10:00 ET on session day D must
+    return D, not D-1. A 16:00 cutoff (as-completed semantics) breaks every intraday
+    run from 07:00-15:59 ET, producing wrong-day dedup keys and ledger stamps (TS-R2).
+    The UTC-midnight rollover defect is already fixed by keying off the ET calendar date.
+
+    This is the correct date to stamp in artifact `as_of` fields and state-dedup keys.
+    Using date.today() (UTC) or datetime.utcnow() breaks after ~00:00 UTC when ET is
+    still in the same session evening (TS-R2).
+
+    Parameters
+    ----------
+    now_utc : datetime | None
+        UTC-aware datetime to evaluate. If None, uses the current UTC wall clock.
+        Naive datetimes are treated as UTC (pipeline convention).
+
+    Returns
+    -------
+    date
+        The NYSE session date the timestamp belongs to.
+    """
+    if now_utc is None:
+        now_utc = datetime.now(timezone.utc)
+    elif now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=timezone.utc)
+    now_et = now_utc.astimezone(ET)
+    today_et = now_et.date()
+    # If the ET calendar date is a session day, it IS the session to stamp —
+    # regardless of whether we are pre-open, mid-session, or post-close.
+    if is_session(today_et):
+        return today_et
+    # Non-session day (weekend, holiday): the last completed session is on
+    # or before the prior ET calendar day.
+    return last_session_on_or_before(today_et - timedelta(days=1))

@@ -63,6 +63,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from lib import config  # noqa: E402
+from lib.nyse_calendar import session_date as _session_date  # noqa: E402 — TS-R2
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("notify_turn_events")
@@ -439,7 +440,7 @@ def run(
     Never raises — own try/except, exit-0 contract.
     """
     if today_str is None:
-        today_str = date.today().isoformat()
+        today_str = _session_date().isoformat()  # TS-R2: NYSE session date, not UTC wall-clock
 
     # Check webhook presence early — log-and-exit-0 if absent (dark mode)
     url = (

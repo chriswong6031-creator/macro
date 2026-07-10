@@ -260,9 +260,13 @@ jobs:
         if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
         run: |
           python3 - <<'PYEOF'
-          import json, datetime, pathlib
+          import json, datetime, pathlib, sys
+          sys.path.insert(0, str(pathlib.Path(".").resolve()))
+          from lib.nyse_calendar import session_date
+          render_ts = datetime.datetime.now(datetime.timezone.utc)
           stamp = {
-            "as_of": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "as_of": render_ts.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "session": session_date(render_ts).isoformat(),  # TS-R2: NYSE session date
             "provisional": True,
             "note": "provisional close (delayed feed); nightly is canonical",
             "lane": "earlyclose"
@@ -311,7 +315,8 @@ jobs:
           git checkout -- . 2>/dev/null || true
           git clean -fdq data/ 2>/dev/null || true
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
-          MSG="earlyclose: provisional EOD render $(date -u +%F) (scope=fast)"$'\n\n'"provisional close (delayed feed); nightly is canonical"$'\n'"EARLYCLOSE=1 lane - site/ only; data/ discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+          SESSION_DATE=$(python3 -c "import sys; sys.path.insert(0,'.'); from lib.nyse_calendar import session_date; print(session_date().isoformat())")
+          MSG="earlyclose: provisional EOD render ${SESSION_DATE} (scope=fast)"$'\n\n'"provisional close (delayed feed); nightly is canonical"$'\n'"EARLYCLOSE=1 lane - site/ only; data/ discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
           git commit -m "$MSG"
           for i in 1 2 3 4 5; do
             if git pull --rebase --autostash -X theirs origin main; then
