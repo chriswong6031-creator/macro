@@ -29,9 +29,7 @@ Thresholds (each marked with their causal_scout.py analogue):
 """
 from __future__ import annotations
 
-import hashlib
 import json
-import traceback
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -47,11 +45,7 @@ from engine.validation import (
     newey_west_tstat,
     ret_moments,
 )
-from engine.signal_foundry.spec import (
-    construction_hash,
-    validate_spec,
-    stamp_gates_hash,
-)
+from engine.signal_foundry.spec import construction_hash
 from engine.signal_foundry.transforms import apply_pipeline
 
 BATTERY_VERSION = "sf-battery-1"
@@ -550,6 +544,41 @@ def _run_backtest(
         return {"error": str(exc)}
 
 
+def _run_backtest_raw(
+    spec: dict,
+    feature: pd.Series,
+    repo_root: Path,
+) -> dict | None:
+    """Return the raw backtest dict from backtest_core for DSR computation.
+
+    Unlike _run_backtest (which returns only summary statistics), this returns
+    the full backtest_core dict including the per-bar 'net' return Series.
+    Used by run_spec to obtain an actual strategy-return stream for DSR.
+    Returns None on any failure.
+    """
+    try:
+        kind = spec["target"]["kind"]
+        if kind not in {"excess_return", "absolute_return"}:
+            return None
+        if spec.get("universe", "single_series") != "single_series":
+            return None
+
+        tgt_entry = {
+            "path": spec["target"]["path"],
+            "column": spec["target"].get("column", "Close"),
+        }
+        prices = _load_raw_price(tgt_entry, repo_root)
+        aligned = pd.concat([feature.rename("f"), prices.rename("p")], axis=1).dropna()
+        if len(aligned) < 60:
+            return None
+        f = aligned["f"]
+        p = aligned["p"]
+        alloc = (f > 0).astype(float)
+        return backtest_core(p, alloc, cost_bps=COST_BPS)
+    except Exception:
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
@@ -576,6 +605,15 @@ def run_spec(
     Returns
     -------
     dict  — the full result record; also written to data/signal_foundry/results/<id>.json.
+
+    Note on SF-R7 enforcement: schema validation (validate_spec) and the git-tracked
+    path gate are enforced by the screen (engine.signal_foundry.screen.screen_candidate)
+    BEFORE a spec is filed.  run_spec does NOT re-call validate_spec at run time —
+    it relies on _build_feature raising FileNotFoundError/KeyError on absent or
+    untracked paths, producing a 'data_missing' verdict.  A hand-built spec that
+    bypasses the screen and references a gitignored-but-present runner-local store
+    will not be blocked here; it will run and produce a result that carries no
+    git-tracking guarantee.  Callers that bypass the screen must validate manually.
     """
     from engine.trial_ledger import DEFAULT_PATH as _DEFAULT_LEDGER
 
@@ -586,7 +624,7 @@ def run_spec(
     # ------------------------------------------------------------------
     # (a) Registration — log BEFORE computing (SF-R4)
     # ------------------------------------------------------------------
-    led_path = Path(ledger_path) if ledger_path is not None else DEFAULT_PATH
+    led_path = Path(ledger_path) if ledger_path is not None else _DEFAULT_LEDGER
     ledger = TrialLedger(path=led_path, family="signal_foundry")
 
     # Canonical config for ledger dedup (construction + gates)
@@ -735,9 +773,62 @@ def run_spec(
     # Negative-lag placebo (mirrors causal_scout negative-lag logic)
     neg_plac = _negative_lag_placebo_ic(feat_arr, tgt_arr, horizon_d)
 
-    # DSR: use ledger for honest multiple-testing N (SF-R3)
-    moments = ret_moments(pd.Series(effect_sub))
+    # ------------------------------------------------------------------
+    # Backtest (for excess_return / absolute_return + single_series)
+    # Run BEFORE DSR so the actual net-return series can feed the gate.
+    # ------------------------------------------------------------------
+    try:
+        backtest_result = _run_backtest(spec, feat_series, repo_root)
+    except Exception as exc:
+        backtest_result = {"error": str(exc)}
+
+    # ------------------------------------------------------------------
+    # DSR gate (SF-R3): use honest multiple-testing N from ledger.
+    #
+    # Input series selection:
+    #   * For excess_return / absolute_return single_series specs a real
+    #     long/flat strategy return series is available from _run_backtest.
+    #     We prefer it because deflated_sharpe() was designed for a strategy
+    #     return stream (var_scaler = 1 - skew*SR + (kurt-1)/4*SR^2 assumes
+    #     return-series moments, not z-product moments).  The z-product of two
+    #     standardized normal series is structurally leptokurtic (~kurtosis 6.75
+    #     vs 3 for normal), which would distort the deflation correction.
+    #   * For all other spec kinds (panel, drawdown_onset, forward_vol) no
+    #     cost-aware return series is computed, so we fall back to the z-product
+    #     effect_sub as a proxy.  This is an acknowledged limitation (PR-E
+    #     deferral: a proper IC-significance DSR for panel specs is TODO).
+    # ------------------------------------------------------------------
+    _target_kind = spec.get("target", {}).get("kind", "")
+    _universe = spec.get("universe", "single_series")
+    _use_backtest_for_dsr = (
+        _target_kind in {"excess_return", "absolute_return"}
+        and _universe == "single_series"
+        and isinstance(backtest_result, dict)
+        and "error" not in backtest_result
+    )
+
     dsr_result: dict | None = None
+    _dsr_series_label: str = ""
+    if _use_backtest_for_dsr:
+        # Obtain the actual net-return series from a fresh backtest call
+        # (backtest_result only stores summary stats, not the per-bar returns).
+        try:
+            _bt_raw = _run_backtest_raw(spec, feat_series, repo_root)
+            _net_rets = _bt_raw.get("net") if _bt_raw else None
+            if _net_rets is not None and len(_net_rets.dropna()) >= 10:
+                moments = ret_moments(_net_rets)
+                _dsr_series_label = "strategy_net_return"
+            else:
+                moments = ret_moments(pd.Series(effect_sub))
+                _dsr_series_label = "z_product_fallback"
+        except Exception:
+            moments = ret_moments(pd.Series(effect_sub))
+            _dsr_series_label = "z_product_fallback"
+    else:
+        # Non-return spec or panel: z-product proxy (acknowledged PR-E deferral).
+        moments = ret_moments(pd.Series(effect_sub))
+        _dsr_series_label = "z_product_ic_proxy"
+
     if moments is not None:
         sr_daily, skew, kurt, t = moments
         dsr_result = deflated_sharpe(
@@ -745,6 +836,8 @@ def run_spec(
             ledger=ledger,
             family="signal_foundry",
         )
+        if dsr_result is not None:
+            dsr_result = dict(dsr_result, dsr_series=_dsr_series_label)
 
     stats = {
         "n_obs": n_obs,
@@ -763,19 +856,19 @@ def run_spec(
     }
 
     # ------------------------------------------------------------------
-    # Backtest (for excess_return / absolute_return + single_series)
-    # ------------------------------------------------------------------
-    try:
-        backtest_result = _run_backtest(spec, feat_series, repo_root)
-    except Exception as exc:
-        backtest_result = {"error": str(exc)}
-
-    # ------------------------------------------------------------------
     # (d) Verdict (SF-R9 closed grammar)
     # ------------------------------------------------------------------
     gates = spec.get("gates", {})
     t_hac_gate = float(gates.get("min_t_hac", 2.0))
     dsr_gate = float(gates.get("dsr", 0.90))
+    # NOTE: fdr_q (SF-R3 BH-FDR) is a REQUIRED gate key in spec.py and is
+    # recorded in each spec's gates dict, but per-spec BH-FDR is inherently
+    # cohort-level (requires a set of p-values across the family, not just the
+    # current single spec).  Application is deferred to the PR-E cohort review
+    # stage, where all specs in a family are evaluated together.  The gate value
+    # stored here is the pre-registered threshold that the PR-E stage will apply.
+    # TODO (PR-E): apply Benjamini-Hochberg across the family's p-values at
+    #              promotion time using each spec's fdr_q threshold.
 
     verdict, reasons = _compute_verdict(
         spec_id, full_ic, hac_stat, block_ci, shift_plac, neg_plac,

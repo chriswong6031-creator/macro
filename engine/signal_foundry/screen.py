@@ -258,14 +258,34 @@ def screen_candidate(
 
     # ------------------------------------------------------------------ #
     # Gate 2: pit_plan_stated                                              #
+    # Mirrors validate_spec: pit is required per data[] entry (not       #
+    # top-level).  A top-level 'pit' or 'pit_plan' key is accepted as a  #
+    # legacy fallback for pre-spec candidates that have not been          #
+    # structured into the data[] list yet.                                #
     # ------------------------------------------------------------------ #
-    pit = str(candidate.get("pit") or candidate.get("pit_plan") or "").strip().lower()
-    if pit and pit not in {"", "unknown", "none"}:
+    _pit_ok = False
+    _checked_entries = [e for e in data_entries if isinstance(e, dict)] if data_entries else []
+    if _checked_entries:
+        # Per-entry check: every entry must have a non-empty pit key
+        _pit_ok = all(
+            str(e.get("pit", "")).strip().lower() not in {"", "unknown", "none"}
+            for e in _checked_entries
+        )
+        if not _pit_ok:
+            # Legacy top-level fallback (pre-spec candidates)
+            pit_top = str(candidate.get("pit") or candidate.get("pit_plan") or "").strip().lower()
+            _pit_ok = bool(pit_top and pit_top not in {"", "unknown", "none"})
+    else:
+        # No data[] entries yet — fall back to top-level pit field
+        pit_top = str(candidate.get("pit") or candidate.get("pit_plan") or "").strip().lower()
+        _pit_ok = bool(pit_top and pit_top not in {"", "unknown", "none"})
+
+    if _pit_ok:
         gates_passed.append("pit_plan")
     else:
         reasons.append(
-            f"Gate 2 FAIL: pit plan not stated (got {pit!r}). "
-            "Specify: 'clean', 'lagged', 'release_lag', or 'proxy'."
+            "Gate 2 FAIL: pit plan not stated on data[] entries (or top-level fallback). "
+            "Each data entry must carry pit: one of 'clean', 'lagged', 'release_lag', or 'proxy'."
         )
         gates_failed.append("pit_plan")
 

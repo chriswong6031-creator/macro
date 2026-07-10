@@ -273,6 +273,51 @@ class TestIdempotentLedger:
 # (v) Gates-frozen check
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# (vi) Default ledger_path (was NameError before the critical fix)
+# ---------------------------------------------------------------------------
+
+class TestDefaultLedgerPath:
+    def test_run_spec_with_default_ledger_path_does_not_crash(self, tmp_path, monkeypatch):
+        """run_spec(spec, ledger_path=None) must NOT raise NameError (critical regression guard).
+
+        Monkeypatches DEFAULT_PATH in engine.trial_ledger to a tmp location so
+        the test does not touch the real project ledger.
+        """
+        import engine.trial_ledger as _tl
+        fake_ledger = tmp_path / "default_ledger.jsonl"
+        monkeypatch.setattr(_tl, "DEFAULT_PATH", fake_ledger)
+
+        _make_git_repo(tmp_path)
+        rng = np.random.default_rng(55)
+        n = 1500
+        idx = _make_date_index(n)
+
+        feature = rng.standard_normal(n)
+        price = 100 * np.cumprod(1 + rng.standard_normal(n) * 0.01)
+
+        feat_df = pd.DataFrame({"feature": feature}, index=idx)
+        tgt_df = pd.DataFrame({"price": price}, index=idx)
+
+        feat_path = _write_tracked_parquet(tmp_path, "feat_default.parquet", feat_df)
+        tgt_path = _write_tracked_parquet(tmp_path, "tgt_default.parquet", tgt_df)
+        _commit(tmp_path)
+
+        spec = _make_base_spec(feat_path, tgt_path)
+        spec["id"] = "SF-9006"
+        spec = stamp_gates_hash(spec)
+
+        # Must NOT raise NameError — this is the critical regression guard
+        result = run_spec(spec, repo_root=tmp_path)  # ledger_path omitted → uses DEFAULT_PATH
+        assert "verdict" in result, f"run_spec returned no verdict: {result}"
+        from engine.signal_foundry.harness import _ALLOWED_VERDICTS
+        assert result["verdict"] in _ALLOWED_VERDICTS, f"verdict {result['verdict']!r} not in grammar"
+
+
+# ---------------------------------------------------------------------------
+# (v) Gates-frozen check
+# ---------------------------------------------------------------------------
+
 class TestGateFrozen:
     def test_changed_gates_returns_error(self, tmp_path):
         """Changing gates after stamping gates_hash must produce verdict=error."""

@@ -282,3 +282,26 @@ entries:
       Era-pooled inference across the 2010 regime break is FORBIDDEN without era split
       (DT-R16).
     source: "DT-R16 era-split law (#1751)"
+
+  - id: BL-026
+    match:
+      any_of:
+        - "shock.{0,30}archetype.{0,20}(beneficiary|casualty|shelter).{0,20}(map|feed|nw)"
+        - "archetype.{0,20}(beneficiary|casualty|shelter).{0,30}shock.{0,30}(map|feed|signal)"
+        - "shock.{0,20}(beneficiary|casualty|shelter).{0,20}map.{0,20}(nw|brain|neural)"
+    reason: >
+      Shock → archetype beneficiary/casualty (shelter) map as an NW/brain feed is KILLED.
+      TI-R5 ruling: no deterministic archetype→price mapping; survivorship confound.
+    source: "TI-R5, TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md"
+
+  - id: BL-027
+    match:
+      any_of:
+        - "parallel.{0,20}shock.{0,20}(vector|classifier).{0,30}beside.{0,20}market.{0,20}driver"
+        - "shock.{0,20}vector.{0,20}classif.{0,30}(parallel|alongside|beside).{0,30}market"
+        - "market.{0,20}driver.{0,30}parallel.{0,20}shock.{0,20}(vector|classif)"
+    reason: >
+      Parallel shock-vector classifier beside market_drivers is REJECT-REDUNDANT (TI-R1).
+      The market_drivers surface already encodes regime-level shock classification;
+      a parallel vector is tautological.
+    source: "TI-R1, TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md"

@@ -196,9 +196,17 @@ class TestDedup:
 
 class TestGateCoverage:
     def test_missing_pit_plan_rejected(self, tmp_path):
+        """pit is enforced per data[] entry (matches validate_spec contract).
+
+        Clearing the per-entry pit key and the top-level fallback must fail Gate 2.
+        """
         _make_git_repo(tmp_path)
         tracked = _add_tracked_csv(tmp_path)
         candidate = _make_candidate(tracked)
+        # Clear the per-entry pit AND the top-level fallback to trigger the gate
+        for entry in candidate.get("data", []):
+            if isinstance(entry, dict):
+                entry["pit"] = "unknown"
         candidate["pit"] = "unknown"
         result = screen_candidate(candidate, repo_root=tmp_path)
         assert "pit_plan" in result["gates_failed"]

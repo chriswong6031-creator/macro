@@ -122,6 +122,42 @@ class TestNoLookahead:
         s = _make_series(300) + 100
         _assert_no_lookahead(lambda x: _drawdown(x, window=63), s, corrupt_after=100)
 
+    def test_rolling_corr_no_lookahead(self):
+        """Corrupting future values of leg-1 must not change past rolling_corr outputs.
+
+        rolling_corr uses right-aligned rolling().corr() so it is causal, but the
+        strongest guarantee (no-lookahead) must be empirically confirmed.
+        """
+        s1 = _make_series(300, seed=1)
+        s2 = _make_series(300, seed=2)
+        corrupt_after = 100
+        window = 30
+
+        out_before = _rolling_corr(s1.copy(), s2.copy(), window=window)
+
+        # Corrupt future of leg-1 only; leg-2 unchanged
+        s1_corrupt = s1.copy()
+        rng = np.random.default_rng(999)
+        s1_corrupt.iloc[corrupt_after:] = rng.standard_normal(len(s1) - corrupt_after) * 1000
+
+        out_after = _rolling_corr(s1_corrupt, s2.copy(), window=window)
+
+        past_before = out_before.iloc[:corrupt_after]
+        past_after = out_after.iloc[:corrupt_after]
+
+        np.testing.assert_array_equal(
+            np.isnan(past_before.to_numpy(float)),
+            np.isnan(past_after.to_numpy(float)),
+            err_msg="NaN pattern changed for past rolling_corr values after future corruption",
+        )
+        valid_mask = ~np.isnan(past_before.to_numpy(float))
+        np.testing.assert_allclose(
+            past_before.to_numpy(float)[valid_mask],
+            past_after.to_numpy(float)[valid_mask],
+            rtol=1e-10,
+            err_msg="Past rolling_corr outputs changed after corrupting future values of leg-1",
+        )
+
 
 # ---------------------------------------------------------------------------
 # NaN handling
