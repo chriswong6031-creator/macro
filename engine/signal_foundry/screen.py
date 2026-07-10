@@ -173,12 +173,18 @@ def _probe_file_span_years(path_str: str, repo_root: Path) -> float | None:
             df = pd.read_csv(fpath, index_col=0, parse_dates=True, sep=sep, usecols=[0])
         else:
             return None
-        if not isinstance(df.index, pd.DatetimeIndex):
-            df.index = pd.to_datetime(df.index, errors="coerce")
-        df = df.dropna(how="all")
-        if len(df) < 2:
+        # Use the index directly — do NOT call df.dropna(how="all") on a
+        # zero-column DataFrame (columns=[] for parquet): pandas drops every
+        # row because all zero values trivially satisfy "all NA", yielding an
+        # empty index even when the file has thousands of dated rows.
+        idx = df.index
+        if not isinstance(idx, pd.DatetimeIndex):
+            idx = pd.to_datetime(idx, errors="coerce")
+        # Drop any NaT entries from coercion failures
+        idx = idx.dropna()
+        if len(idx) < 2:
             return None
-        span = (df.index.max() - df.index.min()).days / 365.25
+        span = (idx.max() - idx.min()).days / 365.25
         return float(span)
     except Exception:
         return None

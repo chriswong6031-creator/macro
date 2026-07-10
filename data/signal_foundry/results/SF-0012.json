@@ -1,0 +1,111 @@
+{
+  "spec": {
+    "id": "SF-0012",
+    "name": "BTC VDD-multiple percentile",
+    "market": "BTC",
+    "thesis": "Value-days-destroyed multiple percentile flags old-coin distribution; rich percentile precedes deeper BTC drawdowns",
+    "mechanism": "VDD-multiple high readings indicate long-held coins (high value-days-destroyed) are being spent/distributed, historically a cycle-top signal.",
+    "data": [
+      {
+        "path": "data/checkonchain/vdd_multiple.parquet",
+        "column": "vdd_multiple",
+        "pit": "chain data"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "pctile_rank",
+          {
+            "window": 1460
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/coinmetrics/price_usd.parquet",
+      "column": "price_usd",
+      "kind": "drawdown_onset",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "registered_at": "2026-07-10",
+    "orthogonality_note": "VDD-multiple measures coin-age-weighted transfer volume; distinct from active addresses (demand signal), hashrate (supply/miner), and MVRV (valuation).",
+    "evidence_note": "CheckOnChain VDD multiple: Woo (2020); coin-day-destruction studies Kondor et al. (2014); old-coin spending as cycle-top warning.",
+    "construction_hash": "add74f4d8d2ae4166b96",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered"
+  },
+  "stats": {
+    "n_obs": 5015,
+    "effective_months": 166,
+    "full_ic": -0.034,
+    "hac": {
+      "mean": 0.04801,
+      "se": 0.06078,
+      "t": 0.79,
+      "p": 0.4296,
+      "n": 80
+    },
+    "split_half": {
+      "h1_ic": -0.0495,
+      "h2_ic": 0.0172,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": null,
+      "post_ic": -0.034,
+      "era_n_pre": 0,
+      "era_n_post": 5015,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.1457,
+      "ci_97p5": 0.0853,
+      "boot_mean": -0.0313,
+      "n_draws": 200,
+      "block_size": 63,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.1066,
+      "sr_daily": 0.047114,
+      "sr_annual": 0.75,
+      "sr0_daily": 0.186655,
+      "sr0_annual": 2.96,
+      "n_trials": 12,
+      "T": 80,
+      "skew": 0.167,
+      "kurt": 2.687,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.275,
+      "obs_ic": -0.034,
+      "placebo_pct_ge_abs_obs": 0.725,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.3745,
+      "obs_ic_same_window": -0.0275,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "unstable",
+  "verdict_reasons": [
+    "split-half sign flip: H1 IC=-0.0495, H2 IC=0.0172",
+    "bootstrap CI [-0.1457, 0.0853] straddles 0"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-10",
+  "ledger_n_at_run": 12
+}

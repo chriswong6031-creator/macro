@@ -1,0 +1,127 @@
+{
+  "spec": {
+    "id": "SF-0005",
+    "name": "COT UST10y spec positioning squeeze",
+    "market": "US rates",
+    "thesis": "Crowded short/long spec positioning in 10y futures precedes squeeze reversals in duration",
+    "mechanism": "Extreme speculative net positioning in 10y T-Note futures tends to mean-revert as crowded trades unwind; squeeze direction predicted by extreme sign.",
+    "data": [
+      {
+        "path": "data/cot/cot_ust10y.parquet",
+        "column": "net_spec",
+        "pit": "weekly CFTC Tuesday data, published Friday, 3-day lag enforced in pipeline"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "zscore",
+          {
+            "window": 156
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 3
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/TLT.parquet",
+      "column": "close_price",
+      "kind": "absolute_return",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "registered_at": "2026-07-10",
+    "orthogonality_note": "10y spec positioning is mechanistically distinct from credit spreads and equity sentiment; captures rate-futures crowding not equity dynamics.",
+    "evidence_note": "Hartzmark & Solomon (2012); Kang, Rouwenhorst & Tang (2014); COT spec extremes in rates documented as squeeze precursors.",
+    "construction_hash": "ee758fe9c35bb8bf8324",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered"
+  },
+  "stats": {
+    "n_obs": 1236,
+    "effective_months": 286,
+    "full_ic": -0.0839,
+    "hac": {
+      "mean": -0.08416,
+      "se": 0.04434,
+      "t": -1.898,
+      "p": 0.0577,
+      "n": 20
+    },
+    "split_half": {
+      "h1_ic": -0.2189,
+      "h2_ic": 0.0411,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": -0.1306,
+      "post_ic": -0.0721,
+      "era_n_pre": 388,
+      "era_n_post": 848,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.2576,
+      "ci_97p5": 0.0706,
+      "boot_mean": -0.0958,
+      "n_draws": 200,
+      "block_size": 35,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.0001,
+      "sr_daily": -0.05943,
+      "sr_annual": -0.94,
+      "sr0_daily": 0.046939,
+      "sr0_annual": 0.75,
+      "n_trials": 12,
+      "T": 1236,
+      "skew": -0.443,
+      "kurt": 10.132,
+      "dsr_series": "strategy_net_return"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.675,
+      "obs_ic": -0.0839,
+      "placebo_pct_ge_abs_obs": 0.325,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": 0.1788,
+      "obs_ic_same_window": -0.0887,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {
+    "net_sharpe": -0.943,
+    "gross_sharpe": -0.832,
+    "hold_sharpe": 0.188,
+    "cagr_net": -0.1548,
+    "cagr_gross": -0.139,
+    "max_dd": -0.5707,
+    "cost_bps": 8.0,
+    "baseline": "buy_and_hold",
+    "years": 23.69
+  },
+  "verdict": "unstable",
+  "verdict_reasons": [
+    "split-half sign flip: H1 IC=-0.2189, H2 IC=0.0411",
+    "bootstrap CI [-0.2576, 0.0706] straddles 0"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-10",
+  "ledger_n_at_run": 12
+}

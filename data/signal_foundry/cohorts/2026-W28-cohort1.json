@@ -1,0 +1,85 @@
+{
+  "cohort_id": "2026-W28-cohort1",
+  "trigger": "operator",
+  "fdr_alpha": 0.1,
+  "n_members": 9,
+  "bh_rejects": [
+    "SF-0001",
+    "SF-0004"
+  ],
+  "members": {
+    "SF-0001": {
+      "p": 0.001232,
+      "q": 0.011087,
+      "t_hac": -3.271,
+      "n_subsample": 237,
+      "verdict": "null",
+      "bh_reject": true
+    },
+    "SF-0002": {
+      "p": 0.0886,
+      "q": 0.19935,
+      "t_hac": -1.707,
+      "n_subsample": 400,
+      "verdict": "null",
+      "bh_reject": false
+    },
+    "SF-0004": {
+      "p": 0.006237,
+      "q": 0.028069,
+      "t_hac": -3.024,
+      "n_subsample": 23,
+      "verdict": "null",
+      "bh_reject": true
+    },
+    "SF-0005": {
+      "p": 0.072995,
+      "q": 0.19935,
+      "t_hac": -1.898,
+      "n_subsample": 20,
+      "verdict": "unstable",
+      "bh_reject": false
+    },
+    "SF-0006": {
+      "p": 0.188632,
+      "q": 0.323716,
+      "t_hac": 1.334,
+      "n_subsample": 48,
+      "verdict": "era_specific",
+      "bh_reject": false
+    },
+    "SF-0007": {
+      "p": 0.215811,
+      "q": 0.323716,
+      "t_hac": 1.24,
+      "n_subsample": 349,
+      "verdict": "null",
+      "bh_reject": false
+    },
+    "SF-0008": {
+      "p": 0.693485,
+      "q": 0.780171,
+      "t_hac": -0.395,
+      "n_subsample": 132,
+      "verdict": "unstable",
+      "bh_reject": false
+    },
+    "SF-0009": {
+      "p": 0.824035,
+      "q": 0.824035,
+      "t_hac": 0.223,
+      "n_subsample": 92,
+      "verdict": "unstable",
+      "bh_reject": false
+    },
+    "SF-0012": {
+      "p": 0.431893,
+      "q": 0.555291,
+      "t_hac": 0.79,
+      "n_subsample": 80,
+      "verdict": "unstable",
+      "bh_reject": false
+    }
+  },
+  "formula_note": "p_i = 2 * t.sf(|t_HAC_i|, df=n_subsample-1); q_i = min(m * p_i / rank_i, 1.0) with monotone enforcement; bh_reject iff q_i <= fdr_alpha."
+}

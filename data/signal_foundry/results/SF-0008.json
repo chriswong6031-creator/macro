@@ -1,0 +1,136 @@
+{
+  "spec": {
+    "id": "SF-0008",
+    "name": "Quality-spread momentum (BAA-AAA)",
+    "market": "US credit",
+    "thesis": "Momentum in the BAA-AAA quality spread captures credit-quality risk repricing ahead of equities",
+    "mechanism": "BAA-AAA spread widening signals flight from lower-quality credit; 63d momentum in the spread captures persistent deterioration in credit quality sentiment before equity repricing.",
+    "data": [
+      {
+        "path": "data/fred/DBAA.parquet",
+        "column": "baa_corp",
+        "pit": "FRED daily"
+      },
+      {
+        "path": "data/fred/DAAA.parquet",
+        "column": "aaa_corp",
+        "pit": "FRED daily"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "spread",
+          {}
+        ],
+        [
+          "diff",
+          {
+            "n": 63
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 252
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "column": "close_price",
+      "kind": "absolute_return",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "registered_at": "2026-07-10",
+    "orthogonality_note": "Quality spread (BAA-AAA) isolates credit-quality premium distinct from HY OAS (which blends default + liquidity); momentum in quality spread is a different dimension from level.",
+    "evidence_note": "Estrella & Mishkin (1998); Krishnamurthy & Vissing-Jorgensen (2011); quality spread as macro/credit cycle indicator extensively studied.",
+    "construction_hash": "e91a9126055e4bac9934",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered"
+  },
+  "stats": {
+    "n_obs": 8301,
+    "effective_months": 400,
+    "full_ic": 0.0151,
+    "hac": {
+      "mean": -0.03317,
+      "se": 0.08393,
+      "t": -0.395,
+      "p": 0.6927,
+      "n": 132
+    },
+    "split_half": {
+      "h1_ic": 0.0273,
+      "h2_ic": -0.0017,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": 0.0223,
+      "post_ic": 0.0047,
+      "era_n_pre": 4238,
+      "era_n_post": 4063,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.0988,
+      "ci_97p5": 0.1142,
+      "boot_mean": 0.0171,
+      "n_draws": 200,
+      "block_size": 63,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.5238,
+      "sr_daily": 0.01897,
+      "sr_annual": 0.3,
+      "sr0_daily": 0.018312,
+      "sr0_annual": 0.29,
+      "n_trials": 12,
+      "T": 8301,
+      "skew": -0.079,
+      "kurt": 31.434,
+      "dsr_series": "strategy_net_return"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.17,
+      "obs_ic": 0.0151,
+      "placebo_pct_ge_abs_obs": 0.83,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.244,
+      "obs_ic_same_window": 0.0185,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {
+    "net_sharpe": 0.301,
+    "gross_sharpe": 0.368,
+    "hold_sharpe": 0.538,
+    "cagr_net": 0.0339,
+    "cagr_gross": 0.0441,
+    "max_dd": -0.5112,
+    "cost_bps": 8.0,
+    "baseline": "buy_and_hold",
+    "years": 33.19
+  },
+  "verdict": "unstable",
+  "verdict_reasons": [
+    "split-half sign flip: H1 IC=0.0273, H2 IC=-0.0017",
+    "bootstrap CI [-0.0988, 0.1142] straddles 0"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-10",
+  "ledger_n_at_run": 12
+}

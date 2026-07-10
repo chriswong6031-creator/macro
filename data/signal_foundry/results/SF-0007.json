@@ -1,0 +1,116 @@
+{
+  "spec": {
+    "id": "SF-0007",
+    "name": "HY OAS widening velocity",
+    "market": "US credit",
+    "thesis": "SPEED of high-yield spread widening (21d diff z), distinct from the scored bond-health LEVEL composite, as drawdown-onset precursor",
+    "mechanism": "Rapid HY spread widening signals tightening financial conditions and credit-risk repricing before equity markets fully adjust; velocity captures regime shift earlier than level.",
+    "data": [
+      {
+        "path": "data/fred/BAMLH0A0HYM2.parquet",
+        "column": "hy_oas",
+        "pit": "FRED daily, minor revision, pit proxy"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "diff",
+          {
+            "n": 21
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 252
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "column": "close_price",
+      "kind": "drawdown_onset",
+      "horizon_d": 21
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "registered_at": "2026-07-10",
+    "orthogonality_note": "Velocity of spread change (diff z) is mechanistically distinct from the level composite used in bond-health scores; captures momentum in credit conditions.",
+    "evidence_note": "Mueller, Vedolin & Zhou (2011); Gilchrist & Zakrajsek (2012); HY spread velocity as leading indicator of equity drawdowns well-documented.",
+    "construction_hash": "303fe6075de8e816cda5",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered"
+  },
+  "stats": {
+    "n_obs": 7319,
+    "effective_months": 350,
+    "full_ic": 0.0666,
+    "hac": {
+      "mean": 0.07951,
+      "se": 0.06411,
+      "t": 1.24,
+      "p": 0.2149,
+      "n": 349
+    },
+    "split_half": {
+      "h1_ic": 0.0358,
+      "h2_ic": 0.1001,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": 0.0343,
+      "post_ic": 0.1006,
+      "era_n_pre": 3189,
+      "era_n_post": 4130,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.0091,
+      "ci_97p5": 0.1282,
+      "boot_mean": 0.0644,
+      "n_draws": 200,
+      "block_size": 21,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.3262,
+      "sr_daily": 0.06028,
+      "sr_annual": 0.96,
+      "sr0_daily": 0.082635,
+      "sr0_annual": 1.31,
+      "n_trials": 12,
+      "T": 349,
+      "skew": 2.773,
+      "kurt": 28.037,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.885,
+      "obs_ic": 0.0666,
+      "placebo_pct_ge_abs_obs": 0.115,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": 0.3901,
+      "obs_ic_same_window": 0.0664,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "null",
+  "verdict_reasons": [
+    "time-shift placebo: IC at 88% of null distribution (floor=90%) \u2014 indistinguishable from lagged echo (DT-R14)"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-10",
+  "ledger_n_at_run": 12
+}

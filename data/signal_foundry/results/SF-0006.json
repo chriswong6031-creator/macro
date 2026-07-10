@@ -1,0 +1,126 @@
+{
+  "spec": {
+    "id": "SF-0006",
+    "name": "NAAIM exposure extremes",
+    "market": "US equity",
+    "thesis": "Active-manager exposure extremes (very low = capitulation, very high = complacency) vs forward SPY",
+    "mechanism": "NAAIM survey reflects active manager equity allocation; extremes mark behavioural capitulation (low) or complacency (high), both historically mean-reverting. Weekly Thursday release, 1-week publication lag enforced.",
+    "data": [
+      {
+        "path": "data/sentiment/naaim.parquet",
+        "column": "naaim_exposure",
+        "pit": "weekly survey, published Thursday, 1-week lag enforced in pipeline"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "zscore",
+          {
+            "window": 104
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 1
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "column": "close_price",
+      "kind": "absolute_return",
+      "horizon_d": 21
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "registered_at": "2026-07-10",
+    "orthogonality_note": "NAAIM surveys active managers (not retail); distinct from AAII survey, COT positioning, and vol sentiment; measures professional allocation decision.",
+    "evidence_note": "Brown & Cliff (2004); Baker & Wurgler (2006) sentiment framework; NAAIM-specific: Blitz, Huij & Martens (2011) style exposure reversals.",
+    "construction_hash": "9f1be46ae6def56712fa",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered"
+  },
+  "stats": {
+    "n_obs": 1005,
+    "effective_months": 234,
+    "full_ic": -0.0525,
+    "hac": {
+      "mean": 0.10098,
+      "se": 0.0757,
+      "t": 1.334,
+      "p": 0.1822,
+      "n": 48
+    },
+    "split_half": {
+      "h1_ic": -0.0134,
+      "h2_ic": -0.097,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": 0.0771,
+      "post_ic": -0.091,
+      "era_n_pre": 156,
+      "era_n_post": 849,
+      "sign_flip": true
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.1728,
+      "ci_97p5": 0.0493,
+      "boot_mean": -0.0595,
+      "n_draws": 200,
+      "block_size": 21,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.7451,
+      "sr_daily": 0.077789,
+      "sr_annual": 1.23,
+      "sr0_daily": 0.055726,
+      "sr0_annual": 0.88,
+      "n_trials": 12,
+      "T": 1005,
+      "skew": -1.34,
+      "kurt": 14.68,
+      "dsr_series": "strategy_net_return"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.705,
+      "obs_ic": -0.0525,
+      "placebo_pct_ge_abs_obs": 0.295,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": 0.0879,
+      "obs_ic_same_window": -0.0422,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {
+    "net_sharpe": 1.235,
+    "gross_sharpe": 1.388,
+    "hold_sharpe": 1.323,
+    "cagr_net": 0.29,
+    "cagr_gross": 0.3358,
+    "max_dd": -0.1862,
+    "cost_bps": 8.0,
+    "baseline": "buy_and_hold",
+    "years": 19.39
+  },
+  "verdict": "era_specific",
+  "verdict_reasons": [
+    "era split sign flip: pre_2010 IC=0.0771, post_2010 IC=-0.091 (DT-R16)"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-10",
+  "ledger_n_at_run": 12
+}

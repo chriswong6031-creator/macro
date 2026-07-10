@@ -1,0 +1,110 @@
+{
+  "spec": {
+    "id": "SF-0002",
+    "name": "CBOE SKEW percentile tail-demand",
+    "market": "US vol",
+    "thesis": "Elevated SKEW percentile = tail-hedge demand; test whether it carries any forward drawdown information (literature says weak \u2014 a clean null is content)",
+    "mechanism": "High SKEW signals elevated OTM put premium relative to ATM; tail-demand could front-run dealer de-risking or mark crowded hedging that dampens actual drawdowns (contrarian interpretation).",
+    "data": [
+      {
+        "path": "data/cboe/skew.parquet",
+        "column": "skew",
+        "pit": "live index prints"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "pctile_rank",
+          {
+            "window": 504
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "column": "close_price",
+      "kind": "drawdown_onset",
+      "horizon_d": 21
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "registered_at": "2026-07-10",
+    "orthogonality_note": "SKEW measures OTM put vs call skewness; orthogonal to VIX (spot vol level) and VVIX/VIX ratio; different signal family.",
+    "evidence_note": "Vilkov & Xiao (2012); Chang, Christoffersen & Jacobs (2013); literature consistently finds weak predictive power \u2014 null hypothesis well-documented.",
+    "construction_hash": "d8c2c06e888b7a5bf244",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered"
+  },
+  "stats": {
+    "n_obs": 8380,
+    "effective_months": 402,
+    "full_ic": -0.0951,
+    "hac": {
+      "mean": -0.09722,
+      "se": 0.05694,
+      "t": -1.707,
+      "p": 0.0877,
+      "n": 400
+    },
+    "split_half": {
+      "h1_ic": -0.1113,
+      "h2_ic": -0.0656,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": -0.1145,
+      "post_ic": -0.0637,
+      "era_n_pre": 4253,
+      "era_n_post": 4127,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.1463,
+      "ci_97p5": -0.031,
+      "boot_mean": -0.0921,
+      "n_draws": 200,
+      "block_size": 21,
+      "ci_straddles_0": false
+    },
+    "dsr": {
+      "dsr": 0.0002,
+      "sr_daily": -0.095656,
+      "sr_annual": -1.52,
+      "sr0_daily": 0.083284,
+      "sr0_annual": 1.32,
+      "n_trials": 12,
+      "T": 400,
+      "skew": -0.14,
+      "kurt": 6.216,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.935,
+      "obs_ic": -0.0951,
+      "placebo_pct_ge_abs_obs": 0.065,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.1992,
+      "obs_ic_same_window": -0.0963,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "null",
+  "verdict_reasons": [
+    "negative-lag placebo fires: future-shifted IC -0.1992 >= observed IC -0.0963 \u2014 reverse-causation concern"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-10",
+  "ledger_n_at_run": 12
+}
