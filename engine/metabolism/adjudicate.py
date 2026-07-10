@@ -296,6 +296,11 @@ def _ux_simplicity_screen(
 
         # Rule 2: max_numbers_per_default_view — if proposal declares a number count
         max_numbers = int(raw.get("max_numbers_per_default_view") or 12)
+        # DENSITY ARM (advisory, defense-in-depth): the declared front-page number
+        # count is honor-system; the non-evadable controls are the jargon-blocklist
+        # arm below and the R-V2-6 rule that ALL front-page changes are T2-tapped
+        # (the operator sees every front-page diff). A proposal omitting the field
+        # is treated as 0 here; the operator tap is the real anti-crowding gate.
         declared_numbers = int(proposal.get("numbers_added_to_default_view") or 0)
         if declared_numbers > max_numbers:
             return {

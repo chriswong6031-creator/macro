@@ -67,6 +67,10 @@ IMMUTABLE_PATTERNS: list[str] = [
     "config/metabolism_schedule.yml",
     # V2-D additions (R-V2-8)
     "config/ux_simplicity_rules.yml",
+    # tap.py holds the T2 safe-default table (conservative timeout actions); a
+    # loop-authored branch must NOT flip e.g. promote_lobe's default to 'promote'.
+    # Fenced so the docstring's immutability claim is structural, not honor-system.
+    "engine/metabolism/tap.py",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────

@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 353, (
-        f"Expected 353 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 357, (
+        f"Expected 357 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (NAR-W3 review fixes added narrative-first-coverage, stock-narrative-witness-history = 350->353"
         " (includes 1 artifact from other PRs merged during rebase);"

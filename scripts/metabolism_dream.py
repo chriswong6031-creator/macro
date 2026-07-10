@@ -43,8 +43,10 @@ def _check_paused() -> bool:
         from scripts.metabolism_guard import is_paused  # type: ignore[import]
         return is_paused()
     except Exception:  # noqa: BLE001
-        val = os.environ.get("AUTONOMY_PAUSED", "")
-        return bool(val) and val.lower() not in ("false", "0", "")
+        # FAIL-CLOSED (R-AUT-2): a kill-switch fallback must default to PAUSED.
+        # Only an explicit AUTONOMY_PAUSED=='false' arms; unset/garbage/error → paused.
+        val = os.environ.get("AUTONOMY_PAUSED", "").strip().lower()
+        return val != "false"
 
 
 def _maybe_resummary(root: Path, dry_run: bool) -> None:

@@ -28,6 +28,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from unittest import mock
 
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
@@ -768,9 +769,19 @@ class TestIsPausedNoOp:
         from engine.metabolism.dream import run_dream_cycle
         # The default env has AUTONOMY_PAUSED unset → treated as paused
         # so running without patching should return paused
-        prior = run_dream_cycle(root=root, today="2026-07-10", dry_run=True)
-        # Either paused or insufficient_data (both are safe no-op states)
-        assert prior.get("status") in ("paused", "insufficient_data", "error")
+        import os
+        from pathlib import Path
+        # Ensure AUTONOMY_PAUSED is genuinely UNSET (default-safe = paused).
+        env = {k: v for k, v in os.environ.items() if k != "AUTONOMY_PAUSED"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            prior = run_dream_cycle(root=root, today="2026-07-10", dry_run=True)
+        # Discriminating: must be exactly 'paused' (not the insufficient_data path,
+        # which would also pass if the pause gate were bypassed) AND write no prior.
+        assert prior.get("status") == "paused", (
+            f"unset AUTONOMY_PAUSED must no-op as 'paused', got {prior.get('status')}"
+        )
+        assert not (Path(root) / "data" / "metabolism" / "preference_prior.json").exists(), \
+            "no preference_prior.json may be written while paused"
 
     def test_dream_script_noops_when_paused(self) -> None:
         """metabolism_dream.py main() returns 0 when AUTONOMY_PAUSED is set."""

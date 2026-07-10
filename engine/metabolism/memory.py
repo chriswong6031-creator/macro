@@ -217,6 +217,10 @@ def resummary_lessons(
         # Keep only the raw tail
         if len(encoded) > LESSONS_TAIL_BYTES:
             tail_text = encoded[-LESSONS_TAIL_BYTES:].decode(errors="replace")
+            # Drop the leading partial line — a raw byte slice can chop mid-JSON,
+            # leaving an unparseable first row. Cut to the first complete line.
+            nl = tail_text.find("\n")
+            tail_text = tail_text[nl + 1:] if nl != -1 else ""
         else:
             tail_text = text
 

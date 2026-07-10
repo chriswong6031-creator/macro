@@ -228,7 +228,12 @@ def run_dream_cycle(
                 log.info("dream: AUTONOMY_PAUSED — skipping cycle")
                 return _paused_prior(ts)
         except Exception:  # noqa: BLE001
-            pass  # guard not available → proceed (conservative: run in tests)
+            # FAIL-CLOSED (R-AUT-2): if the guard is unavailable, treat as PAUSED
+            # unless AUTONOMY_PAUSED is explicitly 'false'.
+            import os as _os
+            if _os.environ.get("AUTONOMY_PAUSED", "").strip().lower() != "false":
+                log.info("dream: guard unavailable + not explicitly armed — skipping (fail-closed)")
+                return _paused_prior(ts)
 
         # Load closed contracts + verify outcomes
         closed = _load_closed_contracts(repo, today)
@@ -361,12 +366,11 @@ def _maybe_resummary(repo: Path) -> None:
     try:
         from engine.metabolism.memory import _needs_resummary  # type: ignore[import]
         if _needs_resummary(repo):
-            log.info("dream: lessons.jsonl exceeds byte cap — resummary triggered")
-            # We do NOT call the LLM here (stateless); we mark a resummary-needed
-            # flag in the prior artifact so the weekly digest surfaces it as an ASK.
-            # The actual LLM-assisted resummary runs in the dream-cycle script
-            # (scripts/metabolism_dream.py) which may invoke the LLM separately.
-            pass
+            # Detection + log only. The actual anti-rot resummary of lessons.jsonl
+            # runs in scripts/metabolism_dream.py:_maybe_resummary (which owns the
+            # rewrite). This engine helper does NOT mutate any artifact — it is a
+            # pure detector so the caller can log/branch. (No flag is written here.)
+            log.info("dream: lessons.jsonl exceeds byte cap — resummary due (runs in dream script)")
     except Exception:  # noqa: BLE001
         pass
 

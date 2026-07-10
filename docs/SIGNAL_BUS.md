@@ -36,6 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-a | 5 |
 | metabolism-phase-v2a | 4 |
 | metabolism-phase-v2b | 1 |
+| metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
 | momoedge | 8 |
 | narrative-ignition | 5 |
@@ -74,13 +75,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 208 |
 | infrastructure | 87 |
 | scored | 4 |
-| shadow | 54 |
+| shadow | 58 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 337 |
+| git | 341 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -366,6 +367,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | metabolism-key-ledger | `data/metabolism/key_ledger.jsonl` | jsonl | on-demand | infrastructure | 2 | 0 |
+
+### metabolism-phase-v2d
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| metabolism-fitness-history | `data/metabolism/fitness_history.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| metabolism-lessons | `data/metabolism/lessons.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
+| metabolism-agenda-archive | `data/metabolism/agenda_archive/` | json | on-demand | shadow | 1 | 0 |
+| metabolism-preference-prior | `data/metabolism/preference_prior.json` | json | weekly | shadow | 1 | 0 |
 
 ### metabolism-phase0
 
@@ -1127,6 +1137,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/build_mastermind_feedback_summary.py`
 - **extra writers:**
   - engine/neuralweb/mastermind_feedback.py — build_and_write() writes the artifact
+
+### metabolism-fitness-history
+
+- **path:** `data/metabolism/fitness_history.jsonl`
+- **declared producer:** `engine/metabolism/memory.py`
+- **extra writers:**
+  - scripts/build_organism_state.py
 
 ### metabolism-insight-bus
 
