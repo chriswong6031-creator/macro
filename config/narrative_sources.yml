@@ -1,0 +1,150 @@
+# Narrative Ignition W2 — PR-reviewed feed registry (NAR-R11)
+# Public-tier sources only: no auth, no paywall circumvention, no credentials.
+# Citrini feeds are EXCLUDED — owned by the CITR program (research/CITRINI_HANDOFF_FOR_NEW_SESSION.md).
+# All additions/removals require a PR (this file is the R-TIL-9 curation gate).
+
+# ── Substack RSS feeds ────────────────────────────────────────────────────────
+# Each entry: feed_id (slug, stable dedup key), rss_url (public RSS), description.
+# Public RSS endpoints serve title + teaser; no paywall content is parsed.
+substack_rss:
+  - feed_id: semianalysis
+    rss_url: "https://www.semianalysis.com/feed"
+    description: "SemiAnalysis — semiconductor & AI infrastructure deep dives"
+
+  - feed_id: doomberg
+    rss_url: "https://doomberg.substack.com/feed"
+    description: "Doomberg — energy & industrial commodities"
+
+  - feed_id: geopolitical_futures
+    rss_url: "https://geopoliticalfutures.com/feed/"
+    description: "Geopolitical Futures — macro geopolitical analysis"
+
+  - feed_id: clouded_judgment
+    rss_url: "https://cloudedjudgement.substack.com/feed"
+    description: "Clouded Judgment — SaaS / public-market software"
+
+  - feed_id: banking_on_ai
+    rss_url: "https://bankingonai.substack.com/feed"
+    description: "Banking on AI — AI adoption in fintech and financial services"
+
+# ── Hacker News keyword map ───────────────────────────────────────────────────
+# ticker -> list of company name variants used to query hn.algolia.com stories.
+# Keep variants short/distinctive to avoid false-positive matches.
+hn_keywords:
+  META:
+    - "Meta AI"
+    - "Meta Platforms"
+    - "Llama"
+    - "Meta Superintelligence"
+  NVDA:
+    - "NVIDIA"
+    - "Nvidia GPU"
+    - "CUDA"
+    - "Blackwell"
+    - "NIM"
+  MSFT:
+    - "Microsoft"
+    - "Azure OpenAI"
+    - "Copilot"
+    - "GitHub Copilot"
+  GOOGL:
+    - "Google DeepMind"
+    - "Gemini"
+    - "Google Cloud"
+    - "Waymo"
+  AMZN:
+    - "Amazon AWS"
+    - "Amazon Bedrock"
+    - "Amazon AGI"
+  AAPL:
+    - "Apple Intelligence"
+    - "Apple silicon"
+    - "Vision Pro"
+  TSLA:
+    - "Tesla FSD"
+    - "Tesla Optimus"
+    - "Tesla robotaxi"
+  AMD:
+    - "AMD MI300"
+    - "AMD ROCm"
+    - "AMD EPYC"
+  AVGO:
+    - "Broadcom AI"
+    - "Broadcom XPU"
+    - "VMware Broadcom"
+  ORCL:
+    - "Oracle Cloud"
+    - "Oracle AI"
+    - "Oracle database"
+  PLTR:
+    - "Palantir AIP"
+    - "Palantir"
+    - "Gotham"
+  SMCI:
+    - "Super Micro"
+    - "SuperMicro"
+  INTC:
+    - "Intel Gaudi"
+    - "Intel foundry"
+    - "Intel 18A"
+  QCOM:
+    - "Qualcomm Snapdragon"
+    - "Qualcomm AI"
+    - "on-device AI"
+  ARM:
+    - "Arm Holdings"
+    - "Arm AI"
+    - "Arm CPU"
+  SNOW:
+    - "Snowflake Cortex"
+    - "Snowflake AI"
+  CRWD:
+    - "CrowdStrike"
+    - "Falcon platform"
+  NET:
+    - "Cloudflare AI"
+    - "Cloudflare Workers"
+  DDOG:
+    - "Datadog LLM"
+    - "Datadog observability"
+  MDB:
+    - "MongoDB Atlas"
+    - "MongoDB vector"
+  NOW:
+    - "ServiceNow AI"
+    - "ServiceNow Now Assist"
+  ADBE:
+    - "Adobe Firefly"
+    - "Adobe AI"
+  CRM:
+    - "Salesforce Agentforce"
+    - "Salesforce Einstein"
+  SAP:
+    - "SAP AI"
+    - "SAP Joule"
+  UBER:
+    - "Uber autonomous"
+    - "Uber robotaxi"
+  LYFT:
+    - "Lyft autonomous"
+    - "Lyft robotaxi"
+  SPOT:
+    - "Spotify AI DJ"
+    - "Spotify podcasts"
+  NFLX:
+    - "Netflix AI"
+    - "Netflix recommendation"
+
+# ── EDGAR 8-K velocity universe note ─────────────────────────────────────────
+# The Edgar8kVelocityAdapter uses the same SP1500 large-cap universe as the
+# polygon_news breadth universe (data/{breadth,midcap_breadth,smallcap_breadth}/
+# constituents.parquet) plus the narrative basket membership.json. No separate
+# registry needed — the universe is derived at runtime from those stores.
+# CIK mapping via data/edgar/company_tickers.json (monthly refresh in collect.py).
+edgar_8k_velocity:
+  universe_note: >
+    SP1500 large-cap slice via breadth/constituents.parquet union
+    baskets/membership.json. CIK map from data/edgar/company_tickers.json.
+  pace_s: 0.12
+  lookback_days: 90
+  stale_days: 3

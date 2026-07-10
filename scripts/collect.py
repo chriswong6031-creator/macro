@@ -917,6 +917,36 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("cn_holder_sale_calendar step failed: %s", e)
 
+    # ---- Narrative Ignition W2 collectors (2026-07-10) ----
+    # Off the render path, guarded, never fatal. Collect lane only.
+    # Substack RSS -> data/narrative/substack_posts.parquet
+    try:
+        from collectors.narrative_sources import SubstackRssAdapter as _SubRss
+        _sub_result = _SubRss().fetch()
+        log.info("narrative/substack_rss: %d total rows", len(_sub_result))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("narrative/substack_rss step failed: %s", e)
+
+    # HN Algolia -> data/narrative/hn_mentions.parquet
+    try:
+        from collectors.narrative_sources import HnAlgoliaAdapter as _HnAlg
+        _hn_result = _HnAlg().fetch()
+        log.info("narrative/hn_algolia: %d total rows", len(_hn_result))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("narrative/hn_algolia step failed: %s", e)
+
+    # Edgar 8-K velocity -> data/narrative/edgar_8k_counts.parquet (NIGHTLY-ONLY: heavy SEC load)
+    if os.environ.get("COLLECT_LANE") == "nightly":
+        try:
+            from collectors.narrative_sources import Edgar8kVelocityAdapter as _Edg8k
+            _edg_result = _Edg8k().fetch()
+            log.info("narrative/edgar_8k_velocity: %d total rows", len(_edg_result))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("narrative/edgar_8k_velocity step failed: %s", e)
+    else:
+        log.debug("narrative/edgar_8k_velocity: skipped — not the nightly lane (COLLECT_LANE=%r)",
+                  os.environ.get("COLLECT_LANE"))
+
     return 0 if ok > 0 else 1
 
 
