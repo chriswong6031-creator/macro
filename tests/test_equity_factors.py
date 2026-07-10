@@ -73,6 +73,59 @@ def test_winsor_z_handles_degenerate() -> None:
     assert np.isfinite(z2.dropna()).all()
 
 
+# --------------------------------------------------------------------------- #
+# Split-staleness guard — EDGAR cover-page shares vs the Polygon reference.
+# A post-split price times pre-split filing shares understated mktcap by the
+# split ratio (BKNG 25:1 2026-04-06 -> profile.mktcap_bn ~25x low).
+# --------------------------------------------------------------------------- #
+def _ref_parquet(tmp_path, monkeypatch, shares: dict) -> None:
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    p = tmp_path / "sp500_heatmap"
+    p.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame({"shares": pd.Series(shares, dtype=float)})
+    df.index.name = "ticker"
+    df["asof"] = "2026-07-10"
+    df.to_parquet(p / "reference.parquet")
+
+
+def test_reconcile_shares_overrides_stale_split_counts(tmp_path, monkeypatch) -> None:
+    from engine.equity_factors import _reconcile_shares
+    _ref_parquet(tmp_path, monkeypatch, {
+        "BKNG": 774.9e6,   # 25:1 split — filing count is 25x low
+        "KLAC": 1.306e9,   # 10:1 split
+        "AAPL": 14.8e9,    # within band of the filing count -> EDGAR kept
+        "META": 2.52e9,    # EDGAR serves no share count -> filled
+        "RSPLT": 1.0e6,    # 1:10 reverse split — filing count is 10x HIGH
+    })
+    edgar = pd.Series({"BKNG": 31.0e6, "KLAC": 130.6e6, "AAPL": 14.7e9,
+                       "META": np.nan, "RSPLT": 1.0e7, "NOREF": 5.0e8})
+    out = _reconcile_shares(edgar)
+    assert out["BKNG"] == 774.9e6                     # stale split count replaced
+    assert out["KLAC"] == 1.306e9
+    assert out["RSPLT"] == 1.0e6                      # reverse split replaced too
+    assert out["META"] == 2.52e9                      # missing filing count filled
+    assert out["AAPL"] == 14.7e9                      # small drift keeps the filing
+    assert out["NOREF"] == 5.0e8                      # not in reference -> untouched
+
+
+def test_reconcile_shares_noop_without_reference(tmp_path, monkeypatch) -> None:
+    from engine.equity_factors import _reconcile_shares
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)  # no reference.parquet
+    edgar = pd.Series({"BKNG": 31.0e6, "META": np.nan})
+    out = _reconcile_shares(edgar)
+    assert out["BKNG"] == 31.0e6 and pd.isna(out["META"])
+
+
+def test_reconcile_shares_survives_broken_reference(tmp_path, monkeypatch) -> None:
+    from engine.equity_factors import _reconcile_shares
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    p = tmp_path / "sp500_heatmap"
+    p.mkdir(parents=True)
+    (p / "reference.parquet").write_bytes(b"not a parquet")
+    edgar = pd.Series({"BKNG": 31.0e6})
+    assert _reconcile_shares(edgar)["BKNG"] == 31.0e6
+
+
 def test_compute_factors_shape_if_cache_present() -> None:
     cache = config.data_dir() / "edgar" / "fundamentals.parquet"
     if not cache.exists():
