@@ -1026,6 +1026,31 @@ def _compute_inner(
         backscan = _backscan(
             us_baskets, closes_map, price_data, spy_closes, market_drivers)
 
+    # Enrich basket rows with slow_reco + reco_as_of from sector_pulse.json.
+    # The disagreement gate (JS strip) requires these to filter WATCH/IGNITION
+    # baskets to only those whose slow reco is hold/avoid (i.e. the constructions
+    # disagree).  Tolerant: any failure leaves the keys absent (null).
+    try:
+        from lib import config as _cfg
+        _site_root = (_cfg.ROOT / _cfg.load()["storage"]["site_dir"]
+                      if data_root is None else data_root.parent / "site")
+        _pulse_path = _site_root / "basketdata" / "sector_pulse.json"
+        if _pulse_path.exists():
+            _pulse = json.loads(_pulse_path.read_text())
+            _pulse_as_of: str | None = _pulse.get("as_of")
+            _pulse_map: dict[str, str] = {
+                t["id"]: t["reco"]
+                for t in (_pulse.get("themes") or [])
+                if t.get("id") and t.get("reco")
+            }
+            for _row in basket_states:
+                _bid = _row.get("basket_id", "")
+                if _bid in _pulse_map:
+                    _row["slow_reco"] = _pulse_map[_bid]
+                    _row["reco_as_of"] = _pulse_as_of
+    except Exception as _ex:  # noqa: BLE001 — enrichment is additive, never fatal
+        log.debug("basket_turn_watch: slow_reco enrichment failed: %s", _ex)
+
     # Assemble site artifact
     result: dict = {
         "schema": "basket_turn_watch.v1",
