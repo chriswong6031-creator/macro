@@ -752,3 +752,109 @@ class TestSnapshotEqualsSeriesLastRow:
             "features() snapshot differs from feature_series().iloc[-1]:\n"
             + "\n".join(failures)
         )
+
+
+# ---------------------------------------------------------------------------
+# (j) Snapshot fast path ≡ feature_series BIT-EXACT battery
+# ---------------------------------------------------------------------------
+
+
+class TestSnapshotSeriesEquivalence:
+    """features() last-row fast path must equal feature_series().iloc[-1]
+    BIT-FOR-BIT across frame shapes, lengths, and pathologies.
+
+    features() no longer computes the full series over the 587-bar tail (that
+    cost ~0.9s/ticker in the nightly personality pass); each ``*_last`` helper
+    computes only the final bar via the same per-window kernel the series
+    functions use.  This battery pins exact equivalence — any drift between a
+    kernel and its snapshot twin fails here.  Includes the pandas
+    Rolling._prep_values gotcha: rolling.apply maps +/-inf to NaN before
+    windowing (a zero close makes log-returns +/-inf), which the direct kernel
+    calls must replicate.
+    """
+
+    @staticmethod
+    def _assert_bit_equal(df, label, as_of=None):
+        snap = features(df, as_of=as_of)
+        # Mirror features()' internal slicing exactly: as_of filter, then
+        # 587-bar tail (the old implementation ran feature_series on this).
+        ref = df.sort_index()
+        if as_of is not None:
+            ref = ref.loc[ref.index <= pd.Timestamp(as_of)]
+        max_window = 587
+        ref = ref.iloc[-max_window:] if len(ref) > max_window else ref
+        if ref.empty:
+            assert all(snap[k] is None for k in _FEATURE_KEYS), label
+            return
+        last_row = feature_series(ref).iloc[-1]
+        failures = []
+        for k in _FEATURE_KEYS:
+            sv = last_row.get(k, np.nan)
+            series_val = None if pd.isna(sv) else float(sv)
+            snap_val = snap[k]
+            # Exact comparison: both None, or floats with identical bits
+            same = (
+                snap_val is None and series_val is None
+            ) or (
+                snap_val is not None and series_val is not None
+                and snap_val.hex() == series_val.hex()
+            )
+            if not same:
+                failures.append(f"{k}: snapshot={snap_val!r} series={series_val!r}")
+        assert not failures, (
+            f"[{label}] snapshot not bit-equal to feature_series last row:\n"
+            + "\n".join(failures)
+        )
+
+    def _pathological_close(self, n, rng, zero_at=None, nan_frac=0.0,
+                            constant=False, nan_last=False):
+        if constant:
+            c = np.full(n, 50.0)
+        else:
+            c = 100.0 * np.exp(np.cumsum(rng.normal(0.0003, 0.02, n)))
+        if nan_frac:
+            c = c.copy()
+            c[rng.random(n) < nan_frac] = np.nan
+        if zero_at is not None and n > zero_at:
+            c[zero_at] = 0.0
+        if nan_last:
+            c[-1] = np.nan
+        return c
+
+    def test_lengths_ohlcv_and_close_only(self):
+        """Short, boundary (514/515 = breakout burn-in edge), and long frames."""
+        rng = np.random.default_rng(SEED + 7)
+        for n in (1, 2, 21, 130, 300, 514, 515, 587, 800):
+            c = self._pathological_close(n, rng)
+            self._assert_bit_equal(_make_ohlcv(c), f"ohlcv-{n}")
+            self._assert_bit_equal(_make_close_only(c), f"close-only-{n}")
+
+    def test_pathologies(self):
+        """NaN holes, NaN last bar, constant price, zero close (inf log-returns),
+        and the data/stocks column shape (high/low/close/volume, no open)."""
+        rng = np.random.default_rng(SEED + 8)
+        n = 800
+        self._assert_bit_equal(
+            _make_ohlcv(self._pathological_close(n, rng, nan_frac=0.05)),
+            "nan-holes")
+        self._assert_bit_equal(
+            _make_ohlcv(self._pathological_close(n, rng, nan_last=True)),
+            "nan-last")
+        self._assert_bit_equal(
+            _make_ohlcv(self._pathological_close(n, rng, constant=True)),
+            "constant")
+        # zero close inside the trailing 126-bar window -> +/-inf log-returns;
+        # exercises the Rolling._prep_values inf->NaN replication
+        self._assert_bit_equal(
+            _make_ohlcv(self._pathological_close(n, rng, zero_at=n - 50)),
+            "zero-close-in-window")
+        df = _make_ohlcv(self._pathological_close(n, rng))
+        self._assert_bit_equal(df.drop(columns=["open"]), "no-open")
+        self._assert_bit_equal(df.drop(columns=["volume"]), "no-volume")
+
+    def test_as_of(self):
+        """as_of slicing must hit the identical fast-path values."""
+        rng = np.random.default_rng(SEED + 9)
+        df = _make_ohlcv(self._pathological_close(900, rng))
+        for pos in (600, 100):
+            self._assert_bit_equal(df, f"asof-{pos}", as_of=df.index[pos])

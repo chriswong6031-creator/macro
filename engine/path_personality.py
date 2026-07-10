@@ -8,7 +8,9 @@ Provides two public APIs:
 
     features(df, *, as_of=None) -> dict
         Causal snapshot of every feature as of ``as_of`` (default: last row).
-        Cheap: only trailing windows ending at ``as_of`` are computed.
+        Cheap: only the final bar's value is computed (last-row fast path;
+        bit-identical to ``feature_series(...).iloc[-1]`` — see
+        tests/test_path_personality.py::TestSnapshotSeriesEquivalence).
         Includes a ``coverage`` sub-dict.
 
     feature_series(df) -> pd.DataFrame
@@ -119,6 +121,20 @@ def _true_range(high: pd.Series, low: pd.Series, close: pd.Series) -> pd.Series:
 # ---------------------------------------------------------------------------
 
 
+def _autocorr_sign(arr: np.ndarray, min_obs: int) -> float:
+    """Per-window kernel for trend persistence (shared by series + snapshot)."""
+    valid = arr[~np.isnan(arr)]
+    if len(valid) < min_obs:
+        return np.nan
+    signs = np.sign(valid)
+    # consecutive pairs: (s_t * s_{t-1}) == 1 means same sign
+    pairs = signs[1:] * signs[:-1]
+    n_pairs = len(pairs)
+    if n_pairs == 0:
+        return np.nan
+    return float(np.sum(pairs) / n_pairs)
+
+
 def _trend_persist_series(close: pd.Series, window: int) -> pd.Series:
     """Lag-1 sign-autocorrelation of daily returns over trailing ``window`` bars.
 
@@ -132,19 +148,52 @@ def _trend_persist_series(close: pd.Series, window: int) -> pd.Series:
 
     lr = np.log(close / close.shift(1))
 
-    def _autocorr_sign(arr: np.ndarray) -> float:
-        valid = arr[~np.isnan(arr)]
-        if len(valid) < min_obs:
-            return np.nan
-        signs = np.sign(valid)
-        # consecutive pairs: (s_t * s_{t-1}) == 1 means same sign
-        pairs = signs[1:] * signs[:-1]
-        n_pairs = len(pairs)
-        if n_pairs == 0:
-            return np.nan
-        return float(np.sum(pairs) / n_pairs)
+    return lr.rolling(window, min_periods=min_obs).apply(
+        lambda arr: _autocorr_sign(arr, min_obs), raw=True
+    )
 
-    return lr.rolling(window, min_periods=min_obs).apply(_autocorr_sign, raw=True)
+
+def _trend_persist_last(close: pd.Series, window: int) -> float:
+    """Last-row value of ``_trend_persist_series`` without the rolling sweep.
+
+    The kernel returns NaN below ``min_obs`` valid pairs, which subsumes the
+    rolling ``min_periods`` gate — the direct call is value-identical.
+    """
+    min_obs = int(window * _MIN_TREND_COVERAGE)
+    lr = np.log(close / close.shift(1))
+    arr = lr.values[-window:]
+    # pandas Rolling._prep_values maps +/-inf to NaN before windowing (a zero
+    # close makes lr +/-inf); replicate so the direct call stays bit-identical.
+    arr = np.where(np.isinf(arr), np.nan, arr)
+    return _autocorr_sign(arr, min_obs)
+
+
+def _frac_agree(arr: np.ndarray) -> float:
+    """Per-window kernel for slope stability (shared by series + snapshot).
+
+    ``arr`` is the trailing 126 log-close values (raw=True).
+    """
+    win_short = _WIN_TREND_20         # 20
+    if np.isnan(arr).any():
+        return np.nan
+    n = len(arr)
+    # 126d slope
+    x_long = np.arange(n, dtype=float)
+    slope_long = np.polyfit(x_long, arr, 1)[0]
+    # Roll through 20d windows within arr
+    agree = 0
+    count = 0
+    for end in range(win_short, n + 1):
+        seg = arr[end - win_short: end]
+        if np.isnan(seg).any():
+            continue
+        x_s = np.arange(win_short, dtype=float)
+        s20 = np.polyfit(x_s, seg, 1)[0]
+        agree += int(np.sign(s20) == np.sign(slope_long))
+        count += 1
+    if count == 0:
+        return np.nan
+    return float(agree / count)
 
 
 def _slope_stability_126_series(close: pd.Series) -> pd.Series:
@@ -157,32 +206,49 @@ def _slope_stability_126_series(close: pd.Series) -> pd.Series:
     """
     log_c = np.log(close.replace(0, np.nan))
     win_long = _WIN_SLOPE_STABILITY   # 126
-    win_short = _WIN_TREND_20         # 20
-
-    def _frac_agree(arr: np.ndarray) -> float:
-        # arr is the trailing 126 log-close values (raw=True)
-        if np.isnan(arr).any():
-            return np.nan
-        n = len(arr)
-        # 126d slope
-        x_long = np.arange(n, dtype=float)
-        slope_long = np.polyfit(x_long, arr, 1)[0]
-        # Roll through 20d windows within arr
-        agree = 0
-        count = 0
-        for end in range(win_short, n + 1):
-            seg = arr[end - win_short: end]
-            if np.isnan(seg).any():
-                continue
-            x_s = np.arange(win_short, dtype=float)
-            s20 = np.polyfit(x_s, seg, 1)[0]
-            agree += int(np.sign(s20) == np.sign(slope_long))
-            count += 1
-        if count == 0:
-            return np.nan
-        return float(agree / count)
 
     return log_c.rolling(win_long, min_periods=win_long).apply(_frac_agree, raw=True)
+
+
+def _slope_stability_126_last(close: pd.Series) -> float:
+    """Last-row value of ``_slope_stability_126_series`` without the rolling sweep.
+
+    This is the single hottest cost in the personality pass: the rolling sweep
+    runs the kernel (~107 polyfits) at every one of ~460 bars to keep one row.
+    The rolling ``min_periods=126`` gate maps to: fewer than 126 bars -> NaN;
+    any NaN in the final window -> NaN (kernel handles the latter).
+    """
+    log_c = np.log(close.replace(0, np.nan))
+    vals = log_c.values
+    if len(vals) < _WIN_SLOPE_STABILITY:
+        return np.nan
+    arr = vals[-_WIN_SLOPE_STABILITY:]
+    # pandas Rolling._prep_values maps +/-inf to NaN before windowing;
+    # replicate so the direct call stays bit-identical (kernel NaN-gates).
+    arr = np.where(np.isinf(arr), np.nan, arr)
+    return _frac_agree(arr)
+
+
+def _pullback_stats(arr: np.ndarray) -> tuple[float, float]:
+    """Per-window kernel for pullback stats (shared by series + snapshot)."""
+    if np.isnan(arr).any():
+        return (np.nan, np.nan)
+    # expanding peak within window
+    peaks = np.maximum.accumulate(arr)
+    dd = arr / peaks - 1.0   # <= 0
+    # find local minima below -1% threshold
+    troughs = []
+    n = len(dd)
+    for i in range(1, n - 1):
+        if dd[i] < -0.01 and dd[i] <= dd[i - 1] and dd[i] <= dd[i + 1]:
+            troughs.append(-dd[i])  # store as positive depth
+    # also catch edge case: last bar can be a trough
+    if n > 1 and dd[-1] < -0.01 and dd[-1] <= dd[-2]:
+        troughs.append(-dd[-1])
+    if len(troughs) == 0:
+        return (np.nan, np.nan)
+    troughs_arr = np.array(troughs)
+    return (float(np.median(troughs_arr)), float(np.percentile(troughs_arr, 90)))
 
 
 def _pullback_series(close: pd.Series) -> pd.DataFrame:
@@ -194,26 +260,6 @@ def _pullback_series(close: pd.Series) -> pd.DataFrame:
     NaN if no troughs found.
     """
     win = _WIN_PULLBACK  # 252
-
-    def _pullback_stats(arr: np.ndarray):
-        if np.isnan(arr).any():
-            return (np.nan, np.nan)
-        # expanding peak within window
-        peaks = np.maximum.accumulate(arr)
-        dd = arr / peaks - 1.0   # <= 0
-        # find local minima below -1% threshold
-        troughs = []
-        n = len(dd)
-        for i in range(1, n - 1):
-            if dd[i] < -0.01 and dd[i] <= dd[i - 1] and dd[i] <= dd[i + 1]:
-                troughs.append(-dd[i])  # store as positive depth
-        # also catch edge case: last bar can be a trough
-        if n > 1 and dd[-1] < -0.01 and dd[-1] <= dd[-2]:
-            troughs.append(-dd[-1])
-        if len(troughs) == 0:
-            return (np.nan, np.nan)
-        troughs_arr = np.array(troughs)
-        return (float(np.median(troughs_arr)), float(np.percentile(troughs_arr, 90)))
 
     # Use rolling apply returning a scalar; compute both stats in one pass
     # by splitting into two series (pandas rolling apply returns one value)
@@ -235,6 +281,69 @@ def _pullback_series(close: pd.Series) -> pd.DataFrame:
     )
 
 
+def _pullback_last(close: pd.Series) -> tuple[float, float]:
+    """Last-row values of ``_pullback_series`` without the rolling sweep.
+
+    The series loop starts at ``win - 1`` on exact ``win``-sized windows, so
+    fewer than 252 bars -> NaN, else the kernel on the trailing 252 bars.
+    """
+    close_vals = close.values.astype(float)
+    if len(close_vals) < _WIN_PULLBACK:
+        return (np.nan, np.nan)
+    return _pullback_stats(close_vals[-_WIN_PULLBACK:])
+
+
+def _rolling_63_prior_high(close_vals: np.ndarray) -> np.ndarray:
+    """63d prior-high level per bar (shared by breakout series + snapshot).
+
+    shift(1) so bar b's breakout level = max of b-63..b-1; a "new 63d high"
+    at bar b means close[b] > max(close[b-63:b]).
+    """
+    return pd.Series(close_vals).shift(1).rolling(
+        _WIN_BREAKOUT, min_periods=_WIN_BREAKOUT
+    ).max().values
+
+
+def _breakout_counts(
+    close_vals: np.ndarray, rolling_63_prior: np.ndarray, t: int
+) -> tuple[int, int, int]:
+    """Per-bar kernel for breakout rates (shared by series + snapshot).
+
+    Counts resolved breakouts in the window of available breakout bars
+    [t - 504, t - 10] (only breakouts at least ``fwd`` bars old are
+    "resolved" at t).  Returns (ft_count, fail_count, total).
+    """
+    n = len(close_vals)
+    fwd = _WIN_BREAKOUT_FWD                  # 10
+    window_start = t - _WIN_BREAKOUT_LOOKBACK
+    resolved_end = t - fwd  # last fully-resolved breakout bar
+
+    ft_count = 0
+    fail_count = 0
+    total = 0
+
+    for b in range(window_start, resolved_end + 1):
+        if np.isnan(rolling_63_prior[b]):
+            continue
+        # Is bar b a new 63d high?
+        if close_vals[b] <= rolling_63_prior[b]:
+            continue
+        level = close_vals[b]
+        # Resolution: forward closes b+1 .. b+fwd
+        if b + fwd >= n:
+            continue
+        fwd_closes = close_vals[b + 1: b + fwd + 1]
+        total += 1
+        # Follow-through: close[b+10] > level (close at breakout)
+        if fwd_closes[-1] > level:
+            ft_count += 1
+        # Failed: any close in b+1..b+fwd falls back below level
+        if np.any(fwd_closes < level):
+            fail_count += 1
+
+    return ft_count, fail_count, total
+
+
 def _breakout_rates_series(close: pd.Series) -> pd.DataFrame:
     """Breakout follow-through and failure rates over trailing 504 bars.
 
@@ -248,7 +357,6 @@ def _breakout_rates_series(close: pd.Series) -> pd.DataFrame:
     NaN if < 5 resolved breakouts within the 504-bar trailing window.
     """
     win_lookback = _WIN_BREAKOUT_LOOKBACK    # 504
-    win_high = _WIN_BREAKOUT                 # 63
     fwd = _WIN_BREAKOUT_FWD                  # 10
     min_bk = _MIN_BREAKOUTS
 
@@ -258,41 +366,10 @@ def _breakout_rates_series(close: pd.Series) -> pd.DataFrame:
     ft_rates = np.full(n, np.nan)
     fail_rates = np.full(n, np.nan)
 
-    # Precompute 63d rolling high (shift(1) so bar b's breakout level = max of b-63..b-1)
-    # A "new 63d high" at bar b means close[b] > max(close[b-63:b])
-    rolling_63_prior = pd.Series(close_vals).shift(1).rolling(
-        win_high, min_periods=win_high
-    ).max().values
+    rolling_63_prior = _rolling_63_prior_high(close_vals)
 
     for t in range(win_lookback + fwd, n):
-        # The window of available breakout bars: [t - win_lookback, t - fwd]
-        # Only breakouts that are at least fwd bars old are "resolved" at t
-        window_start = t - win_lookback
-        resolved_end = t - fwd  # last fully-resolved breakout bar
-
-        ft_count = 0
-        fail_count = 0
-        total = 0
-
-        for b in range(window_start, resolved_end + 1):
-            if np.isnan(rolling_63_prior[b]):
-                continue
-            # Is bar b a new 63d high?
-            if close_vals[b] <= rolling_63_prior[b]:
-                continue
-            level = close_vals[b]
-            # Resolution: forward closes b+1 .. b+fwd
-            if b + fwd >= n:
-                continue
-            fwd_closes = close_vals[b + 1: b + fwd + 1]
-            total += 1
-            # Follow-through: close[b+10] > level (close at breakout)
-            if fwd_closes[-1] > level:
-                ft_count += 1
-            # Failed: any close in b+1..b+fwd falls back below level
-            if np.any(fwd_closes < level):
-                fail_count += 1
-
+        ft_count, fail_count, total = _breakout_counts(close_vals, rolling_63_prior, t)
         if total >= min_bk:
             ft_rates[t] = ft_count / total
             fail_rates[t] = fail_count / total
@@ -301,6 +378,20 @@ def _breakout_rates_series(close: pd.Series) -> pd.DataFrame:
         {"breakout_ft_rate_63": ft_rates, "failed_breakout_rate_63": fail_rates},
         index=close.index,
     )
+
+
+def _breakout_rates_last(close: pd.Series) -> tuple[float, float]:
+    """Last-row values of ``_breakout_rates_series`` for the final bar only."""
+    close_vals = close.values.astype(float)
+    n = len(close_vals)
+    t = n - 1
+    if t < _WIN_BREAKOUT_LOOKBACK + _WIN_BREAKOUT_FWD:
+        return (np.nan, np.nan)
+    rolling_63_prior = _rolling_63_prior_high(close_vals)
+    ft_count, fail_count, total = _breakout_counts(close_vals, rolling_63_prior, t)
+    if total >= _MIN_BREAKOUTS:
+        return (ft_count / total, fail_count / total)
+    return (np.nan, np.nan)
 
 
 def _gap_share_series(open_: pd.Series, close: pd.Series) -> pd.Series:
@@ -322,6 +413,17 @@ def _gap_share_series(open_: pd.Series, close: pd.Series) -> pd.Series:
     return (gap_sum / move_sum.replace(0, np.nan)).rename("gap_share_252")
 
 
+def _event_gap_top5_contrib(g: np.ndarray, m: np.ndarray) -> float:
+    """Per-window kernel for event-gap contribution (shared by series + snapshot)."""
+    if np.isnan(g).any() or np.isnan(m).any():
+        return np.nan
+    total_move = m.sum()
+    if total_move == 0:
+        return np.nan
+    top5 = np.sort(g)[-5:].sum()
+    return top5 / total_move
+
+
 def _event_gap_contrib_series(open_: pd.Series, close: pd.Series) -> pd.Series:
     """event_gap_contrib_252: fraction of total |close_t - close_{t-1}| contributed
     by the 5 largest |gap| days in trailing 252 bars.
@@ -341,17 +443,22 @@ def _event_gap_contrib_series(open_: pd.Series, close: pd.Series) -> pd.Series:
     out = np.full(n, np.nan)
 
     for t in range(win - 1, n):
-        g = gap_vals[t - win + 1: t + 1]
-        m = move_vals[t - win + 1: t + 1]
-        if np.isnan(g).any() or np.isnan(m).any():
-            continue
-        total_move = m.sum()
-        if total_move == 0:
-            continue
-        top5 = np.sort(g)[-5:].sum()
-        out[t] = top5 / total_move
+        out[t] = _event_gap_top5_contrib(
+            gap_vals[t - win + 1: t + 1], move_vals[t - win + 1: t + 1]
+        )
 
     return pd.Series(out, index=close.index, name="event_gap_contrib_252")
+
+
+def _event_gap_contrib_last(open_: pd.Series, close: pd.Series) -> float:
+    """Last-row value of ``_event_gap_contrib_series`` for the final bar only."""
+    win = _WIN_GAP
+    prev_close = close.shift(1)
+    gap_vals = (open_ - prev_close).abs().values.astype(float)
+    move_vals = close.diff().abs().values.astype(float)
+    if len(close) < win:
+        return np.nan
+    return _event_gap_top5_contrib(gap_vals[-win:], move_vals[-win:])
 
 
 def _wick_share_series(
@@ -401,80 +508,110 @@ def _reversal_half_life_series(close: pd.Series) -> pd.Series:
     lr = np.log(close_vals[1:] / close_vals[:-1])  # length n-1
 
     win_lookback = _WIN_SHOCK_LOOKBACK  # 504
-    win_std = _WIN_SHOCK_STD            # 63
     fwd = _WIN_SHOCK_FWD               # 10
-    min_shocks = _MIN_SHOCKS
 
     out = np.full(n, np.nan)
 
-    # rolling 63d std of returns (use shift(1): std at bar t uses bars t-63..t-1)
-    # We compute this once for efficiency
-    lr_series = pd.Series(lr)  # index 0..n-2 correspond to bars 1..n-1 in close
-    # std at original bar t (t >= 1) = std of lr[t-win_std..t-1]
-    # lr[i] = log(close[i+1]/close[i]), so lr index i corresponds to close bar i+1
-    # std at bar t (0-indexed close) uses lr[t-win_std..t-1]
+    trailing_std = _trailing_std_63(lr, n)
+
+    for t in range(win_lookback + fwd, n):
+        out[t] = _reversal_hl_at(lr, trailing_std, t, n)
+
+    return pd.Series(out, index=close.index, name="reversal_half_life")
+
+
+def _trailing_std_63(lr: np.ndarray, n: int) -> np.ndarray:
+    """Trailing 63d return std per close bar (shared by series + snapshot).
+
+    rolling 63d std of returns (use shift(1): std at bar t uses bars t-63..t-1).
+    lr[i] = log(close[i+1]/close[i]), so lr index i corresponds to close bar i+1;
+    std at bar t (0-indexed close) uses lr[t-win_std..t-1].
+    """
+    win_std = _WIN_SHOCK_STD            # 63
     trailing_std = np.full(n, np.nan)
     for t in range(win_std, n):
         seg = lr[t - win_std: t]
         trailing_std[t] = float(np.std(seg, ddof=1))
+    return trailing_std
 
-    for t in range(win_lookback + fwd, n):
-        window_start = t - win_lookback
-        resolved_end = t - fwd
 
-        cum_paths = []
-        for s in range(window_start + 1, resolved_end + 1):
-            # shock check: |lr[s-1]| > 2.5 * trailing_std[s]
-            # lr[s-1] = log(close[s]/close[s-1])
-            if s >= n or s < 1:
-                continue
-            shock_ret = lr[s - 1]  # return at bar s (index s-1 in lr)
-            std_s = trailing_std[s]
-            if np.isnan(std_s) or std_s == 0:
-                continue
-            if abs(shock_ret) <= _SHOCK_MULT * std_s:
-                continue
-            # Resolved: s + fwd < n
-            if s + fwd >= n:
-                continue
-            # Counter-move: sign is opposite to shock_ret
-            shock_sign = np.sign(shock_ret)
-            fwd_rets = lr[s: s + fwd]   # fwd returns after shock bar s
-            counter = np.cumsum(-shock_sign * fwd_rets)
-            cum_paths.append(counter)
+def _reversal_hl_at(
+    lr: np.ndarray, trailing_std: np.ndarray, t: int, n: int
+) -> float:
+    """Per-bar kernel for reversal half-life (shared by series + snapshot)."""
+    win_lookback = _WIN_SHOCK_LOOKBACK  # 504
+    fwd = _WIN_SHOCK_FWD               # 10
+    min_shocks = _MIN_SHOCKS
 
-        if len(cum_paths) < min_shocks:
+    window_start = t - win_lookback
+    resolved_end = t - fwd
+
+    cum_paths = []
+    for s in range(window_start + 1, resolved_end + 1):
+        # shock check: |lr[s-1]| > 2.5 * trailing_std[s]
+        # lr[s-1] = log(close[s]/close[s-1])
+        if s >= n or s < 1:
             continue
-
-        mean_path = np.mean(cum_paths, axis=0)  # shape (fwd,)
-        # half-life: fit y = tau * k where y = cumulative counter (linear decay approx)
-        # More robustly: half-life is where the mean counter-move reaches 50% of its
-        # final value via linear interpolation
-        final_val = mean_path[-1]
-        if final_val <= 0:
-            # no net counter-move on average — degenerate
+        shock_ret = lr[s - 1]  # return at bar s (index s-1 in lr)
+        std_s = trailing_std[s]
+        if np.isnan(std_s) or std_s == 0:
             continue
-        half_target = 0.5 * final_val
-        # Find k where mean_path first crosses half_target
-        hl = np.nan
-        ks = np.arange(1, fwd + 1, dtype=float)
-        for k_idx in range(len(mean_path)):
-            if mean_path[k_idx] >= half_target:
-                if k_idx == 0:
-                    hl = 0.5  # crosses immediately
-                else:
-                    # linear interpolation
-                    prev = mean_path[k_idx - 1]
-                    curr = mean_path[k_idx]
-                    frac = (half_target - prev) / (curr - prev)
-                    hl = float(k_idx + frac)
-                break
-        # If never crosses, set hl to fwd (slow reverter)
-        if np.isnan(hl):
-            hl = float(fwd)
-        out[t] = hl
+        if abs(shock_ret) <= _SHOCK_MULT * std_s:
+            continue
+        # Resolved: s + fwd < n
+        if s + fwd >= n:
+            continue
+        # Counter-move: sign is opposite to shock_ret
+        shock_sign = np.sign(shock_ret)
+        fwd_rets = lr[s: s + fwd]   # fwd returns after shock bar s
+        counter = np.cumsum(-shock_sign * fwd_rets)
+        cum_paths.append(counter)
 
-    return pd.Series(out, index=close.index, name="reversal_half_life")
+    if len(cum_paths) < min_shocks:
+        return np.nan
+
+    mean_path = np.mean(cum_paths, axis=0)  # shape (fwd,)
+    # half-life: fit y = tau * k where y = cumulative counter (linear decay approx)
+    # More robustly: half-life is where the mean counter-move reaches 50% of its
+    # final value via linear interpolation
+    final_val = mean_path[-1]
+    if final_val <= 0:
+        # no net counter-move on average — degenerate
+        return np.nan
+    half_target = 0.5 * final_val
+    # Find k where mean_path first crosses half_target
+    hl = np.nan
+    for k_idx in range(len(mean_path)):
+        if mean_path[k_idx] >= half_target:
+            if k_idx == 0:
+                hl = 0.5  # crosses immediately
+            else:
+                # linear interpolation
+                prev = mean_path[k_idx - 1]
+                curr = mean_path[k_idx]
+                frac = (half_target - prev) / (curr - prev)
+                hl = float(k_idx + frac)
+            break
+    # If never crosses, set hl to fwd (slow reverter)
+    if np.isnan(hl):
+        hl = float(fwd)
+    return hl
+
+
+def _reversal_half_life_last(close: pd.Series) -> float:
+    """Last-row value of ``_reversal_half_life_series`` for the final bar only.
+
+    The trailing-std precompute is kept as the same full loop (cheap; identical
+    values); only the per-bar shock scan collapses to the final bar.
+    """
+    close_vals = close.values.astype(float)
+    n = len(close_vals)
+    t = n - 1
+    if t < _WIN_SHOCK_LOOKBACK + _WIN_SHOCK_FWD:
+        return np.nan
+    lr = np.log(close_vals[1:] / close_vals[:-1])
+    trailing_std = _trailing_std_63(lr, n)
+    return _reversal_hl_at(lr, trailing_std, t, n)
 
 
 def _extreme_bar_freq_series(
@@ -611,6 +748,106 @@ def feature_series(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
+# Snapshot fast path: last-row values only
+# ---------------------------------------------------------------------------
+
+
+def _snapshot_last_row(df: pd.DataFrame) -> dict[str, float]:
+    """Last-row values of every feature key — ``feature_series(df).iloc[-1]``
+    without computing the full time-series.
+
+    Render fast path: ``feature_series`` re-derives every trailing window at
+    every bar (for slope_stability alone that is ~460 rolling windows x ~107
+    polyfits each on the 587-bar tail), which cost ~0.9s/ticker in the nightly
+    personality pass when only the final row was kept.  The ``*_last`` helpers
+    compute the identical value at the final bar only via the same per-window
+    kernels the series functions use.
+
+    Bit-for-bit equivalence with ``feature_series(df).iloc[-1]`` is the
+    contract — guarded by
+    tests/test_path_personality.py::TestSnapshotSeriesEquivalence.
+    Already-vectorized features (rolling sum/mean/median paths) still go
+    through their series implementation; they are not the cost.
+    """
+    df = df.sort_index()
+    close = df["close"].astype(float)
+
+    out: dict[str, float] = {}
+
+    # ---- trend persistence ----
+    out["trend_persist_20"] = _trend_persist_last(close, _WIN_TREND_20)
+    out["trend_persist_60"] = _trend_persist_last(close, _WIN_TREND_60)
+    out["trend_persist_126"] = _trend_persist_last(close, _WIN_TREND_126)
+
+    # ---- slope stability ----
+    out["slope_stability_126"] = _slope_stability_126_last(close)
+
+    # ---- pullback distribution ----
+    out["pullback_median_252"], out["pullback_p90_252"] = _pullback_last(close)
+
+    # ---- breakout rates ----
+    out["breakout_ft_rate_63"], out["failed_breakout_rate_63"] = (
+        _breakout_rates_last(close)
+    )
+
+    # ---- gap features (need open) ----
+    if _has_col(df, "open"):
+        open_ = df["open"].astype(float)
+        out["gap_share_252"] = _gap_share_series(open_, close).iloc[-1]
+        out["event_gap_contrib_252"] = _event_gap_contrib_last(open_, close)
+    else:
+        out["gap_share_252"] = np.nan
+        out["event_gap_contrib_252"] = np.nan
+
+    # ---- wick share (needs OHLC) ----
+    if _has_ohlc(df):
+        open_ = df["open"].astype(float)
+        high = df["high"].astype(float)
+        low = df["low"].astype(float)
+        out["wick_share_126"] = _wick_share_series(open_, high, low, close).iloc[-1]
+    else:
+        out["wick_share_126"] = np.nan
+
+    # ---- reversal half life ----
+    out["reversal_half_life"] = _reversal_half_life_last(close)
+
+    # ---- extreme bar frequency (needs HLC) ----
+    if _has_hlc(df):
+        high = df["high"].astype(float)
+        low = df["low"].astype(float)
+        out["extreme_bar_freq_252"] = _extreme_bar_freq_series(high, low, close).iloc[-1]
+    else:
+        out["extreme_bar_freq_252"] = np.nan
+
+    # ---- range compression (BBWP — reuse entry_primitives) ----
+    out["range_compression_pct"] = bbwp_series(close).iloc[-1]
+
+    # ---- dollar ADV / Amihud (need volume) ----
+    if _has_volume(df):
+        volume = df["volume"].astype(float)
+        out["dollar_adv_21d"] = _dollar_adv_series(close, volume).iloc[-1]
+        am = amihud_series(close, volume, win=20)
+        # 252-bar trailing mean of the 20-bar rolling Amihud
+        out["amihud_252"] = am.rolling(
+            _WIN_AMIHUD, min_periods=_WIN_AMIHUD
+        ).mean().iloc[-1]
+    else:
+        out["dollar_adv_21d"] = np.nan
+        out["amihud_252"] = np.nan
+
+    # ---- Corwin-Schultz spread (needs HLC — reuse entry_primitives) ----
+    if _has_hlc(df):
+        cs = corwin_schultz_spread_series(
+            df["high"].astype(float), df["low"].astype(float)
+        )
+        out["cs_spread_252"] = cs.rolling(_WIN_CS, min_periods=_WIN_CS).mean().iloc[-1]
+    else:
+        out["cs_spread_252"] = np.nan
+
+    return out
+
+
+# ---------------------------------------------------------------------------
 # features: causal snapshot
 # ---------------------------------------------------------------------------
 
@@ -688,8 +925,7 @@ def features(
     )  # 504 + 63 + 10 + 10 = 587
     df_tail = df.iloc[-max_window:] if len(df) > max_window else df
 
-    series = feature_series(df_tail)
-    last_row = series.iloc[-1]
+    last_row = _snapshot_last_row(df_tail)
 
     result = {}
     for k in _FEATURE_KEYS:
