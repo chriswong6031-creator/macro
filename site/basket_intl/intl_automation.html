@@ -380,6 +380,7 @@
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
             <a class="nav-mega-item" href="../foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="../state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
             <a class="nav-mega-item" href="../demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
             <a class="nav-mega-item" href="../radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
             <a class="nav-mega-item" href="../anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
@@ -483,7 +484,7 @@ fetch('../policy_lever.json',{cache:'no-cache'})
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-10 10:58 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-10 14:50 UTC</span>.
 </footer>
 
 <script>
@@ -836,11 +837,16 @@ function render(){
   const TIER_W={T1:0.9,T2:1.0,T3:0.6,T4:0.4};
   const tierW=(c)=>{const s=c&&c.signal; return (s&&s.tier&&TIER_W[s.tier])||0;};
   const tierBadge=(c)=>{const s=c&&c.signal; if(!s||!s.tier) return '';
-    const tip={T1:'T1 — 3D MACD-RSI × 3D StochRSI confluence, buy-filter endorsed (master confirmation).',
-      T2:'T2 — 2D MACD-RSI crossed + 3D StochRSI crossed (an early tier, fires before the 3D master).',
-      T3:'T3 — 3D StochRSI crossed, 2D MACD-RSI cross projected ~1-2 days (provisional, may repaint).',
-      T4:'T4 — 2D MACD-RSI projected + 2D StochRSI crossed, above the 200-day MA (earliest tier).'}[s.tier]||'';
-    return ` <span class="tier ${s.tier}" title="${tip}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};
+    // stage-name vocabulary v2 (W8-R4 #2099); wording mirrors _sig_badge.html.j2, popover via theme.js.
+    const tipEn={T1:'T1 CONFIRMED: master 3D confluence confirmed — 3D MACD-RSI × 3D StochRSI cross, buy-filter endorsed.',
+      T2:'T2 PRIME: 2D cross with 3D support — historically filled at a lower median premium above the 20d trough than CONFIRMED (measured, not a forward promise).',
+      T3:'T3 APPROACHING: 3D StochRSI already crossed and the 2D MACD-RSI cross is projected within ~1–2 days — an early prediction, not yet confirmed (provisional, may repaint).',
+      T4:'T4 FIRST SPARK: earliest read — 2D StochRSI crossed + 2D MACD projected, above the 200-day MA. Lowest confidence.'}[s.tier]||'';
+    const tipZh={T1:'T1 CONFIRMED（确认）：主层3日共振已确认——3日MACD-RSI×3日StochRSI交叉，买入过滤器已背书。',
+      T2:'T2 PRIME（最佳入场）：2日交叉叠加3日支撑——历史上于20日低点以上中位溢价低于CONFIRMED成交（实测数据，非前瞻承诺）。',
+      T3:'T3 APPROACHING（临近）：3日StochRSI已上穿，2日MACD-RSI预计在约1–2日内交叉——提前预判，尚未确认（暂定，可能重绘）。',
+      T4:'T4 FIRST SPARK（初现）：最早读数——2日StochRSI已上穿、2日MACD预投影且在200日均线上方。置信度最低。'}[s.tier]||'';
+    return ` <span class="tier ${s.tier}" data-tip-en="${tipEn}" data-tip-zh="${tipZh}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};
   const sortMembers=(items)=>{
     // default 'recommend' order: fresh-confluence names first (T1>T2>T3>T4), then the
     // conviction blend; other columns keep the plain numeric sort. Mirrors subsectors_china

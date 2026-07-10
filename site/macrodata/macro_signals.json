@@ -1,6 +1,6 @@
 {
   "date": "2026-07-09",
-  "generated_utc": "2026-07-10 13:46",
+  "generated_utc": "2026-07-10 13:27",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -3612,7 +3612,7 @@
       "reason": "version-matched + fresh",
       "calibration_version": "w2.7-loro-v1",
       "calibration_generated_at": "2026-07-02T12:32:51Z",
-      "calibration_age_days": 7
+      "calibration_age_days": 8
     },
     "lag_passport": {
       "basis": "per_leg_schedule",

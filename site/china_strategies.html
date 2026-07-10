@@ -5,6 +5,14 @@
 <script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
+</style>
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>China Strategy Scorecards — Market Intelligence</title>
 <style>
@@ -516,6 +524,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
             <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
             <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
             <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
             <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
@@ -587,11 +596,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <a class="mm-card" href="strategy_cnmm_conservative.html" style="--accent:#1FA971;--pos:0.16">
         <span class="mm-glow"></span>
         <div class="mm-top"><span class="mm-ico">🛟</span><span class="mm-prof"><span class="l-en">Conservative</span><span class="l-zh">保守</span></span></div>
-        <div class="mm-cagr">6.93%<small>CAGR</small></div>
-        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">China 40/60 (CSI300/CGB)</span><span class="l-zh">中国 40/60（沪深300/国债）</span> 5.53% · <b>2.0× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-cagr">6.92%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">China 40/60 (CSI300/CGB)</span><span class="l-zh">中国 40/60（沪深300/国债）</span> 5.47% · <b>2.0× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
         <div class="mm-meter"></div>
         <div class="mm-mets">
-          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.34</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.68</span></div>
+          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.34</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.67</span></div>
           <div><span class="mm-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="mm-v">-6.2%</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -19.1%</span></div>
           <div><span class="mm-k"><span class="l-en">Leverage</span><span class="l-zh">杠杆</span></span><span class="mm-v">0.38x</span><span class="mm-d">12.9y</span></div>
         </div>
@@ -601,11 +610,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <a class="mm-card" href="strategy_cnmm_moderate.html" style="--accent:#285fff;--pos:0.5">
         <span class="mm-glow"></span>
         <div class="mm-top"><span class="mm-ico">⚖️</span><span class="mm-prof"><span class="l-en">Moderate</span><span class="l-zh">均衡</span></span></div>
-        <div class="mm-cagr">9.98%<small>CAGR</small></div>
-        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">CSI 300</span><span class="l-zh">沪深300</span> 7.9% · <b>2.4× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-cagr">9.97%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">CSI 300</span><span class="l-zh">沪深300</span> 7.75% · <b>2.5× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
         <div class="mm-meter"></div>
         <div class="mm-mets">
-          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.15</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.47</span></div>
+          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.15</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.46</span></div>
           <div><span class="mm-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="mm-v">-12.1%</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -45.5%</span></div>
           <div><span class="mm-k"><span class="l-en">Leverage</span><span class="l-zh">杠杆</span></span><span class="mm-v">0.73x</span><span class="mm-d">12.9y</span></div>
         </div>
@@ -615,11 +624,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <a class="mm-card" href="strategy_cnmm_aggressive.html" style="--accent:#a855f7;--pos:0.9">
         <span class="mm-glow"></span>
         <div class="mm-top"><span class="mm-ico">🚀</span><span class="mm-prof"><span class="l-en">Aggressive</span><span class="l-zh">进取</span></span></div>
-        <div class="mm-cagr">14.06%<small>CAGR</small></div>
-        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">CSI 300</span><span class="l-zh">沪深300</span> 7.9% · <b>2.3× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-cagr">14.04%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">CSI 300</span><span class="l-zh">沪深300</span> 7.75% · <b>2.3× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
         <div class="mm-meter"></div>
         <div class="mm-mets">
-          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.08</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.47</span></div>
+          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.08</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.46</span></div>
           <div><span class="mm-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="mm-v">-22.3%</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -45.5%</span></div>
           <div><span class="mm-k"><span class="l-en">Leverage</span><span class="l-zh">杠杆</span></span><span class="mm-v">1.36x</span><span class="mm-d">12.9y</span></div>
         </div>
@@ -642,8 +651,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </div>
       <p><span class="l-en">Diversification, not timing: a static income + gold + short-bond blend that roughly triples the Sharpe of CSI 300 and cuts...</span><span class="l-zh">靠分散而非择时：红利 + 黄金 + 短债的静态组合，夏普约为沪深300的三倍，回撤降至约四分之一。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">7.52%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 7.91%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">0.92</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.47</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">7.52%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 7.76%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">0.92</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.46</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-17.2%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -45.5%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">7.5%</span><span class="m-sub">13.0y</span></div>
       </div>
@@ -661,7 +670,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </div>
       <p><span class="l-en">China&#39;s #1 driver is the credit cycle, not price trend: own CSI 300 when the credit impulse is positive, step aside when i...</span><span class="l-zh">中国第一驱动力是信用周期而非价格趋势：信用脉冲为正时持有沪深300，收缩时退避——叠加轻量波动率护栏以应对慢宏观数据漏掉的恐慌。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">7.17%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 5.93%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v win">7.17%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 5.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.61</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.38</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-23.3%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -45.5%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.8%</span><span class="m-sub">14.2y</span></div>
@@ -680,7 +689,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </div>
       <p><span class="l-en">Moreira-Muir: scale exposure down when CSI 300&#39;s own realized volatility is elevated — a price-orthogonal signal that cuts...</span><span class="l-zh">Moreira-Muir：当沪深300自身已实现波动率升高时降低敞口——一个与价格正交的信号，可削减中国的深度熊市，又避免趋势择时在此频繁打脸。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">7.09%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 5.93%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v win">7.09%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 5.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.59</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.38</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-31.1%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -45.5%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.8%</span><span class="m-sub">14.2y</span></div>
@@ -699,7 +708,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </div>
       <p><span class="l-en">Two slow, fundamentals-based de-risk signals with no price input: lean out of CSI 300 when the credit impulse contracts AN...</span><span class="l-zh">两条慢节奏、基本面驱动、不含价格的降险信号：信用脉冲收缩且散户融资杠杆处于多年狂热极值（2015 年泡沫见顶信号）时减仓沪深300。本系列中回撤最浅。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">3.71%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 5.93%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">3.71%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 5.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.42</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.38</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-22.3%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -45.5%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.8%</span><span class="m-sub">14.2y</span></div>
@@ -713,7 +722,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   </div>
 
   <div class="foot">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-10 10:55 UTC<br>
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-10 14:47 UTC<br>
     <span class="made">© 2026 MastermindX Inc</span>
   </div>
 </div>

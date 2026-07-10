@@ -296,6 +296,7 @@
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
             <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
             <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
             <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
             <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
@@ -583,6 +584,23 @@
     border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:8px 0 2px; font-size:12.5px; }
   .sleeve-chip .sl-main b { font-weight:680; }
   .sleeve-chip .sl-tag { font-size:10.5px; font-style:italic; }
+
+  /* ---- W8-R5 CN basket turn-state chips (display-tier, expected-NULL; FT-R1) ---- */
+  /* Tape-state chip: inline, descriptive, no forward verbs. */
+  .tape-chip { font-size:9.5px; font-weight:700; letter-spacing:.04em; padding:1px 6px;
+    border-radius:5px; white-space:nowrap; border:1px solid; margin-left:3px; cursor:default; }
+  .tape-chip.TURNING  { color:var(--up);   border-color:var(--up);   background:rgba(34,197,94,.10); }
+  .tape-chip.CONFIRMED{ color:var(--up);   border-color:var(--up);   background:rgba(34,197,94,.16); }
+  .tape-chip.WASHED_OUT{ color:var(--warn);border-color:var(--warn); background:rgba(251,146,60,.10); }
+  .tape-chip.BASING   { color:var(--warn); border-color:var(--warn); background:rgba(251,146,60,.08); }
+  .tape-chip.FALLING  { color:var(--down); border-color:var(--down); background:rgba(248,113,113,.10); }
+  /* Dual-read chip: when trend DISAGREES with tape turn (FT-R1 — never merged) */
+  .dual-chip { display:inline-flex; align-items:center; gap:3px; font-size:9.5px; font-weight:700;
+    letter-spacing:.03em; padding:1px 6px; border-radius:5px; border:1px solid var(--warn);
+    background:rgba(251,146,60,.10); color:var(--text); cursor:default; white-space:nowrap; }
+  .dual-chip .dc-trend { color:var(--down); }
+  .dual-chip .dc-sep   { color:var(--muted); font-weight:400; }
+  .dual-chip .dc-tape  { color:var(--up); }
 </style>
 <div class="nav-ctrls" style="justify-content:flex-end;margin:4px 0 0">
     <div class="bell" id="theme-bell">
@@ -694,7 +712,10 @@
   </script>
   <section id="actnow-section" style="margin-top:6px">
     <h2><span class="idx">★</span>✅ <span class="l-en">What to act on now</span><span class="l-zh">现在该做什么</span>
-      <span class="sect-tag"><span class="l-en">buy now · wait for a pullback · reduce / avoid</span><span class="l-zh">立即买入 · 等待回调 · 减仓回避</span></span></h2>
+      <span class="sect-tag"><span class="l-en">buy now · wait for a pullback · reduce / avoid</span><span class="l-zh">立即买入 · 等待回调 · 减仓回避</span></span>
+      
+      <a href="china_stocks.html#act-now" style="font-size:12px;font-weight:600;color:var(--link);margin-left:10px;text-transform:none;letter-spacing:0;vertical-align:middle"><span class="l-en">stock board →</span><span class="l-zh">个股面板 →</span></a>
+    </h2>
     <p class="sub"><span class="l-en">Shortlist by action: buyable now, wait for a better entry, or reduce / avoid. Click a theme for its stocks.</span><span class="l-zh">按操作分组：当前可买、等待更好入场点、或减仓/回避。点击主题查看个股。</span></p>
     <div id="actnow"></div>
   </section>
@@ -766,7 +787,7 @@
 
   <footer>
     <span class="l-en">Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the S&amp;P/TSX Composite. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.</span><span class="l-zh">仅供参考，非投资建议。篮子等权重，并以标普/多伦多综合指数为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-10 10:58 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-10 14:50 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>
