@@ -1,183 +1,185 @@
 {
-  "date": "2026-07-08",
+  "date": "2026-07-10",
   "quad": "Q3",
   "quad_name": "Stagflation",
-  "growth_score": 0.143,
-  "inflation_score": 0.455,
-  "growth_confidence": 0.143,
-  "inflation_confidence": 0.227,
-  "confidence": 0.185,
+  "growth_score": -0.143,
+  "inflation_score": 0.091,
+  "growth_confidence": 0.095,
+  "inflation_confidence": 0.061,
+  "confidence": 0.078,
   "liquidity_overlay": "neutral",
   "cycle_tag": "mid",
-  "pending_quad": "Q2",
-  "pending_days": 4,
+  "pending_quad": NaN,
+  "pending_days": 0,
   "confirming": [
-    "growth_indpro_trend",
-    "growth_smallcap_largecap",
+    "growth_cyclical_defensive",
     "inflation_ppi_direction"
   ],
   "contradicting": [
+    "growth_indpro_trend",
+    "growth_smallcap_largecap",
+    "inflation_cpi_direction",
     "inflation_inflation_beta_basket"
   ],
   "sector_rs": [
     {
       "ticker": "512760.SS",
       "name": "Semiconductors",
-      "rs": 0.29428928353674444,
-      "mom_20d_pct": 26.47,
-      "mom_60d_pct": 62.11,
+      "rs": 0.2998550332092543,
+      "mom_20d_pct": 26.97,
+      "mom_60d_pct": 64.3,
       "above_200d_trend": false,
-      "pctile_252d": 38.1,
+      "pctile_252d": 40.9,
       "rank": 1
     },
     {
       "ticker": "515000.SS",
       "name": "Technology",
-      "rs": 0.31471447163052374,
-      "mom_20d_pct": 9.5,
-      "mom_60d_pct": 39.02,
+      "rs": 0.320149100235239,
+      "mom_20d_pct": 13.0,
+      "mom_60d_pct": 39.06,
       "above_200d_trend": true,
-      "pctile_252d": 76.2,
+      "pctile_252d": 78.2,
       "rank": 2
     },
     {
       "ticker": "512880.SS",
       "name": "Securities & Brokers",
-      "rs": 0.2315548091930788,
-      "mom_20d_pct": 11.19,
-      "mom_60d_pct": 2.68,
+      "rs": 0.2298612580621176,
+      "mom_20d_pct": 8.34,
+      "mom_60d_pct": -0.53,
       "above_200d_trend": false,
-      "pctile_252d": 25.8,
+      "pctile_252d": 23.0,
       "rank": 3
-    },
-    {
-      "ticker": "512800.SS",
-      "name": "Banks",
-      "rs": 0.16048353555184858,
-      "mom_20d_pct": -2.21,
-      "mom_60d_pct": -6.89,
-      "above_200d_trend": false,
-      "pctile_252d": 13.5,
-      "rank": 4
     },
     {
       "ticker": "159992.SZ",
       "name": "Innovative Drugs",
-      "rs": 0.16923718226797793,
-      "mom_20d_pct": 15.2,
-      "mom_60d_pct": -8.43,
+      "rs": 0.17705529504015297,
+      "mom_20d_pct": 17.16,
+      "mom_60d_pct": -2.53,
       "above_200d_trend": false,
-      "pctile_252d": 16.3,
-      "rank": 5
+      "pctile_252d": 32.5,
+      "rank": 4
     },
     {
-      "ticker": "515220.SS",
-      "name": "Coal",
-      "rs": 0.23780743351187397,
-      "mom_20d_pct": -15.61,
-      "mom_60d_pct": -8.86,
+      "ticker": "512800.SS",
+      "name": "Banks",
+      "rs": 0.15883206050035611,
+      "mom_20d_pct": -5.91,
+      "mom_60d_pct": -6.35,
       "above_200d_trend": false,
-      "pctile_252d": 31.7,
-      "rank": 6
+      "pctile_252d": 11.5,
+      "rank": 5
     },
     {
       "ticker": "515250.SS",
       "name": "Automobiles",
-      "rs": 0.21300541584862456,
-      "mom_20d_pct": -3.39,
-      "mom_60d_pct": -9.24,
+      "rs": 0.2151584251714723,
+      "mom_20d_pct": 1.92,
+      "mom_60d_pct": -7.92,
       "above_200d_trend": false,
-      "pctile_252d": 3.6,
-      "rank": 7
-    },
-    {
-      "ticker": "515030.SS",
-      "name": "New-Energy Vehicle",
-      "rs": 0.35848271763398126,
-      "mom_20d_pct": -7.48,
-      "mom_60d_pct": -11.69,
-      "above_200d_trend": false,
-      "pctile_252d": 21.4,
-      "rank": 8
+      "pctile_252d": 6.7,
+      "rank": 6
     },
     {
       "ticker": "512660.SS",
       "name": "Defense & Military",
-      "rs": 0.2540641971112493,
-      "mom_20d_pct": -0.72,
-      "mom_60d_pct": -12.2,
+      "rs": 0.2652723170701482,
+      "mom_20d_pct": 3.39,
+      "mom_60d_pct": -8.66,
       "above_200d_trend": false,
-      "pctile_252d": 3.2,
-      "rank": 9
+      "pctile_252d": 30.6,
+      "rank": 7
     },
     {
       "ticker": "512170.SS",
       "name": "Healthcare",
-      "rs": 0.06335973304870189,
-      "mom_20d_pct": 4.72,
-      "mom_60d_pct": -13.79,
+      "rs": 0.06543798194101458,
+      "mom_20d_pct": 6.11,
+      "mom_60d_pct": -9.13,
       "above_200d_trend": false,
-      "pctile_252d": 8.7,
+      "pctile_252d": 13.5,
+      "rank": 8
+    },
+    {
+      "ticker": "515220.SS",
+      "name": "Coal",
+      "rs": 0.23172498631648183,
+      "mom_20d_pct": -15.96,
+      "mom_60d_pct": -10.61,
+      "above_200d_trend": false,
+      "pctile_252d": 25.4,
+      "rank": 9
+    },
+    {
+      "ticker": "512200.SS",
+      "name": "Real Estate",
+      "rs": 0.2518119614537046,
+      "mom_20d_pct": -5.05,
+      "mom_60d_pct": -13.87,
+      "above_200d_trend": false,
+      "pctile_252d": 6.3,
       "rank": 10
     },
     {
-      "ticker": "515790.SS",
-      "name": "Solar & Photovoltaic",
-      "rs": 0.18736974061667827,
-      "mom_20d_pct": -10.82,
-      "mom_60d_pct": -15.77,
+      "ticker": "515030.SS",
+      "name": "New-Energy Vehicle",
+      "rs": 0.3460343767104398,
+      "mom_20d_pct": -10.41,
+      "mom_60d_pct": -17.7,
       "above_200d_trend": false,
       "pctile_252d": 20.6,
       "rank": 11
     },
     {
-      "ticker": "512200.SS",
-      "name": "Real Estate",
-      "rs": 0.2453105628179308,
-      "mom_20d_pct": -6.27,
-      "mom_60d_pct": -15.93,
+      "ticker": "159928.SZ",
+      "name": "Consumer Staples",
+      "rs": 0.13087596388202916,
+      "mom_20d_pct": -4.34,
+      "mom_60d_pct": -18.17,
       "above_200d_trend": false,
-      "pctile_252d": 4.0,
+      "pctile_252d": 6.7,
       "rank": 12
     },
     {
-      "ticker": "159928.SZ",
-      "name": "Consumer Staples",
-      "rs": 0.13026261325255525,
-      "mom_20d_pct": -2.38,
-      "mom_60d_pct": -20.27,
+      "ticker": "515790.SS",
+      "name": "Solar & Photovoltaic",
+      "rs": 0.18575274704711997,
+      "mom_20d_pct": -11.57,
+      "mom_60d_pct": -18.17,
       "above_200d_trend": false,
-      "pctile_252d": 5.2,
-      "rank": 13
+      "pctile_252d": 18.7,
+      "rank": 12
     },
     {
       "ticker": "512400.SS",
       "name": "Nonferrous Metals",
-      "rs": 0.3647353171071547,
-      "mom_20d_pct": -5.82,
-      "mom_60d_pct": -20.71,
+      "rs": 0.36363637261313575,
+      "mom_20d_pct": -8.1,
+      "mom_60d_pct": -19.29,
       "above_200d_trend": false,
-      "pctile_252d": 31.3,
+      "pctile_252d": 29.8,
       "rank": 14
     },
     {
       "ticker": "512980.SS",
       "name": "Media",
-      "rs": 0.16840351227647016,
-      "mom_20d_pct": -6.37,
-      "mom_60d_pct": -23.92,
+      "rs": 0.17353489339100142,
+      "mom_20d_pct": 0.18,
+      "mom_60d_pct": -19.67,
       "above_200d_trend": false,
-      "pctile_252d": 5.6,
+      "pctile_252d": 8.3,
       "rank": 15
     },
     {
       "ticker": "512690.SS",
       "name": "Baijiu & Liquor",
-      "rs": 0.08128386768811986,
-      "mom_20d_pct": -6.82,
-      "mom_60d_pct": -24.16,
+      "rs": 0.08221164114631692,
+      "mom_20d_pct": -7.88,
+      "mom_60d_pct": -21.79,
       "above_200d_trend": false,
-      "pctile_252d": 4.8,
+      "pctile_252d": 6.0,
       "rank": 16
     }
   ],
@@ -191,30 +193,30 @@
     ],
     "actual_ranks": {
       "512400.SS": 14,
-      "515220.SS": 6,
-      "512800.SS": 4,
-      "159928.SZ": 13
+      "515220.SS": 9,
+      "512800.SS": 5,
+      "159928.SZ": 12
     },
-    "agreement": 0.5,
-    "disagreement_flag": false,
-    "note": "framework and tape agree"
+    "agreement": 0.25,
+    "disagreement_flag": true,
+    "note": "tape disagrees with framework-preferred sectors \u2014 treat as a transition signal"
   },
   "pair_ratios": {
     "cyc_def": {
-      "level": 1.3167,
-      "chg_20d_pct": -1.67
+      "level": 1.3027,
+      "chg_20d_pct": -3.36
     },
     "infl_basket": {
-      "level": 1.759,
-      "chg_20d_pct": -18.22
+      "level": 1.7028,
+      "chg_20d_pct": -24.38
     },
     "smallcap_largecap": {
-      "level": 1.7822,
-      "chg_20d_pct": 4.35
+      "level": 1.8012,
+      "chg_20d_pct": 5.29
     },
     "usdcny": {
-      "level": 6.7872,
-      "chg_20d_pct": 0.22
+      "level": 6.7642,
+      "chg_20d_pct": -0.17
     }
   },
   "property": {
@@ -224,128 +226,116 @@
     "home_price_breadth_6m_trend": 15,
     "climate_index": 91.45,
     "climate_trend": "falling",
-    "construction_demand_z": -0.7,
-    "cgb_10y": 1.738,
-    "cgb_10y2y_slope": 0.489,
-    "cgb_10y_chg_6m": -0.109,
-    "property_etf_drawdown": -35.7,
+    "construction_demand_z": -0.57,
+    "cgb_10y": 1.74,
+    "cgb_10y2y_slope": 0.478,
+    "cgb_10y_chg_6m": -0.119,
+    "property_etf_drawdown": -33.6,
     "note": "display/context only \u2014 A-shares mean-revert, not a scored signal"
   },
   "market_drivers": {
-    "asof": "2026-07-08",
+    "asof": "2026-07-10",
     "window_d": 5,
-    "verdict": "mixed",
-    "verdict_zh": "\u6df7\u5408",
-    "primary": "china_stimulus",
-    "primary_label": "Stimulus tape",
-    "primary_label_zh": "\u523a\u6fc0\u884c\u60c5",
-    "direction": "stimulus-off \u2014 CSI300, brokers, property & copper/rebar lead down",
-    "direction_zh": "\u523a\u6fc0\u9000\u6f6e \u2014 \u6caa\u6df1300\u3001\u5238\u5546\u3001\u5730\u4ea7\u4e0e\u94dc/\u87ba\u7eb9\u9886\u8dcc",
-    "dir_sign": -1,
+    "verdict": "clear",
+    "verdict_zh": "\u660e\u786e",
+    "primary": "southbound_appetite",
+    "primary_label": "Southbound / mainland appetite",
+    "primary_label_zh": "\u5357\u5411/\u5185\u8d44\u504f\u597d",
+    "direction": "mainland risk-on \u2014 southbound buying HK, AH premium narrowing",
+    "direction_zh": "\u5185\u8d44\u504f\u597d\u98ce\u9669 \u2014 \u5357\u5411\u4e70\u5165\u6e2f\u80a1\u3001AH\u6ea2\u4ef7\u6536\u7a84",
+    "dir_sign": 1,
     "confidence": "low",
     "confidence_zh": "\u4f4e",
-    "strength": 0.96,
-    "dominance_ratio": 1.08,
-    "agreement": 0.66,
-    "runner_up": "cny_shock",
-    "runner_up_label": "Yuan (CNH) shock",
-    "runner_up_label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
-    "headline": "Mixed \u2014 Stimulus tape + Yuan (CNH) shock jointly leading (CSI 300 -2.2\u03c3, brokers -1.9\u03c3, real estate -0.9\u03c3); no single dominant driver.",
+    "strength": 0.75,
+    "dominance_ratio": 1.42,
+    "agreement": 1.0,
+    "runner_up": "inflation_commodities",
+    "runner_up_label": "Inflation / commodities",
+    "runner_up_label_zh": "\u901a\u80c0/\u5927\u5b97",
+    "headline": "Southbound / mainland appetite \u2014 mainland risk-on \u2014 southbound buying HK, AH premium narrowing. southbound flow +1.1\u03c3.",
     "evidence": [
-      "CSI 300 -2.2\u03c3",
-      "brokers -1.9\u03c3",
-      "real estate -0.9\u03c3"
+      "southbound flow +1.1\u03c3"
     ],
     "evidence_legs": [
       {
-        "en": "CSI 300",
-        "zh": "\u6caa\u6df1300",
-        "z": -2.2
-      },
-      {
-        "en": "brokers",
-        "zh": "\u5238\u5546",
-        "z": -1.9
-      },
-      {
-        "en": "real estate",
-        "zh": "\u623f\u5730\u4ea7",
-        "z": -0.9
+        "en": "southbound flow",
+        "zh": "\u5357\u5411\u8d44\u91d1",
+        "z": 1.1
       }
     ],
-    "invalidation": "Fades if CSI 300 reverses and the rest of the growth fingerprint stops confirming.",
-    "invalidation_zh": "\u82e5\u6caa\u6df1300\u53cd\u8f6c\u3001\u4e14\u589e\u957f\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
+    "invalidation": "Fades if southbound flow reverses and the rest of the flows fingerprint stops confirming.",
+    "invalidation_zh": "\u82e5\u5357\u5411\u8d44\u91d1\u53cd\u8f6c\u3001\u4e14\u8d44\u91d1\u6d41\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
     "scores": [
-      {
-        "driver": "china_stimulus",
-        "label": "Stimulus tape",
-        "label_zh": "\u523a\u6fc0\u884c\u60c5",
-        "family": "growth",
-        "projection": -0.96,
-        "strength": 0.96,
-        "direction": "stimulus-off \u2014 CSI300, brokers, property & copper/rebar lead down"
-      },
-      {
-        "driver": "cny_shock",
-        "label": "Yuan (CNH) shock",
-        "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
-        "family": "fx",
-        "projection": 0.89,
-        "strength": 0.89,
-        "direction": "yuan weakening \u2014 CNH up, capital-outflow stress, equities pressured"
-      },
       {
         "driver": "southbound_appetite",
         "label": "Southbound / mainland appetite",
         "label_zh": "\u5357\u5411/\u5185\u8d44\u504f\u597d",
         "family": "flows",
-        "projection": 0.71,
-        "strength": 0.71,
+        "projection": 0.75,
+        "strength": 0.75,
         "direction": "mainland risk-on \u2014 southbound buying HK, AH premium narrowing"
-      },
-      {
-        "driver": "ai_semis",
-        "label": "AI / semis leadership",
-        "label_zh": "AI/\u534a\u5bfc\u4f53\u9886\u6da8",
-        "family": "equity-leadership",
-        "projection": -0.7,
-        "strength": 0.7,
-        "direction": "AI/semis unwind \u2014 tech-led de-rating"
-      },
-      {
-        "driver": "liquidity_impulse",
-        "label": "Liquidity impulse",
-        "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
-        "family": "liquidity",
-        "projection": -0.28,
-        "strength": 0.28,
-        "direction": "domestic liquidity draining \u2014 M1/M2 down, overnight dear, small-caps & margin sold"
       },
       {
         "driver": "inflation_commodities",
         "label": "Inflation / commodities",
         "label_zh": "\u901a\u80c0/\u5927\u5b97",
         "family": "inflation",
-        "projection": -0.27,
-        "strength": 0.27,
+        "projection": -0.52,
+        "strength": 0.52,
         "direction": "upstream disinflation \u2014 PPI, coal, nonferrous & oil lead down"
+      },
+      {
+        "driver": "cny_shock",
+        "label": "Yuan (CNH) shock",
+        "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
+        "family": "fx",
+        "projection": 0.34,
+        "strength": 0.34,
+        "direction": "yuan weakening \u2014 CNH up, capital-outflow stress, equities pressured"
       },
       {
         "driver": "risk_off_washout",
         "label": "Risk-off / washout",
         "label_zh": "\u907f\u9669/\u6050\u614c\u51fa\u6e05",
         "family": "volatility",
-        "projection": 0.08,
-        "strength": 0.08,
-        "direction": "fear spike \u2014 QVIX up, breadth collapsing, limit-downs surge"
+        "projection": -0.23,
+        "strength": 0.23,
+        "direction": "fear unwind \u2014 QVIX down, breadth recovering, limit-downs fade"
+      },
+      {
+        "driver": "china_stimulus",
+        "label": "Stimulus tape",
+        "label_zh": "\u523a\u6fc0\u884c\u60c5",
+        "family": "growth",
+        "projection": -0.23,
+        "strength": 0.23,
+        "direction": "stimulus-off \u2014 CSI300, brokers, property & copper/rebar lead down"
+      },
+      {
+        "driver": "ai_semis",
+        "label": "AI / semis leadership",
+        "label_zh": "AI/\u534a\u5bfc\u4f53\u9886\u6da8",
+        "family": "equity-leadership",
+        "projection": 0.18,
+        "strength": 0.18,
+        "direction": "AI/semis leadership \u2014 narrow tech-led tape"
+      },
+      {
+        "driver": "liquidity_impulse",
+        "label": "Liquidity impulse",
+        "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
+        "family": "liquidity",
+        "projection": -0.17,
+        "strength": 0.17,
+        "direction": "domestic liquidity draining \u2014 M1/M2 down, overnight dear, small-caps & margin sold"
       },
       {
         "driver": "pboc_repricing",
         "label": "PBoC / rates repricing",
         "label_zh": "\u592e\u884c/\u5229\u7387\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": -0.06,
-        "strength": 0.06,
+        "projection": -0.17,
+        "strength": 0.17,
         "direction": "rates repricing easier \u2014 SHIBOR & CGB yields down, liquidity added"
       }
     ],
@@ -353,73 +343,73 @@
   },
   "conditions": {
     "roro": {
-      "roro": 0.029,
-      "roro_raw": 0.029,
+      "roro": -0.077,
+      "roro_raw": -0.077,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 1.735,
-      "china_roro_breadth": -0.838,
-      "china_roro_southbound": 1.113,
-      "china_roro_m1_m2": 0.017,
-      "china_roro_turnover": 0.301,
-      "china_roro_qvix": -0.879,
-      "china_roro_usdcnh": -0.719,
-      "china_roro_margin": -0.5,
+      "china_roro_copper_gold": 2.028,
+      "china_roro_breadth": -0.945,
+      "china_roro_southbound": -1.048,
+      "china_roro_m1_m2": 0.016,
+      "china_roro_turnover": 0.903,
+      "china_roro_qvix": -0.609,
+      "china_roro_usdcnh": -0.471,
+      "china_roro_margin": -0.493,
       "china_roro_ah_premium": null,
       "legs": [
         {
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.735,
+          "value": 2.028,
           "lean": "risk-on"
         },
         {
           "key": "breadth",
           "name_en": "Breadth (% > 50d)",
           "name_zh": "\u5e02\u573a\u5bbd\u5ea6\uff08>50\u65e5\uff09",
-          "value": -0.838,
+          "value": -0.945,
           "lean": "risk-off"
         },
         {
           "key": "southbound",
           "name_en": "Southbound smart-money",
           "name_zh": "\u5357\u5411\u8d44\u91d1",
-          "value": 1.113,
-          "lean": "risk-on"
+          "value": -1.048,
+          "lean": "risk-off"
         },
         {
           "key": "m1_m2",
           "name_en": "M1\u2212M2 scissors",
           "name_zh": "M1\u2212M2 \u526a\u5200\u5dee",
-          "value": 0.017,
+          "value": 0.016,
           "lean": "risk-on"
         },
         {
           "key": "turnover",
           "name_en": "Turnover band",
           "name_zh": "\u6210\u4ea4\u6d3b\u8dc3\u5ea6",
-          "value": 0.301,
+          "value": 0.903,
           "lean": "risk-on"
         },
         {
           "key": "qvix",
           "name_en": "QVIX fear (300)",
           "name_zh": "QVIX \u6050\u614c\uff08300\uff09",
-          "value": -0.879,
+          "value": -0.609,
           "lean": "risk-off"
         },
         {
           "key": "usdcnh",
           "name_en": "Offshore yuan (20d)",
           "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-          "value": -0.719,
+          "value": -0.471,
           "lean": "risk-off"
         },
         {
           "key": "margin",
           "name_en": "Margin froth",
           "name_zh": "\u878d\u8d44\u62e5\u6324\u5ea6",
-          "value": -0.5,
+          "value": -0.493,
           "lean": "risk-off"
         }
       ]
@@ -497,7 +487,7 @@
       "note_zh": "\u5df2\u752820\u5e74A\u80a1\u524d\u77bb\u6570\u636e\u6821\u51c6\uff1a\u65e0\u524d\u77bb\u56de\u64a4\u4f18\u52bf\uff08A\u80a1\u5747\u503c\u56de\u5f52 \u2014\u2014 \u9ad8\u8bfb\u6570\u504f\u5e73/\u9006\u5411\uff09\uff1b\u533a\u95f4\u4e3a\u5386\u53f2\u5206\u4f4d\u951a\u5b9a\u3002\u63cf\u8ff0\u6027\u80cc\u666f\uff0c\u4ece\u4e0d\u8ba1\u5165\u8bc4\u5206\u3002"
     },
     "drawdown_risk": {
-      "score": 42.9,
+      "score": 42.7,
       "band": "low",
       "uncalibrated": false,
       "calibrated": true,
@@ -511,8 +501,6 @@
     "charts": {
       "roro": {
         "dates": [
-          "2023-07-04",
-          "2023-07-05",
           "2023-07-06",
           "2023-07-07",
           "2023-07-10",
@@ -1297,11 +1285,11 @@
           "2026-07-03",
           "2026-07-06",
           "2026-07-07",
-          "2026-07-08"
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10"
         ],
         "vals": [
-          -0.197,
-          0.12,
           -0.232,
           -0.441,
           -0.354,
@@ -2066,18 +2054,18 @@
           0.021,
           0.052,
           -0.163,
-          0.174,
-          -0.041,
-          0.177,
-          0.29,
-          0.35,
-          0.116,
+          0.166,
+          -0.05,
+          0.169,
+          0.284,
+          0.344,
+          0.109,
           0.003,
           0.12,
-          0.157,
+          0.15,
           0.115,
           0.123,
-          -0.094,
+          -0.093,
           -0.118,
           -0.193,
           0.029,
@@ -2085,14 +2073,14 @@
           -0.063,
           0.06,
           0.338,
-          -0.19,
-          0.029
+          -0.189,
+          -0.002,
+          0.009,
+          -0.077
         ]
       },
       "recession": {
         "dates": [
-          "2023-07-04",
-          "2023-07-05",
           "2023-07-06",
           "2023-07-07",
           "2023-07-10",
@@ -2877,7 +2865,9 @@
           "2026-07-03",
           "2026-07-06",
           "2026-07-07",
-          "2026-07-08"
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10"
         ],
         "vals": [
           70.1,
@@ -2898,8 +2888,6 @@
           70.1,
           70.1,
           70.1,
-          70.1,
-          70.1,
           66.1,
           66.1,
           66.1,
@@ -3659,6 +3647,8 @@
           45.3,
           45.3,
           45.3,
+          37.8,
+          37.8,
           37.8,
           37.8,
           37.8,
@@ -3671,8 +3661,6 @@
       },
       "drawdown": {
         "dates": [
-          "2023-07-04",
-          "2023-07-05",
           "2023-07-06",
           "2023-07-07",
           "2023-07-10",
@@ -4457,11 +4445,11 @@
           "2026-07-03",
           "2026-07-06",
           "2026-07-07",
-          "2026-07-08"
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10"
         ],
         "vals": [
-          29.3,
-          26.5,
           27.1,
           25.1,
           25.1,
@@ -5246,13 +5234,13 @@
           48.0,
           43.2,
           43.6,
-          42.9
+          43.4,
+          43.7,
+          42.7
         ]
       },
       "fear_euphoria": {
         "dates": [
-          "2023-07-04",
-          "2023-07-05",
           "2023-07-06",
           "2023-07-07",
           "2023-07-10",
@@ -6037,11 +6025,11 @@
           "2026-07-03",
           "2026-07-06",
           "2026-07-07",
-          "2026-07-08"
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10"
         ],
         "vals": [
-          33.4,
-          62.6,
           30.2,
           15.8,
           21.9,
@@ -6806,27 +6794,29 @@
           60.6,
           64.4,
           42.2,
-          78.0,
-          54.0,
-          78.4,
-          86.6,
-          90.4,
-          71.3,
-          57.9,
+          77.3,
+          53.2,
+          77.6,
+          86.3,
+          89.9,
+          70.7,
+          58.0,
           72.2,
-          75.2,
-          71.2,
-          72.4,
-          48.5,
+          74.7,
+          71.3,
+          72.5,
+          48.6,
           46.0,
           38.7,
           61.3,
-          64.9,
-          51.8,
+          65.0,
+          52.0,
           65.3,
           89.1,
           39.3,
-          61.4
+          57.8,
+          58.8,
+          50.6
         ]
       }
     },
@@ -6834,17 +6824,17 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated recession/drawdown gauges; never feeds china_axes / china_regime / china_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 61,
+    "fe_score": 51,
     "band": "Neutral",
     "band_zh": "\u4e2d\u6027",
-    "roro": 0.029,
+    "roro": -0.077,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.735,
+        "value": 2.028,
         "pct": 99,
         "lean": "risk-on"
       },
@@ -6852,92 +6842,75 @@
         "key": "breadth",
         "name_en": "Breadth (% > 50d)",
         "name_zh": "\u5e02\u573a\u5bbd\u5ea6\uff08>50\u65e5\uff09",
-        "value": -0.838,
-        "pct": 29,
+        "value": -0.945,
+        "pct": 24,
         "lean": "risk-off"
       },
       {
         "key": "southbound",
         "name_en": "Southbound smart-money",
         "name_zh": "\u5357\u5411\u8d44\u91d1",
-        "value": 1.113,
-        "pct": 85,
-        "lean": "risk-on"
+        "value": -1.048,
+        "pct": 11,
+        "lean": "risk-off"
       },
       {
         "key": "m1_m2",
         "name_en": "M1\u2212M2 scissors",
         "name_zh": "M1\u2212M2 \u526a\u5200\u5dee",
-        "value": 0.017,
-        "pct": 60,
+        "value": 0.016,
+        "pct": 59,
         "lean": "risk-on"
       },
       {
         "key": "turnover",
         "name_en": "Turnover band",
         "name_zh": "\u6210\u4ea4\u6d3b\u8dc3\u5ea6",
-        "value": 0.301,
-        "pct": 56,
+        "value": 0.903,
+        "pct": 76,
         "lean": "risk-on"
       },
       {
         "key": "qvix",
         "name_en": "QVIX fear (300)",
         "name_zh": "QVIX \u6050\u614c\uff08300\uff09",
-        "value": -0.879,
-        "pct": 18,
+        "value": -0.609,
+        "pct": 23,
         "lean": "risk-off"
       },
       {
         "key": "usdcnh",
         "name_en": "Offshore yuan (20d)",
         "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-        "value": -0.719,
-        "pct": 17,
+        "value": -0.471,
+        "pct": 24,
         "lean": "risk-off"
       },
       {
         "key": "margin",
         "name_en": "Margin froth",
         "name_zh": "\u878d\u8d44\u62e5\u6324\u5ea6",
-        "value": -0.5,
-        "pct": 1,
+        "value": -0.493,
+        "pct": 9,
         "lean": "risk-off"
       }
     ],
     "confirmation": {
-      "n_on": 4,
-      "n_off": 4,
+      "n_on": 3,
+      "n_off": 5,
       "total": 8,
-      "agree": 4,
-      "direction": "split",
+      "agree": 5,
+      "direction": "risk-off",
       "confirmed_by": [
         {
-          "key": "copper_gold",
-          "en": "Copper / Gold",
-          "zh": "\u94dc\uff0f\u91d1 \u6bd4"
+          "key": "breadth",
+          "en": "Breadth (% > 50d)",
+          "zh": "\u5e02\u573a\u5bbd\u5ea6\uff08>50\u65e5\uff09"
         },
         {
           "key": "southbound",
           "en": "Southbound smart-money",
           "zh": "\u5357\u5411\u8d44\u91d1"
-        },
-        {
-          "key": "m1_m2",
-          "en": "M1\u2212M2 scissors",
-          "zh": "M1\u2212M2 \u526a\u5200\u5dee"
-        },
-        {
-          "key": "turnover",
-          "en": "Turnover band",
-          "zh": "\u6210\u4ea4\u6d3b\u8dc3\u5ea6"
-        }
-      ],
-      "dissent": [
-        {
-          "key": "breadth",
-          "en": "Breadth (% > 50d)",
-          "zh": "\u5e02\u573a\u5bbd\u5ea6\uff08>50\u65e5\uff09"
         },
         {
           "key": "qvix",
@@ -6955,27 +6928,28 @@
           "zh": "\u878d\u8d44\u62e5\u6324\u5ea6"
         }
       ],
-      "verdict_en": "divergent (split)",
-      "verdict_zh": "\u80cc\u79bb\uff08\u5bf9\u534a\uff09"
+      "dissent": [
+        {
+          "key": "copper_gold",
+          "en": "Copper / Gold",
+          "zh": "\u94dc\uff0f\u91d1 \u6bd4"
+        },
+        {
+          "key": "m1_m2",
+          "en": "M1\u2212M2 scissors",
+          "zh": "M1\u2212M2 \u526a\u5200\u5dee"
+        },
+        {
+          "key": "turnover",
+          "en": "Turnover band",
+          "zh": "\u6210\u4ea4\u6d3b\u8dc3\u5ea6"
+        }
+      ],
+      "verdict_en": "divergent (no consensus)",
+      "verdict_zh": "\u80cc\u79bb\uff08\u65e0\u5171\u8bc6\uff09"
     },
     "warming_up": false,
-    "history_days": 7509
+    "history_days": 7511
   },
-  "alerts": [
-    {
-      "rule": "china_regime_transition",
-      "severity": "warn",
-      "message": "Regime watch: evidence building toward Reflation (Q2) \u2014 4 day(s) so far; the quad label flips after 7",
-      "message_zh": "\u5468\u671f\u9884\u8b66\uff1a\u8bc1\u636e\u6b63\u5728\u7d2f\u79ef\uff0c\u6307\u5411 \u518d\u901a\u80c0\uff08Q2\uff09\u2014 \u5df2\u6301\u7eed 4 \u5929\uff1b\u6807\u7b7e\u5c06\u5728\u7b2c 7 \u5929\u7ffb\u8f6c",
-      "icon": "\ud83e\udded",
-      "plain_en": "Regime radar moved \u2014 the A-share quad may be flipping",
-      "plain_zh": "\u5468\u671f\u96f7\u8fbe\u53d8\u52a8 \u2014 A \u80a1\u8c61\u9650\u53ef\u80fd\u6b63\u5728\u7ffb\u8f6c",
-      "what_en": "The growth/inflation quad is built from a stable label plus a \"pending\" reading that has to hold a week before the label flips. Evidence is now stacking toward a new quad. A cue to re-check your tilt before it confirms \u2014 not a trade on its own.",
-      "what_zh": "\u589e\u957f\uff0f\u901a\u80c0\u8c61\u9650\u7531\u7a33\u5b9a\u6807\u7b7e\u52a0\u4e0a\u4e00\u4e2a\u9700\u6301\u7eed\u4e00\u5468\u624d\u7ffb\u8f6c\u7684\u300c\u5f85\u5b9a\u300d\u8bfb\u6570\u6784\u6210\u3002\u8bc1\u636e\u6b63\u5728\u7d2f\u79ef\u6307\u5411\u65b0\u7684\u8c61\u9650\u3002\u8fd9\u662f\u5728\u786e\u8ba4\u524d\u91cd\u65b0\u68c0\u89c6\u914d\u7f6e\u7684\u63d0\u793a \u2014 \u672c\u8eab\u5e76\u975e\u4ea4\u6613\u4fe1\u53f7\u3002",
-      "anchor": "regime-radar",
-      "tier": "act",
-      "edge_en": "High \u2014 a quad shift re-prices the sector tilt downstream.",
-      "edge_zh": "\u9ad8 \u2014 \u8c61\u9650\u8f6c\u53d8\u4f1a\u91cd\u65b0\u5b9a\u4ef7\u5176\u4e0b\u6e38\u7684\u677f\u5757\u914d\u7f6e\u3002"
-    }
-  ]
+  "alerts": []
 }
