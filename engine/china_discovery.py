@@ -13,8 +13,8 @@ per-name LEADING feeds DIRECTLY for accumulation that precedes a radar/price rea
 
 A name showing ≥2 of these leading legs BEFORE the radar/price confirms is the
 pre-consensus setup. Each candidate is tagged off_desk (no surface flagged it —
-not in basket_spine members ∪ altdata convergence keys) so the hub can inject the
-off-desk names as bounded discovery dossiers.
+not in basket_spine members [curated ∪ THS concept boards] ∪ altdata convergence
+keys) so the hub can inject the off-desk names as bounded discovery dossiers.
 
 CONTEXT-ONLY · DEGRADE-NEVER-RAISE · LEAF · KEYLESS. Every public fn returns plain
 data and never raises into a build. Nothing here scores or sizes an allocation; it
@@ -275,12 +275,13 @@ def _runup_haircut(ticker: str) -> float:
 
 @lru_cache(maxsize=1)
 def _bundle_universe() -> frozenset:
-    """Names ALREADY on a desk = basket_spine members ∪ altdata convergence keys.
-    A candidate not in here is OFF-DESK. frozenset() on failure (→ everything off-desk)."""
+    """Names ALREADY on a desk = basket_spine members (curated ∪ THS concept boards)
+    ∪ altdata convergence keys. A candidate not in here is OFF-DESK. frozenset() on
+    failure (→ everything off-desk)."""
     uni: set[str] = set()
     try:
         from engine import china_basket_spine as spine
-        uni |= {str(t) for t in spine.ticker_to_basket().keys()}
+        uni |= {str(t) for t in spine.member_tickers_all()}
     except Exception as e:  # noqa: BLE001
         log.debug("china_discovery: spine universe failed (%s)", e)
     try:
@@ -304,7 +305,8 @@ def _name_for(ticker: str) -> str | None:
 
 def build(today: date | None = None) -> dict:
     """Scan the four LEADING per-name feeds, surface names with ≥2 legs, score each, and
-    tag off_desk (not in basket_spine members ∪ altdata convergence keys). Never raises.
+    tag off_desk (not in basket_spine members [curated ∪ THS] ∪ altdata convergence keys).
+    Never raises.
 
     disc_score = weighted mean of the present leading legs × (0.6 + 0.4·runup_haircut),
     legs: 0.34·inst_accum + 0.24·block_premium + 0.22·buyback(cap .40) + 0.20·attention_rising.

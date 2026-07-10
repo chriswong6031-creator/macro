@@ -3,6 +3,14 @@ from __future__ import annotations
 
 from engine import china_basket_spine as sp
 from engine import china_conviction as cv
+from lib import config
+
+
+def _clear_spine_caches():
+    for fn in (sp._baskets, sp._ths_baskets, sp.etf_to_basket, sp.ticker_to_basket,
+               sp._ticker_names, sp._ths_ticker_names, sp.ths_ticker_to_baskets,
+               sp.member_tickers_all):
+        fn.cache_clear()
 
 
 # ---- spine (reads live membership.json) ------------------------------------ #
@@ -33,6 +41,70 @@ def test_cn_property_absent():
     # the dead basket flagged in the audit must not exist in the spine
     assert "cn_property" not in sp.basket_ids()
     assert sp.basket_members("cn_property") == []
+
+
+# ---- THS concept-board layer (reads live baskets_china_ths/membership.json) - #
+def test_ths_ticker_to_baskets_multi_membership():
+    t2b = sp.ths_ticker_to_baskets()
+    # 603129.SS (春风动力) lives ONLY in THS boards — the "603129-hole" this layer closes
+    bids = t2b.get("603129.SS", [])
+    assert "thsc309127" in bids and "thsc301248" in bids   # THS Global 50 + Two-Wheelers
+    # ...and the curated map must NOT have silently absorbed THS membership
+    assert sp.ticker_to_basket().get("603129.SS") is None
+
+
+def test_ths_basket_members_and_label():
+    assert "300474.SZ" in sp.ths_basket_members("ths_ai")
+    assert sp.ths_basket_members("nope") == []
+    en, zh = sp.ths_basket_label("thsc301248")
+    assert en == "Two-Wheelers" and zh == "两轮车"
+    assert sp.ths_basket_label("unknown") == ("unknown", "unknown")
+
+
+def test_ths_no_etf_bridge():
+    # THS boards carry no etf_proxy — the ETF bridge stays curated-only
+    ths = set(sp.ths_basket_ids())
+    assert len(ths) >= 200
+    for bids in sp.etf_to_basket().values():
+        assert not (set(bids) & ths)
+
+
+def test_ticker_name_curated_first_ths_fallback():
+    assert sp.ticker_name("688981.SS") == "中芯国际"      # curated still wins
+    assert sp.ticker_name("603129.SS") == "春风动力"      # THS-only name resolves now
+    assert sp.ticker_name("NOPE") is None
+
+
+def test_member_tickers_all_union():
+    uni = sp.member_tickers_all()
+    assert "688981.SS" in uni and "603129.SS" in uni
+    assert set(sp.ticker_to_basket()) <= uni
+
+
+def test_ths_degrades_empty_on_missing_data(monkeypatch, tmp_path):
+    _clear_spine_caches()
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    try:
+        assert sp.ths_ticker_to_baskets() == {}
+        assert sp.ths_basket_members("ths_ai") == []
+        assert sp.ths_basket_label("x") == ("x", "x")
+        assert sp.ths_basket_ids() == []
+        assert sp.member_tickers_all() == frozenset()
+        assert sp.ticker_name("603129.SS") is None
+    finally:
+        _clear_spine_caches()
+
+
+def test_discovery_bundle_universe_covers_ths_members():
+    # china_discovery off-desk tagging: a THS-only member is ON-DESK (it lives on the
+    # THS boards surface) — the tag must not call it undiscovered
+    from engine import china_discovery as disc
+    disc._bundle_universe.cache_clear()
+    try:
+        uni = disc._bundle_universe()
+        assert "603129.SS" in uni and "688981.SS" in uni
+    finally:
+        disc._bundle_universe.cache_clear()
 
 
 # ---- conviction scale (pure) ----------------------------------------------- #

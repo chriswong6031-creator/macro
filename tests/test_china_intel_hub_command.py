@@ -776,3 +776,27 @@ def test_news_dir_none_does_not_count_toward_lag_up(monkeypatch):
             )
             # news present (from news_payload) but dir=None means neutral dot not a lag signal
             break
+
+
+# ── THS spine wiring (live data/baskets_china_ths/membership.json) ─────────── #
+
+def test_dossier_name_falls_back_to_ths_spine():
+    """A THS-only ticker (the 603129-hole) with no altdata/board row must still get its
+    中文 name + bounded THS concept context via china_basket_spine."""
+    d = hub._dossier("603129.SS", None, None, None, None, None, None, False)
+    assert d["name"] == "春风动力"
+    ids = {c["id"] for c in d["ths_concepts"]}
+    assert ids & {"thsc309127", "thsc301248"}
+    assert len(d["ths_concepts"]) <= 3
+    assert all(c.get("en") and c.get("zh") for c in d["ths_concepts"])
+
+
+def test_dossier_feed_name_still_wins_over_spine():
+    d = hub._dossier("603129.SS", {"name": "FEED_NAME", "convergence": 0.2},
+                     None, None, None, None, None, False)
+    assert d["name"] == "FEED_NAME"
+
+
+def test_ths_concepts_empty_on_unknown_ticker():
+    assert hub._ths_concepts("NOPE.SS") == []
+    assert hub._spine_name("NOPE.SS") is None
