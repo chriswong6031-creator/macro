@@ -10400,3 +10400,32 @@ artifacts:
       asserts charter.tier == synapse.tier. lifecycle_state transitions are proposals
       only. OPERATOR-CURATED (not IMMUTABLE — charters are loop-curated; the roster CAP
       in metabolism_budget.yml IS immutable). Seeded 2026-07-10 from 97 NW-scope lobes.
+
+  # ── V2-B Unit 6 — write-serialization build lane artifacts (R-V2-5) ──────────
+
+  metabolism-build-claims:
+    path: data/metabolism/claims.jsonl
+    format: jsonl
+    producer: scripts/metabolism_build.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2b
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: metabolism.build_claims.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_build.py
+      - scripts/build_active_build_map.py
+    external_consumers: []
+    notes: >
+      V2-B write-serialization claim registry (R-V2-5). One row per granted proposal
+      per cycle: {schema, cycle_id, proposal_id, lobe, target_files[], ts}. The BUILD
+      lane appends before creating a worktree so a colliding proposal (same target_files
+      this cycle) is sequenced to a later cycle and never creates a race. Consumers:
+      metabolism_build.py reads it for collision detection; build_active_build_map.py
+      regenerates ACTIVE_BUILD_MAP after each claim. INERT — no scored-path surface.
