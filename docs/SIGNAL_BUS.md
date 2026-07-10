@@ -58,13 +58,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | til-w7-hiring-intent | 3 |
 | til-w8-trade-flows | 2 |
 | til-w9-discovery-v2 | 3 |
+| turn-sensitivity | 1 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
 
 | tier | count |
 |---|---|
-| display | 198 |
+| display | 199 |
 | infrastructure | 79 |
 | scored | 4 |
 | shadow | 48 |
@@ -73,7 +74,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 315 |
+| git | 316 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -645,6 +646,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-github-adoption | `site/basketdata/github_adoption.json` | json | collect | display | 1 | 0 |
 | site-phrase-velocity | `site/basketdata/phrase_velocity.json` | json | collect | display | 1 | 0 |
 | neuralweb-discovery-confluence | `data/neuralweb/discovery_confluence.json` | json | collect | display | 0 | 0 |
+
+### turn-sensitivity
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| stock-mtf-upturn | `site/stockdata/mtf_upturn.json` | json | daily-engine | display | 1 | 0 |
 
 ### us-stocks-prebreakout
 

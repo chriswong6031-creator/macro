@@ -304,6 +304,23 @@ def main() -> int:
     except Exception as _btw_exc:  # noqa: BLE001 — additive, never fatal
         log.warning("::warning::basket_turn_watch hook failed: %s", _btw_exc)
 
+    # TS-U2 — MTF UPTURN per-stock K-of-N confluence organ (mtf_upturn.v1).
+    # Placed immediately after basket_turn_watch (U2 is the per-stock twin of that organ).
+    # Own try/except — exit-0 always (additive, display-tier).
+    try:
+        from engine.mtf_upturn import compute as _mtu_compute, write_site_artifact as _mtu_write
+        _mtu_result = _mtu_compute()
+        _mtu_path = _mtu_write(_mtu_result)
+        _mtu_n_conf = len(_mtu_result.get("cohort", {}).get("confirmed", []))
+        _mtu_n_watch = len(_mtu_result.get("cohort", {}).get("watch", []))
+        log.info(
+            "mtf_upturn: wrote %s (%d confirmed, %d watch, elapsed=%.1fs)",
+            _mtu_path, _mtu_n_conf, _mtu_n_watch,
+            _mtu_result.get("elapsed_s", 0),
+        )
+    except Exception as _mtu_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("::warning::mtf_upturn hook failed: %s", _mtu_exc)
+
     # FTR W10 — Discord alerts for turn-watch IGNITION / shock activation / tape disagreement.
     # Placed after basket_turn_watch so turn_watch.json is fresh.
     # Own try/except — exit-0 always (FT-R13 / FT-R5 contract).
