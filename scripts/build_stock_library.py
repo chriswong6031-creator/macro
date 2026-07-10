@@ -69,6 +69,41 @@ ETF_LABELS = {**SECTOR_NAMES,
               "SI=F": "Silver", "BZ=F": "Brent Crude", "DX-Y.NYB": "US Dollar Index",
               "BTC-USD": "Bitcoin", "ETH-USD": "Ethereum", "SOL-USD": "Solana"}
 
+# Single-stock rows carry ONE sector vocabulary: the 11 GICS names. The breadth
+# constituents and stock_search.extra_names paths already emit it; the deep-history
+# holdings path uses SPDR display names (SECTOR_NAMES), which differ from GICS for
+# exactly two funds — bridged here so every consumer (SECZH map, donor.GICS_SECTORS,
+# cohort grouping) sees one vocabulary. Anything else non-empty is a data-quality
+# leak — e.g. a stray non-fund parquet stem from data/sector_holdings/ riding in as
+# a fake sector (QCOM sector="history", PR #2113 issue 4).
+GICS_SECTORS = {
+    "Energy", "Materials", "Industrials", "Consumer Discretionary",
+    "Consumer Staples", "Health Care", "Financials", "Information Technology",
+    "Communication Services", "Utilities", "Real Estate",
+}
+_SPDR_TO_GICS = {"Technology": "Information Technology",
+                 "Communications": "Communication Services"}
+
+
+def _drop_spurious_sector_rows(wide: dict) -> dict[str, list[tuple]]:
+    """Drop buy/watch/laggards rows whose sector label is corrupt.
+
+    A row is kept when its sector is empty/None (unknown — missing metadata is
+    not a reason to drop a scored setup) or one of the 11 GICS names. Mutates
+    *wide* in place; returns {lane: [(ticker, sector), ...]} for what was
+    dropped so the caller can log it.
+    """
+    dropped: dict[str, list[tuple]] = {}
+    for lane in ("buy", "watch", "laggards"):
+        rows = wide.get(lane) or []
+        bad = [(r.get("ticker"), r.get("sector")) for r in rows
+               if (r.get("sector") or "") and r.get("sector") not in GICS_SECTORS]
+        if bad:
+            wide[lane] = [r for r in rows
+                          if not r.get("sector") or r.get("sector") in GICS_SECTORS]
+            dropped[lane] = bad
+    return dropped
+
 
 def current_liquidity() -> str | None:
     """The live US net-liquidity regime ("expanding"/"contracting"/"neutral")
@@ -411,6 +446,13 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     if hd.exists():
         for p in hd.glob("*.parquet"):
             fund = p.stem
+            if fund not in SECTOR_NAMES:
+                # cross-fund log files also live here (history.parquet PIT archiver,
+                # holdings_runs.parquet) — their stems would leak in as fake sector
+                # labels (QCOM sector="history", PR #2113 issue 4)
+                continue
+            sec = SECTOR_NAMES[fund]
+            sec = _SPDR_TO_GICS.get(sec, sec)
             try:
                 df = pd.read_parquet(p)
             except Exception as e:  # noqa: BLE001 — one corrupt parquet must not 404 the library
@@ -420,7 +462,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
                 continue
             for _, r in df.iterrows():
                 names[str(r["ticker"]).replace(".", "-")] = (
-                    str(r.get("name", "")).title(), SECTOR_NAMES.get(fund, fund))
+                    str(r.get("name", "")).title(), sec)
     if d.exists():
         for p in sorted(d.glob("*.parquet")):
             t = p.stem
@@ -3022,6 +3064,14 @@ def main() -> int:
                 # W1.5 earnings-blackout: compact suppressed-today note (None when nothing suppressed
                 # and store is fresh). Rendered as a board-level notice by the template.
                 "earnings_blackout_note": _eb_suppressed_note}
+        # Sector-integrity backstop (PR #2113 issue 4): universe() is now hardened
+        # against non-fund sector_holdings parquets, but any future path that leaks a
+        # junk sector label must not ship — drop the row here, before every downstream
+        # consumer (lane_counts, conviction delta, shadow book, the artifact write).
+        _spurious_sec = _drop_spurious_sector_rows(wide)
+        for _lane_s, _rows_s in _spurious_sec.items():
+            log.warning("sector-integrity guard: dropped %d %s row(s) with spurious "
+                        "sector label: %s", len(_rows_s), _lane_s, _rows_s)
         eligible = len(aligned)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
