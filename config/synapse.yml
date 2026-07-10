@@ -9909,3 +9909,107 @@ artifacts:
       denies, PRs opened, realized fitness deltas, reverts, budget spent, circuit
       breaker trips, AUTONOMY_PAUSED state, capability audit tape link.
       Also sends a Telegram summary via scripts/notify.py. Display-only.
+
+  # --- Metabolism Phase V2-A (orchestrator mind) ---
+
+  metabolism-organism-state:
+    path: data/metabolism/organism_state.json
+    format: json
+    producer: scripts/build_organism_state.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2a
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: metabolism.organism_state.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_agenda.py
+      - engine/metabolism/trajectory.py
+    external_consumers: []
+    notes: >
+      Metabolism Phase V2-A whole-organism holistic sensor. Fail-open roll-up of
+      all lobe fitness cards + health.json + cortex memo + governance rates +
+      trial-ledger realized deltas. Per-lobe: fitness values, trajectory slope,
+      health status, stale_legs. Whole-organism: n_lobes, label_counts, biggest_gap
+      (deterministic, not LLM). authority: is_context_only=True, display-only.
+      INERT — never gates, ranks, or scores.
+
+  metabolism-insight-bus:
+    path: data/metabolism/insight_bus.jsonl
+    format: jsonl
+    producer: engine/metabolism/insight_bus.py
+    known_extra_writers:
+      - engine/metabolism/anomaly_monitor.py
+    owner_program: metabolism-phase-v2a
+    cadence: daily-engine
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 48
+    schema: metabolism.insight_bus.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_agenda.py
+    external_consumers: []
+    notes: >
+      Metabolism Phase V2-A stigmergy bus. Append-only typed rows from deterministic
+      emitters (no LLM): health transitions, contradictions, falsifier trips,
+      freshness SLA breaches, comeback clock maturations. Schema: {insight_id, ts,
+      emitter, kind, severity, entities, evidence_ref, summary, handled}.
+      A 'handled' row references an original insight_id. INERT — display-only context.
+
+  metabolism-agenda:
+    path: data/metabolism/agenda/
+    format: json
+    producer: scripts/metabolism_agenda.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2a
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: metabolism.agenda.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Metabolism Phase V2-A ranked agenda. Stateless Opus reasoner over
+      organism_state + open insight bus + ruling_graph + ACTIVE_BUILD_MAP.
+      Items bucketed: URGENT_FIX | NOVEL_BUILD | DEEP_RESEARCH. Deterministic
+      severity floor: severity>=high insight rows MUST appear as URGENT_FIX.
+      Content-hash dedup vs DO_NOT_REBUILD + ACTIVE_BUILD_MAP. INERT: writes
+      artifact only — dispatches nothing, grants nothing, opens no PR.
+
+  metabolism-trajectory:
+    path: data/metabolism/trajectory.jsonl
+    format: jsonl
+    producer: engine/metabolism/trajectory.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2a
+    cadence: daily-engine
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 48
+    schema: metabolism.trajectory.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Metabolism Phase V2-A whole-organism trajectory tape. Append-only;
+      one row per run. Carries overall_signal (GREEN/AMBER/RED) with a one-line
+      human reason. Gate: K_WEEKS history + min_magnitude + regime_tag required
+      before emitting AMBER/RED (else GREEN/accruing). Data-only in V2-A;
+      front-page fragment ships in V2-D behind the UX gate. INERT, display-only.
