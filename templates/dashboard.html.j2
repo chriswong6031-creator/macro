@@ -2549,22 +2549,23 @@
   {% include "_regime_read_panel.html.j2" %}
 
 
-  {# ==================== RELEASE RADAR (MRI PR-D) ====================
+  {# ==================== RELEASE RADAR (MRI PR-D / W11-H MRI-R39) ====================
      Client-side fetch of macrodata/release_forecast.v1 JSON (produced nightly
-     by PR-C scripts/build_release_forecast.py).  Fail-open: if the file is
+     by scripts/build_release_forecast.py).  Fail-open: if the file is
      absent or null the container renders an honest "accruing" placeholder.
      MRI-R5: never says "consensus" — benchmark_set labels only.
      MRI-R7: display-only tier; CI-enforced word ban applies.
-     Render pattern: fetch('macrodata/release_forecast.json', {cache:'no-cache'})
-     — identical to sector_central.html.j2:670. #}
+     MRI-R39: 5-tab modal: OVERVIEW · MODELS · COMPONENTS · HISTORY · CONTEXT
+     Render pattern: fetch('macrodata/release_forecast.json', {cache:'no-cache'}) #}
   {% if mode != 'stocks' %}
   <style id="rr-css">
-  /* ---- Release Radar MRI-R24: card+modal redesign ---- */
+  /* ---- Release Radar MRI-R39: minimalist card + 5-tab modal ---- */
+  /* 4px-base spacing scale; tabular-nums for all figures */
   #release-radar{padding:16px 20px 18px}
   #release-radar h2{margin:0 0 4px;font-size:15px;font-weight:700}
   #release-radar .rr-subline{font-size:11.5px;color:var(--muted);margin-bottom:14px}
   #release-radar .rr-grid{display:flex;flex-wrap:wrap;gap:12px}
-  /* Compact card — click to expand modal */
+  /* Compact card — R24-minimal */
   .rr-card{flex:1 1 220px;min-width:200px;max-width:340px;background:var(--panel2);
     border:1px solid var(--line);border-radius:10px;padding:12px 14px;
     position:relative;cursor:pointer;transition:border-color .15s,box-shadow .15s}
@@ -2580,7 +2581,7 @@
     letter-spacing:.08em;color:var(--muted);margin-bottom:2px}
   .rr-point{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
   .rr-chips-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 4px}
-  /* Expectation chip (expectation_read.tag) */
+  /* Expectation chip */
   .rr-exp{display:inline-flex;align-items:center;padding:2px 8px;
     border-radius:12px;font-size:10.5px;font-weight:600}
   .rr-exp-above{background:color-mix(in srgb,var(--down) 15%,transparent);
@@ -2589,7 +2590,7 @@
     color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
   .rr-exp-aligned{background:color-mix(in srgb,var(--muted) 20%,transparent);
     color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
-  /* Trend skew chip (surprise_skew.tag) */
+  /* Trend skew chip */
   .rr-skew{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;
     border-radius:12px;font-size:10.5px;font-weight:600}
   .rr-skew-hot{background:color-mix(in srgb,var(--down) 18%,transparent);
@@ -2613,27 +2614,50 @@
   .rr-card-conf b{color:var(--text)}
   .rr-card-do-note{font-size:9px;color:var(--muted);font-style:italic;margin-top:5px;line-height:1.4}
   .rr-card-tap{font-size:9.5px;color:var(--muted);margin-top:5px;text-align:right}
-  /* benchmark-only note on card */
+  /* benchmark-only / no-data card states */
   .rr-bmo-note{font-size:11.5px;color:var(--muted);font-style:italic}
-  /* no-data note on card */
   .rr-nodata-note{font-size:11px;color:var(--muted);font-style:italic;padding:4px 0}
   /* ---- Modal overlay ---- */
-  .rr-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);
+  .rr-modal-overlay{display:none;position:fixed;inset:0;
+    background:var(--modal-backdrop,color-mix(in srgb,var(--bg,#000) 72%,transparent));
     z-index:9900;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px}
   .rr-modal-overlay.open{display:flex}
   .rr-modal{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
-    width:100%;max-width:600px;padding:20px 22px;position:relative;
-    box-shadow:0 8px 32px rgba(0,0,0,.28)}
+    width:100%;max-width:620px;padding:0;position:relative;
+    box-shadow:0 8px 32px color-mix(in srgb,var(--text) 16%,transparent)}
+  .rr-modal-hdr{padding:16px 44px 12px 20px}
   .rr-modal-close{position:absolute;top:12px;right:14px;background:none;border:none;
-    font-size:18px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 6px}
-  .rr-modal-close:hover{color:var(--text)}
-  .rr-modal-title{font-size:16px;font-weight:700;margin:0 0 2px;padding-right:28px}
-  .rr-modal-sub{font-size:11.5px;color:var(--muted);margin-bottom:14px}
-  .rr-modal-section{margin:10px 0}
-  .rr-modal-section-label{font-size:10px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.09em;color:var(--muted);margin-bottom:5px;padding-bottom:3px;
-    border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
-  /* interval cone bar (reused in modal) */
+    font-size:20px;cursor:pointer;color:var(--muted);line-height:1;padding:4px 8px;
+    border-radius:4px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
+  .rr-modal-close:hover{color:var(--text);background:var(--panel)}
+  .rr-modal-title{font-size:16px;font-weight:700;margin:0 0 2px}
+  .rr-modal-sub{font-size:11.5px;color:var(--muted)}
+  /* health indicator on sub-line */
+  .rr-health-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--warn);margin-right:4px;vertical-align:middle}
+  /* ---- Tab strip (sticky) ---- */
+  .rr-tab-strip{display:flex;gap:0;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--panel2);z-index:2;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+  .rr-tab-strip::-webkit-scrollbar{display:none}
+  .rr-tab{padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.07em;cursor:pointer;border:none;background:none;color:var(--muted);
+    border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;
+    transition:color .1s,border-color .1s;min-height:40px}
+  .rr-tab:hover{color:var(--text)}
+  .rr-tab.active{color:var(--text);border-bottom-color:var(--accent,var(--up))}
+  /* ---- Tab panes ---- */
+  .rr-tab-body{padding:16px 20px 20px}
+  .rr-pane{display:none}
+  .rr-pane.active{display:block}
+  /* Section group: one bottom-border per group, not per section */
+  .rr-grp{margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
+  .rr-grp:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+  .rr-grp-label{font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.09em;color:var(--muted);margin-bottom:6px}
+  /* shared metric row */
+  .rr-meta-row{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin:4px 0}
+  /* interval cone bar */
   .rr-interval-bar{position:relative;height:8px;border-radius:4px;
     background:var(--panel);border:1px solid var(--line);margin:4px 0 2px;overflow:visible}
   .rr-interval-fill{position:absolute;top:0;bottom:0;border-radius:3px;
@@ -2642,21 +2666,16 @@
     background:var(--text);border-radius:1px}
   .rr-interval-labels{display:flex;justify-content:space-between;
     font-size:9.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-  /* benchmark strip (reused in modal) */
-  .rr-bench{margin:6px 0 5px;padding:8px 10px;background:var(--panel);
-    border:1px solid var(--line);border-radius:7px}
-  .rr-bench-label{font-size:10px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.1em;color:var(--muted);margin-bottom:5px}
+  /* benchmark table */
   .rr-bench-row{display:flex;justify-content:space-between;
     font-size:11.5px;font-variant-numeric:tabular-nums;padding:2px 0}
   .rr-bench-name{color:var(--muted)}
   .rr-bench-val{font-weight:600}
-  .rr-meta-row{display:flex;flex-wrap:wrap;gap:5px 12px;
-    font-size:11px;color:var(--muted);margin:5px 0}
-  .rr-policy{margin:6px 0 4px;font-size:11px;display:flex;flex-wrap:wrap;gap:4px 10px}
+  /* policy items */
+  .rr-policy{font-size:11px;display:flex;flex-wrap:wrap;gap:4px 10px}
   .rr-policy-item{color:var(--muted)}
   .rr-policy-item b{color:var(--text);font-weight:600}
-  .rr-scoreboard{margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+  /* scoreboard */
   .rr-scoreboard-title{font-size:10.5px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
   .rr-track-table{width:100%;border-collapse:collapse;font-size:11px}
@@ -2665,15 +2684,13 @@
     border-bottom:1px solid var(--line)}
   .rr-track-table td{padding:2px 5px;font-variant-numeric:tabular-nums;
     border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
-  .rr-empty{font-size:11.5px;color:var(--muted);font-style:italic;padding:6px 0}
+  .rr-empty{font-size:11.5px;color:var(--muted);font-style:italic;padding:4px 0}
+  /* general */
   .rr-placeholder{color:var(--muted);font-size:12px;font-style:italic;padding:8px 0}
   .rr-asof{font-size:10px;color:var(--muted);margin-top:10px}
   .rr-footer{font-size:10px;color:var(--muted);margin-top:12px;
     padding-top:8px;border-top:1px solid var(--line);line-height:1.5}
-  /* component breakdown bar */
-  .rr-comp-section{margin:8px 0 4px}
-  .rr-comp-label{font-size:10px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+  /* component attribution bars */
   .rr-comp-rows{display:flex;flex-direction:column;gap:3px}
   .rr-comp-row{display:flex;align-items:center;gap:5px;font-size:10.5px}
   .rr-comp-name{width:130px;flex-shrink:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2687,7 +2704,6 @@
     font-size:10px;color:var(--text)}
   .rr-comp-muted{color:var(--muted);font-style:italic}
   /* confidence composition bar */
-  .rr-conf-section{margin:6px 0 4px}
   .rr-conf-bar-wrap{display:flex;height:7px;border-radius:4px;overflow:hidden;
     border:1px solid var(--line)}
   .rr-conf-seg-known{background:color-mix(in srgb,var(--up) 70%,transparent)}
@@ -2710,13 +2726,12 @@
   .rr-sdist-inline{background:color-mix(in srgb,var(--warn) 50%,transparent)}
   .rr-sdist-cold{background:color-mix(in srgb,var(--up) 60%,transparent)}
   .rr-sdist-legend{display:flex;gap:7px;font-size:9.5px;color:var(--muted)}
-  /* reaction sensitivity footer */
-  .rr-sens-footer{margin-top:6px;padding-top:5px;border-top:1px solid var(--line);
-    font-size:10px;color:var(--muted);line-height:1.6}
+  /* reaction sensitivity */
+  .rr-sens-footer{font-size:10px;color:var(--muted);line-height:1.6}
   .rr-sens-note{font-size:9px;color:var(--muted);font-style:italic;margin-top:1px}
   /* revision risk (NFP) */
   .rr-rev-risk{font-size:10.5px;color:var(--muted);margin:3px 0}
-  /* MRI-R20 quirk flag chips */
+  /* quirk flag chips */
   .rr-quirk-row{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0 2px}
   .rr-quirk-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;
     border-radius:4px;font-size:9.5px;line-height:1.4;
@@ -2724,7 +2739,19 @@
     border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);
     color:var(--text)}
   .rr-quirk-icon{font-size:10px}
-  /* MRI-R24 CPI bridge waterfall */
+  /* print-integrity chip */
+  .rr-integrity-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
+    border-radius:4px;font-size:10px;font-weight:600}
+  .rr-integrity-normal{background:color-mix(in srgb,var(--up) 12%,transparent);
+    border:1px solid color-mix(in srgb,var(--up) 25%,transparent);color:var(--up)}
+  .rr-integrity-degraded{background:color-mix(in srgb,var(--warn) 18%,transparent);
+    border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);color:var(--warn)}
+  .rr-integrity-disrupted{background:color-mix(in srgb,var(--down) 18%,transparent);
+    border:1px solid color-mix(in srgb,var(--down) 40%,transparent);color:var(--down)}
+  /* capture health strip */
+  .rr-health-strip{font-size:10px;color:var(--muted);padding:5px 0;line-height:1.6}
+  .rr-health-warn{color:var(--down)}
+  /* CPI bridge waterfall */
   .rr-bridge-row{display:flex;align-items:center;gap:5px;font-size:10.5px;padding:1px 0}
   .rr-bridge-name{width:130px;flex-shrink:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .rr-bridge-bar-wrap{flex:1;position:relative;height:8px;border-radius:3px;
@@ -2736,20 +2763,39 @@
   .rr-bridge-val{width:52px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;
     font-size:10px;color:var(--text)}
   .rr-bridge-prior{font-size:9px;color:var(--muted);font-style:italic}
-  /* MRI-R24 v3_factor shadow row */
+  /* v3_factor shadow row */
   .rr-shadow-row{background:var(--panel);border:1px solid var(--line);border-radius:6px;
     padding:8px 10px;margin:6px 0;font-size:11px}
   .rr-shadow-label{font-size:10px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
   .rr-shadow-warn{font-size:9.5px;color:var(--down);font-style:italic;
     border-left:2px solid var(--down);padding-left:6px;margin-top:4px;line-height:1.4}
+  /* surprise anatomy mini-table */
+  .rr-anatomy-table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:4px}
+  .rr-anatomy-table th{font-size:9.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--muted);text-align:left;padding:2px 5px 3px;
+    border-bottom:1px solid var(--line)}
+  .rr-anatomy-table td{padding:2px 5px;border-bottom:1px solid color-mix(in srgb,var(--line) 35%,transparent)}
+  /* modal footnote */
   .rr-modal-do-note{font-size:9.5px;color:var(--muted);font-style:italic;
-    margin-top:12px;padding-top:8px;border-top:1px solid var(--line);line-height:1.5}
+    margin:12px 20px 16px;padding-top:8px;border-top:1px solid var(--line);line-height:1.5}
+  /* mobile: full-screen sheet ≤480px */
+  @media(max-width:480px){
+    .rr-modal-overlay{padding:0}
+    .rr-modal{max-width:100%;width:100%;border-radius:16px 16px 0 0;margin-top:auto;
+      max-height:90vh;overflow-y:auto}
+    .rr-modal-close{min-width:48px;min-height:48px}
+    .rr-tab{padding:10px 12px;min-height:44px}
+  }
+  /* Compress tab padding on narrow viewports so all 5 tabs fit without clipping */
+  @media(max-width:479px){
+    .rr-tab{padding:8px 8px;font-size:10px;letter-spacing:.04em}
+  }
   </style>
   <div class="panel span12" id="release-radar">
     <h2>{{ t('Release Radar', '数据发布雷达') }}
-      {{ help('Pre-print model projections for upcoming US macro releases (CPI, NFP). Comparison set is our own benchmark set (naive prior, trailing trend, Cleveland nowcast) — not street estimates. Display-only context; not investment advice; scored forward in public.',
-              '即将公布美国宏观数据（CPI、NFP）的预测模型。对比基准为我方自有基准集（朴素先验、趋势追踪、克利夫兰预报），非街道估算。仅展示，非投资建议，正向评分公开记录。') }}
+      {{ help('Pre-print model projections for upcoming US macro releases (CPI, NFP, PCE, PPI). Comparison set is our own benchmark set (naive prior, trailing trend, Cleveland nowcast) — not street estimates. Display-only context; not investment advice; scored forward in public.',
+              '即将公布美国宏观数据（CPI、NFP、PCE、PPI）的预测模型。对比基准为我方自有基准集（朴素先验、趋势追踪、克利夫兰预报），非街道估算。仅展示，非投资建议，正向评分公开记录。') }}
     </h2>
     <div class="rr-subline">
       <span class="l-en">Forward model · display-only · benchmarks · scored in public</span>
@@ -2762,11 +2808,19 @@
       </div>
     </div>
   </div>
-  <!-- MRI-R24: detail modal (JS-populated) -->
+  <!-- MRI-R39: 5-tab detail modal (JS-populated) -->
   <div class="rr-modal-overlay" id="rr-modal-overlay" role="dialog" aria-modal="true">
     <div class="rr-modal" id="rr-modal-body">
-      <button class="rr-modal-close" id="rr-modal-close" type="button">&#215;</button>
-      <div id="rr-modal-inner"></div>
+      <div class="rr-modal-hdr">
+        <button class="rr-modal-close" id="rr-modal-close" type="button" aria-label="Close">&#215;</button>
+        <div id="rr-modal-title-block"></div>
+      </div>
+      <div class="rr-tab-strip" id="rr-tab-strip" role="tablist"></div>
+      <div class="rr-tab-body" id="rr-modal-inner"></div>
+      <div class="rr-modal-do-note">
+        <span class="l-en">display-only — not a signal · benchmarks, not investment advice · scored forward in public</span>
+        <span class="l-zh">仅展示 — 非信号 · 基准对比，非投资建议 · 正向评分公开记录</span>
+      </div>
     </div>
   </div>
   <script>
@@ -2776,8 +2830,10 @@
     var RR_OVERLAY = document.getElementById('rr-modal-overlay');
     var RR_MODAL_INNER = document.getElementById('rr-modal-inner');
     var RR_MODAL_CLOSE = document.getElementById('rr-modal-close');
+    var RR_TAB_STRIP = document.getElementById('rr-tab-strip');
+    var RR_TITLE_BLOCK = document.getElementById('rr-modal-title-block');
 
-    /* ---- helpers ---- */
+    /* ---- base helpers ---- */
     function esc(s){ return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function fmtNum(v, digits){ return (v == null || isNaN(v)) ? '—' : Number(v).toFixed(digits != null ? digits : 2); }
     function fmtPct(v){ return (v == null || isNaN(v)) ? '—' : (Number(v)*100).toFixed(0) + '%'; }
@@ -3141,7 +3197,7 @@
       var h10 = rs.dgs10_h1_hot_bp, c10 = rs.dgs10_h1_cold_bp;
       var hS = rs.spy_h1_hot_pct, cS = rs.spy_h1_cold_pct;
       if (h10 == null && c10 == null && hS == null && cS == null) return '';
-      var n = rs.regime_cells_used != null ? rs.regime_cells_used : null;
+      var n = rs.regime_cells_used;
       var note = rs.note ? esc(rs.note) : '';
       var hotParts = [];
       if (h10 != null) hotParts.push('10y '+(h10>0?'+':'')+fmtNum(h10,0)+'bp');
@@ -3151,7 +3207,8 @@
       if (cS != null) coldParts.push('SPY '+(cS>0?'+':'')+fmtNum(cS,2)+'%');
       var hotStr = hotParts.length ? hotParts.join(', ') : '—';
       var coldStr = coldParts.length ? coldParts.join(', ') : '—';
-      var nStr = n != null ? ' (n='+n+')' : '';
+      /* guard: only show (n=…) when field is a finite number, not boolean/null */
+      var nStr = (typeof n === 'number' && isFinite(n)) ? ' (n='+n+')' : '';
       return '<div class="rr-sens-footer">'
         +'<span class="l-en">Hot print historically: <b>'+esc(hotStr)+'</b> next session'+nStr+'</span>'
         +'<span class="l-zh">历史上热数据：<b>'+esc(hotStr)+'</b>（次交易日）'+nStr+'</span>'
@@ -3340,8 +3397,187 @@
         +'</div>';
     }
 
-    /* ---- MRI-R24: detail modal ---- */
-    function renderModal(item){
+    /* ---- MRI-R39: 5-tab modal ---- */
+    /* Tabs: 0=OVERVIEW 1=MODELS 2=COMPONENTS 3=HISTORY 4=CONTEXT */
+    /* Null tabs (no content) hidden entirely. */
+
+    /* inline SVG interval cone with benchmark ticks — spec: viewBox 0 0 320 56 */
+    function intervalConeSVG(proj, bs, rel){
+      if (!proj) return '';
+      var p10 = proj.p10, p90 = proj.p90, pt = proj.point;
+      if (p10 == null || p90 == null) return '';
+      var span = p90 - p10;
+      if (span <= 0) return '';
+      var p25 = proj.p25, p75 = proj.p75;
+      var W = 320, H = 56, PAD = 24;
+      var iW = W - 2*PAD;
+      function xOf(v){ return PAD + Math.max(0,Math.min(iW,(v-p10)/span*iW)); }
+      /* p25-p75 shaded box */
+      var boxL = p25 != null ? xOf(p25) : xOf(p10);
+      var boxR = p75 != null ? xOf(p75) : xOf(p90);
+      /* point marker */
+      var ptX = pt != null ? xOf(pt) : (proj.p50 != null ? xOf(proj.p50) : null);
+      var isClaims = (rel||'').toLowerCase() === 'claims';
+      var isNfp = (rel||'').toLowerCase() === 'nfp';
+      var useK = isClaims || isNfp;
+      /* benchmark ticks — same-basis only (not market_implied which is YoY/level) */
+      var benchKeys = ['naive_prior','trailing_3m','trailing_4w','ar_model','cleveland_nowcast','expanding_mean'];
+      var benchLabels = {naive_prior:'naive',trailing_3m:'3m',trailing_4w:'4w',ar_model:'AR',cleveland_nowcast:'CLE',expanding_mean:'xmn'};
+      var ticks = [];
+      if (bs) {
+        benchKeys.forEach(function(k){
+          var v = bs[k];
+          if (v == null || v < p10 || v > p90) return;
+          ticks.push({x:xOf(v), label:benchLabels[k]||k, v:v});
+        });
+      }
+      var svgParts = ['<svg viewBox="0 0 320 56" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:56px;display:block;overflow:visible">'];
+      /* whisker line p10-p90 */
+      svgParts.push('<line x1="'+xOf(p10)+'" y1="28" x2="'+xOf(p90)+'" y2="28" stroke="var(--line)" stroke-width="2"/>');
+      /* end caps */
+      svgParts.push('<line x1="'+xOf(p10)+'" y1="22" x2="'+xOf(p10)+'" y2="34" stroke="var(--muted)" stroke-width="1.5"/>');
+      svgParts.push('<line x1="'+xOf(p90)+'" y1="22" x2="'+xOf(p90)+'" y2="34" stroke="var(--muted)" stroke-width="1.5"/>');
+      /* p25-p75 shaded box */
+      svgParts.push('<rect x="'+boxL+'" y="20" width="'+(boxR-boxL)+'" height="16" fill="color-mix(in srgb,var(--up) 28%,transparent)" rx="2"/>');
+      /* benchmark ticks (muted) */
+      ticks.forEach(function(t){
+        svgParts.push('<line x1="'+t.x+'" y1="15" x2="'+t.x+'" y2="41" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2,2"/>');
+        svgParts.push('<text x="'+t.x+'" y="12" text-anchor="middle" font-size="8" fill="var(--muted)" font-family="ui-monospace,monospace">'+esc(t.label)+'</text>');
+      });
+      /* point marker */
+      if (ptX != null){
+        var ptLabel = useK ? fmtK(pt) : fmtNum(pt,2);
+        svgParts.push('<line x1="'+ptX+'" y1="14" x2="'+ptX+'" y2="42" stroke="var(--text)" stroke-width="2.5"/>');
+        svgParts.push('<text x="'+ptX+'" y="52" text-anchor="middle" font-size="9" fill="var(--text)" font-family="ui-monospace,monospace" font-weight="bold">'+esc(ptLabel)+'</text>');
+      }
+      /* p10/p90 labels */
+      svgParts.push('<text x="'+PAD+'" y="52" text-anchor="start" font-size="8" fill="var(--muted)" font-family="ui-monospace,monospace">p10 '+(useK?fmtK(p10):fmtNum(p10,2))+'</text>');
+      svgParts.push('<text x="'+(W-PAD)+'" y="52" text-anchor="end" font-size="8" fill="var(--muted)" font-family="ui-monospace,monospace">p90 '+(useK?fmtK(p90):fmtNum(p90,2))+'</text>');
+      svgParts.push('</svg>');
+      return svgParts.join('');
+    }
+
+    /* model dot plot — shared axis SVG */
+    function modelDotPlot(item, isBenchmarkOnly, isClaims, isNfp){
+      if (isBenchmarkOnly) return '';
+      var proj = item.projection || {};
+      var shadows = item.shadows || {};
+      var mi = (item.benchmark_set||{}).market_implied;
+      var useK = isClaims || isNfp;
+      /* collect model points: champion, v3_factor, cpi_bridge, mf_energy */
+      var models = [];
+      if (proj.point != null) models.push({key:'champion',pt:proj.point,p10:proj.p10,p90:proj.p90,shape:'filled',label:'Champion'});
+      var v3 = shadows.v3_factor;
+      if (v3 && v3.point != null) models.push({key:'v3_factor',pt:v3.point,p10:v3.p10,p90:v3.p90,shape:'hollow',label:'v3_factor'});
+      var bridge = shadows.cpi_bridge;
+      if (bridge && bridge.point != null) models.push({key:'cpi_bridge',pt:bridge.point,shape:'diamond',label:'cpi_bridge'});
+      var mfe = shadows.mf_energy;
+      if (mfe && mfe.point != null) models.push({key:'mf_energy',pt:mfe.point,p10:mfe.p10,p90:mfe.p90,shape:'triangle',label:'mf_energy'});
+      if (!models.length) return '';
+      /* axis range: min/max of all model points + p10/p90 */
+      var allVals = [];
+      models.forEach(function(m){ allVals.push(m.pt); if(m.p10!=null)allVals.push(m.p10); if(m.p90!=null)allVals.push(m.p90); });
+      var vMin = Math.min.apply(null,allVals), vMax = Math.max.apply(null,allVals);
+      if (vMin === vMax){ vMin -= 0.05; vMax += 0.05; }
+      var span = vMax - vMin;
+      /* LABEL_W: fixed gutter for row labels (left); VAL_W: gutter for value chips (right).
+         Axis line starts at AXIS_L and ends at AXIS_R so it never crosses label or value text. */
+      var W = 300, LABEL_W = 68, VAL_W = 36, AXIS_L = LABEL_W + 4, AXIS_R = W - VAL_W - 4;
+      var H = models.length * 22 + 28;
+      var iW = AXIS_R - AXIS_L;
+      function xOf(v){ return AXIS_L + Math.max(0,Math.min(iW,(v-vMin)/span*iW)); }
+      var svgParts = ['<svg viewBox="0 0 300 '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:300px;height:'+H+'px;display:block;margin:6px 0;overflow:visible">'];
+      /* axis line — starts after label gutter, ends before value gutter */
+      svgParts.push('<line x1="'+AXIS_L+'" y1="'+(H-16)+'" x2="'+AXIS_R+'" y2="'+(H-16)+'" stroke="var(--line)" stroke-width="1"/>');
+      models.forEach(function(m,i){
+        var y = 14 + i*22;
+        var cx = xOf(m.pt);
+        /* whisker — clipped to axis range */
+        if (m.p10 != null && m.p90 != null){
+          svgParts.push('<line x1="'+xOf(m.p10)+'" y1="'+y+'" x2="'+xOf(m.p90)+'" y2="'+y+'" stroke="var(--muted)" stroke-width="1"/>');
+        }
+        /* shape */
+        var col = m.key==='champion' ? 'var(--text)' : 'var(--muted)';
+        if (m.shape==='filled'){
+          svgParts.push('<circle cx="'+cx+'" cy="'+y+'" r="5" fill="'+col+'" stroke="none"/>');
+        } else if (m.shape==='hollow'){
+          svgParts.push('<circle cx="'+cx+'" cy="'+y+'" r="5" fill="none" stroke="'+col+'" stroke-width="1.5"/>');
+        } else if (m.shape==='diamond'){
+          svgParts.push('<polygon points="'+cx+','+(y-6)+' '+(cx+5)+','+y+' '+cx+','+(y+6)+' '+(cx-5)+','+y+'" fill="none" stroke="'+col+'" stroke-width="1.5"/>');
+        } else if (m.shape==='triangle'){
+          svgParts.push('<polygon points="'+cx+','+(y-6)+' '+(cx+5)+','+(y+5)+' '+(cx-5)+','+(y+5)+'" fill="none" stroke="'+col+'" stroke-width="1.5"/>');
+        }
+        /* label: left gutter, clipped width so it never reaches axis */
+        var valStr = useK ? fmtK(m.pt) : fmtNum(m.pt,2);
+        svgParts.push('<text x="2" y="'+(y+4)+'" font-size="9" fill="'+col+'" font-family="ui-monospace,monospace" textLength="'+(LABEL_W-6)+'" lengthAdjust="spacingAndGlyphs">'+esc(m.label)+'</text>');
+        /* value chip: right gutter with background rect so axis line never crosses text */
+        svgParts.push('<rect x="'+(W-VAL_W)+'" y="'+(y-7)+'" width="'+VAL_W+'" height="13" fill="var(--panel2)" rx="2"/>');
+        svgParts.push('<text x="'+(W-2)+'" y="'+(y+4)+'" text-anchor="end" font-size="9" fill="'+col+'" font-family="ui-monospace,monospace" font-weight="bold">'+esc(valStr)+'</text>');
+      });
+      svgParts.push('</svg>');
+      var html = svgParts.join('');
+      /* market-implied in own row, explicit basis tag, NEVER on shared axis */
+      if (mi){
+        var miVal = mi.implied_median != null ? fmtNum(mi.implied_median,2) : (mi.implied != null ? String(mi.implied) : '—');
+        var miSrc = mi.source === 'kalshi' ? 'Kalshi' : mi.source === 'polymarket' ? 'Polymarket' : esc(mi.source||'');
+        var basisNote = esc(mi.event_title||'');
+        html += '<div class="rr-mkt-row">'
+          +'<span class="rr-mkt-label"><span class="l-en">Market-implied</span><span class="l-zh">市场隐含</span></span>'
+          +'<span class="rr-mkt-val">'+esc(miVal)+'</span>'
+          +'<span class="rr-mkt-source">'+esc(miSrc)+'</span>'
+          +(basisNote?'<span style="font-size:9px;color:var(--muted);margin-left:4px" title="'+esc(basisNote)+'">'
+            +'<span class="l-en">different basis</span><span class="l-zh">不同基准</span></span>':'')
+          +'</div>';
+      }
+      return html;
+    }
+
+    /* surprise anatomy mini-table for history tab */
+    function surpriseAnatomyTable(releaseKey){
+      /* static catalog — filtered by release family */
+      var catalog = [
+        {date:'2001-03',rel:'NFP',miss:'MISS',cause:'Seasonal anomaly'},
+        {date:'2002-01',rel:'NFP',miss:'BEAT',cause:'Benchmark revision'},
+        {date:'2005-09',rel:'NFP',miss:'MISS',cause:'Hurricane Katrina (-35k)'},
+        {date:'2005-10',rel:'NFP',miss:'BEAT',cause:'Katrina bounce'},
+        {date:'2005-09',rel:'CPI',miss:'BEAT',cause:'Hurricane energy spike'},
+        {date:'2008-01',rel:'NFP',miss:'MISS',cause:'Recession onset'},
+        {date:'2010-05',rel:'NFP',miss:'BEAT',cause:'Census hiring (+411k)'},
+        {date:'2011-09',rel:'CPI',miss:'BEAT',cause:'Supply chain / energy'},
+        {date:'2019-10',rel:'NFP',miss:'MISS',cause:'GM strike (-50k)'},
+        {date:'2021-04',rel:'NFP',miss:'MISS',cause:'Labor supply shortfall'},
+        {date:'2021-10',rel:'CPI',miss:'BEAT',cause:'Shelter surge acceleration'},
+        {date:'2022-06',rel:'CPI',miss:'BEAT',cause:'Energy+shelter peak'},
+        {date:'2023-01',rel:'NFP',miss:'BEAT',cause:'Birth-death + seasonal factor'},
+        {date:'2024-08',rel:'NFP',miss:'MISS',cause:'Benchmark revision -818k'},
+        {date:'2025-01',rel:'CPI',miss:'BEAT',cause:'Annual weight-update'}
+      ];
+      var rk = (releaseKey||'').toUpperCase();
+      var filtered = catalog.filter(function(e){
+        if (rk.indexOf('NFP')!==-1 || rk.indexOf('PAYROLL')!==-1) return e.rel==='NFP';
+        if (rk.indexOf('CPI')!==-1) return e.rel==='CPI';
+        return true;
+      });
+      if (!filtered.length) return '';
+      var rows = filtered.slice(0,8).map(function(e){
+        return '<tr>'
+          +'<td>'+esc(e.date)+'</td>'
+          +'<td>'+esc(e.miss)+'</td>'
+          +'<td>'+esc(e.cause)+'</td>'
+          +'</tr>';
+      }).join('');
+      return '<table class="rr-anatomy-table">'
+        +'<thead><tr>'
+        +'<th><span class="l-en">Date</span><span class="l-zh">日期</span></th>'
+        +'<th><span class="l-en">vs Exp</span><span class="l-zh">结果</span></th>'
+        +'<th><span class="l-en">Cause</span><span class="l-zh">原因</span></th>'
+        +'</tr></thead>'
+        +'<tbody>'+rows+'</tbody>'
+        +'</table>';
+    }
+
+    /* ---- MRI-R39: 5-tab renderModal ---- */
+    function renderModal(item, captureHealth){
       var rel = item.release || '';
       var rt = item.release_type || '';
       var proj = item.projection || {};
@@ -3358,151 +3594,364 @@
       var shadows = item.shadows || {};
       var v3 = shadows.v3_factor || null;
       var bridge = shadows.cpi_bridge || null;
+      var mfe = shadows.mf_energy || null;
       var cf = item.coverage_flags || null;
       var conf = item.confidence;
       var er = item.expectation_read;
       var sk = item.surprise_skew;
+      var pi = item.print_integrity || null;
+      var piRegime = pi ? (pi.regime || 'normal') : null;
 
-      var title = relName(rel, rt);
-      var sub = (item.period||'')
-        +(item.release_date?' · '+esc(item.release_date):'')
-        +(item.days_to!=null?' · <span class="l-en">in '+item.days_to+' days</span><span class="l-zh">'+item.days_to+'天后</span>':'');
-
-      var html = '<div class="rr-modal-title">'+title+'</div>'
-        +'<div class="rr-modal-sub">'+sub+'</div>';
-
-      /* 1. Chips row (expectation + skew + coverage) */
-      if (!isBenchmarkOnly && !isNoData){
-        var chips = expectationChip(er||null) + skewChip(sk||null) + coverageChip(cf||null);
-        if (chips) html += '<div class="rr-chips-row" style="margin-bottom:10px">'+chips+'</div>';
-      }
-
-      /* 2. Interval cone */
-      if (!isBenchmarkOnly && !isNoData && proj.p10 != null){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">Projection interval (p10–p90)</span><span class="l-zh">预测区间（p10–p90）</span></div>'
-          +intervalBar(proj)
+      /* ---- TAB 0: OVERVIEW ---- */
+      var tab0 = '';
+      {
+        /* large point */
+        var ptStr = '—';
+        if (!isBenchmarkOnly && !isNoData && proj.point != null)
+          ptStr = useK ? fmtK(proj.point) : fmtNum(proj.point,2)+(rt.indexOf('nfp')===-1?'pp':'');
+        tab0 += '<div class="rr-grp">'
+          +'<div style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1">'+esc(ptStr)+'</div>'
+          +'<div style="font-size:10px;color:var(--muted);margin-top:2px">'
+          +'<span class="l-en">Our projection · '+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+'</span>'
+          +'<span class="l-zh">本方预测 · '+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+'</span>'
+          +'</div>'
           +'</div>';
+        /* SVG cone */
+        if (!isBenchmarkOnly && !isNoData && proj.p10 != null){
+          tab0 += '<div class="rr-grp">'+intervalConeSVG(proj, item.benchmark_set, rel)+'</div>';
+        }
+        /* chips + coverage */
+        var chips = '';
+        if (!isBenchmarkOnly && !isNoData){
+          chips += expectationChip(er||null);
+          chips += skewChip(sk||null);
+          chips += coverageChip(cf||null);
+        }
+        if (chips) tab0 += '<div class="rr-grp"><div class="rr-chips-row">'+chips+'</div></div>';
+        /* vs strongest benchmark delta */
+        if (!isBenchmarkOnly && !isNoData && proj.point != null && item.benchmark_set){
+          var bs2 = item.benchmark_set;
+          var bVals = [bs2.naive_prior, bs2.trailing_3m, bs2.ar_model, bs2.cleveland_nowcast, bs2.expanding_mean];
+          bVals = bVals.filter(function(v){return v != null;});
+          if (bVals.length){
+            var bMax = Math.max.apply(null,bVals.map(Math.abs));
+            var bMedian = bVals.slice().sort(function(a,b){return a-b;})[Math.floor(bVals.length/2)];
+            var delta = proj.point - bMedian;
+            var dSign = delta >= 0 ? '+' : '';
+            var dStr = useK ? dSign+fmtNum(delta,0)+'k' : dSign+fmtNum(delta,2)+'pp';
+            tab0 += '<div style="font-size:10.5px;color:var(--muted)">'
+              +'<span class="l-en">vs benchmark median: <b style="color:var(--text)">'+esc(dStr)+'</b></span>'
+              +'<span class="l-zh">vs基准中位数：<b style="color:var(--text)">'+esc(dStr)+'</b></span>'
+              +'</div>';
+          }
+        }
+        /* benchmark-only / no-data states */
+        if (isBenchmarkOnly){
+          tab0 += '<div class="rr-empty">'
+            +'<span class="l-en">Benchmark-only — §6 kill rule triggered; no model point. Benchmarks in Models tab.</span>'
+            +'<span class="l-zh">仅基准 — §6规则触发；无模型点预测。基准见模型标签页。</span>'
+            +'</div>';
+        }
+        if (isNoData){
+          tab0 += '<div class="rr-empty">'
+            +'<span class="l-en">Awaiting data — series not yet on disk; machinery ready.</span>'
+            +'<span class="l-zh">待数据 — 系列未入库，系统就绪。</span>'
+            +'</div>';
+        }
+        /* confidence */
+        if (!isBenchmarkOnly && !isNoData && conf != null){
+          tab0 += '<div style="font-size:10px;color:var(--muted);margin-top:6px">'
+            +'<span class="l-en">Confidence: <b style="color:var(--text)">'+esc(fmtPct(conf))+'</b></span>'
+            +'<span class="l-zh">置信度：<b style="color:var(--text)">'+esc(fmtPct(conf))+'</b></span>'
+            +'</div>';
+        }
       }
 
-      /* 3. Benchmark strip */
-      if (item.benchmark_set){
-        html += '<div class="rr-modal-section">'+benchStrip(item.benchmark_set, rel)+'</div>';
+      /* ---- TAB 1: MODELS ---- */
+      var tab1 = '';
+      {
+        /* model dot plot */
+        if (!isBenchmarkOnly && !isNoData){
+          tab1 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Model comparison</span><span class="l-zh">模型对比</span>'
+            +'</div>'
+            +modelDotPlot(item, isBenchmarkOnly, isClaims, isNfp)
+            +'</div>';
+        }
+        /* benchmark table */
+        if (item.benchmark_set){
+          tab1 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Benchmarks (not investment advice)</span><span class="l-zh">基准对比（非投资建议）</span>'
+            +'</div>';
+          var bs = item.benchmark_set;
+          var isCl2 = isClaims;
+          var bench2rows = [];
+          if (bs.naive_prior != null)
+            bench2rows.push(['<span class="l-en">Naive prior</span><span class="l-zh">朴素先验</span>', useK?fmtK(bs.naive_prior):fmtNum(bs.naive_prior,2)]);
+          if (isCl2 && bs.trailing_4w != null)
+            bench2rows.push(['<span class="l-en">Trailing 4w</span><span class="l-zh">近4周均值</span>', fmtK(bs.trailing_4w)]);
+          if (!isCl2 && bs.trailing_3m != null)
+            bench2rows.push(['<span class="l-en">Trailing 3m</span><span class="l-zh">近3月均值</span>', useK?fmtK(bs.trailing_3m):fmtNum(bs.trailing_3m,2)]);
+          if (bs.ar_model != null)
+            bench2rows.push(['AR model', useK?fmtK(bs.ar_model):fmtNum(bs.ar_model,2)]);
+          if (!isCl2 && !isNfp && bs.cleveland_nowcast != null)
+            bench2rows.push(['Cleveland nowcast', fmtNum(bs.cleveland_nowcast,2)]);
+          if (bs.expanding_mean != null)
+            bench2rows.push(['<span class="l-en">Expanding mean</span><span class="l-zh">累积均值</span>', useK?fmtK(bs.expanding_mean):fmtNum(bs.expanding_mean,2)]);
+          tab1 += bench2rows.map(function(r){
+            return '<div class="rr-bench-row"><span class="rr-bench-name">'+r[0]+'</span><span class="rr-bench-val">'+esc(r[1])+'</span></div>';
+          }).join('');
+          tab1 += '</div>';
+        }
+        /* v3_factor shadow */
+        if (!isBenchmarkOnly && v3){
+          tab1 += '<div class="rr-grp">'+v3FactorRow(v3, isClaims, isNfp)+'</div>';
+        }
+        /* market-implied: already rendered inside modelDotPlot() with basis tag — do NOT add again here */
+        /* surprise distribution — gated on !isBenchmarkOnly */
+        var sd = item.surprise_distribution;
+        if (!isBenchmarkOnly && !isNoData && sd){
+          tab1 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Surprise distribution</span><span class="l-zh">惊喜分布</span>'
+            +'</div>'
+            +surpriseDistGauge(sd)
+            +'</div>';
+        }
+        if (!tab1){
+          tab1 = '<div class="rr-empty">'
+            +'<span class="l-en">Benchmark-only — no model point available.</span>'
+            +'<span class="l-zh">仅基准 — 无模型点预测。</span>'
+            +'</div>';
+        }
       }
 
-      /* 4. Component attribution — champion 4-block ridge (energy/shelter/core_persistence/pipeline).
-             DISTINCT from bridge waterfall: reads item.components ONLY (champion projection output).
-             Hidden when null/empty — does NOT fall back to bridge data (MRI-R26 rework-ui). */
+      /* ---- TAB 2: COMPONENTS ---- */
+      var tab2 = '';
+      /* champion attribution — gated on !isBenchmarkOnly */
       var champComponents = (item.components && Array.isArray(item.components) && item.components.length) ? item.components : null;
       if (!isBenchmarkOnly && !isNoData && champComponents){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">Component attribution</span><span class="l-zh">组件归因</span></div>'
+        tab2 += '<div class="rr-grp"><div class="rr-grp-label">'
+          +'<span class="l-en">Champion attribution</span><span class="l-zh">冠军归因</span>'
+          +'</div>'
           +componentsBar(champComponents, rel)
           +'</div>';
       }
-
-      /* 5. CPI bridge waterfall — reads shadows.cpi_bridge.components (6-7 block waterfall:
-             gasoline/electricity/shelter/food_at_home/core_goods/core_services/unmodelled_residual).
-             DISTINCT from champion attribution above. Only rendered when cpi_bridge shadow exists. */
+      /* CPI bridge waterfall — gated on !isBenchmarkOnly */
       if (!isBenchmarkOnly && !isNoData && bridge){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">CPI bridge waterfall</span><span class="l-zh">CPI桥接瀑布</span></div>'
+        tab2 += '<div class="rr-grp"><div class="rr-grp-label">'
+          +'<span class="l-en">Component-bridge waterfall</span><span class="l-zh">组件桥接瀑布</span>'
+          +'</div>'
           +cpiBridgeWaterfall(bridge)
           +'</div>';
       }
-
-      /* 6. Confidence composition — prefer confidence_v2 + confidence_components_v2 when present
-             (champion's own richer breakdown); fall back to pseudo-cv2 built from coverage_flags. */
+      /* confidence composition — gated on !isBenchmarkOnly */
       var cv2 = item.confidence_v2 != null ? item.confidence_v2 : conf;
       var cv2comps = item.confidence_components_v2 || null;
       if (!isBenchmarkOnly && !isNoData && cv2 != null){
         if (!cv2comps && cf && cf.weight_coverage > 0){
-          /* build pseudo cv2comps from coverage_flags as fallback */
-          var wc = Number(cf.weight_coverage||0);
-          var fp = Number(cf.fresh_proxy_coverage||0);
-          var nv = Number(cf.non_vintaged_share||0);
-          cv2comps = { w_known: wc*(1-nv), w_proxy: wc*nv + (1-wc)*fp, w_residual: Math.max(0,1-wc*(1-nv)-wc*nv-(1-wc)*fp) };
+          var wc2 = Number(cf.weight_coverage||0);
+          var fp2 = Number(cf.fresh_proxy_coverage||0);
+          var nv2 = Number(cf.non_vintaged_share||0);
+          cv2comps = {w_known:wc2*(1-nv2),w_proxy:wc2*nv2+(1-wc2)*fp2,w_residual:Math.max(0,1-wc2*(1-nv2)-wc2*nv2-(1-wc2)*fp2)};
         }
-        if (cv2comps){
-          html += '<div class="rr-modal-section">'
-            +'<div class="rr-modal-section-label"><span class="l-en">Confidence composition</span><span class="l-zh">置信度构成</span></div>'
+        if (!isBenchmarkOnly && cv2comps){
+          tab2 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Confidence composition</span><span class="l-zh">置信度构成</span>'
+            +'</div>'
             +confidenceBar(cv2, cv2comps)
             +'</div>';
         }
       }
 
-      /* 7. Surprise distribution gauge */
-      if (!isBenchmarkOnly && !isNoData && item.surprise_distribution){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">Surprise distribution</span><span class="l-zh">惊喜分布</span></div>'
-          +surpriseDistGauge(item.surprise_distribution)
+      /* ---- TAB 3: HISTORY ---- */
+      var tab3 = '';
+      {
+        /* scoreboard — accruing note when empty */
+        tab3 += '<div class="rr-grp"><div class="rr-grp-label">'
+          +'<span class="l-en">Track record</span><span class="l-zh">历史评分</span>'
+          +'</div>'
+          +'<div class="rr-empty">'
+          +'<span class="l-en">Accruing — first scored prints land this month.</span>'
+          +'<span class="l-zh">积累中 — 本月首批评分数据到来。</span>'
+          +'</div>'
           +'</div>';
+        /* NFP revision context */
+        if (isNfp && item.revision_context){
+          var rc = item.revision_context;
+          var lb = (rc.level_bias_annotation||null);
+          tab3 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">NFP revision intelligence</span><span class="l-zh">NFP修正情报</span>'
+            +'</div>';
+          if (lb){
+            tab3 += '<div style="font-size:10.5px;color:var(--muted);line-height:1.6">'
+              +'<span class="l-en">Level bias: expansions <b>+'+esc(lb.expansion_mean_cumulative_revision_k||'?')+'k</b> mean cumulative · contractions <b>'+esc(lb.contraction_mean_cumulative_revision_k||'?')+'k</b></span>'
+              +'<span class="l-zh">水平偏差：扩张期平均累积 <b>+'+esc(lb.expansion_mean_cumulative_revision_k||'?')+'k</b> · 收缩期 <b>'+esc(lb.contraction_mean_cumulative_revision_k||'?')+'k</b></span>'
+              +'</div>';
+          }
+          var ms = (rc.model_status||null);
+          if (ms){
+            tab3 += '<div style="font-size:9.5px;color:var(--muted);margin-top:4px;font-style:italic">'+esc(ms.note||'')+'</div>';
+          }
+          /* revision risk from item — gated on !isBenchmarkOnly */
+          var rrisk = item.revision_risk;
+          if (!isBenchmarkOnly && rrisk){
+            tab3 += '<div style="margin-top:4px">'+revisionRiskLine(rrisk)+'</div>';
+          }
+          tab3 += '</div>';
+        }
+        /* surprise anatomy reference table */
+        var relKey = rt || rel;
+        var anatomyHTML = surpriseAnatomyTable(relKey);
+        if (anatomyHTML){
+          tab3 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Surprise anatomy — notable episodes</span><span class="l-zh">意外解析 — 典型案例</span>'
+            +'</div>'
+            +anatomyHTML
+            +'</div>';
+        }
       }
 
-      /* 8. Market-implied row */
-      if (item.benchmark_set && item.benchmark_set.market_implied){
-        var miHtml = marketImpliedRow(item.benchmark_set.market_implied);
-        if (miHtml) html += '<div class="rr-modal-section">'+miHtml+'</div>';
+      /* ---- TAB 4: CONTEXT ---- */
+      var tab4 = '';
+      {
+        /* policy backdrop */
+        if (item.policy_backdrop){
+          tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Policy backdrop</span><span class="l-zh">政策背景</span>'
+            +'</div>'
+            +policyStrip(item.policy_backdrop)
+            +'</div>';
+        }
+        /* reaction sensitivity — gated on !isBenchmarkOnly */
+        var rsi = item.reaction_sensitivity;
+        if (!isBenchmarkOnly && !isNoData && rsi){
+          tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Reaction sensitivity</span><span class="l-zh">市场反应敏感度</span>'
+            +'</div>'
+            +reactionSensRow(rsi)
+            +'</div>';
+        }
+        /* quirk chips */
+        if (item.quirk_flags && item.quirk_flags.length){
+          tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Quirk flags</span><span class="l-zh">特殊标记</span>'
+            +'</div>'
+            +quirkChips(item.quirk_flags)
+            +'</div>';
+        }
+        /* print integrity chip */
+        if (pi && piRegime){
+          var piCls = piRegime==='normal'?'rr-integrity-normal':piRegime==='disrupted'?'rr-integrity-disrupted':'rr-integrity-degraded';
+          var piEN = piRegime==='normal'?'Normal':piRegime==='disrupted'?'Disrupted':'Degraded';
+          var piZH = piRegime==='normal'?'正常':piRegime==='disrupted'?'中断':'退化';
+          tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Print integrity</span><span class="l-zh">数据完整性</span>'
+            +'</div>'
+            +'<span class="rr-integrity-chip '+esc(piCls)+'">'
+            +'<span class="l-en">'+esc(piEN)+'</span>'
+            +'<span class="l-zh">'+esc(piZH)+'</span>'
+            +'</span>';
+          /* sub-readings */
+          var subParts = [];
+          if (pi.cpi_median_se_trend) subParts.push('SE trend: '+esc(pi.cpi_median_se_trend));
+          if (pi.revision_streak) subParts.push('revision streak: '+esc(pi.revision_streak));
+          if (subParts.length) tab4 += '<div style="font-size:9.5px;color:var(--muted);margin-top:4px">'+subParts.join(' · ')+'</div>';
+          tab4 += '</div>';
+        }
+        /* capture health strip */
+        if (captureHealth && captureHealth.past_due_unscored && captureHealth.past_due_unscored.length){
+          tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Capture health</span><span class="l-zh">采集健康</span>'
+            +'</div>'
+            +'<div class="rr-health-strip">'
+            +'<span class="l-en"><span class="rr-health-warn">&#9888;</span> '+captureHealth.past_due_unscored.length+' past-due unscored: '
+            +captureHealth.past_due_unscored.map(function(u){return esc((u.release||'')+'/'+(u.period||'')+' ('+u.reason+')');}).join(', ')
+            +'</span>'
+            +'<span class="l-zh"><span class="rr-health-warn">&#9888;</span> '+captureHealth.past_due_unscored.length+' 待评分: '
+            +captureHealth.past_due_unscored.map(function(u){return esc((u.release||'')+'/'+(u.period||''));}).join(', ')
+            +'</span>'
+            +'</div></div>';
+        }
+        if (!tab4){
+          tab4 = '<div class="rr-empty">'
+            +'<span class="l-en">No context data for this release.</span>'
+            +'<span class="l-zh">此数据发布无上下文信息。</span>'
+            +'</div>';
+        }
       }
 
-      /* 9. Reaction sensitivity */
-      if (!isBenchmarkOnly && !isNoData && item.reaction_sensitivity){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">Reaction sensitivity</span><span class="l-zh">市场反应敏感度</span></div>'
-          +reactionSensRow(item.reaction_sensitivity)
-          +'</div>';
-      }
-
-      /* 10. Quirk chips */
-      if (item.quirk_flags && item.quirk_flags.length){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">Quirk flags</span><span class="l-zh">特殊标记</span></div>'
-          +quirkChips(item.quirk_flags)
-          +'</div>';
-      }
-
-      /* 11. NFP revision risk */
-      if (!isBenchmarkOnly && isNfp && item.revision_risk){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">Revision risk</span><span class="l-zh">修正风险</span></div>'
-          +revisionRiskLine(item.revision_risk)
-          +'</div>';
-      }
-
-      /* 12. v3_factor challenger shadow */
-      if (!isBenchmarkOnly && v3){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">v3_factor challenger shadow vs champion</span><span class="l-zh">v3因子挑战者 vs 冠军</span></div>'
-          +v3FactorRow(v3, isClaims, isNfp)
-          +'</div>';
-      }
-
-      /* 13. Policy backdrop */
-      if (item.policy_backdrop){
-        html += '<div class="rr-modal-section">'
-          +'<div class="rr-modal-section-label"><span class="l-en">Policy backdrop</span><span class="l-zh">政策背景</span></div>'
-          +policyStrip(item.policy_backdrop)
-          +'</div>';
-      }
-
-      /* display-only footnote */
-      html += '<div class="rr-modal-do-note">'
-        +'<span class="l-en">display-only — not a signal / not consensus · model projections, not investment advice · scored forward in public</span>'
-        +'<span class="l-zh">仅展示 — 非信号·非共识 · 模型预测，非投资建议 · 正向评分公开记录</span>'
-        +'</div>';
-
-      return html;
+      return {tab0:tab0, tab1:tab1, tab2:tab2, tab3:tab3, tab4:tab4};
     }
 
-    /* ---- modal open / close ---- */
+    /* ---- modal open / close / tab switching ---- */
     var _rrItems = [];
+    var _captureHealth = null;
 
+    /* ---- modal open / close ---- */
     function openModal(item){
       if (!RR_OVERLAY || !RR_MODAL_INNER) return;
-      RR_MODAL_INNER.innerHTML = renderModal(item);
+      var rel = item.release || '';
+      var rt = item.release_type || '';
+      var proj = item.projection || {};
+      var isClaims = rel.toLowerCase() === 'claims';
+      var isNfp = rel.toLowerCase() === 'nfp';
+      var isBenchmarkOnly = proj.mode === 'benchmark_only';
+      var pit = item.pit || {};
+      var isRetail = rel.toLowerCase() === 'retail';
+      var isNoData = isRetail && (String(pit.reason||'').indexOf('no_data') !== -1 || (proj.p10==null&&proj.p90==null));
+
+      /* health dot indicator */
+      var captureHealth = _captureHealth;
+      var hasDue = captureHealth && captureHealth.past_due_unscored && captureHealth.past_due_unscored.length;
+      var titleHTML = '<div class="rr-modal-title">'+relName(rel, rt)+'</div>'
+        +'<div class="rr-modal-sub">'
+        +(hasDue ? '<span class="rr-health-dot" title="capture health: past-due unscored"></span>' : '')
+        +'<span class="l-en">'+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+(item.days_to!=null?' · in '+item.days_to+' d':'')+(item.cutoff_label?' · '+esc(item.cutoff_label):'')+'</span>'
+        +'<span class="l-zh">'+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+(item.days_to!=null?' · '+item.days_to+'天后':'')+'</span>'
+        +'</div>';
+      if (RR_TITLE_BLOCK) RR_TITLE_BLOCK.innerHTML = titleHTML;
+
+      var tabs = renderModal(item, captureHealth);
+
+      /* define which tabs are visible: null/empty tabs hidden */
+      var tabDefs = [
+        {id:'t0',en:'Overview',zh:'概览',content:tabs.tab0},
+        {id:'t1',en:'Models',zh:'模型',content:tabs.tab1},
+        {id:'t2',en:'Components',zh:'组件',content:tabs.tab2,skip:isBenchmarkOnly||isNoData},
+        {id:'t3',en:'History',zh:'历史',content:tabs.tab3},
+        {id:'t4',en:'Context',zh:'情境',content:tabs.tab4}
+      ];
+      var visibleTabs = tabDefs.filter(function(t){return !t.skip && t.content;});
+
+      /* build tab strip */
+      if (RR_TAB_STRIP){
+        RR_TAB_STRIP.innerHTML = visibleTabs.map(function(t,i){
+          return '<button class="rr-tab'+(i===0?' active':'')+'" data-tab="'+esc(t.id)+'" role="tab" aria-selected="'+(i===0?'true':'false')+'">'
+            +'<span class="l-en">'+esc(t.en)+'</span>'
+            +'<span class="l-zh">'+esc(t.zh)+'</span>'
+            +'</button>';
+        }).join('');
+        RR_TAB_STRIP.querySelectorAll('.rr-tab').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var tid = btn.getAttribute('data-tab');
+            RR_TAB_STRIP.querySelectorAll('.rr-tab').forEach(function(b){
+              b.classList.toggle('active', b.getAttribute('data-tab')===tid);
+              b.setAttribute('aria-selected', b.getAttribute('data-tab')===tid ? 'true':'false');
+            });
+            RR_MODAL_INNER.querySelectorAll('.rr-pane').forEach(function(p){
+              p.classList.toggle('active', p.getAttribute('data-tab')===tid);
+            });
+          });
+        });
+      }
+
+      /* build panes */
+      RR_MODAL_INNER.innerHTML = visibleTabs.map(function(t,i){
+        return '<div class="rr-pane'+(i===0?' active':'')+'" data-tab="'+esc(t.id)+'">'+t.content+'</div>';
+      }).join('');
+
       RR_OVERLAY.classList.add('open');
       document.body.style.overflow = 'hidden';
-      /* apply current lang */
       var lang = (document.documentElement.getAttribute('data-lang') || 'en');
       RR_OVERLAY.setAttribute('data-lang', lang);
     }
@@ -3518,13 +3967,11 @@
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
 
     /* sync modal lang when language is toggled */
-    var _langObserver = null;
     if (typeof MutationObserver !== 'undefined' && RR_OVERLAY){
-      _langObserver = new MutationObserver(function(){
+      new MutationObserver(function(){
         var lang = document.documentElement.getAttribute('data-lang') || 'en';
         RR_OVERLAY.setAttribute('data-lang', lang);
-      });
-      _langObserver.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
+      }).observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
     }
 
     /* main render */
@@ -3537,6 +3984,7 @@
         return;
       }
       _rrItems = Array.isArray(d.upcoming) ? d.upcoming : [];
+      _captureHealth = d.capture_health || null;
       var lastScored = Array.isArray(d.last_scored) ? d.last_scored : [];
       var asof = d.asof || '';
       var cards = _rrItems.length ? _rrItems.map(renderCard).join('') :
