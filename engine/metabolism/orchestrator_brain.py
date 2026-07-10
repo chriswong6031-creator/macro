@@ -391,13 +391,19 @@ def _build_orchestrator_system(
         #    before Organism State, so the loop sees staleness before reasoning on data.
         try:
             from engine.metabolism import provenance as _prov  # noqa: PLC0415
+            # Use real repo-relative paths so provenance can resolve file mtime.
+            # Logical keys (e.g. "organism_state") resolve to nonexistent paths
+            # and always yield age_days=None / staleness_reason="unknown-age".
             _freshness_blocks: list[dict] = [
-                {"name": "organism_state", "source": "organism_state", "text": ""},
-                {"name": "lessons",        "source": "lessons",        "text": ""},
-                {"name": "case_law",       "source": "case_law",       "text": ""},
-                {"name": "trajectory",     "source": "trajectory",     "text": ""},
-                {"name": "fitness",        "source": "fitness",        "text": ""},
+                {"name": "organism_state", "source": "data/metabolism/organism_state.json",  "text": ""},
+                {"name": "lessons",        "source": "data/metabolism/lessons.jsonl",         "text": ""},
+                {"name": "case_law",       "source": "config/ruling_graph.yml",               "text": ""},
+                {"name": "trajectory",     "source": "data/metabolism/trajectory.jsonl",      "text": ""},
             ]
+            if lobe:
+                _freshness_blocks.append(
+                    {"name": "fitness", "source": f"data/metabolism/fitness/{lobe}.json", "text": ""}
+                )
             _stamped = _prov.stamp_context(_freshness_blocks, root=repo)
             _freshness_header = _prov.render_freshness_header(_stamped)
             parts.append(f"## Context Freshness\n\n{_freshness_header}")

@@ -16,6 +16,8 @@ All tests are HERMETIC (tmp_path, pass root=tmp_path; no live filesystem reads).
 from __future__ import annotations
 
 import json
+import os
+import time
 from pathlib import Path
 
 import pytest
@@ -103,6 +105,76 @@ class TestBrainWiring:
         assert pos_freshness < pos_organism, (
             "Context Freshness header must appear before Organism State "
             f"(freshness at {pos_freshness}, organism at {pos_organism})"
+        )
+
+    def test_freshness_header_real_age_not_unknown(self, tmp_path: Path) -> None:
+        """Freshness header shows computed file-mtime age, not 'age unknown'.
+
+        Seeds:
+          - organism_state.json  (fresh — just written, mtime ~now)
+          - lessons.jsonl        (stale — mtime backdated 40d, SLA is 30d)
+
+        Asserts:
+          - The organism_state line uses 'file-mtime' (numeric age resolved)
+            and does NOT say 'age unknown'.
+          - The lessons line is marked '⚠ STALE' (40d > 30d SLA).
+
+        This test MUST fail against the old logical-key wiring (where source
+        is "organism_state" / "lessons") and pass only after the fix that
+        passes real repo-relative paths as source.
+        """
+        # Seed a FRESH organism_state artifact (mtime ~now)
+        state_dir = tmp_path / "data" / "metabolism"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        state_path = state_dir / "organism_state.json"
+        state_path.write_text(json.dumps({"schema": "v1"}), encoding="utf-8")
+
+        # Seed a STALE lessons.jsonl (mtime backdated 40 days)
+        lessons_path = state_dir / "lessons.jsonl"
+        lessons_path.write_text(
+            json.dumps({"ts": "2026-01-01T00:00:00+00:00", "verdict": "PASS"}) + "\n",
+            encoding="utf-8",
+        )
+        stale_t = time.time() - 40 * 86400
+        os.utime(lessons_path, (stale_t, stale_t))
+
+        prompt = _build_orchestrator_system(
+            model="claude-opus-4-8",
+            lobe="til",
+            root=tmp_path,
+        )
+
+        # Extract the freshness header block
+        assert "## Context Freshness" in prompt, "Freshness header missing"
+
+        freshness_start = prompt.find("## Context Freshness")
+        # Next section starts with "##" — grab everything between them
+        next_section = prompt.find("\n## ", freshness_start + 1)
+        freshness_block = prompt[freshness_start:next_section] if next_section != -1 else prompt[freshness_start:]
+
+        # organism_state line must show a numeric age (file-mtime resolved), not "age unknown"
+        assert "organism_state" in freshness_block, "organism_state missing from freshness block"
+        # Find the organism_state line
+        for line in freshness_block.splitlines():
+            if "organism_state" in line:
+                assert "age unknown" not in line, (
+                    f"organism_state freshness line still shows 'age unknown' — "
+                    f"real path not being resolved: {line!r}"
+                )
+                assert "file-mtime" in line, (
+                    f"organism_state freshness line expected 'file-mtime' staleness_reason: {line!r}"
+                )
+                break
+
+        # lessons line must be marked STALE (40d > 30d SLA)
+        stale_found = False
+        for line in freshness_block.splitlines():
+            if "lessons" in line and "⚠ STALE" in line:
+                stale_found = True
+                break
+        assert stale_found, (
+            f"lessons line not marked ⚠ STALE even though 40d > 30d SLA.\n"
+            f"Freshness block:\n{freshness_block}"
         )
 
     def test_trajectory_strategic_gap_section(self, tmp_path: Path) -> None:

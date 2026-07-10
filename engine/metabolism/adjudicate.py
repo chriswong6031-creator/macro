@@ -624,7 +624,7 @@ def adjudicate_role(
                     )
                     _fp = _rec.fingerprint_construction(_construction_text)
                     for _row in _all_rows:
-                        if not _rec._is_fail_verdict(str(_row.get("verdict") or "")):
+                        if not _rec.is_fail_verdict(str(_row.get("verdict") or "")):
                             continue
                         _row_fp = _rec.fingerprint_construction(str(_row.get("construction") or ""))
                         if not _row_fp or not _fp:
