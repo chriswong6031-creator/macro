@@ -48,6 +48,24 @@ _YAHOO_BATCH = 20
 
 # --------------------------------------------------------------- routing ----
 
+def _us_settle_window(now: datetime | None = None) -> bool:
+    """True outside the US pre/RTH window (16:00 ET → next 04:00 ET + weekends).
+
+    Post-close, Polygon's trade/minute price rungs keep updating with
+    extended-hours prints — a snapshot built then stamps after-hours drift as
+    the day's move (worst exactly on news days). Yahoo spark's
+    regularMarketPrice pins the official settle (basis 'regular'), so US
+    symbols route there instead. Premarket (04:00–09:30 ET) stays on Polygon:
+    the premarket tape is a designed feature (FTR W2c).
+    """
+    from zoneinfo import ZoneInfo
+
+    et = (now or _now()).astimezone(ZoneInfo("America/New_York"))
+    if et.weekday() >= 5:
+        return True
+    return et.hour >= 16 or et.hour < 4
+
+
 def is_us_symbol(sym: str) -> bool:
     """US equity/ETF — Polygon-routable. Anything with a market suffix (``.``), a
     Yahoo future (``=``), a crypto pair (``-``) or a caret index (``^``) is not
@@ -218,7 +236,9 @@ def fetch_quotes(symbols: list[str], *, us_source: str | None = None,
     poly_status = "unused"
 
     if us:
-        if us_source == "polygon" and key:
+        if us_source == "polygon" and key and not _us_settle_window():
+            # Settle-clean routing (TS-U5): post-close the trade/minute rungs
+            # carry extended-hours prints; Yahoo 'regular' pins the settle.
             poly_out, poly_status = fetch_polygon(us, key)
             out.update(poly_out)
         missing = [s for s in us if s not in out]   # Yahoo fallback for any gap / no key
