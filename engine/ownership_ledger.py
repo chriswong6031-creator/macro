@@ -335,38 +335,14 @@ def _l2_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
         anchor_date = rec.get("as_of", "")
         if not anchor_date:
             continue
-        # Aggregate tracked shares from holders who are still holding
-        agg_shares = sum(
-            float(h.get("value_usd", 0)) / (float(h.get("shares", 1)) or 1)
-            * float(h.get("shares", 0) or 0)
-            for h in holders if h.get("action") != "exit"
-        )
-        # Better: just sum shares directly (holders may not carry shares explicitly)
-        # Fall back: aggregate value_usd and an ADV-derived share count
+        # Aggregate shares from holder records (populated by E2.5 fix in compute_smart_money).
+        # holders[*]["shares"] = sum of shares for that fund's position in this ticker.
+        # Null-honest: if no holder carries shares, dte_val stays None.
+        non_exit_holders = [h for h in holders if h.get("action") != "exit"]
+        agg_shares = sum(float(h.get("shares") or 0) for h in non_exit_holders)
         adv_meta = adv_shares(ticker, as_of=anchor_date)
         adv = adv_meta["adv"] if adv_meta else None
-        # Aggregate shares: sum value_usd across non-exit holders then divide by
-        # the implied price (latest close) — best-effort since 13F shares aren't
-        # always in by_ticker; degrade gracefully if unavailable.
-        total_val = sum(float(h.get("value_usd", 0)) for h in holders
-                        if h.get("action") != "exit")
-        # Use ADV in shares; if we can't compute aggregate shares, dte is None
-        dte_val = None
-        if adv and adv > 0 and total_val > 0:
-            # Approximate shares from value and the implied per-share price
-            # Note: this is a rough proxy; the exact formula needs share counts
-            # from the 13F which aren't surfaced in by_ticker. Use dte=None if
-            # share data absent (null-honest).
-            pass  # dte_val stays None; adv-based computation below
-        # Direct approach: read shares from the raw diff if available
-        try:
-            from engine.smart_money import _read_two, diff_snapshots
-            # Use the aggregated from-disk approach for L2 ADV
-            pass
-        except Exception:  # noqa: BLE001
-            pass
-        if dte_val is None and adv:
-            dte_val = None  # null-honest — don't fake it
+        dte_val = days_to_exit(agg_shares if agg_shares > 0 else None, adv)
 
         ticker_dte[ticker] = (dte_val, anchor_date)
         if dte_val is not None:

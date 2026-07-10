@@ -700,6 +700,8 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
                         .agg(action=("action", "first"),
                              pct_portfolio=("pct_portfolio", "sum"),
                              value_usd=("value_usd", "sum"),
+                             shares=("shares", "sum"),          # propagate for days_to_exit
+                             issuer=("issuer", "first"),        # propagate for display
                              shares_change_pct=("shares_change_pct", "first")))
         # per-fund coverage: resolved / total positions
         n_resolved_count = int(len(resolved)) if not resolved.empty else 0
@@ -723,6 +725,10 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
                 "fund": slug.upper(), "fund_name": spec.get("name", slug),
                 "action": r.action, "pct_portfolio": round(float(r.pct_portfolio), 2),
                 "value_usd": float(r.value_usd), "period_end": period_end,
+                "shares": (float(r.shares) if hasattr(r, "shares")
+                           and r.shares is not None and not pd.isna(r.shares)
+                           else None),
+                "issuer": str(getattr(r, "issuer", "") or ""),
                 "shares_change_pct": (None if r.shares_change_pct is None
                                       or pd.isna(r.shares_change_pct)
                                       else float(r.shares_change_pct)),

@@ -40,8 +40,12 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-# Lookback window for 13D/G activist events in the wire (calendar days).
-_13DG_LOOKBACK_DAYS = 45
+# Lookback window for 13D/G events in the main wire (calendar days).
+# The activists BOARD uses its own 45-day feed (_13DG_LOOKBACK_ACTIVISTS = 45)
+# built separately in build_smart_money._build_activists; the main wire keeps
+# 14 days so the combined row count stays manageable.
+_13DG_LOOKBACK_DAYS = 14
+_13DG_LOOKBACK_ACTIVISTS = 45
 
 # Minimum absolute % of fund book to surface on the wire (new/add rows).
 _MIN_BOOK_PCT = 0.0    # surface all; the board filters by action
@@ -356,7 +360,23 @@ def _13dg_rows(lookback_days: int = _13DG_LOOKBACK_DAYS,
             "roster_hit": (ticker in roster) if ticker else False,
         })
 
-    return rows
+    # Dedupe repeated custodial re-files: for the same (filer, ticker, form_type) keep
+    # only the newest filing within the window. Custodial 13G/A re-files from passive
+    # giants (e.g. BlackRock, Vanguard) can flood the window with near-identical rows.
+    seen_keys: set[tuple] = set()
+    deduped: list[dict] = []
+    # Sort newest-first so we keep the most recent filing per key
+    rows.sort(key=lambda r: r.get("date", ""), reverse=True)
+    for r in rows:
+        key = (r.get("fund", ""), r.get("ticker", ""), r.get("type", ""))
+        if key not in seen_keys:
+            seen_keys.add(key)
+            deduped.append(r)
+        else:
+            log.debug("13dg_rows: dropped duplicate custodial re-file "
+                      "filer=%s ticker=%s form=%s date=%s",
+                      r.get("fund"), r.get("ticker"), r.get("type"), r.get("date"))
+    return deduped
 
 
 # --------------------------------------------------------------------------- #
@@ -634,6 +654,16 @@ def build_wire(funds: dict[str, dict],
 
     # Sort descending by date (reverse-chronological), preserving within-date order
     all_rows.sort(key=lambda r: r.get("date", ""), reverse=True)
+
+    # Cap emitted wire at 250 rows (newest first); log count of dropped rows
+    _WIRE_CAP = 250
+    if len(all_rows) > _WIRE_CAP:
+        dropped = len(all_rows) - _WIRE_CAP
+        log.info("build_wire: wire cap applied — emitting %d rows, dropped %d "
+                 "(total before cap: %d; 13f=%d 13dg=%d insider=%d)",
+                 _WIRE_CAP, dropped, len(all_rows),
+                 len(wire_13f), len(wire_13dg), len(wire_insider))
+        all_rows = all_rows[:_WIRE_CAP]
 
     # Build fund_filings for the clock (latest period_end / filing_date per slug)
     fund_filings: dict[str, dict] = {}

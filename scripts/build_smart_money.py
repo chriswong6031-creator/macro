@@ -174,9 +174,11 @@ def _build_grand_portfolio(sm: dict) -> list[dict]:
         hhi = bt.get("ownership_hhi")
         max_book_pct = bt.get("max_book_pct")
         agg_value_usd = float(m.get("total_value", 0))
+        # Issuer: take from first holder that carries it (propagated by compute_smart_money fix)
+        issuer_gp = next((h.get("issuer", "") for h in holders if h.get("issuer")), "")
         out.append({
             "ticker": ticker,
-            "issuer": "",
+            "issuer": issuer_gp,
             "n_funds": int(m.get("n_funds", 0)),
             "d_funds_qoq": d_funds_qoq,
             "holders_series": holders_series,
@@ -230,10 +232,19 @@ def _build_crowding(sm: dict) -> list[dict]:
     except Exception:  # noqa: BLE001
         pass
 
+    # ClosePanel for entry_band latest_close (reuse same price plumbing as enrich_since_filing)
+    close_panel = None
+    try:
+        from engine.manager_trades import ClosePanel
+        close_panel = ClosePanel()
+    except Exception:  # noqa: BLE001
+        log.debug("_build_crowding: ClosePanel unavailable — entry_band n_underwater will be None")
+
     by_ticker = sm.get("by_ticker", {})
     most_held = sm.get("most_held", [])
 
     # Build universe DTE distribution for quintile calibration
+    # Uses aggregate shares directly from holder records (propagated in E2.5 fix).
     dte_universe: list[float] = []
     ticker_dte_map: dict[str, float | None] = {}
     for m in most_held:
@@ -241,21 +252,11 @@ def _build_crowding(sm: dict) -> list[dict]:
         bt = by_ticker.get(ticker, {})
         holders = [h for h in bt.get("holders", []) if h.get("action") != "exit"]
         as_of = bt.get("as_of", "")
-        # Aggregate shares proxy: sum value_usd / implied price
-        total_val = sum(float(h.get("value_usd", 0)) for h in holders)
         adv_meta = adv_shares(ticker, as_of=as_of)
         adv = adv_meta["adv"] if adv_meta else None
-        # Aggregate shares from value: not directly available, use total_val / (recent close proxy)
-        # Without actual share data from by_ticker, dte is proxy-only
-        dte_val = None
-        # Try to use the implied price from entry_band
-        prices = [float(h.get("value_usd", 0)) / max(float(h.get("shares", 0) or 1), 1)
-                  for h in holders if h.get("value_usd") and h.get("shares")]
-        if prices and adv:
-            avg_price = sum(prices) / len(prices)
-            agg_shares_approx = total_val / avg_price if avg_price > 0 else None
-            if agg_shares_approx:
-                dte_val = _dte(agg_shares_approx, adv)
+        # Aggregate shares: sum from holder records (shares propagated by compute_smart_money)
+        agg_shares = sum(float(h.get("shares") or 0) for h in holders)
+        dte_val = _dte(agg_shares if agg_shares > 0 else None, adv)
         ticker_dte_map[ticker] = dte_val
         if dte_val is not None:
             dte_universe.append(dte_val)
@@ -269,10 +270,18 @@ def _build_crowding(sm: dict) -> list[dict]:
         dte_val = ticker_dte_map.get(ticker)
         ct = _ct(dte_val, dte_universe if len(dte_universe) >= 5 else None)
 
-        # implied entry band (from holder rows that carry shares)
+        # Issuer: take from first non-exit holder (populated by compute_smart_money fix)
+        issuer = next((h.get("issuer", "") for h in holders if h.get("issuer")), "")
+
+        # Implied entry band: pass latest close from ClosePanel (reuse existing price plumbing)
         ieb = None
         try:
-            ieb = implied_entry_band(holders, latest_close=None)
+            latest_close = None
+            if close_panel is not None:
+                cs = close_panel.get(ticker)
+                if cs is not None and len(cs) > 0:
+                    latest_close = float(cs.iloc[-1])
+            ieb = implied_entry_band(holders, latest_close=latest_close)
         except Exception:  # noqa: BLE001
             pass
 
@@ -299,7 +308,7 @@ def _build_crowding(sm: dict) -> list[dict]:
 
         out.append({
             "ticker": ticker,
-            "issuer": "",
+            "issuer": issuer,
             "n_funds": int(m.get("n_funds", 0)),
             "agg_value_usd": round(float(m.get("total_value", 0)), 0),
             "hhi": bt.get("ownership_hhi"),
@@ -422,10 +431,18 @@ def main() -> int:
     t3 = time.monotonic()
     wire: list[dict] = []
     clock: dict = {}
+    wire_13dg_activists: list[dict] = []
     try:
-        from engine.ownership_event_wire import build_wire, freshness_axes
+        from engine.ownership_event_wire import (build_wire, freshness_axes,
+                                                 _13dg_rows, _13DG_LOOKBACK_ACTIVISTS)
         wire, clock = build_wire(funds)
         freshness = freshness_axes(wire, clock)
+        # Activists board keeps its own 45-day 13D/G feed (independent of main wire cap)
+        try:
+            wire_13dg_activists = _13dg_rows(lookback_days=_13DG_LOOKBACK_ACTIVISTS)
+        except Exception as e_act:  # noqa: BLE001
+            log.warning("activists 45d 13D/G feed failed — falling back to main wire: %s", e_act)
+            wire_13dg_activists = [r for r in wire if r.get("axis") == "13dg"]
     except Exception as e:  # noqa: BLE001
         log.warning("ownership_event_wire failed — continuing: %s", e)
         freshness = []
@@ -452,7 +469,8 @@ def main() -> int:
         crowding = []
 
     try:
-        activists = _build_activists(wire, sm or {})
+        # Activists board uses the 45-day 13D/G feed (independent of the capped 14d main wire)
+        activists = _build_activists(wire_13dg_activists, sm or {})
     except Exception as e:  # noqa: BLE001
         log.warning("activists build failed: %s", e)
         activists = []

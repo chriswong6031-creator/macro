@@ -247,3 +247,134 @@ def test_full_cusip_map_warns_when_figi_empty(monkeypatch, caplog):
         mapping, meta = _sm.full_cusip_map()
     assert meta["openfigi_entries"] == 0
     assert any("OpenFIGI" in r.message for r in caplog.records)
+
+
+# --------------------------------------------------------------------------- #
+# E2.5 fixes: shares + issuer propagation into holder records                  #
+# --------------------------------------------------------------------------- #
+
+def _make_snapshot_df(rows: list[dict]) -> pd.DataFrame:
+    """Build a minimal 13F snapshot DataFrame for testing."""
+    return pd.DataFrame(rows)
+
+
+def test_diff_snapshots_preserves_shares():
+    """diff_snapshots must retain the 'shares' column in its output (E2.5 fix)."""
+    latest = _make_snapshot_df([
+        {"cusip": "AAPL01", "issuer": "APPLE INC", "sh_type": "SH",
+         "shares": 10000.0, "value_usd": 1_600_000.0},
+        {"cusip": "MSFT01", "issuer": "MICROSOFT CORP", "sh_type": "SH",
+         "shares": 5000.0, "value_usd": 1_900_000.0},
+    ])
+    diff = sm.diff_snapshots(None, latest)
+    assert "shares" in diff.columns, "diff_snapshots must preserve 'shares' column"
+    # Sum per cusip (aggregated by diff_snapshots groupby)
+    shares_map = dict(zip(diff["cusip"], diff["shares"]))
+    assert shares_map["AAPL01"] == pytest.approx(10000.0)
+    assert shares_map["MSFT01"] == pytest.approx(5000.0)
+
+
+def test_compute_smart_money_holder_has_shares(tmp_path, monkeypatch):
+    """Each holder entry in by_ticker must carry a 'shares' field after E2.5 fix.
+
+    Uses a minimal two-snapshot fixture to avoid disk reads.
+    """
+    import engine.smart_money as _sm
+
+    # Monkeypatch data dir + fund config
+    monkeypatch.setattr(_sm.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(_sm.config, "load", lambda: {
+        "smart_money": {
+            "panel_top_n": 12,
+            "funds": {"testfund": {"name": "Test Fund"}},
+        }
+    })
+
+    # Write a minimal snapshot
+    snap_dir = tmp_path / "smart_money" / "testfund"
+    snap_dir.mkdir(parents=True)
+    snap = pd.DataFrame([
+        {"cusip": "AAP001", "issuer": "APPLE INC", "sh_type": "SH",
+         "shares": 12345.0, "value_usd": 2_000_000.0,
+         "fund_slug": "testfund", "period_end": "2025-12-31", "filing_date": "2026-02-14"},
+    ])
+    snap.to_parquet(snap_dir / "2025-12-31.parquet")
+
+    # Monkeypatch name_ticker_map — keys must be _norm()-normalized form of issuer names
+    # _norm("APPLE INC") = "APPLE" (suffixes dropped)
+    monkeypatch.setattr(_sm, "name_ticker_map", lambda *a, **kw: {"APPLE": "AAPL"})
+    # Monkeypatch full_cusip_map to use CUSIP as the primary resolution path
+    monkeypatch.setattr(_sm, "full_cusip_map", lambda *a, **kw: ({"AAP001": "AAPL"}, {"openfigi_entries": 0, "ark_seed_entries": 0}))
+    # Monkeypatch accumulation trend + quality (not relevant here)
+    monkeypatch.setattr(_sm, "_accumulation", lambda *a, **kw: {})
+    monkeypatch.setattr(_sm, "_safe_manager_quality", lambda *a, **kw: {})
+
+    result = _sm.compute_smart_money({
+        "panel_top_n": 12,
+        "funds": {"testfund": {"name": "Test Fund"}},
+    })
+    assert result is not None
+    by_ticker = result.get("by_ticker", {})
+    assert "AAPL" in by_ticker, "AAPL should be resolved from fixture snapshot"
+    holders = by_ticker["AAPL"]["holders"]
+    assert len(holders) >= 1
+    h = holders[0]
+    assert "shares" in h, "holder entry must carry 'shares' field (E2.5 fix)"
+    assert h["shares"] == pytest.approx(12345.0)
+    assert "issuer" in h, "holder entry must carry 'issuer' field (E2.5 fix)"
+    assert "APPLE" in h["issuer"]
+
+
+def test_compute_smart_money_holder_has_issuer(tmp_path, monkeypatch):
+    """Each holder entry must carry a non-empty 'issuer' field (E2.5 fix)."""
+    import engine.smart_money as _sm
+
+    monkeypatch.setattr(_sm.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(_sm.config, "load", lambda: {"smart_money": {"funds": {}}})
+
+    snap_dir = tmp_path / "smart_money" / "issuerfund"
+    snap_dir.mkdir(parents=True)
+    snap = pd.DataFrame([
+        {"cusip": "MSF001", "issuer": "MICROSOFT CORP", "sh_type": "SH",
+         "shares": 999.0, "value_usd": 370_000.0,
+         "fund_slug": "issuerfund", "period_end": "2025-12-31", "filing_date": "2026-02-14"},
+    ])
+    snap.to_parquet(snap_dir / "2025-12-31.parquet")
+
+    # _norm("MICROSOFT CORP") = "MICROSOFT"
+    monkeypatch.setattr(_sm, "name_ticker_map", lambda *a, **kw: {"MICROSOFT": "MSFT"})
+    monkeypatch.setattr(_sm, "full_cusip_map", lambda *a, **kw: ({"MSF001": "MSFT"}, {"openfigi_entries": 0, "ark_seed_entries": 0}))
+    monkeypatch.setattr(_sm, "_accumulation", lambda *a, **kw: {})
+    monkeypatch.setattr(_sm, "_safe_manager_quality", lambda *a, **kw: {})
+
+    result = _sm.compute_smart_money({
+        "panel_top_n": 12,
+        "funds": {"issuerfund": {"name": "Issuer Fund"}},
+    })
+    assert result is not None
+    holders = result["by_ticker"]["MSFT"]["holders"]
+    assert holders[0]["issuer"] != "", "issuer must be non-empty string (E2.5 fix)"
+    assert "MICROSOFT" in holders[0]["issuer"]
+
+
+# --------------------------------------------------------------------------- #
+# days_to_exit computes from fixture holder shares + ADV                        #
+# --------------------------------------------------------------------------- #
+
+def test_days_to_exit_from_holder_shares():
+    """days_to_exit = agg_shares / ADV, computed from holder records carrying 'shares'."""
+    from engine.ownership_crowding import days_to_exit, adv_shares
+
+    # Synthetic holder rows with shares populated
+    holders = [
+        {"action": "hold", "shares": 1_000_000.0, "value_usd": 150_000_000.0},
+        {"action": "add",  "shares": 500_000.0,  "value_usd":  75_000_000.0},
+        {"action": "exit", "shares": 200_000.0,  "value_usd":       0.0},  # excluded
+    ]
+    non_exit = [h for h in holders if h.get("action") != "exit"]
+    agg_shares = sum(float(h.get("shares") or 0) for h in non_exit)
+    assert agg_shares == pytest.approx(1_500_000.0)
+
+    # With ADV = 500_000, dte = 1_500_000 / 500_000 = 3.0
+    dte = days_to_exit(agg_shares=agg_shares, adv=500_000.0)
+    assert dte == pytest.approx(3.0, abs=0.05)

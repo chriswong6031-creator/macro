@@ -438,3 +438,86 @@ class TestNoFusionPayload:
         param_names = list(sig.parameters.keys())
         assert "short_ratio" not in param_names
         assert "days_to_cover" not in param_names
+
+
+# --------------------------------------------------------------------------- #
+# Wire cap + 13D/G dedup (E2.5 defect fixes)                                   #
+# --------------------------------------------------------------------------- #
+
+class TestWireCapAndDedup:
+    """E2.5 fix: wire capped at 250 rows; 13D/G custodial re-files deduped."""
+
+    def _make_13dg_rows(self, n: int) -> list[dict]:
+        """Produce n distinct 13D/G rows."""
+        rows = []
+        for i in range(n):
+            rows.append({
+                "date": f"2026-07-{str(i % 10 + 1).zfill(2)}",
+                "axis": "13dg",
+                "type": "SC 13G/A",
+                "slug": "",
+                "fund": f"Custodian_{i}",
+                "ticker": f"T{i:04d}",
+                "issuer": f"Corp {i}",
+                "action": "13g",
+                "magnitude": None,
+                "unit": None,
+                "asof_note": "...",
+                "signal": "low",
+                "filer_type": "passive_giant",
+                "roster_hit": False,
+            })
+        return rows
+
+    def test_wire_cap_trims_to_250(self, monkeypatch):
+        """build_wire must emit at most 250 rows."""
+        import engine.ownership_event_wire as wire_mod
+        # Inject 400 rows by overriding the axis functions
+        big_rows = self._make_13dg_rows(400)
+        monkeypatch.setattr(wire_mod, "_13f_rows", lambda funds: [])
+        monkeypatch.setattr(wire_mod, "_13dg_rows", lambda **kw: big_rows)
+        monkeypatch.setattr(wire_mod, "_insider_rows", lambda roster: [])
+        monkeypatch.setattr(wire_mod, "_roster_tickers", lambda funds: set())
+        from engine.ownership_event_wire import build_wire
+        wire, clock = build_wire({})
+        assert len(wire) == 250
+
+    def test_13dg_dedup_keeps_newest(self):
+        """Duplicate (filer, ticker, form) entries keep only the newest date."""
+        from engine.ownership_event_wire import _13dg_rows
+        import engine.beneficial_ownership as bo
+
+        # Inject two rows for the same (filer, ticker, form), different dates
+        df = pd.DataFrame([
+            {"ticker": "AAPL", "date_filed": "2026-07-05",
+             "form_type": "SC 13G/A", "filer": "Vanguard", "filer_type": "passive_giant",
+             "company": "Apple Inc"},
+            {"ticker": "AAPL", "date_filed": "2026-07-09",  # newer
+             "form_type": "SC 13G/A", "filer": "Vanguard", "filer_type": "passive_giant",
+             "company": "Apple Inc"},
+            {"ticker": "MSFT", "date_filed": "2026-07-08",  # different ticker, not a dupe
+             "form_type": "SC 13G/A", "filer": "Vanguard", "filer_type": "passive_giant",
+             "company": "Microsoft Corp"},
+        ])
+        # monkeypatch _load_enrichment to return our fixture
+        import unittest.mock as mock
+        with mock.patch.object(bo, "_load_enrichment", return_value=df):
+            rows = _13dg_rows(lookback_days=30, roster={"AAPL", "MSFT"})
+
+        # AAPL should appear only once (deduped), MSFT once → total 2
+        tickers = [r["ticker"] for r in rows]
+        assert tickers.count("AAPL") == 1
+        assert tickers.count("MSFT") == 1
+        # The kept AAPL row should be the newer one
+        aapl_row = next(r for r in rows if r["ticker"] == "AAPL")
+        assert aapl_row["date"] == "2026-07-09"
+
+    def test_13dg_lookback_constant_is_14(self):
+        """The main wire 13D/G lookback constant must be 14 days (E2.5 spec)."""
+        from engine.ownership_event_wire import _13DG_LOOKBACK_DAYS
+        assert _13DG_LOOKBACK_DAYS == 14
+
+    def test_activists_lookback_constant_is_45(self):
+        """The activists board lookback constant must be 45 days (independent feed)."""
+        from engine.ownership_event_wire import _13DG_LOOKBACK_ACTIVISTS
+        assert _13DG_LOOKBACK_ACTIVISTS == 45
