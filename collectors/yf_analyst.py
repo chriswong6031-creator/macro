@@ -393,10 +393,90 @@ def run(
 
     if new_rows:
         _upsert_and_write(new_rows, existing, out_path)
+        # W2 narrative ignition: append-only history snapshot (does not touch targets.parquet)
+        try:
+            _append_analyst_snapshots(new_rows)
+        except Exception as exc:  # noqa: BLE001 — additive, never fatal
+            log.warning("yf_analyst_snapshots: accrual failed (non-fatal): %s", exc)
     else:
         log.warning("yf_analyst: no rows fetched")
 
     return new_rows
+
+
+# ── Analyst snapshot history accrual (W2 narrative ignition) ──────────────────
+# Appends a row per ticker per snapshot_date to data/narrative/analyst_snapshots.parquet
+# so PT-revision velocity becomes derivable after ~4 weeks of history.
+# Does NOT change the existing targets.parquet output contract.
+
+_SNAPSHOT_PATH = _REPO_ROOT / "data" / "narrative" / "analyst_snapshots.parquet"
+_SNAPSHOT_COLS = [
+    "ticker",
+    "snapshot_date",
+    "price_target_mean",
+    "price_target_high",
+    "price_target_low",
+    "n_analysts",
+    "rating_mean",
+]
+
+
+def _append_analyst_snapshots(
+    new_rows: list[dict],
+    snapshot_path: Path | None = None,
+) -> None:
+    """Append new yfinance analyst rows to the history store.
+
+    Each call to run() produces new_rows with as_of = today. We project those
+    into _SNAPSHOT_COLS rows and append (dedup on ticker+snapshot_date so repeated
+    intraday runs are idempotent). Does NOT modify targets.parquet.
+
+    Called automatically by run() after a successful write when not in dry-run mode.
+    """
+    if not new_rows:
+        return
+    snap_path = Path(snapshot_path) if snapshot_path else _SNAPSHOT_PATH
+
+    records = []
+    for r in new_rows:
+        # Only store rows where at least one of the PT fields is non-null —
+        # an all-null row carries no velocity signal.
+        if r.get("target_mean") is None and r.get("num_analysts") is None:
+            continue
+        records.append({
+            "ticker":            r["ticker"],
+            "snapshot_date":     r["as_of"],
+            "price_target_mean": r.get("target_mean"),
+            "price_target_high": r.get("target_high"),
+            "price_target_low":  r.get("target_low"),
+            "n_analysts":        r.get("num_analysts"),
+            "rating_mean":       r.get("recommendation"),  # key string e.g. 'buy'
+        })
+    if not records:
+        return
+
+    new_df = pd.DataFrame(records, columns=_SNAPSHOT_COLS)
+
+    if snap_path.exists():
+        try:
+            existing = pd.read_parquet(snap_path)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("yf_analyst_snapshots: corrupt store, rebuilding: %s", exc)
+            existing = pd.DataFrame(columns=_SNAPSHOT_COLS)
+    else:
+        existing = pd.DataFrame(columns=_SNAPSHOT_COLS)
+
+    combined = pd.concat([existing, new_df], ignore_index=True)
+    # Idempotent: keep first row per (ticker, snapshot_date) so re-runs don't duplicate
+    combined = combined.drop_duplicates(subset=["ticker", "snapshot_date"], keep="first")
+    combined = combined.reset_index(drop=True)
+
+    snap_path.parent.mkdir(parents=True, exist_ok=True)
+    combined.to_parquet(snap_path, index=False)
+    log.info(
+        "yf_analyst_snapshots: +%d rows → %s (%d total)",
+        len(new_df), snap_path, len(combined),
+    )
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
