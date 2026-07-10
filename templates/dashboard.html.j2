@@ -1054,7 +1054,12 @@
   .rm-tbl td.l, .rm-tbl th.l { text-align: left; }
   .rm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 
-  /* ── W8-R6: US Standout table view (mirrors CN implementation) ──────── */
+  /* ── W8-R6: US Standout table view (mirrors CN implementation) ────────
+     NOTE: These .st-* rules are NOT scoped to body.page-stocks (matching the
+     china.html.j2 pattern where the same rules are emitted unscoped).  The HTML
+     data block and JS init ARE gated (_su guard / mode != macro), so the rules
+     are dead CSS on macro.html — no functional impact.  Mirror this intentional
+     pattern when editing china.html.j2 to keep implementations in sync. */
   .st-view-toggle { display:inline-flex; gap:3px; padding:3px; border-radius:8px;
     background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
     border:1px solid var(--line); margin-left:10px; vertical-align:middle; }
@@ -6030,11 +6035,37 @@ setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000
    Mirrors the CN implementation (china.html.j2 StockTable init block).
    Safe no-op if stocktable data element is absent. */
 (function(){
-  var SECZH = {"Technology":"科技","Industrials":"工业","Basic Materials":"原材料","Financial Services":"金融","Consumer Cyclical":"可选消费","Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费","Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产"};
+  /* SECZH: keyed on GICS-style names as emitted by us_standouts producer
+     (Information Technology / Financials / Consumer Discretionary / Health Care …)
+     NOT Yahoo-style names (Technology / Financial Services / Consumer Cyclical / Healthcare).
+     Keep in sync with engine/entry_signal.py sector taxonomy. */
+  var SECZH = {
+    "Information Technology":"信息技术","Financials":"金融","Consumer Discretionary":"可选消费",
+    "Health Care":"医疗保健","Communication Services":"通信服务","Consumer Staples":"必需消费",
+    "Industrials":"工业","Energy":"能源","Materials":"原材料","Real Estate":"房地产",
+    "Utilities":"公用事业"
+  };
   var LANE_LABELS_EN = {"bottoming":"Bottoming","continuation":"Continuation","trend":"Trend","recovery":"Recovery","watch":"Watch"};
   var LANE_LABELS_ZH = {"bottoming":"筑底","continuation":"延续","trend":"趋势","recovery":"复苏","watch":"观察"};
-  var ENTRY_STATUS_EN = {"buy_now":"Buy now","partial":"Partial buy","wait":"Wait","extended":"Extended","watch":"Watch","avoid":"Avoid","topping":"Topping","blocked":"Blocked"};
-  var ENTRY_STATUS_ZH = {"buy_now":"立即买入","partial":"分批买入","wait":"等待","extended":"过热","watch":"观察","avoid":"回避","topping":"做顶","blocked":"封锁"};
+  /* ENTRY_STATUS maps: keyed on all values emitted by entry_signal.status producer.
+     Vocabulary: buy_now, partial, buy_soon, await_confluence, hold, wait_pullback,
+                 extended, watch, avoid, topping, blocked, exit.
+     Any unmapped key falls through to the raw token (visible bug) — extend both maps
+     when the producer vocabulary changes. */
+  var ENTRY_STATUS_EN = {
+    "buy_now":"Buy now","partial":"Partial buy",
+    "buy_soon":"Buy soon","await_confluence":"Await confluence",
+    "hold":"Hold","wait_pullback":"Wait — pullback",
+    "wait":"Wait","extended":"Extended",
+    "watch":"Watch","avoid":"Avoid","topping":"Topping","blocked":"Blocked","exit":"Exit"
+  };
+  var ENTRY_STATUS_ZH = {
+    "buy_now":"立即买入","partial":"分批买入",
+    "buy_soon":"即将买入","await_confluence":"等待共振",
+    "hold":"持有","wait_pullback":"等待回调",
+    "wait":"等待","extended":"过热",
+    "watch":"观察","avoid":"回避","topping":"做顶","blocked":"封锁","exit":"退出"
+  };
   var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;
 
   var cols = [
@@ -6075,7 +6106,7 @@ setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000
     { key:'entry_status', labelEn:'Entry', labelZh:'入场', default:true, sortable:true,
       fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
         var en = ENTRY_STATUS_EN[v]||v; var zh = ENTRY_STATUS_ZH[v]||v;
-        var cls = (v==='buy_now'||v==='partial')?'st-pos':(v==='extended'||v==='avoid'||v==='topping'||v==='blocked')?'st-neg':'';
+        var cls = (v==='buy_now'||v==='partial'||v==='buy_soon')?'st-pos':(v==='extended'||v==='avoid'||v==='topping'||v==='blocked'||v==='exit')?'st-neg':'';
         return '<span class="'+cls+'">'+b(esc(en),esc(zh))+'</span>'; },
       tip:{en:'Entry signal status from the cycle engine',zh:'周期引擎入场信号状态'} },
     { key:'factor_z', labelEn:'Factor Z', labelZh:'因子Z', default:false, sortable:true, right:true,

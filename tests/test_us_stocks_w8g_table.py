@@ -8,6 +8,8 @@ Verifies the W8-R6 stocktable port into templates/dashboard.html.j2 (mode='stock
   - nb-grid-section wrapper present (grid/table switching)
   - stocktable.js script tag present
   - Jinja parse of the data block snippet with synthetic context
+  - ENTRY_STATUS_EN/ZH maps cover every status value in the live artifact (vocabulary-drift CI)
+  - SECZH map covers every sector in the live artifact (vocabulary-drift CI)
 """
 import json
 import re
@@ -272,3 +274,107 @@ class TestUSStocktableRealData:
         payload = json.loads(m.group(1).strip())
         serial_tickers = [r["ticker"] for r in payload["rows"]]
         assert serial_tickers == orig_tickers
+
+
+# ── helpers to extract maps from template source ─────────────────────────────
+
+def _extract_js_object(src: str, var_name: str) -> dict:
+    """Extract a JS object literal assigned to `var_name` from the template source.
+
+    Looks for ``var <var_name> = { ... };`` and parses the value as JSON (the
+    maps use double-quoted string keys/values so valid JSON).
+    Returns an empty dict if not found (test will fail on the check below).
+    """
+    pattern = r'var\s+' + re.escape(var_name) + r'\s*=\s*(\{[^}]+\})'
+    m = re.search(pattern, src, re.DOTALL)
+    if not m:
+        return {}
+    # Normalise: strip trailing commas before } to be valid JSON
+    raw = re.sub(r',\s*\}', '}', m.group(1))
+    return json.loads(raw)
+
+
+class TestUSStocktableVocabularyCompleteness:
+    """Vocabulary-drift CI: maps in template must cover every key in the live artifact.
+
+    When the entry_signal producer adds a new status value or the sector taxonomy
+    changes, these tests fail CI before the table silently shows raw tokens.
+    """
+
+    ARTIFACT = ROOT / "site" / "factordata" / "us_standouts.json"
+
+    @pytest.fixture
+    def standouts(self):
+        if not self.ARTIFACT.exists():
+            pytest.skip("us_standouts.json not found")
+        with open(self.ARTIFACT) as f:
+            return json.load(f)
+
+    def _all_rows(self, standouts) -> list:
+        rows = []
+        for lane in ("buy", "watch", "laggards"):
+            rows.extend(standouts.get(lane, []))
+        return rows
+
+    def test_entry_status_en_covers_artifact_vocabulary(self, standouts):
+        """ENTRY_STATUS_EN must have a key for every status value in us_standouts.json.
+
+        A missing key causes the column to show the raw token (e.g. 'buy_soon')
+        instead of a human-readable label.
+        """
+        map_en = _extract_js_object(SRC, "ENTRY_STATUS_EN")
+        assert map_en, "Could not extract ENTRY_STATUS_EN from template"
+
+        artifact_statuses = set()
+        for row in self._all_rows(standouts):
+            status = (row.get("entry_signal") or {}).get("status")
+            if status:
+                artifact_statuses.add(status)
+
+        missing = artifact_statuses - set(map_en.keys())
+        assert not missing, (
+            f"ENTRY_STATUS_EN is missing keys present in us_standouts.json: {sorted(missing)}. "
+            "Add them to both ENTRY_STATUS_EN and ENTRY_STATUS_ZH in templates/dashboard.html.j2."
+        )
+
+    def test_entry_status_zh_covers_artifact_vocabulary(self, standouts):
+        """ENTRY_STATUS_ZH must have a key for every status value in us_standouts.json."""
+        map_zh = _extract_js_object(SRC, "ENTRY_STATUS_ZH")
+        assert map_zh, "Could not extract ENTRY_STATUS_ZH from template"
+
+        artifact_statuses = set()
+        for row in self._all_rows(standouts):
+            status = (row.get("entry_signal") or {}).get("status")
+            if status:
+                artifact_statuses.add(status)
+
+        missing = artifact_statuses - set(map_zh.keys())
+        assert not missing, (
+            f"ENTRY_STATUS_ZH is missing keys present in us_standouts.json: {sorted(missing)}. "
+            "Add Chinese labels in templates/dashboard.html.j2."
+        )
+
+    def test_seczh_covers_artifact_sectors(self, standouts):
+        """SECZH must have a key for every sector value in us_standouts.json.
+
+        A missing key causes ZH mode to show the English sector name literally.
+        The map uses GICS-style names (Information Technology, Financials, …).
+        """
+        map_seczh = _extract_js_object(SRC, "SECZH")
+        assert map_seczh, "Could not extract SECZH from template"
+
+        artifact_sectors = set()
+        for row in self._all_rows(standouts):
+            sec = row.get("sector")
+            # Ignore spurious data-quality values: real GICS sector names start with
+            # an uppercase letter (e.g. 'history' is a known bad row in the artifact —
+            # issue flagged to us_standouts producer; do not add to the SECZH map).
+            if sec and sec[0].isupper():
+                artifact_sectors.add(sec)
+
+        missing = artifact_sectors - set(map_seczh.keys())
+        assert not missing, (
+            f"SECZH is missing keys present in us_standouts.json: {sorted(missing)}. "
+            "Add Chinese sector labels in templates/dashboard.html.j2. "
+            "Note: map uses GICS-style names (e.g. 'Information Technology'), not Yahoo-style."
+        )
