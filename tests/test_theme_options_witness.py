@@ -893,6 +893,102 @@ class TestSynapseDAGConformance:
 
 
 # ---------------------------------------------------------------------------
+# Leg B basket-aggregation: PCR non-null regression
+# (guards against the string-vs-Timestamp reindex silent-null bug)
+# ---------------------------------------------------------------------------
+
+class TestLegB_BasketAggregation:
+    """Basket-level PCR must produce a non-null value when members have OI.
+
+    This test exercises compute_basket_legs end-to-end on a multi-member basket,
+    asserting that leg_b.value is non-null.  The bug it guards against: if the
+    DatetimeIndex coercion is re-introduced, all_call.reindex(idx) finds zero
+    matching labels (string series vs Timestamp index) → fillna(0) → denom=NaN
+    → pcr_raw all-null — despite coverage_count reporting full member coverage.
+    """
+
+    def test_pcr_non_null_single_member(self, tmp_path):
+        """Single member with sufficient OI history → leg_b.value is non-null."""
+        from engine.theme_options_witness import compute_basket_legs, clear_cache
+        clear_cache()
+
+        dates = _bdays("2025-01-02", 30)
+        strikes_c = [100.0, 110.0, 120.0, 130.0, 140.0]
+        strikes_p = [80.0, 85.0, 90.0, 95.0, 100.0]
+        rows = (
+            _make_oi_rows("BTEST", dates, strikes_c, [1000] * 5, "C")
+            + _make_oi_rows("BTEST", dates, strikes_p, [1500] * 5, "P")
+        )
+        oi_df = pd.DataFrame(rows, columns=_OI_COLS)
+        store = _write_store(tmp_path, "BTEST", 2025, oi_df)
+
+        legs = compute_basket_legs("test_basket", ["BTEST"], store, dates[-1])
+
+        assert legs["leg_b"]["coverage_count"] == 1, \
+            f"Expected 1 covered member, got {legs['leg_b']['coverage_count']}"
+        assert legs["leg_b"]["value"] is not None, (
+            "leg_b.value is null despite member having OI — "
+            "likely string-vs-Timestamp reindex bug reintroduced"
+        )
+        # PCR = put_oi / call_oi = 7500 / 5000 = 1.5 (after shift, first row NaN)
+        assert legs["leg_b"]["value"] > 0, \
+            f"leg_b.value should be positive, got {legs['leg_b']['value']}"
+
+    def test_pcr_non_null_multi_member(self, tmp_path):
+        """Multi-member basket: PCR aggregated across members is non-null."""
+        from engine.theme_options_witness import compute_basket_legs, clear_cache
+        clear_cache()
+
+        dates = _bdays("2025-01-02", 30)
+        strikes_c = [100.0, 110.0, 120.0, 130.0, 140.0]
+        strikes_p = [80.0, 85.0, 90.0, 95.0, 100.0]
+
+        for root in ["MBTEST1", "MBTEST2", "MBTEST3"]:
+            rows = (
+                _make_oi_rows(root, dates, strikes_c, [500] * 5, "C")
+                + _make_oi_rows(root, dates, strikes_p, [700] * 5, "P")
+            )
+            oi_df = pd.DataFrame(rows, columns=_OI_COLS)
+            store = _write_store(tmp_path, root, 2025, oi_df)
+
+        store = tmp_path / "thetadata_eod"
+        members = ["MBTEST1", "MBTEST2", "MBTEST3"]
+        legs = compute_basket_legs("test_basket", members, store, dates[-1])
+
+        assert legs["leg_b"]["coverage_count"] == 3
+        assert legs["leg_b"]["value"] is not None, (
+            "leg_b.value is null for multi-member basket with OI — "
+            "string-vs-Timestamp reindex bug"
+        )
+        assert legs["leg_b"]["value"] > 0
+
+    def test_pcr_inputs_list_contains_ticker_names(self, tmp_path):
+        """leg_b.inputs must contain the contributing ticker names, not 'date'."""
+        from engine.theme_options_witness import compute_basket_legs, clear_cache
+        clear_cache()
+
+        dates = _bdays("2025-01-02", 10)
+        strikes_c = [100.0, 110.0, 120.0, 130.0, 140.0]
+        strikes_p = [80.0, 85.0, 90.0, 95.0, 100.0]
+        rows = (
+            _make_oi_rows("INPUTTEST", dates, strikes_c, [100] * 5, "C")
+            + _make_oi_rows("INPUTTEST", dates, strikes_p, [150] * 5, "P")
+        )
+        oi_df = pd.DataFrame(rows, columns=_OI_COLS)
+        store = _write_store(tmp_path, "INPUTTEST", 2025, oi_df)
+
+        legs = compute_basket_legs("test_basket", ["INPUTTEST", "GHOST"], store, dates[-1])
+
+        inputs = legs["leg_b"]["inputs"]
+        assert "INPUTTEST" in inputs, \
+            f"leg_b.inputs should contain 'INPUTTEST', got {inputs!r}"
+        assert "date" not in inputs, \
+            f"leg_b.inputs contains 'date' (index.name bug) — got {inputs!r}"
+        assert "GHOST" not in inputs, \
+            f"leg_b.inputs should not contain uncovered ticker 'GHOST', got {inputs!r}"
+
+
+# ---------------------------------------------------------------------------
 # z252 rolling z helper
 # ---------------------------------------------------------------------------
 

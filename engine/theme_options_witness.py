@@ -627,11 +627,13 @@ def compute_basket_legs(
     # Leg B — PCR (put/call OI) — EXIT-CROWD L3 accrual
     # ------------------------------------------------------------------
     pcr_frames: list[pd.DataFrame] = []
+    pcr_inputs: list[str] = []
     pcr_covered = 0
     for ticker in members:
         df = _pcr_series_for_root(ticker, store, years)
         if not df.empty and len(df) > 0:
             pcr_frames.append(df.set_index("date"))
+            pcr_inputs.append(ticker)
             pcr_covered += 1
 
     leg_b: dict = {
@@ -645,9 +647,7 @@ def compute_basket_legs(
         "pcr_collapse_into_strength": None,
         "band": None,
         "stale": False,
-        "inputs": [t for t in members if any(
-            t == tf.index.name for tf in pcr_frames
-        )],
+        "inputs": pcr_inputs,
         "note_en": None,
         "note_zh": None,
     }
@@ -657,10 +657,12 @@ def compute_basket_legs(
         all_call = pd.concat([f["call_oi"] for f in pcr_frames], axis=1).sum(axis=1)
         all_put = pd.concat([f["put_oi"] for f in pcr_frames], axis=1).sum(axis=1)
 
-        # Align and sort
-        pcr_raw = pd.Series(dtype=float)
+        # Align and sort.  Both all_call and all_put carry string date indices
+        # (set_index('date') above preserves the string labels from _pcr_series_for_root).
+        # Do NOT coerce to DatetimeIndex here — reindex(string_index) against a
+        # Timestamp index produces all-NaN (label mismatch), zeroing every OI value
+        # and silently nulling the entire Leg B output.
         idx = all_call.index.union(all_put.index)
-        idx = pd.DatetimeIndex(idx) if not isinstance(idx, pd.DatetimeIndex) else idx
         all_call = all_call.reindex(idx).fillna(0)
         all_put = all_put.reindex(idx).fillna(0)
         denom = all_call.where(all_call > 0)
@@ -952,7 +954,9 @@ def compute_theme_options_witness(
         "coverage_stats": coverage_stats,
         "oi_timing_law": (
             "OI[t] = positions as of EOD t-1 (OPRA reports ~06:30 ET). "
-            "shift(1) applied throughout — same-day OI is a build-breaking bug."
+            "Leg B applies explicit shift(1) to the daily OI series (doi_series law). "
+            "Leg A reads only the asof-date snapshot row, which per OPRA schedule "
+            "already represents EOD t-1 positions — no additional shift required."
         ),
         "banned_constructs": [
             "DOI family (delta-OI signed flow) — DEAD per W-E1 gauntlet",
