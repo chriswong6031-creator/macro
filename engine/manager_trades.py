@@ -385,6 +385,16 @@ def rank_leaderboard(scorecards: dict[str, dict], min_buys: int = MIN_RANKED_BUY
             "coverage_pct": sc.get("coverage_pct"),
             "best_trade": sc.get("best_trade"),
             "worst_trade": sc.get("worst_trade"),
+            # Manager lag fields (None when unavailable — additive, no schema breakage)
+            "turnover_pct": sc.get("turnover_pct"),
+            "turnover_tier": sc.get("turnover_tier"),
+            "holding_period_q": sc.get("holding_period_q"),
+            "concentration_pct": sc.get("concentration_pct"),
+            "n_holdings": sc.get("n_holdings"),
+            "style": sc.get("style"),
+            "status": sc.get("status"),
+            # Decay chips at horizons 21/63/126 (252 omitted — frozen-until-matured)
+            "decay": sc.get("decay"),
         })
     # eligible funds first (by robust median excess, then hit-rate), then the rest
     board.sort(key=lambda r: (
@@ -506,7 +516,7 @@ def compute_tracker(cfg: dict | None = None) -> dict | None:
 
     panel = ClosePanel()
     name_map = name_ticker_map()
-    cusip_map = full_cusip_map()
+    cusip_map, _ = full_cusip_map()
 
     all_trades: list[dict] = []
     by_fund: dict[str, dict] = {}
@@ -526,6 +536,56 @@ def compute_tracker(cfg: dict | None = None) -> dict | None:
         att, pri = counters.get("attempted", 0), counters.get("priced", 0)
         sc["n_attempted"] = att
         sc["coverage_pct"] = round(100.0 * pri / att, 1) if att else None
+        # ---- Manager lag diagnostics (additive; tolerant of missing equiv table) ----
+        try:
+            from engine.manager_lag import (fund_turnover as _ft,
+                                            effective_holding_period as _ehp,
+                                            lag_tier as _lt,
+                                            concentration_top10 as _ct10,
+                                            n_holdings as _nh,
+                                            _load_equiv_table as _let,
+                                            _read_all_snaps_for_lag)
+        except ImportError:
+            pass
+        else:
+            try:
+                equiv = _let()
+                ft = _ft(slug, equiv)
+                snaps = _read_all_snaps_for_lag(slug)
+                hp_q = _ehp(snaps, equiv) if len(snaps) >= 2 else None
+                # config hint from spec metadata (tolerant of missing keys)
+                hint = spec.get("turnover_hint")
+                lt = _lt(ft["mean_turnover_pct"], hp_q, hint=hint,
+                         n_pairs=ft["n_pairs"])
+                # concentration and n_holdings from latest snapshot
+                latest_snap = snaps[-1][2] if snaps else None
+                conc = _ct10(latest_snap, equiv) if latest_snap is not None else None
+                nh = _nh(latest_snap, equiv) if latest_snap is not None else None
+                sc["turnover_pct"] = ft["mean_turnover_pct"]
+                sc["turnover_tier"] = lt["tier"]
+                sc["turnover_source"] = lt["source"]
+                sc["holding_period_q"] = hp_q
+                sc["concentration_pct"] = conc
+                sc["n_holdings"] = nh
+                # Config metadata — tolerant of missing keys (spec may be a thin dict)
+                sc["style"] = spec.get("style", "unclassified")
+                sc["status"] = spec.get("status", "active")
+            except Exception:  # noqa: BLE001
+                log.debug("manager_lag integration failed for %s", slug, exc_info=True)
+        # ---- Decay chips: median since-filing SPY-excess at h21/h63/h126 per fund ----
+        try:
+            import statistics as _st
+            buy_trades = [t for t in trades if t["action"] in _BUY]
+            decay: dict[str, dict] = {}
+            for h in (21, 63, 126):
+                exs = [panel.excess(t["ticker"], t["filing_date"], horizon=h)
+                       for t in buy_trades if t.get("filing_date")]
+                vals = [e["excess"] for e in exs if e is not None]
+                decay[f"h{h}"] = {"med": round(_st.median(vals), 4) if vals else None,
+                                   "n": len(vals)}
+            sc["decay"] = decay
+        except Exception:  # noqa: BLE001
+            log.debug("decay chips failed for %s", slug, exc_info=True)
         scorecards[slug] = sc
         # latest-quarter action map (for tagging current holdings) + top book
         latest_period = max((t["period_end"] for t in trades), default="")

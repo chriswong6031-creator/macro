@@ -1,0 +1,151 @@
+# Share-class equivalence table for 13F consensus counts.
+#
+# Purpose: prevent double-counting when a fund holds multiple share classes of the
+# same issuer (e.g. BRK-A and BRK-B both show up separately in 13F filings). The
+# canonical_key is a stable, unambiguous ticker that isnt itself a 13F line (e.g.
+# BRK.A as the canonical, BRK.B collapsed into it). If both tickers appear under the
+# same 6-char CUSIP stem the stem-fallback fires automatically; this table handles
+# cases where the CUSIP stems differ across share classes.
+#
+# Format per entry:
+#   ticker: the non-primary share class (the one to collapse away)
+#   canonical: the primary ticker to count it under
+#   comment: (optional) human note
+#
+# Rule applied in issuer_key(): canonical_key wins; if both are resolved to the same
+# CUSIP stem, the stem already collapses them — this table is the belt-and-suspenders
+# for same-issuer tickers with DIFFERENT CUSIP stems.
+
+equivalences:
+  # Alphabet — Google class A and C
+  - ticker: GOOG
+    canonical: GOOGL
+    comment: "Alphabet class C (no vote) -> class A canonical"
+
+  # Berkshire Hathaway
+  - ticker: BRK.B
+    canonical: BRK.A
+    comment: "Berkshire B (1/1500 of A) -> A canonical"
+  - ticker: BRKB
+    canonical: BRKA
+    comment: "Alternative BRK.B/BRK.A ticker notation"
+
+  # Fox Corp
+  - ticker: FOX
+    canonical: FOXA
+    comment: "Fox class B (no vote) -> class A canonical"
+
+  # Under Armour
+  - ticker: UA
+    canonical: UAA
+    comment: "Under Armour class C (no vote) -> class A canonical"
+
+  # Liberty Broadband
+  - ticker: LBRDK
+    canonical: LBRDA
+    comment: "Liberty Broadband class C -> class A canonical"
+
+  # Liberty SiriusXM
+  - ticker: LSXMK
+    canonical: LSXMA
+    comment: "Liberty SiriusXM class C -> class A canonical"
+
+  # Paramount Global (formerly ViacomCBS)
+  - ticker: PARA
+    canonical: PARAA
+    comment: "Paramount class B (vote) -> class A canonical"
+
+  # News Corp
+  - ticker: NWS
+    canonical: NWSA
+    comment: "News Corp class B (no vote) -> class A canonical"
+
+  # Zillow Group
+  - ticker: ZG
+    canonical: Z
+    comment: "Zillow class C (no vote) -> class A canonical; same CUSIP stem usually"
+
+  # Liberty Tripadvisor / Latin America
+  - ticker: LILA
+    canonical: LILAK
+    comment: "Liberty Latin America class A -> class C canonical (class C more liquid)"
+
+  # Clearway Energy
+  - ticker: CWEN.A
+    canonical: CWEN
+    comment: "Clearway class A -> class C canonical (class C more liquid)"
+
+  # Rush Enterprises
+  - ticker: RUSHA
+    canonical: RUSHB
+    comment: "Rush Enterprises class A -> class B (class B more liquid in 13F context)"
+
+  # Heico Corporation
+  - ticker: HEI.A
+    canonical: HEI
+    comment: "Heico class A -> common canonical"
+
+  # Brown-Forman
+  - ticker: BF.B
+    canonical: BF.A
+    comment: "Brown-Forman class B (no vote) -> class A canonical; different CUSIP stems"
+
+  # Lennar
+  - ticker: LEN.B
+    canonical: LEN
+    comment: "Lennar class B (no vote) -> class A canonical"
+
+  # Moog
+  - ticker: MOG.B
+    canonical: MOG.A
+    comment: "Moog class B -> class A canonical"
+
+  # Molson Coors
+  - ticker: TAP.A
+    canonical: TAP
+    comment: "Molson Coors class A -> class B canonical (class B more liquid)"
+
+  # Greif
+  - ticker: GEF.B
+    canonical: GEF
+    comment: "Greif class B -> class A canonical"
+
+  # John Wiley
+  - ticker: JW.B
+    canonical: JW.A
+    comment: "John Wiley class B -> class A canonical"
+
+  # Central Garden and Pet
+  - ticker: CENTA
+    canonical: CENT
+    comment: "Central Garden class A -> voting class canonical"
+
+  # Liberty Media — Braves Group
+  - ticker: BATRK
+    canonical: BATRA
+    comment: "Atlanta Braves class C -> class A canonical"
+
+  # Liberty Media — Formula One Group
+  - ticker: FWONK
+    canonical: FWONA
+    comment: "Formula One class C -> class A canonical"
+
+  # Liberty Media — Live Nation (previously LYVA/LLYVK)
+  - ticker: LLYVK
+    canonical: LLYVA
+    comment: "Liberty Live class C -> class A canonical"
+
+  # Qurate Retail (formerly QVC)
+  - ticker: QRTEB
+    canonical: QRTEA
+    comment: "Qurate Retail class B -> class A canonical"
+
+  # U-Haul (AMERCO)
+  - ticker: UHAL.B
+    canonical: UHAL
+    comment: "AMERCO/U-Haul class B -> common canonical"
+
+  # StoneX Group (formerly INTL FCStone)
+  - ticker: SNEX
+    canonical: SNEX
+    comment: "Single class; included as self-reference for completeness"

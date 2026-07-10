@@ -181,7 +181,8 @@ def _cusip_map() -> dict[str, str]:
     (smart_money.full_cusip_map). Degrade-to-empty; never raises."""
     try:
         from engine.smart_money import full_cusip_map
-        return dict(full_cusip_map() or {})
+        cusip_map, _ = full_cusip_map()
+        return dict(cusip_map or {})
     except Exception:  # noqa: BLE001
         return {}
 

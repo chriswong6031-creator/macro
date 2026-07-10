@@ -165,7 +165,7 @@ def compute_manager_quality(cfg: dict | None = None, *, horizon: int = DEFAULT_H
     if not funds or closes is None or closes.empty:
         return {}
     name_map = name_ticker_map()
-    cusip_map = full_cusip_map()
+    cusip_map, _ = full_cusip_map()
     mkt_cache: dict = {}                  # memoized market benchmark per (date, horizon)
 
     raw: dict[str, dict] = {}
