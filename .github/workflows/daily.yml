@@ -2293,6 +2293,38 @@ jobs:
           done
           echo "::warning::could not push causal outputs after 5 attempts (non-fatal — downstream reads last committed)"
 
+      - name: signal foundry forward accrual (SF-R4, nightly-ledger law)
+        # Accrues realized (feature, target) rows for every registered Foundry spec
+        # where today > registered_at (forward evidence only — SF-R4).
+        # Non-fatal: exits 0 regardless of internal errors.
+        run: |
+          python -m scripts.signal_foundry_accrue > /tmp/sf_accrue.log 2>&1; rc=$?
+          cat /tmp/sf_accrue.log
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=signal_foundry_accrue::rc=$rc (non-fatal)"
+          fi
+          exit 0
+
+      - name: commit signal foundry forward outputs (SF-R10 narrow git-add)
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # SF-R10 narrow git-add: only data/signal_foundry/forward and lane_status
+          git add data/signal_foundry/forward 2>/dev/null || true
+          git add data/signal_foundry/lane_status.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no signal foundry forward changes"; exit 0; fi
+          git commit -m "signal-foundry: forward accrual $(date -u +%F)"
+          # Retry-rebase push loop with --autostash (stranded-data law #1823)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash origin main && git push; then
+              echo "pushed sf forward outputs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "sf push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push sf forward outputs after 5 attempts (non-fatal)"
+          exit 0
+
   # Light advisory job: generates docs/ACTIVE_BUILD_MAP.md and
   # data/governance/active_builds.json — a map of open PRs, file collisions,
   # and recent merges for multi-agent session air-traffic control.

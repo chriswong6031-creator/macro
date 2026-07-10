@@ -1423,6 +1423,218 @@ def _resolve_dsr_provenance(registry: list[dict]) -> None:
             }
 
 
+def _build_foundry_block(repo_root: Path | None = None) -> dict:
+    """Assemble the Signal Foundry panel payload (D1).
+
+    Reads data/signal_foundry/{candidates.jsonl, results/*.json, promotions.jsonl,
+    lane_status.json} DEFENSIVELY — all may be absent.
+
+    Returns a dict with key 'present' (bool).  When False, only {'present': False}
+    is returned.  When True the dict contains the full funnel + row list + docket.
+    All keys are always set so the template can reference them unconditionally.
+    """
+    if repo_root is None:
+        repo_root = Path(__file__).parent.parent
+
+    sf_dir = repo_root / "data" / "signal_foundry"
+
+    # ---- 0. Fast-path: nothing filed yet -----------------------------------
+    candidates_path = sf_dir / "candidates.jsonl"
+    results_dir = sf_dir / "results"
+    if not sf_dir.exists() or not candidates_path.exists():
+        return {"present": False}
+
+    # ---- 1. Load candidates.jsonl (tolerate corrupt lines) ----------------
+    candidates: list[dict] = []
+    try:
+        with candidates_path.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    candidates.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    except OSError:
+        pass
+
+    if not candidates:
+        return {"present": False}
+
+    # ---- 2. Load results/*.json -------------------------------------------
+    from engine.signal_foundry.results import load_results, promotion_docket
+
+    all_results: list[dict] = []
+    try:
+        all_results = load_results(repo_root)
+    except Exception:  # noqa: BLE001
+        pass
+
+    results_by_id: dict[str, dict] = {}
+    for r in all_results:
+        sid = (r.get("spec") or {}).get("id") or r.get("spec_id") or r.get("id")
+        if sid:
+            results_by_id[str(sid)] = r
+
+    # ---- 3. Load lane_status.json -----------------------------------------
+    lane_status: dict = {}
+    ls_path = sf_dir / "lane_status.json"
+    if ls_path.exists():
+        try:
+            lane_status = json.loads(ls_path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            pass
+
+    # ---- 4. Load promotions.jsonl for human adjudication marks -----------
+    adjudicated_ids: set[str] = set()
+    prom_path = sf_dir / "promotions.jsonl"
+    if prom_path.exists():
+        try:
+            with prom_path.open(encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                        sid = row.get("spec_id") or row.get("id") or ""
+                        if sid:
+                            adjudicated_ids.add(str(sid))
+                    except json.JSONDecodeError:
+                        continue
+        except OSError:
+            pass
+
+    # ---- 5. Funnel counts -------------------------------------------------
+    statuses = [c.get("status", "") for c in candidates]
+    proposed = len(candidates)
+    screen_rejected = sum(1 for s in statuses if s == "screen_rejected")
+    registered = sum(1 for s in statuses if s in ("registered", "tested"))
+    tested = sum(1 for s in statuses if s == "tested")
+
+    verdict_counts: dict[str, int] = {}
+    for r in all_results:
+        v = r.get("verdict", "")
+        verdict_counts[v] = verdict_counts.get(v, 0) + 1
+    pass_candidates = verdict_counts.get("pass_candidate", 0)
+    promoted = sum(1 for c in candidates if c.get("status") == "promoted")
+
+    funnel = {
+        "proposed": proposed,
+        "screen_rejected": screen_rejected,
+        "registered": registered,
+        "tested": tested,
+        "pass_candidates": pass_candidates,
+        "promoted": promoted,
+    }
+
+    # ---- 6. Per-candidate rows --------------------------------------------
+    forward_dir = sf_dir / "forward"
+    rows: list[dict] = []
+    for c in candidates:
+        sid = str(c.get("id") or c.get("spec_id") or "")
+        res = results_by_id.get(sid, {})
+
+        # Forward accrual day count
+        fwd_days = 0
+        if forward_dir.exists() and sid:
+            fwd_path = forward_dir / f"{sid}.jsonl"
+            if fwd_path.exists():
+                try:
+                    with fwd_path.open(encoding="utf-8") as fh:
+                        fwd_days = sum(1 for ln in fh if ln.strip())
+                except OSError:
+                    pass
+
+        # Stats from result record — harness.py writes the NESTED schema:
+        #   stats = {n_obs, effective_months, full_ic, hac:{t,...}, split_half,
+        #            era_split, block_bootstrap_ci, dsr:{dsr,...}|None}
+        #   placebos = {time_shift:{shift_pctile,...}, negative_lag:{...}}
+        # Map to the flat display keys used by the template.
+        stats: dict = res.get("stats", {}) if res else {}
+        placebos: dict = res.get("placebos", {}) if res else {}
+
+        _hac: dict = stats.get("hac") or {}
+        _dsr_dict = stats.get("dsr")  # is a dict or None from harness
+        _dsr_scalar = (_dsr_dict.get("dsr") if isinstance(_dsr_dict, dict) else None)
+        _shift = (placebos.get("time_shift") or {})
+
+        # Seed provenance
+        seed_prov = c.get("seed_provenance") or {}
+        source = seed_prov.get("source") or c.get("source") or ""
+
+        # Gates (from result or spec)
+        spec_in_result = (res.get("spec") or {}) if res else {}
+        gates = spec_in_result.get("gates") or c.get("gates") or {}
+
+        # Thesis (short form — first 120 chars)
+        thesis_full = c.get("thesis") or spec_in_result.get("thesis") or ""
+        thesis_short = (thesis_full[:120] + "…") if len(thesis_full) > 120 else thesis_full
+
+        # Verdict
+        verdict = res.get("verdict") if res else c.get("verdict") or None
+        status = c.get("status") or "proposed"
+
+        rows.append({
+            "id": sid,
+            "name": c.get("name") or sid,
+            "name_zh": c.get("name_zh") or "",
+            "market": c.get("market") or "",
+            "thesis": thesis_short,
+            "thesis_full": thesis_full,
+            "seed_provenance_source": source,
+            "status": status,
+            "verdict": verdict or "",
+            # Stats — mapped from real harness nested schema
+            "ic": stats.get("full_ic"),
+            "t_hac": _hac.get("t"),
+            "dsr": _dsr_scalar,
+            "n_eff_months": stats.get("effective_months"),
+            "placebo_pct": _shift.get("shift_pctile"),
+            # Gates
+            "gates": gates,
+            "registered_at": c.get("registered_at") or "",
+            "forward_days": fwd_days,
+            # For expanded detail: data paths and pipeline
+            "data": c.get("data") or spec_in_result.get("data") or [],
+            "pipeline": (c.get("feature") or spec_in_result.get("feature") or {}).get("pipeline") or [],
+            "target": c.get("target") or spec_in_result.get("target") or {},
+        })
+
+    # Sort: pass_candidates first, then by id
+    _VERDICT_ORDER = {
+        "pass_candidate": 0, "null": 1, "era_specific": 2, "unstable": 2,
+        "insufficient_power": 3, "insufficient_history": 3, "data_missing": 4,
+        "forbidden": 5, "error": 5, "": 6,
+    }
+    rows.sort(key=lambda r: (_VERDICT_ORDER.get(r["verdict"], 6), r["id"]))
+
+    # ---- 7. Promotion docket ----------------------------------------------
+    docket: list[dict] = []
+    try:
+        docket = promotion_docket(repo_root)
+    except Exception:  # noqa: BLE001
+        pass
+
+    # ---- 8. Disclaimers (SF-R1/R3) ----------------------------------------
+    disclaimer_en = (
+        "machine lane — own FDR family; display-tier; nothing here is wired "
+        "to any score"
+    )
+    disclaimer_zh = "机器信号道 — 独立FDR族；仅展示层；不接入任何评分"
+
+    return {
+        "present": True,
+        "funnel": funnel,
+        "rows": rows,
+        "docket": docket,
+        "lane_status": lane_status,
+        "disclaimer_en": disclaimer_en,
+        "disclaimer_zh": disclaimer_zh,
+    }
+
+
 def build_scorecard() -> dict:
     """Assemble the full Signal Lab payload for the template. Pure assembler."""
     warnings: list[str] = []  # A9: collect build warnings
@@ -1504,6 +1716,10 @@ def build_scorecard() -> dict:
     from engine.signal_frontier_docket import CANDIDATES as _CANDIDATES
     docket_candidate_count = len(_CANDIDATES)
 
+    # D1: Signal Foundry machine-lane block (SF-R1/R3/R10)
+    repo_root = Path(__file__).parent.parent
+    foundry = _build_foundry_block(repo_root)
+
     return {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         "tiers": tiers_out,
@@ -1518,6 +1734,7 @@ def build_scorecard() -> dict:
         "adjudications": adjudications,                    # A2
         "waves_adjudication": waves_adjudication,          # back-compat
         "warnings": warnings,                              # A9
+        "foundry": foundry,                                # D1: Signal Foundry panel
     }
 
 

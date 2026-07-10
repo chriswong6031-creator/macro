@@ -145,6 +145,44 @@
   .cross-link-chip a { color:var(--link); }
   /* Frontier count badge */
   .frontier-count { font-size:11px; color:var(--muted); margin-top:4px; }
+  /* D2: Signal Foundry machine-lane panel */
+  .sf-dark-note { font-size:12.5px; color:var(--muted); padding:8px 0; }
+  .sf-disclaimer { font-size:11.5px; color:var(--muted); border-left:2px solid var(--line);
+    padding-left:9px; margin:6px 0 10px; max-width:80ch; }
+  .sf-funnel { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .sf-funnel-chip { font-size:12px; padding:4px 10px; border-radius:18px;
+    border:1px solid var(--line); background:var(--panel2);
+    display:inline-flex; align-items:center; gap:5px; }
+  .sf-funnel-chip b { font-size:14px; }
+  .sf-lane-chip { font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:8px;
+    border:1px solid var(--line); margin-left:8px; }
+  .sf-lane-armed  { background:color-mix(in srgb,var(--up) 15%,transparent);
+    color:var(--up); border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
+  .sf-lane-paused { background:color-mix(in srgb,var(--muted) 12%,transparent);
+    color:var(--muted); }
+  /* SF verdict chips */
+  .sf-v { font-size:10.5px; font-weight:700; padding:1px 8px; border-radius:8px;
+    white-space:nowrap; border:1px solid var(--line); }
+  .sf-v-pass { color:#196; background:color-mix(in srgb,#2d8 22%,transparent);
+    border-color:color-mix(in srgb,#1a7 60%,var(--line)); }
+  .sf-v-null { color:var(--muted); background:color-mix(in srgb,var(--muted) 10%,transparent); }
+  .sf-v-era  { color:#860; background:color-mix(in srgb,#fb0 18%,transparent);
+    border-color:color-mix(in srgb,#a80 60%,var(--line)); }
+  .sf-v-unstable { color:#860; background:color-mix(in srgb,#fb0 18%,transparent);
+    border-color:color-mix(in srgb,#a80 60%,var(--line)); }
+  .sf-v-red { color:#c33; background:color-mix(in srgb,#e55 18%,transparent);
+    border-color:color-mix(in srgb,#c33 60%,var(--line)); }
+  .sf-v-muted { color:var(--muted); background:transparent; font-weight:400; }
+  /* SF expand row */
+  .sf-row-btn { cursor:pointer; background:none; border:none; color:var(--muted);
+    font-size:13px; padding:0 3px; vertical-align:middle; }
+  .sf-row-btn:hover { color:var(--text); }
+  .sf-detail { display:none; }
+  .sf-detail.open { display:table-row; }
+  .sf-detail > td { padding:8px 12px 12px; background:var(--panel2); border-top:none;
+    font-size:12.5px; }
+  .sf-docket-note { font-size:12px; color:var(--muted); border-left:2px solid var(--up);
+    padding-left:9px; margin:8px 0 4px; }
 </style>
 </head>
 <body>
@@ -336,6 +374,179 @@
   </table></div>
 </div>
 {% endif %}
+
+{# D2: Signal Foundry machine-lane panel (SF-R1/R3/R10) #}
+{%- set sf = foundry if foundry is defined else {'present': False} %}
+<div class="panel" id="sf-foundry">
+  <div class="topline">
+    <h1>🤖 {{ t('Signal Foundry — machine lane', '机器信号道 — Signal Foundry') }}
+      {%- if sf.present %}
+        {%- set ls = sf.lane_status if sf.lane_status is defined else {} %}
+        {%- set armed = (ls.get('auto_loop') == True or ls.get('armed') == True) if ls else False %}
+        {%- if armed %}
+        <span class="sf-lane-chip sf-lane-armed">{{ t('ARMED', '已启动') }}</span>
+        {%- else %}
+        <span class="sf-lane-chip sf-lane-paused">{{ t('DARK / paused', '暂停') }}</span>
+        {%- endif %}
+      {%- endif %}
+    </h1>
+  </div>
+  <div class="sf-disclaimer">
+    {{ t(
+      'machine lane — own FDR family; display-tier; nothing here is wired to any score',
+      '机器信号道 — 独立FDR族；仅展示层；不接入任何评分'
+    ) }}
+    · {{ t('SF-R1 / SF-R3', 'SF-R1 / SF-R3') }}
+  </div>
+
+{%- if not sf.present %}
+  <p class="sf-dark-note">{{ t(
+    'Foundry lane built — no cohort filed yet on this branch.',
+    '机器信号道已构建 — 本分支尚无候选提交。'
+  ) }}</p>
+{%- else %}
+  {# Funnel chips #}
+  {%- set fn = sf.funnel %}
+  <div class="sf-funnel">
+    <span class="sf-funnel-chip"><b>{{ fn.proposed }}</b> {{ t('proposed','已提议') }}</span>
+    <span class="sf-funnel-chip"><b>{{ fn.screen_rejected }}</b> {{ t('screened out','已筛除') }}</span>
+    <span class="sf-funnel-chip"><b>{{ fn.registered }}</b> {{ t('registered','已注册') }}</span>
+    <span class="sf-funnel-chip"><b>{{ fn.tested }}</b> {{ t('tested','已测试') }}</span>
+    <span class="sf-funnel-chip"><b>{{ fn.pass_candidates }}</b> {{ t('pass-candidates','通过候选') }}</span>
+    <span class="sf-funnel-chip"><b>{{ fn.promoted }}</b> {{ t('promoted','已晋级') }}</span>
+  </div>
+
+  {# Candidate table #}
+  <div class="scroll" style="margin-top:10px">
+  <table>
+    <thead><tr>
+      <th></th>
+      <th>{{ t('ID','编号') }}</th>
+      <th>{{ t('Signal','信号') }}</th>
+      <th>{{ t('Market','市场') }}</th>
+      <th>{{ t('Status','状态') }}</th>
+      <th>{{ t('Verdict','结论') }}</th>
+      <th class="r">{{ t('IC','IC') }}</th>
+      <th class="r">{{ t('t-HAC','t-HAC') }}</th>
+      <th class="r">{{ t('DSR','DSR') }}</th>
+      <th class="r">{{ t('N-eff mo','有效月数') }}</th>
+      <th class="r">{{ t('Fwd days','前瞻天数') }}</th>
+    </tr></thead>
+    <tbody>
+    {%- for r in sf.rows %}
+    {%- set rid = 'sf-row-' ~ loop.index %}
+    {%- set v = r.verdict %}
+    {%- if v == 'pass_candidate' %}
+      {%- set vpill = 'sf-v sf-v-pass' %}
+      {%- set vlabel_en = 'PASS-CANDIDATE' %}
+      {%- set vlabel_zh = '通过候选' %}
+    {%- elif v == 'null' %}
+      {%- set vpill = 'sf-v sf-v-null' %}
+      {%- set vlabel_en = 'null' %}
+      {%- set vlabel_zh = '空结果' %}
+    {%- elif v == 'era_specific' %}
+      {%- set vpill = 'sf-v sf-v-era' %}
+      {%- set vlabel_en = 'era_specific' %}
+      {%- set vlabel_zh = '时代特定' %}
+    {%- elif v == 'unstable' %}
+      {%- set vpill = 'sf-v sf-v-unstable' %}
+      {%- set vlabel_en = 'unstable' %}
+      {%- set vlabel_zh = '不稳定' %}
+    {%- elif v in ['forbidden', 'error'] %}
+      {%- set vpill = 'sf-v sf-v-red' %}
+      {%- set vlabel_en = v %}
+      {%- set vlabel_zh = '错误' if v == 'error' else '禁止' %}
+    {%- elif v in ['data_missing', 'insufficient_power', 'insufficient_history'] %}
+      {%- set vpill = 'sf-v sf-v-muted' %}
+      {%- set vlabel_en = v %}
+      {%- set vlabel_zh = '数据缺失' if v == 'data_missing' else ('算力不足' if v == 'insufficient_power' else '历史不足') %}
+    {%- else %}
+      {%- set vpill = 'sf-v sf-v-muted' %}
+      {%- set vlabel_en = v if v else '—' %}
+      {%- set vlabel_zh = v if v else '—' %}
+    {%- endif %}
+    <tr>
+      <td><button class="sf-row-btn" onclick="sfToggle('{{ rid }}')" title="expand">▸</button></td>
+      <td><span class="mkt">{{ r.id }}</span></td>
+      <td class="sig">
+        {{ t(r.name, r.name_zh if r.name_zh else r.name) }}
+        <div class="mkt">{{ r.seed_provenance_source }}</div>
+      </td>
+      <td class="mkt">{{ r.market }}</td>
+      <td><span class="mkt">{{ r.status }}</span></td>
+      <td>
+        {%- if v %}<span class="{{ vpill }}">{{ t(vlabel_en, vlabel_zh) }}</span>{%- else %}<span class="muted">—</span>{%- endif %}
+      </td>
+      <td class="r">{{ num(r.ic, 4) }}</td>
+      <td class="r">{{ num(r.t_hac) }}</td>
+      <td class="r">{{ num(r.dsr) }}</td>
+      <td class="r">{{ num(r.n_eff_months, 0) }}</td>
+      <td class="r">{{ r.forward_days if r.forward_days else '—' }}</td>
+    </tr>
+    <tr class="sf-detail" id="{{ rid }}">
+      <td colspan="11">
+        <div class="why-full"><strong>{{ t('Thesis:','论点：') }}</strong> {{ t(r.thesis_full, r.thesis_full) }}</div>
+        {%- if r.data %}
+        <div class="meta-row"><strong>{{ t('Data:','数据：') }}</strong>
+          {%- for d in r.data %} <code>{{ d.get('path','') }}[{{ d.get('column','') }}]</code>{% if not loop.last %},{% endif %}{%- endfor %}
+        </div>
+        {%- endif %}
+        {%- if r.pipeline %}
+        <div class="meta-row"><strong>{{ t('Pipeline:','流水线：') }}</strong>
+          {%- for step in r.pipeline %}
+          {%- if step is iterable and step is not string %}
+          <code>{{ step[0] }}{% if step|length > 1 %}({{ step[1] }}){% endif %}</code>{% if not loop.last %} →{% endif %}
+          {%- endif %}
+          {%- endfor %}
+        </div>
+        {%- endif %}
+        {%- if r.target %}
+        <div class="meta-row"><strong>{{ t('Target:','目标：') }}</strong>
+          {{ r.target.get('kind','') }} · {{ r.target.get('horizon_d','') }}d
+        </div>
+        {%- endif %}
+        {%- if r.gates %}
+        <div class="meta-row"><strong>{{ t('Pre-registered gates:','预注册门槛：') }}</strong>
+          t≥{{ r.gates.get('min_t_hac','—') }} · FDR q≤{{ r.gates.get('fdr_q','—') }} · DSR≥{{ r.gates.get('dsr','—') }}
+        </div>
+        {%- endif %}
+        {%- if r.registered_at %}
+        <div class="meta-row">{{ t('Registered:','注册于：') }} {{ r.registered_at }}
+          {%- if r.forward_days %} · {{ r.forward_days }} {{ t('forward sessions accrued','个前瞻交易日已累积') }}{%- endif %}
+        </div>
+        {%- endif %}
+        {%- if r.placebo_pct is not none and r.placebo_pct is defined %}
+        <div class="meta-row">{{ t('Placebo pctile:','安慰剂百分位：') }} {{ '%.0f%%'|format(r.placebo_pct * 100) if r.placebo_pct else '—' }}</div>
+        {%- endif %}
+      </td>
+    </tr>
+    {%- endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {# Promotion docket #}
+  {%- if sf.docket %}
+  <div style="margin-top:14px">
+    <h2 style="margin-bottom:4px">{{ t('Promotion docket — awaiting human adjudication','晋级候选 — 待人工裁决') }}</h2>
+    <p class="sf-docket-note">{{ t(
+      'Promotion requires operator/Fable adjudication + the standard gauntlet — never automatic.',
+      '晋级需要运营者/Fable裁决 + 标准闯关测试 — 绝不自动晋级。'
+    ) }}</p>
+    <ul style="font-size:12.5px;color:var(--text);margin:4px 0;padding-left:18px">
+    {%- for d in sf.docket %}
+      {%- set ds = d.get('spec') or {} %}
+    <li><strong>{{ ds.get('id','?') }}</strong> — {{ t(ds.get('name','?'), ds.get('name_zh', ds.get('name','?'))) }}
+      <span class="mkt">{{ ds.get('market','') }} · {{ t('registered','注册于') }} {{ ds.get('registered_at','') }}</span>
+    </li>
+    {%- endfor %}
+    </ul>
+  </div>
+  {%- endif %}
+
+{%- endif %}
+</div>
+{# end D2 Signal Foundry panel #}
 
 <div class="panel ctl">
   <input id="slq" type="search" autocomplete="off"
@@ -739,6 +950,17 @@
   }
 
   apply();
+
+  // D2: Signal Foundry row expander
+  function sfToggle(id){
+    var row=document.getElementById(id);
+    if(!row) return;
+    var open=row.classList.toggle('open');
+    var btn=row.previousElementSibling&&row.previousElementSibling.querySelector('.sf-row-btn');
+    if(btn) btn.textContent=open?'▾':'▸';
+  }
+  // Make sfToggle globally accessible (called inline onclick)
+  window.sfToggle=sfToggle;
 })();
 </script>
 </body>

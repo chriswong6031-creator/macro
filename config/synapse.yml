@@ -10429,3 +10429,114 @@ artifacts:
       this cycle) is sequenced to a later cycle and never creates a race. Consumers:
       metabolism_build.py reads it for collision detection; build_active_build_map.py
       regenerates ACTIVE_BUILD_MAP after each claim. INERT — no scored-path surface.
+
+  # --- Signal Foundry machine-lane (SF-R1/R3/R10) ---
+  signal-foundry-candidates:
+    path: data/signal_foundry/candidates.jsonl
+    format: jsonl
+    producer: scripts/run_signal_foundry_brainstorm.py
+    known_extra_writers: []
+    owner_program: signal-foundry
+    cadence: weekly
+    storage: git
+    asof_field: registered_at
+    freshness_sla_hours: 200
+    schema: signal_foundry.candidates.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/signal_lab.py
+    external_consumers: []
+    notes: >
+      SF-R1/SF-R3: Signal Foundry machine-lane candidates.  Each row is a
+      declarative spec (id, name, market, thesis, data paths, feature pipeline,
+      target, pre-registered gates, registered_at, status).  Display-tier only;
+      nothing here is wired to any score/rank/gate (SF-R1).  Own FDR family
+      'signal_foundry' — Foundry volume never tightens/loosens human program bars
+      (SF-R3).  Ships dark: SIGNAL_FOUNDRY_PAUSED fail-closed (SF-R5).
+
+  signal-foundry-results:
+    path: data/signal_foundry/results
+    format: json
+    producer: engine/signal_foundry/harness.py
+    known_extra_writers: []
+    owner_program: signal-foundry
+    cadence: weekly
+    storage: git
+    asof_field: ran_at
+    freshness_sla_hours: 200
+    schema: signal_foundry.result.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/signal_lab.py
+    external_consumers: []
+    notes: >
+      Per-candidate result JSON files from the frozen harness battery (SF-R2).
+      Fields: spec (the frozen spec), verdict (SF-R9 closed grammar:
+      pass_candidate | null | era_specific | unstable | insufficient_power |
+      insufficient_history | data_missing | forbidden | error), stats (nested:
+      full_ic, hac:{t,...}, effective_months, block_bootstrap_ci, dsr:{dsr,...}|None,
+      split_half, era_split, n_obs), placebos (time_shift:{shift_pctile,...},
+      negative_lag), backtest, ran_at.  Display-tier; not wired to any score
+      (SF-R1).  Consumed by engine/signal_lab.py build_scorecard() →
+      site/signal_lab.html Foundry panel.
+
+  signal-foundry-forward:
+    path: data/signal_foundry/forward
+    format: jsonl
+    producer: scripts/signal_foundry_accrue.py
+    known_extra_writers: []
+    owner_program: signal-foundry
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: signal_foundry.forward.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/signal_lab.py
+    external_consumers: []
+    notes: >
+      SF-R4 forward ledger: per-spec JSONL files (one per id) with realized
+      (feature, target_raw, date) rows accrued nightly for registered specs
+      where date > registered_at.  This is the ONLY admissible evidence at
+      promotion (true OOS by construction).  Forward evidence is the
+      human-promotion input; promotion itself requires operator/Fable
+      adjudication + the standard gauntlet (SF-R1).
+
+  signal-foundry-lane-status:
+    path: data/signal_foundry/lane_status.json
+    format: json
+    producer: scripts/run_signal_foundry_brainstorm.py
+    known_extra_writers:
+      - scripts/run_signal_foundry_harness.py
+      - scripts/signal_foundry_accrue.py
+    owner_program: signal-foundry
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 200
+    schema: signal_foundry.lane_status.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/signal_lab.py
+    external_consumers: []
+    notes: >
+      Lane status snapshot: {auto_loop, armed, as_of, paused_reason}.
+      Ships dark (auto_loop=false, armed=false) by default until operator
+      arms via SIGNAL_FOUNDRY_PAUSED=false ruling (SF-R5).  Written by
+      operator/Fable when arming or pausing the lane (no automated writer
+      currently exists — accrue_forward does NOT write this file).  Consumed
+      by engine/signal_lab.py build_scorecard() to render the lane status
+      chip on site/signal_lab.html.

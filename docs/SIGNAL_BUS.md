@@ -58,6 +58,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | setup-species | 6 |
 | short-side | 1 |
 | signal-commons | 8 |
+| signal-foundry | 4 |
 | stock-personality | 5 |
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
@@ -73,7 +74,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 208 |
+| display | 212 |
 | infrastructure | 87 |
 | scored | 4 |
 | shadow | 63 |
@@ -82,7 +83,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 346 |
+| git | 350 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -656,6 +657,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | kernel-half-lives | `data/neuralweb/half_life.json` | json | daily-engine | infrastructure | 1 | 0 |
 | event-priors-gov-contract | `data/special_situations/event_priors/gov_contract.json` | json | weekly | display | 0 | 0 |
 | reflexivity-n-eff-history | `data/reflexivity/n_eff_history.json` | json | daily-engine | infrastructure | 0 | 0 |
+
+### signal-foundry
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| signal-foundry-candidates | `data/signal_foundry/candidates.jsonl` | jsonl | weekly | display | 1 | 0 |
+| signal-foundry-forward | `data/signal_foundry/forward` | jsonl | daily-engine | display | 1 | 0 |
+| signal-foundry-lane-status | `data/signal_foundry/lane_status.json` | json | on-demand | display | 1 | 0 |
+| signal-foundry-results | `data/signal_foundry/results` | json | weekly | display | 1 | 0 |
 
 ### stock-personality
 
@@ -1280,6 +1290,14 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/track_record.py`
 - **extra writers:**
   - scripts/build_track_record.py — CLI runner that calls update_track_record(); additive append
+
+### signal-foundry-lane-status
+
+- **path:** `data/signal_foundry/lane_status.json`
+- **declared producer:** `scripts/run_signal_foundry_brainstorm.py`
+- **extra writers:**
+  - scripts/run_signal_foundry_harness.py
+  - scripts/signal_foundry_accrue.py
 
 ### site-baskets-json
 
