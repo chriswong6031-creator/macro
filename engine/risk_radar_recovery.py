@@ -27,9 +27,14 @@ HONESTY (this never moves money on its own):
   • Every input is display-only context already on the page; every field degrades to absent,
     never crashes the build.
 
-A future engine/risk_radar_recovery_audit could forward-grade whether "receding + liquidity
-turn" actually precedes rebounds; the trajectory phase is already logged
-(engine/risk_radar_audit) so that record begins accruing now.
+MARKET CHANNEL (added W1, RRX-R2..R7):
+  • engine/risk_radar_market_catalysts.py adds 7 market-internal confirmation chips (C1–C7)
+    plus a vol-instability veto (C8). Each chip is ACCRUING / display-only — not forward-tested
+    yet. Forward-grading is managed by engine/risk_radar_recovery_audit.py on the rebound ruler
+    pre-declared in research/RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md §3.
+  • turn_confirmed_full (new sibling key) = liquidity channel AND market channel confirmed.
+    The existing turn_confirmed field is UNCHANGED for backward compat.
+  • channels dict (new sibling key) exposes {liquidity, market, veto} booleans separately.
 """
 from __future__ import annotations
 
@@ -76,6 +81,27 @@ def _us_latest() -> dict:
 
 
 # --- liquidity-injection catalysts -------------------------------------------------------------
+def _market_catalysts(latest: dict | None = None) -> dict | None:
+    """Lazy import of engine/risk_radar_market_catalysts. Returns the compute() dict or None on
+    any failure. latest is passed for future context-gating but currently unused by compute().
+    NEVER raises.
+
+    Hot-path note: this function is called on both the intraday fast-path
+    (build_risk_state.py → market_state.market_state_snapshot → assess) and the nightly path
+    (engine/run.py).  compute() itself is read-only (no ledger writes) and the result is
+    stripped from risk_state.json by _verdict_block's key whitelist, so no ledger or banner
+    mutation occurs intraday.  The per-tick I/O cost is ~4 store.read calls (breadth/SPY/_VIX
+    /FRED) plus rolling/EMA/pct_rank_window; acceptable on the current 4-core box given the
+    intraday tick rate (~1/min), but operator should revisit if tick frequency increases.
+    """
+    try:
+        from engine import risk_radar_market_catalysts as _rmc
+        return _rmc.compute()
+    except Exception as e:  # noqa: BLE001
+        log.debug("recovery: market catalysts unavailable (%s)", e)
+        return None
+
+
 def _liquidity_catalysts(latest: dict, market: str = "us") -> list[dict]:
     """The supportive-liquidity legs that are firing right now, as display chips. All read the
     display-only context already on the page; each degrades to absent. `fresh` = a genuinely
@@ -185,6 +211,13 @@ def assess(latest: dict) -> dict | None:
         n_cat = len(cats)
         n_fresh = sum(1 for c in cats if c.get("fresh"))
 
+        # Market-internal confirmation channel (W1, accruing — not yet forward-tested).
+        # US-ONLY: the chips read US stores (S&P breadth, SPY, VIX term, HY OAS) — attaching
+        # them to the CN/HK/CA radar latests would render US internals on intl cards
+        # (assess() serves BOTH call sites in engine/market_state.py). Intl ports are a
+        # W5 docket (masterplan §5); until then the intl market channel is N/A, not False.
+        mkt = _market_catalysts(latest) if market == "us" else None
+
         # Show ONLY once there was genuine risk to recede FROM, and it is no longer rising — OR a
         # broad liquidity turn is underway while the radar sits at/just past its peak.
         present = (reached and phase in ("peaking", "receding")) or \
@@ -204,7 +237,23 @@ def assess(latest: dict) -> dict | None:
 
         receding = (phase == "receding") and not suppressed
         peaking = (phase == "peaking") and not suppressed
-        turn_confirmed = bool(receding and n_fresh >= 1)   # risk derating + liquidity injection
+        turn_confirmed = bool(receding and n_fresh >= 1)   # risk derating + liquidity injection (UNCHANGED)
+
+        # Market channel: accruing, not yet forward-tested. On intl radars (mkt is None by
+        # the scoping above) the channel is N/A: channels.market / turn_confirmed_full stay
+        # None so the card can distinguish "not confirmed" from "not applicable".
+        if market == "us":
+            mkt_confirmed = bool(mkt and mkt.get("market_confirmed"))
+            mkt_veto = bool(mkt and mkt.get("veto", {}).get("active"))
+            # turn_confirmed_full requires BOTH liquidity AND market channels
+            turn_confirmed_full = bool(turn_confirmed and mkt_confirmed)
+        else:
+            mkt_confirmed = mkt_veto = turn_confirmed_full = None
+        channels = {
+            "liquidity": bool(n_fresh >= 1),
+            "market": mkt_confirmed,
+            "veto": mkt_veto,
+        }
 
         off = traj.get("off_peak") or 0.0
         vel = traj.get("velocity") or 0.0
@@ -284,6 +333,11 @@ def assess(latest: dict) -> dict | None:
             # dominant scare escalates; mirrored for the template/bot to read
             "suppressed": suppressed, "deescalation": deesc,
             "turn_confirmed": turn_confirmed, "strength": strength,
+            # --- W1 market-channel additions (sibling keys, never wrappers — RRX-R7) ---
+            # market_confirmed_raw and market_confirmed are the raw chip outputs
+            "market": mkt,
+            "turn_confirmed_full": turn_confirmed_full,
+            "channels": channels,
             # the odds turn + velocity (mirrored from the trajectory so the template reads one dict)
             "odds_now": odds_now, "odds_peak": odds_peak, "odds_delta": odds_delta,
             "peak_days_ago": days, "velocity": vel, "off_peak": off,
