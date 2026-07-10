@@ -24,9 +24,31 @@ SYSTEM_ZH = (
     "of strings, exactly one output per input, in the same order."
 )
 
+SYSTEM_EN = (
+    "You are a professional financial-news translator. Translate each Simplified "
+    "Chinese headline or short summary into concise, natural English. Use the "
+    "common English names for Chinese companies, institutions and policy terms "
+    "(PBOC, CSRC, RRR, A-shares); preserve ticker symbols and numbers. Do not add "
+    "analysis. Return ONLY a JSON array of strings, exactly one output per input, "
+    "in the same order."
+)
+
 
 def _has_cjk(text: str) -> bool:
     return any("\u4e00" <= ch <= "\u9fff" for ch in text or "")
+
+
+def _cjk_ratio(text: str) -> float:
+    if not text:
+        return 0.0
+    return sum(1 for ch in text if "\u4e00" <= ch <= "\u9fff") / len(text)
+
+
+def _looks_english(text: str) -> bool:
+    """A plausible English translation: nonempty, mostly non-CJK (proper nouns may
+    keep a few CJK glyphs), and carries at least some latin letters."""
+    s = (text or "").strip()
+    return bool(s) and _cjk_ratio(s) <= 0.3 and any(c.isascii() and c.isalpha() for c in s)
 
 
 def _cfg() -> dict:
@@ -172,6 +194,101 @@ def translate_to_zh(texts: list[str], cfg: dict | None = None) -> list[str | Non
         zh = _translate_batch(client, src, cfg)
         _write_cache(list(zip(src, zh)), cfg)
         for i, val in zip(idxs, zh, strict=False):
+            if val:
+                cached[i] = val
+    return cached
+
+
+# --------------------------------------------------------------------------- #
+# ZH -> EN direction (the china_news page's EN language toggle). Mirrors the
+# EN -> ZH path: same cache dir (keys carry target="en"), same client, same
+# batch protocol — only the system prompt, cache field and output validator
+# differ (a plausible English string instead of a CJK one).
+# --------------------------------------------------------------------------- #
+def _read_cache_en(texts: list[str], cfg: dict) -> tuple[list[str | None], list[int]]:
+    cdir = _cache_dir(cfg)
+    out: list[str | None] = []
+    missing: list[int] = []
+    for i, text in enumerate(texts):
+        if not text or not _has_cjk(text):
+            out.append(text if text else None)     # already English -> passthrough
+            continue
+        path = cdir / f"{_key(text, 'en')}.json"
+        try:
+            if path.exists():
+                val = json.loads(path.read_text()).get("text_en")
+                out.append(val if val and _looks_english(val) else None)
+                if out[-1]:
+                    continue
+        except Exception:  # noqa: BLE001
+            pass
+        out.append(None)
+        missing.append(i)
+    return out, missing
+
+
+def _write_cache_en(pairs: list[tuple[str, str | None]], cfg: dict) -> None:
+    cdir = _cache_dir(cfg)
+    for src, en in pairs:
+        if not src or not en or not _looks_english(en):
+            continue
+        try:
+            (cdir / f"{_key(src, 'en')}.json").write_text(json.dumps(
+                {"text": src, "text_en": en}, ensure_ascii=False))
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _translate_batch_en(client, texts: list[str], cfg: dict) -> list[str | None]:
+    none = [None] * len(texts)
+    max_chars = int(cfg.get("max_chars", 360))
+    payload = [t[:max_chars] for t in texts]
+    user = "Translate this JSON array to English:\n" + json.dumps(payload, ensure_ascii=False)
+    try:
+        resp = client.messages.create(
+            model=cfg.get("model", "deepseek-chat"),
+            max_tokens=int(cfg.get("max_tokens", 3000)),
+            system=SYSTEM_EN,
+            messages=[{"role": "user", "content": user}],
+        )
+        text = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text")
+    except Exception as e:  # noqa: BLE001
+        log.warning("news EN-translation batch failed: %s", e)
+        return none
+    arr = _extract_array(text)
+    if arr is None or len(arr) != len(texts):
+        log.warning("news EN-translation malformed: got %s for %d inputs",
+                    None if arr is None else len(arr), len(texts))
+        return none
+    out: list[str | None] = []
+    for val in arr:
+        s = str(val).strip() if val is not None else ""
+        out.append(s if _looks_english(s) else None)
+    return out
+
+
+def translate_to_en(texts: list[str], cfg: dict | None = None) -> list[str | None]:
+    """Translate Simplified-Chinese news strings to English, cache-aligned.
+
+    English strings pass through unchanged. Chinese strings return a cached/API
+    translation or None, so callers can fall back to the original text.
+    """
+    cfg = cfg if cfg is not None else _cfg()
+    if not texts:
+        return []
+    cached, missing = _read_cache_en(texts, cfg)
+    if not missing or not cfg.get("enabled"):
+        return cached
+    client = _client(cfg)
+    if client is None:
+        return cached
+    batch_size = max(1, int(cfg.get("batch_size", 16)))
+    for start in range(0, len(missing), batch_size):
+        idxs = missing[start:start + batch_size]
+        src = [texts[i] for i in idxs]
+        en = _translate_batch_en(client, src, cfg)
+        _write_cache_en(list(zip(src, en)), cfg)
+        for i, val in zip(idxs, en, strict=False):
             if val:
                 cached[i] = val
     return cached

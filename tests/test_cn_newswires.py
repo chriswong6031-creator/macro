@@ -152,8 +152,26 @@ def test_page_fetch_cn_wires_maps_to_candidate_shape(monkeypatch):
     it = items[0]
     assert it["source"] == "cn_wire" and it["source_tier"] == "china_native"
     assert it["source_lang"] == "zh" and it["source_name"] == "金十数据"
+    assert it["wire_important"] is True and items[1]["wire_important"] is False
     # tier weight: native Chinese financial source (+24) — the page ranker input
     assert cn._source_weight(it["source_tier"], it["source_name"], it["source"])[0] == 24
+
+
+def test_wire_important_flag_boosts_importance():
+    from engine import china_news as cn
+    base, _, _ = cn._importance("央行今日开展1000亿元7天逆回购操作", "", "monetary",
+                                "china_native", "金十数据", "cn_wire")
+    boosted, _, reasons = cn._importance("央行今日开展1000亿元7天逆回购操作", "", "monetary",
+                                         "china_native", "金十数据", "cn_wire",
+                                         wire_important=True)
+    assert boosted == base + 8
+    assert "wire-flagged high impact" in reasons
+    # the boost rides BEFORE the off-China damp: a flagged foreign flash stays context
+    fb, _, fr = cn._importance("波兰央行委员：有理由考虑今年晚些时候降息", "", "monetary",
+                               "china_native", "金十数据", "cn_wire", wire_important=True)
+    fu, _, _ = cn._importance("波兰央行委员：有理由考虑今年晚些时候降息", "", "monetary",
+                              "china_native", "金十数据", "cn_wire")
+    assert fu < fb < base and "global macro relay (non-China)" in fr
 
 
 def test_page_cn_wire_requires_theme_gate():
