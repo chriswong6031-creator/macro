@@ -1,0 +1,13 @@
+# IMMUTABLE (R-V2-8 / R-V3-1): loop PRs may not edit this — the mind cannot loosen
+# its own freshness alarms. Registered in check_self_mod_fence.py + grader manifest by W3.
+
+# Per-source-key SLA in days.  "stale" = age_days > sla_days.
+sources:
+  organism_state:  {sla_days: 2}
+  fitness:         {sla_days: 3}
+  trajectory:      {sla_days: 7}
+  lessons:         {sla_days: 30}
+  case_law:        {sla_days: 120}
+  charter:         {sla_days: 365}
+
+default_sla_days: 14
