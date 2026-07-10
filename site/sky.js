@@ -29,6 +29,7 @@
   var motionOK = !mq.matches;
   var nowMs = function () { return (window.performance && performance.now) ? performance.now() : Date.now(); };
 
+  if (!SAT_ENABLED && satEl) satEl.style.opacity = '0';   // hide once; frame() will skip placeSat
   var W = 0, H = 0, dpr = 1, stars = [];
   var raf = 0, running = false, lastT = 0;
   var starAlpha = 0, starTarget = 0;   // global star opacity (eased toward target)
@@ -80,7 +81,7 @@
     }
   }
   function size() {
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(1.5, window.devicePixelRatio || 1);
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
@@ -154,6 +155,11 @@
     satEl.style.opacity = (op * sa).toFixed(3);
   }
 
+  var lastScrollT = -9999;   // timestamp of last scroll event (for scroll-skip)
+  window.addEventListener('scroll', function () { lastScrollT = performance.now(); }, { passive: true });
+
+  var lastDrawT = 0;         // timestamp of last drawStars call (for twinkle throttle)
+
   function frame(t) {
     if (!running) return;                 // ignore any stale/queued callback
     if (!lastT) lastT = t;
@@ -162,12 +168,21 @@
     var ke = 1 - Math.pow(0.02, dt / 1000);     // entry easing (slower, more graceful)
     starAlpha += (starTarget - starAlpha) * ka;
     entry += (entryTarget - entry) * ke;
-    drawStars(t);
-    placeSat(dt);
+
+    // --- scroll skip: canvas is position:fixed; frozen stars during scroll are imperceptible ---
+    var scrolling = (t - lastScrollT) < 120;
+    // --- twinkle throttle: once animation has settled, cap redraws to ~30fps ---
+    var settled = entry > 0.996 && Math.abs(starAlpha - starTarget) < 0.004;
+    var throttled = settled && (t - lastDrawT) < 28;
+    if (!scrolling && !throttled) {
+      drawStars(t);
+      lastDrawT = t;
+    }
+    if (SAT_ENABLED) placeSat(dt);
 
     if (!motionOK) { running = false; raf = 0; return; }   // static single frame
-    var settled = Math.abs(starAlpha - starTarget) < 0.004 && Math.abs(entry - entryTarget) < 0.004;
-    if (starTarget === 0 && settled) { running = false; raf = 0; cx.clearRect(0, 0, W, H); return; }
+    var fullySettled = Math.abs(starAlpha - starTarget) < 0.004 && Math.abs(entry - entryTarget) < 0.004;
+    if (starTarget === 0 && fullySettled) { running = false; raf = 0; cx.clearRect(0, 0, W, H); return; }
     raf = requestAnimationFrame(frame);
   }
   function run() { if (!running) { running = true; lastT = 0; if (raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); } }

@@ -1395,12 +1395,11 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
 .gd-isl .body{position:absolute;left:50%;top:50%;white-space:nowrap;margin:0;font-family:inherit;
  transform:translate(calc(-50% + var(--ox,0)*1px),calc(-50% + var(--oy,0)*1px)) scale(calc(.84 + .16*var(--f,1)));
  display:flex;align-items:center;gap:8px;padding:7px 13px 7px 11px;border-radius:999px;cursor:pointer;
- background:color-mix(in srgb,var(--panel) 84%,transparent);
+ background:color-mix(in srgb,var(--panel) 93%,transparent);
  border:1px solid color-mix(in srgb,var(--qc) 26%,color-mix(in srgb,var(--line) 78%,transparent));
- -webkit-backdrop-filter:blur(13px) saturate(1.7);backdrop-filter:blur(13px) saturate(1.7);
  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -9px 15px rgba(0,0,0,.32),0 11px 26px -10px rgba(0,0,0,.7),0 5px 18px -7px color-mix(in srgb,var(--qc) 45%,transparent);
- transition:opacity .35s ease,filter .35s ease,border-color .2s ease,box-shadow .2s ease,transform .12s linear;
- opacity:calc(.12 + .88*var(--f,1));filter:blur(calc((1 - var(--f,1))*6px)) saturate(calc(.4 + .6*var(--f,1)))}
+ transition:opacity .35s ease,border-color .2s ease,box-shadow .2s ease;
+ opacity:calc(.12 + .88*var(--f,1))}
 .gd-isl .body::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
  background:linear-gradient(140deg,rgba(255,255,255,.62),rgba(255,255,255,.06) 40%,rgba(0,0,0,.16));
  -webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;opacity:.95}
@@ -1412,9 +1411,8 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
 /* LIGHT THEME: the dark inner shadows read as a muddy smudge on a white pebble — drop
    them, go more transparent + frosted so the globe shows through as real glass */
 html[data-theme="light"] .gd-isl .body{
- background:color-mix(in srgb,var(--panel) 52%,transparent);
+ background:color-mix(in srgb,var(--panel) 82%,transparent);
  border-color:color-mix(in srgb,var(--qc) 32%,color-mix(in srgb,var(--line) 66%,transparent));
- -webkit-backdrop-filter:blur(15px) saturate(1.5);backdrop-filter:blur(15px) saturate(1.5);
  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 2px rgba(255,255,255,.45),0 8px 20px -10px rgba(28,40,64,.24),0 3px 13px -6px color-mix(in srgb,var(--qc) 40%,transparent)}
 html[data-theme="light"] .gd-isl .body::before{background:linear-gradient(140deg,rgba(255,255,255,.92),rgba(255,255,255,.22) 46%,rgba(120,140,170,.12))}
 html[data-theme="light"] .gd-isl .body:hover,html[data-theme="light"] .gd-isl .body:focus-visible{
@@ -1580,7 +1578,7 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
 @keyframes gd-conv-top{0%{transform:translateY(0);opacity:1}45%{transform:translateY(6px);opacity:0.35}46%{transform:translateY(-10px);opacity:0}47%{transform:translateY(-10px);opacity:0}75%{transform:translateY(0);opacity:1}100%{transform:translateY(0);opacity:1}}
 @keyframes gd-conv-bot{0%{transform:translateY(0);opacity:0.55}45%{transform:translateY(8px);opacity:0}46%{transform:translateY(-8px);opacity:0}75%{transform:translateY(0);opacity:0.55}100%{transform:translateY(0);opacity:0.55}}
 .gd-cta{display:flex;justify-content:center;margin:6px 0 2px}
-.gd-scroll{position:relative;display:inline-flex;align-items:center;gap:9px;padding:10px 20px 10px 22px;border-radius:999px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;letter-spacing:.01em;color:var(--text);background:color-mix(in srgb,var(--panel2) 72%,transparent);-webkit-backdrop-filter:blur(13px) saturate(1.2);backdrop-filter:blur(13px) saturate(1.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px -12px rgba(0,0,0,.6);animation:gd-float 2.8s ease-in-out infinite;overflow:visible}
+.gd-scroll{position:relative;display:inline-flex;align-items:center;gap:9px;padding:10px 20px 10px 22px;border-radius:999px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;letter-spacing:.01em;color:var(--text);background:color-mix(in srgb,var(--panel2) 90%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px -12px rgba(0,0,0,.6);animation:gd-float 2.8s ease-in-out infinite;overflow:visible}
 .gd-scroll::before{content:'';position:absolute;inset:-1px;border-radius:999px;background:linear-gradient(135deg,var(--info),#7c5cff);-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;pointer-events:none}
 .gd-scroll::after{content:'';position:absolute;inset:-10px;border-radius:999px;background:radial-gradient(closest-side,color-mix(in srgb,var(--info) 22%,transparent),transparent 70%);z-index:-1;opacity:0.7;animation:gd-halo-glow 2.8s ease-in-out infinite;pointer-events:none}
 .gd-scroll-chev{position:relative;width:16px;height:18px;overflow:hidden}
@@ -2052,14 +2050,9 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '});});'
         'var sb=document.querySelector(".gd-scroll");'
         'if(sb){sb.addEventListener("click",function(){'
-        'var target=hv;var rm=false;'
-        'try{rm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}'
-        'var to=target.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop)-12;'
-        'if(rm){window.scrollTo(0,to);return;}'
-        'var from=window.pageYOffset||document.documentElement.scrollTop,d=650,t0=null;'
-        'function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}'
-        'function step(ts){if(t0===null)t0=ts;var p=Math.min((ts-t0)/d,1);window.scrollTo(0,from+(to-from)*ease(p));if(p<1)requestAnimationFrame(step);}'
-        'requestAnimationFrame(step);'
+        'var to=hv.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop)-12;'
+        'var rm=false;try{rm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}'
+        'if(rm){window.scrollTo(0,to);}else{try{window.scrollTo({top:to,behavior:"smooth"});}catch(e){window.scrollTo(0,to);}}'
         '});}'
         '})();</script>'
         '</body></html>'
