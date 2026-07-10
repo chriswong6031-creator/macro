@@ -541,15 +541,27 @@ class TestSeedRegistryValid:
             f"data/experiments/registry_seed.json not found at {EXPERIMENTS_SEED_PATH}"
         )
 
-    def test_sync_produces_no_schema_errors(self):
+    @pytest.fixture
+    def tmp_seed(self, tmp_path):
+        """Copy of the real experiments seed for sync() to write to.
+
+        mirror_to_experiments rewrites the seed (regime_context refresh) on
+        every run, so sync() with the default experiments_path would mutate
+        tracked data/experiments/registry_seed.json as a test side effect.
+        """
+        p = tmp_path / "registry_seed.json"
+        p.write_text(EXPERIMENTS_SEED_PATH.read_text())
+        return p
+
+    def test_sync_produces_no_schema_errors(self, tmp_seed):
         """sync() on the real registry must return no errors."""
-        result = sync()
+        result = sync(experiments_path=tmp_seed)
         assert result["errors"] == [], (
             f"sync() found schema errors:\n" + "\n".join(result["errors"])
         )
 
-    def test_sync_counts_species(self):
-        result = sync()
+    def test_sync_counts_species(self, tmp_seed):
+        result = sync(experiments_path=tmp_seed)
         assert result["n_species"] >= 13, (
             f"Expected ≥13 species in the seed, found {result['n_species']}"
         )
