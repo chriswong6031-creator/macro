@@ -1350,6 +1350,7 @@ def main() -> int:
     # Personality pass timing accumulator (sum of per-ticker personality try-block elapsed)
     _sp_elapsed_acc: float = 0.0
     _sp_n_tickers = 0
+    _sp_n_skipped = 0
     # Container for personality objects (ticker -> personality dict) for post-loop passes
     _sp_by_ticker: "dict[str, dict]" = {}
     # -------------------------------------------------------------------
@@ -2081,7 +2082,20 @@ def main() -> int:
             _sp_n_tickers += 1
             _sp_elapsed_acc += time.time() - _sp_tick_t0
         except Exception as _sp_e:  # noqa: BLE001 — display chip; NEVER fatal
-            log.debug("personality pass for %s skipped (%s)", ticker, _sp_e)
+            _sp_n_skipped += 1
+            # WARNING (not debug) so a systemic failure surfaces in nightly logs,
+            # which run at INFO. First skip carries the full traceback for diagnosis;
+            # skips beyond 10 drop to debug so a full-universe failure can't flood
+            # the log — the end-of-loop summary always prints the skip count.
+            if _sp_n_skipped == 1:
+                log.warning("personality pass for %s skipped (%s: %s)",
+                            ticker, type(_sp_e).__name__, _sp_e, exc_info=True)
+            elif _sp_n_skipped <= 10:
+                log.warning("personality pass for %s skipped (%s: %s)",
+                            ticker, type(_sp_e).__name__, _sp_e)
+            else:
+                log.debug("personality pass for %s skipped (%s: %s)",
+                          ticker, type(_sp_e).__name__, _sp_e)
         _tech = rec.get("tech") or {}
         disp_map[ticker] = {
             "price": _tech.get("price"), "off_high": _tech.get("off_52w_high_pct"),
@@ -2260,7 +2274,17 @@ def main() -> int:
             log.warning("W3 evidence collection for %s failed (%s)", ticker, _w3e)
         built += 1
     # ---- stock_personality.v1 benchmark gate ----------------------------------------
-    log.info("personality pass: %.1fs over %d tickers", _sp_elapsed_acc, _sp_n_tickers)
+    # Skip-count summary at WARNING whenever any ticker skipped: a partial or
+    # full-universe personality failure must be visible in nightly logs (INFO level),
+    # never only at per-ticker debug (the 2026-07 "0 of 1,626" scare was undiagnosable
+    # because every skip logged at debug).
+    if _sp_n_skipped:
+        log.warning("personality pass: %.1fs — %d ok, %d skipped of %d total",
+                    _sp_elapsed_acc, _sp_n_tickers, _sp_n_skipped,
+                    _sp_n_tickers + _sp_n_skipped)
+    else:
+        log.info("personality pass: %.1fs over %d tickers (0 skipped)",
+                 _sp_elapsed_acc, _sp_n_tickers)
     # ---- stock_personality.v1 panel append ------------------------------------------
     # Append today's per-ticker label rows to data/stock_personality/panel/YYYY-MM/panel.parquet
     # (gitignored-local; R2-published via publish_r2). Fail-open: any write error is logged.
