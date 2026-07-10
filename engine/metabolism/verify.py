@@ -455,3 +455,274 @@ def write_verify_record(
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_verify.write_verify_record: %s", exc)
         return None
+
+
+# ── Fitness-floor demotion ladder (V2-C) ──────────────────────────────────────
+#
+# Per-lobe journal at data/metabolism/lifecycle/<lobe_id>.jsonl.
+# Each row: {ts, lobe_id, breach_type, counted, reason, regime_paused, health_status}.
+#
+# Breach types:
+#   logic_breach  — a real fitness-floor failure (the only type that counts toward
+#                   the circuit breaker).
+#   health_miss   — health.py reports missing/degraded/stale (NOT counted; dead feed
+#                   ≠ bad lobe per R-V2-3 demotion-safety).
+#
+# Circuit breaker:
+#   logic breaches >= BREAKER_TRIP_ACTIVE → proposal: active→probation
+#   logic breaches >= BREAKER_TRIP_PROBATION → proposal: probation→demoted
+#   demoted → emits a DO_NOT_REBUILD docket row
+#
+# INERT: emits proposals + docket items, never auto-retires.
+
+SCHEMA_LIFECYCLE_JOURNAL = "metabolism.lifecycle_journal.v1"
+LIFECYCLE_DIR = ("data", "metabolism", "lifecycle")
+
+# Health statuses that must NOT count as logic breaches (R-V2-3 demotion safety)
+_HEALTH_EXCLUDED_STATUSES = frozenset({"missing", "degraded", "stale", "unknown"})
+
+_BREAKER_TRIP_ACTIVE = 3     # consecutive logic breaches → active→probation
+_BREAKER_TRIP_PROBATION = 3  # consecutive logic breaches while on probation → demoted
+
+
+def _lobe_journal_path(lobe_id: str, root: Path) -> Path:
+    """Return the path for a lobe's lifecycle journal."""
+    return root.joinpath(*LIFECYCLE_DIR) / f"{lobe_id}.jsonl"
+
+
+def journal_breach(
+    lobe_id: str,
+    *,
+    breach_type: str,
+    health_status: str | None = None,
+    reason: str = "",
+    regime_paused: bool = False,
+    all_inputs_absent: bool = False,
+    root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Journal one fitness-floor assessment row for a lobe.
+
+    Parameters
+    ----------
+    lobe_id : str
+    breach_type : str
+        "logic_breach" — a real fitness-floor failure (counted toward breaker).
+        "health_miss"  — health.py missing/degraded/stale (NOT counted).
+        "pass"         — floor passed (resets consecutive breach counter).
+    health_status : str | None
+        The health.py status string (fresh/stale/missing/degraded/unknown).
+        If this is in _HEALTH_EXCLUDED_STATUSES, the breach is NOT counted.
+    reason : str
+    regime_paused : bool
+        If True, the lobe is in a regime-aware pause (no demotion emitted even
+        if breaker would trip).
+    all_inputs_absent : bool
+        If True, this is an all-inputs-absent case.  An adversary non-veto is
+        required before any demotion proposal; this is noted in the journal row.
+    root : str | Path | None
+
+    Returns
+    -------
+    dict — the journal row written.  NEVER raises.
+    """
+    try:
+        r = Path(root) if root is not None else Path(__file__).resolve().parent.parent.parent
+        ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+        # Determine whether this breach actually counts toward the circuit breaker
+        excluded_by_health = (
+            health_status is not None
+            and health_status in _HEALTH_EXCLUDED_STATUSES
+        )
+        counted = (
+            breach_type == "logic_breach"
+            and not excluded_by_health
+            and not regime_paused
+        )
+
+        row: dict[str, Any] = {
+            "schema": SCHEMA_LIFECYCLE_JOURNAL,
+            "ts": ts,
+            "lobe_id": lobe_id,
+            "breach_type": breach_type,
+            "health_status": health_status,
+            "counted": counted,
+            "reason": reason,
+            "regime_paused": regime_paused,
+            "all_inputs_absent": all_inputs_absent,
+            "adversary_nonveto_required": all_inputs_absent,
+            "authority": {
+                "is_context_only": True,
+                "display_only": True,
+                "not_a_signal": True,
+                "note": (
+                    "Lifecycle journal row. Demotion proposals are emitted by "
+                    "grade_demotion_ladder(); nothing is auto-retired in this PR."
+                ),
+            },
+        }
+
+        # Append to lobe journal
+        journal_dir = r.joinpath(*LIFECYCLE_DIR)
+        journal_dir.mkdir(parents=True, exist_ok=True)
+        journal_path = journal_dir / f"{lobe_id}.jsonl"
+        with journal_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+        return row
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify.journal_breach(%s): %s", lobe_id, exc)
+        return {
+            "schema": SCHEMA_LIFECYCLE_JOURNAL,
+            "lobe_id": lobe_id,
+            "breach_type": breach_type,
+            "counted": False,
+            "error": str(exc),
+        }
+
+
+def _read_journal_rows(lobe_id: str, root: Path) -> list[dict]:
+    """Read all journal rows for a lobe.  Returns [] on any error."""
+    try:
+        p = _lobe_journal_path(lobe_id, root)
+        if not p.exists():
+            return []
+        rows = []
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    rows.append(json.loads(line))
+                except Exception:  # noqa: BLE001
+                    pass
+        return rows
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._read_journal_rows(%s): %s", lobe_id, exc)
+        return []
+
+
+def _consecutive_counted_breaches(rows: list[dict]) -> int:
+    """Return the count of consecutive counted breaches at the tail of the journal."""
+    count = 0
+    for row in reversed(rows):
+        if row.get("breach_type") == "pass":
+            break
+        if row.get("counted", False):
+            count += 1
+        else:
+            # uncounted row (health miss, regime paused) — does NOT reset the streak
+            # but also doesn't count; skip and keep scanning
+            pass
+    return count
+
+
+def grade_demotion_ladder(
+    lobe_id: str,
+    current_lifecycle_state: str,
+    *,
+    regime_paused: bool = False,
+    all_inputs_absent: bool = False,
+    adversary_nonveto: bool = True,
+    root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Evaluate the demotion ladder for a lobe and emit a lifecycle proposal if warranted.
+
+    Reads data/metabolism/lifecycle/<lobe_id>.jsonl and counts consecutive
+    logic breaches.  If the circuit breaker trips, calls lifecycle.transition()
+    to emit a proposal (INERT: proposal + docket item only, never auto-retires).
+
+    DEMOTION SAFETY (R-V2-3):
+      - Only counted=True rows (logic_breach, not health-excluded, not regime-paused)
+        count toward the circuit breaker.
+      - all_inputs_absent → adversary non-veto required; if adversary_nonveto=False,
+        demotion is blocked.
+      - regime_paused=True → no demotion emitted.
+
+    Returns
+    -------
+    dict — ladder state + proposal result.  NEVER raises.
+    """
+    result: dict[str, Any] = {
+        "lobe_id": lobe_id,
+        "current_lifecycle_state": current_lifecycle_state,
+        "consecutive_counted_breaches": 0,
+        "breaker_tripped": False,
+        "regime_paused": regime_paused,
+        "all_inputs_absent": all_inputs_absent,
+        "adversary_nonveto_blocked": False,
+        "proposal": None,
+        "authority": {
+            "is_context_only": True,
+            "display_only": True,
+            "not_a_signal": True,
+            "note": "Demotion ladder state. INERT: proposals only, no autonomous retires.",
+        },
+    }
+    try:
+        r = Path(root) if root is not None else Path(__file__).resolve().parent.parent.parent
+
+        rows = _read_journal_rows(lobe_id, r)
+        consecutive = _consecutive_counted_breaches(rows)
+        result["consecutive_counted_breaches"] = consecutive
+
+        # Regime-aware pause — no demotion even if breaker trips
+        if regime_paused:
+            result["breaker_tripped"] = False
+            return result
+
+        # All-inputs-absent: require adversary non-veto
+        if all_inputs_absent and not adversary_nonveto:
+            result["adversary_nonveto_blocked"] = True
+            log.info(
+                "lifecycle.grade_demotion_ladder: %s all_inputs_absent + no adversary "
+                "non-veto — demotion blocked",
+                lobe_id,
+            )
+            return result
+
+        # Determine if breaker trips
+        trip_threshold = (
+            _BREAKER_TRIP_PROBATION
+            if current_lifecycle_state == "probation"
+            else _BREAKER_TRIP_ACTIVE
+        )
+
+        if consecutive < trip_threshold:
+            return result
+
+        result["breaker_tripped"] = True
+
+        # Determine the demotion edge
+        from_to_map = {
+            "active": ("active", "probation"),
+            "probation": ("probation", "demoted"),
+            "demoted": ("demoted", "retired"),
+        }
+        edge = from_to_map.get(current_lifecycle_state)
+        if edge is None:
+            log.info(
+                "lifecycle.grade_demotion_ladder: %s in state %r — no demotion edge",
+                lobe_id, current_lifecycle_state,
+            )
+            return result
+
+        from_state, to_state = edge
+
+        # Emit lifecycle proposal (INERT)
+        from engine.metabolism.lifecycle import transition  # noqa: PLC0415
+        proposal = transition(
+            from_state, to_state, lobe_id,
+            reason=(
+                f"Fitness-floor demotion ladder: {consecutive} consecutive counted "
+                f"logic breaches (threshold={trip_threshold}). "
+                f"health.py missing/degraded/stale rows excluded per R-V2-3."
+            ),
+            root=r,
+        )
+        result["proposal"] = proposal
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify.grade_demotion_ladder(%s): %s", lobe_id, exc)
+        result["error"] = str(exc)
+
+    return result

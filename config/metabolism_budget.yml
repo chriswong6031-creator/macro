@@ -48,3 +48,22 @@ circuit_breaker_trip: 3
 # It is append-only (decremented per stage); a full-cycle reset happens at
 # cycle start.  Over-cap → clean no-op + journal entry.
 budget_ledger_path: data/metabolism/budget_ledger.json
+
+# ── Roster-budget governor (V2-C, R-V2-7) ────────────────────────────────────
+#
+# Operator-ratified cap on the number of active non-scored lobes the loop
+# may charter.  Current roster = 63 (display + shadow + confirmer NW-scope
+# lobes from synapse.yml as of 2026-07-10).  Cap = current + 3.
+#
+# When the charter queue would exceed max_active_nonscored_lobes, the loop
+# does NOT silently block: it emits a digest ASK tap card via V2-D tap.py
+# so the operator can raise this number.
+#
+# max_probation_lobes: how many lobes may be in 'probation' simultaneously
+# before the ladder pauses new demotions (prevents cascade kills from a
+# feed outage that disables many lobes at once).
+#
+# These values are IMMUTABLE (loop PRs cannot modify them; R-V2-8).
+# An operator raises them via a T2 tap-gated human PR.
+max_active_nonscored_lobes: 66    # 63 current + 3 headroom (operator-ratified 2026-07-10)
+max_probation_lobes: 5            # max simultaneous probation lobes (anti-cascade)

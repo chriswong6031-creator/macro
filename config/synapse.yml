@@ -10292,3 +10292,111 @@ artifacts:
       the killed standalone preference-prior module + agenda-review. Honest null
       when fewer than MIN_CLOSED_CONTRACTS (10) mature contracts exist — status=
       'insufficient_data' printed, no fabricated calibration. INERT.
+
+  # ── V2-C: Lobe lifecycle authority (R-V2-3, R-V2-7) ─────────────────────────
+  # history note: V2-C 2026-07-10 — added 4 artifacts (count 357→361)
+
+  metabolism-lifecycle-journal:
+    path: data/metabolism/lifecycle/
+    format: jsonl
+    producer: engine/metabolism/verify.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2c
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: metabolism.lifecycle_journal.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/metabolism/verify.py
+    external_consumers: []
+    notes: >
+      V2-C lobe lifecycle journal. Per-lobe JSONL at data/metabolism/lifecycle/<lobe_id>.jsonl.
+      Each row: {ts, lobe_id, breach_type, health_status, counted, reason, regime_paused,
+      all_inputs_absent}. Only logic_breach rows with health_status NOT in
+      {missing, degraded, stale, unknown} count toward the circuit breaker (R-V2-3
+      demotion-safety). Used by grade_demotion_ladder() to count consecutive breaches.
+      INERT: demotion proposals only, no autonomous retires.
+
+  metabolism-lifecycle-docket:
+    path: data/metabolism/lifecycle_docket/
+    format: json
+    producer: engine/metabolism/lifecycle.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2c
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: metabolism.lifecycle_docket.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_dispatch.py
+    external_consumers: []
+    notes: >
+      V2-C lifecycle docket. One JSON file per lifecycle transition proposal
+      at data/metabolism/lifecycle_docket/<date>_<lobe>_<from>_to_<to>.json.
+      Written by lifecycle.transition() for every allowed transition. These are
+      PROPOSALS for the normal PROPOSE→ADJUDICATE gauntlet — lifecycle.py does NOT
+      directly edit synapse.yml or mastermind_context (R-V2-3). INERT.
+
+  metabolism-authority-audit:
+    path: data/metabolism/authority_audit/
+    format: json
+    producer: engine/metabolism/authority_audit.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2c
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 2208
+    schema: metabolism.authority_audit.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_digest.py
+    external_consumers: []
+    notes: >
+      V2-C quarterly authority audit. Scans synapse consumers + scored_path_surfaces
+      for display-tier lobes feeding scored/confirmer consumers (the promotion-launder
+      gap the tier fence cannot catch structurally). Report: {display_to_scored_consumers,
+      scored_path_surface_launders, summary}. Display-tier, no action — operator visibility
+      only. Surfaced in the operator digest. Per R-V2-3 §6.2 (residual launder acceptance).
+      Output: data/metabolism/authority_audit/<quarter>.json.
+
+  metabolism-lobe-charters:
+    path: config/lobe_charters.yml
+    format: other
+    producer: engine/metabolism/lobe_registry.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2c
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: lobe_charters.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/metabolism/lobe_registry.py
+      - engine/metabolism/roster_governor.py
+      - engine/metabolism/lifecycle.py
+    external_consumers: []
+    notes: >
+      V2-C lobe charter registry. One entry per NW-scope lobe (owner_program==neural-web
+      OR external_consumers includes mastermind:context — same derivation as health.py
+      _is_nw_scope). tier field is CI-MIRRORED from synapse.yml (R-V2-7); a helper
+      asserts charter.tier == synapse.tier. lifecycle_state transitions are proposals
+      only. OPERATOR-CURATED (not IMMUTABLE — charters are loop-curated; the roster CAP
+      in metabolism_budget.yml IS immutable). Seeded 2026-07-10 from 97 NW-scope lobes.
