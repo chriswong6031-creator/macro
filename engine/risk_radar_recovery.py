@@ -84,7 +84,16 @@ def _us_latest() -> dict:
 def _market_catalysts(latest: dict | None = None) -> dict | None:
     """Lazy import of engine/risk_radar_market_catalysts. Returns the compute() dict or None on
     any failure. latest is passed for future context-gating but currently unused by compute().
-    NEVER raises."""
+    NEVER raises.
+
+    Hot-path note: this function is called on both the intraday fast-path
+    (build_risk_state.py → market_state.market_state_snapshot → assess) and the nightly path
+    (engine/run.py).  compute() itself is read-only (no ledger writes) and the result is
+    stripped from risk_state.json by _verdict_block's key whitelist, so no ledger or banner
+    mutation occurs intraday.  The per-tick I/O cost is ~4 store.read calls (breadth/SPY/_VIX
+    /FRED) plus rolling/EMA/pct_rank_window; acceptable on the current 4-core box given the
+    intraday tick rate (~1/min), but operator should revisit if tick frequency increases.
+    """
     try:
         from engine import risk_radar_market_catalysts as _rmc
         return _rmc.compute()

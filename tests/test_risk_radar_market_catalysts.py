@@ -55,6 +55,25 @@ def _fred_hy(oas_series) -> pd.DataFrame:
     return pd.DataFrame({"hy_oas": oas_series}, index=idx)
 
 
+def _patch_today(monkeypatch, as_of: str) -> None:
+    """Patch rmc.date so date.today() returns a fixed date.
+
+    This lets _is_fresh / _bd_since return deterministic results against
+    synthetic frames whose last bar is years in the past.  Pass the ISO date
+    string you want 'today' to be (e.g. the day of the chip event or a few
+    business days after it).
+    """
+    from datetime import date as _real_date
+    target = _real_date.fromisoformat(as_of)
+
+    class _FakeDate(_real_date):
+        @classmethod
+        def today(cls):
+            return target
+
+    monkeypatch.setattr(rmc, "date", _FakeDate)
+
+
 # ---------------------------------------------------------------------------
 # C1 — thrust_confluence
 # ---------------------------------------------------------------------------
@@ -107,22 +126,35 @@ class TestC1ThrustConfluence:
         assert chip["key"] == "thrust_confluence"
         assert chip["accruing"] is True
 
-    def test_zbt_fires_on_sharp_bounce(self):
-        """Build a series where 10d EMA crosses <=0.40 then >=0.615 within 10 sessions."""
+    def test_zbt_fires_on_sharp_bounce(self, monkeypatch):
+        """Build a series where adv ratio dips below 0.40 then surges above 0.615 within 10 sessions.
+
+        The frame ends at the surge so patching today to the last frame date makes
+        the event fresh and lets us assert fired=True.
+        """
         n = 500
         b = _breadth_df(n=n, adv_frac=0.55, n_members=450)
-        # Override last 20 rows: first 8 days low adv (~35%), then high adv (~65%)
-        low_adv = int(0.35 * 450)
-        high_adv = int(0.65 * 450)
+        # 15 days of deep washout (adv ~22%) then 7 days of very high adv (~85%)
+        # 10d EMA of ratio: after washout EMA dips well below 0.40;
+        # after the surge spike it jumps above 0.615 within the same 10-session window.
+        low_adv = int(0.22 * 450)
+        high_adv = int(0.85 * 450)
         b = b.copy()
-        b.iloc[-15:-7, b.columns.get_loc("adv")] = low_adv
-        b.iloc[-15:-7, b.columns.get_loc("dec")] = 450 - low_adv
+        b.iloc[-22:-7, b.columns.get_loc("adv")] = low_adv
+        b.iloc[-22:-7, b.columns.get_loc("dec")] = 450 - low_adv
         b.iloc[-7:, b.columns.get_loc("adv")] = high_adv
         b.iloc[-7:, b.columns.get_loc("dec")] = 450 - high_adv
-        # ZBT may or may not fire depending on the EMA smoothing — just ensure no crash
+
+        # Patch today to the last day of the frame so the event is fresh
+        last_date = str(b.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+
         chip = rmc._c1_thrust_confluence(b)
-        assert "fired" in chip
         assert chip["accruing"] is True
+        # ZBT component should fire: low EMA < 0.40 then high EMA >= 0.615 in <=10 sessions
+        assert chip["detail"]["components"]["zbt"]["fired"] is True
+        assert chip["fired"] is True
+        assert chip["fresh"] is True
 
     def test_missing_columns_returns_absent(self):
         """Missing adv/dec columns should return absent chip."""
@@ -139,27 +171,55 @@ class TestC1ThrustConfluence:
 class TestC2MSISwing:
 
     def _make_breadth_with_swing(self) -> pd.DataFrame:
-        """Create breadth that produces a summation low < 100 then > 1000 with positive slope."""
+        """Create breadth that produces a summation low < 100 within last 126 bars, then > 1000 now.
+
+        Construction: neutral 350 bars to build moderate summation, then a severe bearish
+        episode (bars 350-420) that crashes summation well below 100 inside the last-126
+        window, then very bullish 420+ to spike summation above 1000 with positive slope.
+        """
         n = 500
-        b = _breadth_df(n=n, adv_frac=0.55, n_members=450)
-        # First 300 days: adv much lower than dec (depresses summation)
+        b = _breadth_df(n=n, adv_frac=0.50, n_members=450)
         b = b.copy()
-        low_adv = int(0.30 * 450)
-        b.iloc[:300, b.columns.get_loc("adv")] = low_adv
-        b.iloc[:300, b.columns.get_loc("dec")] = 450 - low_adv
-        # Last 200 days: adv much higher (raises summation)
-        high_adv = int(0.75 * 450)
-        b.iloc[300:, b.columns.get_loc("adv")] = high_adv
-        b.iloc[300:, b.columns.get_loc("dec")] = 450 - high_adv
+        # Neutral: 50% adv -> zero oscillator, summation near 0
+        b.iloc[:350, b.columns.get_loc("adv")] = int(0.50 * 450)
+        b.iloc[:350, b.columns.get_loc("dec")] = 450 - int(0.50 * 450)
+        # Very bearish: 15% adv -> RANA crashes, summation drops well below 100
+        low_adv = int(0.15 * 450)
+        b.iloc[350:420, b.columns.get_loc("adv")] = low_adv
+        b.iloc[350:420, b.columns.get_loc("dec")] = 450 - low_adv
+        # Very bullish: 90% adv -> summation surges above 1000 with positive slope
+        high_adv = int(0.90 * 450)
+        b.iloc[420:, b.columns.get_loc("adv")] = high_adv
+        b.iloc[420:, b.columns.get_loc("dec")] = 450 - high_adv
         return b
 
-    def test_swing_fires_on_low_to_high(self):
+    def test_swing_fires_on_low_to_high(self, monkeypatch):
         b = self._make_breadth_with_swing()
+        # The summation crossing above 1000 occurs around bar 430-440.
+        # Patch today to the last frame date so that crossing is within _FRESH_BD (10bd).
+        # (crossing is ~bar 435 of 500, frame last is bar 499; gap ~65bd; use crossing-day +3bd)
+        # We determine the crossing date by computing the summation inline.
+        b2 = b.copy()
+        b2.index = pd.to_datetime(b2.index)
+        b_mature = b2[b2["n_members"] >= rmc.THRUST_N]
+        total = (b_mature["adv"] + b_mature["dec"]).replace(0, float("nan"))
+        rana = 1000.0 * (b_mature["adv"] - b_mature["dec"]) / total
+        osc = rana.ewm(span=19, adjust=False).mean() - rana.ewm(span=39, adjust=False).mean()
+        summ = osc.cumsum()
+        above1k = summ > 1000
+        crossings = summ[(~above1k.shift(1, fill_value=False)) & above1k]
+        assert not crossings.empty, "test setup: summation did not cross 1000"
+        crossing_date = crossings.index[-1]
+        today_str = str((crossing_date + pd.tseries.offsets.BDay(3)).date())
+        _patch_today(monkeypatch, today_str)
+
         chip = rmc._c2_msi_swing(b)
-        # Not guaranteed to exactly fire given the construction, but should not crash
-        assert "fired" in chip
         assert chip["accruing"] is True
         assert chip["key"] == "msi_swing"
+        assert chip["fired"] is True
+        assert chip["fresh"] is True
+        assert chip["detail"]["summation_now"] > 1000
+        assert chip["detail"]["recent_min_126"] < 100
 
     def test_no_fire_when_flat(self):
         """Flat 55% adv — summation won't do a washout→swing."""
@@ -194,30 +254,54 @@ class TestC3WashoutThrust20:
         assert "cache-local" in chip["detail"]["note"]
         assert chip["accruing"] is True
 
-    def test_fires_when_cache_present(self, tmp_path):
-        """Build a synthetic closes cache that triggers washout->thrust."""
-        # 200 tickers; first 150 bars: most below 20dma (washout < 25%), last 50: most above (> 90%)
+    def test_fires_when_cache_present(self, tmp_path, monkeypatch):
+        """Build a synthetic closes cache that triggers the washout (<25%) → thrust (>90%) round-trip.
+
+        Construction:
+          - bars 0..129: price=120 (high baseline, 20dma ~120)
+          - bars 130..154: price=5 (far below 20dma → pct < 25%, washout)
+          - bars 155..199: price linearly rising 200→288 (strictly > lagging 20dma → pct > 90%)
+
+        The thrust crossing happens around bar 155.  Today is patched to ~3bd after that
+        crossing so _is_fresh returns True.
+        """
         n = 200
         n_tickers = 50
         idx = _bdate_range(n)
-        closes = np.ones((n, n_tickers)) * 100.0
-
-        # Simulate prices: first 150 rows — prices below 20dma (use low values)
-        # 20dma of first 150 rows will be high (start high then drop)
-        closes[:130] = 120.0   # price high first (so 20dma will be ~120 during washout)
-        closes[130:160] = 50.0  # price drops sharply — below 20dma (washout)
-        closes[160:] = 130.0   # price surges — above 20dma (thrust)
+        closes = np.ones((n, n_tickers)) * 120.0
+        closes[130:155] = 5.0
+        for i in range(155, 200):
+            closes[i] = 200.0 + (i - 155) * 2.0  # rising trend stays ahead of 20dma
 
         df = pd.DataFrame(closes, index=idx)
         cache_path = tmp_path / "data" / "breadth" / "_closes_cache.parquet"
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(cache_path)
 
+        # Determine the thrust crossing date to patch today
+        ma20 = df.rolling(20, min_periods=10).mean()
+        pct = (df > ma20).sum(axis=1) / df.notna().sum(axis=1)
+        above90 = pct > 0.90
+        below25 = pct < 0.25
+        crossings = []
+        last_below25_i = None
+        for i in range(len(pct)):
+            if below25.iloc[i]:
+                last_below25_i = i
+            elif above90.iloc[i] and last_below25_i is not None:
+                crossings.append(pct.index[i])
+                last_below25_i = None
+        assert crossings, "test setup: no washout→thrust crossing found"
+        last_cross = crossings[-1]
+        today_str = str((last_cross + pd.tseries.offsets.BDay(3)).date())
+        _patch_today(monkeypatch, today_str)
+
         chip = rmc._c3_washout_thrust20(tmp_path)
         assert chip["accruing"] is True
-        # The chip may or may not fire depending on the exact pct calculation
-        # but it should not crash
-        assert "fired" in chip
+        assert chip["fired"] is True
+        assert chip["fresh"] is True
+        assert chip["detail"]["min_63d"] < 0.25
+        assert chip["detail"]["pct_now"] > 0.90
 
 
 # ---------------------------------------------------------------------------
@@ -227,12 +311,16 @@ class TestC3WashoutThrust20:
 class TestC4FTD:
 
     def test_ftd_fires_on_valid_sequence(self, monkeypatch):
-        """Build SPY with: drawdown > 6%, rally attempt, day 4 +>1.2% on higher volume."""
+        """Build SPY with: drawdown > 6%, rally attempt, day 4 +1.5% on higher volume.
+
+        Patches today to 5 business days after the FTD date so that bd_ago <= 10
+        and both fired=True and fresh=True are asserted.
+        """
         n = 120
         closes = [500.0] * n
         volumes = [1e6] * n
 
-        # Peak at bar 20, then drawdown (simulate 63d hi rolling = 500 from bar 0..19)
+        # Peak at bar 20, then drawdown (63d rolling high = 500 from bar 0..19)
         for i in range(21, 35):
             closes[i] = 500.0 - (i - 20) * 3.5   # drops to ~452 = -9.6%
 
@@ -241,19 +329,25 @@ class TestC4FTD:
         closes[35] = 455.0   # up close = attempt day 1
         closes[36] = 453.0   # day 2
         closes[37] = 456.0   # day 3
-        # day 4: +1.5% on higher volume
-        closes[38] = closes[37] * 1.015   # +1.5%
-        volumes[38] = volumes[37] * 1.2   # higher volume -> FTD
+        # day 4: +1.5% on higher volume -> FTD
+        closes[38] = closes[37] * 1.015
+        volumes[38] = volumes[37] * 1.2
 
         spy_df = _spy_df(closes, volumes)
         monkeypatch.setattr(rmc.store, "read", lambda g, n: spy_df if (g, n) == ("yahoo", "SPY") else None)
 
+        # FTD date is bar 38 of the frame (2020-01-02 + 38 bdays = 2020-02-25)
+        ftd_date = spy_df.index[38]
+        today_str = str((ftd_date + pd.tseries.offsets.BDay(5)).date())
+        _patch_today(monkeypatch, today_str)
+
         chip = rmc._c4_ftd(None)
         assert chip["accruing"] is True
         assert chip["key"] == "ftd"
-        # The FTD was at bar 38 which is ~(120-38)=82 bd ago from "today" -> not fresh but fired within 21bd check
-        # Since our test series ends far from today, fired may be False; ensure no crash
-        assert "fired" in chip
+        assert chip["fired"] is True
+        assert chip["fresh"] is True
+        assert chip["detail"]["last_ftd"] == str(ftd_date.date())
+        assert chip["detail"]["n_ftds_all"] >= 1
 
     def test_no_ftd_without_drawdown(self, monkeypatch):
         """Flat or rising SPY — no FTD."""
@@ -331,12 +425,25 @@ class TestC5RetestDivergence:
         return b
 
     def test_fires_with_both_facets(self, monkeypatch):
+        """Assert chip fires (True) with both facets active when today is patched near low2_date."""
         b = self._make_retest_scenario(monkeypatch, fewer_nl=True, higher_adline=True)
+
+        # low2 is at bar 185 of the 200-bar frame.  Patch today to 3 bdays after low2_date
+        # so _is_fresh(low2_date) returns True.
+        low2_date = b.index[185]
+        today_str = str((low2_date + pd.tseries.offsets.BDay(3)).date())
+        _patch_today(monkeypatch, today_str)
+
         chip = rmc._c5_retest_divergence(b, None)
         assert chip["accruing"] is True
         assert chip["key"] == "retest_divergence"
-        # May not fire since the test SPY ends far in the past; ensure no crash
-        assert "fired" in chip
+        assert chip["fired"] is True
+        assert isinstance(chip["fired"], bool)   # no numpy bool leak
+        assert chip["fresh"] is True
+        assert chip["detail"]["is_retest"] is True
+        assert isinstance(chip["detail"]["is_retest"], bool)  # no numpy bool leak
+        assert chip["detail"]["facets"]["facet_a"]["fired"] is True
+        assert chip["detail"]["facets"]["facet_b"]["fired"] is True
 
     def test_absent_when_spy_missing(self, monkeypatch):
         monkeypatch.setattr(rmc.store, "read", lambda g, n: None)
@@ -426,19 +533,48 @@ class TestC7OASRollover:
                             lambda g, n: df if (g, n) == ("fred", "BAMLH0A0HYM2") else None)
 
     def test_fires_on_rollover(self, monkeypatch):
-        """OAS spikes (ROC at high pctile) then rolls over."""
+        """OAS spikes within last 63 bars (ROC pctile → ~0.99), then gradually retreats.
+
+        Construction: OAS ramps from baseline to 10 over bars 500-555, then retreats over
+        555-599.  During the retreat the 21d-ROC pctile falls through 0.75 and keeps declining
+        (p_now < p_5ago), satisfying the full rollover condition.  Today is patched to 3bd
+        after the first rollover crossing so fresh=True.
+        """
         n = 600
         oas = np.full(n, 3.5)
-        # Spike in ROC: OAS surges then retreats
-        oas[450:480] = 8.0   # big jump -> high 21d ROC pctile
-        oas[480:] = 5.0      # retreats, rolling back ROC pctile
+        # Ramp up bars 500-555 (55 bars) to a peak of 10
+        for i in range(500, 556):
+            oas[i] = 3.5 + (10.0 - 3.5) * (i - 500) / 55.0
+        # Gradual descent bars 556-599 (44 bars) back toward baseline
+        for i in range(556, 600):
+            oas[i] = 10.0 - (10.0 - 3.5) * (i - 556) / 44.0
+
         self._patch_oas(monkeypatch, oas)
+
+        # Determine rollover date inline to set today correctly
+        from engine.indicators import pct_rank_window as _prw
+        idx7 = pd.bdate_range("2018-01-02", periods=n)
+        oas_s = pd.Series(oas, index=pd.to_datetime(idx7))
+        roc = oas_s.diff(21)
+        p = _prw(roc, 504)
+        p_63 = p.iloc[-63:]
+        p_max = float(p_63.max())
+        peak_pos = p_63.idxmax()
+        after_peak = p_63[p_63.index > peak_pos]
+        rollover_thresh = p_max - 0.15
+        rolled = after_peak[(after_peak <= rollover_thresh) & (after_peak < 0.75)]
+        assert not rolled.empty, "test setup: no rollover crossing found"
+        since_date = rolled.index[0]
+        today_str = str((since_date + pd.tseries.offsets.BDay(3)).date())
+        _patch_today(monkeypatch, today_str)
+
         chip = rmc._c7_oas_rollover()
         assert chip["accruing"] is True
         assert chip["key"] == "oas_rollover"
-        # After the surge and retreat: p_max was high, p_now should be lower
-        # May or may not fire depending on exact pctile; ensure no crash
-        assert "fired" in chip
+        assert chip["fired"] is True
+        assert chip["fresh"] is True
+        assert chip["detail"]["p_max_63"] >= 0.90
+        assert chip["detail"]["p_now"] <= chip["detail"]["p_max_63"] - 0.15
 
     def test_no_fire_when_flat(self, monkeypatch):
         """Flat OAS -> low ROC pctile -> no rollover."""
@@ -460,17 +596,21 @@ class TestC7OASRollover:
 class TestC8VolInstabilityVeto:
 
     def test_veto_active_when_vol_high(self, monkeypatch):
-        """Large VIX daily swings -> inst pctile >= 0.80 -> veto active."""
+        """Large VIX daily swings -> 21d realized-vol pctile >= 0.80 -> veto active=True.
+
+        Uses a fixed random seed for reproducibility.  Verified: with seed=42 and randn*8
+        on the last 50 bars, p_now ≈ 0.98 >= 0.80.
+        """
         n = 600
         vix_closes = np.full(n, 20.0)
-        # Last 25 bars: huge daily swings to spike inst
         np.random.seed(42)
         vix_closes[550:] = 20.0 + np.random.randn(50) * 8
         v = pd.DataFrame({"close": vix_closes}, index=pd.bdate_range("2015-01-02", periods=n))
         monkeypatch.setattr(rmc.store, "read",
                             lambda g, nm: v if (g, nm) == ("yahoo", "_VIX") else None)
         veto = rmc._c8_vol_instability_veto()
-        assert "active" in veto
+        assert veto["active"] is True
+        assert veto["p_now"] >= 0.80
 
     def test_veto_inactive_when_calm(self, monkeypatch):
         """Flat VIX -> low daily changes -> low inst pctile -> veto inactive."""

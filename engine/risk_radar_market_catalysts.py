@@ -471,10 +471,10 @@ def _c4_ftd(root: Path | None) -> dict:
             # check if any FTD within last _FRESH_BD business days
             last_ftd = ftd_dates[-1]
             bd_ago = _bd_since(last_ftd)
-            if bd_ago is not None and bd_ago <= 21:   # "fired" = within last 21bd
+            if bd_ago is not None and bd_ago <= 21:   # fired = within 21bd (wider than fresh=10bd)
                 fired = True
                 since = _iso(last_ftd)
-                fresh = bd_ago <= _FRESH_BD
+                fresh = bd_ago <= _FRESH_BD  # fresh uses the standard 10bd gate
 
         return {
             "key": key,
@@ -489,7 +489,9 @@ def _c4_ftd(root: Path | None) -> dict:
                 "note": (
                     "O'Neil FTD: day 4..13 of rally attempt after >=6% drawdown, "
                     "+>=1.2% on higher volume. Lit (QE): ~55% success rate. "
-                    "Orthogonal to breadth chips — pure price+volume."
+                    "Orthogonal to breadth chips — pure price+volume. "
+                    "fired=within-21bd (display wider context); fresh=within-10bd "
+                    "(standard gate used by market_confirmed/n_fresh — spec §C4)."
                 ),
             },
             "accruing": True,
@@ -547,13 +549,13 @@ def _c5_retest_divergence(breadth: pd.DataFrame, root: Path | None) -> dict:
         low1_date = w_old.idxmin()
 
         # is it a retest? low2 <= low1 * 1.02 (within 2%) AND max close between lows >= low1 * 1.04
-        is_retest = (low2_val <= low1_val * 1.02)
+        is_retest = bool(low2_val <= low1_val * 1.02)
         if is_retest:
             # max close between the two lows
             between_mask = (spy_c.index > low1_date) & (spy_c.index < low2_date)
             between = spy_c[between_mask]
             mid_max = float(between.max()) if len(between) > 0 else low1_val
-            is_retest = is_retest and (mid_max >= low1_val * 1.04)
+            is_retest = is_retest and bool(mid_max >= low1_val * 1.04)
 
         facet_a = False
         facet_b = False
@@ -593,7 +595,7 @@ def _c5_retest_divergence(breadth: pd.DataFrame, root: Path | None) -> dict:
                 "desc": "A/D line at low2 > A/D line at low1 (higher low)",
             }
 
-        fired = is_retest and (facet_a or facet_b)
+        fired = bool(is_retest and (facet_a or facet_b))
         since = _iso(low2_date) if fired else None
         fresh = _is_fresh(low2_date) if fired else False
 
