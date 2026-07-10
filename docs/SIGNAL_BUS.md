@@ -34,6 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-release-intel | 6 |
 | mastermind-feedback-contract | 2 |
 | metabolism-phase-a | 5 |
+| metabolism-phase-v2a | 4 |
 | metabolism-phase0 | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
@@ -71,13 +72,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 205 |
 | infrastructure | 84 |
 | scored | 4 |
-| shadow | 50 |
+| shadow | 54 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 329 |
+| git | 333 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -348,6 +349,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-til-fitness | `data/metabolism/fitness/til.json` | json | daily-engine | shadow | 1 | 0 |
 | metabolism-verify | `data/metabolism/verify/` | json | on-demand | infrastructure | 1 | 0 |
 | metabolism-digest | `data/metabolism/digest/` | other | weekly | shadow | 0 | 0 |
+
+### metabolism-phase-v2a
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| metabolism-organism-state | `data/metabolism/organism_state.json` | json | daily-engine | shadow | 2 | 0 |
+| metabolism-insight-bus | `data/metabolism/insight_bus.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| metabolism-agenda | `data/metabolism/agenda/` | json | daily-engine | shadow | 0 | 0 |
+| metabolism-trajectory | `data/metabolism/trajectory.jsonl` | jsonl | daily-engine | shadow | 0 | 0 |
 
 ### metabolism-phase0
 
@@ -1099,6 +1109,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/build_mastermind_feedback_summary.py`
 - **extra writers:**
   - engine/neuralweb/mastermind_feedback.py — build_and_write() writes the artifact
+
+### metabolism-insight-bus
+
+- **path:** `data/metabolism/insight_bus.jsonl`
+- **declared producer:** `engine/metabolism/insight_bus.py`
+- **extra writers:**
+  - engine/metabolism/anomaly_monitor.py
 
 ### metabolism-journal
 
