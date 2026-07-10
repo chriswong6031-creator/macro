@@ -1418,6 +1418,9 @@ def main(alpha: dict | None = None) -> dict | None:
     #     Best-effort: failures degrade to None (no stage for that name), never fatal.
     from engine.setup_tier import w_setup as _w_setup_fn, assign_stage as _assign_stage_fn
     from engine.setup_tier import STAGE_ENTRY, STAGE_RAN_LATE, STAGE_RIPENING
+    from engine.setup_tier import assign_ripening_zone as _assign_ripening_zone_fn
+    from engine.setup_tier import ZONE_FALLING, ZONE_READY, ZONE_BASING
+    from engine.cycles import macd_parts as _macd_parts
     _wsetup_by: dict[str, dict | None] = {}
     _t0_wsetup = time.time()
     for (_t, _close_w, _high_w, _name_w, _sector_w) in uni:
@@ -1598,10 +1601,28 @@ def main(alpha: dict | None = None) -> dict | None:
     _ran_rows.sort(key=lambda x: x.get("sessions_since") or 99)
     _ran_rows = _ran_rows[:15]
 
-    # (5) Build the RIPENING array (rule 4): NOT gate-eligible, no recent cross, setup_live.
-    #     Screen the FULL closes panel universe (skip <200 bars). Sorted by imminence
-    #     (macd_bars_to_cross ascending, then washout depth). Capped at 24.
-    _ripening_rows: list[dict] = []
+    # (5) Build the RIPENING arrays (W8-R1 three-zone lifecycle):
+    #     - _ripening_rows   : READY + BASING (quota: READY up to 16, BASING fills to cap 32)
+    #     - _ripening_falling: FALLING (cap 8, sorted ret_5d ascending — worst first)
+    #
+    #     Zone assignment: HARD precedence cascade per W8-R1.
+    #     ORDERING LAW (Article-2 framing): within each zone, PRIMARY key = macd_bars_to_cross
+    #     ascending (None→999); tiebreak = w1 cross bars_since asc (None→99); then stoch_2w asc.
+    #     Zones are display grouping only — no ordering/attention authority.
+    #
+    #     Every row now carries: zone, evidence chips, ret_5d, macd_hist_d, macd_hist_slope sign,
+    #     stoch_2w + reclaim arrow (+1/0/-1), days_in_washout, price, spark_svg.
+    #
+    #     W8-R1 constants (v1 frozen descriptively — amendment-logged, recalibrated at W6):
+    #       - FALLING: ret_5d <= -8% OR (daily MACD hist < 0 AND falling)
+    #       - READY:   fresh 1W cross (<=3 bars) AND hist>=0; OR hist>0 AND rising; OR 2W MACD <=10 AND hist>=0
+    #       - BASING:  else
+    #
+    #     R3-minor bug fix: arrays are now built from `uni` (entire close universe) and
+    #     attached to setups/wide unconditionally within the cand block (the arrays are
+    #     always computed — the empty-cand case is a separate non-template fallback path).
+    _t0_rip = time.time()
+    _ripening_all: list[dict] = []    # all candidate rows before zone split
     for (_t, _close_w, _high_w, _name_w, _sector_w) in uni:
         if _t in _eligible_set:
             continue           # already on buy shelf
@@ -1617,30 +1638,171 @@ def main(alpha: dict | None = None) -> dict | None:
         _w2 = _ws.get("w2") or {}
         _btc = _w2.get("macd_bars_to_cross")
         _stoch = _w2.get("stoch")
-        # imminence sort key: MACD bars to cross ascending (closer = more imminent),
-        # fallback = 999 (washout-only names sort after MACD-imminent names).
-        _imminence = float(_btc) if _btc is not None else (
-            float(_stoch) / 10.0 if _stoch is not None else 999.0)
-        _ripening_rows.append({
-            "ticker": _t, "name": _name_w or _t, "sector": _sector_w or "",
+        _w1x = _ws.get("w1_cross") or {}
+
+        # ── Per-name inputs for zone assignment ────────────────────────────────
+        # 5d return (decimal): use the close series already in scope
+        _ret5d: float | None = None
+        _macd_hist_last: float | None = None
+        _macd_hist_prev: float | None = None
+        _price: float | None = None
+        _spark_svg_rip: str = ""
+        _days_in_washout: int | None = None
+        try:
+            _cv = _close_w.dropna() if _close_w is not None else None
+            if _cv is not None and len(_cv) >= 6:
+                _price = round(float(_cv.iloc[-1]), 3)
+                _ret5d = round(float(_cv.iloc[-1] / _cv.iloc[-6] - 1.0), 4)
+                # Daily MACD(12,26,9) last two hist values
+                if len(_cv) >= 35:
+                    _mdf = _macd_parts(_cv)
+                    _mhist = _mdf["hist"].dropna()
+                    if len(_mhist) >= 2:
+                        _macd_hist_last = round(float(_mhist.iloc[-1]), 4)
+                        _macd_hist_prev = round(float(_mhist.iloc[-2]), 4)
+                # Spark SVG for the ripening card (same helper as buy rows)
+                _spark_col = ("var(--up)" if _macd_hist_last is not None and _macd_hist_last >= 0
+                              else "var(--down)" if _macd_hist_last is not None and _macd_hist_last < 0
+                              else "var(--muted)")
+                _spark_svg_rip = _spark_svg(list(_cv.tail(32).values), color=_spark_col)
+                # Days in washout: sessions since 2W stoch entered <=35 in the current spell
+                if _stoch is not None and _stoch <= 35:
+                    _cv_tail = _cv.tail(80)
+                    _cv2w = _cv_tail.resample("2W-FRI").last().dropna()
+                    from engine.cycles import _tf_state as _tfs_fn
+                    # count sessions in this continuous washout spell from the daily close
+                    # (simple: count tail sessions while stoch would stay <=35 — use 2W stoch
+                    # continuity proxy: count sessions from most recent washout entry)
+                    # Approximate: look at recent 40 daily bars to find the entry session
+                    try:
+                        # compute rolling 14-period StochRSI on daily to find washout entry
+                        from engine.confluence_tiers import _stoch_rsi_kd as _srsi_fn
+                        _k14, _d14 = _srsi_fn(_cv.tail(60))
+                        _in_wash = (_k14 <= 35)
+                        _in_wash_vals = _in_wash.values.tolist()
+                        _diw = 0
+                        for _v in reversed(_in_wash_vals):
+                            if _v:
+                                _diw += 1
+                            else:
+                                break
+                        _days_in_washout = _diw if _diw > 0 else None
+                    except Exception:
+                        _days_in_washout = None
+        except Exception:
+            pass
+
+        # ── Reclaim arrow for 2W stoch ─────────────────────────────────────────
+        # +1 = stoch_cross_up (reclaiming from <20), 0 = flat, -1 = declining
+        _stoch_prev = None
+        try:
+            if _cv is not None and len(_cv) >= 4:
+                _cv2w_all = _cv.resample("2W-FRI").last().dropna()
+                if len(_cv2w_all) >= 2:
+                    _tfs_prev = _tf_state(_cv2w_all.iloc[:-1])
+                    _stoch_prev = _tfs_prev.get("stoch") if _tfs_prev else None
+        except Exception:
+            _stoch_prev = None
+        _stoch_arrow: int
+        if _w2.get("stoch_cross_up"):
+            _stoch_arrow = 1
+        elif _stoch_prev is not None and _stoch is not None and _stoch > _stoch_prev:
+            _stoch_arrow = 1
+        elif _stoch_prev is not None and _stoch is not None and _stoch < _stoch_prev:
+            _stoch_arrow = -1
+        else:
+            _stoch_arrow = 0
+
+        # ── Zone assignment (W8-R1 hard precedence) ────────────────────────────
+        _zone_result = _assign_ripening_zone_fn(
+            ret_5d=_ret5d,
+            macd_hist_d=_macd_hist_last,
+            macd_hist_prev_d=_macd_hist_prev,
+            w1_cross_bars_since=_w1x.get("bars_since"),
+            w1_from_washout=bool(_w1x.get("from_washout")),
+            macd_bars_to_cross_2w=_btc,
+            stoch_2w=_stoch,
+            stoch_2w_prev=_stoch_prev,
+        )
+        _zone = _zone_result["zone"]
+        _zone_evidence = _zone_result["evidence"]
+
+        # ── Build the row ──────────────────────────────────────────────────────
+        # Article-2 ORDERING keys (within zone): macd_bars_to_cross asc (None→999),
+        # then w1 cross bars_since asc (None→99), then stoch_2w asc.
+        _sort_btc = float(_btc) if _btc is not None else 999.0
+        _sort_bars = float(_w1x.get("bars_since")) if _w1x.get("bars_since") is not None else 99.0
+        _sort_stoch = float(_stoch) if _stoch is not None else 999.0
+
+        _ripening_all.append({
+            "ticker": _t,
+            "name": _name_w or _t,
+            "sector": _sector_w or "",
+            "zone": _zone,
+            "evidence": _zone_evidence,
             "reasons": _ws.get("setup_reasons") or [],
-            "imminence": _btc,            # macd_bars_to_cross; None for washout-only
+            "imminence": _btc,
             "w2_stoch": _stoch,
+            "w2_stoch_arrow": _stoch_arrow,    # +1/0/-1 reclaim arrow
             "w2_macd_approaching": bool(_w2.get("macd_approaching_up")),
             "w2_macd_cross_up": bool(_w2.get("macd_cross_up")),
-            "w1_cross_date": (_ws.get("w1_cross") or {}).get("cross_date"),
-            "w1_d_at_cross": (_ws.get("w1_cross") or {}).get("d_at_cross"),
+            "w1_cross_date": _w1x.get("cross_date"),
+            "w1_cross_bars_since": _w1x.get("bars_since"),
+            "w1_d_at_cross": _w1x.get("d_at_cross"),
+            "w1_from_washout": bool(_w1x.get("from_washout")),
             "spot_pct_in_range": (_ws.get("base") or {}).get("spot_pct_in_range"),
-            "_sort_key": _imminence,
+            "ret_5d": _ret5d,
+            "macd_hist_d": _macd_hist_last,
+            "macd_hist_slope": (
+                1 if (_macd_hist_last is not None and _macd_hist_prev is not None
+                      and _macd_hist_last > _macd_hist_prev)
+                else -1 if (_macd_hist_last is not None and _macd_hist_prev is not None
+                            and _macd_hist_last < _macd_hist_prev)
+                else 0
+            ),
+            "days_in_washout": _days_in_washout,
+            "price": _price,
+            "spark_svg": _spark_svg_rip,
+            "_sort_btc": _sort_btc,
+            "_sort_bars": _sort_bars,
+            "_sort_stoch": _sort_stoch,
         })
-    _ripening_rows.sort(key=lambda x: x.get("_sort_key") or 999)
-    for _rr in _ripening_rows:
-        _rr.pop("_sort_key", None)       # remove internal sort key before serialisation
-    _ripening_rows = _ripening_rows[:24]
+
+    # ── Zone split + ordering ──────────────────────────────────────────────────
+    # Article-2 ordering within each zone: btc asc, then bars_since asc, then stoch asc
+    _all_sorted = sorted(
+        _ripening_all,
+        key=lambda x: (x["_sort_btc"], x["_sort_bars"], x["_sort_stoch"])
+    )
+
+    # FALLING sink: sorted by ret_5d ascending (worst drawdown first), cap 8
+    _ripening_falling: list[dict] = [r for r in _all_sorted if r["zone"] == ZONE_FALLING]
+    _ripening_falling.sort(
+        key=lambda x: float(x["ret_5d"]) if x.get("ret_5d") is not None else -999.0
+    )
+    _ripening_falling = _ripening_falling[:8]
+
+    # READY + BASING: quota (READY up to 16, BASING fills remainder to cap 32)
+    _ready_rows = [r for r in _all_sorted if r["zone"] == ZONE_READY]
+    _basing_rows = [r for r in _all_sorted if r["zone"] == ZONE_BASING]
+    _ready_capped = _ready_rows[:16]
+    _basing_capped = _basing_rows[:(32 - len(_ready_capped))]
+    _ripening_rows = _ready_capped + _basing_capped
+
+    # Strip internal sort keys before serialisation
+    for _rr in _ripening_rows + _ripening_falling:
+        _rr.pop("_sort_btc", None)
+        _rr.pop("_sort_bars", None)
+        _rr.pop("_sort_stoch", None)
+
+    _t1_rip = time.time()
+    log.info("W8-R1 ripening zone loop: %.1fs over %d candidates → %d READY + %d BASING + %d FALLING",
+             _t1_rip - _t0_rip, len(_ripening_all),
+             len(_ready_capped), len(_basing_capped), len(_ripening_falling))
 
     # W2-B: attach narrative tags to RIPENING rows (display/ledger only — no rank change).
-    # Stage is implicitly RIPENING for all rows in this array.
-    for _rr in _ripening_rows:
+    # Stage is implicitly RIPENING for all rows in these arrays.
+    for _rr in _ripening_rows + _ripening_falling:
         _rr_ticker = _rr.get("ticker")
         _rr_tag = _narr_tags.get(_rr_ticker) if _rr_ticker else None
         if _rr_tag:
@@ -1685,16 +1847,21 @@ def main(alpha: dict | None = None) -> dict | None:
     assert not _rip_bad, (
         f"W1-B invariant FAILED: ripening rows must never be gate-eligible. "
         f"Violation: {_rip_bad}")
-    assert len(_ripening_rows) <= 24, (
-        f"W1-B invariant FAILED: ripening cap 24 exceeded ({len(_ripening_rows)})")
+    # W8-R1: updated caps (READY+BASING cap 32, FALLING sink cap 8)
+    assert len(_ripening_rows) <= 32, (
+        f"W8-R1 invariant FAILED: ripening (READY+BASING) cap 32 exceeded ({len(_ripening_rows)})")
+    assert len(_ripening_falling) <= 8, (
+        f"W8-R1 invariant FAILED: ripening FALLING sink cap 8 exceeded ({len(_ripening_falling)})")
     assert len(_ran_rows) <= 15, (
         f"W1-B invariant FAILED: ran cap 15 exceeded ({len(_ran_rows)})")
     _n_entry = sum(1 for r in eligible_rows if r.get("stage") == STAGE_ENTRY)
     _n_ran_late = sum(1 for r in eligible_rows if r.get("stage") == STAGE_RAN_LATE)
+    log.info("W8-R1 zone partition: %d READY + %d BASING (ripening rows) + %d FALLING + %d RAN",
+             len(_ready_capped), len(_basing_capped), len(_ripening_falling), len(_ran_rows))
     log.info("W1-B stage partition: %d ENTRY + %d RAN_LATE + %d no-shelf (buy rows); "
-             "%d RIPENING + %d RAN (non-buy universe)",
+             "%d RIPENING + %d FALLING + %d RAN (non-buy universe)",
              _n_entry, _n_ran_late, len(eligible_rows) - _n_entry - _n_ran_late,
-             len(_ripening_rows), len(_ran_rows))
+             len(_ripening_rows), len(_ripening_falling), len(_ran_rows))
 
     if cand:
         as_of = (alpha or {}).get("as_of")
@@ -1866,28 +2033,34 @@ def main(alpha: dict | None = None) -> dict | None:
                 log.warning("W0.7 board-width guard: buy-count collapsed %d→%d (%.0f%% drop) — "
                             "stamping data_outage; banner will render",
                             _prev_buy_n, _new_buy_n, _drop_frac * 100)
-        # W1-B: attach RIPENING + RAN arrays to the artifact (new keys; buy unchanged).
+        # W8-R1/W1-B: attach RIPENING + FALLING + RAN arrays to the artifact (new keys; buy unchanged).
         # Downstream consumers of `buy` keep working untouched — these are additive arrays.
+        # ripening = READY + BASING (full scorecards); falling = FALLING sink (compact rows).
         wide["ripening"] = _ripening_rows
+        wide["ripening_falling"] = _ripening_falling
         wide["ran"] = _ran_rows
         setups["ripening"] = _ripening_rows
+        setups["ripening_falling"] = _ripening_falling
         setups["ran"] = _ran_rows
         # W1-B ledger: log ripening set to data/china_standout_track/ripening.parquet
-        # (compact append: ticker, reasons, imminence, w2_stoch — W6 conversion grading).
+        # (compact append: ticker, reasons, imminence, w2_stoch, zone — W6 conversion grading).
+        # Schema-union tolerant: new columns (zone, evidence, sort keys) are written here;
+        # the existing parquet reader in append_ripening tolerates the new columns via union.
         try:
             _rip_lane = os.environ.get("CN_LANE", "asia")
             _rn = china_standout_track.append_ripening(
-                _ripening_rows, asof=as_of, lane=_rip_lane)
-            log.info("W1-B ripening ledger: appended %d names this run (total ledger rows=%d)",
-                     len(_ripening_rows), _rn)
+                _ripening_rows + _ripening_falling, asof=as_of, lane=_rip_lane)
+            log.info("W8-R1 ripening ledger: appended %d names this run (total ledger rows=%d)",
+                     len(_ripening_rows) + len(_ripening_falling), _rn)
         except Exception as _re:  # noqa: BLE001 — ledger is additive, never fatal
             log.warning("W1-B ripening ledger failed (%s)", _re)
         _standouts_path.write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
-        log.info("wrote china_standouts.json (%d buy [%d ENTRY/%d RAN_LATE] / %d RIPENING / %d RAN"
-                 " / %d eligible / %d universe)",
+        log.info("wrote china_standouts.json (%d buy [%d ENTRY/%d RAN_LATE] / %d RIPENING"
+                 " [%d READY+%d BASING] / %d FALLING / %d RAN / %d eligible / %d universe)",
                  len(wide["buy"]), _n_entry, _n_ran_late,
-                 len(_ripening_rows), len(_ran_rows),
+                 len(_ripening_rows), len(_ready_capped), len(_basing_capped),
+                 len(_ripening_falling), len(_ran_rows),
                  len(eligible_rows), len(cand))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))

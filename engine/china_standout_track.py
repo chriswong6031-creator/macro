@@ -1046,6 +1046,14 @@ def append_ripening(rows: list[dict], asof: str | None = None,
     Row schema: date, ticker, reasons (comma-joined str), imminence (macd_bars_to_cross or None),
     w2_stoch, setup_live. Keep-FIRST per (date, ticker). Same asia-lane gate as append_board.
     Best-effort — never raises.
+
+    W8-R1 schema additions (schema-union tolerant — old rows without these cols = NaN):
+      zone          : str FALLING | READY | BASING
+      evidence      : pipe-joined evidence chips
+      ret_5d        : float — 5-session return (decimal)
+      macd_hist_d   : float — daily MACD histogram last bar
+      macd_hist_slope: int  — +1/0/-1 slope direction
+      w1_cross_bars_since : int — 1W cross bars since
     """
     if not rows or not asof:
         return 0
@@ -1057,6 +1065,7 @@ def append_ripening(rows: list[dict], asof: str | None = None,
         if not tk:
             continue
         reasons = r.get("reasons") or []
+        evidence = r.get("evidence") or []
         out.append({
             "date": str(asof),
             "ticker": str(tk),
@@ -1064,6 +1073,13 @@ def append_ripening(rows: list[dict], asof: str | None = None,
             "imminence": r.get("imminence"),
             "w2_stoch": r.get("w2_stoch"),
             "setup_live": True,
+            # W8-R1 zone columns (schema-union safe; old rows missing these cols = NaN).
+            "zone":               r.get("zone"),
+            "evidence":           " | ".join(evidence) if evidence else None,
+            "ret_5d":             r.get("ret_5d"),
+            "macd_hist_d":        r.get("macd_hist_d"),
+            "macd_hist_slope":    r.get("macd_hist_slope"),
+            "w1_cross_bars_since": r.get("w1_cross_bars_since"),
             # W2-B narrative columns (schema-union safe; old rows missing these cols = NaN).
             # Mirrors the board ledger schema so W6 can stratify RIPENING by narrative heat.
             "narr_theme":   (r.get("narrative") or {}).get("theme"),

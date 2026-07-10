@@ -2316,7 +2316,19 @@ artifacts:
       - scripts/backfill_stock_open.py
     external_consumers:
       - mastermind:vendored
-    notes: "Producer: scripts/build_china_library.py:1865 write_text."
+    notes: >
+      Producer: scripts/build_china_library.py:1865 write_text.
+      W8-R1 addendum: china_standouts.json now also carries 'ripening' (READY+BASING,
+      cap 32) and 'ripening_falling' (FALLING sink, cap 8) keys — three-zone lifecycle
+      display regrouping. Zone assignment: HARD precedence cascade — FALLING veto first
+      (5d ret <= -8% OR daily MACD hist negative AND falling), then READY (directional
+      evidence live), then BASING. Ordering within zone: macd_bars_to_cross asc
+      (Article-2 primary key retained), tiebreak = w1 cross bars_since asc, then
+      stoch_2w asc. Zone thresholds v1 frozen descriptively, recalibrated at W6 (F3).
+      Display-tier visual regrouping only — NOT wired to alert_triage, top_setups,
+      board_ordering, or push_floor. authority.may_rank/gate/size/escalate=false.
+      Adjudication note: display-defect fix + display regrouping; primary imminence
+      key retained; no rank-weight change; CN-SYS-R7 lane respected.
 
   # --- 3 consumers ---
   site-basket-oracle-state:

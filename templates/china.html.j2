@@ -327,30 +327,8 @@
                    border-bottom:1px solid color-mix(in srgb,var(--down) 20%,var(--line)); }
   /* RAN card modifier: de-emphasise score display */
   .nb-stage-ran-card .nb-cscore { opacity:.45; }
-  /* ── RIPENING SHELF: compact zoned cards (NOT full nbcard) ─────────────── */
-  .nb-rip-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:7px; margin-top:8px; }
-  .nb-rip-card { background:var(--panel); border:1px solid var(--line); border-radius:9px;
-                 min-width:0; border-left:3px solid color-mix(in srgb,var(--warn) 55%,var(--line));
-                 overflow:hidden; display:flex; flex-direction:column; }
-  /* ripening identity zone */
-  .nb-rip-id { padding:6px 9px 5px;
-               background:color-mix(in srgb,var(--warn) 5%,color-mix(in srgb,var(--muted) 5%,var(--panel)));
-               border-bottom:1px solid color-mix(in srgb,var(--warn) 18%,var(--line));
-               display:flex; flex-direction:column; gap:3px; min-width:0; }
-  html[data-theme="light"] .nb-rip-id { background:color-mix(in srgb,var(--warn) 6%,var(--panel)); }
-  .nb-rip-top { display:flex; align-items:baseline; gap:5px; min-width:0; }
-  .nb-rip-tk { font-weight:800; font-size:13px; color:var(--text); }
-  .nb-rip-imm { font-size:8.5px; font-weight:800; color:var(--warn); flex:none; margin-left:auto; }
-  /* name on its own full-width line */
-  .nb-rip-nm { font-size:10.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis;
-               white-space:nowrap; max-width:100%; display:block; }
-  /* ripening body */
-  .nb-rip-body { padding:5px 9px 7px; display:flex; flex-direction:column; gap:4px; min-width:0; }
-  .nb-rip-secrow { display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:9px; color:var(--muted); }
-  .nb-rip-chips { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-  .nb-rip-chip { font-size:8px; font-weight:700; padding:1px 5px; border-radius:6px; overflow-wrap:anywhere; max-width:100%;
-                 color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel));
-                 border:1px solid color-mix(in srgb,var(--warn) 38%,var(--line)); }
+  /* ── W8-R1: RIPENING SHELF three-zone CSS is in theme.css (.rip-shelf / .rip-zone / .rip-card) ── */
+  /* Legacy compact card CSS kept for RAN shelf backward compat (nb-rip-* not used by new W8 markup) */
   .nb-rip-sec { font-size:9px; color:var(--muted); }
   .nb-rip-range { font-size:8px; color:var(--muted); margin-left:auto; }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
@@ -1600,46 +1578,245 @@
     </div>
     {% endif %}
 
-    {# ── W1-C: RIPENING SHELF (non-buy universe, rule 4) ─────────────────────
-       Compact cards — ticker, name, sector, reason chips, imminence.
+    {# ── W8-R1: RIPENING SHELF (three-zone lifecycle: READY / BASING / FALLING sink) ─
+       Full scorecards for READY + BASING; collapsed knife-sink for FALLING.
        NOT entry signals. No BUY-family language anywhere. #}
     {% set _rip = setups.get('ripening') or [] %}
-    {% if _rip %}
-    <div class="nb-shelf-hdr" style="margin-top:16px">
-      <span class="nb-shelf-tag st-ripe"><span class="l-en">RIPENING</span><span class="l-zh">待熟</span></span>
-      <span class="nb-shelf-expl"><span class="l-en">setups forming — NOT an entry signal; watching for the turn. Screened from the full closes universe.</span><span class="l-zh">形态形成中 — 非入场信号；等待转向。从全收盘价宇宙筛选。</span></span>
-    </div>
-    <div class="nb-rip-grid" data-showmore-rows="3">
-    {% for r in _rip %}
-    <div class="nb-rip-card">
-      {# ── RIPENING identity zone ──────────────────────────────────────── #}
-      <div class="nb-rip-id">
-        {# top row: ticker (bold) + imminence chip right #}
-        <div class="nb-rip-top">
-          <span class="nb-rip-tk">{{ r.get('ticker','') }}</span>
-          {% if r.get('imminence') is not none %}<span class="nb-rip-imm" data-tip-en="2W-MACD bars to cross" data-tip-zh="2周MACD距交叉周期数">~{{ '%.1f'|format(r.get('imminence')) }}{{ t('W','周') }}</span>{% endif %}
-        </div>
-        {# name on its own full-width line #}
-        <span class="nb-rip-nm">{{ nm(r.get('name','')) }}</span>
+    {# ── W8-R1: RIPENING three-zone shelf (READY / BASING / FALLING sink) ────────────
+       Full scorecards for READY + BASING; collapsed knife-sink for FALLING.
+       NOT an entry signal. No BUY-family words. W8-R1/R2. #}
+    {% set _rip_ready  = (_rip | selectattr('zone','equalto','READY')  | list) if _rip else [] %}
+    {% set _rip_basing = (_rip | selectattr('zone','equalto','BASING') | list) if _rip else [] %}
+    {% set _rip_fall   = setups.get('ripening_falling') or [] %}
+    {% if _rip or _rip_fall %}
+    <div class="rip-shelf" style="margin-top:16px">
+      {# ── Shelf header ──────────────────────────────────────────────── #}
+      <div class="rip-shelf-hdr">
+        <span class="rip-shelf-title"><span class="l-en">RIPENING SHELF</span><span class="l-zh">筑底观察区</span></span>
+        <span class="rip-shelf-sub"><span class="l-en">setup forming — NOT an entry signal</span><span class="l-zh">形态形成中 — 非入场信号</span></span>
+        {% if setups.get('as_of') %}<span class="rip-shelf-asof"><span class="l-en">as of {{ setups.get('as_of','') }}</span><span class="l-zh">截至 {{ setups.get('as_of','') }}</span></span>{% endif %}
       </div>
-      {# ── RIPENING body ───────────────────────────────────────────────── #}
-      <div class="nb-rip-body">
-        <div class="nb-rip-secrow">
-          <span class="nb-rip-sec">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</span>
-          {% if r.get('spot_pct_in_range') is not none %}<span class="nb-rip-range"><span class="l-en">range {{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span><span class="l-zh">区间位置{{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span></span>{% endif %}
+
+      {# ── ZONE 1: READY — confluence forming, nearest to entry ─────────────── #}
+      {% if _rip_ready %}
+      <div class="rip-zone rz-ready">
+        <div class="rip-zone-hdr">
+          <span class="rip-zone-label"><span class="l-en">READY</span><span class="l-zh">共振形成中</span></span>
+          <span class="rip-zone-count">{{ _rip_ready|length }}</span>
+          <span class="rip-zone-defn"><span class="l-en">confluence forming — nearest to entry</span><span class="l-zh">接近入场条件</span></span>
         </div>
-        {% set _rs = r.get('reasons') %}
-        {% if _rs %}
-        <div class="nb-rip-chips">
-          {% for reason in (_rs if _rs is iterable and _rs is not string else _rs.split(',')) %}
-          <span class="nb-rip-chip">{{ reason | trim }}</span>
+        <div class="rip-grid">
+        {% for r in _rip_ready %}
+        {%- set _r_ticker = r.get('ticker','') -%}
+        {%- set _r_hist = r.get('macd_hist_d') -%}
+        {%- set _r_slope = r.get('macd_hist_slope', 0) -%}
+        {%- set _r_stoch = r.get('w2_stoch') -%}
+        {%- set _r_arrow = r.get('w2_stoch_arrow', 0) -%}
+        {%- set _r_bars = r.get('w1_cross_bars_since') -%}
+        {%- set _r_d = r.get('w1_d_at_cross') -%}
+        {%- set _r_diw = r.get('days_in_washout') -%}
+        {%- set _r_rng = r.get('spot_pct_in_range') -%}
+        {%- set _r_ret = r.get('ret_5d') -%}
+        {%- set _r_price = r.get('price') -%}
+        {%- set _r_imm = r.get('imminence') -%}
+        <a href="china_lookup.html#{{ _r_ticker }}" class="rip-card" style="text-decoration:none;color:inherit">
+          <div class="rip-card-stripe"></div>
+          <div class="rip-card-body">
+            {# Identity #}
+            <div class="rip-card-id">
+              <div>
+                <div class="rip-card-tk">{{ _r_ticker }}</div>
+                <div class="rip-card-nm">{{ nm(r.get('name','')) }}</div>
+                <div class="rip-card-sec">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</div>
+              </div>
+              {% if _r_price is not none %}
+              <div style="text-align:right">
+                <div class="rip-card-px">{{ '%.2f'|format(_r_price) }}</div>
+                {% if _r_ret is not none %}<div style="font-size:10px;color:{{ 'var(--up)' if _r_ret >= 0 else 'var(--down)' }}">{{ '%+.1f'|format(_r_ret * 100) }}%</div>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {# Sparkline #}
+            {% if r.get('spark_svg') %}<div class="rip-card-spark">{{ r.get('spark_svg') | safe }}</div>{% endif %}
+            {# Metrics grid #}
+            <div class="rip-metrics">
+              {# 2W Stoch + reclaim arrow #}
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">2W Stoch</span><span class="l-zh">双周随机</span></div>
+                <div class="rip-metric-val {% if _r_stoch is not none and _r_stoch <= 20 %}pos{% elif _r_stoch is not none and _r_stoch > 35 %}mut{% endif %}">
+                  {% if _r_stoch is not none %}{{ '%.1f'|format(_r_stoch) }}{% else %}—{% endif %}
+                  {% if _r_arrow == 1 %}<span class="rip-arrow up">↑</span>{% elif _r_arrow == -1 %}<span class="rip-arrow dn">↓</span>{% else %}<span class="rip-arrow fl">→</span>{% endif %}
+                </div>
+              </div>
+              {# MACD D hist #}
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">MACD D hist</span><span class="l-zh">日MACD柱</span></div>
+                <div class="rip-metric-val {% if _r_hist is not none and _r_hist >= 0 %}pos{% elif _r_hist is not none %}neg{% endif %}">
+                  {% if _r_hist is not none %}{{ '%+.3f'|format(_r_hist) }}{% else %}—{% endif %}
+                  {%- if _r_slope == 1 %}<span style="font-size:9px">↑</span>{%- elif _r_slope == -1 %}<span style="font-size:9px">↓</span>{%- endif %}
+                </div>
+              </div>
+              {# Washout depth (d at cross) #}
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">Washout depth</span><span class="l-zh">超卖深度</span></div>
+                <div class="rip-metric-val mut">{% if _r_d is not none %}d={{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
+              </div>
+              {# Range position #}
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">Range pos.</span><span class="l-zh">区间位置</span></div>
+                <div class="rip-metric-val mut">{% if _r_rng is not none %}{{ '%.0f'|format(_r_rng) }}%{% else %}—{% endif %}</div>
+              </div>
+              {# Days in washout #}
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">Days in washout</span><span class="l-zh">超卖天数</span></div>
+                <div class="rip-metric-val mut">{% if _r_diw %}~{{ _r_diw }}d{% else %}—{% endif %}</div>
+              </div>
+              {# 2W MACD imminence #}
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">2W MACD ETA</span><span class="l-zh">双周MACD距交叉</span></div>
+                <div class="rip-metric-val mut">{% if _r_imm is not none %}~{{ '%.1f'|format(_r_imm) }}{{ t('W','周') }}{% else %}—{% endif %}</div>
+              </div>
+            </div>
+            {# Evidence + context chips #}
+            <div class="rip-chips">
+              {% set _evid = r.get('evidence') or [] %}
+              {% for ev in _evid %}
+                <span class="rip-chip cp-ready">{{ ev }}</span>
+              {% endfor %}
+              {% if _r_bars is not none %}
+                <span class="rip-chip cp-cross"><span class="l-en">1W cross {{ _r_bars }}{{ 'W' if _r_bars != 1 else 'W' }} ago</span><span class="l-zh">周线穿越{{ _r_bars }}根K线前</span></span>
+              {% endif %}
+              {% set _rr_narr = r.get('narrative') %}
+              {% if _rr_narr and _rr_narr.get('theme') %}
+                <span class="rip-chip cp-warn"><span class="l-en">{{ _rr_narr.get('theme') }}</span><span class="l-zh">{{ _rr_narr.get('theme_zh') or _rr_narr.get('theme') }}</span></span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+        </div>{# /rip-grid #}
+      </div>{# /rz-ready #}
+      {% endif %}
+
+      {# ── ZONE 2: BASING — washout present, no directional trigger yet ──────── #}
+      {% if _rip_basing %}
+      <div class="rip-zone rz-basing">
+        <div class="rip-zone-hdr">
+          <span class="rip-zone-label"><span class="l-en">BASING</span><span class="l-zh">筑底中</span></span>
+          <span class="rip-zone-count">{{ _rip_basing|length }}</span>
+          <span class="rip-zone-defn"><span class="l-en">washout in progress — waiting for a turn</span><span class="l-zh">超卖持续中 — 等待转向信号</span></span>
+        </div>
+        <div class="rip-grid">
+        {% for r in _rip_basing %}
+        {%- set _r_ticker = r.get('ticker','') -%}
+        {%- set _r_hist = r.get('macd_hist_d') -%}
+        {%- set _r_slope = r.get('macd_hist_slope', 0) -%}
+        {%- set _r_stoch = r.get('w2_stoch') -%}
+        {%- set _r_arrow = r.get('w2_stoch_arrow', 0) -%}
+        {%- set _r_bars = r.get('w1_cross_bars_since') -%}
+        {%- set _r_d = r.get('w1_d_at_cross') -%}
+        {%- set _r_diw = r.get('days_in_washout') -%}
+        {%- set _r_rng = r.get('spot_pct_in_range') -%}
+        {%- set _r_ret = r.get('ret_5d') -%}
+        {%- set _r_price = r.get('price') -%}
+        {%- set _r_imm = r.get('imminence') -%}
+        <a href="china_lookup.html#{{ _r_ticker }}" class="rip-card" style="text-decoration:none;color:inherit;opacity:.88">
+          <div class="rip-card-stripe"></div>
+          <div class="rip-card-body">
+            <div class="rip-card-id">
+              <div>
+                <div class="rip-card-tk">{{ _r_ticker }}</div>
+                <div class="rip-card-nm">{{ nm(r.get('name','')) }}</div>
+                <div class="rip-card-sec">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</div>
+              </div>
+              {% if _r_price is not none %}
+              <div style="text-align:right">
+                <div class="rip-card-px">{{ '%.2f'|format(_r_price) }}</div>
+                {% if _r_ret is not none %}<div style="font-size:10px;color:{{ 'var(--up)' if _r_ret >= 0 else 'var(--down)' }}">{{ '%+.1f'|format(_r_ret * 100) }}%</div>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% if r.get('spark_svg') %}<div class="rip-card-spark">{{ r.get('spark_svg') | safe }}</div>{% endif %}
+            <div class="rip-metrics">
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">2W Stoch</span><span class="l-zh">双周随机</span></div>
+                <div class="rip-metric-val mut">
+                  {% if _r_stoch is not none %}{{ '%.1f'|format(_r_stoch) }}{% else %}—{% endif %}
+                  {% if _r_arrow == 1 %}<span class="rip-arrow up">↑</span>{% elif _r_arrow == -1 %}<span class="rip-arrow dn">↓</span>{% else %}<span class="rip-arrow fl">→</span>{% endif %}
+                </div>
+              </div>
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">MACD D hist</span><span class="l-zh">日MACD柱</span></div>
+                <div class="rip-metric-val {% if _r_hist is not none and _r_hist >= 0 %}pos{% elif _r_hist is not none %}neg{% endif %}">
+                  {% if _r_hist is not none %}{{ '%+.3f'|format(_r_hist) }}{% else %}—{% endif %}
+                  {%- if _r_slope == 1 %}<span style="font-size:9px">↑</span>{%- elif _r_slope == -1 %}<span style="font-size:9px">↓</span>{%- endif %}
+                </div>
+              </div>
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">Washout depth</span><span class="l-zh">超卖深度</span></div>
+                <div class="rip-metric-val mut">{% if _r_d is not none %}d={{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">Range pos.</span><span class="l-zh">区间位置</span></div>
+                <div class="rip-metric-val mut">{% if _r_rng is not none %}{{ '%.0f'|format(_r_rng) }}%{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">Days in washout</span><span class="l-zh">超卖天数</span></div>
+                <div class="rip-metric-val mut">{% if _r_diw %}~{{ _r_diw }}d{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric">
+                <div class="rip-metric-lbl"><span class="l-en">2W MACD ETA</span><span class="l-zh">双周MACD距交叉</span></div>
+                <div class="rip-metric-val mut">{% if _r_imm is not none %}~{{ '%.1f'|format(_r_imm) }}{{ t('W','周') }}{% else %}—{% endif %}</div>
+              </div>
+            </div>
+            <div class="rip-chips">
+              {% set _evid = r.get('evidence') or [] %}
+              {% for ev in _evid %}
+                <span class="rip-chip cp-neutral">{{ ev }}</span>
+              {% endfor %}
+              {% set _rr_narr = r.get('narrative') %}
+              {% if _rr_narr and _rr_narr.get('theme') %}
+                <span class="rip-chip cp-warn"><span class="l-en">{{ _rr_narr.get('theme') }}</span><span class="l-zh">{{ _rr_narr.get('theme_zh') or _rr_narr.get('theme') }}</span></span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+        </div>
+      </div>{# /rz-basing #}
+      {% endif %}
+
+      {# ── ZONE 3: FALLING SINK — collapsed by default; knife veto (W8-R1) ──── #}
+      {% if _rip_fall %}
+      <div class="rip-zone rz-fall">
+        <div class="rip-zone-hdr">
+          <span class="rip-zone-label"><span class="l-en">FALLING</span><span class="l-zh">仍在下跌</span></span>
+          <span class="rip-zone-count">{{ _rip_fall|length }}</span>
+          <span class="rip-zone-defn"><span class="l-en">still falling — do not catch</span><span class="l-zh">仍在下跌 — 勿接飞刀</span></span>
+          <button class="rip-toggle-btn" onclick="var b=this.closest('.rip-zone').querySelector('.rip-fall-body');b.classList.toggle('rip-collapsed');this.textContent=b.classList.contains('rip-collapsed')?'{{ t('show','展开') }}':'{{ t('hide','收起') }}'">
+            <span class="l-en">show</span><span class="l-zh">展开</span>
+          </button>
+        </div>
+        <div class="rip-fall-body rip-collapsed">
+          <div class="rip-fall-rows">
+          {% for r in _rip_fall %}
+          {%- set _rf_ret = r.get('ret_5d') -%}
+          <div class="rip-fall-row">
+            <div>
+              <a href="china_lookup.html#{{ r.get('ticker','') }}" style="font-weight:800;color:var(--text)">{{ r.get('ticker','') }}</a>
+              <div class="rip-fall-nm">{{ nm(r.get('name','')) }}</div>
+            </div>
+            <div class="rip-fall-nm" style="font-size:9.5px">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</div>
+            <div class="rip-fall-ret">{% if _rf_ret is not none %}{{ '%+.1f'|format(_rf_ret * 100) }}%{% endif %}</div>
+            <div class="rip-fall-lbl"><span class="l-en">5d</span><span class="l-zh">5日</span></div>
+          </div>
           {% endfor %}
+          </div>
         </div>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-    </div>
+      </div>{# /rz-fall #}
+      {% endif %}
+
+    </div>{# /rip-shelf #}
     {% endif %}
 
     {# ── W1-C: RAN array (non-buy universe, rule 3) ───────────────────────────

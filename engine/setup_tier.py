@@ -10,12 +10,18 @@ Computes a multi-timeframe setup snapshot per the China Alpha Masterplan (F2/W1)
 
 Stage assignment rules (ENTRY / RIPENING / RAN_LATE) mirror the masterplan spec exactly.
 
+W8-R1: assign_ripening_zone() — three-zone lifecycle classifier (FALLING / READY / BASING).
+  Hard precedence cascade: FALLING veto first (no cross can override), then READY evidence,
+  then BASING. Zone thresholds v1 frozen descriptively — amendment-logged, recalibrated at
+  china_alpha W6 (F3 discipline). Display-tier only; may_rank=false.
+
 Nearest sibling: engine/hold.py (same _tf_bars / _stoch_rsi_kd / _rsi_macd imports;
 same dict | None returns; same MIN_HISTORY guard).
 
 Public API:
   w_setup(close)           -> dict | None   (W-tier state per name)
   assign_stage(...)        -> dict           (stage + sublabel + detail)
+  assign_ripening_zone(...) -> dict          (zone + evidence: W8-R1)
 """
 from __future__ import annotations
 
@@ -415,3 +421,151 @@ def assign_stage(
 
     # ── Rule 5: no shelf ─────────────────────────────────────────────────────
     return {"stage": STAGE_NONE, "sublabel": None, "detail": {}}
+
+
+# ── W8-R1: Ripening three-zone lifecycle classifier ───────────────────────────
+#
+# Zone thresholds (v1 frozen descriptively — amendment-logged, recalibrated at
+# china_alpha W6). These are display-tier grouping constants only; they do not
+# affect board_ordering, alert_triage, or any authority surface (may_rank=false).
+#
+# Precedence cascade (HARD — no override):
+#   1. FALLING  — directional veto; no fresh-cross evidence overrides this
+#   2. READY    — directional evidence live AND tape not collapsing
+#   3. BASING   — everything else with setup_live (washout present, drifting)
+#
+# Operator fixture tests (R7 census data, pinned here for regression):
+#   000792: ret_5d=-13.6%, hist=-0.253 (falling) → FALLING
+#   002709: ret_5d=-24.4%, hist=-1.061 (falling), w1_cross_bars_since=2 → FALLING
+#           (precedence: FALLING veto beats fresh cross evidence)
+#   601360: ret_5d=+1.6%,  hist=+0.041 (rising),  w1_cross_bars_since=3, d=3.6 → READY
+#   601933: ret_5d=-2.9%,  hist=+0.022 (positive), w1_cross_bars_since=1 → READY
+
+# FALLING zone thresholds
+_FALLING_RET5D_THRESH = -0.08          # 5d return <= -8% → FALLING (absolute)
+# READY zone: fresh 1W cross window
+_READY_W1_CROSS_MAX_BARS = 3           # 1W cross within this many weekly bars = fresh
+# READY zone: 2W MACD imminence window (bars to cross)
+_READY_MACD_BARS_MAX = 10              # 2W MACD bars_to_cross <= this = READY (when hist >= 0)
+
+ZONE_FALLING = "FALLING"
+ZONE_READY   = "READY"
+ZONE_BASING  = "BASING"
+
+
+def assign_ripening_zone(
+    *,
+    ret_5d: float | None,
+    macd_hist_d: float | None,
+    macd_hist_prev_d: float | None,
+    w1_cross_bars_since: int | None,
+    w1_from_washout: bool,
+    macd_bars_to_cross_2w: float | None,
+    stoch_2w: float | None,
+    stoch_2w_prev: float | None = None,
+) -> dict:
+    """Assign a FALLING / READY / BASING zone for a ripening candidate.
+
+    PURE function — no I/O, no side-effects, deterministic given inputs.
+    Display-tier only (W8-R1). Zone thresholds v1 frozen descriptively;
+    recalibrated at china_alpha W6.
+
+    Parameters
+    ----------
+    ret_5d : float | None
+        5-session price return as a decimal (e.g. -0.136 for -13.6%).
+    macd_hist_d : float | None
+        Daily MACD histogram last bar value.
+    macd_hist_prev_d : float | None
+        Daily MACD histogram one bar prior (for slope direction).
+    w1_cross_bars_since : int | None
+        Bars since the last 1W StochRSI k/d bullish cross (from w_setup).
+        None means no cross was found.
+    w1_from_washout : bool
+        True when the 1W cross originated from the deep washout zone (d < 25).
+    macd_bars_to_cross_2w : float | None
+        2W MACD estimated bars to cross (None = no approach detected / already crossed).
+    stoch_2w : float | None
+        2W StochRSI last value (0-100 scale).
+    stoch_2w_prev : float | None
+        2W StochRSI previous value (for reclaim arrow; optional, not used in zone logic).
+
+    Returns
+    -------
+    dict with keys:
+        zone     : str — FALLING | READY | BASING
+        evidence : list[str] — EN-language evidence chips for this zone assignment
+    """
+    evidence: list[str] = []
+
+    # ── Step 1: FALLING veto (evaluated FIRST — no cross evidence can override) ──────
+    # Condition F1: catastrophic 5d drawdown
+    _ret_falling = ret_5d is not None and ret_5d <= _FALLING_RET5D_THRESH
+    # Condition F2: daily MACD histogram negative AND declining (knife shape)
+    _macd_neg_falling = (
+        macd_hist_d is not None
+        and macd_hist_d < 0
+        and macd_hist_prev_d is not None
+        and macd_hist_d < macd_hist_prev_d
+    )
+    if _ret_falling or _macd_neg_falling:
+        if _ret_falling:
+            evidence.append(f"5d return {ret_5d*100:.1f}% (below -8% veto)")
+        if _macd_neg_falling:
+            evidence.append(
+                f"D-MACD hist {macd_hist_d:+.3f} (negative & falling from "
+                f"{macd_hist_prev_d:+.3f})"
+            )
+        return {"zone": ZONE_FALLING, "evidence": evidence}
+
+    # ── Step 2: READY — directional evidence live, tape not collapsing ────────────────
+    # Condition R1: fresh 1W washout cross AND daily MACD hist >= 0
+    _fresh_1w_cross = (
+        w1_cross_bars_since is not None
+        and w1_cross_bars_since <= _READY_W1_CROSS_MAX_BARS
+        and w1_from_washout
+        and macd_hist_d is not None
+        and macd_hist_d >= 0
+    )
+    # Condition R2: daily MACD histogram turned positive (hist > 0 AND rising)
+    _macd_turned_pos = (
+        macd_hist_d is not None
+        and macd_hist_d > 0
+        and macd_hist_prev_d is not None
+        and macd_hist_d > macd_hist_prev_d
+    )
+    # Condition R3: 2W MACD imminent (bars_to_cross <= threshold) AND daily hist >= 0
+    _macd_imminent = (
+        macd_bars_to_cross_2w is not None
+        and macd_bars_to_cross_2w <= _READY_MACD_BARS_MAX
+        and macd_hist_d is not None
+        and macd_hist_d >= 0
+    )
+
+    if _fresh_1w_cross or _macd_turned_pos or _macd_imminent:
+        if _fresh_1w_cross:
+            evidence.append(
+                f"1W cross {w1_cross_bars_since} bar{'s' if w1_cross_bars_since != 1 else ''} ago"
+                f" (d-washout), D-MACD {'+' if macd_hist_d and macd_hist_d >= 0 else ''}"
+                f"{macd_hist_d:.3f}"
+            )
+        if _macd_turned_pos and not _fresh_1w_cross:
+            evidence.append(
+                f"D-MACD hist turned positive: {macd_hist_d:+.3f}"
+                + (f" (from {macd_hist_prev_d:+.3f})" if macd_hist_prev_d is not None else "")
+            )
+        if _macd_imminent:
+            evidence.append(
+                f"2W MACD ~{macd_bars_to_cross_2w:.1f} bars to cross"
+            )
+        return {"zone": ZONE_READY, "evidence": evidence}
+
+    # ── Step 3: BASING — washout present but no directional trigger yet ───────────────
+    if stoch_2w is not None:
+        evidence.append(f"2W stoch {stoch_2w:.1f} (washout)")
+    if macd_hist_d is not None:
+        _slope_tag = "rising" if (macd_hist_prev_d is not None and macd_hist_d > macd_hist_prev_d) else "flat/falling"
+        evidence.append(f"D-MACD {macd_hist_d:+.3f} ({_slope_tag})")
+    if w1_cross_bars_since is not None:
+        evidence.append(f"1W cross {w1_cross_bars_since} bars ago (stale)")
+    return {"zone": ZONE_BASING, "evidence": evidence}
