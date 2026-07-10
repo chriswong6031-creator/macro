@@ -27,7 +27,7 @@ pure numpy/pandas only).
 ## 1. Target Variable (verbatim from §12.3 MRI-R37)
 
 > Frozen target: sign(payems_mom_change[T, vintage=release(T+2)] −
-> payems_mom_change[T, vintage=release(T+2)]) — the first→third revision to the
+> payems_mom_change[T, vintage=release(T)]) — the first→third revision to the
 > MoM change, from a NEW multi-vintage PAYEMS store (ALFRED output_type=2, additive
 > collector; the existing output_type=4 first-print pipeline is untouched).
 
@@ -297,4 +297,32 @@ an amendment section below.
 
 ## AMENDMENTS
 
-*(none at registration time)*
+### Amendment 1: Training-label PIT compliance fix (2026-07-10)
+
+**Filed by:** Track R build agent (attempt #1 re-run).
+**Nature:** Implementation bug correction — the frozen spec is UNCHANGED.
+
+**Bug:** `run_revision_walk_forward` in `engine/release_revision_model.py`
+trained on all `records[:i]` regardless of whether each row's label (the
+third-print MoM direction) had been published by the fold's `decision_date`.
+This violated the expanding-window PIT requirement in §3.2 ("train on all
+(period, target) pairs whose target is KNOWN ... AND whose decision date D <
+current step") — specifically the "target is KNOWN" clause was not enforced.
+
+**Fix:** Each record now carries `label_observable_date` (= `third_release_date`
+from `build_revision_target_df`).  At fold i, `run_revision_walk_forward`
+filters `records[:i]` to rows where `label_observable_date <= pred_decision`
+before building the training matrix.  Rows without `label_observable_date`
+(backward-compatible paths) are included unconditionally.
+
+**Prior run (voided):** Wilson LB 0.5375, HR 0.601, n_dir=238 — inflated by
+look-ahead, kill verdict was technically correct but founded on contaminated data.
+
+**Corrected run (attempt #1):** Wilson LB 0.5057, HR 0.569, n_dir=239, basis
+first_to_third.  Kill STANDS: Wilson LB 0.5057 <= majority_base_rate 0.547.
+
+**Additional nit fixes (no spec change):**
+- §1 target definition typo: second term corrected from `vintage=release(T+2)`
+  to `vintage=release(T)` to match §12.3 MRI-R37 masterplan verbatim.
+- RESULTS note corrected: pre-2010 era directional count noted accurately (n=74,
+  not "typically 0"); n_directional reconciliation note added.

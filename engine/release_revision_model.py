@@ -491,6 +491,17 @@ def run_revision_walk_forward(
         period, first_release_date, target (int: +1/-1/0),
         fp_surprise_vs_AR1, sin_month, cos_month, icsa_4m_survey_week_change.
 
+    PIT-compliance: each record may optionally carry ``label_observable_date``
+    (a pd.Timestamp) — the date on which the LABEL for that row became
+    observable (i.e., the third-print release date, or the cumulative-fallback
+    vintage date).  When present, training at fold i is restricted to rows
+    whose label had already landed by pred_rec["decision_date"].  This
+    eliminates training-label look-ahead: a row whose third print has not yet
+    been published cannot serve as a training example at fold i.
+
+    If ``label_observable_date`` is absent for a row (backward-compat), the
+    row is treated as always observable (old behaviour).
+
     Returns list of result dicts (one per step after min_obs training samples).
     """
     if feature_names is None:
@@ -502,8 +513,22 @@ def run_revision_walk_forward(
     for i in range(len(records)):
         if i < min_obs:
             continue
-        train_recs = records[:i]
         pred_rec = records[i]
+        pred_decision = pred_rec.get("decision_date")
+
+        # PIT filter: only include training rows whose label was observable
+        # at pred_rec["decision_date"].  Rows that carry no label_observable_date
+        # are included unconditionally (backward-compatible).
+        if pred_decision is not None:
+            train_recs = [
+                r for r in records[:i]
+                if (
+                    r.get("label_observable_date") is None
+                    or r["label_observable_date"] <= pred_decision
+                )
+            ]
+        else:
+            train_recs = records[:i]
         actual_target = pred_rec.get("target")
         if actual_target is None:
             continue
@@ -721,10 +746,18 @@ def compute_revision_lean(
             mv_df=mv_df,
             init_vintages=init_vintages,
         )
+        # label_observable_date = third_release_date: the date the target
+        # (third print MoM) first became observable in ALFRED.
+        # Used by run_revision_walk_forward to prevent training-label look-ahead.
+        label_obs = row.get("third_release_date")
         rec = {
             "period": period,
             "first_release_date": row["first_release_date"],
             "decision_date": decision_date,
+            "label_observable_date": (
+                pd.Timestamp(label_obs) if label_obs is not None and pd.notna(label_obs)
+                else None
+            ),
             "target": int(row["target"]),
             **features,
         }

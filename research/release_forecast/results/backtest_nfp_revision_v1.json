@@ -3,20 +3,20 @@
   "spec": "research/release_forecast/PREREG_NFP_REVISION_V1.md",
   "basis": "first_to_third",
   "n_records": 353,
-  "n_wf_steps": 293,
+  "n_wf_steps": 291,
   "min_train_obs": 60,
   "strength_threshold": 0.1,
   "kill_rule": {
     "verdict": "kill",
     "kill_triggered": true,
-    "wilson_lb": 0.5375,
-    "majority_base_rate": 0.5467,
-    "hit_rate": 0.6008,
-    "n_directional": 238
+    "wilson_lb": 0.5057,
+    "majority_base_rate": 0.547,
+    "hit_rate": 0.569,
+    "n_directional": 239
   },
   "era_results": {
     "pre_2010": {
-      "n_total": 97,
+      "n_total": 95,
       "n_directional": 74,
       "n_hits": 39,
       "hit_rate": 0.527,
@@ -24,20 +24,20 @@
         0.4148,
         0.6366
       ],
-      "majority_base_rate": 0.5155,
-      "n_up_actual": 50,
-      "n_down_actual": 47,
-      "fp_baseline_hr": 0.4742,
-      "fp_baseline_n_dir": 97
+      "majority_base_rate": 0.5158,
+      "n_up_actual": 49,
+      "n_down_actual": 46,
+      "fp_baseline_hr": 0.4737,
+      "fp_baseline_n_dir": 95
     },
     "2010_2020": {
       "n_total": 122,
-      "n_directional": 106,
-      "n_hits": 67,
-      "hit_rate": 0.6321,
+      "n_directional": 108,
+      "n_hits": 61,
+      "hit_rate": 0.5648,
       "wilson_95_ci": [
-        0.5372,
-        0.7178
+        0.4707,
+        0.6545
       ],
       "majority_base_rate": 0.6148,
       "n_up_actual": 75,
@@ -62,12 +62,12 @@
     },
     "2020_recovery": {
       "n_total": 6,
-      "n_directional": 6,
+      "n_directional": 5,
       "n_hits": 4,
-      "hit_rate": 0.6667,
+      "hit_rate": 0.8,
       "wilson_95_ci": [
-        0.3,
-        0.9032
+        0.3755,
+        0.9638
       ],
       "majority_base_rate": 0.6667,
       "n_up_actual": 4,
@@ -78,11 +78,11 @@
     "2021_plus": {
       "n_total": 64,
       "n_directional": 52,
-      "n_hits": 33,
-      "hit_rate": 0.6346,
+      "n_hits": 32,
+      "hit_rate": 0.6154,
       "wilson_95_ci": [
-        0.4987,
-        0.752
+        0.4796,
+        0.7353
       ],
       "majority_base_rate": 0.5469,
       "n_up_actual": 29,
@@ -91,19 +91,19 @@
       "fp_baseline_n_dir": 64
     },
     "full_non_covid": {
-      "n_total": 289,
-      "n_directional": 238,
-      "n_hits": 143,
-      "hit_rate": 0.6008,
+      "n_total": 287,
+      "n_directional": 239,
+      "n_hits": 136,
+      "hit_rate": 0.569,
       "wilson_95_ci": [
-        0.5375,
-        0.661
+        0.5057,
+        0.6302
       ],
-      "majority_base_rate": 0.5467,
-      "n_up_actual": 158,
-      "n_down_actual": 131,
-      "fp_baseline_hr": 0.4637,
-      "fp_baseline_n_dir": 289
+      "majority_base_rate": 0.547,
+      "n_up_actual": 157,
+      "n_down_actual": 130,
+      "fp_baseline_hr": 0.4634,
+      "fp_baseline_n_dir": 287
     }
   },
   "feature_presence": {

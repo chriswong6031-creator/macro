@@ -13,13 +13,13 @@
 | Item | Value |
 |------|-------|
 | Records available | 353 |
-| Walk-forward steps | 293 |
+| Walk-forward steps | 291 |
 | Target basis | first_to_third |
 | Kill verdict | **KILL** |
-| Hit rate (full non-covid) | 0.601 |
-| Wilson 95% LB | 0.537 |
+| Hit rate (full non-covid) | 0.569 |
+| Wilson 95% LB | 0.506 |
 | Majority base rate | 0.547 |
-| n directional steps | 238 |
+| n directional steps | 239 |
 
 ---
 
@@ -27,8 +27,8 @@
 
 **Kill TRIGGERED** (model suppressed — lean='none'):
 
-- Wilson LB: 0.5375
-- Majority base rate: 0.5467
+- Wilson LB: 0.5057
+- Majority base rate: 0.547
 - Kill condition (Wilson LB <= majority base rate): True
 
 ---
@@ -39,15 +39,16 @@ Directional only (steps where |y_hat| >= strength_threshold); majority base rate
 
 | Era | n_dir | n_hits | Hit Rate | Wilson 95% CI | Majority Base Rate | FP-Baseline HR |
 |-----|-------|--------|----------|---------------|--------------------|----------------|
-| pre_2010 | 74 | 39 | 0.527 | [0.415, 0.637] | 0.515 | 0.474 |
-| 2010_2020 | 106 | 67 | 0.632 | [0.537, 0.718] | 0.615 | 0.451 |
+| pre_2010 | 74 | 39 | 0.527 | [0.415, 0.637] | 0.516 | 0.474 |
+| 2010_2020 | 108 | 61 | 0.565 | [0.471, 0.654] | 0.615 | 0.451 |
 | covid | 3 | 2 | 0.667 | [0.208, 0.939] | 0.750 | 0.750 |
-| 2020_recovery | 6 | 4 | 0.667 | [0.300, 0.903] | 0.667 | 0.333 |
-| 2021_plus | 52 | 33 | 0.635 | [0.499, 0.752] | 0.547 | 0.484 |
-| full_non_covid | 238 | 143 | 0.601 | [0.537, 0.661] | 0.547 | 0.464 |
+| 2020_recovery | 5 | 4 | 0.800 | [0.376, 0.964] | 0.667 | 0.333 |
+| 2021_plus | 52 | 32 | 0.615 | [0.480, 0.735] | 0.547 | 0.484 |
+| full_non_covid | 239 | 136 | 0.569 | [0.506, 0.630] | 0.547 | 0.463 |
 
-**Note:** Pre-2010 directional n is typically 0 (model needs 60 training steps before predicting).
+**Note:** Pre-2010 directional n=74 (model has ≥60 training rows available before 2010 given data starting ~1997).
 COVID rows (2020-03..2020-06) are excluded from the kill-rule evaluation per PREREG §3.2.
+n_directional in the kill-rule evaluation (239) equals the full_non_covid directional count in the era table — any difference between this and prior runs reflects the PIT-compliance fix (look-ahead-corrected training windows can raise or lower the directional call rate at certain folds).
 
 ---
 

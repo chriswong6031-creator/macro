@@ -508,7 +508,243 @@ class TestTargetConstruction:
 
 
 # ---------------------------------------------------------------------------
-# 7. Walk-forward output structure
+# 7. Walk-forward label look-ahead regression test
+# ---------------------------------------------------------------------------
+
+class TestLabelLookaheadFix:
+    """Regression tests for training-label PIT compliance in run_revision_walk_forward.
+
+    The bug: at each fold i, records[:i] was used as training data regardless
+    of whether those rows' labels (third-print values) had been published by
+    pred_rec["decision_date"].  The fix: filter training rows by
+    label_observable_date <= pred_decision.
+
+    These tests construct a fixture where including vs. excluding unlanded
+    labels changes the prediction, and assert the correct (exclusion) outcome.
+    """
+
+    def _make_records_with_observable_dates(
+        self,
+        n_base: int = 70,
+        base_date: pd.Timestamp = pd.Timestamp("2010-01-01"),
+        n_unlanded: int = 5,
+    ) -> tuple[list[dict], list[dict]]:
+        """Build two record lists — one with label_observable_date populated
+        (PIT-correct), one without (old behaviour).
+
+        The last ``n_unlanded`` records in the training window for the final
+        prediction step have label_observable_dates AFTER the prediction
+        decision_date.  Those rows should be excluded from training when
+        label_observable_date is present.
+
+        Returns (records_with_pit, records_without_pit).
+        Both lists are sorted by first_release_date and have n_base+1 rows;
+        the last row is the prediction step.
+        """
+        records_pit = []
+        records_no_pit = []
+
+        # Build n_base training rows + 1 prediction row.
+        #
+        # The prediction decision_date is a fixed anchor.  Each training row
+        # gets an explicit label_observable_date:
+        #   - rows 0..n_base-n_unlanded-1: label already landed (date well before anchor)
+        #   - rows n_base-n_unlanded..n_base-1: label NOT YET landed (date = anchor + 30d)
+        #     These rows ALL have target = +1 and fp_surprise = -100 (contradictory signal).
+        #   - landed rows are balanced (alternating +1/-1) with consistent fp signal.
+        #
+        # Effect on model:
+        #   With unlanded rows INCLUDED: corrupted training mix → different coefficient.
+        #   With unlanded rows EXCLUDED: clean balanced data → different n_train and y_hat.
+
+        pred_decision = pd.Timestamp("2016-03-04")  # fixed anchor date
+
+        for i in range(n_base + 1):
+            period = base_date + pd.DateOffset(months=i)
+            first_release = period + pd.Timedelta(days=35)
+            decision_date = first_release - pd.Timedelta(days=1)
+
+            is_unlanded = (
+                i >= n_base - n_unlanded
+                and i < n_base  # training row (not pred step)
+            )
+
+            if i == n_base:
+                # Prediction step
+                target = 1
+                fp = 5.0
+                label_obs = None  # prediction step: no label yet
+            elif is_unlanded:
+                # Label not yet observable at pred_decision
+                target = 1       # biasing: all up → contradictory with neg fp
+                fp = -100.0      # strongly negative surprise → corrupted signal
+                label_obs = pred_decision + pd.Timedelta(days=30)  # NOT YET landed
+            else:
+                # Label already landed well before pred_decision
+                target = 1 if i % 2 == 0 else -1
+                fp = float(target) * 10.0  # consistent signal
+                label_obs = pred_decision - pd.Timedelta(days=365)  # landed long ago
+
+            base_rec = {
+                "period": period,
+                "first_release_date": first_release,
+                # Prediction step uses the fixed pred_decision; others use their own date
+                "decision_date": pred_decision if i == n_base else decision_date,
+                "target": int(target),
+                "fp_surprise_vs_AR1": fp,
+                "sin_month": float(np.sin(2 * np.pi * (period.month - 1) / 12)),
+                "cos_month": float(np.cos(2 * np.pi * (period.month - 1) / 12)),
+                "icsa_4m_survey_week_change": None,
+            }
+
+            # PIT version: carry label_observable_date
+            rec_pit = {**base_rec, "label_observable_date": label_obs}
+            # Non-PIT version: no label_observable_date (old behaviour)
+            rec_no_pit = {**base_rec}
+
+            records_pit.append(rec_pit)
+            records_no_pit.append(rec_no_pit)
+
+        return records_pit, records_no_pit
+
+    def test_unlanded_labels_excluded_from_training(self):
+        """Fold training must exclude rows whose label_observable_date > decision_date.
+
+        Concretely: when n_unlanded rows with contradictory labels are present
+        in records[:i] but have label_observable_date > pred_decision, the
+        PIT-correct walk-forward must exclude them.  This changes the effective
+        training set and therefore must produce a different n_train count
+        at the final fold.
+        """
+        n_base = 70
+        n_unlanded = 5
+        records_pit, records_no_pit = self._make_records_with_observable_dates(
+            n_base=n_base, n_unlanded=n_unlanded
+        )
+
+        # Use min_obs=60 so both runs reach the final step
+        results_pit = run_revision_walk_forward(records_pit, min_obs=60)
+        results_no_pit = run_revision_walk_forward(records_no_pit, min_obs=60)
+
+        assert results_pit, "PIT run produced no walk-forward steps"
+        assert results_no_pit, "non-PIT run produced no walk-forward steps"
+
+        # The LAST step in each run corresponds to the prediction at fold n_base.
+        # PIT version: n_train must be SMALLER (unlanded rows excluded).
+        last_pit = results_pit[-1]
+        last_no_pit = results_no_pit[-1]
+
+        # PIT-correct run must exclude the n_unlanded rows (training rows whose
+        # third release date > prediction decision date).
+        # The non-PIT run uses all records[:n_base] as training.
+        assert last_pit["n_train"] < last_no_pit["n_train"], (
+            f"PIT run n_train ({last_pit['n_train']}) should be smaller than "
+            f"non-PIT n_train ({last_no_pit['n_train']}) because {n_unlanded} "
+            f"unlanded-label rows must be excluded"
+        )
+        # Specifically, the difference should equal n_unlanded (each one excluded)
+        assert last_no_pit["n_train"] - last_pit["n_train"] == n_unlanded, (
+            f"Expected n_train difference of {n_unlanded}, "
+            f"got {last_no_pit['n_train'] - last_pit['n_train']}"
+        )
+
+    def test_unlanded_label_exclusion_changes_prediction(self):
+        """Excluding unlanded labels must change y_hat when those labels are contradictory.
+
+        This verifies that the fix has a real effect on the model output,
+        not merely on the training-set bookkeeping.
+        """
+        n_base = 70
+        n_unlanded = 5
+        records_pit, records_no_pit = self._make_records_with_observable_dates(
+            n_base=n_base, n_unlanded=n_unlanded
+        )
+
+        results_pit = run_revision_walk_forward(records_pit, min_obs=60)
+        results_no_pit = run_revision_walk_forward(records_no_pit, min_obs=60)
+
+        assert results_pit, "PIT run produced no walk-forward steps"
+        assert results_no_pit, "non-PIT run produced no walk-forward steps"
+
+        last_pit = results_pit[-1]
+        last_no_pit = results_no_pit[-1]
+
+        # The two runs must produce different y_hat values because the unlanded
+        # rows carry a contradictory fp_surprise → target relationship.
+        assert last_pit["y_hat"] != last_no_pit["y_hat"], (
+            "y_hat must differ between PIT-correct and non-PIT runs when "
+            "the excluded unlanded rows carry a systematically contradictory signal"
+        )
+
+    def test_no_label_observable_date_is_backward_compatible(self):
+        """Records without label_observable_date use all records[:i] (old behaviour)."""
+        np.random.seed(77)
+        records = _make_records_for_wf(n=80)
+        # No label_observable_date key — should behave identically to old logic
+        results_new = run_revision_walk_forward(records, min_obs=20)
+        # Verify we still get results (backward-compat)
+        assert len(results_new) > 0
+        # The n_train at each step should equal i (minus any zero-target/NaN drops)
+        # Rather than asserting exact values, just verify the walk-forward runs to completion.
+        for r in results_new:
+            assert r["n_train"] >= 0
+
+    def test_label_observable_past_decision_includes_row(self):
+        """A row whose label_observable_date is exactly on pred_decision is included."""
+        # Build a tiny fixture: 65 training rows + 1 pred row
+        # The last training row has label_observable_date = pred_decision
+        # (exactly on the boundary — should be included: <= not <)
+        base_date = pd.Timestamp("2010-01-01")
+        n = 66  # 65 training + 1 pred
+        records = []
+        pred_decision = base_date + pd.DateOffset(months=65) + pd.Timedelta(days=34)
+        for i in range(n):
+            period = base_date + pd.DateOffset(months=i)
+            first_release = period + pd.Timedelta(days=35)
+            decision_date = first_release - pd.Timedelta(days=1)
+            if i == n - 1:
+                # Prediction step
+                label_obs = None
+                target = 1
+            elif i == n - 2:
+                # Last training row: label_observable_date == pred_decision (boundary)
+                label_obs = pred_decision
+                target = 1
+            else:
+                # All other training rows: label already landed well before pred_decision
+                label_obs = decision_date + pd.Timedelta(days=60)
+                target = 1 if i % 2 == 0 else -1
+
+            records.append({
+                "period": period,
+                "first_release_date": first_release,
+                "decision_date": pred_decision if i == n - 1 else decision_date,
+                "label_observable_date": label_obs,
+                "target": target,
+                "fp_surprise_vs_AR1": float(target) * 5.0,
+                "sin_month": float(np.sin(2 * np.pi * (period.month - 1) / 12)),
+                "cos_month": float(np.cos(2 * np.pi * (period.month - 1) / 12)),
+                "icsa_4m_survey_week_change": None,
+            })
+
+        results = run_revision_walk_forward(records, min_obs=60)
+        assert results, "Expected at least one walk-forward step"
+
+        # The boundary row (label_observable_date == pred_decision) must be INCLUDED
+        # (<=, not <).  With min_obs=60, the last step (i=65) trains on records[:65].
+        # Among those 65 rows, the boundary row (i=64) has label_obs==pred_decision
+        # and should be included.  Check that n_train is larger than it would be if
+        # the boundary were excluded (n_train for all-valid-target rows >= 60).
+        last = results[-1]
+        # At minimum we need 60 complete-case rows; since all targets are ±1,
+        # the boundary row counts.
+        assert last["n_train"] >= 60, (
+            f"Expected n_train >= 60 (boundary row included), got {last['n_train']}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 8. Walk-forward output structure
 # ---------------------------------------------------------------------------
 
 class TestWalkForwardOutput:

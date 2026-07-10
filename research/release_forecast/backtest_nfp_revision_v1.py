@@ -146,10 +146,19 @@ def run_backtest() -> dict[str, Any]:
             mv_df=mv_df,
             init_vintages=init_vintages,
         )
+        # label_observable_date = third_release_date: the date the training
+        # label (third-print MoM direction) first became visible in ALFRED.
+        # Passed to run_revision_walk_forward to enforce PIT compliance and
+        # eliminate training-label look-ahead (the bug that voided the prior run).
+        label_obs = row.get("third_release_date")
         rec = {
             "period": period,
             "first_release_date": pd.Timestamp(row["first_release_date"]),
             "decision_date": decision_date,
+            "label_observable_date": (
+                pd.Timestamp(label_obs) if label_obs is not None and pd.notna(label_obs)
+                else None
+            ),
             "first_print_mom": float(row["first_print_mom"]),
             "third_print_mom": float(row["third_print_mom"]),
             "revision": float(row["revision"]),
@@ -329,10 +338,25 @@ def write_results_md(result: dict[str, Any]) -> None:
             f"{'N/A' if fp_hr is None else f'{fp_hr:.3f}'} |"
         )
 
+    # Pre-2010 note: with data starting from ~1997, the model accumulates 60 training
+    # rows by ~2002 and therefore CAN produce directional calls before 2010.
+    pre2010_dir = era.get("pre_2010", {}).get("n_directional", 0)
+    pre2010_note = (
+        f"Pre-2010 directional n={pre2010_dir} (model has ≥60 training rows available"
+        " before 2010 given data starting ~1997)."
+        if pre2010_dir > 0
+        else
+        "Pre-2010 directional n=0 (model needs 60 training rows before the first prediction;  "
+        "check whether data starts late enough to exceed that threshold before 2010)."
+    )
     lines += [
         "",
-        "**Note:** Pre-2010 directional n is typically 0 (model needs 60 training steps before predicting).",
-        "COVID rows (2020-03..2020-06) are excluded from the kill-rule evaluation per PREREG §3.2.",
+        f"**Note:** {pre2010_note}",
+        f"COVID rows (2020-03..2020-06) are excluded from the kill-rule evaluation per PREREG §3.2.",
+        f"n_directional in the kill-rule evaluation ({result['kill_rule']['n_directional']}) "
+        f"equals the full_non_covid directional count in the era table — any difference between "
+        f"this and prior runs reflects the PIT-compliance fix (look-ahead-corrected training windows "
+        f"can raise or lower the directional call rate at certain folds).",
         "",
         "---",
         "",
