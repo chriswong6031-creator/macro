@@ -992,6 +992,123 @@ def _market_stocks_state(market: str) -> dict:
         return {"label": "", "n_setups": 0}
 
 
+def _rotation_strip_data(run_date: str | None = None) -> list[dict] | None:
+    """Return top-4 sector rotation chips (2 Accumulate + 2 Reduce by |score|, latest date).
+    Returns None when the parquet is absent or the latest date is >7d stale vs run_date."""
+    try:
+        p = config.data_dir().parent / "sector_central" / "calls.parquet"
+        if not p.exists():
+            p = Path(config.ROOT) / "data" / "sector_central" / "calls.parquet"
+        if not p.exists():
+            return None
+        df = pd.read_parquet(p)
+        # latest date only
+        latest = df["date"].max()
+        run_dt = pd.Timestamp(run_date) if run_date else pd.Timestamp.utcnow().tz_localize(None)
+        if (run_dt - pd.Timestamp(latest)).days > 7:
+            return None
+        rows = df[df["date"] == latest].copy()
+        accum = rows[rows["label"] == "Accumulate"].nlargest(2, "score")
+        reduce = rows[rows["label"] == "Reduce"].nlargest(2, "score")
+        out = []
+        for _, r in accum.iterrows():
+            out.append({"name": r["name"], "label": "Accumulate", "label_zh": "积累",
+                        "dir": str(r["dir"]), "score": int(r["score"]), "side": "add"})
+        for _, r in reduce.iterrows():
+            out.append({"name": r["name"], "label": "Reduce", "label_zh": "减持",
+                        "dir": str(r["dir"]), "score": int(r["score"]), "side": "reduce"})
+        return out if out else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _rotation_strip_html(chips: list[dict] | None) -> str:
+    """Render the slim rotation snapshot strip HTML. Returns '' when chips is None/empty."""
+    if not chips:
+        return ""
+    parts = []
+    for c in chips:
+        arrow = "▲" if c["dir"] == "up" else ("▼" if c["dir"] == "down" else "—")
+        cls = "rot-add" if c["side"] == "add" else "rot-red"
+        parts.append(
+            '<span class="rot-chip ' + cls + '">'
+            + '<span class="rot-arr" aria-hidden="true">' + arrow + '</span>'
+            + '<span class="rot-nm">' + c["name"] + '</span>'
+            + '<span class="rot-lbl">'
+            + '<span class="l-en">' + c["label"] + '</span>'
+            + '<span class="l-zh">' + c["label_zh"] + '</span>'
+            + '</span>'
+            + '</span>'
+        )
+    return (
+        '<div class="rot-strip">'
+        '<a class="rot-hd" href="sector_central.html">'
+        '<span class="l-en">Rotation desk</span>'
+        '<span class="l-zh">轮动台</span>'
+        '</a>'
+        + "".join(parts)
+        + '</div>'
+    )
+
+
+def _regime_change_ccs(alerts: list[dict], run_date: str | None = None) -> set[str]:
+    """Return the set of market CCs (e.g. 'US') with a regime-label-change alert
+    within the past 7 days. Cross-references the home alert feed — no new detection.
+    Mapping: transition_state_change / growth_confidence_floor / inflation_confidence_floor
+    rules fire on the US macro dashboard; gex_flip_cross is also US-market-level."""
+    _US_RULES = frozenset({"transition_state_change", "growth_confidence_floor",
+                           "inflation_confidence_floor", "gex_flip_cross"})
+    ccs: set[str] = set()
+    cutoff = (pd.Timestamp(run_date) if run_date
+              else pd.Timestamp.utcnow().tz_localize(None)) - pd.Timedelta(days=7)
+    for a in alerts:
+        ts = pd.Timestamp(a.get("ts", "1970-01-01"))
+        if ts.tzinfo is not None:
+            ts = ts.tz_localize(None)
+        if ts < cutoff:
+            continue
+        rule = a.get("type", "")
+        if rule in _US_RULES:
+            ccs.add("US")
+    return ccs
+
+
+def _standout_tickers(market: str = "us") -> list[str]:
+    """Return up to 3 top-ranked standout tickers from the committed factordata artifact.
+    Reads site/factordata/{market}_standouts.json (display-tier, committed artifact).
+    Returns [] if the artifact is absent or has no qualifying rows.
+    CN/HK exchange suffixes (.SS/.SZ/.HK) are stripped for compact display."""
+    try:
+        site = config.ROOT / config.load()["storage"]["site_dir"]
+        p = site / "factordata" / f"{market}_standouts.json"
+        if not p.exists():
+            return []
+        d = json.loads(p.read_text())
+        buy = d.get("buy", [])
+
+        def _clean(tkr: str) -> str:
+            """Strip exchange suffix (.SS .SZ .HK) for display."""
+            if "." in tkr:
+                base = tkr.rsplit(".", 1)[0]
+                # Only strip if suffix is a known exchange code (2 letters)
+                sfx = tkr.rsplit(".", 1)[1].upper()
+                if sfx in ("SS", "SZ", "HK"):
+                    return base
+            return tkr
+
+        # US standouts: prefer label=='BUY ZONE' entries first, then fallback
+        if market == "us":
+            zone = [r["ticker"] for r in buy if r.get("label") == "BUY ZONE"][:3]
+            if zone:
+                return [_clean(t) for t in zone]
+            return [_clean(r["ticker"]) for r in buy[:3]]
+        # CN/HK standouts: top 3 buy list tickers (cleaned)
+        tickers = [_clean(r.get("ticker", "")) for r in buy[:3] if r.get("ticker")]
+        return [t for t in tickers if t]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def _spvector_state() -> dict:
     """S&P / Macro Vector card — gated on the page existing; shows the current macro
     risk band + recommended equity weight from data/regime/spvector_latest.json when
@@ -1196,9 +1313,15 @@ html{overflow-x:hidden}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
- padding:22px 20px 56px;position:relative;overflow-x:hidden}
+ padding:22px max(20px,env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));position:relative;overflow-x:hidden}
 .wrap{width:100%;max-width:1180px;display:flex;flex-direction:column}
+@media(min-width:1600px){.wrap{max-width:1360px}}
 .hub-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px}
+.hub-signin{background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;padding:4px 2px;border-radius:6px;transition:color .14s ease}
+.hub-signin:hover{color:var(--text)}
+.hub-signin .l-zh{display:none}
+html[data-lang="zh"] .hub-signin .l-en{display:none}
+html[data-lang="zh"] .hub-signin .l-zh{display:inline}
 .h{text-align:center;margin:6px 0 22px;position:relative;isolation:isolate}
 /* a soft, feathered radial --bg scrim sits BEHIND the hero text (own stacking
    context via isolation) so the bright sun/moon disc never washes the headline
@@ -1264,6 +1387,7 @@ html[data-lang="zh"] .band h2{letter-spacing:0}
 
 /* ===== the nav grid (markets + vectors, all visible) ===== */
 .nav{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
+@media(max-width:1024px) and (min-width:769px){.nav.vc{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:880px){.nav{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.nav{grid-template-columns:1fr}}
 
@@ -1282,6 +1406,7 @@ html[data-lang="zh"] .card-h{letter-spacing:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .pill{font-size:11.5px;font-weight:700;letter-spacing:-.005em;background:color-mix(in srgb,var(--accent) 12%,var(--panel2));
  color:color-mix(in srgb,var(--accent) 74%,var(--text));padding:3px 9px;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent) 18%,transparent)}
+html[data-theme="light"] .pill{color:color-mix(in srgb,var(--accent) 48%,var(--text))}
 .pill.q1{background:color-mix(in srgb,var(--q1) 13%,var(--panel2));color:color-mix(in srgb,var(--q1) 80%,var(--text));border-color:color-mix(in srgb,var(--q1) 24%,transparent)}
 .pill.q2{background:color-mix(in srgb,var(--q2) 13%,var(--panel2));color:color-mix(in srgb,var(--q2) 80%,var(--text));border-color:color-mix(in srgb,var(--q2) 24%,transparent)}
 .pill.q3{background:color-mix(in srgb,var(--q3) 13%,var(--panel2));color:color-mix(in srgb,var(--q3) 80%,var(--text));border-color:color-mix(in srgb,var(--q3) 24%,transparent)}
@@ -1337,6 +1462,14 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .ha-detail a{font-weight:700;color:var(--link)}
 .al-more{display:block;text-align:center;padding:11px 0 6px;font-size:12.5px;font-weight:700;color:var(--link);text-decoration:none}
 .al-more:hover{text-decoration:underline}
+.ha-toggle{display:block;width:100%;background:none;border:none;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding:9px 0;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--link);cursor:pointer;text-align:center}
+.ha-toggle:hover{text-decoration:underline}
+.ha-toggle .ha-t-less{display:none}
+.ha-toggle.open .ha-t-more{display:none}
+.ha-toggle.open .ha-t-less{display:inline}
+.ha-toggle .l-zh{display:none}
+html[data-lang="zh"] .ha-toggle .l-en{display:none}
+html[data-lang="zh"] .ha-toggle .l-zh{display:inline}
 
 .site-footer{margin:34px auto 0;padding-top:22px;border-top:1px solid var(--line);text-align:center;line-height:1.6}
 .site-footer .made{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
@@ -1368,7 +1501,9 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
    min-height is viewport-aware: full 640px hero on tall monitors, but it shrinks on
    shorter laptops so the Markets grid below clears the fold on load (a flat 640px +
    the ~320px header pushed the grid ~170px under the fold at ~790px viewports). */
-.gd-stage{position:relative;min-height:clamp(380px,100svh - 370px,640px);display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
+.gd-stage{position:relative;min-height:clamp(380px,100svh - 370px,740px);display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
+@media(min-width:1600px){.gd-stage{min-height:clamp(380px,100svh - 370px,740px)}}
+@media(max-width:1024px) and (min-width:769px){.gd-stage{min-height:clamp(320px,100svh - 370px,min(80vw,560px))}}
 @media(max-width:880px){.gd-stage{min-height:0;height:min(94vw,500px)}}
 .gd-canvas{position:relative;z-index:10;width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 .gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
@@ -1417,8 +1552,6 @@ html[data-theme="light"] .gd-isl .body{
 html[data-theme="light"] .gd-isl .body::before{background:linear-gradient(140deg,rgba(255,255,255,.92),rgba(255,255,255,.22) 46%,rgba(120,140,170,.12))}
 html[data-theme="light"] .gd-isl .body:hover,html[data-theme="light"] .gd-isl .body:focus-visible{
  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 11px 24px -10px rgba(28,40,64,.28),0 5px 16px -6px color-mix(in srgb,var(--qc) 55%,transparent)}
-html[data-theme="light"] .gd-cluster{background:color-mix(in srgb,var(--panel) 55%,transparent);
- box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 8px 20px -10px rgba(28,40,64,.24)}
 .gd-isl .isl-flag{font-size:16px;line-height:1;filter:saturate(1.1)}
 .gd-isl .isl-sem{width:10px;height:10px;border-radius:50%;flex:none;position:relative}
 .gd-isl .isl-sem.open{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 26%,transparent),0 0 7px var(--ok);animation:gdsempulse 2.1s ease-in-out infinite}
@@ -1429,21 +1562,9 @@ html[data-theme="light"] .gd-cluster{background:color-mix(in srgb,var(--panel) 5
 .gd-isl .isl-chg{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;font-style:normal}
 .gd-isl .isl-chg.up{color:var(--up)} .gd-isl .isl-chg.down{color:var(--down)} .gd-isl .isl-chg.stale{color:var(--muted)}
 .gd-isl .isl-px{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:1px}
-/* ===== Asia cluster chip (collapses the JP/KR/TW/HK/CN knot when compressed) ===== */
-.gd-cluster{position:absolute;left:0;top:0;display:none;align-items:center;gap:7px;padding:7px 13px 7px 11px;border-radius:999px;cursor:pointer;z-index:30;
- transform:translate(calc(var(--cx,0)*1px - 50%),calc(var(--cy,0)*1px - 50%));
- background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
- -webkit-backdrop-filter:blur(13px) saturate(1.6);backdrop-filter:blur(13px) saturate(1.6);
- box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -8px 14px rgba(0,0,0,.30),0 11px 26px -10px rgba(0,0,0,.7);
- font-size:12.5px;font-weight:800;color:var(--text);letter-spacing:-.01em}
-.gd-cluster.show{display:flex}
-.gd-cluster .cl-globe{font-size:15px;line-height:1}
-.gd-cluster .cl-n{color:var(--muted);font-weight:700}
-.gd-cluster .cl-dots{display:flex;gap:3px;margin-left:3px}
-.gd-cluster .cl-dots i{width:6px;height:6px;border-radius:50%;display:block;box-shadow:0 0 5px currentColor}
-.gd-cluster .l-zh{display:none} html[data-lang="zh"] .gd-cluster .l-en{display:none} html[data-lang="zh"] .gd-cluster .l-zh{display:inline}
 @media(max-width:560px){.h .eyebrow{display:none}}
 @media(max-width:560px){.gd-isl .body{gap:6px;padding:5px 10px 5px 8px} .gd-isl .isl-chg{font-size:12px} .gd-isl .isl-px{display:none} .gd-isl .isl-flag{font-size:14px}}
+@media(max-width:560px){.gd-isl .body{overflow:visible}.gd-isl .body::after{content:'';position:absolute;inset:-10px;height:auto;width:auto;border-radius:0;background:transparent;box-shadow:none;opacity:1}}
 @media (prefers-reduced-motion: reduce){.gd-isl .glow,.gd-isl .isl-sem.open{animation:none}}
 .gd-poster{position:absolute;inset:0;width:100%;height:100%;transition:opacity .6s ease;pointer-events:none}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;margin:-1px;padding:0;border:0}
@@ -1636,6 +1757,39 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 .nav.vc .go .go-tx{display:none}
 }
 .go-tx{display:inline}
+
+/* ===== rotation snapshot strip ===== */
+.rot-strip{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 13px;padding:9px 13px;border-radius:12px;
+ background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.rot-hd{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-right:4px;white-space:nowrap;flex:none}
+.rot-hd:hover{color:var(--link)}
+.rot-hd .l-zh{display:none}
+html[data-lang="zh"] .rot-hd .l-en{display:none}
+html[data-lang="zh"] .rot-hd .l-zh{display:inline}
+.rot-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;border:1px solid transparent}
+.rot-chip.rot-add{background:color-mix(in srgb,var(--up) 12%,transparent);border-color:color-mix(in srgb,var(--up) 28%,transparent);color:var(--up)}
+.rot-chip.rot-red{background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 22%,transparent);color:var(--down)}
+.rot-arr{font-size:10px;flex:none}
+.rot-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:14ch}
+.rot-lbl{font-size:10px;opacity:.8;flex:none}
+.rot-lbl .l-zh{display:none}
+html[data-lang="zh"] .rot-lbl .l-en{display:none}
+html[data-lang="zh"] .rot-lbl .l-zh{display:inline}
+@media(max-width:560px){.rot-strip{padding:7px 10px;gap:5px}.rot-nm{max-width:10ch}}
+
+/* ===== regime-change badge on market cards ===== */
+.regime-changed{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;
+ background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);
+ color:var(--warn);margin-left:6px;vertical-align:middle;white-space:nowrap}
+.regime-changed .l-zh{display:none}
+html[data-lang="zh"] .regime-changed .l-en{display:none}
+html[data-lang="zh"] .regime-changed .l-zh{display:inline}
+
+/* ===== standout ticker chips in stock splitbtn em ===== */
+.sb-tickers{display:inline;font-family:"SF Mono","Fira Code",Consolas,monospace;font-size:10.5px;opacity:.8;letter-spacing:.01em}
+
+/* ===== report teaser badge on reports card ===== */
+.rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
 </style>"""
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
@@ -1794,17 +1948,32 @@ def _g_legend(blob):
     return "".join(out)
 
 
-def _g_markets(blob, us_n, cn_n, hk_n):
+def _g_markets(blob, us_n, cn_n, hk_n,
+               rotation_strip: str = "",
+               regime_changed_ccs: "set[str] | None" = None,
+               standout_tickers: "dict[str, list[str]] | None" = None):
     by = {m["cc"]: m for m in blob}
+    _regime_changed = regime_changed_ccs or set()
+    _tickers = standout_tickers or {}
     # Each entry: (href, ic, ten, tzh, ten_s, tzh_s, sen, szh)
     # ten_s/tzh_s = short label shown on mobile; ten/tzh = full label shown on desktop
+    # Build stock em lines with optional standout ticker chips
+    def _stock_em(cc: str, en: str, zh: str) -> str:
+        t = _tickers.get(cc, [])
+        if t:
+            ticker_str = " · ".join(t)
+            chip = '<span class="sb-tickers"> · ' + ticker_str + '</span>'
+            return ('<span class="l-en">' + en + chip + '</span>'
+                    '<span class="l-zh">' + zh + chip + '</span>')
+        return _bi(en, zh)
+
     SUB = {
         "US": [("macro.html", "📊", "Macro Dashboard", "宏观看板", "Macro", "宏观", "Regime · cycle · drivers", "周期 · 阶段 · 驱动"),
-               ("us_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(us_n), "个股 · " + str(us_n), str(us_n) + " standout setups", str(us_n) + " 只精选个股")],
+               ("us_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(us_n), "个股 · " + str(us_n), _stock_em("US", str(us_n) + " standout setups", str(us_n) + " 只精选个股"), "")],
         "CN": [("china.html", "📊", "Macro Dashboard", "宏观看板", "Macro", "宏观", "A-share regime · cycle", "A股周期 · 阶段"),
-               ("china_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(cn_n), "个股 · " + str(cn_n), str(cn_n) + " setups · screener", str(cn_n) + " 形态 · 筛选")],
+               ("china_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(cn_n), "个股 · " + str(cn_n), _stock_em("CN", str(cn_n) + " setups · screener", str(cn_n) + " 形态 · 筛选"), "")],
         "HK": [("hk.html", "📊", "Macro Dashboard", "宏观看板", "Macro", "宏观", "Regime · risk overlay", "周期 · 风险叠加"),
-               ("hk_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(hk_n), "个股 · " + str(hk_n), str(hk_n) + " beta exposures", str(hk_n) + " 个 beta 敞口")],
+               ("hk_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks · " + str(hk_n), "个股 · " + str(hk_n), _stock_em("HK", str(hk_n) + " beta exposures", str(hk_n) + " 个 beta 敞口"), "")],
         "CA": [("canada.html", "📊", "Macro Dashboard", "宏观看板", "Macro", "宏观", "Regime · CAD overlay", "周期 · 加元叠加"),
                ("canada_stocks.html", "📈", "Stock Dashboard", "个股看板", "Stocks", "个股", "TSX names & sectors", "TSX 个股与板块")],
     }
@@ -1814,20 +1983,51 @@ def _g_markets(blob, us_n, cn_n, hk_n):
     for cc in ("US", "CN", "HK", "CA"):
         m = by[cc]
         btns = []
-        for href, ic, ten, tzh, ten_s, tzh_s, sen, szh in SUB[cc]:
+        for row in SUB[cc]:
+            href, ic, ten, tzh, ten_s, tzh_s, sen, szh = row
+            # sen/szh may already be fully-formed bilingual HTML (from _stock_em); detect by prefix
+            if str(sen).startswith('<span class="l-en">'):
+                em_html = str(sen)  # already bilingual HTML
+            else:
+                em_html = _bi(sen, szh)
             btns.append('<a class="splitbtn" href="' + href + '"><span class="sb-ic" aria-hidden="true">' + ic + '</span>'
-                        '<span class="sb-tx"><b><span class="sb-full">' + _bi(ten, tzh) + '</span><span class="sb-mini">' + _bi(ten_s, tzh_s) + '</span></b><em>' + _bi(sen, szh) + '</em></span>'
+                        '<span class="sb-tx"><b><span class="sb-full">' + _bi(ten, tzh) + '</span><span class="sb-mini">' + _bi(ten_s, tzh_s) + '</span></b><em>' + em_html + '</em></span>'
                         '<span class="sb-go" aria-hidden="true">→</span></a>')
+        # regime-change badge on card header
+        changed_badge = (
+            '<span class="regime-changed">'
+            '<span class="l-en">changed</span>'
+            '<span class="l-zh">已切换</span>'
+            '</span>'
+        ) if cc in _regime_changed else ""
         cards.append('<div class="glass acc card ' + cls[cc] + '">'
                      '<div class="card-top"><span class="ico" aria-hidden="true">' + m["flag"] + '</span>'
                      '<h3 class="card-h">' + _bi(*nm[cc]) + '</h3>'
-                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span></div>'
+                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span>'
+                     + changed_badge + '</div>'
                      '<div class="split">' + "".join(btns) + '</div></div>')
     return ('<div class="band"><h2>' + _bi("Markets", "市场") + '</h2><span class="ln"></span></div>'
-            '<div class="nav mk reveal">' + "".join(cards) + '</div>')
+            + rotation_strip
+            + '<div class="nav mk reveal">' + "".join(cards) + '</div>')
 
 
-def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist):
+def _latest_report_data() -> dict | None:
+    """Return the newest report entry from build_reports.REPORTS (by date).
+    Returns None on any parse failure so the caller degrades gracefully."""
+    try:
+        from scripts.build_reports import REPORTS  # type: ignore[import]
+        if not REPORTS:
+            return None
+        newest = max(REPORTS, key=lambda r: r["date"])
+        return {"date": newest["date"], "title_en": newest["title_en"],
+                "title_zh": newest["title_zh"],
+                "dek_en": newest["dek_en"], "dek_zh": newest["dek_zh"]}
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist,
+               latest_report: "dict | None" = None):
     risk_cls = "on" if vm["risk_on"] else "off"
     mom_cls = "neg" if (vm.get("momentum") is not None and vm["momentum"] < 0) else ""
     fav = ", ".join((commodities or {}).get("favored", []))
@@ -1853,17 +2053,38 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
     # zh users previously saw the English regime word ("Goldilocks") — translate it
     com = ('<div class="chips"><span class="pill ' + com_q + '">' + _bi(com_label, _GQUAD_ZH.get(com_label, com_label))
            + '</span>' + ('<span class="pill">' + _bi("Favored: " + fav, "偏好：" + fav) + '</span>' if fav else "") + '</div>')
-    fx = '<div class="chips"><span class="pill">' + _bi((forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else ""), (forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else "")) + '</span></div>'
+    _FX_LABEL_ZH = {
+        "US growth premium": "美元增长溢价",
+        "risk-on": "风险偏好",
+        "risk-off": "风险厌恶",
+        "neutral": "中性",
+    }
+    _fx_label = (forex or {}).get("label", "—")
+    _fx_label_zh = _FX_LABEL_ZH.get(_fx_label, _fx_label)
+    _fx_risk_zh = _FX_LABEL_ZH.get(fx_risk, fx_risk) if fx_risk else ""
+    fx = '<div class="chips"><span class="pill">' + _bi(
+        _fx_label + ((" · " + fx_risk) if fx_risk else ""),
+        _fx_label_zh + ((" · " + _fx_risk_zh) if _fx_risk_zh else ""),
+    ) + '</span></div>'
     term = '<div class="chips"><span class="pill on">' + _bi("Trading charts", "交易图表") + '</span><span class="pill">' + _bi("Live terminal", "实时终端") + '</span></div>'
     cyc = '<div class="chips"><span class="pill">' + _bi("Cycle clocks", "周期时钟") + '</span><span class="pill">' + _bi("Country regimes", "国家周期") + '</span></div>'
     sec_us = '<div class="chips"><span class="pill">' + _bi("US sectors", "美股行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
     sec_cn = '<div class="chips"><span class="pill">' + _bi("CN sectors", "中国行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
     rep = '<div class="chips"><span class="pill">' + _bi("Research library", "研究库") + '</span><span class="pill">' + _bi("Deep dives", "深度报告") + '</span></div>'
+    if latest_report:
+        _rdate = latest_report["date"]
+        # truncate dek to keep the card compact
+        _dek_en = latest_report["dek_en"][:72].rstrip() + ("…" if len(latest_report["dek_en"]) > 72 else "")
+        _dek_zh = latest_report["dek_zh"][:40].rstrip() + ("…" if len(latest_report["dek_zh"]) > 40 else "")
+        rep += ('<div class="rep-latest">'
+                + '<span class="l-en">Latest: ' + _rdate + ' · ' + _dek_en + '</span>'
+                + '<span class="l-zh">最新：' + _rdate + ' · ' + _dek_zh + '</span>'
+                + '</div>')
     cards = [
         card("term", "▣", "Terminal", "交易终端", "Terminal", "终端", term, "Trading charts & stock workspace", "交易图表与个股工作台", "https://app.mastermind-x.com", ' rel="noopener"'),
         card("cyc", "◷", "Cycle Intelligence", "周期智能", "Cycle Intel", "周期", cyc, "Country cycle dashboards", "国家周期看板", "cycle.html"),
         card("sec l-en", "▦", "US Sectors", "美股行业", "US Sectors", "美股行业", sec_us, "Sector Central rotation map", "行业轮动中心", "sector_central.html"),
-        card("sec l-zh", "▦", "CN Sectors", "CN Sectors", "CN Sectors", "中国行业", sec_cn, "Sector Central rotation map", "中国行业轮动中心", "sector_central_china.html"),
+        card("sec l-zh", "▦", "CN Sectors", "中国行业", "CN Sectors", "中国行业", sec_cn, "Sector Central rotation map", "中国行业轮动中心", "sector_central_china.html"),
         card("rep", "◇", "Research Reports", "研究报告", "Reports", "报告", rep, "Read the latest research desk", "阅读最新研究", "reports.html"),
         card("btc", "₿", "Bitcoin Vector", "比特币向量", "Bitcoin", "比特币", btc, "Risk, momentum & allocation", "风险、动量与配置", "vector.html"),
         card("bd", "🏛️", "Bonds & Bond Health", "债券与债券健康", "Bonds", "债券", bd, "Curve, credit & cycle clock", "曲线、信用与周期时钟", "bonds.html"),
@@ -1881,14 +2102,35 @@ def _g_alerts(alerts):
         def T(en, zh=""):
             return en
     n = len(alerts)
+    # 2c: visible-cut dedupe — collapse identical headline text, keep newest (by ts)
+    # before slicing so the top-5 never shows the same concept twice
+    seen_headlines: set = set()
+    deduped = []
+    for a in sorted(alerts, key=lambda x: x["ts"], reverse=True):
+        h = a["headline"]
+        if h not in seen_headlines:
+            seen_headlines.add(h)
+            deduped.append(a)
+    # cap at 12 (house-law render cap); the chip counts what is actually rendered
+    # (deduped + capped) so it can never over-report vs the rows below it
+    deduped = deduped[:12]
+    total = len(deduped)
+    shown = min(total, 5)
+    # 2a: chip text: "X of N signals" when N>shown, plain "N signals" otherwise
+    if total > shown:
+        chip_en = str(shown) + " of " + str(total) + " signals"
+        chip_zh = "显示 " + str(shown) + " / " + str(total) + " 条信号"
+    else:
+        chip_en = str(total) + " signals"
+        chip_zh = str(total) + " 条信号"
     head = ('<div class="band"><h2>' + _bi("What changed", "近期变化") + '</h2><span class="ln"></span>'
-            '<span class="cnt">' + _bi(str(n) + " signals", str(n) + " 条信号") + '</span></div>')
-    if not alerts:
+            '<span class="cnt">' + _bi(chip_en, chip_zh) + '</span></div>')
+    if not deduped:
         rows = '<div class="ha-empty">' + str(T("No major alerts right now.", "目前没有重大警报。")) + '</div>'
     else:
         now = pd.Timestamp.utcnow().tz_localize(None)
         out = []
-        for a in alerts[:5]:
+        for idx, a in enumerate(deduped):
             ts = pd.Timestamp(a["ts"])
             if ts.tzinfo is not None:
                 ts = ts.tz_localize(None)
@@ -1901,11 +2143,35 @@ def _g_alerts(alerts):
             head_t = str(T(a["headline"], a.get("headline_zh") or a["headline"]))
             detail = str(T(a["detail"], a.get("detail_zh") or a["detail"]))
             cta = str(T(a.get("cta", "Open →"), a.get("cta_zh") or a.get("cta", "Open →")))
+            # 2b: rows 6+ (idx>=5) go inside the hidden expander; wrap them after row 5
+            if idx == 5:
+                k = len(deduped) - 5
+                out.append(
+                    '<div class="ha-more-wrap" id="ha-more" style="display:none">'
+                )
             out.append('<details class="ha-item"><summary><span class="ha-dot d-' + dot + '"></span>'
                        '<span class="ha-src ' + src_cls + '">' + src + '</span>'
                        '<span class="ha-head">' + head_t + '</span>'
                        '<span class="ha-when">' + _bi(when, when_zh) + '</span></summary>'
                        '<div class="ha-detail">' + detail + ' <a href="' + a["link"] + '">' + cta + '</a></div></details>')
+        if len(deduped) > 5:
+            # close the hidden wrapper after the last extra row
+            out.append('</div>')
+            k = len(deduped) - 5
+            # toggle button to reveal/collapse the extra rows. Both label states are
+            # pre-rendered spans and CSS (.ha-toggle.open) picks the visible one, so the
+            # inline handler never builds markup strings (no quote-nesting hazards).
+            out.append(
+                "<button class=\"ha-toggle\" type=\"button\" aria-controls=\"ha-more\" aria-expanded=\"false\""
+                " onclick=\"var w=document.getElementById('ha-more');if(w){var o=w.style.display!=='none';"
+                "w.style.display=o?'none':'block';this.classList.toggle('open',!o);"
+                "this.setAttribute('aria-expanded',o?'false':'true');}\">"
+                '<span class="ha-t-more"><span class="l-en">Show ' + str(k) + ' more →</span>'
+                '<span class="l-zh">再显示 ' + str(k) + ' 条 →</span></span>'
+                '<span class="ha-t-less"><span class="l-en">Show less ↑</span>'
+                '<span class="l-zh">收起 ↑</span></span>'
+                '</button>'
+            )
         out.append('<a class="al-more" href="vector.html#timeline">' + _bi("View full timeline →", "查看完整时间线 →") + '</a>')
         rows = "".join(out)
     return head + '<section class="alerts reveal" id="alerts"><div class="glass al-card">' + rows + '</div></section>'
@@ -1934,8 +2200,23 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     hk_n = (hk_stocks or {}).get("n_setups") or 0
     legend = _g_legend(blob)
     globe_deck = _GLOBE_DECK_DOM.replace("__LEGEND__", legend)
-    markets = _g_markets(blob, us_n, cn_n, hk_n)
-    vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist)
+    # --- new hub sections ---
+    rot_chips = _rotation_strip_data()
+    rot_strip_html = _rotation_strip_html(rot_chips)
+    regime_ccs = _regime_change_ccs(alerts)
+    _tickers: dict[str, list[str]] = {}
+    for _mkt, _key in (("US", "us"), ("CN", "china"), ("HK", "hk")):
+        _t = _standout_tickers(_key)
+        if _t:
+            _tickers[_mkt] = _t
+    latest_rpt = _latest_report_data()
+    # --- end new hub sections ---
+    markets = _g_markets(blob, us_n, cn_n, hk_n,
+                         rotation_strip=rot_strip_html,
+                         regime_changed_ccs=regime_ccs,
+                         standout_tickers=_tickers)
+    vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist,
+                         latest_report=latest_rpt)
     alerts_html = _g_alerts(alerts)
     blob_json = json.dumps(blob, ensure_ascii=False)
 
@@ -1966,7 +2247,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
 
     head = (HUB_MARKER + "\n"
             '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">\n'
-            '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
             '<title>' + _seo_title + '</title>\n'
             + _seo +
             "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>\n"
@@ -1999,6 +2280,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '</svg></div></div>'
         '<div class="wrap">'
         '<div class="hub-top">'
+        '<button id="hub-signin" class="hub-signin" hidden type="button"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>'
         '<button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>'
         '<div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>'
         '</div>'
@@ -2007,8 +2289,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
               '实时 · <span class="hub-clock" data-loc="zh-CN">—</span>')
         + '</span><h1 class="hub-logo">' + _BRAND_MARK_SVG
         + '<span class="logo-word">MASTERMIND</span></h1>'
-        '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
-                    "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
+        '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, disciplined engine.",
+                    "覆盖各大类资产的市场周期仪表盘——一套机械化、有纪律的引擎。") + '</p></header>'
         + globe_deck
         + '<div class="hub-views" id="hub-views" data-view="mk">'
         + _HUB_SEG_HTML

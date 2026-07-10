@@ -688,7 +688,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 
 @media (max-width: 560px) {
   /* phone: rise from the bottom as a sheet instead of a corner dropdown */
-  .af { position: fixed; left: 50%; right: auto; top: auto; bottom: 0;
+  .af { position: fixed; left: 50%; right: auto; top: auto; bottom: env(safe-area-inset-bottom, 0);
     width: 100%; max-width: 540px; border-radius: 16px 16px 0 0;
     transform-origin: bottom center; transform: translate(-50%, 16px) scale(1); }
   .af.af-open { transform: translate(-50%, 0) scale(1); }
