@@ -1,0 +1,99 @@
+name: signal-foundry
+# Signal Foundry weekly cycle (SF-R5) — ships DARK by default.
+#
+# KILL SWITCH — SIGNAL_FOUNDRY_PAUSED repo variable (SF-R5):
+#   gh variable set SIGNAL_FOUNDRY_PAUSED --body true    # (re)arm the pause (default-safe)
+#   gh variable set SIGNAL_FOUNDRY_PAUSED --body false   # arm the loop (operator-only)
+# Absent OR anything other than the literal 'false' → brainstorm script degrades to pack-only.
+# The scheduled auto_loop gate in config/signal_foundry.yml must also be true.
+#
+# INERTNESS GUARANTEE:
+#   - Default-paused: brainstorm script degrades to pack-only (no LLM calls, no candidate filing).
+#   - Harness runner only runs registered specs — produces data/signal_foundry/results/* (display only).
+#   - Commits ONLY data/signal_foundry/ and data/trial_ledger.jsonl (SF-R10 write fence).
+#   - Never touches engine/, config/, scripts/, or site/ outputs.
+on:
+  schedule:
+    - cron: "0 10 * * 3"   # Wednesday 10:00 UTC weekly
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: signal-foundry
+  cancel-in-progress: false
+
+jobs:
+  weekly-cycle:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+          exit 0
+
+      - name: install deps
+        run: |
+          pip install --quiet pyyaml anthropic
+          exit 0
+
+      - name: brainstorm (LLM chain — degrades to pack-only if paused or no auth)
+        env:
+          SIGNAL_FOUNDRY_PAUSED: ${{ vars.SIGNAL_FOUNDRY_PAUSED }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set -uo pipefail
+          if python -m scripts.run_signal_foundry_brainstorm --trigger scheduled; then
+            echo "brainstorm step ok"
+          else
+            echo "brainstorm step exited non-zero (non-fatal)"
+          fi
+          exit 0
+
+      - name: harness batch (deterministic — runs registered specs within budget)
+        run: |
+          set -uo pipefail
+          if python -m scripts.run_signal_foundry_harness; then
+            echo "harness batch step ok"
+          else
+            echo "harness batch step exited non-zero (non-fatal)"
+          fi
+          exit 0
+
+      - name: narrow commit and push (signal_foundry + trial_ledger only)
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          git add data/signal_foundry data/trial_ledger.jsonl 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "no signal_foundry output changes to commit"
+            exit 0
+          fi
+
+          git commit -m "foundry: weekly cycle $(date -u +%F)"
+
+          # Retry-rebase push loop with --autostash (stranded-data law #1823)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash origin main && git push; then
+              echo "pushed foundry outputs on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "foundry push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          echo "could not push foundry outputs after 5 attempts (non-fatal)"
+          exit 0
