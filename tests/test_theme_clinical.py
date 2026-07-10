@@ -189,34 +189,41 @@ class TestLikeMonthYoY:
 
 
 # ---------------------------------------------------------------------------
-# Phase-migration computation
+# Phase-distribution computation (replaces the old confounded phase-migration)
 # ---------------------------------------------------------------------------
 
-class TestPhaseMigration:
+class TestPhaseDistribution:
+    """
+    Tests for _compute_phase_distribution.
 
-    def test_maturing_pipeline_read(self):
+    NOTE: The API returns only CURRENT phase — not phase at registration.
+    Cross-cohort delta (delta_pp) is always None (confounded by observation-lag
+    asymmetry; backfill studies carry phase-as-of-ingest not phase-at-registration).
+    The 'read' is based on trailing-12m window only (near-PIT for recent rows).
+    The old name _compute_phase_migration is an alias for backward compat.
+    """
+
+    def test_high_late_stage_read(self):
         """
-        Rising Phase-2+ share → 'maturing' read.
+        High Phase-2+ share in trailing 12m → 'high_late_stage' read.
 
-        Fixture: 24 contiguous months (2022-01 to 2023-12).
-        Prior window = months 1-12 (2022): 2 Phase-3 + 10 Phase-1 = 2/12 = 16.7% Phase-2+
-        Recent window = months 13-24 (2023): 9 Phase-3 + 3 Phase-1 = 9/12 = 75% Phase-2+
-        delta_pp = +58.3pp → 'maturing'
+        Fixture: 24 contiguous months.
+        Recent window (2023): 9/12 = 75% Phase-2+ → 'high_late_stage' (>= 40%).
+        delta_pp must always be None (confounded; not published).
         """
-        from engine.theme_clinical import _compute_phase_migration
+        from engine.theme_clinical import _compute_phase_distribution
 
-        # Build 24 contiguous months with rising Phase-3 share
+        # Build 24 contiguous months with high Phase-3 in recent window
         all_months = [f"2022-{m:02d}" for m in range(1, 13)] + [f"2023-{m:02d}" for m in range(1, 13)]
         rows = []
         nct = 1
         for i, ym in enumerate(all_months):
             if i < 12:
-                # Prior window (2022): 2 Phase-3 in months 1 and 2, rest Phase-1
-                for j in range(1):
-                    phase3 = (i < 2)
-                    rows.append(_make_row("m1", "t1", f"NCT_P{nct:04d}", ym,
-                                         phase1=not phase3, phase3=phase3))
-                    nct += 1
+                # Prior window (2022): 2 Phase-3, rest Phase-1
+                phase3 = (i < 2)
+                rows.append(_make_row("m1", "t1", f"NCT_P{nct:04d}", ym,
+                                     phase1=not phase3, phase3=phase3))
+                nct += 1
             else:
                 # Recent window (2023): 9 Phase-3 (months 1-9), 3 Phase-1 (months 10-12)
                 month_idx = i - 12
@@ -226,49 +233,62 @@ class TestPhaseMigration:
                 nct += 1
 
         df = _build_df(rows)
-        pm = _compute_phase_migration(df)
-        assert pm["read"] in ("maturing", "stable"), (
-            f"Expected 'maturing' or 'stable' with rising Phase-2+ share; got {pm['read']!r}"
+        pd_ = _compute_phase_distribution(df)
+        # Read must be from the correct vocabulary (recent-window only, not delta)
+        assert pd_["read"] in ("high_late_stage", "mixed", "early_stage"), (
+            f"read must be one of the valid vocab values; got {pd_['read']!r}"
         )
-        if pm["delta_pp"] is not None:
-            assert pm["delta_pp"] > 0, (
-                f"Expected positive delta_pp for maturing pipeline; got {pm['delta_pp']}"
-            )
+        # delta_pp must always be None (confounded; not published)
+        assert pd_["delta_pp"] is None, (
+            f"delta_pp must always be None (cross-cohort delta is confounded); "
+            f"got {pd_['delta_pp']}"
+        )
+        # phase_data_caveat must be present
+        assert pd_.get("phase_data_caveat"), "phase_data_caveat must be present"
+        # With 9/12 Phase-3 in recent window (75% >= 40%), expect high_late_stage
+        assert pd_["share_phase2plus_recent"] is not None
+        assert pd_["share_phase2plus_recent"] >= 0.40, (
+            f"Expected >= 40% Phase-2+ in recent window; got {pd_['share_phase2plus_recent']:.2%}"
+        )
+        assert pd_["read"] == "high_late_stage", (
+            f"Expected 'high_late_stage' for 75% Phase-2+ recent; got {pd_['read']!r}"
+        )
 
     def test_insufficient_data_returns_insufficient(self):
         """Fewer than 13 months → read='insufficient_data'."""
-        from engine.theme_clinical import _compute_phase_migration
+        from engine.theme_clinical import _compute_phase_distribution
 
         rows = [_make_row("m1", "t1", f"NCT{i:04d}", f"2025-0{i+1}") for i in range(5)]
         df = _build_df(rows)
-        pm = _compute_phase_migration(df)
-        assert pm["read"] == "insufficient_data", (
-            f"Expected 'insufficient_data' for < 13 months; got {pm['read']!r}"
+        pd_ = _compute_phase_distribution(df)
+        assert pd_["read"] == "insufficient_data", (
+            f"Expected 'insufficient_data' for < 13 months; got {pd_['read']!r}"
         )
 
     def test_empty_df_returns_null_dict(self):
         """Empty DataFrame → null result dict."""
-        from engine.theme_clinical import _compute_phase_migration
+        from engine.theme_clinical import _compute_phase_distribution
 
-        pm = _compute_phase_migration(pd.DataFrame())
-        assert pm["read"] == "insufficient_data"
-        assert pm["share_phase2plus_recent"] is None
+        pd_ = _compute_phase_distribution(pd.DataFrame())
+        assert pd_["read"] == "insufficient_data"
+        assert pd_["share_phase2plus_recent"] is None
+        assert pd_["delta_pp"] is None  # always None
 
-    def test_phase_migration_no_phase3_studies(self):
+    def test_phase_distribution_no_phase3_studies(self):
         """All Phase-1 pipeline → 0 Phase-3 count in trailing 12m."""
-        from engine.theme_clinical import _compute_phase_migration
+        from engine.theme_clinical import _compute_phase_distribution
 
         rows = [
             _make_row("m1", "t1", f"NCT{i:04d}", f"2023-{(i%12)+1:02d}", phase1=True, phase3=False)
             for i in range(24)
         ]
         df = _build_df(rows)
-        pm = _compute_phase_migration(df)
-        assert pm["n_phase3_recent"] == 0, "Expected 0 Phase-3 in all-Phase-1 pipeline"
+        pd_ = _compute_phase_distribution(df)
+        assert pd_["n_phase3_recent"] == 0, "Expected 0 Phase-3 in all-Phase-1 pipeline"
 
     def test_n_phase3_recent_count_correct(self):
         """n_phase3_recent must count Phase-3 studies in trailing 12 months."""
-        from engine.theme_clinical import _compute_phase_migration
+        from engine.theme_clinical import _compute_phase_distribution
 
         # 24 months: first 12 are all Phase-1, second 12 are all Phase-3
         prior_rows = [
@@ -281,12 +301,61 @@ class TestPhaseMigration:
             for i in range(12)
         ]
         df = _build_df(prior_rows + recent_rows)
-        pm = _compute_phase_migration(df)
+        pd_ = _compute_phase_distribution(df)
         # Recent window = 2023-01 to 2023-12 (the last 12 months)
-        assert pm["n_phase3_recent"] == 12, (
-            f"Expected 12 Phase-3 in recent 12m; got {pm['n_phase3_recent']}"
+        assert pd_["n_phase3_recent"] == 12, (
+            f"Expected 12 Phase-3 in recent 12m; got {pd_['n_phase3_recent']}"
         )
-        assert pm["n_total_prior"] >= 0
+        assert pd_["n_total_prior"] >= 0
+        # delta_pp must always be None regardless of data
+        assert pd_["delta_pp"] is None, (
+            "delta_pp must always be None (cross-cohort comparison is confounded)"
+        )
+
+    def test_alias_phase_migration_still_works(self):
+        """_compute_phase_migration is an alias for _compute_phase_distribution."""
+        from engine.theme_clinical import _compute_phase_migration, _compute_phase_distribution
+        assert _compute_phase_migration is _compute_phase_distribution, (
+            "_compute_phase_migration must be an alias for _compute_phase_distribution"
+        )
+
+    def test_read_vocabulary_is_valid(self):
+        """read must be one of the defined vocabulary values."""
+        from engine.theme_clinical import _compute_phase_distribution
+        valid_reads = {"high_late_stage", "mixed", "early_stage", "insufficient_data"}
+
+        # 24 months, early-stage only
+        rows = [
+            _make_row("m1", "t1", f"NCT{i:04d}", f"2022-{(i%12)+1:02d}",
+                      phase1=True, phase2=False, phase3=False)
+            for i in range(24)
+        ]
+        df = _build_df(rows)
+        pd_ = _compute_phase_distribution(df)
+        assert pd_["read"] in valid_reads, (
+            f"read {pd_['read']!r} not in valid vocab {valid_reads}"
+        )
+
+    def test_delta_pp_always_none(self):
+        """
+        delta_pp must be None regardless of data (cross-cohort phase delta is
+        confounded by observation-lag asymmetry; not published).
+        """
+        from engine.theme_clinical import _compute_phase_distribution
+
+        # 24 months with phase3 dominance in recent
+        rows = [
+            _make_row("m1", "t1", f"NCT{i:04d}", f"2022-{(i%12)+1:02d}", phase3=True)
+            for i in range(12)
+        ] + [
+            _make_row("m1", "t1", f"NCT{12+i:04d}", f"2023-{(i%12)+1:02d}", phase3=True)
+            for i in range(12)
+        ]
+        df = _build_df(rows)
+        pd_ = _compute_phase_distribution(df)
+        assert pd_["delta_pp"] is None, (
+            f"delta_pp must always be None; got {pd_['delta_pp']}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -427,6 +496,41 @@ class TestOutputSchema:
         assert "authority" in site
         assert site["authority"].get("is_context_only") is True
 
+    def test_site_projection_phase_fields_correct(self, monkeypatch, tmp_path):
+        """
+        Site projection must use phase_distribution_read (not the old phase_migration_read)
+        and must not publish phase_migration_delta_pp (confounded; renamed and suppressed).
+        """
+        from engine import theme_clinical as tc
+
+        site_out = tmp_path / "clinical_pipeline.json"
+        with (
+            mock.patch.object(tc, "_load_parquet", return_value=None),
+            mock.patch.object(tc, "_NW_OUT", tmp_path / "nw.json"),
+            mock.patch.object(tc, "_SITE_OUT", site_out),
+        ):
+            tc.compute_theme_clinical(write_nw=True, write_site=True)
+
+        with open(site_out) as fh:
+            site = json.load(fh)
+
+        # Check each modality in each theme
+        for theme_id, t in (site.get("themes") or {}).items():
+            for mid, m in (t.get("modalities") or {}).items():
+                # New field must be present
+                assert "phase_distribution_read" in m, (
+                    f"Modality {mid}: site projection must have 'phase_distribution_read' "
+                    f"(not 'phase_migration_read')"
+                )
+                # Old confounded key must NOT be present
+                assert "phase_migration_read" not in m, (
+                    f"Modality {mid}: site projection must not have 'phase_migration_read'"
+                )
+                assert "phase_migration_delta_pp" not in m, (
+                    f"Modality {mid}: site projection must not have 'phase_migration_delta_pp' "
+                    "(confounded; suppressed)"
+                )
+
     def test_schema_field_value(self, monkeypatch):
         """schema field must be 'theme_clinical.v1' (version-pinned)."""
         from engine import theme_clinical as tc
@@ -442,7 +546,7 @@ class TestOutputSchema:
         required = {
             "modality_id", "theme_id", "n_studies_total",
             "registration_yoy_pct", "registration_velocity_read",
-            "phase_migration", "n_phase3_trailing12m",
+            "phase_distribution", "n_phase3_trailing12m",
             "coverage_note", "coverage_note_zh", "expected_read",
         }
         for theme_id, t in result["themes"].items():
@@ -450,6 +554,42 @@ class TestOutputSchema:
                 missing = required - set(m.keys())
                 assert not missing, (
                     f"Modality {mid} in theme {theme_id} missing required fields: {missing}"
+                )
+
+    def test_modality_phase_distribution_delta_pp_none(self, monkeypatch):
+        """
+        phase_distribution.delta_pp must be None in all modality outputs
+        (cross-cohort phase delta is confounded; not published).
+        """
+        from engine import theme_clinical as tc
+        from collectors.clinicaltrials_themes import STORE_COLS
+
+        rows = []
+        for i in range(24):
+            rows.append({
+                "modality_id": "glp1_named_agents",
+                "theme_id": "glp1_obesity",
+                "nct_id": f"NCT{i:08d}",
+                "study_first_post_date": f"2022-{(i%12)+1:02d}-15",
+                "year_month": f"2022-{(i%12)+1:02d}",
+                "phases_raw": "PHASE3",
+                "phase1": False, "phase2": False, "phase3": True,
+                "enrollment_target": 100,
+                "sponsor_class": "INDUSTRY",
+                "ingest_date": "2026-07-09",
+                "vocabulary_version": "v1",
+            })
+        df = pd.DataFrame(rows, columns=STORE_COLS)
+
+        with mock.patch.object(tc, "_load_parquet", return_value=df):
+            result = tc.compute_theme_clinical(write_nw=False, write_site=False)
+
+        for theme_id, t in result["themes"].items():
+            for mid, m in (t.get("modalities") or {}).items():
+                pd_ = m.get("phase_distribution", {})
+                assert pd_.get("delta_pp") is None, (
+                    f"Modality {mid}: phase_distribution.delta_pp must be None "
+                    f"(confounded); got {pd_.get('delta_pp')}"
                 )
 
 
@@ -700,6 +840,39 @@ class TestCheckValidatedClaims:
         with mock.patch.object(tc, "_load_parquet", return_value=None):
             result = tc.compute_theme_clinical(write_nw=False, write_site=False)
         assert result.get("honesty_header"), "honesty_header must be present and non-empty"
+
+    def test_honesty_header_no_false_migration_claim(self, monkeypatch):
+        """
+        honesty_header must NOT claim 'phase-migration read' or 'maturing toward
+        monetization' — the API returns only current phase; cross-cohort phase delta
+        is confounded and must not be asserted as a maturation signal.
+        """
+        from engine import theme_clinical as tc
+        with mock.patch.object(tc, "_load_parquet", return_value=None):
+            result = tc.compute_theme_clinical(write_nw=False, write_site=False)
+        header = result.get("honesty_header", "").lower()
+        # These were the old false claims; must not be present
+        assert "maturing toward monetization" not in header, (
+            "honesty_header must not claim 'maturing toward monetization' "
+            "(phase data is non-PIT; cross-cohort delta is confounded)"
+        )
+
+    def test_api_note_no_false_incremental_claim(self, monkeypatch):
+        """
+        api_note must NOT claim 'incremental updates' or 'weekly no-op via state file'
+        — the collector does a FULL FETCH on every run; state file is monitoring-only.
+        """
+        from engine import theme_clinical as tc
+        with mock.patch.object(tc, "_load_parquet", return_value=None):
+            result = tc.compute_theme_clinical(write_nw=False, write_site=False)
+        api_note = result.get("api_note", "").lower()
+        assert "incremental updates" not in api_note, (
+            "api_note must not claim 'incremental updates' — collector does full fetch every run"
+        )
+        # Must acknowledge full fetch behavior
+        assert "full fetch" in api_note or "full" in api_note, (
+            "api_note must describe the actual full-fetch behavior"
+        )
 
 
 # ---------------------------------------------------------------------------

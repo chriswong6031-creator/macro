@@ -110,16 +110,22 @@ lanes:
         module: collectors.clinicaltrials_themes
         note: >
           TIL W10 (PR-W10) ClinicalTrials.gov theme-level pipeline density ingest.
-          Off the render critical path. Weekly cadence (runs nightly; idempotent
-          weekly no-op via state file). Fetches INDUSTRY-sponsored studies from
-          the v2 API (keyless — verified 2026-07-09) for 9 curated modalities
-          across 3 health-adjacent themes (glp1_obesity, diagnostics_lifesci,
-          medical_devices). INDUSTRY filter: AREA[LeadSponsorClass]INDUSTRY.
+          Off the render critical path. Runs nightly; FULL FETCH from 2018-01-01
+          on every run (no incremental mode — CT.gov v2 API exposes only current
+          study state; per-study update detection not feasible without full scan).
+          Deduplication by (modality_id, nct_id) keep-first prevents double-counting.
+          State file (ct_themes_state.json) records last-ingest date per modality
+          for monitoring only — does NOT gate fetch scope.
+          Fetches INDUSTRY-sponsored studies from the v2 API (keyless — verified
+          2026-07-09) for 9 curated modalities across 3 health-adjacent themes
+          (glp1_obesity, diagnostics_lifesci, medical_devices).
+          INDUSTRY filter: AREA[LeadSponsorClass]INDUSTRY.
           Per-modality isolation: one bad modality never voids the run.
           PIT law: keyed by studyFirstPostDate; ingest_date stored separately;
           vocabulary_version stamps query definition.
+          PHASE NOTE: API returns only current phase (non-PIT for backfill rows).
           Output: data/clinical_trials/modality_monthly.parquet (git-stored, small).
-          State: data/clinical_trials/ct_themes_state.json.
+          State: data/clinical_trials/ct_themes_state.json (monitoring only).
           Env override: CLINICAL_THEMES_STORE.
           Always exits 0 (tolerant).
       - id: build_theme_clinical
@@ -134,9 +140,11 @@ lanes:
             data/neuralweb/theme_clinical.json   (git-tracked; NW artifact)
             site/basketdata/clinical_pipeline.json (git-tracked; compact site)
           Outputs: registration velocity YoY, enrollment-commitment trend,
-          phase-migration read (Phase-2+ share delta = maturing/early_stage/stable).
-          FENCE: SEPARATE display leg — never fused into fused_obs_z.
-          Always exits 0 (tolerant; absent parquet → honest null written).
+          phase-distribution read (phase at ingest — near-PIT for trailing-12m
+          registrations; backfill prior-window phase is upper-biased toward late
+          phase; cross-cohort comparison is confounded and not published as
+          "migration" signal). FENCE: SEPARATE display leg — never fused into
+          fused_obs_z. Always exits 0 (tolerant; absent parquet → honest null).
       - id: build_discovery_confluence
         module: scripts.build_discovery_confluence
         note: >

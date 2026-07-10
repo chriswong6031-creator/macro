@@ -10,6 +10,25 @@
 # ~oncology-all-of-it are worthless for capital-commitment signal — a broad query
 # captures every oncology program regardless of mechanism, erasing the theme signal.
 #
+# LIVE HIT COUNT NOTE: live_hit_count_verified below was measured with the
+# INDUSTRY filter ONLY (AREA[LeadSponsorClass]INDUSTRY) — without the
+# studyFirstPostDate>=2018 filter the collector actually applies. The real
+# (date-filtered) counts are somewhat lower: e.g. glp1_named_agents 437 vs 692,
+# mRNA 360 vs 392, gene_editing_crispr 90 vs 94, obesity_device 120 vs 258.
+# All are well under the 2,000 precision cap. The INDUSTRY sponsor filter is
+# verified to work (692 INDUSTRY vs 1,026 all-sponsors for glp1_named_agents).
+# The counts here document query precision (not collector output volume).
+#
+# OVERALLSTATUS NOTE: The API is queried without an overallStatus filter;
+# WITHDRAWN and TERMINATED studies are counted in the denominator. For the
+# capital-commitment read, these are included as evidence of past investment.
+# The coverage_note in each modality output records the total INDUSTRY count.
+#
+# PHASE NOTE: API returns only current phase per study (no historical phase).
+# Phase columns in the parquet are phase-as-of-ingest. Near-PIT only for
+# trailing-12m registrations. Cross-cohort phase delta is confounded.
+# See engine/theme_clinical.py _compute_phase_distribution for full caveat.
+#
 # VERIFIED LIVE 2026-07-09:
 #   Endpoint: https://clinicaltrials.gov/api/v2/studies
 #   INDUSTRY filter: filter.advanced=AREA[LeadSponsorClass]INDUSTRY (verified)
@@ -168,12 +187,15 @@ modalities:
     query_type: query.intr
     query: "mRNA"
     rationale: >
-      mRNA therapeutic programs beyond COVID-19 vaccines — oncology mRNA,
-      rare disease mRNA, personalized cancer vaccines (Moderna, BioNTech
-      pipeline). Hit count 392 (INDUSTRY, 2026-07-09). Post-COVID mRNA pipeline
-      expansion is a major capital-commitment signal for the life-science tools
-      and diagnostics complex (lipid-nanoparticle manufacturing, sequence design
-      tools, cold-chain infrastructure).
-    expected_read: "rising registrations = post-COVID mRNA expansion"
+      mRNA programs (all indications) — includes COVID-19 and flu vaccines
+      (which dominate the query as of 2026) plus oncology mRNA, rare disease
+      mRNA, and personalized cancer vaccines (Moderna, BioNTech pipeline).
+      Query is a broad catch-all: COVID-19 and flu vaccines are a large
+      fraction of the INDUSTRY sample. Hit count 392 (INDUSTRY, 2026-07-09;
+      date-filtered count ~360). Rising registrations = capital commitment
+      to the mRNA platform, including but not limited to post-COVID expansion.
+      For platform-infrastructure read (lipid-nanoparticle manufacturing,
+      sequence design, cold-chain), total mRNA volume is the relevant signal.
+    expected_read: "rising registrations = mRNA platform capital commitment"
     live_hit_count_verified: 392
     verified_date: "2026-07-09"

@@ -1,6 +1,6 @@
 """collectors/clinicaltrials_themes.py — ClinicalTrials.gov theme-level pipeline density.
 
-TIL W10 (PR-W10). Keyless; weekly cadence; collect-lane step.
+TIL W10 (PR-W10). Keyless; nightly collect-lane step.
 
 WHAT THIS BUILDS (vs per-stock clinicaltrials.py):
   The existing collectors/clinicaltrials.py is per-TICKER (per-stock Phase-3 catalyst).
@@ -29,9 +29,28 @@ PIT LAW (W9):
   separately as ingest_date. No retroactive query-expansion without bumping
   vocabulary_version in clinical_modalities.yml.
 
+FETCH BEHAVIOR (actual, not aspirational):
+  Every run performs a FULL FETCH from _BACKFILL_START (2018-01-01) for all
+  modalities. There is no incremental mode — the ClinicalTrials.gov v2 API
+  returns only current study state; studies updated since last ingest cannot be
+  reliably identified without a per-study last-updated scan. Deduplication by
+  (modality_id, nct_id) keep-first prevents double-counting across runs.
+  The state file (ct_themes_state.json) records last-ingest date per modality
+  for monitoring purposes only — it does NOT gate fetches.
+  Cost: ~9 API calls per modality (depends on study count); ~4-5 min total.
+
+PHASE NOTE (non-PIT):
+  The API returns only CURRENT phase — there is no historical phase field.
+  Phase stored in the parquet is the phase as of the ingest date, not as of
+  the study's first-post date. Recent registrations (trailing 12 months) are
+  near-PIT because most studies don't migrate phase within months of registration.
+  Backfill studies (pre-2025) carry phase-as-of-2026-ingest — their phase may
+  have advanced since first registration (non-PIT, upper-biased toward late phase).
+  Engine consumers MUST respect this caveat. See engine/theme_clinical.py.
+
 OUTPUT:
   data/clinical_trials/modality_monthly.parquet (git-stored, small)
-  data/clinical_trials/ct_themes_state.json  (state file; last-ingest per modality)
+  data/clinical_trials/ct_themes_state.json  (state file; monitoring only)
 
 Per-modality isolation: one bad modality query never voids others.
 Tolerant: always exits 0; honest null written on complete failure.
@@ -281,9 +300,13 @@ def _fetch_modality(
     Returns:
       (rows: list[dict], total_api_count: int, error_msg: Optional[str])
 
-    Incremental mode: only fetches studies not already in the state
-    (compares by most-recent year_month in state).
-    Full backfill: fetches from _BACKFILL_START regardless of state.
+    Fetch behavior: always performs a FULL FETCH from _BACKFILL_START (2018-01-01)
+    regardless of backfill flag or state contents. The ClinicalTrials.gov v2 API
+    exposes only current study state; there is no reliable way to identify studies
+    updated since the last ingest without a per-study scan. Deduplication at the
+    merge step (keep-first by modality_id+nct_id) prevents double-counting.
+    The backfill and state params are retained for API stability and monitoring;
+    they do not control query scope.
 
     Per-modality isolation: catches all exceptions; returns empty rows + error.
     """

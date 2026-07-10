@@ -203,27 +203,48 @@ def _velocity_read(yoy_pct: Optional[float]) -> tuple[str, Optional[str]]:
 # Phase-migration read
 # ---------------------------------------------------------------------------
 
-def _compute_phase_migration(
+def _compute_phase_distribution(
     monthly_df: pd.DataFrame,
 ) -> dict:
     """
-    Phase-migration read: share of pipeline in Phase-2+ (Phase 2 or Phase 3)
-    vs one year ago.
+    Phase distribution of INDUSTRY-sponsored registrations by first-post cohort.
 
-    LIKE-MONTH LAW: compare trailing 12-month window vs prior 12-month window.
+    IMPORTANT — NON-PIT CAVEAT:
+    The ClinicalTrials.gov v2 API returns only the CURRENT phase for each study
+    (there is no historical phase field). Phase stored in the parquet is the phase
+    as of the ingest date, not as of the study's first-post date. Consequently:
+      - Trailing-12m window: near-PIT (most studies don't migrate phase within
+        months of registration; ingest ≈ registration for recent rows).
+      - Prior window (backfill, pre-2025): phase-as-of-2026-ingest — these studies
+        have had years to migrate to a later phase. Prior-window Phase-2+ share is
+        UPPER-BIASED relative to what it was at original registration.
+      - Cross-cohort delta (delta_pp) is CONFOUNDED by observation-lag asymmetry
+        and must NOT be interpreted as evidence of pipeline maturation. It is
+        published as None and must not drive any read or claim.
+
+    What this function returns is accurate and useful:
+      - share_phase2plus_recent: Phase-2+ share among trailing-12m registrations
+        (near-PIT) — a valid cross-sectional snapshot of recent registrations.
+      - n_phase3_recent: count of Phase-3 registrations in trailing 12m (near-PIT).
+    The prior-window counts are published for transparency, with explicit caveat.
+
+    LIKE-MONTH LAW: windows defined by trailing-12 vs prior-12 month buckets of
+    study_first_post_date (PIT registration date), not ingest date.
 
     Returns:
       {
-        share_phase2plus_recent: float (0-1) — share of studies in Phase 2+
-                                                in the trailing 12 months,
-        share_phase2plus_prior:  float (0-1) — same metric 12 months ago,
-        delta_pp: float — percentage-point change (positive = maturing pipeline),
+        share_phase2plus_recent: float (0-1) — Phase-2+ share, trailing 12m (near-PIT),
+        share_phase2plus_prior:  float (0-1) — Phase-2+ share, prior 12m (UPPER-BIASED;
+                                               do not compare to recent),
+        delta_pp: None — always None; cross-cohort comparison is confounded (see above),
         n_total_recent: int,
         n_phase2plus_recent: int,
         n_phase3_recent: int,
         n_total_prior: int,
         n_phase2plus_prior: int,
-        read: str — "maturing" | "early_stage" | "stable" | "insufficient_data",
+        read: str — "high_late_stage" | "mixed" | "early_stage" | "insufficient_data",
+               based on recent-window share_phase2plus_recent ONLY (not delta),
+        phase_data_caveat: str — machine-readable caveat for downstream consumers,
         coverage_note: str,
       }
 
@@ -238,7 +259,12 @@ def _compute_phase_migration(
         "n_total_prior": 0,
         "n_phase2plus_prior": 0,
         "read": "insufficient_data",
-        "coverage_note": "Insufficient data for phase-migration computation",
+        "phase_data_caveat": (
+            "phase_non_pit: API returns current phase only; backfill rows carry "
+            "phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); "
+            "cross-cohort delta is confounded and not published."
+        ),
+        "coverage_note": "Insufficient data for phase distribution computation",
     }
     if monthly_df is None or monthly_df.empty:
         return null_result
@@ -267,36 +293,52 @@ def _compute_phase_migration(
 
     share_recent = n_phase2plus_recent / n_total_recent
     share_prior = (n_phase2plus_prior / n_total_prior) if n_total_prior > 0 else None
-    delta_pp = (share_recent - share_prior) * 100.0 if share_prior is not None else None
 
-    # Phase-migration read
-    if delta_pp is None:
-        read = "insufficient_data"
-    elif delta_pp >= 3.0:
-        read = "maturing"    # pipeline advancing toward monetization
-    elif delta_pp <= -3.0:
-        read = "early_stage"  # more early-phase trials = pipeline rebuilding
+    # Read: based on recent-window ONLY (cross-cohort delta is confounded — see docstring).
+    # Thresholds on current registration mix:
+    #   >= 40% Phase-2+: high_late_stage (late-stage programs dominating new registrations)
+    #   >= 15% Phase-2+: mixed
+    #   < 15% Phase-2+: early_stage (predominantly early-phase new registrations)
+    if share_recent >= 0.40:
+        read = "high_late_stage"
+    elif share_recent >= 0.15:
+        read = "mixed"
     else:
-        read = "stable"
+        read = "early_stage"
+
+    caveat = (
+        "phase_non_pit: API returns current phase only; backfill rows carry "
+        "phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); "
+        "cross-cohort delta is confounded and not published; "
+        "read is based on trailing-12m recent-window only (near-PIT)."
+    )
 
     cov = (
-        f"{n_total_recent} studies in trailing 12m "
-        f"({n_phase2plus_recent} Phase-2+, {n_phase3_recent} Phase-3); "
-        f"{n_total_prior} studies in prior window"
+        f"{n_total_recent} INDUSTRY studies in trailing 12m "
+        f"({n_phase2plus_recent} Phase-2+, {n_phase3_recent} Phase-3; "
+        f"phase as of ingest, near-PIT for recent registrations); "
+        f"{n_total_prior} studies in prior window "
+        f"(phase upper-biased; cross-cohort delta not published)"
     )
 
     return {
         "share_phase2plus_recent": round(share_recent, 4),
         "share_phase2plus_prior": round(share_prior, 4) if share_prior is not None else None,
-        "delta_pp": round(delta_pp, 2) if delta_pp is not None else None,
+        "delta_pp": None,  # confounded; not published (see phase_data_caveat)
         "n_total_recent": n_total_recent,
         "n_phase2plus_recent": n_phase2plus_recent,
         "n_phase3_recent": n_phase3_recent,
         "n_total_prior": n_total_prior,
         "n_phase2plus_prior": n_phase2plus_prior,
         "read": read,
+        "phase_data_caveat": caveat,
         "coverage_note": cov,
     }
+
+
+# Keep the old name as an alias so callers using the old name still work during migration.
+# All new code must call _compute_phase_distribution directly.
+_compute_phase_migration = _compute_phase_distribution
 
 
 # ---------------------------------------------------------------------------
@@ -323,7 +365,7 @@ def _rollup_modality(
             "enrollment_yoy_pct": None,
             "enrollment_velocity_read": "neutral",
             "enrollment_magnitude_band": None,
-            "phase_migration": _compute_phase_migration(mod_df),
+            "phase_distribution": _compute_phase_distribution(mod_df),
             "n_phase3_trailing12m": 0,
             "coverage_note": "No data — run collectors/clinicaltrials_themes.py",
             "coverage_note_zh": "暂无数据——请运行临床试验主题采集器。",
@@ -352,8 +394,9 @@ def _rollup_modality(
     reg_read, reg_band = _velocity_read(reg_yoy)
     enroll_read, enroll_band = _velocity_read(enroll_yoy)
 
-    # Phase migration (row-level, not monthly aggregated)
-    pm = _compute_phase_migration(mod_df)
+    # Phase distribution (row-level, not monthly aggregated)
+    # NOTE: phase is non-PIT for backfill rows — see _compute_phase_distribution docstring.
+    pm = _compute_phase_distribution(mod_df)
 
     # n_phase3 in trailing 12 months
     if year_month_max:
@@ -385,7 +428,7 @@ def _rollup_modality(
         "enrollment_yoy_pct": round(enroll_yoy, 2) if enroll_yoy is not None else None,
         "enrollment_velocity_read": enroll_read,
         "enrollment_magnitude_band": enroll_band,
-        "phase_migration": pm,
+        "phase_distribution": pm,
         "n_phase3_trailing12m": n_phase3_t12,
         "coverage_note": cov_en,
         "coverage_note_zh": cov_zh,
@@ -419,7 +462,7 @@ def _rollup_theme(
                 "enrollment_yoy_pct": None,
                 "enrollment_velocity_read": "neutral",
                 "enrollment_magnitude_band": None,
-                "phase_migration": _compute_phase_migration(pd.DataFrame()),
+                "phase_distribution": _compute_phase_distribution(pd.DataFrame()),
                 "n_phase3_trailing12m": 0,
                 "coverage_note": (
                     "No data — run collectors/clinicaltrials_themes.py to populate. "
@@ -542,8 +585,15 @@ def compute_theme_clinical(
             "Display/context only. Not a scored factor. Not a buy/sell signal. "
             "Like-month YoY law: all YoY comparisons use same calendar-month windows "
             "(trailing 12m vs prior 12m) — seasonal registration patterns cancel. "
-            "Phase-migration read: rising share of Phase-2+ = pipeline maturing toward "
-            "monetization (12-24mo leading capital-commitment indicator). "
+            "Phase distribution: the API returns only CURRENT phase per study — there is "
+            "no historical phase field. Phase stored in the parquet is phase as of the "
+            "ingest date. For trailing-12m registrations, ingest-phase is near-PIT (studies "
+            "rarely migrate phase within months of registration). For backfill studies "
+            "(pre-2025), phase may have advanced since first registration — prior-window "
+            "Phase-2+ shares are upper-biased. Cross-cohort phase delta (prior vs recent) "
+            "is confounded by observation-lag asymmetry and is NOT published. "
+            "Phase distribution read (high_late_stage/mixed/early_stage) is based on "
+            "trailing-12m registrations only (near-PIT). "
             "No composite across themes — each theme is independent. "
             "INDUSTRY filter: AREA[LeadSponsorClass]INDUSTRY (verified 2026-07-09)."
         ),
@@ -559,7 +609,9 @@ def compute_theme_clinical(
             "Keyless (no API key required — verified 2026-07-09). "
             "INDUSTRY filter: filter.advanced=AREA[LeadSponsorClass]INDUSTRY. "
             "Backfill from 2018-01-01 (AREA[StudyFirstPostDate]RANGE[2018-01-01,MAX]). "
-            "Weekly cadence; incremental updates. "
+            "Full fetch every run — no incremental mode (API returns only current state; "
+            "state file records last-ingest date for monitoring only). "
+            "Phase: API returns current phase only (non-PIT for backfill rows). "
             "vocabulary_version stamps query definition for PIT-safe history."
         ),
         "themes": themes_out,
@@ -608,8 +660,9 @@ def _build_site_projection(nw: dict) -> dict:
                 "enrollment_yoy_pct": m.get("enrollment_yoy_pct"),
                 "enrollment_velocity_read": m.get("enrollment_velocity_read"),
                 "n_phase3_trailing12m": m.get("n_phase3_trailing12m"),
-                "phase_migration_read": m.get("phase_migration", {}).get("read"),
-                "phase_migration_delta_pp": m.get("phase_migration", {}).get("delta_pp"),
+                "phase_distribution_read": m.get("phase_distribution", {}).get("read"),
+                "phase_distribution_share_phase2plus_recent": m.get("phase_distribution", {}).get("share_phase2plus_recent"),
+                "phase_data_caveat": m.get("phase_distribution", {}).get("phase_data_caveat"),
                 "coverage_note": m.get("coverage_note"),
                 "coverage_note_zh": m.get("coverage_note_zh"),
                 "expected_read": m.get("expected_read"),
