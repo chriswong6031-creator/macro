@@ -250,7 +250,6 @@ def main() -> int:
     # run in history.  If we only write on failure the file persists stale=true in the
     # committed tree forever after the first bad nightly, permanently misleading W3.
     import json as _json
-    from datetime import datetime, timezone
     from lib import config as _cfg
     _fdir = _cfg.ROOT / "site" / "allocationdata"
     _fdir.mkdir(parents=True, exist_ok=True)
