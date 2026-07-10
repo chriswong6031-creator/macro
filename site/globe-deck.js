@@ -24,6 +24,43 @@
   var motionOK = !window.matchMedia || !matchMedia("(prefers-reduced-motion: reduce)").matches;
   var isDark = function () { return document.documentElement.getAttribute("data-theme") !== "light"; };
 
+  // ---- visibility & quality state ------------------------------------------
+  var inView = true;             // set by IntersectionObserver; keeps frame loop cheap when off-screen
+  var _loopRender = false;       // true only while frame() renders — island skip-frames apply in-loop only
+  var _skipSizeRender = false;   // governor tier changes: frame() renders next, skip size()'s repaint
+  var lastScrollT = -1e4;        // timestamp of last scroll event (performance.now())
+  window.addEventListener("scroll", function () { lastScrollT = performance.now(); }, { passive: true });
+
+  // Quality tier: 2=high dpr≤2, 1=mid dpr≤1.5, 0=low dpr≤1.15
+  var Q = 2, _dtBuf = new Float32Array(48), _dtIdx = 0, _dtFull = false, _lastTierT = 0;
+  function _pushDt(dt) {
+    _dtBuf[_dtIdx] = dt > 100 ? 100 : dt;
+    _dtIdx = (_dtIdx + 1) % 48;
+    if (_dtIdx === 0) _dtFull = true;
+    if ((_dtFull ? _dtIdx === 0 : _dtIdx === 47)) {   // every 48 frames
+      var n = _dtFull ? 48 : _dtIdx, sum = 0;
+      for (var _i = 0; _i < n; _i++) sum += _dtBuf[_i];
+      var avg = sum / (n || 1);
+      var now = performance.now();
+      // _skipSizeRender: frame() renders right after this, so size()'s own repaint is redundant
+      if (avg > 22 && Q > 0) { Q--; _lastTierT = now; _skipSizeRender = true; size(); _skipSizeRender = false; }
+      else if (avg < 13 && Q < 2 && (now - _lastTierT) > 60000) { Q++; _lastTierT = now; _skipSizeRender = true; size(); _skipSizeRender = false; }
+      // update instrumentation avg
+      if (window.__gdPerf) window.__gdPerf.avg = Math.round(avg * 10) / 10;
+    }
+  }
+  // GLOW_K: scale factor for the half-res glow canvas (recomputed in size())
+  var GLOW_K = 0.5;
+  var glowCv = document.createElement("canvas");
+  var glowCtx = glowCv.getContext("2d");
+  var glowPath = null;   // assigned in size() after projection is ready
+
+  // palette version — bumped in readPalette(); gradient caches key on it
+  var palVersion = 0;
+  // memoized rgba(): bounded by small PAL set; cleared in readPalette()
+  var _rgbaCache = {};
+  function _clearRgbaCache() { _rgbaCache = {}; }
+
   // ---- geometry ------------------------------------------------------------
   var land = null, graticule = d3.geoGraticule10(), sphere = { type: "Sphere" };
   var paint = [];   // {cc, feature, centroid, m}  covered countries + EZ bloc
@@ -50,7 +87,12 @@
     if (hk) posMap[hk.m.cc] = hk.lonlat;
     DATA.forEach(function (m) {
       (m.agrees_with || []).forEach(function (cc) {
-        if (m.cc < cc && posMap[m.cc] && posMap[cc]) arcs.push({ a: posMap[m.cc], b: posMap[cc], q: m.quad });
+        if (m.cc < cc && posMap[m.cc] && posMap[cc]) {
+          var interp = d3.geoInterpolate(posMap[m.cc], posMap[cc]);
+          var pts27 = [];
+          for (var _s = 0; _s <= 26; _s++) pts27.push(interp(_s / 26));
+          arcs.push({ a: posMap[m.cc], b: posMap[cc], q: m.quad, interp: interp, pts: pts27 });
+        }
       });
     });
     ready = true;
@@ -67,15 +109,23 @@
      "--text", "--bg", "--up", "--down", "--muted", "--warn", "--orange"].forEach(function (n) {
       PAL[n] = norm(cssv(n) || "#888");
     });
+    palVersion++;
+    _clearRgbaCache();
   }
-  // rgba helper: blend a hex/rgb color toward another by alpha
+  // rgba helper: blend a hex/rgb color toward alpha — memoized (cache cleared in readPalette)
   function rgba(hex, a) {
+    var key = hex + "|" + (a * 64 | 0);
+    if (_rgbaCache[key]) return _rgbaCache[key];
     var c = norm(hex); // ensures rgb()/hex
+    var result;
     if (c[0] === "#") {
       var r = parseInt(c.slice(1, 3), 16), g = parseInt(c.slice(3, 5), 16), b = parseInt(c.slice(5, 7), 16);
-      return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+      result = "rgba(" + r + "," + g + "," + b + "," + a + ")";
+    } else {
+      result = c.replace(/rgb\(([^)]+)\)/, "rgba($1," + a + ")");
     }
-    return c.replace(/rgb\(([^)]+)\)/, "rgba($1," + a + ")");
+    _rgbaCache[key] = result;
+    return result;
   }
   function qcolor(q) { return PAL["--" + q] || PAL["--q1"]; }
   function toRGB(c) { c = norm(c); if (c[0] === "#") return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)]; var m = c.match(/(\d+\.?\d*)/g); return [+m[0], +m[1], +m[2]]; }
@@ -88,15 +138,30 @@
   var rot = [98, -38];      // [lambda, phi] — start centered on North America (98W, 38N)
   var fitScale = 240, scale = 240, W = 0, H = 0, R = 0, dpr = 1, lastClipR = -1;
 
+  // cached radial gradients (avoid per-frame createRadialGradient allocations)
+  // keyed on Math.round(scale*2) + '|' + dark + '|' + W + '|' + H + '|' + palVersion
+  var _atmoKey = null, _atmoGrad = null;
+  var _oceanKey = null, _oceanGrad = null;
+  // cached night terminator polygon (recompute only when minute changes)
+  var _nightMin = -1, _nightPoly = null;
+
   function size() {
     // collapse the canvas first so the grid cell can shrink to its true width,
     // THEN measure (otherwise a stale inline px width pins the layout wide on resize)
     canvas.style.width = "0px"; canvas.style.height = "0px";
     var rect = stage.getBoundingClientRect();
     W = Math.max(200, Math.floor(rect.width)); H = Math.max(240, Math.floor(rect.height));
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    // Q-governed dpr: tier 2=full, 1=mid, 0=low
+    dpr = Math.min(Q === 2 ? 2 : Q === 1 ? 1.5 : 1.15, window.devicePixelRatio || 1);
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + "px"; canvas.style.height = H + "px";
+    // half-res glow canvas (dominant shadowBlur cost lives here)
+    GLOW_K = Q >= 1 ? 0.5 : 0.35;
+    glowCv.width = Math.max(1, Math.round(W * GLOW_K));
+    glowCv.height = Math.max(1, Math.round(H * GLOW_K));
+    glowCtx.setTransform(GLOW_K, 0, 0, GLOW_K, 0, 0);
+    // glowPath needs the projection (already set above via apply() chain); assign after apply()
+
     // soft top/bottom fade so the globe dissolves into the page near the subtitle (above) and the
     // next-bell strip (below) — when zoomed in it fades out gracefully instead of a hard clip line
     var fade = "linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%)";
@@ -107,7 +172,11 @@
                                  // so it's never cut off by the canvas edge — bigger hero globe
     fitScale = R; scale = scale === 240 ? R : Math.min(R * 1.35, Math.max(R * 0.8, scale));
     apply();
-    if (ready) render(performance.now());   // repaint + reposition islands on resize even when paused
+    // assign glowPath now that projection is configured
+    glowPath = d3.geoPath(projection, glowCtx);
+    // invalidate gradient caches after resize (W/H/scale changed)
+    _atmoKey = null; _oceanKey = null;
+    if (ready && !_skipSizeRender) render(performance.now());   // repaint + reposition islands on resize even when paused
   }
   function apply() { projection.rotate([rot[0], rot[1], 0]).scale(scale).translate([W / 2, H / 2]); clipHit(); }
   // Limit the canvas's TOUCH/click region to the visible globe disc (+ glow), centered.
@@ -198,6 +267,7 @@
   }
   function drawCityLights(t, ss) {
     if (!cities.length) return;
+    if (Q === 0) return;   // skip entirely at lowest quality tier
     var mob = W < 560;
     var warm = PAL["--warn"], hot = PAL["--orange"], core = lerpColor(warm, "#ffffff", 0.55);
     var spread = scale * (mob ? 0.011 : 0.014);       // cluster radius in px (tracks zoom)
@@ -221,18 +291,22 @@
         halo.addColorStop(1, rgba(warm, 0));
         ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(xy[0], xy[1], hr, 0, 6.283); ctx.fill();
       }
-      var pts = C.pts, nn = mob ? Math.min(pts.length, 4) : pts.length;
+      var pts = C.pts, nn = mob ? Math.min(pts.length, 4) : (Q < 2 ? Math.min(pts.length, 6) : pts.length);
       for (var j = 0; j < nn; j++) {
         var p = pts[j];
         var tw = motionOK ? (p.b + p.a * Math.sin(t * p.f + p.ph)) : (p.b + p.a * 0.35);
         if (tw <= 0) continue;
         var a = vis * tw * p.i; if (a <= 0.008) continue; if (a > 0.66) a = 0.66;   // ceiling: additive "lighter" pile-ups saturate gracefully instead of clipping to white
         var col = p.tone === 0 ? core : (p.tone === 1 ? warm : hot);
-        if (p.glow && !mob) { ctx.shadowColor = rgba(col, 0.85 * vis); ctx.shadowBlur = cr * 1.2; }
+        if (p.glow && !mob) {
+          // soft bloom via a second arc (cheaper than shadowBlur over a large radius)
+          ctx.beginPath();
+          ctx.arc(xy[0] + p.ox * cr, xy[1] + p.oy * cr, baseDot * p.rr * 2.2, 0, 6.283);
+          ctx.fillStyle = rgba(col, a * 0.25); ctx.fill();
+        }
         ctx.beginPath();
         ctx.arc(xy[0] + p.ox * cr, xy[1] + p.oy * cr, baseDot * p.rr, 0, 6.283);
         ctx.fillStyle = rgba(col, a); ctx.fill();
-        if (p.glow && !mob) ctx.shadowBlur = 0;
       }
     }
     ctx.restore();
@@ -271,19 +345,27 @@
       ctx.globalAlpha = 1;
     }
 
-    // atmosphere rim-glow (outside the disc)
-    var atmo = ctx.createRadialGradient(cx, cy, scale * 0.92, cx, cy, scale * 1.13);
-    atmo.addColorStop(0, rgba(PAL["--info"], 0));
-    atmo.addColorStop(0.55, rgba(PAL["--info"], dark ? 0.22 : 0.12));
-    atmo.addColorStop(1, rgba(PAL["--info"], 0));
-    ctx.fillStyle = atmo;
+    // atmosphere rim-glow (outside the disc) — cached gradient
+    var _ak = Math.round(scale * 2) + "|" + dark + "|" + W + "|" + H + "|" + palVersion;
+    if (_ak !== _atmoKey) {
+      _atmoKey = _ak;
+      _atmoGrad = ctx.createRadialGradient(cx, cy, scale * 0.92, cx, cy, scale * 1.13);
+      _atmoGrad.addColorStop(0, rgba(PAL["--info"], 0));
+      _atmoGrad.addColorStop(0.55, rgba(PAL["--info"], dark ? 0.22 : 0.12));
+      _atmoGrad.addColorStop(1, rgba(PAL["--info"], 0));
+    }
+    ctx.fillStyle = _atmoGrad;
     ctx.beginPath(); ctx.arc(cx, cy, scale * 1.13, 0, 6.283); ctx.fill();
 
-    // ocean sphere
-    var oc = ctx.createRadialGradient(cx - scale * 0.3, cy - scale * 0.3, scale * 0.2, cx, cy, scale);
-    oc.addColorStop(0, dark ? rgba(PAL["--panel2"], 1) : rgba(PAL["--panel2"], 1));
-    oc.addColorStop(1, dark ? rgba(PAL["--bg"], 1) : rgba(PAL["--line"], 0.6));
-    ctx.beginPath(); path(sphere); ctx.fillStyle = oc; ctx.fill();
+    // ocean sphere — cached gradient
+    var _ok = Math.round(scale * 2) + "|" + dark + "|" + W + "|" + H + "|" + palVersion;
+    if (_ok !== _oceanKey) {
+      _oceanKey = _ok;
+      _oceanGrad = ctx.createRadialGradient(cx - scale * 0.3, cy - scale * 0.3, scale * 0.2, cx, cy, scale);
+      _oceanGrad.addColorStop(0, dark ? rgba(PAL["--panel2"], 1) : rgba(PAL["--panel2"], 1));
+      _oceanGrad.addColorStop(1, dark ? rgba(PAL["--bg"], 1) : rgba(PAL["--line"], 0.6));
+    }
+    ctx.beginPath(); path(sphere); ctx.fillStyle = _oceanGrad; ctx.fill();
 
     // graticule
     ctx.beginPath(); path(graticule); ctx.strokeStyle = rgba(PAL["--line"], dark ? 0.45 : 0.6); ctx.lineWidth = 0.5; ctx.stroke();
@@ -292,41 +374,80 @@
     ctx.beginPath(); path(land); ctx.fillStyle = rgba(PAL["--muted"], dark ? 0.16 : 0.13); ctx.fill();
     ctx.strokeStyle = rgba(PAL["--line"], dark ? 0.5 : 0.55); ctx.lineWidth = 0.4; ctx.stroke();
 
-    // covered country fills (breathing glow)
+    // covered country fills — two-pass: glow into half-res canvas, then composite + crisp cap
     var anyHover = hovered || selected;
-    for (var k = 0; k < paint.length; k++) {
-      var p = paint[k], q = qcolor(p.m.quad);
-      if (sweep && sweep.old[p.cc] && posMap[p.cc]) {       // west->east recolor wipe
-        var ln = (posMap[p.cc][0] + 180) / 360;
-        var lp = Math.max(0, Math.min(1, ((t - sweep.t0) / sweep.dur - ln * 0.7) / 0.4));
-        q = lerpColor(sweep.old[p.cc], qcolor(p.m.quad), lp);
+    // scratch array for pass 2 (avoids re-computing in crisp pass)
+    var _scratch = [];
+    // Pass 1: compute per-country params, draw glow into glowCv
+    if (glowPath) {
+      glowCtx.clearRect(0, 0, W, H);   // clear in CSS-px coords (transform scales it down)
+      for (var k = 0; k < paint.length; k++) {
+        var p = paint[k], q = qcolor(p.m.quad);
+        if (sweep && sweep.old[p.cc] && posMap[p.cc]) {
+          var ln = (posMap[p.cc][0] + 180) / 360;
+          var lp = Math.max(0, Math.min(1, ((t - sweep.t0) / sweep.dur - ln * 0.7) / 0.4));
+          q = lerpColor(sweep.old[p.cc], qcolor(p.m.quad), lp);
+        }
+        var conf = p.m.confidence == null ? 0.4 : p.m.confidence;
+        var amp = 0.16 + 0.34 * conf;
+        var per = 4200 + 1800 * (1 - conf);
+        var breath = motionOK ? (0.5 + 0.5 * Math.sin(t * 2 * Math.PI / per + hashPhase(p.cc))) : 0.5;
+        var focus = (anyHover && (hovered === p.cc || selected === p.cc));
+        var dim = (anyHover && !focus) ? 0.45 : 1;
+        var glow = (focus ? 26 : 14) + amp * 22 * breath;
+        _scratch.push({ p: p, q: q, breath: breath, focus: focus, dim: dim, glow: glow });
+        // draw glow fill into half-res canvas
+        glowCtx.save();
+        glowCtx.shadowColor = rgba(q, (focus ? 0.95 : 0.65) * dim);
+        glowCtx.shadowBlur = glow * GLOW_K;   // shadow blur is in device px — scale manually
+        glowCtx.beginPath(); glowPath(p.feature);
+        glowCtx.fillStyle = rgba(q, (0.30 + 0.26 * (focus ? 1 : breath)) * dim);
+        glowCtx.fill();
+        glowCtx.restore();
       }
-      var conf = p.m.confidence == null ? 0.4 : p.m.confidence;
-      var amp = 0.16 + 0.34 * conf;
-      var per = 4200 + 1800 * (1 - conf);
-      var breath = motionOK ? (0.5 + 0.5 * Math.sin(t * 2 * Math.PI / per + hashPhase(p.cc))) : 0.5;
-      var focus = (anyHover && (hovered === p.cc || selected === p.cc));
-      var dim = (anyHover && !focus) ? 0.45 : 1;
-      var glow = (focus ? 26 : 14) + amp * 22 * breath;
-      // glow
-      ctx.save();
-      ctx.shadowColor = rgba(q, (focus ? 0.95 : 0.65) * dim);
-      ctx.shadowBlur = glow;
-      ctx.beginPath(); path(p.feature);
-      ctx.fillStyle = rgba(q, (0.30 + 0.26 * (focus ? 1 : breath)) * dim);
+      // composite the glow layer onto the main canvas (upscale from half-res)
+      ctx.drawImage(glowCv, 0, 0, glowCv.width, glowCv.height, 0, 0, W, H);
+    } else {
+      // glowPath not yet ready (first frame before size() finishes): fall back to old inline glow
+      for (var k2 = 0; k2 < paint.length; k2++) {
+        var p2 = paint[k2], q2 = qcolor(p2.m.quad);
+        if (sweep && sweep.old[p2.cc] && posMap[p2.cc]) {
+          var ln2 = (posMap[p2.cc][0] + 180) / 360;
+          var lp2 = Math.max(0, Math.min(1, ((t - sweep.t0) / sweep.dur - ln2 * 0.7) / 0.4));
+          q2 = lerpColor(sweep.old[p2.cc], qcolor(p2.m.quad), lp2);
+        }
+        var conf2 = p2.m.confidence == null ? 0.4 : p2.m.confidence;
+        var amp2 = 0.16 + 0.34 * conf2;
+        var per2 = 4200 + 1800 * (1 - conf2);
+        var breath2 = motionOK ? (0.5 + 0.5 * Math.sin(t * 2 * Math.PI / per2 + hashPhase(p2.cc))) : 0.5;
+        var focus2 = (anyHover && (hovered === p2.cc || selected === p2.cc));
+        var dim2 = (anyHover && !focus2) ? 0.45 : 1;
+        var glow2 = (focus2 ? 26 : 14) + amp2 * 22 * breath2;
+        _scratch.push({ p: p2, q: q2, breath: breath2, focus: focus2, dim: dim2, glow: glow2 });
+        ctx.save();
+        ctx.shadowColor = rgba(q2, (focus2 ? 0.95 : 0.65) * dim2);
+        ctx.shadowBlur = glow2;
+        ctx.beginPath(); path(p2.feature);
+        ctx.fillStyle = rgba(q2, (0.30 + 0.26 * (focus2 ? 1 : breath2)) * dim2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    // Pass 2: crisp cap fill + stroke (on main canvas, no shadow)
+    for (var ki = 0; ki < _scratch.length; ki++) {
+      var sc = _scratch[ki];
+      ctx.beginPath(); path(sc.p.feature);
+      ctx.fillStyle = rgba(sc.q, (0.22 + (sc.focus ? 0.18 : 0.10)) * sc.dim);
       ctx.fill();
-      ctx.restore();
-      // crisp cap + stroke (steady, no shimmer)
-      ctx.beginPath(); path(p.feature);
-      ctx.fillStyle = rgba(q, (0.22 + (focus ? 0.18 : 0.10)) * dim);
-      ctx.fill();
-      ctx.strokeStyle = rgba(q, (focus ? 1 : 0.8) * dim); ctx.lineWidth = focus ? 1.4 : 1; ctx.stroke();
+      ctx.strokeStyle = rgba(sc.q, (sc.focus ? 1 : 0.8) * sc.dim);
+      ctx.lineWidth = sc.focus ? 1.4 : 1; ctx.stroke();
     }
 
-    // terminator (night dim, never black)
+    // terminator (night dim, never black) — polygon cached per minute
     var ss = subsolar();
-    var night = d3.geoCircle().radius(90).center([ss[0] + 180, -ss[1]])();
-    ctx.beginPath(); path(night);
+    var _nowMin = Math.floor(Date.now() / 60000);
+    if (_nowMin !== _nightMin) { _nightMin = _nowMin; _nightPoly = d3.geoCircle().radius(90).center([ss[0] + 180, -ss[1]])(); }
+    ctx.beginPath(); path(_nightPoly);
     ctx.fillStyle = rgba(PAL["--bg"], dark ? 0.34 : 0.16); ctx.fill();
 
     // city lights — clustered, twinkling metro glow on the night side (dark theme only)
@@ -335,18 +456,27 @@
     // shipping lanes + ships riding the ocean surface
     drawSeaRoutes(t, dark);
 
-    // confluence arcs (same-regime agreements)
+    // confluence arcs (same-regime agreements) — cached pts, no shadow wrapper on stroke
     for (var ai = 0; ai < arcs.length; ai++) {
-      var arc = arcs[ai], aq = qcolor(arc.q), interp = d3.geoInterpolate(arc.a, arc.b), pts = [];
-      for (var s = 0; s <= 26; s++) pts.push(interp(s / 26));
-      ctx.save();
-      ctx.shadowColor = rgba(aq, 0.6); ctx.shadowBlur = 4;
-      ctx.beginPath(); path({ type: "LineString", coordinates: pts });
-      ctx.strokeStyle = rgba(aq, dark ? 0.42 : 0.48); ctx.lineWidth = 1.2; ctx.setLineDash([1, 5]); ctx.stroke(); ctx.setLineDash([]);
-      ctx.restore();
+      var arc = arcs[ai], aq = qcolor(arc.q);
+      // single dashed stroke, alpha +0.06 (shadow dropped for perf)
+      ctx.beginPath(); path({ type: "LineString", coordinates: arc.pts });
+      ctx.strokeStyle = rgba(aq, (dark ? 0.48 : 0.54)); ctx.lineWidth = 1.2; ctx.setLineDash([1, 5]); ctx.stroke(); ctx.setLineDash([]);
       if (motionOK) {
-        var fr = (t / 3000 + ai * 0.17) % 1, fp = interp(fr);
-        if (onFront(fp)) { var pxy = projection(fp); if (pxy) { ctx.save(); ctx.shadowColor = rgba(aq, 0.9); ctx.shadowBlur = 6; ctx.beginPath(); ctx.arc(pxy[0], pxy[1], 2, 0, 6.283); ctx.fillStyle = rgba(aq, 1); ctx.fill(); ctx.restore(); } }
+        var fr = (t / 3000 + ai * 0.17) % 1, fp = arc.interp(fr);
+        if (onFront(fp)) {
+          var pxy = projection(fp);
+          if (pxy) {
+            if (Q === 2) {
+              ctx.save(); ctx.shadowColor = rgba(aq, 0.9); ctx.shadowBlur = 6;
+              ctx.beginPath(); ctx.arc(pxy[0], pxy[1], 2, 0, 6.283); ctx.fillStyle = rgba(aq, 1); ctx.fill();
+              ctx.restore();
+            } else {
+              // plain fill for moving dot at Q<2
+              ctx.beginPath(); ctx.arc(pxy[0], pxy[1], 2, 0, 6.283); ctx.fillStyle = rgba(aq, 1); ctx.fill();
+            }
+          }
+        }
       }
     }
 
@@ -362,6 +492,8 @@
     // floating data-islands (DOM overlay): positioned, occluded + leader-drawn here,
     // replacing the old static canvas flag labels AND the market-clock sidebar
     positionIslands();
+    // instrumentation
+    if (window.__gdPerf) { window.__gdPerf.frames++; window.__gdPerf.scale = scale; window.__gdPerf.rot0 = rot[0]; }
   }
 
   function visible(lonlat) {
@@ -513,7 +645,7 @@
     ctx.lineTo(-sz - wl, -sz * 0.60); ctx.lineTo(-sz * 0.9, -sz * 0.30); ctx.closePath(); ctx.fill();
     // hull — near-white in BOTH themes (in light mode --text is dark → a heavy blob), with a
     // thin slate outline so the pale hull still reads crisply on a light ocean; glow only in dark
-    ctx.shadowColor = rgba(glow, 0.85); ctx.shadowBlur = dark ? 7 : 0;
+    ctx.shadowColor = rgba(glow, 0.85); ctx.shadowBlur = (dark && Q === 2) ? 7 : 0;
     shipPath(sz); ctx.fillStyle = dark ? rgba(PAL["--text"], 0.94) : "rgba(252,253,255,0.97)"; ctx.fill(); ctx.shadowBlur = 0;
     if (!dark) { shipPath(sz); ctx.strokeStyle = rgba(PAL["--muted"], 0.62); ctx.lineWidth = Math.max(0.5, sz * 0.1); ctx.stroke(); }
     // deckhouse + bow running light
@@ -557,8 +689,8 @@
         var sa = projection(smp.ahead), ea = sa ? elev(sa, cx, cy, alt) : null;
         var ang = ea ? Math.atan2(ea[1] - e2[1], ea[0] - e2[0]) : 0, fr = frontness(smp.p);
         drawPlaneShadow(s[0], s[1], ang, sz, fr, alt);
-        // altitude stem: a faint line from the water shadow up to the aircraft — reads as height
-        if (alt > 0.012) {
+        // altitude stem: a faint line from the water shadow up to the aircraft — reads as height (skipped at Q===0)
+        if (Q > 0 && alt > 0.012) {
           ctx.save();
           ctx.strokeStyle = rgba(air, 0.28 * fr); ctx.lineWidth = 1; ctx.setLineDash([1, 2.5]);
           ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke();
@@ -576,8 +708,8 @@
   }
   function drawPlane(x, y, ang, sz, glow, fr, t, ph, pts, u, MAXALT, cx, cy, dark) {
     // contrail — a few elevated points trailing behind, fading out. Wrapped in its own
-    // save/restore (self-contained, no state leak) and skipped on mobile to save per-frame trig.
-    var segs = W < 560 ? 0 : 5, trail = dark ? PAL["--text"] : PAL["--muted"];   // softer trail in light mode
+    // save/restore (self-contained, no state leak) and skipped on mobile and Q<2 to save per-frame trig.
+    var segs = (W < 560 || Q < 2) ? 0 : 5, trail = dark ? PAL["--text"] : PAL["--muted"];   // softer trail in light mode
     if (segs) {
       ctx.save();
       var prev = null;
@@ -598,7 +730,7 @@
     // thin slate outline keeps the pale fuselage crisp on the bright sky, and the warm glow is dropped
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
     ctx.globalAlpha = Math.max(0.35, fr);
-    ctx.shadowColor = rgba(glow, 0.95); ctx.shadowBlur = dark ? 9 : 0;
+    ctx.shadowColor = rgba(glow, 0.95); ctx.shadowBlur = (dark && Q === 2) ? 9 : 0;
     planePath(sz); ctx.fillStyle = dark ? rgba(PAL["--text"], 0.97) : "rgba(252,253,255,0.98)"; ctx.fill(); ctx.shadowBlur = 0;
     if (!dark) { planePath(sz); ctx.strokeStyle = rgba(PAL["--muted"], 0.62); ctx.lineWidth = Math.max(0.5, sz * 0.08); ctx.stroke(); }
     ctx.fillStyle = rgba(glow, 0.95); ctx.beginPath(); ctx.arc(sz * 0.55, 0, sz * 0.14, 0, 6.283); ctx.fill();
@@ -648,7 +780,7 @@
       var O = list[r], def = O.def, pts = O.pts, n = pts.length, ph = r * 1.9, alt = def.alt * altK;
       var breath = motionOK ? (0.62 + 0.38 * Math.sin(t / 3000 + ph)) : 0.85;
       // faint dotted orbit ring (per-dot occlusion: near side always; far side only outside the disc)
-      var iStep = mob ? 2 : 1;
+      var iStep = mob ? 2 : (Q === 0 ? 2 : 1);
       for (var i = 0; i < n; i += iStep) {
         var ll = pts[i], sp = projection(ll); if (!sp) continue;
         var ex = cx + (sp[0] - cx) * (1 + alt), ey = cy + (sp[1] - cy) * (1 + alt);
@@ -691,7 +823,7 @@
     // strut + body (bright, glowing)
     ctx.strokeStyle = rgba(col, 0.65); ctx.lineWidth = Math.max(0.6, sz * 0.11);
     ctx.beginPath(); ctx.moveTo(0, -sz * 0.7); ctx.lineTo(0, sz * 0.7); ctx.stroke();
-    ctx.shadowColor = rgba(col, 0.95 * tw); ctx.shadowBlur = 7;
+    ctx.shadowColor = rgba(col, 0.95 * tw); ctx.shadowBlur = Q === 2 ? 7 : 0;
     ctx.fillStyle = rgba(col, 0.97); ctx.beginPath(); ctx.arc(0, 0, sz * 0.44, 0, 6.283); ctx.fill();
     ctx.restore();
   }
@@ -709,9 +841,19 @@
     ctx.textAlign = "start";
   }
 
+  // ---- visibility gating via IntersectionObserver --------------------------
   // ---- frame loop ----------------------------------------------------------
   var raf = null;
+  var _lastFrameT = 0;
   function frame(t) {
+    raf = null;
+    if (!inView) { _lastFrameT = 0; return; }   // visibility gating: self-stop when off-screen
+    // scroll pause: frozen globe during scroll (imperceptible, kills scroll jank).
+    // _lastFrameT resets so the pause gap never lands in the governor's dt window.
+    if (t - lastScrollT < 120) { _lastFrameT = 0; raf = requestAnimationFrame(frame); return; }
+    // quality governor: push dt sample every frame
+    if (_lastFrameT > 0) _pushDt(t - _lastFrameT);
+    _lastFrameT = t;
     if (sweep && t - sweep.t0 > sweep.dur + 500) sweep = null;
     var tgt = (hovering && !dragging) ? 0.5 : 1; spd += (tgt - spd) * 0.05;   // fade slowdown / fade speedup on hover
     if (flying) {
@@ -729,10 +871,27 @@
     } else if (motionOK && !selected && (t - lastInteract) > 1500) {
       rot[0] += 0.12 * spd; apply();   // idle auto-rotate, eased to half-speed while hovered
     }
-    render(t);
+    _loopRender = true; render(t); _loopRender = false;
     raf = requestAnimationFrame(frame);
   }
   function clampLat(p) { return Math.max(-78, Math.min(78, p)); }
+  // instrumentation tier field kept in sync (set after frame ends)
+  function _syncPerfTier() { if (window.__gdPerf) window.__gdPerf.tier = Q; }
+
+  // IntersectionObserver: stop the loop when the stage is off-screen, re-arm on entry
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          inView = true;
+          if (motionOK && ready && !raf) raf = requestAnimationFrame(frame);
+        } else {
+          inView = false;
+          // raf loop self-stops because frame() returns early when !inView
+        }
+      });
+    }, { threshold: 0, rootMargin: "80px" }).observe(stage);
+  }
 
   // ---- interaction ---------------------------------------------------------
   var px = 0, py = 0, moved = 0, lastMoveT = 0;
@@ -766,6 +925,9 @@
   });
   canvas.addEventListener("pointerleave", function () { if (!dragging) { hovered = null; hideTip(); } });
   canvas.addEventListener("wheel", function (e) {
+    // plain wheel / trackpad scroll → let the page scroll (no preventDefault)
+    // ctrl+wheel or meta+wheel (incl. trackpad pinch which arrives as ctrlKey) → zoom the globe
+    if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault(); lastInteract = performance.now();
     scale = Math.max(fitScale * 0.8, Math.min(fitScale * 1.3, scale * (e.deltaY < 0 ? 1.08 : 0.93))); apply();
   }, { passive: false });
@@ -871,9 +1033,13 @@
   function hideTip() { if (selected) return; tip.hidden = true; }
   function fmt(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(2); }
   // ---- sidebar market clock ------------------------------------------------
+  // formatter cache: constructing Intl.DateTimeFormat 9x/second is a jank spike
+  var _fmtCache = {};
   function localParts(tz) {
-    var f = new Intl.DateTimeFormat("en-GB", { timeZone: tz, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false });
-    var o = {}; f.formatToParts(new Date()).forEach(function (p) { o[p.type] = p.value; });
+    if (!_fmtCache[tz]) {
+      _fmtCache[tz] = new Intl.DateTimeFormat("en-GB", { timeZone: tz, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+    }
+    var o = {}; _fmtCache[tz].formatToParts(new Date()).forEach(function (p) { o[p.type] = p.value; });
     return { wd: o.weekday, min: (parseInt(o.hour, 10) % 24) * 60 + parseInt(o.minute, 10) };
   }
   function hm(s) { var a = s.split(":"); return parseInt(a[0], 10) * 60 + parseInt(a[1], 10); }
@@ -938,8 +1104,11 @@
         '<em class="isl-chg nb-chg ' + (up ? "up" : "down") + '" data-sym="' + (m.index_sym || "") + '">' + (up ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em>' +
         '<span class="isl-px nb-px" data-sym="' + (m.index_sym || "") + '" data-mkt="idx">' + (m.index_price || "—") + '</span>' +
         '</button>';
-      el.querySelector(".body").addEventListener("click", function (ev) { ev.stopPropagation(); toggleSelect(m); });
+      var bodyEl = el.querySelector(".body");
+      el._gdBody = bodyEl;   // cache body element — no per-frame querySelector
+      bodyEl.addEventListener("click", function (ev) { ev.stopPropagation(); toggleSelect(m); });
       islFront.appendChild(el); islEls[m.cc] = el; rowEls[m.cc] = el; islFrontState[m.cc] = true;
+      el._gdPtrEvt = "auto";   // track last pointerEvents value to skip identical sets
     });
     // (Asia cluster chip retired — overlapping pebbles now fan out as leader-line
     //  "balloons" in positionIslands() so every market stays individually readable)
@@ -952,47 +1121,75 @@
     clusterEl.addEventListener("click", function (e) { e.stopPropagation(); exploded = !exploded; });
     islFront.appendChild(clusterEl);
   }
+  // island position skip-frame state (recompute every 2nd frame unless dragging/flying)
+  var _islFrame = 0, _islLabCache = [];
+
+  // per-element last-written CSS custom property strings (skip identical writes)
+  function _setprop(el, prop, val) {
+    var key = "_gd" + prop;
+    if (el[key] !== val) { el[key] = val; el.style.setProperty(prop, val); }
+  }
+
   function positionIslands() {
     if (!islFront) return;
     var cx = W / 2, cy = H / 2, mob = W < 560;
     var off = mob ? 16 : 26;                          // how far the balloon floats off its dot
     var hw = mob ? 52 : 76, hh = 14, gapY = mob ? 8 : 10;  // body half-size + min vertical gap
     var padX = mob ? 14 : 12, topPad = 40;           // viewport clamp insets (extra margin on mobile)
+    _islFrame++;
+    // full recompute every 2nd loop frame, or always when moving — and always on DIRECT
+    // render() calls (resize/recolor outside the loop, e.g. reduced-motion), where a
+    // skipped frame would leave pebble DOM transforms stale with no next frame to fix them
+    var doFull = !_loopRender || !(_islFrame & 1) || dragging || flying;
+    if (!doFull && _islLabCache.length) {
+      // skipped frame: just redraw leader lines from the cache
+      for (var ci = 0; ci < _islLabCache.length; ci++) {
+        var cp = _islLabCache[ci];
+        ctx.beginPath(); ctx.moveTo(cp.ax, cp.ay); ctx.lineTo(cp.bx, cp.by);
+        ctx.strokeStyle = rgba(cp.q, 0.62); ctx.lineWidth = 1; ctx.stroke();
+      }
+      return;
+    }
     var lab = [];
     DATA.forEach(function (m) {
       var el = islEls[m.cc], ll = posMap[m.cc]; if (!el || !ll) return;
       var xy = projection(ll); if (!xy) return;
       var f = frontness(ll);
       var dx = xy[0] - cx, dy = xy[1] - cy, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
-      el.style.setProperty("--x", xy[0].toFixed(1));
-      el.style.setProperty("--y", xy[1].toFixed(1));
-      el.style.setProperty("--f", f.toFixed(3));
+      // quantize to 0.5px and skip identical setProperty calls
+      _setprop(el, "--x", (Math.round(xy[0] * 2) / 2).toFixed(1));
+      _setprop(el, "--y", (Math.round(xy[1] * 2) / 2).toFixed(1));
+      _setprop(el, "--f", f.toFixed(3));
       // hysteresis reparent across the limb so the opaque globe clips back-side pebbles
       var isF = islFrontState[m.cc];
       if (isF && f < 0.42) { islFrontState[m.cc] = false; islBack.appendChild(el); }
       else if (!isF && f > 0.58) { islFrontState[m.cc] = true; islFront.appendChild(el); }
-      el.querySelector(".body").style.pointerEvents = f > 0.5 ? "auto" : "none";
+      // set pointerEvents only when it flips (use cached body ref)
+      var pev = f > 0.5 ? "auto" : "none";
+      if (el._gdPtrEvt !== pev) { el._gdPtrEvt = pev; if (el._gdBody) el._gdBody.style.pointerEvents = pev; }
       if (f > 0.5) {
         // front pebble: start the balloon a bit out along its radial, then declutter below
         lab.push({ el: el, m: m, ax: xy[0], ay: xy[1], bx: xy[0] + ux * off, by: xy[1] + uy * off });
       } else {
         // fading/back: just sit a touch off the dot, no leader, no declutter
-        el.style.setProperty("--ox", (ux * off).toFixed(1));
-        el.style.setProperty("--oy", (uy * off).toFixed(1));
+        _setprop(el, "--ox", (Math.round(ux * off * 2) / 2).toFixed(1));
+        _setprop(el, "--oy", (Math.round(uy * off * 2) / 2).toFixed(1));
       }
     });
     // fan overlapping balloons apart (mostly vertical → a readable column on strings)
     declutter(lab, hw * 2 * 0.72, hh * 2 + gapY);
     // commit positions (clamped to the viewport) + draw the leader "strings"
+    _islLabCache = [];
     for (var i = 0; i < lab.length; i++) {
       var p = lab[i];
       if (p.bx < hw + padX) p.bx = hw + padX; else if (p.bx > W - hw - padX) p.bx = W - hw - padX;
       if (p.by < topPad) p.by = topPad; else if (p.by > H - hh - padX) p.by = H - hh - padX;
-      p.el.style.setProperty("--ox", (p.bx - p.ax).toFixed(1));
-      p.el.style.setProperty("--oy", (p.by - p.ay).toFixed(1));
+      _setprop(p.el, "--ox", (Math.round((p.bx - p.ax) * 2) / 2).toFixed(1));
+      _setprop(p.el, "--oy", (Math.round((p.by - p.ay) * 2) / 2).toFixed(1));
       var q = qcolor(p.m.quad);
-      ctx.save(); ctx.beginPath(); ctx.moveTo(p.ax, p.ay); ctx.lineTo(p.bx, p.by);
-      ctx.strokeStyle = rgba(q, 0.5); ctx.lineWidth = 1; ctx.shadowColor = rgba(q, 0.55); ctx.shadowBlur = 3; ctx.stroke(); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(p.ax, p.ay); ctx.lineTo(p.bx, p.by);
+      ctx.strokeStyle = rgba(q, 0.62); ctx.lineWidth = 1; ctx.stroke();
+      _islLabCache.push({ ax: p.ax, ay: p.ay, bx: p.bx, by: p.by, q: q });
     }
   }
   // greedy relaxation: separate overlapping label bodies, pushing mostly vertically so
@@ -1016,12 +1213,14 @@
     }
   }
   function updateClocks() {
+    if (!inView) return;   // skip clock DOM updates when off-screen
     DATA.forEach(function (m) {
       var el = islEls[m.cc]; if (!el) return;
       var st = clockState(m);
       var pre = (st.open && st.next <= 15) || (!st.open && !st.lunch && st.next <= 15);
-      el.querySelector(".isl-sem").className = "isl-sem " + (st.open ? (pre ? "pre" : "open") : st.lunch ? "lunch" : pre ? "pre" : "closed");
-      var arcEl = el.querySelector(".arc");
+      var semEl = el._gdBody ? el._gdBody.querySelector(".isl-sem") : el.querySelector(".isl-sem");
+      if (semEl) semEl.className = "isl-sem " + (st.open ? (pre ? "pre" : "open") : st.lunch ? "lunch" : pre ? "pre" : "closed");
+      var arcEl = el._gdArc || (el._gdArc = el.querySelector(".arc"));
       if (arcEl) { var shown = st.open || st.lunch; arcEl.style.strokeDasharray = RINGC.toFixed(2); arcEl.style.strokeDashoffset = (RINGC * (1 - (shown ? st.arc : 0))).toFixed(2); arcEl.style.stroke = pre ? "var(--warn)" : "var(--qc)"; arcEl.style.opacity = shown ? "1" : "0"; }
       el.classList.toggle("sel", selected === m.cc);
     });
@@ -1058,6 +1257,8 @@
 
   // ---- boot ----------------------------------------------------------------
   function boot(topo) {
+    // init instrumentation object once (mutated each frame)
+    window.__gdPerf = { tier: Q, frames: 0, scale: scale, avg: 0, rot0: rot[0] };
     buildGeometry(topo); buildRoutes(); readPalette(); buildStars(); buildCities(); buildIslands(); size();
     // The islands are built lazily (after a topo fetch + idle callback), so live.js's
     // first poll already ran against an empty DOM — nudge it to patch the fresh
