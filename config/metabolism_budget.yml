@@ -1,0 +1,50 @@
+# config/metabolism_budget.yml — Metabolism budget governor config (A7).
+#
+# IMMUTABLE: this file is an operator-ratified policy document.
+# Loop-authored PRs may NOT modify it.  Changes require a T2 operator-tap.
+#
+# Per R-AUT-2 and §6 of the masterplan:
+#   "set the per-cycle token/USD cap in metabolism_budget.yml (IMMUTABLE) —
+#    the loop physically cannot exceed it."
+#
+# Schema: metabolism_budget.v1
+schema: metabolism_budget.v1
+generated_at: "2026-07-09"
+owner_program: metabolism-phase-a
+
+# ── Per-cycle hard caps ───────────────────────────────────────────────────────
+
+# Hard USD cap per cycle.  When cumulative spend >= this value, all remaining
+# stages emit a clean journaled no-op and exit 0.
+per_cycle_usd_cap: 25
+
+# Hard token cap per cycle.  Set conservatively: 1M output tokens ≈ $15 at
+# Opus pricing; 25M is a hard ceiling that is well above any normal cycle.
+per_cycle_token_cap: 25000000
+
+# Maximum number of proposals a single PROPOSE run may emit.
+max_docket_size: 5
+
+# ── Per-lobe caps (inherit per_cycle unless overridden) ──────────────────────
+
+lobe_caps:
+  til:
+    per_cycle_usd_cap: 25
+    per_cycle_token_cap: 25000000
+    max_docket_size: 5
+    # Per-lobe circuit breaker: after this many consecutive failed PRs for the
+    # lobe, auto-set a per-lobe pause flag.
+    breaker_trip: 3
+
+# ── Circuit breaker config ───────────────────────────────────────────────────
+
+# Number of consecutive failed PRs for a lobe before auto-pausing that lobe.
+# Mirrors healthcheck.py's breaker_trip pattern.
+circuit_breaker_trip: 3
+
+# ── Budget tracking artifact ─────────────────────────────────────────────────
+
+# The budget ledger is tracked at data/metabolism/budget_ledger.json.
+# It is append-only (decremented per stage); a full-cycle reset happens at
+# cycle start.  Over-cap → clean no-op + journal entry.
+budget_ledger_path: data/metabolism/budget_ledger.json

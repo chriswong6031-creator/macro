@@ -73,10 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 334, (
-        f"Expected 334 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 339, (
+        f"Expected 339 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (Metabolism Phase 0 F3 added capability-manifest, capability-audit = 332->334;"
+        " (Metabolism Phase A added metabolism-journal, metabolism-til-fitness,"
+        " metabolism-verify, metabolism-budget-ledger, metabolism-digest = 334->339;"
+        " Metabolism Phase 0 F3 added capability-manifest, capability-audit = 332->334;"
         " TIL W11 added theme-options-witness, site-options-witness — pin healed to actual 332 at merge;"
         " (TSU U2 added stock-mtf-upturn = 329->330;"
         " (TIL W10 added neuralweb-theme-clinical, site-clinical-pipeline = 327->329"
