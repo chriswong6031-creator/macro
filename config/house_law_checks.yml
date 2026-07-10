@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-08"
+updated: "2026-07-09"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1272,3 +1272,110 @@ checks:
         at the latest rather than night 3.
     owner_program: neural-web
     notes: null
+
+  # ── Metabolism Phase 0 guards ──────────────────────────────────────────────
+
+  - law_id: metabolism.grader_immutability
+    summary: >
+      The fitness-producing grader files (grade_thematic, foresight_leadlag,
+      theme_placebo, qledger_falsifier, sample_qledger_placebo) are registered
+      in config/grader_manifest.yml with SHA-256 hashes.  Any hash drift —
+      whether from a loop PR or a human PR — is a hard CI failure.  This is the
+      highest-leverage fence in the Metabolism: it prevents the loop from
+      rewriting its own fitness scoreboard (R-AUT-7).
+    source_ref:
+      - scripts/check_grader_manifest.py
+      - config/grader_manifest.yml
+      - research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md
+    severity: hard
+    check_script: scripts/check_grader_manifest.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: grader-manifest
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Covers only the five declared grader files; threshold constants
+        embedded in YAML configs are not yet hashed (Phase A hardening).
+      - Does not verify the quarantine replay-corpus delta — that is a T2
+        operator-tap step run manually when a grader hash legitimately changes.
+    owner_program: metabolism-phase0
+    notes: >
+      Quarantine path: any intentional grader change requires running
+      'python3 scripts/check_grader_manifest.py --regen', comparing the
+      fitness delta vs the frozen replay corpus, and obtaining an operator
+      T2 ratification in the PR body before the manifest update merges.
+
+  - law_id: metabolism.self_mod_fence
+    summary: >
+      Loop-authored PRs (branch prefix metabolism/* or claude/loop-*, OR a
+      'Loop-Authored:' commit trailer) may NEVER touch the IMMUTABLE set:
+      .claude/hooks/**, .github/workflows/**, config/grader_manifest.yml,
+      config/capability_manifest.yml, config/metabolism_budget.yml,
+      engine/neuralweb/capability_broker.py, check_self_mod_fence.py,
+      check_grader_manifest.py, settings.json, and the masterplan tier table.
+      Fail-closed: unclassifiable input → blocked (R-AUT-5).
+    source_ref:
+      - scripts/check_self_mod_fence.py
+      - research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md
+    severity: hard
+    check_script: scripts/check_self_mod_fence.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: self-mod-fence
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Attribution is by branch prefix and commit trailers, not by GitHub
+        actor identity — the loop and operator share the same OAuth identity.
+        A loop stage that uses a non-reserved branch name and omits the trailer
+        would bypass this fence; the branch-protection rule for metabolism/*
+        (F4, Phase A) adds a second layer.
+      - Does not scan PR body or issue comments for trailer-equivalent text.
+    owner_program: metabolism-phase0
+    notes: >
+      Human/operator PRs (no loop namespace, no Loop-Authored: trailer) pass
+      freely even when touching immutable paths — this fence targets the loop
+      specifically.  A human PR that intentionally changes a grader must also
+      update config/grader_manifest.yml (grader-manifest job catches drift).
+
+  - law_id: metabolism.capability_redline
+    summary: >
+      Secret VALUES must NEVER land in a tracked git artifact.  The capability
+      manifest (config/capability_manifest.yml) and broker
+      (engine/neuralweb/capability_broker.py) are scanned for high-entropy
+      strings (40-char hex, 20+ base64) and value-capture patterns (secrets.*
+      references, os.environ[...] assignments to tracked literals).  Any finding
+      is a hard CI failure.  This is the single unforgivable defect in the
+      Metabolism (§3 of masterplan / THE REDLINE).
+    source_ref:
+      - scripts/check_capability_redline.py
+      - engine/neuralweb/capability_broker.py
+      - config/capability_manifest.yml
+      - research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md
+    severity: hard
+    check_script: scripts/check_capability_redline.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: capability-broker
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Entropy scan has false-positive risk on long base64-looking strings
+        in comments; known-safe names are stripped before the scan.
+      - Does not scan the runtime environment (os.environ values at execution
+        time) — that is outside the scope of a static git-artifact scan.
+      - Does not catch secrets stored in GitHub Actions env-var YAML steps
+        (those are scanned by the workflow YAML paths in F2/ci.yml).
+    owner_program: metabolism-phase0
+    notes: >
+      The broker resolves capability IDs to ref NAMES only — callers read
+      os.environ[ref_name] independently.  The broker is never in the secret-value
+      handling path.  Audit tape records attribution (run_id, actor, sha) but
+      no values.

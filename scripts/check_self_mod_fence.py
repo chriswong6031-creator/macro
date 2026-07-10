@@ -1,0 +1,318 @@
+"""scripts/check_self_mod_fence.py — F2 self-modification fence (R-AUT-5).
+
+Checks whether a PR carries the loop namespace AND touches the IMMUTABLE set.
+If both conditions are true, the PR is BLOCKED (exit 1).
+
+Attribution is by namespace + trailer, NOT identity (R-AUT-5):
+  - Loop namespace: branch prefix 'metabolism/' or 'claude/loop-'
+  - Loop trailer:   'Loop-Authored:' commit trailer present in any commit on the branch
+
+The IMMUTABLE set (hard-coded here and in the F1/F3 manifests):
+  .claude/hooks/**
+  .github/workflows/**
+  config/grader_manifest.yml
+  config/capability_manifest.yml
+  config/metabolism_budget.yml
+  engine/neuralweb/capability_broker.py
+  scripts/check_self_mod_fence.py
+  scripts/check_grader_manifest.py
+  settings.json
+  research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md   (the tier table lives here)
+
+Fail-CLOSED contract:
+  - Unclassifiable inputs (can't determine branch, can't list files) → BLOCK (exit 1).
+  - Any error in classification → BLOCK (exit 1).
+  - Only CLEAR non-loop-namespace PRs with no loop trailers pass freely.
+
+Human/operator PRs (no loop namespace, no loop trailer) always pass.
+Loop PRs touching NON-immutable paths always pass.
+Only loop + immutable is blocked.
+
+Usage:
+    python3 scripts/check_self_mod_fence.py \\
+        --branch <branch_name> \\
+        --files <file1> [<file2> ...] \\
+        [--trailers <raw_trailer_text>]
+
+    python3 scripts/check_self_mod_fence.py --selftest
+
+Exit codes:
+    0   OK (human PR, or loop PR touching no immutable path)
+    1   BLOCKED (loop PR touching immutable path, or unclassifiable input)
+"""
+from __future__ import annotations
+
+import argparse
+import fnmatch
+import sys
+from pathlib import Path
+
+# ── Immutable path patterns (glob-style) ─────────────────────────────────────
+
+IMMUTABLE_PATTERNS: list[str] = [
+    ".claude/hooks/**",
+    ".github/workflows/**",
+    "config/grader_manifest.yml",
+    "config/capability_manifest.yml",
+    "config/metabolism_budget.yml",
+    "engine/neuralweb/capability_broker.py",
+    "scripts/check_self_mod_fence.py",
+    "scripts/check_grader_manifest.py",
+    "settings.json",
+    "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md",
+]
+
+# ── Loop namespace markers ────────────────────────────────────────────────────
+
+LOOP_BRANCH_PREFIXES: list[str] = [
+    "metabolism/",
+    "claude/loop-",
+]
+
+LOOP_TRAILER_KEY = "Loop-Authored:"
+
+
+# ── Classification helpers ───────────────────────────────────────────────────
+
+def _is_loop_branch(branch: str) -> bool:
+    """Return True if the branch name carries the reserved loop namespace."""
+    for prefix in LOOP_BRANCH_PREFIXES:
+        if branch.startswith(prefix):
+            return True
+    return False
+
+
+def _has_loop_trailer(trailers_text: str) -> bool:
+    """Return True if the raw commit-trailer text contains a 'Loop-Authored:' line."""
+    for line in trailers_text.splitlines():
+        if line.strip().startswith(LOOP_TRAILER_KEY):
+            return True
+    return False
+
+
+def _matches_immutable(file_path: str) -> bool:
+    """Return True if the file path matches any immutable pattern."""
+    # Normalise separators
+    norm = file_path.replace("\\", "/").lstrip("/")
+    for pattern in IMMUTABLE_PATTERNS:
+        # fnmatch handles * and ** matching
+        if fnmatch.fnmatch(norm, pattern):
+            return True
+        # Also handle ** as "any depth" by trying with partial prefix
+        if "**" in pattern:
+            # Simple sub-match: strip the trailing /** and check prefix
+            base = pattern.replace("/**", "").replace("**", "")
+            if base and norm.startswith(base.rstrip("/")):
+                return True
+    return False
+
+
+# ── Main check ───────────────────────────────────────────────────────────────
+
+def check(
+    branch: str,
+    changed_files: list[str],
+    trailers_text: str = "",
+) -> tuple[int, str]:
+    """Run the self-modification fence.
+
+    Parameters
+    ----------
+    branch : str
+        The PR's branch name.
+    changed_files : list[str]
+        List of files changed by the PR (relative paths).
+    trailers_text : str
+        Raw commit-trailer text from the commits on the branch.
+
+    Returns
+    -------
+    (exit_code, message)
+        exit_code 0 → PASS; 1 → BLOCKED.
+        message explains the decision.
+    """
+    # Fail-closed: unclassifiable inputs → BLOCK
+    if not branch:
+        return 1, "BLOCKED: branch name is empty — unclassifiable, fail-closed."
+
+    # Determine if this is a loop PR
+    try:
+        loop_branch = _is_loop_branch(branch)
+        loop_trailer = _has_loop_trailer(trailers_text) if trailers_text else False
+        is_loop_pr = loop_branch or loop_trailer
+    except Exception as e:
+        return 1, f"BLOCKED: could not classify PR as loop/human ({e}) — fail-closed."
+
+    # Human PRs always pass
+    if not is_loop_pr:
+        return 0, (
+            f"PASS: branch '{branch}' carries no loop namespace or trailer — "
+            f"human/operator PR; immutable-set check skipped."
+        )
+
+    # Loop PR: check for immutable-path touches
+    try:
+        immutable_hits = [f for f in changed_files if _matches_immutable(f)]
+    except Exception as e:
+        return 1, f"BLOCKED: could not classify changed files ({e}) — fail-closed."
+
+    if immutable_hits:
+        reason = "loop branch prefix" if loop_branch else "Loop-Authored: commit trailer"
+        return 1, (
+            f"BLOCKED: loop PR (attributed by {reason}) touches the IMMUTABLE set.\n"
+            f"  Branch: {branch}\n"
+            f"  Immutable files touched:\n"
+            + "".join(f"    - {f}\n" for f in immutable_hits)
+            + "\n"
+            f"  The IMMUTABLE set is defined in R-AUT-4 and config/grader_manifest.yml.\n"
+            f"  Grader-modifying changes require T2 operator-tap and a human-authored PR.\n"
+            f"  Self-modification fence violations cannot be overridden automatically."
+        )
+
+    loop_reason = "loop branch prefix" if loop_branch else "Loop-Authored: commit trailer"
+    return 0, (
+        f"PASS: loop PR (attributed by {loop_reason}) branch='{branch}' "
+        f"touches {len(changed_files)} file(s), none in the IMMUTABLE set."
+    )
+
+
+# ── Selftest ──────────────────────────────────────────────────────────────────
+
+def selftest() -> int:
+    """Prove the fence blocks loop+immutable and allows the other three cases."""
+    print("Running selftest...")
+    failures: list[str] = []
+
+    cases = [
+        # (branch, files, trailers, expected_exit, label)
+        (
+            "metabolism/some-lobe",
+            ["config/grader_manifest.yml", "data/metabolism/heartbeat.jsonl"],
+            "",
+            1,  # BLOCKED — loop branch + immutable
+            "loop branch prefix + immutable path → BLOCKED",
+        ),
+        (
+            "claude/loop-propose-til",
+            ["engine/neuralweb/capability_broker.py"],
+            "",
+            1,  # BLOCKED — loop prefix + immutable
+            "loop branch prefix claude/loop-* + immutable → BLOCKED",
+        ),
+        (
+            "claude/some-human-pr",
+            ["config/grader_manifest.yml"],
+            "",
+            0,  # PASS — human branch (no loop prefix)
+            "human branch touching immutable path → allowed",
+        ),
+        (
+            "metabolism/some-lobe",
+            ["engine/neuralweb/some_new_organ.py", "data/neuralweb/foo.json"],
+            "",
+            0,  # PASS — loop branch but NOT immutable paths
+            "loop branch touching non-immutable paths → allowed",
+        ),
+        (
+            "claude/human-pr",
+            ["engine/neuralweb/capability_broker.py"],
+            "Loop-Authored: propose-lobe run=abc123",  # trailer present
+            1,  # BLOCKED — loop trailer + immutable
+            "loop trailer + immutable path → BLOCKED",
+        ),
+        (
+            "claude/human-pr",
+            ["engine/neuralweb/capability_broker.py"],
+            "Co-Authored-By: human@example.com",  # no loop trailer
+            0,  # PASS — no loop namespace
+            "human trailer + immutable path → allowed",
+        ),
+        (
+            "metabolism/owns-fence",
+            [".claude/hooks/model_routing_guard.py"],
+            "",
+            1,  # BLOCKED — loop + .claude/hooks/**
+            "loop branch + .claude/hooks/** → BLOCKED",
+        ),
+        (
+            "metabolism/owns-workflow",
+            [".github/workflows/ci.yml"],
+            "",
+            1,  # BLOCKED — loop + .github/workflows/**
+            "loop branch + .github/workflows/** → BLOCKED",
+        ),
+        (
+            "",  # empty branch → unclassifiable → fail-closed
+            ["anything.py"],
+            "",
+            1,
+            "empty branch → unclassifiable → BLOCKED (fail-closed)",
+        ),
+    ]
+
+    for branch, files, trailers, expected_exit, label in cases:
+        rc, msg = check(branch, files, trailers)
+        status = "PASS" if rc == expected_exit else "FAIL"
+        if rc != expected_exit:
+            failures.append(f"{label}: expected exit {expected_exit}, got {rc} — {msg[:120]}")
+        print(f"  [{status}] {label}")
+
+    if failures:
+        print("\nSELFTEST FAILED:")
+        for f in failures:
+            print(f"  - {f}")
+        return 1
+
+    print("selftest OK")
+    return 0
+
+
+# ── CLI ──────────────────────────────────────────────────────────────────────
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(
+        description="F2 self-modification fence — blocks loop PRs touching the IMMUTABLE set."
+    )
+    ap.add_argument(
+        "--branch",
+        default="",
+        help="PR branch name.",
+    )
+    ap.add_argument(
+        "--files",
+        nargs="*",
+        default=[],
+        help="List of changed files (relative paths).",
+    )
+    ap.add_argument(
+        "--trailers",
+        default="",
+        help="Raw commit-trailer text from the PR's commits.",
+    )
+    ap.add_argument(
+        "--selftest",
+        action="store_true",
+        help="Run synthetic selftest; exit 0 on pass, 1 on failure.",
+    )
+    args = ap.parse_args(argv)
+
+    if args.selftest:
+        return selftest()
+
+    # Fail-closed: if we can't even parse the arguments, block.
+    exit_code, message = check(
+        branch=args.branch,
+        changed_files=args.files or [],
+        trailers_text=args.trailers or "",
+    )
+
+    if exit_code != 0:
+        print(message, file=sys.stderr)
+    else:
+        print(message)
+
+    return exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

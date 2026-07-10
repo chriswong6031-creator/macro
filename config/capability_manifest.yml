@@ -1,0 +1,95 @@
+# config/capability_manifest.yml — Capability broker manifest (F3, §3 of masterplan)
+#
+# REDLINE: this file must NEVER contain secret values.
+#   - secret_ref fields store NAMES only (the env-var or GitHub Secret name).
+#   - The capability broker reads this file and returns ref names; it never
+#     reads or returns secret values.
+#   - CI (check_capability_redline.py) scans this file for high-entropy strings
+#     and any 'secrets.' or 'os.environ[' patterns and hard-fails on any finding.
+#
+# To add a capability:
+#   1. Add a row here (name, kind, ref name, scope — no values).
+#   2. The broker resolves by ref name; the runner/caller reads os.environ[ref_name].
+#   3. Wire allowed_lanes and allowed_tiers conservatively (principle of least privilege).
+#
+# Schema: capability_manifest.v1
+schema: capability_manifest.v1
+generated_at: "2026-07-09"
+owner_program: metabolism-phase0
+
+capabilities:
+
+  # ── LLM OAuth (whitehouse-sentinel, future metabolism stages) ──────────────
+
+  - capability_id: claude_code_oauth
+    kind: llm_oauth
+    secret_ref: CLAUDE_CODE_OAUTH_TOKEN
+    scope: >
+      Anthropic Claude API access via OAuth token.  Used by whitehouse-sentinel,
+      asia-close, and future metabolism PROPOSE/ADJUDICATE stages.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - whitehouse-sentinel
+      - asia-close
+      - metabolism-propose     # Phase A — not yet armed
+      - metabolism-adjudicate  # Phase A — not yet armed
+    allowed_tiers:
+      - T0
+      - T1
+    rotation_state: active
+    kill_state: active
+    notes: >
+      Already a GH secret (confirmed by whitehouse-sentinel.yml usage).
+      A2 preflight gate (Phase A) pings cheapest tier to verify health before
+      any build stage is allowed to proceed.
+
+  # ── VPS deploy key (render pipeline) ─────────────────────────────────────
+
+  - capability_id: vps_deploy_key
+    kind: vps_deploy
+    secret_ref: VPS_DEPLOY_KEY
+    scope: >
+      SSH private key for deploying rendered site artifacts to the live VPS.
+      Used by render.yml and engine-render.yml deploy steps.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - render
+      - engine-render
+    allowed_tiers:
+      - T0
+      - T1
+    rotation_state: active
+    kill_state: active
+    notes: >
+      Loop stages may NEVER use this capability (R-AUT-12: no VPS shell for the loop).
+      Changes to the live site reach VPS only through the render tail, never a
+      loop-direct shell command.
+
+  # ── GitHub token (read/write for PR operations) ──────────────────────────
+
+  - capability_id: github_token
+    kind: github_pat
+    secret_ref: GITHUB_TOKEN
+    scope: >
+      Standard GitHub Actions GITHUB_TOKEN providing contents read/write and
+      pull-request write permissions within the repository workflow context.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - ci
+      - render
+      - engine-render
+      - whitehouse-sentinel
+      - metabolism-heartbeat
+      - metabolism-propose     # Phase A — contents:read only (per R-AUT-4 F4)
+      - metabolism-build       # Phase A — contents+PR write behind required Opus-review
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      F4 (Phase 0) per-lane permission blocks: PROPOSE = contents:read only;
+      BUILD = contents+PR write behind required Opus-review check status.
+      A merge PAT without 'workflows' scope will be provisioned for BUILD
+      to prevent the loop from modifying workflow files (R-AUT-5).
