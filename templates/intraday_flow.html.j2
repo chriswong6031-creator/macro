@@ -206,7 +206,9 @@
       </select>
     </div>
     <div class="search-box">
-      <input type="text" id="ift-search" placeholder="{{ t('Ticker search…', '搜索代码…') }}" autocomplete="off">
+      {# Never put dual-language spans inside an attribute — the class="" quotes break
+         the tag (see theme.js nav-search comment). EN in placeholder, ZH in data-ph-zh. #}
+      <input type="text" id="ift-search" placeholder="Ticker search…" data-ph-zh="搜索代码…" autocomplete="off">
     </div>
     <span class="stamp-row xs muted" id="sort-label">{{ t('Sorted by RVOL ↓', '按RVOL排序↓') }}</span>
   </div>
@@ -949,6 +951,13 @@ if (searchEl) searchEl.addEventListener('input', function(){
   searchQ = searchEl.value.trim();
   applyFilter();
 });
+// lang-aware placeholder (theme.js handles .nav-search only; page inputs do it themselves)
+if (searchEl) (function(){
+  var en = searchEl.placeholder, zh = searchEl.getAttribute('data-ph-zh') || en;
+  function setPh(){ searchEl.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? zh : en; }
+  setPh();
+  document.addEventListener('langchange', setPh);
+})();
 
 // ── Leg expand/collapse ───────────────────────────────────────────────────
 window.toggleLegs = function(btn) {
