@@ -451,6 +451,24 @@ class TestAgenda:
         assert ret == 0
         assert not llm_called, "LLM was called despite AUTONOMY_PAUSED"
 
+    def test_is_paused_no_op_on_unset_var(self):
+        """The genuinely default-safe path: AUTONOMY_PAUSED UNSET (not mocked) must
+        still no-op the agenda CLI without any LLM call. This isolates the
+        unset-var fail-safe so a regression can't hide behind a mocked is_paused."""
+        llm_called = []
+
+        def _booby_trap_llm(*args, **kwargs):
+            llm_called.append(True)
+            raise AssertionError("LLM must not be called when AUTONOMY_PAUSED is unset")
+
+        env = {k: v for k, v in os.environ.items() if k != "AUTONOMY_PAUSED"}
+        with patch.dict(os.environ, env, clear=True):
+            # NO mock of is_paused — exercise the real unset->paused fail-safe.
+            from scripts.metabolism_agenda import main
+            ret = main(["--cycle-id", "test-unset", "--root", str(_tmp_root())])
+        assert ret == 0
+        assert not llm_called, "LLM ran with AUTONOMY_PAUSED unset (fail-safe regressed)"
+
     def test_severity_floor_reinserts_high_insights(self):
         """LLM returning empty items → severity floor re-inserts high-severity bus rows."""
         from engine.metabolism.agenda import build_agenda, _enforce_severity_floor
@@ -697,16 +715,15 @@ class TestNoAuthorityPaths:
 
     # Patterns that would indicate authority execution (not just mentions in docs)
     _FORBIDDEN_CALL_PATTERNS = [
-        "gh pr create",
-        "git push origin main",
-        ".merge(",
-        "dispatch_build(",
-        "grant_authority(",
-        "lifecycle.promote(",
-        "lifecycle.demote(",
-        "lifecycle.charter(",
-        "lobe_roster.add(",
-        "lobe_roster.remove(",
+        # PR / merge / push
+        "gh pr create", "gh pr merge", "git push", ".merge(",
+        # arbitrary process execution (a session could shell out to gh/git/anything)
+        "subprocess.", "os.system(", "os.popen(", "Popen(",
+        # governance grant / authority
+        "append_governance(", "grant_authority(", "dispatch_build(", "dispatch(",
+        # lobe lifecycle (V2-C authority — must NEVER appear in the V2-A mind)
+        "lifecycle.promote(", "lifecycle.demote(", "lifecycle.charter(",
+        "lifecycle.retire(", "lobe_roster.add(", "lobe_roster.remove(",
     ]
 
     def test_no_authority_execution_paths(self):
