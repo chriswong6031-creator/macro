@@ -20,7 +20,7 @@
 <script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>US Stock Dashboard — 2026-07-08</title>
+<title>US Stock Dashboard — 2026-07-09</title>
 
 <meta name="description" content="US single-stock and sector signals in one board — momentum, breadth, confluence and regime context, updated daily.">
 <link rel="canonical" href="https://mastermind-x.com/us_stocks.html">
@@ -1535,6 +1535,73 @@
     body.page-macro #regime-radar > .howto { text-align: left; }
     body.page-macro .cb-tab { padding: 7px 12px; font-size: 12.5px; }
   }
+
+  /* ── TS-U3: two-speed tape band (stocks page only) ────────────────────── */
+  .dash-tape-band { background:var(--panel2); border-bottom:2px solid var(--line); display:none; margin:-16px -16px 14px; }
+  .dash-tape-band.visible { display:block; }
+  .dash-tape-hd { display:flex; align-items:center; gap:10px; padding:9px 16px 7px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .dash-tape-lbl { font-size:13px; font-weight:700; color:var(--text); }
+  .dash-tape-delay { font-size:11px; color:var(--muted); }
+  .dash-tape-asof { font-size:11px; color:var(--muted); margin-left:auto; }
+  .dash-tape-body { display:grid; grid-template-columns:1fr 1fr; }
+  @media(max-width:640px){ .dash-tape-body{ grid-template-columns:1fr; } }
+  .dash-tape-t1 { padding:5px 16px 6px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); }
+  .dash-tape-half { padding:7px 16px 9px; }
+  .dash-tape-half:first-child { border-right:1px solid var(--line); }
+  .dash-tape-half-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.07em; font-weight:700; margin-bottom:5px; }
+  .dash-tape-half-lbl.top { color:var(--up); }
+  .dash-tape-half-lbl.bot { color:var(--down); }
+  .dash-mrow { display:flex; align-items:center; gap:0; padding:2px 0; font-size:12px; }
+  .dash-mrow .mr-rank { width:24px; font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; flex:none; }
+  .dash-mrow .mr-name { flex:1; color:var(--text); font-weight:500; }
+  .dash-mrow .mr-chg  { font-weight:700; font-variant-numeric:tabular-nums; min-width:52px; text-align:right; }
+  .dash-mrow .mr-bar  { width:44px; height:4px; border-radius:2px; margin-left:7px; flex:none; }
+  .dash-mrow .mr-bar.up { background:var(--up); }
+  .dash-mrow .mr-bar.dn { background:var(--down); }
+
+  /* ── TS-U3: turn watch strip ────────────────────────────────────────────── */
+  .dash-tw-strip { background:color-mix(in srgb,var(--warn) 6%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line)); border-radius:9px; padding:9px 13px 10px; margin:0 0 12px; display:none; }
+  .dash-tw-strip.visible { display:block; }
+  .dash-tw-hdr { display:flex; align-items:center; gap:8px; margin-bottom:7px; flex-wrap:wrap; }
+  .dash-tw-title { font-size:12px; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.05em; }
+  .dash-tw-asof { font-size:10px; color:var(--muted); margin-left:auto; }
+  .dash-tw-rows { display:flex; flex-direction:column; gap:5px; }
+  .dash-tw-row { display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-size:12px; }
+  .dash-tw-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
+  .dash-tw-badge.ignition { background:color-mix(in srgb,var(--up) 15%,transparent); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); color:var(--up); }
+  .dash-tw-badge.watch { background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); color:var(--warn); }
+  .dash-tw-badge.member { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 32%,transparent); color:var(--info,var(--link)); }
+  .dash-tw-name { font-weight:600; color:var(--text); }
+  .dash-tw-slow { font-size:11px; color:var(--muted); }
+  .dash-tw-disc { font-size:10.5px; color:var(--muted); margin-top:6px; border-top:1px solid var(--line); padding-top:5px; }
+
+  /* ── TS-U3: salience chip on hold/avoid rows ────────────────────────────── */
+  .dash-turn-chip { display:inline-flex; align-items:center; gap:3px; padding:1px 5px; border-radius:5px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 32%,transparent); color:var(--warn); margin-left:4px; }
+
+  /* ── TS-U3: per-stock turn setups table ─────────────────────────────────── */
+  .dash-mtf-section { margin-top:14px; }
+  .dash-mtf-tbl { width:100%; border-collapse:collapse; margin-top:7px; font-size:11.5px; }
+  .dash-mtf-tbl th { text-align:left; font-weight:700; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:3px 6px; border-bottom:1px solid var(--line); }
+  .dash-mtf-tbl td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
+  .dash-mtf-tbl tr:hover { background:color-mix(in srgb,var(--muted) 4%,transparent); }
+  .dash-mtf-badge { display:inline-flex; align-items:center; padding:1px 6px; border-radius:10px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
+  .dash-mtf-badge.confirmed { background:color-mix(in srgb,var(--up) 14%,transparent); border:1px solid color-mix(in srgb,var(--up) 36%,transparent); color:var(--up); }
+  .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--info,var(--link)); }
+  .dash-mtf-badge.none { background:color-mix(in srgb,var(--muted) 8%,transparent); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); color:var(--muted); }
+  .dash-mtf-leg { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; }
+  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
+  .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
+  .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+  .dash-mtf-legs { display:flex; gap:3px; align-items:center; }
+  .dash-mtf-since { font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .dash-mtf-baskets { font-size:10px; color:var(--muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dash-mtf-phase { font-size:10px; color:var(--muted); }
+  .dash-mtf-absent { font-size:12px; color:var(--muted); padding:10px 0; }
+  .dash-mtf-k { font-weight:700; font-variant-numeric:tabular-nums; font-size:11px; }
+
+  /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
+  .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
+  .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
 </style>
 </head>
 <body class="page-stocks">
@@ -1856,6 +1923,46 @@
     
     
     
+    <div id="dash-tape-band" class="dash-tape-band" aria-label="<span class="l-en">Live basket tape</span><span class="l-zh">实时篮子行情</span>">
+      <div class="dash-tape-hd">
+        <span id="dash-session-pill" class="ftr-session-pill closed">
+          <span class="ftr-dot"></span>
+          <span id="dash-session-label">—</span>
+        </span>
+        <span class="dash-tape-lbl"><span class="l-en">Live Basket Tape</span><span class="l-zh">实时篮子行情</span></span>
+        <span class="dash-tape-delay" id="dash-tape-delay"><span class="l-en">15-min delayed</span><span class="l-zh">15分钟延迟</span></span>
+        <span id="dash-cx-badge"></span>
+        <span class="dash-tape-asof" id="dash-tape-asof"></span>
+      </div>
+      <div class="dash-tape-body">
+        <div class="dash-tape-half">
+          <div class="dash-tape-half-lbl top"><span class="l-en">Top 5 live leaders</span><span class="l-zh">前5领涨</span></div>
+          <div id="dash-top-movers"></div>
+        </div>
+        <div class="dash-tape-half">
+          <div class="dash-tape-half-lbl bot"><span class="l-en">Bottom 3 live laggards</span><span class="l-zh">后3领跌</span></div>
+          <div id="dash-bot-movers"></div>
+        </div>
+      </div>
+      <div class="dash-tape-t1"><span class="l-en">Tape is context only — violent flips fade 58% at T+1 (n=26)</span><span class="l-zh">行情仅作参考 — 剧烈反转T+1消退概率58%（n=26）</span></div>
+    </div>
+    
+    <div id="dash-tw-strip" class="dash-tw-strip">
+      <div class="dash-tw-hdr">
+        <span class="dash-tw-title"><span class="l-en">&#9889; Turn Watch — multi-timeframe divergence</span><span class="l-zh">&#9889; 拐点观察 — 多时间框架背离</span></span>
+        <span class="dash-tw-asof" id="dash-tw-asof"></span>
+      </div>
+      <div class="dash-tw-rows" id="dash-tw-rows"></div>
+      <div class="dash-tw-disc">
+        <span class="l-en">Expected-null forward meter (basket-level turn fired NULL in backtest, Oracle P8). Slow reco labels unchanged. T+1 flip base rate: <strong>58% fade</strong> (n=26). Display context only.</span>
+        <span class="l-zh">预期空值前瞻计量（板块级别拐点回测为NULL，Oracle P8）。慢速评级标签未变。T+1翻转基础概率：<strong>58%消退</strong>（n=26）。仅作展示参考。</span>
+      </div>
+    </div>
+    
+    
+    
+    
+    
     
     
     
@@ -1898,40 +2005,48 @@
       <div class="actcol act-hold lst-wrap">
         <div class="acth">⚪ <span class="l-en">HOLD / avoid</span><span class="l-zh">持有／回避</span></div>
         
-        <div class="lst-collapse lst-cap6 is-collapsed">
+        <div class="lst-collapse lst-cap6 is-collapsed" id="dash-hold-fold">
         
-          <a class="actitem ai-theme" href="basket/cybersecurity.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Cybersecurity"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          
+          <div data-theme-id="cybersecurity"><a class="actitem ai-theme" href="basket/cybersecurity.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Cybersecurity"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/obesity_glp1.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="GLP-1 &amp; Obesity"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          
+          <div data-theme-id="obesity_glp1"><a class="actitem ai-theme" href="basket/obesity_glp1.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="GLP-1 &amp; Obesity"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/regional_banks.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Regional Banks"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          
+          <div data-theme-id="managed_care"><a class="actitem ai-theme" href="basket/managed_care.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Managed Care &amp; Insurers"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/managed_care.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Managed Care &amp; Insurers"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          
+          <div data-theme-id="regional_banks"><a class="actitem ai-theme" href="basket/regional_banks.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Regional Banks"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Payments &amp; Fintech"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          
+          <div data-theme-id="payments_fintech"><a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Payments &amp; Fintech"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/travel.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Travel &amp; Experiences"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          
+          <div data-theme-id="travel"><a class="actitem ai-theme" href="basket/travel.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Travel &amp; Experiences"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/reshoring.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Reshoring &amp; Industrial Capex"><span class="l-en">Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          
+          <div data-theme-id="reshoring"><a class="actitem ai-theme" href="basket/reshoring.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Reshoring &amp; Industrial Capex"><span class="l-en">Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/ai_agents.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="AI Agents &amp; Applications"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          
+          <div data-theme-id="ai_agents"><a class="actitem ai-theme" href="basket/ai_agents.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="AI Agents &amp; Applications"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
         
         
-          <a class="actitem ai-theme" href="basket/uranium_miners.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Uranium &amp; Nuclear Fuel"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <div data-theme-id="uranium_miners"><a class="actitem ai-theme" href="basket/uranium_miners.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Uranium &amp; Nuclear Fuel"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/crypto.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Crypto &amp; Digital Assets"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <div data-theme-id="crypto"><a class="actitem ai-theme" href="basket/crypto.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Crypto &amp; Digital Assets"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/critical_minerals.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Critical Minerals &amp; Rare Earths"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <div data-theme-id="critical_minerals"><a class="actitem ai-theme" href="basket/critical_minerals.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Critical Minerals &amp; Rare Earths"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/space_economy.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Space Economy"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <div data-theme-id="space_economy"><a class="actitem ai-theme" href="basket/space_economy.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Space Economy"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/nuclear_power.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Nuclear &amp; SMR Power"><span class="l-en">Nuclear &amp; SMR Power</span><span class="l-zh">核电与小型模块化反应堆</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <div data-theme-id="nuclear_power"><a class="actitem ai-theme" href="basket/nuclear_power.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Nuclear &amp; SMR Power"><span class="l-en">Nuclear &amp; SMR Power</span><span class="l-zh">核电与小型模块化反应堆</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/retail.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Retail"><span class="l-en">Retail</span><span class="l-zh">零售</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <div data-theme-id="retail"><a class="actitem ai-theme" href="basket/retail.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Retail"><span class="l-en">Retail</span><span class="l-zh">零售</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/quantum_computing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Quantum Computing"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <div data-theme-id="defense"><a class="actitem ai-theme" href="basket/defense.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Defense &amp; Aerospace"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
-          <a class="actitem ai-theme" href="basket/defense.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Defense &amp; Aerospace"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <div data-theme-id="quantum_computing"><a class="actitem ai-theme" href="basket/quantum_computing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Quantum Computing"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
         
           <a class="actitem" href="basket/us_sector_materials.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Materials"><span class="l-en">Materials</span><span class="l-zh">原材料</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
         
@@ -1967,9 +2082,9 @@
       
       
       
-      <div class="nb-donor donor-cracking" data-tip-en="Rotation: the leading GICS sector (Information Technology, top-126d equal-weight return across 11 sectors) shows signs of cracking — a fresh weekly RSI-MACD bearish cross on its composite within the last 4 completed weeks, or its 20-day EW return has gone negative. Historically, stock entries during donor cracking have higher clean-exit rates (G6a, +5.96 pp deep / +5.81 pp baskets, episode LB +2.66 pp). DISPLAY-ONLY: does not change rankings, gates, or sizing. Context for your own entry-timing discipline. · cracking · Information Technology · as of 2026-07-09" data-tip-zh="轮动：领涨GICS板块（Information Technology，全市场126日等权收益最高，共11个板块）显现趋弱迹象——过去4个已完结周内出现周线RSI-MACD看跌交叉，或其20日等权收益已转负。历史数据显示，领涨板块趋弱期间入场的胜率更高（G6a，深度+5.96pp / 篮子+5.81pp）。仅供参考：不影响排名、门控或仓位。 · cracking · Information Technology · as of 2026-07-09">
-        <span class="donor-ic">☯</span>
-        <b><span class="l-en">Sector leader: Information Technology — wobbling (historically a BETTER entry window — not a sell signal)</span><span class="l-zh">领涨板块：Information Technology — 出现趋弱（过去此阶段入场胜率更高——并非卖出信号）</span></b>
+      <div class="nb-donor donor-intact" data-tip-en="Rotation: the leading GICS sector (Industrials, top-126d equal-weight return across 11 sectors) is intact — no fresh weekly RSI-MACD bearish cross in the last 4 completed weeks and its 20-day EW return is positive. The rotation leader is still running. DISPLAY-ONLY: context only, not a signal. · intact · Industrials · as of 2026-07-08" data-tip-zh="轮动：领涨GICS板块（Industrials，全市场126日等权收益最高，共11个板块）运行稳健——过去4个已完结周内无周线RSI-MACD看跌交叉，且20日等权收益为正。轮动领涨板块仍在运行。仅供参考：非交易信号。 · intact · Industrials · as of 2026-07-08">
+        <span class="donor-ic">✓</span>
+        <b><span class="l-en">Sector leader: Industrials — still going strong</span><span class="l-zh">领涨板块：Industrials — 依然强势</span></b>
       </div>
       
       
@@ -2510,7 +2625,7 @@
           <a class="nb-head-link" href="stock.html#BMY">
           <div class="nb-top">
             <span class="nb-tk">BMY</span>
-            <span class="nb-sec nb-spot nb-spot-link spot-up" data-href="basket/big_pharma.html" tabindex="0" title="Theme/sector spotlight tilt (×1.09) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Big Pharma (ACCUMULATE). Sector: Health Care — improving. Open the theme →"><span class="sp-tag l-en">Big Pharma</span><span class="sp-tag l-zh">大型药企</span><span class="sp-ar">▲</span></span>
+            <span class="nb-sec nb-spot nb-spot-link spot-up" data-href="basket/big_pharma.html" tabindex="0" title="Theme/sector spotlight tilt (×1.13) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Big Pharma (ACCUMULATE). Sector: Health Care — leading. Open the theme →"><span class="sp-tag l-en">Big Pharma</span><span class="sp-tag l-zh">大型药企</span><span class="sp-ar">▲</span></span>
             
             <span class="nb-px" data-sym="BMY" data-mkt="us">$57.54</span>
           </div>
@@ -2566,7 +2681,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">46</span>
-            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">74<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">73<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -2629,9 +2744,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 53/100">
+            <div class="nb-ax" title="TWD 55/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:53%"></div></div>
+              <div class="axt"><div class="axf" style="width:55%"></div></div>
             </div>
             
             
@@ -3022,7 +3137,7 @@
           <a class="nb-head-link" href="stock.html#EOG">
           <div class="nb-top">
             <span class="nb-tk">EOG</span>
-            <span class="nb-sec nb-spot nb-spot-link spot-dn" data-href="basket/energy_complex.html" tabindex="0" title="Theme/sector spotlight tilt (×0.89) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: US Energy Complex (AVOID). Sector: Energy — lagging. Open the theme →"><span class="sp-tag l-en">US Energy</span><span class="sp-tag l-zh">美国能源综合</span><span class="sp-ar">▼</span></span>
+            <span class="nb-sec nb-spot nb-spot-link spot-dn" data-href="basket/energy_complex.html" tabindex="0" title="Theme/sector spotlight tilt (×0.92) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: US Energy Complex (AVOID). Sector: Energy — weakening. Open the theme →"><span class="sp-tag l-en">US Energy</span><span class="sp-tag l-zh">美国能源综合</span><span class="sp-ar">▼</span></span>
             
             <span class="nb-px" data-sym="EOG" data-mkt="us">$137.59</span>
           </div>
@@ -3078,7 +3193,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">41</span>
-            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">78<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">77<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -3141,9 +3256,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 46/100">
+            <div class="nb-ax" title="TWD 47/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:46%"></div></div>
+              <div class="axt"><div class="axf" style="width:47%"></div></div>
             </div>
             
             
@@ -3287,7 +3402,7 @@
           <a class="nb-head-link" href="stock.html#SLVM">
           <div class="nb-top">
             <span class="nb-tk">SLVM</span>
-            <span class="nb-sec nb-spot spot-dn" title="Theme/sector spotlight tilt (×0.86) — a small narrative nudge to rank; never overrides extension or risk vetoes. Sector: Materials — lagging."><span class="sp-tag l-en">Materials</span><span class="sp-tag l-zh">Materials</span><span class="sp-ar">▼</span></span>
+            <span class="nb-sec nb-spot spot-dn" title="Theme/sector spotlight tilt (×0.87) — a small narrative nudge to rank; never overrides extension or risk vetoes. Sector: Materials — lagging."><span class="sp-tag l-en">Materials</span><span class="sp-tag l-zh">Materials</span><span class="sp-ar">▼</span></span>
             
             <span class="nb-px" data-sym="SLVM" data-mkt="us">$38.10</span>
           </div>
@@ -3339,7 +3454,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">61</span>
-            <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">27<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">26<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
           </div>
           
@@ -3529,7 +3644,8 @@
           <a class="nb-head-link" href="stock.html#TDY">
           <div class="nb-top">
             <span class="nb-tk">TDY</span>
-            <span class="nb-sec nb-sec-plain"><span class="l-en">Info Tech</span><span class="l-zh">Information Technology</span></span>
+            <span class="nb-sec nb-spot nb-spot-link spot-dn" data-href="basket/defense.html" tabindex="0" title="Theme/sector spotlight tilt (×0.91) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Defense &amp; Aerospace (AVOID). Sector: Technology — weakening. Open the theme →"><span class="sp-tag l-en">Defense</span><span class="sp-tag l-zh">国防与航空航天</span><span class="sp-ar">▼</span></span>
+            
             <span class="nb-px" data-sym="TDY" data-mkt="us">$639.51</span>
           </div>
           </a>
@@ -3580,7 +3696,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">17</span>
-            <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">42<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">41<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
           </div>
           
@@ -3643,9 +3759,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 49/100">
+            <div class="nb-ax" title="TWD 47/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:49%"></div></div>
+              <div class="axt"><div class="axf" style="width:47%"></div></div>
             </div>
             
             
@@ -3773,7 +3889,7 @@
           <a class="nb-head-link" href="stock.html#WMB">
           <div class="nb-top">
             <span class="nb-tk">WMB</span>
-            <span class="nb-sec nb-spot nb-spot-link spot-dn" data-href="basket/energy_complex.html" tabindex="0" title="Theme/sector spotlight tilt (×0.89) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: US Energy Complex (AVOID). Sector: Energy — lagging. Open the theme →"><span class="sp-tag l-en">US Energy</span><span class="sp-tag l-zh">美国能源综合</span><span class="sp-ar">▼</span></span>
+            <span class="nb-sec nb-spot nb-spot-link spot-dn" data-href="basket/energy_complex.html" tabindex="0" title="Theme/sector spotlight tilt (×0.92) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: US Energy Complex (AVOID). Sector: Energy — weakening. Open the theme →"><span class="sp-tag l-en">US Energy</span><span class="sp-tag l-zh">美国能源综合</span><span class="sp-ar">▼</span></span>
             
             <span class="nb-px" data-sym="WMB" data-mkt="us">$75.27</span>
           </div>
@@ -3888,9 +4004,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 46/100">
+            <div class="nb-ax" title="TWD 47/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:46%"></div></div>
+              <div class="axt"><div class="axf" style="width:47%"></div></div>
             </div>
             
             
@@ -4079,7 +4195,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">21</span>
-            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">55<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">54<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -4288,7 +4404,8 @@
           <a class="nb-head-link" href="stock.html#APP">
           <div class="nb-top">
             <span class="nb-tk">APP</span>
-            <span class="nb-sec nb-sec-plain"><span class="l-en">Info Tech</span><span class="l-zh">Information Technology</span></span>
+            <span class="nb-sec nb-spot nb-spot-link spot-dn" data-href="basket/us_sector_tech.html" tabindex="0" title="Theme/sector spotlight tilt (×0.92) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Technology (Equal-Weight) (AVOID). Sector: Technology — weakening. Open the theme →"><span class="sp-tag l-en">Technology</span><span class="sp-tag l-zh">信息技术</span><span class="sp-ar">▼</span></span>
+            
             <span class="nb-px" data-sym="APP" data-mkt="us">$522.18</span>
           </div>
           </a>
@@ -4339,7 +4456,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-high" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">79</span>
-            <span class="nb-edge-pct edge-hi" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">93<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-hi" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">92<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           
@@ -4402,9 +4519,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 50/100">
+            <div class="nb-ax" title="TWD 47/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:50%"></div></div>
+              <div class="axt"><div class="axf" style="width:47%"></div></div>
             </div>
             
             
@@ -4537,7 +4654,7 @@
           <a class="nb-head-link" href="stock.html#CI">
           <div class="nb-top">
             <span class="nb-tk">CI</span>
-            <span class="nb-sec nb-spot nb-spot-link spot-up" data-href="basket/us_sector_health.html" tabindex="0" title="Theme/sector spotlight tilt (×1.09) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Health Care (Equal-Weight) (ACCUMULATE). Sector: Health Care — improving. Open the theme →"><span class="sp-tag l-en">Health Care</span><span class="sp-tag l-zh">医疗保健</span><span class="sp-ar">▲</span></span>
+            <span class="nb-sec nb-spot nb-spot-link spot-up" data-href="basket/us_sector_health.html" tabindex="0" title="Theme/sector spotlight tilt (×1.13) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Health Care (Equal-Weight) (ACCUMULATE). Sector: Health Care — leading. Open the theme →"><span class="sp-tag l-en">Health Care</span><span class="sp-tag l-zh">医疗保健</span><span class="sp-ar">▲</span></span>
             
             <span class="nb-px" data-sym="CI" data-mkt="us">$289.73</span>
           </div>
@@ -4589,7 +4706,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">46</span>
-            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">61<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">59<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -4652,9 +4769,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 53/100">
+            <div class="nb-ax" title="TWD 55/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:53%"></div></div>
+              <div class="axt"><div class="axf" style="width:55%"></div></div>
             </div>
             
             
@@ -4790,8 +4907,7 @@
           <a class="nb-head-link" href="stock.html#PI">
           <div class="nb-top">
             <span class="nb-tk">PI</span>
-            <span class="nb-sec nb-spot spot-up" title="Theme/sector spotlight tilt (×1.18) — a small narrative nudge to rank; never overrides extension or risk vetoes. Sector: Technology — leading."><span class="sp-tag l-en">Technology</span><span class="sp-tag l-zh">Technology</span><span class="sp-ar">▲</span></span>
-            
+            <span class="nb-sec nb-sec-plain"><span class="l-en">Info Tech</span><span class="l-zh">Information Technology</span></span>
             <span class="nb-px" data-sym="PI" data-mkt="us">$143.15</span>
           </div>
           </a>
@@ -4842,7 +4958,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">84</span>
-            <span class="nb-edge-pct edge-hi" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">81<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-hi" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">80<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -4905,9 +5021,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 56/100">
+            <div class="nb-ax" title="TWD 49/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:56%"></div></div>
+              <div class="axt"><div class="axf" style="width:49%"></div></div>
             </div>
             
             
@@ -5595,6 +5711,8 @@
             <span style="color:var(--info);letter-spacing:1px;font-size:10px">●</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Approaching an up-cross above trend — get ready, not yet triggered.</span><span class="l-zh">在趋势之上接近上穿——准备，尚未触发。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">MACD curling up</span><span class="l-zh">MACD 上弯</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
@@ -5618,6 +5736,8 @@
             <span style="color:var(--muted);letter-spacing:1px;font-size:10px">·</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">In trend, nothing fresh — no edge either way.</span><span class="l-zh">处于趋势中，无新信号——两边都无优势。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">MACD ↓</span><span class="l-zh">MACD 下穿</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
@@ -5625,31 +5745,8 @@
         <td class="pos" data-sort="16.1">+16.1%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+1.2% (64%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="6.8" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="37.3" width="14.2" height="2.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="25.6" width="14.2" height="14.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="23.7" width="14.2" height="16.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="34.1" width="14.2" height="5.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="2.7" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="24.5" width="14.2" height="15.5" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="33.5" width="14.2" height="6.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="9.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="20.8" width="14.2" height="19.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="33.1" width="14.2" height="6.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.5%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+0.2%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.1%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+1.2%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.5%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.2%</td><td>43%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.2%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.5%</td><td>63%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-0.7%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.5%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.0%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+0.5%</td><td>63%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
-          </span>
-        </td>
-        <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 51% up · n=2547</span><span class="l-zh">对SPY +0.1% · 51% 上涨 · n=2547</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="basket/us_sector_tech.html"><b>XLK</b></a> <span class="muted"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
-        </td>
-        <td class="l" data-sort="5">
-          <span style="display:inline-flex;align-items:center;gap:6px">
-            <span class="pill" style="border:1px solid var(--muted);color:var(--muted);background:transparent;font-weight:700"><span class="l-en">NEUTRAL</span><span class="l-zh">中性</span></span>
-            <span style="color:var(--muted);letter-spacing:1px;font-size:10px">·</span>
-          </span>
-          <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">In trend, nothing fresh — no edge either way.</span><span class="l-zh">处于趋势中，无新信号——两边都无优势。</span></div>
-        </td>
-        <td class="l" style="font-size:12px"><span class="l-en">MACD ↓</span><span class="l-zh">MACD 下穿</span></td>
-        <td class="pos" style="font-size:12px">✓200d ✓50d</td>
-        <td style="font-size:12px">RSI 58 · Stoch 4</td>
-        <td class="pos" data-sort="16.1">+16.1%</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+1.4% (64%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="30.6" width="14.2" height="9.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="8.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="28.5" width="14.2" height="11.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="23.4" width="14.2" height="16.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="20.9" width="14.2" height="19.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="31.5" width="14.2" height="8.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="27.5" width="14.2" height="12.5" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="33.4" width="14.2" height="6.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="17.6" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="16.2" width="14.2" height="23.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="36.8" width="14.2" height="3.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+1.1%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.9%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.3%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+1.9%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+2.1%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+1.0%</td><td>50%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.4%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.7%</td><td>56%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-2.0%</td><td>48%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+2.9%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.7%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+0.4%</td><td>56%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
+            <span style="cursor:help">+1.5% (64%)</span>
+            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="30.6" width="14.2" height="9.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="8.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="28.5" width="14.2" height="11.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="23.4" width="14.2" height="16.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="20.9" width="14.2" height="19.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="31.5" width="14.2" height="8.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="26.9" width="14.2" height="13.1" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="33.4" width="14.2" height="6.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="17.6" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="16.2" width="14.2" height="23.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="36.8" width="14.2" height="3.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+1.1%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.9%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.3%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+1.9%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+2.1%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+1.0%</td><td>50%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.5%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.7%</td><td>56%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-2.0%</td><td>48%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+2.9%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.7%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+0.4%</td><td>56%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
         <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 51% up · n=2547</span><span class="l-zh">对SPY +0.1% · 51% 上涨 · n=2547</span></td>
@@ -5664,6 +5761,8 @@
             <span style="color:var(--muted);letter-spacing:1px;font-size:10px">·</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">In trend, nothing fresh — no edge either way.</span><span class="l-zh">处于趋势中，无新信号——两边都无优势。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
         <td class="" style="font-size:12px">✓200d ✗50d</td>
@@ -5687,6 +5786,8 @@
             <span style="color:var(--muted);letter-spacing:1px;font-size:10px">·</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">In trend, nothing fresh — no edge either way.</span><span class="l-zh">处于趋势中，无新信号——两边都无优势。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
         <td class="" style="font-size:12px">✓200d ✗50d</td>
@@ -5710,6 +5811,8 @@
             <span style="color:var(--muted);letter-spacing:1px;font-size:10px">·</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">In trend, nothing fresh — no edge either way.</span><span class="l-zh">处于趋势中，无新信号——两边都无优势。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
@@ -5717,8 +5820,8 @@
         <td class="neg" data-sort="-12.1">-12.1%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+1.0% (68%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="2.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="11.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.2" width="14.2" height="25.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="31.8" width="14.2" height="8.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="39.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="28.2" width="14.2" height="11.8" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="36.0" width="14.2" height="4.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="39.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="26.1" width="14.2" height="13.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="30.9" width="14.2" height="9.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="29.0" width="14.2" height="11.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.2%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-1.0%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+2.3%</td><td>75%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.3%</td><td>82%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.7%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+0.0%</td><td>54%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.0%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.3%</td><td>63%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="pos">+0.1%</td><td>63%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.2%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+0.8%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.0%</td><td>63%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
+            <span style="cursor:help">+1.0% (64%)</span>
+            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="2.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="11.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.2" width="14.2" height="25.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="31.8" width="14.2" height="8.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="39.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="28.4" width="14.2" height="11.6" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="36.0" width="14.2" height="4.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="39.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="26.1" width="14.2" height="13.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="30.9" width="14.2" height="9.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="29.0" width="14.2" height="11.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.2%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-1.0%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+2.3%</td><td>75%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.3%</td><td>82%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.7%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+0.0%</td><td>54%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.0%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.3%</td><td>63%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="pos">+0.1%</td><td>63%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.2%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+0.8%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.0%</td><td>63%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
         <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 51% up · n=2547</span><span class="l-zh">对SPY +0.1% · 51% 上涨 · n=2547</span></td>
@@ -5733,6 +5836,8 @@
             <span style="color:var(--orange);letter-spacing:1px;font-size:10px">●</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Overbought and still rising — late; hold/trim, don&#39;t chase.</span><span class="l-zh">超买且仍在上行——已晚；持有/减仓，勿追。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
@@ -5741,7 +5846,7 @@
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+1.5% (71%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="3.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="36.2" width="14.2" height="3.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="32.3" width="14.2" height="7.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="19.9" width="14.2" height="20.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="35.0" width="14.2" height="5.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.7" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="28.7" width="14.2" height="11.3" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="38.1" width="14.2" height="1.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="8.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="31.4" width="14.2" height="8.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="30.5" width="14.2" height="9.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+0.5%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.0%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.7%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.7%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.2%</td><td>46%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.5%</td><td>71%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.1%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.1%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.5%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.3%</td><td>70%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
+            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="3.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="36.2" width="14.2" height="3.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="32.3" width="14.2" height="7.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="19.9" width="14.2" height="20.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="35.0" width="14.2" height="5.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.7" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="28.6" width="14.2" height="11.4" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="38.1" width="14.2" height="1.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="8.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="31.4" width="14.2" height="8.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="30.5" width="14.2" height="9.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+0.5%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.0%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.7%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.7%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.2%</td><td>46%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.5%</td><td>71%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.1%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.1%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.5%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.3%</td><td>70%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
         <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2189</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2189</span></td>
@@ -5756,6 +5861,8 @@
             <span style="color:var(--orange);letter-spacing:1px;font-size:10px">●</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Overbought and still rising — late; hold/trim, don&#39;t chase.</span><span class="l-zh">超买且仍在上行——已晚；持有/减仓，勿追。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">MACD curling up</span><span class="l-zh">MACD 上弯</span></td>
         <td class="" style="font-size:12px">✓200d ✗50d</td>
@@ -5764,7 +5871,7 @@
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+0.2% (61%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="30.8" width="14.2" height="9.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="27.0" width="14.2" height="13.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="22.2" width="14.2" height="17.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="36.6" width="14.2" height="3.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="38.0" width="14.2" height="2.0" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="40.0" width="14.2" height="3.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="6.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="31.8" width="14.2" height="8.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="25.2" width="14.2" height="14.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="32.1" width="14.2" height="7.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+1.1%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+1.6%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+2.2%</td><td>71%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+3.2%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.1%</td><td>50%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+0.2%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="neg">-0.4%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-0.8%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.0%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+1.8%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.0%</td><td>63%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
+            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="30.8" width="14.2" height="9.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="27.0" width="14.2" height="13.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="22.2" width="14.2" height="17.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="36.6" width="14.2" height="3.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="38.5" width="14.2" height="1.5" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="40.0" width="14.2" height="3.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="6.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="31.8" width="14.2" height="8.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="25.2" width="14.2" height="14.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="32.1" width="14.2" height="7.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+1.1%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+1.6%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+2.2%</td><td>71%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+3.2%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.1%</td><td>50%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+0.2%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="neg">-0.4%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-0.8%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.0%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+1.8%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.0%</td><td>63%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
         <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2189</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2189</span></td>
@@ -5779,6 +5886,8 @@
             <span style="color:var(--down);letter-spacing:1px;font-size:10px">●</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Overbought and rolling over — distribution risk; reduce.</span><span class="l-zh">超买且开始回落——派发风险；减仓。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">daily momentum rolling down</span><span class="l-zh">日线动量回落</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
@@ -5802,6 +5911,8 @@
             <span style="color:var(--down);letter-spacing:1px;font-size:10px">●</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Overbought and rolling over — distribution risk; reduce.</span><span class="l-zh">超买且开始回落——派发风险；减仓。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">daily momentum rolling down</span><span class="l-zh">日线动量回落</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
@@ -5810,7 +5921,7 @@
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+1.9% (68%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="1.8" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="9.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="31.9" width="14.2" height="8.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="37.1" width="14.2" height="2.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="8.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="21.3" width="14.2" height="18.7" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="37.5" width="14.2" height="2.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="11.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="20.2" width="14.2" height="19.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="20.0" width="14.2" height="20.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="28.4" width="14.2" height="11.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.2%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-1.0%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+0.8%</td><td>43%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.6%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.3%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.8%</td><td>39%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.9%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.2%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+2.0%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.0%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.2%</td><td>70%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
+            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="1.8" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="9.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="31.9" width="14.2" height="8.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="37.1" width="14.2" height="2.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="8.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="21.0" width="14.2" height="19.0" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="37.5" width="14.2" height="2.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="11.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="20.2" width="14.2" height="19.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="20.0" width="14.2" height="20.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="28.4" width="14.2" height="11.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.2%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-1.0%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+0.8%</td><td>43%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.6%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.3%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.8%</td><td>39%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.9%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.2%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+2.0%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.0%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.2%</td><td>70%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
         <td class="neg" style="font-size:11.5px"><span class="l-en">-0.2% vs SPY · 49% up · n=2336</span><span class="l-zh">对SPY -0.2% · 49% 上涨 · n=2336</span></td>
@@ -5825,6 +5936,8 @@
             <span style="color:var(--muted);letter-spacing:1px;font-size:10px">●</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Below the 200-day — bottoming buys here are knives; wait for a reclaim.</span><span class="l-zh">处于200日线下方——此处抄底如接飞刀；等待收复。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">daily momentum rolling down</span><span class="l-zh">日线动量回落</span></td>
         <td class="" style="font-size:12px">✗200d ✗50d</td>
@@ -5833,7 +5946,7 @@
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+1.7% (68%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="34.6" width="14.2" height="5.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="3.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="28.7" width="14.2" height="11.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="17.7" width="14.2" height="22.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="37.4" width="14.2" height="2.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="25.0" width="14.2" height="15.0" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="39.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="6.7" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="26.4" width="14.2" height="13.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="29.7" width="14.2" height="10.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+0.6%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.3%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.5%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.3%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.1%</td><td>54%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.7%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.1%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-0.8%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.5%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.9%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.2%</td><td>78%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
+            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="34.6" width="14.2" height="5.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="3.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="28.7" width="14.2" height="11.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="17.7" width="14.2" height="22.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="37.4" width="14.2" height="2.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="24.6" width="14.2" height="15.4" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="39.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="6.7" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="26.4" width="14.2" height="13.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="29.7" width="14.2" height="10.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+0.6%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.3%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.5%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.3%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.1%</td><td>54%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.7%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.1%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-0.8%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.5%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.9%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.2%</td><td>78%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
         <td class="neg" style="font-size:11.5px"><span class="l-en">-0.1% vs SPY · 50% up · n=3486</span><span class="l-zh">对SPY -0.1% · 50% 上涨 · n=3486</span></td>
@@ -5848,6 +5961,8 @@
             <span style="color:var(--muted);letter-spacing:1px;font-size:10px">●</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Below the 200-day — bottoming buys here are knives; wait for a reclaim.</span><span class="l-zh">处于200日线下方——此处抄底如接飞刀；等待收复。</span></div>
+          
+          
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">StochRSI ↑20, MACD curling up, ~8d to cross</span><span class="l-zh">StochRSI 上穿20, MACD 上弯, 约8天后交叉</span></td>
         <td class="" style="font-size:12px">✗200d ✗50d</td>
@@ -5855,8 +5970,8 @@
         <td class="neg" data-sort="-12.8">-12.8%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+2.4% (78%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="5.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="40.0" width="14.2" height="4.9" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="27.8" width="14.2" height="12.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="24.1" width="14.2" height="15.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="35.0" width="14.2" height="5.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="25.4" width="14.2" height="14.6" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="30.6" width="14.2" height="9.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="12.6" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="40.0" width="14.2" height="4.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="18.3" width="14.2" height="21.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+4.2%</td><td>75%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.9%</td><td>25%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="neg">-0.8%</td><td>62%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.0%</td><td>62%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+2.6%</td><td>75%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+0.8%</td><td>75%</td><td class="muted">8</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+2.4%</td><td>78%</td><td class="muted">9</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+1.5%</td><td>62%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-2.0%</td><td>38%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="neg">-0.7%</td><td>50%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.5%</td><td>75%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="neg">-0.0%</td><td>62%</td><td class="muted">8</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
+            <span style="cursor:help">+2.5% (78%)</span>
+            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="5.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="40.0" width="14.2" height="4.9" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="27.8" width="14.2" height="12.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="24.1" width="14.2" height="15.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="35.0" width="14.2" height="5.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="24.7" width="14.2" height="15.3" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="30.6" width="14.2" height="9.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="12.6" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="40.0" width="14.2" height="4.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="18.3" width="14.2" height="21.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+4.2%</td><td>75%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.9%</td><td>25%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="neg">-0.8%</td><td>62%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.0%</td><td>62%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+2.6%</td><td>75%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+0.8%</td><td>75%</td><td class="muted">8</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+2.5%</td><td>78%</td><td class="muted">9</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+1.5%</td><td>62%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-2.0%</td><td>38%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="neg">-0.7%</td><td>50%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.5%</td><td>75%</td><td class="muted">8</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="neg">-0.0%</td><td>62%</td><td class="muted">8</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
         <td class="neg" style="font-size:11.5px"><span class="l-en">-0.1% vs SPY · 50% up · n=3486</span><span class="l-zh">对SPY -0.1% · 50% 上涨 · n=3486</span></td>
@@ -5866,6 +5981,39 @@
     <p class="muted" style="font-size:12px"><span class="l-en">Click any sector for its full drill-down: cycle position, multi-timeframe momentum, the confluence signal, and each top-10 holding analyzed individually.</span><span class="l-zh">点击任意板块查看完整下钻：周期位置、多时间尺度动量、共振信号，以及逐一分析的每个前十大持仓。</span></p>
   </div>
   
+
+  
+  
+  <div class="panel span12 dash-mtf-section" id="dash-mtf-section">
+    <h2><span class="l-en">Turn Setups — multi-timeframe momentum</span><span class="l-zh">拐点形态 — 多时间框架动量</span>
+      <span class="help">?<span class="tip tip-wide">
+        <span class="l-en">
+          Forward-graded meter (expected-null; prior sector-level turn in backtest printed NULL — Oracle P8 / DO_NOT_REBUILD §2).
+          Display context only — not a directional signal or a return forecast. Tier = display.
+          <b>Legs:</b> D = daily MACD bull cross; 3D = house 3-day confluence (MACD+StochRSI, the primary setup engine);
+          W = weekly MACD (filled = confirmed cross, hollow circle = approaching); 2W = biweekly MACD cross.
+          <b>States:</b> UPTURN_CONFIRMED (K≥3 incl. ≥1 weekly/2W leg) · UPTURN_WATCH (K≥2) · NONE.
+          <b>Monthly phase</b> is anti-trap context only (not a gate). Fade base rate: 58% at T+1 (n=26).
+          Mag7 always shown. Data lands after nightly (~02:00 UTC). Accruing from ship date.
+        </span>
+        <span class="l-zh">
+          前瞻计量（预期空值；回测中板块级别拐点为NULL — Oracle P8 / DO_NOT_REBUILD §2）。
+          仅展示参考，非方向信号或收益预测。层级=展示。
+          <b>信号腿：</b>D=日线MACD金叉；3D=本系统3日共振（MACD+StochRSI，主要形态引擎）；
+          W=周线MACD（实心=确认交叉，空心=接近交叉）；2W=双周MACD交叉。
+          <b>状态：</b>UPTURN_CONFIRMED（K≥3含≥1周/双周腿）· UPTURN_WATCH（K≥2）· NONE。
+          <b>月线阶段</b>仅作防陷阱参考（非门控）。T+1翻转消退概率：58%（n=26）。
+          Mag7始终显示。数据在每晚收盘后更新（约UTC 02:00）。从上线日起积累。
+        </span>
+      </span></span>
+    </h2>
+    <div id="dash-mtf-body">
+      <p class="dash-mtf-absent l-en">Loading turn setup data…</p>
+      <p class="dash-mtf-absent l-zh">加载拐点形态数据…</p>
+    </div>
+  </div>
+  
+
   
 
 
@@ -6352,6 +6500,348 @@ window.__CHART_SWAP__ = {
   }, true);
 })();
 </script>
+
+<script>
+/* TS-U3 dash-tape-band + dash-tw-strip + dash-mtf-section JS (mode=stocks only).
+   FT-R1/TS-R5: display-tier only; never mutates slow state; no buy verbs.
+   FT-R8: graceful absent-file. TS-R1: honest-delay modes. */
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function L(en,zh){return'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>';}
+function fmtPct(v){if(v==null)return'—';return(v>=0?'+':'')+v.toFixed(2)+'%';}
+function clsPct(v){return v==null?'muted':v>=0?'up':'dn';}
+
+function fetchJson(url, cb){
+  fetch(url,{cache:'no-cache'})
+    .then(function(r){if(!r.ok)throw 0;return r.json();})
+    .then(cb)
+    .catch(function(){});
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   TAPE BAND (TS-R7 — dashboard reach; clones FTR W3 idiom)
+   ──────────────────────────────────────────────────────────────────────── */
+var SESSION_LABELS = {
+  pre:  {cls:'pre',  en:'PREMARKET',   zh:'盘前'},
+  rth:  {cls:'live', en:'LIVE · RTH',  zh:'实盘 · 正常时段'},
+  post: {cls:'post', en:'POST-MARKET', zh:'盘后'},
+  closed:{cls:'closed',en:'CLOSED',   zh:'休市'}
+};
+function isChipSuppressed(pulse){ return !pulse || (pulse.mode||'live') !== 'live'; }
+function modePillHtml(pulse){
+  var mode = pulse.mode||'live';
+  if(mode==='live') return '';
+  var delay = pulse.delay_min_median;
+  var asof  = pulse.as_of_quotes || pulse.as_of_utc;
+  var asofStr='';
+  if(asof){try{asofStr=asof.length<=10?asof:new Date(asof).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});}catch(e){asofStr=asof;}}
+  var pills={delayed:{en:'DELAYED',zh:'延迟数据',cls:'pre'},last_rth:{en:'LAST SESSION',zh:'上一交易时段',cls:'post'},eod:{en:'EOD CLOSE',zh:'收盘价',cls:'closed'}};
+  var p=pills[mode]||{en:mode.toUpperCase(),zh:mode,cls:'closed'};
+  var delayNote='';
+  if(mode==='delayed'&&delay!=null){var h=Math.round(delay/60);delayNote=' · '+L('~'+h+'h delay','约'+h+'小时延迟');}
+  var asofNote=asofStr?(' · '+L('as of '+esc(asofStr),'截至 '+esc(asofStr))):'';
+  return '<span class="ftr-session-pill '+p.cls+'" style="margin-left:6px;font-size:10px">'+L(esc(p.en),esc(p.zh))+delayNote+asofNote+'</span>';
+}
+function renderTapeBand(pulse){
+  var band = document.getElementById('dash-tape-band');
+  if(!band) return;
+  if(!pulse){band.classList.remove('visible');return;}
+  band.classList.add('visible');
+  var session = pulse.session||'closed';
+  var mode    = pulse.mode||'live';
+  // Session pill
+  var info = SESSION_LABELS[session]||SESSION_LABELS.closed;
+  var pill = document.getElementById('dash-session-pill');
+  var lbl  = document.getElementById('dash-session-label');
+  if(pill){ pill.className='ftr-session-pill '+info.cls; }
+  if(lbl){ lbl.innerHTML=L(esc(info.en),esc(info.zh)); }
+  // Mode pill + as-of
+  var asofEl = document.getElementById('dash-tape-asof');
+  if(asofEl){
+    var ts = pulse.as_of_quotes||pulse.as_of_utc, tsStr='';
+    if(ts){try{tsStr=ts.length<=10?ts:new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});}catch(e){tsStr=ts;}}
+    asofEl.innerHTML=(tsStr?L('as of '+esc(tsStr),'截至 '+esc(tsStr)):'')+modePillHtml(pulse);
+  }
+  // Opacity
+  var hasAny=(pulse.baskets||[]).some(function(b){return b.live_ew_chg_pct!=null;});
+  band.style.opacity=(mode==='live')?'':(hasAny?'0.85':'0.65');
+  // AI-capex badge
+  var cxEl = document.getElementById('dash-cx-badge');
+  if(cxEl){
+    var cx=null;
+    (pulse.complexes||[]).forEach(function(c){if(c.complex_id==='ai_capex')cx=c;});
+    if(cx&&cx.live_ew_chg_pct!=null&&!isChipSuppressed(pulse)){
+      var isG=cx.live_ew_chg_pct>=0;
+      var col=isG?'rgba(35,192,138,.10)':'rgba(255,92,108,.07)';
+      var bdr=isG?'rgba(35,192,138,.28)':'rgba(255,92,108,.25)';
+      var vc=isG?'var(--up)':'var(--down)';
+      cxEl.innerHTML='<div class="ftr-cx-badge" style="background:'+col+';border-color:'+bdr+'">'
+        +'<div><div class="cx-name">'+L('AI-Capex Complex','AI资本开支复合板块')+'</div>'
+        +(cx.only_green_complex?'<div class="cx-note" style="color:'+vc+'">'+L('only green complex','唯一上涨复合板块')+'</div>':'')+'</div>'
+        +'<div class="cx-val" style="color:'+vc+'">'+fmtPct(cx.live_ew_chg_pct)+'</div></div>';
+    } else { cxEl.innerHTML=''; }
+  }
+  // Movers — top 5 / bottom 3
+  var topEl=document.getElementById('dash-top-movers'),botEl=document.getElementById('dash-bot-movers');
+  if(!topEl||!botEl) return;
+  var live=(pulse.baskets||[]).filter(function(b){return b.live_ew_chg_pct!=null&&b.tape_rank!=null;});
+  if(!live.length){
+    var noMsg='<span class="muted" style="font-size:11px">'+L('quotes loading…','报价加载中…')+'</span>';
+    topEl.innerHTML=noMsg; botEl.innerHTML=noMsg; return;
+  }
+  live.sort(function(a,b){return b.tape_rank-a.tape_rank;});
+  var top5=live.slice(0,5), bot3=live.slice(-3).reverse();
+  function mRow(b){
+    var chg=b.live_ew_chg_pct, isUp=chg>=0;
+    var barW=Math.min(44,Math.abs(chg)*10);
+    return '<div class="dash-mrow">'
+      +'<span class="mr-rank">#'+b.tape_rank+'</span>'
+      +'<span class="mr-name">'+esc(b.id)+'</span>'
+      +'<span class="mr-chg '+(isUp?'up':'dn')+'">'+fmtPct(chg)+'</span>'
+      +'<div class="mr-bar '+(isUp?'up':'dn')+'" style="width:'+barW.toFixed(0)+'px"></div>'
+      +'</div>';
+  }
+  topEl.innerHTML=top5.map(mRow).join('');
+  botEl.innerHTML=bot3.map(mRow).join('');
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   TURN WATCH STRIP + AUTO-EXPAND SALIENCE (TS-R5 / TS-R7)
+   Shows baskets with WATCH/IGNITION state OR ≥2 UPTURN_CONFIRMED members
+   while slow reco is hold/avoid. Removes is-collapsed from hold fold for
+   matched rows (TS-R5); adds ⚡ chip to those rows.
+   ──────────────────────────────────────────────────────────────────────── */
+function renderTurnWatch(turnWatch, mtfUpturn){
+  var stripEl=document.getElementById('dash-tw-strip');
+  var rowsEl=document.getElementById('dash-tw-rows');
+  var asofEl=document.getElementById('dash-tw-asof');
+  if(!stripEl||!rowsEl) return;
+
+  // Build mtfUpturn member-confirmed index: basket_id → confirmed count
+  var mtfBasketConfirmed={};
+  if(mtfUpturn&&mtfUpturn.tickers){
+    Object.keys(mtfUpturn.tickers).forEach(function(sym){
+      var t=mtfUpturn.tickers[sym];
+      if(t.state==='UPTURN_CONFIRMED'){
+        (t.basket_ids||[]).forEach(function(bid){
+          mtfBasketConfirmed[bid]=(mtfBasketConfirmed[bid]||0)+1;
+        });
+      }
+    });
+  }
+
+  // Build candidate list from turn_watch (basket-level)
+  var candidates=[];
+  var twBaskets=(turnWatch&&turnWatch.baskets)||[];
+  var twAsOf=(turnWatch&&turnWatch.as_of)||'';
+  var DISAGREE_RECOS={'hold':1,'avoid':1};  // TS-R5 disagreement gate (A1 fix)
+  twBaskets.forEach(function(tw){
+    var isActive=tw.state==='WATCH'||tw.state==='IGNITION';
+    var memberCount=mtfBasketConfirmed[tw.basket_id]||0;
+    // Show if: active state OR ≥2 members UPTURN_CONFIRMED
+    if(!isActive&&memberCount<2) return;
+    // TS-R5 disagreement gate: for WATCH/IGNITION baskets, only surface when slow_reco
+    // is hold/avoid (turn disagrees with slow read) or when reco is absent (honest null).
+    // A basket already on a buy reco + IGNITION is agreement, not disagreement — omit.
+    var reco=(tw.slow_reco||'').toLowerCase();
+    if(isActive&&reco&&!DISAGREE_RECOS[reco]) return;
+    candidates.push({
+      id: tw.basket_id,
+      name: tw.basket_id,  // basket name from id; ideally enriched from pulse
+      tw_state: isActive?tw.state:null,
+      member_confirmed: memberCount,
+      reco: tw.slow_reco||'',
+      reco_as_of: tw.reco_as_of||'',
+      sort_key: (tw.state==='IGNITION'?0:tw.state==='WATCH'?1:2)*100 - memberCount
+    });
+  });
+  // Also add baskets with ≥2 UPTURN_CONFIRMED members even if NOT in turn_watch baskets
+  Object.keys(mtfBasketConfirmed).forEach(function(bid){
+    var count=mtfBasketConfirmed[bid];
+    if(count>=2&&!candidates.find(function(c){return c.id===bid;})){
+      candidates.push({
+        id:bid, name:bid, tw_state:null, member_confirmed:count,
+        reco:'', reco_as_of:'', sort_key:200-count
+      });
+    }
+  });
+
+  candidates.sort(function(a,b){return a.sort_key-b.sort_key;});
+  candidates=candidates.slice(0,6);
+
+  if(!candidates.length){stripEl.classList.remove('visible');return;}
+  stripEl.classList.add('visible');
+  if(asofEl&&twAsOf){asofEl.textContent=L('nightly · '+esc(twAsOf),'每晚 · '+esc(twAsOf));}
+
+  // Render rows
+  var html='';
+  candidates.forEach(function(c){
+    var badgeCls='member', badgeTxt='';
+    if(c.tw_state==='IGNITION'){ badgeCls='ignition'; badgeTxt=L('&#9889; IGNITION','&#9889; 点火'); }
+    else if(c.tw_state==='WATCH'){ badgeCls='watch'; badgeTxt=L('&#9889; WATCH','&#9889; 观察'); }
+    else { badgeTxt=L(c.member_confirmed+' members confirmed',c.member_confirmed+'个成分确认'); }
+    var slowPart='';
+    if(c.reco){
+      var dateStr=c.reco_as_of?c.reco_as_of.slice(5):'';
+      var recoEn='slow reco: '+esc(c.reco.toUpperCase())+(dateStr?' (as-of '+esc(dateStr)+')':'');
+      var recoZh='慢速评级: '+esc(c.reco.toUpperCase())+(dateStr?' (截至'+esc(dateStr)+'）':'');
+      slowPart='<span class="dash-tw-slow">'+L(recoEn,recoZh)+'</span>';
+    }
+    var fadeStr=L(' · T+1 58% fade',' · T+1 58%消退');
+    html+='<div class="dash-tw-row">'
+      +'<span class="dash-tw-badge '+badgeCls+'">'+badgeTxt+'</span>'
+      +'<span class="dash-tw-name">'+esc(c.name)+'</span>'
+      +slowPart
+      +'<span class="dash-tw-slow">'+fadeStr+'</span>'
+      +'</div>';
+  });
+  rowsEl.innerHTML=html;
+
+  // TS-R5: auto-expand hold fold for matched theme IDs; add ⚡ chip
+  var matchedIds=new Set(candidates.map(function(c){return c.id;}));
+  var fold=document.getElementById('dash-hold-fold');
+  if(fold&&matchedIds.size){
+    var needExpand=false;
+    fold.querySelectorAll('[data-theme-id]').forEach(function(wrapper){
+      var tid=wrapper.getAttribute('data-theme-id');
+      if(!tid||!matchedIds.has(tid)) return;
+      // Add ⚡ salience chip if not already present
+      if(!wrapper.querySelector('.dash-turn-chip')){
+        var chip=document.createElement('span');
+        chip.className='dash-turn-chip';
+        chip.innerHTML='&#9889; '+L('TURN WATCH','拐点观察');
+        wrapper.appendChild(chip);
+      }
+      // Check if this item is currently hidden (would be after n+7 sibling)
+      // We'll just un-collapse the whole fold when any match is hidden
+      needExpand=true;
+    });
+    if(needExpand&&fold.classList.contains('is-collapsed')){
+      fold.classList.remove('is-collapsed');
+      // Update button state
+      var btn=fold.parentElement&&fold.parentElement.querySelector('.lst-more');
+      if(btn){btn.setAttribute('aria-expanded','true');var sh=btn.querySelector('.lm-show'),hi=btn.querySelector('.lm-hide');if(sh)sh.style.display='none';if(hi)hi.style.display='inline';}
+    }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   PER-STOCK TURN SETUPS TABLE (TS-R3 / TS-R7 / TS-R3)
+   ──────────────────────────────────────────────────────────────────────── */
+var MAG7=['AAPL','AMZN','GOOGL','META','MSFT','NVDA','TSLA'];
+function renderMtfTable(mtfUpturn){
+  var bodyEl=document.getElementById('dash-mtf-body');
+  if(!bodyEl) return;
+
+  if(!mtfUpturn||!mtfUpturn.tickers){
+    bodyEl.innerHTML='<p class="dash-mtf-absent">'
+      +L('Turn setup data lands after tonight\'s nightly (~02:00 UTC). Mag7 + basket members will appear here.',
+         '拐点形态数据将在今晚收盘后更新（约UTC 02:00）。Mag7及篮子成分将在此显示。')
+      +'</p>';
+    return;
+  }
+
+  var tickers=mtfUpturn.tickers;
+  var asOf=mtfUpturn.as_of||'';
+
+  // Build row list: CONFIRMED first, then WATCH, then Mag7 NONE
+  var confirmed=[], watch=[], mag7None=[];
+  var seen=new Set();
+  (mtfUpturn.cohort&&mtfUpturn.cohort.confirmed||[]).forEach(function(sym){
+    if(tickers[sym]){confirmed.push(sym);seen.add(sym);}
+  });
+  (mtfUpturn.cohort&&mtfUpturn.cohort.watch||[]).forEach(function(sym){
+    if(tickers[sym]&&!seen.has(sym)){watch.push(sym);seen.add(sym);}
+  });
+  MAG7.forEach(function(sym){
+    if(tickers[sym]&&!seen.has(sym)){mag7None.push(sym);seen.add(sym);}
+  });
+
+  var rows=confirmed.concat(watch).concat(mag7None).slice(0,40);
+
+  if(!rows.length){
+    bodyEl.innerHTML='<p class="dash-mtf-absent">'+L('No turn setup data yet.','暂无拐点形态数据。')+'</p>';
+    return;
+  }
+
+  // Leg glyphs
+  function legEl(fired, isPartial, label){
+    var cls=fired?'on':(isPartial?'partial':'off');
+    return '<span class="dash-mtf-leg '+cls+'" title="'+esc(label)+'">'+esc(label.slice(0,2))+'</span>';
+  }
+  function wMacdEl(val){
+    if(val==='cross') return '<span class="dash-mtf-leg on">W</span>';
+    if(val==='approaching') return '<span class="dash-mtf-leg partial" style="border-style:dashed">W</span>';
+    return '<span class="dash-mtf-leg off">W</span>';
+  }
+
+  var html='<p class="muted" style="font-size:11px;margin:0 0 5px">'
+    +L('as of '+esc(asOf)+' · Mag7 always shown · forward-graded meter (expected null) · display only',
+       '截至 '+esc(asOf)+' · Mag7始终显示 · 前瞻计量（预期空值）· 仅展示')+'</p>';
+  html+='<table class="dash-mtf-tbl"><thead><tr>'
+    +'<th>'+L('ticker','代码')+'</th>'
+    +'<th>'+L('state','状态')+'</th>'
+    +'<th class="r">K</th>'
+    +'<th>'+L('legs (D / 3D / W / 2W)','信号腿 (D / 3D / W / 2W)')
+      +' <span class="help" style="vertical-align:middle">?<span class="tip">'
+      +'<span class="l-en">D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (solid=confirmed, dashed=approaching); 2W=biweekly MACD. Forward-graded meter; prior sector-level turn printed NULL (Oracle P8). Display context, not a signal.</span>'
+      +'<span class="l-zh">D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（实线=确认，虚线=接近）；2W=双周MACD。前瞻计量；板块级别拐点为NULL（Oracle P8）。展示参考，非信号。</span>'
+      +'</span></span></th>'
+    +'<th>'+L('monthly phase','月线阶段')+'</th>'
+    +'<th>'+L('since','起始')+'</th>'
+    +'<th>'+L('baskets','篮子')+'</th>'
+    +'</tr></thead><tbody>';
+
+  rows.forEach(function(sym){
+    var t=tickers[sym];
+    var legs=t.legs||{};
+    var stateCls=t.state==='UPTURN_CONFIRMED'?'confirmed':t.state==='UPTURN_WATCH'?'watch':'none';
+    var stateLbl=t.state==='UPTURN_CONFIRMED'?L('CONFIRMED','已确认'):t.state==='UPTURN_WATCH'?L('WATCH','观察'):L('—','—');
+    var basketStr=(t.basket_ids||[]).slice(0,3).join(', ')+(t.basket_ids&&t.basket_ids.length>3?'…':'');
+    html+='<tr>'
+      +'<td><b>'+esc(sym)+'</b></td>'
+      +'<td><span class="dash-mtf-badge '+stateCls+'">'+stateLbl+'</span></td>'
+      +'<td class="r"><span class="dash-mtf-k">'+(t.k||0)+'</span></td>'
+      +'<td><div class="dash-mtf-legs">'
+        +legEl(!!legs.d_macd,false,'D')
+        +legEl(!!legs.d3_confluence,false,'3D')
+        +wMacdEl(legs.w_macd||'none')
+        +legEl(!!legs.w2_macd,false,'2W')
+      +'</div></td>'
+      +'<td class="dash-mtf-phase">'+esc(t.monthly_phase||'—')+'</td>'
+      +'<td class="dash-mtf-since">'+esc(t.since||'—')+'</td>'
+      +'<td class="dash-mtf-baskets">'+esc(basketStr||'—')+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  bodyEl.innerHTML=html;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   FETCH + ORCHESTRATE
+   ──────────────────────────────────────────────────────────────────────── */
+var pulse=null, turnWatch=null, mtfUpturn=null;
+var pulseDone=false, twDone=false, mtfDone=false;
+
+function tryRender(){
+  if(!pulseDone||!twDone||!mtfDone) return;
+  renderTapeBand(pulse);
+  renderTurnWatch(turnWatch, mtfUpturn);
+  renderMtfTable(mtfUpturn);
+}
+
+fetchJson('live/basket_pulse.json',function(d){pulse=d;pulseDone=true;tryRender();});
+fetchJson('basketdata/turn_watch.json',function(d){turnWatch=d;twDone=true;tryRender();});
+fetchJson('stockdata/mtf_upturn.json',function(d){mtfUpturn=d;mtfDone=true;tryRender();});
+
+// Fail-open: if any fetch doesn't resolve, still render with what we have
+setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000);
+
+})();
+</script>
+
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
