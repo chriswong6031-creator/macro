@@ -257,6 +257,8 @@ def select_candidates(
 # ---------------------------------------------------------------------------
 
 _VALIDATED_PAT = re.compile(r"\b(validated|已验证)\b", re.IGNORECASE)
+_VALIDATED_PAT_ZH = re.compile(r"已验证", re.IGNORECASE)
+_VALIDATED_PAT_EN = re.compile(r"\bvalidated\b", re.IGNORECASE)
 
 
 def _sanitize_thesis_text(text: str) -> str:
@@ -268,6 +270,14 @@ def _sanitize_thesis_text(text: str) -> str:
     Replace them with 'risk gate' to preserve the semantic content without the claim.
     """
     return _VALIDATED_PAT.sub("risk gate", text)
+
+
+def _sanitize_thesis_text_zh(text: str) -> str:
+    """ZH counterpart of _sanitize_thesis_text — replaces forbidden tokens with ZH equivalents.
+    '已验证' → '风险管控'; 'validated' (EN in ZH context) → '风险管控'."""
+    text = _VALIDATED_PAT_ZH.sub("风险管控", text)
+    text = _VALIDATED_PAT_EN.sub("风险管控", text)
+    return text
 
 
 def _build_thesis(ticker: str, b: dict) -> str:
@@ -338,6 +348,71 @@ def _build_thesis(ticker: str, b: dict) -> str:
         "DISPLAY-ONLY: machine-generated from factor scores; no forward return"
         " guarantee; display-tier artifact."
     )
+    return " ".join(parts)
+
+
+def _build_thesis_zh(ticker: str, b: dict) -> str:
+    """ZH counterpart of _build_thesis — same deterministic template, translated strings.
+    Data interpolation (ticker, score, prices) is unchanged; no LLM at runtime."""
+    conv = b.get("conviction") or {}
+    es = b.get("entry_signal") or {}
+    hold = b.get("hold") or {}
+    drivers_zh = conv.get("drivers_zh", []) or conv.get("drivers", []) or []
+    cautions_zh = conv.get("cautions_zh", []) or conv.get("cautions", []) or []
+    score = conv.get("score", "N/A")
+    band = conv.get("band", "N/A")
+
+    # Band translation map
+    _BAND_ZH = {"high": "高", "constructive": "积极", "neutral": "中性",
+                "caution": "留意", "avoid": "回避"}
+    band_zh = _BAND_ZH.get(str(band), str(band))
+
+    tech_flags_zh: list[str] = []
+    if es.get("above200"):
+        tech_flags_zh.append("站上200日均线")
+    if es.get("weekly_bull"):
+        tech_flags_zh.append("周线结构看多")
+    if es.get("coiled"):
+        tech_flags_zh.append("盘整蓄势形态")
+    washout = es.get("washout_ctx") or hold.get("washout_ctx")
+    if washout:
+        tech_flags_zh.append("超跌回暖背景")
+    dc_phase = hold.get("dc_phase") or es.get("dc_phase")
+    if dc_phase:
+        tech_flags_zh.append(f"唐奇安阶段: {dc_phase}")
+
+    entry_grade = es.get("entry_grade") or ""
+    archetype = b.get("archetype") or b.get("setup_type") or ""
+
+    s1_parts = [f"{ticker} — 确信度 {score}/100（{band_zh}）"]
+    if tech_flags_zh:
+        s1_parts.append(f"技术背景: {'; '.join(tech_flags_zh[:3])}。")
+    elif entry_grade:
+        s1_parts.append(f"入场评级: {entry_grade}。")
+    if archetype:
+        s1_parts.append(f"形态类型: {archetype}。")
+    sentence1 = " ".join(s1_parts).strip()
+
+    sentence2 = ""
+    if drivers_zh:
+        sanitized = [_sanitize_thesis_text_zh(str(d)) for d in drivers_zh[:3]]
+        sentence2 = f"驱动因素: {'; '.join(sanitized)}。"
+
+    sentence3_parts: list[str] = []
+    if cautions_zh:
+        sanitized_c = [_sanitize_thesis_text_zh(str(c)) for c in cautions_zh[:2]]
+        sentence3_parts.append(f"注意事项: {'; '.join(sanitized_c)}。")
+    trust_zh = (conv.get("trust_tier") or {}).get("zh", "")
+    if trust_zh:
+        sentence3_parts.append(f"可信度: {trust_zh}。")
+    sentence3 = " ".join(sentence3_parts)
+
+    parts = [sentence1]
+    if sentence2:
+        parts.append(sentence2)
+    if sentence3:
+        parts.append(sentence3)
+    parts.append("仅供展示：由因子分数机器生成；无前瞻收益保证；展示层级输出。")
     return " ".join(parts)
 
 
@@ -462,6 +537,93 @@ def _build_what_to_do_now(
     ]
 
 
+def _build_what_to_do_now_zh(
+    phase: str,
+    entry: float | None,
+    trigger: float | None,
+    invalidation: float | None,
+    t1: float | None,
+    t2: float | None,
+    tranche: int = 1,
+) -> list[str]:
+    """ZH counterpart of _build_what_to_do_now — translated template strings,
+    identical data interpolation. No LLM at runtime."""
+    trigger_str = _fmt_price(trigger)
+    t1_str = _fmt_price(t1)
+    t2_str = _fmt_price(t2)
+    inval_str = _fmt_price(invalidation)
+
+    if phase == "pre_trigger":
+        lines = [
+            f"等待价格触及触发点（{trigger_str}）后再入场，触发确认前不建仓。",
+            f"初始建仓保持小仓位；买入区间从触发点延伸至 {t1_str}（T1），无需急于入场。",
+        ]
+        if t2 is not None:
+            lines.append(
+                f"触发确认后逐步加仓。止损参考位为 {inval_str}，收盘跌破该位即离场。"
+            )
+        return lines
+
+    if phase in ("triggered_pre_t1",):
+        lines = [
+            f"触发点已确认。持有当前仓位，等待价格向 T1（{t1_str}）推进。",
+            f"只要价格维持在 {inval_str}（无效化位）上方，可在短期回调中加仓。",
+        ]
+        if t2 is not None:
+            lines.append(
+                f"行情持续确认后继续加仓，目标 T2 为 {t2_str}。勿追高，回调时加仓。"
+            )
+        return lines
+
+    if phase in ("at_t1", "between_t1_t2"):
+        lines = [
+            f"T1（{t1_str}）已达到。在此减仓约 40%，将止损上移至入场位（{_fmt_price(entry)}）。",
+        ]
+        if t2 is not None:
+            lines.append(
+                f"剩余仓位持有待 T2（{t2_str}）。将止损移至盈亏平衡点以防反转。"
+            )
+        lines.append(
+            f"T2 目标为 {t2_str}——除非价格收盘回落至 {t1_str} 下方，否则让剩余仓位继续运行。"
+            if t2 is not None else
+            f"无 T2 目标。考虑全部平仓或紧追止损。"
+        )
+        return lines[:3]
+
+    if phase == "post_t1_failed_hold":
+        return [
+            f"T1 后涨幅回吐。减少敞口——减仓或若价格收盘跌破入场位（{_fmt_price(entry)}）则离场。",
+            f"无效化位为 {inval_str}，收盘跌破该位即全部离场。",
+            f"不要在此加仓。若价格放量重新站上 {t1_str}（T1），再重新评估。",
+        ]
+
+    if phase in ("at_t2", "post_t2"):
+        lines = [
+            f"T2（{t2_str}）已达到。平掉大部分仓位（约 60–80%）。",
+            f"剩余仓位追踪止损以保护盈利。考虑将止损硬停在 T1（{t1_str}）。",
+        ]
+        return lines
+
+    if phase == "overtime":
+        return [
+            f"交易超出预期持有周期但未达 T1（{t1_str}）。重新评估论点。",
+            f"减仓以降低时间风险。收盘跌破 {inval_str}（无效化位）即全部离场。",
+            f"超时期间不要加仓。等待 T1 尽快达到，否则该形态推迟执行。",
+        ]
+
+    if phase == "invalidated":
+        return [
+            f"无效化位（{inval_str}）已被突破，全部离场。",
+            f"该计划已失效，不要持仓硬撑。",
+        ]
+
+    # Fallback
+    return [
+        f"监测价格相对于触发点（{trigger_str}）和 T1（{t1_str}）的表现。",
+        f"收盘跌破无效化位（{inval_str}）即离场。",
+    ]
+
+
 def _build_profit_plan(
     phase: str,
     entry: float | None,
@@ -509,6 +671,51 @@ def _build_profit_plan(
             "level": t2,
             "label": "T2",
             "action": "Close remaining 60%, exit full position",
+            "status": t2_status,
+        })
+
+    return rows
+
+
+def _build_profit_plan_zh(
+    phase: str,
+    entry: float | None,
+    t1: float | None,
+    t2: float | None,
+    p1: float | None = None,
+    p2: float | None = None,
+) -> list[dict]:
+    """ZH counterpart of _build_profit_plan — same row structure, translated action strings.
+    label stays "T1"/"T2" (universal); action_zh added per row. No LLM at runtime."""
+    rows: list[dict] = []
+
+    t1_status: str
+    if phase in ("at_t1", "between_t1_t2", "post_t1_failed_hold", "at_t2", "post_t2"):
+        t1_status = "DONE"
+    elif phase == "invalidated":
+        t1_status = "DONE"
+    else:
+        t1_status = "ACTIVE"
+
+    rows.append({
+        "level": t1,
+        "label": "T1",
+        "action": "减仓 40%，将止损上移至入场位",
+        "status": t1_status,
+    })
+
+    if t2 is not None:
+        t2_status: str
+        if phase in ("at_t2", "post_t2"):
+            t2_status = "DONE"
+        elif phase in ("at_t1", "between_t1_t2"):
+            t2_status = "ACTIVE"
+        else:
+            t2_status = "PENDING"
+        rows.append({
+            "level": t2,
+            "label": "T2",
+            "action": "平仓剩余 60%，全部离场",
             "status": t2_status,
         })
 
@@ -815,7 +1022,24 @@ def originate_plans(
             t2=t2_price,
             tranche=1,
         )
+        what_to_do_now_zh = _build_what_to_do_now_zh(
+            phase=init_phase,
+            entry=entry,
+            trigger=trigger,
+            invalidation=geo["invalidation"],
+            t1=t1_price,
+            t2=t2_price,
+            tranche=1,
+        )
         profit_plan = _build_profit_plan(
+            phase=init_phase,
+            entry=entry,
+            t1=t1_price,
+            t2=t2_price,
+            p1=0.0,
+            p2=0.0 if t2_price is not None else None,
+        )
+        profit_plan_zh = _build_profit_plan_zh(
             phase=init_phase,
             entry=entry,
             t1=t1_price,
@@ -832,6 +1056,7 @@ def originate_plans(
             "asset": ticker,
             "direction": direction,
             "thesis": _build_thesis(ticker, b),
+            "thesis_zh": _build_thesis_zh(ticker, b),
             "source_engines": ["us_standouts_buy_lane", "neural_web"],
             "trigger": round(trigger, 4),
             "entry": round(entry, 4),
@@ -862,8 +1087,10 @@ def originate_plans(
             # ── Content blocks (optional; graceful fallback on absence) ───────
             # These are regenerated by the management engine on each nightly run
             # with the current phase.  display-only artifact.
-            "what_to_do_now": what_to_do_now,   # list[str] — numbered bullets
-            "profit_plan": profit_plan,           # list[{level, label, action, status}]
+            "what_to_do_now": what_to_do_now,       # list[str] — numbered bullets (EN)
+            "what_to_do_now_zh": what_to_do_now_zh, # list[str] — numbered bullets (ZH)
+            "profit_plan": profit_plan,              # list[{level, label, action, status}] (EN)
+            "profit_plan_zh": profit_plan_zh,        # list[{level, label, action, status}] (ZH)
             # Extra metadata (display)
             "_signal_date": signal_date,
             "_conviction_score": conv.get("score"),
