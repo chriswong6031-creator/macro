@@ -37,6 +37,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2a | 4 |
 | metabolism-phase0 | 2 |
 | momoedge | 8 |
+| narrative-ignition | 2 |
 | nasdaq-internals | 1 |
 | neural-web | 48 |
 | next3 | 3 |
@@ -69,7 +70,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 205 |
+| display | 207 |
 | infrastructure | 84 |
 | scored | 4 |
 | shadow | 54 |
@@ -78,7 +79,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 333 |
+| git | 335 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -378,6 +379,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
 | prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
 | prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+
+### narrative-ignition
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| stock-flare-persistence | `site/stockdata/flare_persistence.json` | json | daily-engine | display | 1 | 0 |
+| stock-flare-persistence-history | `data/flare_persistence/state_hist.parquet` | parquet | daily-engine | display | 0 | 0 |
 
 ### nasdaq-internals
 
