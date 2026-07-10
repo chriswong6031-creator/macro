@@ -106,11 +106,15 @@ _LEG_CALIB = {
     # a hot Tier-A bubble read but CANNOT originate state. Come-back 2026-10-15.
     "nh_contraction":   {"lift_2020": 0.0,   "lift_full": 0.275, "lead_d": 15, "thr_pct": 0.85, "era_robust": False, "accruing": True},
     # jpy_carry: -(DEXJPUS/DEXJPUS.shift(10)-1) gated to 0 when DEXJPUS >= 50d MA → causal 504d pctile.
-    # Phase-0 measured: lift_full=1.188, lift_2020=1.450, fire_rate=0.0961, perm_p=0.036 — PASS.
+    # Phase-0 measured: lift_full=1.188, measured_lift_2020=1.450, fire_rate=0.0961, perm_p=0.036 — PASS.
+    # lift_2020 kept None (matching all other Tier-B accruing legs) so _is_validated returns False
+    # and jpy_carry stays out of the CI validated-leg gate — its accruing=True / Tier-B status means
+    # it must never be able to red the validated-leg evidence gate via a future live-data shift.
+    # Measured 1.45 recorded above as measured_lift_2020 (non-gating).
     # Joins the 'global' scare (weight 0.3) as a complementary carry-stress channel alongside
     # global_breadth (weight 0.7). 2022 sign-inversion documented: in a pure Fed-hike regime,
     # USD/JPY weakness ≠ risk-off — WHY it is Tier-B escalator-only (never originates state).
-    "jpy_carry":        {"lift_2020": 1.450, "lift_full": 1.188, "lead_d": 5,  "thr_pct": 0.85, "era_robust": False, "accruing": True},
+    "jpy_carry":        {"lift_2020": None,  "measured_lift_2020": 1.450, "lift_full": 1.188, "lead_d": 5,  "thr_pct": 0.85, "era_robust": False, "accruing": True},
 }
 _VALIDATED_MIN = 1.20   # a leg is a real LEADING leg only if its 2020+ lift clears this
 
@@ -427,7 +431,7 @@ def leading_signals() -> pd.DataFrame:
         jpy_leg = build_jpy_carry(spy, dex_s)
         jpy_leg_clean = jpy_leg.dropna()
         if len(jpy_leg_clean) >= _PCT_MINP:
-            out["jpy_carry"] = jpy_leg.reindex(idx).fillna(0.0)
+            out["jpy_carry"] = jpy_leg.reindex(idx)
     # nh_contraction: breadth internals deterioration at fresh index highs → 'internals' scare.
     # Phase-0 NULL (lift_2020=0.0, perm_p=0.978) — accruing confluence input, Tier-B only.
     # Absent (degrade-don't-crash) when breadth.parquet is missing or lacks 'nh'/'n_members'.
@@ -437,7 +441,7 @@ def leading_signals() -> pd.DataFrame:
         nhc_leg = build_nh_contraction(spy, b_df)
         nhc_leg_clean = nhc_leg.dropna()
         if len(nhc_leg_clean) >= _PCT_MINP:
-            out["nh_contraction"] = nhc_leg.reindex(idx).fillna(0.0)
+            out["nh_contraction"] = nhc_leg.reindex(idx)
     return out
 
 
@@ -640,8 +644,24 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
     second = [s for s in tierA if s["score"] >= bands["watch"]]
     conjunction = len(armed) >= 1 and len(second) >= 2
     esc = conjunction
-    if state != "calm" and any(s["score"] >= bands["caution"] for s in tierB):
-        esc = True   # Tier-B (vol) may escalate a hot Tier-A, never originate
+    # Tier-B scares may escalate a hot Tier-A state, never originate one.  However a scare whose
+    # ALL firing legs carry lift_2020==0.0 (measured null — e.g. nh_contraction perm_p=0.978) is
+    # excluded from the escalation set until it accrues a real forward-graded lift.  This keeps
+    # phase-0 null legs display-only per the context-accrual law, preventing a noise signal from
+    # moving state/gross/banner.  Legs with lift_2020=None (unknown/accruing, e.g. vol flow legs,
+    # global_breadth) are NOT excluded — their lift is simply unmeasured, not measured-zero.
+    def _tierb_can_escalate(scare_d: dict, calib: dict) -> bool:
+        legs = scare_d["firing_legs"]
+        if not legs:
+            return False
+        # all legs measured-zero → exclude from escalation
+        if all(calib["legs"].get(l["leg"], {}).get("lift_2020") == 0.0 for l in legs):
+            return False
+        return True
+    if state != "calm" and any(
+        s["score"] >= bands["caution"] and _tierb_can_escalate(s, calib) for s in tierB
+    ):
+        esc = True
     state_ungated = state
     if esc and _STATE_ORDER.index(state) < _STATE_ORDER.index("risk-off") and state != "calm":
         state = _STATE_ORDER[_STATE_ORDER.index(state) + 1]

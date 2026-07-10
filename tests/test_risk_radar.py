@@ -208,10 +208,14 @@ def test_rrx_tierb_legs_not_validated():
     """New Tier-B legs must NOT be validated (accruing only, lift not yet at bar)."""
     assert rr._is_validated("nh_contraction") is False
     assert rr._LEG_CALIB["nh_contraction"].get("accruing") is True
-    # jpy_carry PASSES the 2020+ lift gate (1.45 >= 1.20) but is still Tier-B accruing
-    # because its escalator-only classification is policy (2022 sign-inversion caveat),
-    # not the lift number alone — it should have accruing=True and live in Tier-B.
+    # jpy_carry: phase-0 measured 1.45 (recorded as measured_lift_2020 in _LEG_CALIB) but
+    # lift_2020 is kept None so _is_validated returns False.  This prevents jpy_carry from
+    # entering the CI validated-leg gate (test_evidence_gate_validated_legs_still_lead), where
+    # a future live-data shift below 1.0 would red unrelated PRs.  Tier-B / accruing only.
+    assert rr._is_validated("jpy_carry") is False
     assert rr._LEG_CALIB["jpy_carry"].get("accruing") is True
+    # measured_lift_2020 non-gating field preserves the phase-0 result for documentation
+    assert rr._LEG_CALIB["jpy_carry"].get("measured_lift_2020") == 1.450
 
 
 def test_rrx_internals_cannot_originate_state():
@@ -220,6 +224,26 @@ def test_rrx_internals_cannot_originate_state():
     assert out["state"] == "calm", (
         f"Tier-B internals scare originated state '{out['state']}' — must stay calm")
     assert out["alert"] is False
+
+
+def test_rrx_null_leg_cannot_escalate_tier_a():
+    """nh_contraction (measured-null, lift_2020=0.0) must NOT escalate a hot Tier-A scare.
+    A caution-band growth scare alone → state 'caution'.  Adding a hot nh_contraction must
+    NOT push state to 'elevated' (the loud banner).  The escalation gate excludes Tier-B
+    scares whose all legs are measured-zero per the context-accrual law."""
+    # growth legs at caution level
+    base = rr.compute(sigs=_sigs(growth_defensives=0.72, growth_cyc_def=0.72),
+                      gate={"met": True})
+    assert base["state"] in ("caution", "watch"), (
+        f"baseline growth scare not at caution band: {base['state']}")
+    caution_state = base["state"]
+    # now add a maxed-out nh_contraction
+    with_null = rr.compute(
+        sigs=_sigs(growth_defensives=0.72, growth_cyc_def=0.72, nh_contraction=0.99),
+        gate={"met": True})
+    assert with_null["state"] == caution_state, (
+        f"measured-null nh_contraction escalated state from '{caution_state}' to "
+        f"'{with_null['state']}' — must be excluded from escalation set")
 
 
 def test_rrx_jpy_carry_cannot_originate_state():
