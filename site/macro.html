@@ -3264,7 +3264,7 @@
       <span class="help">?<span class="tip"><span class="l-en">Pre-print model projections for upcoming US macro releases (CPI, NFP). Comparison set is our own benchmark set (naive prior, trailing trend, Cleveland nowcast) — not street estimates. Display-only context; not investment advice; scored forward in public.</span><span class="l-zh">即将公布美国宏观数据（CPI、NFP）的预测模型。对比基准为我方自有基准集（朴素先验、趋势追踪、克利夫兰预报），非街道估算。仅展示，非投资建议，正向评分公开记录。</span></span></span>
     </h2>
     <div class="rr-subline">
-      <span class="l-en">Forward model · display-only · benchmarks 基准 · scored in public</span>
+      <span class="l-en">Forward model · display-only · benchmarks · scored in public</span>
       <span class="l-zh">前瞻模型 · 仅展示 · 基准对比 · 公开评分</span>
     </div>
     <div id="rr-content">
@@ -3429,7 +3429,7 @@
         return '<div class="rr-bench-row"><span class="rr-bench-name">'+r[0]+'</span><span class="rr-bench-val">'+esc(r[1])+'</span></div>';
       }).join('');
       return '<div class="rr-bench">'
-        +'<div class="rr-bench-label"><span class="l-en">Benchmarks 基准</span><span class="l-zh">基准对比（非共识）</span></div>'
+        +'<div class="rr-bench-label"><span class="l-en">Benchmarks</span><span class="l-zh">基准对比（非共识）</span></div>'
         +rows
         +'</div>';
     }
@@ -3843,7 +3843,7 @@
         +(chips?'<div class="rr-chips-row">'+chips+'</div>':'')
         +(conf?'<div class="rr-card-conf"><span class="l-en">Confidence: <b>'+esc(conf)+'</b></span><span class="l-zh">置信度：<b>'+esc(conf)+'</b></span></div>':'')
         +'<div class="rr-card-do-note">'
-        +'<span class="l-en">display-only — not a signal / not consensus 非信号·非共识</span>'
+        +'<span class="l-en">display-only — not a signal / not consensus</span>'
         +'<span class="l-zh">仅展示 — 非信号·非共识</span>'
         +'</div>'
         +'<div class="rr-card-tap">'
@@ -3999,7 +3999,7 @@
 
       /* display-only footnote */
       html += '<div class="rr-modal-do-note">'
-        +'<span class="l-en">display-only — not a signal / not consensus 非信号·非共识 · model projections, not investment advice · scored forward in public</span>'
+        +'<span class="l-en">display-only — not a signal / not consensus · model projections, not investment advice · scored forward in public</span>'
         +'<span class="l-zh">仅展示 — 非信号·非共识 · 模型预测，非投资建议 · 正向评分公开记录</span>'
         +'</div>';
 
