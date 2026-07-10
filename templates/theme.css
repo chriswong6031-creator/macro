@@ -881,7 +881,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .sig-gate .sig-w { font-size:9.5px; font-weight:700; letter-spacing:.2px; opacity:.7;
   padding-left:3px; border-left:1px solid color-mix(in srgb, var(--c, var(--muted)) 30%, transparent); }
 /* provisional-basis marker (W6 #22): a T3 fresh fire is graded on an incomplete resample
-   bucket and repaints at a measured 23.8% US / 15.1% CN — flagged wherever the tier renders
+   bucket and repaints at a measured 9.4% US / 0% CN (post-N=2 persistence hardening) — flagged wherever the tier renders
    (_sig_badge, Top-setups strip, discovery chip). Dashed border = tentative by design. */
 .prov-flag { display:inline-block; font-size:9px; font-weight:800; letter-spacing:.4px;
   text-transform:uppercase; line-height:1; padding:2px 5px; border-radius:4px; margin-left:4px;

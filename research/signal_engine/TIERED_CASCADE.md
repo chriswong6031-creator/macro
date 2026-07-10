@@ -454,6 +454,10 @@ The PRIME (T2) tooltip is **comparative and measurement-framed only**: "2D cross
 
 The stale pre-hardening repaint figures (23.8% US / 15.1% CN) have been replaced with the post-N=2 persistence actuals (9.4% US / 0% CN) per the T3 persistence hardening amendment (§Amendment 2026-07-06). Updated in:
 - `templates/_sig_badge.html.j2` — comment header, inline PROVISIONAL tooltip, prov-flag tooltip
+- `templates/discovery.html.j2` — T3 chip PROVISIONAL tooltip + prov-flag (also #2099)
+- `templates/dashboard.html.j2` — Top-setups T3 tooltip + prov-flag (EN/ZH; stale 41/172 count dropped) (follow-up sweep)
+- `templates/subsector_rotation.html.j2` — member-fire `(repaint ~%)` note (follow-up sweep)
+- `templates/theme.css` — `.prov-flag` comment header (paired `site/theme.css` synced) (follow-up sweep)
 
 ### What is NOT changed
 
