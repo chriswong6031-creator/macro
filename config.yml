@@ -367,6 +367,9 @@ fred:
       USGOVT: nfp_government            # government payrolls (thousands SA, 1939→) — decomposition government leg
       CES0500000003: avg_hourly_earnings  # avg hourly earnings total private ($/hr SA, 2006-03→) — AHE target
       AWHAETP: avg_weekly_hours         # avg weekly hours total private (hrs/wk SA, 2006-03→) — hours target
+      # MRI-W11 Track S data adoptions (context series; no champion spec change — chartered for future use):
+      TRMMEANCPIM158SFRBCLE: trimmed_mean_cpi  # Cleveland Fed 16% trimmed-mean CPI (monthly, % change SA) — alternative core inflation measure
+      JTSQUR: jolts_quits_rate              # JOLTS quits rate (monthly, %) — voluntary separation signal; leading labor-market health indicator
   retries: 3
   backoff_base_s: 5
   batch_size: 80

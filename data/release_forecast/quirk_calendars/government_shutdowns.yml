@@ -1,0 +1,52 @@
+# Government shutdown / appropriations-gap calendar
+# Maintained manually; append a new entry when a shutdown begins.
+# Fields:
+#   start: YYYY-MM-DD (lapse begins)
+#   end: YYYY-MM-DD (CR or omnibus signed; null if ongoing)
+#   note: brief description
+#   cite: source URL
+#
+# Shutdown affects the government_shutdown quirk flag in engine/release_quirks.py.
+# The flag fires when the NFP reference period overlaps with a shutdown gap.
+#
+# Source: CRS "Federal Funding Gaps" reports; OMB guidance; BLS press releases.
+# https://fas.org/sgp/crs/misc/R42648.pdf
+
+shutdowns:
+
+  # 2018-01 (Schumer Shutdown) — 3 days
+  - start: "2018-01-20"
+    end:   "2018-01-23"
+    note:  "CR lapsed; Senate filibuster; resolved after 3 days"
+    cite:  "https://fas.org/sgp/crs/misc/R42648.pdf"
+
+  # 2018-02 (Rand Paul procedural) — 9 hours (overnight)
+  - start: "2018-02-09"
+    end:   "2018-02-09"
+    note:  "Brief overnight lapse; Rand Paul blocked vote"
+    cite:  "https://fas.org/sgp/crs/misc/R42648.pdf"
+
+  # 2018-12 / 2019-01 (longest on record: 35 days)
+  - start: "2018-12-22"
+    end:   "2019-01-25"
+    note:  "Dispute over border wall funding; 35 days — longest US government shutdown on record"
+    cite:  "https://fas.org/sgp/crs/misc/R42648.pdf"
+
+  # 2023-09 (avoided at the last minute with a CR; included as near-miss reference)
+  # Not a true lapse; omitted.
+
+  # 2025-10 / 2025-11 (longest full shutdown on record: 43 days)
+  # Verified: FY2026 appropriations lapsed midnight Oct 1, 2025; bill signed Nov 12, 2025.
+  # CPI Oct 2025 publication was cancelled due to BLS data-collection disruption.
+  # Source: https://en.wikipedia.org/wiki/2025_United_States_federal_government_shutdown
+  #         https://www.cbo.gov/system/files/2025-10/61823-Shutdown.pdf
+  - start: "2025-10-01"
+    end:   "2025-11-12"
+    note:  "FY2026 appropriations lapse; 43 days — longest full US government shutdown on record; BLS data-collection disruption; CPI Oct 2025 publication cancelled"
+    cite:  "https://en.wikipedia.org/wiki/2025_United_States_federal_government_shutdown"
+
+  # Add future entries here as:
+  # - start: "YYYY-MM-DD"
+  #   end:   "YYYY-MM-DD"
+  #   note:  "..."
+  #   cite:  "..."
