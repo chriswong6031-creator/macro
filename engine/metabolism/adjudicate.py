@@ -185,6 +185,150 @@ def _deterministic_screen(proposal: dict[str, Any], case_law: dict[str, str]) ->
     return {"allow": True, "reason": "no case-law collision"}
 
 
+# ── UX-simplicity gate (3rd deterministic screen, R-V2-6) ────────────────────
+
+def _classify_surface_tier(proposal: dict[str, Any], root: Path | None = None) -> str:
+    """Classify the proposal's target surface tier: 'front_page' or 'admin_lab'.
+
+    Fires ONLY when the proposal lists changed files (changed_files field).
+    If no changed_files are declared, defaults to 'admin_lab' (conservative —
+    only known front-page file patterns trigger the gate).
+
+    Returns 'front_page' or 'admin_lab'.  NEVER raises.
+    """
+    try:
+        changed = proposal.get("changed_files") or []
+        if not changed:
+            return "admin_lab"
+
+        import fnmatch  # noqa: PLC0415
+
+        # Load rules from config
+        r = _repo_root(root)
+        rules_path = r / "config" / "ux_simplicity_rules.yml"
+        if not rules_path.exists():
+            return "admin_lab"
+
+        import yaml  # noqa: PLC0415
+        raw = yaml.safe_load(rules_path.read_text(encoding="utf-8")) or {}
+        surface = raw.get("surface_patterns") or {}
+        front_includes = surface.get("front_page", {}).get("include") or []
+        front_excludes = surface.get("front_page", {}).get("exclude") or []
+
+        def _norm(p: str) -> str:
+            return p.replace("\\", "/").lstrip("/")
+
+        for f in changed:
+            fn = _norm(str(f))
+            # Check excludes first
+            excluded = any(fnmatch.fnmatch(fn, _norm(pat)) for pat in front_excludes)
+            if excluded:
+                continue
+            # Check includes
+            matched = any(fnmatch.fnmatch(fn, _norm(pat)) for pat in front_includes)
+            if matched:
+                return "front_page"
+        return "admin_lab"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("adjudicate._classify_surface_tier: %s", exc)
+        return "admin_lab"
+
+
+def _ux_simplicity_screen(
+    proposal: dict[str, Any],
+    root: Path | None = None,
+) -> dict[str, Any]:
+    """Third deterministic screen: UX-simplicity gate (R-V2-6).
+
+    Fires ONLY on front-page asset diffs (never *_lab/committee/admin/*research*).
+    config/ux_simplicity_rules.yml is IMMUTABLE — the LLM cannot relax it.
+
+    A front-page-touching proposal that fails the rules is DENIED and routed to
+    admin/lab tier instead.
+
+    Returns {allow: bool, reason: str, surface_tier: str}.
+    NEVER raises.
+    """
+    try:
+        surface_tier = _classify_surface_tier(proposal, root)
+
+        if surface_tier != "front_page":
+            return {
+                "allow": True,
+                "reason": f"surface_tier='{surface_tier}' — UX gate not applicable",
+                "surface_tier": surface_tier,
+            }
+
+        # Load the immutable rules
+        r = _repo_root(root)
+        rules_path = r / "config" / "ux_simplicity_rules.yml"
+        if not rules_path.exists():
+            # Config absent → allow (fail-open for UX gate only; case-law screen is the hard floor)
+            return {
+                "allow": True,
+                "reason": "ux_simplicity_rules.yml absent — UX gate skipped (fail-open)",
+                "surface_tier": surface_tier,
+            }
+
+        import yaml  # noqa: PLC0415
+        raw = yaml.safe_load(rules_path.read_text(encoding="utf-8")) or {}
+
+        # Rule 1: jargon blocklist — any new label/heading matching blocklist → DENY
+        jargon_blocklist = [str(j).lower() for j in (raw.get("jargon_blocklist") or [])]
+        proposal_text = " ".join([
+            str(proposal.get("title") or ""),
+            str(proposal.get("rationale") or ""),
+            str(proposal.get("description") or ""),
+        ]).lower()
+        for term in jargon_blocklist:
+            if term and term in proposal_text:
+                fail_note = raw.get("front_page_fail_note", "Fails UX-simplicity rules.")
+                return {
+                    "allow": False,
+                    "reason": (
+                        f"Front-page proposal uses internal jargon term '{term}' "
+                        f"which is in the UX blocklist. Route to admin/lab instead. "
+                        f"{fail_note}"
+                    ),
+                    "surface_tier": surface_tier,
+                    "jargon_hit": term,
+                }
+
+        # Rule 2: max_numbers_per_default_view — if proposal declares a number count
+        max_numbers = int(raw.get("max_numbers_per_default_view") or 12)
+        # DENSITY ARM (advisory, defense-in-depth): the declared front-page number
+        # count is honor-system; the non-evadable controls are the jargon-blocklist
+        # arm below and the R-V2-6 rule that ALL front-page changes are T2-tapped
+        # (the operator sees every front-page diff). A proposal omitting the field
+        # is treated as 0 here; the operator tap is the real anti-crowding gate.
+        declared_numbers = int(proposal.get("numbers_added_to_default_view") or 0)
+        if declared_numbers > max_numbers:
+            return {
+                "allow": False,
+                "reason": (
+                    f"Front-page proposal adds {declared_numbers} numbers to the default view, "
+                    f"exceeding the limit of {max_numbers}. Route dense metrics to admin/lab."
+                ),
+                "surface_tier": surface_tier,
+            }
+
+        # Passed all checks
+        return {
+            "allow": True,
+            "reason": "front-page proposal passes UX-simplicity rules",
+            "surface_tier": surface_tier,
+        }
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("adjudicate._ux_simplicity_screen: %s", exc)
+        # Fail-open for UX gate (the case-law screen is the hard floor)
+        return {
+            "allow": True,
+            "reason": f"UX gate error (fail-open): {exc}",
+            "surface_tier": "unknown",
+        }
+
+
 # ── LLM role invocation ───────────────────────────────────────────────────────
 
 _ORCH_SYSTEM = (
@@ -447,7 +591,17 @@ def adjudicate_role(
                 continue
             tier = str(prop.get("tier") or "T1").strip().upper()
             target = _target(cycle_id, pid)
+            # Screen 1: case-law (DO_NOT_REBUILD + ACTIVE_BUILD_MAP)
             screen = _deterministic_screen(prop, case_law)
+            # Screen 3: UX-simplicity gate (fires only on front-page asset diffs)
+            ux_screen = _ux_simplicity_screen(prop, root)
+            # Combined screen: both must allow for the proposal to proceed
+            combined_allow = screen["allow"] and ux_screen["allow"]
+            combined_reason = (
+                screen["reason"] if not screen["allow"]
+                else (ux_screen["reason"] if not ux_screen["allow"]
+                      else screen["reason"])
+            )
             j = (judgments or {}).get(pid, {})
             has_opinion = (judgments is not None) and (pid in judgments)
 
@@ -455,11 +609,15 @@ def adjudicate_role(
                 # R-AUT-1: grant = deterministic allow AND llm grant (fail-closed
                 # when the LLM has no opinion).
                 llm_grant = bool(j.get("grant", False)) if has_opinion else False
-                decision = "grant" if (screen["allow"] and llm_grant) else "deny"
+                decision = "grant" if (combined_allow and llm_grant) else "deny"
                 after = {
                     "role": ROLE_ORCH, "decision": decision, "tier": tier,
-                    "run_id": run_id, "screen_allow": screen["allow"],
-                    "screen_reason": screen["reason"], "llm_opinion": has_opinion,
+                    "run_id": run_id, "screen_allow": combined_allow,
+                    "screen_reason": combined_reason,
+                    "case_law_allow": screen["allow"],
+                    "ux_allow": ux_screen["allow"],
+                    "ux_surface_tier": ux_screen.get("surface_tier", "unknown"),
+                    "llm_opinion": has_opinion,
                 }
                 if not dry_run and not _ruled_in(existing, target, EVT_ADJUDICATION, ROLE_ORCH):
                     _append_governance(
@@ -468,18 +626,25 @@ def adjudicate_role(
                         note=f"orchestrator {decision} for {tier} proposal", root=root,
                     )
                 results.append({"proposal_id": pid, "tier": tier, "decision": decision,
-                                "screen_allow": screen["allow"]})
+                                "screen_allow": combined_allow,
+                                "ux_surface_tier": ux_screen.get("surface_tier", "unknown")})
 
             else:  # ROLE_ADV
                 # Fail-closed: no genuine opinion → veto. A deterministic kill is
                 # also an automatic veto (the adversary agrees the topic is closed).
-                if not has_opinion or not screen["allow"]:
+                if not has_opinion or not combined_allow:
                     veto = True
-                    findings = ([screen["reason"]] if not screen["allow"]
-                                else ["adversary produced no opinion — fail-closed veto"])
+                    findings = (
+                        ([screen["reason"]] if not screen["allow"]
+                         else ([ux_screen["reason"]] if not ux_screen["allow"]
+                               else ["adversary produced no opinion — fail-closed veto"]))
+                    )
                     tripwires: list[str] = []
-                    rationale = ("deterministic case-law collision" if not screen["allow"]
-                                 else f"adversary unavailable ({degraded})")
+                    rationale = (
+                        "deterministic case-law collision" if not screen["allow"]
+                        else ("UX-simplicity gate denial" if not ux_screen["allow"]
+                              else f"adversary unavailable ({degraded})")
+                    )
                 else:
                     veto = bool(j.get("veto", False))
                     findings = [str(x) for x in (j.get("findings") or [])]

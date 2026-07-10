@@ -89,3 +89,15 @@ files:
       gating so lobe activations are spread across UTC hours — the loop never
       fires 40 sessions at once. IMMUTABLE — loop PRs may not modify.
       Dispatcher reads it; it never writes to it.
+
+  # --- V2-D IMMUTABLE configs (R-V2-8) ---
+
+  - path: config/ux_simplicity_rules.yml
+    sha256: 059dd08f6c929fc8db2a7aec5b0017bc76d3718f11276c870a7a4f5566fa5f3b
+    role: ux_gate
+    notes: >
+      V2-D UX-simplicity gate rules (R-V2-6). Deterministic screen in adjudicate.py
+      fires on front-page asset diffs. Rules: <=N numbers per default view,
+      plain-language label requirement (jargon blocklist), one clear primary action.
+      IMMUTABLE — loop PRs may not modify. The LLM cannot relax this gate.
+      Human-authored changes require T2 operator-tap ruling + manifest update.

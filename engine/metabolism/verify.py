@@ -241,6 +241,12 @@ def verify_proposal(
         if triage["action"] == "operator_tap":
             _append_governance_tap(cycle_id, contract, triage, root)
 
+        # Append a lesson to lessons.jsonl so PROPOSE stops repeating dead constructions
+        _append_lesson_from_verify(cycle_id, contract, triage, outcome, root)
+
+        # Archive-on-verify: save the contract + outcome to agenda_archive/ for dream cycle
+        _archive_on_verify(cycle_id, contract, record, root)
+
         return record
 
     except Exception as exc:  # noqa: BLE001
@@ -308,6 +314,89 @@ def _pending_record(cycle_id: str, contract: dict, check_by: str) -> dict[str, A
         "authority": AUTHORITY_BLOCK,
         "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+
+
+def _archive_on_verify(
+    cycle_id: str,
+    contract: dict,
+    verify_record: dict,
+    root: Path,
+) -> None:
+    """Archive agenda + verify outcome to agenda_archive/ for the dream cycle (NEVER-RAISE)."""
+    try:
+        from engine.metabolism.memory import archive_agenda  # type: ignore[import]
+        # Load the agenda file for this cycle if available
+        agenda_path = root / "data" / "metabolism" / "agenda" / f"{cycle_id}.json"
+        agenda_data: dict = {}
+        if agenda_path.exists():
+            try:
+                agenda_data = json.loads(agenda_path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                agenda_data = {"contract": contract}
+        else:
+            agenda_data = {"contract": contract}
+        archive_agenda(
+            cycle_id=cycle_id,
+            agenda_data=agenda_data,
+            verify_outcome=verify_record,
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_verify._archive_on_verify: %s", exc)
+
+
+def _append_lesson_from_verify(
+    cycle_id: str,
+    contract: dict,
+    triage: dict,
+    outcome: str,
+    root: Path,
+) -> None:
+    """Append a lesson to lessons.jsonl after VERIFY grading (NEVER-RAISE).
+
+    Encodes what worked, what failed, and the construction so PROPOSE stops
+    repeating dead constructions.
+    """
+    try:
+        from engine.metabolism.memory import append_lesson  # type: ignore[import]
+        classification = triage.get("classification", "unknown")
+        action = triage.get("action", "")
+        what_worked = ""
+        what_failed = ""
+        if classification == "confirmed":
+            what_worked = (
+                f"Fitness contract held: sensor={contract.get('sensor')}, "
+                f"band={contract.get('band')!r}, outcome={outcome}."
+            )
+        elif action == "revert_plan":
+            what_failed = (
+                f"Fitness contract missed (clean overfit): sensor={contract.get('sensor')}, "
+                f"expected={contract.get('expected_sign')}, band={contract.get('band')!r}, "
+                f"outcome={outcome}."
+            )
+        elif action == "operator_tap":
+            what_failed = (
+                f"Outcome ambiguous — operator tap required: "
+                f"{triage.get('operator_tap_reason', '')} (outcome={outcome})."
+            )
+        else:
+            what_failed = f"Outcome={outcome}, classification={classification}."
+
+        construction = (
+            f"sensor={contract.get('sensor')} kind={contract.get('kind')} "
+            f"tier={contract.get('tier')} title={contract.get('title','')!r}"
+        )
+        append_lesson(
+            cycle_id=cycle_id,
+            verdict=classification,
+            what_worked=what_worked,
+            what_failed=what_failed,
+            construction=construction,
+            proposal_id=str(contract.get("proposal_id") or contract.get("dedup_hash") or ""),
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_verify._append_lesson_from_verify: %s", exc)
 
 
 def _append_governance_tap(
