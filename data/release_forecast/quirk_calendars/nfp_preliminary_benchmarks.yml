@@ -1,15 +1,22 @@
 # NFP Preliminary Benchmark Revision Estimates
-# BLS publishes a preliminary benchmark revision estimate each October
-# (for the reference period ending March of the same year).
-# When the preliminary is > |100k|, the Track S flag fires for the
+# BLS publishes a preliminary benchmark revision estimate each late summer / fall
+# (for the reference period ending March of the same year):
+#   Through ~2010 : typically published in October
+#   ca. 2011-2018 : moved to late September (e.g. Sep 29, 2011; Sep 27, 2012)
+#   2019+         : moved to August (Aug 21, 2019; Aug 24, 2022; Aug 23, 2023;
+#                   Aug 21, 2024) or September (Sep 9, 2025)
+# When |preliminary_estimate| > 100 (thousands), the Track S flag fires for the
 # following January NFP print.
 #
 # Fields:
-#   published_month: YYYY-MM (typically October each year)
-#   reference_period_end: YYYY-MM (typically March of that year)
+#   published_month: YYYY-MM (actual month the BLS preliminary was released)
+#   reference_period_end: YYYY-MM (March of that year — the benchmark reference date)
 #   preliminary_estimate: int (thousands; positive = upward revision)
-#   source: BLS CES benchmark revision page
 #   cite: URL
+#
+# Engine matching: _check_preliminary_benchmark() matches on the YEAR portion of
+# published_month only (i.e. pub.startswith("{ref.year-1}-")), so the correct
+# entry fires regardless of the specific month.
 #
 # Source: https://www.bls.gov/ces/publications/benchmark.htm
 
@@ -35,35 +42,43 @@ preliminary_benchmarks:
     preliminary_estimate: -366
     cite: "https://www.bls.gov/ces/publications/benchmark.htm"
 
-  - published_month: "2011-10"
+  - published_month: "2011-09"
     reference_period_end: "2011-03"
     preliminary_estimate: 192
+    # Released Sep 29, 2011 per BLS announcement.
+    # Source: https://www.calculatedriskblog.com/2011/09/employment-comment-on-preliminary.html
     cite: "https://www.bls.gov/ces/publications/benchmark.htm"
 
-  - published_month: "2012-10"
+  - published_month: "2012-09"
     reference_period_end: "2012-03"
     preliminary_estimate: 386
+    # Released Sep 27, 2012 per BLS; Calculated Risk coverage confirms date.
+    # Source: https://www.calculatedriskblog.com/2012/09/employment-preliminary-annual-benchmark.html
     cite: "https://www.bls.gov/ces/publications/benchmark.htm"
 
-  - published_month: "2019-10"
+  - published_month: "2019-08"
     reference_period_end: "2019-03"
     preliminary_estimate: -501
+    # Released Aug 21, 2019. Source: https://www.bls.gov/ces/notices/2019/2019-ces-preliminary-benchmark-revision.htm
     cite: "https://www.bls.gov/ces/publications/benchmark.htm"
 
-  - published_month: "2022-10"
+  - published_month: "2022-08"
     reference_period_end: "2022-03"
     preliminary_estimate: 462
+    # Released Aug 24, 2022. Source: https://www.bls.gov/ces/notices/2022/2022-ces-preliminary-benchmark-revision.htm
     cite: "https://www.bls.gov/ces/publications/benchmark.htm"
     note: "Final: +517k in January 2023 benchmark revision"
 
-  - published_month: "2023-10"
+  - published_month: "2023-08"
     reference_period_end: "2023-03"
     preliminary_estimate: -306
+    # Released Aug 23, 2023. Source: https://www.bls.gov/ces/notices/2023/2023-preliminary-benchmark-revision-release-date.htm
     cite: "https://www.bls.gov/ces/publications/benchmark.htm"
 
-  - published_month: "2024-10"
+  - published_month: "2024-08"
     reference_period_end: "2024-03"
     preliminary_estimate: -818
+    # Released Aug 21, 2024. Source: https://www.bls.gov/ces/notices/2024/2024-preliminary-benchmark-revision-release-date.htm
     cite: "https://www.bls.gov/ces/publications/benchmark.htm"
     note: "Largest downward preliminary revision since 2009; flagged Jan 2025 benchmark print"
 

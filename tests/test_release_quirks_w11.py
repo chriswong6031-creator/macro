@@ -204,6 +204,90 @@ class TestActiveStrike:
         ref_sat = _nfp_reference_saturday(date(2019, 10, 1))
         assert ref_sat == date(2019, 10, 12)
 
+    def test_ongoing_strike_nat_end_date_triggers(self) -> None:
+        """Ongoing strike (end_date NaT/None) overlapping ref week → flag fires.
+
+        Bug fixed (MRI-R38 review): pd.NaT satisfies isinstance(pd.NaT, datetime.date)
+        in some pandas versions, so the old ``not isinstance(end, date)`` guard
+        silently failed to convert NaT→None, causing a TypeError swallowed as False.
+        """
+        ongoing_df = pd.DataFrame([{
+            "org": "Test Union Ongoing",
+            "employer": "Test Corp Ongoing",
+            "states": "NY",
+            "workers": 40000,       # ≥25k
+            "start_date": date(2026, 5, 1),
+            "end_date": None,        # ongoing — NaT in parquet
+            "naics": "5000",
+            "source_url": "https://www.bls.gov/wsp/",
+        }])
+        with patch("collectors.bls_work_stoppages.load_stoppages", return_value=ongoing_df):
+            # Jul 2026 ref week = Jul 6–12; strike started May 1, no end → overlaps
+            result = _check_active_strike(date(2026, 7, 1), root=_REPO)
+        assert result is True, "Ongoing strike (NaT end_date) must fire active_strike flag"
+
+    def test_aggregate_split_employer_strikes_fire_threshold(self) -> None:
+        """Split-employer strikes sharing same org+month aggregate over the 25k threshold.
+
+        2023-UAW-style: Ford 17k + Stellantis 7k = 24k each individually < 25k,
+        but summed via aggregation they would be 24k still.  Use a case that crosses
+        the line: two rows at 13k each (combined 26k ≥ 25k) for the same org.
+        """
+        split_df = pd.DataFrame([
+            {
+                "org": "Test Union Split",
+                "employer": "Employer Alpha",
+                "states": "MI",
+                "workers": 13000,        # < 25k alone
+                "start_date": date(2026, 6, 1),
+                "end_date": date(2026, 8, 1),
+                "naics": "3361",
+                "source_url": "https://www.bls.gov/wsp/",
+            },
+            {
+                "org": "Test Union Split",
+                "employer": "Employer Beta",
+                "states": "OH",
+                "workers": 13000,        # < 25k alone; same org + same month → sum = 26k ≥ 25k
+                "start_date": date(2026, 6, 1),
+                "end_date": date(2026, 8, 1),
+                "naics": "3361",
+                "source_url": "https://www.bls.gov/wsp/",
+            },
+        ])
+        with patch("collectors.bls_work_stoppages.load_stoppages", return_value=split_df):
+            # Jul 2026 ref week = Jul 6–12; strikes Jun 1–Aug 1 → overlap; combined 26k ≥ 25k
+            result = _check_active_strike(date(2026, 7, 1), root=_REPO)
+        assert result is True, "Aggregated split-employer same-org strikes must cross 25k threshold"
+
+    def test_aggregate_different_orgs_not_combined(self) -> None:
+        """Different orgs do NOT aggregate; each stays below threshold independently."""
+        diff_org_df = pd.DataFrame([
+            {
+                "org": "Union Alpha",
+                "employer": "Corp A",
+                "states": "MI",
+                "workers": 13000,
+                "start_date": date(2026, 6, 1),
+                "end_date": date(2026, 8, 1),
+                "naics": "3361",
+                "source_url": "https://www.bls.gov/wsp/",
+            },
+            {
+                "org": "Union Beta",
+                "employer": "Corp B",
+                "states": "OH",
+                "workers": 13000,
+                "start_date": date(2026, 6, 1),
+                "end_date": date(2026, 8, 1),
+                "naics": "3361",
+                "source_url": "https://www.bls.gov/wsp/",
+            },
+        ])
+        with patch("collectors.bls_work_stoppages.load_stoppages", return_value=diff_org_df):
+            result = _check_active_strike(date(2026, 7, 1), root=_REPO)
+        assert result is False, "Different orgs must not be aggregated across the threshold"
+
 
 # ---------------------------------------------------------------------------
 # 4. Integrity regime thresholds
@@ -430,9 +514,26 @@ class TestGovernmentShutdown:
         result = _check_government_shutdown(date(2019, 1, 1), root=_REPO)
         assert result is True
 
-    def test_known_2025_shutdown_flags_march(self) -> None:
-        """2025-03 shutdown → flags NFP reference period in March 2025."""
+    def test_known_2025_shutdown_flags_october(self) -> None:
+        """Oct 1–Nov 12, 2025 shutdown → flags NFP reference period in Oct 2025.
+
+        The previous YAML entry (start 2025-03-14, end 2025-03-28) was fabricated;
+        the real 2025 FY2026 appropriations lapse ran Oct 1 – Nov 12, 2025 (43 days).
+        Sources:
+          https://en.wikipedia.org/wiki/2025_United_States_federal_government_shutdown
+          https://www.cbo.gov/system/files/2025-10/61823-Shutdown.pdf
+        """
+        result = _check_government_shutdown(date(2025, 10, 1), root=_REPO)
+        assert result is True
+
+    def test_2025_march_not_in_shutdown(self) -> None:
+        """March 2025 is NOT in any shutdown (the old fabricated entry has been removed)."""
         result = _check_government_shutdown(date(2025, 3, 1), root=_REPO)
+        assert result is False
+
+    def test_2025_november_in_shutdown(self) -> None:
+        """Nov 12, 2025 is the last day of the 2025 shutdown window."""
+        result = _check_government_shutdown(date(2025, 11, 1), root=_REPO)
         assert result is True
 
     def test_no_shutdown_in_quiet_period(self) -> None:

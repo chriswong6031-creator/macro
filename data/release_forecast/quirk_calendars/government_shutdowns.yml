@@ -35,11 +35,15 @@ shutdowns:
   # 2023-09 (avoided at the last minute with a CR; included as near-miss reference)
   # Not a true lapse; omitted.
 
-  # 2025 episodes (DOGE / appropriations dispute)
-  - start: "2025-03-14"
-    end:   "2025-03-28"
-    note:  "FY2025 appropriations lapse; BLS data-collection disruption; CPI Oct 2025 publication cancelled"
-    cite:  "https://www.bls.gov/"
+  # 2025-10 / 2025-11 (longest full shutdown on record: 43 days)
+  # Verified: FY2026 appropriations lapsed midnight Oct 1, 2025; bill signed Nov 12, 2025.
+  # CPI Oct 2025 publication was cancelled due to BLS data-collection disruption.
+  # Source: https://en.wikipedia.org/wiki/2025_United_States_federal_government_shutdown
+  #         https://www.cbo.gov/system/files/2025-10/61823-Shutdown.pdf
+  - start: "2025-10-01"
+    end:   "2025-11-12"
+    note:  "FY2026 appropriations lapse; 43 days — longest full US government shutdown on record; BLS data-collection disruption; CPI Oct 2025 publication cancelled"
+    cite:  "https://en.wikipedia.org/wiki/2025_United_States_federal_government_shutdown"
 
   # Add future entries here as:
   # - start: "YYYY-MM-DD"

@@ -24,8 +24,9 @@ W11-E Track S additions (MRI-R38):
                               overlapping the NFP reference week. Reads from
                               data/bls_work_stoppages/stoppages.parquet (fail-open:
                               falls back to collectors/bls_work_stoppages.SEED_ROWS).
-  nfp_preliminary_benchmark — September BLS preliminary benchmark magnitude >|100k|
-                              → flag the following January print.  Reads
+  nfp_preliminary_benchmark — BLS preliminary benchmark magnitude >|100k| (released
+                              in Aug/Sep/Oct depending on year; matching is year-based,
+                              not month-based) → flag the following January print.  Reads
                               data/release_forecast/quirk_calendars/nfp_preliminary_benchmarks.yml;
                               seeded with known episodes through 2024.
   government_shutdown       — Appropriations gap / government shutdown overlapping
@@ -98,8 +99,8 @@ _FLAG_META: dict[str, dict[str, str]] = {
         "cite": "https://www.bls.gov/wsp/",
     },
     "nfp_preliminary_benchmark": {
-        "en": "BLS September preliminary benchmark revision >|100k|: January NFP will include large CES revision",
-        "zh": "BLS 9月基准修订初步估计>|10万|：1月NFP将包含较大CES年度修订",
+        "en": "BLS preliminary benchmark revision >|100k| (released Aug–Oct of prior year): January NFP will include large CES revision",
+        "zh": "BLS基准修订初步估计>|10万|（上年8-10月发布）：1月NFP将包含较大CES年度修订",
         "cite": "https://www.bls.gov/ces/publications/benchmark.htm",
     },
     "government_shutdown": {
@@ -239,14 +240,37 @@ def _load_yaml(path: Path) -> Any:
         return None
 
 
+def _is_nat_or_none(val: object) -> bool:
+    """Return True when val is None or any NaT-like sentinel.
+
+    pd.NaT satisfies isinstance(pd.NaT, datetime.date) in some pandas
+    versions (https://github.com/pandas-dev/pandas/issues/32023), so
+    we MUST use pd.isnull() rather than an isinstance guard to detect it.
+    """
+    try:
+        import pandas as pd
+        return val is None or pd.isnull(val)  # type: ignore[arg-type]
+    except Exception:
+        return val is None
+
+
 def _check_active_strike(ref_month: date, root: Path | None = None) -> bool:
-    """Return True when an active major work stoppage (≥25k workers) overlaps
-    the NFP reference week for ref_month.
+    """Return True when any active major work stoppage (≥25k workers COMBINED
+    for same-action stoppages) overlaps the NFP reference week for ref_month.
 
     Logic:
       - NFP reference week = Sun through Sat ending on _nfp_reference_saturday(ref_month)
-      - A stoppage overlaps if: start_date <= ref_week_end AND (end_date is NaT OR end_date >= ref_week_start)
-      - workers >= WORK_STOPPAGE_MIN_WORKERS
+      - A stoppage overlaps if: start_date <= ref_week_end AND (end_date is NaT/None
+        [still active] OR end_date >= ref_week_start)
+      - After filtering to overlapping rows, aggregate workers by (org, start_month)
+        so split-employer actions like the 2023 UAW strike (separate rows for GM /
+        Ford / Stellantis that share the same union and action month) are summed
+        before the ≥25k threshold test.
+
+    Bug fix (MRI-R38 review): pandas NaT satisfies isinstance(NaT, datetime.date)
+    in some versions, so the old ``not isinstance(end, date)`` guard silently
+    skipped the NaT→None conversion, causing a TypeError on ``end >= ref_sun``
+    and an exception-swallowed False for ongoing strikes.  Fixed with pd.isnull().
 
     Reads from data/bls_work_stoppages/stoppages.parquet via
     collectors/bls_work_stoppages.load_stoppages() (fail-open: uses SEED_ROWS
@@ -269,44 +293,72 @@ def _check_active_strike(ref_month: date, root: Path | None = None) -> bool:
         ref_sat = _nfp_reference_saturday(ref_month)
         ref_sun = ref_sat - timedelta(days=6)
 
-        # Normalise dates
+        # Normalise dates and worker counts
         df = df.copy()
         df["start_date"] = pd.to_datetime(df["start_date"], errors="coerce").dt.date
         df["end_date"] = pd.to_datetime(df["end_date"], errors="coerce").dt.date
         df["workers"] = pd.to_numeric(df.get("workers", 0), errors="coerce").fillna(0)
 
-        large = df[df["workers"] >= _WORK_STOPPAGE_MIN_WORKERS]
-
-        for _, row in large.iterrows():
+        # Build overlap mask row by row (accounts for ongoing/NaT end_date)
+        overlap_mask = []
+        for _, row in df.iterrows():
             start = row["start_date"]
             end = row["end_date"]
-            if start is None or (hasattr(start, '__class__') and str(start) == 'NaT'):
-                continue
-            # Convert pandas NaT/None to None for comparison
-            try:
-                import math
-                if end is not None and hasattr(end, '__class__') and not isinstance(end, date):
-                    end = None
-                if isinstance(start, date) and start != date(1900, 1, 1):
-                    # Overlap: start <= ref_sat AND (end is None OR end >= ref_sun)
-                    if start <= ref_sat:
-                        if end is None or end >= ref_sun:
-                            return True
-            except Exception:
+
+            # Skip rows with invalid start
+            if _is_nat_or_none(start):
+                overlap_mask.append(False)
                 continue
 
-        return False
+            try:
+                # Treat NaT/None end as "still active" (no end date known)
+                end_is_open = _is_nat_or_none(end)
+
+                # Overlap: strike started on or before ref week end AND
+                # (still active OR ended on/after ref week start)
+                overlaps = (
+                    start <= ref_sat
+                    and (end_is_open or end >= ref_sun)  # type: ignore[operator]
+                )
+                overlap_mask.append(overlaps)
+            except Exception:
+                overlap_mask.append(False)
+
+        df["_overlaps"] = overlap_mask
+        active = df[df["_overlaps"]].copy()
+
+        if active.empty:
+            return False
+
+        # Aggregate: sum workers for rows sharing (org, start_month) so that
+        # same-action stoppages split across employers (e.g. UAW 2023: separate
+        # rows for GM / Ford / Stellantis each starting 2023-09-15) count as one
+        # action for the threshold test.
+        active["_start_month"] = active["start_date"].apply(
+            lambda d: f"{d.year}-{d.month:02d}" if not _is_nat_or_none(d) else ""
+        )
+        aggregated = active.groupby(["org", "_start_month"])["workers"].sum().reset_index()
+
+        return bool((aggregated["workers"] >= _WORK_STOPPAGE_MIN_WORKERS).any())
+
     except Exception as exc:
         log.warning("release_quirks active_strike check failed: %s", exc)
         return False
 
 
 def _check_preliminary_benchmark(ref_month: date, root: Path | None = None) -> bool:
-    """Return True when the September BLS preliminary benchmark for the year
+    """Return True when the BLS preliminary benchmark revision for the year
     preceding ref_month's January has magnitude >|100k|.
 
-    The preliminary is published in October; the flag fires for the following
-    January NFP print.  Reads nfp_preliminary_benchmarks.yml.
+    The preliminary is published in late summer / early fall of the prior year
+    (historically October through ~2010; moved to September ca. 2011-2012; moved
+    to August from 2019 onward).  The flag fires for the following January NFP
+    print.  Reads nfp_preliminary_benchmarks.yml.
+
+    Matching strategy: compare only on the *year* portion of published_month
+    (i.e. published_month starts with "{ref_month.year - 1}-") so that the
+    correct entry is found regardless of whether the specific month in the YAML
+    is August, September, or October.
     """
     if ref_month.month != 1:
         return False  # only relevant for January prints
@@ -318,14 +370,13 @@ def _check_preliminary_benchmark(ref_month: date, root: Path | None = None) -> b
     if not data:
         return False
 
-    # The preliminary published in October of the prior year flags the January print
-    # Example: preliminary_month="2022-10" → flags January 2023 NFP
-    target_pub_year = ref_month.year - 1
-    target_pub_month = f"{target_pub_year}-10"
+    # Match on the prior year; the specific month varies historically
+    # (Oct pre-2011, Sep 2011-2018, Aug 2019+).
+    target_pub_year_prefix = f"{ref_month.year - 1}-"
 
     for entry in data.get("preliminary_benchmarks", []):
         pub = str(entry.get("published_month", ""))
-        if pub == target_pub_month:
+        if pub.startswith(target_pub_year_prefix):
             est = entry.get("preliminary_estimate", 0)
             try:
                 # Values stored in thousands (e.g., -818 means 818k jobs).

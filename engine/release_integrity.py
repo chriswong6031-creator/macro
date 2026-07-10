@@ -1,5 +1,12 @@
 """MRI W11-E Track S — Print-integrity chip (MRI-R38).
 
+INTEGRATION NOTE (W11-G, chartered — DEFERRED-NOT-DEAD):
+  compute_print_integrity() is the public API consumed by the W11-G integration
+  wave, which wires the regime dict into the release-forecast display layer
+  (release_forecast.py / release_forecast_v3.py).  It is not yet called from
+  the nightly pipeline; that wiring is the explicit deliverable of W11-G.
+  Tests for this module live in tests/test_release_quirks_w11.py §4.
+
 Computes a data-quality regime descriptor for macro releases from:
 
   1. CES collection/response rates  (data/bls_print_integrity/integrity.parquet,
