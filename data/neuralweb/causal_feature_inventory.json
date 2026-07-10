@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.causal_feature_inventory.v1",
   "artifact_id": "causal-feature-inventory",
-  "asof": "2026-07-09T07:45:22.217301+00:00",
+  "asof": "2026-07-10T09:06:20.001028+00:00",
   "authority": {
     "tier": "infrastructure",
     "display_only": true,
@@ -299,7 +299,8 @@
   ],
   "feature_count": 9,
   "gap_notes": [
-    "feature replay__entry_quality_outcomes: file absent at data/replay/replay_boarded.parquet"
+    "feature replay__entry_quality_outcomes: file absent at data/replay/replay_boarded.parquet",
+    "kill_mask compiled section out of sync with causal_nulls.jsonl \u2014 run build_causal_inventory.py and commit the updated priors"
   ],
   "produced_by": "engine.neuralweb.causal_inventory.build_inventory"
 }

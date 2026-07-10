@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-07-09T19:04:08Z",
+  "asof": "2026-07-10T09:06:20Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -46,7 +46,8 @@
   "drift_events": [],
   "llm_lane": {
     "status": "awaiting_phase_a",
-    "description": "LLM brainstorm lane is INACTIVE. Phase-A gate requires: >= 1 operator-triggered cycle with >= 5 schema-valid cards filed, >= 1 candidate through exit (a) or (b), and zero guard violations. Then operator may flip auto_loop: true in config/causal_llm.yml."
+    "asof": "2026-07-09T19:44:10+00:00",
+    "description": "auto_loop disabled \u2014 pack-only mode"
   },
   "data_absent_notes": [
     "entry_quality target family unavailable: replay_boarded.parquet not found (set REPLAY_BOARDED_PATH env var to runner-local path)"
