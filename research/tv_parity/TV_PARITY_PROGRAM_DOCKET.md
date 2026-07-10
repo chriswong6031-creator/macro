@@ -108,3 +108,26 @@ ChartPanel-adjacent surfaces. Phase 0 ships immediately on disjoint-ish surfaces
 - No new heavy deps without justification; lightweight-charts stays the engine.
 - Deploys are orchestrator-gated (CDN chunk-availability check is now law).
 - Honesty rules unchanged (basis badges, stale flags, no fake data in empty tabs).
+
+## Phase 6 — watchlist & symbol intelligence (operator brief 2026-07-09 late, 5 TV screenshots)
+
+18. **Watchlist flag ribbons**: each row can carry a colored flag rendered as a left-edge
+    band + colored mark. Hover an unflagged row → an outline ribbon affordance appears;
+    click = flag with the LAST-USED color (sticky default for smooth repeat use). Hover
+    an existing flag → palette dropdown (TV palette: red, blue, green, yellow, purple,
+    cyan) + trash to unflag. Persist per user with the watchlist.
+19. **Composite basket symbols**: `META+AVGO+AMZN` in Symbol Search or Add Symbol
+    creates an equal-weighted composite — chart series = aligned sum of constituent
+    closes (TV "spread" semantics), ticker pane card titled with the expression,
+    subtitle "Composite Symbols", live summed price + chg vs summed prevClose. Search
+    result row shows type "spread". On a basket pane, the add-symbol dialog's FIRST and
+    highlighted option = add-this-basket-to-watchlist. v1 guards: ≤10 constituents,
+    US equities only, hide volume pane, no fake overnight line.
+20. **History-aware search dialogs**: both dialogs open pre-populated with the user's
+    chronological search history (most recent first, before any typing). The
+    HIGHLIGHTED entry = the current chart's symbol when it's not yet in the watchlist —
+    Enter adds it instantly (Add Symbol) / navigates (Symbol Search). Watchlist-member
+    rows: flag mark left of the ticker; in Add Symbol they show trash ("Remove from
+    Watchlist" tooltip) + crosshair target ("Go to Symbol" → jumps chart) instead of +.
+    Footer hint: "⇧+Click or ⇧+Enter to add symbol and close dialog". History = local
+    ring buffer (~50), recorded on search commits and symbol navigations.
