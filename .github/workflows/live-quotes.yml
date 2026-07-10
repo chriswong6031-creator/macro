@@ -12,9 +12,12 @@ name: live-quotes
 # real-time US prices from this job instead (the key never reaches the browser).
 on:
   schedule:
-    # Every 10 min, Mon–Fri. Covers US + Asia + Europe equity sessions and the
-    # ~23h weekday futures tape. Weekends fall back to the last close (correct).
-    - cron: "*/10 * * * 1-5"
+    # Every 5 min, Mon–Fri (tightened from */10 per TSU: measured run duration
+    # ~80-100s across 2026-07-09/10 at the full universe, >2x headroom in the
+    # 5-min slot; concurrency-cancel below guards pile-up). Covers US + Asia +
+    # Europe equity sessions and the ~23h weekday futures tape. Weekends fall
+    # back to the last close (correct).
+    - cron: "*/5 * * * 1-5"
   workflow_dispatch:
 
 permissions:
