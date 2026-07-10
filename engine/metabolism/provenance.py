@@ -78,6 +78,35 @@ def _parse_iso(iso: str) -> datetime | None:
         return None
 
 
+def _derive_source_key(source: str) -> str:
+    """Derive a logical SLA key from a path-form source string.
+
+    When ``source`` looks like a file path (contains "/" or ends with a
+    recognised extension), extract the stem and strip a trailing ``_history``
+    suffix.  Examples:
+      "data/metabolism/fitness_history.jsonl" → "fitness"
+      "data/metabolism/organism_state.json"   → "organism_state"
+      "data/metabolism/lessons.jsonl"         → "lessons"
+      "trajectory"                            → "trajectory"   (no-op)
+
+    Returns the original ``source`` unchanged when it does not look like a path,
+    so callers can always fall through to the normal lookup.
+    """
+    if not source:
+        return source
+    is_path = "/" in source or source.endswith((".json", ".jsonl", ".yaml", ".yml"))
+    if not is_path:
+        return source
+    stem = Path(source).stem  # e.g. "fitness_history" from "fitness_history.jsonl"
+    # Strip known trailing suffixes that are just storage artefacts, not the
+    # logical name (e.g. "_history" in "fitness_history").
+    for suffix in ("_history",):
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
+    return stem
+
+
 def stamp_context(
     blocks: list[dict[str, Any]],
     *,
@@ -108,6 +137,12 @@ def stamp_context(
     NEVER-RAISE: returns a copy of the input blocks (un-stamped) on any
     top-level error.
     """
+    # B3 fix: coerce non-list inputs to [] so stamp_context(None) and
+    # stamp_context("notalist") never raise (NEVER-RAISE contract).
+    # A string would otherwise be iterated as per-char blocks.
+    if not isinstance(blocks, list):
+        blocks = []
+
     try:
         per_source, default_sla = _load_sla(root)
         repo = _repo_root(root)
@@ -128,8 +163,15 @@ def stamp_context(
                 source = str(out.get("source") or "")
                 as_of = out.get("as_of")
 
-                # Determine SLA
-                sla = per_source.get(source, per_source.get(name, default_sla))
+                # Determine SLA (B4 fix: path-form source derives a logical key)
+                # Resolution order: explicit source key → derived logical key →
+                # name key → default.  This ensures that a source like
+                # "data/metabolism/fitness_history.jsonl" resolves to "fitness"
+                # (SLA=3) rather than silently falling through to default (14).
+                sla = per_source.get(source)
+                if sla is None:
+                    derived_key = _derive_source_key(source)
+                    sla = per_source.get(derived_key, per_source.get(name, default_sla))
 
                 age_days: float | None = None
                 staleness_reason = "unknown-age"

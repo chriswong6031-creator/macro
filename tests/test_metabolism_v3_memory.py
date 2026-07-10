@@ -472,3 +472,221 @@ class TestNeverRaise:
         for text in ["", "   ", "\n\t", "!@#$%", "a" * 10000]:
             result = fingerprint_construction(text)
             assert isinstance(result, str)
+
+    def test_stamp_context_none_returns_empty_list(self, tmp_path):
+        """B3: stamp_context(None) must not raise and must return []."""
+        result = stamp_context(None, root=tmp_path)  # type: ignore[arg-type]
+        assert result == []
+
+    def test_stamp_context_string_returns_empty_list(self, tmp_path):
+        """B3: stamp_context('notalist') must not raise and must return []."""
+        result = stamp_context("notalist", root=tmp_path)  # type: ignore[arg-type]
+        assert result == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# G. Regression: B1 — FAIL floor invariants
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestFailFloorInvariants:
+    """Regression tests for B1: the hard FAIL floor.
+
+    Invariant (i): a FAIL row whose construction matches the query outranks every
+                   non-FAIL row, even when the FAIL row has a long ~25-token
+                   what_failed prose and is older.
+    Invariant (ii): an unrelated FAIL (construction does NOT match the query)
+                    does not outrank a relevant PASS row.
+    """
+
+    def test_matching_fail_outranks_newer_pass_despite_long_what_failed(self, tmp_path):
+        """B1 invariant (i): FAIL with matching construction and long what_failed prose
+        must rank above all PASS rows even when older.
+
+        This reproduces the reported 2.43 vs 2.59 score inversion where the 25-token
+        what_failed prose inflated the union denominator in the old pooled Jaccard.
+        """
+        old_ts = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat(timespec="seconds")
+
+        # Long what_failed (~25 tokens) that must NOT deflate the construction Jaccard
+        long_what_failed = (
+            "construction C failed in lobe X with zero IC across all tested regimes "
+            "the momentum signal showed no predictive power and decayed rapidly "
+            "across bullish bearish and sideways conditions yielding a flat equity curve"
+        )
+
+        rows = [
+            _lesson(
+                "fail-001",
+                verdict="FAIL",
+                construction="momentum factor lobe X construction C",
+                what_failed=long_what_failed,
+                ts=old_ts,
+            ),
+            # Newer PASS rows with same lobe match
+            _lesson("pass-050", verdict="PASS", construction="momentum factor lobe X construction C"),
+            _lesson("pass-051", verdict="PASS", construction="momentum factor lobe X construction C"),
+            _lesson("pass-052", verdict="PASS", construction="momentum factor something else"),
+        ]
+        _write_lessons(tmp_path, rows)
+
+        top = recall_lesson_rows(
+            lobe="X",
+            construction_terms="momentum factor C",
+            root=tmp_path,
+        )
+        assert len(top) > 0
+        best = top[0]
+        assert best["verdict"] == "FAIL", (
+            f"FAIL row must rank first but got verdict={best['verdict']} "
+            f"score={best['_score']:.3f} reasons={best['_reasons']}"
+        )
+        assert best["cycle_id"] == "fail-001"
+        # The FAIL row's score must exceed the max non-FAIL score (8.5)
+        assert best["_score"] > 8.5, (
+            f"FAIL floor score must exceed 8.5 but got {best['_score']:.3f}"
+        )
+
+    def test_unrelated_fail_does_not_outrank_relevant_pass(self, tmp_path):
+        """B1 invariant (ii): a FAIL row with unrelated construction must NOT
+        outrank a PASS row that matches the query lobe and construction.
+        """
+        rows = [
+            # Unrelated FAIL — different lobe, different construction
+            _lesson(
+                "unrelated-fail",
+                verdict="FAIL",
+                construction="some completely different unrelated signal alpha gamma",
+                what_failed="unrelated mechanism failed",
+            ),
+            # Relevant PASS — matches the query lobe and construction
+            _lesson(
+                "relevant-pass",
+                verdict="PASS",
+                construction="momentum factor lobe X construction C",
+            ),
+        ]
+        _write_lessons(tmp_path, rows)
+
+        top = recall_lesson_rows(
+            lobe="X",
+            construction_terms="momentum factor C",
+            root=tmp_path,
+        )
+        assert len(top) >= 2
+        best = top[0]
+        assert best["cycle_id"] == "relevant-pass", (
+            f"Relevant PASS must outrank unrelated FAIL but got cycle_id={best['cycle_id']} "
+            f"score={best['_score']:.3f}"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# H. Regression: B2 — _is_fail_verdict exact-token classification
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestIsFailVerdict:
+    """Regression tests for B2: substring-match false-fires."""
+
+    def test_benign_verdicts_not_classified_as_fail(self):
+        """B2: these benign verdicts must NOT be classified as FAIL."""
+        from engine.metabolism.recall import _is_fail_verdict
+        benign = [
+            "PASS (no issues)",
+            "PASS - no concerns",
+            "NONE",
+            "normal",
+            "pass",
+            "PASS",
+            "OK",
+        ]
+        for v in benign:
+            assert not _is_fail_verdict(v), f"Benign verdict {v!r} was wrongly classified as FAIL"
+
+    def test_fail_verdicts_classified_correctly(self):
+        """B2: these verdicts must be classified as FAIL."""
+        from engine.metabolism.recall import _is_fail_verdict
+        fail_verdicts = [
+            "FAIL",
+            "fail",
+            "killed",
+            "KILLED",
+            "reject",
+            "REJECTED",
+            "dead",
+            "DEAD",
+            "false",
+            "FALSE",
+            "FAIL — zero IC",
+            "verdict: kill",
+        ]
+        for v in fail_verdicts:
+            assert _is_fail_verdict(v), f"Fail verdict {v!r} was NOT classified as FAIL"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# I. Regression: B4 — path-form source SLA resolution
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPathFormSlaResolution:
+    """Regression tests for B4: path-form source must resolve to logical SLA key."""
+
+    def test_fitness_history_jsonl_gets_sla_3_not_14(self, tmp_path):
+        """B4: source='data/metabolism/fitness_history.jsonl' must use SLA=3 (fitness),
+        NOT the default SLA=14.  A block that is 5 days old must be flagged stale.
+        """
+        _write_sla(tmp_path)
+        five_days_ago = (
+            datetime.now(timezone.utc) - timedelta(days=5)
+        ).isoformat(timespec="seconds")
+        now = _now_iso()
+
+        blocks = [{
+            "name": "fitness_history",
+            "source": "data/metabolism/fitness_history.jsonl",
+            "text": "x",
+            "as_of": five_days_ago,
+        }]
+        result = stamp_context(blocks, now_iso=now, root=tmp_path)
+        assert len(result) == 1
+        b = result[0]
+        assert b["sla_days"] == 3, (
+            f"Expected SLA=3 (fitness) but got {b['sla_days']} "
+            f"(would mean the block is NOT stale despite being 5 days old)"
+        )
+        assert b["is_stale"] is True, (
+            "5-day-old fitness_history.jsonl block must be stale under SLA=3"
+        )
+
+    def test_organism_state_json_path_resolves_correctly(self, tmp_path):
+        """B4: 'data/metabolism/organism_state.json' → SLA=2 (organism_state)."""
+        _write_sla(tmp_path)
+        three_days_ago = (
+            datetime.now(timezone.utc) - timedelta(days=3)
+        ).isoformat(timespec="seconds")
+        now = _now_iso()
+        blocks = [{
+            "name": "organism_state",
+            "source": "data/metabolism/organism_state.json",
+            "text": "x",
+            "as_of": three_days_ago,
+        }]
+        result = stamp_context(blocks, now_iso=now, root=tmp_path)
+        assert result[0]["sla_days"] == 2
+        assert result[0]["is_stale"] is True  # 3 days > SLA 2
+
+    def test_logical_key_still_resolves_correctly(self, tmp_path):
+        """B4: plain logical keys (no path) must continue to work as before."""
+        _write_sla(tmp_path)
+        one_day_ago = (
+            datetime.now(timezone.utc) - timedelta(days=1)
+        ).isoformat(timespec="seconds")
+        now = _now_iso()
+        blocks = [{
+            "name": "trajectory",
+            "source": "trajectory",
+            "text": "x",
+            "as_of": one_day_ago,
+        }]
+        result = stamp_context(blocks, now_iso=now, root=tmp_path)
+        assert result[0]["sla_days"] == 7
+        assert result[0]["is_stale"] is False  # 1 day < SLA 7

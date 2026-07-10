@@ -24,10 +24,15 @@ log = logging.getLogger(__name__)
 LESSONS_PATH = ("data", "metabolism", "lessons.jsonl")
 
 # Score weights
-_WEIGHT_LOBE_MATCH = 4.0       # strong: lobe keyword found anywhere in row
-_WEIGHT_CONSTRUCTION_JACCARD = 3.0  # token-overlap on construction/what_failed/what_worked
-_WEIGHT_FAIL_VERDICT = 2.0     # FAIL/kill/reject verdicts weighted higher (anti-repetition signal)
-_WEIGHT_RECENCY = 0.5          # small tiebreak only (newer is marginally preferred)
+_WEIGHT_LOBE_MATCH = 4.0            # strong: lobe keyword found anywhere in row
+_WEIGHT_CONSTRUCTION_JACCARD = 3.0  # token-overlap on construction field only
+_WEIGHT_FAIL_VERDICT = 2.0          # FAIL/kill/reject verdicts weighted higher (anti-repetition signal)
+_WEIGHT_RECENCY = 0.5               # small tiebreak only (newer is marginally preferred)
+
+# Max possible non-FAIL score: lobe(4.0) + construction_jaccard(3.0) + sensor(1.0) + recency(0.5) = 8.5
+# The dominating FAIL floor must exceed this.
+_FAIL_FLOOR_BONUS = 20.0            # added when FAIL row's construction matches query (Jaccard >= 0.5)
+_FAIL_CONSTRUCTION_MATCH_THRESHOLD = 0.5  # Jaccard threshold for "same construction"
 
 # Stopwords to drop during fingerprinting and scoring
 _STOPWORDS = frozenset({
@@ -84,10 +89,20 @@ def _jaccard(set_a: frozenset[str], set_b: frozenset[str]) -> float:
     return intersection / union if union else 0.0
 
 
+_FAIL_TOKENS: frozenset[str] = frozenset({
+    "fail", "failed", "kill", "killed", "reject", "rejected", "dead", "false",
+})
+
+
 def _is_fail_verdict(verdict: str) -> bool:
-    """Return True for FAIL/kill/reject-class verdicts."""
-    v = verdict.lower().strip()
-    return any(kw in v for kw in ("fail", "kill", "reject", "dead", "false", "no"))
+    """Return True for FAIL/kill/reject-class verdicts.
+
+    Tokenizes the verdict string and tests set-membership against an exact
+    fail-token set.  This avoids substring false-fires such as "no" matching
+    inside "NONE", "normal", or "PASS (no issues)".
+    """
+    tokens = frozenset(_tokenize(verdict))
+    return bool(tokens & _FAIL_TOKENS)
 
 
 def _score_row(
@@ -103,30 +118,35 @@ def _score_row(
     score = 0.0
     reasons: list[str] = []
 
-    # Combine all row text fields for lobe-match and construction searches
-    row_text_fields = [
+    # Combine all text fields for lobe-match and sensor searches (broad bag)
+    row_text_fields_broad = [
         str(row.get("construction") or ""),
         str(row.get("what_worked") or ""),
         str(row.get("what_failed") or ""),
         str(row.get("proposal_id") or ""),
         str(row.get("cycle_id") or ""),
     ]
-    row_all_tokens = frozenset(_tokenize(" ".join(row_text_fields)))
+    row_all_tokens = frozenset(_tokenize(" ".join(row_text_fields_broad)))
 
-    # 1. Lobe match
+    # Construction-only tokens (used for Jaccard — must NOT pool what_* so long
+    # what_failed prose doesn't inflate the union and drive FAIL rows DOWN)
+    row_construction_tokens = frozenset(_tokenize(str(row.get("construction") or "")))
+
+    # 1. Lobe match (uses broad bag so lobe keywords in any field count)
     if lobe_tokens:
         overlap = lobe_tokens & row_all_tokens
         if overlap:
             score += _WEIGHT_LOBE_MATCH
             reasons.append(f"lobe_match:{','.join(sorted(overlap))}")
 
-    # 2. Construction-token overlap (Jaccard on construction+what_failed+what_worked)
+    # 2. Construction-token overlap (Jaccard on construction field ONLY — B1a fix)
+    construction_jaccard = 0.0
     if construction_tokens:
-        j = _jaccard(construction_tokens, row_all_tokens)
-        if j > 0:
-            weighted = j * _WEIGHT_CONSTRUCTION_JACCARD
+        construction_jaccard = _jaccard(construction_tokens, row_construction_tokens)
+        if construction_jaccard > 0:
+            weighted = construction_jaccard * _WEIGHT_CONSTRUCTION_JACCARD
             score += weighted
-            reasons.append(f"construction_jaccard:{j:.3f}")
+            reasons.append(f"construction_jaccard:{construction_jaccard:.3f}")
 
     # 3. Sensor match bonus (small, helps filter when sensors provided)
     if sensor_tokens:
@@ -138,7 +158,16 @@ def _score_row(
     # 4. FAIL verdict weight — critical for anti-repetition
     verdict = str(row.get("verdict") or "")
     if _is_fail_verdict(verdict):
-        score += _WEIGHT_FAIL_VERDICT
+        # B1b: hard FAIL floor — when this FAIL row's construction matches the
+        # query (Jaccard >= threshold), add a dominating bonus that provably
+        # exceeds the maximum possible non-FAIL score (8.5).  An unrelated FAIL
+        # (construction does NOT match) gets only the normal small weight so it
+        # does not flood out relevant PASS rows.
+        if construction_tokens and construction_jaccard >= _FAIL_CONSTRUCTION_MATCH_THRESHOLD:
+            score += _FAIL_FLOOR_BONUS
+            reasons.append(f"fail_floor_bonus:{_FAIL_FLOOR_BONUS}")
+        else:
+            score += _WEIGHT_FAIL_VERDICT
         reasons.append(f"fail_verdict:{verdict}")
 
     # 5. Recency tiebreak: normalize ts position in [oldest, newest] range
@@ -154,8 +183,11 @@ def _score_row(
             elif ts <= oldest_ts:
                 normalized = 0.0
             else:
-                # Use string length as proxy for comparable timestamps
-                # Fallback: simple comparison
+                # Middle range: assign a flat 0.5 tiebreak weight.
+                # ISO 8601 strings sort correctly lexicographically, but
+                # linear interpolation on strings is not implemented here —
+                # recency is intentionally a small tiebreak (0–0.5 pts total),
+                # not a precise normalization.
                 normalized = 0.5
             score += normalized * _WEIGHT_RECENCY
             if normalized > 0:
