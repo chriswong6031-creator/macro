@@ -1245,3 +1245,130 @@ def test_r39a_ppi_expected_value_bench_median_no_market_implied():
     assert bs.get("market_implied") is None, (
         "PPI fixture has market_implied — test needs update or exclusion check must be verified"
     )
+
+
+# ---------------------------------------------------------------------------
+# MRI-R39a W11: track-record button + overlay; inline block + duplicate footer removed
+# ---------------------------------------------------------------------------
+
+def test_w11_no_inline_forward_accrual_in_panel_render():
+    """W11: inline 'Forward accrual began' block no longer appended to rr-content.
+
+    The scoreboardBlock() output must NOT be injected into RR_EL.innerHTML.
+    It is now routed to the track-record overlay (rr-tr-body).
+    """
+    src = _rr_section_src()
+    main_start = src.find("function renderRadar(")
+    main_body = src[main_start:main_start + 8000] if main_start >= 0 else ""
+    # Old pattern: RR_EL.innerHTML = cardsHtml + scoreboardBlock(...)
+    # New pattern: RR_EL.innerHTML = cardsHtml; (scoreboard goes to rr-tr-body)
+    assert "RR_EL.innerHTML = cardsHtml + scoreboardBlock" not in main_body, (
+        "Inline scoreboard block still appended to RR_EL — must be moved to rr-tr-body (W11)"
+    )
+    assert "RR_TR_BODY" in main_body or "rr-tr-body" in main_body, (
+        "scoreboardBlock output must be routed to rr-tr-body overlay (W11)"
+    )
+
+
+def test_w11_no_duplicate_footer_disclosure_in_panel():
+    """W11: duplicate footer 'Model projections · display-only · not investment advice' removed from panel.
+
+    The panel renders only: header → subline → cards → see-more.
+    The redundant rr-footer JS block must be gone from renderRadar().
+    """
+    src = _rr_section_src()
+    main_start = src.find("function renderRadar(")
+    main_body = src[main_start:main_start + 8000] if main_start >= 0 else ""
+    # The old footer variable with this duplicate disclosure must not be injected into RR_EL
+    assert ("Model projections · display-only · not investment advice · scored forward in public"
+            not in main_body), (
+        "Duplicate footer disclosure still present in renderRadar output (W11)"
+    )
+
+
+def test_w11_header_disclosure_line_retained():
+    """W11: panel-level 'Forward model · display-only · benchmarks · scored in public' subline retained.
+
+    MRI-R5/R7 honesty law: this single disclosure line must remain in static HTML.
+    """
+    html = _render("macro")
+    assert "Forward model" in html, (
+        "Panel header disclosure 'Forward model' subline missing — MRI-R5/R7 violation (W11)"
+    )
+    assert "display-only" in html, "display-only still required in static HTML (W11)"
+    assert "rr-subline" in html, "rr-subline element missing from rendered HTML (W11)"
+
+
+def test_w11_track_record_btn_in_header():
+    """W11: top-right 'Track record ↗' button present in panel header."""
+    html = _render("macro")
+    assert "rr-tr-btn" in html, (
+        "rr-tr-btn element missing from rendered HTML (W11)"
+    )
+    assert "Track record" in html, "EN 'Track record' text missing from header button (W11)"
+    assert "评分记录" in html, "ZH '评分记录' text missing from header button (W11)"
+
+
+def test_w11_track_record_btn_no_cjk_in_title():
+    """W11: no CJK characters in title= attributes near the track-record button."""
+    html = _render("macro")
+    idx_start = html.find('id="release-radar"')
+    idx_end = html.find('id="week-ahead"', idx_start) if idx_start >= 0 else -1
+    section = html[idx_start:idx_end] if idx_end > idx_start else html[idx_start:idx_start + 30000]
+    titles = re.findall(r'title=["\']([^"\']*)["\']', section)
+    for t_val in titles:
+        for ch in t_val:
+            assert not ('一' <= ch <= '鿿'), (
+                f"CJK in title= attribute (W11 CI law violation): {t_val!r}"
+            )
+
+
+def test_w11_track_record_overlay_in_html():
+    """W11: rr-tr-overlay element is present in rendered macro HTML."""
+    html = _render("macro")
+    assert "rr-tr-overlay" in html, "rr-tr-overlay missing from rendered HTML (W11)"
+    assert "rr-tr-sheet" in html, "rr-tr-sheet missing from rendered HTML (W11)"
+    assert "rr-tr-body" in html, "rr-tr-body missing from rendered HTML (W11)"
+
+
+def test_w11_track_record_overlay_bilingual_title():
+    """W11: track-record overlay has bilingual EN + ZH title."""
+    html = _render("macro")
+    assert "Release Radar — Track record" in html, (
+        "EN 'Release Radar — Track record' title missing from overlay (W11)"
+    )
+    assert "数据发布雷达 — 评分记录" in html, (
+        "ZH '数据发布雷达 — 评分记录' title missing from overlay (W11)"
+    )
+
+
+def test_w11_see_more_still_present():
+    """W11: See more button and toggle logic remain intact in renderRadar."""
+    src = _rr_section_src()
+    main_start = src.find("function renderRadar(")
+    main_body = src[main_start:main_start + 8000] if main_start >= 0 else ""
+    assert "rr-see-more-btn" in main_body, (
+        "rr-see-more-btn missing from renderRadar after W11 cleanup"
+    )
+    assert "See more" in main_body and "See less" in main_body, (
+        "See more / See less text missing after W11 cleanup"
+    )
+
+
+def test_w11_overlay_absent_in_stocks_mode():
+    """W11: track-record overlay not rendered in stocks mode (inside {% if mode != 'stocks' %})."""
+    html = _render("stocks")
+    assert "rr-tr-overlay" not in html, (
+        "rr-tr-overlay must not appear in stocks mode (W11)"
+    )
+
+
+def test_w11_no_consensus_in_overlay_strings():
+    """W11 / MRI-R5: 'consensus' / '共识' absent from track-record overlay static HTML."""
+    html = _render("macro")
+    idx_start = html.find("rr-tr-overlay")
+    idx_end = html.find("rr-modal-overlay", idx_start) if idx_start >= 0 else -1
+    section = html[idx_start:idx_end] if idx_end > idx_start else html[idx_start:idx_start + 4000]
+    assert "consensus" not in section.lower(), (
+        "MRI-R5: 'consensus' found in track-record overlay HTML (W11)"
+    )
