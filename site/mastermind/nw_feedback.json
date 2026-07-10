@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_nw_feedback.v2",
-  "generated_at": "2026-07-10T12:25:00Z",
+  "generated_at": "2026-07-10T22:25:00Z",
   "window_days": 14,
   "thesis_counts": {
     "open": 26,
@@ -24,7 +24,7 @@
       "other": 0
     },
     "macro_refresh": {
-      "ok": 33,
+      "ok": 36,
       "error": 0,
       "other": 0
     },
@@ -34,17 +34,17 @@
       "other": 0
     },
     "publish_macro_snapshot": {
-      "ok": 8,
+      "ok": 9,
       "error": 0,
       "other": 0
     },
     "derisk_us_intraday": {
-      "ok": 55,
+      "ok": 69,
       "error": 0,
       "other": 0
     },
     "watch_asia_overnight": {
-      "ok": 12,
+      "ok": 14,
       "error": 0,
       "other": 0
     },
@@ -89,17 +89,17 @@
       "other": 0
     },
     "settle_pending": {
-      "ok": 3,
+      "ok": 4,
       "error": 0,
       "other": 0
     },
     "portfolio_risk_compose": {
-      "ok": 38,
+      "ok": 54,
       "error": 0,
       "other": 0
     },
     "portfolio_risk_daily": {
-      "ok": 2,
+      "ok": 3,
       "error": 0,
       "other": 0
     }

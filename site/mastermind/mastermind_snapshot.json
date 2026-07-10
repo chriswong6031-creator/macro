@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-07-10T12:25:00Z",
+  "generated_at": "2026-07-10T22:25:00Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -12,7 +12,7 @@
       "manager": "engine",
       "benchmark": "SPY",
       "as_of": "2026-07-09",
-      "market_status": "closed",
+      "market_status": "open",
       "gross": 0.4421,
       "cash": 0.5579,
       "regime": {
@@ -100,7 +100,7 @@
           "thesis_id": "2026-07-09-LLY-conv",
           "time_stop_by": "2026-10-06",
           "confluence": 0.714,
-          "entry_price": 1215.83,
+          "entry_price": 1210.31,
           "research": {
             "summary": "Highest-conviction single name and the cleanest gate pass in the sheet: confluence +0.71, size_authority UP, no vetoes, with growth/trend/options/altdata-flow/options-flow/narrative all bullish. It is the quality leader of the confirmed GLP-1/obesity theme WITHOUT the crowding pathology the strategist flags elsewhere (HIMS runs negative alpha; LLY does not). It doubles as quality large-cap healthcare, so it also earns its keep as defensive ballast if the froth unwinds. Only bear lenses are rate/fed/cross-asset macro — none name-specific.",
             "confirmed": true
@@ -136,11 +136,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. LLY receives 8.0% (confluence +0.71 (6/7 lenses bullish = +0.71 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-06.",
             "confluence": 0.714,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 1216.95,
-          "fill_after": "2026-07-10"
+          }
         },
         {
           "ticker": "WST",
@@ -152,7 +148,7 @@
           "thesis_id": "2026-07-09-WST-conv",
           "time_stop_by": "2026-10-06",
           "confluence": 0.667,
-          "entry_price": 353.68,
+          "entry_price": 357.92,
           "research": {
             "summary": "Second clean gate pass: confluence +0.67, size_authority UP, bullish on quality/asymmetry/trend/options/options-flow/narrative. West Pharmaceutical is a quality med-tech compounder — a confirmed name with a real quality axis, exactly the kind of clean-alpha holding that beats a defensive basket in an up-tape while holding up in a wobble. Valuation is the one caution, sized accordingly.",
             "confirmed": true
@@ -189,11 +185,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. WST receives 7.0% (confluence +0.67 (5/6 lenses bullish = +0.67 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-06.",
             "confluence": 0.667,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 357.66,
-          "fill_after": "2026-07-10"
+          }
         },
         {
           "ticker": "XLV",
@@ -247,7 +239,7 @@
           "thesis_id": "2026-07-09-USMV-conv",
           "time_stop_by": "2026-10-06",
           "confluence": 0.0,
-          "entry_price": 97.65,
+          "entry_price": 97.69,
           "research": {
             "summary": "The most direct portfolio answer to the two loudest risk-off planes: froth_fragility Euphoric (leaders distributing) and vol_shock elevated. Min-volatility keeps me invested — beating the cash-drag that was sinking the book versus a fully-invested defensive basket — while structurally underweighting the crowded/high-beta names that would lead a narrowing-top unwind.",
             "confirmed": true
@@ -277,11 +269,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. USMV receives 2.4% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-06.",
             "confluence": 0.0,
             "prob_correct": 0.55
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 97.6,
-          "fill_after": "2026-07-10"
+          }
         },
         {
           "ticker": "JNJ",
@@ -340,7 +328,7 @@
           "thesis_id": "2026-07-09-XLF-conv",
           "time_stop_by": "2026-10-05",
           "confluence": 0.0,
-          "entry_price": 54.97,
+          "entry_price": 55.99,
           "research": {
             "summary": "My ONLY financials expression, and deliberately the broad ETF rather than single-name regional banks. Rationale is twofold: XLF is a defensive-benchmark component (helps me track/beat the basket), and cycles flags XLF as entry_favored. But I size it only moderate and refuse the strategist's USB/UMBF/CFR because all three FAIL the gate — Financials RS is rank-7/23rd-pctile below its 200d trend and the regional_banks theme ranks 20/46 negative. The sector lean is real in narrative but unconfirmed on price; XLF is the disciplined way to hold it.",
             "confirmed": true
@@ -374,11 +362,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLF receives 8.0% (confluence +0.00 (2/4 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-05.",
             "confluence": 0.0,
             "prob_correct": 0.55
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 55.54,
-          "fill_after": "2026-07-10"
+          }
         },
         {
           "ticker": "XLP",
@@ -865,80 +849,7 @@
           "raw_prob_correct": 0.55
         }
       ],
-      "pending_orders": [
-        {
-          "id": "2026-07-09-XLE-sell",
-          "ticker": "XLE",
-          "side": "sell",
-          "shares": 865.0,
-          "est_price": 55.3696,
-          "est_value": 47894.72,
-          "weight": 0.0,
-          "placed_asof": "2026-07-09",
-          "fill_after": "2026-07-10",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-09-MRNA-sell",
-          "ticker": "MRNA",
-          "side": "sell",
-          "shares": 391.0,
-          "est_price": 73.8,
-          "est_value": 28855.8,
-          "weight": 0.0,
-          "placed_asof": "2026-07-09",
-          "fill_after": "2026-07-10",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-09-LLY-buy",
-          "ticker": "LLY",
-          "side": "buy",
-          "shares": 63.0,
-          "est_price": 1216.95,
-          "est_value": 76667.85,
-          "weight": 0.08,
-          "placed_asof": "2026-07-09",
-          "fill_after": "2026-07-10",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-09-WST-buy",
-          "ticker": "WST",
-          "side": "buy",
-          "shares": 189.0,
-          "est_price": 357.66,
-          "est_value": 67597.74,
-          "weight": 0.07,
-          "placed_asof": "2026-07-09",
-          "fill_after": "2026-07-10",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-09-USMV-buy",
-          "ticker": "USMV",
-          "side": "buy",
-          "shares": 237.0,
-          "est_price": 97.6,
-          "est_value": 23131.2,
-          "weight": 0.0239,
-          "placed_asof": "2026-07-09",
-          "fill_after": "2026-07-10",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-09-XLF-buy",
-          "ticker": "XLF",
-          "side": "buy",
-          "shares": 347.0,
-          "est_price": 55.54,
-          "est_value": 19272.38,
-          "weight": 0.08,
-          "placed_asof": "2026-07-09",
-          "fill_after": "2026-07-10",
-          "status": "pending"
-        }
-      ],
+      "pending_orders": [],
       "research_held": [
         {
           "ticker": "ABBV",
@@ -1276,13 +1187,13 @@
       "performance": {
         "inception_date": "2026-06-19",
         "starting_nav": 1000000.0,
-        "current_nav": 970357.76,
-        "cash": 640364.86,
-        "invested": 329992.9,
-        "total_return_pct": -2.9642,
-        "vs_spy_pct": -4.415,
+        "current_nav": 968978.19,
+        "cash": 531529.89,
+        "invested": 437448.3,
+        "total_return_pct": -3.1022,
+        "vs_spy_pct": -4.607,
         "benchmark": "SPY",
-        "day_change_pct": 0.8691,
+        "day_change_pct": -0.1422,
         "max_drawdown_pct": -4.3535,
         "realized_since": "2026-06-19",
         "series": [
@@ -2492,18 +2403,18 @@
       "kind": "autonomous",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-10",
       "market_status": {
-        "open": false,
-        "asof_et": "2026-07-09T19:13:19.911233-04:00",
+        "open": true,
+        "asof_et": "2026-07-10T11:00:25.200504-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-10T09:30:00-04:00",
-        "next_open_day": "2026-07-10",
-        "prev_trading_day": "2026-07-08"
+        "next_open": "2026-07-13T09:30:00-04:00",
+        "next_open_day": "2026-07-13",
+        "prev_trading_day": "2026-07-09"
       },
-      "gross": 0.402,
-      "cash": 0.598,
+      "gross": 0.3786,
+      "cash": 0.6214,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -2512,40 +2423,19 @@
       "sleeves": null,
       "positions": [
         {
-          "ticker": "HWM",
-          "sleeve": "brain",
-          "weight": 0.0648,
-          "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Quality late-cycle aero/engineered-structures industrial and the holding most insulated from both the semis/AI de-rate and any cyclical air-pocket. XLI is cycle-entry-favored; durable aero-build demand and pricing power have kept it roughly flat on cost through prior stressed tapes. It is my ballast the froth-unwind cannot reach, so it stays near the top of the book.",
-          "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 18,
-          "cost_basis": 276.1437,
-          "current_price": 273.77,
-          "market_value": 63259.44,
-          "unrealized_pnl": -548.49,
-          "unrealized_pct": -0.86,
-          "thesis_full": {
-            "summary": "Quality late-cycle aero/engineered-structures industrial and the holding most insulated from both the semis/AI de-rate and any cyclical air-pocket. XLI is cycle-entry-favored; durable aero-build demand and pricing power have kept it roughly flat on cost through prior stressed tapes. It is my ballast the froth-unwind cannot reach, so it stays near the top of the book.",
-            "why_now": "Quality late-cycle aero/engineered-structures industrial and the holding most insulated from both the semis/AI de-rate and any cyclical air-pocket. XLI is cycle-entry-favored; durable aero-build demand and pricing power have kept it roughly flat on cost through prior stressed tapes. It is my ballast the froth-unwind cannot reach, so it stays near the top of the book.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
           "ticker": "MCY",
           "sleeve": "brain",
-          "weight": 0.0637,
+          "weight": 0.064,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Top defensive anchor and my best multi-plane name. Insurance & Brokers is the #3 leadership theme (20d rel +0.11), narrative leadership_ok, and XLF is cycle-entry-favored — Charter P1 satisfied on the cycle plane. Structurally immune to the AI/semi de-rate and to the cross-asset concentration risk, and a hawkish Fed (−2 implied cuts, higher-for-longer 10Y) is a direct reinvestment-yield tailwind for a P&C insurer. In a ROTATE_DEFENSIVE, size_authority=hold tape, this is the cleanest thing I own, so it holds the core defensive weight.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 18,
+          "held_days": 19,
           "cost_basis": 105.1111,
-          "current_price": 109.79,
-          "market_value": 62192.52,
-          "unrealized_pnl": 2650.47,
-          "unrealized_pct": 4.45,
+          "current_price": 110.075,
+          "market_value": 62353.96,
+          "unrealized_pnl": 2811.91,
+          "unrealized_pct": 4.72,
           "thesis_full": {
             "summary": "Top defensive anchor and my best multi-plane name. Insurance & Brokers is the #3 leadership theme (20d rel +0.11), narrative leadership_ok, and XLF is cycle-entry-favored — Charter P1 satisfied on the cycle plane. Structurally immune to the AI/semi de-rate and to the cross-asset concentration risk, and a hawkish Fed (−2 implied cuts, higher-for-longer 10Y) is a direct reinvestment-yield tailwind for a P&C insurer. In a ROTATE_DEFENSIVE, size_authority=hold tape, this is the cleanest thing I own, so it holds the core defensive weight.",
             "why_now": "Top defensive anchor and my best multi-plane name. Insurance & Brokers is the #3 leadership theme (20d rel +0.11), narrative leadership_ok, and XLF is cycle-entry-favored — Charter P1 satisfied on the cycle plane. Structurally immune to the AI/semi de-rate and to the cross-asset concentration risk, and a hawkish Fed (−2 implied cuts, higher-for-longer 10Y) is a direct reinvestment-yield tailwind for a P&C insurer. In a ROTATE_DEFENSIVE, size_authority=hold tape, this is the cleanest thing I own, so it holds the core defensive weight.",
@@ -2554,19 +2444,40 @@
           }
         },
         {
+          "ticker": "HWM",
+          "sleeve": "brain",
+          "weight": 0.0636,
+          "verdict": "hold",
+          "conviction": "medium",
+          "rationale": "Quality late-cycle aero/engineered-structures industrial and the holding most insulated from both the semis/AI de-rate and any cyclical air-pocket. XLI is cycle-entry-favored; durable aero-build demand and pricing power have kept it roughly flat on cost through prior stressed tapes. It is my ballast the froth-unwind cannot reach, so it stays near the top of the book.",
+          "opened_at": "2026-06-21T14:26:56.050465+00:00",
+          "held_days": 19,
+          "cost_basis": 276.1437,
+          "current_price": 268.14,
+          "market_value": 61958.53,
+          "unrealized_pnl": -1849.39,
+          "unrealized_pct": -2.9,
+          "thesis_full": {
+            "summary": "Quality late-cycle aero/engineered-structures industrial and the holding most insulated from both the semis/AI de-rate and any cyclical air-pocket. XLI is cycle-entry-favored; durable aero-build demand and pricing power have kept it roughly flat on cost through prior stressed tapes. It is my ballast the froth-unwind cannot reach, so it stays near the top of the book.",
+            "why_now": "Quality late-cycle aero/engineered-structures industrial and the holding most insulated from both the semis/AI de-rate and any cyclical air-pocket. XLI is cycle-entry-favored; durable aero-build demand and pricing power have kept it roughly flat on cost through prior stressed tapes. It is my ballast the froth-unwind cannot reach, so it stays near the top of the book.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
           "ticker": "URI",
           "sleeve": "brain",
-          "weight": 0.0565,
+          "weight": 0.0576,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Equipment-rental proxy on US non-residential/infrastructure construction; XLI and the cycle engine favor it for ENTRY, and it sits in the industrial cohort that kept confirming while tech de-rated. Sitting essentially flat on cost. I hold it at a measured ~5.5% — genuine participation in confirmed US-infra strength, not a leveraged cyclical bet under an elevated-vol, event-risk overnight (CPI 7/14).",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 18,
+          "held_days": 19,
           "cost_basis": 1089.166,
-          "current_price": 1088.67,
-          "market_value": 55215.83,
-          "unrealized_pnl": -25.15,
-          "unrealized_pct": -0.05,
+          "current_price": 1104.9821,
+          "market_value": 56043.15,
+          "unrealized_pnl": 802.17,
+          "unrealized_pct": 1.45,
           "thesis_full": {
             "summary": "Equipment-rental proxy on US non-residential/infrastructure construction; XLI and the cycle engine favor it for ENTRY, and it sits in the industrial cohort that kept confirming while tech de-rated. Sitting essentially flat on cost. I hold it at a measured ~5.5% — genuine participation in confirmed US-infra strength, not a leveraged cyclical bet under an elevated-vol, event-risk overnight (CPI 7/14).",
             "why_now": "Equipment-rental proxy on US non-residential/infrastructure construction; XLI and the cycle engine favor it for ENTRY, and it sits in the industrial cohort that kept confirming while tech de-rated. Sitting essentially flat on cost. I hold it at a measured ~5.5% — genuine participation in confirmed US-infra strength, not a leveraged cyclical bet under an elevated-vol, event-risk overnight (CPI 7/14).",
@@ -2577,17 +2488,17 @@
         {
           "ticker": "APH",
           "sleeve": "brain",
-          "weight": 0.0518,
+          "weight": 0.0505,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Amphenol rides AI-infra/electrification but is XLI-diversified, carrying far less late-cycle-XLK stigma than pure semis. Froth_fragility remains structurally live (euphoric leaders distributing, narrowing-top risk), so I will not carry a full offensive weight here. ~4.5% keeps the structural, cycle-entry-favored exposure while respecting the distribution risk in its AI-adjacent end-markets — trimmed slightly to fund the healthcare rotation.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 18,
+          "held_days": 19,
           "cost_basis": 165.768,
-          "current_price": 162.24,
-          "market_value": 50558.36,
-          "unrealized_pnl": -1099.41,
-          "unrealized_pct": -2.13,
+          "current_price": 157.84,
+          "market_value": 49187.2,
+          "unrealized_pnl": -2470.57,
+          "unrealized_pct": -4.78,
           "thesis_full": {
             "summary": "Amphenol rides AI-infra/electrification but is XLI-diversified, carrying far less late-cycle-XLK stigma than pure semis. Froth_fragility remains structurally live (euphoric leaders distributing, narrowing-top risk), so I will not carry a full offensive weight here. ~4.5% keeps the structural, cycle-entry-favored exposure while respecting the distribution risk in its AI-adjacent end-markets — trimmed slightly to fund the healthcare rotation.",
             "why_now": "Amphenol rides AI-infra/electrification but is XLI-diversified, carrying far less late-cycle-XLK stigma than pure semis. Froth_fragility remains structurally live (euphoric leaders distributing, narrowing-top risk), so I will not carry a full offensive weight here. ~4.5% keeps the structural, cycle-entry-favored exposure while respecting the distribution risk in its AI-adjacent end-markets — trimmed slightly to fund the healthcare rotation.",
@@ -2603,12 +2514,12 @@
           "conviction": "low",
           "rationale": "Arista is datacenter networking / AI-infra and my best-working tech name on cost (+9%). I hold it minimal on name quality alone rather than adding: AI-infra is the worst-performing theme block (−0.057 20d), it shares the narrowing-top froth risk, and XLK is late-cycle do-not-add. But selling strength that isn't cracking into a green tech tape is not warranted either — I trim to ~3.5% and would only rebuild once AI-infra reclaims confirmed leadership and froth_fragility clears.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 18,
+          "held_days": 19,
           "cost_basis": 169.424,
-          "current_price": 184.69,
-          "market_value": 42683.42,
-          "unrealized_pnl": 3528.11,
-          "unrealized_pct": 9.01,
+          "current_price": 183.95,
+          "market_value": 42512.4,
+          "unrealized_pnl": 3357.09,
+          "unrealized_pct": 8.57,
           "thesis_full": {
             "summary": "Arista is datacenter networking / AI-infra and my best-working tech name on cost (+9%). I hold it minimal on name quality alone rather than adding: AI-infra is the worst-performing theme block (−0.057 20d), it shares the narrowing-top froth risk, and XLK is late-cycle do-not-add. But selling strength that isn't cracking into a green tech tape is not warranted either — I trim to ~3.5% and would only rebuild once AI-infra reclaims confirmed leadership and froth_fragility clears.",
             "why_now": "Arista is datacenter networking / AI-infra and my best-working tech name on cost (+9%). I hold it minimal on name quality alone rather than adding: AI-infra is the worst-performing theme block (−0.057 20d), it shares the narrowing-top froth risk, and XLK is late-cycle do-not-add. But selling strength that isn't cracking into a green tech tape is not warranted either — I trim to ~3.5% and would only rebuild once AI-infra reclaims confirmed leadership and froth_fragility clears.",
@@ -2617,19 +2528,40 @@
           }
         },
         {
+          "ticker": "XLE",
+          "sleeve": "brain",
+          "weight": 0.0392,
+          "verdict": "hold",
+          "conviction": "low",
+          "rationale": "Energy stays a genuinely uncorrelated hedge at its structural weight. The cycle engine independently favors XLE for ENTRY, so it satisfies Charter P1 on the cycle plane, but the theme itself is weak (US Energy Complex −0.024 20d) and there is no oil-catalyst confirmation on the tape, so I refuse to spend offense budget here. 3.5% is a structural uncorrelated-hedge weight, not a conviction position.",
+          "opened_at": "2026-07-08T15:00:07.424551+00:00",
+          "held_days": 2,
+          "cost_basis": 55.455,
+          "current_price": 54.87,
+          "market_value": 38134.65,
+          "unrealized_pnl": -406.58,
+          "unrealized_pct": -1.05,
+          "thesis_full": {
+            "summary": "Energy stays a genuinely uncorrelated hedge at its structural weight. The cycle engine independently favors XLE for ENTRY, so it satisfies Charter P1 on the cycle plane, but the theme itself is weak (US Energy Complex −0.024 20d) and there is no oil-catalyst confirmation on the tape, so I refuse to spend offense budget here. 3.5% is a structural uncorrelated-hedge weight, not a conviction position.",
+            "why_now": "Energy stays a genuinely uncorrelated hedge at its structural weight. The cycle engine independently favors XLE for ENTRY, so it satisfies Charter P1 on the cycle plane, but the theme itself is weak (US Energy Complex −0.024 20d) and there is no oil-catalyst confirmation on the tape, so I refuse to spend offense budget here. 3.5% is a structural uncorrelated-hedge weight, not a conviction position.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
           "ticker": "SMH",
           "sleeve": "brain",
-          "weight": 0.0417,
+          "weight": 0.0301,
           "verdict": "hold",
           "conviction": "low",
           "rationale": "Semiconductor ETF held as a light placeholder in the #1-RS secular sector (60d mom +25%, pctile 92). But this is a do-not-add: XLK is cycle-BLOCKED late-cycle, 20d momentum has rolled negative, ai_semiconductors is the single weakest theme block (−0.070 20d), and froth_fragility is live. Trimmed to 3% — a structural-leader toehold I rebuild only once AI-infra reclaims confirmed leadership and the froth caution clears.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 18,
+          "held_days": 19,
           "cost_basis": 638.2775,
-          "current_price": 607.73,
-          "market_value": 40765.2,
-          "unrealized_pnl": -2049.06,
-          "unrealized_pct": -4.79,
+          "current_price": 602.69,
+          "market_value": 29357.83,
+          "unrealized_pnl": -1733.51,
+          "unrealized_pct": -5.58,
           "thesis_full": {
             "summary": "Semiconductor ETF held as a light placeholder in the #1-RS secular sector (60d mom +25%, pctile 92). But this is a do-not-add: XLK is cycle-BLOCKED late-cycle, 20d momentum has rolled negative, ai_semiconductors is the single weakest theme block (−0.070 20d), and froth_fragility is live. Trimmed to 3% — a structural-leader toehold I rebuild only once AI-infra reclaims confirmed leadership and the froth caution clears.",
             "why_now": "Semiconductor ETF held as a light placeholder in the #1-RS secular sector (60d mom +25%, pctile 92). But this is a do-not-add: XLK is cycle-BLOCKED late-cycle, 20d momentum has rolled negative, ai_semiconductors is the single weakest theme block (−0.070 20d), and froth_fragility is live. Trimmed to 3% — a structural-leader toehold I rebuild only once AI-infra reclaims confirmed leadership and the froth caution clears.",
@@ -2640,41 +2572,20 @@
         {
           "ticker": "EME",
           "sleeve": "brain",
-          "weight": 0.0408,
+          "weight": 0.0299,
           "verdict": "hold",
           "conviction": "low",
           "rationale": "EMCOR is the most direct AI-datacenter-capex correlation in my book and thus the cleanest froth-unwind tail — down ~6.6% on cost and the weakest industrial I hold. The multi-year electrification/data-center buildout demand is real, so I keep a capped structural toehold, but I trim it to 3% and hold it below my cleaner cycle-favored industrials (HWM/URI). I will not add into a structurally distributing AI-infra tape.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 18,
+          "held_days": 19,
           "cost_basis": 839.0062,
-          "current_price": 783.41,
-          "market_value": 39880.31,
-          "unrealized_pnl": -2830.18,
-          "unrealized_pct": -6.63,
+          "current_price": 774.365,
+          "market_value": 29147.03,
+          "unrealized_pnl": -2433.09,
+          "unrealized_pct": -7.7,
           "thesis_full": {
             "summary": "EMCOR is the most direct AI-datacenter-capex correlation in my book and thus the cleanest froth-unwind tail — down ~6.6% on cost and the weakest industrial I hold. The multi-year electrification/data-center buildout demand is real, so I keep a capped structural toehold, but I trim it to 3% and hold it below my cleaner cycle-favored industrials (HWM/URI). I will not add into a structurally distributing AI-infra tape.",
             "why_now": "EMCOR is the most direct AI-datacenter-capex correlation in my book and thus the cleanest froth-unwind tail — down ~6.6% on cost and the weakest industrial I hold. The multi-year electrification/data-center buildout demand is real, so I keep a capped structural toehold, but I trim it to 3% and hold it below my cleaner cycle-favored industrials (HWM/URI). I will not add into a structurally distributing AI-infra tape.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
-          "ticker": "XLE",
-          "sleeve": "brain",
-          "weight": 0.039,
-          "verdict": "hold",
-          "conviction": "low",
-          "rationale": "Energy stays a genuinely uncorrelated hedge at its structural weight. The cycle engine independently favors XLE for ENTRY, so it satisfies Charter P1 on the cycle plane, but the theme itself is weak (US Energy Complex −0.024 20d) and there is no oil-catalyst confirmation on the tape, so I refuse to spend offense budget here. 3.5% is a structural uncorrelated-hedge weight, not a conviction position.",
-          "opened_at": "2026-07-08T15:00:07.424551+00:00",
-          "held_days": 1,
-          "cost_basis": 55.455,
-          "current_price": 54.82,
-          "market_value": 38099.9,
-          "unrealized_pnl": -441.33,
-          "unrealized_pct": -1.15,
-          "thesis_full": {
-            "summary": "Energy stays a genuinely uncorrelated hedge at its structural weight. The cycle engine independently favors XLE for ENTRY, so it satisfies Charter P1 on the cycle plane, but the theme itself is weak (US Energy Complex −0.024 20d) and there is no oil-catalyst confirmation on the tape, so I refuse to spend offense budget here. 3.5% is a structural uncorrelated-hedge weight, not a conviction position.",
-            "why_now": "Energy stays a genuinely uncorrelated hedge at its structural weight. The cycle engine independently favors XLE for ENTRY, so it satisfies Charter P1 on the cycle plane, but the theme itself is weak (US Energy Complex −0.024 20d) and there is no oil-catalyst confirmation on the tape, so I refuse to spend offense budget here. 3.5% is a structural uncorrelated-hedge weight, not a conviction position.",
             "bull": [],
             "bear": []
           }
@@ -2685,7 +2596,7 @@
           "subject": "Autonomous book",
           "lean": "Rotate-quality-and-hold-cash tape. The engine reads size_authority=HOLD across every sector (hawkish Fed −2 implied cuts + top-4% cross-asset concentration dock everything), posture is ROTATE_DEFENSIVE/NEUTRAL under a low-confidence (0.124) TRANSITIONING Goldilocks label, and the risk board flashes euphoric froth_fragility (leaders distributing) with elevated vol. So today is not a press-size day. I keep ~55% cash as dry powder into the 7/14 CPI print and make one disciplined rotation: out of the froth tail (trimmed SMH, EME, ANET, APH — the AI-infra/semi/datacenter-capex block that is the worst-performing theme cohort and cycle do-not-add) into confirmed defensive leadership I was entirely missing — a new XLV sleeve (healthcare/managed_care is the strongest narrative on the board, rank 5 +0.938, breadth 1.0, best 20d RS momentum) and a small new XLU sleeve (cycle-entry-favored and the most uncorrelated defensive hedge against the flagged cross-asset concentration). MCY (insurance, cycle-favored XLF, higher-for-longer yield tailwind) stays the anchor; cycle-favored quality industrials HWM/URI provide ballast; XLE stays a small uncorrelated hedge. Every add sits on at least one confirming plane beyond the label (cycle and/or theme leadership), satisfying Charter P1. Net exposure ~45%, tilted defensive, froth-light.",
           "thesis": "No full exits. Trimmed the froth-adjacent block to fund the rotation: SMH 4.2%→3.0%, EME 4.1%→3.0%, ANET 4.4%→3.5%, APH 5.2%→4.5%, URI 5.65%→5.5%. Added two new confirmed-leadership sleeves: XLV 5.5% (healthcare/managed-care) and XLU 3.5% (utilities diversifier). Net exposure rises modestly from ~40% to ~45%, all of the add concentrated in cycle-and-theme-confirmed defensives rather than the froth.",
-          "logged_at": "2026-07-09T23:13:19.908034+00:00"
+          "logged_at": "2026-07-10T15:00:25.196837+00:00"
         }
       ],
       "pending_orders": [],
@@ -2700,13 +2611,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 976415.02,
-        "cash": 583760.04,
-        "invested": 392654.98,
-        "total_return_pct": -2.3585,
-        "vs_spy_pct": -3.0241,
+        "current_nav": 975639.12,
+        "cash": 605111.8,
+        "invested": 370527.32,
+        "total_return_pct": -2.4361,
+        "vs_spy_pct": -3.1472,
         "benchmark": "SPY",
-        "day_change_pct": 0.469,
+        "day_change_pct": -0.0795,
         "max_drawdown_pct": -3.9925,
         "realized_since": "2026-06-21",
         "series": [
@@ -3267,18 +3178,18 @@
       "kind": "etf_brain",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-10",
       "market_status": {
-        "open": false,
-        "asof_et": "2026-07-09T19:16:57.877989-04:00",
+        "open": true,
+        "asof_et": "2026-07-10T11:00:26.565965-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-10T09:30:00-04:00",
-        "next_open_day": "2026-07-10",
-        "prev_trading_day": "2026-07-08"
+        "next_open": "2026-07-13T09:30:00-04:00",
+        "next_open_day": "2026-07-13",
+        "prev_trading_day": "2026-07-09"
       },
-      "gross": 0.3468,
-      "cash": 0.6532,
+      "gross": 0.3957,
+      "cash": 0.6043,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -3295,12 +3206,12 @@
           "conviction": "high",
           "rationale": "T-bill buffer and the working defensive asset. With cross-asset concentration lit as a LEADING fragility (absorption 96th pctile), risk_state elevated, and posture reading ROTATE_DEFENSIVE (shadow), I hold a solid ~12% bill buffer PLUS a large residual cash sleeve as dry powder — the board is explicit about not spending all cash into strength on a quiet coincident read. With a hawkish Fed and TLT/IEF both below their 200d, duration is not bid; safety stays in bills, not bonds.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 16,
+          "held_days": 17,
           "cost_basis": 100.6186,
-          "current_price": 100.48,
-          "market_value": 97432.67,
-          "unrealized_pnl": -134.42,
-          "unrealized_pct": -0.14,
+          "current_price": 100.505,
+          "market_value": 97456.9,
+          "unrealized_pnl": -110.19,
+          "unrealized_pct": -0.11,
           "thesis_full": {
             "summary": "T-bill buffer and the working defensive asset. With cross-asset concentration lit as a LEADING fragility (absorption 96th pctile), risk_state elevated, and posture reading ROTATE_DEFENSIVE (shadow), I hold a solid ~12% bill buffer PLUS a large residual cash sleeve as dry powder — the board is explicit about not spending all cash into strength on a quiet coincident read. With a hawkish Fed and TLT/IEF both below their 200d, duration is not bid; safety stays in bills, not bonds.",
             "why_now": "T-bill buffer and the working defensive asset. With cross-asset concentration lit as a LEADING fragility (absorption 96th pctile), risk_state elevated, and posture reading ROTATE_DEFENSIVE (shadow), I hold a solid ~12% bill buffer PLUS a large residual cash sleeve as dry powder — the board is explicit about not spending all cash into strength on a quiet coincident read. With a hawkish Fed and TLT/IEF both below their 200d, duration is not bid; safety stays in bills, not bonds.",
@@ -3317,12 +3228,12 @@
           "conviction": "medium",
           "rationale": "Core beta and the benchmark I'm accountable to. SPY holds an intact Goldilocks/mid-cycle uptrend above 50d/200d (+7.8% vs 200d). Sitting ~75% defensive against a rising SPY is the book's real risk, so I restore a proper core weight. I keep it below RSP because SPY carries the mega-cap concentration the fragility gauge flags — I own the benchmark but let equal-weight carry the concentration-aware overweight.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 16,
+          "held_days": 17,
           "cost_basis": 743.1258,
-          "current_price": 751.71,
-          "market_value": 61409.21,
-          "unrealized_pnl": 701.27,
-          "unrealized_pct": 1.16,
+          "current_price": 750.98,
+          "market_value": 61349.57,
+          "unrealized_pnl": 641.63,
+          "unrealized_pct": 1.06,
           "thesis_full": {
             "summary": "Core beta and the benchmark I'm accountable to. SPY holds an intact Goldilocks/mid-cycle uptrend above 50d/200d (+7.8% vs 200d). Sitting ~75% defensive against a rising SPY is the book's real risk, so I restore a proper core weight. I keep it below RSP because SPY carries the mega-cap concentration the fragility gauge flags — I own the benchmark but let equal-weight carry the concentration-aware overweight.",
             "why_now": "Core beta and the benchmark I'm accountable to. SPY holds an intact Goldilocks/mid-cycle uptrend above 50d/200d (+7.8% vs 200d). Sitting ~75% defensive against a rising SPY is the book's real risk, so I restore a proper core weight. I keep it below RSP because SPY carries the mega-cap concentration the fragility gauge flags — I own the benchmark but let equal-weight carry the concentration-aware overweight.",
@@ -3334,17 +3245,17 @@
           "ticker": "RSP",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.0624,
+          "weight": 0.0626,
           "verdict": "hold",
           "conviction": "high",
           "rationale": "Equal-weight S&P is the largest equity leg by design — the direct antidote to the single lit fragility, cross-asset/mega-cap concentration in the top ~4% of its 5y range with absorption at the 96th pctile. It delivers broad US beta WITHOUT doubling the crowded AI/semis complex the fragility note flags as the dominant unwind driver. Above 50d/200d (+7.9% vs 200d), rank-8 RS but that understates it in a concentration regime where breadth, not the mega-caps, is the healthier bet. I lead the re-gross here.",
           "opened_at": "2026-07-02T15:00:04.450824+00:00",
-          "held_days": 7,
+          "held_days": 8,
           "cost_basis": 214.478,
-          "current_price": 213.5,
-          "market_value": 60847.5,
-          "unrealized_pnl": -278.73,
-          "unrealized_pct": -0.46,
+          "current_price": 214.2699,
+          "market_value": 61066.92,
+          "unrealized_pnl": -59.31,
+          "unrealized_pct": -0.1,
           "thesis_full": {
             "summary": "Equal-weight S&P is the largest equity leg by design — the direct antidote to the single lit fragility, cross-asset/mega-cap concentration in the top ~4% of its 5y range with absorption at the 96th pctile. It delivers broad US beta WITHOUT doubling the crowded AI/semis complex the fragility note flags as the dominant unwind driver. Above 50d/200d (+7.9% vs 200d), rank-8 RS but that understates it in a concentration regime where breadth, not the mega-caps, is the healthier bet. I lead the re-gross here.",
             "why_now": "Equal-weight S&P is the largest equity leg by design — the direct antidote to the single lit fragility, cross-asset/mega-cap concentration in the top ~4% of its 5y range with absorption at the 96th pctile. It delivers broad US beta WITHOUT doubling the crowded AI/semis complex the fragility note flags as the dominant unwind driver. Above 50d/200d (+7.9% vs 200d), rank-8 RS but that understates it in a concentration regime where breadth, not the mega-caps, is the healthier bet. I lead the re-gross here.",
@@ -3353,20 +3264,42 @@
           }
         },
         {
+          "ticker": "QQQ",
+          "sleeve": "brain",
+          "group": "core_index",
+          "weight": 0.0499,
+          "verdict": "hold",
+          "conviction": "low",
+          "rationale": "A deliberate Nasdaq underweight toe. QQQ IS the AI/semis mega-cap concentration the fragility gauge names as the dominant unwind driver, and it sits BELOW its 50d even as the 200d uptrend (+11.9%) holds. I keep exposure to the leadership so I'm not fully absent if it melts up, but I refuse to let the crowded trade lead my re-gross while cross-asset concentration is the lit leading fragility — 5% only.",
+          "opened_at": "2026-06-23T01:19:49.774519+00:00",
+          "held_days": 17,
+          "cost_basis": 727.2235,
+          "current_price": 719.83,
+          "market_value": 48639.54,
+          "unrealized_pnl": -499.58,
+          "unrealized_pct": -1.02,
+          "thesis_full": {
+            "summary": "A deliberate Nasdaq underweight toe. QQQ IS the AI/semis mega-cap concentration the fragility gauge names as the dominant unwind driver, and it sits BELOW its 50d even as the 200d uptrend (+11.9%) holds. I keep exposure to the leadership so I'm not fully absent if it melts up, but I refuse to let the crowded trade lead my re-gross while cross-asset concentration is the lit leading fragility — 5% only.",
+            "why_now": "A deliberate Nasdaq underweight toe. QQQ IS the AI/semis mega-cap concentration the fragility gauge names as the dominant unwind driver, and it sits BELOW its 50d even as the 200d uptrend (+11.9%) holds. I keep exposure to the leadership so I'm not fully absent if it melts up, but I refuse to let the crowded trade lead my re-gross while cross-asset concentration is the lit leading fragility — 5% only.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
           "ticker": "XLI",
           "sleeve": "brain",
           "group": "sectors",
-          "weight": 0.0452,
+          "weight": 0.0453,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "The strongest non-tech cyclical leg, consistent with mid-cycle Goldilocks and expanding liquidity — above 50d/200d (+9.7% vs 200d), positive 20d (+1.11%), 67th percentile. It participates in healthy breadth broadening without adding to the crowded mega-cap trade, complementing RSP and IWM as the concentration-aware cyclical expression.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 16,
+          "held_days": 17,
           "cost_basis": 182.5034,
-          "current_price": 181.11,
-          "market_value": 44050.37,
-          "unrealized_pnl": -338.91,
-          "unrealized_pct": -0.76,
+          "current_price": 181.76,
+          "market_value": 44208.47,
+          "unrealized_pnl": -180.82,
+          "unrealized_pct": -0.41,
           "thesis_full": {
             "summary": "The strongest non-tech cyclical leg, consistent with mid-cycle Goldilocks and expanding liquidity — above 50d/200d (+9.7% vs 200d), positive 20d (+1.11%), 67th percentile. It participates in healthy breadth broadening without adding to the crowded mega-cap trade, complementing RSP and IWM as the concentration-aware cyclical expression.",
             "why_now": "The strongest non-tech cyclical leg, consistent with mid-cycle Goldilocks and expanding liquidity — above 50d/200d (+9.7% vs 200d), positive 20d (+1.11%), 67th percentile. It participates in healthy breadth broadening without adding to the crowded mega-cap trade, complementing RSP and IWM as the concentration-aware cyclical expression.",
@@ -3375,42 +3308,20 @@
           }
         },
         {
-          "ticker": "IWM",
-          "sleeve": "brain",
-          "group": "core_index",
-          "weight": 0.0355,
-          "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Small-cap breadth — rank-4 RS, strongest trend vs its own 200d (+12.5%), 95th percentile, with 20d momentum accelerating (+2.23%) and breadth_divergence reading FALSE. This is the clean beneficiary of expanding liquidity that carries no AI/semis crowding, so it re-grosses cyclical risk without adding to the lit concentration. A genuine breadth leg, not a toe.",
-          "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 16,
-          "cost_basis": 298.2754,
-          "current_price": 297.24,
-          "market_value": 34608.7,
-          "unrealized_pnl": -120.55,
-          "unrealized_pct": -0.35,
-          "thesis_full": {
-            "summary": "Small-cap breadth — rank-4 RS, strongest trend vs its own 200d (+12.5%), 95th percentile, with 20d momentum accelerating (+2.23%) and breadth_divergence reading FALSE. This is the clean beneficiary of expanding liquidity that carries no AI/semis crowding, so it re-grosses cyclical risk without adding to the lit concentration. A genuine breadth leg, not a toe.",
-            "why_now": "Small-cap breadth — rank-4 RS, strongest trend vs its own 200d (+12.5%), 95th percentile, with 20d momentum accelerating (+2.23%) and breadth_divergence reading FALSE. This is the clean beneficiary of expanding liquidity that carries no AI/semis crowding, so it re-grosses cyclical risk without adding to the lit concentration. A genuine breadth leg, not a toe.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
           "ticker": "MTUM",
           "sleeve": "brain",
           "group": "factors",
-          "weight": 0.0205,
+          "weight": 0.0399,
           "verdict": "hold",
           "conviction": "low",
           "rationale": "A small momentum toe. MTUM is rank-3 RS and above 50d/200d (+17.8% vs 200d) but shares the mega-cap/semis crowding that unwinds fastest in a concentration air-pocket, and its 20d momentum has rolled slightly negative. I keep a token 4% and do NOT let the crowded factor lead re-grossing into an elevated-fragility tape.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 16,
-          "cost_basis": 345.22,
-          "current_price": 321.2,
-          "market_value": 19956.18,
-          "unrealized_pnl": -1492.36,
-          "unrealized_pct": -6.96,
+          "held_days": 17,
+          "cost_basis": 332.2109,
+          "current_price": 318.74,
+          "market_value": 38927.73,
+          "unrealized_pnl": -1645.2,
+          "unrealized_pct": -4.05,
           "thesis_full": {
             "summary": "A small momentum toe. MTUM is rank-3 RS and above 50d/200d (+17.8% vs 200d) but shares the mega-cap/semis crowding that unwinds fastest in a concentration air-pocket, and its 20d momentum has rolled slightly negative. I keep a token 4% and do NOT let the crowded factor lead re-grossing into an elevated-fragility tape.",
             "why_now": "A small momentum toe. MTUM is rank-3 RS and above 50d/200d (+17.8% vs 200d) but shares the mega-cap/semis crowding that unwinds fastest in a concentration air-pocket, and its 20d momentum has rolled slightly negative. I keep a token 4% and do NOT let the crowded factor lead re-grossing into an elevated-fragility tape.",
@@ -3419,23 +3330,23 @@
           }
         },
         {
-          "ticker": "QQQ",
+          "ticker": "IWM",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.0204,
+          "weight": 0.0352,
           "verdict": "hold",
-          "conviction": "low",
-          "rationale": "A deliberate Nasdaq underweight toe. QQQ IS the AI/semis mega-cap concentration the fragility gauge names as the dominant unwind driver, and it sits BELOW its 50d even as the 200d uptrend (+11.9%) holds. I keep exposure to the leadership so I'm not fully absent if it melts up, but I refuse to let the crowded trade lead my re-gross while cross-asset concentration is the lit leading fragility — 5% only.",
+          "conviction": "medium",
+          "rationale": "Small-cap breadth — rank-4 RS, strongest trend vs its own 200d (+12.5%), 95th percentile, with 20d momentum accelerating (+2.23%) and breadth_divergence reading FALSE. This is the clean beneficiary of expanding liquidity that carries no AI/semis crowding, so it re-grosses cyclical risk without adding to the lit concentration. A genuine breadth leg, not a toe.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 16,
-          "cost_basis": 737.95,
-          "current_price": 723.28,
-          "market_value": 19941.46,
-          "unrealized_pnl": -404.46,
-          "unrealized_pct": -1.99,
+          "held_days": 17,
+          "cost_basis": 298.2754,
+          "current_price": 294.69,
+          "market_value": 34311.8,
+          "unrealized_pnl": -417.46,
+          "unrealized_pct": -1.2,
           "thesis_full": {
-            "summary": "A deliberate Nasdaq underweight toe. QQQ IS the AI/semis mega-cap concentration the fragility gauge names as the dominant unwind driver, and it sits BELOW its 50d even as the 200d uptrend (+11.9%) holds. I keep exposure to the leadership so I'm not fully absent if it melts up, but I refuse to let the crowded trade lead my re-gross while cross-asset concentration is the lit leading fragility — 5% only.",
-            "why_now": "A deliberate Nasdaq underweight toe. QQQ IS the AI/semis mega-cap concentration the fragility gauge names as the dominant unwind driver, and it sits BELOW its 50d even as the 200d uptrend (+11.9%) holds. I keep exposure to the leadership so I'm not fully absent if it melts up, but I refuse to let the crowded trade lead my re-gross while cross-asset concentration is the lit leading fragility — 5% only.",
+            "summary": "Small-cap breadth — rank-4 RS, strongest trend vs its own 200d (+12.5%), 95th percentile, with 20d momentum accelerating (+2.23%) and breadth_divergence reading FALSE. This is the clean beneficiary of expanding liquidity that carries no AI/semis crowding, so it re-grosses cyclical risk without adding to the lit concentration. A genuine breadth leg, not a toe.",
+            "why_now": "Small-cap breadth — rank-4 RS, strongest trend vs its own 200d (+12.5%), 95th percentile, with 20d momentum accelerating (+2.23%) and breadth_divergence reading FALSE. This is the clean beneficiary of expanding liquidity that carries no AI/semis crowding, so it re-grosses cyclical risk without adding to the lit concentration. A genuine breadth leg, not a toe.",
             "bull": [],
             "bear": []
           }
@@ -3446,7 +3357,7 @@
           "subject": "ETF book",
           "lean": "Measured, concentration-aware re-gross from a badly over-defensive book (~75% cash+bills, ~25% equity) toward ~59% equity / ~41% cash+bills, into a Goldilocks / mid-cycle / expanding-liquidity regime where the tape's leaders (SPY, RSP, IWM, XLI, MTUM) are confirmed above their 200d. The one lit fragility — cross-asset concentration in the top ~4% of its 5y range, absorption 96th pctile — is singular (GEX fine, breadth-divergence false), so I treat it as a tilt signal, not an air-pocket alert: equal-weight (RSP, top leg) and non-crowded breadth/cyclicals (IWM, XLI) carry the re-gross, while the crowded mega-cap/semis complex (QQQ, MTUM) stays deliberately underweight. I keep ~12% bills plus a large cash residual as dry powder because fragility is genuinely lit and risk_state is elevated. Duration stays out — hawkish Fed, TLT/IEF below 200d. The dominant risk to the book is lagging a rising SPY from too much cash; the dominant risk to markets is the concentration unwind — this book leans against both by re-grossing into breadth rather than into the crowd.",
           "thesis": "No outright exits — same 7-name universe minus nothing; this is a re-weighting. Materially lifted the equity sleeve (RSP 6.2%->16%, SPY 6.3%->14%, IWM 3.6%->11%, XLI 4.5%->9%) funded by drawing down the oversized cash residual; trimmed SGOV 10%->12% is roughly flat. QQQ (2%->5%) and MTUM (2%->4%) nudged up but kept as deliberate underweight toes on the crowded mega-cap/semis complex.",
-          "logged_at": "2026-07-09T23:16:57.868516+00:00"
+          "logged_at": "2026-07-10T15:00:26.554306+00:00"
         }
       ],
       "pending_orders": [],
@@ -3461,13 +3372,13 @@
       "performance": {
         "inception_date": "2026-06-22",
         "starting_nav": 1000000.0,
-        "current_nav": 975548.12,
-        "cash": 637302.03,
-        "invested": 338246.09,
-        "total_return_pct": -2.4452,
-        "vs_spy_pct": -3.4285,
+        "current_nav": 975345.37,
+        "cash": 589384.43,
+        "invested": 385960.94,
+        "total_return_pct": -2.4655,
+        "vs_spy_pct": -3.3507,
         "benchmark": "SPY",
-        "day_change_pct": 0.2359,
+        "day_change_pct": -0.0208,
         "max_drawdown_pct": -2.6748,
         "realized_since": "2026-06-22",
         "series": [
