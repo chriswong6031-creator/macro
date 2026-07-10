@@ -61,25 +61,41 @@ SEED_ROWS: list[dict] = [
         "naics": "3361",
         "source_url": "https://www.bls.gov/wsp/",
     },
+    # 2023 UAW "Stand-Up" strike vs the Big Three (Sep 15 - late Oct 2023).
+    # Worker counts = documented late-October per-employer peaks (~45k concurrent,
+    # ~53k total involved across waves). The three rows share org=UAW and
+    # overlapping windows so the same-action aggregation sums them past the 25k
+    # flag threshold. Sources: EPI 2023 major-strike-activity (BLS WSP basis),
+    # federalreserve.gov FEDS note 2024-04-16, en.wikipedia.org/wiki/2023_United_Auto_Workers_strike
     {
         "org": "United Auto Workers (UAW)",
         "employer": "Ford Motor Company",
-        "states": "MI,OH,MO",
-        "workers": 17000,
+        "states": "MI,OH,MO,KY",
+        "workers": 16600,
+        "start_date": date(2023, 9, 15),
+        "end_date": date(2023, 10, 25),
+        "naics": "3361",
+        "source_url": "https://www.epi.org/publication/major-strike-activity-in-2023/",
+    },
+    {
+        "org": "United Auto Workers (UAW)",
+        "employer": "General Motors",
+        "states": "MI,MO,TX,TN",
+        "workers": 14300,
         "start_date": date(2023, 9, 15),
         "end_date": date(2023, 10, 30),
         "naics": "3361",
-        "source_url": "https://www.bls.gov/wsp/",
+        "source_url": "https://www.epi.org/publication/major-strike-activity-in-2023/",
     },
     {
         "org": "United Auto Workers (UAW)",
         "employer": "Stellantis",
         "states": "MI,OH,IN,IL",
-        "workers": 7000,
+        "workers": 14400,
         "start_date": date(2023, 9, 15),
-        "end_date": date(2023, 10, 25),
+        "end_date": date(2023, 10, 28),
         "naics": "3361",
-        "source_url": "https://www.bls.gov/wsp/",
+        "source_url": "https://www.epi.org/publication/major-strike-activity-in-2023/",
     },
     {
         "org": "International Association of Machinists (IAM)",

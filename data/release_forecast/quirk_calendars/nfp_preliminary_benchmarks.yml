@@ -82,6 +82,17 @@ preliminary_benchmarks:
     cite: "https://www.bls.gov/ces/publications/benchmark.htm"
     note: "Largest downward preliminary revision since 2009; flagged Jan 2025 benchmark print"
 
+  - published_month: "2025-09"
+    reference_period_end: "2025-03"
+    preliminary_estimate: -911
+    # Released Tue Sep 9, 2025, 10:00 ET (USDL-25-1352). Private -880k, government -31k.
+    # Largest preliminary benchmark revision on record (since 2002); final lands with
+    # the Jan-2026 Employment Situation (Feb 2026).
+    # Sources: https://www.bls.gov/news.release/prebmk.nr0.htm ;
+    # https://www.bls.gov/sae/notices/2025/preliminary-benchmark-announcement-2025.htm
+    cite: "https://www.bls.gov/news.release/prebmk.nr0.htm"
+    note: "Largest preliminary revision on record (-0.6%); flags the Jan 2026 benchmark print"
+
   # Template for future entries:
   # - published_month: "YYYY-10"
   #   reference_period_end: "YYYY-03"
