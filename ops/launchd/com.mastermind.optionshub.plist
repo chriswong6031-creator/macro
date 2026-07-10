@@ -97,6 +97,8 @@
 
   <key>EnvironmentVariables</key>
   <dict>
+    <key>HUB_ROOT_BUDGET_S</key>
+    <string>420</string>
     <key>PYTHONPATH</key>
     <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
     <!--

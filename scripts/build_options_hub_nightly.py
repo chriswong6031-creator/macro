@@ -57,7 +57,7 @@ R2_PREFIX = "options_hub/"
 # ── per-root wall-clock budget ────────────────────────────────────────────────
 # Roots with large option chains (e.g. RCL, NVDA) can take 30-60 s legitimately;
 # anything beyond ROOT_WALL_BUDGET_S indicates a hang and should be skipped.
-ROOT_WALL_BUDGET_S: float = float(os.environ.get("HUB_ROOT_BUDGET_S", "120"))
+ROOT_WALL_BUDGET_S: float = float(os.environ.get("HUB_ROOT_BUDGET_S", "420"))
 
 # ── incremental aggregate publish interval ────────────────────────────────────
 # Publish cross-root aggregates (oi_movers / hot_contracts / context) after every
