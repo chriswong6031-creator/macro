@@ -1,0 +1,87 @@
+# config/ux_simplicity_rules.yml — UX-simplicity gate rules (R-V2-6, V2-D)
+#
+# IMMUTABLE: this file joins the grader-manifest + self-mod fence.
+# A loop PR editing this file is CI-refused.
+# Only a human-authored PR with a T2 operator-tap ruling may change it.
+#
+# The UX-simplicity gate fires as a THIRD deterministic screen in adjudicate.py
+# on proposals whose changed files touch front-page assets.
+# Proposals failing these rules are DENIED and routed to admin/lab tier instead.
+# The LLM cannot relax these rules (config is immutable).
+#
+# Schema: ux_simplicity_rules.v1
+schema: ux_simplicity_rules.v1
+generated_at: "2026-07-10"
+owner_program: metabolism-phase-v2d
+
+# Surface routing — which file path patterns are FRONT-PAGE vs ADMIN/LAB/RESEARCH
+surface_patterns:
+  front_page:
+    # Paths that count as "front-page" (visible to the trading operator by default)
+    include:
+      - "site/*.html"
+      - "site/index.html"
+      - "templates/*.html"
+      - "templates/*.j2"
+    # Paths that are EXCLUDED from front-page classification (never trigger the gate)
+    exclude:
+      - "*_lab*"
+      - "*_admin*"
+      - "*admin/*"
+      - "*committee*"
+      - "*research*"
+      - "site/admin/*"
+      - "site/*lab*"
+      - "site/*research*"
+
+# Numeric density limit — a front-page default view may show at most this many
+# distinct numbers (counts, percentages, scores, prices, deltas) without being
+# classified as "too dense". Admin/lab views have no limit.
+max_numbers_per_default_view: 12
+
+# Plain-language label requirement — a proposal touching front-page assets must
+# NOT use internal metric jargon as primary labels. The blocklist below is applied
+# to any new label/heading/column added by the proposal.
+# A match against any term in this list (case-insensitive, substring) causes DENY
+# (with a suggestion to route to admin/lab tier or use the plain-language alias).
+jargon_blocklist:
+  # Internal metric codes that are opaque to a non-quant operator
+  - "z_score"
+  - "robust_z"
+  - "mad_z"
+  - "percentile_rank"
+  - "ic_mean"
+  - "ir_ratio"
+  - "gexr"
+  - "cwiv"
+  - "theta_delta"
+  - "pnl_attribution"
+  - "alpha_ts"
+  - "fdr_pvalue"
+  - "wilson_ci"
+  - "placebo_hit"
+  - "falsifier_tripped"
+  - "lobe_id"
+  - "synapse_id"
+  - "ruling_id"
+  # Metabolism-internal terms that must not surface on front-page
+  - "metabolism"
+  - "insight_bus"
+  - "organism_state"
+  - "fitness_history"
+  - "dream_cycle"
+  - "preference_prior"
+
+# Primary-action requirement — a front-page proposal that adds or reworks a panel
+# must include exactly one primary call-to-action (button/link/intent) per panel.
+# Proposals that add more than this count are DENIED.
+max_primary_actions_per_panel: 1
+
+# Verdict for a failing front-page proposal:
+# "deny" → blocked; the proposer must split the dense/jargon content to admin/lab.
+front_page_fail_verdict: "deny"
+front_page_fail_note: >
+  This proposal targets a front-page surface but fails the UX-simplicity rules
+  (too many numbers, jargon labels, or multiple primary actions). Per R-V2-6,
+  dense metrics and diagnostics route to admin/signal-lab/research pages.
+  Refile the proposal targeting admin/* or *_lab/* instead.

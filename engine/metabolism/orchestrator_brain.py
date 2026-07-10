@@ -1,15 +1,26 @@
-"""engine.metabolism.orchestrator_brain — System-prompt builder stub (V2-A).
+"""engine.metabolism.orchestrator_brain — System-prompt builder (V2-D, extends V2-A stub).
 
 _build_orchestrator_system(model, role, lobe) is the ONE versioned helper
 imported by every orchestrator-tier reasoner (organism_state pass, agenda, dream)
-so the persona is consistent across all LLM calls.  Full prompt engine is V2-D;
-here we ship the STUB that handles the required V2-A agenda call.
+so the persona is consistent across all LLM calls.
 
-What this stub does (per R-V2-2, §3 of V2 masterplan):
-  1. Role line from config/metabolism_roles.yml (or a default role).
-  2. If model is Opus-class → prepend config/fable_mode_core.md (IMMUTABLE).
-  3. A small quoted slice of standing laws from ruling_graph.yml (by topic tags).
-  4. Byte-capped context (mirrors propose.py's [:6000] discipline).
+Full prompt engine (V2-D §3):
+  1. ROLE + DOCTRINE: role line from config/metabolism_roles.yml.
+     If model is Opus-class (startswith 'claude-opus') → PREPEND config/fable_mode_core.md.
+     If Fable-class → OMIT. Default-inject whenever NOT-provably-Fable.
+  2. STANDING LAWS: load-bearing rulings BY ID from config/ruling_graph.yml
+     (NW-ART1 signal ban, HOUSE-U4 gauntlet-is-promotion-gate,
+      RUL-U10 UI-restraint/language-law, NW-U11 stateless-cattle/retire-one).
+     Quote-verified from the graph — one source of truth, not paraphrased.
+  3. ORGANISM-STATE SLICE: organism_state.json rollup + lobe raw deltas,
+     byte-capped [:6000].
+  4. CASE-LAW SLICE: ruling rows whose target/tags match the lobe + whole
+     DO_NOT_REBUILD.md.
+  5. LOBE CHARTER (config/lobe_charters.yml, tolerant if absent) +
+     RECENT LESSONS (lessons.jsonl tail) + fitness-contract requirement.
+
+Byte-capped throughout. Template code is FIXED; every injected part is an
+artifact the loop edits.
 
 NEVER reads ~/.  All paths relative to repo root.
 NEVER-RAISE: returns a minimal safe prompt on any failure.
@@ -23,14 +34,24 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-# Byte cap for the organism-state slice injected into the system prompt
+# Byte caps
 _ORGANISM_STATE_BYTE_CAP = 6000
-# Byte cap for the ruling graph slice
-_RULING_SLICE_BYTE_CAP = 2000
-# Byte cap for the ACTIVE_BUILD_MAP slice
+_RULING_SLICE_BYTE_CAP = 3000
 _ABM_BYTE_CAP = 1500
+_DO_NOT_REBUILD_BYTE_CAP = 2000
+_LESSONS_BYTE_CAP = 2000
+_CHARTER_BYTE_CAP = 1000
 
-# Opus-class model name substrings
+# Ruling IDs for the 5 standing laws (quote-verified from ruling_graph.yml)
+_STANDING_LAW_IDS = [
+    "NW-ART1",    # R-AUT-1 equivalent: signal/origination ban
+    "HOUSE-U4",   # gauntlet-is-promotion-gate (display-only until gauntleted)
+    "RUL-U10",    # UI-restraint / language law (plain language; banned words include the v-word)
+    "NW-U11",     # stateless-cattle / retire-one-to-file-one (cortex machine-trial law)
+    "CONST-ART1", # Origination Ban — A7 permanently refused (constitutional)
+]
+
+# Opus-class model name substrings (not Fable)
 _OPUS_SUBSTRINGS = ("opus", "claude-3-opus", "claude-opus")
 
 
@@ -53,7 +74,7 @@ def _is_opus_class(model: str | None) -> bool:
         return False
     if any(s in model_lower for s in _OPUS_SUBSTRINGS):
         return True
-    # Unknown model → inject to be safe
+    # Unknown model → inject to be safe (default inject whenever NOT-provably-Fable)
     return True
 
 
@@ -63,6 +84,15 @@ def _read_text(p: Path) -> str | None:
     except Exception:  # noqa: BLE001
         return None
 
+
+def _byte_cap(text: str, cap: int) -> str:
+    encoded = text.encode()
+    if len(encoded) <= cap:
+        return text
+    return encoded[:cap].decode(errors="replace") + "\n… (truncated)"
+
+
+# ── Part 1: Role + Doctrine ────────────────────────────────────────────────────
 
 def _load_role(root: Path, role: str | None) -> str:
     """Load the role line from config/metabolism_roles.yml."""
@@ -96,15 +126,17 @@ def _load_fable_mode_core(root: Path) -> str:
     return _read_text(p) or ""
 
 
-def _load_ruling_slice(root: Path) -> str:
-    """Load a small slice of standing laws from ruling_graph.yml.
+# ── Part 2: Standing Laws (quote-verified from ruling_graph.yml) ───────────────
 
-    Selects rulings tagged with metabolism/autonomic-loop/display-only topics.
-    Byte-capped.
+def _load_standing_laws(root: Path) -> str:
+    """Pull the 5 load-bearing standing laws BY ID from ruling_graph.yml.
+
+    Quote-verified — the ruling text is taken verbatim from the graph,
+    never paraphrased.  Returns a formatted block even on partial failure.
     """
     p = root / "config" / "ruling_graph.yml"
     if not p.exists():
-        return "(ruling_graph.yml not found)"
+        return _fallback_standing_laws()
     try:
         import yaml  # noqa: PLC0415
         raw = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
@@ -112,58 +144,204 @@ def _load_ruling_slice(root: Path) -> str:
         if isinstance(rulings, dict):
             rulings = list(rulings.values())
 
-        target_tags = {
-            "display-only", "autonomic", "metabolism", "gauntlet",
-            "signal-origination", "llm-origination", "stateless",
-        }
-        selected: list[str] = []
+        # Index by ruling_id for O(n) single pass
+        by_id: dict[str, dict[str, Any]] = {}
         for r in rulings:
-            if not isinstance(r, dict):
+            if isinstance(r, dict) and r.get("ruling_id"):
+                by_id[r["ruling_id"]] = r
+
+        lines: list[str] = []
+        for rid in _STANDING_LAW_IDS:
+            r = by_id.get(rid)
+            if not r:
+                lines.append(f"[{rid}] (not found in ruling_graph)")
                 continue
-            tags = set(r.get("tags") or [])
-            title = str(r.get("title") or r.get("short_name") or "")
-            ruling = str(r.get("ruling") or "")
-            if tags & target_tags:
-                snippet = f"[{r.get('short_name', title)}] {ruling}"
-                selected.append(snippet[:300])
-            if len("\n".join(selected).encode()) >= _RULING_SLICE_BYTE_CAP:
-                break
+            short = r.get("short_name") or rid
+            title = r.get("title") or ""
+            ruling_text = str(r.get("ruling") or "").strip()
+            snippet = f"[{rid} | {short}]\nTitle: {title}\nRuling: {ruling_text}"
+            lines.append(snippet[:500])
 
-        if not selected:
-            # Fallback: the most important standing laws, hard-coded
-            selected = [
-                "[R-AUT-1] The signal path stays deterministic; the loop authors CODE, not signals. "
-                "No loop-authored change may make an LLM originate a runtime signal/score/escalation.",
-                "[gauntlet-is-promotion-gate] Gauntlet = promotion gate, not build gate. "
-                "A null never blocks building or accrual.",
-                "[display-only-until-gauntleted] All outputs are display-only until gauntleted. "
-                "LLMs may only de-escalate calibrated keys — never originate signals, scores, or escalations.",
-            ]
+        result = "\n\n".join(lines)
+        return _byte_cap(result, _RULING_SLICE_BYTE_CAP)
 
-        slice_text = "\n".join(selected)
-        if len(slice_text.encode()) > _RULING_SLICE_BYTE_CAP:
-            slice_text = slice_text.encode()[:_RULING_SLICE_BYTE_CAP].decode(errors="replace")
-        return slice_text
     except Exception as exc:  # noqa: BLE001
-        log.warning("orchestrator_brain: cannot load ruling slice — %s", exc)
-        return "(ruling slice unavailable)"
+        log.warning("orchestrator_brain: cannot load standing laws — %s", exc)
+        return _fallback_standing_laws()
 
 
-def _load_abm_slice(root: Path) -> str:
-    """Load a byte-capped slice of ACTIVE_BUILD_MAP.md."""
-    p = root / "docs" / "ACTIVE_BUILD_MAP.md"
-    if not p.exists():
-        return "(ACTIVE_BUILD_MAP.md not found)"
+def _fallback_standing_laws() -> str:
+    """Hard-coded fallback for the 5 standing laws when ruling_graph is unavailable."""
+    return (
+        "[NW-ART1] No LLM origination: No LLM may invent a signal, trade, or escalation. "
+        "This prohibition is permanent across all authority rungs. Classified A7 ORIGINATE — banned.\n\n"
+        "[HOUSE-U4] Gauntlet-is-promotion-gate: All signals are display-only until gauntleted. "
+        "Pre-registered gates required. Nulls printed, not hidden. LLMs may only de-escalate "
+        "calibrated keys — never originate signals, scores, or escalations.\n\n"
+        "[RUL-U10] Language law: The word 'v*lidated' (check_validated_claims) must appear "
+        "nowhere in any artifact. Plain-language box mandatory in every report.\n\n"
+        "[NW-U11] Retire-one-to-file-one: Machine trials graded ONLY on post-registration data. "
+        "Hard proposal budget per cycle; retire-one-to-file-one beyond budget.\n\n"
+        "[CONST-ART1] Origination ban (constitutional): A7/ORIGINATE permanently refused. "
+        "No amount of evidence can override this refusal."
+    )
+
+
+# ── Part 3: Organism-state slice ───────────────────────────────────────────────
+
+def _build_state_slice(
+    root: Path,
+    lobe: str | None,
+    organism_state: dict | None,
+) -> str:
+    """Build the organism-state + lobe-deltas slice, byte-capped."""
+    parts: list[str] = []
+
+    # Whole-organism rollup (caller may pass it; else load from disk)
+    state = organism_state
+    if state is None:
+        state_path = root / "data" / "metabolism" / "organism_state.json"
+        if state_path.exists():
+            try:
+                state = json.loads(state_path.read_text(encoding="utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("orchestrator_brain: organism_state load failed — %s", exc)
+
+    if state:
+        try:
+            os_text = json.dumps(state, indent=2, ensure_ascii=False)
+            os_text = _byte_cap(os_text, _ORGANISM_STATE_BYTE_CAP)
+            parts.append(f"### Organism state (rollup)\n\n```json\n{os_text}\n```")
+        except Exception as exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: organism_state serialization failed — %s", exc)
+
+    # Lobe-specific raw deltas (the fitness card for this lobe)
+    if lobe:
+        fitness_path = root / "data" / "metabolism" / "fitness" / f"{lobe}.json"
+        if fitness_path.exists():
+            try:
+                lobe_text = fitness_path.read_text(encoding="utf-8")
+                lobe_text = _byte_cap(lobe_text, 2000)
+                parts.append(f"### Lobe fitness card: {lobe}\n\n```json\n{lobe_text}\n```")
+            except Exception as exc:  # noqa: BLE001
+                log.warning("orchestrator_brain: lobe card load failed — %s", exc)
+
+    if not parts:
+        return "(organism state unavailable — accruing)"
+    return "\n\n".join(parts)
+
+
+# ── Part 4: Case-law slice ─────────────────────────────────────────────────────
+
+def _load_case_law_slice(root: Path, lobe: str | None) -> str:
+    """Load ruling rows matching the lobe + DO_NOT_REBUILD.md.
+
+    The deterministic screen in adjudicate.py is the HARD floor;
+    this slice only informs the LLM.
+    """
+    parts: list[str] = []
+
+    # DO_NOT_REBUILD.md (always included, byte-capped)
+    dnr_path = root / "research" / "DO_NOT_REBUILD.md"
+    if dnr_path.exists():
+        try:
+            dnr_text = dnr_path.read_text(encoding="utf-8")
+            dnr_text = _byte_cap(dnr_text, _DO_NOT_REBUILD_BYTE_CAP)
+            parts.append(f"### DO_NOT_REBUILD kills\n\n{dnr_text}")
+        except Exception as exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: DO_NOT_REBUILD load failed — %s", exc)
+
+    # Ruling rows matching the lobe (by match_terms / owner_program)
+    if lobe:
+        graph_path = root / "config" / "ruling_graph.yml"
+        if graph_path.exists():
+            try:
+                import yaml  # noqa: PLC0415
+                raw = yaml.safe_load(graph_path.read_text(encoding="utf-8")) or {}
+                rulings = raw.get("rulings") or []
+                if isinstance(rulings, dict):
+                    rulings = list(rulings.values())
+
+                lobe_lower = lobe.lower()
+                selected: list[str] = []
+                for r in rulings:
+                    if not isinstance(r, dict):
+                        continue
+                    haystack = " ".join([
+                        str(r.get("match_terms") or ""),
+                        str(r.get("owner_program") or ""),
+                        str(r.get("title") or ""),
+                    ]).lower()
+                    if lobe_lower in haystack:
+                        rid = r.get("ruling_id", "")
+                        ruling_text = str(r.get("ruling") or "").strip()
+                        selected.append(f"[{rid}] {ruling_text}"[:300])
+                    if len("\n".join(selected).encode()) >= 2000:
+                        break
+
+                if selected:
+                    lobe_laws = _byte_cap("\n".join(selected), 2000)
+                    parts.append(f"### Rulings relevant to lobe: {lobe}\n\n{lobe_laws}")
+            except Exception as exc:  # noqa: BLE001
+                log.warning("orchestrator_brain: lobe ruling slice failed — %s", exc)
+
+    return "\n\n".join(parts) if parts else "(case-law slice unavailable)"
+
+
+# ── Part 5: Lobe charter + lessons + contract requirement ─────────────────────
+
+def _load_lobe_charter(root: Path, lobe: str | None) -> str:
+    """Load lobe charter from config/lobe_charters.yml (tolerant if absent)."""
+    if not lobe:
+        return "(no lobe specified)"
+    charter_path = root / "config" / "lobe_charters.yml"
+    if not charter_path.exists():
+        return "(config/lobe_charters.yml not yet present — V2-C artifact)"
     try:
-        text = p.read_text(encoding="utf-8")
+        import yaml  # noqa: PLC0415
+        raw = yaml.safe_load(charter_path.read_text(encoding="utf-8")) or {}
+        charters = raw.get("charters") or raw.get("lobes") or {}
+        entry = charters.get(lobe)
+        if entry is None:
+            return f"(no charter registered for lobe: {lobe})"
+        charter_text = json.dumps(entry, indent=2, ensure_ascii=False)
+        return _byte_cap(charter_text, _CHARTER_BYTE_CAP)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("orchestrator_brain: lobe charter load failed — %s", exc)
+        return "(lobe charter unavailable)"
+
+
+def _load_recent_lessons(root: Path) -> str:
+    """Load the tail of lessons.jsonl (VERIFY appends), byte-capped."""
+    lessons_path = root / "data" / "metabolism" / "lessons.jsonl"
+    if not lessons_path.exists():
+        return "(lessons.jsonl not yet present — accruing as VERIFY runs)"
+    try:
+        text = lessons_path.read_text(encoding="utf-8")
+        # Take the tail: last _LESSONS_BYTE_CAP bytes
         encoded = text.encode()
-        if len(encoded) > _ABM_BYTE_CAP:
-            text = encoded[:_ABM_BYTE_CAP].decode(errors="replace") + "\n… (truncated)"
+        if len(encoded) > _LESSONS_BYTE_CAP:
+            tail = encoded[-_LESSONS_BYTE_CAP:].decode(errors="replace")
+            return "(tail) " + tail
         return text
     except Exception as exc:  # noqa: BLE001
-        log.warning("orchestrator_brain: cannot load ACTIVE_BUILD_MAP — %s", exc)
-        return "(ACTIVE_BUILD_MAP unavailable)"
+        log.warning("orchestrator_brain: lessons.jsonl load failed — %s", exc)
+        return "(lessons unavailable)"
 
+
+_FITNESS_CONTRACT_REQUIREMENT = """\
+FITNESS CONTRACT REQUIREMENT (mandatory on every proposal):
+Every proposal MUST carry a fitness_contract field with:
+  - sensor: which TIL fitness sensor it improves
+  - expected_sign: direction of expected improvement
+  - band: numeric band (e.g., [0.05, null] for IC > 5%)
+  - check_by: ISO date when outcome is graded (typically 90-180 days out)
+  - placebo_to_beat: a placebo or null benchmark
+  - falsifier_spec: a qledger-compatible check dict
+A proposal with no fitness_contract is automatically rejected by the adjudicator."""
+
+
+# ── Main builder ───────────────────────────────────────────────────────────────
 
 def _build_orchestrator_system(
     model: str | None = None,
@@ -172,20 +350,23 @@ def _build_orchestrator_system(
     root: Path | None = None,
     organism_state: dict | None = None,
 ) -> str:
-    """Build the orchestrator system prompt.
+    """Build the orchestrator system prompt (full V2-D §3 spec).
 
     Parameters
     ----------
     model : str | None
         Resolved model ID.  Used to decide whether to inject fable_mode_core.md.
+        Opus-class (contains 'opus' or unknown) → inject.
+        Fable-class (contains 'fable') → OMIT.
     role : str | None
         Role key in metabolism_roles.yml (defaults to 'orchestrator').
     lobe : str | None
-        Target lobe (used to scope the case-law slice; currently unused in stub).
+        Target lobe. Used to scope the case-law slice + charter + lobe card.
     root : Path | None
         Repo root override (for testing).
     organism_state : dict | None
-        If provided, a byte-capped slice is injected.
+        If provided, used directly (caller may pre-load it).
+        If None, loaded from data/metabolism/organism_state.json.
 
     Returns
     -------
@@ -196,42 +377,57 @@ def _build_orchestrator_system(
         repo = _repo_root(root)
         parts: list[str] = []
 
-        # 1. Fable-mode doctrine (Opus-class models only)
+        # ── Part 1: Fable-mode doctrine (Opus-class models only) ──────────────
         if _is_opus_class(model):
             fable_text = _load_fable_mode_core(repo)
             if fable_text:
                 parts.append("## Fable Mode Doctrine (vendored)\n\n" + fable_text)
 
-        # 2. Role line
+        # ── Part 1b: Role line ─────────────────────────────────────────────────
         role_text = _load_role(repo, role)
         parts.append(f"## Role\n\n{role_text}")
 
-        # 3. Standing laws slice
-        ruling_slice = _load_ruling_slice(repo)
-        parts.append(f"## Standing Laws (from ruling_graph)\n\n{ruling_slice}")
+        # ── Part 2: Standing laws (quote-verified from ruling_graph.yml) ───────
+        laws_text = _load_standing_laws(repo)
+        parts.append(f"## Standing Laws (quote-verified from ruling_graph.yml)\n\n{laws_text}")
 
-        # 4. Organism-state slice (byte-capped)
-        if organism_state:
+        # ── Part 3: Organism-state slice (byte-capped [:6000]) ─────────────────
+        state_text = _build_state_slice(repo, lobe, organism_state)
+        parts.append(f"## Organism State\n\n{state_text}")
+
+        # ── Part 4: Case-law slice (lobe-scoped + DO_NOT_REBUILD) ──────────────
+        case_law_text = _load_case_law_slice(repo, lobe)
+        parts.append(f"## Case Law (lobe-scoped + DO_NOT_REBUILD)\n\n{case_law_text}")
+
+        # ── Part 5a: Lobe charter (config/lobe_charters.yml, tolerant if absent)
+        charter_text = _load_lobe_charter(repo, lobe)
+        parts.append(f"## Lobe Charter\n\n{charter_text}")
+
+        # ── Part 5b: Recent lessons (lessons.jsonl tail) ────────────────────────
+        lessons_text = _load_recent_lessons(repo)
+        parts.append(f"## Recent Lessons (from VERIFY outcomes)\n\n{lessons_text}")
+
+        # ── Part 5c: Fitness-contract requirement ───────────────────────────────
+        parts.append(f"## Fitness Contract Requirement\n\n{_FITNESS_CONTRACT_REQUIREMENT}")
+
+        # ── ACTIVE_BUILD_MAP collision check ────────────────────────────────────
+        abm_path = repo / "docs" / "ACTIVE_BUILD_MAP.md"
+        if abm_path.exists():
             try:
-                os_text = json.dumps(organism_state, indent=2, ensure_ascii=False)
-                encoded = os_text.encode()
-                if len(encoded) > _ORGANISM_STATE_BYTE_CAP:
-                    os_text = encoded[:_ORGANISM_STATE_BYTE_CAP].decode(errors="replace") + "\n… (truncated)"
-                parts.append(f"## Organism State (current)\n\n```json\n{os_text}\n```")
+                abm_text = abm_path.read_text(encoding="utf-8")
+                abm_text = _byte_cap(abm_text, _ABM_BYTE_CAP)
+                parts.append(f"## Active Build Map (collision check)\n\n{abm_text}")
             except Exception as exc:  # noqa: BLE001
-                log.warning("orchestrator_brain: organism_state serialization failed — %s", exc)
+                log.warning("orchestrator_brain: ACTIVE_BUILD_MAP load failed — %s", exc)
 
-        # 5. ACTIVE_BUILD_MAP slice
-        abm_slice = _load_abm_slice(repo)
-        parts.append(f"## Active Build Map (collision check)\n\n{abm_slice}")
-
-        # 6. INERTNESS reminder
+        # ── INERTNESS reminder ──────────────────────────────────────────────────
         parts.append(
             "## INERTNESS CONSTRAINT\n\n"
-            "You are operating in Phase V2-A: ZERO authority.  You read, compute, and reason.\n"
-            "You write the agenda artifact ONLY.  You dispatch nothing, grant nothing, "
-            "open no PR, touch no lobe roster.  The agenda is a PROPOSAL consumed by "
-            "later (still-inert) stages."
+            "You are INERT. You read, compute, and reason.\n"
+            "You write the named artifact ONLY. You dispatch nothing, grant nothing, "
+            "open no PR, touch no lobe roster. You never originate a signal, score, "
+            "or escalation. The word flagged by check_validated_claims must never appear "
+            "in your output."
         )
 
         return "\n\n---\n\n".join(parts)
@@ -239,6 +435,7 @@ def _build_orchestrator_system(
     except Exception as exc:  # noqa: BLE001
         log.warning("orchestrator_brain._build_orchestrator_system: failed — %s", exc)
         return (
-            "You are the Metabolism Orchestrator (V2-A, INERT).  "
-            "Write a ranked agenda artifact only.  Dispatch nothing, grant nothing."
+            "You are the Metabolism Orchestrator (V2-D, INERT).  "
+            "Write the named artifact only.  Dispatch nothing, grant nothing.  "
+            "Never originate signals, scores, or escalations."
         )

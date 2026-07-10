@@ -181,6 +181,157 @@ def _autonomy_state() -> str:
         return f"AUTONOMY_PAUSED={val!r}"
 
 
+def build_operator_onepager(root: Path, now: datetime) -> str:
+    """Build the V2-D operator one-pager: FIXED FOUR-HEADING plain-English contract.
+
+    Phone-readable, plain language, NO internal metric jargon.
+    Headings: 'What got better' / 'What's slipping' / 'What I'm about to do' /
+              'What needs your tap'.
+    This is the operator relationship: minimal work, plain language.
+
+    The dense digest (build_digest) is ADMIN-tier and is linked, not pushed.
+    NEVER raises.
+    """
+    try:
+        week = _week_label(now)
+        since = now - timedelta(days=7)
+
+        journal_counts = _count_journals(root, since)
+        verify = _collect_verify_summary(root, since)
+        budget = _budget_summary(root)
+        gov_counts = _count_governance(root, since)
+        auto_state = _autonomy_state()
+
+        # ── Section: What got better ─────────────────────────────────────────
+        better: list[str] = []
+        if verify["confirmed"] > 0:
+            better.append(
+                f"{verify['confirmed']} building block(s) held their targets and are still running."
+            )
+        if journal_counts["done"] > 0 and journal_counts["failed"] == 0:
+            better.append(
+                f"All {journal_counts['done']} checks ran cleanly this week — no failures."
+            )
+        elif journal_counts["done"] > 0:
+            better.append(
+                f"{journal_counts['done']} checks ran this week."
+            )
+        grants = gov_counts.get("metabolism_adjudication", 0)
+        if grants > 0:
+            better.append(f"{grants} new build proposal(s) cleared review.")
+        if not better:
+            better.append("Nothing new confirmed this week — still early in the accrual period.")
+
+        # ── Section: What's slipping ─────────────────────────────────────────
+        slipping: list[str] = []
+        if verify["overfit_revert_plans"] > 0:
+            slipping.append(
+                f"{verify['overfit_revert_plans']} building block(s) missed their target "
+                f"— a reversal plan has been drafted for your review."
+            )
+        if verify["operator_taps"] > 0:
+            slipping.append(
+                f"{verify['operator_taps']} outcome(s) are ambiguous (possibly a market-regime shift "
+                f"rather than a real miss) — held for your call, not auto-reversed."
+            )
+        if journal_counts["failed"] > 0:
+            slipping.append(
+                f"{journal_counts['failed']} check(s) hit an error this week."
+            )
+        if budget["breaker_tripped_lobes"]:
+            lobes_str = ", ".join(budget["breaker_tripped_lobes"])
+            slipping.append(f"Spending limit hit for: {lobes_str} — those areas are paused.")
+        if not slipping:
+            slipping.append("Nothing is slipping this week.")
+
+        # ── Section: What I'm about to do ────────────────────────────────────
+        upcoming: list[str] = []
+        upcoming.append("Run the weekly calibration pass over past proposals.")
+        if verify["pending"] > 0:
+            upcoming.append(
+                f"Wait on {verify['pending']} pending outcome(s) — their check dates haven't arrived yet."
+            )
+        upcoming.append(
+            f"Budget status: about ${budget['usd_spent']:.2f} of ${budget['usd_cap']} used."
+        )
+        usd_remaining = (budget["usd_cap"] or 0) - (budget["usd_spent"] or 0)
+        if usd_remaining is not None and budget["usd_cap"] and usd_remaining < budget["usd_cap"] * 0.2:
+            upcoming.append("Heads up: spending budget is getting low (under 20% remaining).")
+
+        # ── Section: What needs your tap ─────────────────────────────────────
+        needs_tap: list[str] = []
+        # Load open tap cards
+        tap_dir = root / "data" / "metabolism" / "tap"
+        if tap_dir.exists():
+            tap_files = sorted(tap_dir.glob("*.json"))
+            for tf in tap_files[-3:]:  # show at most 3 most recent
+                try:
+                    tc = json.loads(tf.read_text(encoding="utf-8"))
+                    headline = tc.get("headline", "")
+                    why_now = tc.get("why_now", "")
+                    rec = tc.get("recommended_default", "defer")
+                    if headline:
+                        needs_tap.append(
+                            f"**{headline}** — {why_now} "
+                            f"(suggested: {rec}; auto-action on timeout: "
+                            f"{tc.get('auto_action_on_timeout', {}).get('action', 'defer')})"
+                        )
+                except Exception:  # noqa: BLE001
+                    continue
+        if verify["overfit_revert_plans"] > 0:
+            needs_tap.append(
+                f"Review {verify['overfit_revert_plans']} reversal plan(s) "
+                f"— they're waiting for your go-ahead before anything rolls back."
+            )
+        if not needs_tap:
+            needs_tap.append("Nothing needs your attention this week — keep going.")
+
+        # ── Compose the one-pager ─────────────────────────────────────────────
+        arm_status = "Armed" if "ARMED" in auto_state.upper() else "Paused (safe)"
+        lines = [
+            f"# Weekly Check-In — {week}",
+            f"",
+            f"*System status: {arm_status}*",
+            f"",
+            f"## What got better",
+            f"",
+        ]
+        for b in better:
+            lines.append(f"- {b}")
+        lines.extend([
+            f"",
+            f"## What's slipping",
+            f"",
+        ])
+        for s in slipping:
+            lines.append(f"- {s}")
+        lines.extend([
+            f"",
+            f"## What I'm about to do",
+            f"",
+        ])
+        for u in upcoming:
+            lines.append(f"- {u}")
+        lines.extend([
+            f"",
+            f"## What needs your tap",
+            f"",
+        ])
+        for n in needs_tap:
+            lines.append(f"- {n}")
+        lines.extend([
+            f"",
+            f"---",
+            f"",
+            f"*Full technical digest (admin): data/metabolism/digest/{week}.md*",
+        ])
+
+        return "\n".join(lines) + "\n"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_digest.build_operator_onepager: %s", exc)
+        return f"# Weekly Check-In ERROR\n\nError building one-pager: {exc}\n"
+
+
 def build_digest(root: Path, now: datetime) -> str:
     """Build the weekly digest markdown string.  Never raises."""
     try:
@@ -292,18 +443,32 @@ def main(argv: list[str] | None = None) -> int:
     week = args.week or _week_label(now)
 
     if args.dry_run:
+        print("=== OPERATOR ONE-PAGER ===")
+        onepager = build_operator_onepager(root, now)
+        print(onepager)
+        print("=== ADMIN DIGEST ===")
         print(content)
         return 0
 
+    # Write admin digest (ADMIN-tier, not pushed to phone)
     out_path = _write_digest(content, root, week)
     if out_path:
-        log.info("metabolism_digest: wrote %s", out_path)
+        log.info("metabolism_digest: wrote admin digest %s", out_path)
+
+    # Write operator one-pager (separate file)
+    onepager = build_operator_onepager(root, now)
+    onepager_path = _write_digest(onepager, root, f"{week}-onepager")
+    if onepager_path:
+        log.info("metabolism_digest: wrote operator one-pager %s", onepager_path)
 
     if not args.no_notify:
         try:
             from scripts.notify import send_telegram  # type: ignore[import]
-            # Send a condensed version to Telegram (first 1500 chars)
-            telegram_msg = content[:1500] + ("\n...(see full digest on disk)" if len(content) > 1500 else "")
+            # Push the operator one-pager to Telegram (phone-readable, plain language)
+            # The dense admin digest is NEVER pushed — it's linked in the one-pager footer.
+            telegram_msg = onepager[:2000] + (
+                "\n...(full one-pager on disk)" if len(onepager) > 2000 else ""
+            )
             send_telegram(telegram_msg)
         except Exception as exc:  # noqa: BLE001
             log.warning("metabolism_digest: telegram notify failed: %s", exc)

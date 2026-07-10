@@ -10187,3 +10187,108 @@ artifacts:
   # known_extra_writers and described in the metabolism-key-ledger notes.
   # No separate path entry is registered here to avoid the duplicate-path
   # violation; the dispatcher's freeze output is covered by metabolism-journal.
+
+  # --- Metabolism Phase V2-D (mind's memory + operator relationship) ---
+
+  metabolism-fitness-history:
+    path: data/metabolism/fitness_history.jsonl
+    format: jsonl
+    producer: engine/metabolism/memory.py
+    known_extra_writers:
+      - scripts/build_organism_state.py
+    owner_program: metabolism-phase-v2d
+    cadence: daily-engine
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 48
+    schema: metabolism.fitness_history.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/metabolism/anomaly_monitor.py
+      - engine/metabolism/dream.py
+    external_consumers: []
+    notes: >
+      V2-D fitness history tape. Append-only; one row per SENSE/organism_state run.
+      Schema: {schema, ts, run_id, lobe, sensors}. Used by anomaly_monitor (statistical
+      z-scores) and dream cycle (calibration). INERT — display-only context.
+      STATELESS-CATTLE: all state in git; a fresh process reads from this file.
+
+  metabolism-lessons:
+    path: data/metabolism/lessons.jsonl
+    format: jsonl
+    producer: engine/metabolism/verify.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2d
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: metabolism.lessons.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/metabolism/orchestrator_brain.py
+      - scripts/metabolism_dream.py
+    external_consumers: []
+    notes: >
+      V2-D lessons tape. Append-only; VERIFY appends one row per graded proposal:
+      {schema, ts, cycle_id, proposal_id, verdict, what_worked, what_failed, construction}.
+      Fed into the orchestrator system prompt (lessons tail) so PROPOSE stops
+      repeating dead constructions. Anti-rot: weekly dream cycle compresses old
+      entries via resummary_lessons() when file exceeds LESSONS_BYTE_CAP (60KB).
+      Summary is display-only — never gate-altering. INERT.
+
+  metabolism-agenda-archive:
+    path: data/metabolism/agenda_archive/
+    format: json
+    producer: engine/metabolism/verify.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2d
+    cadence: on-demand
+    storage: git
+    asof_field: archived_at
+    freshness_sla_hours: 8760
+    schema: metabolism.agenda_archive.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/metabolism/dream.py
+    external_consumers: []
+    notes: >
+      V2-D agenda archive. Each file: data/metabolism/agenda_archive/<cycle_id>.json.
+      Written by VERIFY (archive-on-verify step) with the original agenda + realized
+      outcome so the dream cycle can compare what was proposed vs what materialized.
+      Schema: {schema, cycle_id, archived_at, agenda, verify_outcome}. INERT.
+
+  metabolism-preference-prior:
+    path: data/metabolism/preference_prior.json
+    format: json
+    producer: scripts/metabolism_dream.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-v2d
+    cadence: weekly
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: metabolism.preference_prior.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_propose.py
+    external_consumers: []
+    notes: >
+      V2-D advisory preference prior. Written by weekly dream cycle. ADVISORY ONLY:
+      marked not_gate_altering=True — it is appended to the next PROPOSE prompt as
+      context and NEVER alters gates, thresholds, or authority surfaces. Subsumes
+      the killed standalone preference-prior module + agenda-review. Honest null
+      when fewer than MIN_CLOSED_CONTRACTS (10) mature contracts exist — status=
+      'insufficient_data' printed, no fabricated calibration. INERT.
