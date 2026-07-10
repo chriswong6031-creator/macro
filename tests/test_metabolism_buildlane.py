@@ -376,6 +376,27 @@ class TestMergeLaneFenceRefusal:
             f"Found: {admin_cmd.group() if admin_cmd else ''}"
         )
 
+    def test_fence_fail_closed_on_empty_file_list(self):
+        """_fence_check_pr must REFUSE (fail-closed) when the changed-files list is empty.
+
+        _get_pr_files returns [] on any gh API error.  If the fence passes on an
+        empty list, a PR that touches IMMUTABLE files but cannot be enumerated would
+        silently be let through.  R-AUT-5 requires fail-closed here.
+        """
+        import scripts.metabolism_merge as mm
+        importlib.reload(mm)
+
+        ok, msg = mm._fence_check_pr(
+            pr_branch="metabolism/build-some-lobe-cycle-001",
+            pr_files=[],   # empty — simulates gh API failure
+        )
+        assert ok is False, (
+            f"Fence must REFUSE (fail-closed) when file list is empty, got ok={ok}, msg={msg!r}"
+        )
+        assert "fail-closed" in msg.lower() or "empty" in msg.lower(), (
+            f"Fence refusal reason should mention fail-closed or empty, got: {msg!r}"
+        )
+
 
 # ── 6. merge lane requires the two-key ───────────────────────────────────────
 
@@ -436,6 +457,135 @@ class TestMergeLaneTwoKeyRequired:
         # At least one merge should appear
         merges = [r for r in results if r.get("status") == "merged"]
         assert len(merges) >= 1, f"Expected at least one merge but got: {results}"
+
+    def test_evil_proposal_cannot_hijack_authorized_grant(self):
+        """THE BLOCKING BUG FIX: a build PR for an unauthorized proposal (P_EVIL) must NOT
+        merge under an authorized proposal's (P_AUTH) two-key grant.
+
+        Scenario: 2-proposal docket.
+          - P_AUTH (p_auth_id): two-key granted, targets sensor_auth.
+          - P_EVIL (p_evil_id): NOT authorized, targets sensor_evil.
+        The PR head-branch is metabolism/build-test_lobe-<cycle> (the docket lobe branch).
+        The claims.jsonl records P_EVIL as the one that was actually built on this branch.
+        Result: the merge lane must detect that P_EVIL is not authorized and skip,
+        NOT inherit P_AUTH's grant.
+        """
+        import scripts.metabolism_build as mb
+        importlib.reload(mb)
+        import scripts.metabolism_merge as mm
+        importlib.reload(mm)
+
+        d = _tmp_root()
+        cycle_id = "cycle-evil-001"
+
+        p_auth_id = "p_auth_id"
+        p_evil_id = "p_evil_id"
+
+        proposals = [
+            {
+                "proposal_id": p_auth_id,
+                "title": "Authorized proposal",
+                "tier": "T1",
+                "target_files": ["engine/auth_sensor.py"],
+                "targets_sensor": "sensor_auth",
+                "rationale": "auth",
+                "fitness_contract": {"metric": "ok"},
+            },
+            {
+                "proposal_id": p_evil_id,
+                "title": "Unauthorized proposal",
+                "tier": "T1",
+                "target_files": ["engine/evil_sensor.py"],
+                "targets_sensor": "sensor_evil",
+                "rationale": "evil",
+                "fitness_contract": {"metric": "evil"},
+            },
+        ]
+        docket = _write_docket(d, cycle_id, proposals)
+
+        # claims.jsonl: P_EVIL was the one actually built on the docket-lobe branch
+        claims_path = d / "data" / "metabolism" / "claims.jsonl"
+        branch = mb._build_branch_name("test_lobe", cycle_id)
+        claims_path.write_text(json.dumps({
+            "schema": "metabolism.build_claims.v1",
+            "cycle_id": cycle_id,
+            "proposal_id": p_evil_id,   # <-- EVIL proposal built this PR
+            "lobe": "test_lobe",
+            "target_files": ["engine/evil_sensor.py"],
+            "ts": _ts_now(),
+        }) + "\n")
+
+        # The merge lane sees a draft PR on the docket-lobe branch
+        fake_pr = {
+            "number": 7777,
+            "headRefName": branch,
+            "title": "evil build PR",
+            "isDraft": True,
+            "statusCheckRollup": [{"state": "SUCCESS"}],
+            "files": [],
+        }
+
+        def _selective_two_key(cycle_id_, proposal_id_, docket_path_, *, root=None):
+            # Only P_AUTH is granted; P_EVIL is NOT
+            return proposal_id_ == p_auth_id
+
+        with patch.dict(os.environ, {"AUTONOMY_PAUSED": "false"}, clear=False):
+            importlib.reload(mm)
+            with patch.object(mm, "_is_two_key_granted", side_effect=_selective_two_key):
+                with patch.object(mm, "_list_build_draft_prs", return_value=[fake_pr]):
+                    with patch.object(mm, "_pr_ci_green", return_value=True):
+                        with patch.object(mm, "_get_pr_files", return_value=["engine/evil_sensor.py"]):
+                            with patch.object(mm, "_mark_pr_ready", return_value=True):
+                                with patch.object(mm, "_rebase_merge_pr",
+                                                  return_value={"merged": True, "attempts": 1}):
+                                    results = mm.run_merge_lane(cycle_id, docket, root=d)
+
+        # P_EVIL's PR must NOT be merged (it is not authorized)
+        merges = [r for r in results if r.get("status") == "merged"]
+        assert len(merges) == 0, (
+            f"SECURITY: P_EVIL's PR merged under P_AUTH's grant — two-key bypass!\n{results}"
+        )
+        # The result should indicate not_granted (P_EVIL is not authorized)
+        not_granted = [r for r in results if r.get("status") == "not_granted"]
+        assert len(not_granted) >= 1, (
+            f"Expected not_granted for P_EVIL, got: {results}"
+        )
+
+    def test_pr_with_unrecognized_branch_gets_no_matching_proposal(self):
+        """A PR whose branch does not match any proposal in the docket → no_matching_proposal.
+
+        This tests the EXACT-MATCH enforcement: a branch that merely starts with
+        'metabolism/build-' but does not match the docket lobe must be skipped.
+        """
+        import scripts.metabolism_merge as mm
+        importlib.reload(mm)
+
+        d = _tmp_root()
+        cycle_id = "cycle-nomatch-001"
+        docket = _write_docket(d, cycle_id, [_minimal_proposal("p1", ["engine/foo.py"])])
+
+        # Branch is a valid metabolism/build- prefix but for a DIFFERENT lobe/cycle
+        fake_pr = {
+            "number": 8888,
+            "headRefName": f"metabolism/build-OTHER_LOBE-{cycle_id}",  # wrong lobe
+            "title": "wrong-lobe PR",
+            "isDraft": True,
+            "statusCheckRollup": [{"state": "SUCCESS"}],
+            "files": [],
+        }
+
+        with patch.dict(os.environ, {"AUTONOMY_PAUSED": "false"}, clear=False):
+            importlib.reload(mm)
+            # Even if two-key says "granted", the branch mismatch must block merge
+            with patch.object(mm, "_is_two_key_granted", return_value=True):
+                with patch.object(mm, "_list_build_draft_prs", return_value=[fake_pr]):
+                    results = mm.run_merge_lane(cycle_id, docket, root=d)
+
+        # Must be no_matching_proposal, not merged
+        merges = [r for r in results if r.get("status") == "merged"]
+        assert len(merges) == 0, f"Unexpected merge of wrong-lobe PR: {results}"
+        no_match = [r for r in results if r.get("status") == "no_matching_proposal"]
+        assert len(no_match) >= 1, f"Expected no_matching_proposal, got: {results}"
 
 
 # ── 7. concurrency-group in merge workflow ────────────────────────────────────

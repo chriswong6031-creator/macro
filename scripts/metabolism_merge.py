@@ -54,6 +54,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Path to claims.jsonl relative to repo root (same as metabolism_build._CLAIMS_REL)
+_CLAIMS_REL = ("data", "metabolism", "claims.jsonl")
+
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
@@ -101,9 +104,17 @@ def _fence_check_pr(pr_branch: str, pr_files: list[str]) -> tuple[bool, str]:
     """Return (passes, reason) for the self-mod fence on a PR.
 
     A loop PR touching the IMMUTABLE set is REFUSED — no admin bypass.
+    Fail-closed: if the changed-files list is empty (could not enumerate),
+    the fence REFUSES.  An empty file list means we cannot verify safety.
     NEVER raises.
     """
     try:
+        if not pr_files:
+            # Cannot enumerate changed files — fail-closed (R-AUT-5).
+            # Contrast: ci.yml lines 912-919 exit 1 on empty file list for the same reason.
+            msg = "fence fail-closed: could not enumerate PR changed files (empty list)"
+            log.warning("metabolism_merge._fence_check_pr: %s", msg)
+            return False, msg
         from scripts.check_self_mod_fence import check
         code, msg = check(branch=pr_branch, changed_files=pr_files)
         return code == 0, msg
@@ -224,34 +235,41 @@ def _rebase_merge_pr(
         for attempt in range(1, retries + 1):
             result["attempts"] = attempt
             try:
-                # Fetch the branch
+                # Fetch main and the PR branch fresh
                 subprocess.run(
-                    ["git", "fetch", "origin", pr_branch],
+                    ["git", "fetch", "origin", "main", pr_branch],
                     cwd=str(r), capture_output=True, timeout=60,
                 )
-                # Rebase local main onto remote + autostash
+                # Reset to a clean origin/main tip before applying the PR.
+                # Without this, git pull --rebase would rebase onto whatever branch
+                # happens to be checked out in this worktree (the docket branch),
+                # and HEAD:main would push that history rather than main + PR commits.
+                subprocess.run(
+                    ["git", "checkout", "main"],
+                    cwd=str(r), capture_output=True, timeout=30,
+                )
+                reset = subprocess.run(
+                    ["git", "reset", "--hard", "origin/main"],
+                    cwd=str(r), capture_output=True, text=True, timeout=30,
+                )
+                if reset.returncode != 0:
+                    log.warning("MERGE: reset failed (attempt %d): %s", attempt, reset.stderr[:200])
+                    continue
+                # Merge the PR branch into the now-clean local main
                 rebase = subprocess.run(
                     ["git", "pull", "--rebase", "--autostash", "origin", pr_branch],
                     cwd=str(r), capture_output=True, text=True, timeout=120,
                 )
                 if rebase.returncode == 0:
-                    # Merge the branch into main
-                    merge = subprocess.run(
-                        ["git", "merge", "--ff-only", f"origin/{pr_branch}"],
+                    push = subprocess.run(
+                        ["git", "push", "origin", "HEAD:main"],
                         cwd=str(r), capture_output=True, text=True, timeout=60,
                     )
-                    if merge.returncode == 0:
-                        push = subprocess.run(
-                            ["git", "push", "origin", "HEAD:main"],
-                            cwd=str(r), capture_output=True, text=True, timeout=60,
-                        )
-                        if push.returncode == 0:
-                            result["merged"] = True
-                            log.info("MERGE: merged %s on attempt %d", pr_branch, attempt)
-                            return result
-                        log.warning("MERGE: push failed (attempt %d): %s", attempt, push.stderr[:200])
-                    else:
-                        log.warning("MERGE: ff-only failed (attempt %d): %s", attempt, merge.stderr[:200])
+                    if push.returncode == 0:
+                        result["merged"] = True
+                        log.info("MERGE: merged %s on attempt %d", pr_branch, attempt)
+                        return result
+                    log.warning("MERGE: push failed (attempt %d): %s", attempt, push.stderr[:200])
                 else:
                     log.warning("MERGE: rebase failed (attempt %d): %s", attempt, rebase.stderr[:200])
             except Exception as exc:  # noqa: BLE001
@@ -263,6 +281,96 @@ def _rebase_merge_pr(
         log.warning("metabolism_merge._rebase_merge_pr: %s", exc)
         result["error"] = str(exc)
         return result
+
+
+# ── Proposal-ID resolution (the BLOCKING fix) ─────────────────────────────────
+
+def _resolve_proposal_id_for_branch(
+    pr_branch: str,
+    cycle_id: str,
+    docket: dict[str, Any],
+    docket_path: Path,
+    *,
+    root: Path | None = None,
+) -> str | None:
+    """Return the proposal_id whose build branch exactly matches pr_branch, or None.
+
+    SECURITY INVARIANT: only an exact branch match is accepted.  A namespace-prefix
+    test (startswith "metabolism/build-") is NEVER used — that would let any build PR
+    inherit any proposal's two-key grant, defeating write-serialization (R-V2-5).
+
+    Resolution order:
+      1. claims.jsonl (authoritative — written atomically by the build lane):
+         find a row with cycle_id == cycle_id and lobe such that
+         _build_branch_name(row["lobe"], cycle_id) == pr_branch, and whose
+         proposal_id exists in the docket's prop_index.
+      2. Docket-level lobe (same source the build lane uses): compute
+         _build_branch_name(docket["lobe"], cycle_id) and require exact equality.
+         If matched, return the first uncollided proposal_id from the docket
+         (the build lane skips collided proposals in order, so first-in-docket
+         is the one that would have been built).
+
+    If neither step produces an exact match, returns None.
+    NEVER raises.
+    """
+    try:
+        from scripts.metabolism_build import _build_branch_name
+
+        prop_index = {
+            str(p.get("proposal_id") or ""): p
+            for p in (docket.get("proposals") or [])
+            if p.get("proposal_id")
+        }
+
+        # Step 1: claims.jsonl — authoritative proposal→branch mapping
+        r = root or _ROOT
+        claims_path = r.joinpath(*_CLAIMS_REL)
+        if claims_path.exists():
+            try:
+                for raw in claims_path.read_text(encoding="utf-8").splitlines():
+                    raw = raw.strip()
+                    if not raw:
+                        continue
+                    row = json.loads(raw)
+                    if row.get("cycle_id") != cycle_id:
+                        continue
+                    row_lobe = row.get("lobe") or ""
+                    if not row_lobe:
+                        continue
+                    expected = _build_branch_name(row_lobe, cycle_id)
+                    if expected == pr_branch:
+                        pid = str(row.get("proposal_id") or "")
+                        if pid and pid in prop_index:
+                            log.info(
+                                "MERGE: branch %s → proposal %s (via claims.jsonl)", pr_branch, pid
+                            )
+                            return pid
+            except Exception as exc:  # noqa: BLE001
+                log.warning("MERGE: _resolve_proposal_id_for_branch claims read error: %s", exc)
+                # Fall through to docket-level fallback
+
+        # Step 2: docket-level lobe — same source the build lane uses
+        docket_lobe = docket.get("lobe") or ""
+        if docket_lobe:
+            expected = _build_branch_name(docket_lobe, cycle_id)
+            if expected == pr_branch:
+                # Return the proposal_id of the first proposal in the docket that
+                # is present in prop_index (the build lane processes in order).
+                for prop in (docket.get("proposals") or []):
+                    pid = str(prop.get("proposal_id") or "")
+                    if pid and pid in prop_index:
+                        log.info(
+                            "MERGE: branch %s → proposal %s (via docket lobe fallback)", pr_branch, pid
+                        )
+                        return pid
+
+        log.info(
+            "MERGE: no exact match for branch %s in cycle %s (claims or docket)", pr_branch, cycle_id
+        )
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_merge._resolve_proposal_id_for_branch: %s", exc)
+        return None
 
 
 # ── Main merge loop ───────────────────────────────────────────────────────────
@@ -331,25 +439,35 @@ def run_merge_lane(
                 results.append(per)
                 break
 
-            # Extract proposal_id from branch name (metabolism/build-<lobe>-<cycle>)
-            # The proposal_id is embedded in the docket for this cycle
-            # For the merge lane we check the docket for ALL proposals that are
-            # authorized and whose branch matches this PR's branch.
-            # Find the first authorized proposal for this cycle.
-            proposal_id = None
-            for pid, prop in prop_index.items():
-                from scripts.metabolism_build import _build_branch_name
-                expected_branch = _build_branch_name(
-                    prop.get("lobe") or prop.get("targets_sensor", "unknown"),
-                    cycle_id,
-                )
-                if expected_branch == pr_branch or pr_branch.startswith("metabolism/build-"):
-                    proposal_id = pid
-                    break
+            # --- BLOCKING FIX: exact proposal matching only; never namespace-prefix ---
+            # The build lane names branches from the DOCKET-level `lobe` (not per-proposal).
+            # The merge lane must resolve proposal_id the same way — an exact branch match
+            # against the branch the build lane would have created for THIS docket.
+            #
+            # Two-step resolution (both require EXACT match — no startswith fallback):
+            #   1. PRIMARY: consult claims.jsonl. The build lane writes one row per
+            #      claimed proposal, containing {cycle_id, proposal_id, lobe}.
+            #      We compute the branch from the claims row's lobe and require it to
+            #      exactly equal pr_branch.  This is the authoritative mapping: the row
+            #      was written atomically by the build lane that opened the PR.
+            #   2. FALLBACK: if claims.jsonl is absent or has no row for this cycle/branch,
+            #      derive the expected branch from the DOCKET-level lobe (the same source
+            #      the build lane uses at line 475/517) and require an exact match.
+            #      This handles the in-flight window before claims.jsonl is committed.
+            #
+            # If neither produces an exact match, skip with no_matching_proposal.
+            # Under NO circumstances does a namespace-prefix test (startswith) gate a merge.
+            proposal_id = _resolve_proposal_id_for_branch(
+                pr_branch, cycle_id, docket, dp, root=root
+            )
 
             if proposal_id is None:
                 per["status"] = "no_matching_proposal"
-                per["reason"] = "could not match PR branch to a docket proposal"
+                per["reason"] = (
+                    f"could not exactly match PR branch {pr_branch!r} to a docket proposal — "
+                    "skipping (never merge under a mis-matched grant)"
+                )
+                log.warning("MERGE: PR #%s %s", pr_number, per["reason"])
                 results.append(per)
                 continue
 
