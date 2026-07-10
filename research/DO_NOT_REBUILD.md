@@ -111,3 +111,4 @@ curated, not generated. Do not build an extractor.
   Signal Commons rulings, R-ORTH RUL-ORTH-1..8, nontech-bottom RUL-18..29.
 - `docs/ACTIVE_BUILD_MAP.md` — the generated temporal complement (open PRs, collisions,
   recent merges). Regenerate: `python scripts/build_active_build_map.py`.
+| CPI revision-direction model (first→latest MoM revision prediction) | KILLED before attempt — CPI revisions are annual seasonal-recalc only, tiny magnitude; empirics on our own vintage store show no exploitable structure | MRI-R38, `MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md` §12.3 |
