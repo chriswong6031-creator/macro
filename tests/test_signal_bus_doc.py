@@ -73,9 +73,10 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 361, (
-        f"Expected 361 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 362, (
+        f"Expected 362 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Metabolism V2-B unit-6 added metabolism-build-claims = 361->362;"
         " (Metabolism V2-C added lobe-charters+lifecycle+authority-audit artifacts = 357->361;"
         " (NAR-W3 review fixes added narrative-first-coverage, stock-narrative-witness-history = 350->353"
         " (includes 1 artifact from other PRs merged during rebase);"
