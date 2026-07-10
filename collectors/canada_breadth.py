@@ -58,7 +58,7 @@ class CanadaBreadthAdapter(BreadthAdapter):
                 age = (pd.Timestamp.utcnow().tz_localize(None) - cached.index.max()).days
                 if age <= 14:
                     fresh = self._download_closes(tickers, "1mo")
-                    closes = fresh.combine_first(cached)
+                    closes = self._merge_refreshed(fresh, cached)  # split-seam repair
             if closes is None:
                 days = self.cfg["lookback_days_live"]
                 closes = self._download_closes(tickers, f"{max(1, days // 365 + 1)}y")
