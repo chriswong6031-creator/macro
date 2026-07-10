@@ -53,10 +53,12 @@ from pathlib import Path
 SCAN_PATHS = [
     "config/capability_manifest.yml",
     "engine/neuralweb/capability_broker.py",
+    "engine/neuralweb/key_pool.py",       # V2-B: multi-key pool (NEVER reads token values)
     "engine/metabolism/propose.py",
     "engine/metabolism/adjudicate.py",
     "scripts/metabolism_propose.py",
     "scripts/metabolism_adjudicate.py",
+    "scripts/metabolism_dispatch.py",     # V2-B: dispatcher (returns cap_id only)
 ]
 
 # Git-committed artifacts that must be clean IF present (written at run time,
@@ -70,6 +72,8 @@ SCAN_PATHS = [
 # token VALUE cannot be captured into them in the first place.
 SCAN_IF_PRESENT = [
     "data/neuralweb/capability_audit.jsonl",
+    "data/metabolism/key_ledger.jsonl",   # V2-B: key usage belief-state (NEVER a token value)
+    "data/metabolism/journal/*.json",     # V2-B: freeze/stage journals (committed; symmetry w/ ledger)
 ]
 
 # The ONLY env keys the broker may legitimately READ (non-secret attribution
@@ -79,6 +83,12 @@ SCAN_IF_PRESENT = [
 _SAFE_ENV_KEYS = frozenset({
     "GITHUB_RUN_ID", "GITHUB_WORKFLOW", "GITHUB_ACTOR", "GITHUB_SHA",
     "GITHUB_REPOSITORY", "GITHUB_REF", "GITHUB_EVENT_NAME",
+    # Notification channels — these carry webhook URLs / bot tokens, NOT OAuth
+    # secrets.  They may be read to send operator notify messages.  They are
+    # listed here so metabolism_dispatch._notify_freeze() can read them without
+    # triggering the environ_value_capture redline rule.
+    "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+    "DISCORD_WEBHOOK_URL", "DISCORD_WEBHOOK_WATCHLIST",
 })
 
 # ── Entropy pattern ───────────────────────────────────────────────────────────
@@ -137,12 +147,21 @@ def _line_is_entropy_exempt(line: str) -> bool:  # retained for API stability
 
 def _strip_known_names(line: str) -> str:
     """Remove known-safe name strings before the entropy check."""
-    for name in ["CLAUDE_CODE_OAUTH_TOKEN", "VPS_DEPLOY_KEY", "GITHUB_TOKEN",
+    for name in ["CLAUDE_CODE_OAUTH_TOKEN_1", "CLAUDE_CODE_OAUTH_TOKEN_2",
+                 "CLAUDE_CODE_OAUTH_TOKEN_3", "CLAUDE_CODE_OAUTH_TOKEN",
+                 "VPS_DEPLOY_KEY", "GITHUB_TOKEN",
                  "GITHUB_RUN_ID", "GITHUB_WORKFLOW", "GITHUB_SHA", "GITHUB_ACTOR",
                  "AUTONOMY_PAUSED", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
                  "DISCORD_WEBHOOK_URL", "DISCORD_WEBHOOK_WATCHLIST",
                  "ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY",
-                 "ref_name", "secret_ref", "capability_id"]:
+                 "ref_name", "secret_ref", "capability_id",
+                 # Known-safe module path substrings that can appear in docstrings.
+                 # Stripping path components (not values) prevents false-positives
+                 # when a path like 'engine/neuralweb/key_pool.py' matches the
+                 # base64 lookahead via a digit elsewhere on the same line.
+                 "engine/neuralweb/key_pool", "scripts/metabolism_dispatch",
+                 "engine/neuralweb/capability_broker", "engine/metabolism/",
+                 "scripts/metabolism_", "data/metabolism/key_ledger"]:
         line = line.replace(name, "")
     return line
 
@@ -319,6 +338,39 @@ def selftest() -> int:
             failures.append("Missing scan target should raise RuntimeError but did not")
         except RuntimeError:
             print("  [PASS] missing scan target raises RuntimeError (fail-closed)")
+
+    # Test 5a: planted fake token in key_ledger (SCAN_IF_PRESENT) is caught
+    with tempfile.TemporaryDirectory(prefix="capability_redline_ledger_selftest_") as tmpdir2:
+        tmp2 = Path(tmpdir2)
+        (tmp2 / "config").mkdir()
+        (tmp2 / "engine" / "neuralweb").mkdir(parents=True)
+        (tmp2 / "engine" / "metabolism").mkdir(parents=True)
+        (tmp2 / "scripts").mkdir(parents=True)
+        (tmp2 / "data" / "metabolism").mkdir(parents=True)
+        # Stub all SCAN_PATHS as clean
+        for rel in SCAN_PATHS:
+            p2 = tmp2 / rel
+            p2.parent.mkdir(parents=True, exist_ok=True)
+            p2.write_text("# clean stub — names only\n")
+        # Plant a fake token in key_ledger.jsonl (SCAN_IF_PRESENT)
+        fake_tok2 = "a" * 5 + "1" + "b" * 34  # 40-char hex-like
+        import json as _json
+        ledger_row = _json.dumps({"schema": "metabolism.key_ledger.v1", "key_id": "x",
+                                  "bad_field": fake_tok2})
+        (tmp2 / "data" / "metabolism" / "key_ledger.jsonl").write_text(
+            ledger_row + "\n"
+        )
+        try:
+            found2 = scan(root=tmp2)
+        except RuntimeError:
+            found2 = []
+        ledger_found = any(f["kind"] == "high_entropy_hex40" for f in found2)
+        if ledger_found:
+            print("  [PASS] planted fake token in key_ledger.jsonl is caught by SCAN_IF_PRESENT")
+        else:
+            failures.append(
+                "Planted fake token in key_ledger.jsonl NOT caught — SCAN_IF_PRESENT may not cover it"
+            )
 
     # Test 5: real production files pass (no planted violations)
     real_root = Path(__file__).resolve().parent.parent

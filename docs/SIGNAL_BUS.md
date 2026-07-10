@@ -35,6 +35,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mastermind-feedback-contract | 2 |
 | metabolism-phase-a | 5 |
 | metabolism-phase-v2a | 4 |
+| metabolism-phase-v2b | 1 |
 | metabolism-phase0 | 2 |
 | momoedge | 8 |
 | narrative-ignition | 2 |
@@ -71,7 +72,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 207 |
-| infrastructure | 84 |
+| infrastructure | 85 |
 | scored | 4 |
 | shadow | 54 |
 
@@ -79,7 +80,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 335 |
+| git | 336 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -359,6 +360,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-insight-bus | `data/metabolism/insight_bus.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | metabolism-agenda | `data/metabolism/agenda/` | json | daily-engine | shadow | 0 | 0 |
 | metabolism-trajectory | `data/metabolism/trajectory.jsonl` | jsonl | daily-engine | shadow | 0 | 0 |
+
+### metabolism-phase-v2b
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| metabolism-key-ledger | `data/metabolism/key_ledger.jsonl` | jsonl | on-demand | infrastructure | 2 | 0 |
 
 ### metabolism-phase0
 
@@ -1131,6 +1138,14 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/metabolism_journal.py`
 - **extra writers:**
   - scripts/metabolism_verify.py
+  - scripts/metabolism_dispatch.py
+
+### metabolism-key-ledger
+
+- **path:** `data/metabolism/key_ledger.jsonl`
+- **declared producer:** `engine/neuralweb/key_pool.py`
+- **extra writers:**
+  - scripts/metabolism_dispatch.py
 
 ### moat-falsifier-sensors
 

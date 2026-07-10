@@ -78,3 +78,14 @@ files:
       V2-A vendored Fable-mode doctrine (R-V2-2): five commitments + pre-send
       gate. Injected into orchestrator system prompt when model is Opus-class.
       IMMUTABLE — loop PRs may not modify. Runner never reads ~/.
+
+  # --- V2-B IMMUTABLE configs (R-V2-8) ---
+
+  - path: config/metabolism_schedule.yml
+    sha256: a80d83f41fe6680a08728dce0a4a58ee1ba792c7afba41520362c5de8c7745ef
+    role: dispatch_schedule
+    notes: >
+      V2-B dispatch spread table (R-V2-8). Operator-ratified time-of-day
+      gating so lobe activations are spread across UTC hours — the loop never
+      fires 40 sessions at once. IMMUTABLE — loop PRs may not modify.
+      Dispatcher reads it; it never writes to it.

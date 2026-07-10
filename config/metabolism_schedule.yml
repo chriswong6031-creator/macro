@@ -1,0 +1,82 @@
+# config/metabolism_schedule.yml — Metabolism V2-B dispatch spread table (R-V2-8).
+#
+# IMMUTABLE: this file is an operator-ratified policy document.
+# Loop-authored PRs may NOT modify it (enforced by check_self_mod_fence.py).
+# Changes require a T2 operator-tap.
+#
+# PURPOSE: spread lobe activations across UTC hours so the loop never fires
+# 40 sessions at once and burns a 5h window in one burst.
+#
+# SEMANTICS:
+#   dispatch_windows: list of time windows.  Each window names a set of stages
+#   (by stage ID) and the UTC hours in which they may be dispatched.
+#   A stage not in any window is allowed at any hour (fail-open).
+#   The dispatcher checks utc_hours at pick_key() time; if the current hour is
+#   not in the stage's window, the key is not issued and the caller exits 0.
+#
+# With 1 key: all windows still apply; the key is issued sequentially in each
+# allowed window.  The serialisation is the expected degraded behaviour.
+#
+# Schema: metabolism_schedule.v1
+schema: metabolism_schedule.v1
+generated_at: "2026-07-10"
+owner_program: metabolism-phase-v2b
+
+# ── Dispatch windows ────────────────────────────────────────────────────────
+#
+# Windows are defined in UTC hours (0-23).  The loop runs on a cron that
+# fires multiple times per day; the stage is only dispatched in its window.
+#
+# Design: three ~8h slots covering the 24h day.
+#   Slot A (00-07 UTC): organism_state + insight_bus passes (compute-heavy)
+#   Slot B (08-15 UTC): sense + propose passes for lobe 1-2
+#   Slot C (16-23 UTC): sense + propose for lobe 3-N + verify passes
+#
+# With 3 keys this means each slot uses a different key (LRU picks the least
+# used in the 5h window).  With 1 key the single key handles all slots but
+# the spread still prevents a burst.
+
+dispatch_windows:
+  - id: slot_a_infra
+    description: "Infrastructure passes — organism_state, insight_bus, anomaly_monitor"
+    utc_hours: [0, 1, 2, 3, 4, 5, 6, 7]
+    stages:
+      - organism_state
+      - insight_bus
+      - anomaly_monitor
+      - agenda
+
+  - id: slot_b_sense_propose
+    description: "Sense + Propose passes for the first lobe batch"
+    utc_hours: [8, 9, 10, 11, 12, 13, 14, 15]
+    stages:
+      - sense
+      - propose
+      - preflight
+
+  - id: slot_c_verify_learn
+    description: "Verify + Learn + additional Propose passes"
+    utc_hours: [16, 17, 18, 19, 20, 21, 22, 23]
+    stages:
+      - verify
+      - learn
+      - adjudicate
+      - dispatch
+
+# ── Budget hints ─────────────────────────────────────────────────────────────
+# These are advisory only; hard caps live in config/metabolism_budget.yml.
+# The dispatcher uses these to decide WHEN to issue a key; actual spend is
+# tracked in data/metabolism/key_ledger.jsonl.
+
+budget_hints:
+  # Maximum sessions per key per 5h window before preferring another key.
+  # With 3 keys present this gives ~15 sessions per 5h window system-wide.
+  max_window_sessions_per_key: 5
+
+  # Conservative weekly reserve: keep this fraction of estimated weekly budget
+  # for late-week critical runs (avoid burning all quota on Mon-Thu).
+  weekly_reserve_pct: 0.15
+
+  # Estimated tokens per typical Sonnet session (for weekly_load estimation).
+  # Real token consumption is tracked per-row in key_ledger.jsonl.
+  est_tokens_per_session: 50000
