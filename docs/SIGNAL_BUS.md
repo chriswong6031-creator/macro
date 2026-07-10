@@ -33,6 +33,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
 | mastermind-feedback-contract | 2 |
+| metabolism-phase-a | 5 |
 | metabolism-phase0 | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
@@ -68,15 +69,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 201 |
-| infrastructure | 81 |
+| infrastructure | 84 |
 | scored | 4 |
-| shadow | 48 |
+| shadow | 50 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 320 |
+| git | 325 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -333,6 +334,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-mastermind-nw-feedback | `site/mastermind/nw_feedback.json` | json | on-demand | display | 1 | 0 |
 | mastermind-feedback-summary | `data/governance/mastermind_feedback_summary.json` | json | daily-engine | display | 0 | 0 |
+
+### metabolism-phase-a
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| metabolism-journal | `data/metabolism/journal/` | json | on-demand | infrastructure | 4 | 0 |
+| metabolism-budget-ledger | `data/metabolism/budget_ledger.json` | json | on-demand | infrastructure | 1 | 0 |
+| metabolism-til-fitness | `data/metabolism/fitness/til.json` | json | daily-engine | shadow | 1 | 0 |
+| metabolism-verify | `data/metabolism/verify/` | json | on-demand | infrastructure | 1 | 0 |
+| metabolism-digest | `data/metabolism/digest/` | other | weekly | shadow | 0 | 0 |
 
 ### metabolism-phase0
 
@@ -1084,6 +1095,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/build_mastermind_feedback_summary.py`
 - **extra writers:**
   - engine/neuralweb/mastermind_feedback.py — build_and_write() writes the artifact
+
+### metabolism-journal
+
+- **path:** `data/metabolism/journal/`
+- **declared producer:** `scripts/metabolism_journal.py`
+- **extra writers:**
+  - scripts/metabolism_verify.py
 
 ### moat-falsifier-sensors
 

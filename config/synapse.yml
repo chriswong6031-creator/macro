@@ -9640,3 +9640,134 @@ artifacts:
       ts, run_id, workflow, actor, sha, capability_id, lane}. Never contains
       secret values — only ref names and GitHub Actions env attribution fields.
       Used for operator audit (§6 of masterplan: weekly digest + audit-tape link).
+
+  # --- Metabolism Phase A (TIL pilot loop spine) ---
+
+  metabolism-journal:
+    path: data/metabolism/journal/
+    format: json
+    producer: scripts/metabolism_journal.py
+    known_extra_writers:
+      - scripts/metabolism_verify.py
+    owner_program: metabolism-phase-a
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: metabolism.journal.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_budget.py
+      - scripts/metabolism_verify.py
+      - scripts/metabolism_gc.py
+      - scripts/metabolism_digest.py
+    external_consumers: []
+    notes: >
+      Metabolism Phase A (A1) per-cycle journal directory. Each file
+      data/metabolism/journal/<cycle_id>.json records: cycle_id, stage, status
+      (pending|running|done|failed|noop_paused), auth_ok, artifacts[], next_stage,
+      ts, and per-stage records. Used for resume-off-git semantics and orphan GC.
+      All loop state lives here (stateless-cattle law R-AUT-3).
+
+  metabolism-til-fitness:
+    path: data/metabolism/fitness/til.json
+    format: json
+    producer: scripts/build_til_fitness.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-a
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: metabolism.til_fitness.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_digest.py
+    external_consumers: []
+    notes: >
+      Metabolism Phase A (A3) TIL fitness card. Typed sensor rollup from the
+      immutable TIL graders (foresight_leadlag, theme_placebo, qledger_falsifier).
+      Four sensors: front_run_lead, placebo_hit_rate, falsifier_honesty,
+      live_leg_quality. All sensors are "accruing" until ~2026-10-15 (first
+      check_by dates). Authority block: is_context_only=True, display-only.
+      LOOP SENSE input — never a scored-path surface.
+
+  metabolism-verify:
+    path: data/metabolism/verify/
+    format: json
+    producer: scripts/metabolism_verify.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-a
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: metabolism.verify.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_digest.py
+    external_consumers: []
+    notes: >
+      Metabolism Phase A (A6) verify records directory. Each file
+      data/metabolism/verify/<cycle_id>.json records the realized fitness delta
+      vs the registered contract: outcome (CONFIRMED|FALSIFIER_TRIPPED|UNVERIFIABLE),
+      regime-aware triage (confirmed→keep, overfit→revert_plan, ambiguous→operator_tap).
+      Revert PLAN artifacts only — execution gated on operator arming. Display-only.
+
+  metabolism-budget-ledger:
+    path: data/metabolism/budget_ledger.json
+    format: json
+    producer: scripts/metabolism_budget.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-a
+    cadence: on-demand
+    storage: git
+    asof_field: updated_at
+    freshness_sla_hours: 8760
+    schema: metabolism.budget_ledger.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_digest.py
+    external_consumers: []
+    notes: >
+      Metabolism Phase A (A7) budget ledger. Append-only within a cycle; tracks
+      USD/token spend per stage against the operator-ratified caps in
+      config/metabolism_budget.yml. Includes per-lobe circuit breaker state:
+      N consecutive failed PRs (default 3) → lobe auto-paused. This file is the
+      sole source of truth for spend enforcement and circuit breaker state.
+
+  metabolism-digest:
+    path: data/metabolism/digest/
+    format: other
+    producer: scripts/metabolism_digest.py
+    known_extra_writers: []
+    owner_program: metabolism-phase-a
+    cadence: weekly
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: null
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Metabolism Phase A (A8) operator digest directory. Weekly markdown files
+      data/metabolism/digest/<YYYY-WNN>.md covering: cycles run, proposals/grants/
+      denies, PRs opened, realized fitness deltas, reverts, budget spent, circuit
+      breaker trips, AUTONOMY_PAUSED state, capability audit tape link.
+      Also sends a Telegram summary via scripts/notify.py. Display-only.
