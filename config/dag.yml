@@ -973,6 +973,11 @@ lanes:
       - id: build_subsector_rotation_china_pages
         module: scripts.build_subsector_rotation_china_pages
         note: non-fatal; W9 lane unification — per-subsector CN detail pages
+      # ── W8-R7: CN MTF upturn organ runs INLINE inside build_china_library.main() ──
+      # compute_cn() is called at end of build_china_library.main() after board arrays
+      # are assembled (see engine/mtf_upturn.py CN lane). No standalone script entry
+      # added here — inline call; parser cannot extract. Output: site/chinastockdata/
+      # mtf_upturn_cn.json + data/mtf_upturn_cn/ledger.jsonl (CN_LANE=asia gate).
       # ── CN Pick Lab (CNPL-R8): runs AFTER build_china_library (library step) ──
       # build_china_library produces the CN snapshot; build_china_pick_lab reads it.
       # Runs in the library-restore step shell loop (after CN library); wired here

@@ -76,6 +76,23 @@
   .sb-table th.sorted { color:var(--text); }
   .sb-table .sarrow { font-size:9px; opacity:.32; margin-left:3px; font-weight:700; }
   .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
+  /* W8-R7: CN MTF upturn panel (reuses dash-mtf-* class names from dashboard.html) */
+  .cn-mtf-tbl { width:100%; border-collapse:collapse; margin-top:7px; font-size:11.5px; }
+  .cn-mtf-tbl th { text-align:left; font-weight:700; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:3px 6px; border-bottom:1px solid var(--line); }
+  .cn-mtf-tbl td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
+  .cn-mtf-tbl tr:hover { background:color-mix(in srgb,var(--muted) 4%,transparent); }
+  .dash-mtf-badge { display:inline-flex; align-items:center; padding:1px 6px; border-radius:10px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
+  .dash-mtf-badge.confirmed { background:color-mix(in srgb,var(--up) 14%,transparent); border:1px solid color-mix(in srgb,var(--up) 36%,transparent); color:var(--up); }
+  .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--info,var(--link)); }
+  .dash-mtf-badge.none { background:color-mix(in srgb,var(--muted) 8%,transparent); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); color:var(--muted); }
+  .dash-mtf-leg { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; }
+  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
+  .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
+  .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+  .dash-mtf-legs { display:flex; gap:3px; align-items:center; }
+  .dash-mtf-phase { font-size:10px; color:var(--muted); }
+  .dash-mtf-k { font-weight:700; font-variant-numeric:tabular-nums; font-size:11px; }
+  @media(max-width:560px){.cn-mtf-tbl{font-size:10px;}.cn-mtf-tbl th,.cn-mtf-tbl td{padding:3px 4px;}}
   /* sector washout→turn boost: row tint + chip (display re-rank only, never a filter) */
   .sb-table tr.sbt2 td { background:color-mix(in srgb,var(--up) 9%,transparent); }
   .sb-table tr.sbt1 td { background:color-mix(in srgb,var(--up) 4.5%,transparent); }
@@ -2518,6 +2535,136 @@
   </div>
   {% endif %}{# /_rd #}
   {% endif %}{# /mode == 'stocks' reversion desk #}
+
+  {# =========== W8-R7: Turn Setups (multi-timeframe) / 多周期转折 =========== #}
+  {# Self-contained panel; does NOT touch standouts card/table markup.          #}
+  {# Data: mtf_upturn_cn (mtf_upturn_cn.v1 artifact, built by build_china_library). #}
+  {% if mode == 'stocks' and mtf_upturn_cn %}
+  {% set _mtf_cn = mtf_upturn_cn %}
+  {% set _mtf_members = _mtf_cn.get('members', {}) %}
+  {% set _mtf_confirmed = _mtf_cn.get('cohort', {}).get('confirmed', []) %}
+  {% set _mtf_watch = _mtf_cn.get('cohort', {}).get('watch', []) %}
+  {% set _mtf_rows_raw = (_mtf_confirmed + _mtf_watch) %}
+  <div class="panel span12" id="cn-mtf-upturn">
+    <h2>{{ t('Turn Setups (multi-timeframe)', '多周期转折形态') }}
+      <span class="help">?<span class="tip tip-wide">
+        <span class="l-en">
+          Forward-graded meter (expected-null; prior sector-level turn in backtest printed NULL — Oracle P8 / DO_NOT_REBUILD §2).
+          Display context only — not a directional signal or a return forecast. Tier = display.
+          <b>Legs:</b> D = daily MACD bull cross (&le;5 sessions); 3D = house 3-day confluence (MACD+StochRSI);
+          W = weekly MACD (confirmed cross &le;3 bars); 2W = biweekly MACD cross.
+          <b>States:</b> UPTURN_CONFIRMED (K&ge;3 incl. &ge;1 weekly/2W leg) &middot; UPTURN_WATCH (K&ge;2).
+          <b>Monthly phase</b> is anti-trap context only (not a gate).
+          CN analog of TS-R3/TS-R4; promotion question earliest 2027.
+          Universe: board buy + ripening + THS act-now theme members (&le;400 names).
+          Data lands after nightly asia close. Accruing from ship date.
+        </span>
+        <span class="l-zh">
+          前瞻计量（预期空值；回测中板块级别拐点为NULL — Oracle P8 / DO_NOT_REBUILD §2）。
+          仅展示参考，非方向信号或收益预测。层级=展示。
+          <b>信号腿：</b>D=日线MACD金叉（5日内）；3D=本系统3日共振（MACD+StochRSI）；
+          W=周线MACD（确认交叉&le;3根K线）；2W=双周MACD交叉。
+          <b>状态：</b>UPTURN_CONFIRMED（K&ge;3含&ge;1周/双周腿）&middot; UPTURN_WATCH（K&ge;2）。
+          <b>月线阶段</b>仅作防陷阱参考（非门控）。
+          CN版本对应TS-R3/TS-R4；晋升问题最早2027年。
+          覆盖范围：买入榜单+成熟区+THS立即行动主题成员（&le;400只）。数据在每晚亚洲收盘后更新。
+        </span>
+      </span></span>
+      {% if _mtf_cn.get('as_of') %}<span class="note" style="text-transform:none"> &middot; {{ _mtf_cn.as_of }}</span>{% endif %}
+    </h2>
+    {% if _mtf_rows_raw %}
+    {# Show UPTURN_CONFIRMED first, then UPTURN_WATCH; cap 12 + show-more #}
+    {% set _mtf_all = [] %}
+    {% for _sym in _mtf_confirmed %}{% if _mtf_members.get(_sym) %}{% set _ = _mtf_all.append((_sym, _mtf_members[_sym])) %}{% endif %}{% endfor %}
+    {% for _sym in _mtf_watch %}{% if _mtf_members.get(_sym) %}{% set _ = _mtf_all.append((_sym, _mtf_members[_sym])) %}{% endif %}{% endfor %}
+    {% set _mtf_visible = _mtf_all[:12] %}
+    {% set _mtf_hidden = _mtf_all[12:] %}
+    <table class="cn-mtf-tbl">
+      <thead>
+        <tr>
+          <th class="l">{{ t('Ticker', '代码') }}</th>
+          <th><span class="l-en">State</span><span class="l-zh">状态</span></th>
+          <th class="r">K</th>
+          <th><span class="l-en">Legs (D / 3D / W / 2W)</span><span class="l-zh">信号腿 (D / 3D / W / 2W)</span></th>
+          <th><span class="l-en">Monthly phase</span><span class="l-zh">月线阶段</span></th>
+          <th class="l"><span class="l-en">Lookup</span><span class="l-zh">详情</span></th>
+        </tr>
+      </thead>
+      <tbody id="cn-mtf-tbody-vis">
+      {% for _sym, _td in _mtf_visible %}
+      {% set _state = _td.get('state', 'NONE') %}
+      {% set _legs = _td.get('legs', {}) %}
+      <tr>
+        <td class="l"><b>{{ _sym }}</b></td>
+        <td>
+          <span class="dash-mtf-badge {{ 'confirmed' if _state == 'UPTURN_CONFIRMED' else 'watch' if _state == 'UPTURN_WATCH' else 'none' }}">
+            <span class="l-en">{{ 'CONFIRMED' if _state == 'UPTURN_CONFIRMED' else 'WATCH' if _state == 'UPTURN_WATCH' else '—' }}</span>
+            <span class="l-zh">{{ '已确认' if _state == 'UPTURN_CONFIRMED' else '观察' if _state == 'UPTURN_WATCH' else '—' }}</span>
+          </span>
+        </td>
+        <td class="r"><span class="dash-mtf-k">{{ _td.get('k', 0) }}</span></td>
+        <td>
+          <div class="dash-mtf-legs">
+            <span class="dash-mtf-leg {{ 'on' if _legs.get('d_macd') else 'off' }}">D</span>
+            <span class="dash-mtf-leg {{ 'on' if _legs.get('d3_confluence') else 'off' }}">3D</span>
+            {% set _wm = _legs.get('w_macd', 'none') %}
+            <span class="dash-mtf-leg {{ 'on' if _wm == 'cross' else 'partial' if _wm == 'approaching' else 'off' }}"{% if _wm == 'approaching' %} style="border-style:dashed"{% endif %}>W</span>
+            <span class="dash-mtf-leg {{ 'on' if _legs.get('w2_macd') else 'off' }}">2W</span>
+          </div>
+        </td>
+        <td class="dash-mtf-phase muted">{{ _td.get('monthly_phase', '—') }}</td>
+        <td class="l"><a href="china_lookup.html#{{ _sym }}" class="muted" style="font-size:11px">{{ t('lookup', '查看') }}</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+      {% if _mtf_hidden %}
+      <tbody id="cn-mtf-tbody-hid" style="display:none">
+      {% for _sym, _td in _mtf_hidden %}
+      {% set _state = _td.get('state', 'NONE') %}
+      {% set _legs = _td.get('legs', {}) %}
+      <tr>
+        <td class="l"><b>{{ _sym }}</b></td>
+        <td>
+          <span class="dash-mtf-badge {{ 'confirmed' if _state == 'UPTURN_CONFIRMED' else 'watch' if _state == 'UPTURN_WATCH' else 'none' }}">
+            <span class="l-en">{{ 'CONFIRMED' if _state == 'UPTURN_CONFIRMED' else 'WATCH' if _state == 'UPTURN_WATCH' else '—' }}</span>
+            <span class="l-zh">{{ '已确认' if _state == 'UPTURN_CONFIRMED' else '观察' if _state == 'UPTURN_WATCH' else '—' }}</span>
+          </span>
+        </td>
+        <td class="r"><span class="dash-mtf-k">{{ _td.get('k', 0) }}</span></td>
+        <td>
+          <div class="dash-mtf-legs">
+            <span class="dash-mtf-leg {{ 'on' if _legs.get('d_macd') else 'off' }}">D</span>
+            <span class="dash-mtf-leg {{ 'on' if _legs.get('d3_confluence') else 'off' }}">3D</span>
+            {% set _wm = _legs.get('w_macd', 'none') %}
+            <span class="dash-mtf-leg {{ 'on' if _wm == 'cross' else 'partial' if _wm == 'approaching' else 'off' }}"{% if _wm == 'approaching' %} style="border-style:dashed"{% endif %}>W</span>
+            <span class="dash-mtf-leg {{ 'on' if _legs.get('w2_macd') else 'off' }}">2W</span>
+          </div>
+        </td>
+        <td class="dash-mtf-phase muted">{{ _td.get('monthly_phase', '—') }}</td>
+        <td class="l"><a href="china_lookup.html#{{ _sym }}" class="muted" style="font-size:11px">{{ t('lookup', '查看') }}</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+      {% endif %}
+    </table>
+    {% if _mtf_hidden %}
+    <button class="lst-more cn-mtf-more" type="button" aria-expanded="false" onclick="(function(b){var h=document.getElementById('cn-mtf-tbody-hid');if(h){var show=h.style.display==='none';h.style.display=show?'':'none';b.setAttribute('aria-expanded',show);}})(this)">
+      <span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _mtf_hidden|length }}) ▾</span>
+      <span class="lm-hide">{{ t('Show less', '收起') }} ▴</span>
+    </button>
+    {% endif %}
+    {% else %}
+    <p class="note">
+      <span class="l-en">No UPTURN_CONFIRMED or UPTURN_WATCH names in today's universe — expected null in this tape.</span>
+      <span class="l-zh">今日覆盖股票中无UPTURN_CONFIRMED或UPTURN_WATCH — 当前行情下预期为空值。</span>
+    </p>
+    {% endif %}
+    <p class="note" style="margin:8px 0 0;font-size:11px">
+      <span class="l-en">Display-tier only. Expected-null forward meter (CN port of TS-R3/TS-R4). Universe: board buy + ripening + THS act-now theme members (&le;400 names). No buy/sell implication — washout-to-turn sector-level construction printed NULL in backtest (Oracle P8 / DO_NOT_REBUILD §2). Promotion clock: earliest 2027.</span>
+      <span class="l-zh">仅展示层。预期空值前瞻计量（TS-R3/TS-R4的中国版本）。覆盖范围：买入榜单+成熟区+THS立即行动主题成员（≤400只）。不含买卖含义——板块级别洗盘转向构建在回测中为NULL（Oracle P8 / DO_NOT_REBUILD §2）。晋升时钟：最早2027年。</span>
+    </p>
+  </div>
+  {% endif %}{# /mode == 'stocks' and mtf_upturn_cn #}
 
   {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch) #}
 

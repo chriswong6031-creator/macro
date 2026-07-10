@@ -2400,6 +2400,32 @@ def main(alpha: dict | None = None) -> dict | None:
             log.warning("china pick_lab snapshot producer failed (%s)", _cnpl_e)
     # ── END CN Pick Lab snapshot producer ─────────────────────────────────────
 
+    # ── W8-R7: CN per-stock MTF upturn organ ──────────────────────────────────
+    # Runs AFTER the board arrays (buy/ripening) exist in wide/setups (required
+    # for universe assembly). Never fatal — the dashboard degrades gracefully.
+    # Asia-lane ledger write gated on CN_LANE=asia (mirrors CNPL-R8 pattern).
+    try:
+        import time as _mtf_time
+        _mtf_t0 = _mtf_time.time()
+        from engine.mtf_upturn import compute_cn as _mtf_cn_compute, write_cn_site_artifact as _mtf_cn_write
+        _mtf_result = _mtf_cn_compute(data_root=config.data_dir(), as_of=as_of)
+        _mtf_site_root = config.ROOT / config.load()["storage"]["site_dir"]
+        _mtf_cn_write(_mtf_result, site_root=_mtf_site_root)
+        log.info(
+            "W8-R7 mtf_upturn_cn: universe=%d confirmed=%d watch=%d elapsed=%.1fs",
+            _mtf_result.get("universe_n", 0),
+            len(_mtf_result.get("cohort", {}).get("confirmed", [])),
+            len(_mtf_result.get("cohort", {}).get("watch", [])),
+            _mtf_result.get("elapsed_s", 0.0),
+        )
+        # Attach FULL result to setups so build_china.py can pass it to the template
+        # directly (avoids re-reading the JSON file and eliminates the ordering hazard).
+        if setups is not None:
+            setups["mtf_upturn_cn"] = _mtf_result
+    except Exception as _mtf_e:  # noqa: BLE001 — additive, never fatal
+        log.warning("W8-R7 mtf_upturn_cn failed (%s) — dashboard degrades without MTF panel", _mtf_e)
+    # ── END W8-R7 CN MTF upturn organ ─────────────────────────────────────────
+
     return setups
 
 

@@ -707,7 +707,18 @@ def main() -> int:
             forward_log_path = data_dir / "china_sector_cycles" / "forward_log.parquet"
             theme_intel = load_theme_intel(str(baskets_json_path))
             cycle_rows = load_cycle_rows(str(forward_log_path))
-            act_now_v2 = assemble_act_now(sectors, theme_intel, cycle_rows)
+            # W8-R7 rider: load basket_turn_cn artifact for bottoming-watch organ chips
+            _basket_turn_cn: dict | None = None
+            try:
+                _bt_cn_path = site_dir / "chinabasketdata" / "basket_turn_cn.json"
+                if _bt_cn_path.exists():
+                    _basket_turn_cn = json.loads(_bt_cn_path.read_text())
+            except Exception as _bte:  # noqa: BLE001
+                log.debug("basket_turn_cn load failed (%s) — rider omitted", _bte)
+            act_now_v2 = assemble_act_now(
+                sectors, theme_intel, cycle_rows,
+                basket_turn=_basket_turn_cn,
+            )
         except Exception as _e:  # noqa: BLE001 — additive, never fatal
             log.error("china act_now_v2 build failed (%s); skipping", _e)
             act_now_v2 = None
@@ -722,6 +733,7 @@ def main() -> int:
             "pref": latest.get("preference_check", {}),
             "actions": _china_action_board(sectors),
             "act_now_v2": act_now_v2,            # W8-R3: four-lane board (stocks mode)
+            "mtf_upturn_cn": None,               # W8-R7: populated after library call below
             "health": _health_rows(),
             "index_health": _china_index_health(),  # macro-page index-health strip
             "alloc_card": _china_alloc_card(),       # China Income Vector button (blue card)
@@ -876,6 +888,12 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china stock library build failed (%s); skipping", e)
         vm["setups"] = setups
+        # W8-R7: populate mtf_upturn_cn from in-memory setups result (written by library
+        # during the call above).  Reading here — AFTER build_china_library.main() — ensures
+        # the current cycle's data is always used, even on the very first deploy when no
+        # pre-existing artifact file is present on disk.
+        if setups is not None:
+            vm["mtf_upturn_cn"] = setups.get("mtf_upturn_cn")  # full result dict or None
 
         # "Mean-reversion watch" — the VALIDATED A-share signal (3mo within-sector deep
         # dips, screened). Separate from the momentum-anchored setups; Phase 0 showed this

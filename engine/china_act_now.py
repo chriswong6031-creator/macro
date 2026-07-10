@@ -9,6 +9,13 @@ theme_intel  dict|None   – baskets.json['theme_intel'] (entire dict); absent/
 cycle_rows   list[dict]  – latest forward_log rows (from data/china_sector_cycles/
                            forward_log.parquet), each row a dict; None/[] → bottoming
                            lane skipped
+basket_turn  dict|None   – basket_turn_cn.json artifact (W8-R7 rider); absent/None
+                           → organ chips omitted, existing forward_log-only logic
+                           unchanged. Used to add TURNING/CONFIRMED organ chips
+                           to bottoming_watch rows AND upgrade WASHED_OUT/BASING
+                           baskets already in the lane via forward_log Trough+osc
+                           rule. The organ ADDS evidence chips and members; it does
+                           NOT remove rows selected by the forward_log rule.
 
 Output
 ------
@@ -46,6 +53,10 @@ LaneRow = {
     'dual_read':    bool,
     'dual_chip_en': str | None,        # text for secondary chip on reduce_avoid row
     'dual_chip_zh': str | None,
+    # W8-R7 rider — basket-turn organ chip
+    'organ_state':  str | None,        # TURNING | CONFIRMED (from basket_turn_cn)
+    'organ_chip_en': str | None,       # "organ: TURNING (tape)"
+    'organ_chip_zh': str | None,       # "器官：转向（纸带）"
 }
 
 Lane mapping
@@ -131,6 +142,10 @@ def _blank_row(kind: str, id_: str, name: str, name_zh: str | None = None) -> di
         "dual_read": False,
         "dual_chip_en": None,
         "dual_chip_zh": None,
+        # W8-R7 rider fields (organ chip; None when basket_turn absent)
+        "organ_state": None,
+        "organ_chip_en": None,
+        "organ_chip_zh": None,
     }
 
 
@@ -182,6 +197,7 @@ def assemble_act_now(
     sectors: list[dict],
     theme_intel: dict | None,
     cycle_rows: list[dict] | None,
+    basket_turn: dict | None = None,
 ) -> dict[str, Any]:
     """Assemble the four-lane Act-Now v2 board.
 
@@ -192,6 +208,11 @@ def assemble_act_now(
     theme_intel baskets.json['theme_intel'] dict or None
     cycle_rows  list of forward_log row dicts for latest date (both kind='sector'
                 and kind='basket'); None / [] means bottoming lane is empty
+    basket_turn basket_turn_cn.json artifact dict (W8-R7 rider) or None;
+                when present, adds organ chips to bottoming_watch rows for baskets
+                whose state is TURNING or CONFIRMED. Also surfaces WASHED_OUT/
+                BASING baskets already in the lane with an organ-state chip.
+                The organ ADDS evidence — never removes forward_log-selected rows.
 
     Returns
     -------
@@ -310,6 +331,64 @@ def assemble_act_now(
     # Any bottoming-watch id that is also in reduce_avoid already has the
     # dual_chip on the reduce side; the bottoming row keeps its normal copy.
     # (No change needed to bottoming rows — they are shown side-by-side)
+
+    # ── 5. W8-R7 RIDER — basket-turn organ chips ─────────────────────────
+    # The basket_turn_cn artifact (W8-R5) annotates baskets with per-basket
+    # states: FALLING / WASHED_OUT / BASING / TURNING / CONFIRMED.
+    #
+    # For bottoming_watch rows:
+    #   - TURNING or CONFIRMED state → add organ chip ("organ: TURNING (tape)")
+    #   - Other states (WASHED_OUT, BASING) → add organ_state chip only if already in lane
+    #
+    # The organ ADDS chips; it does NOT remove rows. Forward_log Trough+osc
+    # rule remains the gate for inclusion in the lane.
+    if basket_turn:
+        _bt_baskets: dict = basket_turn.get("baskets") or {}
+        # Build a normalized id → organ_state map (strip 'b-' prefix for matching)
+        _organ_state_map: dict[str, str] = {}
+        for _bt_id, _bt_info in _bt_baskets.items():
+            _bt_state = _bt_info.get("state") if isinstance(_bt_info, dict) else None
+            if _bt_state and _bt_state != "NONE":
+                _organ_state_map[_bt_id] = _bt_state
+                # Also register canonical id without 'b-' prefix
+                _canonical = _bt_id[2:] if _bt_id.startswith("b-") else _bt_id
+                _organ_state_map[_canonical] = _bt_state
+
+        # Annotate existing bottoming_watch rows with organ chips
+        _existing_bw_ids: set[str] = set()
+        for _bw_row in bottoming_watch:
+            _bw_id = _bw_row["id"]
+            _existing_bw_ids.add(_bw_id)
+            _canonical_id = _bw_id[2:] if _bw_id.startswith("b-") else _bw_id
+            _organ_st = _organ_state_map.get(_bw_id) or _organ_state_map.get(_canonical_id)
+            if _organ_st:
+                _bw_row["organ_state"] = _organ_st
+                if _organ_st in ("TURNING", "CONFIRMED"):
+                    _bw_row["organ_chip_en"] = f"organ: {_organ_st} (tape)"
+                    _bw_row["organ_chip_zh"] = f"器官：{_organ_st}（纸带）"
+                else:
+                    _bw_row["organ_chip_en"] = f"organ: {_organ_st}"
+                    _bw_row["organ_chip_zh"] = f"器官：{_organ_st}"
+
+        # Surface NEW baskets from organ (TURNING/CONFIRMED) not already in the lane
+        # These are baskets the forward_log Trough+osc rule did not surface but the
+        # organ detects as turning — add them as additional evidence rows.
+        for _org_id, _org_st in _organ_state_map.items():
+            if _org_st not in ("TURNING", "CONFIRMED"):
+                continue
+            if _org_id in _existing_bw_ids:
+                continue
+            # Avoid duplicates from the canonical/b- prefix both mapping
+            _canonical_org = _org_id[2:] if _org_id.startswith("b-") else _org_id
+            if _canonical_org in _existing_bw_ids:
+                continue
+            # Only include if the organ provides TURNING/CONFIRMED
+            _new_bw_row = _blank_row("BASKET", _org_id, _org_id)
+            _new_bw_row["organ_state"] = _org_st
+            _new_bw_row["organ_chip_en"] = f"organ: {_org_st} (tape)"
+            _new_bw_row["organ_chip_zh"] = f"器官：{_org_st}（纸带）"
+            bottoming_watch.append(_new_bw_row)
+            _existing_bw_ids.add(_org_id)
 
     return {
         "lanes": {

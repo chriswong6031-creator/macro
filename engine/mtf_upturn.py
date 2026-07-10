@@ -698,6 +698,456 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# CN lane — universe assembly, price loading, ledger, compute, artifact writer
+# ---------------------------------------------------------------------------
+
+# CN ledger gating: write only in the asia lane (mirrors CNPL-R8).
+_CN_LEDGER_DIR = "mtf_upturn_cn"
+_CN_LEDGER_FILE = "ledger.jsonl"
+
+# CN universe cap (budget constraint — W8-R7)
+CN_UNIVERSE_CAP = 400
+
+DISCLOSURE_CN = (
+    "Expected-NULL forward meter (CN lane). Per-stock K-of-N construction accrues "
+    "display-tier; same legs/thresholds as US organ (TS-R3/TS-R4). "
+    "Promotion question for CN analog earliest 2027 (mirrors US TS-R3/TS-R4 ruling). "
+    "Prior sector-level standalone washout-to-turn constructions printed NULL "
+    "(Oracle P8 P-W1/S-W3; DO_NOT_REBUILD §2 'Washout x turn'); this is a "
+    "different construction (per-stock granularity, no washout seed)."
+)
+
+
+def _cn_ledger_advance_enabled() -> bool:
+    """True only when running in the asia engine lane (CN_LANE=asia)."""
+    return os.environ.get("CN_LANE", "").lower() == "asia"
+
+
+def _cn_ledger_path(data_root: Path | None = None) -> Path:
+    from lib import config
+    root = data_root if data_root is not None else config.data_dir()
+    return root / _CN_LEDGER_DIR / _CN_LEDGER_FILE
+
+
+def _cn_stamp_ledger(
+    transition_rows: list[dict],
+    data_root: Path | None = None,
+) -> int:
+    """Append CN state-transition rows. Asia-lane-only (CN_LANE=asia gate).
+
+    Idempotent: keep-first per (session, symbol).
+    """
+    if not _cn_ledger_advance_enabled():
+        log.debug("mtf_upturn_cn._cn_stamp_ledger: skipped (CN_LANE != asia)")
+        return 0
+    if not transition_rows:
+        return 0
+    try:
+        p = _cn_ledger_path(data_root)
+        existing_rows: list[dict] = []
+        if p.exists():
+            for line in p.read_text().splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        existing_rows.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        existing = {(r.get("symbol"), r.get("session")) for r in existing_rows}
+        appended = 0
+        for t in transition_rows:
+            key = (t.get("symbol"), t.get("session"))
+            if key in existing:
+                continue
+            existing_rows.append(t)
+            existing.add(key)
+            appended += 1
+        if appended:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            content = "\n".join(json.dumps(r, default=str) for r in existing_rows)
+            if content:
+                content += "\n"
+            fd, tmp = tempfile.mkstemp(dir=p.parent, prefix=".cn_ledger_tmp_")
+            try:
+                with os.fdopen(fd, "w") as fh:
+                    fh.write(content)
+                os.replace(tmp, p)
+            except Exception:
+                try:
+                    os.unlink(tmp)
+                except OSError:
+                    pass
+                raise
+        return appended
+    except Exception as e:  # noqa: BLE001
+        log.warning("mtf_upturn_cn._cn_stamp_ledger failed: %s", e)
+        return 0
+
+
+def _cn_load_prior_states(data_root: Path | None = None) -> dict[str, dict]:
+    """Load previous CN session states from ledger for hysteresis."""
+    p = _cn_ledger_path(data_root)
+    if not p.exists():
+        return {}
+    rows: list[dict] = []
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if line:
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    if not rows:
+        return {}
+    prior: dict[str, dict] = {}
+    for row in reversed(rows):
+        sym = row.get("symbol")
+        if sym and sym not in prior:
+            prior[sym] = {
+                "state": row.get("state", "NONE"),
+                "sessions_held": row.get("hysteresis_sessions_held", 0),
+            }
+    return prior
+
+
+def _cn_load_close(
+    sym: str,
+    data_root: Path | None = None,
+    panel: "pd.DataFrame | None" = None,
+) -> "pd.Series | None":
+    """Load CN daily close for sym.
+
+    Priority order (R6.md §1 fallback chain):
+    1. data/china_stocks_raw/<sym>.parquet (per-ticker OHLCV — primary)
+    2. data/china_search/closes.parquet panel column (tracked; works in
+       worktrees/CI since it is git-tracked)
+
+    Returns a DatetimeIndex-indexed float Series or None if < MIN_DAILY_BARS.
+    """
+    from lib import config
+    root = data_root if data_root is not None else config.data_dir()
+
+    # Path 1: per-ticker parquet in china_stocks_raw
+    raw_path = root / "china_stocks_raw" / f"{sym}.parquet"
+    if raw_path.exists():
+        try:
+            df = pd.read_parquet(raw_path)
+            df.index = pd.to_datetime(df.index)
+            col = "close" if "close" in df.columns else None
+            if col is None:
+                for c in df.columns:
+                    if "close" in c.lower():
+                        col = c
+                        break
+            if col:
+                s = df[col].astype(float).dropna().sort_index()
+                if len(s) >= MIN_DAILY_BARS:
+                    return s
+        except Exception as e:
+            log.debug("cn_load_close raw_path failed for %s: %s", sym, e)
+
+    # Path 2: closes.parquet panel column
+    if panel is not None and sym in panel.columns:
+        try:
+            s = panel[sym].dropna().sort_index()
+            s = s.astype(float)
+            if len(s) >= MIN_DAILY_BARS:
+                return s
+        except Exception as e:
+            log.debug("cn_load_close panel failed for %s: %s", sym, e)
+        return None
+
+    # Try loading panel from disk as last resort
+    panel_path = root / "china_search" / "closes.parquet"
+    if panel_path.exists():
+        try:
+            _panel = pd.read_parquet(panel_path)
+            _panel.index = pd.to_datetime(_panel.index)
+            if sym in _panel.columns:
+                s = _panel[sym].dropna().sort_index().astype(float)
+                if len(s) >= MIN_DAILY_BARS:
+                    return s
+        except Exception as e:
+            log.debug("cn_load_close panel_path failed for %s: %s", sym, e)
+
+    return None
+
+
+def _build_cn_universe(
+    data_root: Path | None = None,
+) -> dict[str, list[str]]:
+    """Assemble the CN universe: board buy + ripening + THS act-now theme members.
+
+    Priority order (deduped, capped at CN_UNIVERSE_CAP):
+    1. Board buy tickers (ENTRY + RAN_LATE from china_standouts.json)
+    2. Ripening tickers (READY + BASING from ripening shelf)
+    3. THS theme members of act-now themes (from baskets.json theme_intel.act_now.buy)
+
+    Returns {ticker: [source_tag, ...]}.
+    """
+    from lib import config
+    root = data_root if data_root is not None else config.data_dir()
+    site_cfg = config.load().get("storage", {})
+    site_dir = Path(site_cfg.get("site_dir", "site"))
+
+    ticker_sources: dict[str, list[str]] = {}
+
+    def _add(tickers: list[str], tag: str) -> None:
+        for t in tickers:
+            t = t.strip()
+            if not t:
+                continue
+            ticker_sources.setdefault(t, [])
+            if tag not in ticker_sources[t]:
+                ticker_sources[t].append(tag)
+
+    # 1. Board buy + ripening from china_standouts.json
+    # Primary path: site/factordata/china_standouts.json (written by build_china_library.main())
+    # Fallback: site/chinastockdata/china_standouts.json (legacy path compatibility)
+    standouts_path = site_dir / "factordata" / "china_standouts.json"
+    if not standouts_path.exists():
+        standouts_path = site_dir / "chinastockdata" / "china_standouts.json"
+    if standouts_path.exists():
+        try:
+            sd = json.loads(standouts_path.read_text())
+            buy_tickers = [r.get("ticker") for r in (sd.get("buy") or []) if r.get("ticker")]
+            _add([t for t in buy_tickers if t], "board_buy")
+            rip_tickers = [r.get("ticker") for r in (sd.get("ripening") or []) if r.get("ticker")]
+            _add([t for t in rip_tickers if t], "ripening")
+            rip_fall = [r.get("ticker") for r in (sd.get("ripening_falling") or []) if r.get("ticker")]
+            _add([t for t in rip_fall if t], "ripening_falling")
+        except Exception as e:
+            log.warning("_build_cn_universe: standouts read failed: %s", e)
+    else:
+        log.debug("_build_cn_universe: china_standouts.json absent — board tickers skipped")
+
+    # 2. THS theme members for act-now themes (from baskets.json)
+    baskets_path = site_dir / "chinabasketdata" / "baskets.json"
+    if baskets_path.exists() and len(ticker_sources) < CN_UNIVERSE_CAP:
+        try:
+            bd = json.loads(baskets_path.read_text())
+            ti = bd.get("theme_intel") or {}
+            an = ti.get("act_now") or {}
+            act_now_ids: set[str] = set()
+            for item in (an.get("buy") or []):
+                iid = item.get("id")
+                if iid:
+                    act_now_ids.add(iid)
+            # THS baskets with matching id
+            baskets_ths_path = site_dir / "chinabasketdata" / "baskets_ths.json"
+            if baskets_ths_path.exists() and act_now_ids:
+                ths_data = json.loads(baskets_ths_path.read_text())
+                for basket in (ths_data.get("baskets") or []):
+                    bid = basket.get("id", "")
+                    if bid in act_now_ids:
+                        for m in (basket.get("members") or []):
+                            sym = m.get("symbol", "").strip()
+                            if sym:
+                                _add([sym], f"ths_{bid}")
+            # Also include curated baskets in act-now
+            for basket in (bd.get("baskets") or []):
+                if basket.get("id") in act_now_ids:
+                    for m in (basket.get("members") or []):
+                        sym = m.get("symbol", "").strip()
+                        if sym:
+                            _add([sym], f"basket_{basket['id']}")
+        except Exception as e:
+            log.warning("_build_cn_universe: baskets read failed: %s", e)
+
+    # Cap at CN_UNIVERSE_CAP (priority: board_buy first, then ripening, then theme)
+    if len(ticker_sources) > CN_UNIVERSE_CAP:
+        # Sort by priority: board_buy first, ripening second, theme third
+        def _priority(item: tuple) -> int:
+            tags = item[1]
+            if "board_buy" in tags:
+                return 0
+            if "ripening" in tags or "ripening_falling" in tags:
+                return 1
+            return 2
+        sorted_items = sorted(ticker_sources.items(), key=_priority)
+        ticker_sources = dict(sorted_items[:CN_UNIVERSE_CAP])
+
+    return ticker_sources
+
+
+def compute_cn(
+    data_root: Path | None = None,
+    as_of: str | None = None,
+    panel: "pd.DataFrame | None" = None,
+) -> dict:
+    """Compute mtf_upturn_cn.v1 for the CN universe.
+
+    Returns the full site artifact. Never raises (additive pattern).
+    """
+    try:
+        return _compute_cn_inner(data_root, as_of, panel)
+    except Exception as e:  # noqa: BLE001
+        log.error("mtf_upturn_cn.compute_cn crashed: %s", e)
+        return {
+            "schema": "mtf_upturn_cn.v1",
+            "as_of": as_of or date.today().isoformat(),
+            "universe_n": 0,
+            "skipped_n": 0,
+            "members": {},
+            "cohort": {"confirmed": [], "watch": []},
+            "authority": AUTHORITY,
+            "tier": "display",
+            "disclosure": DISCLOSURE_CN,
+            "error": str(e),
+        }
+
+
+def _compute_cn_inner(
+    data_root: Path | None,
+    as_of: str | None,
+    panel: "pd.DataFrame | None",
+) -> dict:
+    t0 = time.time()
+
+    universe = _build_cn_universe(data_root)
+    prior_states = _cn_load_prior_states(data_root)
+
+    # Lazily load closes panel once — reused across all fallbacks
+    if panel is None:
+        from lib import config
+        root = data_root if data_root is not None else config.data_dir()
+        panel_path = root / "china_search" / "closes.parquet"
+        if panel_path.exists():
+            try:
+                panel = pd.read_parquet(panel_path)
+                panel.index = pd.to_datetime(panel.index)
+                log.debug("mtf_upturn_cn: loaded closes panel (%d rows x %d cols)",
+                          len(panel), len(panel.columns))
+            except Exception as e:
+                log.warning("mtf_upturn_cn: panel load failed: %s", e)
+                panel = None
+
+    universe_n = 0
+    skipped_n = 0
+    members_out: dict[str, Any] = {}
+    transition_rows: list[dict] = []
+    confirmed_list: list[str] = []
+    watch_list: list[str] = []
+    max_bar_date: str | None = None
+
+    for sym, source_tags in sorted(universe.items()):
+        close = _cn_load_close(sym, data_root, panel)
+        if close is None:
+            skipped_n += 1
+            log.debug("mtf_upturn_cn: skipped %s (insufficient data)", sym)
+            continue
+
+        universe_n += 1
+        sym_asof = str(close.index[-1].date())
+        if max_bar_date is None or sym_asof > max_bar_date:
+            max_bar_date = sym_asof
+
+        prior = prior_states.get(sym, {})
+        prior_state = prior.get("state", "NONE")
+        prior_held = prior.get("sessions_held", 0)
+
+        try:
+            result = _compute_symbol(sym, close, prior_state, prior_held)
+        except Exception as e:
+            log.debug("mtf_upturn_cn: %s compute failed: %s", sym, e)
+            continue
+
+        state = result["state"]
+        k = result["k"]
+        raw_state = result["raw_state"]
+
+        if state == "UPTURN_CONFIRMED":
+            confirmed_list.append(sym)
+        elif state == "UPTURN_WATCH":
+            watch_list.append(sym)
+
+        # Hysteresis held counter
+        if state == "UPTURN_CONFIRMED" and raw_state != "UPTURN_CONFIRMED":
+            new_held = prior_held + 1
+        else:
+            new_held = 0
+
+        # Output record for all non-NONE states
+        if state != "NONE":
+            members_out[sym] = {
+                "state": state,
+                "k": k,
+                "legs": result["legs"],
+                "monthly_phase": result["monthly_phase"],
+                "htf_coverage": result["htf_coverage"],
+                "sources": source_tags,
+            }
+            transition_rows.append({
+                "session": sym_asof,
+                "symbol": sym,
+                "state": state,
+                "k": k,
+                "legs": result["legs"],
+                "sources": source_tags,
+                "hysteresis_sessions_held": new_held,
+            })
+
+    computed_asof = as_of
+    if computed_asof is None:
+        if max_bar_date is not None:
+            computed_asof = max_bar_date
+        else:
+            log.warning("mtf_upturn_cn: universe empty — falling back to date.today()")
+            computed_asof = date.today().isoformat()
+
+    # Stamp forward ledger (asia-lane only)
+    _cn_stamp_ledger(transition_rows, data_root)
+
+    elapsed = time.time() - t0
+    log.info(
+        "mtf_upturn_cn: universe=%d skipped=%d confirmed=%d watch=%d elapsed=%.1fs",
+        universe_n, skipped_n, len(confirmed_list), len(watch_list), elapsed,
+    )
+
+    if elapsed > 90:
+        log.warning(
+            "mtf_upturn_cn: elapsed %.1fs > 90s budget — consider reducing universe "
+            "(board_buy=%d priority names; reduce theme members if needed)",
+            elapsed,
+            sum(1 for tags in universe.values() if "board_buy" in tags),
+        )
+
+    return {
+        "schema": "mtf_upturn_cn.v1",
+        "as_of": computed_asof,
+        "universe_n": universe_n,
+        "skipped_n": skipped_n,
+        "elapsed_s": round(elapsed, 2),
+        "members": members_out,
+        "cohort": {
+            "confirmed": sorted(confirmed_list),
+            "watch": sorted(watch_list),
+        },
+        "authority": AUTHORITY,
+        "tier": "display",
+        "disclosure": DISCLOSURE_CN,
+    }
+
+
+def write_cn_site_artifact(
+    result: dict,
+    site_root: Path | None = None,
+) -> Path:
+    """Write site/chinastockdata/mtf_upturn_cn.json. Returns written path."""
+    from lib import config
+    if site_root is None:
+        site_root = config.ROOT / config.load()["storage"]["site_dir"]
+    out_dir = site_root / "chinastockdata"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "mtf_upturn_cn.json"
+
+    payload = json.dumps(result, separators=(",", ":"), default=str)
+    out_path.write_text(payload + "\n", encoding="utf-8")
+    log.info("mtf_upturn_cn: wrote %s (%dKB)", out_path, len(payload.encode()) // 1024)
+    return out_path
+
+
+# ---------------------------------------------------------------------------
 # Site artifact writer
 # ---------------------------------------------------------------------------
 
