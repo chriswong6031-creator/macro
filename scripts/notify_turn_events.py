@@ -18,6 +18,17 @@ EVENT SOURCES
     while slow reco is NOT in {enter, accumulate}.
     Fire at most once per basket-day (state-day dedup).
 
+(d) MTF upturn confirmed cohort (site/stockdata/mtf_upturn.json) — TS-R7
+    Fires at most once per session-day when cohort.confirmed is non-empty.
+    Dedup key: (kind="mtf_upturn_confirmed", "cohort", date).
+    DT-R14: cohort-level key, NOT per-symbol.
+
+(e) MTF upturn Mag7 transition (site/stockdata/mtf_upturn.json) — TS-R7
+    Fires once per Mag7 member per session-day on entry to UPTURN_CONFIRMED.
+    Transition detected via last-seen state stored in notify_state.json.
+    Dedup key: (kind="mtf_upturn_mag7", SYM, date).
+    Fail-open: missing/malformed artifact does not affect sources (a)–(c).
+
 NOTE ON DEDUP SEMANTICS: all three detectors use state-day dedup — they fire
 once per calendar day per subject while the state is active, NOT only on the
 first transition into the state.  Masterplan §5 specifies "dedup per state-day".
@@ -79,6 +90,7 @@ _TURN_WATCH_PATH = _SITE_BASKETDATA / "turn_watch.json"
 _SHOCK_STATE_PATH = _SITE_LIVE / "shock_state.json"
 _BASKET_PULSE_PATH = _SITE_LIVE / "basket_pulse.json"
 _NOTIFY_STATE_PATH = _SITE_LIVE / "notify_state.json"
+_MTF_UPTURN_PATH = ROOT / "site" / "stockdata" / "mtf_upturn.json"
 
 # ---------------------------------------------------------------------------
 # Copy constants (FT-R13 compliant)
@@ -89,6 +101,9 @@ _FADE_COPY = "violent flips fade 58% at T+1 (n=26)"
 
 # Forbidden words that must never appear in emitted copy.
 FORBIDDEN_WORDS = frozenset(["buy", "sell", "long", "short", "add", "chase"])
+
+# Mag7 member set (mirrors engine/mtf_upturn.py MAG7 constant).
+MAG7 = frozenset(["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"])
 
 # ---------------------------------------------------------------------------
 # Dedup state (site-only write, FT-R5)
@@ -225,6 +240,83 @@ def _tape_disagreement_message(
         f"· as-of {tape_as_of} "
         f"· display-tier, expected-null meter "
         f"· {_FADE_COPY}"
+    )
+    _assert_no_forbidden_words(msg)
+    return msg
+
+
+def _mtf_upturn_cohort_message(
+    confirmed: list[str],
+    tickers: dict,
+    as_of: str,
+) -> str:
+    """Build FT-R13-compliant MTF UPTURN CONFIRMED cohort alert message.
+
+    Format: cohort summary line + up to 10 per-symbol detail lines.
+    Copy contract: state name, evidence legs, as-of, fade base rate.
+    No direction words (buy/sell/long/short/add/chase).
+    """
+    n = len(confirmed)
+    preview = confirmed[:8]
+    preview_str = ", ".join(preview)
+    if n > 8:
+        preview_str += "…"
+
+    lines = [
+        f"MTF UPTURN CONFIRMED — {n} names ({preview_str})"
+        f" | legs: D-MACD/3D-confluence/W-MACD/2W-MACD K-of-N"
+        f" | as-of {as_of}"
+        f" | display-tier forward meter; {_FADE_COPY}"
+    ]
+
+    # Per-symbol detail lines (up to 10)
+    leg_keys = ("d_macd", "d3_confluence", "w_macd", "w2_macd")
+    leg_glyphs = {"d_macd": "D-MACD", "d3_confluence": "3D", "w_macd": "W-MACD", "w2_macd": "2W"}
+    for sym in confirmed[:10]:
+        ticker_data = tickers.get(sym, {})
+        k = ticker_data.get("k", "?")
+        legs = ticker_data.get("legs", {})
+        # Build glyph string: active legs shown, w_macd special (cross vs approaching vs none)
+        active_glyphs = []
+        for leg in leg_keys:
+            val = legs.get(leg)
+            if leg == "w_macd":
+                if val == "cross":
+                    active_glyphs.append(leg_glyphs[leg])
+            elif val:
+                active_glyphs.append(leg_glyphs[leg])
+        glyphs_str = "+".join(active_glyphs) if active_glyphs else "–"
+        lines.append(f"  {sym}: K={k} [{glyphs_str}]")
+
+    msg = "\n".join(lines)
+    _assert_no_forbidden_words(msg)
+    return msg
+
+
+def _mtf_upturn_mag7_message(sym: str, k: int | str, legs: dict, as_of: str) -> str:
+    """Build FT-R13-compliant Mag7 UPTURN_CONFIRMED entry alert message.
+
+    Triggered when a Mag7 member transitions INTO UPTURN_CONFIRMED state.
+    Copy contract: state name, evidence legs, as-of, fade base rate.
+    No direction words.
+    """
+    leg_keys = ("d_macd", "d3_confluence", "w_macd", "w2_macd")
+    leg_glyphs = {"d_macd": "D-MACD", "d3_confluence": "3D", "w_macd": "W-MACD", "w2_macd": "2W"}
+    active_glyphs = []
+    for leg in leg_keys:
+        val = legs.get(leg)
+        if leg == "w_macd":
+            if val == "cross":
+                active_glyphs.append(leg_glyphs[leg])
+        elif val:
+            active_glyphs.append(leg_glyphs[leg])
+    glyphs_str = "+".join(active_glyphs) if active_glyphs else "–"
+
+    msg = (
+        f"MTF UPTURN CONFIRMED — Mag7 member {sym} entered state"
+        f" | K={k} [{glyphs_str}]"
+        f" | as-of {as_of}"
+        f" | display-tier forward meter; {_FADE_COPY}"
     )
     _assert_no_forbidden_words(msg)
     return msg
@@ -406,6 +498,103 @@ def _detect_tape_disagreement(
     return results
 
 
+# ---------------------------------------------------------------------------
+# (d) MTF upturn confirmed cohort detector
+# ---------------------------------------------------------------------------
+
+
+def _detect_mtf_upturn_confirmed(
+    mtf_upturn: dict,
+    notify_state: dict,
+    today_str: str,
+) -> list[tuple[str, str]]:
+    """Return list of [(subject, message)] for MTF upturn cohort event.
+
+    Fires at most once per session-day for the whole cohort (DT-R14 law).
+    Dedup key: 'mtf_upturn_confirmed|<session_date>'.
+    Requires cohort.confirmed to be non-empty.
+    """
+    results: list[tuple[str, str]] = []
+
+    confirmed = mtf_upturn.get("cohort", {}).get("confirmed") or []
+    if not confirmed:
+        return results
+
+    subject = "cohort"
+    if _already_fired(notify_state, "mtf_upturn_confirmed", subject, today_str):
+        log.debug("notify_turn_events: mtf_upturn_confirmed cohort already fired today")
+        return results
+
+    as_of = mtf_upturn.get("as_of") or today_str
+    tickers = mtf_upturn.get("tickers") or {}
+    msg = _mtf_upturn_cohort_message(confirmed, tickers, as_of)
+    results.append((subject, msg))
+    return results
+
+
+def _detect_mtf_upturn_mag7(
+    mtf_upturn: dict,
+    notify_state: dict,
+    today_str: str,
+) -> list[tuple[str, str]]:
+    """Return list of [(sym, message)] for Mag7 members entering UPTURN_CONFIRMED.
+
+    State transition = current state is UPTURN_CONFIRMED AND the last-seen
+    state snapshot (stored in notify_state under 'mtf_upturn_mag7_last|<SYM>')
+    was NOT UPTURN_CONFIRMED (or is absent/unknown, treated as first-ever run).
+
+    Dedup key per symbol: 'mtf_upturn_mag7|<SYM>|<session_date>' — fires at
+    most once per symbol per session-day.
+
+    Also updates the last-seen state snapshot in notify_state regardless of
+    whether a message was sent (to detect future transitions correctly).
+    """
+    results: list[tuple[str, str]] = []
+
+    tickers = mtf_upturn.get("tickers") or {}
+    as_of = mtf_upturn.get("as_of") or today_str
+
+    for sym in MAG7:
+        ticker_data = tickers.get(sym)
+        if ticker_data is None:
+            # Symbol absent from tickers entirely — treat as NONE
+            current_state = "NONE"
+        else:
+            current_state = ticker_data.get("state") or "NONE"
+
+        # Read last-seen state from notify_state
+        last_state_key = f"mtf_upturn_mag7_last|{sym}"
+        prior_state = notify_state.get(last_state_key)
+
+        # Update last-seen state (always, so future runs can detect transitions)
+        notify_state[last_state_key] = current_state
+
+        if current_state != "UPTURN_CONFIRMED":
+            continue
+
+        # Already in CONFIRMED — check if this is a NEW entry (transition)
+        # prior_state == None means first-ever run; treat as transition.
+        if prior_state == "UPTURN_CONFIRMED":
+            # State has persisted — not a new transition
+            # Still check per-day dedup (daily alert suppression)
+            log.debug(
+                "notify_turn_events: Mag7 %s persisted UPTURN_CONFIRMED (no new transition)", sym
+            )
+            continue
+
+        # New transition into UPTURN_CONFIRMED — check session-day dedup
+        if _already_fired(notify_state, "mtf_upturn_mag7", sym, today_str):
+            log.debug("notify_turn_events: mtf_upturn_mag7 %s already fired today", sym)
+            continue
+
+        legs = ticker_data.get("legs") or {} if ticker_data else {}
+        k = ticker_data.get("k", 0) if ticker_data else 0
+        msg = _mtf_upturn_mag7_message(sym, k, legs, as_of)
+        results.append((sym, msg))
+
+    return results
+
+
 def _lookup_slow_reco(basket_id: str) -> str | None:
     """Attempt to read slow_reco from site/basketdata/baskets.json.
 
@@ -434,7 +623,7 @@ def run(
     today_str: str | None = None,
     dry_run: bool = False,
 ) -> int:
-    """Evaluate all three event sources and dispatch alerts.
+    """Evaluate all five event sources and dispatch alerts.
 
     Returns the count of messages sent (0 = dark/no events/already fired).
     Never raises — own try/except, exit-0 contract.
@@ -457,8 +646,9 @@ def run(
     turn_watch = _load_json(_TURN_WATCH_PATH) or {}
     shock_state = _load_json(_SHOCK_STATE_PATH) or {}
     basket_pulse = _load_json(_BASKET_PULSE_PATH) or {}
+    mtf_upturn = _load_json(_MTF_UPTURN_PATH) or {}
 
-    if not turn_watch and not shock_state:
+    if not turn_watch and not shock_state and not mtf_upturn:
         log.info("notify_turn_events: no event source data — nothing to evaluate")
         return 0
 
@@ -487,6 +677,26 @@ def run(
         if _send_discord(msg, dry_run=dry_run):
             dispatched += 1
         _mark_fired(notify_state, "tape_disagreement", basket_id, today_str)
+
+    # (d) MTF upturn confirmed cohort — fail-open, isolated from other sources
+    try:
+        for subject, msg in _detect_mtf_upturn_confirmed(mtf_upturn, notify_state, today_str):
+            if _send_discord(msg, dry_run=dry_run):
+                dispatched += 1
+            _mark_fired(notify_state, "mtf_upturn_confirmed", subject, today_str)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("notify_turn_events: mtf_upturn_confirmed source error (skipped): %s", exc)
+
+    # (e) MTF upturn Mag7 transition — fail-open, isolated from other sources
+    # Note: _detect_mtf_upturn_mag7 mutates notify_state with last-seen states
+    # (for transition tracking) before firing per-symbol dedup checks.
+    try:
+        for sym, msg in _detect_mtf_upturn_mag7(mtf_upturn, notify_state, today_str):
+            if _send_discord(msg, dry_run=dry_run):
+                dispatched += 1
+            _mark_fired(notify_state, "mtf_upturn_mag7", sym, today_str)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("notify_turn_events: mtf_upturn_mag7 source error (skipped): %s", exc)
 
     # Persist updated state (site-only write, FT-R5)
     if notify_state != original_state:
