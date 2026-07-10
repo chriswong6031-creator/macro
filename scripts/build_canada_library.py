@@ -565,6 +565,44 @@ def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -
             col = ("var(--up)" if r.get("dir") == "up"
                    else "var(--down)" if r.get("dir") == "down" else "var(--muted)")
             r["spark_svg"] = _spark_svg(s, color=col)
+    # ── W8-G: days_since_signal enrichment ───────────────────────────────────
+    # Days since first appearance in the CA board ledger (data/board_ledger/ca_board.parquet).
+    # Null-safe: if the store is absent the field is None ("—" in template / table).
+    # DISPLAY ONLY — no ordering change; no rank effect (mirrors build_china_library:2067).
+    _w8g_first_seen: dict[str, str] = {}
+    try:
+        from lib import config as _w8g_cfg  # noqa: PLC0415
+        _brd_path = _w8g_cfg.data_dir() / "board_ledger" / "ca_board.parquet"
+        if _brd_path.exists():
+            _brd_df = pd.read_parquet(_brd_path, columns=["date", "ticker"])
+            _w8g_first_seen = (
+                _brd_df.groupby("ticker")["date"].min()
+                .apply(str).to_dict()
+            )
+            log.info("W8-G days_since_signal: %d tickers in CA board ledger (range %s → %s)",
+                     len(_w8g_first_seen),
+                     min(_w8g_first_seen.values()) if _w8g_first_seen else "?",
+                     max(_w8g_first_seen.values()) if _w8g_first_seen else "?")
+    except Exception as _w8g_e:  # noqa: BLE001 — additive, never fatal
+        log.warning("W8-G days_since_signal: CA board ledger unavailable (%s)", _w8g_e)
+
+    _w8g_today_str = str(setups.get("as_of")) if setups.get("as_of") else None
+
+    def _w8g_days_since(ticker: str) -> int | None:
+        fs = _w8g_first_seen.get(str(ticker))
+        if not fs or not _w8g_today_str:
+            return None
+        try:
+            d0 = pd.Timestamp(fs).date()
+            d1 = pd.Timestamp(_w8g_today_str).date()
+            return max(0, (d1 - d0).days)
+        except Exception:  # noqa: BLE001
+            return None
+
+    for _w8g_r in setups["buy"]:
+        _tk = _w8g_r.get("ticker")
+        _w8g_r["days_since_signal"] = _w8g_days_since(_tk) if _tk else None
+
     # BRANCH B: group (entry_open > setting_up) then rank within group by the momentum
     # SCREEN z. Replaces the entry_open_first composite sort — the composite is NOT the
     # order under the zero-GO branch (masterplan §4.1 / §5.0).

@@ -265,6 +265,114 @@
 {% include "_cmd_hero.css.j2" %}
 {% include "_market_state.css.j2" %}
   body.page-canada { padding-top: 24px; }
+
+{% if mode == 'stocks' %}
+  /* ── W8-G: Standout table view (CA port of W8-E) ──────────────────────── */
+  .st-view-toggle { display:inline-flex; gap:3px; padding:3px; border-radius:8px;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
+    border:1px solid var(--line); margin-left:10px; vertical-align:middle; }
+  .st-view-toggle button { font:inherit; font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid transparent; background:transparent; color:var(--muted);
+    padding:4px 9px; border-radius:5px; line-height:1; transition:all .12s; }
+  .st-view-toggle button[aria-selected="true"] { background:var(--panel); color:var(--text);
+    border-color:var(--line); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  #stocktable-wrap { display:none; }
+  #standouts.st-table-mode #stocktable-wrap { display:block; }
+  #standouts.st-table-mode .nb-grid-section { display:none; }
+  #st-count-chips { display:inline-flex; gap:5px; flex-wrap:wrap; align-items:center; margin:8px 0; }
+  .st-chip { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px;
+    border-radius:999px; white-space:nowrap; }
+  .st-chip-entry { background:color-mix(in srgb,var(--up) 14%,transparent);
+    color:var(--up); border:1px solid color-mix(in srgb,var(--up) 35%,transparent); }
+  .st-chip-ran { background:color-mix(in srgb,var(--muted) 12%,transparent);
+    color:var(--muted); border:1px solid var(--line); }
+  .st-chip-rip { background:color-mix(in srgb,var(--link) 12%,transparent);
+    color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
+  .st-chip-knife { background:color-mix(in srgb,var(--down) 12%,transparent);
+    color:var(--down); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
+  .st-filters { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:8px 0 10px; }
+  .st-filter-sel { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:4px 8px; cursor:pointer;
+    min-width:90px; }
+  .st-filter-txt { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:4px 8px; outline:none; }
+  .st-filter-txt:focus { border-color:var(--link); }
+  .st-filter-chk { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px;
+    cursor:pointer; user-select:none; }
+  .st-reset-btn, .st-col-btn { font:inherit; font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid var(--line); background:var(--panel); color:var(--muted);
+    padding:4px 10px; border-radius:7px; white-space:nowrap; transition:color .12s; }
+  .st-reset-btn:hover, .st-col-btn:hover { color:var(--text); border-color:var(--link); }
+  .st-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;
+    border:1px solid var(--line); border-radius:9px; }
+  .st-table { border-collapse:collapse; width:100%; font-size:12px;
+    font-variant-numeric:tabular-nums; }
+  .st-table thead { position:sticky; top:0; z-index:4;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 9%,var(--panel))); }
+  .st-table th { padding:7px 10px; font-size:11px; font-weight:700; color:var(--muted);
+    text-align:left; white-space:nowrap; border-bottom:2px solid var(--line);
+    user-select:none; }
+  .st-table th.st-sortable { cursor:pointer; }
+  .st-table th.st-sortable:hover { color:var(--text); }
+  .st-table td { padding:6px 10px; border-bottom:1px solid var(--line);
+    text-align:left; white-space:nowrap; vertical-align:middle; }
+  .st-table td.st-r, .st-table th.st-r { text-align:right; }
+  .st-table tbody tr:last-child td { border-bottom:none; }
+  .st-table tbody tr:hover td { background:color-mix(in srgb,var(--link) 5%,transparent); }
+  .st-sticky-col { position:sticky; left:0; z-index:2; background:var(--panel); }
+  thead .st-sticky-col { z-index:5;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 9%,var(--panel))); }
+  .st-row-entry td { background:color-mix(in srgb,var(--up) 4%,transparent); }
+  .st-row-entry td.st-sticky-col { background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .st-row-entry td:first-child { box-shadow:inset 3px 0 0 var(--up); }
+  .st-row-ran td:first-child { box-shadow:inset 3px 0 0 var(--muted); }
+  .st-sarrow { font-size:8px; margin-left:2px; opacity:.28; }
+  .st-sarrow-idle { font-size:8px; }
+  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--link); }
+  .st-pos { color:var(--up); font-weight:600; }
+  .st-neg { color:var(--down); font-weight:600; }
+  .st-muted { color:var(--muted); }
+  .st-new-dot::before { content:"NEW"; display:inline-block; font-size:8px; font-weight:800;
+    background:var(--up); color:#fff; padding:0 4px; border-radius:4px; margin-right:4px;
+    vertical-align:1px; }
+  .st-chooser-wrap { position:relative; }
+  .st-chooser { position:absolute; top:0; right:0; z-index:20; min-width:240px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 8px 28px rgba(0,0,0,.22); padding:0; overflow:hidden; }
+  .st-chooser-hidden .st-chooser { display:none; }
+  .st-chooser-hdr { display:flex; align-items:center; gap:8px; padding:10px 12px 8px;
+    border-bottom:1px solid var(--line); font-weight:700; font-size:12.5px; }
+  .st-chooser-note { font-size:10.5px; color:var(--muted); font-weight:400; margin-left:auto; }
+  .st-chooser-close { font:inherit; font-size:15px; cursor:pointer; background:none;
+    border:none; color:var(--muted); padding:0 2px; line-height:1; }
+  .st-chooser-list { max-height:340px; overflow-y:auto; padding:6px 0; }
+  .st-chooser-row { display:flex; align-items:center; gap:8px; padding:5px 12px;
+    cursor:grab; user-select:none; font-size:12px; }
+  .st-chooser-row:hover { background:var(--panel2,color-mix(in srgb,var(--muted) 7%,var(--panel))); }
+  .st-chooser-row.st-dragging { opacity:.5; }
+  .st-drag-handle { color:var(--muted); font-size:11px; flex:none; }
+  .st-chooser-footer { padding:8px 12px; border-top:1px solid var(--line); }
+  .st-chooser-reset { font:inherit; font-size:12px; cursor:pointer; background:none;
+    border:1px solid var(--line); border-radius:7px; padding:4px 10px; color:var(--muted); }
+  .st-chooser-reset:hover { color:var(--text); border-color:var(--link); }
+  .st-th-tip { display:inline-flex; align-items:center; justify-content:center;
+    width:13px; height:13px; border-radius:50%; border:1px solid var(--muted);
+    color:var(--muted); font-size:9px; font-weight:700; cursor:help;
+    position:relative; vertical-align:1px; margin-left:3px; }
+  .st-th-tip::after { content:attr(data-tip-en); display:none; position:absolute;
+    bottom:150%; left:50%; transform:translateX(-50%); width:220px; max-width:90vw;
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:7px 10px; font-size:11px; font-weight:400; color:var(--text); text-align:left;
+    white-space:normal; box-shadow:var(--popover-shadow,0 3px 12px rgba(0,0,0,.18)); z-index:30; }
+  html[data-lang="zh"] .st-th-tip::after { content:attr(data-tip-zh); }
+  .st-th-tip:hover::after { display:block; }
+  @media (max-width:680px) {
+    .st-table { font-size:11px; }
+    .st-table td, .st-table th { padding:5px 7px; }
+    .st-filters { gap:4px; }
+    .st-filter-sel { font-size:11px; min-width:70px; padding:3px 6px; }
+  }
+{% endif %}{# /stocks mode: W8-G table CSS #}
 </style>
 </head>
 <body class="page-canada">
@@ -505,6 +613,39 @@
 
 <!-- ===== Standout stocks (BRANCH B ripe-list contract) — the TSX Stock Dashboard headline ===== -->
 {% if mode == 'stocks' and setups and setups.buy %}
+{# ── W8-G: JSON data block — feeds StockTable.init(); serialized in system (board) order.
+   NO re-sorting here: _branch_b_order already delivered the correct system order; this
+   block copies fields verbatim, preserving the delivered sequence (CN no-ordering-mutation
+   pattern). stage is mapped from the CA group field (entry_open → ENTRY, setting_up → RIPENING)
+   so the stocktable.js row-accent / filter logic works identically across markets. ── #}
+{% set _ca_st_rows = [] %}
+{% for _r in setups.buy %}
+  {% set _sig = _r.get('signal') or {} %}
+  {% set _conv = _r.get('conviction') or {} %}
+  {% set _es = _r.get('entry_signal') or {} %}
+  {% set _ca_row = {
+    'ticker':            _r.ticker,
+    'name':              _r.name or _r.ticker,
+    'sector':            _r.sector or '',
+    'stage':             'ENTRY' if _r.get('group') == 'entry_open' else 'RIPENING',
+    '_stage':            'ENTRY' if _r.get('group') == 'entry_open' else 'RIPENING',
+    'tier':              _sig.get('tier_cascade') or '',
+    'price':             _r.get('price'),
+    'off_high':          _r.get('off_high'),
+    'conviction':        _conv.get('score') if _conv else none,
+    'days_since_signal': _r.get('days_since_signal'),
+    'alpha':             _r.get('alpha'),
+    'entry_status':      _es.get('status') or '',
+    'group':             _r.get('group') or '',
+  } %}
+  {% set _ = _ca_st_rows.append(_ca_row) %}
+{% endfor %}
+<script type="application/json" id="stocktable-data">
+{
+  "rows": {{ _ca_st_rows | tojson }},
+  "as_of": {{ (setups.as_of or '') | tojson }}
+}
+</script>
 {# ---- stocks-mode health banner (deliverable 5): breadth cache (HKCA-13), board-ledger
       failures, tailwind suppression — only degraded rows appear. ---- #}
 {% if stocks_health %}
@@ -520,10 +661,15 @@
   </div>
 </div>
 {% endif %}
-<div class="panel">
+<div class="panel" id="standouts">
   <h2>{{ t('⚡ Standout TSX names — ripe-list screen', '⚡ 突出的 TSX 个股 — 成熟清单筛选') }}
     {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('bottoming and turning up (not still falling)', '筑底并开始转向（而非仍在下跌）') }}</span>{% endif %}
     {{ help('Ranks bottoming TSX names: buyable now first, then names still setting up. # is order, not probability.', '排列正在筑底的 TSX 个股：可买的在前，仍在蓄势的在后。# 是顺序，不是概率。') }}
+    {# W8-G: grid/table view toggle #}
+    <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
+      <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">&#x229E; <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
+      <button id="st-btn-table" aria-selected="false" onclick="StockTable._setView('table')">&#x2630; <span class="l-en">Table</span><span class="l-zh">表格</span></button>
+    </span>
   </h2>
   {# ===== ONE desk-header "what this desk is / isn't" block (§7.2 / §7.3) — consolidates
      the caveat museum (the old per-page repetitions are DELETED; the tier badge lives on
@@ -581,6 +727,12 @@
   {% if setups.tailwind_suppressed %}
   <p class="chip off" style="margin:2px 0 8px">{{ t('Basket-tailwind axis suppressed', '篮子顺风轴已抑制') }}{% if setups.tailwind_stale_days is not none %} — {{ t('panel', '面板') }} {{ setups.tailwind_stale_days }} {{ t('trading days stale', '个交易日陈旧') }}{% else %} — {{ t('panel missing', '面板缺失') }}{% endif %}</p>
   {% endif %}
+  {# W8-G: count chips row (live-updated by JS when in table mode) #}
+  <div id="st-count-chips" style="display:none"></div>
+  {# W8-G: table view mount point #}
+  <div id="stocktable-wrap"></div>
+  {# W8-G: grid section (hidden in table mode by CSS .nb-grid-section) #}
+  <div class="nb-grid-section">
   <div class="cards" data-showmore-rows="3">
     {% for s in setups.buy %}
     {# ---- BRANCH-B group divider: entry-open before setting-up ---- #}
@@ -767,6 +919,7 @@
   {% if ca_aibrief_href %}
   <a class="ai-brief-link" href="{{ ca_aibrief_href }}" style="margin-top:12px; display:inline-flex">🤖 {{ t('Read the Canada AI brief', '阅读加拿大 AI 简报') }}</a>
   {% endif %}
+  </div>{# /.nb-grid-section #}
 </div>
 {% endif %}
 
@@ -845,6 +998,114 @@
 <script src="chart_i18n.js"></script>
 <script src="charts.js"></script>
 <script src="tablesort.js"></script>
+{% if mode == 'stocks' and setups and setups.buy %}
+<script src="stocktable.js"></script>
+<script>
+/* W8-G: StockTable init — standout board table view (CA / TSX market).
+   Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent.
+   market key 'ca' / localStorage key mdx_stocktable_ca / link pattern canada_stock.html#{ticker}. */
+(function(){
+  var SECZH = {"Energy":"能源","Materials":"材料","Financials":"金融","Information Technology":"科技","Communication Services":"通信服务","Consumer Staples":"必需消费","Consumer Discretionary":"可选消费","Health Care":"医疗保健","Industrials":"工业","Real Estate":"房地产","Utilities":"公用事业"};
+  var GROUP_LABELS = {"entry_open":["ENTRY OPEN","入场开启"],"setting_up":["SETTING UP","蓄势中"]};
+  var TIER_ZH = {"PRIME":"极佳","CONFIRMED":"确认","CONFIRMING":"确认中","APPROACHING":"临近","FIRST SPARK":"首信号"};
+  var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;
+
+  function stageBadge(stage, group) {
+    if (!stage) return '<span class="st-muted">—</span>';
+    var cls = stage === 'ENTRY' ? 'st-chip-entry' : 'st-chip-rip';
+    var glbl = GROUP_LABELS[group];
+    var len = glbl ? glbl[0] : (stage === 'ENTRY' ? 'ENTRY' : 'SETTING UP');
+    var lzh = glbl ? glbl[1] : (stage === 'ENTRY' ? '入场开启' : '蓄势中');
+    return '<span class="st-chip ' + cls + '">' + b(len, lzh) + '</span>';
+  }
+
+  var cols = [
+    { key:'_ca_stage_grp', labelEn:'Stage', labelZh:'阶段', default:true, sortable:false,
+      fmt:function(v,r){ return stageBadge(r.stage||r._stage, r.group); },
+      tip:{en:'Entry open (entry-window green) vs Setting up (awaiting trigger); system order is the board rank',zh:'入场开启（入场窗口绿灯）vs 蓄势中（等待触发）；系统顺序即榜单排名'} },
+    { key:'ticker', labelEn:'Ticker', labelZh:'代码', default:true, sortable:true,
+      fmt:function(v,r){
+        var fresh = (r.days_since_signal != null && r.days_since_signal <= 2);
+        return (fresh ? '<span class="st-new-dot"></span>' : '') + '<b>' + esc(v||'') + '</b>';
+      }},
+    { key:'name', labelEn:'Name', labelZh:'名称', default:true, sortable:true,
+      fmt:function(v){ return esc(v||''); }},
+    { key:'tier', labelEn:'Tier', labelZh:'级别', default:true, sortable:true,
+      fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
+        return '<span class="st-chip st-chip-entry" style="font-size:9px;padding:1px 6px">' + b(esc(v), esc(TIER_ZH[v]||v)) + '</span>'; }},
+    { key:'sector', labelEn:'Sector', labelZh:'板块', default:true, sortable:true,
+      fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
+        return b(esc(v), esc(SECZH[v]||v)); }},
+    { key:'price', labelEn:'Price', labelZh:'价格', default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': '$'+fn(v,2); }},
+    { key:'off_high', labelEn:'Off High', labelZh:'距高点', default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fp(v,1); },
+      tip:{en:'% below 52-week high',zh:'距52周高点百分比'} },
+    { key:'alpha', labelEn:'Mom Screen', labelZh:'动量筛选', default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>':
+        '<span class="' + (v>=0?'st-pos':'st-neg') + '">' + (v>=0?'+':'')+fn(v,2) + '</span>'; },
+      tip:{en:'Momentum screen z (sector-neutral residual alpha; display-only, accruing)',zh:'动量筛选 z 值（板块中性残差 alpha；仅展示，累积中）'} },
+    { key:'entry_status', labelEn:'Entry', labelZh:'入场', default:true, sortable:true,
+      fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
+        var cls = (v==='buy_now'||v==='partial')?'st-pos':(v==='extended'||v==='exit'||v==='avoid'?'st-neg':'');
+        return '<span class="' + cls + '">' + esc(v.replace(/_/g,' ')) + '</span>'; },
+      tip:{en:'Entry-timing gate: buy_now / partial / buy_soon / wait_pullback / extended …',zh:'入场时机门控：立即买入 / 部分 / 即将买入 / 等回调 / 偏离 …'} },
+    { key:'days_since_signal', labelEn:'Days', labelZh:'信号天数', default:false, sortable:true, right:true,
+      fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
+        var n = parseInt(v);
+        return n<=2 ? '<span class="st-pos">' + n + '</span>' : String(n); },
+      tip:{en:'Days since first board appearance (from ledger)',zh:'首次上榜天数（账本记录）'} },
+    { key:'conviction', labelEn:'Score', labelZh:'评分', default:false, sortable:true, right:true,
+      fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
+        var n = parseInt(v); var cls = n>=70?'st-pos':n>=40?'':'st-neg';
+        return '<span class="' + cls + '">' + n + '</span>'; },
+      tip:{en:'Conviction score 0-100 (suppressed under Branch-B; null is expected)',zh:'确信度评分0-100（Branch-B下已抑制；空值正常）'} },
+  ];
+
+  // use a synthetic key for the stage+group column so it does not collide with a real field
+  cols[0].key = '_ca_stage_grp_display';
+
+  /* view persistence */
+  var LS_VIEW = 'mdx_stocktable_ca_view';
+  var currentView = localStorage.getItem(LS_VIEW) || 'grid';
+
+  function applyView(v) {
+    currentView = v;
+    localStorage.setItem(LS_VIEW, v);
+    var standouts = document.getElementById('standouts');
+    var chipsEl   = document.getElementById('st-count-chips');
+    var gbtn = document.getElementById('st-btn-grid');
+    var tbtn = document.getElementById('st-btn-table');
+    if (!standouts) return;
+    if (v === 'table') {
+      standouts.classList.add('st-table-mode');
+      if (chipsEl) chipsEl.style.display = '';
+      if (gbtn) gbtn.setAttribute('aria-selected','false');
+      if (tbtn) tbtn.setAttribute('aria-selected','true');
+    } else {
+      standouts.classList.remove('st-table-mode');
+      if (chipsEl) chipsEl.style.display = 'none';
+      if (gbtn) gbtn.setAttribute('aria-selected','true');
+      if (tbtn) tbtn.setAttribute('aria-selected','false');
+    }
+  }
+
+  StockTable._setView = applyView;
+
+  /* init */
+  StockTable.init({
+    dataId:      'stocktable-data',
+    containerId: 'stocktable-wrap',
+    market:      'ca',
+    linkPattern: 'canada_stock.html#{ticker}',
+    columns:     cols,
+  });
+
+  /* restore persisted view */
+  applyView(currentView);
+})();
+</script>
+{% endif %}
 <script>
   // keep tooltips on-screen: flip below near the top of the viewport, and anchor to the
   // nearest side when the help target is close to the left/right edge (powers the Market

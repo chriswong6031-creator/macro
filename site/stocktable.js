@@ -374,11 +374,12 @@
       });
       var chipEl = document.getElementById('st-count-chips');
       if (chipEl) {
-        chipEl.innerHTML =
-          '<span class="st-chip st-chip-entry">ENTRY ' + counts.ENTRY + '</span>' +
-          '<span class="st-chip st-chip-ran">RAN ' + counts.RAN_LATE + '</span>' +
-          '<span class="st-chip st-chip-rip">RIPENING ' + counts.RIPENING + '</span>' +
-          '<span class="st-chip st-chip-knife">KNIFE ' + counts.KNIFE + '</span>';
+        var html = '';
+        if (counts.ENTRY > 0)    html += '<span class="st-chip st-chip-entry">ENTRY ' + counts.ENTRY + '</span>';
+        if (counts.RAN_LATE > 0) html += '<span class="st-chip st-chip-ran">RAN ' + counts.RAN_LATE + '</span>';
+        if (counts.RIPENING > 0) html += '<span class="st-chip st-chip-rip">RIPENING ' + counts.RIPENING + '</span>';
+        if (counts.KNIFE > 0)    html += '<span class="st-chip st-chip-knife">KNIFE ' + counts.KNIFE + '</span>';
+        chipEl.innerHTML = html;
       }
       // reset-order button visibility
       var resetBtn = document.getElementById('st-reset-order');
