@@ -29,8 +29,13 @@ Tiers
 from __future__ import annotations
 
 import json
+import logging
+import re
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+
+log = logging.getLogger(__name__)
 
 from engine.signal_frontier_docket import page_frontier_rows, phase0_summary
 from lib import config
@@ -72,6 +77,18 @@ VERDICT_WORD = {
 }
 
 
+def _name_to_slug(name: str) -> str:
+    """Stable ASCII kebab slug for per-row anchor ids (A8).
+
+    Only ASCII alphanumerics and hyphens; collapses runs of non-alnum to a single
+    hyphen; strips leading/trailing hyphens.  Stable: the same name always gives
+    the same slug across builds.
+    """
+    s = name.lower()
+    s = re.sub(r"[^a-z0-9]+", "-", s)
+    return s.strip("-")[:80]
+
+
 def _row(name, name_zh, market, tier, why, why_zh, source, *, horizon="",
          ic=None, ic_ir=None, t_hac=None, q_fdr=None, dsr=None, sharpe=None,
          hit=None, n=None, fdr_survivor=None, wired="", extra=None,
@@ -95,6 +112,7 @@ def _row(name, name_zh, market, tier, why, why_zh, source, *, horizon="",
         "extra": extra or [],   # list of (label, value_str) quoted context stats
         "dsr_family": dsr_family, "dsr_n_trials": dsr_n_trials,
         "dsr_basis": dsr_basis, "dsr_expiry": dsr_expiry,
+        "slug": _name_to_slug(name),  # A8: stable anchor id
     }
 
 
@@ -1407,6 +1425,8 @@ def _resolve_dsr_provenance(registry: list[dict]) -> None:
 
 def build_scorecard() -> dict:
     """Assemble the full Signal Lab payload for the template. Pure assembler."""
+    warnings: list[str] = []  # A9: collect build warnings
+
     ft = _load_factor_table()
     factor_rows: list[dict] = []
     fdr_survivors_factor = 0
@@ -1427,6 +1447,9 @@ def build_scorecard() -> dict:
     # W1d: resolve each DSR quote's multiple-testing n_trials from the Trial Ledger (live) or
     # surface it as a stamped frozen-quote with an expiry — no more self-certifying constants.
     _resolve_dsr_provenance(REGISTRY)
+
+    # A10: audit source references for each registry row
+    _audit_source_refs(REGISTRY)
 
     # group the curated registry by tier, preserving TIERS order
     by_tier: dict[str, list[dict]] = {t["key"]: [] for t in TIERS}
@@ -1466,6 +1489,21 @@ def build_scorecard() -> dict:
     # anti-predictive, not tradeable.
     survivors = [{"name": r["name"], "ic": r["ic"]} for r in factor_rows if r["survives"]]
 
+    # A3: frontier rows for the page table
+    frontier_rows = FRONTIER + page_frontier_rows()
+    # Chip counts computed from ACTUAL rendered rows (not docket-wide FABLE_VERDICTS totals)
+    frontier_chip_counts = _compute_frontier_chip_counts(frontier_rows)
+    # Docket-wide summary still available as frontier_phase0_summary
+    # A2: load adjudications from file (replaces hardcoded _waves_adjudication_block)
+    adjudications = _load_adjudications(warnings)
+    # Back-compat: expose the first (most-recent) adjudication as waves_adjudication for
+    # tests and template code that reference it by the old key
+    waves_adjudication = adjudications[0] if adjudications else {}
+
+    # A12: total docket candidate count (derived, not hardcoded)
+    from engine.signal_frontier_docket import CANDIDATES as _CANDIDATES
+    docket_candidate_count = len(_CANDIDATES)
+
     return {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         "tiers": tiers_out,
@@ -1473,135 +1511,85 @@ def build_scorecard() -> dict:
         "factor_rows": factor_rows,
         "factor_survivors": survivors,
         "factor_meta": factor_meta,
-        "frontier_rows": FRONTIER + page_frontier_rows(),
+        "frontier_rows": frontier_rows,
+        "frontier_chip_counts": frontier_chip_counts,      # A3
         "frontier_phase0_summary": phase0_summary(),
-        "waves_adjudication": _waves_adjudication_block(),
+        "docket_candidate_count": docket_candidate_count,  # A3 / A12
+        "adjudications": adjudications,                    # A2
+        "waves_adjudication": waves_adjudication,          # back-compat
+        "warnings": warnings,                              # A9
     }
 
 
-def _waves_adjudication_block() -> dict:
-    """Compact waves 2-4 adjudication summary — display-only metadata.
-    Moratorium in force until wave-1 + spike verdicts booked and queue < 3.
-    Sources: research/SIGNAL_LAB_FRONTIER_WAVE{2,3,4}_FABLE_ADJUDICATION_2026-07-06.md
+_ADJUDICATIONS_PATH = Path(__file__).parent.parent / "data" / "signal_lab" / "adjudications.json"
+
+
+def _load_adjudications(warnings: list[str]) -> list[dict]:
+    """Load adjudication events from data/signal_lab/adjudications.json (A2).
+
+    Returns a list of adjudication-event objects sorted date-desc.
+    Appends to ``warnings`` on missing/corrupt file and returns empty list.
     """
-    return {
-        "date": "2026-07-06",
-        "waves": [
-            {
-                "wave": 2,
-                "screened": 200,
-                "advanced": 58,
-                "result_label": "2 spikes + 5 queued",
-                "result_label_zh": "2个尖峰候选 + 5个排队",
-                "detail": (
-                    "200 screened / 58 template advances collapsed to 7 actionable: "
-                    "2 spikes (KEV vendor-shock NULL #1656; NHTSA safety-recall in flight), "
-                    "5 queued for post-moratorium adjudication."
-                ),
-                "detail_zh": (
-                    "200个筛选 / 58个模板候选合并为7个可操作：2个尖峰候选（KEV供应商冲击 NULL #1656；"
-                    "NHTSA安全召回进行中），5个排队等待暂停期后裁决。"
-                ),
-                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE2_FABLE_ADJUDICATION_2026-07-06.md",
-            },
-            {
-                "wave": 3,
-                "screened": 500,
-                "advanced": 48,
-                "result_label": "1 family queued (FFIEC bank stress)",
-                "result_label_zh": "1个家族排队（FFIEC银行压力）",
-                "detail": (
-                    "500 screened / 48 template advances collapsed to 4 feeds / "
-                    "1 family queued: FFIEC bank-stress call-report ratios."
-                ),
-                "detail_zh": (
-                    "500个筛选 / 48个模板候选合并为4个数据流 / 1个家族排队：FFIEC银行压力报告比率。"
-                ),
-                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE3_FABLE_ADJUDICATION_2026-07-06.md",
-            },
-            {
-                "wave": 4,
-                "screened": 500,
-                "advanced": 8,
-                "result_label": "1 family queued + 1 park + 2 kills",
-                "result_label_zh": "1个家族排队 + 1个暂存 + 2个否决",
-                "detail": (
-                    "500 screened / 8 advanced / 1 consolidated family queued "
-                    "(multi-state gaming tape) + 1 park + 2 kills."
-                ),
-                "detail_zh": (
-                    "500个筛选 / 8个候选 / 1个合并家族排队（多州博彩数据）+ 1个暂存 + 2个否决。"
-                ),
-                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE4_FABLE_ADJUDICATION_2026-07-06.md",
-            },
-        ],
-        "moratorium": True,
-        "moratorium_note": (
-            "Generation moratorium in force: no new wave authorized until wave-1 + "
-            "spike verdicts are booked and the queued family count drops below 3."
-        ),
-        "moratorium_note_zh": (
-            "生成暂停令生效：在第一波 + 尖峰候选裁决登记、排队家族数降至3以下之前，"
-            "不授权新一波筛选。"
-        ),
-        "day3_results": {
-            "date": "2026-07-07",
-            "families_tested": 13,
-            "pass_count": 2,
-            "accrue_count": 1,
-            "directional_fail_count": 1,
-            "park_count": 1,
-            "null_count": 8,
-            "data_blocked_count": 1,
-            "label": "Build-day (Day 3) results",
-            "label_zh": "构建日（第3天）结果",
-            "verdicts": [
-                {"family": "d2_rates_calendar_flows",      "result": "PASS",              "result_zh": "通过",
-                 "note": "V3 month-end extension day (TLT t=3.63, IEF t=5.02); V1+V2 NULL"},
-                {"family": "d2_comment_letter_release",    "result": "PASS (accrual caveat)", "result_zh": "通过（需积累）",
-                 "note": "substantive/h21/massive t=-3.26 q=0.0044; effect concentrated 2023-2025; accrual required"},
-                {"family": "w3_bank_callreport_stress",    "result": "ACCRUE",            "result_zh": "积累中",
-                 "note": "n=1 crisis episode; verdict clock ~2027; FFIEC Y-9C machinery live"},
-                {"family": "d2_cn_holder_sale_calendar",   "result": "DIRECTIONAL FAIL",  "result_zh": "方向性否决",
-                 "note": "anti-hypothesis: POSITIVE excess (C1 t=2.41, C5 t=4.11, largest tercile most positive)"},
-                {"family": "w5b_warn_paid_feed",           "result": "PARK",              "result_zh": "暂存",
-                 "note": "paid-feed only ($49/mo); collectors built; on hold pending feed decision"},
-                {"family": "w5_trade_size_capitulation",   "result": "NULL",              "result_zh": "无效",
-                 "note": "trade-size collapse at 52w lows; store 2021+ only; all 6 cells NULL"},
-                {"family": "d2_rates_calendar_flows_v1v2", "result": "NULL",              "result_zh": "无效",
-                 "note": "V1 auction-cycle + V2 QE-rebalance: all cells NULL"},
-                {"family": "w2104_cmdi_conditioning",      "result": "NULL",              "result_zh": "无效",
-                 "note": "CMDI AUC <0.60; LOCO crisis-dependent; context display only"},
-                {"family": "w2153_itc337",                 "result": "NULL",              "result_zh": "无效",
-                 "note": "ITC 337 institution/adverse events: E2 underpowered (n=1); E1 NULL"},
-                {"family": "w2051_housing_hf",             "result": "NULL",              "result_zh": "无效",
-                 "note": "housing HF signals; direction correct but <4 gates simultaneously"},
-                {"family": "d2_russell_deletion_overshoot","result": "NULL (n=3 descriptive)", "result_zh": "无效（n=3描述性）",
-                 "note": "n=3 recon years; 2/3 positive at T+21d; accrual-only"},
-                {"family": "d2_cn_export_share_nowcast",   "result": "NULL",              "result_zh": "无效",
-                 "note": "CN export share nowcast t=1.47 p=0.14 n=39; PIT-clean conditions"},
-                {"family": "w4_multistate_gaming_tape",    "result": "DATA-BLOCKED",      "result_zh": "数据受阻",
-                 "note": "collectors live (NY/NJ/PA/NV); network-blocked in build env; re-run with real data"},
-            ],
-            "data_products_live": [
-                "data/tsa — TSA daily passenger throughput (git-tracked, 2019->)",
-                "data/china_block_tape — A-share block-trade archiver (SLF-A10, 39 files)",
-                "data/options_tape_signed — options tape pilot 20 tickers (SLF-A11)",
-                "data/cn_holder_sales — 减持 calendar 38,988 windows (SLF-B3)",
-                "data/nyfed_cmdi — CMDI weekly/monthly (SLF-A4)",
-                "data/redfin_hf + data/zori — housing HF panels (SLF-A7)",
-                "data/gaming_tape — gaming nowcast panel synthetic (SLF-B1, real data pending)",
-                "data/cn_export_products — Comtrade 5 HS tapes (SLF-B4)",
-                "data/comment_letter_events — EDGAR CORRESP/UPLOAD 26,141 events (SLF-A3)",
-                "FFIEC Y-9C panel: NOT PRESENT (slf-b2 removed; regenerate via scripts/collect_ffiec_y9c.py --resume)",
-            ],
-            "queue_status": (
-                "Authorized queue is now EMPTY except accrual clocks and parked items — "
-                "moratorium condition met. Next docket generation requires operator ratification."
-            ),
-            "queue_status_zh": (
-                "授权队列已清空（积累时钟和暂存项除外）——暂停令条件已满足。"
-                "下一批次生成需要运营方批准。"
-            ),
-        },
-    }
+    if not _ADJUDICATIONS_PATH.exists():
+        warnings.append(
+            f"adjudications.json missing at {_ADJUDICATIONS_PATH} — adjudication panel will be empty"
+        )
+        return []
+    try:
+        events = json.loads(_ADJUDICATIONS_PATH.read_text(encoding="utf-8"))
+        if not isinstance(events, list):
+            raise ValueError("top-level must be a JSON array")
+        return sorted(events, key=lambda e: e.get("date", ""), reverse=True)
+    except Exception as exc:  # noqa: BLE001
+        warnings.append(f"adjudications.json corrupt ({exc}) — adjudication panel will be empty")
+        return []
+
+
+# Source-ref extraction pattern (A10): tokens like path/to/file.md or reports/x
+_SOURCE_REF_RE = re.compile(r"[\w./\-]+\.md|reports/[\w./\-]+")
+
+
+def _audit_source_refs(registry: list[dict]) -> None:
+    """For each registry row, extract .md / reports/<x> references from source string.
+
+    Attaches row['source_refs'] = [{'ref': str, 'exists': bool}].
+    Checks both reports/ and research/ directories under the repo root.
+    Never crashes on odd source strings (A10).
+    """
+    root = Path(__file__).parent.parent
+    reports_dir = root / "reports"
+    research_dir = root / "research"
+
+    for r in registry:
+        source = r.get("source") or ""
+        try:
+            refs: list[dict] = []
+            seen: set[str] = set()
+            for token in _SOURCE_REF_RE.findall(source):
+                if token in seen:
+                    continue
+                seen.add(token)
+                # Strip leading path separators to form a relative path
+                clean = token.lstrip("/")
+                # Check under reports/ first, then research/, then as absolute within repo
+                exists = (
+                    (reports_dir / clean).exists()
+                    or (research_dir / clean).exists()
+                    or (root / clean).exists()
+                    or (reports_dir / Path(clean).name).exists()
+                    or (research_dir / Path(clean).name).exists()
+                )
+                refs.append({"ref": token, "exists": exists})
+            r["source_refs"] = refs
+        except Exception:  # noqa: BLE001
+            r["source_refs"] = []
+
+
+def _compute_frontier_chip_counts(frontier_rows: list[dict]) -> dict:
+    """Compute fable_verdict counts from the ACTUAL rendered frontier rows (A3).
+
+    This ensures prose counts match the table below them.
+    Returns a dict: {'BUILD': n, 'PROBE': n, 'PILOT': n, 'KILLED': n, ...}
+    """
+    counts: Counter = Counter(r.get("fable_verdict", "PENDING") for r in frontier_rows)
+    return dict(counts)
