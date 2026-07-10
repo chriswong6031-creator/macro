@@ -203,6 +203,19 @@ on:
       - "docs/NEURAL_WEB_CASE_LAW.md"
       - "site/neuralwebdata/ruling_graph.json"
       - "data/neuralweb/ruling_conflicts_allowlist.json"
+      # Metabolism Phase 0 (F1/F2/F3): grader manifest, self-mod fence, capability broker.
+      # Any change to these files re-proves all three cage fences.
+      - "config/grader_manifest.yml"
+      - "config/capability_manifest.yml"
+      - "scripts/check_grader_manifest.py"
+      - "scripts/check_self_mod_fence.py"
+      - "scripts/check_capability_redline.py"
+      - "engine/neuralweb/capability_broker.py"
+      - "tests/test_grader_manifest.py"
+      - "tests/test_self_mod_fence.py"
+      - "tests/test_capability_broker.py"
+      - ".github/workflows/metabolism-heartbeat.yml"
+      - "scripts/metabolism_guard.py"
   workflow_dispatch:
 
 permissions:
@@ -829,3 +842,81 @@ jobs:
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+
+  grader-manifest:
+    # F1 (Metabolism Phase 0 / R-AUT-7): grader-immutability manifest guard.
+    # The fitness-producing files (grade_thematic, foresight_leadlag, theme_placebo,
+    # qledger_falsifier, sample_qledger_placebo) are registered in
+    # config/grader_manifest.yml with their SHA-256 content hashes.  Any drift in
+    # a grader file — whether from a loop PR or a human PR — fails RED here.
+    # Loop-authored PRs are additionally blocked by the F2 self-mod-fence job.
+    # Selftest proves the check detects simulated hash drift and missing files.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: grader-manifest selftest (drift detection + fail-closed proof)
+        run: python3 scripts/check_grader_manifest.py --selftest
+      - name: grader-manifest live check (hash drift is a hard failure)
+        run: python3 scripts/check_grader_manifest.py
+      - name: grader-manifest test suite
+        run: python -m pytest tests/test_grader_manifest.py -q
+
+  self-mod-fence:
+    # F2 (Metabolism Phase 0 / R-AUT-5): self-modification fence.
+    # Hard-fails any PR whose branch name or commit trailers carry the loop
+    # namespace (metabolism/* or claude/loop-*, or 'Loop-Authored:' trailer)
+    # AND whose changed-file list touches the IMMUTABLE set.
+    # Human/operator PRs pass freely.  Fail-closed: unclassifiable → blocked.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: self-mod-fence selftest (all four cases proven)
+        run: python3 scripts/check_self_mod_fence.py --selftest
+      - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }}
+          BRANCH="${{ github.head_ref }}"
+          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
+          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
+          if [ -z "$FILES" ]; then
+            echo "No file diff available (possibly a merge commit or shallow clone); skipping"
+            exit 0
+          fi
+          python3 scripts/check_self_mod_fence.py \
+            --branch "$BRANCH" \
+            --files $FILES \
+            --trailers "$TRAILERS"
+      - name: self-mod-fence test suite
+        run: python -m pytest tests/test_self_mod_fence.py -q
+
+  capability-broker:
+    # F3 (Metabolism Phase 0 / §3 of masterplan): capability broker + redline scanner.
+    # The capability broker (engine/neuralweb/capability_broker.py) resolves capability
+    # IDs to ref names only — never secret values.  The redline scanner hard-fails on
+    # any high-entropy string or secrets.* value reference in the manifest or broker.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: capability-redline selftest (planted secret caught; clean real files pass)
+        run: python3 scripts/check_capability_redline.py --selftest
+      - name: capability-redline live scan (hard fail on secret values or value-capture)
+        run: python3 scripts/check_capability_redline.py
+      - name: capability broker + redline test suite
+        run: python -m pytest tests/test_capability_broker.py -q

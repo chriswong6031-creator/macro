@@ -33,6 +33,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
 | mastermind-feedback-contract | 2 |
+| metabolism-phase0 | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
 | neural-web | 48 |
@@ -67,7 +68,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 201 |
-| infrastructure | 79 |
+| infrastructure | 81 |
 | scored | 4 |
 | shadow | 48 |
 
@@ -75,7 +76,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 318 |
+| git | 320 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -332,6 +333,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-mastermind-nw-feedback | `site/mastermind/nw_feedback.json` | json | on-demand | display | 1 | 0 |
 | mastermind-feedback-summary | `data/governance/mastermind_feedback_summary.json` | json | daily-engine | display | 0 | 0 |
+
+### metabolism-phase0
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| capability-manifest | `config/capability_manifest.yml` | other | on-demand | infrastructure | 1 | 0 |
+| capability-audit | `data/neuralweb/capability_audit.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
 
 ### momoedge
 

@@ -9585,3 +9585,58 @@ artifacts:
       omitted for bandwidth efficiency. Authority: all may_* false; is_context_only=true.
       Off render path (launchd ops-wt lane or standalone CLI).
       Honest null when ThetaData store absent.
+
+  # ── Metabolism Phase 0 (F3 capability broker) ────────────────────────────
+
+  # --- 0 consumers (config artifact — read by capability_broker.py at runtime) ---
+  capability-manifest:
+    path: config/capability_manifest.yml
+    format: other
+    producer: scripts/check_capability_redline.py
+    known_extra_writers: []
+    owner_program: metabolism-phase0
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: capability_manifest.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/capability_broker.py
+    external_consumers: []
+    notes: >
+      Metabolism Phase 0 (F3) capability broker manifest. Registers NAMES only —
+      never secret values. Each row: capability_id, kind, secret_ref (name),
+      scope, storage_locus, allowed_lanes, allowed_tiers, rotation_state,
+      kill_state. The broker resolves ref names; callers read os.environ[ref_name].
+      Redline CI (check_capability_redline.py) hard-fails on any high-entropy
+      string or secrets.* value reference in this file.
+      IMMUTABLE: loop PRs may never modify this file (F2 self-mod fence).
+
+  # --- 0 consumers (append-only audit tape) ---
+  capability-audit:
+    path: data/neuralweb/capability_audit.jsonl
+    format: jsonl
+    producer: engine/neuralweb/capability_broker.py
+    known_extra_writers: []
+    owner_program: metabolism-phase0
+    cadence: on-demand
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: neuralweb.capability_broker.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Metabolism Phase 0 (F3) capability broker audit tape. Append-only record of
+      every capability resolve() call that was actually used: {schema, event_id,
+      ts, run_id, workflow, actor, sha, capability_id, lane}. Never contains
+      secret values — only ref names and GitHub Actions env attribution fields.
+      Used for operator audit (§6 of masterplan: weekly digest + audit-tape link).
