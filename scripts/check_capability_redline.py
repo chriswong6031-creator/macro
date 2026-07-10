@@ -92,7 +92,10 @@ _ENTROPY_EXEMPTIONS = [
     "GITHUB_ACTOR",             # name
     "ref_name",                 # variable name
     "secret_ref",               # field name
-    "#",                        # skip comment-only lines for entropy (still check value-capture)
+    # NOTE: bare '#' was removed — a line containing '#' is NOT exempt.
+    # A secret pasted after a YAML inline comment (e.g. "key: value  # <40-hex>")
+    # or on any line that happens to have '#' would sail through undetected.
+    # All known-safe name strings are handled by _strip_known_names() instead.
 ]
 
 
@@ -247,6 +250,25 @@ def selftest() -> int:
             print("  [PASS] secrets.* reference is caught")
         else:
             failures.append("Planted secrets.* reference not caught")
+
+        # Test 3b: secret on a line that contains '#' is caught (regression guard —
+        #   the bare '#' exemption was removed because it let secrets smuggled after
+        #   an inline comment or on any '#'-containing line sail through undetected).
+        (tmp / "config" / "capability_manifest.yml").write_text(
+            f"schema: capability_manifest.v1\n"
+            f"x: 'value_pad_{fake_token}#comment'\n"  # secret value on a '#'-bearing line
+        )
+        try:
+            found = scan(root=tmp)
+        except RuntimeError:
+            found = []
+        hash_line_found = any(f["kind"] == "high_entropy_hex40" for f in found)
+        if hash_line_found:
+            print("  [PASS] secret on a '#'-bearing line is caught (no bare-'#' exemption)")
+        else:
+            failures.append(
+                "Secret on a '#'-bearing line NOT caught — bare '#' exemption may have returned"
+            )
 
         # Test 4: missing scan target is a hard failure (fail-closed)
         (tmp / "config" / "capability_manifest.yml").unlink()

@@ -205,8 +205,14 @@ on:
       - "data/neuralweb/ruling_conflicts_allowlist.json"
       # Metabolism Phase 0 (F1/F2/F3): grader manifest, self-mod fence, capability broker.
       # Any change to these files re-proves all three cage fences.
+      # NOTE: the full IMMUTABLE set (R-AUT-4) must be covered here so the self-mod-fence
+      # CI job actually fires for every protected path.  The four paths below were missing
+      # from the original filter, creating a fail-open window for 40% of the immutable set
+      # (.claude/hooks/**, config/metabolism_budget.yml, settings.json, and the masterplan).
+      - ".claude/**"
       - "config/grader_manifest.yml"
       - "config/capability_manifest.yml"
+      - "config/metabolism_budget.yml"
       - "scripts/check_grader_manifest.py"
       - "scripts/check_self_mod_fence.py"
       - "scripts/check_capability_redline.py"
@@ -216,6 +222,8 @@ on:
       - "tests/test_capability_broker.py"
       - ".github/workflows/metabolism-heartbeat.yml"
       - "scripts/metabolism_guard.py"
+      - "settings.json"
+      - "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md"
   workflow_dispatch:
 
 permissions:
@@ -891,8 +899,13 @@ jobs:
           TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
           FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
           if [ -z "$FILES" ]; then
-            echo "No file diff available (possibly a merge commit or shallow clone); skipping"
-            exit 0
+            # R-AUT-5 fail-closed contract: an empty file list (git diff error, shallow
+            # clone, base-ref resolution failure, or merge-commit HEAD) must BLOCK — not
+            # silently pass.  A fence that errors open is worse than no fence.
+            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
+            echo "Possible causes: git diff error, shallow clone, or base_ref resolution failure." >&2
+            echo "Resolve by ensuring fetch-depth: 0 and a valid base_ref before this step." >&2
+            exit 1
           fi
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
