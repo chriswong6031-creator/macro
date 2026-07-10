@@ -26,8 +26,8 @@ log() {
 # Returns 0 if current ET time is in a pre-market or post-market ext window,
 # 1 otherwise.  Uses simple hour/minute arithmetic; Mac system tz = America/New_York.
 in_ext_window() {
-    H=$(date +%H | sed 's/^0*//')
-    M=$(date +%M | sed 's/^0*//')
+    H=$(TZ=America/New_York date +%H | sed 's/^0*//')
+    M=$(TZ=America/New_York date +%M | sed 's/^0*//')
     H=${H:-0}
     M=${M:-0}
     MINS=$((H * 60 + M))
