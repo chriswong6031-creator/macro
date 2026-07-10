@@ -387,6 +387,30 @@ def _build_orchestrator_system(
         role_text = _load_role(repo, role)
         parts.append(f"## Role\n\n{role_text}")
 
+        # ── Part 1c: Context Freshness header (R-V3-1) — right after Role/Doctrine,
+        #    before Organism State, so the loop sees staleness before reasoning on data.
+        try:
+            from engine.metabolism import provenance as _prov  # noqa: PLC0415
+            # Use real repo-relative paths so provenance can resolve file mtime.
+            # Logical keys (e.g. "organism_state") resolve to nonexistent paths
+            # and always yield age_days=None / staleness_reason="unknown-age".
+            _freshness_blocks: list[dict] = [
+                {"name": "organism_state", "source": "data/metabolism/organism_state.json",  "text": ""},
+                {"name": "lessons",        "source": "data/metabolism/lessons.jsonl",         "text": ""},
+                {"name": "case_law",       "source": "config/ruling_graph.yml",               "text": ""},
+                {"name": "trajectory",     "source": "data/metabolism/trajectory.jsonl",      "text": ""},
+            ]
+            if lobe:
+                _freshness_blocks.append(
+                    {"name": "fitness", "source": f"data/metabolism/fitness/{lobe}.json", "text": ""}
+                )
+            _stamped = _prov.stamp_context(_freshness_blocks, root=repo)
+            _freshness_header = _prov.render_freshness_header(_stamped)
+            parts.append(f"## Context Freshness\n\n{_freshness_header}")
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: freshness header failed — %s", _exc)
+            parts.append("## Context Freshness\n\n(freshness header unavailable)")
+
         # ── Part 2: Standing laws (quote-verified from ruling_graph.yml) ───────
         laws_text = _load_standing_laws(repo)
         parts.append(f"## Standing Laws (quote-verified from ruling_graph.yml)\n\n{laws_text}")
@@ -403,12 +427,36 @@ def _build_orchestrator_system(
         charter_text = _load_lobe_charter(repo, lobe)
         parts.append(f"## Lobe Charter\n\n{charter_text}")
 
-        # ── Part 5b: Recent lessons (lessons.jsonl tail) ────────────────────────
-        lessons_text = _load_recent_lessons(repo)
+        # ── Part 5b: Recent lessons — relevance-ranked recall (R-V3-2) ─────────
+        try:
+            from engine.metabolism import recall as _recall  # noqa: PLC0415
+            lessons_text = _recall.recall_lessons(
+                lobe=lobe,
+                byte_budget=_LESSONS_BYTE_CAP,
+                root=repo,
+            )
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: recall.recall_lessons failed — %s", _exc)
+            lessons_text = _load_recent_lessons(repo)
         parts.append(f"## Recent Lessons (from VERIFY outcomes)\n\n{lessons_text}")
 
         # ── Part 5c: Fitness-contract requirement ───────────────────────────────
         parts.append(f"## Fitness Contract Requirement\n\n{_FITNESS_CONTRACT_REQUIREMENT}")
+
+        # ── Part 5d: Trajectory + strategic gap (R-V3-4) ───────────────────────
+        try:
+            from engine.metabolism import strategic as _strategic  # noqa: PLC0415
+            _gap_text = _strategic.build_strategic_gap(organism_state, root=repo)
+            _traj_parts: list[str] = [_gap_text]
+            if lobe:
+                _traj_text = _strategic.build_trajectory_block(lobe, root=repo)
+                _traj_parts.append(_traj_text)
+            parts.append(
+                "## Trajectory & Strategic Gap\n\n" + "\n\n".join(_traj_parts)
+            )
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: trajectory/strategic-gap failed — %s", _exc)
+            parts.append("## Trajectory & Strategic Gap\n\n(unavailable)")
 
         # ── ACTIVE_BUILD_MAP collision check ────────────────────────────────────
         abm_path = repo / "docs" / "ACTIVE_BUILD_MAP.md"

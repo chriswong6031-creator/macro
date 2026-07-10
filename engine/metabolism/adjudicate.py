@@ -605,6 +605,45 @@ def adjudicate_role(
             j = (judgments or {}).get(pid, {})
             has_opinion = (judgments is not None) and (pid in judgments)
 
+            # Anti-repetition FLAG (R-V3-3) — INFORMATIONAL ONLY.
+            # Attaches prior_fail_receipt when a past FAIL matches this construction.
+            # CRITICAL: this annotation MUST NOT set allow=False, MUST NOT veto,
+            # MUST NOT change any existing screen verdict. It informs; the operator
+            # justifies any re-attempt. "A kill closes the specific construction tested,
+            # not the search space." (house-law: context-accrual-fundamental-goal)
+            prior_fail_receipt: list[dict] = []
+            try:
+                from engine.metabolism import recall as _rec  # noqa: PLC0415
+                _construction_text = str(
+                    prop.get("construction") or prop.get("description") or prop.get("rationale") or ""
+                )
+                if _construction_text.strip():
+                    _all_rows = _rec.recall_lesson_rows(
+                        construction_terms=_construction_text,
+                        root=root,
+                    )
+                    _fp = _rec.fingerprint_construction(_construction_text)
+                    for _row in _all_rows:
+                        if not _rec.is_fail_verdict(str(_row.get("verdict") or "")):
+                            continue
+                        _row_fp = _rec.fingerprint_construction(str(_row.get("construction") or ""))
+                        if not _row_fp or not _fp:
+                            continue
+                        # High construction overlap: fingerprint token overlap >= 50%
+                        _fp_set = frozenset(_fp.split())
+                        _row_fp_set = frozenset(_row_fp.split())
+                        if _fp_set and _row_fp_set:
+                            _overlap = len(_fp_set & _row_fp_set) / len(_fp_set | _row_fp_set)
+                            if _overlap >= 0.5:
+                                prior_fail_receipt.append({
+                                    "cycle_id": _row.get("cycle_id"),
+                                    "verdict": _row.get("verdict"),
+                                    "construction": _row.get("construction"),
+                                    "what_failed": _row.get("what_failed"),
+                                })
+            except Exception as _exc:  # noqa: BLE001
+                log.warning("adjudicate: prior_fail_receipt annotation failed — %s", _exc)
+
             if role == ROLE_ORCH:
                 # R-AUT-1: grant = deterministic allow AND llm grant (fail-closed
                 # when the LLM has no opinion).
@@ -627,7 +666,8 @@ def adjudicate_role(
                     )
                 results.append({"proposal_id": pid, "tier": tier, "decision": decision,
                                 "screen_allow": combined_allow,
-                                "ux_surface_tier": ux_screen.get("surface_tier", "unknown")})
+                                "ux_surface_tier": ux_screen.get("surface_tier", "unknown"),
+                                "prior_fail_receipt": prior_fail_receipt})
 
             else:  # ROLE_ADV
                 # Fail-closed: no genuine opinion → veto. A deterministic kill is
@@ -665,7 +705,8 @@ def adjudicate_role(
                         cycle_id, pid, run_id=run_id, veto=veto, findings=findings,
                         tripwire_predictions=tripwires, rationale=rationale, root=root,
                     )
-                results.append({"proposal_id": pid, "tier": tier, "veto": veto})
+                results.append({"proposal_id": pid, "tier": tier, "veto": veto,
+                                "prior_fail_receipt": prior_fail_receipt})
         except Exception as exc:  # noqa: BLE001
             log.warning("adjudicate: proposal ruling error (%s): %s", role, exc)
 

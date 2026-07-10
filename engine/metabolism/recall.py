@@ -94,7 +94,7 @@ _FAIL_TOKENS: frozenset[str] = frozenset({
 })
 
 
-def _is_fail_verdict(verdict: str) -> bool:
+def is_fail_verdict(verdict: str) -> bool:
     """Return True for FAIL/kill/reject-class verdicts.
 
     Tokenizes the verdict string and tests set-membership against an exact
@@ -103,6 +103,10 @@ def _is_fail_verdict(verdict: str) -> bool:
     """
     tokens = frozenset(_tokenize(verdict))
     return bool(tokens & _FAIL_TOKENS)
+
+
+# Back-compat alias — kept so any callers of the private name still work.
+_is_fail_verdict = is_fail_verdict
 
 
 def _score_row(
