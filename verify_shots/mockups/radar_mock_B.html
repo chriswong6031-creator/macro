@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Divergence Radar — Variant B</title>
+<link rel="stylesheet" href="../../site/theme.css">
+<style>
+/* ── Reset & base ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:13px;line-height:1.5;min-height:100vh}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="en"] .l-zh{display:none}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── Layout wrapper ───────────────────────────────────────────── */
+.rdr-page{max-width:1200px;margin:0 auto;padding:12px 16px 40px}
+
+/* ── LAYER 1: Overview band ───────────────────────────────────── */
+.rdr-band{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px}
+
+/* Triage summary strip */
+.rdr-triage{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:12px}
+.rdr-triage-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;margin-right:4px}
+.rdr-triage-title .ico{opacity:.7}
+.rdr-sep{color:var(--line);font-size:16px;flex-shrink:0}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;border:1px solid;white-space:nowrap}
+.chip-neg{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down);border-color:color-mix(in srgb,var(--down) 30%,transparent)}
+.chip-cdn{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);border-color:color-mix(in srgb,var(--muted) 30%,transparent)}
+.chip-quiet{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border-color:color-mix(in srgb,var(--muted) 20%,transparent)}
+.chip-regime{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 30%,transparent)}
+.chip-acct{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border-color:color-mix(in srgb,var(--muted) 20%,transparent);font-weight:400}
+.rdr-asof{color:var(--muted);font-size:11px;margin-left:auto}
+
+/* Δ TODAY strip */
+.rdr-delta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0 2px;font-size:11px}
+.rdr-delta-label{color:var(--muted);font-size:11px;font-weight:600;white-space:nowrap}
+.delta-new{background:color-mix(in srgb,var(--down) 15%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 35%,transparent);padding:2px 7px;border-radius:10px;font-size:11px}
+.delta-res{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent);padding:2px 7px;border-radius:10px;font-size:11px}
+.delta-flip{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);padding:2px 7px;border-radius:10px;font-size:11px}
+
+/* Visual overview: divergence scatter strip */
+.rdr-scatter-wrap{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.rdr-scatter-label{font-size:10px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
+.rdr-scatter-legend{display:flex;gap:10px;font-size:10px}
+.rdr-scatter-canvas{width:100%;height:80px;cursor:default}
+
+/* ── LAYER 2: Lifecycle pipeline ─────────────────────────────── */
+.rdr-lifecycle{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px}
+.rdr-lifecycle-h{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+.rdr-pipe{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.rdr-lane{flex:1;min-width:110px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--panel2)}
+.rdr-lane-h{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.rdr-lane-cnt{color:var(--muted);font-weight:400}
+.rdr-lchip{font-size:11px;padding:3px 6px;border-left:2px solid;border-radius:0 4px 4px 0;background:color-mix(in srgb,var(--panel) 60%,transparent);margin-bottom:3px;cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rdr-lchip:hover{background:var(--panel)}
+.rdr-lmore{font-size:10px;color:var(--link);cursor:pointer;padding:2px 6px;opacity:.8}
+.rdr-lmore:hover{opacity:1}
+.rdr-lane-empty{color:var(--muted);font-size:11px;opacity:.5;padding:2px 0}
+
+/* ── LAYER 2: Spotlight / divergence deck ────────────────────── */
+.rdr-spotlight{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px}
+.rdr-spot-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rdr-spot-title{font-size:13px;font-weight:700}
+.rdr-spot-count{font-size:11px;color:var(--muted)}
+.rdr-spot-ctrl{margin-left:auto;display:flex;gap:6px}
+
+/* Full spotlight cards */
+.rdr-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-bottom:8px}
+.rdr-card{border:1px solid var(--line);border-radius:7px;padding:10px 12px;background:var(--panel2);border-top-width:2px}
+.rdr-card.neg{border-top-color:var(--down)}
+.rdr-card.cdn{border-top-color:var(--muted)}
+.rdr-card-hdr{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.rdr-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;border:1px solid}
+.badge-neg{color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent);border-color:color-mix(in srgb,var(--down) 30%,transparent)}
+.badge-cdn{color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent);border-color:color-mix(in srgb,var(--muted) 25%,transparent)}
+.badge-quiet{color:var(--muted);background:transparent;border-color:var(--line)}
+.rdr-card-name{font-weight:700;font-size:13px}
+.rdr-edge-badge{margin-left:auto;font-weight:700;font-size:11px;padding:1px 7px;border-radius:7px}
+.rdr-card-note{font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.4}
+.rdr-srcs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.rdr-src-chip{font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid;font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
+.rdr-metrics{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.rdr-metric{font-size:11px;color:var(--muted);padding:1px 6px;background:color-mix(in srgb,var(--muted) 8%,transparent);border-radius:4px;border:1px solid var(--line)}
+.rdr-metric b{color:var(--text)}
+.rdr-confirm-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.rdr-conf-chip{font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.rdr-tickers{font-size:10px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;line-height:1.6}
+.rdr-card-strip{margin-top:5px;display:flex;gap:2px;align-items:center}
+.strip-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;opacity:.85;cursor:default}
+.strip-label{font-size:9px;color:var(--muted);margin:0 3px}
+
+/* Headlines toggle */
+.rdr-news-toggle{font-size:11px;color:var(--link);cursor:pointer;margin-top:5px;display:inline-flex;align-items:center;gap:3px;border:none;background:none;padding:0}
+.rdr-news-body{display:none;margin-top:6px;border-top:1px solid var(--line);padding-top:6px}
+.rdr-news-body.open{display:block}
+.rdr-hl{font-size:11px;margin-bottom:4px;line-height:1.4}
+.rdr-hl-src{color:var(--muted);font-size:10px}
+
+/* Compact rows (remaining divergences) */
+.rdr-compact-h{font-size:11px;color:var(--muted);font-weight:600;margin:10px 0 4px;padding:0 4px;text-transform:uppercase;letter-spacing:.05em}
+.rdr-compact-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:5px;cursor:pointer;border:1px solid transparent;font-size:12px}
+.rdr-compact-row:hover{background:var(--panel2);border-color:var(--line)}
+.rdr-compact-name{font-weight:600;min-width:140px;flex-shrink:0}
+.rdr-compact-state{flex-shrink:0}
+.rdr-compact-edge{font-weight:700;font-size:11px;font-family:ui-monospace,Menlo,monospace;flex-shrink:0;min-width:36px;text-align:right}
+.rdr-compact-div{font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--muted);flex-shrink:0;min-width:40px}
+.rdr-compact-days{font-size:10px;color:var(--muted);flex-shrink:0;min-width:38px}
+.rdr-compact-strip{display:flex;gap:2px;align-items:center;margin-left:auto;flex-shrink:0}
+.rdr-compact-expand{display:none;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:8px 10px;margin:0 8px 4px;font-size:12px}
+.rdr-compact-expand.open{display:block}
+.rdr-show-ctrl{font-size:11px;color:var(--link);cursor:pointer;padding:4px 8px;margin-top:4px;display:inline-block}
+
+/* ── LAYER 3: Tabbed panels ───────────────────────────────────── */
+.rdr-tabs-wrap{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.rdr-tabs-nav{display:flex;border-bottom:1px solid var(--line);background:var(--panel2)}
+.rdr-tab-btn{padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap}
+.rdr-tab-btn:hover{color:var(--text)}
+.rdr-tab-btn.active{color:var(--text);border-bottom-color:var(--link)}
+.rdr-tab-body{display:none;padding:12px 14px}
+.rdr-tab-body.active{display:block}
+
+/* All-themes table */
+.rdr-theme-controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.rdr-filter-chip{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--muted);transition:all .15s}
+.rdr-filter-chip.active{background:var(--panel2);color:var(--text);border-color:var(--muted)}
+.rdr-search-box{padding:4px 10px;border-radius:5px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:12px;font-family:inherit;outline:none;width:180px}
+.rdr-search-box:focus{border-color:var(--link)}
+.rdr-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.rdr-tbl th{text-align:left;padding:5px 8px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+.rdr-tbl th:hover{color:var(--text)}
+.rdr-tbl th .sort-ico{font-size:9px;margin-left:3px;opacity:.5}
+.rdr-tbl th.sorted .sort-ico{opacity:1}
+.rdr-tbl td{padding:5px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
+.rdr-tbl tr:hover td{background:color-mix(in srgb,var(--panel2) 50%,transparent)}
+.rdr-tbl tr.hidden{display:none}
+.rdr-quiet-toggle{font-size:11px;color:var(--link);cursor:pointer;padding:6px 8px;display:inline-block}
+.rdr-num{font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+.rdr-strip-cell{display:flex;gap:2px;align-items:center}
+.rdr-life-tag{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+
+/* Per-name section */
+.rdr-name-controls{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.rdr-name-search{padding:4px 10px;border-radius:5px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:12px;font-family:inherit;outline:none;width:180px}
+.rdr-name-search:focus{border-color:var(--link)}
+.rdr-name-select{padding:4px 8px;border-radius:5px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:12px;font-family:inherit;outline:none;cursor:pointer}
+.rdr-name-rows{}
+.rdr-name-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:5px;cursor:pointer;border:1px solid transparent;font-size:12px}
+.rdr-name-row:hover{background:var(--panel2);border-color:var(--line)}
+.rdr-name-ticker{font-family:ui-monospace,Menlo,monospace;font-weight:700;min-width:52px;flex-shrink:0}
+.rdr-name-basket{font-size:10px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rdr-name-edge{font-weight:700;font-size:11px;font-family:ui-monospace,Menlo,monospace;min-width:36px;text-align:right;flex-shrink:0}
+.rdr-name-rs{font-size:11px;font-family:ui-monospace,Menlo,monospace;min-width:52px;text-align:right;flex-shrink:0}
+.rdr-name-expand{display:none;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:8px 10px;margin:0 8px 4px;font-size:12px}
+.rdr-name-expand.open{display:block}
+.rdr-show-more{display:block;width:100%;text-align:center;padding:8px;font-size:12px;color:var(--link);cursor:pointer;border:1px solid var(--line);border-radius:5px;background:none;margin-top:8px}
+
+/* Accountability panel */
+.rdr-acct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:10px}
+.rdr-acct-stat{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.rdr-acct-val{font-size:18px;font-weight:700;font-family:ui-monospace,Menlo,monospace;color:var(--muted)}
+.rdr-acct-lbl{font-size:10px;color:var(--muted);margin-top:1px;text-transform:uppercase;letter-spacing:.05em}
+.rdr-acct-note{font-size:11px;color:var(--muted);line-height:1.5;padding:8px;background:color-mix(in srgb,var(--warn) 8%,transparent);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent);border-radius:5px;margin-bottom:8px}
+.rdr-acct-null{font-size:12px;color:var(--muted);font-style:italic}
+.rdr-horizon-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.rdr-horizon{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:6px 10px;font-size:11px}
+.rdr-horizon-h{font-weight:600;margin-bottom:2px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+
+/* Narrative Brain */
+.rdr-brain{margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:color-mix(in srgb,var(--muted) 6%,transparent);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+
+/* Mobile overrides */
+@media(max-width:600px){
+  .rdr-page{padding:8px 10px 32px}
+  .rdr-cards{grid-template-columns:1fr}
+  .rdr-pipe{gap:6px}
+  .rdr-lane{min-width:90px}
+  .rdr-compact-name{min-width:100px}
+  .rdr-asof{display:none}
+  .rdr-triage{gap:6px}
+  .rdr-tab-btn{padding:7px 10px;font-size:11px}
+  .rdr-name-controls{gap:4px}
+  .rdr-name-search,.rdr-name-select{width:100%}
+  .rdr-tbl{font-size:11px}
+}
+@media(max-width:400px){
+  .rdr-compact-days{display:none}
+  .rdr-compact-div{display:none}
+}
+</style>
+</head>
+<body>
+<div class="rdr-page">
+
+  <!-- ══ LAYER 1: OVERVIEW BAND ══════════════════════════════════════ -->
+  <div class="rdr-band">
+    <!-- 1a. Triage summary strip -->
+    <div class="rdr-triage" id="triage-strip">
+      <div class="rdr-triage-title">
+        <span class="ico">🛰️</span>
+        <span class="l-en">Divergence Radar</span>
+        <span class="l-zh">背离雷达</span>
+      </div>
+      <span class="rdr-sep">·</span>
+      <!-- Regime -->
+      <span class="chip chip-regime" id="regime-chip">
+        <span class="l-en">Goldilocks</span><span class="l-zh">金发女孩</span>
+        &nbsp;×1.032
+      </span>
+      <!-- State counts — injected by JS -->
+      <span id="state-chips"></span>
+      <!-- Coverage -->
+      <span class="chip chip-quiet" id="coverage-chip">
+        <span class="l-en">46 themes · 458 members</span>
+        <span class="l-zh">46主题 · 458成员</span>
+      </span>
+      <!-- Accountability status -->
+      <span class="chip chip-acct">
+        <span class="l-en">grading: 0 matured · accruing</span>
+        <span class="l-zh">评级中：0成熟 · 累积中</span>
+      </span>
+      <span class="rdr-asof" id="asof-text">as of 2026-07-09 · lag 3mo</span>
+    </div>
+
+    <!-- 1b. Δ TODAY strip -->
+    <div class="rdr-delta" id="delta-strip" style="display:none">
+      <span class="rdr-delta-label">
+        <span class="l-en">Δ TODAY</span><span class="l-zh">今日变化</span>
+      </span>
+      <span id="delta-chips"></span>
+    </div>
+
+    <!-- 1c. Scatter overview -->
+    <div class="rdr-scatter-wrap">
+      <div class="rdr-scatter-label">
+        <span style="color:var(--muted)">
+          <span class="l-en">price 60d rel · all 46 themes · dot size = edge score</span>
+          <span class="l-zh">60日相对价格 · 全部46主题 · 点大小 = 优势分</span>
+        </span>
+        <span class="rdr-scatter-legend">
+          <span style="color:var(--down)">● <span class="l-en">Neg Div</span><span class="l-zh">负背离</span></span>
+          <span style="color:var(--muted)">● <span class="l-en">Conf Down</span><span class="l-zh">确认走弱</span></span>
+          <span style="color:color-mix(in srgb,var(--muted) 40%,transparent)">● <span class="l-en">Quiet</span><span class="l-zh">平静</span></span>
+        </span>
+      </div>
+      <canvas class="rdr-scatter-canvas" id="scatter-canvas" height="80"></canvas>
+    </div>
+  </div>
+
+  <!-- ══ LAYER 2: LIFECYCLE PIPELINE ══════════════════════════════════ -->
+  <div class="rdr-lifecycle">
+    <div class="rdr-lifecycle-h">
+      <span class="l-en">Lifecycle Pipeline</span>
+      <span class="l-zh">生命周期管线</span>
+    </div>
+    <div class="rdr-pipe" id="lifecycle-pipe"></div>
+  </div>
+
+  <!-- ══ LAYER 2: SPOTLIGHT — DIVERGENCE DECK ═════════════════════════ -->
+  <div class="rdr-spotlight">
+    <div class="rdr-spot-h">
+      <span class="rdr-spot-title">
+        <span class="l-en">🎯 Active Divergences</span>
+        <span class="l-zh">🎯 活跃背离</span>
+      </span>
+      <span class="rdr-spot-count" id="spot-count"></span>
+      <div class="rdr-spot-ctrl">
+        <button onclick="scrollToSection('tab-names')" style="font-size:11px;color:var(--link);background:none;border:none;cursor:pointer;padding:2px 6px">
+          <span class="l-en">filter per-name ↓</span><span class="l-zh">筛选个股↓</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Top cards (full) -->
+    <div class="rdr-cards" id="top-cards"></div>
+
+    <!-- Compact rows (remaining divergences) -->
+    <div class="rdr-compact-h" id="compact-h" style="display:none">
+      <span class="l-en">All divergences</span><span class="l-zh">全部背离</span>
+    </div>
+    <div id="compact-rows"></div>
+    <span class="rdr-show-ctrl" id="show-all-ctrl" onclick="toggleShowAll()" style="display:none">
+      <span class="l-en">Show all divergences</span><span class="l-zh">显示全部背离</span>
+    </span>
+  </div>
+
+  <!-- ══ LAYER 3: TABBED DRILL-DOWN ══════════════════════════════════ -->
+  <div class="rdr-tabs-wrap">
+    <div class="rdr-tabs-nav">
+      <button class="rdr-tab-btn active" onclick="showTab('tab-themes',this)">
+        <span class="l-en">All Themes</span><span class="l-zh">全部主题</span>
+      </button>
+      <button class="rdr-tab-btn" onclick="showTab('tab-names',this)">
+        <span class="l-en">Per-Name (211)</span><span class="l-zh">个股(211)</span>
+      </button>
+      <button class="rdr-tab-btn" onclick="showTab('tab-acct',this)">
+        <span class="l-en">Accountability</span><span class="l-zh">可信度</span>
+      </button>
+    </div>
+
+    <!-- TAB: All Themes -->
+    <div class="rdr-tab-body active" id="tab-themes">
+      <div class="rdr-theme-controls">
+        <button class="rdr-filter-chip active" onclick="setFilter('all',this)">
+          <span class="l-en">All</span><span class="l-zh">全部</span>
+        </button>
+        <button class="rdr-filter-chip" onclick="setFilter('div',this)">
+          <span class="l-en">Divergences</span><span class="l-zh">背离</span>
+        </button>
+        <button class="rdr-filter-chip" onclick="setFilter('conf',this)">
+          <span class="l-en">Confirmed</span><span class="l-zh">确认</span>
+        </button>
+        <button class="rdr-filter-chip" onclick="setFilter('quiet',this)">
+          <span class="l-en">Quiet</span><span class="l-zh">平静</span>
+        </button>
+        <span id="quiet-hide-toggle" class="rdr-quiet-toggle" onclick="toggleQuiet()">
+          <span class="l-en">show 25 quiet</span><span class="l-zh">显示25个平静</span>
+        </span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="rdr-tbl" id="theme-table">
+          <thead>
+            <tr>
+              <th onclick="sortThemes('name')" data-col="name">
+                <span class="l-en">Theme</span><span class="l-zh">主题</span>
+                <span class="sort-ico">↕</span>
+              </th>
+              <th onclick="sortThemes('accel')" data-col="accel">
+                <span class="l-en">Spend YoY</span><span class="l-zh">支出同比</span>
+                <span class="sort-ico">↕</span>
+              </th>
+              <th onclick="sortThemes('rel60')" data-col="rel60">
+                <span class="l-en">Price 60d</span><span class="l-zh">价格60日</span>
+                <span class="sort-ico">↕</span>
+              </th>
+              <th onclick="sortThemes('edge')" data-col="edge">
+                <span class="l-en">Edge</span><span class="l-zh">优势</span>
+                <span class="sort-ico">↕</span>
+              </th>
+              <th onclick="sortThemes('days')" data-col="days">
+                <span class="l-en">Days</span><span class="l-zh">天数</span>
+                <span class="sort-ico">↕</span>
+              </th>
+              <th>
+                <span class="l-en">14d Strip</span><span class="l-zh">14日</span>
+              </th>
+              <th>
+                <span class="l-en">State</span><span class="l-zh">状态</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="theme-tbody"></tbody>
+        </table>
+      </div>
+      <div id="theme-quiet-rows" style="display:none">
+        <!-- quiet rows appended here by JS when toggled -->
+      </div>
+    </div>
+
+    <!-- TAB: Per-Name -->
+    <div class="rdr-tab-body" id="tab-names">
+      <div class="rdr-name-controls">
+        <input class="rdr-name-search" id="name-search" placeholder="Search ticker…" oninput="filterNames()">
+        <select class="rdr-name-select" id="name-state-filter" onchange="filterNames()">
+          <option value="all">All states</option>
+          <option value="NEGATIVE_DIVERGENCE">Neg Divergence</option>
+          <option value="CONFIRMED_DOWN">Confirmed Down</option>
+          <option value="QUIET">Quiet</option>
+        </select>
+        <select class="rdr-name-select" id="name-basket-filter" onchange="filterNames()">
+          <option value="all">All baskets</option>
+        </select>
+      </div>
+      <div class="rdr-name-rows" id="name-rows"></div>
+      <button class="rdr-show-more" id="name-show-more" onclick="showMoreNames()" style="display:none">
+        <span class="l-en">Show 20 more</span><span class="l-zh">显示更多20个</span>
+      </button>
+    </div>
+
+    <!-- TAB: Accountability -->
+    <div class="rdr-tab-body" id="tab-acct">
+      <div class="rdr-acct-note">
+        <b>🔍 <span class="l-en">Honest null</span><span class="l-zh">诚实空值</span>:</b>
+        <span class="l-en"> This radar has 4,073 recorded snapshots and 0 matured predictions. Grading requires horizons to elapse (21d / 63d). 112 theses are open. No performance claim is possible yet — this section auto-populates as horizons mature.</span>
+        <span class="l-zh"> 雷达已记录4,073个快照，0个已成熟预测。评级需要等待时间窗口到期（21天/63天）。112个论点仍在跟踪。目前无法做出任何表现声明——本节将在到期时自动填充。</span>
+      </div>
+      <div class="rdr-acct-grid">
+        <div class="rdr-acct-stat">
+          <div class="rdr-acct-val">4,073</div>
+          <div class="rdr-acct-lbl"><span class="l-en">Snapshots recorded</span><span class="l-zh">已记录快照</span></div>
+        </div>
+        <div class="rdr-acct-stat">
+          <div class="rdr-acct-val">0</div>
+          <div class="rdr-acct-lbl"><span class="l-en">Matured predictions</span><span class="l-zh">已成熟预测</span></div>
+        </div>
+        <div class="rdr-acct-stat">
+          <div class="rdr-acct-val">112</div>
+          <div class="rdr-acct-lbl"><span class="l-en">Open theses</span><span class="l-zh">开放论点</span></div>
+        </div>
+        <div class="rdr-acct-stat">
+          <div class="rdr-acct-val" style="color:var(--muted)">—</div>
+          <div class="rdr-acct-lbl"><span class="l-en">IC (all)</span><span class="l-zh">IC (全部)</span></div>
+        </div>
+        <div class="rdr-acct-stat">
+          <div class="rdr-acct-val" style="color:var(--muted)">—</div>
+          <div class="rdr-acct-lbl"><span class="l-en">Hit rate</span><span class="l-zh">命中率</span></div>
+        </div>
+        <div class="rdr-acct-stat">
+          <div class="rdr-acct-val" style="color:var(--muted)">—</div>
+          <div class="rdr-acct-lbl"><span class="l-en">Dir accuracy</span><span class="l-zh">方向准确率</span></div>
+        </div>
+      </div>
+      <div class="rdr-horizon-row">
+        <div class="rdr-horizon">
+          <div class="rdr-horizon-h">21d <span class="l-en">horizon</span><span class="l-zh">期限</span></div>
+          <span class="rdr-acct-null">
+            <span class="l-en">IC: — · Hit rate: — · n=0 matured</span>
+            <span class="l-zh">IC: — · 命中率: — · n=0成熟</span>
+          </span>
+        </div>
+        <div class="rdr-horizon">
+          <div class="rdr-horizon-h">63d <span class="l-en">horizon</span><span class="l-zh">期限</span></div>
+          <span class="rdr-acct-null">
+            <span class="l-en">IC: — · Hit rate: — · n=0 matured</span>
+            <span class="l-zh">IC: — · 命中率: — · n=0成熟</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Narrative Brain -->
+      <div class="rdr-brain" id="brain-slot">
+        <span>🧠</span>
+        <span>
+          <b><span class="l-en">Narrative Brain</span><span class="l-zh">叙事大脑</span></b>
+          <span class="l-en"> · deterministic only — AI read unavailable (no_usable_reply)</span>
+          <span class="l-zh"> · 仅确定性——AI解读不可用（no_usable_reply）</span>
+        </span>
+      </div>
+      <p style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5">
+        <span class="l-en">Radar IC schema v1 · Track record schema v1 · Display-only context, no allocation signal.</span>
+        <span class="l-zh">雷达IC架构v1 · 记录模式v1 · 仅供参考，不作为配置信号。</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];})}
+function bi(en,zh){var z=(zh==null||zh==="")?en:zh;return'<span class="l-en">'+esc(en)+'</span><span class="l-zh">'+esc(z)+'</span>';}
+function fetchJSON(url){return fetch(url,{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}
+function relpct(x){return x==null?"—":(x>0?"+":"")+(x*100).toFixed(0)+"%";}
+function usd(x){if(x==null)return"—";var v=Math.abs(x);if(v>=1e9)return"$"+(x/1e9).toFixed(1)+"B";if(v>=1e6)return"$"+Math.round(x/1e6)+"M";return"$"+Math.round(x/1e3)+"K";}
+function edgeColor(e){return e>=70?"var(--up)":e>=45?"var(--warn)":"var(--muted)";}
+
+var STATE={
+  NEGATIVE_DIVERGENCE:{cls:"badge-neg",en:"Neg Divergence",zh:"负背离",ico:"◎",col:"var(--down)"},
+  CONFIRMED_DOWN:{cls:"badge-cdn",en:"Conf Down",zh:"确认走弱",ico:"✓",col:"var(--muted)"},
+  CONFIRMED_UP:{cls:"badge-neg",en:"Conf Up",zh:"确认上行",ico:"✓",col:"var(--up)"},
+  POSITIVE_DIVERGENCE:{cls:"badge-pos",en:"Pos Divergence",zh:"正背离",ico:"◎",col:"var(--up)"},
+  QUIET:{cls:"badge-quiet",en:"Quiet",zh:"平静",ico:"·",col:"var(--line)"}
+};
+function st(s){return STATE[s]||STATE.QUIET;}
+
+var LIFE={
+  emerging:{en:"Emerging",zh:"新兴",c:"var(--up)"},
+  forming:{en:"Forming",zh:"形成中",c:"var(--up)"},
+  confirming:{en:"Confirming",zh:"确认中",c:"var(--link)"},
+  mature:{en:"Mature",zh:"成熟",c:"var(--muted)"},
+  fading:{en:"Fading",zh:"退潮",c:"var(--down)"},
+  quiet:{en:"Quiet",zh:"平静",c:"var(--muted)"}
+};
+
+// ── Fake additive data (as per brief) ─────────────────────────────────────
+var FAKE_CHANGES={
+  prev_date:"2026-07-09",
+  new_flags:[{basket:"ai_semiconductors",name:"AI Semiconductors",name_zh:"AI半导体",state:"NEGATIVE_DIVERGENCE"}],
+  resolved:[{basket:"travel",name:"Travel",name_zh:"旅游",prev_state:"NEGATIVE_DIVERGENCE"}],
+  flips:[{basket:"defense",name:"Defense",name_zh:"国防",from:"POSITIVE_DIVERGENCE",to:"CONFIRMED_UP"}]
+};
+
+// Fake 14-day state strip generator
+function fakeStrip(f){
+  var states=["QUIET","QUIET","QUIET","QUIET","QUIET","QUIET","QUIET","QUIET","QUIET","QUIET","QUIET","QUIET"];
+  var s=f.state;
+  var n=f.decay&&f.decay.days_in_state?f.decay.days_in_state:3;
+  for(var i=Math.max(0,12-n);i<12;i++){states[i]=s;}
+  var dates=[];
+  for(var d=0;d<12;d++){
+    var dt=new Date(2026,5,27+d);
+    dates.push({d:(dt.getMonth()+1)+"-"+(dt.getDate()<10?"0":"")+dt.getDate(),s:states[d]});
+  }
+  return dates;
+}
+
+function stripDots(strip){
+  return strip.map(function(item){
+    var col=item.s==="NEGATIVE_DIVERGENCE"?"var(--down)":item.s==="CONFIRMED_DOWN"?"#5d6b7e":item.s==="POSITIVE_DIVERGENCE"?"var(--up)":"var(--line)";
+    return'<span class="strip-dot" style="background:'+col+'" title="'+esc(item.d)+' '+esc(item.s)+'"></span>';
+  }).join("");
+}
+
+// ── Global state ───────────────────────────────────────────────────────────
+var allFlags=[];
+var allTickers=[];
+var themeFilter="all";
+var quietVisible=false;
+var showAllDivs=false;
+var nameOffset=20;
+var sortCol="edge",sortDir=-1;
+
+// ── FETCH ──────────────────────────────────────────────────────────────────
+Promise.all([
+  fetchJSON("../../site/basketdata/radar.json"),
+  fetchJSON("../../site/basketdata/radar_enriched.json"),
+  fetchJSON("../../site/basketdata/radar_news.json"),
+  fetchJSON("../../site/basketdata/radar_ticker.json"),
+  fetchJSON("../../site/basketdata/radar_ic.json"),
+  fetchJSON("../../site/basketdata/radar_track_record.json"),
+  fetchJSON("../../site/basketdata/narrative_brain.json")
+]).then(function(results){
+  var radar=results[0],enriched=results[1],newsMap=results[2],tickers=results[3];
+  if(!radar||!radar.flags){return;}
+
+  // Merge enriched into flags
+  var eidx={};
+  ((enriched||{}).flags||[]).forEach(function(ef){if(ef.basket)eidx[ef.basket]=ef;});
+  var baskets=(newsMap||{}).baskets||{};
+  radar.flags.forEach(function(f){
+    var ef=eidx[f.basket]||{};
+    ["edge_score","confirm","regime","decay","drivers"].forEach(function(k){if(ef[k]!=null)f[k]=ef[k];});
+    var nb=baskets[f.basket]||{};
+    f._headlines=nb.headlines||[];
+    // Inject fake additive fields
+    f.prev_state="QUIET";
+    f.state_strip=fakeStrip(f);
+  });
+
+  allFlags=radar.flags;
+  allTickers=(tickers&&tickers.tickers)||[];
+
+  renderTriage(radar,enriched);
+  renderDelta(FAKE_CHANGES);
+  renderScatter(radar.flags);
+  renderLifecycle(radar.flags);
+  renderSpotlight(radar.flags);
+  renderThemesTable(radar.flags);
+  renderNamesSection(allTickers);
+});
+
+// ── 1a. Triage strip ──────────────────────────────────────────────────────
+function renderTriage(radar,enriched){
+  var states={NEGATIVE_DIVERGENCE:0,CONFIRMED_DOWN:0,QUIET:0};
+  radar.flags.forEach(function(f){if(states[f.state]!=null)states[f.state]++;});
+  var html='<span style="display:flex;flex-wrap:wrap;gap:5px;align-items:center">';
+  html+='<span class="chip chip-neg">◎ '+states.NEGATIVE_DIVERGENCE+' <span class="l-en">neg div</span><span class="l-zh">负背离</span></span>';
+  html+='<span class="chip chip-cdn">✓ '+states.CONFIRMED_DOWN+' <span class="l-en">conf down</span><span class="l-zh">确认走弱</span></span>';
+  html+='<span class="chip chip-quiet">· '+states.QUIET+' <span class="l-en">quiet</span><span class="l-zh">平静</span></span>';
+  html+='</span>';
+  document.getElementById("state-chips").innerHTML=html;
+  if(radar.as_of){
+    document.getElementById("asof-text").textContent="as of "+radar.as_of+" · lag "+radar.lag_months+"mo";
+  }
+}
+
+// ── 1b. Δ TODAY strip ─────────────────────────────────────────────────────
+function renderDelta(changes){
+  var chips=[];
+  (changes.new_flags||[]).forEach(function(f){
+    chips.push('<span class="delta-new">+ '+bi(f.name,f.name_zh)+' <span class="l-en">new</span><span class="l-zh">新</span></span>');
+  });
+  (changes.resolved||[]).forEach(function(f){
+    chips.push('<span class="delta-res">✓ '+bi(f.name,f.name_zh)+' <span class="l-en">resolved</span><span class="l-zh">已消除</span></span>');
+  });
+  (changes.flips||[]).forEach(function(f){
+    chips.push('<span class="delta-flip">⇄ '+bi(f.name,f.name_zh)+'</span>');
+  });
+  if(chips.length){
+    var el=document.getElementById("delta-strip");
+    el.style.display="";
+    document.getElementById("delta-chips").innerHTML=chips.join("");
+  }
+}
+
+// ── 1c. Scatter canvas ─────────────────────────────────────────────────────
+function renderScatter(flags){
+  var canvas=document.getElementById("scatter-canvas");
+  if(!canvas)return;
+  var W=canvas.offsetWidth||900,H=80;
+  canvas.width=W*window.devicePixelRatio||W;
+  canvas.height=H*window.devicePixelRatio||H;
+  var ctx=canvas.getContext("2d");
+  var dpr=window.devicePixelRatio||1;
+  ctx.scale(dpr,dpr);
+
+  // X-axis = rel_60d, ranging from -0.35 to 0.82
+  var xMin=-0.35,xMax=0.82;
+  function toX(v){return 12+((v-xMin)/(xMax-xMin))*(W-24);}
+
+  // Draw zero line + faint band
+  var cx=toX(0);
+  ctx.fillStyle="rgba(128,128,128,0.05)";
+  ctx.fillRect(toX(-0.35),0,cx-toX(-0.35),H-14);
+  ctx.strokeStyle="rgba(128,128,128,0.2)";
+  ctx.lineWidth=1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(cx,4);ctx.lineTo(cx,H-16);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Draw axis tick marks and labels
+  ctx.fillStyle="rgba(139,147,161,0.55)";
+  ctx.font="9px system-ui,sans-serif";
+  ctx.textAlign="center";
+  [-0.3,-0.2,-0.1,0,0.1,0.2,0.3,0.4,0.5,0.6,0.7].forEach(function(v){
+    var x=toX(v);
+    ctx.fillText((v>0?"+":"")+(v*100).toFixed(0)+"%",x,H-2);
+    ctx.fillStyle="rgba(128,128,128,0.1)";
+    ctx.fillRect(x,0,1,H-14);
+    ctx.fillStyle="rgba(139,147,161,0.55)";
+  });
+
+  // Group flags by state
+  var stateGroups={NEGATIVE_DIVERGENCE:[],CONFIRMED_DOWN:[],QUIET:[]};
+  flags.forEach(function(f){
+    var key=f.state in stateGroups?f.state:"QUIET";
+    stateGroups[key].push(f);
+  });
+
+  // Y-bands: 3 swim lanes by state — keeps them visually separated
+  // QUIET: y≈30, CONFIRMED_DOWN: y≈45, NEG_DIV: y≈20 (most prominent, top)
+  var yBands={QUIET:48,CONFIRMED_DOWN:34,NEGATIVE_DIVERGENCE:18};
+
+  function drawGroup(grp,fillColor,strokeColor,yBase){
+    // Sort by x so jitter goes by density at same position
+    grp.sort(function(a,b){return(a.consensus&&a.consensus.rel_60d||0)-(b.consensus&&b.consensus.rel_60d||0);});
+    grp.forEach(function(f,i){
+      var rel=f.consensus&&f.consensus.rel_60d!=null?f.consensus.rel_60d:0;
+      var x=toX(rel);
+      var edge=f.edge_score||0;
+      var r=Math.max(3.5,3+edge/28); // min 3.5 radius, scale with edge
+      // Jitter within lane so overlapping dots spread slightly
+      var yOff=(i%5-2)*4;
+      var y=yBase+yOff;
+      ctx.beginPath();
+      ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fillStyle=fillColor;
+      ctx.fill();
+      if(strokeColor){
+        ctx.strokeStyle=strokeColor;
+        ctx.lineWidth=1;
+        ctx.stroke();
+      }
+    });
+  }
+
+  drawGroup(stateGroups.QUIET,"rgba(60,70,90,0.6)","rgba(90,100,120,0.3)",yBands.QUIET);
+  drawGroup(stateGroups.CONFIRMED_DOWN,"rgba(100,110,130,0.7)","rgba(139,147,161,0.4)",yBands.CONFIRMED_DOWN);
+  drawGroup(stateGroups.NEGATIVE_DIVERGENCE,"rgba(224,100,100,0.8)","rgba(255,120,120,0.4)",yBands.NEGATIVE_DIVERGENCE);
+
+  // Label top-4 neg-div by edge (name above dot)
+  var topNeg=stateGroups.NEGATIVE_DIVERGENCE.slice()
+    .sort(function(a,b){return(b.edge_score||0)-(a.edge_score||0);}).slice(0,4);
+  ctx.font="bold 9px system-ui,sans-serif";
+  ctx.textAlign="center";
+  topNeg.forEach(function(f){
+    var rel=f.consensus&&f.consensus.rel_60d!=null?f.consensus.rel_60d:0;
+    var x=toX(rel);
+    // Abbreviate name
+    var parts=(f.name||"").split(" ");
+    var label=parts.length>2?parts[0]+"-"+parts[parts.length-1].slice(0,4):parts[0];
+    ctx.fillStyle="rgba(255,140,140,0.95)";
+    ctx.fillText(label,x,9);
+  });
+
+  // Side labels for swim lanes
+  ctx.font="8px system-ui,sans-serif";
+  ctx.textAlign="left";
+  ctx.fillStyle="rgba(224,100,100,0.6)";
+  ctx.fillText("NEG",2,yBands.NEGATIVE_DIVERGENCE+3);
+  ctx.fillStyle="rgba(139,147,161,0.5)";
+  ctx.fillText("CDN",2,yBands.CONFIRMED_DOWN+3);
+  ctx.fillStyle="rgba(90,100,120,0.4)";
+  ctx.fillText("QT",2,yBands.QUIET+3);
+}
+
+// ── Lifecycle pipeline ─────────────────────────────────────────────────────
+var LANES=[
+  {key:"emerging",en:"Emerging",zh:"新兴"},
+  {key:"forming",en:"Forming",zh:"形成中"},
+  {key:"confirming",en:"Confirming",zh:"确认中"},
+  {key:"mature",en:"Mature",zh:"成熟"},
+  {key:"fading",en:"Fading",zh:"退潮"},
+  {key:"quiet",en:"Quiet",zh:"平静"}
+];
+var LANE_CAP=3; // chips shown before +N more
+var laneExpanded={};
+
+function renderLifecycle(flags){
+  var el=document.getElementById("lifecycle-pipe");
+  el.innerHTML=LANES.map(function(L,li){
+    var chips=flags.filter(function(f){return f.lifecycle===L.key;});
+    var linfo=LIFE[L.key]||LIFE.quiet;
+    var laneHtml='<div class="rdr-lane" id="lane-'+li+'">';
+    laneHtml+='<div class="rdr-lane-h" style="color:'+linfo.c+'">'+bi(L.en,L.zh)+'<span class="rdr-lane-cnt">'+chips.length+'</span></div>';
+    if(!chips.length){
+      laneHtml+='<div class="rdr-lane-empty">—</div>';
+    } else {
+      chips.slice(0,LANE_CAP).forEach(function(f){
+        var s=st(f.state);
+        laneHtml+='<div class="rdr-lchip" style="border-left-color:'+linfo.c+'" title="'+esc(f.name)+' · '+esc(s.en)+'">';
+        laneHtml+=bi(f.name||f.basket,f.name_zh||f.name||f.basket);
+        laneHtml+='</div>';
+      });
+      if(chips.length>LANE_CAP){
+        var extra=chips.length-LANE_CAP;
+        laneHtml+='<div class="rdr-lchip" id="lane-extra-'+li+'" style="display:none;border-left-color:'+linfo.c+'">';
+        chips.slice(LANE_CAP).forEach(function(f){
+          laneHtml+=bi(f.name||f.basket,f.name_zh||f.name||f.basket)+'<br>';
+        });
+        laneHtml+='</div>';
+        laneHtml+='<span class="rdr-lmore" onclick="toggleLane('+li+','+extra+',this)">+'+extra+' <span class="l-en">more</span><span class="l-zh">更多</span></span>';
+      }
+    }
+    laneHtml+='</div>';
+    return laneHtml;
+  }).join("");
+}
+
+window.toggleLane=function(li,n,btn){
+  var extra=document.getElementById("lane-extra-"+li);
+  if(!extra)return;
+  var open=extra.style.display!=="none";
+  extra.style.display=open?"none":"block";
+  btn.innerHTML=open?('+'+n+' <span class="l-en">more</span><span class="l-zh">更多</span>')
+    :('<span class="l-en">collapse</span><span class="l-zh">收起</span>');
+};
+
+// ── Spotlight (top cards + compact rows) ──────────────────────────────────
+function renderSpotlight(flags){
+  var divs=flags.filter(function(f){return f.state.indexOf("DIVERGENCE")>=0;});
+  divs.sort(function(a,b){return(b.edge_score||0)-(a.edge_score||0);});
+
+  document.getElementById("spot-count").innerHTML=
+    bi(divs.length+" active divergences ranked by edge score","按优势分排序的"+divs.length+"个活跃背离");
+
+  var TOP=4;
+  var topDivs=divs.slice(0,TOP);
+  var restDivs=divs.slice(TOP);
+
+  // Full cards for top 4
+  var cardsEl=document.getElementById("top-cards");
+  cardsEl.innerHTML=topDivs.map(function(f,i){return fullCard(f,i);}).join("");
+
+  // Compact rows for remaining
+  var compactEl=document.getElementById("compact-rows");
+  var compH=document.getElementById("compact-h");
+  if(restDivs.length){
+    compH.style.display="";
+    compactEl.innerHTML=restDivs.map(function(f,i){return compactRow(f,TOP+i);}).join("");
+    var SHOW=4; // show first N compact rows, rest behind toggle
+    if(restDivs.length>SHOW){
+      var ctrlEl=document.getElementById("show-all-ctrl");
+      ctrlEl.style.display="";
+      ctrlEl.innerHTML='<span class="l-en">Show all '+restDivs.length+' divergences</span><span class="l-zh">显示全部'+restDivs.length+'个背离</span>';
+      // hide beyond SHOW
+      var rows=compactEl.querySelectorAll(".rdr-compact-row,.rdr-compact-expand");
+      // Group into pairs (row + expand div)
+      var allRows=compactEl.querySelectorAll(".rdr-compact-row");
+      allRows.forEach(function(r,idx){
+        if(idx>=SHOW){r.style.display="none";}
+        var expandId=r.getAttribute("data-expand");
+        if(expandId&&idx>=SHOW){
+          var exp=document.getElementById(expandId);
+          if(exp)exp.style.display="none";
+        }
+      });
+    }
+  }
+}
+
+function fullCard(f,i){
+  var s=st(f.state);
+  var o=f.observable||{};
+  var c=f.consensus||{};
+  var edge=f.edge_score;
+  var ecol=edgeColor(edge||0);
+
+  var srcsHtml="";
+  if(o.sources&&o.sources.length){
+    srcsHtml='<div class="rdr-srcs">';
+    o.sources.forEach(function(src){
+      var z=src.z==null?0:src.z;
+      var col=z>0.2?"var(--up)":z<-0.2?"var(--down)":"var(--muted)";
+      srcsHtml+='<span class="rdr-src-chip" style="color:'+col+';border-color:'+col+'">'+
+        bi(src.label_en||src.name,src.label_zh||src.name)+
+        ' <b>'+(z>0?"+":"")+z.toFixed(1)+'</b></span>';
+    });
+    srcsHtml+='</div>';
+  }
+
+  var confirmHtml="";
+  var cf=f.confirm;
+  if(cf){
+    var legs=[];
+    function confLeg(name,lg){
+      if(!lg||!lg.present)return;
+      var d=lg.lean>0?"▲":lg.lean<0?"▼":"·";
+      var col=lg.lean>0?"var(--up)":lg.lean<0?"var(--down)":"var(--muted)";
+      legs.push('<span class="rdr-conf-chip" style="color:'+col+';border-color:'+col+'">'+name+' '+d+'</span>');
+    }
+    confLeg(bi("smart$","聪明钱"),cf.alt);
+    confLeg("ETF",cf.flows);
+    confLeg(bi("options","期权"),cf.options);
+    if(cf.crowd&&cf.crowd.penalty>0)legs.push('<span class="rdr-conf-chip" style="color:var(--warn)">'+bi("crowd","拥挤")+' −'+cf.crowd.penalty+'</span>');
+    if(f.decay&&f.decay.days_in_state>1)legs.push('<span class="rdr-conf-chip">'+f.decay.days_in_state+bi("d","天")+'</span>');
+    if(legs.length)confirmHtml='<div class="rdr-confirm-row">'+legs.join("")+'</div>';
+  }
+
+  var tickers=(o.covered||[]).slice(0,8).join(" · ")+(o.covered&&o.covered.length>8?"…":"");
+
+  // Headlines toggle
+  var newsHtml="";
+  var hs=f._headlines||[];
+  if(hs.length){
+    var newsId="news-"+i;
+    newsHtml='<button class="rdr-news-toggle" onclick="toggleNews(\''+newsId+'\',this)">'+
+      '📰 <span class="l-en">'+hs.length+' headlines</span><span class="l-zh">'+hs.length+'条新闻</span> ▼</button>'+
+      '<div class="rdr-news-body" id="'+newsId+'">';
+    hs.slice(0,4).forEach(function(h){
+      var sent=h.sentiment==="pos"?" ▲":h.sentiment==="neg"?" ▼":"";
+      newsHtml+='<div class="rdr-hl"><a href="'+esc(h.url||"#")+'" target="_blank">'+esc(h.title||"")+'</a> '+
+        '<span class="rdr-hl-src">· '+esc(h.source||"")+sent+'</span></div>';
+    });
+    newsHtml+='</div>';
+  }
+
+  var stripHtml='<div class="rdr-card-strip">'+
+    '<span class="strip-label" style="font-size:9px;color:var(--muted)">14d</span>'+
+    stripDots(f.state_strip||[])+
+    '</div>';
+
+  return '<div class="rdr-card '+( f.state==="NEGATIVE_DIVERGENCE"?"neg":"cdn")+'">'+
+    '<div class="rdr-card-hdr">'+
+    '<span class="rdr-badge '+s.cls+'">'+s.ico+' '+bi(s.en,s.zh)+'</span>'+
+    '<span class="rdr-card-name">'+bi(f.name||f.basket,f.name_zh||f.name||f.basket)+'</span>'+
+    (edge!=null?'<span class="rdr-edge-badge" style="background:color-mix(in srgb,'+ecol+' 15%,transparent);color:'+ecol+'">edge '+edge+'</span>':'')+'</div>'+
+    '<div class="rdr-card-note">'+bi(f.note||"",f.note_zh||f.note||"")+'</div>'+
+    srcsHtml+
+    '<div class="rdr-metrics">'+
+    '<span class="rdr-metric">'+bi("spend","支出")+' <b>'+(o.accel==null?"—":o.accel.toFixed(2)+"×")+'</b> '+bi("YoY","同比")+'</span>'+
+    (o.recent_3m_usd!=null?'<span class="rdr-metric">'+bi("vs yr-ago","对比去年")+' <b>'+usd(o.recent_3m_usd)+'</b>/'+usd(o.base_3m_usd)+'</span>':"")+
+    '<span class="rdr-metric">'+bi("price 60d","价格60日")+' <b>'+relpct(c.rel_60d)+'</b></span>'+
+    '</div>'+
+    confirmHtml+
+    '<div class="rdr-tickers">'+esc(tickers)+'</div>'+
+    stripHtml+
+    newsHtml+
+    '</div>';
+}
+
+function compactRow(f,i){
+  var s=st(f.state);
+  var edge=f.edge_score;
+  var ecol=edgeColor(edge||0);
+  var expandId="cexp-"+i;
+  var rowId="crow-"+i;
+  var div=f.divergence;
+  var days=f.decay&&f.decay.days_in_state;
+
+  var row='<div class="rdr-compact-row" id="'+rowId+'" data-expand="'+expandId+'" onclick="toggleCompact(\''+expandId+'\',\''+rowId+'\')">';
+  row+='<span class="rdr-compact-name">'+bi(f.name||f.basket,f.name_zh||f.name||f.basket)+'</span>';
+  row+='<span class="rdr-compact-state"><span class="rdr-badge '+s.cls+'">'+s.ico+' '+bi(s.en,s.zh)+'</span></span>';
+  row+='<span class="rdr-compact-edge" style="color:'+ecol+'">'+( edge!=null?edge:"—")+'</span>';
+  row+='<span class="rdr-compact-div" style="color:var(--muted)">'+(div!=null?(div>0?"+":"")+div.toFixed(1):"—")+'</span>';
+  row+='<span class="rdr-compact-days">'+(days!=null?days+'d':"—")+'</span>';
+  row+='<span class="rdr-compact-strip">'+stripDots(f.state_strip||[])+'</span>';
+  row+='</div>';
+
+  // Expand block (same as full card content, collapsed)
+  row+='<div class="rdr-compact-expand" id="'+expandId+'">'+compactExpandContent(f,i)+'</div>';
+  return row;
+}
+
+function compactExpandContent(f,i){
+  var o=f.observable||{};
+  var c=f.consensus||{};
+  var srcs=(o.sources||[]).map(function(src){
+    var z=src.z==null?0:src.z;
+    var col=z>0.2?"var(--up)":z<-0.2?"var(--down)":"var(--muted)";
+    return'<span class="rdr-src-chip" style="color:'+col+';border-color:'+col+'">'+
+      bi(src.label_en||src.name,src.label_zh||src.name)+
+      ' <b>'+(z>0?"+":"")+z.toFixed(1)+'</b></span>';
+  }).join("");
+
+  var tickers=(o.covered||[]).slice(0,10).join(" · ")+(o.covered&&o.covered.length>10?"…":"");
+
+  return'<div class="rdr-card-note">'+bi(f.note||"",f.note_zh||f.note||"")+'</div>'+
+    (srcs?'<div class="rdr-srcs">'+srcs+'</div>':'')+
+    '<div class="rdr-metrics" style="margin-top:4px">'+
+    '<span class="rdr-metric">'+bi("spend","支出")+' <b>'+(o.accel==null?"—":o.accel.toFixed(2)+"×")+'</b></span>'+
+    '<span class="rdr-metric">'+bi("price 60d","价格60日")+' <b>'+relpct(c.rel_60d)+'</b></span>'+
+    (o.recent_3m_usd!=null?'<span class="rdr-metric"><b>'+usd(o.recent_3m_usd)+'</b>/'+usd(o.base_3m_usd)+'</span>':"")+
+    '</div>'+
+    '<div class="rdr-tickers" style="margin-top:3px">'+esc(tickers)+'</div>';
+}
+
+window.toggleCompact=function(expandId,rowId){
+  var exp=document.getElementById(expandId);
+  if(!exp)return;
+  var open=exp.classList.contains("open");
+  exp.classList.toggle("open",!open);
+};
+
+window.toggleNews=function(id,btn){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var open=el.classList.contains("open");
+  el.classList.toggle("open",!open);
+  var arr=btn.querySelector?btn:btn;
+  btn.innerHTML=btn.innerHTML.replace(open?"▲":"▼",open?"▼":"▲");
+};
+
+window.toggleShowAll=function(){
+  showAllDivs=!showAllDivs;
+  var rows=document.querySelectorAll("#compact-rows .rdr-compact-row");
+  rows.forEach(function(r,idx){
+    if(idx>=4)r.style.display=showAllDivs?"":"none";
+  });
+  var ctrl=document.getElementById("show-all-ctrl");
+  if(showAllDivs){
+    ctrl.innerHTML='<span class="l-en">Collapse</span><span class="l-zh">收起</span>';
+  } else {
+    var n=rows.length-4;
+    ctrl.innerHTML='<span class="l-en">Show all '+n+' divergences</span><span class="l-zh">显示全部'+n+'个背离</span>';
+  }
+};
+
+// ── Themes table ───────────────────────────────────────────────────────────
+var sortAsc=false;
+
+function renderThemesTable(flags){
+  populateThemesTable(flags);
+}
+
+function populateThemesTable(flags){
+  var tbody=document.getElementById("theme-tbody");
+  var nonQuiet=flags.filter(function(f){return f.state!=="QUIET";});
+  var quietFlags=flags.filter(function(f){return f.state==="QUIET";});
+
+  // Apply filter
+  var toShow=nonQuiet;
+  if(themeFilter==="div")toShow=flags.filter(function(f){return f.state.indexOf("DIVERGENCE")>=0;});
+  else if(themeFilter==="conf")toShow=flags.filter(function(f){return f.state.indexOf("CONFIRMED")>=0;});
+  else if(themeFilter==="quiet"){toShow=quietFlags;quietVisible=true;}
+
+  // Sort
+  toShow=toShow.slice().sort(function(a,b){
+    var va=sortVal(a),vb=sortVal(b);
+    return sortAsc?(va>vb?1:va<vb?-1:0):(va<vb?1:va>vb?-1:0);
+  });
+
+  tbody.innerHTML=toShow.map(function(f){return themeRow(f);}).join("");
+
+  // Handle quiet toggle
+  var qtToggle=document.getElementById("quiet-hide-toggle");
+  if(themeFilter==="all"){
+    qtToggle.style.display="";
+    var qSection=document.getElementById("theme-quiet-rows");
+    if(quietVisible){
+      var sortedQ=quietFlags.slice().sort(function(a,b){
+        var va=sortVal(a),vb=sortVal(b);
+        return sortAsc?(va>vb?1:va<vb?-1:0):(va<vb?1:va>vb?-1:0);
+      });
+      qSection.innerHTML='<div style="overflow-x:auto"><table class="rdr-tbl"><tbody>'+
+        sortedQ.map(function(f){return themeRow(f);}).join("")+'</tbody></table></div>';
+      qSection.style.display="";
+      qtToggle.innerHTML='<span class="l-en">hide 25 quiet</span><span class="l-zh">隐藏25个平静</span>';
+    } else {
+      qSection.style.display="none";
+      qtToggle.innerHTML='<span class="l-en">show 25 quiet</span><span class="l-zh">显示25个平静</span>';
+    }
+  } else {
+    qtToggle.style.display="none";
+  }
+
+  // Update sort header icons
+  document.querySelectorAll(".rdr-tbl th").forEach(function(th){
+    th.classList.remove("sorted");
+    var ico=th.querySelector(".sort-ico");
+    if(ico)ico.textContent="↕";
+  });
+  var activeH=document.querySelector('.rdr-tbl th[data-col="'+sortCol+'"]');
+  if(activeH){
+    activeH.classList.add("sorted");
+    var ico=activeH.querySelector(".sort-ico");
+    if(ico)ico.textContent=sortAsc?"↑":"↓";
+  }
+}
+
+function sortVal(f){
+  if(sortCol==="name")return f.name||"";
+  if(sortCol==="accel")return(f.observable&&f.observable.accel!=null)?f.observable.accel:0;
+  if(sortCol==="rel60")return(f.consensus&&f.consensus.rel_60d!=null)?f.consensus.rel_60d:0;
+  if(sortCol==="edge")return f.edge_score||0;
+  if(sortCol==="days")return(f.decay&&f.decay.days_in_state)||0;
+  return 0;
+}
+
+window.sortThemes=function(col){
+  if(sortCol===col){sortAsc=!sortAsc;}else{sortCol=col;sortAsc=false;}
+  populateThemesTable(allFlags);
+};
+
+window.setFilter=function(filter,btn){
+  themeFilter=filter;
+  quietVisible=filter==="quiet";
+  document.querySelectorAll(".rdr-filter-chip").forEach(function(b){b.classList.remove("active");});
+  btn.classList.add("active");
+  populateThemesTable(allFlags);
+};
+
+window.toggleQuiet=function(){
+  quietVisible=!quietVisible;
+  populateThemesTable(allFlags);
+};
+
+function themeRow(f){
+  var s=st(f.state);
+  var o=f.observable||{};
+  var c=f.consensus||{};
+  var edge=f.edge_score;
+  var ecol=edgeColor(edge||0);
+  var rel=c.rel_60d;
+  var relCol=rel>0?"var(--up)":rel<0?"var(--down)":"var(--muted)";
+  var accel=o.accel;
+  var accelCol=accel>1.5?"var(--up)":accel>0.5?"var(--warn)":"var(--muted)";
+  var l=LIFE[f.lifecycle];
+  var days=f.decay&&f.decay.days_in_state;
+
+  return'<tr>'+
+    '<td>'+bi(f.name||f.basket,f.name_zh||f.name||f.basket)+
+      (l?'<div class="rdr-life-tag" style="color:'+l.c+'">'+bi(l.en,l.zh)+'</div>':'')+'</td>'+
+    '<td class="rdr-num" style="color:'+accelCol+'">'+(accel!=null?accel.toFixed(2)+"×":"—")+'</td>'+
+    '<td class="rdr-num" style="color:'+relCol+'">'+relpct(rel)+'</td>'+
+    '<td class="rdr-num" style="color:'+ecol+';font-weight:700">'+(edge!=null?edge:"—")+'</td>'+
+    '<td class="rdr-num" style="color:var(--muted)">'+(days!=null?days+"d":"—")+'</td>'+
+    '<td><div class="rdr-strip-cell">'+stripDots(f.state_strip||[])+'</div></td>'+
+    '<td><span class="rdr-badge '+s.cls+'">'+s.ico+' '+bi(s.en,s.zh)+'</span></td>'+
+    '</tr>';
+}
+
+// ── Per-name section ───────────────────────────────────────────────────────
+var nameVisible=20;
+var nameFiltered=[];
+
+function renderNamesSection(tickers){
+  // Populate basket filter
+  var baskets={};
+  tickers.forEach(function(t){if(t.basket&&t.basket_name)baskets[t.basket]=t.basket_name;});
+  var sel=document.getElementById("name-basket-filter");
+  Object.keys(baskets).sort().forEach(function(k){
+    var opt=document.createElement("option");
+    opt.value=k;opt.textContent=baskets[k];
+    sel.appendChild(opt);
+  });
+
+  nameFiltered=tickers.slice().sort(function(a,b){return(b.edge_score||0)-(a.edge_score||0);});
+  renderNameRows();
+}
+
+function renderNameRows(){
+  var rows=document.getElementById("name-rows");
+  var shown=nameFiltered.slice(0,nameVisible);
+  rows.innerHTML=shown.map(function(t,i){return nameRow(t,i);}).join("");
+  var moreBtn=document.getElementById("name-show-more");
+  moreBtn.style.display=nameFiltered.length>nameVisible?"":"none";
+}
+
+window.filterNames=function(){
+  var q=(document.getElementById("name-search").value||"").toLowerCase();
+  var stateF=document.getElementById("name-state-filter").value;
+  var basketF=document.getElementById("name-basket-filter").value;
+  nameFiltered=allTickers.filter(function(t){
+    if(q&&!(t.ticker||"").toLowerCase().startsWith(q)&&!(t.basket_name||"").toLowerCase().includes(q))return false;
+    if(stateF!=="all"&&t.state!==stateF)return false;
+    if(basketF!=="all"&&t.basket!==basketF)return false;
+    return true;
+  }).sort(function(a,b){return(b.edge_score||0)-(a.edge_score||0);});
+  nameVisible=20;
+  renderNameRows();
+};
+
+window.showMoreNames=function(){
+  nameVisible+=20;
+  renderNameRows();
+};
+
+function nameRow(t,i){
+  var s=st(t.state);
+  var edge=t.edge_score;
+  var ecol=edgeColor(edge||0);
+  var rs=t.rs_vs_spy_60d;
+  var rsCol=rs>0?"var(--up)":rs<0?"var(--down)":"var(--muted)";
+  var expandId="nexp-"+i;
+  var note=t.note||"";
+
+  return'<div class="rdr-name-row" onclick="toggleNameExpand(\''+expandId+'\')">'+
+    '<span class="rdr-name-ticker">'+esc(t.ticker)+'</span>'+
+    '<span class="rdr-badge '+s.cls+'">'+s.ico+'</span>'+
+    '<span class="rdr-name-basket">'+esc(t.basket_name||t.basket)+'</span>'+
+    '<span class="rdr-name-edge" style="color:'+ecol+'">'+(edge!=null?edge:"—")+'</span>'+
+    '<span class="rdr-name-rs" style="color:'+rsCol+'">'+(rs!=null?(rs>0?"+":"")+rs.toFixed(1)+"%":"—")+'</span>'+
+    '</div>'+
+    (note?'<div class="rdr-name-expand" id="'+expandId+'"><div style="color:var(--muted);font-size:11.5px">'+esc(note)+'</div>'+
+      (t.within_basket_pct!=null?'<div style="font-size:10px;color:var(--muted);margin-top:3px">'+bi("basket pct","篮子百分位")+' <b>'+(t.within_basket_pct*100).toFixed(0)+'%</b></div>':'')+
+      '</div>':'');
+}
+
+window.toggleNameExpand=function(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.classList.toggle("open");
+};
+
+// ── Tab navigation ─────────────────────────────────────────────────────────
+window.showTab=function(tabId,btn){
+  document.querySelectorAll(".rdr-tab-body").forEach(function(t){t.classList.remove("active");});
+  document.querySelectorAll(".rdr-tab-btn").forEach(function(b){b.classList.remove("active");});
+  document.getElementById(tabId).classList.add("active");
+  btn.classList.add("active");
+};
+
+window.scrollToSection=function(tabId){
+  // Switch to the per-name tab
+  var btn=document.querySelector('[onclick*="'+tabId+'"]');
+  if(btn)btn.click();
+  document.querySelector(".rdr-tabs-wrap").scrollIntoView({behavior:"smooth",block:"start"});
+};
+
+// ── Language / theme toggles (dev utility) ─────────────────────────────────
+// (In production these come from theme.js)
+window.setLang=function(lang){document.documentElement.setAttribute("data-lang",lang);};
+window.setTheme=function(t){document.documentElement.setAttribute("data-theme",t);};
+
+})();
+</script>
+
+<!-- Dev controls (remove in production) -->
+<div style="position:fixed;bottom:12px;right:12px;display:flex;gap:6px;z-index:999">
+  <button onclick="setLang('en')" style="font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer">EN</button>
+  <button onclick="setLang('zh')" style="font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer">ZH</button>
+  <button onclick="setTheme('dark')" style="font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer">Dark</button>
+  <button onclick="setTheme('light')" style="font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer">Light</button>
+</div>
+</body>
+</html>

@@ -11,27 +11,10 @@
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  .wrap { max-width:1080px; margin:0 auto; }
-  header h1 { font-size:22px; margin:0 0 2px; }
-  header .sub { color:var(--muted); font-size:13px; margin:0 0 14px; max-width:760px; }
-  /* lifecycle pipeline */
-  #radar-lifecycle { margin:6px 0 14px; }
-  .rl-pipe { display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:8px; }
-  @media (max-width:820px){ .rl-pipe{ grid-template-columns:repeat(3,1fr); } }
-  @media (max-width:520px){ .rl-pipe{ grid-template-columns:repeat(2,1fr); } }
-  .rl-lane { background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:8px; min-height:60px; }
-  .rl-lane-h { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin-bottom:6px; }
-  .rl-chip { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--muted);
-    border-radius:7px; padding:5px 7px; margin-bottom:5px; font-size:11.5px; }
-  .rl-chip b { font-size:12px; } .rl-meta { font-size:10px; color:var(--muted); margin-top:1px; }
-  .rl-empty { color:var(--muted); font-size:12px; text-align:center; padding:6px 0; }
-  .dr-mut { color:var(--muted); }
-  /* the shared panel's header classes (defined per-page on baskets.html) — restate here */
-  #divergence-radar h2 { font-size:16px; margin:16px 0 2px; }
-  #divergence-radar .idx { color:var(--muted); font-weight:700; margin-right:7px; font-size:13px; }
-  #divergence-radar .sect-tag { font-size:11px; font-weight:600; color:var(--muted); margin-left:9px; }
-  #divergence-radar .sub { color:var(--muted); font-size:12.5px; margin:2px 0 8px; }
+  body { background:var(--bg); color:var(--text); font:13px/1.5 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0; }
+  .wrap { max-width:1200px; margin:0 auto; padding:12px 16px 40px; }
+  header h1 { font-size:20px; margin:0 0 2px; }
+  header .sub { color:var(--muted); font-size:12.5px; margin:0 0 12px; max-width:800px; line-height:1.5; }
 </style>
 </head>
 <body class="page-radar">
@@ -59,20 +42,11 @@
       '独立的真实活动 —— 联邦合同、Quiver 政府合同／国会／游说／专利，以及建模新闻流 —— 领先或落后于价格之处。活动与价格一致时雷达保持沉默，只在背离时发声。另含 Claude 对各主题持续力的解读，并随时间对照行情评分。仅供参考，非交易触发。') }}</p>
   </header>
 
-  {# Lifecycle pipeline — themes grouped emerging → confirming → mature → fading #}
-  <section id="radar-lifecycle"></section>
-
-  {# Spotlight + source-fusion table + Claude Narrative Brain (reuses the shared panel,
-     which loads radar_panel.js and calls renderDivergenceRadar) #}
-  {% include "_radar_panel.html.j2" %}
-
-  {# Per-NAME divergence (Phase 2) — the basket radar masks individual names; this
-     surfaces per-ticker activity-vs-price divergence with the new edge_score. #}
-  <section id="radar-ticker"></section>
+  <section id="divergence-radar" class="panel pad"></section>
 </div>
 
-<script>renderRadarLifecycle({ base: "basketdata/" });</script>
-<script>if (window.renderTickerRadar) renderTickerRadar({ base: "basketdata/" });</script>
+<script src="radar_panel.js"></script>
+<script>renderRadarFull({ base: "basketdata/" });</script>
 <script src="theme.js"></script>
 </body>
 </html>

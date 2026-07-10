@@ -186,6 +186,28 @@ def _state_history(today: date) -> dict:
     return {"_rows": rows, "_path": p, "_today": today}
 
 
+def _prev_state_and_strip(basket: str, hist: dict) -> tuple:
+    """Return (prev_state, state_strip) for a basket.
+
+    prev_state: the state from the most recent history date STRICTLY BEFORE today.
+    state_strip: list (oldest→newest, max 14 prior entries) of {"d": "MM-DD", "s": STATE}
+                 with today's current state appended as the final entry.
+    Both derived from rows with date < today.
+    """
+    today = hist["_today"]
+    today_iso = today.isoformat()
+    # All rows for this basket strictly before today, sorted oldest first
+    prior = sorted(
+        [r for r in hist["_rows"] if r.get("basket") == basket and r.get("date", "") < today_iso],
+        key=lambda r: r.get("date", ""),
+    )
+    prev_state = prior[-1].get("state") if prior else None
+    # Build strip from the last 14 prior rows
+    strip_rows = prior[-14:]
+    strip = [{"d": r["date"][5:], "s": r["state"]} for r in strip_rows]  # "MM-DD"
+    return prev_state, strip
+
+
 def _decay_for(basket: str, state: str, hist: dict) -> dict:
     rows = [r for r in hist["_rows"] if r.get("basket") == basket]
     rows.sort(key=lambda r: r.get("date", ""))
@@ -208,8 +230,9 @@ def _decay_for(basket: str, state: str, hist: dict) -> dict:
 # --------------------------------------------------------------------------- #
 def enrich(radar: dict, today: date | None = None) -> dict:
     """Add edge_score + confirm legs + regime + decay + drivers to each flag, plus a
-    top-level edge_ranked + regime. Mutates and returns `radar`. Never raises."""
+    top-level edge_ranked + regime + changes. Mutates and returns `radar`. Never raises."""
     today = today or date.today()
+    today_mmdd = today.isoformat()[5:]  # "MM-DD"
     flags = radar.get("flags") or []
     alt_bt = _load("site/altdata/by_ticker.json") or {}
     mm = _load("site/altdata/mastermind.json") or {}
@@ -248,6 +271,18 @@ def enrich(radar: dict, today: date | None = None) -> dict:
             drivers = alt.get("drivers") or []
             decay = _decay_for(f.get("basket"), state, hist)
 
+            # --- new additive fields ---
+            try:
+                prev_state, strip = _prev_state_and_strip(f.get("basket"), hist)
+                # append today's current state as the final strip entry
+                strip = strip + [{"d": today_mmdd, "s": state}]
+                f["prev_state"] = prev_state
+                f["state_strip"] = strip
+            except Exception as e:  # noqa: BLE001
+                log.debug("radar_plus prev_state/state_strip %s failed (%s)", f.get("basket"), e)
+                f.setdefault("prev_state", None)
+                f.setdefault("state_strip", [{"d": today_mmdd, "s": state}])
+
             f["edge_score"] = edge
             f["confirm"] = {"alt": alt, "flows": flows, "options": options, "crowd": crowd,
                             "breadth": round(breadth, 2), "n_legs": len(legs)}
@@ -270,6 +305,42 @@ def enrich(radar: dict, today: date | None = None) -> dict:
                     fh.write(json.dumps(r) + "\n")
     except Exception as e:  # noqa: BLE001
         log.debug("state history append failed (%s)", e)
+
+    # --- top-level changes block ---
+    try:
+        # find the most recent date strictly before today across all history rows
+        today_iso = today.isoformat()
+        prior_dates = sorted({r.get("date", "") for r in hist["_rows"] if r.get("date", "") < today_iso})
+        prev_date = prior_dates[-1] if prior_dates else None
+
+        new_divergences, resolved, flips = [], [], []
+        for f in flags:
+            basket = f.get("basket")
+            name = f.get("name") or basket
+            name_zh = f.get("name_zh") or ""
+            cur = f.get("state") or "QUIET"
+            prev = f.get("prev_state")  # None if no history
+            if prev is None or prev == cur:
+                continue
+            cur_div = cur.endswith("_DIVERGENCE")
+            prev_div = prev.endswith("_DIVERGENCE")
+            entry = {"basket": basket, "name": name, "name_zh": name_zh, "from": prev, "to": cur}
+            if cur_div and not prev_div:
+                new_divergences.append(entry)
+            elif prev_div and not cur_div:
+                resolved.append(entry)
+            else:
+                flips.append(entry)
+
+        radar["changes"] = {
+            "prev_date": prev_date,
+            "new_divergences": new_divergences,
+            "resolved": resolved,
+            "flips": flips,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("radar_plus changes block failed (%s)", e)
+        radar.setdefault("changes", {"prev_date": None, "new_divergences": [], "resolved": [], "flips": []})
 
     radar["regime"] = regime
     radar["edge_ranked"] = sorted(

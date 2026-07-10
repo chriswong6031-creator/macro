@@ -10,27 +10,10 @@
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  .wrap { max-width:1080px; margin:0 auto; }
-  header h1 { font-size:22px; margin:0 0 2px; }
-  header .sub { color:var(--muted); font-size:13px; margin:0 0 14px; max-width:760px; }
-  /* lifecycle pipeline */
-  #radar-lifecycle { margin:6px 0 14px; }
-  .rl-pipe { display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:8px; }
-  @media (max-width:820px){ .rl-pipe{ grid-template-columns:repeat(3,1fr); } }
-  @media (max-width:520px){ .rl-pipe{ grid-template-columns:repeat(2,1fr); } }
-  .rl-lane { background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:8px; min-height:60px; }
-  .rl-lane-h { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin-bottom:6px; }
-  .rl-chip { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--muted);
-    border-radius:7px; padding:5px 7px; margin-bottom:5px; font-size:11.5px; }
-  .rl-chip b { font-size:12px; } .rl-meta { font-size:10px; color:var(--muted); margin-top:1px; }
-  .rl-empty { color:var(--muted); font-size:12px; text-align:center; padding:6px 0; }
-  .dr-mut { color:var(--muted); }
-  /* the shared panel's header classes (defined per-page on baskets.html) — restate here */
-  #divergence-radar h2 { font-size:16px; margin:16px 0 2px; }
-  #divergence-radar .idx { color:var(--muted); font-weight:700; margin-right:7px; font-size:13px; }
-  #divergence-radar .sect-tag { font-size:11px; font-weight:600; color:var(--muted); margin-left:9px; }
-  #divergence-radar .sub { color:var(--muted); font-size:12.5px; margin:2px 0 8px; }
+  body { background:var(--bg); color:var(--text); font:13px/1.5 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0; }
+  .wrap { max-width:1200px; margin:0 auto; padding:12px 16px 40px; }
+  header h1 { font-size:20px; margin:0 0 2px; }
+  header .sub { color:var(--muted); font-size:12.5px; margin:0 0 12px; max-width:800px; line-height:1.5; }
 </style>
 </head>
 <body class="page-radar">
@@ -317,66 +300,11 @@
     <p class="sub"><span class="l-en">Where independent REAL ACTIVITY — federal contracts, Quiver gov-contracts / congress / lobbying / patents, and modeled news flow — runs AHEAD of or BEHIND price. The radar stays silent when activity and price agree; it speaks only on the divergence. Plus a Claude reading of each theme&#39;s durability, graded against the tape over time. Display-only context, never a trade trigger.</span><span class="l-zh">独立的真实活动 —— 联邦合同、Quiver 政府合同／国会／游说／专利，以及建模新闻流 —— 领先或落后于价格之处。活动与价格一致时雷达保持沉默，只在背离时发声。另含 Claude 对各主题持续力的解读，并随时间对照行情评分。仅供参考，非交易触发。</span></p>
   </header>
 
-  
-  <section id="radar-lifecycle"></section>
-
-  
-  
-<section id="divergence-radar" class="panel pad" style="margin-top:10px"></section>
-<style>
-  #divergence-radar .dr-spot { display:grid; gap:9px; grid-template-columns:1fr; margin:6px 0 12px; }
-  @media (min-width:760px){ #divergence-radar .dr-spot.two { grid-template-columns:1fr 1fr; } }
-  #divergence-radar .dr-card { border:1px solid var(--line); border-left-width:3px; border-radius:9px;
-    padding:9px 11px; background:var(--panel2); }
-  #divergence-radar .dr-card.dr-pos { border-left-color:var(--up); }
-  #divergence-radar .dr-card.dr-neg { border-left-color:var(--warn); }
-  #divergence-radar .dr-card-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
-  #divergence-radar .dr-theme { font-size:14px; }
-  #divergence-radar .dr-badge { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px;
-    border:1px solid var(--line); white-space:nowrap; }
-  #divergence-radar .dr-badge.dr-pos { color:var(--up); border-color:var(--up); }
-  #divergence-radar .dr-badge.dr-neg { color:var(--warn); border-color:var(--warn); }
-  #divergence-radar .dr-badge.dr-cup { color:var(--up); opacity:.8; }
-  #divergence-radar .dr-badge.dr-cdn { color:var(--down); opacity:.8; }
-  #divergence-radar .dr-badge.dr-quiet { color:var(--muted); }
-  #divergence-radar .dr-life { font-size:10px; font-weight:700; padding:1px 7px; border-radius:999px;
-    border:1px solid var(--muted); white-space:nowrap; }
-  #divergence-radar .dr-life-sm { font-size:9.5px; font-weight:600; margin-top:1px; }
-  #divergence-radar .dr-srcs { display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin-bottom:6px; font-size:10.5px; }
-  #divergence-radar .dr-src { padding:1px 6px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; color:var(--muted); }
-  #divergence-radar .dr-note { font-size:12.5px; line-height:1.5; color:var(--text); margin-bottom:6px; }
-  #divergence-radar .dr-chips { display:flex; gap:6px 10px; flex-wrap:wrap; align-items:center; font-size:11.5px; color:var(--muted); }
-  #divergence-radar .dr-chip { white-space:nowrap; } #divergence-radar .dr-chip b { color:var(--text); }
-  #divergence-radar .dr-cov { font-size:10.5px; color:var(--muted); font-family:var(--mono,monospace); }
-  #divergence-radar .dr-calm { font-size:12.5px; color:var(--muted); background:var(--panel2);
-    border:1px dashed var(--line); border-radius:9px; padding:10px 12px; margin:6px 0 12px; }
-  #divergence-radar .dr-tblwrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  #divergence-radar .dr-tbl { width:100%; border-collapse:collapse; font-size:12px; min-width:420px; }
-  #divergence-radar .dr-tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:10.5px;
-    text-transform:uppercase; letter-spacing:.03em; padding:4px 8px; border-bottom:1px solid var(--line); }
-  #divergence-radar .dr-tbl td { padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:middle; }
-  #divergence-radar .dr-tbl .dr-num { font-variant-numeric:tabular-nums; white-space:nowrap; }
-  #divergence-radar .dr-mut { color:var(--muted); font-size:10.5px; }
-  #divergence-radar .dr-cav { font-size:10.5px; color:var(--muted); margin:8px 0 0; line-height:1.45; }
-  #divergence-radar .dr-nb { margin-top:12px; border-top:1px dashed var(--line); padding-top:10px; }
-  #divergence-radar .dr-nb-h { font-size:13px; font-weight:700; margin-bottom:6px; }
-  #divergence-radar .dr-nb-rot { font-size:12px; color:var(--text); background:var(--panel2);
-    border:1px solid var(--line); border-radius:8px; padding:7px 10px; margin-bottom:8px; }
-  #divergence-radar .dr-nb-row { padding:5px 0; border-bottom:1px solid var(--line); }
-  #divergence-radar .dr-nb-badge { font-size:10px; font-weight:700; padding:1px 7px; border-radius:999px;
-    border:1px solid var(--muted); margin-right:6px; }
-  #divergence-radar .dr-nb-theme { font-size:12.5px; margin-right:6px; }
-  #divergence-radar .dr-nb-why { font-size:11.5px; color:var(--text); line-height:1.5; margin-top:2px; }
-</style>
-<script src="radar_panel.js"></script>
-<script>renderDivergenceRadar({ base: "basketdata/" });</script>
-
-  
-  <section id="radar-ticker"></section>
+  <section id="divergence-radar" class="panel pad"></section>
 </div>
 
-<script>renderRadarLifecycle({ base: "basketdata/" });</script>
-<script>if (window.renderTickerRadar) renderTickerRadar({ base: "basketdata/" });</script>
+<script src="radar_panel.js"></script>
+<script>renderRadarFull({ base: "basketdata/" });</script>
 <script src="theme.js"></script>
 </body>
 </html>
