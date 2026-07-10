@@ -220,3 +220,8 @@ PYEOF
 fi
 
 exit "$BUILD_RC"
+
+# Mirror the nightly-committed gex_state regime files to R2 (QA-sweep fix:
+# the Terminal reads options_structure/gex_state/<ROOT>.json from R2, which was
+# never populated). Fail-soft by design — never blocks the matrix lane.
+"$PYTHON" scripts/mirror_gex_state_r2.py || true
