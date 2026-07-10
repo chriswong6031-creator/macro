@@ -42,6 +42,7 @@
   var FEED_LABEL = window.LIVE_FEED_LABEL || "";   // honest caption for [data-live-label] nodes
   var OVERLAY = "live/overlay.json";
   var inflight = false, lastTs = 0, pendingRefresh = false;
+  var _paused = false, _timer = null;
 
   function nodes() { return [].slice.call(document.querySelectorAll(".nb-px[data-sym]")); }
   function chgNodes() { return [].slice.call(document.querySelectorAll(".nb-chg[data-sym]")); }
@@ -79,6 +80,21 @@
     if (/\.HK$/.test(s)) return "hk";
     if (/\.(SS|SZ|BJ)$/.test(s)) return "cn";
     if (/\.(TO|V)$/.test(s)) return "ca";
+    // Foreign index tickers (^-prefixed): map to their exchange region so the
+    // staleness chip uses the right session clock.  For regions where the overlay
+    // carries no session entry (jp/kr/tw/gb/eu) sessions[region] will be undefined
+    // and closed=false — the staleness state falls back to "stale" never "closed",
+    // which is the correct safe default (we simply don't know).
+    if (s === "^HSI")      return "hk";
+    if (s === "^GSPC")     return "us";
+    if (s === "^GSPTSE")   return "ca";
+    if (s === "^N225")     return "jp";
+    if (s === "^KS11")     return "kr";
+    if (s === "^TWII")     return "tw";
+    if (s === "^FTSE")     return "gb";
+    if (s === "^STOXX50E") return "eu";
+    // 000001.SS / generic .SS / .SZ / .BJ already caught above; any remaining
+    // ^-index without an explicit mapping falls through to "us" as before.
     return "us";
   }
 
@@ -100,7 +116,9 @@
       ".nb-chg.stale{color:#9ca3af;font-weight:500}" +
       "@media (forced-colors:active){.nb-px[data-live]::after{forced-color-adjust:none;border:1px solid currentColor}}" +
       "@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}" +
-      "70%{box-shadow:0 0 0 5px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}";
+      "70%{box-shadow:0 0 0 5px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}" +
+      "@media (prefers-reduced-motion:reduce){.nb-px[data-live]::after{animation:none}}" +
+      "html.fx-min .nb-px[data-live]::after{animation:none}";
     document.head.appendChild(s);
   }
 
@@ -181,7 +199,7 @@
   }
 
   function tick() {
-    if (document.hidden || inflight) return;                 // pause hidden / no overlap
+    if (_paused || document.hidden || inflight) return;      // pause: explicit / hidden / no overlap
     var ns = symNodes();
     if (!ns.length) return;
     var syms = {};
@@ -227,16 +245,44 @@
       .forEach(function (el) { el.textContent = FEED_LABEL; el.title = FEED_LABEL; });
   }
 
+  function _startTimer() {
+    if (_timer) clearInterval(_timer);
+    _timer = setInterval(tick, POLL);
+  }
+
   function start() {
     injectStyle();
     paintLabel();
-    // Refresh hook for SPA pages (the single-stock view re-renders .nb-px nodes
-    // client-side on hashchange) — they call this right after setting data-sym.
-    // If a poll is in flight, defer so the new symbol isn't dropped.
-    window.LiveQuotes = { refresh: function () { if (inflight) pendingRefresh = true; else tick(); } };
-    tick();
-    setInterval(tick, POLL);
-    document.addEventListener("visibilitychange", function () { if (!document.hidden) tick(); });
+    // Pause/resume API for callers that want to suppress polling (e.g. a settings
+    // toggle persisted in localStorage as liveOff=1).
+    // .pause()  — stops the interval; marks _paused so tick() is a no-op even if called.
+    // .resume() — clears the paused flag, restarts the interval, fires an immediate tick.
+    // .refresh() — existing SPA hook; honours the paused flag (paused = refresh is a no-op).
+    window.LiveQuotes = {
+      refresh: function () {
+        if (_paused) return;
+        if (inflight) pendingRefresh = true; else tick();
+      },
+      pause: function () {
+        _paused = true;
+        if (_timer) { clearInterval(_timer); _timer = null; }
+      },
+      resume: function () {
+        _paused = false;
+        _startTimer();
+        tick();                                              // immediate tick on resume
+      }
+    };
+    // Boot gate: if the user previously chose to disable live quotes, start paused
+    // (no initial tick, no interval) so we fire zero network requests.
+    try { if (localStorage.getItem("liveOff") === "1") { _paused = true; } } catch (e) {}
+    if (!_paused) {
+      tick();
+      _startTimer();
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && !_paused) tick();
+    });
   }
   if (document.readyState !== "loading") start();
   else document.addEventListener("DOMContentLoaded", start);

@@ -203,6 +203,8 @@
 
   /* ---- theme (dark default) ------------------------------------------------ */
   function curTheme() { return docEl.getAttribute('data-theme') || 'dark'; }
+  // Hour-derived theme for Auto mode: 7-19 local = light, else dark
+  function _hourTheme() { var h = new Date().getHours(); return (h >= 7 && h < 19) ? 'light' : 'dark'; }
   function setTheme(tm) {
     docEl.setAttribute('data-theme', tm);
     // an explicit choice ends time-of-day auto mode (see each page's no-flash init)
@@ -216,6 +218,7 @@
     themeCharts();
     document.dispatchEvent(new CustomEvent('themechange', { detail: tm }));
     skyToggleFx(tm);
+    _syncThemeSegment();
   }
   /* Sitewide theme-toggle flourish: a luminous sun (→ light) or a crescent moon
      (→ dark) blooms in the centre of the screen, then fades. The landing page runs
@@ -234,12 +237,62 @@
       setTimeout(function () { if (o.parentNode) o.parentNode.removeChild(o); }, 1100);
     } catch (e) {}
   }
+  // Apply Auto mode: persist themeAuto + apply the hour-derived theme via same code
+  // path as setTheme BUT WITHOUT removing themeAuto (so it survives page reloads).
+  function setThemeAuto() {
+    var tm = _hourTheme();
+    docEl.setAttribute('data-theme', tm);
+    try { localStorage.setItem('themeAuto', '1'); localStorage.setItem('theme', tm); } catch (e) {}
+    document.querySelectorAll('.theme-btn').forEach(function (b) {
+      b.innerHTML = tm === 'light'
+        ? '<span class="l-en">🌙 Dark</span><span class="l-zh">🌙 深色</span>'
+        : '<span class="l-en">☀️ Light</span><span class="l-zh">☀️ 浅色</span>';
+    });
+    if (window.hydrateMTF) window.hydrateMTF();
+    themeCharts();
+    document.dispatchEvent(new CustomEvent('themechange', { detail: tm }));
+    skyToggleFx(tm);
+    _syncThemeSegment();
+  }
+  // Placeholder — real implementation wired after initSettings builds the segment
+  function _syncThemeSegment() {}
+  // SITE-WIDE LIFT: at boot, if themeAuto==='1' re-derive the hour theme and apply
+  // it (one-time flip so other pages' pre-paint head scripts pick it up immediately).
+  (function () {
+    try {
+      if (localStorage.getItem('themeAuto') === '1') {
+        var hourTm = _hourTheme();
+        if (docEl.getAttribute('data-theme') !== hourTm) {
+          docEl.setAttribute('data-theme', hourTm);
+          localStorage.setItem('theme', hourTm);
+        }
+      }
+    } catch (e) {}
+  })();
   window.toggleTheme = function () { setTheme(curTheme() === 'light' ? 'dark' : 'light'); };
+  window.setThemeAuto = setThemeAuto;
+
+  /* ---- Reduced-effects (Feature 6): apply fx-min ASAP at boot --------------
+     theme.js loads end-of-body (minor flash accepted; documented). Inject the
+     suppression stylesheet once and add/remove the class on toggle.             */
+  (function () {
+    try { if (localStorage.getItem('fx') === 'min') docEl.classList.add('fx-min'); } catch (e) {}
+    if (!document.getElementById('fx-min-css')) {
+      var _fxSt = document.createElement('style');
+      _fxSt.id = 'fx-min-css';
+      _fxSt.textContent = 'html.fx-min *,html.fx-min *::before,html.fx-min *::after{'
+        + 'animation-duration:.001s!important;animation-iteration-count:1!important;'
+        + 'transition-duration:.001s!important;scroll-behavior:auto!important}';
+      (document.head || document.documentElement).appendChild(_fxSt);
+    }
+  })();
 
   /* ---- language (en default) ----------------------------------------------- */
   function curLang() { return docEl.getAttribute('data-lang') || 'en'; }
   function setLang(lg) {
     docEl.setAttribute('data-lang', lg);
+    // WCAG 3.1.1: keep document.documentElement.lang in sync with the active language
+    docEl.lang = lg === 'zh' ? 'zh-CN' : 'en';
     try { localStorage.setItem('lang', lg); } catch (e) {}
     document.querySelectorAll('.lang-btn').forEach(function (b) {
       // label advertises the OTHER language (what a click switches you to)
@@ -250,6 +303,11 @@
     if (window.hydrateMTF) window.hydrateMTF();
     document.dispatchEvent(new CustomEvent('langchange', { detail: lg }));
   }
+  // Apply documentElement.lang once at boot from the current data-lang attribute
+  (function () {
+    var bootLang = docEl.getAttribute('data-lang') || 'en';
+    docEl.lang = bootLang === 'zh' ? 'zh-CN' : 'en';
+  })();
   window.toggleLang = function () { setLang(curLang() === 'zh' ? 'en' : 'zh'); };
   window.setLang = setLang;
   window.setTheme = setTheme;
@@ -1066,7 +1124,7 @@
     sub:     ['Personalize your workspace', '个性化你的工作区'],
     prefs:   ['Preferences', '偏好设置'],
     theme:   ['Appearance', '外观'],
-    themeD:  ['Switch dark / light mode', '切换深色 / 浅色模式'],
+    themeD:  ['Light · Auto · Dark', '浅色 · 自动 · 深色'],
     lang:    ['Language', '语言'],
     langD:   ['English · 中文', 'English · 中文'],
     account: ['Account', '账户'],
@@ -1077,7 +1135,24 @@
     signup:  ['Create account', '注册'],
     signedin:['Manage account & sync ›', '管理账户与同步 ›'],
     signout: ['Sign out', '退出'],
-    close:   ['Close settings', '关闭设置']
+    close:   ['Close settings', '关闭设置'],
+    // Feature 5: three-way theme segment labels
+    themeLight: ['Light', '浅色'],
+    themeAuto:  ['Auto', '自动'],
+    themeDark:  ['Dark', '深色'],
+    // Feature 6: reduced effects
+    fx:      ['Reduced effects', '减少动效'],
+    fxD:     ['Minimize animations and transitions', '最小化动效与过渡'],
+    fxOn:    ['On', '开'],
+    fxOff:   ['Off', '关'],
+    // Feature 7: live prices
+    liveP:   ['Live prices', '实时报价'],
+    livePD:  ['Real-time quote updates', '实时行情更新'],
+    // Feature 8: default view (hub-only)
+    defView: ['Default view', '默认视图'],
+    defViewD:['Markets or Features tab on open', '打开时显示市场或功能标签'],
+    defMk:   ['Markets', '市场'],
+    defVc:   ['Features', '功能']
   };
   var SETTINGS_CSS = [
     /* two-row nav: the menu takes the whole first row on its own line; the global
@@ -1167,7 +1242,19 @@
     '.settings-acct-in .sr-desc{display:block;font-size:11px;color:var(--muted,var(--ink-3));margin-top:1px}',
     '.settings-acct-in .sa-signout{flex:none;padding:7px 11px;border-radius:9px;border:1px solid var(--line,var(--grid));background:transparent;color:var(--text,var(--ink));font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:border-color .18s,color .18s}',
     '.settings-acct-in .sa-signout:hover{border-color:var(--down,#ff5c6c);color:var(--down,#ff5c6c)}',
-    '@media (prefers-reduced-motion:reduce){.settings-pop{transition:opacity .14s ease,visibility 0s linear .14s}.settings-pop.open,.nav-settings:hover .settings-pop,.nav-settings:focus-within .settings-pop{transition:opacity .14s ease}.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg,.nav-settings:hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn svg{transform:none}}'
+    '@media (prefers-reduced-motion:reduce){.settings-pop{transition:opacity .14s ease,visibility 0s linear .14s}.settings-pop.open,.nav-settings:hover .settings-pop,.nav-settings:focus-within .settings-pop{transition:opacity .14s ease}.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg,.nav-settings:hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn svg{transform:none}}',
+    /* ---- three-way theme segment + on/off toggle (shared by fx and live-prices) */
+    '.set-theme-seg{display:inline-flex;background:var(--bg,var(--card));border:1px solid var(--line,var(--grid));border-radius:999px;padding:3px;gap:2px;flex:none}',
+    '.set-seg-btn{padding:3px 10px;border:none;border-radius:999px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted,var(--ink-3));transition:background .2s,color .2s;white-space:nowrap}',
+    '.set-seg-btn.active{background:var(--link,var(--blue));color:#fff}',
+    '.set-seg-btn:hover:not(.active){background:color-mix(in srgb,var(--text,#fff) 9%,transparent);color:var(--text,var(--ink))}',
+    '.set-seg-btn:focus-visible{outline:2px solid var(--link,var(--blue));outline-offset:2px}',
+    /* on/off toggle button */
+    '.set-toggle-btn{position:relative;width:44px;height:24px;border-radius:999px;border:1px solid var(--line,var(--grid));background:var(--bg,var(--card));cursor:pointer;padding:0;transition:background .25s,border-color .25s}',
+    '.set-toggle-btn[aria-checked="true"]{background:var(--link,var(--blue));border-color:var(--link,var(--blue))}',
+    '.set-toggle-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.4,.5,1)}',
+    '.set-toggle-btn[aria-checked="true"] .set-toggle-knob{transform:translateX(20px)}',
+    '.set-toggle-btn:focus-visible{outline:2px solid var(--link,var(--blue));outline-offset:2px}'
   ].join('');
 
   function setLabels(root) {
@@ -1218,15 +1305,46 @@
       '</div>' +
       '<div class="settings-sec">' +
         '<div class="settings-sec-t" data-set="prefs"></div>' +
+        // Theme row — three-way segment: Light / Auto / Dark
         '<div class="settings-row">' +
           '<span class="sr-ic">' + SET_ICON.theme + '</span>' +
           '<span class="sr-main"><span class="sr-lbl" data-set="theme"></span><span class="sr-desc" data-set="themeD"></span></span>' +
-          '<span class="sr-ctrl" id="set-theme-slot"></span>' +
+          '<span class="sr-ctrl" id="set-theme-slot">' +
+            '<div class="set-theme-seg" id="set-theme-seg" role="group" aria-label="Appearance">' +
+              '<button type="button" class="set-seg-btn" id="set-theme-light" data-set="themeLight"></button>' +
+              '<button type="button" class="set-seg-btn" id="set-theme-auto" data-set="themeAuto"></button>' +
+              '<button type="button" class="set-seg-btn" id="set-theme-dark" data-set="themeDark"></button>' +
+            '</div>' +
+          '</span>' +
         '</div>' +
+        // Lang row — lang-toggle relocated here
         '<div class="settings-row">' +
           '<span class="sr-ic">' + SET_ICON.lang + '</span>' +
           '<span class="sr-main"><span class="sr-lbl" data-set="lang"></span><span class="sr-desc" data-set="langD"></span></span>' +
           '<span class="sr-ctrl" id="set-lang-slot"></span>' +
+        '</div>' +
+        // Reduced effects row
+        '<div class="settings-row" id="set-fx-row">' +
+          '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg></span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="fx"></span><span class="sr-desc" data-set="fxD"></span></span>' +
+          '<span class="sr-ctrl"><button type="button" class="set-toggle-btn" id="set-fx-toggle" role="switch" aria-checked="false"><span class="set-toggle-knob"></span></button></span>' +
+        '</div>' +
+        // Live prices row (hidden until LiveQuotes is available)
+        '<div class="settings-row" id="set-live-row" style="display:none">' +
+          '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="liveP"></span><span class="sr-desc" data-set="livePD"></span></span>' +
+          '<span class="sr-ctrl"><button type="button" class="set-toggle-btn" id="set-live-toggle" role="switch" aria-checked="true"><span class="set-toggle-knob"></span></button></span>' +
+        '</div>' +
+        // Default view row (hub-only — shown only when #hub-views exists)
+        '<div class="settings-row" id="set-defview-row" style="display:none">' +
+          '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="defView"></span><span class="sr-desc" data-set="defViewD"></span></span>' +
+          '<span class="sr-ctrl">' +
+            '<div class="set-theme-seg" id="set-defview-seg" role="group">' +
+              '<button type="button" class="set-seg-btn" id="set-defview-mk" data-set="defMk"></button>' +
+              '<button type="button" class="set-seg-btn" id="set-defview-vc" data-set="defVc"></button>' +
+            '</div>' +
+          '</span>' +
         '</div>' +
       '</div>' +
       '<div class="settings-sec" id="set-acct-sec">' +
@@ -1249,8 +1367,9 @@
     wrap.appendChild(pop);
     ctrls.appendChild(wrap);   // gear + dropdown, pinned at the cluster's end
 
-    // relocate the live toggles into the popover (their listeners ride along)
-    if (ts) pop.querySelector('#set-theme-slot').appendChild(ts);
+    // relocate the live lang-toggle into the popover (theme-switch no longer relocated —
+    // the three-way segment above replaces it; hide the original toggle from the nav)
+    if (ts) ts.style.display = 'none';    // replaced by the 3-way segment in the pane
     if (lt) pop.querySelector('#set-lang-slot').appendChild(lt);
 
     // keep the gear/popover/close ARIA labels localized too (the visible text is
@@ -1263,6 +1382,25 @@
     }
     setLabels(pop); relabelSetAria();
     document.addEventListener('langchange', function () { setLabels(pop); relabelSetAria(); });
+    // MutationObserver on data-lang attribute: catches any code that sets the attribute
+    // directly without dispatching the langchange event (defensive hardening).
+    // Deduped: skips the relabel when the event path already handled it (uses a flag).
+    var _muLangBusy = false;
+    if (window.MutationObserver) {
+      new MutationObserver(function (mutations) {
+        for (var i = 0; i < mutations.length; i++) {
+          if (mutations[i].attributeName === 'data-lang') {
+            if (_muLangBusy) return;
+            _muLangBusy = true;
+            // sync the WCAG lang attribute too — this observer exists precisely for
+            // code paths that set data-lang without going through setLang()
+            try { docEl.lang = docEl.getAttribute('data-lang') === 'zh' ? 'zh-CN' : 'en'; } catch (e) {}
+            try { setLabels(pop); relabelSetAria(); } catch (e) {}
+            _muLangBusy = false;
+          }
+        }
+      }).observe(docEl, { attributes: true, attributeFilter: ['data-lang'] });
+    }
 
     function isOpen() { return pop.classList.contains('open'); }
     function open() {
@@ -1287,6 +1425,18 @@
     if (window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
       wrap.addEventListener('mouseleave', close);
     }
+    // Pane ARIA/keyboard: on focusin inside .nav-settings open the panel + sync aria-expanded
+    // (CSS :focus-within also reveals on desktop, but JS .open keeps close/Esc/focus-restore
+    // correct). On focusout leaving the entire wrap, close.
+    wrap.addEventListener('focusin', function () {
+      if (!isOpen()) { open(); }
+    });
+    wrap.addEventListener('focusout', function () {
+      // relatedTarget may be null on blur-to-outside; defer one tick so activeElement settles
+      setTimeout(function () {
+        if (!wrap.contains(document.activeElement)) { close(); }
+      }, 0);
+    });
 
     // account section — live when Supabase is configured, else hidden entirely.
     var bSignin = pop.querySelector('#set-signin'), bSignup = pop.querySelector('#set-signup'),
@@ -1310,6 +1460,168 @@
     } else {
       var sec = pop.querySelector('#set-acct-sec'); if (sec) sec.style.display = 'none';
     }
+
+    // ---- Feature 5: wire the three-way theme segment -----------------------
+    var _tLight = pop.querySelector('#set-theme-light'),
+        _tAuto  = pop.querySelector('#set-theme-auto'),
+        _tDark  = pop.querySelector('#set-theme-dark');
+    function _syncThemeSegNow() {
+      var isAuto = false;
+      try { isAuto = localStorage.getItem('themeAuto') === '1'; } catch (e) {}
+      var cur = curTheme();
+      function _seg(el, on) {
+        if (!el) return;
+        el.classList.toggle('active', on);
+        el.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+      _seg(_tLight, !isAuto && cur === 'light');
+      _seg(_tAuto, isAuto);
+      _seg(_tDark, !isAuto && cur === 'dark');
+    }
+    // Replace the placeholder with the real function now that the DOM is built
+    _syncThemeSegment = _syncThemeSegNow;
+    _syncThemeSegNow();  // initialize to current state
+    if (_tLight) _tLight.addEventListener('click', function () { setTheme('light'); });
+    if (_tAuto)  _tAuto.addEventListener('click', function () { setThemeAuto(); });
+    if (_tDark)  _tDark.addEventListener('click', function () { setTheme('dark'); });
+    // keep the segment in sync when themechange fires (e.g. from legacy toggleTheme)
+    document.addEventListener('themechange', function () { _syncThemeSegNow(); });
+
+    // ---- Feature 6: wire the Reduced-effects toggle -----------------------
+    var _fxToggle = pop.querySelector('#set-fx-toggle');
+    function _fxState() {
+      try { return localStorage.getItem('fx') === 'min'; } catch (e) { return false; }
+    }
+    function _setFxAria() {
+      if (_fxToggle) _fxToggle.setAttribute('aria-checked', _fxState() ? 'true' : 'false');
+    }
+    _setFxAria();
+    if (_fxToggle) _fxToggle.addEventListener('click', function () {
+      if (_fxState()) {
+        // turn OFF reduced effects
+        try { localStorage.removeItem('fx'); } catch (e) {}
+        docEl.classList.remove('fx-min');
+        if (typeof window.__gdSetTier === 'function') { try { window.__gdSetTier(2); } catch (e) {} }
+        if (typeof window.__gdSetMotion === 'function') { try { window.__gdSetMotion(true); } catch (e) {} }
+      } else {
+        // turn ON reduced effects
+        try { localStorage.setItem('fx', 'min'); } catch (e) {}
+        docEl.classList.add('fx-min');
+        if (typeof window.__gdSetTier === 'function') { try { window.__gdSetTier(0); } catch (e) {} }
+        if (typeof window.__gdSetMotion === 'function') { try { window.__gdSetMotion(false); } catch (e) {} }
+      }
+      _setFxAria();
+    });
+
+    // ---- Feature 7: wire the Live-prices toggle (hub-optional) ---------------
+    var _liveRow = pop.querySelector('#set-live-row'), _liveToggle = pop.querySelector('#set-live-toggle');
+    function _updateLiveRow() {
+      if (!_liveRow) return;
+      _liveRow.style.display = (typeof window.LiveQuotes !== 'undefined') ? '' : 'none';
+    }
+    // Check after DOM ready (LiveQuotes may not be set yet at initSettings time)
+    document.addEventListener('DOMContentLoaded', function () { _updateLiveRow(); });
+    _updateLiveRow();
+    // Initial state from localStorage (liveOff='1' = paused)
+    function _liveOff() { try { return localStorage.getItem('liveOff') === '1'; } catch (e) { return false; } }
+    function _setLiveAria() {
+      if (_liveToggle) _liveToggle.setAttribute('aria-checked', _liveOff() ? 'false' : 'true');
+    }
+    _setLiveAria();
+    if (_liveToggle) _liveToggle.addEventListener('click', function () {
+      if (_liveOff()) {
+        try { localStorage.removeItem('liveOff'); } catch (e) {}
+        if (window.LiveQuotes && typeof window.LiveQuotes.resume === 'function') window.LiveQuotes.resume();
+      } else {
+        try { localStorage.setItem('liveOff', '1'); } catch (e) {}
+        if (window.LiveQuotes && typeof window.LiveQuotes.pause === 'function') window.LiveQuotes.pause();
+      }
+      _setLiveAria();
+    });
+
+    // ---- Feature 8: Default view (hub-only — row only when #hub-views exists) --
+    var _defViewRow = pop.querySelector('#set-defview-row');
+    var _defMkBtn = pop.querySelector('#set-defview-mk'), _defVcBtn = pop.querySelector('#set-defview-vc');
+    function _initDefView() {
+      var hv = document.getElementById('hub-views');
+      if (!hv || !_defViewRow) return;
+      _defViewRow.style.display = '';
+      var stored = null;
+      try { stored = localStorage.getItem('hubView'); } catch (e) {}
+      // apply stored view on boot
+      if (stored === 'mk' || stored === 'vc') {
+        hv.setAttribute('data-view', stored);
+        var btns = hv.querySelectorAll('.hub-seg-btn');
+        btns.forEach(function (b) {
+          var on = b.getAttribute('data-v') === stored;
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+      function _syncDefViewBtns() {
+        var cur = null;
+        try { cur = localStorage.getItem('hubView') || 'mk'; } catch (e) { cur = 'mk'; }
+        if (_defMkBtn) _defMkBtn.classList.toggle('active', cur === 'mk');
+        if (_defVcBtn) _defVcBtn.classList.toggle('active', cur === 'vc');
+      }
+      _syncDefViewBtns();
+      function _setDefView(v) {
+        try { localStorage.setItem('hubView', v); } catch (e) {}
+        // update the hub inline switcher to match
+        var hv2 = document.getElementById('hub-views');
+        if (hv2) {
+          hv2.setAttribute('data-view', v);
+          hv2.querySelectorAll('.hub-seg-btn').forEach(function (b) {
+            var on = b.getAttribute('data-v') === v;
+            b.classList.toggle('on', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+        }
+        _syncDefViewBtns();
+      }
+      if (_defMkBtn) _defMkBtn.addEventListener('click', function () { _setDefView('mk'); });
+      if (_defVcBtn) _defVcBtn.addEventListener('click', function () { _setDefView('vc'); });
+    }
+    // run after DOM ready so #hub-views is guaranteed present
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _initDefView);
+    } else { _initDefView(); }
+
+    // ---- Feature 9: sign-in link wiring (hub-only, hub-signin element) -------
+    function _initHubSignin() {
+      var signinLink = document.getElementById('hub-signin');
+      if (!signinLink || typeof window.MDXAuth === 'undefined') return;
+      function _updateSigninLink(user) {
+        // Hide when signed in (gear handles account); show when signed out.
+        // The element ships with the [hidden] attribute — the property must be
+        // cleared too (inline display:'' does not override the UA hidden rule).
+        signinLink.hidden = !!user;
+        signinLink.style.display = user ? 'none' : '';
+        if (!user) {
+          // label: Sign in / 登录 bilingual via span children
+          signinLink.textContent = '';
+          var en = document.createElement('span'); en.className = 'l-en'; en.textContent = 'Sign in';
+          var zh = document.createElement('span'); zh.className = 'l-zh'; zh.textContent = '登录';
+          signinLink.appendChild(en); signinLink.appendChild(zh);
+        }
+      }
+      // subscribe to auth changes
+      if (window.MDXAuth && typeof window.MDXAuth.onChange === 'function') {
+        window.MDXAuth.onChange(function (user) { _updateSigninLink(user); });
+      }
+      // click: open settings pane scrolled/focused to the ACCOUNT section
+      signinLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        open();
+        var acctSec = pop.querySelector('#set-acct-sec');
+        if (acctSec) { setTimeout(function () { acctSec.scrollIntoView({ block: 'nearest' }); var btn = acctSec.querySelector('button'); if (btn) btn.focus(); }, 60); }
+      });
+      // initial state
+      _updateSigninLink(window.MDXAuth.user ? window.MDXAuth.user() : null);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _initHubSignin);
+    } else { _initHubSignin(); }
 
     window.openSettings = open;
     return true;
@@ -1559,6 +1871,22 @@
     // <button>. Bound on the container so descendant clicks bubble up to one handler.
     document.querySelectorAll('.lang-toggle').forEach(function (t) {
       t.addEventListener('click', function () { window.toggleLang(); });
+      // Keyboard operability (WCAG 2.1 SC 2.1.1): make the lang-toggle reachable and
+      // operable via keyboard without breaking existing CSS.
+      if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '0');
+      if (!t.getAttribute('role')) t.setAttribute('role', 'switch');
+      // aria-checked reflects zh = true / en = false; synced on langchange + immediately
+      function _syncLangAria() {
+        var zh = (docEl.getAttribute('data-lang') || 'en') === 'zh';
+        t.setAttribute('aria-checked', zh ? 'true' : 'false');
+        // bilingual aria-label without using title= (CI-guarded rule)
+        t.setAttribute('aria-label', zh ? '语言 — 当前中文，切换为 English' : 'Language — current English, switch to 中文');
+      }
+      _syncLangAria();
+      document.addEventListener('langchange', _syncLangAria);
+      t.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.toggleLang(); }
+      });
     });
     initSettings();   // fallback if the early call above could not run
     _authBoot();      // restore a prior cookie session / consume an OAuth return

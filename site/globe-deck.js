@@ -32,7 +32,8 @@
   window.addEventListener("scroll", function () { lastScrollT = performance.now(); }, { passive: true });
 
   // Quality tier: 2=high dpr≤2, 1=mid dpr≤1.5, 0=low dpr≤1.15
-  var Q = 2, _dtBuf = new Float32Array(48), _dtIdx = 0, _dtFull = false, _lastTierT = 0;
+  // _tierPinned: set by __gdSetTier(); prevents the auto-governor from overriding the manual choice.
+  var Q = 2, _tierPinned = false, _dtBuf = new Float32Array(48), _dtIdx = 0, _dtFull = false, _lastTierT = 0;
   function _pushDt(dt) {
     _dtBuf[_dtIdx] = dt > 100 ? 100 : dt;
     _dtIdx = (_dtIdx + 1) % 48;
@@ -42,9 +43,11 @@
       for (var _i = 0; _i < n; _i++) sum += _dtBuf[_i];
       var avg = sum / (n || 1);
       var now = performance.now();
-      // _skipSizeRender: frame() renders right after this, so size()'s own repaint is redundant
-      if (avg > 22 && Q > 0) { Q--; _lastTierT = now; _skipSizeRender = true; size(); _skipSizeRender = false; }
-      else if (avg < 13 && Q < 2 && (now - _lastTierT) > 60000) { Q++; _lastTierT = now; _skipSizeRender = true; size(); _skipSizeRender = false; }
+      if (!_tierPinned) {
+        // _skipSizeRender: frame() renders right after this, so size()'s own repaint is redundant
+        if (avg > 22 && Q > 0) { Q--; _lastTierT = now; _skipSizeRender = true; size(); _skipSizeRender = false; }
+        else if (avg < 13 && Q < 2 && (now - _lastTierT) > 60000) { Q++; _lastTierT = now; _skipSizeRender = true; size(); _skipSizeRender = false; }
+      }
       // update instrumentation avg
       if (window.__gdPerf) window.__gdPerf.avg = Math.round(avg * 10) / 10;
     }
@@ -327,6 +330,7 @@
   // ---- focus / selection state ---------------------------------------------
   var hovered = null, selected = null, t0 = performance.now(), lastInteract = t0;
   var velX = 0, velY = 0, dragging = false, flying = null;
+  var _tipTrigger = null;   // the legend button that opened the current pinned tooltip (for Escape focus-return)
 
   // ---- render --------------------------------------------------------------
   function render(t) {
@@ -956,14 +960,23 @@
   }
   // press an already-open market again to close it; otherwise open / switch
   function toggleSelect(m, cx, cy) { if (selected === m.cc) deselect(); else selectMarket(m, cx, cy); }
-  function deselect() { selected = null; hovered = null; tip.classList.remove("pinned"); tip.hidden = true; syncRows(); if (live) live.textContent = ""; }
+  function deselect() {
+    selected = null; hovered = null; tip.classList.remove("pinned"); tip.hidden = true;
+    tip.removeAttribute("role"); tip.tabIndex = -1;
+    syncRows(); if (live) live.textContent = "";
+    if (_tipTrigger) { try { _tipTrigger.focus(); } catch (e) {} _tipTrigger = null; }
+  }
   function selectMarket(m, cx, cy) {
     selected = m.cc; hovered = null; lastInteract = performance.now();
     var ll = m.kind === "marker" ? m.marker_lonlat : (byCC[m.cc] && paintCentroid(m.cc)) || [0, 0];
     flying = { t0: performance.now(), dur: 700, a0: rot[0], b0: rot[1], a1: -ll[0], b1: clampLat(-ll[1]), s0: scale, s1: fitScale * 1.12 };
     showTip(m, cx || (W / 2 + stage.getBoundingClientRect().left), cy || (H / 2 + stage.getBoundingClientRect().top), true);
     syncRows();
-    if (live) live.textContent = m.name_en + ": " + m.quad_name_en;
+    if (live) {
+      var _zh = document.documentElement.getAttribute("data-lang") === "zh";
+      live.textContent = _zh ? ((m.name_zh || m.name_en || m.cc) + ": " + (m.quad_name_zh || m.quad_name_en || ""))
+                              : ((m.name_en || m.cc) + ": " + (m.quad_name_en || ""));
+    }
   }
   function paintCentroid(cc) { for (var k = 0; k < paint.length; k++) if (paint[k].cc === cc) return paint[k].centroid; return null; }
 
@@ -998,15 +1011,23 @@
         '<b>' + (m.index_price || "—") + '</b>' +
         '<span class="gd-chg" style="color:' + chgColor + '">' + (up ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</span></div>' +
       '<div class="gd-tip-foot">' + bilingual("Descriptive regime read — not a forecast.", "描述性周期读数，非预测。") +
-        (m.macro_asof ? ' · ' + bilingual("as of " + m.macro_asof, m.macro_asof) : '') + '</div>' +
+        (m.macro_asof ? ' · ' + bilingual("as of " + m.macro_asof, "截至 " + m.macro_asof) : '') + '</div>' +
       '<a class="gd-tip-go" href="' + m.href + '">' + bilingual("Open dashboard →", "打开看板 →") + '</a>';
     tip.hidden = false;
     tip.classList.toggle("pinned", !!pinned);
+    if (pinned) {
+      tip.setAttribute("role", "dialog");
+      tip.tabIndex = -1;
+    } else {
+      tip.removeAttribute("role");
+      tip.tabIndex = -1;
+    }
     // mobile: a pinned tooltip becomes a BOTTOM SHEET — always fully on-screen even
     // when the tap came from the sidebar far below the globe (no more half-off-screen).
     if (pinned && window.innerWidth <= 560) {
       tip.style.left = "10px"; tip.style.right = "10px"; tip.style.width = "auto";
-      tip.style.top = "auto"; tip.style.bottom = "12px";
+      tip.style.top = "auto"; tip.style.bottom = "calc(12px + env(safe-area-inset-bottom))";
+      try { tip.focus({ preventScroll: true }); } catch (e) {}
       return;
     }
     tip.style.right = ""; tip.style.bottom = ""; tip.style.width = "";  // clear any prior bottom-sheet
@@ -1029,6 +1050,7 @@
     y = Math.max(pad, Math.min(y, window.innerHeight - th - pad));
     tip.style.left = x + "px"; tip.style.top = y + "px";
     tip.classList.toggle("pinned", !!pinned);
+    if (pinned) { try { tip.focus({ preventScroll: true }); } catch (e) {} }
   }
   function hideTip() { if (selected) return; tip.hidden = true; }
   function fmt(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(2); }
@@ -1083,7 +1105,6 @@
   // .nb-px/.nb-chg), session state in the semaphore + ring + the next-bell strip,
   // and the sr-only legend buttons remain the keyboard / no-JS spine.
   var islEls = {}, islFrontState = {}, islFront = null, islBack = null, rowEls = {};
-  var ASIA = ["CN", "JP", "KR", "TW", "HK"], clusterEl = null, exploded = false;
   var RINGC = 2 * Math.PI * 9;
   function buildIslands() {
     islFront = stage.querySelector(".gd-isl-front");
@@ -1098,7 +1119,7 @@
       el.innerHTML =
         '<span class="glow"></span><span class="dot"></span>' +
         '<svg class="ring" viewBox="0 0 24 24" aria-hidden="true"><circle class="trk" cx="12" cy="12" r="9"></circle><circle class="arc" cx="12" cy="12" r="9"></circle></svg>' +
-        '<button class="body" type="button" aria-label="' + (m.name_en || m.cc) + '">' +
+        '<button class="body" type="button" tabindex="-1" aria-label="' + (m.name_en || m.cc) + '">' +
         '<span class="isl-flag">' + m.flag + '</span>' +
         '<span class="isl-sem closed"></span>' +
         '<em class="isl-chg nb-chg ' + (up ? "up" : "down") + '" data-sym="' + (m.index_sym || "") + '">' + (up ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em>' +
@@ -1114,12 +1135,6 @@
     //  "balloons" in positionIslands() so every market stays individually readable)
     updateClocks();
     setInterval(updateClocks, 1000);
-  }
-  function buildCluster() {
-    clusterEl = document.createElement("div"); clusterEl.className = "gd-cluster";
-    clusterEl.innerHTML = '<span class="cl-globe" aria-hidden="true">🌏</span>' + bilingual("Asia", "亚洲") + '<span class="cl-n"></span><span class="cl-dots" aria-hidden="true"></span>';
-    clusterEl.addEventListener("click", function (e) { e.stopPropagation(); exploded = !exploded; });
-    islFront.appendChild(clusterEl);
   }
   // island position skip-frame state (recompute every 2nd frame unless dragging/flying)
   var _islFrame = 0, _islLabCache = [];
@@ -1236,7 +1251,10 @@
     else render(performance.now());
   }
   ["langchange", "themechange"].forEach(function (e) { document.addEventListener(e, recolor); });
-  if (window.matchMedia) try { matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", function (e) { motionOK = !e.matches; if (motionOK && !raf) raf = requestAnimationFrame(frame); }); } catch (e) {}
+  if (window.matchMedia) try { matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", function (e) {
+    if (_motionManualUsed) return;   // manual override wins for this page session
+    motionOK = !e.matches; if (motionOK && !raf) raf = requestAnimationFrame(frame);
+  }); } catch (e) {}
 
   // ---- keyboard ------------------------------------------------------------
   canvas.addEventListener("keydown", function (e) {
@@ -1250,16 +1268,180 @@
     e.preventDefault(); apply();
   });
   stage.querySelectorAll(".gd-leg").forEach(function (btn) {
-    btn.addEventListener("click", function () { var m = byCC[btn.getAttribute("data-cc")]; if (m) toggleSelect(m); });
+    btn.addEventListener("click", function () {
+      var m = byCC[btn.getAttribute("data-cc")]; if (!m) return;
+      // track keyboard trigger for focus-return on deselect; clear if already selected (will deselect)
+      if (selected !== m.cc) _tipTrigger = btn; else _tipTrigger = null;
+      toggleSelect(m);
+    });
     btn.addEventListener("mouseenter", function () { hovered = btn.getAttribute("data-cc"); });
     btn.addEventListener("mouseleave", function () { if (!dragging) hovered = null; });
   });
+
+  // ---- injected styles (hint chip + eyebrow chips + manual effects API) ----
+  (function injectStyles() {
+    var s = document.createElement("style");
+    s.textContent = [
+      ".gd-hint-chip{position:absolute;bottom:calc(8% + 12px);left:50%;transform:translateX(-50%);",
+      "background:color-mix(in srgb,var(--panel,#1a1e2a) 82%,transparent);",
+      "border:1px solid var(--line,rgba(255,255,255,.12));border-radius:999px;",
+      "padding:5px 14px;font-size:11.5px;color:var(--muted,rgba(255,255,255,.45));",
+      "pointer-events:none;white-space:nowrap;opacity:1;",
+      "transition:opacity .6s ease;z-index:4;}",
+      ".gd-hint-chip.gd-hint-hidden{opacity:0;}",
+      "@media(prefers-reduced-motion:reduce){.gd-hint-chip{transition:none;}}",
+      ".gd-eyebrow-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}",
+      ".gd-eb-chip{font-size:11px;color:var(--muted,rgba(255,255,255,.45));",
+      "background:color-mix(in srgb,var(--panel,#1a1e2a) 70%,transparent);",
+      "border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;",
+      "padding:2px 7px;white-space:nowrap;}",
+      "@media(max-width:559px){.gd-eb-chip-bell{display:none;}}"
+    ].join("");
+    document.head.appendChild(s);
+  }());
+
+  // ---- hint chip (first-visit globe interactivity affordance) --------------
+  var _hintEl = null;
+  function buildHintChip() {
+    if (!stage) return;
+    if (localStorage.getItem("gdHintSeen")) return;
+    _hintEl = document.createElement("div");
+    _hintEl.className = "gd-hint-chip";
+    _hintEl.setAttribute("aria-hidden", "true");
+    _hintEl.innerHTML =
+      '<span class="l-en">Drag to rotate \xb7 tap a market \xb7 ctrl/⌘+scroll or pinch to zoom</span>' +
+      '<span class="l-zh">拖动旋转 \xb7 点按市场 \xb7 ctrl/⌘+滚轮或双指缩放</span>';
+    stage.appendChild(_hintEl);
+    var _hideHint = function () {
+      if (!_hintEl) return;
+      localStorage.setItem("gdHintSeen", "1");
+      if (!window.matchMedia || !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        _hintEl.classList.add("gd-hint-hidden");
+        setTimeout(function () { if (_hintEl && _hintEl.parentNode) _hintEl.parentNode.removeChild(_hintEl); _hintEl = null; }, 700);
+      } else {
+        if (_hintEl.parentNode) _hintEl.parentNode.removeChild(_hintEl);
+        _hintEl = null;
+      }
+    };
+    canvas.addEventListener("pointerdown", _hideHint, { once: true, passive: true });
+    setTimeout(_hideHint, 8000);
+  }
+
+  // ---- eyebrow chips (next-bell + data vintage) ----------------------------
+  var _bellChipEl = null, _vintChipEl = null, _eyebrowInterval = null;
+  function _fmtMinutes(mins) {
+    var h = Math.floor(mins / 60), m = mins % 60;
+    if (h > 0 && m > 0) return h + "h " + m + "m";
+    if (h > 0) return h + "h";
+    return m + "m";
+  }
+  function _fmtMinutesZH(mins) {
+    var h = Math.floor(mins / 60), m = mins % 60;
+    if (h > 0 && m > 0) return h + "小时" + m + "分";
+    if (h > 0) return h + "小时";
+    return m + "分";
+  }
+  function updateEyebrowChips() {
+    if (!_bellChipEl && !_vintChipEl) return;
+    // next-bell
+    if (_bellChipEl && DATA && DATA.length) {
+      var best = null, bestMins = Infinity;
+      DATA.forEach(function (m) {
+        if (!m.tz || !m.open || !m.close) return;
+        try {
+          var st = clockState(m);
+          if (st.next < bestMins) { bestMins = st.next; best = { m: m, st: st }; }
+        } catch (e) {}
+      });
+      if (best) {
+        var mm = best.m, st = best.st;
+        var ev_en = st.open ? "closes" : "opens", ev_zh = st.open ? "收盘" : "开盘";
+        var t_en = _fmtMinutes(bestMins), t_zh = _fmtMinutesZH(bestMins);
+        var flag = mm.flag || "";
+        var name_en = (mm.name_en || mm.cc) + " " + ev_en + " in " + t_en;
+        var name_zh = (mm.name_zh || mm.cc) + " " + t_zh + "后" + ev_zh;
+        _bellChipEl.innerHTML =
+          '<span class="l-en">' + flag + " " + name_en + '</span>' +
+          '<span class="l-zh">' + flag + " " + name_zh + '</span>';
+      }
+    }
+  }
+  function buildEyebrowChips() {
+    // find the eyebrow's parent: the hub-clock's parent container
+    var hubClock = document.querySelector(".hub-clock");
+    if (!hubClock) return;
+    var eyebrowParent = hubClock.parentElement;
+    if (!eyebrowParent) return;
+    // wrap existing children if not already wrapped
+    var wrap = eyebrowParent.querySelector(".gd-eyebrow-chips");
+    if (!wrap) {
+      wrap = document.createElement("span");
+      wrap.className = "gd-eyebrow-chips";
+      eyebrowParent.appendChild(wrap);
+    }
+    // next-bell chip
+    _bellChipEl = document.createElement("span");
+    _bellChipEl.className = "gd-eb-chip gd-eb-chip-bell";
+    wrap.appendChild(_bellChipEl);
+    // data vintage chip
+    if (DATA && DATA.length) {
+      var maxAsof = null;
+      DATA.forEach(function (m) { if (m.macro_asof && (!maxAsof || m.macro_asof > maxAsof)) maxAsof = m.macro_asof; });
+      if (maxAsof) {
+        _vintChipEl = document.createElement("span");
+        _vintChipEl.className = "gd-eb-chip";
+        _vintChipEl.innerHTML =
+          '<span class="l-en">data as of ' + maxAsof + '</span>' +
+          '<span class="l-zh">数据截至 ' + maxAsof + '</span>';
+        wrap.appendChild(_vintChipEl);
+      }
+    }
+    updateEyebrowChips();
+    _eyebrowInterval = setInterval(updateEyebrowChips, 30000);
+  }
+
+  // ---- Manual Effects API --------------------------------------------------
+  // _tierPinned declared near _pushDt above; once set, the governor never auto-changes Q.
+  // __gdSetMotion: once called this session, the prefers-reduced-motion listener defers.
+  var _motionManualUsed = false;
+  window.__gdSetTier = function (n) {
+    n = Math.max(0, Math.min(2, n | 0));
+    _tierPinned = true;
+    Q = n;
+    _skipSizeRender = true; size(); _skipSizeRender = false;
+  };
+  window.__gdSetMotion = function (on) {
+    _motionManualUsed = true;
+    motionOK = !!on;
+    if (!motionOK) {
+      // cancel loop and render one static frame
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      render(performance.now());
+    } else {
+      // re-arm if visible and loaded
+      if (inView && ready && !raf) raf = requestAnimationFrame(frame);
+    }
+  };
+  // read fx setting from localStorage on boot
+  function _applyFxLocalStorage() {
+    try {
+      if (localStorage.getItem("fx") === "min") {
+        window.__gdSetTier(0);
+        window.__gdSetMotion(false);
+      }
+    } catch (e) {}
+  }
 
   // ---- boot ----------------------------------------------------------------
   function boot(topo) {
     // init instrumentation object once (mutated each frame)
     window.__gdPerf = { tier: Q, frames: 0, scale: scale, avg: 0, rot0: rot[0] };
     buildGeometry(topo); buildRoutes(); readPalette(); buildStars(); buildCities(); buildIslands(); size();
+    // hint chip + eyebrow chips (new self-owned UI)
+    buildHintChip();
+    buildEyebrowChips();
+    // apply fx localStorage preset (must run after __gdSetTier/__gdSetMotion are defined)
+    _applyFxLocalStorage();
     // The islands are built lazily (after a topo fetch + idle callback), so live.js's
     // first poll already ran against an empty DOM — nudge it to patch the fresh
     // .nb-px/.nb-chg index nodes now instead of waiting a full poll interval.
