@@ -39,6 +39,7 @@ import pandas as pd
 import yfinance as yf
 
 from collectors.base import Adapter
+from collectors.breadth import repair_seams
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -221,6 +222,20 @@ class IntlUniverseAdapter(Adapter):
         wide = pd.concat(parts, axis=1)
         return wide.loc[:, ~wide.columns.duplicated()].sort_index()
 
+    def _merge_refreshed(self, fresh: pd.DataFrame, prev: pd.DataFrame) -> pd.DataFrame:
+        """``fresh.combine_first(prev)`` + split-seam repair (2026-07-10 KLAC class).
+
+        yfinance auto_adjust back-adjusts only the freshly downloaded window, so
+        after a split (e.g. the big JP re-denominations like NTT 25:1) the
+        combine_first tail refresh leaves prev rows BEFORE the fresh window on
+        the pre-split basis — a permanent fake ±N00% day at the seam. Flagged
+        tickers are re-pulled over the full window and replaced wholesale; never
+        fatal (see collectors.breadth.repair_seams)."""
+        merged = fresh.combine_first(prev)
+        merged, _ = repair_seams(merged, fresh, prev, self._download_closes,
+                                 name=self.name)
+        return merged
+
     # -- main ------------------------------------------------------------------
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         if not self.cfg.get("enabled", True):
@@ -238,7 +253,7 @@ class IntlUniverseAdapter(Adapter):
             age = (pd.Timestamp.utcnow().tz_localize(None) - prev.index.max()).days
             new = [t for t in tickers if t not in prev.columns]
             fresh = self._download_closes(tickers, "1mo" if age <= 21 else period)
-            closes = fresh.combine_first(prev)
+            closes = self._merge_refreshed(fresh, prev)
             if new:
                 closes = self._download_closes(new, period).combine_first(closes)
         else:
