@@ -29,6 +29,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-pick-lab | 3 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
+| intraday-flow-tracker | 3 |
 | long-hold | 28 |
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
@@ -74,7 +75,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 212 |
+| display | 215 |
 | infrastructure | 87 |
 | scored | 4 |
 | shadow | 63 |
@@ -83,7 +84,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 350 |
+| git | 353 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -273,6 +274,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | intl-bridge-ledger | `data/intl_bridge/ledger.json` | json | on-demand | shadow | 6 | 0 |
+
+### intraday-flow-tracker
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| intraday-flow-base | `site/flowtracker/base.json` | json | daily-engine | display | 1 | 0 |
+| intraday-flow-pulse | `site/live/flow_pulse.json` | json | intraday | display | 1 | 0 |
+| intraday-flow-ledger | `data/intraday_flow/ledger.parquet` | parquet | daily-engine | display | 0 | 0 |
 
 ### long-hold
 
