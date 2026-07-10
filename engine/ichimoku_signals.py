@@ -1,8 +1,8 @@
 """engine/ichimoku_signals.py — Ichimoku Kinko Hyo chart-grammar signal family.
 
 Display-tier descriptive chart-grammar family. No authority, no buy/sell/stop
-commands, no composite scores. Routed per research/DANNYTRADES_INDICATOR_DOCKET_
-ADJUDICATION_2026-07-10_BY_FABLE.md ruling DT-R18.
+commands, no composite scores. Routed per
+research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md (DT-R1..DT-R16).
 
 PIT-clean: all cloud components use .shift(displacement) so that the cloud value
 at bar t uses only data known at or before bar t.
@@ -26,7 +26,7 @@ import pandas as pd
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Default parameters (pre-registered per DT-R18)
+# Default parameters
 # ---------------------------------------------------------------------------
 DEFAULT_TENKAN: int = 9
 DEFAULT_KIJUN: int = 26
@@ -44,12 +44,17 @@ def _ichimoku_components(
     kijun: int = DEFAULT_KIJUN,
     senkou_b: int = DEFAULT_SENKOU_B,
     displacement: int = DEFAULT_DISPLACEMENT,
-) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
-    """Return (close, tenkan, kijun, span_a, span_b, cloud_top, cloud_bot).
+) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
+    """Return (close, tenkan, kijun, cloud_top, cloud_bot).
 
     All cloud spans are displaced forward by `displacement` bars — PIT-clean:
     the cloud value visible at bar t was projected `displacement` bars ago using
     only data that was available at that earlier bar.
+
+    cloud_top and cloud_bot are NaN whenever either span_a or span_b is NaN
+    (i.e., during the first kijun+displacement and senkou_b+displacement warm-up
+    bars), so signals built on them will not fire during the incomplete-cloud
+    window.
     """
     high = df["high"]
     low = df["low"]
@@ -67,9 +72,15 @@ def _ichimoku_components(
     # Senkou Span B: midpoint of n-period high/low, projected forward
     span_b = _midpoint(high, low, senkou_b).shift(displacement)
 
-    # Cloud top/bottom
-    cloud_top = span_a.combine(span_b, max)
-    cloud_bot = span_a.combine(span_b, min)
+    # Cloud top/bottom — only defined where BOTH spans are valid.
+    # pd.Series.combine(other, func) passes the non-NaN operand when one side is
+    # NaN, so max(span_a, NaN) == span_a.  For the ~26-bar window between span_a
+    # becoming valid and span_b becoming valid this would produce a degenerate
+    # zero-thickness cloud (cloud_top == cloud_bot == span_a).  Gate explicitly
+    # so signals do not fire during the incomplete-cloud window.
+    both_valid = span_a.notna() & span_b.notna()
+    cloud_top = span_a.combine(span_b, max).where(both_valid)
+    cloud_bot = span_a.combine(span_b, min).where(both_valid)
 
     return close, tk, kj, cloud_top, cloud_bot
 

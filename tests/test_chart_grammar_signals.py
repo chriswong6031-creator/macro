@@ -1,6 +1,6 @@
 """tests/test_chart_grammar_signals.py — Tests for the 4 chart-grammar signal families.
 
-Families under test (DT-R18):
+Families under test:
   ichimoku         — ichimoku_signals.py (6 signals)
   trend_ribbon     — trend_ribbon_signals.py (4 signals)
   rsi_stack        — rsi_stack_signals.py (4 signals)
@@ -214,18 +214,43 @@ class TestIchimokuSignals:
         result = m.ichimoku_cloud_breakdown(df)
         assert result.sum() == 0, "ichimoku_cloud_breakdown must not fire on a flat series"
 
-    # ---- PIT check ----------------------------------------------------------
+    # ---- PIT / displacement check -------------------------------------------
 
-    @pytest.mark.parametrize("t_offset", [80, 120, 180, 250])
-    def test_ichimoku_pit_consistency(self, t_offset):
-        """PIT: computing on df[:t] vs full df yields identical value at bar t-1.
+    def test_ichimoku_displacement_isolates_spike(self):
+        """Displacement test: a price spike at bar T must not affect cloud values at T-26.
 
-        This guards against any look-ahead in the cloud construction.
+        If the displacement shift were absent (or wrong-signed), span_a/span_b at
+        bar T would immediately be placed at T rather than T+26, causing signal
+        values at or near T-26 to change when data at T is appended.  This test
+        plants an extreme price spike at a single bar and verifies that all six
+        ichimoku signal values at bar T-27 (one bar before the spike could
+        possibly influence the displaced cloud) are identical whether computed on
+        the full series or on df[:T].
+
+        We verify two scenarios to make the test self-checking:
+          (a) baseline — spike bar outside the range: result must match (trivial).
+          (b) actual test — spike bar at T (displacement=26 before T+26): signal
+              values at T-27 must be unchanged; the spike should not bleed back.
         """
         m = self._import()
-        df = _make_ohlcv(n=400)
+        n = 300
+        displacement = 26
 
-        # For each signal function, value at index t-1 must match
+        # Build a calm random-walk base
+        base_df = _make_ohlcv(n=n, seed=77)
+        spike_bar = 200  # the bar we'll inject the spike at
+
+        # Compute on the calm base only up to spike_bar (no spike in view)
+        baseline = base_df.iloc[:spike_bar]
+
+        # Add an extreme spike at spike_bar
+        df_with_spike = base_df.copy()
+        df_with_spike.at[df_with_spike.index[spike_bar], "close"] = 99_999.0
+        df_with_spike.at[df_with_spike.index[spike_bar], "high"]  = 99_999.0
+
+        # The check bar: displacement bars before the spike bar
+        check_bar_pos = spike_bar - displacement - 1  # T-27
+
         funcs = [
             m.ichimoku_above_cloud,
             m.ichimoku_below_cloud,
@@ -234,16 +259,47 @@ class TestIchimokuSignals:
             m.ichimoku_cloud_breakout_up,
             m.ichimoku_cloud_breakdown,
         ]
+        check_idx = base_df.index[check_bar_pos]
+
         for fn in funcs:
-            full_result = fn(df)
-            partial_result = fn(df.iloc[:t_offset])
-            # Compare value at position t_offset - 1 (last bar of partial)
-            bar_idx = df.index[t_offset - 1]
-            val_full = full_result.loc[bar_idx]
-            val_partial = partial_result.iloc[-1]
-            assert val_full == val_partial, (
-                f"PIT failure for {fn.__name__} at t={t_offset}: "
-                f"full={val_full}, partial={val_partial}"
+            val_no_spike = fn(baseline).iloc[check_bar_pos]
+            val_with_spike = fn(df_with_spike).loc[check_idx]
+            assert val_no_spike == val_with_spike, (
+                f"Displacement failure for {fn.__name__}: spike at bar {spike_bar} "
+                f"changed value at bar {check_bar_pos} (T-{displacement+1}). "
+                f"no_spike={val_no_spike}, with_spike={val_with_spike}. "
+                "This indicates the cloud displacement shift is missing or wrong."
+            )
+
+    def test_ichimoku_warmup_no_signal_before_both_spans_valid(self):
+        """Cloud signals must be 0 until BOTH span_a and span_b are non-NaN.
+
+        Default params: tenkan=9, kijun=26, senkou_b=52, displacement=26.
+        span_a first valid at bar kijun+displacement-1 = 51 (0-indexed).
+        span_b first valid at bar senkou_b+displacement-1 = 77 (0-indexed).
+        All six cloud signals must stay 0 for bars 0..76.
+        """
+        m = self._import()
+        n = 300
+        # Use a strong uptrend so that above_cloud would fire if the cloud
+        # were (incorrectly) active during the partial span_b window.
+        close = 100.0 * (1.005 ** np.arange(n))
+        df = _as_df(close, close * 1.002, close * 0.998)
+
+        cloud_signals = [
+            m.ichimoku_above_cloud,
+            m.ichimoku_below_cloud,
+            m.ichimoku_cloud_breakout_up,
+            m.ichimoku_cloud_breakdown,
+        ]
+        # span_b becomes valid at bar senkou_b + displacement - 1 = 77
+        warmup_end = 26 + 52 - 1  # = 77 (0-indexed, first valid bar)
+        for fn in cloud_signals:
+            result = fn(df)
+            early = result.iloc[:warmup_end]
+            assert early.sum() == 0, (
+                f"{fn.__name__} fired during incomplete-cloud warmup "
+                f"(bars 0..{warmup_end - 1}): {early[early != 0]}"
             )
 
 
@@ -392,7 +448,7 @@ class TestRsiStackSignals:
         assert result.sum() > 0, "rsi_stack_oversold should fire after a severe decline"
 
     def test_oversold_no_fire_flat(self):
-        """Flat series: RSI converges to ~50, never ≤ 30."""
+        """Flat series: all price diffs are zero, so RSI is NaN; signals stay 0.0 via fillna."""
         m = self._import()
         df = _flat_df(n=300)
         result = m.rsi_stack_oversold(df)
@@ -419,7 +475,7 @@ class TestRsiStackSignals:
         assert result.sum() > 0, "rsi_stack_overbought should fire after a strong rally"
 
     def test_overbought_no_fire_flat(self):
-        """Flat series: RSI converges to ~50, never ≥ 80."""
+        """Flat series: all price diffs are zero, so RSI is NaN; signals stay 0.0 via fillna."""
         m = self._import()
         df = _flat_df(n=300)
         result = m.rsi_stack_overbought(df)

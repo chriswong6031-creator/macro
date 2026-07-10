@@ -1,11 +1,12 @@
 """engine/rsi_stack_signals.py — RSI stack (multi-timeframe) chart-grammar signal family.
 
 Display-tier descriptive chart-grammar family. No authority, no buy/sell/stop
-commands, no composite scores. Routed per research/DANNYTRADES_INDICATOR_DOCKET_
-ADJUDICATION_2026-07-10_BY_FABLE.md ruling DT-R18.
+commands, no composite scores. Routed per
+research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md (DT-R1..DT-R16).
 
-RSI periods 7, 14, 21 are FROZEN per DT-R18 adjudication pre-registration — do
-not alter them without a new adjudication ruling. RSI is computed via engine.canon.rsi
+RSI periods 7, 14, 21 are frozen at the canonical multi-timeframe values used
+throughout this family — do not alter them without a new adjudication ruling.
+RSI is computed via engine.canon.rsi
 (Wilder/SMA-seeded RMA, the canonical cross-engine implementation).
 
 The overbought threshold of 80 is a public descriptive reference band. The
@@ -30,11 +31,11 @@ from engine.canon import rsi as _canon_rsi
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Frozen RSI periods (per DT-R18 adjudication pre-registration)
+# Frozen RSI periods (canonical multi-timeframe values for this family)
 # ---------------------------------------------------------------------------
 _RSI_PERIODS: tuple[int, int, int] = (7, 14, 21)
 
-# Public descriptive reference bands (per DT-R18 governance)
+# Public descriptive reference bands
 _OVERSOLD_BAND: float = 30.0
 _OVERBOUGHT_BAND: float = 80.0
 
@@ -99,8 +100,8 @@ def rsi_stack_oversold(df: pd.DataFrame, **kwargs) -> pd.Series:
 def rsi_stack_overbought(df: pd.DataFrame, **kwargs) -> pd.Series:
     """State: all three RSIs (7/14/21) are at or above 80 (public reference band).
 
-    The 80 threshold is a public descriptive reference band per DT-R18; it is
-    labeled as such and carries no signal authority.
+    The 80 threshold is a public descriptive reference band; it is labeled as
+    such and carries no signal authority.
 
     Returns {0.0, 1.0}.
     """

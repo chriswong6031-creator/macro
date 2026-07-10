@@ -201,7 +201,7 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
         ("engine.trend_signals",       "trend_signals"),
         ("engine.fundamental_screens", "fundamental_screens"),
         ("engine.insider_power_signals", "insider_power_signals"),
-        # Chart-grammar families — DT-R18
+        # Chart-grammar families (ichimoku / trend_ribbon / rsi_stack / bollinger_events)
         ("engine.ichimoku_signals",        "ichimoku_signals"),
         ("engine.trend_ribbon_signals",    "trend_ribbon_signals"),
         ("engine.rsi_stack_signals",       "rsi_stack_signals"),

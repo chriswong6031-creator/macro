@@ -1,8 +1,8 @@
 """engine/bollinger_event_signals.py — Bollinger Band event/state chart-grammar signals.
 
 Display-tier descriptive chart-grammar family. No authority, no buy/sell/stop
-commands, no composite scores. Routed per research/DANNYTRADES_INDICATOR_DOCKET_
-ADJUDICATION_2026-07-10_BY_FABLE.md ruling DT-R18.
+commands, no composite scores. Routed per
+research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md (DT-R1..DT-R16).
 
 These signals use price-vs-band relationships (rejection from the upper band,
 reclaim of the lower band, and band-walk states). They do NOT duplicate the
@@ -29,7 +29,7 @@ import pandas as pd
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Default parameters (pre-registered per DT-R18)
+# Default parameters
 # ---------------------------------------------------------------------------
 DEFAULT_BB_N: int = 20
 DEFAULT_BB_K: float = 2.0
