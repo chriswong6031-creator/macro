@@ -25,8 +25,8 @@ Three responsibilities:
        Grades at 21d and 63d: forward excess return vs SPY recorded (descriptive
        accrual; no pass/fail verdict this wave — NAR-R5).
 
-All data/ writes nightly-gated (COLLECT_LANE=nightly).
-site/ writes (grading_summary.json) allowed on all lanes — site/ may write freely.
+All data/ writes nightly-gated (COLLECT_LANE=nightly), including grading_summary.json
+which lives in data/narrative_flare/ (data-tier, not site/).
 
 NAR-R10: absent/stale upstream -> log warning + skip; never crash.
 NAR-R4: zero LLM anywhere in this module.
@@ -44,6 +44,7 @@ import pandas as pd
 
 from engine import qledger as q
 from lib import config
+from lib.nyse_calendar import is_session
 
 log = logging.getLogger(__name__)
 
@@ -69,8 +70,11 @@ BETA_BETA = 5
 # ---------------------------------------------------------------------------
 # Resolution parameters (§4.3)
 # ---------------------------------------------------------------------------
-RESOLUTION_TRADING_DAYS = 20       # D+20 trading days
+RESOLUTION_TRADING_DAYS = 20       # D+20 trading days (exact NYSE calendar)
 EXCESS_HIT_THRESHOLD = 0.05        # |excess| > 5% = hit (UNSIGNED, NAR §4.3)
+
+# State-claim descriptive horizons (§7 W4): 21 and 63 trading days after snapshot
+STATE_CLAIM_HORIZONS_TD = (21, 63)  # trading days
 
 # ---------------------------------------------------------------------------
 # Store paths
@@ -233,50 +237,134 @@ def load_state_hist(data_root: Path | None = None) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Price helpers (reuse qledger._fwd_ret + _fill_entry exactly)
+# NYSE trading-day arithmetic
 # ---------------------------------------------------------------------------
 
 
-def _excess_return_unsigned(
-    ticker: str,
-    entry_date: str,
-    horizon_d: int,
-    root: Path,
-) -> float | None:
-    """|subject_ret - bench_ret| over D+horizon_d calendar days from next-bar fill.
+def _add_trading_days(start_date: str, n_trading_days: int) -> date:
+    """Return the date that is exactly `n_trading_days` NYSE sessions after `start_date`.
 
-    Returns None when prices unavailable or horizon not yet matured.
-    Uses qledger._fwd_ret (next_bar convention, SPY bench) — the same price layer
-    all other graders use.
+    Walks forward one calendar day at a time, counting only days where
+    lib.nyse_calendar.is_session() is True.  This is the same idiom used by
+    engine/basket_turn_watch.py (the existing house pattern).
+    """
+    d = pd.Timestamp(start_date).date()
+    counted = 0
+    while counted < n_trading_days:
+        d += timedelta(days=1)
+        if is_session(d):
+            counted += 1
+    return d
+
+
+# ---------------------------------------------------------------------------
+# Price helpers — bypass _fwd_ret; compute returns against exact exit_date
+# ---------------------------------------------------------------------------
+# DESIGN CHOICE (BLOCKER 1): We bypass qledger._fwd_ret rather than passing
+# an approximated calendar-day horizon_d.  Reason: _fwd_ret interprets
+# horizon_d as calendar days from fill_ts (the next bar after entry_date),
+# not from entry_date itself.  Computing the exact exit_date in trading-day
+# space and then deriving a calendar span from fill_ts is circular (fill_ts
+# varies per ticker).  Direct price-store access with a fixed exit_date is
+# the cleaner approach and exactly what the review recommends.  We replicate
+# _fwd_ret's next-bar fill math (first close STRICTLY AFTER entry_date) then
+# take the last close ON OR BEFORE exit_date — identical semantics, exact
+# exit boundary.
+
+
+def _fwd_ret_to_exit(
+    ticker: str,
+    root: Path,
+    entry_date: str,
+    exit_date: date,
+) -> tuple[float | None, bool]:
+    """Return (raw_ret, price_available) for ticker from next-bar fill to exit_date.
+
+    raw_ret: (exit_close / fill_close - 1), rounded to 6 decimal places.
+             None when the price series does not cover exit_date yet (not matured).
+    price_available: False when the price series is absent or the fill bar is missing
+                     (distinct from not-yet-matured).
+
+    Uses next-bar fill convention (same as qledger._fwd_ret default).
     """
     try:
-        subj = q._fwd_ret(ticker, root, entry_date, horizon_d)
-        bench = q._fwd_ret("SPY", root, entry_date, horizon_d)
-        if subj is None or bench is None:
-            return None
-        return round(abs(subj - bench), 6)
+        from engine import ai_desk as _aidesk  # lazy: mirrors qledger import pattern
+        s = _aidesk._close_series(ticker, root)
+        if s is None or s.empty:
+            return None, False
+        # Next-bar fill: first close STRICTLY AFTER entry_date
+        fwd = s[s.index > pd.Timestamp(entry_date)]
+        if not len(fwd):
+            return None, False
+        fill_price = float(fwd.iloc[0])
+        if not fill_price:
+            return None, False
+        # Exit: last close ON OR BEFORE exit_date (same semantics as _fwd_ret)
+        exit_ts = pd.Timestamp(exit_date)
+        if s.index.max() < exit_ts:
+            return None, True   # not yet matured — price_available=True, ret=None
+        w = s[s.index <= exit_ts]
+        if not len(w):
+            return None, False
+        exit_price = float(w.iloc[-1])
+        return round(exit_price / fill_price - 1.0, 6), True
     except Exception as e:  # noqa: BLE001
-        log.debug("source_registry: excess_return_unsigned %s %s %dd: %s",
-                  ticker, entry_date, horizon_d, e)
+        log.debug("source_registry: _fwd_ret_to_exit %s %s->%s: %s",
+                  ticker, entry_date, exit_date, e)
+        return None, False
+
+
+def _excess_return_unsigned_at_exit(
+    ticker: str,
+    entry_date: str,
+    exit_date: date,
+    root: Path,
+) -> float | None:
+    """|ticker_ret - SPY_ret| from next-bar fill through exit_date (UNSIGNED, §4.3).
+
+    Returns None when prices are unavailable or the exit date is not yet covered.
+    Both legs must cover exit_date; otherwise returns None (maturity not confirmed).
+    """
+    try:
+        subj_ret, subj_avail = _fwd_ret_to_exit(ticker, root, entry_date, exit_date)
+        bench_ret, bench_avail = _fwd_ret_to_exit("SPY", root, entry_date, exit_date)
+        if subj_ret is None or bench_ret is None:
+            return None
+        return round(abs(subj_ret - bench_ret), 6)
+    except Exception as e:  # noqa: BLE001
+        log.debug("source_registry: excess_return_unsigned_at_exit %s %s->%s: %s",
+                  ticker, entry_date, exit_date, e)
         return None
 
 
-def _matured_at_trading_days(
+def _is_matured_at_exit(
     entry_date: str,
-    trading_days: int,
+    exit_date: date,
     today: date,
     root: Path,
-    ticker: str = "SPY",
+    tickers: list[str],
 ) -> bool:
-    """True when enough calendar days have elapsed and SPY (or ticker) covers the exit.
+    """True when today >= exit_date AND price series for all tickers cover exit_date.
 
-    20 trading days ≈ 28 calendar days (adds a 10-day safety buffer).
-    We use the qledger maturity check as-is (calendar days based) with a
-    calendar-day approximation: 20 trading days ≈ 28 calendar days.
+    This is the maturity gate for a fixed exit_date horizon (trading-day exact).
+    Mirrors the logic of qledger._matured but operates on a pre-computed exit_date
+    rather than a calendar-day offset, ensuring the same boundary for both maturity
+    check and price measurement.
     """
-    # Approximate: 20 trading days ≈ 28 calendar days (conservative)
-    approx_calendar_days = int(trading_days * 1.4)
-    return q._matured(root, entry_date, approx_calendar_days, today, [ticker, "SPY"])
+    if today < exit_date:
+        return False
+    try:
+        exit_ts = pd.Timestamp(exit_date)
+        from engine import ai_desk as _aidesk
+        for ticker in tickers:
+            if not ticker:
+                continue
+            s = _aidesk._close_series(ticker, root)
+            if s is None or s.empty or s.index.max() < exit_ts:
+                return False
+        return True
+    except Exception:  # noqa: BLE001
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -330,13 +418,23 @@ def register_source_call_claims(
         except Exception:  # noqa: BLE001
             continue
 
+        # Compute exact exit_date at D+20 NYSE trading days and store the
+        # exact calendar span so the claim is self-documenting.
+        try:
+            exit_date = _add_trading_days(cov_date, RESOLUTION_TRADING_DAYS)
+            horizon_cd = (exit_date - pd.Timestamp(cov_date).date()).days
+        except Exception:  # noqa: BLE001
+            # Fallback: ~28cd is a safe lower bound
+            horizon_cd = 28
+            exit_date = (pd.Timestamp(cov_date).date() + timedelta(days=horizon_cd))
+
         claim = q.make_claim(
             desk=_DESK_SOURCE_CALL,
             asof=cov_date,
             scope_type="entity",
             scope_key=ticker,
             direction=0,           # salience-only: |excess| graded, not directional
-            horizon_d=RESOLUTION_TRADING_DAYS * 2,  # ~40cd; enough for 20 trading days
+            horizon_d=horizon_cd,  # exact calendar days to D+20 trading days exit
             timestamp_quality="CRAWL_BOUNDED",
             bench="SPY",
             claim_family=_FAMILY_SOURCE_CALL,
@@ -346,11 +444,12 @@ def register_source_call_claims(
                 "title": title[:256],
                 "join_confidence": join_conf,
                 "resolution_trading_days": RESOLUTION_TRADING_DAYS,
+                "exit_date": exit_date.isoformat(),  # exact D+20td exit boundary
                 "excess_hit_threshold": EXCESS_HIT_THRESHOLD,
                 "authority": AUTHORITY,
                 "registration_note": (
                     "NAR-W4 narrative_source_call: "
-                    "graded at D+20 trading days, |excess vs SPY|>5% = hit (UNSIGNED). "
+                    "graded at D+20 NYSE trading days (exact), |excess vs SPY|>5% = hit (UNSIGNED). "
                     "direction=0 salience-only. NAR-R3/NAR-R5 apply."
                 ),
             },
@@ -519,13 +618,25 @@ def _resolve_source_call_claims(
 
         entry_date = q._entry_date(claim)  # respects embargo
 
-        # Check maturity: 20 trading days ≈ 28 calendar days
-        if not _matured_at_trading_days(entry_date, RESOLUTION_TRADING_DAYS, today, root, ticker):
+        # Determine exact exit_date: prefer stored exit_date (registered per-claim);
+        # fall back to computing from entry_date for legacy claims without it.
+        stored_exit = claim.get("exit_date")
+        if stored_exit:
+            try:
+                exit_date = date.fromisoformat(stored_exit)
+            except (ValueError, TypeError):
+                exit_date = _add_trading_days(entry_date, RESOLUTION_TRADING_DAYS)
+        else:
+            exit_date = _add_trading_days(entry_date, RESOLUTION_TRADING_DAYS)
+
+        # Maturity gate: today must be >= exit_date AND price series must cover it.
+        # Same boundary used for measurement below — eliminates the phantom gap.
+        if not _is_matured_at_exit(entry_date, exit_date, today, root, [ticker, "SPY"]):
             n_immature += 1
             continue
 
-        # Compute |excess| (UNSIGNED — §4.3)
-        excess_abs = _excess_return_unsigned(ticker, entry_date, RESOLUTION_TRADING_DAYS * 2, root)
+        # Compute |excess| (UNSIGNED — §4.3) to exact exit_date
+        excess_abs = _excess_return_unsigned_at_exit(ticker, entry_date, exit_date, root)
         if excess_abs is None:
             n_no_price += 1
             continue
@@ -559,12 +670,20 @@ def _resolve_source_call_claims(
 # ---------------------------------------------------------------------------
 
 
-def _build_grading_summary(data_root: Path, root: Path) -> dict:
+def _build_grading_summary(
+    data_root: Path,
+    root: Path,
+    flare_state_excess: dict | None = None,
+) -> dict:
     """Compute data/narrative_flare/grading_summary.json (NAR-R13).
 
     Families: narrative_source_call, narrative_flare_state.
     Per family: n_claims, n_resolved (graded at any horizon), hit_rate,
     accruing flag. Data-tier only — no site/ write.
+
+    flare_state_excess: output of _resolve_flare_state_claims (per-horizon excess
+    arrays for the narrative_flare_state family — descriptive accrual, NAR-R5).
+    If None, only the claim/grade counts are included.
     """
     claims = q.load_claims(root)
     grades = q.load_grades(root)
@@ -592,7 +711,7 @@ def _build_grading_summary(data_root: Path, root: Path) -> dict:
         else:
             hit_rate = None
 
-        summary["families"][family] = {
+        fam_entry: dict[str, Any] = {
             "n_claims": n_claims,
             "n_resolved": n_resolved,
             "hit_rate": hit_rate,
@@ -601,6 +720,16 @@ def _build_grading_summary(data_root: Path, root: Path) -> dict:
                 c.get("asof") for c in fam_claims if c.get("asof")
             })),
         }
+
+        # Attach per-horizon excess arrays for narrative_flare_state (NAR-R5, §7 W4)
+        if family == _FAMILY_FLARE_STATE and flare_state_excess:
+            fam_entry["excess_by_horizon_td"] = {
+                k: v for k, v in flare_state_excess.items()
+                if k not in ("n_matured", "n_immature", "n_no_price", "skipped")
+            }
+            fam_entry["excess_n_matured"] = flare_state_excess.get("n_matured", 0)
+
+        summary["families"][family] = fam_entry
 
     # Source registry snapshot (NAR-R13: rolling IC of qledger families)
     reg = load_registry(data_root)
@@ -614,22 +743,129 @@ def _build_grading_summary(data_root: Path, root: Path) -> dict:
 def write_grading_summary(
     data_root: Path | None = None,
     root: Path | None = None,
+    flare_state_excess: dict | None = None,
 ) -> dict:
     """Compute and write data/narrative_flare/grading_summary.json.
 
-    Allowed on all lanes (site/ equivalent data-tier output). Returns payload.
+    data/ write — gated behind COLLECT_LANE=nightly (same gate as steps 1-3).
+    COLLECT_LANE law: grading_summary.json lives in data/narrative_flare/, not
+    in site/; it is NOT a site/ output and must not be written on render lanes.
+    Returns payload dict; returns {"skipped": True} on non-nightly lane.
+
+    flare_state_excess: output of _resolve_flare_state_claims — excess arrays
+    per trading-day horizon for narrative_flare_state claims (descriptive only,
+    NAR-R5). Injected here so the summary captures the per-family excess field
+    promised by qual_ladder.yml's `field: excess` for narrative_flare_state.excess.
     """
+    if not _ledger_advance_enabled():
+        log.debug("source_registry: write_grading_summary skipped — not nightly lane")
+        return {"skipped": True, "reason": "not_nightly_lane"}
+
     if data_root is None:
         data_root = config.data_dir()
     if root is None:
         root = config.ROOT
 
-    payload = _build_grading_summary(data_root, root)
+    payload = _build_grading_summary(data_root, root, flare_state_excess=flare_state_excess)
     out_p = data_root / _NAR_FLARE_DIR / _SUMMARY_FILE
     out_p.parent.mkdir(parents=True, exist_ok=True)
     out_p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     log.info("source_registry: wrote grading_summary.json")
     return payload
+
+
+# ---------------------------------------------------------------------------
+# Descriptive excess recorder: narrative_flare_state (§7 W4, NAR-R5)
+# ---------------------------------------------------------------------------
+
+
+def _resolve_flare_state_claims(
+    data_root: Path,
+    root: Path,
+    today: date,
+) -> dict:
+    """For matured narrative_flare_state claims, record forward excess vs SPY.
+
+    Horizons: 21 and 63 NYSE trading days after the snapshot date (STATE_CLAIM_HORIZONS_TD).
+    No pass/fail verdict — descriptive accrual only (NAR-R5).  Results are written
+    into the grading_summary.json per-family excess arrays.
+
+    Returns a dict with per-horizon arrays: {21: [excess, ...], 63: [excess, ...]}
+    and aggregate stats.  Writes nothing to the qledger grades store (no hit verdict).
+    """
+    if not _ledger_advance_enabled():
+        return {"skipped": True, "reason": "not_nightly_lane"}
+
+    claims = q.load_claims(root)
+    flare_claims = [
+        c for c in claims
+        if (c.get("claim_family") == _FAMILY_FLARE_STATE
+            and c.get("status") == q.STATUS_OPEN
+            and c.get("direction") == 0)
+    ]
+
+    if not flare_claims:
+        log.info("source_registry: no open narrative_flare_state claims to record excess for")
+        return {str(h): [] for h in STATE_CLAIM_HORIZONS_TD}
+
+    excess_by_horizon: dict[int, list[float]] = {h: [] for h in STATE_CLAIM_HORIZONS_TD}
+    n_matured = n_immature = n_no_price = 0
+
+    for claim in flare_claims:
+        scope = claim.get("scope") or {}
+        ticker = str(scope.get("key") or "").upper()
+        asof = str(claim.get("asof") or "")
+        horizon_d = claim.get("horizon_d")
+
+        if not ticker or not asof or horizon_d not in STATE_CLAIM_HORIZONS_TD:
+            continue
+
+        entry_date = q._entry_date(claim)  # respects embargo (SNAPSHOT_DATE → not graded
+        # SNAPSHOT_DATE claims are display-only per qledger TIMESTAMP_QUALITY, so
+        # _entry_date returns asof as-is (no embargo shift), which is correct here:
+        # the snapshot date IS the event date and the next-bar fill is the fill after it.
+
+        # Compute exact exit_date in trading-day space
+        try:
+            exit_date = _add_trading_days(entry_date, int(horizon_d))
+        except Exception:  # noqa: BLE001
+            continue
+
+        # Maturity gate: same boundary as measurement
+        if not _is_matured_at_exit(entry_date, exit_date, today, root, [ticker, "SPY"]):
+            n_immature += 1
+            continue
+
+        # Record excess (descriptive only — no pass/fail, NAR-R5)
+        excess = _excess_return_unsigned_at_exit(ticker, entry_date, exit_date, root)
+        if excess is None:
+            n_no_price += 1
+            continue
+
+        excess_by_horizon[int(horizon_d)].append(excess)
+        n_matured += 1
+
+    # Aggregate per horizon
+    result: dict[str, Any] = {
+        "n_matured": n_matured,
+        "n_immature": n_immature,
+        "n_no_price": n_no_price,
+    }
+    for h, arr in excess_by_horizon.items():
+        result[str(h)] = {
+            "n": len(arr),
+            "excess_values": arr,
+            "mean_excess": round(sum(arr) / len(arr), 6) if arr else None,
+            # No verdict fields — descriptive accrual only (NAR-R5)
+        }
+
+    log.info(
+        "source_registry: flare_state excess: matured=%d immature=%d no_price=%d "
+        "21td_n=%d 63td_n=%d",
+        n_matured, n_immature, n_no_price,
+        len(excess_by_horizon[21]), len(excess_by_horizon[63]),
+    )
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -644,11 +880,12 @@ def nightly_run(
 ) -> dict:
     """Full nightly grader step for the Narrative Ignition W4.
 
-    Steps (all nightly-gated):
+    Steps (all nightly-gated via COLLECT_LANE=nightly):
       1. Register narrative_source_call claims from first_coverage.parquet.
       2. Register narrative_flare_state claims from state_hist.parquet.
       3. Resolve matured narrative_source_call claims; update source_registry.json.
-      4. Write grading_summary.json (NAR-R13).
+      4a. Record descriptive excess for matured flare_state claims (NAR-R5, §7 W4).
+      4b. Write grading_summary.json (NAR-R13) with excess arrays.
 
     Returns summary dict. Never raises (NAR-R10 additive pattern).
     """
@@ -697,9 +934,20 @@ def _nightly_run_inner(
         log.warning("source_registry: source_call resolution failed: %s", e)
         results["source_call_resolution"] = {"error": str(e)}
 
-    # Step 4: write grading_summary.json (NAR-R13)
+    # Step 4a: record descriptive excess for flare_state claims (§7 W4, NAR-R5)
+    flare_excess: dict | None = None
     try:
-        summary = write_grading_summary(data_root=data_root, root=root)
+        flare_excess = _resolve_flare_state_claims(data_root=data_root, root=root, today=today)
+        results["flare_state_excess"] = flare_excess
+    except Exception as e:  # noqa: BLE001
+        log.warning("source_registry: flare_state excess recording failed: %s", e)
+        results["flare_state_excess"] = {"error": str(e)}
+
+    # Step 4b: write grading_summary.json (NAR-R13) with excess arrays injected
+    try:
+        summary = write_grading_summary(
+            data_root=data_root, root=root, flare_state_excess=flare_excess
+        )
         results["grading_summary"] = {
             "families": list(summary.get("families", {}).keys()),
             "source_registry_n": summary.get("source_registry_n", 0),

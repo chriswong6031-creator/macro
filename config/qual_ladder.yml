@@ -577,6 +577,7 @@ narrative_source_call.cred:
 narrative_flare_state.excess:
   field: excess
   artifact_glob: "data/narrative_flare/grading_summary.json"
+  artifact_path: "families.narrative_flare_state.excess_by_horizon_td"
   producer: engine/source_registry.py
   claim_family: narrative_flare_state
   ladder_state: SHADOW
@@ -584,8 +585,11 @@ narrative_flare_state.excess:
   grandfathered: false
   scored_consumers: []
   notes: >
-    NAR-W4 §4.3. One qledger claim per (ticker, date) where state_hist.parquet
-    prints PRIMED or later. Grades at 21d and 63d: forward excess return vs SPY
-    recorded (descriptive accrual only — no pass/fail verdict this wave, NAR-R5).
-    Direction=0 (salience-only). CONFIRMER question earliest ~2026-10 (n_dates>=25
-    on the state family; masterplan §10).
+    NAR-W4 §7 W4. One qledger claim per (ticker, date) where state_hist.parquet
+    prints PRIMED or later. Descriptive recorder: _resolve_flare_state_claims computes
+    forward excess vs SPY at exactly 21 and 63 NYSE trading days after the snapshot
+    (same NYSE calendar math as source_call resolution). Results written to
+    grading_summary.json -> families.narrative_flare_state.excess_by_horizon_td
+    as per-horizon {n, excess_values[], mean_excess} arrays. No pass/fail verdict
+    (NAR-R5 — descriptive accrual only). CONFIRMER question earliest ~2026-10
+    (n_dates>=25 on the state family; masterplan §10).
