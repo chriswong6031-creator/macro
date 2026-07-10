@@ -101,6 +101,12 @@
       "at": "2026-07-09T21:43:47.982836+00:00",
       "activated": false,
       "importance": null
+    },
+    "https://www.whitehouse.gov/?p=44753": {
+      "id": "wh-2026-07-10-minnesota-democrats-pardoned-a-convicted-child-rapist-president-trump-deported-h",
+      "at": "2026-07-10T20:42:46.461965+00:00",
+      "activated": false,
+      "importance": null
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
