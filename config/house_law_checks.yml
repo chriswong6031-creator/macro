@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-09"
+updated: "2026-07-10"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -203,6 +203,44 @@ checks:
       loop (post-rebase, pre-push) — a self-heal, not a gate: the lane re-copies
       every pair from post-rebase templates/ and folds the delta into a
       follow-up "render-sync" commit.
+
+  - law_id: ui.interfonts_theme_sync
+    summary: >
+      The Inter @font-face blocks in templates/_interfonts.html.j2 (the
+      self-hosted-font partial included in the <head> of the 16 standalone
+      templates that do not link theme.css, PR #2119) must be byte-identical,
+      in order, to the @font-face lines at the top of templates/theme.css —
+      and exactly six of them must exist. The partial is a manual copy whose
+      comment says "keep the two in sync"; without this gate an edit to
+      theme.css's @font-face rules (a new weight, a renamed font file) drifts
+      silently past the partial and the standalone pages lose the self-hosted
+      font again — the exact regression #2119 fixed.
+    source_ref:
+      - scripts/check_interfonts_sync.py
+      - templates/_interfonts.html.j2
+      - "PR #2119"
+    severity: hard
+    check_script: scripts/check_interfonts_sync.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: template-site-sync
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Line-prefix match only — @font-face rules must stay one-per-line at
+        column 0 in both files; the exact-count assertion (EXPECTED_COUNT=6
+        in the script) catches a reformat that breaks this shape in both
+        files at once, where list equality would pass vacuously.
+      - Does not verify that the standalone templates actually include the
+        partial, nor that site/fonts/ ships the referenced .woff2 files.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Wired as extra steps inside the existing template-site-sync pr_ci job
+      (ci.yml already triggers on templates/**). Render lanes never write
+      templates/, so a hand-edited PR is the only drift vector — pr_ci is the
+      complete enforcement point; no render/publish wiring needed.
 
   - law_id: ui.ms_board_coherence
     summary: >
