@@ -3,10 +3,14 @@
 WHAT IT DOES
 ------------
 Scans the curated NW-scope domain universe (config/nw_information_domains.yml)
-against the ACTIVE lobe roster (lobe_charters.yml) and the insight bus, and
-emits a DISPLAY-TIER charter PROPOSAL for any domain that has been uncovered for
->= min_uncovered_cycles distinct scout cycles.  "Auto-charter from a *recurring
-coverage gap*, not a whim" (masterplan §4 V2-C).
+against the ACTIVE lobe roster (lobe_charters.yml), the organism_state trajectory
+rollup, and the insight bus, and emits a DISPLAY-TIER charter PROPOSAL for any
+domain that has been uncovered for >= min_uncovered_cycles distinct scout cycles.
+"Auto-charter from a *recurring coverage gap*, not a whim" (masterplan §4 V2-C).
+
+It ALSO reports (context only, never proposed) domains that are technically
+covered but only by lobes in a weak trajectory — "thinly covered" — by reading
+per-lobe trajectory labels from data/metabolism/organism_state.json.
 
 WHY IT IS SAFE (the load-bearing properties)
 --------------------------------------------
@@ -151,8 +155,8 @@ def _domain_min_cycles(domain: dict, default_min: int) -> int:
 
 # ── Coverage determination ────────────────────────────────────────────────────
 
-def _active_identity_strings(root: Path) -> list[str]:
-    """Return one lowercased identity string per ACTIVE charter.
+def _active_identities(root: Path) -> dict[str, str]:
+    """Return {lobe_id: lowercased identity string} for every ACTIVE charter.
 
     Identity = lobe_id + information_domain + owner_program.  Used for substring
     signature matching (the coarse `information_domain` tag is not a reliable
@@ -161,7 +165,7 @@ def _active_identity_strings(root: Path) -> list[str]:
     falsely mark a domain covered — for a gap-finder, a false-positive coverage
     silences a real proposal, which is the dangerous direction.  NEVER raises.
     """
-    ids: list[str] = []
+    out: dict[str, str] = {}
     try:
         from engine.metabolism.lobe_registry import load as load_charters  # noqa: PLC0415
         charters = load_charters(root).get("charters", {})
@@ -175,24 +179,66 @@ def _active_identity_strings(root: Path) -> list[str]:
                 str(ch.get("information_domain", "")),
                 str(ch.get("owner_program", "")),
             ]
-            ids.append(" ".join(parts).lower())
+            out[str(lobe_id)] = " ".join(parts).lower()
     except Exception as exc:  # noqa: BLE001
-        log.warning("scout._active_identity_strings: %s", exc)
-    return ids
+        log.warning("scout._active_identities: %s", exc)
+    return out
 
 
-def _is_covered(domain: dict, identities: list[str]) -> bool:
-    """True iff any active lobe identity contains any coverage_match substring."""
+def _covering_lobes(domain: dict, identities: dict[str, str]) -> list[str]:
+    """Return the lobe_ids whose identity matches any coverage_match substring.
+
+    Empty list when the domain has no coverage_match (unspecified) OR no active
+    lobe matches.  Use with `_has_coverage_spec` to distinguish the two.
+    """
     matches = [m.lower() for m in _as_list(domain.get("coverage_match")) if m.strip()]
     if not matches:
-        # A domain with no coverage_match cannot be evaluated → treat as covered
-        # (fail-safe: never propose on an unspecified domain).
-        return True
-    for ident in identities:
-        for sub in matches:
-            if sub in ident:
-                return True
-    return False
+        return []
+    hits: list[str] = []
+    for lobe_id, ident in identities.items():
+        if any(sub in ident for sub in matches):
+            hits.append(lobe_id)
+    return hits
+
+
+def _has_coverage_spec(domain: dict) -> bool:
+    return bool([m for m in _as_list(domain.get("coverage_match")) if m.strip()])
+
+
+# ── Trajectory (organism_state.json — for thin-coverage detection) ────────────
+
+# A domain whose covering lobes are ALL in a WEAK trajectory (and at least one is
+# actively degrading) is "thinly covered": technically covered, but by dying
+# organs.  A single compounding/accruing covering lobe means healthy coverage.
+_WEAK_LABELS = frozenset({"degrading", "stagnating"})
+
+
+def _trajectory_labels(root: Path) -> dict[str, str]:
+    """Return {lobe_id: trajectory_label} from data/metabolism/organism_state.json.
+
+    Reads the already-built artifact (the scout is a downstream consumer, not a
+    recomputer).  Fail-open: a missing/unreadable/garbage file → {} (no domain is
+    ever flagged thin, which is the safe direction).  NEVER raises.
+    """
+    out: dict[str, str] = {}
+    try:
+        p = root / "data" / "metabolism" / "organism_state.json"
+        if not p.exists():
+            return out
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        lobes = (raw or {}).get("lobes")
+        if not isinstance(lobes, dict):
+            return out
+        for lobe_id, lobe in lobes.items():
+            if not isinstance(lobe, dict):
+                continue
+            traj = lobe.get("trajectory")
+            label = traj.get("label") if isinstance(traj, dict) else None
+            if label:
+                out[str(lobe_id)] = str(label)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("scout._trajectory_labels: %s", exc)
+    return out
 
 
 # ── Demand evidence (optional, from the insight bus) ──────────────────────────
@@ -401,6 +447,9 @@ def scan(
         cycle_id, universe_size,
         covered           : list[domain_id]
         uncovered         : list[domain_id]   — zero active covering lobes THIS cycle
+        thinly_covered    : list[dict]        — covered, but every covering lobe is
+                                                 in a weak trajectory (context only,
+                                                 NOT proposed — the domain IS covered)
         emitted           : list[dict]        — proposals written this run
         already_proposed  : list[domain_id]   — uncovered + a standing proposal exists
         accruing          : list[dict]        — uncovered but below the persistence gate
@@ -416,6 +465,7 @@ def scan(
         "universe_size": 0,
         "covered": [],
         "uncovered": [],
+        "thinly_covered": [],
         "emitted": [],
         "already_proposed": [],
         "accruing": [],
@@ -430,19 +480,40 @@ def scan(
         if not domains:
             return result
 
-        identities = _active_identity_strings(r)
+        identities = _active_identities(r)
+        labels = _trajectory_labels(r)
         observations = _read_observations(r)
 
         covered_ids: list[str] = []
         uncovered_ids: list[str] = []
+        thinly_covered: list[dict] = []
         for domain in domains:
             did = domain.get("domain_id")
-            if _is_covered(domain, identities):
+            covering = _covering_lobes(domain, identities)
+            covered = bool(covering) or not _has_coverage_spec(domain)
+            if covered:
                 covered_ids.append(did)
+                # Thin coverage: EVERY covering lobe has a KNOWN weak trajectory
+                # label and at least one is actively degrading. A single
+                # compounding/accruing covering lobe = healthy coverage → not thin;
+                # an UNLABELED covering lobe = unknown health → honest-null, not thin.
+                known = [labels[l] for l in covering if l in labels]
+                if (
+                    covering
+                    and len(known) == len(covering)
+                    and all(lbl in _WEAK_LABELS for lbl in known)
+                    and any(lbl == "degrading" for lbl in known)
+                ):
+                    thinly_covered.append({
+                        "domain_id": did,
+                        "covering_lobes": covering,
+                        "labels": {l: labels.get(l) for l in covering},
+                    })
             else:
                 uncovered_ids.append(did)
         result["covered"] = covered_ids
         result["uncovered"] = uncovered_ids
+        result["thinly_covered"] = thinly_covered
 
         # Append THIS cycle's observation first so it counts toward persistence.
         # Skip a redundant append on an intraday re-run of the SAME cycle with an
