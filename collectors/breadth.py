@@ -188,6 +188,12 @@ def compute_updown(closes: pd.DataFrame, volume: pd.DataFrame) -> pd.DataFrame:
         "n_reporting": n_reporting.astype(float),
     })
     out = out[out["n_reporting"] >= 300]
+    # On extreme days (all-up or all-down) min_count=1 leaves the empty side as NaN.
+    # Fill those to 0 so that ratio metrics (e.g. down_vol/(up_vol+down_vol)) produce
+    # 0/1 on the very days that matter most for Lowry/Desmond 90%-day detection.
+    out[["up_vol", "down_vol", "up_pts", "down_pts"]] = (
+        out[["up_vol", "down_vol", "up_pts", "down_pts"]].fillna(0.0)
+    )
     return out.dropna(how="all", subset=["up_vol", "down_vol"])
 
 
@@ -401,8 +407,9 @@ class BreadthAdapter(Adapter):
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("breadth sector split failed (%s) — market-wide only", e)
         # W2: up/down volume + points aggregate — accruing nightly into updown.parquet.
-        # Volume comes from the OHLCV extras cache written earlier in this run; the cache
-        # is gitignored and runner-local so it is absent in fresh worktrees — fail-soft.
+        # Volume comes from _volume_cache.parquet, a TRACKED committed store written
+        # earlier in this same breadth run.  The try/except is a fail-soft for the case
+        # where the cache write was skipped (e.g. network outage) or the file is corrupt.
         try:
             vcache = self.cache_path.parent / "_volume_cache.parquet"
             if vcache.exists():
@@ -421,8 +428,7 @@ class BreadthAdapter(Adapter):
                     merged_ud.to_parquet(udpath)
                     log.info("breadth updown: %d total rows (W2 accrual)", len(merged_ud))
             else:
-                log.info("breadth updown: volume cache absent — updown.parquet not updated "
-                         "(accrues once _volume_cache is populated by a full breadth run)")
+                log.info("breadth updown: volume cache absent — updown.parquet not updated")
         except Exception as e:  # noqa: BLE001 — updown must never break the breadth build
             log.warning("breadth updown accrual failed (%s) — breadth.parquet unaffected", e)
         return out

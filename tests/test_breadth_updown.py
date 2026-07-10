@@ -246,13 +246,24 @@ class TestCombineFirstNoRegress:
             assert dt in merged.index, f"New row {dt} missing after combine_first"
 
     def test_history_never_shrinks(self):
-        """Merged frame must have at least as many rows as the old frame."""
+        """Merged frame must contain exactly old_dates | new_dates, and old values must be
+        byte-equal post-merge (so a buggy merge that silently mutates history fails)."""
         old = self._make_updown("2025-01-02", periods=10, base_val=1.0)
         new = self._make_updown("2025-01-13", periods=5, base_val=1.0)
         merged = new.combine_first(old).sort_index()
-        assert len(merged) >= len(old), (
-            f"History shrank: was {len(old)}, now {len(merged)}"
+        expected_dates = old.index.union(new.index)
+        # Exact row set
+        assert set(merged.index) == set(expected_dates), (
+            f"Merged index mismatch: expected {sorted(expected_dates)}, got {sorted(merged.index)}"
         )
+        # Every old row's values must be byte-equal
+        for dt in old.index:
+            for col in ["up_vol", "down_vol", "up_pts", "down_pts", "n_reporting"]:
+                orig = old.loc[dt, col]
+                after = merged.loc[dt, col]
+                assert after == pytest.approx(orig), (
+                    f"Old row {dt} col {col} was mutated: {orig} -> {after}"
+                )
 
     def test_overlap_new_wins(self):
         """On overlap dates, the new batch value takes precedence."""
@@ -283,3 +294,69 @@ class TestCombineFirstNoRegress:
             assert after == pytest.approx(orig), (
                 f"Row {dt} down_pts changed from {orig} to {after}"
             )
+
+
+class TestExtremedays:
+    """Extreme (all-up / all-down) day handling — regression for MAJOR finding.
+
+    On an all-down day min_count=1 previously left up_vol=NaN instead of 0.0,
+    making down_vol/(up_vol+down_vol) evaluate to NaN on exactly the 90%-down
+    days that Lowry/Desmond metrics exist to detect.  After the fillna(0.0) fix
+    these must be 0.0, not NaN.
+    """
+
+    def _panel(self, n: int = 400) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Return 2-row closes + volume where row 0 = flat (diff=NaN), row 1 = all-down."""
+        dates = pd.bdate_range("2025-03-03", periods=2)
+        closes = pd.DataFrame(
+            {f"T{i}": [100.0, 99.0] for i in range(n)},  # all tickers fall on day 1
+            index=dates, dtype=float,
+        )
+        volume = pd.DataFrame(
+            {f"T{i}": [1_000_000.0, 1_000_000.0] for i in range(n)},
+            index=dates, dtype=float,
+        )
+        return closes, volume
+
+    def test_all_down_day_up_vol_is_zero_not_nan(self):
+        """An all-down day must produce up_vol==0.0, not NaN."""
+        closes, volume = self._panel()
+        result = compute_updown(closes, volume)
+        # day index 1 is the all-down day (day 0 is dropped because diff() gives NaN)
+        assert len(result) == 1, f"Expected 1 row, got {len(result)}"
+        row = result.iloc[0]
+        assert row["up_vol"] == pytest.approx(0.0), (
+            f"All-down day: up_vol={row['up_vol']!r}, expected 0.0 (not NaN)"
+        )
+        assert not np.isnan(row["up_vol"]), "up_vol is NaN on all-down day"
+        assert row["down_vol"] > 0, "down_vol should be positive on all-down day"
+
+    def test_all_up_day_down_vol_is_zero_not_nan(self):
+        """An all-up day must produce down_vol==0.0, not NaN."""
+        dates = pd.bdate_range("2025-03-03", periods=2)
+        n = 400
+        closes = pd.DataFrame(
+            {f"T{i}": [100.0, 101.0] for i in range(n)},  # all tickers rise
+            index=dates, dtype=float,
+        )
+        volume = pd.DataFrame(
+            {f"T{i}": [1_000_000.0, 1_000_000.0] for i in range(n)},
+            index=dates, dtype=float,
+        )
+        result = compute_updown(closes, volume)
+        assert len(result) == 1
+        row = result.iloc[0]
+        assert row["down_vol"] == pytest.approx(0.0), (
+            f"All-up day: down_vol={row['down_vol']!r}, expected 0.0 (not NaN)"
+        )
+        assert not np.isnan(row["down_vol"]), "down_vol is NaN on all-up day"
+        assert row["up_vol"] > 0, "up_vol should be positive on all-up day"
+
+    def test_ratio_valid_on_extreme_day(self):
+        """down_vol/(up_vol+down_vol) must be finite (0 or 1) on extreme days."""
+        closes, volume = self._panel()
+        result = compute_updown(closes, volume)
+        row = result.iloc[0]
+        ratio = row["down_vol"] / (row["up_vol"] + row["down_vol"])
+        assert np.isfinite(ratio), f"Ratio is not finite: {ratio}"
+        assert ratio == pytest.approx(1.0), f"All-down ratio should be 1.0, got {ratio}"
