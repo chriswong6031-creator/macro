@@ -56,6 +56,66 @@ def _extract_payload(js_text: str) -> dict:
     return json.loads(m.group(1))
 
 
+def _render_measurement_template(**overrides) -> str:
+    """Render measurement.html.j2 with an all-artifacts-absent context.
+
+    Mirrors the template.render() call in scripts.build_measurement.run() —
+    every variable the template requires gets a benign absent/empty default so
+    each test overrides only the section under test. Keep the defaults in sync
+    with the builder's render kwargs; the coverage assertion below turns a
+    missing variable into an actionable failure instead of a mid-render
+    TypeError on jinja2.Undefined.
+    """
+    from jinja2 import Environment, FileSystemLoader, meta
+    templates_dir = REPO / "templates"
+    env = Environment(loader=FileSystemLoader(str(templates_dir)), autoescape=False)
+    try:
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    except Exception:
+        env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
+
+    context = {
+        "page_title": "Test",
+        "engines": [],
+        "gate_ledger": [],
+        "accruing_experiments": [],
+        "cone_recalibration": {},
+        "collinearity": {},
+        "sync_gauge": {"available": False},
+        "provenance": {"epochs": {}, "fingerprint_consistent": True},
+        "build_date": date.today().isoformat(),
+        "generated_at": "2026-07-06T00:00:00Z",
+        "n_stamps_grand_total": 0,
+        # Hub v2
+        "truth_ledger": {"available": False},
+        "accrual_clocks": [],
+        # Hub v2 completion (P2)
+        "prediction_layer": {"available": False},
+        "coverage_matrix": {"available": False, "rows": []},
+        # Evidence-Gap panel (PR-A1)
+        "grading_closure": {"available": False},
+        "trial_budgets": {"available": False},
+        "rule_experiments": {"available": False},
+        "qledger_reliability": {"available": False},
+    }
+    context.update(overrides)
+
+    source = (templates_dir / "measurement.html.j2").read_text(encoding="utf-8")
+    needed = meta.find_undeclared_variables(env.parse(source))
+    # Block-scoped {% set %} names leak into find_undeclared_variables — they are
+    # template-internal, not render kwargs.
+    internal_sets = set(re.findall(r"\{%-?\s*set\s+([A-Za-z_]\w*)", source))
+    missing = sorted(needed - set(context) - set(env.globals) - internal_sets)
+    assert not missing, (
+        f"measurement.html.j2 now requires template variables with no absent-state "
+        f"default in this test: {missing} — add them to _render_measurement_template() "
+        f"(mirror the render call in scripts.build_measurement.run())."
+    )
+
+    return env.get_template("measurement.html.j2").render(**context)
+
+
 # ---------------------------------------------------------------------------
 # 1. Builder runs end-to-end
 # ---------------------------------------------------------------------------
@@ -270,31 +330,7 @@ def test_truth_ledger_absent_safe():
 
 def test_html_contains_not_yet_built_message_when_absent():
     """Template renders 'not yet built' placeholder when truth_ledger.available is False."""
-    from jinja2 import Environment, FileSystemLoader
-    templates_dir = REPO / "templates"
-    env = Environment(loader=FileSystemLoader(str(templates_dir)), autoescape=False)
-    try:
-        from engine import i18n
-        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    except Exception:
-        env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
-
-    template = env.get_template("measurement.html.j2")
-    html = template.render(
-        page_title="Test",
-        engines=[],
-        gate_ledger=[],
-        accruing_experiments=[],
-        cone_recalibration={},
-        collinearity={},
-        sync_gauge={"available": False},
-        provenance={"epochs": {}, "fingerprint_consistent": True},
-        build_date=date.today().isoformat(),
-        generated_at="2026-07-06T00:00:00Z",
-        # Hub v2
-        truth_ledger={"available": False},
-        accrual_clocks=[],
-    )
+    html = _render_measurement_template(truth_ledger={"available": False})
     # The absent-safe message must appear
     assert "truths.jsonl" in html, (
         "Expected 'truths.jsonl' absent-safe message in rendered HTML when available=False"
@@ -452,12 +488,30 @@ def test_prediction_layer_adoption_gaps_non_empty():
     assert len(by_engine) > 0, "by_engine adoption gaps must be non-empty"
     assert len(curated) > 0, "curated adoption gaps must be non-empty"
 
-    # The canonical gap: China log is all-NaN
+    # Every engine entry must carry a valid gap_type coherent with its measured
+    # non-null rate. (Do not pin a specific gap_type: the logs mature over time —
+    # China moved all_null → partial_null as forward stamps accrued post-W4.3.)
+    valid_gap_types = {"missing", "all_null", "partial_null", "none"}
+    for gap in by_engine:
+        gap_type = gap["gap_type"]
+        rate = gap["non_null_rate"]
+        assert gap_type in valid_gap_types, (
+            f"{gap['engine']}: invalid gap_type {gap_type!r}, expected one of {valid_gap_types}"
+        )
+        if gap_type == "missing":
+            assert rate is None, f"{gap['engine']}: gap_type=missing but non_null_rate={rate}"
+        elif gap_type == "all_null":
+            assert rate == 0.0, f"{gap['engine']}: gap_type=all_null but non_null_rate={rate}"
+        elif gap_type == "partial_null":
+            assert rate is not None and 0.0 < rate < 1.0, (
+                f"{gap['engine']}: gap_type=partial_null but non_null_rate={rate}"
+            )
+        else:  # "none"
+            assert rate == 1.0, f"{gap['engine']}: gap_type=none but non_null_rate={rate}"
+
+    # The engine list is fixed (FORWARD_LOG_PATHS) — china must always be reported
     china_gap = next((g for g in by_engine if g["engine"] == "china_sector_cycles"), None)
     assert china_gap is not None, "china_sector_cycles must have an adoption gap entry"
-    assert china_gap["gap_type"] == "all_null", (
-        f"China sector cycles hazard should be all_null, got {china_gap['gap_type']}"
-    )
 
     # The curated UI gap must state 'zero' or 'nowhere' (no page renders hazard)
     curated_text = curated[0].get("description_en", "").lower()
@@ -555,29 +609,7 @@ def test_coverage_matrix_html_renders():
 
 def test_template_renders_absent_prediction_layer():
     """Template renders absent-safe message when prediction_layer.available=False."""
-    from jinja2 import Environment, FileSystemLoader
-    templates_dir = REPO / "templates"
-    env = Environment(loader=FileSystemLoader(str(templates_dir)), autoescape=False)
-    try:
-        from engine import i18n
-        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    except Exception:
-        env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
-
-    template = env.get_template("measurement.html.j2")
-    html = template.render(
-        page_title="Test",
-        engines=[],
-        gate_ledger=[],
-        accruing_experiments=[],
-        cone_recalibration={},
-        collinearity={},
-        sync_gauge={"available": False},
-        provenance={"epochs": {}, "fingerprint_consistent": True},
-        build_date=date.today().isoformat(),
-        generated_at="2026-07-06T00:00:00Z",
-        truth_ledger={"available": False},
-        accrual_clocks=[],
+    html = _render_measurement_template(
         prediction_layer={"available": False},
         coverage_matrix={"available": False, "rows": []},
     )
