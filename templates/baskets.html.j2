@@ -467,13 +467,40 @@
   function L(en,zh){return'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>';}
   function fmtPct(v){if(v==null)return'—';return(v>=0?'+':'')+v.toFixed(2)+'%';}
   function clsPct(v){return v==null?'muted':v>=0?'up':'dn';}
-  // Stale gate: suppress (not invert) when stale or closed (FT-R12)
-  function isDataStale(pulse){
+  // Disagreement-chip gate (FT-R12): chips only when mode=live (TS-R1).
+  // Values (movers) are rendered in all modes when a stamped read exists.
+  function isChipSuppressed(pulse){
     if(!pulse) return true;
-    if(pulse.session==='closed') return true;
-    // pulse-level stale flag
-    var allStale = (pulse.baskets||[]).every(function(b){return b.stale;});
-    return allStale;
+    return (pulse.mode||'live') !== 'live';
+  }
+  // Mode pill label + as-of stamp for non-live reads (TS-R1 honest-delay law)
+  function modePillHtml(pulse){
+    var mode = pulse.mode||'live';
+    var delay = pulse.delay_min_median;
+    var asof = pulse.as_of_quotes || pulse.as_of_utc;
+    if(mode==='live') return '';
+    var asofStr='';
+    if(asof){
+      try{
+        var d=new Date(asof);
+        // If it's a date string without time (EOD bar date) show just the date
+        asofStr = asof.length<=10 ? asof : d.toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+      }catch(e){asofStr=asof;}
+    }
+    var pills={
+      delayed:{en:'DELAYED',zh:'延迟数据',cls:'pre'},
+      last_rth:{en:'LAST SESSION',zh:'上一交易时段',cls:'post'},
+      eod:{en:'EOD CLOSE',zh:'收盘价',cls:'closed'}
+    };
+    var p=pills[mode]||{en:mode.toUpperCase(),zh:mode,cls:'closed'};
+    var delayNote='';
+    if(mode==='delayed'&&delay!=null){
+      var h=Math.round(delay/60);
+      delayNote=' · '+L('~'+h+'h delay','约'+h+'小时延迟');
+    }
+    var asofNote=asofStr?(' · '+L('as of '+esc(asofStr),'截至 '+esc(asofStr))):'';
+    return '<span class="ftr-session-pill '+p.cls+'" style="margin-left:6px;font-size:10px">'
+      +L(esc(p.en),esc(p.zh))+delayNote+asofNote+'</span>';
   }
 
   // ── Session pill rendering ────────────────────────────────────────────────
@@ -517,15 +544,15 @@
   }
 
   // ── Mover rows ────────────────────────────────────────────────────────────
-  function renderMovers(baskets, byId, stale){
+  function renderMovers(baskets, byId, pulse){
     var topEl = document.getElementById('ftr-top-movers');
     var botEl = document.getElementById('ftr-bot-movers');
     if(!topEl||!botEl) return;
-    if(stale || !baskets || !baskets.length){
+    if(!baskets || !baskets.length){
       var msg='<span class="muted" style="font-size:11px">'+L('data absent','数据缺失')+'</span>';
       topEl.innerHTML=msg; botEl.innerHTML=msg; return;
     }
-    // sort live baskets by chg
+    // sort live baskets by rank — works for live, delayed, last_rth, eod
     var live = baskets.filter(function(b){return b.live_ew_chg_pct!=null && b.tape_rank!=null;});
     if(!live.length){
       var msg2='<span class="muted" style="font-size:11px">'+L('quotes loading…','报价加载中…')+'</span>';
@@ -697,34 +724,40 @@
     band.classList.add('visible');
 
     var session = pulse.session||'closed';
-    var stale = isDataStale(pulse);
+    var mode = pulse.mode||'live';
+    var chipsSuppressed = isChipSuppressed(pulse);
     renderSessionPill(session);
 
-    // as-of label
+    // as-of label + mode pill (TS-R1: show mode whenever not live)
     var asofEl = document.getElementById('ftr-tape-asof');
     if(asofEl){
-      var ts = pulse.as_of_utc ? new Date(pulse.as_of_utc).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short'}) : '';
-      asofEl.textContent = ts ? L('as of '+ts,'截至 '+ts).replace(/<[^>]*>/g,'') : '';
-      asofEl.innerHTML = ts ? L('as of '+esc(ts),'截至 '+esc(ts)) : '';
+      var ts = pulse.as_of_quotes || pulse.as_of_utc;
+      var tsStr='';
+      if(ts){
+        try{
+          tsStr = ts.length<=10 ? ts : new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+        }catch(e){tsStr=ts;}
+      }
+      asofEl.innerHTML = (tsStr ? L('as of '+esc(tsStr),'截至 '+esc(tsStr)) : '')
+        + modePillHtml(pulse);
     }
 
-    // Closed mode: grey out
-    if(session==='closed' || stale){
-      band.style.opacity='0.65';
-    } else {
-      band.style.opacity='';
-    }
+    // Grey out only when no data at all (mode=eod with all-null)
+    var hasAnyValue = (pulse.baskets||[]).some(function(b){return b.live_ew_chg_pct!=null;});
+    band.style.opacity = (mode==='live') ? '' : (hasAnyValue ? '0.85' : '0.65');
 
     // Build byId name index from BASKETS global
     var byId = {};
     (window.BASKETS&&window.BASKETS.baskets||[]).forEach(function(b){ byId[b.id]=b; });
 
-    renderCxBadge(pulse.complexes, stale);
-    renderMovers(pulse.baskets, byId, stale);
+    // AI-capex badge: only in live mode (FT-R12: chip suppressed when not live)
+    renderCxBadge(pulse.complexes, chipsSuppressed);
+    // Movers: shown in all modes when values exist (TS-R1)
+    renderMovers(pulse.baskets, byId, pulse);
 
     // Inject per-card chips (called after a small delay to let theme desk render first)
     setTimeout(function(){
-      injectCardChips(pulse, turnWatch, sectorPulse, stale);
+      injectCardChips(pulse, turnWatch, sectorPulse, chipsSuppressed);
     }, 120);
   }
 
@@ -745,7 +778,7 @@
 
   // Re-run chip injection after theme desk is likely rendered (fallback)
   setTimeout(function(){
-    if(pulse) injectCardChips(pulse, turnWatch, sectorPulse, isDataStale(pulse));
+    if(pulse) injectCardChips(pulse, turnWatch, sectorPulse, isChipSuppressed(pulse));
   }, 800);
   })();
   </script>

@@ -115,6 +115,10 @@ jobs:
           # Stage the served live artifacts (site/live/* is gitignored -> force-track, like site/stockdata)
           # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
           git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live_config.js
+          # TS-U0: stage the lastgood sidecar so it survives the next checkout and
+          # is available to the post-close tick's last_rth serve path. Guard with
+          # || true since it may not exist on a tick that produced no live/delayed compute.
+          git add -f site/live/basket_pulse_lastgood.json 2>/dev/null || true
           # notify_state.json is only written when an alert actually fires (or webhook is absent on
           # first tick — dark mode never creates the file). Guard with || true so a missing file on
           # the common no-event / dark-mode tick does NOT abort the commit step under bash -eo pipefail.

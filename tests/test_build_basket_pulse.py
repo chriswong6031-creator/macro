@@ -21,8 +21,14 @@ def _now_ms(dt: datetime) -> int:
 
 
 def _make_quote(chg: float, age_min: float = 1.0, prev: float = 100.0,
-                now: datetime | None = None) -> dict:
-    """Synthesise a Worker-contract quote dict."""
+                now: datetime | None = None, delay_min: float | None = None) -> dict:
+    """Synthesise a Worker-contract quote dict.
+
+    delay_min: explicit data-provider delay (mirrors the delayMin field that the
+    real quotes worker writes). If None, defaults to age_min so that the synthetic
+    quote's apparent staleness matches the intended test scenario.
+    build_basket_pulse uses delayMin preferentially over (now - ts) arithmetic.
+    """
     if now is None:
         now = datetime.now(timezone.utc)
     ts_ms = int(now.timestamp() * 1000) - int(age_min * 60_000)
@@ -35,7 +41,7 @@ def _make_quote(chg: float, age_min: float = 1.0, prev: float = 100.0,
         "prevClose": prev,
         "changePct": round(chg, 4),
         "currency": "USD",
-        "delayMin": 15,
+        "delayMin": delay_min if delay_min is not None else age_min,
     }
 
 
@@ -476,3 +482,365 @@ class TestBuild:
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         # Must not raise
         json.dumps(result, allow_nan=False)
+
+    def test_build_emits_new_schema_fields(self, tmp_path, monkeypatch):
+        """TS-R1: build result includes mode, delay_min_median, as_of_quotes."""
+        now = datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)  # RTH
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text(json.dumps({"quotes": {
+            "AA": _make_quote(1.0, now=now),
+            "AB": _make_quote(1.0, now=now),
+            "AC": _make_quote(1.0, now=now),
+        }}))
+        mem_path = self._synthetic_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+
+        result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
+        assert "mode" in result
+        assert "delay_min_median" in result
+        assert "as_of_quotes" in result
+
+
+# ── graded-mode tests (TS-R1) ──────────────────────────────────────────────────
+
+class TestGradedModes:
+    """TS-R1: live, delayed, last_rth, eod modes.
+
+    Fixtures use the real pathology: 238-min delays, post-session.
+    """
+
+    def _synthetic_membership(self, tmp_path: Path) -> Path:
+        m = {
+            "version": "test",
+            "baskets": _make_membership({
+                "basket_a": ["AA", "AB", "AC"],
+                "basket_b": ["BA", "BB"],
+            }),
+        }
+        p = tmp_path / "membership.json"
+        p.write_text(json.dumps(m))
+        return p
+
+    # RTH, fresh quotes → live mode
+    def test_live_mode_rth_fresh_quotes(self, tmp_path, monkeypatch):
+        """Fresh quotes during RTH → mode=live, values computed."""
+        now = datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)  # 10:00 ET RTH
+        qs_path = tmp_path / "quotes.json"
+        # All quotes fresh (delayMin=1 via default age_min=1)
+        qs_path.write_text(json.dumps({"quotes": {
+            "AA": _make_quote(2.0, now=now),
+            "AB": _make_quote(2.0, now=now),
+            "AC": _make_quote(2.0, now=now),
+            "BA": _make_quote(-1.0, now=now),
+            "BB": _make_quote(-1.0, now=now),
+        }}))
+        mem_path = self._synthetic_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+
+        result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
+        assert result["mode"] == bp.MODE_LIVE
+        assert result["session"] == "rth"
+        baskets = {b["id"]: b for b in result["baskets"]}
+        assert baskets["basket_a"]["live_ew_chg_pct"] == pytest.approx(2.0, abs=0.01)
+        assert baskets["basket_b"]["live_ew_chg_pct"] == pytest.approx(-1.0, abs=0.01)
+        assert result["delay_min_median"] is not None
+
+    # RTH, delayed quotes (238-min delay, real-world Polygon pathology) → delayed mode
+    def test_delayed_mode_rth_238min_delay(self, tmp_path, monkeypatch):
+        """Delayed quotes during RTH (238-min data-provider delay) → mode=delayed,
+        values computed anyway (honest-delay law), delay_min_median populated."""
+        now = datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)  # 10:00 ET RTH
+        qs_path = tmp_path / "quotes.json"
+        # Simulate 238-min Polygon free-tier delay
+        qs_path.write_text(json.dumps({"quotes": {
+            "AA": _make_quote(3.0, age_min=238.0, now=now),
+            "AB": _make_quote(3.0, age_min=238.0, now=now),
+            "AC": _make_quote(3.0, age_min=238.0, now=now),
+            "BA": _make_quote(-2.0, age_min=238.0, now=now),
+            "BB": _make_quote(-2.0, age_min=238.0, now=now),
+        }}))
+        mem_path = self._synthetic_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+
+        result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
+        assert result["mode"] == bp.MODE_DELAYED, (
+            "Quotes with 238-min delay must yield mode=delayed, not null")
+        # Values MUST be computed (honest-delay law: delayed value beats null)
+        baskets = {b["id"]: b for b in result["baskets"]}
+        assert baskets["basket_a"]["live_ew_chg_pct"] is not None, (
+            "Delayed mode must compute EW from delayed quotes, not null")
+        assert baskets["basket_a"]["live_ew_chg_pct"] == pytest.approx(3.0, abs=0.01)
+        assert baskets["basket_b"]["live_ew_chg_pct"] == pytest.approx(-2.0, abs=0.01)
+        assert result["delay_min_median"] == pytest.approx(238.0, abs=1.0)
+
+    # Post-session + no quotes + no lastgood → eod mode
+    def test_eod_mode_post_session_no_quotes_no_sidecar(self, tmp_path, monkeypatch):
+        """Post-session, no quotes, no lastgood sidecar → mode=eod.
+        eod_basket_chg called; no crash on missing parquet."""
+        # 21:00 UTC = 17:00 ET → closed
+        now = datetime(2026, 7, 8, 21, 0, tzinfo=timezone.utc)
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text('{"quotes":{}}')
+        mem_path = self._synthetic_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        # No parquet files → eod_basket_chg returns None gracefully
+        monkeypatch.setattr(bp, "_eod_basket_chg", lambda bid, mems: (None, None))
+
+        result = bp.build(
+            quotes_path=qs_path, membership_path=mem_path, now=now,
+            out_dir=tmp_path,  # no sidecar present → eod
+        )
+        assert result["mode"] == bp.MODE_EOD
+        json.dumps(result, allow_nan=False)  # NaN-safe contract
+
+    # Post-session + valid sidecar → last_rth mode
+    def test_last_rth_mode_with_sidecar(self, tmp_path, monkeypatch):
+        """Post-session with a lastgood sidecar → mode=last_rth, original values served."""
+        # Create a fake lastgood sidecar
+        lastgood = {
+            "schema": "basket_pulse.v1",
+            "as_of_utc": "2026-07-08T20:00:00+00:00",
+            "as_of_quotes": "2026-07-08T20:00:00+00:00",
+            "built": "2026-07-08 20:00:00 UTC",
+            "session": "rth",
+            "mode": bp.MODE_DELAYED,
+            "delay_min_median": 238.0,
+            "coverage_pct": 99.5,
+            "quotes_source": None,
+            "n_quotes_total": 5,
+            "stale_min": 20,
+            "baskets": [
+                {"id": "basket_a", "n_members": 3, "n_quoted": 3,
+                 "live_ew_chg_pct": 2.5, "cum_2d_pct": None, "tape_rank": 2,
+                 "stale": True, "delay_min": 238.0},
+                {"id": "basket_b", "n_members": 2, "n_quoted": 2,
+                 "live_ew_chg_pct": -1.0, "cum_2d_pct": None, "tape_rank": 1,
+                 "stale": True, "delay_min": 238.0},
+            ],
+            "od_spread_print": None,
+            "shock_day_relative_bid": None,
+            "complexes": [],
+        }
+        sidecar_path = tmp_path / bp.LASTGOOD_FILENAME
+        sidecar_path.write_text(json.dumps(lastgood))
+
+        # Now build in post-session
+        now = datetime(2026, 7, 8, 21, 0, tzinfo=timezone.utc)  # 17:00 ET post
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text('{"quotes":{}}')
+        mem_path = self._synthetic_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+
+        result = bp.build(
+            quotes_path=qs_path, membership_path=mem_path, now=now,
+            out_dir=tmp_path,
+        )
+        assert result["mode"] == bp.MODE_LAST_RTH
+        # Values from sidecar are preserved
+        baskets = {b["id"]: b for b in result["baskets"]}
+        assert baskets["basket_a"]["live_ew_chg_pct"] == pytest.approx(2.5, abs=0.01)
+        assert result["session"] == "post"  # current session
+        assert result["delay_min_median"] == pytest.approx(238.0, abs=1.0)
+        json.dumps(result, allow_nan=False)
+
+    # Lastgood sidecar is saved on live/delayed compute
+    def test_lastgood_sidecar_saved_on_live_compute(self, tmp_path, monkeypatch):
+        """Successful live build writes basket_pulse_lastgood.json."""
+        now = datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)  # RTH
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text(json.dumps({"quotes": {
+            "AA": _make_quote(1.0, now=now),
+            "AB": _make_quote(1.0, now=now),
+            "AC": _make_quote(1.0, now=now),
+            "BA": _make_quote(-1.0, now=now),
+            "BB": _make_quote(-1.0, now=now),
+        }}))
+        mem_path = self._synthetic_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+
+        result = bp.build(
+            quotes_path=qs_path, membership_path=mem_path, now=now,
+            out_dir=tmp_path,
+        )
+        sidecar = tmp_path / bp.LASTGOOD_FILENAME
+        assert sidecar.exists(), "lastgood sidecar must be written on live build"
+        saved = json.loads(sidecar.read_text())
+        assert saved["mode"] in (bp.MODE_LIVE, bp.MODE_DELAYED)
+        assert saved["coverage_pct"] > 0
+
+    # Mode=delayed: per-basket delay_min field is populated
+    def test_delayed_mode_per_basket_delay_min(self, tmp_path, monkeypatch):
+        """In delayed mode, each basket row has a delay_min field."""
+        now = datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text(json.dumps({"quotes": {
+            "AA": _make_quote(1.0, age_min=193.0, now=now),
+            "AB": _make_quote(1.0, age_min=193.0, now=now),
+            "AC": _make_quote(1.0, age_min=193.0, now=now),
+            "BA": _make_quote(-1.0, age_min=155.0, now=now),
+            "BB": _make_quote(-1.0, age_min=155.0, now=now),
+        }}))
+        mem_path = self._synthetic_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+
+        result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
+        assert result["mode"] == bp.MODE_DELAYED
+        for b in result["baskets"]:
+            assert b.get("delay_min") is not None, (
+                f"basket {b['id']} missing delay_min in delayed mode")
+
+    # NaN-safe output for all modes
+    def test_all_modes_nan_safe(self, tmp_path, monkeypatch):
+        """All build paths produce allow_nan=False safe JSON."""
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_eod_basket_chg", lambda bid, mems: (None, None))
+        mem_path = self._synthetic_membership(tmp_path)
+
+        for label, qs_content, dt, extra in [
+            ("live", json.dumps({"quotes": {
+                "AA": _make_quote(1.0, now=datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)),
+                "AB": _make_quote(1.0, now=datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)),
+                "AC": _make_quote(1.0, now=datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)),
+            }}), datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc), {}),
+            ("delayed", json.dumps({"quotes": {
+                "AA": _make_quote(1.0, age_min=238.0, now=datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)),
+                "AB": _make_quote(1.0, age_min=238.0, now=datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)),
+                "AC": _make_quote(1.0, age_min=238.0, now=datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)),
+            }}), datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc), {}),
+            ("eod", '{"quotes":{}}', datetime(2026, 7, 8, 21, 0, tzinfo=timezone.utc),
+             {"out_dir": tmp_path}),
+        ]:
+            qs_path = tmp_path / f"quotes_{label}.json"
+            qs_path.write_text(qs_content)
+            result = bp.build(
+                quotes_path=qs_path, membership_path=mem_path, now=dt, **extra)
+            try:
+                json.dumps(result, allow_nan=False)
+            except Exception as e:
+                raise AssertionError(f"mode={label}: NaN in output: {e}") from e
+
+
+class TestSidecarDurability:
+    """TS-U0 blocker fix: sidecar must be in the fastpath staging set, and the
+    age guard must gate stale sidecars before serving last_rth."""
+
+    def _synthetic_membership(self, tmp_path: Path) -> Path:
+        m = {
+            "version": "test",
+            "baskets": _make_membership({
+                "basket_a": ["AA", "AB", "AC"],
+                "basket_b": ["BA", "BB"],
+            }),
+        }
+        p = tmp_path / "membership.json"
+        p.write_text(json.dumps(m))
+        return p
+
+    def test_lastgood_path_in_fastpath_staging(self):
+        """The sidecar filename must appear in the intraday-fastpath.yml staging block.
+
+        This is a durability guard: if the workflow doesn't force-stage the sidecar
+        it is wiped by actions/checkout at the next tick and last_rth never fires.
+        """
+        import re
+        wf = Path(__file__).parent.parent / ".github" / "workflows" / "intraday-fastpath.yml"
+        if not wf.exists():
+            pytest.skip("intraday-fastpath.yml not present in this checkout")
+        content = wf.read_text()
+        assert bp.LASTGOOD_FILENAME in content, (
+            f"{bp.LASTGOOD_FILENAME} must be force-staged in {wf.name}; "
+            "otherwise the sidecar is wiped by checkout and last_rth can never fire."
+        )
+
+    def test_stale_sidecar_falls_through_to_eod(self, tmp_path, monkeypatch):
+        """A sidecar older than the last completed NYSE session must NOT be served as
+        last_rth — it should fall through to eod to avoid implying stale numbers
+        are 'LAST SESSION'."""
+        # Sidecar dated 2026-07-01 (many days ago, always older than last session)
+        old_date = "2026-07-01T20:00:00+00:00"
+        lastgood = {
+            "schema": "basket_pulse.v1",
+            "as_of_utc": old_date,
+            "as_of_quotes": old_date,
+            "built": "2026-07-01 20:00:00 UTC",
+            "session": "rth",
+            "mode": bp.MODE_DELAYED,
+            "delay_min_median": 238.0,
+            "coverage_pct": 99.5,
+            "quotes_source": None,
+            "n_quotes_total": 5,
+            "stale_min": 20,
+            "baskets": [
+                {"id": "basket_a", "n_members": 3, "n_quoted": 3,
+                 "live_ew_chg_pct": 2.5, "cum_2d_pct": None, "tape_rank": 2,
+                 "stale": True, "delay_min": 238.0},
+            ],
+            "od_spread_print": None,
+            "shock_day_relative_bid": None,
+            "complexes": [],
+        }
+        sidecar_path = tmp_path / bp.LASTGOOD_FILENAME
+        sidecar_path.write_text(json.dumps(lastgood))
+
+        # Post-session on 2026-07-09 (sidecar is 8 days old — well beyond any holiday gap)
+        now = datetime(2026, 7, 9, 21, 0, tzinfo=timezone.utc)  # 17:00 ET
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text('{"quotes":{}}')
+        mem_path = self._synthetic_membership(tmp_path)
+
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_eod_basket_chg", lambda bid, mems: (None, None))
+
+        result = bp.build(
+            quotes_path=qs_path, membership_path=mem_path, now=now,
+            out_dir=tmp_path,
+        )
+        # Stale sidecar must be rejected; result must be eod, NOT last_rth
+        assert result["mode"] == bp.MODE_EOD, (
+            f"expected mode=eod when sidecar is multi-day stale, got {result['mode']!r}"
+        )
+
+    def test_fresh_sidecar_serves_last_rth(self, tmp_path, monkeypatch):
+        """A same-day sidecar is served as last_rth (age guard passes)."""
+        # Sidecar dated same day as the post-close tick (2026-07-09)
+        fresh_date = "2026-07-09T18:00:00+00:00"
+        lastgood = {
+            "schema": "basket_pulse.v1",
+            "as_of_utc": fresh_date,
+            "as_of_quotes": fresh_date,
+            "built": "2026-07-09 18:00:00 UTC",
+            "session": "rth",
+            "mode": bp.MODE_DELAYED,
+            "delay_min_median": 238.0,
+            "coverage_pct": 99.5,
+            "quotes_source": None,
+            "n_quotes_total": 5,
+            "stale_min": 20,
+            "baskets": [
+                {"id": "basket_a", "n_members": 3, "n_quoted": 3,
+                 "live_ew_chg_pct": 2.5, "cum_2d_pct": None, "tape_rank": 2,
+                 "stale": True, "delay_min": 238.0},
+            ],
+            "od_spread_print": None,
+            "shock_day_relative_bid": None,
+            "complexes": [],
+        }
+        sidecar_path = tmp_path / bp.LASTGOOD_FILENAME
+        sidecar_path.write_text(json.dumps(lastgood))
+
+        # Post-session on 2026-07-09 (after 17:00 ET = 21:00 UTC)
+        now = datetime(2026, 7, 9, 21, 0, tzinfo=timezone.utc)
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text('{"quotes":{}}')
+        mem_path = self._synthetic_membership(tmp_path)
+
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+
+        result = bp.build(
+            quotes_path=qs_path, membership_path=mem_path, now=now,
+            out_dir=tmp_path,
+        )
+        assert result["mode"] == bp.MODE_LAST_RTH, (
+            f"expected mode=last_rth for fresh same-day sidecar, got {result['mode']!r}"
+        )
+        assert result["baskets"][0]["live_ew_chg_pct"] == pytest.approx(2.5, abs=0.01)

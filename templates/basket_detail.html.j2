@@ -779,25 +779,77 @@ function anatomyPanelHtml(th){
   return html;
 }
 
+// ── staleness banner (TS-R6): shown when basket detail as_of predates today's session
+function stalenessBannerHtml(detailAsOf){
+  if(!detailAsOf) return '';
+  // Compare detail as_of date to today in ET so 19:00–24:00 UTC (next UTC day) does
+  // not falsely flag a same-session as_of as stale.
+  var today=(function(){try{return new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});}catch(e){return new Date().toISOString().slice(0,10);}})();
+  if(detailAsOf>=today) return '';
+  // The page's data predates the current calendar day → session not yet ingested
+  return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;'
+    +'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.35);margin-bottom:10px">'
+    +'<span style="font-size:18px">⏳</span>'
+    +'<div><div style="font-weight:680;color:var(--warn)">'
+    +L('Data as of '+esc(detailAsOf)+' close — today\'s session not yet ingested (nightly pending)',
+       '数据截至 '+esc(detailAsOf)+' 收盘 — 今日行情尚未录入（等待夜间更新）')
+    +'</div></div></div>';
+}
+
+// ── verdict-evidence coherence chip (TS-R6)
+// Shown when the page verdict is DETERIORATING/AVOID but the same record's
+// mtf ladder reads BOTTOMING/TURN SIGNALED — a self-contradictory snapshot.
+function coherenceChipHtml(theme, detailAsOf){
+  if(!theme) return '';
+  var reco=(theme.reco||'').toLowerCase();
+  var weakRecos=['deteriorating','avoid','reduce','trim'];
+  if(weakRecos.indexOf(reco)<0) return '';
+  var mtf=theme.mtf||{};
+  var ladderState=(mtf.ladder_state||'').toUpperCase();
+  var ladderLabel=(mtf.ladder_label||'').toUpperCase();
+  // Coherence concern: verdict is bearish but ladder shows a bullish formation
+  var bullishLadders=['BOTTOMING','TURN SIGNALED','INFLECTING','EMERGING'];
+  var isBullishLadder=bullishLadders.some(function(s){
+    return ladderState.indexOf(s)>=0||ladderLabel.indexOf(s)>=0;
+  });
+  if(!isBullishLadder) return '';
+  var verdictDisp=(theme.reco_en||theme.reco||'').toUpperCase();
+  var ladderDisp=ladderLabel||ladderState;
+  var dateDisp=detailAsOf?' ('+detailAsOf+')'  :'';
+  return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-radius:8px;'
+    +'background:rgba(139,147,167,.08);border:1px solid var(--line);margin-bottom:10px">'
+    +'<span style="font-size:16px;flex:none">&#x2696;</span>'
+    +'<div><div style="font-weight:680;color:var(--muted)">'
+    +L('Mixed evidence: verdict '+esc(verdictDisp)+dateDisp+' vs timeframes '+esc(ladderDisp)+' — see anatomy panel',
+       '证据分歧：结论 '+esc(verdictDisp)+dateDisp+' 与多周期 '+esc(ladderDisp)+' 不一致 — 详见解剖面板')
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--muted);margin-top:3px">'
+    +L('The nightly scoring reflects the slower structural read; the MTF tape captures the shorter-term turn. Both are shown — do not merge them.',
+       '夜间评分反映较慢的结构性判断；多周期行情捕捉短期拐点。两者均已展示——请勿将其合并解读。')
+    +'</div></div></div>';
+}
+
 // ── W3: live strip HTML ────────────────────────────────────────────────────
-function liveStripHtml(pb, tw, totalBaskets){
+function liveStripHtml(pb, tw, totalBaskets, pulseMode){
   if(!pb) return '';
   var session = pb.session||'closed';
+  var mode = pulseMode||'live';
   var chg = pb.live_ew_chg_pct;
   var rank = pb.tape_rank;
-  var stale = pb.stale||chg==null;
   var sessMap={pre:{cls:'pre',en:'PREMARKET',zh:'盘前'},rth:{cls:'live',en:'LIVE · RTH',zh:'实盘'},post:{cls:'post',en:'POST-MARKET',zh:'盘后'},closed:{cls:'closed',en:'CLOSED',zh:'休市'}};
   var si = sessMap[session]||sessMap.closed;
   var html='<div class="ftr-live-strip">'
     +'<span class="ftr-ls-pill '+si.cls+'">'+L(esc(si.en),esc(si.zh))+'</span>';
-  if(!stale&&chg!=null){
+  // Show values in all modes when available (TS-R1 honest-delay law)
+  if(chg!=null){
     html+='<span class="ftr-ls-chg '+(chg>=0?'up':'dn')+'">'+fmtPct(chg,2)+'</span>';
-    html+='<span class="ftr-ls-rank" style="color:var(--muted)">'+L('tape rank #'+rank+' of '+totalBaskets,'行情排名 #'+rank+' / '+totalBaskets)+'</span>';
-  } else if(stale) {
-    html+='<span class="chip" style="font-size:10.5px;background:rgba(255,92,108,.07);border-color:rgba(255,92,108,.28);color:var(--down)">'+L('STALE · live quotes not fresh','陈旧 · 实时报价不新鲜')+'</span>';
+    if(rank!=null) html+='<span class="ftr-ls-rank" style="color:var(--muted)">'+L('tape rank #'+rank+' of '+totalBaskets,'行情排名 #'+rank+' / '+totalBaskets)+'</span>';
   }
-  if(session==='closed'&&chg!=null){
-    html+='<span style="font-size:10.5px;color:var(--muted)">'+L('last session value (greyed)','上一交易时段数值（已灰显）')+'</span>';
+  // Mode pill for non-live reads
+  if(mode!=='live'){
+    var modeLabels={delayed:L('DELAYED','延迟数据'),last_rth:L('LAST SESSION','上一交易时段'),eod:L('EOD CLOSE','收盘价')};
+    var mLabel=modeLabels[mode]||L(mode.toUpperCase(),mode);
+    html+='<span style="display:inline-block;padding:1px 7px;border-radius:5px;font-size:9.5px;border:1px solid var(--line);color:var(--muted);margin-left:4px">'+mLabel+'</span>';
   }
   if(tw&&(tw.state==='WATCH'||tw.state==='IGNITION')){
     var isIgn=tw.state==='IGNITION';
@@ -812,9 +864,10 @@ function liveStripHtml(pb, tw, totalBaskets){
 
 // ── Fetch + inject ─────────────────────────────────────────────────────────
 function injectFtrWidgets(pulse, turnWatch){
-  var pb=null, tw=null, totalBaskets=0;
+  var pb=null, tw=null, totalBaskets=0, pulseMode='live';
   if(pulse){
     var baskets=pulse.baskets||[];
+    pulseMode=pulse.mode||'live';
     totalBaskets=baskets.filter(function(b){return b.tape_rank!=null;}).length;
     pb=baskets.find(function(b){return b.id===BID;})||null;
     // Override session from top-level
@@ -834,11 +887,38 @@ function injectFtrWidgets(pulse, turnWatch){
   if(oldStrip) oldStrip.remove();
   var oldAnatomy=app.querySelector('.ftr-w8-anatomy-section');
   if(oldAnatomy) oldAnatomy.remove();
+  var oldStaleBanner=app.querySelector('.ftr-stale-banner');
+  if(oldStaleBanner) oldStaleBanner.remove();
+  var oldCoherenceChip=app.querySelector('.ftr-coherence-chip');
+  if(oldCoherenceChip) oldCoherenceChip.remove();
+
+  var detailAsOf=(DETAIL.as_of||'').slice(0,10);
+
+  // Staleness banner: shown when basket data predates today's session (TS-R6)
+  var bannerHtml=stalenessBannerHtml(detailAsOf);
+  if(bannerHtml){
+    var bannerEl=document.createElement('div');
+    bannerEl.className='ftr-stale-banner';
+    bannerEl.innerHTML=bannerHtml;
+    var firstH2b=app.querySelector('h2');
+    if(firstH2b) app.insertBefore(bannerEl, firstH2b); else app.prepend(bannerEl);
+  }
+
+  // Verdict-evidence coherence chip (TS-R6)
+  var th2cohere=(DETAIL.theme||{});
+  var coherenceHtml=coherenceChipHtml(th2cohere, detailAsOf);
+  if(coherenceHtml){
+    var coherenceEl=document.createElement('div');
+    coherenceEl.className='ftr-coherence-chip';
+    coherenceEl.innerHTML=coherenceHtml;
+    var firstH2c=app.querySelector('h2');
+    if(firstH2c) app.insertBefore(coherenceEl, firstH2c); else app.prepend(coherenceEl);
+  }
 
   // Insert live strip before first <h2> or at start of #app
   var firstH2=app.querySelector('h2');
   var stripEl=document.createElement('div');
-  stripEl.innerHTML=liveStripHtml(pb, tw, totalBaskets);
+  stripEl.innerHTML=liveStripHtml(pb, tw, totalBaskets, pulseMode);
   if(stripEl.firstChild){
     if(firstH2) app.insertBefore(stripEl.firstChild, firstH2);
     else app.appendChild(stripEl.firstChild);
