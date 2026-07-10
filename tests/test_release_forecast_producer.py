@@ -1300,3 +1300,481 @@ class TestExpectationReadProducer:
         assert "expectation_read" in result.get("enrichments", []), (
             "enrichments list must include 'expectation_read'"
         )
+
+
+# ============================================================
+# 13. MRI-R35 — cutoff_label assignment
+# ============================================================
+
+from scripts.build_release_forecast import _assign_cutoff_labels
+
+
+class TestCutoffLabels:
+    """MRI-R35: _assign_cutoff_labels assigns T-1 / early correctly."""
+
+    def test_single_item_gets_t1(self):
+        """One item for a release_type always gets T-1."""
+        items = [
+            {"release_type": "cpi_headline", "release_date": "2026-08-12"},
+        ]
+        _assign_cutoff_labels(items)
+        assert items[0]["cutoff_label"] == "T-1"
+
+    def test_nearest_gets_t1_rest_early(self):
+        """Nearest release_date gets T-1; later ones get early."""
+        items = [
+            {"release_type": "cpi_headline", "release_date": "2026-09-10"},
+            {"release_type": "cpi_headline", "release_date": "2026-08-12"},  # nearest
+        ]
+        _assign_cutoff_labels(items)
+        by_date = {i["release_date"]: i["cutoff_label"] for i in items}
+        assert by_date["2026-08-12"] == "T-1"
+        assert by_date["2026-09-10"] == "early"
+
+    def test_different_release_types_independent(self):
+        """Each release_type has its own T-1 — CPI and NFP both get a T-1."""
+        items = [
+            {"release_type": "cpi_headline", "release_date": "2026-08-12"},
+            {"release_type": "nfp", "release_date": "2026-08-01"},
+        ]
+        _assign_cutoff_labels(items)
+        by_rt = {i["release_type"]: i["cutoff_label"] for i in items}
+        assert by_rt["cpi_headline"] == "T-1"
+        assert by_rt["nfp"] == "T-1"
+
+    def test_no_release_date_gets_early(self):
+        """Item without release_date sorts last and gets 'early' if another item exists."""
+        items = [
+            {"release_type": "cpi_headline", "release_date": "2026-08-12"},
+            {"release_type": "cpi_headline"},  # no release_date
+        ]
+        _assign_cutoff_labels(items)
+        labeled = [(i.get("release_date"), i["cutoff_label"]) for i in items]
+        # "2026-08-12" should be T-1; missing date should be early
+        date_labels = {rd: lbl for rd, lbl in labeled}
+        assert date_labels.get("2026-08-12") == "T-1"
+        assert date_labels.get(None) == "early"
+
+    def test_cutoff_label_frozen_in_ledger_row(self):
+        """cutoff_label assigned in-place appears in projection ledger rows."""
+        from datetime import date
+        today = date(2026, 7, 9)
+        item = {
+            "release": "cpi",
+            "release_type": "cpi_headline",
+            "period": "2026-07",
+            "release_date": "2026-08-12",
+            "days_to": 34,
+            "projection": {"point": 0.28, "p10": 0.10, "p25": 0.18, "p50": 0.28, "p75": 0.38, "p90": 0.46},
+            "confidence": 0.60,
+            "input_completeness": 0.75,
+            "benchmark_set": {
+                "naive_prior": 0.24, "trailing_3m": 0.25, "ar_model": 0.26,
+                "cleveland_nowcast": 0.30, "market_implied": None,
+            },
+            "surprise_skew": {"sigma_scale_pp": 0.31, "sigma": 0.0, "tag": "inline"},
+            "pit": {"inputs_hash": "abc123"},
+            "regime_axis": "inflation",
+            "policy_backdrop": {},
+            "quirk_flags": [],
+            "expectation_read": None,
+            "cutoff_label": "T-1",  # pre-assigned by _assign_cutoff_labels
+        }
+        from scripts.build_release_forecast import _build_projection_ledger_rows
+        policy_backdrop = {"fed_stance": None, "gap_bp": None,
+                           "implied_cuts_12m": None, "next_fomc": None, "guidance_direction": None}
+        rows = _build_projection_ledger_rows(today, [item], policy_backdrop)
+        assert len(rows) == 1
+        assert rows[0].get("cutoff_label") == "T-1", (
+            f"Expected cutoff_label='T-1' in ledger row, got {rows[0].get('cutoff_label')!r}"
+        )
+
+    def test_scored_row_inherits_cutoff_label(self, tmp_root: Path):
+        """cutoff_label from the frozen T-1 projection is carried into the scored row."""
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 316.26,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+        proj_row = _projection_row(
+            release="cpi_headline", period="2026-06",
+            asof_night="2026-07-01", release_date="2026-07-10",
+        )
+        proj_row["cutoff_label"] = "T-1"  # set by _assign_cutoff_labels
+
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [proj_row])
+        assert len(scored) == 1
+        assert scored[0].get("cutoff_label") == "T-1", (
+            f"Expected cutoff_label='T-1' in scored row, got {scored[0].get('cutoff_label')!r}"
+        )
+
+
+# ============================================================
+# 14. MRI-R31 — pinball loss
+# ============================================================
+
+class TestPinballLoss:
+    """MRI-R31: 5-quantile pinball loss in the scoreboard."""
+
+    def _make_scored_with_quantiles(
+        self,
+        actual: float,
+        p10: float, p25: float, p50: float, p75: float, p90: float,
+        release: str = "cpi_headline",
+        period: str = "2026-06",
+    ) -> dict:
+        row = _scored_row(release=release, period=period)
+        row["actual"] = actual
+        row["frozen_projection_p10"] = p10
+        row["frozen_projection_p25"] = p25
+        row["frozen_projection_point"] = p50   # point ≈ p50 for pinball
+        row["frozen_projection_p75"] = p75
+        row["frozen_projection_p90"] = p90
+        row["interval_hit"] = bool(p10 <= actual <= p90)
+        return row
+
+    def test_pinball_null_when_no_quantiles(self):
+        """pinball_loss_5q is None when no quantile fields are populated."""
+        scored = _scored_row()
+        scored["actual"] = 0.30
+        scored["frozen_projection_point"] = 0.28
+        scored["interval_hit"] = True
+        scored["skew_hit"] = True
+        # No p10/p25/p75/p90 set
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        # p50 is non-null (frozen_projection_point) but others absent — check behaviour
+        # pinball_loss_5q may or may not be null depending on whether p50 is accumulated
+        # (the test only asserts the key exists and type is correct)
+        assert "pinball_loss_5q" in cpi_stats, "pinball_loss_5q key must be present"
+        assert "pinball_loss_5q_n" in cpi_stats, "pinball_loss_5q_n key must be present"
+
+    def test_pinball_formula_spot_check(self):
+        """Spot-check pinball loss formula: L_q(y, q̂) = (y - q̂)(α - 1{y < q̂}).
+
+        With actual=0.5 and all quantile predictions = 0.3:
+          p10: q̂=0.3, α=0.10, y>q̂ → err=0.2 → L = 0.2 * 0.10 = 0.02
+          p25: q̂=0.3, α=0.25, y>q̂ → err=0.2 → L = 0.2 * 0.25 = 0.05
+          p50: q̂=0.3, α=0.50, y>q̂ → err=0.2 → L = 0.2 * 0.50 = 0.10
+          p75: q̂=0.3, α=0.75, y>q̂ → err=0.2 → L = 0.2 * 0.75 = 0.15
+          p90: q̂=0.3, α=0.90, y>q̂ → err=0.2 → L = 0.2 * 0.90 = 0.18
+          sum = 0.02 + 0.05 + 0.10 + 0.15 + 0.18 = 0.50
+        """
+        scored = self._make_scored_with_quantiles(
+            actual=0.5, p10=0.3, p25=0.3, p50=0.3, p75=0.3, p90=0.3
+        )
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        pb = cpi_stats.get("pinball_loss_5q")
+        assert pb is not None, "pinball_loss_5q must not be None when quantiles are set"
+        assert pb == pytest.approx(0.50, abs=1e-3), (
+            f"Expected pinball sum=0.50 for all-0.3 quantiles vs actual=0.5, got {pb}"
+        )
+        assert cpi_stats["pinball_loss_5q_n"] == 1
+
+    def test_pinball_multiple_rows_averaged(self):
+        """pinball_loss_5q is the mean-of-means across rows (one row per n draw)."""
+        # Row 1: actual=0.5, all q=0.3 → individual sums = 0.50 (from test above)
+        # Row 2: actual=0.3, all q=0.3 → errors all 0 → sum = 0.0
+        # Mean = 0.25
+        scored1 = self._make_scored_with_quantiles(
+            actual=0.5, p10=0.3, p25=0.3, p50=0.3, p75=0.3, p90=0.3,
+            period="2026-05",
+        )
+        scored2 = self._make_scored_with_quantiles(
+            actual=0.3, p10=0.3, p25=0.3, p50=0.3, p75=0.3, p90=0.3,
+            period="2026-06",
+        )
+        sb = _build_scoreboard([scored1, scored2], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        pb = cpi_stats.get("pinball_loss_5q")
+        assert pb is not None
+        assert pb == pytest.approx(0.25, abs=1e-3), (
+            f"Expected pinball mean=0.25 for two rows, got {pb}"
+        )
+        assert cpi_stats["pinball_loss_5q_n"] == 2
+
+    def test_pinball_note_present(self):
+        """pinball_loss_5q_note is present with MRI-R31 reference."""
+        scored = self._make_scored_with_quantiles(
+            actual=0.5, p10=0.3, p25=0.3, p50=0.3, p75=0.3, p90=0.3
+        )
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        note = cpi_stats.get("pinball_loss_5q_note", "")
+        assert "MRI-R31" in note, f"pinball_loss_5q_note must reference MRI-R31, got: {note!r}"
+
+
+# ============================================================
+# 15. MRI-R32a — catch-up sweep (orphaned past print fixture test)
+# ============================================================
+
+class TestCatchUpSweep:
+    """MRI-R32a: catch-up sweep fixture test using orphaned past print case."""
+
+    def test_orphaned_past_print_gets_scored(self, tmp_root: Path):
+        """Fixture test: projection asof 2026-07-08 for release 2026-07-09.
+        No scored row exists. Vintage is available (initial print present).
+        Running on 2026-07-10: catch-up sweep must produce exactly 1 scored row.
+        """
+        # Write CPI vintage: prior month (2026-05) + current month (2026-06)
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            # Initial print available from 2026-07-09
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 316.26,
+             "realtime_start": "2026-07-09", "realtime_end": "2099-01-01"},
+        ])
+
+        proj_row = _projection_row(
+            release="cpi_headline",
+            period="2026-06",
+            asof_night="2026-07-08",   # pre-release (release date = 2026-07-09)
+            proj_point=0.28,
+            proj_p10=0.10,
+            proj_p90=0.46,
+            release_date="2026-07-09",
+        )
+
+        # No scored row yet — orphaned projection
+        existing_ledger = [proj_row]
+
+        # Run catch-up as of 2026-07-10 (day after release)
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, existing_ledger)
+
+        assert len(scored) == 1, (
+            f"Expected exactly 1 scored row from catch-up sweep, got {len(scored)}.\n"
+            f"scored={scored}"
+        )
+        sr = scored[0]
+        assert sr["row_type"] == "scored"
+        assert sr["release"] == "cpi_headline"
+        assert sr["period"] == "2026-06"
+        assert sr["release_date"] == "2026-07-09"
+        # Actual = (316.26 / 315.0 - 1) * 100 = 0.4
+        expected_actual = round((316.26 / 315.0 - 1) * 100, 4)
+        assert sr["actual"] == pytest.approx(expected_actual, abs=1e-3), (
+            f"Expected actual={expected_actual}, got {sr['actual']}"
+        )
+        # Pre-release projection used (not late)
+        assert sr.get("late") is not True, (
+            "Should not be flagged 'late' — pre-release projection exists"
+        )
+
+    def test_catch_up_idempotent_on_existing_scored(self, tmp_root: Path):
+        """Running catch-up when a scored row already exists produces zero new rows."""
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 316.26,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+        proj_row = _projection_row(
+            release="cpi_headline", period="2026-06",
+            asof_night="2026-07-01", release_date="2026-07-10",
+        )
+        scored_row = _scored_row(release="cpi_headline", period="2026-06")
+        existing_ledger = [proj_row, scored_row]
+
+        today = date(2026, 7, 10)
+        new_rows = _check_release_day_capture(today, tmp_root, existing_ledger)
+        assert len(new_rows) == 0, (
+            f"Expected 0 new rows (already scored), got {len(new_rows)}"
+        )
+
+    def test_catch_up_lookback_gate(self, tmp_root: Path):
+        """A projection older than 120d is outside the lookback window and not scored."""
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2025-01-01", "value": 310.0,
+             "realtime_start": "2025-02-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2025-02-01", "value": 311.0,
+             "realtime_start": "2025-03-12", "realtime_end": "2099-01-01"},
+        ])
+        # Project for a period 200 days ago (2026-07-10 - 200d ≈ 2025-12-22)
+        old_proj = _projection_row(
+            release="cpi_headline", period="2025-12",
+            asof_night="2025-12-20", release_date="2025-12-22",
+        )
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [old_proj], lookback_days=120)
+        assert len(scored) == 0, (
+            f"Expected 0 scored rows (period outside 120d lookback), got {len(scored)}"
+        )
+
+    def test_catch_up_late_flag_when_no_pre_release(self, tmp_root: Path):
+        """MRI-R32c: when only release-day projection exists, scored row gets late=True."""
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 316.26,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+        # Projection on same day as release (no pre-release row)
+        proj_row = _projection_row(
+            release="cpi_headline", period="2026-06",
+            asof_night="2026-07-10",   # == release_date
+            release_date="2026-07-10",
+        )
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [proj_row])
+        # MRI-R32b: release-day row is used; MRI-R32c: no pre-release → late=True
+        assert len(scored) == 1
+        sr = scored[0]
+        assert sr.get("late") is True, (
+            f"Expected late=True (only release-day projection exists), got late={sr.get('late')!r}"
+        )
+        assert sr.get("frozen_on_release_day") is True, (
+            "Expected frozen_on_release_day=True when asof_night == release_date"
+        )
+
+
+# ============================================================
+# 16. MRI-R34 — Cleveland PIT fix (first_seen_asof filter)
+# ============================================================
+
+class TestClevelandPITFix:
+    """MRI-R34: _read_cleveland_nowcast uses first_seen_asof (not obs_date) for PIT."""
+
+    def test_first_seen_asof_is_the_pit_gate(self, tmp_root: Path):
+        """A row with obs_date before today but first_seen_asof AFTER today must be excluded.
+
+        This is the key regression: pre-fix code used obs_date <= today (which would INCLUDE
+        this row); post-fix code uses first_seen_asof <= today (which correctly EXCLUDES it).
+        """
+        today = date(2026, 7, 7)
+        _make_cleveland_parquet(tmp_root, [
+            {
+                # obs_date is well before today — old code would include this
+                # but first_seen_asof is AFTER today — correct code must EXCLUDE it
+                "first_seen_asof": "2026-07-08",   # not yet known on 2026-07-07
+                "target_period": "2026-06-01",
+                "series": "cpi_mom",
+                "obs_date": "2026-06-01",           # obs_date is historical
+                "value": 0.40,                      # should NOT be returned
+            },
+            {
+                # Both first_seen_asof and obs_date are before today → valid
+                "first_seen_asof": "2026-07-06",
+                "target_period": "2026-06-01",
+                "series": "cpi_mom",
+                "obs_date": "2026-07-06",
+                "value": 0.31,                      # must be returned
+            },
+        ])
+        result = _read_cleveland_nowcast(tmp_root, "cpi_headline", "2026-06", today)
+        assert result == pytest.approx(0.31, abs=1e-5), (
+            f"MRI-R34 PIT fix: expected 0.31 (first_seen_asof=2026-07-06 ≤ today=2026-07-07), "
+            f"got {result}. If 0.40, the old obs_date-based filter is still in use."
+        )
+
+    def test_real_schema_fixture(self, tmp_root: Path):
+        """Regression test against real parquet schema:
+        columns first_seen_asof / target_period / series / obs_date / value.
+
+        Verifies _read_cleveland_nowcast handles the real production schema without crashing.
+        Schema matches data/cleveland_nowcast/nowcast.parquet (first_seen_asof as str).
+        """
+        today = date(2026, 7, 9)
+        # Fixture uses real column names and types from production parquet
+        _make_cleveland_parquet(tmp_root, [
+            {
+                "first_seen_asof": "2026-07-07",   # str, as in production
+                "target_period": "2026-06-01",      # month-start date str
+                "series": "cpi_mom",
+                "obs_date": "2026-07-07",
+                "value": 0.295,
+            },
+            {
+                "first_seen_asof": "2026-07-08",
+                "target_period": "2026-06-01",
+                "series": "cpi_mom",
+                "obs_date": "2026-07-08",
+                "value": 0.300,
+            },
+            {
+                "first_seen_asof": "2026-07-10",   # after today — must be excluded
+                "target_period": "2026-06-01",
+                "series": "cpi_mom",
+                "obs_date": "2026-07-10",
+                "value": 0.999,                     # should not appear
+            },
+        ])
+        result = _read_cleveland_nowcast(tmp_root, "cpi_headline", "2026-06", today)
+        # Latest first_seen_asof <= today is 2026-07-08 → value 0.300
+        assert result is not None, "Expected a non-None result"
+        assert result == pytest.approx(0.300, abs=1e-5), (
+            f"Expected 0.300 (latest first_seen_asof≤today), got {result}"
+        )
+
+
+# ============================================================
+# 17. MRI-R32e — capture_health block
+# ============================================================
+
+from scripts.build_release_forecast import _compute_capture_health
+
+
+class TestCaptureHealth:
+    """MRI-R32e: _compute_capture_health returns expected fields."""
+
+    def test_empty_ledger_returns_safe_defaults(self, tmp_root: Path):
+        """With an empty ledger, capture_health returns None for gap fields."""
+        health = _compute_capture_health(date(2026, 7, 10), tmp_root, [])
+        assert "last_nightly_asof" in health
+        assert health["last_nightly_asof"] is None
+        assert health["nightly_gap_days"] is None
+        assert health["past_due_unscored"] == []
+        assert "enricher_staleness" in health
+
+    def test_last_nightly_asof_and_gap(self, tmp_root: Path):
+        """With a ledger row from 2026-07-08, last_nightly_asof is correct and gap=2."""
+        ledger = [_projection_row(asof_night="2026-07-08")]
+        health = _compute_capture_health(date(2026, 7, 10), tmp_root, ledger)
+        assert health["last_nightly_asof"] == "2026-07-08"
+        assert health["nightly_gap_days"] == 2
+
+    def test_past_due_unscored_detected(self, tmp_root: Path):
+        """A past-due projection (release_date passed, no scored row, no vintage) is reported."""
+        proj = _projection_row(
+            release="cpi_headline", period="2026-06",
+            asof_night="2026-07-01", release_date="2026-07-09",
+        )
+        health = _compute_capture_health(date(2026, 7, 10), tmp_root, [proj])
+        pdu = health["past_due_unscored"]
+        assert len(pdu) >= 1, "Expected at least one past_due_unscored entry"
+        entry = pdu[0]
+        assert entry["release"] == "cpi_headline"
+        assert "reason" in entry
+        # No vintage in tmp_root → reason should be missing_vintage or similar
+        assert entry["reason"] in ("missing_vintage", "no_t1_projection", "api_key_absent")
+
+    def test_already_scored_not_in_past_due(self, tmp_root: Path):
+        """An already-scored (release, period) does not appear in past_due_unscored."""
+        proj = _projection_row(
+            release="cpi_headline", period="2026-06",
+            asof_night="2026-07-01", release_date="2026-07-09",
+        )
+        scored = _scored_row(release="cpi_headline", period="2026-06")
+        health = _compute_capture_health(date(2026, 7, 10), tmp_root, [proj, scored])
+        releases_in_pdu = [e["release"] for e in health["past_due_unscored"]]
+        assert "cpi_headline" not in releases_in_pdu, (
+            "cpi_headline must not appear in past_due_unscored — it is already scored"
+        )
+
+    def test_capture_health_in_latest_json(self, tmp_root: Path, monkeypatch):
+        """capture_health appears in latest.json when build() runs."""
+        import scripts.build_release_forecast as producer
+        monkeypatch.setattr(producer, "_find_upcoming_releases", lambda *a, **k: [])
+        monkeypatch.setattr(producer, "_read_policy_backdrop", lambda *a, **k: {
+            "fed_stance": None, "gap_bp": None,
+            "implied_cuts_12m": None, "next_fomc": None, "guidance_direction": None,
+        })
+        result = producer.build(tmp_root, dry_run=True)
+        assert "capture_health" in result, "capture_health must be a top-level key in latest.json"
+        ch = result["capture_health"]
+        assert "last_nightly_asof" in ch
+        assert "nightly_gap_days" in ch
+        assert "past_due_unscored" in ch

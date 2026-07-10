@@ -91,11 +91,23 @@ _CLAIMS_BENCHMARK_ONLY_REASON = (
     "No attempt 3 without program-level adjudication."
 )
 
-# CPI family mapping for Cleveland nowcast (series name in nowcast.parquet)
+# CPI/PCE family mapping for Cleveland nowcast (series name in nowcast.parquet)
+# MRI-R34: also maps pce_headline/pce_core using the pce_mom/core_pce_mom series
+# that exist in the live store.
 _CLEVELAND_SERIES_MAP = {
     "cpi_headline": "cpi_mom",
     "cpi_core":     "core_cpi_mom",
+    "pce_headline": "pce_mom",
+    "pce_core":     "core_pce_mom",
 }
+
+# MRI-R32d: tracked release series whose ALFRED vintages must refresh NIGHTLY
+# (not weekly). These are the series whose initial prints land within the
+# scoring window. The 7-day mtime gate is kept for the rest of DEFAULT_VINTAGE_SERIES.
+_NIGHTLY_VINTAGE_SERIES = frozenset([
+    "CPIAUCSL", "CPILFESL", "PAYEMS", "ICSA", "IC4WSA", "CCSA",
+    "PCEPI", "PCEPILFE", "PPIFIS", "PPIFES",
+])
 
 # FRED series for revision sweep (current/latest value for scored releases)
 _FRED_REVISION_SERIES = {
@@ -288,10 +300,15 @@ def _next_thursday_claims(today: date, horizon_days: int) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def _read_cleveland_nowcast(root: Path, release_type: str, period_str: str, today: date) -> float | None:
-    """Read the Cleveland nowcast for the target period/series, PIT-safe (obs_date <= today).
+    """Read the Cleveland nowcast for the target period/series, PIT-safe.
 
-    Returns the value from the latest obs_date for the matching series and target_period,
-    where obs_date <= today. Absent file / rows → None (fail-open).
+    MRI-R34 fix: PIT law uses first_seen_asof <= asof (not obs_date <= asof).
+    The store schema is: first_seen_asof / target_period / series / obs_date / value.
+    We select rows where first_seen_asof <= today AND target_period matches, then
+    pick the latest obs_date among those rows as the best available nowcast.
+
+    Returns the value from the latest obs_date among PIT-eligible rows,
+    or None if absent / fail-open.
     """
     series = _CLEVELAND_SERIES_MAP.get(release_type)
     if series is None:
@@ -303,23 +320,25 @@ def _read_cleveland_nowcast(root: Path, release_type: str, period_str: str, toda
         df = pd.read_parquet(path)
         if df.empty:
             return None
-        # Normalize types
+        # Normalize types — first_seen_asof and obs_date stored as strings in practice
         df["obs_date"] = pd.to_datetime(df["obs_date"])
         df["target_period"] = pd.to_datetime(df["target_period"])
+        df["first_seen_asof"] = pd.to_datetime(df["first_seen_asof"])
 
         # Match target period (period_str = "YYYY-MM")
         target_ts = pd.Timestamp(period_str + "-01")
         today_ts = pd.Timestamp(today)
 
+        # MRI-R34 PIT fix: filter on first_seen_asof <= today (not obs_date)
         mask = (
             (df["series"] == series) &
             (df["target_period"] == target_ts) &
-            (df["obs_date"] <= today_ts)
+            (df["first_seen_asof"] <= today_ts)
         )
         sub = df[mask]
         if sub.empty:
             return None
-        # Latest obs_date
+        # From PIT-eligible rows, take the one with the latest obs_date
         latest_row = sub.loc[sub["obs_date"].idxmax()]
         val = float(latest_row["value"])
         return val if np.isfinite(val) else None
@@ -615,6 +634,9 @@ def _append_ledger_rows(ledger_path: Path, new_rows: list[dict]) -> None:
     with open(ledger_path, "a", encoding="utf-8") as fh:
         for row in to_write:
             fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
+        fh.flush()
+        import os as _os
+        _os.fsync(fh.fileno())  # MRI-R33 DURABILITY-1: fsync ledger appends
     log.info("ledger: appended %d new rows", len(to_write))
 
 
@@ -992,6 +1014,33 @@ def _build_shadow_ledger_rows(
     return rows
 
 
+def _assign_cutoff_labels(upcoming_block: list[dict]) -> None:
+    """MRI-R35: assign cutoff_label in-place to each upcoming item.
+
+    For each release_type, sort items by release_date. The nearest upcoming
+    release gets 'T-1'; all subsequent items for the same release_type get 'early'.
+    Items with no release_date get 'early' (treated as far-future).
+    Claims: each week is its own period, so each gets 'T-1' for its own slot
+    (there is at most 1-2 claims rows — both get 'T-1' by the ordering rule if
+    they are distinct periods).
+    """
+    # Group by release_type, sort by release_date, label nearest as T-1
+    from collections import defaultdict
+    by_rt: dict[str, list[dict]] = defaultdict(list)
+    for item in upcoming_block:
+        by_rt[item.get("release_type", "")].append(item)
+
+    for rt, items in by_rt.items():
+        # Sort: items without release_date sort last (treated as far future)
+        def _sort_key(x: dict) -> str:
+            rd = x.get("release_date")
+            return rd if rd else "9999-99-99"
+
+        items_sorted = sorted(items, key=_sort_key)
+        for i, item in enumerate(items_sorted):
+            item["cutoff_label"] = "T-1" if i == 0 else "early"
+
+
 def _build_projection_ledger_rows(
     today: date,
     upcoming_block: list[dict],
@@ -1069,6 +1118,8 @@ def _build_projection_ledger_rows(
             "coverage_model_maturity":       (item.get("coverage_flags") or {}).get("model_maturity"),
             # MRI-R26: reference to on-disk input snapshot (path string or None)
             "input_snapshot_ref":            item.get("input_snapshot_ref"),
+            # MRI-R35: cutoff label — 'T-1' for nearest upcoming period, 'early' for later
+            "cutoff_label": item.get("cutoff_label"),
         }
         rows.append(row)
     return rows
@@ -1217,29 +1268,32 @@ def _check_release_day_capture(
     today: date,
     root: Path,
     existing_ledger: list[dict],
+    lookback_days: int = 120,
 ) -> list[dict]:
-    """Check if any tracked (release, period) has printed today and not yet been scored.
+    """MRI-R32a/b/c: Catch-up scoring sweep — score ANY unscored past-release
+    projection AND shadow_projection row whose initial print is available.
 
-    Returns a list of new 'scored' rows to append.
+    MRI-R32a: bounded lookback 120d; idempotent on existing scored keys.
+    MRI-R32b: T-1 candidate filter = asof_night <= release_date (not strictly <),
+      preferring latest strictly-pre-release row. Release-day rows stamped
+      frozen_on_release_day=True and annotated; never dropped.
+    MRI-R32c: late back-projection only when NO pre-release row exists, flagged
+      late=True in the scored row.
 
-    Round-2b extension: also scores frozen shadow_projection rows for each (release, period)
-    that prints. Shadow scored rows carry model="v3_factor"|"cpi_bridge", row_type="scored".
-    Idempotency key includes model (None for champion, string for shadows).
-    Fail-open: shadow scoring failures are logged and skipped.
+    Returns list of new 'scored' rows to append.
     """
     scored_rows = []
     asof_night = today.isoformat()
+    lookback_cutoff = (today - timedelta(days=lookback_days)).isoformat()
 
     # Find scored rows already in ledger — keyed on (release, period, model)
-    # model=None for champion, model=str for shadows.
     existing_scored_keys: set[tuple] = {
         (r["release"], r["period"], r.get("model"))
         for r in existing_ledger
         if r.get("row_type") == "scored"
     }
 
-    # Also track which (release, period) pairs have a printable actual value already computed
-    # so we only look it up once per (release, period).
+    # Actual-value cache: one lookup per (release, period)
     _actual_cache: dict[tuple[str, str], float | None] = {}
 
     def _get_actual(release_type: str, period_str: str, release_date_str: str) -> float | None:
@@ -1252,67 +1306,38 @@ def _check_release_day_capture(
                 _actual_cache[key] = _compute_actual_from_print(release_type, raw_print, root, period_str)
         return _actual_cache[key]
 
-    # --- Champion scoring (row_type="projection", model=None) ---
-    for proj_row in existing_ledger:
-        if proj_row.get("row_type") != "projection":
-            continue
+    def _pick_t1_row(candidates: list[dict], release_date_str: str) -> tuple[dict | None, bool]:
+        """MRI-R32b: pick the best frozen T-1 row.
 
-        release_type = proj_row.get("release")
-        period_str = proj_row.get("period")
-        release_date_str = proj_row.get("release_date")
+        Preference order:
+          1. Latest row with asof_night STRICTLY < release_date (true pre-release).
+          2. If none, any row with asof_night == release_date (release-day row),
+             stamped frozen_on_release_day=True.
+        Returns (row | None, frozen_on_release_day: bool).
+        """
+        pre_release = [r for r in candidates if r.get("asof_night", "") < release_date_str]
+        if pre_release:
+            return max(pre_release, key=lambda r: r.get("asof_night", "")), False
+        release_day = [r for r in candidates if r.get("asof_night", "") == release_date_str]
+        if release_day:
+            return max(release_day, key=lambda r: r.get("asof_night", "")), True
+        return None, False
 
-        if not release_type or not period_str or not release_date_str:
-            continue
-
-        # Already scored for champion?
-        if (release_type, period_str, None) in existing_scored_keys:
-            continue
-
-        # Check if the release date has passed
-        try:
-            release_date = date.fromisoformat(release_date_str)
-        except ValueError:
-            continue
-
-        if today < release_date:
-            continue  # not yet released
-
-        # Try to get actual
-        actual = _get_actual(release_type, period_str, release_date_str)
-        if actual is None:
-            log.debug("no actual found for %s/%s as of %s", release_type, period_str, asof_night)
-            continue
-
-        # Frozen T-1 projection (latest projection row for this release/period,
-        # where asof_night < release_date — find the most recent such row)
-        proj_candidates = [
-            r for r in existing_ledger
-            if r.get("row_type") == "projection"
-            and r.get("release") == release_type
-            and r.get("period") == period_str
-            and r.get("asof_night", "") < release_date_str
-        ]
-        if not proj_candidates:
-            log.debug("no T-1 projection found for %s/%s", release_type, period_str)
-            continue
-
-        # Most recent T-1 projection
-        t1_proj = max(proj_candidates, key=lambda r: r.get("asof_night", ""))
-
+    def _score_champion(release_type: str, period_str: str, release_date_str: str,
+                        actual: float, t1_proj: dict, frozen_on_release_day: bool,
+                        is_late: bool) -> dict:
+        """Build a scored row for champion (model=None)."""
         proj_point = t1_proj.get("projection_point")
         proj_p10 = t1_proj.get("projection_p10")
         proj_p90 = t1_proj.get("projection_p90")
-
         proj_mode = t1_proj.get("projection_mode")
 
-        # Compute surprise vs our projection (null for benchmark_only mode)
         our_surprise = (
             round(actual - proj_point, 4)
             if (proj_point is not None and proj_mode != "benchmark_only")
             else None
         )
 
-        # Benchmarks — claims uses trailing_4w key; all others use trailing_3m
         bench_naive = t1_proj.get("benchmark_naive_prior")
         if release_type == "claims":
             bench_trailing = t1_proj.get("benchmark_trailing_4w")
@@ -1321,44 +1346,34 @@ def _check_release_day_capture(
         bench_ar = t1_proj.get("benchmark_ar_model")
         bench_cleveland = t1_proj.get("benchmark_cleveland")
 
-        def _surprise_vs(bench: float | None) -> float | None:
-            if bench is None or actual is None:
-                return None
-            return round(actual - bench, 4)
+        def _sv(bench: float | None) -> float | None:
+            return round(actual - bench, 4) if bench is not None else None
 
-        # Interval hit: null in benchmark_only mode; actual within [proj_p10, proj_p90] otherwise
         interval_hit: bool | None = None
         if proj_mode != "benchmark_only" and proj_p10 is not None and proj_p90 is not None:
             interval_hit = bool(proj_p10 <= actual <= proj_p90)
 
-        # Skew direction hit: null in benchmark_only mode
         skew_hit: bool | None = None
         bench_vals = [v for v in [bench_naive, bench_trailing, bench_ar, bench_cleveland] if v is not None]
-        if proj_mode != "benchmark_only" and bench_vals and proj_point is not None and actual is not None:
+        if proj_mode != "benchmark_only" and bench_vals and proj_point is not None:
             bench_median = float(np.median(bench_vals))
-            our_direction = "hotter" if proj_point > bench_median else ("cooler" if proj_point < bench_median else "inline")
-            actual_direction = "hotter" if actual > bench_median else ("cooler" if actual < bench_median else "inline")
-            skew_hit = bool(our_direction == actual_direction)
+            our_dir = "hotter" if proj_point > bench_median else ("cooler" if proj_point < bench_median else "inline")
+            act_dir = "hotter" if actual > bench_median else ("cooler" if actual < bench_median else "inline")
+            skew_hit = bool(our_dir == act_dir)
 
-        # MRI-R22: expectation_hit — did the actual fall in the same sign bucket as the frozen tag?
-        # Frozen read: {tag, expectation_median, ...}; re-derive bands using frozen sigma_scale_pp.
         expectation_hit: bool | None = None
         try:
             frozen_er = t1_proj.get("expectation_read")
             frozen_sigma = t1_proj.get("sigma_scale_pp")
             if (
-                frozen_er is not None
-                and isinstance(frozen_er, dict)
+                frozen_er is not None and isinstance(frozen_er, dict)
                 and frozen_er.get("tag") is not None
-                and frozen_sigma is not None
-                and frozen_sigma > 0
-                and actual is not None
+                and frozen_sigma is not None and frozen_sigma > 0
             ):
                 frozen_tag = frozen_er["tag"]
                 frozen_median = frozen_er.get("expectation_median")
                 if frozen_median is not None:
-                    actual_delta = actual - float(frozen_median)
-                    actual_std = actual_delta / float(frozen_sigma)
+                    actual_std = (actual - float(frozen_median)) / float(frozen_sigma)
                     if actual_std > _EXPECTATION_BAND_THRESHOLD:
                         actual_tag = "above_expectations"
                     elif actual_std < -_EXPECTATION_BAND_THRESHOLD:
@@ -1367,125 +1382,183 @@ def _check_release_day_capture(
                         actual_tag = "aligned"
                     expectation_hit = bool(frozen_tag == actual_tag)
         except Exception as exc:
-            log.debug("expectation_hit computation failed for %s/%s: %s", release_type, period_str, exc)
-            expectation_hit = None
+            log.debug("expectation_hit failed for %s/%s: %s", release_type, period_str, exc)
 
-        scored_row = {
+        row: dict = {
             "schema": 2,
             "row_type": "scored",
-            "model": None,  # champion
-            "asof_night": asof_night,
-            "release": release_type,
-            "period": period_str,
-            "release_date": release_date_str,
-            "actual": actual,
-            "actual_first": actual,  # schema v2: capture = initial print, revision rows track drift
-            "raw_initial_print": _actual_cache.get((release_type, period_str)),
-            "frozen_asof_night": t1_proj.get("asof_night"),
-            "frozen_projection_point": proj_point,
-            "frozen_projection_p10": proj_p10,
-            "frozen_projection_p90": proj_p90,
-            "our_surprise": our_surprise,
-            "surprise_vs_naive": _surprise_vs(bench_naive),
-            "surprise_vs_trailing": _surprise_vs(bench_trailing),
-            "surprise_vs_ar": _surprise_vs(bench_ar),
-            "surprise_vs_cleveland": _surprise_vs(bench_cleveland),
-            "interval_hit": interval_hit,
-            "skew_hit": skew_hit,
-            "projection_mode": proj_mode,
-            "benchmark_trailing_key": "trailing_4w" if release_type == "claims" else "trailing_3m",
-            # MRI-R22: expectation read grading
-            "expectation_hit": expectation_hit,
-        }
-        scored_rows.append(scored_row)
-        log.info("scored: %s/%s — actual=%.4f vs proj=%.4f", release_type, period_str, actual, proj_point or float("nan"))
-
-    # --- Round-2b: Shadow scoring (row_type="shadow_projection") ---
-    # For each shadow_projection row in the ledger that has printed, emit a scored row
-    # tagged with the shadow's model. Forward-only.
-    for shadow_row in existing_ledger:
-        if shadow_row.get("row_type") != "shadow_projection":
-            continue
-
-        shadow_model = shadow_row.get("model")
-        if not shadow_model:
-            continue
-
-        release_type = shadow_row.get("release")
-        period_str = shadow_row.get("period")
-        release_date_str = shadow_row.get("release_date")
-
-        if not release_type or not period_str or not release_date_str:
-            continue
-
-        # Already scored for this shadow model?
-        if (release_type, period_str, shadow_model) in existing_scored_keys:
-            continue
-
-        # Check if the release date has passed
-        try:
-            release_date = date.fromisoformat(release_date_str)
-        except ValueError:
-            continue
-
-        if today < release_date:
-            continue  # not yet released
-
-        # Reuse actual from cache (computed for champion path or compute fresh)
-        actual = _get_actual(release_type, period_str, release_date_str)
-        if actual is None:
-            continue
-
-        # Find most recent T-1 shadow_projection for this (release, period, model)
-        shadow_candidates = [
-            r for r in existing_ledger
-            if r.get("row_type") == "shadow_projection"
-            and r.get("model") == shadow_model
-            and r.get("release") == release_type
-            and r.get("period") == period_str
-            and r.get("asof_night", "") < release_date_str
-        ]
-        if not shadow_candidates:
-            log.debug("no T-1 shadow (%s) found for %s/%s", shadow_model, release_type, period_str)
-            continue
-
-        t1_shadow = max(shadow_candidates, key=lambda r: r.get("asof_night", ""))
-        shadow_point = t1_shadow.get("projection_point")
-        shadow_p10 = t1_shadow.get("projection_p10")
-        shadow_p90 = t1_shadow.get("projection_p90")
-
-        shadow_surprise = (
-            round(actual - shadow_point, 4)
-            if shadow_point is not None
-            else None
-        )
-
-        shadow_interval_hit: bool | None = None
-        if shadow_p10 is not None and shadow_p90 is not None:
-            shadow_interval_hit = bool(shadow_p10 <= actual <= shadow_p90)
-
-        scored_shadow_row: dict = {
-            "schema": 2,
-            "row_type": "scored",
-            "model": shadow_model,
+            "model": None,
             "asof_night": asof_night,
             "release": release_type,
             "period": period_str,
             "release_date": release_date_str,
             "actual": actual,
             "actual_first": actual,
-            "frozen_asof_night": t1_shadow.get("asof_night"),
-            "frozen_projection_point": shadow_point,
-            "frozen_projection_p10": shadow_p10,
-            "frozen_projection_p90": shadow_p90,
-            "our_surprise": shadow_surprise,
-            "interval_hit": shadow_interval_hit,
+            "raw_initial_print": _actual_cache.get((release_type, period_str)),
+            "frozen_asof_night": t1_proj.get("asof_night"),
+            "frozen_projection_point": proj_point,
+            "frozen_projection_p10": proj_p10,
+            "frozen_projection_p90": proj_p90,
+            "our_surprise": our_surprise,
+            "surprise_vs_naive": _sv(bench_naive),
+            "surprise_vs_trailing": _sv(bench_trailing),
+            "surprise_vs_ar": _sv(bench_ar),
+            "surprise_vs_cleveland": _sv(bench_cleveland),
+            "interval_hit": interval_hit,
+            "skew_hit": skew_hit,
+            "projection_mode": proj_mode,
+            "benchmark_trailing_key": "trailing_4w" if release_type == "claims" else "trailing_3m",
+            "expectation_hit": expectation_hit,
+            # MRI-R35: freeze cutoff_label from T-1 projection row
+            "cutoff_label": t1_proj.get("cutoff_label"),
         }
-        scored_rows.append(scored_shadow_row)
-        log.info(
-            "scored shadow (%s): %s/%s — actual=%.4f vs shadow_proj=%.4f",
-            shadow_model, release_type, period_str, actual, shadow_point or float("nan"),
-        )
+        if frozen_on_release_day:
+            row["frozen_on_release_day"] = True
+            row["frozen_on_release_day_note"] = (
+                "MRI-R32b: T-1 projection was from release day itself (asof_night == release_date); "
+                "no strictly-pre-release projection found. Annotated but not dropped."
+            )
+        if is_late:
+            row["late"] = True
+            row["late_note"] = (
+                "MRI-R32c: no pre-release projection existed; scored against a late back-projection."
+            )
+        return row
+
+    # --- Collect all (release, period) pairs in the lookback window that need scoring ---
+    # For each row_type (projection / shadow_projection) in the ledger, deduplicate
+    # by (release, period) so we attempt scoring once per pair.
+    seen_release_period_for_scoring: dict[tuple[str, str, str | None], str] = {}  # -> release_date
+    for row in existing_ledger:
+        rt_val = row.get("row_type")
+        if rt_val not in ("projection", "shadow_projection"):
+            continue
+        release_type = row.get("release")
+        period_str = row.get("period")
+        release_date_str = row.get("release_date")
+        model = row.get("model")  # None for champion, str for shadow
+
+        if not release_type or not period_str or not release_date_str:
+            continue
+        # Lookback gate
+        if release_date_str < lookback_cutoff:
+            continue
+
+        key = (release_type, period_str, model)
+        if key not in seen_release_period_for_scoring:
+            seen_release_period_for_scoring[key] = release_date_str
+
+    for (release_type, period_str, model_key), release_date_str in seen_release_period_for_scoring.items():
+        # Already scored?
+        if (release_type, period_str, model_key) in existing_scored_keys:
+            continue
+
+        # Release date must have passed
+        try:
+            release_date = date.fromisoformat(release_date_str)
+        except ValueError:
+            continue
+        if today < release_date:
+            continue
+
+        # Get actual value
+        actual = _get_actual(release_type, period_str, release_date_str)
+        if actual is None:
+            log.debug("catch-up: no actual for %s/%s (model=%s) as of %s",
+                      release_type, period_str, model_key, asof_night)
+            continue
+
+        if model_key is None:
+            # --- Champion scoring ---
+            all_proj = [
+                r for r in existing_ledger
+                if r.get("row_type") == "projection"
+                and r.get("release") == release_type
+                and r.get("period") == period_str
+                and r.get("asof_night", "") <= release_date_str  # MRI-R32b: <= not <
+            ]
+            if not all_proj:
+                log.debug("catch-up: no projection candidates for %s/%s", release_type, period_str)
+                continue
+
+            t1_proj, frozen_on_rd = _pick_t1_row(all_proj, release_date_str)
+            if t1_proj is None:
+                log.debug("catch-up: no T-1 row for %s/%s", release_type, period_str)
+                continue
+
+            # MRI-R32c: check if this is a late back-projection case
+            # (the only row found is on or after release date)
+            has_pre_release = any(
+                r.get("asof_night", "") < release_date_str for r in all_proj
+            )
+            is_late = not has_pre_release
+
+            sr = _score_champion(release_type, period_str, release_date_str, actual,
+                                 t1_proj, frozen_on_rd, is_late)
+            scored_rows.append(sr)
+            log.info(
+                "catch-up scored: %s/%s — actual=%.4f vs proj=%.4f%s%s",
+                release_type, period_str, actual,
+                t1_proj.get("projection_point") or float("nan"),
+                " [frozen_on_release_day]" if frozen_on_rd else "",
+                " [late]" if is_late else "",
+            )
+
+        else:
+            # --- Shadow scoring ---
+            shadow_model = model_key
+            all_shadow = [
+                r for r in existing_ledger
+                if r.get("row_type") == "shadow_projection"
+                and r.get("model") == shadow_model
+                and r.get("release") == release_type
+                and r.get("period") == period_str
+                and r.get("asof_night", "") <= release_date_str
+            ]
+            if not all_shadow:
+                log.debug("catch-up: no shadow (%s) candidates for %s/%s",
+                          shadow_model, release_type, period_str)
+                continue
+
+            t1_shadow, frozen_on_rd = _pick_t1_row(all_shadow, release_date_str)
+            if t1_shadow is None:
+                continue
+
+            shadow_point = t1_shadow.get("projection_point")
+            shadow_p10 = t1_shadow.get("projection_p10")
+            shadow_p90 = t1_shadow.get("projection_p90")
+
+            shadow_surprise = round(actual - shadow_point, 4) if shadow_point is not None else None
+            shadow_interval_hit: bool | None = None
+            if shadow_p10 is not None and shadow_p90 is not None:
+                shadow_interval_hit = bool(shadow_p10 <= actual <= shadow_p90)
+
+            scored_shadow_row: dict = {
+                "schema": 2,
+                "row_type": "scored",
+                "model": shadow_model,
+                "asof_night": asof_night,
+                "release": release_type,
+                "period": period_str,
+                "release_date": release_date_str,
+                "actual": actual,
+                "actual_first": actual,
+                "frozen_asof_night": t1_shadow.get("asof_night"),
+                "frozen_projection_point": shadow_point,
+                "frozen_projection_p10": shadow_p10,
+                "frozen_projection_p90": shadow_p90,
+                "our_surprise": shadow_surprise,
+                "interval_hit": shadow_interval_hit,
+                # MRI-R35: freeze cutoff_label from shadow row
+                "cutoff_label": t1_shadow.get("cutoff_label"),
+            }
+            if frozen_on_rd:
+                scored_shadow_row["frozen_on_release_day"] = True
+            scored_rows.append(scored_shadow_row)
+            log.info(
+                "catch-up scored shadow (%s): %s/%s — actual=%.4f vs shadow_proj=%.4f",
+                shadow_model, release_type, period_str, actual, shadow_point or float("nan"),
+            )
 
     return scored_rows
 
@@ -1843,6 +1916,9 @@ def _build_scoreboard(
             "revision_errors": [],     # |proj - actual_latest|
             "reaction_dgs10_h0_abs": [],  # |dgs10_h0_bp| for hot/cold rows
             "expectation_hits": [],    # MRI-R22: expectation_read hit/miss
+            # MRI-R31: pinball loss accumulators per quantile (p10,p25,p50,p75,p90)
+            "pinball_p10": [], "pinball_p25": [], "pinball_p50": [],
+            "pinball_p75": [], "pinball_p90": [],
         }
 
     # Per release-type aggregation (champion rows, model=None)
@@ -1903,6 +1979,22 @@ def _build_scoreboard(
         eh = row.get("expectation_hit")
         if eh is not None:
             g["expectation_hits"].append(bool(eh))
+
+        # MRI-R31: pinball loss per quantile — L_q(y, q) = (y-q)*(alpha - 1{y<q})
+        # where alpha is the quantile level. Sum over 5 quantiles = pinball loss.
+        if actual is not None:
+            _pb_vals = {
+                "pinball_p10": (row.get("frozen_projection_p10"), 0.10),
+                "pinball_p25": (row.get("frozen_projection_p25"), 0.25),
+                "pinball_p50": (row.get("frozen_projection_point"), 0.50),  # p50 ≈ point
+                "pinball_p75": (row.get("frozen_projection_p75"), 0.75),
+                "pinball_p90": (row.get("frozen_projection_p90"), 0.90),
+            }
+            for pb_key, (q_val, alpha) in _pb_vals.items():
+                if q_val is not None:
+                    err = float(actual) - float(q_val)
+                    pb = err * alpha if err >= 0 else err * (alpha - 1.0)
+                    g[pb_key].append(pb)
 
         # mae_vs_actual_latest: use revision data if available
         rev_key = (rt, row.get("period", ""))
@@ -1970,6 +2062,31 @@ def _build_scoreboard(
                 "Fraction of prints where actual fell in the same band as frozen expectation_read tag "
                 "(above_expectations / below_expectations / aligned, ±0.35·σ_scale). "
                 "Display-only (MRI-R22). Null until data accrues."
+            ),
+            # MRI-R31: pinball loss (5-quantile sum), reported-only
+            "pinball_loss_5q": (
+                round(
+                    sum(
+                        float(np.mean(g[k])) for k in (
+                            "pinball_p10", "pinball_p25", "pinball_p50",
+                            "pinball_p75", "pinball_p90"
+                        )
+                        if g[k]
+                    ),
+                    4,
+                )
+                if any(g[k] for k in ("pinball_p10", "pinball_p25", "pinball_p50",
+                                      "pinball_p75", "pinball_p90"))
+                else None
+            ),
+            "pinball_loss_5q_n": min(
+                (len(g[k]) for k in ("pinball_p10", "pinball_p25", "pinball_p50",
+                                     "pinball_p75", "pinball_p90") if g[k]),
+                default=0,
+            ),
+            "pinball_loss_5q_note": (
+                "MRI-R31: 5-quantile pinball loss sum (p10+p25+p50+p75+p90 mean losses). "
+                "Reported-only; lower is better. Skew display marked descriptive_until_n24."
             ),
         }
         if rt == "claims" and model_label is None:
@@ -2159,6 +2276,209 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 8e. Capture health (MRI-R32e)
+# ---------------------------------------------------------------------------
+
+def _compute_capture_health(
+    today: date,
+    root: Path,
+    existing_ledger: list[dict],
+    lookback_days: int = 120,
+) -> dict:
+    """MRI-R32e: compute capture_health block for latest.json.
+
+    Reports:
+      - last_nightly_asof: most recent asof_night in ledger
+      - nightly_gap_days: how many calendar days since the last nightly run
+      - past_due_unscored: list of {release, period, release_date, reason}
+          where reason in: missing_vintage / no_t1_projection / api_key_absent
+      - enricher_staleness: per-enricher last-known asof (from existing rows)
+
+    Fail-open: any error → partial dict with available fields.
+    """
+    import os as _os
+    health: dict = {
+        "asof": today.isoformat(),
+        "last_nightly_asof": None,
+        "nightly_gap_days": None,
+        "past_due_unscored": [],
+        "enricher_staleness": {},
+    }
+
+    # Last nightly asof from any row in ledger
+    all_asofs = [r.get("asof_night", "") for r in existing_ledger if r.get("asof_night")]
+    if all_asofs:
+        last_asof = max(all_asofs)
+        health["last_nightly_asof"] = last_asof
+        try:
+            gap = (today - date.fromisoformat(last_asof)).days
+            health["nightly_gap_days"] = gap
+        except Exception:
+            pass
+
+    # FRED API key presence
+    has_fred_key = bool(_os.environ.get("FRED_API_KEY", "").strip())
+
+    # Already scored keys
+    scored_keys: set[tuple] = {
+        (r["release"], r["period"], r.get("model"))
+        for r in existing_ledger
+        if r.get("row_type") == "scored"
+    }
+
+    # Past-due unscored: projection/shadow_projection rows where release_date has passed
+    lookback_cutoff = (today - timedelta(days=lookback_days)).isoformat()
+    seen: set[tuple] = set()  # (release, period, model)
+
+    for row in existing_ledger:
+        if row.get("row_type") not in ("projection", "shadow_projection"):
+            continue
+        release_type = row.get("release") or ""
+        period_str = row.get("period") or ""
+        release_date_str = row.get("release_date") or ""
+        model = row.get("model")  # None or str
+
+        if not release_type or not period_str or not release_date_str:
+            continue
+        if release_date_str < lookback_cutoff:
+            continue
+
+        try:
+            release_date = date.fromisoformat(release_date_str)
+        except ValueError:
+            continue
+        if today < release_date:
+            continue  # not yet released
+
+        key = (release_type, period_str, model)
+        if key in scored_keys or key in seen:
+            continue
+        seen.add(key)
+
+        # Diagnose why it is unscored
+        if not has_fred_key:
+            reason = "api_key_absent"
+        elif _get_initial_print(root, release_type, period_str, release_date_str) is None:
+            reason = "missing_vintage"
+        else:
+            # Check if there is any T-1 candidate
+            pre_rows = [
+                r for r in existing_ledger
+                if r.get("row_type") in ("projection", "shadow_projection")
+                and r.get("model") == model
+                and r.get("release") == release_type
+                and r.get("period") == period_str
+                and r.get("asof_night", "") <= release_date_str
+            ]
+            reason = "no_t1_projection" if not pre_rows else "unknown"
+
+        health["past_due_unscored"].append({
+            "release": release_type,
+            "period": period_str,
+            "release_date": release_date_str,
+            "model": model,
+            "reason": reason,
+        })
+
+    health["past_due_unscored_count"] = len(health["past_due_unscored"])
+
+    # Enricher staleness: check Kalshi snapshot and Cleveland nowcast asof
+    try:
+        kalshi_path = root / "data" / "prediction_markets" / "kalshi_releases.parquet"
+        if kalshi_path.exists():
+            import stat as _stat
+            mtime = kalshi_path.stat().st_mtime
+            health["enricher_staleness"]["kalshi_releases_mtime"] = datetime.fromtimestamp(
+                mtime, tz=timezone.utc
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except Exception:
+        pass
+
+    try:
+        cleveland_path = root / "data" / "cleveland_nowcast" / "nowcast.parquet"
+        if cleveland_path.exists():
+            import stat as _stat
+            mtime = cleveland_path.stat().st_mtime
+            health["enricher_staleness"]["cleveland_nowcast_mtime"] = datetime.fromtimestamp(
+                mtime, tz=timezone.utc
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except Exception:
+        pass
+
+    return health
+
+
+# ---------------------------------------------------------------------------
+# 8f. Input-snapshot GC (MRI-R33 SNAPSHOT-GC-1)
+# ---------------------------------------------------------------------------
+
+def _run_snapshot_gc(snapshots_dir: Path, existing_ledger: list[dict], today: date) -> int:
+    """MRI-R33 SNAPSHOT-GC-1: GC input_snapshots older than 30 days.
+
+    Keep permanently: frozen T-1 receipts per (release, period).
+      These are snapshots referenced by the latest strictly-pre-release projection
+      row per (release, period) — they are permanent witnesses.
+    Delete: all other snapshots older than 30d.
+
+    Returns number of files deleted.
+    """
+    if not snapshots_dir.exists():
+        return 0
+
+    cutoff_date = today - timedelta(days=30)
+
+    # Build set of permanently-kept snapshot refs:
+    # For each (release, period), the latest asof_night < release_date projection row's
+    # input_snapshot_ref is permanent.
+    permanent_refs: set[str] = set()
+    by_release_period: dict[tuple[str, str], list[dict]] = {}
+    for row in existing_ledger:
+        if row.get("row_type") != "projection":
+            continue
+        release_type = row.get("release") or ""
+        period_str = row.get("period") or ""
+        release_date_str = row.get("release_date") or ""
+        asof_night = row.get("asof_night") or ""
+
+        if not release_type or not period_str or not release_date_str:
+            continue
+        if asof_night >= release_date_str:
+            continue  # not a pre-release row
+
+        key = (release_type, period_str)
+        by_release_period.setdefault(key, []).append(row)
+
+    for key, rows in by_release_period.items():
+        latest_pre = max(rows, key=lambda r: r.get("asof_night", ""))
+        ref = latest_pre.get("input_snapshot_ref")
+        if ref:
+            # ref is a relative path string; extract basename for matching
+            import os.path as _osp
+            permanent_refs.add(_osp.basename(ref))
+
+    deleted = 0
+    try:
+        for snap_file in snapshots_dir.glob("*.json"):
+            # Keep permanently-protected files
+            if snap_file.name in permanent_refs:
+                continue
+            # GC files older than 30 days
+            try:
+                mtime_date = date.fromtimestamp(snap_file.stat().st_mtime)
+                if mtime_date < cutoff_date:
+                    snap_file.unlink()
+                    deleted += 1
+            except Exception as exc_inner:
+                log.debug("snapshot GC: failed to delete %s: %s", snap_file.name, exc_inner)
+    except Exception as exc:
+        log.debug("snapshot GC scan failed: %s", exc)
+
+    if deleted:
+        log.info("snapshot GC: deleted %d snapshots older than 30d", deleted)
+    return deleted
+
+
+# ---------------------------------------------------------------------------
 # 9. Main build
 # ---------------------------------------------------------------------------
 
@@ -2205,6 +2525,10 @@ def build(root: Path, dry_run: bool = False) -> dict:
                      for item in upcoming_block if item.get("shadows")}
     log.info("shadow projections attached: %s", shadow_counts)
 
+    # 3d. MRI-R35: assign cutoff_label to each upcoming item before ledger rows freeze them.
+    _assign_cutoff_labels(upcoming_block)
+    log.info("cutoff labels assigned to %d items", len(upcoming_block))
+
     # 5. Build today's projection ledger rows (champion, model=None)
     proj_ledger_rows = _build_projection_ledger_rows(today, upcoming_block, policy_backdrop)
 
@@ -2212,9 +2536,10 @@ def build(root: Path, dry_run: bool = False) -> dict:
     shadow_ledger_rows = _build_shadow_ledger_rows(today, upcoming_block, root)
     log.info("shadow ledger rows built: %d", len(shadow_ledger_rows))
 
-    # 6. Release-day capture (check if any tracked release printed) — includes shadow scoring
+    # 6. MRI-R32a: catch-up scoring sweep — score ANY unscored past-release projection
+    # (champion + shadow) whose initial print is in vintages; 120d lookback, idempotent.
     scored_rows = _check_release_day_capture(today, root, existing_ledger)
-    log.info("release-day capture: %d new scored rows (champion + shadow)", len(scored_rows))
+    log.info("catch-up scoring sweep: %d new scored rows (champion + shadow)", len(scored_rows))
 
     # 6a. Revision sweep (schema v2)
     combined_for_revision = existing_ledger + scored_rows
@@ -2224,6 +2549,29 @@ def build(root: Path, dry_run: bool = False) -> dict:
     # 6b. Reaction rows (schema v2)
     reaction_rows = _check_reaction_rows(today, root, combined_for_revision)
     log.info("reaction rows: %d new reaction rows", len(reaction_rows))
+
+    # 6c. MRI-R32e: capture_health block
+    capture_health = _compute_capture_health(today, root, existing_ledger + scored_rows)
+    log.info(
+        "capture_health: last_asof=%s gap_days=%s past_due=%d",
+        capture_health.get("last_nightly_asof"),
+        capture_health.get("nightly_gap_days"),
+        capture_health.get("past_due_unscored_count", 0),
+    )
+    if capture_health.get("past_due_unscored"):
+        for item in capture_health["past_due_unscored"]:
+            log.warning(
+                "CAPTURE_HEALTH: unscored %s/%s (release_date=%s reason=%s)",
+                item.get("release"), item.get("period"),
+                item.get("release_date"), item.get("reason"),
+            )
+
+    # 6d. MRI-R33 SNAPSHOT-GC-1: GC input_snapshots older than 30d (keep frozen T-1 receipts)
+    if not dry_run:
+        try:
+            _run_snapshot_gc(snapshots_dir, existing_ledger + proj_ledger_rows, today)
+        except Exception as exc_gc:
+            log.debug("snapshot GC step failed (non-fatal): %s", exc_gc)
 
     # 7. Determine accrual start (earliest projection asof_night in ledger, or today)
     all_proj_nights = [
@@ -2257,10 +2605,16 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "can_size": False,
             "can_trade": False,
         },
-        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity", "quirk_flags", "expectation_read", "coverage_flags", "input_snapshot_ref", "shadows"],
+        "enrichments": [
+            "surprise_distribution", "market_implied", "reaction_sensitivity",
+            "quirk_flags", "expectation_read", "coverage_flags", "input_snapshot_ref",
+            "shadows", "cutoff_label",
+        ],
         "upcoming": upcoming_block,
         "last_scored": last_scored,
         "scoreboard_ref": "data/release_forecast/scoreboard.json",
+        # MRI-R32e: capture health strip
+        "capture_health": capture_health,
     }
 
     if not dry_run:

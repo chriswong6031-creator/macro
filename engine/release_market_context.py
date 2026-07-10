@@ -94,6 +94,7 @@ or None when:
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -107,6 +108,28 @@ _INLINE_HALF_WIDTH_SIGMA = 0.35   # ±σ band per MRI §3.4
 _TAIL_SIGMA_CAP = 4.0             # cap tail extension beyond ±4σ from benchmark
 _ERA_LABEL = "2021plus"           # exact string used in playbook_v1.json
 _REGIME_MIN_N = 8                 # prefer regime cell only if n >= this
+
+# MRI-R33 STALE-ENRICH-1/2: TTL staleness gates for enrichment sources.
+# A stale source nulls the field with a stale reason; never silently extrapolates.
+_KALSHI_TTL_DAYS = 5              # Kalshi / market-implied ≤5d old else null
+_MARKET_IMPLIED_TTL_DAYS = 5      # same rule for Polymarket snapshots
+
+
+def _check_parquet_staleness(path: Path, ttl_days: float) -> str | None:
+    """Return a stale reason string if path is older than ttl_days, else None.
+
+    Checks file mtime; returns None if file is fresh or does not exist
+    (caller handles absent file via empty result, not staleness).
+    """
+    if not path.exists():
+        return None  # absence handled by caller (returns None result)
+    age_days = (time.time() - path.stat().st_mtime) / 86400.0
+    if age_days > ttl_days:
+        return (
+            f"stale: file last updated {age_days:.1f}d ago "
+            f"(TTL={ttl_days}d, MRI-R33 STALE-ENRICH)"
+        )
+    return None
 
 
 # ── 1. Surprise distribution (MRI-R15) ────────────────────────────────────────
@@ -266,6 +289,9 @@ def get_kalshi_implied(
 ) -> dict | None:
     """Return the latest Kalshi implied read for (release_type, period), or None.
 
+    MRI-R33 STALE-ENRICH-1: if the Kalshi parquet is older than 5 days, returns a
+    stale-annotated null dict ({source, stale_reason}) rather than a stale value.
+
     Reads summary rows (is_summary=True) from the first-seen snapshot store and
     returns the most recent asof_date's implied_median for the matching period.
     Context only — never fused into model math (MRI-R16). implied_mean is not
@@ -275,6 +301,11 @@ def get_kalshi_implied(
         kalshi_type = _KALSHI_RELEASE_MAP.get(release_type)
         if kalshi_type is None or period is None or not kalshi_path.exists():
             return None
+        # MRI-R33: TTL staleness gate — null with reason if > 5 days old
+        stale_reason = _check_parquet_staleness(kalshi_path, _KALSHI_TTL_DAYS)
+        if stale_reason:
+            log.warning("get_kalshi_implied: %s", stale_reason)
+            return {"source": "kalshi", "implied_median": None, "stale_reason": stale_reason}
         df = pd.read_parquet(kalshi_path)
         if df.empty or "is_summary" not in df.columns:
             return None
@@ -309,6 +340,9 @@ def get_market_implied_benchmark(
 ) -> dict | None:
     """Return market-implied benchmark dict for a release, or None if absent.
 
+    MRI-R33 STALE-ENRICH-2: if the snapshots parquet is older than 5 days, returns a
+    stale-annotated null dict ({source, stale_reason}) rather than a stale value.
+
     Reads the latest snapshot for the matching event_key (cpi_print / nfp_print),
     picks the row with the end_date nearest to (and >= ) release_date_str, and
     derives an implied read from the highest-probability outcome.
@@ -325,6 +359,12 @@ def get_market_implied_benchmark(
 
         if not snapshots_path.exists():
             return None
+
+        # MRI-R33: TTL staleness gate — null with reason if > 5 days old
+        stale_reason = _check_parquet_staleness(snapshots_path, _MARKET_IMPLIED_TTL_DAYS)
+        if stale_reason:
+            log.warning("get_market_implied_benchmark: %s", stale_reason)
+            return {"source": "market_implied", "implied": None, "stale_reason": stale_reason}
 
         df = pd.read_parquet(snapshots_path)
         if df.empty:

@@ -495,22 +495,47 @@ def main() -> int:
         log.info("collect timing total %.0fs · slowest: %s", sum(timings.values()),
                  ", ".join(f"{k} {v:.0f}s" for k, v in slow[:12]))
 
-    # ALFRED point-in-time vintages — slow-moving (revisions accrue over months),
-    # so refresh weekly via an mtime gate. Additive: a separate store the live
-    # engine doesn't read (feeds point-in-time macro backtests). Runs only when
-    # FRED is in scope; failure never aborts collection.
+    # ALFRED point-in-time vintages — most series refresh weekly (revisions accrue
+    # over months); MRI-R32d: tracked release series refresh NIGHTLY so the
+    # release-capture engine always has fresh vintages for scoring.
+    # Additive: a separate store the live engine doesn't read (feeds PIT backtests).
+    # Runs only when FRED is in scope; failure never aborts collection. Fail-open
+    # when FRED_API_KEY is absent.
+    _NIGHTLY_VINTAGE_SERIES = frozenset([
+        "CPIAUCSL", "CPILFESL", "PAYEMS", "ICSA", "IC4WSA", "CCSA",
+        "PCEPI", "PCEPILFE", "PPIFIS", "PPIFES",
+    ])
     if "fred" in registry:
         try:
             from collectors.fred import FredAdapter, _vintage_path
             vp = _vintage_path()
-            stale = not vp.exists() or (time.time() - vp.stat().st_mtime) / 86400.0 >= 7
-            if stale or args.full_history:
-                log.info("=== refreshing FRED ALFRED vintages ===")
+            # MRI-R32d: check per-series staleness — nightly for tracked release
+            # series, weekly (7d) for all others. Refresh if ANY tracked-release
+            # series would be stale, OR if the weekly gate fires for the rest, OR
+            # if full_history is requested.
+            def _series_stale(series_id: str) -> bool:
+                """Return True if this series' vintage file needs a refresh."""
+                sp = vp.parent / f"{series_id}_vintages.parquet" if vp.parent.exists() else vp
+                if not sp.exists():
+                    sp = vp  # fall back to the umbrella path
+                if not sp.exists():
+                    return True
+                age_days = (time.time() - sp.stat().st_mtime) / 86400.0
+                ttl = 1 if series_id in _NIGHTLY_VINTAGE_SERIES else 7
+                return age_days >= ttl
+
+            needs_nightly = any(_series_stale(s) for s in _NIGHTLY_VINTAGE_SERIES)
+            umbrella_stale = not vp.exists() or (time.time() - vp.stat().st_mtime) / 86400.0 >= 7
+            if needs_nightly or umbrella_stale or args.full_history:
+                log.info(
+                    "=== refreshing FRED ALFRED vintages (nightly=%s weekly=%s) ===",
+                    needs_nightly, umbrella_stale,
+                )
                 FredAdapter().fetch_vintages()
             else:
                 log.info("FRED vintages fresh — skip")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.warning("FRED vintages step failed: %s", e)
+            log.warning("FRED vintages step failed (fail-open): %s", e)
         # PIT release-lag recorder, PER FRED SERIES (a release calendar needs series-level
         # granularity, not one adapter-wide last_date). Reads each stored series' last obs
         # date from the store — cheap, additive, and can never break collection.
