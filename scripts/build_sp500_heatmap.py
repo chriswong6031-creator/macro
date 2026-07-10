@@ -108,6 +108,30 @@ def _load_caps_from_stockdata(site: Path, symbols: list[str]) -> dict[str, float
     return caps
 
 
+def _load_caps_from_prev_payload(site: Path) -> dict[str, float]:
+    """Real caps recycled from the last committed heatmap payload. The intraday
+    refresh lane runs on a fresh checkout where neither the Polygon reference
+    cache nor the stockdata records exist; the nightly payload's tile sizes ARE
+    the nightly real caps, so reusing them keeps intraday tiles on market-cap
+    sizing instead of visibly re-sizing to the weight proxy mid-session."""
+    p = site / "marketdata" / "sp500_heatmap.json"
+    if not p.exists():
+        return {}
+    try:
+        prev = json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("previous heatmap payload unreadable: %s", e)
+        return {}
+    if prev.get("size_basis") != "marketcap":
+        return {}
+    caps: dict[str, float] = {}
+    for t in prev.get("tiles") or []:
+        sym, size = t.get("t"), t.get("size")
+        if sym and size is not None and float(size) > 0:
+            caps[str(sym)] = float(size)
+    return caps
+
+
 def _load_sector_weights() -> dict[str, float]:
     """ticker -> latest SPDR within-sector weight_pct (offline cap proxy input)."""
     out: dict[str, float] = {}
@@ -322,10 +346,12 @@ def build(site: Path | None = None, *, live: bool = True,
     industry_map = _load_industry_map()
     weights = _load_sector_weights()
     # Real caps: Polygon reference cache first, else harvest from the nightly
-    # per-stock records (offline-safe). Either gives true market-cap sizing;
-    # the gaps are filled from calibrated ETF weights so every tile sizes on one
-    # scale rather than collapsing to a floor.
-    caps = _load_caps(closes) or _load_caps_from_stockdata(site, symbols)
+    # per-stock records, else recycle the last committed payload's sizes (the
+    # intraday lane's fresh checkout has neither cache). All three give true
+    # market-cap sizing; the gaps are filled from calibrated ETF weights so
+    # every tile sizes on one scale rather than collapsing to a floor.
+    caps = (_load_caps(closes) or _load_caps_from_stockdata(site, symbols)
+            or _load_caps_from_prev_payload(site))
     if caps:
         static = _load_static_caps()
         if static:

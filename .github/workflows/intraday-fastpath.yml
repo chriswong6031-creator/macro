@@ -18,9 +18,14 @@ name: intraday-fastpath
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/30 11-20 * * 1-5"   # :00 + :30, 11:00-20:30 UTC, Mon-Fri.
+    - cron: "*/30 11-21 * * 1-5"   # :00 + :30, 11:00-21:30 UTC, Mon-Fri.
                                     # Extended from 13:00 to 11:00 UTC (= 07:00 ET) to cover the
                                     # US premarket window (07:00–09:30 ET).
+                                    # Extended from 20:30 to 21:30 UTC so the post-close ticks
+                                    # exist YEAR-ROUND: in EST (winter) the 16:00 ET closing bell
+                                    # is 21:00 UTC, which the old 20:30 cutoff missed entirely —
+                                    # the S&P heatmap's closing-bell refresh (step below) needs a
+                                    # tick after the close in both EDT and EST.
                                     # Steps 1–3 (regime/overlay/risk-state) are RTH-gated below
                                     # and remain no-ops before 13:00 UTC, preserving today's
                                     # behavior exactly. Step 4 (basket pulse) runs on ALL ticks.
@@ -86,9 +91,30 @@ jobs:
             exit 0
           fi
           python -m scripts.build_risk_state
+      - name: S&P 500 heatmap live refresh (15-min-delayed splice -> site/marketdata/sp500_heatmap.json)
+        # The committed heatmap feed was otherwise only rebuilt inside the nightly render
+        # (~23:45 ET), so macro.html / sector_heatmap.html showed the PRIOR day's close for
+        # the whole session. This rebuilds it with the live Polygon splice (source=polygon-live,
+        # fresh 1D) every 30 min through RTH; the post-close ticks (16:0x/16:3x ET) capture the
+        # settled closing-bell print. Offline-safe: with no key or a failed fetch the build
+        # falls back to the close cache, and any failure is non-fatal — the last committed
+        # payload keeps serving. Market-cap sizing on this fresh checkout comes from the
+        # committed payload itself (caps recycle, see _load_caps_from_prev_payload).
+        # RTH-gated: premarket ticks (UTC < 13:00) skip this step.
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+        run: |
+          UTC_HOUR=$(date -u +%H)
+          if [ "$UTC_HOUR" -lt 13 ]; then
+            echo "UTC hour $UTC_HOUR < 13 — premarket tick, skipping heatmap refresh (RTH gate)"
+            exit 0
+          fi
+          python -m scripts.build_sp500_heatmap || \
+            echo "::warning::sp500 heatmap live refresh failed (non-fatal; nightly payload keeps serving)"
       - name: basket pulse (all ticks — pre|RTH|post session; site/live/basket_pulse.json)
         # Consumes the already-fetched live-quotes snapshot from the live-data branch.
-        # Runs on EVERY tick (07:00–20:30 ET window), not just RTH, so the premarket
+        # Runs on EVERY tick (07:00 ET through the post-close ticks), not just RTH, so the premarket
         # basket tape is available from 07:00 ET. Exit-0-always per FT-R5/FT-R8.
         run: |
           # Fetch the full live-quotes snapshot from the live-data branch (written every
@@ -115,6 +141,8 @@ jobs:
           # Stage the served live artifacts (site/live/* is gitignored -> force-track, like site/stockdata)
           # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
           git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live_config.js
+          # S&P heatmap live refresh (tracked file; guard for the premarket ticks that skip the build)
+          git add site/marketdata/sp500_heatmap.json 2>/dev/null || true
           # TS-U0: stage the lastgood sidecar so it survives the next checkout and
           # is available to the post-close tick's last_rth serve path. Guard with
           # || true since it may not exist on a tick that produced no live/delayed compute.
@@ -137,7 +165,7 @@ jobs:
           git checkout -- . 2>/dev/null || true
           git clean -fdq data/ 2>/dev/null || true
           if git diff --cached --quiet; then echo "no live/regime change"; exit 0; fi
-          git commit -m "live: intraday overlay + risk-state + regime freshness $(date -u +%FT%H:%MZ)"
+          git commit -m "live: intraday overlay + risk-state + heatmap + regime freshness $(date -u +%FT%H:%MZ)"
           for i in 1 2 3 4 5; do
             if git pull --rebase -X theirs origin main && git push; then echo "pushed (attempt $i)"; exit 0; fi
             git rebase --abort 2>/dev/null || true; echo "push attempt $i lost a race"; sleep $((i * 5))
