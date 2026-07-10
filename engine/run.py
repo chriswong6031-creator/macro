@@ -615,6 +615,19 @@ def run() -> dict:
                 latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"])
         except Exception as e:  # noqa: BLE001
             log.warning("risk-radar audit failed: %s", e)
+        # Recovery-channel forward-outcome log (engine/risk_radar_recovery_audit.py, W1):
+        # log today's recovery + market-chip snapshot, grade matured entries vs SPY path
+        # (rebound ruler, RRX-R2), attach the scorecard. Additive, never fatal.
+        try:
+            from engine import risk_radar_recovery as _rrr
+            from engine import risk_radar_recovery_audit as _rra2
+            if latest.get("risk_radar"):
+                _rec = _rrr.assess(latest)
+                latest["risk_radar"]["recovery_log"] = _rra2.snapshot_and_grade(
+                    _rec or {}, latest["risk_radar"]
+                )
+        except Exception as e:  # noqa: BLE001
+            log.warning("risk-radar recovery audit failed: %s", e)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("risk-radar failed: %s", e)
         latest["risk_radar"] = None
