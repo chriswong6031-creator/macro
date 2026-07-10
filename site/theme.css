@@ -929,6 +929,76 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .lst-wrap:has(.lst-collapse.lst-cap4 > :nth-child(5)) > .lst-more { display:block; }
 }
 
+/* ==== Act-Now v2 four-lane board (W8-R3, china_stocks.html) ================
+   anv2-board: stocks-mode only; macro-panel keeps legacy actcol.
+   Lane accent: buy=green, pull=blue, bot=amber, red=red.
+   Mobile: single-column ≤560px; board label 12px nowrap at 390px.
+   =========================================================================== */
+.anv2-board { }
+.anv2-hd { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+.anv2-hd h2 { font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin:0; display:flex; align-items:center; gap:8px; flex-wrap:nowrap; white-space:nowrap; }
+@media (max-width:390px) { .anv2-hd h2 { font-size:12px; } }
+.anv2-v2pill { font-size:10px; font-weight:700; background:color-mix(in srgb,var(--info) 14%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border:1px solid color-mix(in srgb,var(--info) 28%,transparent); padding:1px 7px; border-radius:5px; }
+.anv2-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.anv2-xlink { font-size:12px; color:var(--link); font-weight:600; text-decoration:none; white-space:nowrap; }
+.anv2-xlink:hover { text-decoration:underline; }
+.anv2-notes { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+/* four-column grid at ≥960px, two-column 560–959, single-column ≤560 */
+.anv2-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:start; }
+@media (max-width:960px) { .anv2-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:560px)  { .anv2-grid { grid-template-columns:1fr; } }
+/* individual lane card */
+.anv2-lane { background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+/* accent top bar */
+.anv2-lane-hd { padding:10px 13px 8px; border-bottom:1px solid var(--line); position:relative; }
+.anv2-lane-hd::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:14px 14px 0 0; background:var(--anv2-accent,var(--muted)); }
+.anv2-lane--buy   { --anv2-accent: var(--up); }
+.anv2-lane--pull  { --anv2-accent: var(--info); }
+.anv2-lane--bot   { --anv2-accent: var(--warn); }
+.anv2-lane--red   { --anv2-accent: var(--down); }
+.anv2-lane-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+.anv2-lane--buy   .anv2-lane-title { color:var(--up); }
+.anv2-lane--pull  .anv2-lane-title { color:var(--info); }
+.anv2-lane--bot   .anv2-lane-title { color:var(--warn); }
+.anv2-lane--red   .anv2-lane-title { color:var(--down); }
+.anv2-lane-count { font-size:11px; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
+.anv2-lane-sub { font-size:10.5px; color:var(--muted); margin-top:3px; line-height:1.4; }
+.anv2-lane--bot .anv2-lane-sub { color:color-mix(in srgb,var(--warn) 75%,var(--muted)); }
+/* lane body */
+.anv2-lane-body { padding:6px 0; flex:1; }
+/* bottoming disclaimer box */
+.anv2-bot-disc { margin:6px 12px 4px; background:color-mix(in srgb,var(--warn) 8%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 20%,transparent); border-radius:7px; padding:6px 9px; font-size:10.5px; line-height:1.45; }
+.anv2-bot-disc strong { display:block; font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:color-mix(in srgb,var(--warn) 90%,var(--text)); margin-bottom:2px; }
+/* row items */
+.anv2-lst .anv2-row { padding:7px 13px; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent); min-width:0; overflow:hidden; }
+.anv2-lst .anv2-row:last-child { border-bottom:none; }
+.anv2-lst .anv2-row:hover { background:color-mix(in srgb,var(--panel2) 55%,transparent); }
+.anv2-row-top { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:4px; }
+.anv2-name { font-size:12.5px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.anv2-score { font-size:15px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.anv2-score-hi  { color:var(--up); }
+.anv2-score-mid { color:var(--warn); }
+.anv2-score-lo  { color:var(--down); }
+.anv2-chips { display:flex; flex-wrap:wrap; gap:3px; align-items:center; margin-bottom:3px; }
+/* chip base */
+.anv2-chip { display:inline-flex; align-items:center; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 6px; border-radius:4px; border:1px solid; white-space:nowrap; text-transform:uppercase; }
+.anv2-chip-theme  { background:color-mix(in srgb,var(--info) 12%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
+.anv2-chip-basket { background:color-mix(in srgb,#8b5cf6 10%,var(--panel)); color:color-mix(in srgb,#8b5cf6 80%,var(--text)); border-color:color-mix(in srgb,#8b5cf6 24%,transparent); }
+.anv2-chip-sector { background:color-mix(in srgb,var(--warn) 10%,var(--panel)); color:color-mix(in srgb,var(--warn) 75%,var(--text)); border-color:color-mix(in srgb,var(--warn) 24%,transparent); }
+/* reco chips */
+.anv2-chip-reco-accumulate,.anv2-chip-reco-enter { background:color-mix(in srgb,var(--up) 14%,var(--panel)); color:color-mix(in srgb,var(--up) 85%,var(--text)); border-color:color-mix(in srgb,var(--up) 32%,transparent); }
+.anv2-chip-reco-hold { background:color-mix(in srgb,var(--muted) 12%,var(--panel)); color:color-mix(in srgb,var(--muted) 75%,var(--text)); border-color:color-mix(in srgb,var(--muted) 24%,transparent); }
+.anv2-chip-reco-trim,.anv2-chip-reco-avoid { background:color-mix(in srgb,var(--down) 12%,var(--panel)); color:color-mix(in srgb,var(--down) 80%,var(--text)); border-color:color-mix(in srgb,var(--down) 28%,transparent); }
+/* bottoming + dual-read chips */
+.anv2-chip-trough  { background:color-mix(in srgb,var(--warn) 12%,var(--panel)); color:color-mix(in srgb,var(--warn) 85%,var(--text)); border-color:color-mix(in srgb,var(--warn) 28%,transparent); }
+.anv2-chip-turn    { background:color-mix(in srgb,#3dd6c8 10%,var(--panel)); color:color-mix(in srgb,#3dd6c8 80%,var(--text)); border-color:color-mix(in srgb,#3dd6c8 24%,transparent); }
+.anv2-chip-washout { background:color-mix(in srgb,var(--warn) 11%,var(--panel)); color:color-mix(in srgb,var(--warn) 80%,var(--text)); border-color:color-mix(in srgb,var(--warn) 26%,transparent); cursor:help; }
+.anv2-chip-tag     { background:var(--panel2); color:var(--muted); border-color:var(--line); }
+/* stat line */
+.anv2-stat { font-size:11px; color:var(--muted); }
+.anv2-pos { color:var(--up); font-weight:600; }
+.anv2-neg { color:var(--down); font-weight:600; }
+
 /* ==== regime panels (base-effect strip + HMM regime-probability) — shared by dashboard.html.j2 (US) + china.html.j2. Status colours --ok/--warn/--muted do NOT flip in zh; quad colours --q1..--q4 do (intentional). ==== */
 /* MEASURED / MODELED / NO-EDGE honesty badges (status colours --ok/--warn/--muted do NOT
    flip in zh mode, unlike --up/--down) + the base-effect forward strip (v0). */

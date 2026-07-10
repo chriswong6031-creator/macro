@@ -396,7 +396,7 @@
   .bignum { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
   .sub { font-size: 11.5px; color: var(--muted); }
   .chart { margin: 4px 0 2px; }
-  /* action board */
+  /* legacy macro-panel action board (actcol, mode=macro sub-panel, untouched) */
   .act-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
   .act-col h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; }
   .act-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
@@ -566,36 +566,112 @@
     {% endif %}
   </div>
 
-  <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
-  {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
-  <div class="panel span12" id="act-now">
-    <h2>⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
-      {{ help("The A-share sector ETFs bucketed by the cycle ladder’s entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read. Click any sector for its full breakdown.", "A股板块 ETF 按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。点击任意板块查看完整拆解。") }}
-    </h2>
-    <div class="act-grid">
-      {% macro sactcol(cls, title_en, title_zh, items) %}
-      {% if items %}
-      <div class="act-col {{ cls }} lst-wrap">
-        <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
-        <div class="lst-collapse lst-cap4 is-collapsed">
-        {% for it in items %}
-        <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
-          <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
-        </div>
-        {% endfor %}
-        </div>
-        {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
+  <!-- ===================== ACT-NOW v2 — FOUR-LANE BOARD (W8-R3) ===================== -->
+  {# act_now_v2: assembled by engine/china_act_now.assemble_act_now() in build_china.py.
+     Sectors + themes co-exist as typed rows (THEME / SECTOR / BASKET chips).
+     Bottoming lane copy law: never BUY-family words (F1/W8-R3).
+     Dual-read law (FT-R1): a name in reduce AND bottoming appears in BOTH lanes.
+     Macro mode: only the legacy actcol sub-panel is used (untouched, see line ~1275). #}
+  {% if act_now_v2 %}
+  {% set _anv2 = act_now_v2 %}
+  {% set _anl = _anv2.lanes %}
+  <div class="panel span12 anv2-board" id="act-now">
+    <div class="anv2-hd">
+      <h2 style="margin:0">⚡ {{ t('What to Act On Now', '现在行动') }}
+        <span class="anv2-v2pill">v2</span>
+        {{ help('Themes and sectors co-exist in four lanes. THEME rows come from the basket scoring engine (composite 0-100 score, clean-entry gate). SECTOR rows come from the cycle-ladder entry-timing call. BOTTOMING WATCH shows baskets/sectors whose cycle is at Trough phase with the oscillator slope turning positive — this is a washout signal, never a buy signal. REDUCE/AVOID shows the paired honesty read: a name in both Bottoming Watch and Reduce carries dual chips so you see the contradiction explicitly. No composite scores are created or fused.', '主题与板块共存于四个分栏。THEME 行来自篮子打分引擎（综合 0-100 分，干净入场门槛）。SECTOR 行来自周期阶梯的入场时机判断。洗盘观察栏显示处于低谷期且震荡指标斜率由负转正的篮子/板块——这是洗盘转向信号，绝非入场信号。减仓/回避栏展示诚实双读：同时出现在洗盘观察和减仓中的名称会展示双重标签，以便清晰看出矛盾。不创建或融合任何综合评分。') }}
+      </h2>
+      <div class="anv2-meta">
+        {% if _anv2.as_of %}<span class="muted" style="font-size:11px">{{ t('themes as of','主题截至') }} {{ _anv2.as_of }}</span>{% endif %}
+        <a href="baskets_china.html#actnow" class="anv2-xlink">{{ t('theme desk →', '主题面板 →') }}</a>
+      </div>
+    </div>
+    {% if _anv2.notes %}
+    <div class="anv2-notes">{% for n in _anv2.notes %}<span class="muted" style="font-size:11px">⚠ {{ n }}</span>{% endfor %}</div>
+    {% endif %}
+    <div class="anv2-grid">
+
+    {# ── Macro: row item helper ─────────────────────────────────────────── #}
+    {%- macro _anrow(row, lane) -%}
+    <div class="anv2-row">
+      <div class="anv2-row-top">
+        <span class="anv2-name">{{ row.name_zh if row.name_zh and lang == 'zh' else row.name }}</span>
+        {% if row.score is not none %}<span class="anv2-score{% if row.score >= 60 %} anv2-score-hi{% elif row.score >= 40 %} anv2-score-mid{% else %} anv2-score-lo{% endif %}">{{ row.score }}</span>{% endif %}
+      </div>
+      <div class="anv2-chips">
+        {# type chip #}
+        {% if row.kind == 'THEME' %}<span class="anv2-chip anv2-chip-theme">{{ t('THEME','主题') }}</span>
+        {% elif row.kind == 'BASKET' %}<span class="anv2-chip anv2-chip-basket">{{ t('BASKET','篮子') }}</span>
+        {% else %}<span class="anv2-chip anv2-chip-sector">{{ t('SECTOR','板块') }}</span>{% endif %}
+        {# reco chip (theme rows) #}
+        {% if row.reco_en %}<span class="anv2-chip anv2-chip-reco-{{ row.reco or 'hold' }}">{{ t(row.reco_en, row.reco_zh or row.reco_en) }}</span>{% endif %}
+        {# sector urgency/tag chip #}
+        {% if row.tag and row.kind != 'THEME' %}<span class="anv2-chip anv2-chip-tag">{{ row.tag }}</span>{% endif %}
+        {# dual-read chip on reduce lane #}
+        {% if lane == 'reduce' and row.dual_read %}
+        <span class="anv2-chip anv2-chip-washout" data-tip-en="This name also appears in Bottoming Watch: the cycle oscillator is turning while the trend recommendation is Reduce/Avoid. Both reads shown — never merged." data-tip-zh="该名称同时出现在洗盘观察栏：周期振荡器正在转向，但趋势建议为减仓/回避。两种判读并列显示，永不合并。">{{ t(row.dual_chip_en, row.dual_chip_zh) }}</span>
+        {% endif %}
+        {# bottoming lane: trough+slope chip #}
+        {% if lane == 'bot' and row.osc_slope is not none %}
+        <span class="anv2-chip anv2-chip-trough">{{ t('TROUGH','低谷') }}</span>
+        <span class="anv2-chip anv2-chip-turn">↗ {{ '%.1f'|format(row.osc_slope) }}</span>
+        {% endif %}
+      </div>
+      {# stat line: rel20 for themes, rs_63d+pos for bottoming #}
+      {% if lane == 'bot' %}
+      <div class="anv2-stat">
+        {% if row.rs_63d is not none %}<span class="{% if row.rs_63d < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rs_63d) }}%</span><span class="muted"> 63d RS</span>{% endif %}
+        {% if row.pos is not none %} · <span class="muted">{{ t('pos','位置') }} {{ '%.0f'|format(row.pos) }}%</span>{% endif %}
+      </div>
+      {% elif row.rel20 is not none %}
+      <div class="anv2-stat">
+        <span class="{% if row.rel20 < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rel20 * 100) }}%</span><span class="muted"> {{ t('20d vs CSI 300','20日相对沪深300') }}</span>
       </div>
       {% endif %}
-      {% endmacro %}
-      {{ sactcol('act-now', 'Buy zone', '买入区', actions.buy_now) }}
-      {{ sactcol('act-soon', 'Setting up', '即将到位', actions.buy_soon) }}
-      {{ sactcol('act-run', "ON THE RUN — don't chase", '顺势运行 — 勿追高', actions.get('on_the_run', [])) }}
-      {{ sactcol('act-tp', 'Take profits', '止盈', actions.take_profits) }}
-      {{ sactcol('act-hold', 'Hold', '持有', actions.hold) }}
-      {{ sactcol('act-avoid', 'Avoid', '回避', actions.avoid) }}
     </div>
-  </div>
+    {%- endmacro -%}
+
+    {# ── Lane macro ─────────────────────────────────────────────────────── #}
+    {%- macro _anlane(lane_key, cls, title_en, title_zh, subtitle_en, subtitle_zh, items, lane_id) -%}
+    <div class="anv2-lane anv2-lane--{{ cls }}" id="{{ lane_id }}">
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title">
+          <span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span>
+          <span class="anv2-lane-count">({{ items|length }})</span>
+        </div>
+        {% if subtitle_en %}<div class="anv2-lane-sub"><span class="l-en">{{ subtitle_en }}</span><span class="l-zh">{{ subtitle_zh }}</span></div>{% endif %}
+      </div>
+      <div class="anv2-lane-body">
+      {% if lane_key == 'bot' %}
+      <div class="anv2-bot-disc">
+        <strong>{{ t('washout turning — NOT an entry signal','洗盘转向 — 非入场信号') }}</strong>
+        <span class="l-en">Cycle trough with oscillator slope turning positive. Shows the tape is stabilising — does not mean buy. Position only after a confirmed turn.</span>
+        <span class="l-zh">周期处于低谷且震荡指标斜率由负转正。说明趋势正在企稳——不意味着买入。仅在趋势确认后再建仓。</span>
+      </div>
+      {% endif %}
+      <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+        {% for row in items %}{{ _anrow(row, lane_key) }}{% endfor %}
+      </div>
+      {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+      </div>
+    </div>
+    {%- endmacro -%}
+
+    {{ _anlane('buy',  'buy',  'Buy Now',               '立即买入',
+               'Clean entry · themes &amp; sectors', '干净入场 · 主题与板块',
+               _anl.buy_now, 'anv2-buy') }}
+    {{ _anlane('pull', 'pull', 'In Favour — Wait for Pullback', '看好 — 等待回调',
+               'Add on pullback · extended or no clean entry', '回调加仓 · 已延伸或无干净入场点',
+               _anl.wait_pullback, 'anv2-pull') }}
+    {{ _anlane('bot',  'bot',  'Bottoming Watch',        '洗盘观察',
+               'Trough · osc slope turning — watch only', '低谷 · 震荡斜率转正 — 仅观察',
+               _anl.bottoming_watch, 'anv2-bot') }}
+    {{ _anlane('reduce', 'red', 'Reduce / Avoid',        '减仓 / 回避',
+               'Trend deteriorating · dual-read shown where tape disagrees', '趋势恶化 · 纸带有分歧时展示双重判读',
+               _anl.reduce_avoid, 'anv2-red') }}
+
+    </div>{# /.anv2-grid #}
+  </div>{# /.anv2-board #}
   {% endif %}
   {% endif %}
 
@@ -1276,7 +1352,7 @@
   {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
   <div class="msec flush">
     <h3 class="msec-h">⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
-      {{ help("The 16 sector ETFs bucketed by the cycle ladder’s entry-timing call (same engine as the US action board). A structure/risk map, not an allocation rule — read alongside the calibration note below.", "16 个板块 ETF 按周期阶梯的入场时机分桶（与美国操作板同一引擎）。这是结构／风险图，而非配置规则 — 请结合下方校准说明阅读。") }}
+      {{ help("The 16 sector ETFs bucketed by the cycle ladder's entry-timing call (same engine as the US action board). A structure/risk map, not an allocation rule — read alongside the calibration note below.", "16 个板块 ETF 按周期阶梯的入场时机分桶（与美国操作板同一引擎）。这是结构／风险图，而非配置规则 — 请结合下方校准说明阅读。") }}
     </h3>
     <div class="act-grid">
       {% macro actcol(cls, title_en, title_zh, items) %}
@@ -2232,7 +2308,7 @@
   {% if I.southbound %}
   <div class="msec span5">
     <h3 class="msec-h">{{ t('🇭🇰 Southbound flow', '🇭🇰 南向资金') }} <span class="note" style="text-transform:none">· {{ t('mainland → Hong Kong', '内地 → 香港') }}</span>
-      {{ help("Net mainland buying of Hong Kong via Stock Connect — the live half of the Connect flows (northbound daily direction was discontinued by regulators in Aug-2024). The z-score is today’s net vs its trailing-year distribution; the chart is the 20-day cumulative net. Persistent southbound buying is a mainland risk-appetite tell.", "经港股通的内地净买入香港 — 互联互通中仍实时披露的一侧（北向每日方向于 2024 年 8 月被监管停披）。Z 值为当日净额相对近一年分布；图为 20 日累计净额。持续南下是内地风险偏好的信号。") }}
+      {{ help("Net mainland buying of Hong Kong via Stock Connect — the live half of the Connect flows (northbound daily direction was discontinued by regulators in Aug-2024). The z-score is today's net vs its trailing-year distribution; the chart is the 20-day cumulative net. Persistent southbound buying is a mainland risk-appetite tell.", "经港股通的内地净买入香港 — 互联互通中仍实时披露的一侧（北向每日方向于 2024 年 8 月被监管停披）。Z 值为当日净额相对近一年分布；图为 20 日累计净额。持续南下是内地风险偏好的信号。") }}
     </h3>
     <div style="display:flex;align-items:baseline;gap:10px">
       <span class="bignum {{ 'pos' if I.southbound.net>=0 else 'neg' }}">{{ '{:+,.0f}'.format(I.southbound.net) }}</span>
@@ -2446,7 +2522,7 @@
   {% if health %}
   <div class="panel span6" id="data-health">
     <h2>{{ t('Data health', '数据健康度') }}
-      {{ help("Freshness of the China data feeds powering this page. ‘ok’ = updated within its expected cadence; rows = total stored history.", "驱动本页的中国数据源的新鲜度。‘ok’＝在预期更新周期内已更新；rows＝累计存储行数。") }}
+      {{ help("Freshness of the China data feeds powering this page. 'ok' = updated within its expected cadence; rows = total stored history.", "驱动本页的中国数据源的新鲜度。'ok'＝在预期更新周期内已更新；rows＝累计存储行数。") }}
     </h2>
     <table>
       <thead><tr><th class="l">{{ t('source', '来源') }}</th><th>{{ t('status', '状态') }}</th><th>{{ t('rows', '行数') }}</th><th>{{ t('last', '最新') }}</th></tr></thead>
