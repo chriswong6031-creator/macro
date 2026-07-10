@@ -41,6 +41,10 @@
   .sig { font-weight:600; } .mkt { font-size:11px; color:var(--muted); }
   .src { font-size:10.5px; color:var(--muted); }
   .extra { font-size:11px; color:var(--muted); margin-top:2px; }
+  .extra-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .extra-chip { font-size:10.5px; padding:1px 7px; border-radius:6px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--muted); display:inline-flex; gap:4px; }
+  .extra-chip .el { font-weight:600; color:var(--text); }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
           height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
           font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
@@ -107,6 +111,42 @@
   .fable-chip.tested-pass { background:color-mix(in srgb,#2d8 25%,transparent); color:#196; border:1px solid #1a7; }
   .fable-chip.tested-partial { background:color-mix(in srgb,#fb0 20%,transparent); color:#860; border:1px solid #a80; }
   .fable-chip.tested-accrue { background:color-mix(in srgb,#aaf 20%,transparent); color:#33a; border:1px solid #55c; }
+  /* A1: DSR provenance chips */
+  .dsr-prov { font-size:10px; padding:1px 6px; border-radius:6px; margin-left:4px; font-weight:600; vertical-align:middle; }
+  .dsr-prov.ledger   { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 50%,var(--line)); }
+  .dsr-prov.frozen   { background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); border:1px solid var(--line); }
+  .dsr-prov.expired  { background:color-mix(in srgb,var(--down) 20%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 50%,var(--line)); }
+  /* A5: expandable row */
+  .row-expand-btn { cursor:pointer; background:none; border:none; color:var(--muted);
+    font-size:13px; padding:0 3px; vertical-align:middle; line-height:1; }
+  .row-expand-btn:hover { color:var(--text); }
+  .row-detail { display:none; }
+  .row-detail.open { display:table-row; }
+  .row-detail > td { padding:8px 12px 12px; background:var(--panel2); border-top:none; }
+  .row-detail .why-full { font-size:12.5px; line-height:1.5; max-width:80ch; }
+  .row-detail .meta-row { font-size:11.5px; color:var(--muted); margin-top:6px; }
+  .anchor-link { color:var(--muted); font-size:11px; text-decoration:none; margin-left:4px; opacity:0.5; }
+  .anchor-link:hover { opacity:1; color:var(--link); }
+  /* A9: warning banner */
+  .warn-banner { background:color-mix(in srgb,#f80 15%,var(--panel)); border:1px solid #c70;
+    border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; color:#a50; }
+  .warn-banner strong { color:#c70; }
+  /* A10: source-not-found chip */
+  .src-missing { font-size:9.5px; color:#a50; border:1px solid #c70; border-radius:4px; padding:0 4px; margin-left:3px; }
+  /* A11: reset link */
+  .filter-reset { font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; }
+  .filter-reset:hover { color:var(--text); }
+  /* A12: pipeline legend */
+  .pipeline-legend { font-size:11.5px; color:var(--muted); margin:6px 0 0; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .pipeline-legend .arrow { color:var(--muted); }
+  .pipeline-legend .step { font-weight:600; color:var(--text); }
+  /* A13: cross-link chip */
+  .cross-link-chip { display:inline-flex; align-items:center; gap:6px; font-size:11.5px;
+    padding:3px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel2);
+    color:var(--muted); margin-left:auto; }
+  .cross-link-chip a { color:var(--link); }
+  /* Frontier count badge */
+  .frontier-count { font-size:11px; color:var(--muted); margin-top:4px; }
 </style>
 </head>
 <body>
@@ -133,22 +173,39 @@
   </div>
 </nav>
 
-<div class="panel">
-  <div class="topline">
+{%- if warnings %}
+<div class=”warn-banner”>
+  <strong>{{ t('Build warnings', '构建警告') }}:</strong>
+  {% for w in warnings %}<div>{{ w }}</div>{% endfor %}
+</div>
+{%- endif %}
+
+<div class=”panel”>
+  <div class=”topline”>
     <h1>🔬 {{ t('Signal Lab', '信号实验室') }}</h1>
-    <span class="muted sm">{{ t('Every signal, and whether it actually survives validation',
+    <span class=”muted sm”>{{ t('Every signal, and whether it actually survives validation',
                                 '每个信号，以及它是否真正通过验证') }}</span>
+    {# A13: cross-link to China signal lab surface #}
+    <span class=”cross-link-chip”>{{ t('China signals:', '中国信号:') }}
+      <a href=”china_stocks_lab.html”>{{ t('China Signal Lab', '中国信号实验室') }}</a>
+    </span>
   </div>
-  <p class="lead" style="margin:10px 0 0">{{ t(
-     "What separates a dashboard from a model is honest validation. Every signal here goes "
-     "through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that "
-     "respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many "
-     "ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this "
-     "page is the graveyard: the signals we measured and refused to ship.",
-     "把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验："
-     "秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，"
-     "以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是“信号墓地”：那些我们测量后拒绝上线的信号。") }}</p>
-  <div class="chips">
+  {# A12: pipeline legend #}
+  <div class=”pipeline-legend”>
+    <span class=”step”>{{ t('idea', '想法') }}</span>
+    <span class=”arrow”>→</span>
+    <span class=”step”>{{ t('phase-0 battery', 'Phase-0 验证') }}</span>
+    <span class=”arrow”>→</span>
+    <span class=”step”>{{ t('adjudication', '裁决') }}</span>
+    <span class=”arrow”>→</span>
+    <span class=”step”>{{ t('tier', '分级') }}</span>
+    <span style=”margin-left:8px”>·</span>
+    <a href=”factordata/signal_lab.json” style=”font-size:11px;color:var(--muted)”>{{ t('machine-readable payload', '机器可读数据') }} ↗</a>
+  </div>
+  <p class=”lead” style=”margin:10px 0 0”>{{ t(
+     'What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.',
+     '把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是”信号墓地”：那些我们测量后拒绝上线的信号。') }}</p>
+  <div class=”chips”>
     <span class="chip"><span class="dot d-scored"></span><b>{{ summary.scored }}</b> {{ t('scored','已计分') }}</span>
     <span class="chip"><span class="dot d-confirmer"></span><b>{{ summary.confirmer }}</b> {{ t('confirmer','确认项') }}</span>
     <span class="chip"><span class="dot d-display"></span><b>{{ summary.display }}</b> {{ t('display-only','仅展示') }}</span>
@@ -173,26 +230,50 @@
   <p class="frontier-note">{{ t(
     'The search is data-first: borrow pressure, FTDs, option-informed flow, EDGAR attention, auction absorption, positioning exhaustion, and time-of-day market microstructure.',
     '这轮搜索以数据为先：借券压力、交割失败、期权知情流、EDGAR 关注、拍卖吸收、仓位耗尽与日内/隔夜微结构。') }}</p>
-  {%- if frontier_phase0_summary %}
-  <p class="frontier-note">{{ t(
-    'Expanded docket (60 candidates) adjudicated 2026-07-06: 9 authorized for testing (' ~ frontier_phase0_summary.build_count ~ ' build / ' ~ frontier_phase0_summary.probe_count ~ ' probe / ' ~ frontier_phase0_summary.pilot_count ~ ' pilot), 11 killed. See ',
-    '扩展清单（60个候选）于2026-07-06完成裁决：9个授权测试（' ~ frontier_phase0_summary.build_count ~ ' 构建 / ' ~ frontier_phase0_summary.probe_count ~ ' 探针 / ' ~ frontier_phase0_summary.pilot_count ~ ' 试点），11个已否决。详见 ') }}<a href="/research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md" style="font-size:inherit">research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md</a>.</p>
+
+  {# A3: frontier chip counts computed from ACTUAL rendered rows — verifiable against the table below #}
+  {%- if frontier_chip_counts %}
+  {%- set fc = frontier_chip_counts %}
+  <p class="frontier-note">
+    {{ t('This table (' ~ frontier_rows|length ~ ' rows):',
+         '本表（' ~ frontier_rows|length ~ ' 行）：') }}
+    {%- if fc.get('BUILD', 0) %} <strong>{{ fc.BUILD }}</strong> BUILD{%- endif -%}
+    {%- if fc.get('PROBE', 0) %}, <strong>{{ fc.PROBE }}</strong> PROBE{%- endif -%}
+    {%- if fc.get('PILOT', 0) %}, <strong>{{ fc.PILOT }}</strong> PILOT{%- endif -%}
+    {%- if fc.get('QUEUED', 0) %}, <strong>{{ fc.QUEUED }}</strong> QUEUED{%- endif -%}
+    {%- if fc.get('ACCRUE', 0) or fc.get('ACCRUE-CONFIRMED', 0) %}, <strong>{{ (fc.get('ACCRUE', 0) or 0) + (fc.get('ACCRUE-CONFIRMED', 0) or 0) }}</strong> ACCRUE{%- endif -%}
+    {%- if fc.get('TESTED-PASS', 0) %}, <strong>{{ fc['TESTED-PASS'] }}</strong> TESTED-PASS{%- endif -%}
+    {%- if fc.get('TESTED-PARTIAL', 0) %}, <strong>{{ fc['TESTED-PARTIAL'] }}</strong> TESTED-PARTIAL{%- endif -%}
+    {%- if fc.get('TESTED-NULL', 0) or fc.get('TESTED-NULL(G3)', 0) %}, <strong>{{ (fc.get('TESTED-NULL', 0) or 0) + (fc.get('TESTED-NULL(G3)', 0) or 0) }}</strong> TESTED-NULL{%- endif -%}
+    {%- if fc.get('TESTED-ACCRUE', 0) %}, <strong>{{ fc['TESTED-ACCRUE'] }}</strong> TESTED-ACCRUE{%- endif -%}
+    {%- if fc.get('KILLED', 0) %}, <strong>{{ fc.KILLED }}</strong> KILLED{%- endif -%}
+    {%- if fc.get('ROUTED', 0) %}, <strong>{{ fc.ROUTED }}</strong> ROUTED{%- endif -%}
+    {%- if fc.get('PENDING', 0) %}, <strong>{{ fc.PENDING }}</strong> PENDING{%- endif %}.
+    {%- if frontier_phase0_summary %}
+    {{ t('Docket-wide across all ' ~ docket_candidate_count ~ ' candidates: ' ~ frontier_phase0_summary.advance_to_fable ~ ' advance to Fable, ' ~ frontier_phase0_summary.graveyard_now ~ ' graveyard.',
+         '全清单 ' ~ docket_candidate_count ~ ' 个候选：' ~ frontier_phase0_summary.advance_to_fable ~ ' 个提交Fable，' ~ frontier_phase0_summary.graveyard_now ~ ' 个进墓地。') }}
+    {%- endif %}
+  </p>
   {%- endif %}
-  {%- if waves_adjudication and waves_adjudication.waves %}
+
+  {# A2: data-driven adjudication events, rendered generically #}
+  {%- for adj in adjudications %}
   <div class="frontier-note" style="border-left:3px solid var(--line);padding-left:10px;margin-top:10px">
-    <strong>{{ t('Waves 2–4 adjudicated 2026-07-06','第2–4波 2026-07-06裁决') }}:</strong>
-    {%- for w in waves_adjudication.waves %}
+    <strong>{{ t(adj.get('title', adj.date), adj.get('title_zh', adj.get('title', adj.date))) }}</strong>
+    {%- if adj.get('waves') %}
+    {%- for w in adj.waves %}
     <span style="display:inline-block;margin:2px 8px 2px 0">
       <a href="/{{ w.doc }}" style="color:inherit;text-decoration:underline dotted">{{ t('W'~w.wave, 'W'~w.wave) }}</a>
       {{ t(w.screened~' screened / '~w.advanced~' advanced → '~w.result_label,
            w.screened~'筛选 / '~w.advanced~'候选 → '~w.result_label_zh) }};
     </span>
     {%- endfor %}
-    {%- if waves_adjudication.moratorium %}
+    {%- if adj.get('moratorium') %}
     <span style="color:var(--muted)">{{ t('generation moratorium in force until wave-1 + spike verdicts booked and queue &lt; 3','生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次') }}.</span>
     {%- endif %}
-    {%- if waves_adjudication.day3_results %}
-    {%- set d3 = waves_adjudication.day3_results %}
+    {%- endif %}
+    {%- if adj.get('day3_results') %}
+    {%- set d3 = adj.day3_results %}
     <div style="margin-top:10px;border-left:3px solid var(--accent,#4a9);padding-left:10px">
       <strong>{{ t(d3.label, d3.label_zh) }}</strong>
       {{ t(d3.families_tested~' families tested → '~d3.pass_count~' PASS, '~d3.accrue_count~' ACCRUE, '~d3.directional_fail_count~' DIRECTIONAL FAIL, '~d3.park_count~' PARK, '~d3.null_count~' NULL, gaming DATA-BLOCKED.',
@@ -201,8 +282,16 @@
     </div>
     {%- endif %}
   </div>
-  {%- endif %}
-  <div class="scroll"><table class="frontier-table">
+  {%- endfor %}
+
+  {# A4: market filter + visible count for frontier table #}
+  <div class="ctl" style="margin:10px 0 6px">
+    <input id="fq" type="search" autocomplete="off" style="max-width:220px"
+      placeholder="Filter frontier…" data-ph-zh="筛选前沿…">
+    <select id="fmkt" aria-label="market"><option value="">{{ t('All markets','全部市场') }}</option></select>
+    <span id="fcount" class="muted sm"></span>
+  </div>
+  <div class="scroll"><table class="frontier-table" id="frontier-tbl">
     <thead><tr>
       <th>{{ t('Candidate','候选') }}</th>
       <th>{{ t('Thesis','论点') }}</th>
@@ -212,7 +301,8 @@
     </tr></thead>
     <tbody>
     {%- for r in frontier_rows %}
-      <tr>
+      {%- set ftxt = (r.name ~ ' ' ~ r.name_zh ~ ' ' ~ r.market ~ ' ' ~ r.thesis)|replace('"','')|lower %}
+      <tr class="fr-row" data-text="{{ ftxt }}" data-mkt="{{ r.market }}">
         <td>
           <div class="sig">{{ t(r.name, r.name_zh) }}<span class="frontier-pri">{{ r.priority }}</span></div>
           <div class="mkt">{{ r.market }} · {{ t(r.readiness, r.readiness_zh) }}</div>
@@ -254,12 +344,14 @@
     placeholder="Filter signals — name, market, rationale…" data-ph-zh="筛选信号 — 名称、市场、说明…">
   <select id="slmkt" aria-label="market"><option value="">All markets · 全部市场</option></select>
   <div class="tier-tog-wrap">
-    {% for tk in ['scored','confirmer','display','killed'] %}
+    {%- set tier_labels = {'scored':'已计分','confirmer':'确认项','display':'仅展示','killed':'已否决','pending':'待接入'} %}
+    {% for tk in ['scored','confirmer','display','killed','pending'] %}
     <label><input type="checkbox" class="sltier" data-tier="{{ tk }}" checked>
-      <span class="dot d-{{ tk }}"></span>{{ t(tk, {'scored':'已计分','confirmer':'确认项','display':'仅展示','killed':'已否决'}[tk]) }}</label>
+      <span class="dot d-{{ tk }}"></span>{{ t(tk, tier_labels[tk]) }}</label>
     {% endfor %}
   </div>
   <span id="slcount" class="muted sm" style="margin-left:auto"></span>
+  <span class="filter-reset" id="slreset" style="display:none">{{ t('reset filters','重置筛选') }}</span>
 </div>
 
 {% if factor_rows %}
@@ -341,6 +433,7 @@
   {% endif %}
   <div class="scroll"><table class="sl-table">
     <thead><tr>
+      <th></th>
       <th>{{ t('Signal','信号') }}</th>
       <th class="r">IC</th>
       <th class="r">HAC t</th>
@@ -354,27 +447,80 @@
     </tr></thead>
     <tbody>
     {% for r in tier.rows %}
-      <tr class="sl-row" data-tier="{{ tier.key }}" data-mkt="{{ r.market }}"
+    {%- set row_id = 'sig-' ~ (r.slug or r.name|lower|replace(' ','-')) %}
+      <tr class="sl-row" id="{{ row_id }}" data-tier="{{ tier.key }}" data-mkt="{{ r.market }}"
           data-text="{{ (r.name ~ ' ' ~ r.name_zh ~ ' ' ~ r.market ~ ' ' ~ r.why)|replace('"','')|lower }}">
+        <td style="width:24px;text-align:center">
+          <button class="row-expand-btn" data-target="{{ row_id }}-detail">⊕</button>
+        </td>
         <td>
           <div class="sig">{{ t(r.name, r.name_zh) }}
-            {% if r.fdr_survivor %}<span class="yes" title="survives FDR">✓FDR</span>{% endif %}</div>
+            {% if r.fdr_survivor %}<span class="yes">✓FDR</span>{% endif %}
+            <a class="anchor-link" href="#{{ row_id }}" title="anchor">¶</a>
+          </div>
           <div class="mkt">{{ r.market }}{% if r.horizon %} · {{ r.horizon }}{% endif %}{% if r.wired %} · {{ r.wired }}{% endif %}</div>
-          {% if r.extra %}<div class="extra">{% for lbl, val in r.extra %}{{ lbl }} {{ val }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+          {# A6: structured extra chips #}
+          {% if r.extra %}
+          <div class="extra-chips">
+            {% for lbl, val in r.extra %}
+            <span class="extra-chip"><span class="el">{{ lbl }}</span><span>{{ val }}</span></span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {# A10: missing source refs chip #}
+          {% if r.get('source_refs') %}
+          {% for sref in r.source_refs %}
+          {% if not sref.exists %}
+          <span class="src-missing" title="source file not on branch">{{ sref.ref }} !</span>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
         </td>
         <td class="r {{ 'pos' if (r.ic or 0) > 0 else ('neg' if r.ic is not none and r.ic < 0) }}">{{ num(r.ic, 4, plus=True) }}</td>
         <td class="r">{{ num(r.t_hac, 2, plus=True) }}</td>
         <td class="r {{ 'yes' if (r.q_fdr is not none and r.q_fdr < 0.10) }}">{{ num(r.q_fdr, 3) }}</td>
-        <td class="r {{ 'yes' if (r.dsr is not none and r.dsr >= 0.90) else ('neg' if r.dsr is not none) }}">{{ num(r.dsr, 3) }}</td>
+        <td class="r {{ 'yes' if (r.dsr is not none and r.dsr >= 0.90) else ('neg' if r.dsr is not none) }}">
+          {{ num(r.dsr, 3) }}
+          {# A1: DSR provenance badge #}
+          {%- if r.get('dsr_provenance') %}
+          {%- set prov = r.dsr_provenance %}
+          {%- if prov.basis == 'ledger' %}
+          <span class="dsr-prov ledger">n={{ prov.n_trials }} ledger-live</span>
+          {%- elif prov.basis == 'expired' %}
+          <span class="dsr-prov expired">EXPIRED quote</span>
+          {%- else %}
+          <span class="dsr-prov frozen">frozen quote · exp {{ prov.get('expiry','?') }}</span>
+          {%- endif %}
+          {%- endif %}
+        </td>
         <td class="r {{ 'pos' if (r.sharpe or 0) > 0 else ('neg' if r.sharpe is not none and r.sharpe < 0) }}">{{ num(r.sharpe, 2, plus=True) }}</td>
         <td class="r">{{ pct(r.hit) }}</td>
         <td class="r">{{ r.n if r.n is not none else '—' }}</td>
         <td><span class="pill v-{{ tier.key }}">{{ t(tier.verdict_word, tier.verdict_word_zh) }}</span></td>
         <td style="max-width:34ch">
-          <span class="muted sm">{{ t(r.why[:120] ~ ('…' if r.why|length > 120 else ''),
-                                      r.why_zh[:80] ~ ('…' if r.why_zh|length > 80 else '')) }}</span>
-          {{ help(r.why ~ '  [' ~ r.source ~ ']', r.why_zh ~ '  [' ~ r.source ~ ']') }}
+          <span class="muted sm l-en">{{ r.why[:120] ~ ('…' if r.why|length > 120 else '') }}</span>
+          <span class="muted sm l-zh">{{ r.why_zh[:80] ~ ('…' if r.why_zh|length > 80 else '') }}</span>
           <div class="src">{{ r.source }}</div>
+        </td>
+      </tr>
+      {# A5: expandable detail row #}
+      <tr class="row-detail" id="{{ row_id }}-detail">
+        <td colspan="11">
+          <div class="why-full l-en">{{ r.why }}</div>
+          <div class="why-full l-zh">{{ r.why_zh }}</div>
+          {# Structured extras in expanded view #}
+          {% if r.extra %}
+          <div class="extra-chips" style="margin-top:8px">
+            {% for lbl, val in r.extra %}
+            <span class="extra-chip"><span class="el">{{ lbl }}</span><span>{{ val }}</span></span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="meta-row">
+            {{ t('Source:','来源:') }} {{ r.source }}
+            · <a href="#{{ row_id }}" class="anchor-link" style="opacity:1">¶ {{ t('anchor','锚点') }}</a>
+            {% if r.wired %} · {{ t('Wired:','接线:') }} {{ r.wired }}{% endif %}
+          </div>
         </td>
       </tr>
     {% endfor %}
@@ -396,7 +542,11 @@
       <dt>{{ t('Deflated Sharpe (DSR)','去偏夏普 (DSR)') }}</dt>
       <dd>{{ t('A Sharpe ratio haircut for the number of strategies tried, plus return skew/kurtosis (López de Prado). It is the probability the true Sharpe is positive. Our bar is 0.90 — a backtest Sharpe that looks great but has DSR<0.90 is treated as luck.','按尝试的策略数量及收益偏度/峰度对夏普打折（López de Prado）。它是真实夏普为正的概率。门槛 0.90 — 回测夏普好看但 DSR<0.90 的，按运气处理。') }}</dd>
       <dt>{{ t('Point-in-time (leak-free)','时点（无泄漏）') }}</dt>
-      <dd>{{ t('Fundamentals are stamped at period-end + reporting lag; index membership is reconstructed as it was on each date; indicators are shifted so a backtest only ever sees what was knowable then. This is why the spreads are honestly weaker than a naive backtest.','基本面以“期末+披露滞后”打戳；指数成分按当日实际重建；指标移位，使回测只看到当时可知的信息。这正是价差诚实地弱于朴素回测的原因。') }}</dd>
+      <dd>{{ t('Fundamentals are stamped at period-end + reporting lag; index membership is reconstructed as it was on each date; indicators are shifted so a backtest only ever sees what was knowable then. This is why the spreads are honestly weaker than a naive backtest.','基本面以”期末+披露滞后”打戳；指数成分按当日实际重建；指标移位，使回测只看到当时可知的信息。这正是价差诚实地弱于朴素回测的原因。') }}</dd>
+      <dt>{{ t('DSR Provenance badge','DSR 溯源标记') }}</dt>
+      <dd>{{ t(
+        'The green [n=... ledger-live] badge means the DSR n_trials count is sourced live from the persistent Trial Ledger maintained by calibrate_* scripts. Grey [frozen quote - exp ...] means the n_trials was hardcoded pending re-derivation -- treat the DSR as an approximation. Red [EXPIRED quote] means the expiry date has passed without re-derivation.',
+        '绿色 [n=... ledger-live] 标记表示 DSR 的试验次数从持久试验账本（由 calibrate_* 脚本维护）实时读取。灰色 [frozen quote - exp ...] 表示试验次数为硬编码值，待重新推导--DSR 应视为近似值。红色 [EXPIRED quote] 表示到期日已过但尚未重新推导。') }}</dd>
     </dl>
   </details>
 </div>
@@ -419,36 +569,128 @@
 <script src="theme.js"></script>
 <script>
 (function(){
+  /* ---- A11: localStorage filter persistence ---- */
+  var LS_KEY = 'sl_filters';
+  function saveFilters(){
+    try{
+      var on=[];
+      document.querySelectorAll('.sltier').forEach(function(b){ if(b.checked) on.push(b.dataset.tier); });
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        q: (document.getElementById('slq')||{}).value||'',
+        mkt: (document.getElementById('slmkt')||{}).value||'',
+        tiers: on
+      }));
+    }catch(e){}
+  }
+  function loadFilters(){
+    try{
+      var s = localStorage.getItem(LS_KEY);
+      if(!s) return false;
+      var f = JSON.parse(s);
+      if(f.q && document.getElementById('slq')) document.getElementById('slq').value=f.q;
+      if(f.mkt && document.getElementById('slmkt')) document.getElementById('slmkt').value=f.mkt;
+      if(Array.isArray(f.tiers)){
+        document.querySelectorAll('.sltier').forEach(function(b){
+          b.checked = f.tiers.indexOf(b.dataset.tier)>=0;
+        });
+      }
+      return true;
+    }catch(e){ return false; }
+  }
+
+  /* ---- Main registry filter ---- */
   var rows = Array.prototype.slice.call(document.querySelectorAll('tr.sl-row'));
   if(!rows.length) return;
   var q = document.getElementById('slq'), mkt = document.getElementById('slmkt'),
       tierBoxes = Array.prototype.slice.call(document.querySelectorAll('.sltier')),
-      countEl = document.getElementById('slcount'),
+      countEl = document.getElementById('slcount'), resetEl = document.getElementById('slreset'),
       panels = Array.prototype.slice.call(document.querySelectorAll('.tier-panel'));
   var seen = {};
   rows.forEach(function(r){ if(r.dataset.mkt) seen[r.dataset.mkt]=1; });
   Object.keys(seen).sort().forEach(function(m){
     var o=document.createElement('option'); o.value=m; o.textContent=m; mkt.appendChild(o);
   });
+  function isDefault(){
+    if((q&&q.value)||''!=='') return false;
+    if((mkt&&mkt.value)||''!=='') return false;
+    return !tierBoxes.some(function(b){ return !b.checked; });
+  }
   function apply(){
-    var term=(q.value||'').trim().toLowerCase(), m=mkt.value, on={};
+    var term=(q&&q.value||'').trim().toLowerCase(), m=mkt?mkt.value:'', on={};
     tierBoxes.forEach(function(b){ if(b.checked) on[b.dataset.tier]=1; });
     var vis=0;
     rows.forEach(function(r){
       var show = on[r.dataset.tier] && (!m || r.dataset.mkt===m) &&
                  (!term || (r.dataset.text||'').indexOf(term)>=0);
-      r.style.display = show ? '' : 'none'; if(show) vis++;
+      r.style.display = show ? '' : 'none';
+      /* A5: hide detail row of hidden main rows */
+      var det = document.getElementById(r.id+'-detail');
+      if(det && !show){ det.classList.remove('open'); det.style.display='none'; }
+      if(show) vis++;
     });
     panels.forEach(function(p){
       var any = Array.prototype.some.call(p.querySelectorAll('tr.sl-row'),
                   function(r){ return r.style.display!=='none'; });
       p.style.display = any ? '' : 'none';
     });
-    if(countEl) countEl.textContent = vis + ' / ' + rows.length + ' shown';
+    if(countEl) countEl.textContent = vis + ' / ' + rows.length + ' shown · ' + '{{ t("total","合计") }}';
+    if(resetEl) resetEl.style.display = isDefault() ? 'none' : '';
+    saveFilters();
   }
-  q.addEventListener('input', apply);
-  mkt.addEventListener('change', apply);
+  /* A11: restore on load */
+  loadFilters();
+  if(q) q.addEventListener('input', apply);
+  if(mkt) mkt.addEventListener('change', apply);
   tierBoxes.forEach(function(b){ b.addEventListener('change', apply); });
+  if(resetEl) resetEl.addEventListener('click', function(){
+    if(q) q.value='';
+    if(mkt) mkt.value='';
+    tierBoxes.forEach(function(b){ b.checked=true; });
+    try{ localStorage.removeItem(LS_KEY); }catch(e){}
+    apply();
+  });
+
+  /* ---- A5: row expand/collapse ---- */
+  document.querySelectorAll('.row-expand-btn').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var targetId = btn.dataset.target;
+      var det = document.getElementById(targetId);
+      if(!det) return;
+      var open = det.classList.toggle('open');
+      btn.textContent = open ? '⊖' : '⊕';
+      det.style.display = open ? 'table-row' : 'none';
+    });
+  });
+
+  /* ---- A8: anchor navigation + hash expand ---- */
+  document.querySelectorAll('.anchor-link[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      var hash = a.getAttribute('href');
+      history.pushState(null,'',hash);
+      /* Don't auto-expand on ¶ click — user controls expand */
+    });
+  });
+  function handleHash(){
+    var hash = location.hash;
+    if(!hash) return;
+    var id = hash.slice(1);
+    var row = document.getElementById(id);
+    if(!row) return;
+    /* Expand the detail row */
+    var det = document.getElementById(id+'-detail');
+    var btn = row.querySelector('.row-expand-btn');
+    if(det && !det.classList.contains('open')){
+      det.classList.add('open'); det.style.display='table-row';
+      if(btn) btn.textContent='⊖';
+    }
+    setTimeout(function(){ row.scrollIntoView({behavior:'smooth',block:'center'}); }, 80);
+  }
+  handleHash();
+  window.addEventListener('hashchange', handleHash);
+
+  /* ---- Column sort (sl-table) ---- */
   function cellVal(tr, i){
     var td = tr.children[i]; if(!td) return '';
     var txt = td.textContent.trim().replace(/[%,]/g,'');
@@ -463,15 +705,44 @@
         var asc = !(th.dataset.dir==='asc'); th.dataset.dir = asc?'asc':'desc';
         ths.forEach(function(o){ o.classList.remove('sorted','asc'); });
         th.classList.add('sorted'); if(asc) th.classList.add('asc');
-        var trs = Array.prototype.slice.call(body.querySelectorAll('tr'));
-        trs.sort(function(a,b){
+        /* Sort only main rows; keep detail rows paired with their main row */
+        var mainRows = Array.prototype.slice.call(body.querySelectorAll('tr.sl-row'));
+        mainRows.sort(function(a,b){
           var av=cellVal(a,i), bv=cellVal(b,i);
           if(av<bv) return asc?-1:1; if(av>bv) return asc?1:-1; return 0;
         });
-        trs.forEach(function(tr){ body.appendChild(tr); });
+        mainRows.forEach(function(tr){
+          body.appendChild(tr);
+          var det = document.getElementById(tr.id+'-detail');
+          if(det) body.appendChild(det);
+        });
       });
     });
   });
+
+  /* ---- A4: frontier table filter ---- */
+  var frows = Array.prototype.slice.call(document.querySelectorAll('tr.fr-row'));
+  var fq = document.getElementById('fq'), fmkt = document.getElementById('fmkt'),
+      fcount = document.getElementById('fcount');
+  if(frows.length && fmkt){
+    var fseen={};
+    frows.forEach(function(r){ if(r.dataset.mkt) fseen[r.dataset.mkt]=1; });
+    Object.keys(fseen).sort().forEach(function(m){
+      var o=document.createElement('option'); o.value=m; o.textContent=m; fmkt.appendChild(o);
+    });
+    function fapply(){
+      var term=(fq&&fq.value||'').trim().toLowerCase(), m=fmkt?fmkt.value:'', vis=0;
+      frows.forEach(function(r){
+        var show=(!m||r.dataset.mkt===m)&&(!term||(r.dataset.text||'').indexOf(term)>=0);
+        r.style.display=show?'':'none'; if(show) vis++;
+      });
+      if(fcount) fcount.textContent=vis+' / '+frows.length;
+    }
+    if(fq) fq.addEventListener('input',fapply);
+    if(fmkt) fmkt.addEventListener('change',fapply);
+    fapply();
+  }
+
   apply();
 })();
 </script>
