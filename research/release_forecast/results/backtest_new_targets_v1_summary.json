@@ -13,6 +13,8 @@
         "rmse_trailing3m": 1.1363,
         "mae_ar3": 0.3351,
         "rmse_ar3": 1.0025,
+        "mae_expanding_mean": 0.3373,
+        "rmse_expanding_mean": 1.0077,
         "coverage_p10_p90": 0.7876,
         "skew_hit_rate": 0.7527,
         "skew_wilson_ci": [
@@ -31,6 +33,8 @@
         "rmse_trailing3m": 1.669,
         "mae_ar3": 0.4771,
         "rmse_ar3": 1.4573,
+        "mae_expanding_mean": 0.4633,
+        "rmse_expanding_mean": 1.4796,
         "coverage_p10_p90": 0.5862,
         "skew_hit_rate": 0.84,
         "skew_wilson_ci": [
@@ -49,6 +53,8 @@
         "rmse_trailing3m": 1.0531,
         "mae_ar3": 0.2651,
         "rmse_ar3": 0.9188,
+        "mae_expanding_mean": 0.2736,
+        "rmse_expanding_mean": 0.9191,
         "coverage_p10_p90": 0.8197,
         "skew_hit_rate": 0.7869,
         "skew_wilson_ci": [
@@ -67,6 +73,8 @@
         "rmse_trailing3m": 0.4827,
         "mae_ar3": 0.3329,
         "rmse_ar3": 0.369,
+        "mae_expanding_mean": 0.3361,
+        "rmse_expanding_mean": 0.3727,
         "coverage_p10_p90": 0.5,
         "skew_hit_rate": 1.0,
         "skew_wilson_ci": [
@@ -85,6 +93,8 @@
         "rmse_trailing3m": 0.3153,
         "mae_ar3": 0.2096,
         "rmse_ar3": 0.2901,
+        "mae_expanding_mean": 0.2181,
+        "rmse_expanding_mean": 0.2992,
         "coverage_p10_p90": 0.8333,
         "skew_hit_rate": 0.5,
         "skew_wilson_ci": [
@@ -103,6 +113,8 @@
         "rmse_trailing3m": 0.7678,
         "mae_ar3": 0.3625,
         "rmse_ar3": 0.7302,
+        "mae_expanding_mean": 0.367,
+        "rmse_expanding_mean": 0.7322,
         "coverage_p10_p90": 0.8308,
         "skew_hit_rate": 0.6615,
         "skew_wilson_ci": [
@@ -133,6 +145,8 @@
         "rmse_trailing3m": 1.0578,
         "mae_ar3": 0.2729,
         "rmse_ar3": 0.9237,
+        "mae_expanding_mean": 0.2641,
+        "rmse_expanding_mean": 0.9276,
         "coverage_p10_p90": 0.7434,
         "skew_hit_rate": 0.6129,
         "skew_wilson_ci": [
@@ -151,6 +165,8 @@
         "rmse_trailing3m": 1.3711,
         "mae_ar3": 0.3017,
         "rmse_ar3": 1.1865,
+        "mae_expanding_mean": 0.2635,
+        "rmse_expanding_mean": 1.2043,
         "coverage_p10_p90": 0.6207,
         "skew_hit_rate": 0.58,
         "skew_wilson_ci": [
@@ -169,6 +185,8 @@
         "rmse_trailing3m": 0.9461,
         "mae_ar3": 0.2128,
         "rmse_ar3": 0.8208,
+        "mae_expanding_mean": 0.2155,
+        "rmse_expanding_mean": 0.8221,
         "coverage_p10_p90": 0.8361,
         "skew_hit_rate": 0.5902,
         "skew_wilson_ci": [
@@ -187,6 +205,8 @@
         "rmse_trailing3m": 0.3779,
         "mae_ar3": 0.2347,
         "rmse_ar3": 0.2832,
+        "mae_expanding_mean": 0.2389,
+        "rmse_expanding_mean": 0.2857,
         "coverage_p10_p90": 0.25,
         "skew_hit_rate": 0.5,
         "skew_wilson_ci": [
@@ -205,6 +225,8 @@
         "rmse_trailing3m": 0.3166,
         "mae_ar3": 0.2035,
         "rmse_ar3": 0.283,
+        "mae_expanding_mean": 0.2024,
+        "rmse_expanding_mean": 0.2812,
         "coverage_p10_p90": 0.5,
         "skew_hit_rate": 0.5,
         "skew_wilson_ci": [
@@ -223,6 +245,8 @@
         "rmse_trailing3m": 1.0357,
         "mae_ar3": 0.3712,
         "rmse_ar3": 0.9258,
+        "mae_expanding_mean": 0.3628,
+        "rmse_expanding_mean": 0.9245,
         "coverage_p10_p90": 0.6769,
         "skew_hit_rate": 0.6769,
         "skew_wilson_ci": [
@@ -253,6 +277,8 @@
         "rmse_trailing3m": 0.4865,
         "mae_ar3": 0.372,
         "rmse_ar3": 0.4788,
+        "mae_expanding_mean": 0.4031,
+        "rmse_expanding_mean": 0.5127,
         "coverage_p10_p90": 0.7619,
         "skew_hit_rate": 0.75,
         "skew_wilson_ci": [
@@ -271,6 +297,8 @@
         "rmse_trailing3m": null,
         "mae_ar3": null,
         "rmse_ar3": null,
+        "mae_expanding_mean": null,
+        "rmse_expanding_mean": null,
         "coverage_p10_p90": null,
         "skew_hit_rate": null,
         "skew_wilson_ci": null,
@@ -286,6 +314,8 @@
         "rmse_trailing3m": 0.3669,
         "mae_ar3": 0.2786,
         "rmse_ar3": 0.3649,
+        "mae_expanding_mean": 0.3005,
+        "rmse_expanding_mean": 0.3629,
         "coverage_p10_p90": null,
         "skew_hit_rate": 0.7778,
         "skew_wilson_ci": [
@@ -304,6 +334,8 @@
         "rmse_trailing3m": 0.8165,
         "mae_ar3": 0.535,
         "rmse_ar3": 0.7153,
+        "mae_expanding_mean": 0.5633,
+        "rmse_expanding_mean": 0.7296,
         "coverage_p10_p90": null,
         "skew_hit_rate": 1.0,
         "skew_wilson_ci": [
@@ -322,6 +354,8 @@
         "rmse_trailing3m": 0.4077,
         "mae_ar3": 0.2232,
         "rmse_ar3": 0.2389,
+        "mae_expanding_mean": 0.294,
+        "rmse_expanding_mean": 0.3411,
         "coverage_p10_p90": null,
         "skew_hit_rate": 0.8333,
         "skew_wilson_ci": [
@@ -340,6 +374,8 @@
         "rmse_trailing3m": 0.4854,
         "mae_ar3": 0.393,
         "rmse_ar3": 0.4954,
+        "mae_expanding_mean": 0.4206,
+        "rmse_expanding_mean": 0.531,
         "coverage_p10_p90": 0.7619,
         "skew_hit_rate": 0.7231,
         "skew_wilson_ci": [

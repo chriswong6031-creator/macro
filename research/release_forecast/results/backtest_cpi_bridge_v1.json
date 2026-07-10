@@ -1,5 +1,5 @@
 {
-  "run_date": "2026-07-08",
+  "run_date": "2026-07-10",
   "cpi_headline": {
     "release": "cpi_headline",
     "model": "cpi_bridge",
@@ -17,7 +17,8 @@
         "mae_trailing3m": 0.2563160745975044,
         "rmse_trailing3m": 0.3489003235494527,
         "mae_champ": 0.15925665301017636,
-        "rmse_champ": 0.20646251984744868
+        "rmse_champ": 0.20646251984744868,
+        "mae_expanding_mean": 0.22926592721261932
       },
       "pre_2010": {
         "n": 96,
@@ -28,7 +29,8 @@
         "mae_trailing3m": 0.3407741544927016,
         "rmse_trailing3m": 0.4558180448880279,
         "mae_champ": 0.14152174231003525,
-        "rmse_champ": 0.19574714698320647
+        "rmse_champ": 0.19574714698320647,
+        "mae_expanding_mean": 0.2752939794169984
       },
       "2010_2020": {
         "n": 122,
@@ -39,7 +41,8 @@
         "mae_trailing3m": 0.20716948855856146,
         "rmse_trailing3m": 0.2683137945350316,
         "mae_champ": 0.1658941985976897,
-        "rmse_champ": 0.21051212527232943
+        "rmse_champ": 0.21051212527232943,
+        "mae_expanding_mean": 0.18171801484553066
       },
       "2021_plus": {
         "n": 64,
@@ -50,7 +53,8 @@
         "mae_trailing3m": 0.2233146343914437,
         "rmse_trailing3m": 0.2957848821984887,
         "mae_champ": 0.17320619778419052,
-        "rmse_champ": 0.21417901622837374
+        "rmse_champ": 0.21417901622837374,
+        "mae_expanding_mean": 0.251581245171507
       },
       "covid_separate": {
         "n": 4,
@@ -61,7 +65,8 @@
         "mae_trailing3m": 0.6512893021873837,
         "rmse_trailing3m": 0.6946578897778634,
         "mae_champ": 0.24788460197269654,
-        "rmse_champ": 0.2642986513404903
+        "rmse_champ": 0.2642986513404903,
+        "mae_expanding_mean": 0.5459275107782997
       }
     },
     "kill_rule": {
@@ -92,7 +97,8 @@
         "mae_trailing3m": 0.09247790722913288,
         "rmse_trailing3m": 0.128250325109499,
         "mae_champ": 0.09095948938723497,
-        "rmse_champ": 0.12424818994953804
+        "rmse_champ": 0.12424818994953804,
+        "mae_expanding_mean": 0.0956721319136413
       },
       "pre_2010": {
         "n": 96,
@@ -103,7 +109,8 @@
         "mae_trailing3m": 0.08655801281838332,
         "rmse_trailing3m": 0.10713944509422135,
         "mae_champ": 0.08322894339885448,
-        "rmse_champ": 0.10307886438039954
+        "rmse_champ": 0.10307886438039954,
+        "mae_expanding_mean": 0.07803666265603554
       },
       "2010_2020": {
         "n": 122,
@@ -114,7 +121,8 @@
         "mae_trailing3m": 0.07216544334874855,
         "rmse_trailing3m": 0.08997147281532063,
         "mae_champ": 0.07206081775009822,
-        "rmse_champ": 0.09314025419406581
+        "rmse_champ": 0.09314025419406581,
+        "mae_expanding_mean": 0.06397424496950971
       },
       "2021_plus": {
         "n": 64,
@@ -125,7 +133,8 @@
         "mae_trailing3m": 0.14007838311723986,
         "rmse_trailing3m": 0.19956330731663155,
         "mae_champ": 0.13858090117809768,
-        "rmse_champ": 0.18853959779245175
+        "rmse_champ": 0.18853959779245175,
+        "mae_expanding_mean": 0.18227387858015065
       },
       "covid_separate": {
         "n": 4,
@@ -136,7 +145,8 @@
         "mae_trailing3m": 0.3323297092490971,
         "rmse_trailing3m": 0.38280863683196653,
         "mae_champ": 0.22467118981496065,
-        "rmse_champ": 0.32285164886805623
+        "rmse_champ": 0.32285164886805623,
+        "mae_expanding_mean": 0.29127330783835065
       }
     },
     "kill_rule": {

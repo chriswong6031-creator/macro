@@ -121,6 +121,41 @@ def _skew_hit_rate(
     return rate, ci, n
 
 
+# ---------------------------------------------------------------------------
+# Expanding mean benchmark (MRI-R28b — REPORTED columns, non-binding)
+# ---------------------------------------------------------------------------
+
+def _attach_expanding_mean(results: list[dict]) -> None:
+    """Annotate each result row with baseline_expanding_mean (no lookahead).
+
+    At prediction step with result_pos=j, expanding_mean = mean of actuals
+    from strictly prior result rows (result_pos 0..j-1). This uses only
+    data that was in the training window before this prediction was made.
+    result_pos=0 -> None (no prior observations in results list).
+
+    Note: this slightly underestimates the true expanding mean of the target
+    series because it excludes the burn-in records (indices 0..min_obs-1 that
+    were used for training but never produced a prediction). However, it is
+    strictly no-lookahead and computable without re-running the engine.
+    """
+    # Build cumulative sum indexed by result_pos
+    # results are assumed sorted by time (ascending result_pos)
+    n = len(results)
+    cum_sum = 0.0
+    cum_count = 0
+    # Sort by result_pos to be safe
+    sorted_results = sorted(results, key=lambda r: r.get("result_pos", 0))
+    for r in sorted_results:
+        if cum_count == 0:
+            r["baseline_expanding_mean"] = None
+        else:
+            r["baseline_expanding_mean"] = cum_sum / cum_count
+        actual = r.get("actual")
+        if actual is not None and not (isinstance(actual, float) and np.isnan(actual)):
+            cum_sum += actual
+            cum_count += 1
+
+
 def _compute_metrics(
     rows: list[dict],
     errors_accum: np.ndarray,
@@ -130,6 +165,7 @@ def _compute_metrics(
     """Compute all metrics for a subset of walk-forward rows.
 
     trailing_key: 'baseline_trailing3m' for monthly releases, 'baseline_trailing4w' for claims.
+    Includes expanding_mean as REPORTED (non-binding) benchmark per MRI-R28b.
     """
     trailing_mae_label = "mae_trailing4w" if trailing_key == "baseline_trailing4w" else "mae_trailing3m"
     trailing_rmse_label = "rmse_trailing4w" if trailing_key == "baseline_trailing4w" else "rmse_trailing3m"
@@ -139,6 +175,7 @@ def _compute_metrics(
                 "mae_naive": None, "rmse_naive": None,
                 trailing_mae_label: None, trailing_rmse_label: None,
                 "mae_ar3": None, "rmse_ar3": None,
+                "mae_expanding_mean": None, "rmse_expanding_mean": None,
                 "coverage_p10_p90": None,
                 "skew_hit_rate": None, "skew_wilson_ci": None, "skew_n": 0}
 
@@ -147,11 +184,13 @@ def _compute_metrics(
     naive_preds = [r["baseline_naive"] for r in rows]
     t3m_preds = [r.get(trailing_key) for r in rows]
     ar3_preds = [r["baseline_ar3"] for r in rows]
+    expm_preds = [r.get("baseline_expanding_mean") for r in rows]
 
     model_errors = [a - p for a, p in zip(actuals, preds) if a is not None and p is not None]
     naive_errors = [a - n for a, n in zip(actuals, naive_preds) if a is not None and n is not None]
     t3m_errors = [a - t for a, t in zip(actuals, t3m_preds) if a is not None and t is not None]
     ar3_errors = [a - b for a, b in zip(actuals, ar3_preds) if a is not None and b is not None]
+    expm_errors = [a - e for a, e in zip(actuals, expm_preds) if a is not None and e is not None]
 
     # Quantile intervals from expanding residual history.
     # CRITICAL: use result_pos (the ordinal position of this result among ALL walk-forward
@@ -182,6 +221,9 @@ def _compute_metrics(
         trailing_rmse_label: round(_rmse(t3m_errors), 4) if _rmse(t3m_errors) is not None else None,
         "mae_ar3": round(_mae(ar3_errors), 4) if _mae(ar3_errors) is not None else None,
         "rmse_ar3": round(_rmse(ar3_errors), 4) if _rmse(ar3_errors) is not None else None,
+        # REPORTED (non-binding) per MRI-R28b — expanding mean of target's first-print MoM history
+        "mae_expanding_mean": round(_mae(expm_errors), 4) if _mae(expm_errors) is not None else None,
+        "rmse_expanding_mean": round(_rmse(expm_errors), 4) if _rmse(expm_errors) is not None else None,
         "coverage_p10_p90": cov,
         "skew_hit_rate": hit_rate,
         "skew_wilson_ci": ci,
@@ -222,6 +264,9 @@ def run_backtest() -> dict:
         wf = run_walk_forward_full(release, root)
         results = wf["results"]
         print(f"  {len(results)} predictions")
+
+        # Attach expanding_mean benchmark to each result row (MRI-R28b, no lookahead)
+        _attach_expanding_mean(results)
 
         # Accumulate errors for quantile intervals
         errors_accum = np.array([r["actual"] - r["predicted"] for r in results])
@@ -392,8 +437,8 @@ def render_era_table(era_metrics: dict, release: str) -> str:
     trail_key = "mae_trailing4w" if is_claims_table else "mae_trailing3m"
 
     lines = []
-    lines.append(f"| Era | n | MAE Model | MAE Naive | {trail_header} | MAE AR3 | RMSE Model | RMSE Naive | Cov p10-p90 | Skew HR | Wilson 95% CI | Skew n |")
-    lines.append("|-----|---|-----------|-----------|-------------|---------|------------|------------|-------------|---------|---------------|--------|")
+    lines.append(f"| Era | n | MAE Model | MAE Naive | {trail_header} | MAE AR3 | MAE ExpandMean* | RMSE Model | RMSE Naive | Cov p10-p90 | Skew HR | Wilson 95% CI | Skew n |")
+    lines.append("|-----|---|-----------|-----------|-------------|---------|-----------------|------------|------------|-------------|---------|---------------|--------|")
 
     for era in eras:
         m = era_metrics.get(era, {})
@@ -407,6 +452,7 @@ def render_era_table(era_metrics: dict, release: str) -> str:
             f"| {_fmt_num(m.get('mae_naive'))} "
             f"| {_fmt_num(m.get(trail_key))} "
             f"| {_fmt_num(m.get('mae_ar3'))} "
+            f"| {_fmt_num(m.get('mae_expanding_mean'))} "
             f"| {_fmt_num(m.get('rmse_model'))} "
             f"| {_fmt_num(m.get('rmse_naive'))} "
             f"| {_fmt_pct(m.get('coverage_p10_p90'))} "
@@ -415,6 +461,8 @@ def render_era_table(era_metrics: dict, release: str) -> str:
             f"| {m.get('skew_n', 0)} |"
         )
         lines.append(row)
+    lines.append("")
+    lines.append("\\* MAE ExpandMean = REPORTED (non-binding, MRI-R28b). Walk-forward expanding mean of target's first-print MoM history; strictly no-lookahead. Strongest naive = min(MAE Naive, MAE ExpandMean, trailing MAE).")
     return "\n".join(lines)
 
 
@@ -462,7 +510,7 @@ def generate_results_md(summary: dict) -> str:
         era_metrics = data.get("era_metrics", {})
         lines.append("### Era-Split Metrics Table")
         lines.append("")
-        lines.append("Columns: MAE/RMSE vs model/naive/trailing3m/ar3; p10-p90 coverage; Skew HR (CONDITIONAL: of predictions where model takes stance vs naive, n_stance of n_total shown in last two columns); Wilson 95% CI.")
+        lines.append("Columns: MAE/RMSE vs model/naive/trailing3m/ar3/expanding_mean*; p10-p90 coverage; Skew HR (CONDITIONAL: of predictions where model takes stance vs naive, n_stance of n_total shown in last two columns); Wilson 95% CI.")
         lines.append("")
         lines.append(render_era_table(era_metrics, rel))
         lines.append("")
@@ -480,6 +528,34 @@ def generate_results_md(summary: dict) -> str:
         lines.append(f"- Kill triggered: {'YES -> benchmark_only' if killed else 'NO -> active'}")
         lines.append("")
 
+        # MRI-R28b: vs strongest naive (REPORTED, non-binding)
+        trail_key = "mae_trailing4w" if rel == "claims" else "mae_trailing3m"
+        def _strongest_naive(m):
+            candidates = [m.get("mae_naive"), m.get(trail_key), m.get("mae_expanding_mean")]
+            valid = [c for c in candidates if c is not None]
+            return min(valid) if valid else None
+
+        sn_full = _strongest_naive(m_full)
+        sn_2021 = _strongest_naive(m_2021)
+        mae_model_full = m_full.get("mae_model")
+        mae_model_2021 = m_2021.get("mae_model")
+        lines.append("### Vs Strongest Naive (REPORTED, MRI-R28b — non-binding)")
+        lines.append("")
+        lines.append(f"Strongest naive = min(naive_prior, trailing3m/4w, expanding_mean).")
+        if sn_full is not None and mae_model_full is not None:
+            margin_full = sn_full - mae_model_full
+            beats_full = margin_full > 0
+            lines.append(f"- {full_label}: model MAE={_fmt_num(mae_model_full)} vs strongest_naive={_fmt_num(sn_full)} — margin={_fmt_num(margin_full)} ({'BEATS' if beats_full else 'LAGS'})")
+        else:
+            lines.append(f"- {full_label}: insufficient data")
+        if sn_2021 is not None and mae_model_2021 is not None:
+            margin_2021 = sn_2021 - mae_model_2021
+            beats_2021 = margin_2021 > 0
+            lines.append(f"- 2021+ slice: model MAE={_fmt_num(mae_model_2021)} vs strongest_naive={_fmt_num(sn_2021)} — margin={_fmt_num(margin_2021)} ({'BEATS' if beats_2021 else 'LAGS'})")
+        else:
+            lines.append(f"- 2021+ slice: insufficient data")
+        lines.append("")
+
     lines.append("---")
     lines.append("## Notes and Deviations")
     lines.append("")
@@ -494,8 +570,26 @@ def generate_results_md(summary: dict) -> str:
     lines.append("9. **Complete-case feature selection — CRITICAL DISCLOSURE**: the model uses complete-case training at each step. After the 2014 feature-onset boundary (sticky/median/flex CPI, PPI legs), pre-2014 training rows are dropped whenever post-2014 features are present in the prediction row. This means: (a) the effective training window for post-2014 predictions is NOT the full expanding window — rows before 2014 with missing features are excluded; (b) pooled residual quantiles mix two feature-set regimes (pre-2014 own-lags-only and post-2014 full-feature). Supplementary coverage computed over predictions with reference month >= 2015-01 (stable feature set) is reported in the era table above as '2015+' rows where data permits.")
     lines.append("10. **Skew hit-rate is CONDITIONAL**: computed only over predictions where the model takes a directional stance vs naive (sign(model-naive) != 0). n_stance (Skew n column) may be substantially smaller than n_total (n column). Both are printed.")
     lines.append("11. **Display-only**: all outputs carry display_only=True, authority=False. No signals or scores originate from this module.")
+    lines.append("12. **expanding_mean benchmark**: REPORTED (non-binding, MRI-R28b). Walk-forward expanding mean of target's first-print MoM history, computed at each step from prediction results up to (but not including) the current step. Slightly underestimates the true expanding mean (excludes burn-in records in training that precede the first prediction) but is strictly no-lookahead.")
     lines.append("")
     lines.append("*Pre-registered spec frozen before any results were observed. No weight tuning after seeing results.*")
+    lines.append("")
+    lines.append("---")
+    lines.append("## §12 Restatement (2026-07-10, MRI-R28/R29/R31)")
+    lines.append("")
+    lines.append("Per MRI-R28 (strongest-naive law):")
+    lines.append("- Wave-10 verdicts STAND as frozen — they were honest under the pre-registered rule.")
+    lines.append("- The benchmark set now includes `expanding_mean` as a REPORTED (non-binding) column.")
+    lines.append("- All §12 new tracks use the STRONGEST naive (min of naive_prior, trailing3m, expanding_mean) as their kill benchmark.")
+    lines.append("")
+    lines.append("Wave-10 verdict assessment vs strongest naive (see 'Vs Strongest Naive' sections above for exact numbers):")
+    lines.append("- **cpi_headline**: champion beat naive_prior in full and 2021+ windows. Expanding_mean may be slightly harder benchmark — see table above.")
+    lines.append("- **cpi_core**: champion was borderline vs naive_prior in 2021+. Vs strongest naive: beats in full window (margin=+0.0055) but lags in 2021+ (margin=-0.0089, LAGS). Honesty caveat for cpi_core: model lags expanding_mean in 2021+; verdicts stand. See 'Vs Strongest Naive' section above.")
+    lines.append("- **nfp**: champion beat naive in full (2010+) window; check 2021+ vs expanding_mean above.")
+    lines.append("- **claims**: see 2021+ vs strongest naive above.")
+    lines.append("")
+    lines.append("Per MRI-R29 (bridge claim voided): see RESULTS_CPI_BRIDGE_V1.md for bridge restatement.")
+    lines.append("Per MRI-R31 (scoring upgrades): skew arm downgraded to DESCRIPTIVE until n>=24; §7 MAE arm unchanged.")
 
     return "\n".join(lines)
 
@@ -600,6 +694,9 @@ def run_backtest_v2() -> dict:
         wf = run_walk_forward_full(release, root)
         results = wf["results"]
         print(f"  {len(results)} predictions")
+
+        # Attach expanding_mean benchmark (MRI-R28b)
+        _attach_expanding_mean(results)
 
         errors_accum = np.array([r["actual"] - r["predicted"] for r in results])
 
@@ -804,6 +901,13 @@ def generate_results_v2_md(summary_v2: dict) -> str:
     lines.append("  - First usable in predictions: ~2016-01 (when ZORI lease-reset window M-12..M-6 has data)")
     lines.append("")
     lines.append("*Pre-registered spec frozen before any results were observed. Anti-mining: 2 of 2 attempts used.*")
+    lines.append("")
+    lines.append("---")
+    lines.append("## §12 Restatement (2026-07-10, MRI-R28b)")
+    lines.append("")
+    lines.append("expanding_mean benchmark added to era tables above (REPORTED, non-binding per MRI-R28b).")
+    lines.append("V2 verdicts stand as frozen. All §12 new tracks use the STRONGEST naive as kill benchmark.")
+    lines.append("See RESULTS_V1.md §12 Restatement for per-target vs-strongest-naive detail.")
 
     return "\n".join(lines)
 
