@@ -139,9 +139,15 @@ See RESULTS_V1.md §12 Restatement for per-target vs-strongest-naive detail.
 **Implementation:** `engine/release_forecast._compute_quantiles_volscaled` (W=24, MIN_SIGMA_OBS=12)
 **Points unchanged** — only the bands move (byte-identity on point estimates verified by test suite).
 
-Coverage falsifier that triggered recalibration (§6 gate [70%,95%]):
+Coverage falsifiers that triggered recalibration (§6 gate [70%,95%]):
 - cpi_core 2021+: **64.1%** (BEFORE) — below 70%
 - pce_core 2021+: **67.7%** (BEFORE) — below 70%
+- nfp 2021+: **64.6%** (BEFORE) — below 70% (champion; see its section below)
+
+Prereg errata (declared, immaterial): the implementation guards degenerate sigma
+with epsilon 1e-10 where PREREG §1.2/§3 wrote literal `sigma > 0` — np.std of a
+constant array returns ~7e-18, not exactly 0. Residual scales here are ~0.1–500,
+so the epsilon cannot alter any real band; recorded per §6 exactness discipline.
 
 ### cpi_headline — BEFORE vs AFTER
 
@@ -164,3 +170,26 @@ Coverage falsifier that triggered recalibration (§6 gate [70%,95%]):
 **Verdict (PRIMARY — MRI-R30 trigger):** cpi_core 2021+ coverage moves from **64.1%** (below [70%,95%] gate) to **81.2%** (within gate). Pinball improves on all eras. Vol-scaling successfully adapts to the elevated inflation-regime residual dispersion. Forward gate (§6): if coverage exits [70%,95%] after 12 more prints, quantile claims drop from UI.
 
 Note: cpi_core was the primary falsifier target. Before recalibration, the static bands underestimated the 2021+ regime's residual dispersion. Vol-scaling recognizes the widening uncertainty and expands bands appropriately.
+
+### nfp (champion) — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 293 | 72.9% | 80.3% | 45.0% | 51.7% | 673.90 | 851.08 |
+| 2021+ | 65 | **64.6%** | **81.5%** | 38.5% | 58.5% | 451.93 | **1044.81** |
+
+**Verdict (honest trade-off — the recalibration's WORST metric):** nfp 2021+
+coverage was itself a §6 falsifier (64.6% < 70%) and moves into gate (81.5%).
+But pinball sharpness degrades materially — **2.31× worse in 2021+** (451.93 →
+1044.81) and +26% on the full window (673.90 → 851.08). Mechanism: the trailing
+σ_t window still carries COVID-era residuals (2020-03..06 shocks of ±10^3–10^4k)
+into the early-2020s bands, over-widening NFP intervals long after the shock;
+the CPI-family targets do not have residuals of that magnitude, so they gain
+coverage without paying comparable sharpness. Per MRI-R30 the spec is ONE
+uniform recalibration with no per-target tuning — NFP ships with these wider
+bands and the degradation printed. The §6 forward gate governs: if nfp p10–p90
+coverage exits [70%,95%] after 12 more forward prints, its quantile claims drop
+from the UI; sharpness is additionally tracked via the shipped pinball
+scoreboard column (MRI-R31), and a future program-level adjudication may
+consider a COVID-exclusion amendment to σ_t as a NEW chartered spec — it is NOT
+permitted as a quiet fix under this one-shot recalibration.
