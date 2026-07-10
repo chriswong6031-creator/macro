@@ -3916,6 +3916,17 @@ def main() -> int:
     except Exception as _nwe:  # noqa: BLE001 — additive; never break main build
         log.warning("committee.html render failed (%s); page skipped", _nwe)
 
+    # W4: TIL State of Themes terminal — cross-theme matrix with asymmetry legs,
+    # falsifier health, filter chips, and weekly-delta strip. Reads the four
+    # site/neuralwebdata theme artifacts already written by build_thematic_state.
+    try:
+        import scripts.build_state_of_themes as _sot
+        _sot_html = _sot.render(config.ROOT)
+        write_page(site / "state_of_themes.html", _sot_html)
+        log.info("wrote %s", site / "state_of_themes.html")
+    except Exception as _sot_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("state_of_themes.html render failed (%s); page skipped", _sot_e)
+
     return 0
 
 

@@ -561,6 +561,16 @@ lanes:
       - id: build_mechanism_pathways
         module: scripts.build_mechanism_pathways
         note: non-fatal; MPC v1 (RUL-CC-1..13) — deterministic display-only pathway compiler; reads market_drivers/transmission/factor_intelligence emitted artifacts; outputs data/neuralweb/mechanism_pathways.json + history + site mirror
+      - id: build_state_of_themes
+        module: scripts.build_state_of_themes
+        note: >
+          non-fatal; TIL W4 (PR-F) State of Themes operator terminal — renders
+          templates/state_of_themes.html.j2 → site/state_of_themes.html; reads the
+          four site/neuralwebdata theme artifacts (theme_state, theme_thesis,
+          theme_asymmetry, theme_pathways) + data/neuralweb/theme_phase_history.jsonl;
+          cross-theme matrix + filter chips + expandable thesis drawer + weekly-delta
+          strip; tolerant on missing artifacts; display-only, never crashes build.
+          Runs AFTER build_thematic_state (and build_theme_thesis, build_theme_asymmetry).
       - id: build_thematic_state
         module: scripts.build_thematic_state
         note: >
@@ -1516,6 +1526,19 @@ divergences:
       runner, Saturday quiet hours). US-only page builders run every nightly; the weekly's
       purpose is calibration + international builds, not full US page rebuild.
     evidence: "weekly.yml:18-21 (comment: weekly does collectors + all calibrations + every dashboard build)"
+
+  - lanes: [engine, engine-render, render]
+    differs: >
+      scripts.build_state_of_themes declared in dag.yml but not present as a standalone
+      run_py/brun call in any workflow — it is invoked from within scripts.build_site.
+    reason: >
+      TIL W4 (PR-F): state_of_themes.html is a render-only page (no data artifacts
+      produced, no committed data/ writes). Its render is embedded in build_site.py's
+      W4 block (after committee.html) so it runs whenever build_site runs — in daily,
+      render, engine-render, and weekly. The dag.yml entry documents the module for
+      discoverability; the divergence documents that it is an embedded call, not a
+      standalone module invocation in the workflow YAML.
+    evidence: scripts/build_site.py (W4 block after committee.html render)
 
   # ── SUSPECT — undocumented drift inherited at W5a adoption ─────────────
   # Each entry either gets a documented reason or the lanes get fixed in a future PR.
