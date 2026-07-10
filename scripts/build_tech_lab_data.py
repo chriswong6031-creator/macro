@@ -61,11 +61,19 @@ log = logging.getLogger("build_tech_lab_data")
 _OUTPUT_DIR = _REPO_ROOT / "site" / "factordata"
 _SCREENER_FILE = "tech_screener.json"
 _LAB_FILE = "tech_lab.json"
+_TECH_EVENTS_DIR = "tech_events"
+_TECH_EVENTS_INDEX = "_index.json"
 
 _HORIZON = 21          # forward-return horizon (trading days)
 _FIRE_CAP = 2000       # cap per-signal pool to this many fires (logged if hit)
 _SPX_KEY = "_GSPC"    # SPX series key in yahoo store
 _ERA_SPLIT = "2010-01-01"  # era split date
+
+# tech_events export: fires within the last 3 years
+_EVENTS_WINDOW_YEARS = 3
+
+# Lab-exempt snapshot families: skip per-bar fires, but keep latest state
+_LAB_EXEMPT_FAMILIES = frozenset({"fundamental_valuation", "insider"})
 
 # performance lookback in bars (approximate)
 _PERF_7D = 7
@@ -213,11 +221,14 @@ def build_all(
     tech_stars: Any,
     df_spx: pd.DataFrame,
     name_map: dict[str, str],
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, Any]]]:
     """Single-pass over (ticker × signal): compute each series ONCE and feed
-    BOTH the screener state and the lab fire-accumulation.
+    BOTH the screener state and the lab fire-accumulation AND tech_events export.
 
-    Returns (screener_payload, lab_payload).
+    Returns (screener_payload, lab_payload, tech_events_by_ticker).
+
+    tech_events_by_ticker maps ticker → per-ticker events dict (raw, pre-serialization).
+    The caller writes site/factordata/tech_events/<TICKER>.json + _index.json.
     """
     all_sigs = tc.list_signals()
     n_sigs = len(all_sigs)
@@ -271,6 +282,14 @@ def build_all(
     stocks_out: dict[str, dict[str, Any]] = {}
 
     # -----------------------------------------------------------------------
+    # tech_events per-ticker accumulator (TLT-R3)
+    # -----------------------------------------------------------------------
+    # fires within the last 3 years only; omit signals with zero fires AND state==0
+    tech_events_by_ticker: dict[str, dict[str, Any]] = {}
+    _now = datetime.now(timezone.utc)
+    _events_cutoff = pd.Timestamp(_now.year - _EVENTS_WINDOW_YEARS, _now.month, _now.day)
+
+    # -----------------------------------------------------------------------
     # SINGLE PASS: outer = ticker, inner = signal
     # -----------------------------------------------------------------------
     for i, ticker in enumerate(tickers):
@@ -306,6 +325,8 @@ def build_all(
 
         # Per-signal inner loop
         sig_entries: list[dict[str, Any]] = []
+        # Per-ticker tech_events accumulator (collected in this inner loop)
+        _te_signals: dict[str, dict[str, Any]] = {}
 
         for sig in all_sigs:
             sid = sig["signal_id"]
@@ -357,6 +378,41 @@ def build_all(
                     "band": band,
                 })
 
+            # ---- TECH_EVENTS side (TLT-R3) ----
+            # Lab-exempt families: skip fires but keep latest state.
+            # Non-exempt: collect fires within the 3-year window.
+            family_te = sig.get("family", "")
+            if family_te in _LAB_EXEMPT_FAMILIES:
+                # Only include if state is active (avoid noise from zero-state exempt signals)
+                if state == 1:
+                    _te_signals[sid] = {
+                        "dir": int(sig.get("direction", 0)),
+                        "kind": kind,
+                        "fires": [],
+                        "state": state,
+                    }
+            else:
+                # Determine event fires (state→rising-edge; event→fire bars)
+                if kind == "state":
+                    pos_shifted_te = series.shift(1, fill_value=0.0)
+                    event_te = ((series > 0) & (pos_shifted_te == 0)).astype(float)
+                else:
+                    event_te = series
+
+                fires_in_window = event_te[
+                    (event_te > 0) & (event_te.index >= _events_cutoff)
+                ]
+                fire_dates_str = [str(d.date()) for d in fires_in_window.index]
+
+                # Omit signals with zero fires in-window AND state==0
+                if fire_dates_str or state == 1:
+                    _te_signals[sid] = {
+                        "dir": int(sig.get("direction", 0)),
+                        "kind": kind,
+                        "fires": fire_dates_str,
+                        "state": state,
+                    }
+
             # ---- LAB side (skip snapshot-family signals: fundamental + insider) ----
             if acc["lab_exempt"]:
                 continue
@@ -388,6 +444,16 @@ def build_all(
                     acc["all_metrics"].append(m)
             except Exception:
                 continue
+
+        # Finalize tech_events for this ticker
+        last_bar_date = str(df.index[-1].date()) if not df.empty else ""
+        window_start_date = str(_events_cutoff.date())
+        tech_events_by_ticker[ticker] = {
+            "ticker": ticker,
+            "generated_utc": _now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "window_start": window_start_date,
+            "signals": _te_signals,
+        }
 
         stocks_out[ticker] = {
             "name": name_map.get(ticker, ticker),
@@ -574,7 +640,75 @@ def build_all(
         "_meta": {"total_fires": total_fires},
     }
 
-    return screener_payload, lab_payload
+    return screener_payload, lab_payload, tech_events_by_ticker
+
+
+# ---------------------------------------------------------------------------
+# tech_events writer (TLT-R3)
+# ---------------------------------------------------------------------------
+
+def write_tech_events(
+    tech_events_by_ticker: dict[str, dict[str, Any]],
+    output_dir: Path,
+) -> Path:
+    """Write per-ticker tech_events JSON and the _index.json summary.
+
+    Writes:
+      <output_dir>/tech_events/<TICKER>.json  — per-ticker fires/state per signal
+      <output_dir>/tech_events/_index.json    — index: generated_utc + n_fires_total per ticker
+
+    Schema (per-ticker JSON):
+      {
+        "ticker": "NVDA",
+        "generated_utc": "...",
+        "window_start": "YYYY-MM-DD",
+        "signals": {
+          "<signal_id>": {
+            "dir": 1|-1|0,
+            "kind": "event"|"state",
+            "fires": ["YYYY-MM-DD", ...],
+            "state": 0|1
+          },
+          ...
+        }
+      }
+
+    Per TLT-R3: fires are event fires (or state rising edges) within the last 3 years only.
+    Signals with zero fires in-window AND state==0 are omitted.
+    Lab-exempt snapshot families (fundamental_valuation, insider) appear with fires=[] and
+    latest state only.
+    """
+    events_dir = output_dir / _TECH_EVENTS_DIR
+    events_dir.mkdir(parents=True, exist_ok=True)
+
+    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    index_tickers: dict[str, int] = {}
+
+    for ticker, payload in tech_events_by_ticker.items():
+        n_fires = sum(
+            len(sig_data.get("fires", []))
+            for sig_data in payload.get("signals", {}).values()
+        )
+        index_tickers[ticker] = n_fires
+
+        out_path = events_dir / f"{ticker}.json"
+        with open(out_path, "w") as fh:
+            json.dump(payload, fh, separators=(",", ":"))
+
+    # Write _index.json
+    index_payload = {
+        "generated_utc": now_utc,
+        "tickers": index_tickers,
+    }
+    index_path = events_dir / _TECH_EVENTS_INDEX
+    with open(index_path, "w") as fh:
+        json.dump(index_payload, fh, separators=(",", ":"))
+
+    log.info(
+        "tech_events: wrote %d ticker files + _index.json to %s",
+        len(tech_events_by_ticker), events_dir,
+    )
+    return events_dir
 
 
 # ---------------------------------------------------------------------------
@@ -629,9 +763,9 @@ def main(argv: list[str] | None = None) -> None:
     else:
         df_spx = pd.DataFrame({"close": spx_series})
 
-    # --- Single pass (screener + lab) ---------------------------------------
+    # --- Single pass (screener + lab + tech_events) -------------------------
     log.info("Running single-pass build …")
-    screener_payload, lab_payload = build_all(
+    screener_payload, lab_payload, tech_events_by_ticker = build_all(
         universe, tc, tech_score, tech_stars, df_spx, name_map,
     )
 
@@ -647,6 +781,10 @@ def main(argv: list[str] | None = None) -> None:
         json.dump(lab_payload, fh, separators=(",", ":"))
     log.info("Wrote %s (%.1f KB)", lab_path, lab_path.stat().st_size / 1024)
 
+    # --- Write tech_events (TLT-R3) -----------------------------------------
+    events_dir = write_tech_events(tech_events_by_ticker, output_dir)
+    log.info("tech_events written to %s", events_dir)
+
     # Summary
     total_fires = lab_payload["_meta"]["total_fires"]
     elapsed = time.monotonic() - t0
@@ -655,8 +793,9 @@ def main(argv: list[str] | None = None) -> None:
         f"\n[build_tech_lab_data] {n_signals} signals | {n_stocks} stocks | "
         f"{total_fires} fires pooled | {elapsed:.1f}s"
     )
-    print(f"  Screener: {screener_path}")
-    print(f"  Lab:      {lab_path}")
+    print(f"  Screener:     {screener_path}")
+    print(f"  Lab:          {lab_path}")
+    print(f"  Tech Events:  {events_dir}/")
 
 
 if __name__ == "__main__":
