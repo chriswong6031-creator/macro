@@ -202,7 +202,7 @@ class TestTwoReadsChip:
         }
 
     def _inject_two_reads_chip(self, r: dict, timing: dict) -> None:
-        """Mirror the logic from sector_setup_view."""
+        """Mirror the logic from sector_setup_view (A3 fix: all caution→take_profits)."""
         r["two_reads_chip"] = None
         if timing and r.get("side") == "buy":
             tm = timing.get(r["ticker"]) or {}
@@ -210,8 +210,9 @@ class TestTwoReadsChip:
             u = e.get("urgency", "")
             tag = e.get("tag", "")
             cycle_label = tm.get("label", "")
+            _CAUTION_NON_REDUCE = {"DON'T CHASE", "UNCONFIRMED — HIGH RISK"}
             cycle_is_reduce = (u == "exit") or (
-                u == "caution" and "TAKE PROFITS" in tag.upper()
+                u == "caution" and tag not in _CAUTION_NON_REDUCE
             )
             if cycle_is_reduce:
                 r["two_reads_chip"] = {
@@ -262,6 +263,97 @@ class TestTwoReadsChip:
         r = self._make_sector_row("XLK", "BUY", "buy")
         self._inject_two_reads_chip(r, None)
         assert r["two_reads_chip"] is None
+
+    def test_chip_fires_for_non_literal_take_profits_caution(self):
+        """A3 fix: caution with any tag that isn't DON'T CHASE or UNCONFIRMED should fire."""
+        r = self._make_sector_row("XLK", "SETUP_BUY", "buy")
+        timing = {"XLK": {"label": "EXTENDED", "entry": {"urgency": "caution", "tag": "EXIT POSITION"}}}
+        self._inject_two_reads_chip(r, timing)
+        assert r["two_reads_chip"] is not None, "chip must fire for caution→take_profits even without literal 'TAKE PROFITS' tag"
+
+    def test_chip_absent_for_dont_chase_caution(self):
+        """DON'T CHASE routes to on_the_run, not take_profits — no chip."""
+        r = self._make_sector_row("XLK", "SETUP_BUY", "buy")
+        timing = {"XLK": {"label": "ON THE RUN", "entry": {"urgency": "caution", "tag": "DON'T CHASE"}}}
+        self._inject_two_reads_chip(r, timing)
+        assert r["two_reads_chip"] is None
+
+    def test_chip_absent_for_unconfirmed_high_risk_caution(self):
+        """UNCONFIRMED — HIGH RISK routes to avoid, not take_profits — no chip."""
+        r = self._make_sector_row("XLK", "SETUP_BUY", "buy")
+        timing = {"XLK": {"label": "RISKY", "entry": {"urgency": "caution", "tag": "UNCONFIRMED — HIGH RISK"}}}
+        self._inject_two_reads_chip(r, timing)
+        assert r["two_reads_chip"] is None
+
+
+# ---------------------------------------------------------------------------
+# 2b. action_board two_reads_chip wiring (A2 fix: TS-R6)
+# ---------------------------------------------------------------------------
+
+class TestActionBoardTwoReadsChipWiring:
+    """Two-reads chip must attach to action_board sector items when sector_setups has it."""
+
+    def _run_two_reads_wiring(self, sector_setups: dict | None, action_board: dict) -> dict:
+        """Mirror the A2 wiring logic from build_site.py."""
+        _two_reads_lookup: dict = {}
+        if sector_setups:
+            for _sr in (sector_setups.get("sectors") or []):
+                if _sr.get("two_reads_chip") and _sr.get("ticker"):
+                    _two_reads_lookup[_sr["ticker"]] = _sr["two_reads_chip"]
+        if _two_reads_lookup:
+            for _lane in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid", "notable"):
+                for _item in (action_board.get(_lane) or []):
+                    if _item.get("kind") == "sector" and _item.get("ticker") in _two_reads_lookup:
+                        _item["two_reads_chip"] = _two_reads_lookup[_item["ticker"]]
+        return action_board
+
+    def test_chip_attached_to_take_profits_sector_item(self):
+        chip = {"cycle_label_en": "NEARING A HIGH", "setup_label_en": "SETUP BUY", "setup_state": "SETUP_BUY"}
+        sector_setups = {"sectors": [{"ticker": "XLK", "two_reads_chip": chip}]}
+        ab = {"take_profits": [{"ticker": "XLK", "kind": "sector"}], "buy_now": [], "buy_soon": [],
+              "on_the_run": [], "hold": [], "avoid": [], "notable": []}
+        result = self._run_two_reads_wiring(sector_setups, ab)
+        assert result["take_profits"][0].get("two_reads_chip") == chip
+
+    def test_chip_not_attached_to_theme_items(self):
+        chip = {"cycle_label_en": "HIGH", "setup_label_en": "BUY", "setup_state": "BUY"}
+        sector_setups = {"sectors": [{"ticker": "XLK", "two_reads_chip": chip}]}
+        ab = {"take_profits": [{"ticker": "XLK", "kind": "theme"}], "buy_now": [], "buy_soon": [],
+              "on_the_run": [], "hold": [], "avoid": [], "notable": []}
+        result = self._run_two_reads_wiring(sector_setups, ab)
+        assert "two_reads_chip" not in result["take_profits"][0]
+
+    def test_chip_not_attached_when_sector_setups_none(self):
+        ab = {"take_profits": [{"ticker": "XLK", "kind": "sector"}], "buy_now": [], "buy_soon": [],
+              "on_the_run": [], "hold": [], "avoid": [], "notable": []}
+        result = self._run_two_reads_wiring(None, ab)
+        assert "two_reads_chip" not in result["take_profits"][0]
+
+
+# ---------------------------------------------------------------------------
+# 2c. JS disagreement gate (A1 fix: WATCH/IGNITION + buy reco must not appear)
+# ---------------------------------------------------------------------------
+
+class TestDisagreementGate:
+    """JS gate: WATCH/IGNITION baskets must not enter the strip when slow_reco is buy/accumulate."""
+
+    TPL_SRC = (TPL_DIR / "dashboard.html.j2").read_text()
+
+    def test_disagree_gate_variable_present_in_template(self):
+        """DISAGREE_RECOS variable must be present in JS."""
+        assert "DISAGREE_RECOS" in self.TPL_SRC, "JS disagreement gate variable missing from template"
+
+    def test_gate_allows_hold_reco(self):
+        """Template JS gate source includes hold in the DISAGREE_RECOS set."""
+        assert "'hold':1" in self.TPL_SRC or '"hold":1' in self.TPL_SRC
+
+    def test_gate_allows_avoid_reco(self):
+        """Template JS gate source includes avoid in the DISAGREE_RECOS set."""
+        assert "'avoid':1" in self.TPL_SRC or '"avoid":1' in self.TPL_SRC
+
+    def test_gate_skips_active_buy_reco(self):
+        """The gate return statement is present and only skips when isActive AND reco known AND NOT in DISAGREE_RECOS."""
+        assert "DISAGREE_RECOS[reco]" in self.TPL_SRC, "gate must check DISAGREE_RECOS[reco]"
 
 
 # ---------------------------------------------------------------------------

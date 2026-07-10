@@ -1501,9 +1501,13 @@ def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
                 u = e.get("urgency", "")
                 tag = e.get("tag", "")
                 cycle_label = tm.get("label", "")
-                # Cycle is on the reduce side when urgency=exit or caution+TAKE PROFITS
+                # Cycle is on the reduce side when urgency=exit, OR when caution routes
+                # to take_profits (any caution tag except DON'T CHASE / UNCONFIRMED —
+                # HIGH RISK, which route to on_the_run / avoid respectively).
+                # Mirrors action_board routing exactly (A3 fix).
+                _CAUTION_NON_REDUCE = {"DON'T CHASE", "UNCONFIRMED — HIGH RISK"}
                 cycle_is_reduce = (u == "exit") or (
-                    u == "caution" and "TAKE PROFITS" in tag.upper()
+                    u == "caution" and tag not in _CAUTION_NON_REDUCE
                 )
                 if cycle_is_reduce:
                     setup_label = r.get("label") or r.get("label_zh") or r["state"]
@@ -3354,6 +3358,23 @@ def main() -> int:
             _dash_shock_state = _dsj.loads(_dsp.read_text())
     except Exception as _dse:  # noqa: BLE001 — additive, never fatal
         log.warning("shock_state unavailable for dashboard (%s)", _dse)
+    # TS-R6 A2: compute sector_setups before the vm so we can extract two_reads_chip
+    # per ticker and attach it to action_board sector items (same ETF, two constructions).
+    _sector_setups = sector_setup_view(latest, sector_timing)
+    _two_reads_lookup: dict[str, dict] = {}
+    if _sector_setups:
+        for _sr in (_sector_setups.get("sectors") or []):
+            if _sr.get("two_reads_chip") and _sr.get("ticker"):
+                _two_reads_lookup[_sr["ticker"]] = _sr["two_reads_chip"]
+
+    _ab = action_board(sector_timing, notable, basket_action_items(site))
+    # Attach two_reads_chip to sector items across all lanes.
+    if _two_reads_lookup:
+        for _lane in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid", "notable"):
+            for _item in (_ab.get(_lane) or []):
+                if _item.get("kind") == "sector" and _item.get("ticker") in _two_reads_lookup:
+                    _item["two_reads_chip"] = _two_reads_lookup[_item["ticker"]]
+
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -3372,7 +3393,7 @@ def main() -> int:
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
         commodities=(latest.get("playbook") or {}).get("commodities", []),
         sector_timing=sector_timing,
-        action_board=action_board(sector_timing, notable, basket_action_items(site)),
+        action_board=_ab,
         top_setups=top_setups,
         us_standouts=us_standouts,
         us_board_outcomes=us_board_outcomes,
@@ -3385,7 +3406,7 @@ def main() -> int:
         breadth_div=breadth_divergence(f),
         breadth_panel=breadth_scorecard(),
         adv_breadth=advanced_breadth_view(f),    # Advanced Breadth tracker (us_stocks page)
-        sector_setups=sector_setup_view(latest, sector_timing),  # PRIMARY confluence board
+        sector_setups=_sector_setups,  # PRIMARY confluence board
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
         chart_credit_breadth=chart_credit_breadth(f),
