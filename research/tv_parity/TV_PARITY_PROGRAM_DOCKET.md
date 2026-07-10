@@ -108,3 +108,23 @@ ChartPanel-adjacent surfaces. Phase 0 ships immediately on disjoint-ish surfaces
 - No new heavy deps without justification; lightweight-charts stays the engine.
 - Deploys are orchestrator-gated (CDN chunk-availability check is now law).
 - Honesty rules unchanged (basis badges, stale flags, no fake data in empty tabs).
+
+## Phase 7 — right-click context suite (operator brief 2026-07-09 night, 5 TV screenshots)
+
+21. **Chart context menu** (TV structure, NO trading rows per operator): Reset chart
+    view ⌥R | ─ | Copy price <clicked price> · Paste ⌘V | ─ | Add alert on <SYM> at
+    <price>… ⌥A (opens our alert dialog PREFILLED: condition Price/Crossing/<clicked
+    value>) | ─ | Lock vertical cursor line by time (pins a dashed vertical line at the
+    clicked timestamp w/ a lock marker on the time axis; toggle; persists per layout) |
+    ─ | Table view · Object tree · Chart template ▸ | ─ | Remove N indicators (live
+    count) | ─ | Settings… (opens the Phase-2 modal).
+22. **Chart template ▸ submenu**: list of saved templates (click = apply indicator set
+    + chart settings) + "Save as template" → popup titled "Save template as" with a
+    name input + Save. Templates persist per user.
+23. **Table view**: replaces the chart region — "<Company> · Table view" header +
+    Back-to-chart button; Download data (CSV); columns Date·TF | O/H/L/C | Change
+    (+abs/+%) | Volume | one column per ACTIVE indicator (∅ when no value); newest
+    first; respects the active timeframe.
+24. **Object tree**: right-rail tab (next to a Data-window tab if cheap) listing the
+    symbol node (SYM·EXCH, TF) + every indicator/drawing as rows with eye
+    (show/hide) toggles and remove; selection highlights.
