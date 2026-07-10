@@ -7,15 +7,20 @@
   "funnel": {
     "authored": 12,
     "screen_rejected": 3,
-    "tested": 9
+    "held_for_adjudication": 1,
+    "tested": 8
   },
+  "funnel_note": "SF-0004 was held_for_adjudication (BL-002 hit: original Fable-authored thesis prose contained 'fused...forbidden' self-referential negation that tripped the fused-shield regex; builder edited prose and admitted instead of leaving for Fable adjudication; fix-pass reverts to held state pending Fable ruling). Tested cohort is 8 specs (was 9 before fix-pass).",
   "screen_rejection_details": {
     "SF-0003": "Gate 3 (sample_5y): vix_curve.parquet only 0.2y in current tracked store",
     "SF-0010": "Gate 5 (novelty): identical construction_hash to SF-0009 (same pipeline+target, different input series)",
     "SF-0011": "Gate 3 (sample_5y): putcall.parquet only 0.1y in current tracked store"
   },
+  "held_for_adjudication_details": {
+    "SF-0004": "BL-002 prose false-positive: original thesis 'NOT a fusion — fused positioning shields are forbidden' tripped fused.{0,20}(shield|meta.router) regex. Construction (COT net-spec z-score → excess return) is not a fused shield. Builder edited prose and admitted; fix-pass reverts to held_for_adjudication pending Fable ruling. Result file voided (SF-0004.json.voided_bl002). Awaiting operator/Fable adjudication before re-admission and re-run."
+  },
   "verdict_histogram": {
-    "null": 4,
+    "null": 3,
     "unstable": 4,
     "era_specific": 1,
     "pass_candidate": 0,
@@ -23,13 +28,17 @@
   },
   "bh_fdr": {
     "alpha": 0.10,
-    "rejects_by_q": ["SF-0001", "SF-0004"],
-    "note": "BH rejects are informational only; harness verdict governs promotion docket admission"
+    "m": 8,
+    "significant_by_q": ["SF-0001"],
+    "note": "BH significant-by-q is informational only; harness verdict governs promotion docket admission. m=8 (admitted cohort); DSR uses ledger_n_at_run=12 (all registered trials including superseded constructions)."
   },
   "battery_version": "sf-battery-1",
   "engine_changes": [
     "engine/signal_foundry/screen.py: fixed _probe_file_span_years bug (pd.read_parquet(columns=[]).dropna(how='all') drops all rows on zero-column DataFrame; fixed to use index directly)",
     "engine/signal_foundry/results.py: added cohort_fdr() function (Benjamini-Hochberg FDR over cohort p-values derived from HAC t-stats)"
   ],
+  "known_design_gaps": {
+    "construction_hash_excludes_data_path": "spec.py construction_hash() hashes only {market, feature.pipeline, target, universe} and deliberately excludes spec.data[].path. SF-0009 (hashrate) and SF-0010 (active_addresses) share the same hash despite different input series. This is a pre-existing design defect not introduced by lane E (spec.py is unchanged in this PR). Dedup key is too coarse; input-series-distinct constructions can be silently suppressed. Pre-registered for Fable/orchestrator adjudication on whether data[].path should be incorporated into the hash."
+  },
   "sf_r5_note": "This cohort is an operator-triggered in-session run, exempt from the weekly filed_per_week budget (SF-R5/R6 bind the autonomous scheduled lane only). Every run still logs to the trial ledger (family=signal_foundry) per SF-R4."
 }

@@ -434,7 +434,19 @@ def cohort_fdr(
         "trigger": trigger,
         "fdr_alpha": fdr_alpha,
         "n_members": m,
-        "bh_rejects": bh_rejects,  # ids with q <= fdr_alpha (pass BH gate)
+        # bh_rejects: kept for backwards compatibility and programmatic use.
+        # bh_significant_by_q: human-readable alias — same content but clearly
+        # labelled to avoid confusion with a promotion pass list.
+        # BOTH lists are INFORMATIONAL ONLY: harness verdict governs promotion.
+        "bh_rejects": bh_rejects,
+        "bh_significant_by_q": bh_rejects,
+        "bh_significant_by_q_note": (
+            "bh_significant_by_q lists specs whose BH-adjusted q-value <= fdr_alpha. "
+            "INFORMATIONAL ONLY — harness verdict governs promotion docket admission. "
+            "A spec here with verdict='null' is NOT a pass_candidate. "
+            "m here = admitted cohort members; DSR uses ledger_n_at_run = all registered "
+            "trials including superseded constructions — different denominators by design."
+        ),
         "members": {
             md["id"]: {
                 "p": round(md["p"], 6),
@@ -443,13 +455,14 @@ def cohort_fdr(
                 "n_subsample": md.get("n_subsample"),
                 "verdict": md.get("verdict"),
                 "bh_reject": md.get("bh_reject", False),
+                "bh_significant": md.get("bh_reject", False),
             }
             for md in member_data
         },
         "formula_note": (
             "p_i = 2 * t.sf(|t_HAC_i|, df=n_subsample-1); "
             "q_i = min(m * p_i / rank_i, 1.0) with monotone enforcement; "
-            "bh_reject iff q_i <= fdr_alpha."
+            "bh_reject / bh_significant iff q_i <= fdr_alpha."
         ),
     }
 
