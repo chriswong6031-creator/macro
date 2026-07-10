@@ -101,3 +101,15 @@ files:
       plain-language label requirement (jargon blocklist), one clear primary action.
       IMMUTABLE — loop PRs may not modify. The LLM cannot relax this gate.
       Human-authored changes require T2 operator-tap ruling + manifest update.
+
+  # --- V2-C Unit 6 IMMUTABLE config (R-V2-8) ---
+
+  - path: config/nw_information_domains.yml
+    sha256: 3bc272062cceb17697a0d9e95201e78d62594ac69894e251645684b6fe3911ec
+    role: scout_domain_universe
+    notes: >
+      V2-C Unit 6 curated NW-scope domain universe. The Uncovered-Domain Scout
+      (engine/metabolism/scout.py) proposes a display-tier charter only for a
+      domain uncovered across >= K distinct cycles. IMMUTABLE — a loop PR that
+      could add a domain could manufacture its own charter mandate (R-V2-8;
+      originating an escalation is forbidden by R-AUT-1/R-V2-9). Operator-only.

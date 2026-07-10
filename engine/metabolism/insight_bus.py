@@ -68,6 +68,9 @@ _KINDS = frozenset({
     "falsifier_tripped",
     "freshness_sla_breach",
     "comeback_clock_matured",
+    # V2-C Unit 6 emitters (scout + revamp adjudicator)
+    "uncovered_domain",
+    "revamp_recommendation",
 })
 
 
