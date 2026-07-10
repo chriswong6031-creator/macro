@@ -2610,13 +2610,28 @@
     color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
   .rr-cov-prior{background:color-mix(in srgb,var(--muted) 15%,transparent);
     color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
-  .rr-card-conf{font-size:10px;color:var(--muted);margin-top:4px}
-  .rr-card-conf b{color:var(--text)}
-  .rr-card-do-note{font-size:9px;color:var(--muted);font-style:italic;margin-top:5px;line-height:1.4}
-  .rr-card-tap{font-size:9.5px;color:var(--muted);margin-top:5px;text-align:right}
-  /* benchmark-only / no-data card states */
-  .rr-bmo-note{font-size:11.5px;color:var(--muted);font-style:italic}
-  .rr-nodata-note{font-size:11px;color:var(--muted);font-style:italic;padding:4px 0}
+  /* MRI-R39a compact two-number row */
+  .rr-nums-row{display:flex;gap:16px;margin:5px 0 4px;align-items:flex-end}
+  .rr-num-col{display:flex;flex-direction:column;min-width:52px}
+  .rr-num-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--muted);margin-bottom:1px;white-space:nowrap}
+  .rr-num-src{font-size:8.5px;color:var(--muted);margin-left:3px;font-weight:400;text-transform:none;letter-spacing:0}
+  .rr-num-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+  .rr-num-dash{font-size:18px;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+  /* chevron corner */
+  .rr-chevron{position:absolute;bottom:7px;right:10px;font-size:11px;color:var(--muted)}
+  /* benchmark-only tag */
+  .rr-bmo-tag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:4px;
+    font-size:9.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-top:2px}
+  /* no-data compact card */
+  .rr-nodata-compact{font-size:11px;color:var(--muted);font-style:italic;padding:6px 0 2px}
+  /* see-more toggle */
+  .rr-see-more-wrap{text-align:center;margin-top:10px}
+  .rr-see-more-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 18px;
+    border-radius:8px;border:1px solid var(--line);background:var(--panel2);
+    color:var(--muted);font-size:12px;cursor:pointer;min-height:44px;
+    font-family:inherit;transition:border-color .15s,color .15s}
+  .rr-see-more-btn:hover{border-color:var(--accent,var(--up));color:var(--text)}
   /* ---- Modal overlay ---- */
   .rr-modal-overlay{display:none;position:fixed;inset:0;
     background:var(--modal-backdrop,color-mix(in srgb,var(--bg,#000) 72%,transparent));
@@ -3326,7 +3341,44 @@
         +'</div>';
     }
 
-    /* ---- MRI-R24: compact card ---- */
+    /* ---- MRI-R39a: expected-value sourcing (directive 3) ---- */
+    /* Returns {val:string, label:{en,zh}, src:string|null} */
+    function _expectedVal(item){
+      var rel = (item.release||'').toLowerCase();
+      var isClaims = rel === 'claims';
+      var isNfp = rel === 'nfp';
+      var useK = isClaims || isNfp;
+      var er = item.expectation_read;
+      /* (a) expectation_read.expectation_median when non-null */
+      if (er && er.expectation_median != null){
+        var srcs = er.sources || [];
+        var srcTag = '';
+        if (srcs.indexOf('cleveland_nowcast') !== -1) srcTag = 'CLE';
+        else if (srcs.indexOf('kalshi') !== -1 || srcs.indexOf('polymarket') !== -1) srcTag = 'MKT';
+        var valStr = useK ? fmtK(er.expectation_median) : fmtNum(er.expectation_median,2)+'pp';
+        return {val:valStr, labelEN:'exp', labelZH:'预期', src:srcTag};
+      }
+      /* (b) bench median: naive_prior, trailing_3m (or trailing_4w for claims), ar_model,
+             cleveland_nowcast, expanding_mean — EXCLUDE market_implied */
+      var bs = item.benchmark_set || {};
+      var benchKeys = isClaims
+        ? ['naive_prior','trailing_4w','ar_model','expanding_mean']
+        : ['naive_prior','trailing_3m','ar_model','cleveland_nowcast','expanding_mean'];
+      var vals = [];
+      benchKeys.forEach(function(k){
+        var v = bs[k];
+        if (v != null && !isNaN(Number(v))) vals.push(Number(v));
+      });
+      if (!vals.length) return null;
+      vals.sort(function(a,b){return a-b;});
+      var med = vals.length % 2 === 0
+        ? (vals[vals.length/2-1]+vals[vals.length/2])/2
+        : vals[Math.floor(vals.length/2)];
+      var valStr = useK ? fmtK(med) : fmtNum(med,2)+'pp';
+      return {val:valStr, labelEN:'bench', labelZH:'基准', src:null};
+    }
+
+    /* ---- MRI-R39a: compact card (operator directive 1-3) ---- */
     function renderCard(item){
       var rel = item.release || '';
       var rt = item.release_type || '';
@@ -3342,58 +3394,104 @@
         String(pit.reason||'').indexOf('no_data') !== -1 ||
         (proj.p10 == null && proj.p90 == null)
       );
-      var conf = (!isBenchmarkOnly && !isNoData && item.confidence != null) ? fmtPct(item.confidence) : null;
       var daysTo = item.days_to != null ? item.days_to : null;
       var daysLabel = daysTo != null
-        ? ('<span class="l-en">in '+esc(daysTo)+' d</span>'
+        ? ('<span class="l-en">in '+esc(daysTo)+'d</span>'
            +'<span class="l-zh">'+esc(daysTo)+'天后</span>')
         : ('<span class="l-en">awaiting date</span><span class="l-zh">待日期</span>');
-      /* point value */
-      var ptStr = '—';
-      if (!isBenchmarkOnly && !isNoData && proj.point != null)
-        ptStr = useK ? fmtK(proj.point) : fmtNum(proj.point,2)+(rt.indexOf('nfp')===-1?'pp':'');
-      /* chips — expectation_read + surprise_skew */
+
+      /* --- no_data card: compact one-liner --- */
+      if (isNoData){
+        return '<div class="rr-card" data-rr-rel="'+esc(rel)+'" data-rr-rt="'+esc(rt)+'">'
+          +'<div class="rr-card-head">'
+          +'<span class="rr-card-name">'+relName(rel,rt)+'</span>'
+          +'<span class="rr-countdown">'+daysLabel+'</span>'
+          +'</div>'
+          +'<div class="rr-nodata-compact">'
+          +'<span class="l-en">awaiting data 待数据</span>'
+          +'<span class="l-zh">待数据</span>'
+          +'</div>'
+          +'<span class="rr-chevron">▸</span>'
+          +'</div>';
+      }
+
+      /* --- OURS column --- */
+      var oursVal = '—';
+      if (!isBenchmarkOnly && proj.point != null){
+        oursVal = useK ? fmtK(proj.point) : fmtNum(proj.point,2)+'pp';
+      }
+      /* for NFP None-point: ours = '—' (fall through) */
+
+      /* --- EXPECTED column (directive 3) --- */
+      var expObj = _expectedVal(item);
+
+      /* --- benchmark_only: ours=— (claims shows bench number only in exp col) --- */
+      /* Already handled: isBenchmarkOnly → oursVal='—', expObj from bench median */
+
+      /* --- ONE chip: expectation_read.tag preferred, else surprise_skew.tag --- */
       var er = item.expectation_read;
       var sk = item.surprise_skew;
-      var chips = '';
-      if (!isBenchmarkOnly && !isNoData){
-        chips += expectationChip(er||null);
-        chips += skewChip(sk||null);
+      var chip = '';
+      if (!isBenchmarkOnly){
+        if (er && er.tag) chip = expectationChip(er);
+        else if (sk && sk.tag) chip = skewChip(sk);
       }
-      /* projection label */
-      var projBlock = '';
+
+      /* --- build nums row --- */
+      var numsRow = '';
       if (isBenchmarkOnly){
-        projBlock = '<div class="rr-proj-row">'
-          +'<div class="rr-proj-label"><span class="l-en">Projection</span><span class="l-zh">预测</span></div>'
-          +'<span class="rr-bmo-note"><span class="l-en">Benchmark-only (§6 kill rule)</span><span class="l-zh">仅基准对比（§6规则）</span></span>'
-          +'</div>';
-      } else if (isNoData){
-        projBlock = '<div class="rr-nodata-note">'
-          +'<span class="l-en">Awaiting data — machinery ships, series not yet on disk</span>'
-          +'<span class="l-zh">待数据 — 系统就绪，序列未入库</span>'
+        /* claims: show only bench number, no ours column */
+        var bmoExp = expObj;
+        numsRow = '<div class="rr-nums-row">'
+          +(bmoExp
+            ? '<div class="rr-num-col">'
+              +'<div class="rr-num-lbl">'
+              +'<span class="l-en">'+esc(bmoExp.labelEN)+'</span>'
+              +'<span class="l-zh">'+esc(bmoExp.labelZH)+'</span>'
+              +(bmoExp.src?'<span class="rr-num-src">'+esc(bmoExp.src)+'</span>':'')
+              +'</div>'
+              +'<div class="rr-num-val">'+esc(bmoExp.val)+'</div>'
+              +'</div>'
+            : '')
+          +'</div>'
+          +'<div class="rr-chips-row">'
+          +'<span class="rr-bmo-tag">'
+          +'<span class="l-en">benchmark-only 仅基准</span>'
+          +'<span class="l-zh">仅基准</span>'
+          +'</span>'
           +'</div>';
       } else {
-        projBlock = '<div class="rr-proj-row">'
-          +'<div class="rr-proj-label"><span class="l-en">Our projection</span><span class="l-zh">本方预测</span></div>'
-          +'<span class="rr-point">'+esc(ptStr)+'</span>'
-          +'</div>';
+        /* normal card: ours + expected side by side */
+        var expColHtml = expObj
+          ? '<div class="rr-num-col">'
+            +'<div class="rr-num-lbl">'
+            +'<span class="l-en">'+esc(expObj.labelEN)+'</span>'
+            +'<span class="l-zh">'+esc(expObj.labelZH)+'</span>'
+            +(expObj.src?'<span class="rr-num-src">'+esc(expObj.src)+'</span>':'')
+            +'</div>'
+            +'<div class="rr-num-val">'+esc(expObj.val)+'</div>'
+            +'</div>'
+          : '';
+        numsRow = '<div class="rr-nums-row">'
+          +'<div class="rr-num-col">'
+          +'<div class="rr-num-lbl"><span class="l-en">ours</span><span class="l-zh">本方</span></div>'
+          +(oursVal==='—'
+            ? '<div class="rr-num-dash">—</div>'
+            : '<div class="rr-num-val">'+esc(oursVal)+'</div>')
+          +'</div>'
+          +expColHtml
+          +'</div>'
+          +(chip?'<div class="rr-chips-row">'+chip+'</div>':'');
       }
+
       return '<div class="rr-card" data-rr-rel="'+esc(rel)+'" data-rr-rt="'+esc(rt)+'">'
         +'<div class="rr-card-head">'
         +'<span class="rr-card-name">'+relName(rel, rt)+'</span>'
         +'<span class="rr-card-period">'+esc(item.period||'')+'</span>'
         +'<span class="rr-countdown">'+daysLabel+'</span>'
         +'</div>'
-        +projBlock
-        +(chips?'<div class="rr-chips-row">'+chips+'</div>':'')
-        +(conf?'<div class="rr-card-conf"><span class="l-en">Confidence: <b>'+esc(conf)+'</b></span><span class="l-zh">置信度：<b>'+esc(conf)+'</b></span></div>':'')
-        +'<div class="rr-card-do-note">'
-        +'<span class="l-en">display-only — not a signal / not consensus</span>'
-        +'<span class="l-zh">仅展示 — 非信号·非共识</span>'
-        +'</div>'
-        +'<div class="rr-card-tap">'
-        +'<span class="l-en">tap for detail ▸</span><span class="l-zh">点击查看 ▸</span>'
-        +'</div>'
+        +numsRow
+        +'<span class="rr-chevron">▸</span>'
         +'</div>';
     }
 
@@ -3987,25 +4085,123 @@
       _captureHealth = d.capture_health || null;
       var lastScored = Array.isArray(d.last_scored) ? d.last_scored : [];
       var asof = d.asof || '';
-      var cards = _rrItems.length ? _rrItems.map(renderCard).join('') :
-        '<div class="rr-placeholder">'
-        +'<span class="l-en">No upcoming releases in the current window.</span>'
-        +'<span class="l-zh">当前窗口内无即将发布的数据。</span>'
-        +'</div>';
+
+      /* ---- directive 4: see-more logic ---- */
+      /* Find earliest release_date among items that have a release_date */
+      var dates = [];
+      _rrItems.forEach(function(it){
+        if (it.release_date && dates.indexOf(it.release_date) === -1)
+          dates.push(it.release_date);
+      });
+      dates.sort();
+      /* Default-visible = items sharing the EARLIEST upcoming date */
+      var visibleDate = dates[0] || null;
+      /* Guard: if none of those have a modelled point, also show next date that does */
+      function _hasModelledPoint(it){
+        var proj = it.projection || {};
+        return proj.mode !== 'benchmark_only' && proj.point !== null && proj.point !== undefined
+               && (it.release||'').toLowerCase() !== 'retail';
+      }
+      if (visibleDate){
+        var firstHasModel = _rrItems.some(function(it){
+          return it.release_date === visibleDate && _hasModelledPoint(it);
+        });
+        if (!firstHasModel){
+          /* find next date with a modelled point */
+          var nextModelDate = null;
+          for (var di = 1; di < dates.length; di++){
+            if (_rrItems.some(function(it){ return it.release_date === dates[di] && _hasModelledPoint(it); })){
+              nextModelDate = dates[di];
+              break;
+            }
+          }
+          if (nextModelDate) visibleDate = nextModelDate;
+        }
+      }
+      /* Partition items */
+      var visibleItems = [];
+      var hiddenItems = [];
+      _rrItems.forEach(function(it){
+        if (!it.release_date || it.release_date === visibleDate)
+          visibleItems.push(it);
+        else
+          hiddenItems.push(it);
+      });
+      /* Note: retail (no date) always goes in visible per the logic above since its release_date is null */
+      /* Actually retail has release_date=null, so it falls into visibleItems above. Move it to hidden. */
+      var visibleFinal = [];
+      var hiddenFinal = [];
+      _rrItems.forEach(function(it, idx){
+        var isNoDataCard = (it.release||'').toLowerCase() === 'retail';
+        if (isNoDataCard){
+          hiddenFinal.push(it);
+        } else if (it.release_date === visibleDate){
+          visibleFinal.push(it);
+        } else {
+          hiddenFinal.push(it);
+        }
+      });
+
+      var cardsHtml;
+      if (!_rrItems.length){
+        cardsHtml = '<div class="rr-placeholder">'
+          +'<span class="l-en">No upcoming releases in the current window.</span>'
+          +'<span class="l-zh">当前窗口内无即将发布的数据。</span>'
+          +'</div>';
+      } else {
+        /* map items to cards, tracking global index for click handler */
+        var _allOrdered = visibleFinal.concat(hiddenFinal);
+        /* rebuild _rrItems in visible-first order so click idx aligns */
+        _rrItems = _allOrdered;
+        var visCards = visibleFinal.map(renderCard).join('');
+        var hidCards = hiddenFinal.map(renderCard).join('');
+        var nHidden = hiddenFinal.length;
+        var seeMoreHtml = nHidden > 0
+          ? '<div class="rr-see-more-wrap">'
+            +'<button class="rr-see-more-btn" id="rr-see-more-btn" type="button">'
+            +'<span class="l-en">See more ('+nHidden+')</span>'
+            +'<span class="l-zh">显示更多（'+nHidden+'）</span>'
+            +'</button>'
+            +'</div>'
+          : '';
+        var hiddenWrap = nHidden > 0
+          ? '<div class="rr-grid rr-hidden-cards" id="rr-hidden-cards" style="display:none">'+hidCards+'</div>'
+            +seeMoreHtml
+          : '';
+        cardsHtml = '<div class="rr-grid">'+visCards+'</div>'
+          +hiddenWrap;
+      }
+
       var asofLine = asof ? '<div class="rr-asof"><span class="l-en">as of '+esc(asof)+'</span><span class="l-zh">截至 '+esc(asof)+'</span></div>' : '';
       var footer = '<div class="rr-footer">'
         +'<span class="l-en">Model projections · display-only · not investment advice · scored forward in public</span>'
         +'<span class="l-zh">模型预测 · 仅展示 · 非投资建议 · 正向评分公开记录</span>'
         +'</div>';
-      RR_EL.innerHTML = '<div class="rr-grid">'+cards+'</div>'
+      RR_EL.innerHTML = cardsHtml
         + scoreboardBlock(lastScored)
         + asofLine
         + footer;
-      /* wire up card clicks */
+      /* wire up card clicks — index matches _rrItems (visible-first order) */
       var cardEls = RR_EL.querySelectorAll('.rr-card');
       cardEls.forEach(function(el, idx){
         el.addEventListener('click', function(){ if (_rrItems[idx]) openModal(_rrItems[idx]); });
       });
+      /* wire see-more toggle */
+      var smBtn = document.getElementById('rr-see-more-btn');
+      var smWrap = document.getElementById('rr-hidden-cards');
+      if (smBtn && smWrap){
+        var _smOpen = false;
+        smBtn.addEventListener('click', function(){
+          _smOpen = !_smOpen;
+          smWrap.style.display = _smOpen ? '' : 'none';
+          smBtn.innerHTML = _smOpen
+            ? '<span class="l-en">See less</span><span class="l-zh">收起</span>'
+            : '<span class="l-en">See more ('+hiddenFinal.length+')</span><span class="l-zh">显示更多（'+hiddenFinal.length+'）</span>';
+          /* re-sync lang class on button */
+          var lang = document.documentElement.getAttribute('data-lang') || 'en';
+          smBtn.closest('[data-lang]') || void 0;
+        });
+      }
     }
 
     /* fetch — pattern mirrors sector_central.html.j2:670 */
