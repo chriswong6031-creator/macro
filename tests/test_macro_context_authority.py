@@ -230,7 +230,7 @@ def _build_minimal_tree_with_snapshot(root: Path) -> None:
     _write_json(root / "data" / "neuralweb" / "world_state.json", ws)
 
     snapshot = {
-        "schema": "macro_snapshot.v1",
+        "schema": "macro_snapshot.v1.1",
         "asof": "2026-07-05",
         "macro_context_id": "abc123def456789a",
         "labels": {
