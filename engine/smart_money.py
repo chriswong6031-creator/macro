@@ -685,6 +685,7 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
         if latest is None or latest.empty:
             continue
         period_end = str(latest["period_end"].iloc[0]) if "period_end" in latest else ""
+        fund_filing_date = _snapshot_filing_date(latest)  # PIT anchor for L2/L4 ledgers
         as_of_dates.append(period_end)
         diff = diff_snapshots(prev, latest)
         if diff.empty:
@@ -725,6 +726,7 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
                 "fund": slug.upper(), "fund_name": spec.get("name", slug),
                 "action": r.action, "pct_portfolio": round(float(r.pct_portfolio), 2),
                 "value_usd": float(r.value_usd), "period_end": period_end,
+                "filing_date": fund_filing_date,   # PIT anchor; "" for legacy snapshots
                 "shares": (float(r.shares) if hasattr(r, "shares")
                            and r.shares is not None and not pd.isna(r.shares)
                            else None),
@@ -738,11 +740,18 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
                             and r.tilt_pp is not None else None),
             }
             by_ticker.setdefault(t, {"holders": []})["holders"].append(entry)
-            ov = overlap.setdefault(t, {"ticker": t, "n_funds": 0, "funds": [],
-                                        "total_value": 0.0})
-            ov["n_funds"] += 1
-            ov["funds"].append(slug.upper())
+            # Track which raw ticker maps to which canonical ticker (for share-class
+            # collapse). issuer_key uses the equiv table (e.g. GOOG -> GOOGL).
+            canon = issuer_key(t, None)
+            ov = overlap.setdefault(canon, {"ticker": canon, "n_funds": 0, "funds": [],
+                                            "total_value": 0.0,
+                                            "_raw_tickers": set()})
+            if slug.upper() not in ov["funds"]:
+                # Count each fund at most once across all share classes for this issuer
+                ov["n_funds"] += 1
+                ov["funds"].append(slug.upper())
             ov["total_value"] += float(r.value_usd)
+            ov["_raw_tickers"].add(t)
 
     if not by_ticker:
         return None
@@ -787,9 +796,44 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
             fr["quality_grade"] = q["grade"]
             fr["quality_z"] = q.get("quality_z")
 
+    # Attach share_classes lists; promote canonical ticker if it wasn't in by_ticker
+    # (e.g. GOOG -> GOOGL: canonical is GOOGL which may not itself be in the filing).
+    # Also write alias copies in by_ticker so both class-A and class-C pages resolve.
+    for canon, ov in overlap.items():
+        raw_tickers: set[str] = ov.pop("_raw_tickers", set())
+        sc_list = sorted(raw_tickers)
+        ov["share_classes"] = sc_list
+        # For the canonical record in by_ticker: merge from the first matching raw ticker
+        # if the canonical itself was not directly resolved (edge case; usually it is).
+        if canon not in by_ticker and sc_list:
+            # Pick the raw ticker entry that exists in by_ticker
+            for rt in sc_list:
+                if rt in by_ticker:
+                    by_ticker[canon] = by_ticker[rt]
+                    break
+        # Stamp share_classes onto the canonical by_ticker record so stock pages can
+        # surface it (e.g. GOOGL page shows ["GOOG","GOOGL"]). Only stamp when multi-class.
+        if canon in by_ticker and len(sc_list) > 1:
+            by_ticker[canon]["share_classes"] = sc_list
+        # Write alias copies for every non-canonical raw ticker that maps to this canon.
+        # Alias points to the same canonical record so both class pages resolve identically.
+        if canon in by_ticker:
+            canon_rec = by_ticker[canon]
+            for rt in sc_list:
+                if rt != canon:
+                    # Write alias entry pointing to the same canonical data so stock pages
+                    # looking up by their own ticker (GOOG or GOOGL) both resolve.
+                    if rt not in by_ticker:
+                        by_ticker[rt] = canon_rec
+                    # If rt IS already in by_ticker (both classes resolved independently),
+                    # replace with canonical record for consistency.
+                    else:
+                        by_ticker[rt] = canon_rec
+
     most_held = sorted(overlap.values(), key=lambda r: (-r["n_funds"], -r["total_value"]))[:40]
     for m in most_held:
         m["total_value"] = round(m["total_value"], 0)
+        # most_held uses canonical tickers only — no duplicates across share classes
 
     return {
         "as_of": max(as_of_dates) if as_of_dates else "",

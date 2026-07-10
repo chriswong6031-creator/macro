@@ -46,12 +46,17 @@ def test_full_cusip_map_seed_overrides_openfigi(tmp_path, monkeypatch):
     pd.DataFrame({"cusip": ["AAA", "CCC"], "ticker": ["FIGI_A", "ZZ"]}).to_parquet(p)
     monkeypatch.setattr(of, "_cache_path", lambda: p)
     monkeypatch.setattr(sm, "cusip_ticker_seed", lambda: {"AAA": "SEEDWIN"})
-    fm = sm.full_cusip_map()
-    assert fm["AAA"] == "SEEDWIN"                   # hand-verified seed wins on conflict
-    assert fm["CCC"] == "ZZ"                        # OpenFIGI-only entry kept
+    mapping, meta = sm.full_cusip_map()
+    assert mapping["AAA"] == "SEEDWIN"              # hand-verified seed wins on conflict
+    assert mapping["CCC"] == "ZZ"                   # OpenFIGI-only entry kept
+    assert meta["openfigi_entries"] >= 2            # OpenFIGI contributed entries
+    assert meta["ark_seed_entries"] >= 1            # seed contributed entries
 
 
 def test_full_cusip_map_degrades_without_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(of, "_cache_path", lambda: tmp_path / "nope.parquet")
     monkeypatch.setattr(sm, "cusip_ticker_seed", lambda: {"AAA": "X"})
-    assert sm.full_cusip_map() == {"AAA": "X"}      # no cache -> just the seed
+    mapping, meta = sm.full_cusip_map()             # returns (dict, meta) always
+    assert mapping == {"AAA": "X"}                  # no cache -> just the seed
+    assert meta["openfigi_entries"] == 0            # OpenFIGI contributed nothing
+    assert meta["ark_seed_entries"] == 1            # seed contributed 1 entry

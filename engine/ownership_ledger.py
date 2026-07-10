@@ -332,13 +332,18 @@ def _l2_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
         holders = rec.get("holders", [])
         if not holders:
             continue
-        anchor_date = rec.get("as_of", "")
+        non_exit_holders = [h for h in holders if h.get("action") != "exit"]
+        # Anchor = max filing_date across non-exit holders (PIT law: filing_date is the
+        # only look-ahead-free anchor; period_end is ~45d before the data was public).
+        # Fall back to None (skip entry) if no holder carries a filing_date.
+        filing_dates = [h["filing_date"] for h in non_exit_holders
+                        if h.get("filing_date")]
+        anchor_date = max(filing_dates) if filing_dates else None
         if not anchor_date:
             continue
         # Aggregate shares from holder records (populated by E2.5 fix in compute_smart_money).
         # holders[*]["shares"] = sum of shares for that fund's position in this ticker.
         # Null-honest: if no holder carries shares, dte_val stays None.
-        non_exit_holders = [h for h in holders if h.get("action") != "exit"]
         agg_shares = sum(float(h.get("shares") or 0) for h in non_exit_holders)
         adv_meta = adv_shares(ticker, as_of=anchor_date)
         adv = adv_meta["adv"] if adv_meta else None
@@ -449,9 +454,13 @@ def _l4_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
         ticker = rec.get("ticker", "")
         if not ticker:
             continue
-        # Anchor = latest as_of from the by_ticker record
+        # Anchor = max filing_date across the ticker's holders (PIT law: filing_date is
+        # the only look-ahead-free anchor; period_end / as_of is ~45d before public).
+        # Fall back to skip (null-honest) if no holder carries a filing_date.
         bt = sm_payload.get("by_ticker", {}).get(ticker, {})
-        anchor_date = bt.get("as_of", "")
+        holders = bt.get("holders", [])
+        filing_dates = [h["filing_date"] for h in holders if h.get("filing_date")]
+        anchor_date = max(filing_dates) if filing_dates else None
         if not anchor_date:
             continue
         m = _grade_entry(ticker, anchor_date, panel)

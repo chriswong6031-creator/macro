@@ -54,7 +54,9 @@ def test_issuer_key_unknown():
 # --------------------------------------------------------------------------- #
 
 def _make_brk_holders():
-    """Simulate two holder entries for the same fund — BRK.A and BRK.B lots."""
+    """Simulate two holder entries for the same fund — BRK.A and BRK.B lots.
+    NOTE: This fixture is retained for reference but is no longer used directly
+    by tests. The M4 de-theater test below uses compute_smart_money directly."""
     return [
         {"fund": "BERKTEST", "fund_name": "Test Fund", "action": "hold",
          "pct_portfolio": 3.0, "value_usd": 3e6, "period_end": "2025-06-30",
@@ -65,20 +67,93 @@ def _make_brk_holders():
     ]
 
 
-def test_overlap_stats_does_not_double_count_share_classes():
-    """overlap_stats counts funds, not lots. If a single fund appears twice (A+B share
-    class), vip must count it ONCE — the calling code in compute_smart_money collapses
-    dual-class lots via groupby(ticker) before building by_ticker entries, so each fund
-    appears at most once in the holders list. This test verifies the contract."""
-    # After the compute_smart_money groupby collapse, a fund appears only once per ticker.
-    # Simulate post-collapse: one entry per fund.
-    holders = [
-        {"fund": "FUND1", "action": "hold", "value_usd": 4e6, "pct_portfolio": 4.0},
-        {"fund": "FUND2", "action": "hold", "value_usd": 2e6, "pct_portfolio": 2.0},
-    ]
-    stats = sm.overlap_stats(holders)
-    # 2 distinct funds → vip = 2
-    assert stats["vip"] == 2
+def test_overlap_stats_does_not_double_count_share_classes(tmp_path, monkeypatch):
+    """Funds holding both GOOG and GOOGL must be counted ONCE in n_funds.
+
+    This test pushes genuinely un-collapsed GOOG+GOOGL rows through the real
+    compute_smart_money aggregation path. We assert:
+    - n_funds counts each fund once (not once per share class)
+    - total_value sums both classes
+    - both GOOG and GOOGL resolve in by_ticker to the same canonical record
+    - most_held has only the canonical row (no duplicate entry)
+    """
+    import engine.smart_money as _sm
+
+    monkeypatch.setattr(_sm.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(_sm.config, "load", lambda: {
+        "smart_money": {
+            "panel_top_n": 12,
+            "funds": {
+                "fund_alpha": {"name": "Fund Alpha"},
+                "fund_beta": {"name": "Fund Beta"},
+            },
+        }
+    })
+
+    # Fund Alpha holds GOOG (class C) + GOOGL (class A) — two 13F lines per SEC rules
+    alpha_dir = tmp_path / "smart_money" / "fund_alpha"
+    alpha_dir.mkdir(parents=True)
+    # GOOG CUSIP: 02079K107; GOOGL CUSIP: 02079K305 (real, different stems)
+    snap_alpha = pd.DataFrame([
+        {"cusip": "02079K107", "issuer": "ALPHABET INC CLASS C", "sh_type": "SH",
+         "shares": 500.0, "value_usd": 900_000.0,
+         "period_end": "2025-12-31", "filing_date": "2026-02-14"},
+        {"cusip": "02079K305", "issuer": "ALPHABET INC CLASS A", "sh_type": "SH",
+         "shares": 300.0, "value_usd": 600_000.0,
+         "period_end": "2025-12-31", "filing_date": "2026-02-14"},
+    ])
+    snap_alpha.to_parquet(alpha_dir / "2025-12-31.parquet")
+
+    # Fund Beta holds GOOGL only
+    beta_dir = tmp_path / "smart_money" / "fund_beta"
+    beta_dir.mkdir(parents=True)
+    snap_beta = pd.DataFrame([
+        {"cusip": "02079K305", "issuer": "ALPHABET INC CLASS A", "sh_type": "SH",
+         "shares": 1000.0, "value_usd": 2_000_000.0,
+         "period_end": "2025-12-31", "filing_date": "2026-02-20"},
+    ])
+    snap_beta.to_parquet(beta_dir / "2025-12-31.parquet")
+
+    # Monkeypatch resolution: GOOG -> GOOG, GOOGL -> GOOGL by CUSIP
+    monkeypatch.setattr(_sm, "name_ticker_map", lambda *a, **kw: {})
+    monkeypatch.setattr(_sm, "full_cusip_map", lambda *a, **kw: (
+        {"02079K107": "GOOG", "02079K305": "GOOGL"},
+        {"openfigi_entries": 2, "ark_seed_entries": 0},
+    ))
+    monkeypatch.setattr(_sm, "_accumulation", lambda *a, **kw: {})
+    monkeypatch.setattr(_sm, "_safe_manager_quality", lambda *a, **kw: {})
+
+    result = _sm.compute_smart_money({
+        "panel_top_n": 12,
+        "funds": {
+            "fund_alpha": {"name": "Fund Alpha"},
+            "fund_beta": {"name": "Fund Beta"},
+        },
+    })
+    assert result is not None, "compute_smart_money returned None"
+
+    # 1. most_held must have only the canonical row (GOOGL), not both GOOG and GOOGL
+    most_held_tickers = [r["ticker"] for r in result["most_held"]]
+    assert "GOOG" not in most_held_tickers, (
+        f"GOOG must NOT appear as a separate most_held row; got {most_held_tickers}")
+    assert "GOOGL" in most_held_tickers, "GOOGL canonical row must be in most_held"
+
+    # 2. n_funds for the canonical row: fund_alpha (holds both GOOG+GOOGL) counts ONCE
+    # + fund_beta = 2 total, not 3
+    canon_row = next(r for r in result["most_held"] if r["ticker"] == "GOOGL")
+    assert canon_row["n_funds"] == 2, (
+        f"Expected n_funds=2 (fund_alpha once + fund_beta), got {canon_row['n_funds']}")
+
+    # 3. total_value sums both classes: alpha=900k+600k=1.5M + beta=2M = 3.5M
+    assert canon_row["total_value"] == pytest.approx(3_500_000.0, rel=0.01), (
+        f"Expected total_value≈3.5M, got {canon_row['total_value']}")
+
+    # 4. Both GOOG and GOOGL must resolve in by_ticker to the same canonical record
+    by_ticker = result["by_ticker"]
+    assert "GOOGL" in by_ticker, "Canonical GOOGL must be in by_ticker"
+    assert "GOOG" in by_ticker, "Alias GOOG must be in by_ticker"
+    assert by_ticker["GOOG"] is by_ticker["GOOGL"], (
+        "GOOG and GOOGL must point to the same canonical by_ticker record")
 
 
 def test_position_rank_and_tilt():

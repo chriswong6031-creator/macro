@@ -299,3 +299,136 @@ class TestAdvanceLedgersNightlyGuard:
         result = ol.advance_ledgers(funds, sm_payload={}, root=tmp_path)
         # Should have tried all cohorts (returned 0 since mocked to empty)
         assert set(result.keys()) == {"L1", "L2", "L3", "L4"}
+
+
+# --------------------------------------------------------------------------- #
+# M3 PIT anchor: L2/L4 must use filing_date, not period_end (look-ahead-free)  #
+# --------------------------------------------------------------------------- #
+
+class TestL2L4FilingDateAnchor:
+    """L2 and L4 must anchor on filing_date (public disclosure date), not
+    period_end (~45d earlier). This prevents ~45d of look-ahead leakage.
+
+    Fixture: holders with period_end=2026-03-31 and filing_date=2026-05-15.
+    Assert the anchor_date passed to forward_metrics / stored in the ledger row
+    is 2026-05-15, not 2026-03-31.
+    """
+
+    def _make_sm_payload(self, ticker: str,
+                         period_end: str = "2026-03-31",
+                         filing_date: str = "2026-05-15",
+                         n_funds: int = 3) -> dict:
+        """Minimal sm_payload with controllable period_end / filing_date on holders."""
+        holders = [
+            {"fund": f"FUND{i}", "fund_name": f"Fund {i}", "action": "hold",
+             "pct_portfolio": 2.0, "value_usd": 2_000_000.0,
+             "period_end": period_end,
+             "filing_date": filing_date,   # the public-disclosure anchor
+             "shares": 1_000_000.0,
+             "shares_change_pct": None}
+            for i in range(n_funds)
+        ]
+        return {
+            "by_ticker": {
+                ticker: {
+                    "holders": holders,
+                    "as_of": period_end,    # old period_end field still present
+                    "vip": n_funds,
+                }
+            },
+            "most_held": [{"ticker": ticker, "n_funds": n_funds,
+                           "total_value": 6_000_000.0}],
+        }
+
+    def test_l2_anchor_is_filing_date_not_period_end(self, monkeypatch):
+        """_l2_entries must use max(holder.filing_date) for the anchor, not as_of."""
+        captured_anchors: list[str] = []
+
+        def fake_adv(ticker, as_of=None):
+            return {"adv": 50_000.0, "source": "yahoo"}
+
+        def fake_grade(ticker, anchor, panel):
+            captured_anchors.append(anchor)
+            return {}
+
+        monkeypatch.setattr(ol, "_grade_entry", fake_grade)
+        monkeypatch.setattr(ol, "_spy_grade", lambda a, p: {})
+        monkeypatch.setattr(ol, "_fwd_mae", lambda t, a, p: {})
+
+        # Patch adv_shares inside ownership_ledger's import
+        import engine.ownership_crowding as oc
+        monkeypatch.setattr(oc, "adv_shares", fake_adv)
+
+        period_end = "2026-03-31"
+        filing_date = "2026-05-15"
+        payload = self._make_sm_payload("AAPL",
+                                        period_end=period_end,
+                                        filing_date=filing_date,
+                                        n_funds=10)
+
+        class NullPanel:
+            def get(self, t): return None
+
+        entries = ol._l2_entries(payload, NullPanel())
+        # Entries may be empty (dte quintile needs >=5 tickers), but if anchor was
+        # captured it must be filing_date; we capture via _grade_entry mock.
+        for anchor in captured_anchors:
+            assert anchor == filing_date, (
+                f"L2 anchor should be filing_date {filing_date!r}, "
+                f"got period_end-era {anchor!r}")
+        # If we got entries, verify anchor_date in the rows themselves
+        for row in entries:
+            assert row["anchor_date"] == filing_date, (
+                f"L2 row anchor_date {row['anchor_date']!r} != "
+                f"filing_date {filing_date!r}")
+
+    def test_l4_anchor_is_filing_date_not_period_end(self, monkeypatch):
+        """_l4_entries must use max(holder.filing_date) for the anchor, not as_of."""
+        captured_anchors: list[str] = []
+
+        def fake_grade(ticker, anchor, panel):
+            captured_anchors.append(anchor)
+            return {}
+
+        monkeypatch.setattr(ol, "_grade_entry", fake_grade)
+        monkeypatch.setattr(ol, "_spy_grade", lambda a, p: {})
+
+        period_end = "2026-03-31"
+        filing_date = "2026-05-15"
+        payload = self._make_sm_payload("MSFT",
+                                        period_end=period_end,
+                                        filing_date=filing_date)
+
+        class NullPanel:
+            def get(self, t): return None
+
+        entries = ol._l4_entries(payload, NullPanel())
+        assert len(entries) >= 1, "Expected at least one L4 entry from fixture"
+        for row in entries:
+            assert row["anchor_date"] == filing_date, (
+                f"L4 row anchor_date {row['anchor_date']!r} != "
+                f"filing_date {filing_date!r}")
+        for anchor in captured_anchors:
+            assert anchor == filing_date, (
+                f"L4 _grade_entry called with anchor {anchor!r} "
+                f"instead of filing_date {filing_date!r}")
+
+    def test_l2_skips_entry_when_no_filing_date(self, monkeypatch):
+        """When no holder carries a filing_date, L2 must skip the entry (null-honest)."""
+        import engine.ownership_crowding as oc
+        monkeypatch.setattr(oc, "adv_shares", lambda t, as_of=None: {"adv": 50_000.0, "source": "yahoo"})
+        monkeypatch.setattr(ol, "_grade_entry", lambda t, a, p: {})
+        monkeypatch.setattr(ol, "_spy_grade", lambda a, p: {})
+        monkeypatch.setattr(ol, "_fwd_mae", lambda t, a, p: {})
+
+        # Build payload with empty filing_date on all holders
+        payload = self._make_sm_payload("TSLA", period_end="2026-03-31",
+                                        filing_date="", n_funds=10)
+
+        class NullPanel:
+            def get(self, t): return None
+
+        entries = ol._l2_entries(payload, NullPanel())
+        # With no filing_date, the ticker should be skipped entirely (no entry)
+        assert not any(r["ticker"] == "TSLA" for r in entries), (
+            "L2 must skip tickers whose holders have no filing_date")

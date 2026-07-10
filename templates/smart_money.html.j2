@@ -276,7 +276,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
     {% set qs = d_fresh.get('quarter_state') or '' %}
     {% if qs == 'window_open' %}
       {% set filed_ct = (d_fresh.get('filed_pending') or []) | selectattr('status','equalto','filed') | list | length %}
-      {% set total_ct = (d_fresh.get('filed_pending') or []) | length %}
+      {% set total_ct = (d_fresh.get('filed_pending') or []) | rejectattr('status','equalto','closed') | list | length %}
       <div class="qstate">{{ t('FILING WINDOW OPEN','申报窗口已开启') }} — {{ filed_ct }}/{{ total_ct }} {{ t('funds filed','家基金已申报') }}</div>
     {% elif qs == 'closed' %}
       <div class="qstate" style="color:var(--muted)">{{ t('WINDOW CLOSED','窗口已关闭') }}</div>
@@ -296,6 +296,8 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
       {% for fp in d_fresh.get('filed_pending') or [] %}
         {% if fp.get('status') == 'filed' %}
           <i class="df" title="{{ fp.slug }} — filed {{ fp.filing_date }}"></i>
+        {% elif fp.get('status') == 'closed' %}
+          <i style="opacity:.3" title="{{ fp.slug }} — closed"></i>
         {% else %}
           <i class="dp" title="{{ fp.slug }} — pending"></i>
         {% endif %}
@@ -627,7 +629,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
       <td class="num">{{ row.n_funds }}</td>
       <td class="num">{{ usd(row.agg_value_usd) }}</td>
       <td class="num">{{ "%.3f" | format(row.hhi) if row.get('hhi') is not none else '—' }}</td>
-      <td class="num">{{ "%.1f" | format(row.days_to_exit) if row.get('days_to_exit') is not none else '—' }}</td>
+      <td class="num">{% if row.get('days_to_exit') is not none %}{% if row.days_to_exit < 0.05 %}&lt;0.1{% else %}{{ "%.1f" | format(row.days_to_exit) }}{% endif %}{% else %}—{% endif %}</td>
       <td><span class="tier {{ ct }}">{{ ct | upper }}</span></td>
       <td class="num">{% if eb.get('p50') %}${{ "%.2f" | format(eb.p50) }} <span class="mut">{{ t('proxy','估算') }}</span>{% else %}—{% endif %}</td>
       <td class="num">{% if eb.get('n_underwater') is not none and eb.get('n') %}{{ eb.n_underwater }} / {{ eb.n }}{% else %}—{% endif %}</td>
@@ -902,7 +904,8 @@ function _renderDossier(ticker){
     b13f += '<br>';
     vip.slice(0,3).forEach(function(h){b13f+='<span class="mut">'+h.fund_name+'</span> <span class="act-pill '+(h.action||'')+'">'+h.action+'</span> '+h.pct_portfolio.toFixed(1)+'% · ';});
     if(crowdRow){
-      b13f += '<br>Days-to-exit: '+(crowdRow.days_to_exit!=null?crowdRow.days_to_exit.toFixed(1):'—')+' <span class="tier '+(crowdRow.crowding_tier||'low')+'">'+(crowdRow.crowding_tier||'').toUpperCase()+'</span>';
+      var _dteStr=crowdRow.days_to_exit!=null?(crowdRow.days_to_exit<0.05?'<0.1':crowdRow.days_to_exit.toFixed(1)):'—';
+      b13f += '<br>Days-to-exit: '+_dteStr+' <span class="tier '+(crowdRow.crowding_tier||'low')+'">'+(crowdRow.crowding_tier||'').toUpperCase()+'</span>';
       var eb=crowdRow.entry_band||{};
       if(eb.p50) b13f += ' · entry P50 $'+eb.p50.toFixed(2)+' <span class="mut">(proxy)</span>';
       if(eb.n_underwater!=null&&eb.n) b13f += ' · '+eb.n_underwater+'/'+eb.n+' underwater';

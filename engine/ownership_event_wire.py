@@ -128,15 +128,20 @@ def filing_season_clock(funds: dict[str, dict],
         meta = fund_filings.get(slug, {})
         period_end = meta.get("period_end", "") or ""
         filing_date = meta.get("filing_date", "") or ""
-        # A fund has "filed" for this expected quarter if its latest on-disk period_end
-        # matches the expected quarter_end string.
-        expected_pe = str(qend)
-        if period_end == expected_pe:
-            status = "filed"
-        elif quarter_state == "window_open":
-            status = "pending"
+        # Closed funds (status: closed in config) do not file; skip them in the
+        # filed/pending counts but include them in the grid as a muted indicator.
+        if str(spec.get("status", "")).lower() == "closed":
+            status = "closed"
         else:
-            status = "lapsed"
+            # A fund has "filed" for this expected quarter if its latest on-disk
+            # period_end matches the expected quarter_end string.
+            expected_pe = str(qend)
+            if period_end == expected_pe:
+                status = "filed"
+            elif quarter_state == "window_open":
+                status = "pending"
+            else:
+                status = "lapsed"
         grid.append({
             "slug": slug,
             "name": spec.get("name", slug),
