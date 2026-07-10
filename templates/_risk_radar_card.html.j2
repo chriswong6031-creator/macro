@@ -108,7 +108,7 @@
     <div class="rrx-rec-hd">
       <span class="rrx-rec-ar">{{ '↘' if rv.receding else '◔' }}</span>
       <span class="rrx-rec-ttl">{{ t(rv.headline_en, rv.headline_zh) }}</span>
-      {% if rv.turn_confirmed %}<span class="rrx-rec-tag">{{ t('TURN','转向') }}</span>{% endif %}
+      {% if rv.turn_confirmed %}<span class="rrx-rec-tag">{{ t('TURN','转向') }}</span>{% endif %}{% if rv.turn_confirmed_full %}<span class="rrx-rec-tag">{{ t('INTERNALS ✓','内部确认 ✓') }}</span>{% endif %}
       {{ help(rv.caveat_en, rv.caveat_zh) }}
     </div>
     <div class="rrx-rec-mid">
@@ -129,6 +129,21 @@
     {% else %}
     <div class="rrx-rec-cats none">{{ t('No liquidity catalyst yet — risk easing on its own; watch for a policy / liquidity turn to confirm.','尚无流动性催化 — 风险自行回落；留意政策／流动性转向以确认。') }}</div>
     {% endif %}
+    {#- Market-INTERNAL confirmation channel (engine/risk_radar_market_catalysts.py, W1) — the
+       second leg of the two-channel turn read (RRX masterplan §4A). US radar only (the intl
+       payloads carry market=None by scoping). ACCRUING: forward-graded on the rebound ruler
+       (risk_radar_recovery_audit) before it is ever trusted; the fired chips are context, not
+       an all-clear. Old artifacts lack rv.market entirely -> this block renders NOTHING (the
+       whitespace-control below keeps the no-market output byte-identical to the prior card). -#}
+    {%- if rv.market and rv.market.chips %}
+    {%- set fired_chips = rv.market.chips | selectattr('fired') | list %}
+    <div class="rrx-rec-cats">
+      <span class="rrx-rec-k">{{ t('Internals','市场内部') }}{{ help('Market-internal confirmation chips (breadth thrusts, follow-through, capitulation-resolution, credit rollover). Accruing — every read is forward-graded before the channel is trusted; not an all-clear.','市场内部确认信号（广度推进、放量确认、恐慌解除、信用利差回落）。积累中 — 每次读取均做前瞻评分后方可信任；并非解除警报。') }}</span>
+      {% if fired_chips %}{% for c in fired_chips %}<span class="rrx-rec-chip{{ ' fresh' if c.fresh }}">{{ t(c.label_en, c.label_zh) }}</span>{% endfor %}
+      {% else %}<span class="rrx-rec-chip">{{ t('no internal confirmation yet','尚无内部确认') }}</span>{% endif %}
+      {% if rv.market.veto and rv.market.veto.active %}<span class="rrx-rec-chip">⚠ {{ t('vol still unstable — turn not trusted','波动仍未稳定 — 转向暂不可信') }}</span>{% endif %}
+    </div>
+    {%- endif %}
     {% if rv.do_en %}<div class="rrx-rec-do"><span class="rrx-rec-do-k">{{ t('Do','应对') }}</span>{{ t(rv.do_en, rv.do_zh) }}</div>{% endif %}
   </div>
   {% endif %}
