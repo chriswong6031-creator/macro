@@ -181,19 +181,21 @@
     </button>
   </div>
   <select class="tl-sig-select" id="tl-sig-select" onchange="tlSelectSignal(this.value)">
-    <option value="COMPOSITE">{{ t('★ Composite (all signals)', '★ 综合评分（全部信号）') }}</option>
+    <option value="COMPOSITE" data-en="★ Composite (all signals)" data-zh="★ 综合评分（全部信号）">★ Composite (all signals)</option>
     {% for group in signal_groups %}
     <optgroup label="{{ group.family | replace('_',' ') | title }}">
       {% for sig in group.signals %}
       {% if sig.id != 'COMPOSITE' %}
-      <option value="{{ sig.id }}">{{ sig.get('display_en', sig.id) }}{% if sig.get('display_zh') %} / {{ sig.display_zh }}{% endif %}</option>
+      <option value="{{ sig.id }}" data-en="{{ sig.get('display_en', sig.id) }}" data-zh="{{ sig.get('display_zh') or sig.get('display_en', sig.id) }}">{{ sig.get('display_en', sig.id) }}</option>
       {% endif %}
       {% endfor %}
     </optgroup>
     {% endfor %}
   </select>
   <input class="tl-search" id="tl-ticker-search" type="text"
-    placeholder="Search ticker… / 搜索标的…"
+    placeholder="Search ticker…"
+    data-ph-en="Search ticker…"
+    data-ph-zh="搜索标的…"
     oninput="tlSearchTicker(this.value)"
     data-tip-en="Search for a stock to see its signal profile"
     data-tip-zh="搜索个股查看其信号档案">
@@ -276,6 +278,12 @@
 {% block body_scripts %}
 <script>
 (function() {
+  // ── i18n helper — dual-span switches via CSS (.l-en/.l-zh) ──
+  function L(en, zh) {
+    return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh != null ? zh : en) + '</span>';
+  }
+  function _isZh() { return document.documentElement.getAttribute('data-lang') === 'zh'; }
+
   // ── runtime state ──
   var SIGS = {};
   var STKS = {};
@@ -318,7 +326,7 @@
     document.getElementById('prof-ticker').textContent = tk;
     document.getElementById('prof-name').textContent   = s.name || '';
     document.getElementById('prof-active-buy').textContent   = s.active_buy   != null ? s.active_buy   : '—';
-    document.getElementById('prof-active-total').textContent = s.active_total != null ? '/ ' + s.active_total + ' total' : '';
+    document.getElementById('prof-active-total').innerHTML = s.active_total != null ? '/ ' + s.active_total + ' ' + L('total', '共') : '';
     document.getElementById('prof-score').textContent = s.score != null ? (s.score > 0 ? '+' : '') + s.score.toFixed(1) : '—';
     var bandEl = document.getElementById('prof-band');
     bandEl.textContent = s.band || '—';
@@ -342,7 +350,7 @@
       var rowCls = sig.state ? 'state-on' : 'state-off';
       sl.innerHTML += '<div class="tl-sig-row ' + rowCls + '">' +
         '<span class="' + dirCls + '">' + _glyph(sig.glyph) + '</span>' +
-        '<span>' + (sig.display_en || sig.id) + '</span>' +
+        L(sig.display_en || sig.id, sig.display_zh || SIGS[sig.id] && SIGS[sig.id].display_zh || sig.display_en || sig.id) +
         (sig.age_days ? '<span class="tl-sig-age">' + sig.age_days + 'd</span>' : '') +
         '</div>';
     });
@@ -391,17 +399,17 @@
         return { ticker: tk, name: s.name, price: s.price, score: s.score, band: s.band }; })
         .filter(function(r) { return r.score != null; })
         .sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
-      title = 'Composite — Top Names by Score'; dir = 1; glyph = 'star_gold'; countWord = ' names';
+      title = L('Composite — Top Names by Score', '综合 — 最高评分标的'); dir = 1; glyph = 'star_gold'; countWord = L(' names', ' 个标的');
     } else {
       tickers = (sig && sig.tickers) ? sig.tickers : [];
-      title = sig ? (sig.display_en + (sig.display_zh && sig.display_zh !== sig.display_en ? ' / ' + sig.display_zh : '')) : _sigId;
-      dir = sig ? sig.direction : 0; glyph = sig ? sig.glyph : null; countWord = ' firing';
+      title = sig ? L(sig.display_en, sig.display_zh || sig.display_en) : _sigId;
+      dir = sig ? sig.direction : 0; glyph = sig ? sig.glyph : null; countWord = L(' firing', ' 个触发中');
     }
     document.getElementById('tl-screener-title').innerHTML =
       '<span class="' + (dir > 0 ? 'glyph-up' : dir < 0 ? 'glyph-down' : 'glyph-neu') + '">' +
       _glyph(glyph) + '</span> ' + title +
       ' <span class="h-note" id="tl-screener-count"></span>';
-    document.getElementById('tl-screener-count').textContent = tickers.length + countWord;
+    document.getElementById('tl-screener-count').innerHTML = tickers.length + countWord;
 
     var tbody = document.getElementById('tl-screener-tbody');
     if (!tickers.length) {
@@ -425,7 +433,7 @@
         '</td>' +
         '<td><span class="band-chip ' + _bandClass(r.band) + '">' + (r.band || '—') + '</span></td>' +
         '<td class="tl-num">' + (r.price != null ? '$' + r.price.toFixed(2) : '—') + '</td>' +
-        '<td><span style="color:var(--link);cursor:pointer;font-size:11.5px" onclick="event.stopPropagation();tlOpenProfile(\'' + r.ticker + '\')">→ profile</span></td>' +
+        '<td><span style="color:var(--link);cursor:pointer;font-size:11.5px" onclick="event.stopPropagation();tlOpenProfile(\'' + r.ticker + '\')">' + L('→ profile', '→ 档案') + '</span></td>' +
         '</tr>';
     }).join('');
   }
@@ -445,7 +453,7 @@
         (wr != null ? '<rect x="0" y="3" width="' + wx.toFixed(1) + '" height="6" rx="3" fill="#5b8def"/>' : '') +
         (base != null ? '<line x1="' + bx.toFixed(1) + '" y1="0" x2="' + bx.toFixed(1) + '" y2="' + h + '" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2,2"/>' : '') +
       '</svg>' +
-      (edge != null ? '<span class="tl-wr-txt ' + edgeCls + '">' + (parseFloat(edge) >= 0 ? '+' : '') + edge + 'pp edge</span>' : '') +
+      (edge != null ? '<span class="tl-wr-txt ' + edgeCls + '">' + (parseFloat(edge) >= 0 ? '+' : '') + edge + L('pp edge', 'pp 优势') + '</span>' : '') +
       '</div>';
   }
 
@@ -453,24 +461,25 @@
     var sig = SIGS[_sigId];
     var lab = sig && sig.lab;
     document.getElementById('tl-lab-title').innerHTML =
-      '🔬 ' + (sig ? (sig.display_en || _sigId) : _sigId) + ' — <span class="h-note">descriptive profile</span>';
+      '🔬 ' + L(sig ? (sig.display_en || _sigId) : _sigId, sig ? (sig.display_zh || sig.display_en || _sigId) : _sigId) +
+      ' — <span class="h-note">' + L('descriptive profile', '描述性档案') + '</span>';
 
     var grid = document.getElementById('tl-lab-grid');
     if (!lab) {
-      grid.innerHTML = '<p class="tl-empty">' + (sig ? 'No lab profile for this signal yet.' : 'Select a signal.') + '</p>';
+      grid.innerHTML = '<p class="tl-empty">' + (sig ? L('No lab profile for this signal yet.', '该信号暂无实验室档案。') : L('Select a signal.', '请选择信号。')) + '</p>';
       return;
     }
     var cells = [
-      { k: 'Win Rate 21d', b: _wrBar(lab.wr_21d, lab.base_wr), note: _wr(lab.wr_21d) + ' vs base ' + _wr(lab.base_wr) },
-      { k: 'Mean Return 21d', v: _pct(lab.mean_21d != null ? lab.mean_21d : null), note: 'base ' + _pct(lab.base_mean != null ? lab.base_mean : null) },
-      { k: 'MFE/MAE', v: lab.mfe_mae_med != null ? lab.mfe_mae_med.toFixed(2) + '×' : '—', note: 'median favourable/adverse' },
-      { k: 'Durable Rate', v: _wr(lab.durable_rate), note: 'held above entry 15d' },
-      { k: 'Median Lag', v: lab.median_lag_pct != null ? (lab.median_lag_pct * 100).toFixed(1) + '%' : '—', note: 'above 60d low at fire' },
-      { k: 'Days Since Low', v: lab.days_since_low_med != null ? Math.round(lab.days_since_low_med) + 'd' : '—', note: 'median' },
-      { k: 'Up-Tape %', v: _wr(lab.up_tape_pct), note: 'SPX up on fire day' },
-      { k: 'Fires / Months', v: (lab.n_fires || '—') + ' / ' + (lab.n_months || '—'), note: 'in sample' },
-      { k: 'WR pre-2010', v: _wr(lab.wr_pre2010), note: lab.wr_pre2010 != null ? 'older regime' : 'no data' },
-      { k: 'WR post-2010', v: _wr(lab.wr_post2010), note: 'modern regime' },
+      { k: L('Win Rate 21d', '21日胜率'), b: _wrBar(lab.wr_21d, lab.base_wr), note: _wr(lab.wr_21d) + ' vs ' + L('base', '基准') + ' ' + _wr(lab.base_wr) },
+      { k: L('Mean Return 21d', '21日平均收益'), v: _pct(lab.mean_21d != null ? lab.mean_21d : null), note: L('base', '基准') + ' ' + _pct(lab.base_mean != null ? lab.base_mean : null) },
+      { k: 'MFE/MAE', v: lab.mfe_mae_med != null ? lab.mfe_mae_med.toFixed(2) + '×' : '—', note: L('median favourable/adverse', '中位有利/不利幅度') },
+      { k: L('Durable Rate', '持续率'), v: _wr(lab.durable_rate), note: L('held above entry 15d', '15日内维持在入场价上方') },
+      { k: L('Median Lag', '中位滞后'), v: lab.median_lag_pct != null ? (lab.median_lag_pct * 100).toFixed(1) + '%' : '—', note: L('above 60d low at fire', '触发时位于60日低点上方') },
+      { k: L('Days Since Low', '距低点天数'), v: lab.days_since_low_med != null ? Math.round(lab.days_since_low_med) + 'd' : '—', note: L('median', '中位数') },
+      { k: L('Up-Tape %', '上涨行情%'), v: _wr(lab.up_tape_pct), note: L('SPX up on fire day', '触发日标普500上涨') },
+      { k: L('Fires / Months', '触发次数 / 月数'), v: (lab.n_fires || '—') + ' / ' + (lab.n_months || '—'), note: L('in sample', '样本内') },
+      { k: L('WR pre-2010', '2010前胜率'), v: _wr(lab.wr_pre2010), note: lab.wr_pre2010 != null ? L('older regime', '旧周期') : L('no data', '无数据') },
+      { k: L('WR post-2010', '2010后胜率'), v: _wr(lab.wr_post2010), note: L('modern regime', '现代周期') },
     ];
     grid.innerHTML = cells.map(function(c) {
       return '<div class="tl-lab-stat"><div class="lk">' + c.k + '</div>' +
@@ -491,8 +500,8 @@
   function _showError(msg) {
     var loadingS = document.getElementById('tl-screener-loading');
     var loadingL = document.getElementById('tl-lab-loading');
-    if (loadingS) loadingS.textContent = msg;
-    if (loadingL) loadingL.textContent = msg;
+    if (loadingS) loadingS.innerHTML = msg;
+    if (loadingL) loadingL.innerHTML = msg;
   }
 
   // ── hide loading indicators, show table ──
@@ -532,7 +541,7 @@
         var s = labSignals[sid];
         merged[sid] = {
           display_en: s.display_en || sid,
-          display_zh: s.display_en || sid,
+          display_zh: s.display_zh || s.display_en || sid,
           family: s.family || 'other',
           direction: s.direction || 0,
           glyph: '○',
@@ -549,7 +558,38 @@
     _showReady();
     _render();
   }).catch(function(err) {
-    _showError('Data unavailable — ' + (err && err.message ? err.message : String(err)));
+    _showError(L('Data unavailable — ', '数据不可用 — ') + (err && err.message ? err.message : String(err)));
+  });
+
+  // ── langchange: re-render current view + swap option text + placeholder ──
+  function _swapOptionsAndPlaceholder(zh) {
+    // Signal <select> options
+    var sel = document.getElementById('tl-sig-select');
+    if (sel) {
+      [].forEach.call(sel.options, function(o) {
+        o.textContent = zh ? (o.getAttribute('data-zh') || o.textContent) : (o.getAttribute('data-en') || o.textContent);
+      });
+      // Also swap the optgroup <option> elements that were Jinja-rendered without data-en/zh
+      // (they are already fixed server-side; this pass handles fallback for dynamic additions)
+    }
+    // Ticker search placeholder
+    var inp = document.getElementById('tl-ticker-search');
+    if (inp) {
+      var phEn = inp.getAttribute('data-ph-en') || 'Search ticker…';
+      var phZh = inp.getAttribute('data-ph-zh') || '搜索标的…';
+      inp.placeholder = zh ? phZh : phEn;
+    }
+  }
+
+  // Initial swap on page load (in case stored lang is 'zh')
+  _swapOptionsAndPlaceholder(_isZh());
+
+  document.addEventListener('langchange', function(e) {
+    var zh = (e.detail === 'zh');
+    _swapOptionsAndPlaceholder(zh);
+    // Re-render so L()-built strings inside innerHTML get their CSS-toggled spans right
+    // (the CSS takes care of l-en/l-zh spans; a full re-render also refreshes option counts etc.)
+    _render();
   });
 
 })();
