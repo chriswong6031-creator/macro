@@ -272,20 +272,62 @@
   window.toggleTheme = function () { setTheme(curTheme() === 'light' ? 'dark' : 'light'); };
   window.setThemeAuto = setThemeAuto;
 
-  /* ---- Reduced-effects (Feature 6): apply fx-min ASAP at boot --------------
-     theme.js loads end-of-body (minor flash accepted; documented). Inject the
-     suppression stylesheet once and add/remove the class on toggle.             */
-  (function () {
-    try { if (localStorage.getItem('fx') === 'min') docEl.classList.add('fx-min'); } catch (e) {}
-    if (!document.getElementById('fx-min-css')) {
-      var _fxSt = document.createElement('style');
-      _fxSt.id = 'fx-min-css';
-      _fxSt.textContent = 'html.fx-min *,html.fx-min *::before,html.fx-min *::after{'
-        + 'animation-duration:.001s!important;animation-iteration-count:1!important;'
-        + 'transition-duration:.001s!important;scroll-behavior:auto!important}';
-      (document.head || document.documentElement).appendChild(_fxSt);
+  /* ---- soft-contrast mode --------------------------------------------------
+     Injects a <style id="soft-contrast-css"> that adds html.soft-contrast
+     overrides: warmer/softer bg + panels in light mode, lifted blacks in dark.
+     Measured on the softened light backgrounds: body --text 9.6-10.6:1 (AAA);
+     --muted 5.8-6.5:1 (comfortably above the 4.5:1 AA floor).
+     Boot: theme.js loads end-of-body, so soft-mode users can see one standard-
+     palette paint first on cold load; the hub's <head> boot script also sets the
+     class pre-paint, other pages accept the brief swap (delta is subtle). */
+  var SOFT_CONTRAST_CSS =
+    'html.soft-contrast[data-theme="light"]{' +
+      '--bg:#eceef1;--panel:#f5f5f7;--panel2:#e8eaed;--text:#2e3950;--muted:#4c5a6c;--line:#d0d4db;' +
+      '--glass-bg:color-mix(in srgb,#f5f5f7 64%,transparent);' +
+      '--glass-brd:color-mix(in srgb,#2e3950 9%,transparent);' +
+      '--card-shadow:0 1px 3px rgba(20,30,50,.05)' +
+    '}' +
+    'html.soft-contrast[data-theme="dark"]{' +
+      '--bg:#0d1018;--panel:#151820;--panel2:#1b1f28;--text:#c8d0dc;--line:#262c38' +
+    '}';
+
+  function _applySoftContrastCSS() {
+    if (document.getElementById('soft-contrast-css')) return;
+    var st = document.createElement('style');
+    st.id = 'soft-contrast-css'; st.textContent = SOFT_CONTRAST_CSS;
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  function curContrast() {
+    try { return localStorage.getItem('contrast') || 'standard'; } catch (e) { return 'standard'; }
+  }
+
+  function setContrast(mode) {
+    // mode: 'standard' | 'soft'
+    try { if (mode === 'soft') { localStorage.setItem('contrast', 'soft'); } else { localStorage.removeItem('contrast'); } } catch (e) {}
+    if (mode === 'soft') {
+      _applySoftContrastCSS();
+      docEl.classList.add('soft-contrast');
+    } else {
+      docEl.classList.remove('soft-contrast');
     }
+    _syncContrastSegment();
+    document.dispatchEvent(new CustomEvent('contrastchange', { detail: mode }));
+  }
+
+  // Placeholder replaced after initSettings builds the segment
+  function _syncContrastSegment() {}
+
+  // Boot: apply class ASAP (theme.js loads at end of <body> but before DOMContentLoaded)
+  (function () {
+    try {
+      if (localStorage.getItem('contrast') === 'soft') {
+        _applySoftContrastCSS();
+        docEl.classList.add('soft-contrast');
+      }
+    } catch (e) {}
   })();
+  window.setContrast = setContrast;
 
   /* ---- language (en default) ----------------------------------------------- */
   function curLang() { return docEl.getAttribute('data-lang') || 'en'; }
@@ -592,7 +634,8 @@
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
     theme: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>',
     lang: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>',
-    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>'
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>',
+    contrast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none" opacity=".45"/><circle cx="12" cy="12" r="9"/></svg>'
   };
 
   /* =======================================================================
@@ -1119,14 +1162,115 @@
     }
   }
 
+  /* ===========================================================================
+     ACCOUNT PANEL — "page 2" inside the settings popover.
+     Opens when a real Supabase signed-in user clicks "Manage account & sync ›".
+     Uses supabase.auth.updateUser() directly; no external broker needed.
+     =========================================================================*/
+
+  /* ---- preference sync via user_metadata.prefs ----------------------------
+     Fired on sign-in (apply server prefs) and on theme/lang change (save back).
+     Guard: _prefSyncing flag prevents apply→save loops. */
+  var _prefSyncing = false, _prefSaveTimer = null;
+
+  function _applyServerPrefs(user) {
+    if (!user) return;
+    var meta = user.user_metadata || {};
+    var prefs = meta.prefs;
+    if (!prefs) return;
+    _prefSyncing = true;
+    try {
+      if (prefs.theme && (prefs.theme === 'light' || prefs.theme === 'dark') && prefs.theme !== curTheme()) {
+        setTheme(prefs.theme);
+      }
+      if (prefs.themeAuto && prefs.themeAuto === '1') {
+        setThemeAuto();
+      }
+      var lg = docEl.getAttribute('data-lang') || 'en';
+      if (prefs.lang && (prefs.lang === 'en' || prefs.lang === 'zh') && prefs.lang !== lg) {
+        setLang(prefs.lang);
+      }
+    } catch (e) {}
+    _prefSyncing = false;
+  }
+
+  function _savePrefToServer() {
+    if (_prefSyncing || !_curUser || !_authEnabled) return;
+    clearTimeout(_prefSaveTimer);
+    _prefSaveTimer = setTimeout(function () {
+      var prefs = {};
+      try { prefs.theme = localStorage.getItem('theme') || curTheme(); } catch (e) { prefs.theme = curTheme(); }
+      try { prefs.themeAuto = localStorage.getItem('themeAuto') || '0'; } catch (e) { prefs.themeAuto = '0'; }
+      prefs.lang = curLang();
+      getSupabaseClient().then(function (sb) {
+        if (!sb || !_curUser) return;
+        return sb.auth.updateUser({ data: { prefs: prefs } });
+      }).catch(function () {});
+    }, 800);
+  }
+
+  /* Hook into theme/lang events — wired once in initSettings() */
+  var _prefHooked = false;
+  function _hookPrefSync() {
+    if (_prefHooked) return;
+    _prefHooked = true;
+    document.addEventListener('themechange', function () { _savePrefToServer(); });
+    document.addEventListener('langchange', function () { _savePrefToServer(); });
+  }
+
+  /* ---- account panel state ------------------------------------------------ */
+  var _acctPanelOpen = false;
+  var _acctPanelBuilt = false;
+  var _acctBusyFlag = false;
+  var _acctClosePanelFn = null;  // set by initSettings, called from outside
+
+  /* ---- account panel labels ----------------------------------------------- */
+  var ACCT_L = {
+    back:       ['‹ Back', '‹ 返回'],
+    myAcct:     ['My account', '我的账户'],
+    memberSince:['Member since', '注册于'],
+    dispName:   ['Display name', '显示名称'],
+    dispNamePh: ['Your name', '你的名字'],
+    saveBtn:    ['Save', '保存'],
+    cancelBtn:  ['Cancel', '取消'],
+    saving:     ['Saving…', '保存中…'],
+    changeEmail:['Change email', '修改邮箱'],
+    newEmail:   ['New email address', '新邮箱地址'],
+    emailNote:  ['A confirmation link will be sent to both addresses.', '两个邮箱地址都会收到确认链接。'],
+    sendConfirm:['Send confirmation', '发送确认'],
+    emailSent:  ['Confirmation sent to both addresses.', '确认链接已发送至两个邮箱。'],
+    changePw:   ['Change password', '修改密码'],
+    newPw:      ['New password', '新密码'],
+    newPwPh:    ['At least 8 characters', '至少 8 个字符'],
+    confirmPw:  ['Confirm password', '确认密码'],
+    confirmPwPh:['Repeat new password', '再次输入新密码'],
+    updatePw:   ['Update password', '更新密码'],
+    pwOk:       ['Password updated.', '密码已更新。'],
+    pwMismatch: ['Passwords don’t match.', '两次密码不一致。'],
+    pwShort:    ['Use at least 8 characters.', '至少 8 个字符。'],
+    prefsSync:  ['Theme & language sync', '主题与语言同步'],
+    prefsSaved: ['Preferences saved to your account.', '偏好已保存至账户。'],
+    prefsNote:  ['Your theme and language follow you across devices.', '你的主题和语言会在所有设备间同步。'],
+    signOut:    ['Sign out', '退出登录'],
+    guestTitle: ['Access session', '访问会话'],
+    guestNote:  ['You’re in with the site access password. Create a free account to manage email, password & sync preferences.', '你正通过站点访问密码登录。注册免费账户以管理邮箱、密码并同步偏好。'],
+    createAcct: ['Create free account', '注册免费账户'],
+    errGen:     ['Something went wrong — please try again.', '出错了，请重试。'],
+    validEmail: ['Enter a valid email address.', '请输入有效的邮箱地址。']
+  };
+  function _AL(k) { var p = ACCT_L[k]; return p ? p[curLang() === 'zh' ? 1 : 0] : ''; }
+  function _escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
   var SET_L = {
     title:   ['Settings', '设置'],
     sub:     ['Personalize your workspace', '个性化你的工作区'],
     prefs:   ['Preferences', '偏好设置'],
     theme:   ['Appearance', '外观'],
-    themeD:  ['Light · Auto · Dark', '浅色 · 自动 · 深色'],
     lang:    ['Language', '语言'],
-    langD:   ['English · 中文', 'English · 中文'],
     account: ['Account', '账户'],
     soon:    ['Soon', '即将推出'],
     acctD:   ['Sign in to sync your watchlists, alerts and settings across devices.',
@@ -1140,19 +1284,14 @@
     themeLight: ['Light', '浅色'],
     themeAuto:  ['Auto', '自动'],
     themeDark:  ['Dark', '深色'],
-    // Feature 6: reduced effects
-    fx:      ['Reduced effects', '减少动效'],
-    fxD:     ['Minimize animations and transitions', '最小化动效与过渡'],
     fxOn:    ['On', '开'],
     fxOff:   ['Off', '关'],
     // Feature 7: live prices
     liveP:   ['Live prices', '实时报价'],
-    livePD:  ['Real-time quote updates', '实时行情更新'],
-    // Feature 8: default view (hub-only)
-    defView: ['Default view', '默认视图'],
-    defViewD:['Markets or Features tab on open', '打开时显示市场或功能标签'],
-    defMk:   ['Markets', '市场'],
-    defVc:   ['Features', '功能']
+    // Soft-contrast row
+    contrast:         ['Contrast', '对比度'],
+    contrastStandard: ['Standard', '标准'],
+    contrastSoft:     ['Soft', '柔和']
   };
   var SETTINGS_CSS = [
     /* two-row nav: the menu takes the whole first row on its own line; the global
@@ -1254,7 +1393,69 @@
     '.set-toggle-btn[aria-checked="true"]{background:var(--link,var(--blue));border-color:var(--link,var(--blue))}',
     '.set-toggle-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.4,.5,1)}',
     '.set-toggle-btn[aria-checked="true"] .set-toggle-knob{transform:translateX(20px)}',
-    '.set-toggle-btn:focus-visible{outline:2px solid var(--link,var(--blue));outline-offset:2px}'
+    '.set-toggle-btn:focus-visible{outline:2px solid var(--link,var(--blue));outline-offset:2px}',
+    /* ---- account panel ("page 2" inside the settings-pop) ------------------
+       .set-acct-panel overlays the pane content when open: absolute fill inside
+       the already-positioned .settings-pop, with its own scroll so content can
+       overflow; slides in from the right using translateX. */
+    '.settings-pop{overflow:hidden}',
+    '.set-acct-panel{position:absolute;inset:0;z-index:10;background:color-mix(in srgb,var(--panel,var(--card)) 76%,transparent);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-radius:16px;overflow-y:auto;overscroll-behavior:contain;transform:translateX(100%);transition:transform .22s cubic-bezier(.32,1.3,.5,1);display:flex;flex-direction:column}',
+    '.set-acct-panel.open{transform:translateX(0)}',
+    '@media (prefers-reduced-motion:reduce){.set-acct-panel{transition:transform .12s ease}}',
+    '.sap-head{display:flex;align-items:center;gap:8px;padding:13px 13px 10px;flex:none;border-bottom:1px solid color-mix(in srgb,var(--line,var(--grid)) 60%,transparent)}',
+    '.sap-back{display:inline-flex;align-items:center;gap:5px;background:transparent;border:0;color:var(--link,var(--blue,#4f8cff));font-size:12.5px;font-weight:700;cursor:pointer;padding:5px 6px;border-radius:8px;font-family:inherit;transition:background .15s}',
+    '.sap-back:hover{background:color-mix(in srgb,var(--link,var(--blue)) 12%,transparent)}',
+    '.sap-head-title{flex:1;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,var(--ink-3));text-align:center}',
+    '.sap-body{padding:13px;flex:1}',
+    /* identity row */
+    '.sap-id{display:flex;align-items:center;gap:10px;padding:11px;background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid));border-radius:11px;margin-bottom:11px}',
+    '.sap-avatar{flex:none;width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--link,var(--blue,#4f8cff)),color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 55%,#9b5cff))}',
+    '.sap-id-main{flex:1;min-width:0}',
+    '.sap-id-email{display:block;font-size:13px;font-weight:700;color:var(--text,var(--ink));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.sap-id-since{display:block;font-size:11px;color:var(--muted,var(--ink-3));margin-top:2px}',
+    /* section rows */
+    '.sap-sec{margin-bottom:9px}',
+    '.sap-sec-t{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,var(--ink-3));margin:0 2px 6px;display:block}',
+    '.sap-row{background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid));border-radius:11px;padding:10px 11px}',
+    '.sap-row+.sap-row{margin-top:7px}',
+    '.sap-row-lbl{display:block;font-size:12px;font-weight:700;color:var(--muted,var(--ink-3));margin-bottom:6px}',
+    /* inline edit */
+    '.sap-inline{display:flex;align-items:center;gap:8px}',
+    '.sap-inline-val{flex:1;font-size:13px;color:var(--text,var(--ink));min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.sap-edit-btn{flex:none;font-size:11.5px;font-weight:700;color:var(--link,var(--blue,#4f8cff));background:transparent;border:1px solid var(--line,var(--grid));border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s}',
+    '.sap-edit-btn:hover{border-color:var(--link,var(--blue));background:color-mix(in srgb,var(--link,var(--blue)) 10%,transparent)}',
+    /* input fields */
+    '.sap-in{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--line,var(--grid));background:var(--bg,var(--card,#0b0f1a));color:var(--text,var(--ink));font-size:13.5px;font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;margin-top:7px;display:block}',
+    '.sap-in:focus{border-color:var(--link,var(--blue));box-shadow:0 0 0 3px color-mix(in srgb,var(--link,var(--blue)) 20%,transparent)}',
+    /* message / feedback */
+    '.sap-msg{font-size:11.5px;line-height:1.4;margin-top:6px;display:none}',
+    '.sap-msg.show{display:block}',
+    '.sap-msg.ok{color:var(--up,#23c08a)}',
+    '.sap-msg.err{color:var(--down,#ff5c6c)}',
+    '.sap-note{font-size:11px;color:var(--muted,var(--ink-3));line-height:1.45;margin-top:5px}',
+    /* action button row */
+    '.sap-btns{display:flex;gap:7px;margin-top:9px;justify-content:flex-end}',
+    '.sap-btn{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;border:1px solid var(--line,var(--grid));font-family:inherit;transition:all .15s}',
+    '.sap-btn:disabled{opacity:.55;cursor:default}',
+    '.sap-btn.primary{background:var(--link,var(--blue));border-color:var(--link,var(--blue));color:#fff}',
+    '.sap-btn.primary:hover:not(:disabled){filter:brightness(1.07);transform:translateY(-1px)}',
+    '.sap-btn.ghost{background:transparent;color:var(--text,var(--ink))}',
+    '.sap-btn.ghost:hover:not(:disabled){border-color:var(--link,var(--blue))}',
+    '.sap-btn.danger{background:transparent;color:var(--down,#ff5c6c);border-color:var(--down,#ff5c6c)}',
+    '.sap-btn.danger:hover:not(:disabled){background:color-mix(in srgb,var(--down,#ff5c6c) 10%,transparent)}',
+    /* prefs-sync row */
+    '.sap-prefs-row{display:flex;align-items:center;justify-content:space-between;gap:10px}',
+    '.sap-prefs-row .sap-prefs-info{flex:1;min-width:0}',
+    '.sap-prefs-row .sap-prefs-lbl{font-size:13px;font-weight:700;color:var(--text,var(--ink))}',
+    '.sap-prefs-row .sap-prefs-note{font-size:11px;color:var(--muted,var(--ink-3));margin-top:2px}',
+    /* sign-out row */
+    '.sap-signout-row{margin-top:7px}',
+    /* guest note */
+    '.sap-guest{text-align:center;padding:14px 4px}',
+    '.sap-guest-title{font-size:14px;font-weight:800;color:var(--text,var(--ink));margin-bottom:7px}',
+    '.sap-guest-note{font-size:12px;color:var(--muted,var(--ink-3));line-height:1.55;margin-bottom:14px}',
+    '.sap-guest-cta{width:100%;padding:11px;border-radius:11px;background:var(--link,var(--blue));border-color:var(--link,var(--blue));color:#fff;font-size:14px;font-weight:800;cursor:pointer;border:1px solid transparent;font-family:inherit;transition:filter .18s,transform .12s ease}',
+    '.sap-guest-cta:hover{filter:brightness(1.07);transform:translateY(-1px)}'
   ].join('');
 
   function setLabels(root) {
@@ -1308,7 +1509,7 @@
         // Theme row — three-way segment: Light / Auto / Dark
         '<div class="settings-row">' +
           '<span class="sr-ic">' + SET_ICON.theme + '</span>' +
-          '<span class="sr-main"><span class="sr-lbl" data-set="theme"></span><span class="sr-desc" data-set="themeD"></span></span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="theme"></span></span>' +
           '<span class="sr-ctrl" id="set-theme-slot">' +
             '<div class="set-theme-seg" id="set-theme-seg" role="group" aria-label="Appearance">' +
               '<button type="button" class="set-seg-btn" id="set-theme-light" data-set="themeLight"></button>' +
@@ -1320,29 +1521,23 @@
         // Lang row — lang-toggle relocated here
         '<div class="settings-row">' +
           '<span class="sr-ic">' + SET_ICON.lang + '</span>' +
-          '<span class="sr-main"><span class="sr-lbl" data-set="lang"></span><span class="sr-desc" data-set="langD"></span></span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="lang"></span></span>' +
           '<span class="sr-ctrl" id="set-lang-slot"></span>' +
-        '</div>' +
-        // Reduced effects row
-        '<div class="settings-row" id="set-fx-row">' +
-          '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg></span>' +
-          '<span class="sr-main"><span class="sr-lbl" data-set="fx"></span><span class="sr-desc" data-set="fxD"></span></span>' +
-          '<span class="sr-ctrl"><button type="button" class="set-toggle-btn" id="set-fx-toggle" role="switch" aria-checked="false"><span class="set-toggle-knob"></span></button></span>' +
         '</div>' +
         // Live prices row (hidden until LiveQuotes is available)
         '<div class="settings-row" id="set-live-row" style="display:none">' +
           '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>' +
-          '<span class="sr-main"><span class="sr-lbl" data-set="liveP"></span><span class="sr-desc" data-set="livePD"></span></span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="liveP"></span></span>' +
           '<span class="sr-ctrl"><button type="button" class="set-toggle-btn" id="set-live-toggle" role="switch" aria-checked="true"><span class="set-toggle-knob"></span></button></span>' +
         '</div>' +
-        // Default view row (hub-only — shown only when #hub-views exists)
-        '<div class="settings-row" id="set-defview-row" style="display:none">' +
-          '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>' +
-          '<span class="sr-main"><span class="sr-lbl" data-set="defView"></span><span class="sr-desc" data-set="defViewD"></span></span>' +
+        // Contrast row — Standard / Soft two-segment (label only, no description per operator ruling)
+        '<div class="settings-row">' +
+          '<span class="sr-ic">' + SET_ICON.contrast + '</span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="contrast"></span></span>' +
           '<span class="sr-ctrl">' +
-            '<div class="set-theme-seg" id="set-defview-seg" role="group">' +
-              '<button type="button" class="set-seg-btn" id="set-defview-mk" data-set="defMk"></button>' +
-              '<button type="button" class="set-seg-btn" id="set-defview-vc" data-set="defVc"></button>' +
+            '<div class="set-theme-seg" id="set-contrast-seg" role="group" aria-label="Contrast">' +
+              '<button type="button" class="set-seg-btn" id="set-contrast-standard" data-set="contrastStandard"></button>' +
+              '<button type="button" class="set-seg-btn" id="set-contrast-soft" data-set="contrastSoft"></button>' +
             '</div>' +
           '</span>' +
         '</div>' +
@@ -1418,7 +1613,12 @@
     pop.querySelector('.settings-close').addEventListener('click', function () { close(); gear.focus(); });
     // no scrim: a click anywhere outside the gear + its dropdown closes it
     document.addEventListener('mousedown', function (e) { if (isOpen() && !wrap.contains(e.target)) close(); });
-    document.addEventListener('keydown', function (e) { if (isOpen() && e.key === 'Escape') { close(); gear.focus(); } });
+    document.addEventListener('keydown', function (e) {
+      if (!isOpen() || e.key !== 'Escape') return;
+      // account "page 2" open? Escape peels back one layer, not the whole pane
+      if (_acctPanelOpen && typeof _acctClosePanelFn === 'function') { _acctClosePanelFn(); return; }
+      close(); gear.focus();
+    });
     // Desktop also opens the panel on hover (pure CSS above). If a stray click set
     // .open, make sure leaving the gear + panel always closes it so it never stays
     // pinned under the cursor; touch (no hover) keeps the click / outside / Esc path.
@@ -1445,16 +1645,346 @@
       if (bSignin) bSignin.addEventListener('click', function () { close(); openAuthModal('signin'); });
       if (bSignup) bSignup.addEventListener('click', function () { close(); openAuthModal('signup'); });
       if (bSignout) bSignout.addEventListener('click', function () { window.MDXAuth.signOut(); });
-      // clicking the signed-in row (avatar / email) opens the full account-management
-      // panel (account.js), which reads the app broker over the shared cookie — no SDK.
+
+      /* ---- ACCOUNT PANEL ("page 2" inside the pane) ---------------------- */
+      // Build the panel shell and inject it into the pane (hidden until opened).
+      var acctPanel = document.createElement('div');
+      acctPanel.className = 'set-acct-panel';
+      acctPanel.setAttribute('role', 'region');
+      acctPanel.setAttribute('aria-label', 'Account');
+      pop.appendChild(acctPanel);
+
+      // Keep a ref to the pane's close fn so the panel can close the whole pane
+      _acctClosePanelFn = function () { _closeAcctPanelPanel(); };
+
+      function _closeAcctPanelPanel() {
+        acctPanel.classList.remove('open');
+        _acctPanelOpen = false;
+        // restore focus to the signed-in row
+        var mMain2 = pop.querySelector('#set-acct-in .sr-main');
+        if (mMain2) mMain2.focus();
+      }
+
+      // Helper: show/clear inline message inside the panel
+      function _sapMsg(id, text, kind) {
+        var m = document.getElementById(id); if (!m) return;
+        if (!text) { m.className = 'sap-msg'; m.textContent = ''; return; }
+        m.textContent = text;
+        m.className = 'sap-msg show ' + (kind || 'err');
+      }
+      // Helper: busy-state on a button (stores original label)
+      function _sapBusy(btn, on, label) {
+        if (!btn) return;
+        if (on) { btn._sapLbl = btn.textContent; btn.disabled = true; if (label) btn.textContent = label; }
+        else { btn.disabled = false; if (btn._sapLbl != null) btn.textContent = btn._sapLbl; }
+      }
+
+      // Render the panel content based on current _curUser
+      function _renderAcctPanel() {
+        if (!acctPanel) return;
+        var u = _curUser;
+        if (!u) { acctPanel.innerHTML = ''; return; }
+
+        var email = u.email || (u.user_metadata && u.user_metadata.email) || '';
+        var meta  = u.user_metadata || {};
+        var isGuest = !email;  // access-password sessions have no email in user object
+
+        // Format member-since date
+        var since = '';
+        try {
+          if (u.created_at) {
+            since = new Date(u.created_at).toLocaleDateString(
+              curLang() === 'zh' ? 'zh-CN' : undefined,
+              { year: 'numeric', month: 'short', day: 'numeric' });
+          }
+        } catch (e) {}
+
+        var initial = email ? email.charAt(0).toUpperCase() : (meta.display_name ? meta.display_name.charAt(0).toUpperCase() : 'U');
+
+        var html = '<div class="sap-head">' +
+          '<button type="button" class="sap-back" id="sap-back">' + _AL('back') + '</button>' +
+          '<span class="sap-head-title" id="sap-title">' + _AL('myAcct') + '</span>' +
+          '<span style="width:56px"></span>' +
+        '</div>' +
+        '<div class="sap-body">';
+
+        if (isGuest) {
+          // Access-password / anonymous session: show explainer + CTA
+          html += '<div class="sap-guest">' +
+            '<div class="sap-guest-title">' + _AL('guestTitle') + '</div>' +
+            '<div class="sap-guest-note">' + _AL('guestNote') + '</div>' +
+            '<button type="button" class="sap-guest-cta" id="sap-create-acct">' + _AL('createAcct') + '</button>' +
+          '</div>';
+        } else {
+          // Real Supabase session — full account management
+          // a) Identity row
+          html += '<div class="sap-id">' +
+            '<span class="sap-avatar" id="sap-avatar">' + initial + '</span>' +
+            '<span class="sap-id-main">' +
+              '<span class="sap-id-email" id="sap-id-email">' + _escHtml(email) + '</span>' +
+              (since ? '<span class="sap-id-since">' + _AL('memberSince') + ' ' + _escHtml(since) + '</span>' : '') +
+            '</span>' +
+          '</div>';
+
+          // b) Display name
+          var dispName = meta.display_name || '';
+          html += '<div class="sap-sec">' +
+            '<div class="sap-row" id="sap-name-row">' +
+              '<span class="sap-row-lbl">' + _AL('dispName') + '</span>' +
+              '<div class="sap-inline">' +
+                '<span class="sap-inline-val" id="sap-name-val">' + _escHtml(dispName || '—') + '</span>' +
+                '<button type="button" class="sap-edit-btn" id="sap-name-edit">Edit</button>' +
+              '</div>' +
+              '<input type="text" class="sap-in" id="sap-name-in" placeholder="' + _AL('dispNamePh') + '" value="' + _escHtml(dispName) + '" style="display:none">' +
+              '<div class="sap-msg" id="sap-name-msg"></div>' +
+              '<div class="sap-btns" id="sap-name-btns" style="display:none">' +
+                '<button type="button" class="sap-btn ghost" id="sap-name-cancel">' + _AL('cancelBtn') + '</button>' +
+                '<button type="button" class="sap-btn primary" id="sap-name-save">' + _AL('saveBtn') + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+          // c) Change email
+          html += '<div class="sap-sec">' +
+            '<div class="sap-row" id="sap-email-row">' +
+              '<span class="sap-row-lbl">' + _AL('changeEmail') + '</span>' +
+              '<div class="sap-inline">' +
+                '<span class="sap-inline-val">' + _escHtml(email) + '</span>' +
+                '<button type="button" class="sap-edit-btn" id="sap-email-edit">Edit</button>' +
+              '</div>' +
+              '<input type="email" class="sap-in" id="sap-email-in" placeholder="' + _AL('newEmail') + '" style="display:none">' +
+              '<div class="sap-msg" id="sap-email-msg"></div>' +
+              '<p class="sap-note" id="sap-email-note" style="display:none">' + _AL('emailNote') + '</p>' +
+              '<div class="sap-btns" id="sap-email-btns" style="display:none">' +
+                '<button type="button" class="sap-btn ghost" id="sap-email-cancel">' + _AL('cancelBtn') + '</button>' +
+                '<button type="button" class="sap-btn primary" id="sap-email-save">' + _AL('sendConfirm') + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+          // d) Change password
+          html += '<div class="sap-sec">' +
+            '<div class="sap-row" id="sap-pw-row">' +
+              '<span class="sap-row-lbl">' + _AL('changePw') + '</span>' +
+              '<div class="sap-inline">' +
+                '<span class="sap-inline-val" style="color:var(--muted,var(--ink-3))">••••••••</span>' +
+                '<button type="button" class="sap-edit-btn" id="sap-pw-edit">Edit</button>' +
+              '</div>' +
+              '<input type="password" class="sap-in" id="sap-pw-in" placeholder="' + _AL('newPwPh') + '" autocomplete="new-password" style="display:none">' +
+              '<input type="password" class="sap-in" id="sap-pw2-in" placeholder="' + _AL('confirmPwPh') + '" autocomplete="new-password" style="display:none">' +
+              '<div class="sap-msg" id="sap-pw-msg"></div>' +
+              '<div class="sap-btns" id="sap-pw-btns" style="display:none">' +
+                '<button type="button" class="sap-btn ghost" id="sap-pw-cancel">' + _AL('cancelBtn') + '</button>' +
+                '<button type="button" class="sap-btn primary" id="sap-pw-save">' + _AL('updatePw') + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+          // e) Preference sync indicator
+          html += '<div class="sap-sec">' +
+            '<div class="sap-row">' +
+              '<div class="sap-prefs-row">' +
+                '<div class="sap-prefs-info">' +
+                  '<div class="sap-prefs-lbl">' + _AL('prefsSync') + '</div>' +
+                  '<div class="sap-prefs-note">' + _AL('prefsNote') + '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="sap-msg" id="sap-prefs-msg"></div>' +
+            '</div>' +
+          '</div>';
+
+          // f) Sign out
+          html += '<div class="sap-sec sap-signout-row">' +
+            '<button type="button" class="sap-btn danger" id="sap-signout" style="width:100%">' + _AL('signOut') + '</button>' +
+          '</div>';
+        }
+
+        html += '</div>';  // end sap-body
+        acctPanel.innerHTML = html;
+
+        // Wire back button
+        var backBtn = document.getElementById('sap-back');
+        if (backBtn) backBtn.addEventListener('click', function () { _closeAcctPanelPanel(); });
+
+        if (isGuest) {
+          // Wire create-account button
+          var ctaBtn = document.getElementById('sap-create-acct');
+          if (ctaBtn) ctaBtn.addEventListener('click', function () {
+            _closeAcctPanelPanel(); close(); openAuthModal('signup');
+          });
+          return;
+        }
+
+        // Wire sign-out
+        var soBtn = document.getElementById('sap-signout');
+        if (soBtn) soBtn.addEventListener('click', function () { window.MDXAuth.signOut(); _closeAcctPanelPanel(); });
+
+        // ---- Display name inline edit ----
+        var nameEdit = document.getElementById('sap-name-edit');
+        var nameIn   = document.getElementById('sap-name-in');
+        var nameBtns = document.getElementById('sap-name-btns');
+        var nameVal  = document.getElementById('sap-name-val');
+        if (nameEdit && nameIn && nameBtns) {
+          nameEdit.addEventListener('click', function () {
+            nameIn.style.display = ''; nameBtns.style.display = '';
+            nameEdit.style.display = 'none'; nameIn.focus();
+          });
+          var nameCancelBtn = document.getElementById('sap-name-cancel');
+          if (nameCancelBtn) nameCancelBtn.addEventListener('click', function () {
+            nameIn.style.display = 'none'; nameBtns.style.display = 'none';
+            nameEdit.style.display = ''; _sapMsg('sap-name-msg', '');
+          });
+          var nameSaveBtn = document.getElementById('sap-name-save');
+          if (nameSaveBtn) nameSaveBtn.addEventListener('click', function () {
+            var val = (nameIn.value || '').trim();
+            _sapMsg('sap-name-msg', '');
+            _sapBusy(nameSaveBtn, true, _AL('saving'));
+            getSupabaseClient().then(function (sb) {
+              if (!sb) throw new Error('no-client');
+              return sb.auth.updateUser({ data: { display_name: val } });
+            }).then(function (res) {
+              _sapBusy(nameSaveBtn, false);
+              if (res && res.error) throw res.error;
+              // optimistic UI update
+              if (nameVal) nameVal.textContent = val || '—';
+              // update _curUser metadata locally
+              if (_curUser && _curUser.user_metadata) _curUser.user_metadata.display_name = val;
+              var av = document.getElementById('sap-avatar');
+              if (av && val) av.textContent = val.charAt(0).toUpperCase();
+              nameIn.style.display = 'none'; nameBtns.style.display = 'none';
+              nameEdit.style.display = '';
+              _sapMsg('sap-name-msg', '');
+            }).catch(function (err) {
+              _sapBusy(nameSaveBtn, false);
+              var m = (err && err.message) || _AL('errGen');
+              _sapMsg('sap-name-msg', m, 'err');
+            });
+          });
+        }
+
+        // ---- Change email ----
+        var emailEdit   = document.getElementById('sap-email-edit');
+        var emailIn     = document.getElementById('sap-email-in');
+        var emailBtns   = document.getElementById('sap-email-btns');
+        var emailNote   = document.getElementById('sap-email-note');
+        if (emailEdit && emailIn && emailBtns) {
+          emailEdit.addEventListener('click', function () {
+            emailIn.style.display = ''; emailBtns.style.display = '';
+            if (emailNote) emailNote.style.display = '';
+            emailEdit.style.display = 'none'; emailIn.focus();
+          });
+          var emailCancelBtn = document.getElementById('sap-email-cancel');
+          if (emailCancelBtn) emailCancelBtn.addEventListener('click', function () {
+            emailIn.style.display = 'none'; emailBtns.style.display = 'none';
+            if (emailNote) emailNote.style.display = 'none';
+            emailEdit.style.display = ''; _sapMsg('sap-email-msg', '');
+          });
+          var emailSaveBtn = document.getElementById('sap-email-save');
+          if (emailSaveBtn) emailSaveBtn.addEventListener('click', function () {
+            var val = (emailIn.value || '').trim();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+              _sapMsg('sap-email-msg', _AL('validEmail'), 'err'); return;
+            }
+            _sapMsg('sap-email-msg', '');
+            _sapBusy(emailSaveBtn, true, _AL('saving'));
+            getSupabaseClient().then(function (sb) {
+              if (!sb) throw new Error('no-client');
+              return sb.auth.updateUser({ email: val });
+            }).then(function (res) {
+              _sapBusy(emailSaveBtn, false);
+              if (res && res.error) throw res.error;
+              _sapMsg('sap-email-msg', _AL('emailSent'), 'ok');
+              emailIn.value = '';
+            }).catch(function (err) {
+              _sapBusy(emailSaveBtn, false);
+              var m = (err && err.message) || _AL('errGen');
+              _sapMsg('sap-email-msg', m, 'err');
+            });
+          });
+        }
+
+        // ---- Change password ----
+        var pwEdit   = document.getElementById('sap-pw-edit');
+        var pwIn     = document.getElementById('sap-pw-in');
+        var pw2In    = document.getElementById('sap-pw2-in');
+        var pwBtns   = document.getElementById('sap-pw-btns');
+        if (pwEdit && pwIn && pw2In && pwBtns) {
+          pwEdit.addEventListener('click', function () {
+            pwIn.style.display = ''; pw2In.style.display = ''; pwBtns.style.display = '';
+            pwEdit.style.display = 'none'; pwIn.focus();
+          });
+          var pwCancelBtn = document.getElementById('sap-pw-cancel');
+          if (pwCancelBtn) pwCancelBtn.addEventListener('click', function () {
+            pwIn.style.display = 'none'; pw2In.style.display = 'none'; pwBtns.style.display = 'none';
+            pwEdit.style.display = ''; pwIn.value = ''; pw2In.value = ''; _sapMsg('sap-pw-msg', '');
+          });
+          var pwSaveBtn = document.getElementById('sap-pw-save');
+          if (pwSaveBtn) pwSaveBtn.addEventListener('click', function () {
+            var p1 = pwIn.value || '', p2 = pw2In.value || '';
+            if (p1.length < 8) { _sapMsg('sap-pw-msg', _AL('pwShort'), 'err'); return; }
+            if (p1 !== p2)     { _sapMsg('sap-pw-msg', _AL('pwMismatch'), 'err'); return; }
+            _sapMsg('sap-pw-msg', '');
+            _sapBusy(pwSaveBtn, true, _AL('saving'));
+            getSupabaseClient().then(function (sb) {
+              if (!sb) throw new Error('no-client');
+              return sb.auth.updateUser({ password: p1 });
+            }).then(function (res) {
+              _sapBusy(pwSaveBtn, false);
+              if (res && res.error) throw res.error;
+              _sapMsg('sap-pw-msg', _AL('pwOk'), 'ok');
+              pwIn.value = ''; pw2In.value = '';
+              setTimeout(function () {
+                pwIn.style.display = 'none'; pw2In.style.display = 'none'; pwBtns.style.display = 'none';
+                pwEdit.style.display = ''; _sapMsg('sap-pw-msg', '');
+              }, 1200);
+            }).catch(function (err) {
+              _sapBusy(pwSaveBtn, false);
+              var m = (err && err.message) || _AL('errGen');
+              _sapMsg('sap-pw-msg', m, 'err');
+            });
+          });
+        }
+      }  // end _renderAcctPanel
+
+      // Open the account panel (slide in page 2)
+      function _openAcctPanel() {
+        if (!_authEnabled || !_curUser) return;
+        _renderAcctPanel();
+        acctPanel.classList.add('open');
+        _acctPanelOpen = true;
+        var backBtn2 = document.getElementById('sap-back');
+        if (backBtn2) setTimeout(function () { backBtn2.focus(); }, 80);
+      }
+
+      // Hook: apply server prefs on sign-in, then show prefs-saved toast on change
+      window.addEventListener('mdx-auth', function (e) {
+        var detail = e && e.detail;
+        if (detail && detail.event === 'SIGNED_IN' && detail.user) {
+          _applyServerPrefs(detail.user);
+        }
+        // If panel is open and user signed out, close the panel
+        if (detail && detail.event === 'SIGNED_OUT' && _acctPanelOpen) {
+          _closeAcctPanelPanel();
+        }
+      });
+
+      // Wire pref sync hooks (once per page)
+      _hookPrefSync();
+
+      // clicking the signed-in row opens the account panel (page 2)
       var mMain = pop.querySelector('#set-acct-in .sr-main');
       if (mMain) {
         mMain.style.cursor = 'pointer';
         mMain.setAttribute('role', 'button'); mMain.setAttribute('tabindex', '0');
-        var _openMgr = function () { close(); if (window.MMAccount && window.MMAccount.open) window.MMAccount.open(); };
+        var _openMgr = function () { _openAcctPanel(); };
         mMain.addEventListener('click', _openMgr);
         mMain.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _openMgr(); } });
       }
+
+      // (Escape handling for the panel lives in the pane's own keydown handler,
+      // which peels the panel layer first — same-node listener order made a
+      // separate handler here fire too late to stop the pane from closing.)
+
       window.addEventListener('mdx-auth', _renderAcct);
       _renderAcct();
     } else {
@@ -1487,31 +2017,24 @@
     // keep the segment in sync when themechange fires (e.g. from legacy toggleTheme)
     document.addEventListener('themechange', function () { _syncThemeSegNow(); });
 
-    // ---- Feature 6: wire the Reduced-effects toggle -----------------------
-    var _fxToggle = pop.querySelector('#set-fx-toggle');
-    function _fxState() {
-      try { return localStorage.getItem('fx') === 'min'; } catch (e) { return false; }
-    }
-    function _setFxAria() {
-      if (_fxToggle) _fxToggle.setAttribute('aria-checked', _fxState() ? 'true' : 'false');
-    }
-    _setFxAria();
-    if (_fxToggle) _fxToggle.addEventListener('click', function () {
-      if (_fxState()) {
-        // turn OFF reduced effects
-        try { localStorage.removeItem('fx'); } catch (e) {}
-        docEl.classList.remove('fx-min');
-        if (typeof window.__gdSetTier === 'function') { try { window.__gdSetTier(2); } catch (e) {} }
-        if (typeof window.__gdSetMotion === 'function') { try { window.__gdSetMotion(true); } catch (e) {} }
-      } else {
-        // turn ON reduced effects
-        try { localStorage.setItem('fx', 'min'); } catch (e) {}
-        docEl.classList.add('fx-min');
-        if (typeof window.__gdSetTier === 'function') { try { window.__gdSetTier(0); } catch (e) {} }
-        if (typeof window.__gdSetMotion === 'function') { try { window.__gdSetMotion(false); } catch (e) {} }
+    // ---- Contrast segment: Standard / Soft ----------------------------------
+    var _cStd = pop.querySelector('#set-contrast-standard'),
+        _cSft = pop.querySelector('#set-contrast-soft');
+    function _syncContrastSegNow() {
+      var isSoft = curContrast() === 'soft';
+      function _seg(el, on) {
+        if (!el) return;
+        el.classList.toggle('active', on);
+        el.setAttribute('aria-pressed', on ? 'true' : 'false');
       }
-      _setFxAria();
-    });
+      _seg(_cStd, !isSoft);
+      _seg(_cSft, isSoft);
+    }
+    _syncContrastSegment = _syncContrastSegNow;
+    _syncContrastSegNow();
+    if (_cStd) _cStd.addEventListener('click', function () { setContrast('standard'); });
+    if (_cSft) _cSft.addEventListener('click', function () { setContrast('soft'); });
+    document.addEventListener('contrastchange', function () { _syncContrastSegNow(); });
 
     // ---- Feature 7: wire the Live-prices toggle (hub-optional) ---------------
     var _liveRow = pop.querySelector('#set-live-row'), _liveToggle = pop.querySelector('#set-live-toggle');
@@ -1538,54 +2061,6 @@
       }
       _setLiveAria();
     });
-
-    // ---- Feature 8: Default view (hub-only — row only when #hub-views exists) --
-    var _defViewRow = pop.querySelector('#set-defview-row');
-    var _defMkBtn = pop.querySelector('#set-defview-mk'), _defVcBtn = pop.querySelector('#set-defview-vc');
-    function _initDefView() {
-      var hv = document.getElementById('hub-views');
-      if (!hv || !_defViewRow) return;
-      _defViewRow.style.display = '';
-      var stored = null;
-      try { stored = localStorage.getItem('hubView'); } catch (e) {}
-      // apply stored view on boot
-      if (stored === 'mk' || stored === 'vc') {
-        hv.setAttribute('data-view', stored);
-        var btns = hv.querySelectorAll('.hub-seg-btn');
-        btns.forEach(function (b) {
-          var on = b.getAttribute('data-v') === stored;
-          b.classList.toggle('on', on);
-          b.setAttribute('aria-pressed', on ? 'true' : 'false');
-        });
-      }
-      function _syncDefViewBtns() {
-        var cur = null;
-        try { cur = localStorage.getItem('hubView') || 'mk'; } catch (e) { cur = 'mk'; }
-        if (_defMkBtn) _defMkBtn.classList.toggle('active', cur === 'mk');
-        if (_defVcBtn) _defVcBtn.classList.toggle('active', cur === 'vc');
-      }
-      _syncDefViewBtns();
-      function _setDefView(v) {
-        try { localStorage.setItem('hubView', v); } catch (e) {}
-        // update the hub inline switcher to match
-        var hv2 = document.getElementById('hub-views');
-        if (hv2) {
-          hv2.setAttribute('data-view', v);
-          hv2.querySelectorAll('.hub-seg-btn').forEach(function (b) {
-            var on = b.getAttribute('data-v') === v;
-            b.classList.toggle('on', on);
-            b.setAttribute('aria-pressed', on ? 'true' : 'false');
-          });
-        }
-        _syncDefViewBtns();
-      }
-      if (_defMkBtn) _defMkBtn.addEventListener('click', function () { _setDefView('mk'); });
-      if (_defVcBtn) _defVcBtn.addEventListener('click', function () { _setDefView('vc'); });
-    }
-    // run after DOM ready so #hub-views is guaranteed present
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', _initDefView);
-    } else { _initDefView(); }
 
     // ---- Feature 9: sign-in link wiring (hub-only, hub-signin element) -------
     function _initHubSignin() {

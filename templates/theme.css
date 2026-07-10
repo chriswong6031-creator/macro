@@ -17,6 +17,19 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 :root {
+  /* ── font stacks ─────────────────────────────────────────────────────────────
+     --font-ui   : primary UI stack. Inter (self-hosted woff2) leads; the chain
+                   covers Windows (Segoe UI), Android (Roboto), and native CJK
+                   glyph coverage (PingFang SC / Hiragino / Microsoft YaHei) so
+                   mixed EN+ZH text renders cleanly without the zh-body override.
+     --font-mono : monospace for code, tickers, numeric labels. ui-monospace
+                   resolves to SF Mono (macOS/iOS), Consolas (Windows), or the
+                   platform mono — no external download needed. */
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+    Menlo, Consolas, "DejaVu Sans Mono", monospace;
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
   --muted: #8b93a1; --line: #2a2f3a;
   --q1: #2e9e4f; --q2: #d4a017; --q3: #d04545; --q4: #3f78d8;
@@ -91,22 +104,24 @@ html[data-theme="light"][data-lang="zh"] {
 /* ---- language visibility toggle (dual-emit text) ---------------------------- */
 html:not([data-lang="zh"]) .l-zh { display: none; }
 html[data-lang="zh"] .l-en { display: none; }
-/* CJK type: pick up a native sans so Chinese renders cleanly, and drop the
-   wide tracking we use on Latin all-caps headings (looks wrong on Hanzi). */
+/* CJK type: put the native CJK face first so Hanzi always uses a proper glyph
+   rather than Inter's Latin fallback, and drop wide tracking on headings (looks
+   wrong on Hanzi). Inter stays in the stack so any Latin mixed-in text still
+   picks up the branded weight. */
 html[data-lang="zh"] body {
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    "Noto Sans CJK SC", "Microsoft JhengHei", "Heiti SC", sans-serif;
+    "Noto Sans CJK SC", "Microsoft JhengHei", "Heiti SC", Inter, sans-serif;
 }
 html[data-lang="zh"] h2 { letter-spacing: 0; }
 
 a { color: var(--link); }
 
-/* Inter as the primary typeface on every page. The `html body` selector has
-   higher specificity than each page's own `body { font: 14px/1.5 -apple-system… }`
-   shorthand, so it swaps the family while leaving their font-size/line-height
-   untouched. Antialiasing matches Vector's crisp rendering. */
-html body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
-  Roboto, Helvetica, Arial, sans-serif; font-size: 15px;
+/* Canonical UI font on every page. The `html body` selector has higher
+   specificity than each page's own `body { font: 14px/1.5 -apple-system… }`
+   shorthand, so it swaps the family while leaving font-size/line-height
+   untouched. Uses the --font-ui token so all font-family declarations across
+   the site resolve to one consistent stack. */
+html body { font-family: var(--font-ui); font-size: 15px;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 /* ---- ambient aurora backdrop (site-wide) ------------------------------------
@@ -276,7 +291,7 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   border-top: 1px solid var(--line);
   text-align: center;
   line-height: 1.6;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-ui);
 }
 .site-footer .made {
   display: block;
@@ -329,7 +344,7 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
 /* weight 900 (Inter Black — loaded via the @font-face rules at the top) + tight tracking so the
    wordmark reads as heavy as the logo glyph; line-height:1 so the all-caps ink centres
    on the glyph (the inherited 1.5 line-height left the caps sitting visibly high). */
-.site-nav .nav-brand .brand-word { font-family: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+.site-nav .nav-brand .brand-word { font-family: var(--font-ui);
   font-size: 13.5px; font-weight: 900; letter-spacing: .07em; line-height: 1;
   color: var(--text); white-space: nowrap; }
 .site-nav a.nav-link { padding: 7px 11px; border-radius: 9px; font-size: 13.5px;

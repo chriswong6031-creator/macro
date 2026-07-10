@@ -40,11 +40,18 @@ then waved build. Perf substrate: PR #2079 (pause-aware globe, quality governor,
 
 ## Gated / follow-ups
 
-- **W3 wow (OPERATOR MOCKUP GATE — pick pending)**: A "Living Planet" (daylight blue-marble
-  light globe, scroll-coupled moon-set, 6s auto-tour of market scorecards) · B "Command
-  Deck" (≥1400 regime/movers side rails, graded alert timeline, real footer) · C "Calm
-  Premium" (restraint + timeline + footer + numbered sections). Working mockups:
-  `/tmp/mmx_mock/site_{a,b,c}` + shots. Do NOT build until the operator picks.
+- **W3 wow — OPERATOR PICKED 2026-07-10: A+B blend, AMENDED.** Binding design rulings
+  from the mockup review: light mode keeps the current palette (**NO light-blue / blue-marble
+  recolor**), **NO stars and NO moon in daylight** — sun only, **dimmed** so text never
+  washes out; **dark mode unchanged** (plus moon fading out on scroll — fixes the
+  moon-bleed-behind-cards bug); **REJECTED: regime/movers side rails** (do not re-propose).
+  SHIPPED same day: globe auto-tour (focus-safe, AT-quiet, pauses 15s on any interaction incl.
+  pebbles/deselect, holds rotation + restores zoom per step, reduced-motion-skipped), dimmed
+  light-mode sun (~45%), dark-mode moon-set on scroll (composes with the -50% centering
+  transform — inline transform stomping was a review catch), graded alert timeline
+  (per-row positioning context + reduced-motion-safe pulse cascade were review catches),
+  three-part footer, document-level Escape for the pinned tooltip. Variant-C numbered
+  sections not picked.
 - **W2b live quotes**: the hub's 9 index symbols (^GSPC, ^HSI, …) are served by NO feed —
   live.js is a no-op on the front page. Wire into `build_live_overlay` (+ sessions for
   jp/kr/tw/gb/eu; client `regionOf` already mapped, absent sessions are safe-unknown).
