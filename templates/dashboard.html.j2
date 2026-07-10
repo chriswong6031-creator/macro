@@ -2562,8 +2562,31 @@
   /* ---- Release Radar MRI-R39: minimalist card + 5-tab modal ---- */
   /* 4px-base spacing scale; tabular-nums for all figures */
   #release-radar{padding:16px 20px 18px}
-  #release-radar h2{margin:0 0 4px;font-size:15px;font-weight:700}
+  #release-radar h2{margin:0 0 4px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
   #release-radar .rr-subline{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  /* MRI-R39a: track-record top-right button */
+  .rr-tr-btn{margin-left:auto;flex-shrink:0;font-size:11px;font-weight:500;
+    color:var(--muted);background:none;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+    border-radius:5px;padding:3px 9px;cursor:pointer;text-decoration:none;display:inline-flex;
+    align-items:center;min-height:44px;min-width:44px;line-height:1.2;transition:border-color .15s,color .15s}
+  .rr-tr-btn:hover{border-color:var(--accent,var(--muted));color:var(--text)}
+  /* MRI-R39a: track-record panel-level overlay */
+  .rr-tr-overlay{position:fixed;inset:0;z-index:1100;display:none;align-items:flex-end;
+    background:color-mix(in srgb,var(--bg,#000) 55%,transparent)}
+  .rr-tr-overlay.is-open{display:flex}
+  .rr-tr-sheet{background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-height:90vh;
+    overflow-y:auto;padding:20px 20px 24px}
+  .rr-tr-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .rr-tr-title{font-size:14px;font-weight:700;flex:1}
+  .rr-tr-close{min-width:44px;min-height:44px;background:none;border:none;
+    cursor:pointer;font-size:20px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+  .rr-tr-close:hover{color:var(--text)}
+  .rr-tr-do-note{font-size:10px;color:var(--muted);margin-top:14px;padding-top:8px;
+    border-top:1px solid var(--line);line-height:1.5}
+  @media(min-width:600px){
+    .rr-tr-sheet{max-width:660px;margin:0 auto;border-radius:12px;margin-top:auto}
+    .rr-tr-overlay{align-items:center}
+  }
   #release-radar .rr-grid{display:flex;flex-wrap:wrap;gap:12px}
   /* Compact card — R24-minimal */
   .rr-card{flex:1 1 220px;min-width:200px;max-width:340px;background:var(--panel2);
@@ -2811,6 +2834,10 @@
     <h2>{{ t('Release Radar', '数据发布雷达') }}
       {{ help('Pre-print model projections for upcoming US macro releases (CPI, NFP, PCE, PPI). Comparison set is our own benchmark set (naive prior, trailing trend, Cleveland nowcast) — not street estimates. Display-only context; not investment advice; scored forward in public.',
               '即将公布美国宏观数据（CPI、NFP、PCE、PPI）的预测模型。对比基准为我方自有基准集（朴素先验、趋势追踪、克利夫兰预报），非街道估算。仅展示，非投资建议，正向评分公开记录。') }}
+      <button type="button" class="rr-tr-btn" id="rr-tr-btn" aria-haspopup="dialog">
+        <span class="l-en">Track record ↗</span>
+        <span class="l-zh">评分记录 ↗</span>
+      </button>
     </h2>
     <div class="rr-subline">
       <span class="l-en">Forward model · display-only · benchmarks · scored in public</span>
@@ -2820,6 +2847,23 @@
       <div class="rr-placeholder">
         <span class="l-en">Loading release projections…</span>
         <span class="l-zh">加载发布预测中…</span>
+      </div>
+    </div>
+  </div>
+  <!-- MRI-R39a: track-record panel-level overlay -->
+  <div class="rr-tr-overlay" id="rr-tr-overlay" role="dialog" aria-modal="true" aria-labelledby="rr-tr-title-el">
+    <div class="rr-tr-sheet" id="rr-tr-sheet">
+      <div class="rr-tr-hdr">
+        <div class="rr-tr-title" id="rr-tr-title-el">
+          <span class="l-en">Release Radar — Track record</span>
+          <span class="l-zh">数据发布雷达 — 评分记录</span>
+        </div>
+        <button type="button" class="rr-tr-close" id="rr-tr-close" aria-label="Close">&#215;</button>
+      </div>
+      <div id="rr-tr-body"></div>
+      <div class="rr-tr-do-note">
+        <span class="l-en">Display-only — scored forward in public, not investment advice.</span>
+        <span class="l-zh">仅展示 — 正向评分公开记录，非投资建议。</span>
       </div>
     </div>
   </div>
@@ -4172,15 +4216,7 @@
           +hiddenWrap;
       }
 
-      var asofLine = asof ? '<div class="rr-asof"><span class="l-en">as of '+esc(asof)+'</span><span class="l-zh">截至 '+esc(asof)+'</span></div>' : '';
-      var footer = '<div class="rr-footer">'
-        +'<span class="l-en">Model projections · display-only · not investment advice · scored forward in public</span>'
-        +'<span class="l-zh">模型预测 · 仅展示 · 非投资建议 · 正向评分公开记录</span>'
-        +'</div>';
-      RR_EL.innerHTML = cardsHtml
-        + scoreboardBlock(lastScored)
-        + asofLine
-        + footer;
+      RR_EL.innerHTML = cardsHtml;
       /* wire up card clicks — index matches _rrItems (visible-first order) */
       var cardEls = RR_EL.querySelectorAll('.rr-card');
       cardEls.forEach(function(el, idx){
@@ -4202,7 +4238,32 @@
           smBtn.closest('[data-lang]') || void 0;
         });
       }
+      /* MRI-R39a: populate track-record overlay with scoreboardBlock data */
+      var RR_TR_BODY = document.getElementById('rr-tr-body');
+      if (RR_TR_BODY) {
+        RR_TR_BODY.innerHTML = scoreboardBlock(lastScored);
+      }
     }
+
+    /* MRI-R39a: track-record overlay open/close */
+    var RR_TR_OVERLAY = document.getElementById('rr-tr-overlay');
+    var RR_TR_BTN = document.getElementById('rr-tr-btn');
+    var RR_TR_CLOSE = document.getElementById('rr-tr-close');
+    function openTrackRecord(){
+      if (!RR_TR_OVERLAY) return;
+      RR_TR_OVERLAY.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeTrackRecord(){
+      if (!RR_TR_OVERLAY) return;
+      RR_TR_OVERLAY.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+    if (RR_TR_BTN) RR_TR_BTN.addEventListener('click', openTrackRecord);
+    if (RR_TR_CLOSE) RR_TR_CLOSE.addEventListener('click', closeTrackRecord);
+    if (RR_TR_OVERLAY) RR_TR_OVERLAY.addEventListener('click', function(e){
+      if (e.target === RR_TR_OVERLAY) closeTrackRecord();
+    });
 
     /* fetch — pattern mirrors sector_central.html.j2:670 */
     fetch('macrodata/release_forecast.json', { cache: 'no-cache' })

@@ -912,3 +912,5 @@ guard: if none of those have a modelled point, also show the next release_date
 that does. All other cards hidden behind "See more (N) 显示更多" / "See less
 收起" toggle (vanilla JS, session-only, ≥44px tap target). The word
 "consensus/共识" is banned from all card strings (MRI-R5 standing).
+
+**MRI-R39a W11 panel cleanup (2026-07-10):** Inline track-record section (TRACK RECORD header + "Forward accrual began … no scored prints yet." line), the "as of &lt;timestamp&gt;" line, and the redundant footer disclosure ("Model projections · display-only · not investment advice · scored forward in public") removed from the panel body. Track record moved to a top-right button ("Track record ↗" / "评分记录 ↗", id=rr-tr-btn) in the h2 header row; clicking opens a panel-level overlay (rr-tr-overlay) populated via scoreboardBlock(). Panel after change: header (title + track-record button + subline disclosure) → default cards → See more → hidden cards. Path taken: new overlay (no existing standalone track-record page found). MRI-R5/R7 honesty satisfied by retained rr-subline.
