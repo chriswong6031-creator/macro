@@ -60,8 +60,11 @@ from engine.prophet_bridge import (
     _next_monthly_expiry,
     _third_friday,
     _build_what_to_do_now,
+    _build_what_to_do_now_zh,
     _build_profit_plan,
+    _build_profit_plan_zh,
     _build_thesis,
+    _build_thesis_zh,
 )
 from engine.options_structure import validate_trade_plan
 
@@ -885,6 +888,121 @@ def test_originate_plans_includes_content_blocks(tmp_path):
     # content blocks must not contain "validated" positively
     for bullet in plan["what_to_do_now"]:
         assert "validated" not in bullet.lower(), f"'validated' in bullet: {bullet}"
+    # ZH variants must also be present
+    assert "what_to_do_now_zh" in plan, "plan missing what_to_do_now_zh"
+    assert "profit_plan_zh" in plan, "plan missing profit_plan_zh"
+    assert "thesis_zh" in plan, "plan missing thesis_zh"
+    assert isinstance(plan["what_to_do_now_zh"], list) and len(plan["what_to_do_now_zh"]) >= 2
+    assert isinstance(plan["profit_plan_zh"], list) and len(plan["profit_plan_zh"]) >= 1
+    # ZH lists must be same length as EN lists
+    assert len(plan["what_to_do_now_zh"]) == len(plan["what_to_do_now"]), (
+        "what_to_do_now_zh length mismatch"
+    )
+    assert len(plan["profit_plan_zh"]) == len(plan["profit_plan"]), (
+        "profit_plan_zh length mismatch"
+    )
+    # ZH blocks must contain Chinese characters (are not just EN copies)
+    zh_text = " ".join(plan["what_to_do_now_zh"])
+    assert any("一" <= c <= "鿿" for c in zh_text), (
+        "what_to_do_now_zh contains no Chinese characters"
+    )
+    # ZH profit_plan rows have same structure as EN rows
+    for row_zh in plan["profit_plan_zh"]:
+        assert "level" in row_zh and "label" in row_zh and "action" in row_zh and "status" in row_zh
+
+
+# ---------------------------------------------------------------------------
+# ZH content-block deterministic template tests
+# ---------------------------------------------------------------------------
+
+class TestZhContentBlocks:
+    """Tests for ZH variants of what_to_do_now, profit_plan, thesis content blocks."""
+
+    _PHASES = [
+        "pre_trigger", "triggered_pre_t1", "at_t1", "between_t1_t2",
+        "post_t1_failed_hold", "at_t2", "post_t2", "overtime", "invalidated",
+    ]
+
+    def test_zh_what_to_do_now_all_phases_return_list(self):
+        """All phases return a non-empty list of strings."""
+        for phase in self._PHASES:
+            result = _build_what_to_do_now_zh(
+                phase=phase, entry=100.0, trigger=105.0, invalidation=92.0,
+                t1=120.0, t2=135.0,
+            )
+            assert isinstance(result, list) and len(result) >= 1, (
+                f"phase {phase!r} returned empty/non-list: {result!r}"
+            )
+            for line in result:
+                assert isinstance(line, str) and len(line) > 0
+
+    def test_zh_what_to_do_now_contains_chinese(self):
+        """ZH bullets contain Chinese characters."""
+        result = _build_what_to_do_now_zh(
+            phase="pre_trigger", entry=100.0, trigger=105.0,
+            invalidation=92.0, t1=120.0, t2=135.0,
+        )
+        combined = " ".join(result)
+        assert any("一" <= c <= "鿿" for c in combined), (
+            "ZH what_to_do_now contains no Chinese characters"
+        )
+
+    def test_zh_same_length_as_en(self):
+        """ZH list length matches EN list length for all phases."""
+        for phase in self._PHASES:
+            en = _build_what_to_do_now(
+                phase=phase, entry=100.0, trigger=105.0, invalidation=92.0,
+                t1=120.0, t2=135.0,
+            )
+            zh = _build_what_to_do_now_zh(
+                phase=phase, entry=100.0, trigger=105.0, invalidation=92.0,
+                t1=120.0, t2=135.0,
+            )
+            assert len(zh) == len(en), (
+                f"phase {phase!r}: zh len={len(zh)} vs en len={len(en)}"
+            )
+
+    def test_zh_profit_plan_row_structure(self):
+        """ZH profit_plan rows have level/label/action/status keys."""
+        for phase in ("pre_trigger", "at_t1", "at_t2", "invalidated"):
+            rows = _build_profit_plan_zh(
+                phase=phase, entry=100.0, t1=120.0, t2=135.0,
+            )
+            assert isinstance(rows, list) and len(rows) >= 1
+            for row in rows:
+                for key in ("level", "label", "action", "status"):
+                    assert key in row, f"row missing {key!r}: {row}"
+            # status values must be canonical
+            assert all(r["status"] in ("ACTIVE", "PENDING", "DONE") for r in rows)
+
+    def test_zh_profit_plan_action_contains_chinese(self):
+        """ZH profit_plan action strings contain Chinese characters."""
+        rows = _build_profit_plan_zh(
+            phase="pre_trigger", entry=100.0, t1=120.0, t2=135.0,
+        )
+        combined = " ".join(r["action"] for r in rows)
+        assert any("一" <= c <= "鿿" for c in combined), (
+            "ZH profit_plan action strings contain no Chinese characters"
+        )
+
+    def test_zh_thesis_contains_chinese_and_no_validated(self):
+        """ZH thesis contains Chinese characters and no bare 'validated'."""
+        b = {
+            "conviction": {
+                "score": 75, "band": "high",
+                "drivers": ["momentum factor"], "drivers_zh": ["动量因子"],
+                "cautions": ["validated risk gate: trim"], "cautions_zh": ["风险门槛：减仓"],
+                "trust_tier": {"en": "Constructive", "zh": "积极"},
+            },
+            "entry_signal": {"above200": True, "weekly_bull": True},
+            "hold": {},
+        }
+        thesis = _build_thesis_zh("NVDA", b)
+        assert any("一" <= c <= "鿿" for c in thesis), (
+            "ZH thesis contains no Chinese characters"
+        )
+        # "已验证" (validated ZH) must not appear (sanitized)
+        assert "已验证" not in thesis, f"'已验证' in ZH thesis: {thesis!r}"
 
 
 # ---------------------------------------------------------------------------
