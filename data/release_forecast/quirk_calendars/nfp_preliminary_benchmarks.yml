@@ -1,0 +1,74 @@
+# NFP Preliminary Benchmark Revision Estimates
+# BLS publishes a preliminary benchmark revision estimate each October
+# (for the reference period ending March of the same year).
+# When the preliminary is > |100k|, the Track S flag fires for the
+# following January NFP print.
+#
+# Fields:
+#   published_month: YYYY-MM (typically October each year)
+#   reference_period_end: YYYY-MM (typically March of that year)
+#   preliminary_estimate: int (thousands; positive = upward revision)
+#   source: BLS CES benchmark revision page
+#   cite: URL
+#
+# Source: https://www.bls.gov/ces/publications/benchmark.htm
+
+preliminary_benchmarks:
+
+  - published_month: "2007-10"
+    reference_period_end: "2007-03"
+    preliminary_estimate: -297
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+
+  - published_month: "2008-10"
+    reference_period_end: "2008-03"
+    preliminary_estimate: -376
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+
+  - published_month: "2009-10"
+    reference_period_end: "2009-03"
+    preliminary_estimate: -824
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+
+  - published_month: "2010-10"
+    reference_period_end: "2010-03"
+    preliminary_estimate: -366
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+
+  - published_month: "2011-10"
+    reference_period_end: "2011-03"
+    preliminary_estimate: 192
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+
+  - published_month: "2012-10"
+    reference_period_end: "2012-03"
+    preliminary_estimate: 386
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+
+  - published_month: "2019-10"
+    reference_period_end: "2019-03"
+    preliminary_estimate: -501
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+
+  - published_month: "2022-10"
+    reference_period_end: "2022-03"
+    preliminary_estimate: 462
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+    note: "Final: +517k in January 2023 benchmark revision"
+
+  - published_month: "2023-10"
+    reference_period_end: "2023-03"
+    preliminary_estimate: -306
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+
+  - published_month: "2024-10"
+    reference_period_end: "2024-03"
+    preliminary_estimate: -818
+    cite: "https://www.bls.gov/ces/publications/benchmark.htm"
+    note: "Largest downward preliminary revision since 2009; flagged Jan 2025 benchmark print"
+
+  # Template for future entries:
+  # - published_month: "YYYY-10"
+  #   reference_period_end: "YYYY-03"
+  #   preliminary_estimate: NNN
+  #   cite: "https://www.bls.gov/ces/publications/benchmark.htm"

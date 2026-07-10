@@ -1,0 +1,301 @@
+{
+  "_meta": {
+    "description": "Curated static reference catalog of macro-print surprise episodes (MRI-R38, Track S). NOT a ledger — nightly does not update this file. Update via PR when new episodes are confirmed.",
+    "generated": "2026-07-10",
+    "source_doc": "research/release_forecast/SURPRISE_ANATOMY_1998_2026.md",
+    "cause_families": [
+      "STRIKE",
+      "HURRICANE",
+      "CENSUS_HIRING",
+      "BENCHMARK_REVISION",
+      "SEASONAL_ANOMALY",
+      "METHODOLOGY_CHANGE",
+      "COLLECTION_DISRUPTION",
+      "COMPOSITION_SHIFT",
+      "REOPEN_SURGE",
+      "HEALTH_INS_RESET",
+      "TARIFF_PASSTHROUGH",
+      "ENERGY_SURGE",
+      "BIRTH_DEATH"
+    ]
+  },
+  "episodes": [
+    {
+      "id": "S001",
+      "date": "2001-03",
+      "release": "NFP",
+      "print_vs_exp": "MISS",
+      "cause_family": "SEASONAL_ANOMALY",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "Manufacturing ISM sub-50; leading indicators deteriorating",
+      "cite": "https://www.bls.gov/news.release/empsit.toc.htm"
+    },
+    {
+      "id": "S002",
+      "date": "2002-01",
+      "release": "NFP",
+      "print_vs_exp": "BEAT (benchmark revision ~+100k/mo)",
+      "cause_family": "BENCHMARK_REVISION",
+      "knowable_ex_ante": "YES",
+      "free_signal": "September preliminary benchmark estimate published Oct 2001",
+      "cite": "https://www.bls.gov/ces/publications/benchmark.htm"
+    },
+    {
+      "id": "S003",
+      "date": "2003-01",
+      "release": "NFP",
+      "print_vs_exp": "BEAT (benchmark revision)",
+      "cause_family": "BENCHMARK_REVISION",
+      "knowable_ex_ante": "YES",
+      "free_signal": "September preliminary benchmark estimate published Oct 2002",
+      "cite": "https://www.bls.gov/ces/publications/benchmark.htm"
+    },
+    {
+      "id": "S004",
+      "date": "2005-09",
+      "release": "NFP",
+      "print_vs_exp": "MISS (-35k vs +150k exp)",
+      "cause_family": "HURRICANE",
+      "knowable_ex_ante": "YES",
+      "free_signal": "Hurricane Katrina landfall Aug 29; NOAA NHC track data",
+      "cite": "https://www.bls.gov/news.release/archives/empsit_10072005.pdf",
+      "hurricane_name": "Katrina",
+      "hurricane_landfall_date": "2005-08-29",
+      "nfp_ref_week_start": "2005-09-11"
+    },
+    {
+      "id": "S005",
+      "date": "2005-10",
+      "release": "NFP",
+      "print_vs_exp": "BEAT (Katrina bounce +56k vs -35k exp)",
+      "cause_family": "HURRICANE",
+      "knowable_ex_ante": "YES",
+      "free_signal": "Historical hurricane-bounce pattern; Katrina displacement visible",
+      "cite": "https://www.bls.gov/news.release/archives/empsit_11042005.pdf"
+    },
+    {
+      "id": "S006",
+      "date": "2005-09",
+      "release": "CPI",
+      "print_vs_exp": "BEAT (+1.2% MoM; largest since 1990)",
+      "cause_family": "HURRICANE",
+      "knowable_ex_ante": "YES",
+      "free_signal": "Katrina disrupted ~25% US Gulf oil production; gasoline spot visible",
+      "cite": "https://www.bls.gov/news.release/archives/cpi_10192005.pdf"
+    },
+    {
+      "id": "S007",
+      "date": "2019-10",
+      "release": "NFP",
+      "print_vs_exp": "MISS (-50k from strike; headline +128k)",
+      "cause_family": "STRIKE",
+      "knowable_ex_ante": "YES",
+      "free_signal": "UAW-GM strike began Sep 16; BLS work-stoppages listing; ~49k workers in ref week Oct 6-12",
+      "cite": "https://www.bls.gov/news.release/archives/empsit_11012019.pdf",
+      "strike_org": "United Auto Workers",
+      "strike_employer": "General Motors",
+      "strike_workers": 49000,
+      "strike_start": "2019-09-16",
+      "nfp_ref_week_start": "2019-10-06"
+    },
+    {
+      "id": "S008",
+      "date": "2010-05",
+      "release": "NFP",
+      "print_vs_exp": "LARGE BEAT (+431k; +411k census workers)",
+      "cause_family": "CENSUS_HIRING",
+      "knowable_ex_ante": "YES",
+      "free_signal": "Census Bureau published monthly hiring schedule",
+      "cite": "https://www.census.gov/2010census/"
+    },
+    {
+      "id": "S009",
+      "date": "2010-06",
+      "release": "NFP",
+      "print_vs_exp": "MISS (-125k; census workers released)",
+      "cause_family": "CENSUS_HIRING",
+      "knowable_ex_ante": "YES",
+      "free_signal": "Same Census hiring schedule showed completion timeline",
+      "cite": "https://www.census.gov/2010census/"
+    },
+    {
+      "id": "S010",
+      "date": "2020-03",
+      "release": "NFP",
+      "print_vs_exp": "MISS (-701k vs -100k exp)",
+      "cause_family": "COLLECTION_DISRUPTION",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "Ref week Mar 8-14 pre-dated most state shutdowns; Philly Fed index collapsing",
+      "cite": "https://www.bls.gov/news.release/archives/empsit_04032020.pdf",
+      "genuinely_unknowable": false
+    },
+    {
+      "id": "S011",
+      "date": "2020-04",
+      "release": "NFP",
+      "print_vs_exp": "MISS (-20500k; consensus range -25M to -10M)",
+      "cause_family": "COLLECTION_DISRUPTION",
+      "knowable_ex_ante": "NO",
+      "free_signal": "OpenTable, TSA, but magnitude unprecedented",
+      "cite": "https://www.bls.gov/news.release/archives/empsit_05082020.pdf",
+      "genuinely_unknowable": true
+    },
+    {
+      "id": "S012",
+      "date": "2020-05",
+      "release": "NFP",
+      "print_vs_exp": "MASSIVE BEAT (+2509k vs -7500k consensus)",
+      "cause_family": "REOPEN_SURGE",
+      "knowable_ex_ante": "NO",
+      "free_signal": "OpenTable reservations; TSA throughput; but magnitude unknowable",
+      "cite": "https://www.bls.gov/news.release/archives/empsit_06052020.pdf",
+      "genuinely_unknowable": true,
+      "notes": "BLS flagged classification error: ~4.9M workers miscoded as 'employed, absent' vs 'unemployed, temporary layoff'; correcting would have produced approx -2.4M"
+    },
+    {
+      "id": "S013",
+      "date": "2021-04",
+      "release": "NFP",
+      "print_vs_exp": "MISS (+266k vs +978k consensus)",
+      "cause_family": "SEASONAL_ANOMALY",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "Enhanced UI elasticity unknown; ADP +742k also misleading",
+      "cite": "https://www.bls.gov/news.release/archives/empsit_05072021.pdf",
+      "genuinely_unknowable": true
+    },
+    {
+      "id": "S014",
+      "date": "2021-04",
+      "release": "CPI",
+      "print_vs_exp": "BEAT (+0.8% core MoM; used cars +10.0%)",
+      "cause_family": "COMPOSITION_SHIFT",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "Manheim Used Vehicle Value Index +8-10% in March (published ~4 weeks prior)",
+      "cite": "https://www.bls.gov/news.release/archives/cpi_05122021.pdf"
+    },
+    {
+      "id": "S015",
+      "date": "2022-06",
+      "release": "CPI",
+      "print_vs_exp": "LARGE BEAT (+1.3% MoM; +9.1% YoY, 40y high)",
+      "cause_family": "ENERGY_SURGE",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "EIA weekly gasoline avg $4.99/gal in June; visible pre-print",
+      "cite": "https://www.bls.gov/news.release/archives/cpi_07132022.pdf"
+    },
+    {
+      "id": "S016",
+      "date": "2022-09",
+      "release": "CPI",
+      "print_vs_exp": "BEAT (+0.4% core MoM vs +0.3% exp; shelter +0.7%)",
+      "cause_family": "COMPOSITION_SHIFT",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "Cleveland Fed Inflation Nowcast +0.47% core MoM (public day-before)",
+      "cite": "https://www.bls.gov/news.release/archives/cpi_10132022.pdf"
+    },
+    {
+      "id": "S017",
+      "date": "2022-10",
+      "release": "CPI",
+      "print_vs_exp": "MISS (core +0.3% vs +0.5% exp; health insurance -4.0%)",
+      "cause_family": "HEALTH_INS_RESET",
+      "knowable_ex_ante": "YES",
+      "free_signal": "BLS MLR article Oct 2022 announced methodology change before first landing",
+      "cite": "https://www.bls.gov/opub/mlr/2023/article/incorporating-new-estimates-into-the-cpi.htm"
+    },
+    {
+      "id": "S018",
+      "date": "2023-01",
+      "release": "CPI",
+      "print_vs_exp": "MISS (health insurance weighing on core)",
+      "cause_family": "HEALTH_INS_RESET",
+      "knowable_ex_ante": "YES",
+      "free_signal": "BLS published semiannual reset cadence (Apr and Oct prints)",
+      "cite": "https://www.bls.gov/opub/mlr/2023/article/incorporating-new-estimates-into-the-cpi.htm"
+    },
+    {
+      "id": "S019",
+      "date": "2023-01",
+      "release": "NFP",
+      "print_vs_exp": "BENCHMARK REVISION +517k (to prior 12 months)",
+      "cause_family": "BENCHMARK_REVISION",
+      "knowable_ex_ante": "YES",
+      "free_signal": "September 2022 preliminary benchmark estimate: +462k (published Oct 2022)",
+      "cite": "https://www.bls.gov/ces/publications/benchmark.htm",
+      "benchmark_preliminary_estimate": 462000,
+      "benchmark_final_estimate": 517000,
+      "preliminary_published_date": "2022-10"
+    },
+    {
+      "id": "S020",
+      "date": "2024-10",
+      "release": "NFP",
+      "print_vs_exp": "MISS (+12k vs +113k exp; hurricane/strike impact ~100k)",
+      "cause_family": "HURRICANE",
+      "knowable_ex_ante": "YES",
+      "free_signal": "Hurricane Helene landfall Sep 26; Milton landfall Oct 9; Boeing IAM strike Sep 13",
+      "cite": "https://www.bls.gov/news.release/archives/empsit_11012024.pdf",
+      "hurricane_name": "Helene+Milton",
+      "hurricane_landfall_date": "2024-09-26",
+      "strike_org": "International Association of Machinists",
+      "strike_employer": "Boeing",
+      "strike_workers": 33000,
+      "strike_start": "2024-09-13",
+      "nfp_ref_week_start": "2024-10-06"
+    },
+    {
+      "id": "S021",
+      "date": "2025-01",
+      "release": "MULTIPLE",
+      "print_vs_exp": "DELAYED/PARTIAL",
+      "cause_family": "COLLECTION_DISRUPTION",
+      "knowable_ex_ante": "YES",
+      "free_signal": "Continuing resolution / appropriations lapse; OMB guidance public",
+      "cite": "https://www.bls.gov/"
+    },
+    {
+      "id": "S022",
+      "date": "2025-10",
+      "release": "CPI",
+      "print_vs_exp": "CANCELLED",
+      "cause_family": "COLLECTION_DISRUPTION",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "Government funding lapse observable; exact cancellation date not disclosed in advance",
+      "cite": "https://www.bls.gov/"
+    },
+    {
+      "id": "S023",
+      "date": "2025-Q2",
+      "release": "CPI (goods)",
+      "print_vs_exp": "BEAT (goods deflation reversed)",
+      "cause_family": "TARIFF_PASSTHROUGH",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "Tariff schedules (CBP); Import Price Index (BLS monthly); 3-6 month passthrough lag",
+      "cite": "https://www.bls.gov/mxp/"
+    },
+    {
+      "id": "S024",
+      "date": "2026-Q1",
+      "release": "CPI headline",
+      "print_vs_exp": "BEAT (energy component)",
+      "cause_family": "ENERGY_SURGE",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "WTI futures strip; EIA weekly petroleum supply data",
+      "cite": "https://www.eia.gov/"
+    },
+    {
+      "id": "S025",
+      "date": "2007-Q4",
+      "release": "NFP (real-time)",
+      "print_vs_exp": "UPWARD BIAS (birth-death over-added; revised -1.2M at Jan 2010 benchmark)",
+      "cause_family": "BIRTH_DEATH",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "BED (Business Employment Dynamics) showed unusual establishment-closure rates; Sep 2009 preliminary -824k published Oct 2009",
+      "cite": "https://www.bls.gov/ces/publications/benchmark.htm"
+    }
+  ],
+  "genuinely_unknowable_summary": {
+    "description": "Episodes where structural/mechanical cause was present but magnitude was not knowable ex ante from public information. No ex-ante signal inference drawn.",
+    "episode_ids": ["S011", "S012", "S013"]
+  }
+}

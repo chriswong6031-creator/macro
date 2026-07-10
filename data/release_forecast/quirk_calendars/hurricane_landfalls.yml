@@ -1,0 +1,101 @@
+# NOAA NHC Hurricane Landfall Calendar
+# Seeded with landfalls that affected NFP reference weeks.
+# A live NHC collector is comeback scope (C-14 / Track S comeback).
+# Maintained manually until live collector lands.
+#
+# Fields:
+#   name:          storm name
+#   landfall_date: YYYY-MM-DD (first US landfall)
+#   landfall_state: two-letter state(s)
+#   category:      Saffir-Simpson at landfall (1-5)
+#   nfp_ref_month: YYYY-MM (the NFP reference period most affected)
+#   affect_type:   displacement | disruption | energy_supply
+#   cite:          NOAA NHC source
+#
+# Source: NOAA National Hurricane Center https://www.nhc.noaa.gov/
+# Each entry represents a storm with documented effect on BLS data collection
+# or energy supply pricing.
+
+landfalls:
+
+  - name: "Katrina"
+    landfall_date: "2005-08-29"
+    landfall_state: "LA"
+    category: 3
+    nfp_ref_month: "2005-09"
+    affect_type: "displacement"
+    notes: "NFP -35k vs +150k exp; ~100k displaced workers; oil production disrupted"
+    cite: "https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf"
+
+  - name: "Rita"
+    landfall_date: "2005-09-24"
+    landfall_state: "TX"
+    category: 3
+    nfp_ref_month: "2005-10"
+    affect_type: "displacement"
+    notes: "Followed Katrina; additional Gulf Coast disruption"
+    cite: "https://www.nhc.noaa.gov/data/tcr/AL182005_Rita.pdf"
+
+  - name: "Ike"
+    landfall_date: "2008-09-13"
+    landfall_state: "TX"
+    category: 2
+    nfp_ref_month: "2008-09"
+    affect_type: "displacement"
+    notes: "NFP reference week Sep 7-13 overlapped with landfall (Sep 13)"
+    cite: "https://www.nhc.noaa.gov/data/tcr/AL092008_Ike.pdf"
+
+  - name: "Sandy"
+    landfall_date: "2012-10-29"
+    landfall_state: "NJ"
+    category: 1
+    nfp_ref_month: "2012-10"
+    affect_type: "disruption"
+    notes: "NFP reference week Oct 7-13 pre-landfall; Oct NFP +171k broadly unaffected; claims data disrupted"
+    cite: "https://www.nhc.noaa.gov/data/tcr/AL182012_Sandy.pdf"
+
+  - name: "Harvey"
+    landfall_date: "2017-08-25"
+    landfall_state: "TX"
+    category: 4
+    nfp_ref_month: "2017-08"
+    affect_type: "displacement"
+    notes: "NFP -33k vs +80k exp; Harvey displaced workers; BLS estimated ~100k impact"
+    cite: "https://www.nhc.noaa.gov/data/tcr/AL092017_Harvey.pdf"
+
+  - name: "Irma"
+    landfall_date: "2017-09-10"
+    landfall_state: "FL"
+    category: 4
+    nfp_ref_month: "2017-09"
+    affect_type: "displacement"
+    notes: "September NFP also depressed by Harvey/Irma combined; BLS flagged"
+    cite: "https://www.nhc.noaa.gov/data/tcr/AL112017_Irma.pdf"
+
+  - name: "Helene"
+    landfall_date: "2024-09-26"
+    landfall_state: "FL"
+    category: 4
+    nfp_ref_month: "2024-10"
+    affect_type: "displacement"
+    notes: "Combined with Boeing strike: Oct 2024 NFP +12k vs +113k exp; BLS ~100k combined impact"
+    cite: "https://www.nhc.noaa.gov/"
+
+  - name: "Milton"
+    landfall_date: "2024-10-09"
+    landfall_state: "FL"
+    category: 3
+    nfp_ref_month: "2024-10"
+    affect_type: "displacement"
+    notes: "Landfall Oct 9, during NFP reference week Oct 6-12; compounded Helene effect"
+    cite: "https://www.nhc.noaa.gov/"
+
+  # Add future entries here as:
+  # - name: "Name"
+  #   landfall_date: "YYYY-MM-DD"
+  #   landfall_state: "XX"
+  #   category: N
+  #   nfp_ref_month: "YYYY-MM"
+  #   affect_type: "displacement|disruption|energy_supply"
+  #   notes: "..."
+  #   cite: "https://www.nhc.noaa.gov/..."
