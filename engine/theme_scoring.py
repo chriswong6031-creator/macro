@@ -97,6 +97,26 @@ _MACRO_PRIOR = {
     "travel":           {"growth": 0.7, "rates": 0.1, "inflation": -0.2, "riskon": 0.5},
     "retail":           {"growth": 0.6, "rates": 0.3, "inflation": -0.3, "riskon": 0.5},
     "crypto":           {"growth": 0.3, "rates": 0.4, "inflation": 0.1,  "riskon": 1.0},
+    # --- W8b prereg additions: AI-capex complex baskets (FT-R7 disclosed exception) ---
+    # ai_semiconductors: direct AI silicon (GPUs / accelerators); by analogy with ai_infra
+    # (same hyperscaler demand pool, same growth/risk-on profile) — slightly higher rates
+    # sensitivity than ai_infra because pure-play semis reprice sharply on Fed pivots.
+    "ai_semiconductors":  {"growth": 0.7, "rates": 0.3, "inflation": -0.1, "riskon": 0.9},
+    # semicap_equipment: wafer-fab equipment (ASML/KLAC/LRCX/AMAT); pro-cyclical tech capex
+    # but one step upstream → lagged demand, more industrial in character than ai_infra;
+    # rates matter less (long equipment capex cycles), moderate risk-on exposure.
+    "semicap_equipment":  {"growth": 0.6, "rates": 0.1, "inflation": 0.1,  "riskon": 0.6},
+    # memory_storage: HBM/DRAM — direct AI accelerator demand beneficiary; profile close to
+    # ai_semiconductors but slightly lower risk-on (memory is commodity-like, cyclical).
+    "memory_storage":     {"growth": 0.6, "rates": 0.2, "inflation": 0.0,  "riskon": 0.7},
+    # data_center_power: power & cooling for data centers (Vertiv/Eaton/GEV); physical
+    # infrastructure character like power_grid — benefits from growth, infrastructure
+    # spending, and mild reflation (equipment pricing); rate-easing helps via project finance.
+    "data_center_power":  {"growth": 0.5, "rates": 0.3, "inflation": 0.2,  "riskon": 0.4},
+    # nuclear_power: nuclear/SMR build-out for data-center and grid demand; by analogy with
+    # power_grid + energy_complex — benefits from reflation, energy scarcity narratives, and
+    # infrastructure spending; moderate rates sensitivity (long-duration capital projects).
+    "nuclear_power":      {"growth": 0.3, "rates": 0.3, "inflation": 0.4,  "riskon": 0.3},
 }
 
 # basket id -> the home sector-ETF whose live relative-strength (regime.sector_rs) is a
@@ -106,6 +126,12 @@ _SECTOR_PROXY = {
     "power_grid": "XLU", "reshoring": "XLI", "regional_banks": "XLF",
     "managed_care": "XLV", "housing": "XLY", "payments_fintech": "XLF",
     "energy_complex": "XLE", "defensives": "XLP", "travel": "XLY", "retail": "XLY",
+    # W8b prereg additions — AI-capex complex
+    "ai_semiconductors": "SMH",   # semiconductor ETF: direct proxy for AI silicon demand
+    "semicap_equipment": "SMH",   # same semiconductor supply-chain ecosystem
+    "memory_storage":    "SMH",   # HBM/DRAM within the semiconductor complex
+    "data_center_power": "XLU",   # power/utilities ETF: closest to the power-infra build-out
+    "nuclear_power":     "XLU",   # utilities ETF: nuclear sits inside XLU
 }
 
 # Lifecycle label -> (en, zh) display.
