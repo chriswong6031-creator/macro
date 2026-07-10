@@ -393,6 +393,7 @@
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
             <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
             <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
             <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
             <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
@@ -468,9 +469,9 @@
   <div class="tl-meta">
     <span class="chip tag-equities"><span class="l-en">Technical Signals</span><span class="l-zh">技术信号</span></span>
     
-      <span class="chip"><span class="l-en">Screener</span><span class="l-zh">筛选器</span>: 2026-07-10 13:04 UTC</span>
-      <span class="chip">46 <span class="l-en">signals</span><span class="l-zh">信号</span></span>
-      <span class="chip">219 <span class="l-en">universe</span><span class="l-zh">覆盖标的</span></span>
+      <span class="chip"><span class="l-en">Screener</span><span class="l-zh">筛选器</span>: 2026-07-10 13:58 UTC</span>
+      <span class="chip">64 <span class="l-en">signals</span><span class="l-zh">信号</span></span>
+      <span class="chip">225 <span class="l-en">universe</span><span class="l-zh">覆盖标的</span></span>
     
   </div>
 </section>
@@ -489,6 +490,26 @@
   </div>
   <select class="tl-sig-select" id="tl-sig-select" onchange="tlSelectSignal(this.value)">
     <option value="COMPOSITE" data-en="★ Composite (all signals)" data-zh="★ 综合评分（全部信号）">★ Composite (all signals)</option>
+    
+    <optgroup label="Bollinger Events">
+      
+      
+      <option value="bb_band_walk_down" data-en="Bollinger Band Walk Down (Close below lower band ≥ 3 of last 5 bars)" data-zh="布林带向下游走（近5根K线中至少3根收盘低于下轨）">Bollinger Band Walk Down (Close below lower band ≥ 3 of last 5 bars)</option>
+      
+      
+      
+      <option value="bb_band_walk_up" data-en="Bollinger Band Walk Up (Close above upper band ≥ 3 of last 5 bars)" data-zh="布林带向上游走（近5根K线中至少3根收盘高于上轨）">Bollinger Band Walk Up (Close above upper band ≥ 3 of last 5 bars)</option>
+      
+      
+      
+      <option value="bb_lower_reclaim" data-en="Bollinger Lower Band Reclaim (Wick below, Close above)" data-zh="布林下轨收复（下影线触穿，收盘回升）">Bollinger Lower Band Reclaim (Wick below, Close above)</option>
+      
+      
+      
+      <option value="bb_upper_rejection" data-en="Bollinger Upper Band Rejection (Wick above, Close below)" data-zh="布林上轨拒绝（上影线穿越，收盘回落）">Bollinger Upper Band Rejection (Wick above, Close below)</option>
+      
+      
+    </optgroup>
     
     <optgroup label="Formations">
       
@@ -530,6 +551,34 @@
       
       
       <option value="valuation_pctile" data-en="Valuation cheapness percentile (0–1, higher = cheaper vs peers)" data-zh="估值便宜百分位（0–1，越高代表相对同业越便宜）">Valuation cheapness percentile (0–1, higher = cheaper vs peers)</option>
+      
+      
+    </optgroup>
+    
+    <optgroup label="Ichimoku">
+      
+      
+      <option value="ichimoku_tk_cross_down" data-en="Ichimoku — Bearish TK Cross (Tenkan crosses below Kijun)" data-zh="一目均衡 — 看跌TK交叉（转换线下穿基准线）">Ichimoku — Bearish TK Cross (Tenkan crosses below Kijun)</option>
+      
+      
+      
+      <option value="ichimoku_tk_cross_up" data-en="Ichimoku — Bullish TK Cross (Tenkan crosses above Kijun)" data-zh="一目均衡 — 看涨TK交叉（转换线上穿基准线）">Ichimoku — Bullish TK Cross (Tenkan crosses above Kijun)</option>
+      
+      
+      
+      <option value="ichimoku_cloud_breakdown" data-en="Ichimoku — Cloud Breakdown (Price crosses below Kumo)" data-zh="一目均衡 — 向下跌破云层（价格下穿云底）">Ichimoku — Cloud Breakdown (Price crosses below Kumo)</option>
+      
+      
+      
+      <option value="ichimoku_cloud_breakout_up" data-en="Ichimoku — Cloud Breakout Up (Price crosses above Kumo)" data-zh="一目均衡 — 向上突破云层（价格上穿云顶）">Ichimoku — Cloud Breakout Up (Price crosses above Kumo)</option>
+      
+      
+      
+      <option value="ichimoku_above_cloud" data-en="Ichimoku — Price Above Cloud" data-zh="一目均衡 — 价格在云层上方">Ichimoku — Price Above Cloud</option>
+      
+      
+      
+      <option value="ichimoku_below_cloud" data-en="Ichimoku — Price Below Cloud" data-zh="一目均衡 — 价格在云层下方">Ichimoku — Price Below Cloud</option>
       
       
     </optgroup>
@@ -662,6 +711,26 @@
       
     </optgroup>
     
+    <optgroup label="Rsi Stack">
+      
+      
+      <option value="rsi_stack_curl_down" data-en="RSI Stack (7/14/21) — All Three Curling Down" data-zh="RSI叠加（7/14/21）— 三条RSI同步下翻">RSI Stack (7/14/21) — All Three Curling Down</option>
+      
+      
+      
+      <option value="rsi_stack_curl_up" data-en="RSI Stack (7/14/21) — All Three Curling Up" data-zh="RSI叠加（7/14/21）— 三条RSI同步上翘">RSI Stack (7/14/21) — All Three Curling Up</option>
+      
+      
+      
+      <option value="rsi_stack_overbought" data-en="RSI Stack (7/14/21) — All Three at or Above 80 (reference band)" data-zh="RSI叠加（7/14/21）— 三条RSI均超过80参考带">RSI Stack (7/14/21) — All Three at or Above 80 (reference band)</option>
+      
+      
+      
+      <option value="rsi_stack_oversold" data-en="RSI Stack (7/14/21) — All Three at or Below 30" data-zh="RSI叠加（7/14/21）— 三条RSI均低于30参考带">RSI Stack (7/14/21) — All Three at or Below 30</option>
+      
+      
+    </optgroup>
+    
     <optgroup label="Tech Stars">
       
       
@@ -710,6 +779,26 @@
       
       
       <option value="trend_rising_short" data-en="Short-term Rising Trend" data-zh="短期上升趋势">Short-term Rising Trend</option>
+      
+      
+    </optgroup>
+    
+    <optgroup label="Trend Ribbon">
+      
+      
+      <option value="ribbon_down" data-en="Trend Ribbon — Downtrend State" data-zh="趋势带 — 下降趋势状态">Trend Ribbon — Downtrend State</option>
+      
+      
+      
+      <option value="ribbon_flip_down" data-en="Trend Ribbon — Flip to Downtrend" data-zh="趋势带 — 翻转为下降趋势">Trend Ribbon — Flip to Downtrend</option>
+      
+      
+      
+      <option value="ribbon_flip_up" data-en="Trend Ribbon — Flip to Uptrend" data-zh="趋势带 — 翻转为上升趋势">Trend Ribbon — Flip to Uptrend</option>
+      
+      
+      
+      <option value="ribbon_up" data-en="Trend Ribbon — Uptrend State" data-zh="趋势带 — 上升趋势状态">Trend Ribbon — Uptrend State</option>
       
       
     </optgroup>
