@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-07-07",
+  "asof": "2026-07-09",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -1540,7 +1540,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-06",
+        "asof": "2026-07-08",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1555,7 +1555,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-07",
+        "asof": "2026-07-08",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1570,7 +1570,7 @@
         "quad_name": "Growth-scare",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-07",
+        "asof": "2026-07-08",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1905,6 +1905,16 @@
     },
     {
       "src": "artifact:regime-latest",
+      "dst": "module:engine/neuralweb/context_api.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/regime/latest.json consumed by engine/neuralweb/context_api.py"
+    },
+    {
+      "src": "artifact:regime-latest",
       "dst": "module:engine/neuralweb/cortex.py",
       "edge_type": "feeds",
       "n": null,
@@ -1922,6 +1932,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/regime/latest.json consumed by engine/neuralweb/covariance_spine.py"
+    },
+    {
+      "src": "artifact:regime-latest",
+      "dst": "module:engine/neuralweb/causal_inventory.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/regime/latest.json consumed by engine/neuralweb/causal_inventory.py"
     },
     {
       "src": "module:scripts/seed_us_sector_baskets.py",
@@ -2122,6 +2142,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/regime/regime_history.parquet consumed by engine/board_ledger.py"
+    },
+    {
+      "src": "artifact:regime-history",
+      "dst": "module:engine/neuralweb/context_api.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/regime/regime_history.parquet consumed by engine/neuralweb/context_api.py"
     },
     {
       "src": "artifact:regime-history",
@@ -2462,6 +2492,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/breadth/breadth.parquet consumed by scripts/validate_timing_overlay.py"
+    },
+    {
+      "src": "artifact:breadth-breadth",
+      "dst": "module:engine/neuralweb/causal_inventory.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/breadth/breadth.parquet consumed by engine/neuralweb/causal_inventory.py"
     },
     {
       "src": "module:engine/altdata_signals.py",
@@ -4395,6 +4435,16 @@
     },
     {
       "src": "artifact:archetypes-history",
+      "dst": "module:engine/neuralweb/context_api.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/archetypes/history.parquet consumed by engine/neuralweb/context_api.py"
+    },
+    {
+      "src": "artifact:archetypes-history",
       "dst": "module:engine/stock_fundamentals.py",
       "edge_type": "feeds",
       "n": null,
@@ -6114,6 +6164,76 @@
       "note": "structural: site/basketdata/sector_pulse.json consumed by engine/oracle/live.py"
     },
     {
+      "src": "module:engine/basket_turn_watch.py",
+      "dst": "artifact:site-basket-turn-watch",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/basket_turn_watch.py writes site/basketdata/turn_watch.json"
+    },
+    {
+      "src": "artifact:site-basket-turn-watch",
+      "dst": "module:scripts/build_baskets.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/basketdata/turn_watch.json consumed by scripts/build_baskets.py"
+    },
+    {
+      "src": "module:engine/mtf_upturn.py",
+      "dst": "artifact:stock-mtf-upturn",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/mtf_upturn.py writes site/stockdata/mtf_upturn.json"
+    },
+    {
+      "src": "artifact:stock-mtf-upturn",
+      "dst": "module:scripts/build_baskets.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/stockdata/mtf_upturn.json consumed by scripts/build_baskets.py"
+    },
+    {
+      "src": "module:scripts/build_basket_turn_grading.py",
+      "dst": "artifact:basket-turn-cohort-claims-log",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_basket_turn_grading.py writes data/basket_turn/cohort_claims_log.jsonl"
+    },
+    {
+      "src": "module:scripts/build_basket_turn_grading.py",
+      "dst": "artifact:basket-turn-cohort-grades",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_basket_turn_grading.py writes data/basket_turn/cohort_grades.jsonl"
+    },
+    {
+      "src": "module:scripts/build_basket_turn_grading.py",
+      "dst": "artifact:tape-disagreement-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_basket_turn_grading.py writes data/basket_turn/disagreement_ledger.jsonl"
+    },
+    {
       "src": "module:scripts/build_radar_plus.py",
       "dst": "artifact:site-radar-ticker",
       "edge_type": "feeds",
@@ -6564,6 +6684,136 @@
       "note": "structural: site/china_intel/command.json consumed by engine/china_intel_bus.py"
     },
     {
+      "src": "module:scripts/build_china_altdata.py",
+      "dst": "artifact:site-china-altdata-mastermind",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_altdata.py writes site/chinaaltdata/mastermind.json"
+    },
+    {
+      "src": "artifact:site-china-altdata-mastermind",
+      "dst": "module:engine/china_intel_analysis.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/chinaaltdata/mastermind.json consumed by engine/china_intel_analysis.py"
+    },
+    {
+      "src": "artifact:site-china-altdata-mastermind",
+      "dst": "module:engine/china_intel_bus.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/chinaaltdata/mastermind.json consumed by engine/china_intel_bus.py"
+    },
+    {
+      "src": "module:scripts/build_china_altdata.py",
+      "dst": "artifact:site-china-altdata-by-ticker",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_altdata.py writes site/chinaaltdata/by_ticker.json"
+    },
+    {
+      "src": "artifact:site-china-altdata-by-ticker",
+      "dst": "module:engine/china_intel_hub.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/chinaaltdata/by_ticker.json consumed by engine/china_intel_hub.py"
+    },
+    {
+      "src": "module:scripts/build_china_altdata.py",
+      "dst": "artifact:site-china-altdata-feed",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_altdata.py writes site/chinaaltdata/feed.json"
+    },
+    {
+      "src": "module:scripts/build_china_cycle_phase.py",
+      "dst": "artifact:site-china-cycle-phase",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_cycle_phase.py writes site/chinastatedata/cycle_phase.json"
+    },
+    {
+      "src": "artifact:site-china-cycle-phase",
+      "dst": "module:engine/china_market_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/chinastatedata/cycle_phase.json consumed by engine/china_market_state.py"
+    },
+    {
+      "src": "module:scripts/build_china_market_state.py",
+      "dst": "artifact:site-china-market-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_market_state.py writes site/chinastatedata/market_state.json"
+    },
+    {
+      "src": "artifact:site-china-market-state",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/chinastatedata/market_state.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "artifact:site-china-market-state",
+      "dst": "module:engine/neuralweb/mastermind_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/chinastatedata/market_state.json consumed by engine/neuralweb/mastermind_context.py"
+    },
+    {
+      "src": "artifact:site-china-market-state",
+      "dst": "module:engine/neuralweb/daily_brief.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/chinastatedata/market_state.json consumed by engine/neuralweb/daily_brief.py"
+    },
+    {
+      "src": "artifact:site-china-market-state",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/chinastatedata/market_state.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
       "src": "module:scripts/export_signal_contracts.py",
       "dst": "artifact:site-artifact-manifest",
       "edge_type": "feeds",
@@ -6784,6 +7034,16 @@
       "note": "structural: site/factordata/factors.json consumed by scripts/build_site.py"
     },
     {
+      "src": "artifact:site-factors",
+      "dst": "module:engine/neuralweb/bottom_sensors.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/factors.json consumed by engine/neuralweb/bottom_sensors.py"
+    },
+    {
       "src": "module:engine/neuralweb/query.py",
       "dst": "artifact:spine-index",
       "edge_type": "feeds",
@@ -6832,6 +7092,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/neuralweb/spine_index.parquet consumed by engine/neuralweb/covariance_spine.py"
+    },
+    {
+      "src": "artifact:spine-index",
+      "dst": "module:engine/neuralweb/context_api.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/spine_index.parquet consumed by engine/neuralweb/context_api.py"
     },
     {
       "src": "module:engine/neuralweb/kernel.py",
@@ -7194,6 +7464,46 @@
       "note": "structural: data/alert_triage/push_sent_healthcheck.jsonl consumed by engine/alert_triage.py"
     },
     {
+      "src": "module:scripts/check_nw_health_escalation.py",
+      "dst": "artifact:ops-push-nw-health",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/check_nw_health_escalation.py writes data/alert_triage/push_sent_nw_health.jsonl"
+    },
+    {
+      "src": "artifact:ops-push-nw-health",
+      "dst": "module:engine/alert_triage.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alert_triage/push_sent_nw_health.jsonl consumed by engine/alert_triage.py"
+    },
+    {
+      "src": "module:scripts/check_nw_health_escalation.py",
+      "dst": "artifact:nw-health-run-history",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/check_nw_health_escalation.py writes data/neuralweb/nw_health_run_history.jsonl"
+    },
+    {
+      "src": "artifact:nw-health-run-history",
+      "dst": "module:scripts/check_nw_health_escalation.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/nw_health_run_history.jsonl consumed by scripts/check_nw_health_escalation.py"
+    },
+    {
       "src": "module:scripts/build_feeds.py",
       "dst": "artifact:feeds-plane",
       "edge_type": "feeds",
@@ -7514,6 +7824,16 @@
       "note": "structural: data/options_entry/state.parquet consumed by engine/neuralweb/mastermind_context.py"
     },
     {
+      "src": "artifact:options-entry-state",
+      "dst": "module:engine/neuralweb/causal_inventory.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_entry/state.parquet consumed by engine/neuralweb/causal_inventory.py"
+    },
+    {
       "src": "module:scripts/validate_options_entry.py",
       "dst": "artifact:options-entry-gate",
       "edge_type": "feeds",
@@ -7542,6 +7862,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_options_skew.py writes data/options_skew/snapshots.parquet"
+    },
+    {
+      "src": "artifact:options-skew-snapshots",
+      "dst": "module:engine/neuralweb/context_api.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/options_skew/snapshots.parquet consumed by engine/neuralweb/context_api.py"
     },
     {
       "src": "artifact:options-skew-snapshots",
@@ -8704,6 +9034,26 @@
       "note": "structural: scripts/build_nw_mastermind_context.py writes site/neuralwebdata/mastermind_context.json"
     },
     {
+      "src": "module:collectors/yf_analyst.py",
+      "dst": "artifact:analyst-targets",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/yf_analyst.py writes data/analyst/targets.parquet"
+    },
+    {
+      "src": "artifact:analyst-targets",
+      "dst": "module:engine/neuralweb/mastermind_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/analyst/targets.parquet consumed by engine/neuralweb/mastermind_context.py"
+    },
+    {
       "src": "module:<MASTERMIND_EXTERNAL>",
       "dst": "artifact:site-mastermind-nw-feedback",
       "edge_type": "feeds",
@@ -8834,66 +9184,6 @@
       "note": "structural: data/neuralweb/factor_intelligence_state.json consumed by admin/neural_web.py"
     },
     {
-      "src": "module:scripts/build_forex.py",
-      "dst": "artifact:forex-latest",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: scripts/build_forex.py writes data/forex/latest.json"
-    },
-    {
-      "src": "artifact:forex-latest",
-      "dst": "module:engine/neuralweb/world_state.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/forex/latest.json consumed by engine/neuralweb/world_state.py"
-    },
-    {
-      "src": "artifact:forex-latest",
-      "dst": "module:engine/neuralweb/cortex.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/forex/latest.json consumed by engine/neuralweb/cortex.py"
-    },
-    {
-      "src": "artifact:forex-latest",
-      "dst": "module:engine/neuralweb/ask_brain.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/forex/latest.json consumed by engine/neuralweb/ask_brain.py"
-    },
-    {
-      "src": "artifact:forex-latest",
-      "dst": "module:scripts/build_site.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/forex/latest.json consumed by scripts/build_site.py"
-    },
-    {
-      "src": "artifact:forex-latest",
-      "dst": "module:admin/neural_web.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/forex/latest.json consumed by admin/neural_web.py"
-    },
-    {
       "src": "module:scripts/build_factor_intelligence_state.py",
       "dst": "artifact:site-factor-intelligence-state",
       "edge_type": "feeds",
@@ -8944,36 +9234,6 @@
       "note": "structural: data/factordata/fire_coordinates.jsonl consumed by engine/neuralweb/ask_brain.py"
     },
     {
-      "src": "module:scripts/build_transmission.py",
-      "dst": "artifact:transmission-latest",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: scripts/build_transmission.py writes data/transmission/latest.json"
-    },
-    {
-      "src": "artifact:transmission-latest",
-      "dst": "module:engine/neuralweb/cortex.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/transmission/latest.json consumed by engine/neuralweb/cortex.py"
-    },
-    {
-      "src": "artifact:transmission-latest",
-      "dst": "module:engine/neuralweb/ask_brain.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/transmission/latest.json consumed by engine/neuralweb/ask_brain.py"
-    },
-    {
       "src": "module:engine/neuralweb/factor_contradictions.py",
       "dst": "artifact:factor-contradictions-ledger",
       "edge_type": "feeds",
@@ -9004,16 +9264,6 @@
       "note": "structural: data/neuralweb/factor_contradictions.jsonl consumed by engine/neuralweb/ask_brain.py"
     },
     {
-      "src": "module:scripts/build_bonds.py",
-      "dst": "artifact:bond-health",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: scripts/build_bonds.py writes data/bonds/bond_health.json"
-    },
-    {
       "src": "module:scripts/build_neuralweb_health.py",
       "dst": "artifact:neuralweb-health",
       "edge_type": "feeds",
@@ -9025,23 +9275,33 @@
     },
     {
       "src": "artifact:neuralweb-health",
-      "dst": "module:engine/neuralweb/world_state.py",
+      "dst": "module:admin/neural_web.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/neuralweb/health.json consumed by engine/neuralweb/world_state.py"
+      "note": "structural: data/neuralweb/health.json consumed by admin/neural_web.py"
     },
     {
-      "src": "module:scripts/build_commodities.py",
-      "dst": "artifact:commodity-latest",
+      "src": "artifact:neuralweb-health",
+      "dst": "module:engine/neuralweb/daily_brief.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: scripts/build_commodities.py writes data/commodity/latest.json"
+      "note": "structural: data/neuralweb/health.json consumed by engine/neuralweb/daily_brief.py"
+    },
+    {
+      "src": "artifact:neuralweb-health",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/health.json consumed by engine/neuralweb/evidence_clock.py"
     },
     {
       "src": "module:scripts/build_neuralweb_health.py",
@@ -9085,93 +9345,13 @@
     },
     {
       "src": "artifact:neuralweb-daily-brief",
-      "dst": "module:engine/neuralweb/cortex.py",
+      "dst": "module:admin/neural_web.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/neuralweb/daily_brief.json consumed by engine/neuralweb/cortex.py"
-    },
-    {
-      "src": "artifact:neuralweb-daily-brief",
-      "dst": "module:engine/neuralweb/ask_brain.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/neuralweb/daily_brief.json consumed by engine/neuralweb/ask_brain.py"
-    },
-    {
-      "src": "module:engine/china_run.py",
-      "dst": "artifact:china-regime-latest",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: engine/china_run.py writes data/china_regime/latest.json"
-    },
-    {
-      "src": "artifact:china-regime-latest",
-      "dst": "module:engine/neuralweb/world_state.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/china_regime/latest.json consumed by engine/neuralweb/world_state.py"
-    },
-    {
-      "src": "module:engine/hk_run.py",
-      "dst": "artifact:hk-regime-latest",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: engine/hk_run.py writes data/hk_regime/latest.json"
-    },
-    {
-      "src": "artifact:hk-regime-latest",
-      "dst": "module:engine/neuralweb/world_state.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/hk_regime/latest.json consumed by engine/neuralweb/world_state.py"
-    },
-    {
-      "src": "module:engine/canada_run.py",
-      "dst": "artifact:canada-regime-latest",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: engine/canada_run.py writes data/canada_regime/latest.json"
-    },
-    {
-      "src": "artifact:canada-regime-latest",
-      "dst": "module:engine/neuralweb/world_state.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/canada_regime/latest.json consumed by engine/neuralweb/world_state.py"
-    },
-    {
-      "src": "module:scripts/build_briefing.py",
-      "dst": "artifact:site-intelligence-briefing",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: scripts/build_briefing.py writes site/intelligence/briefing.json"
+      "note": "structural: data/neuralweb/daily_brief.json consumed by admin/neural_web.py"
     },
     {
       "src": "module:scripts/build_neuralweb_brief.py",
@@ -9212,6 +9392,46 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/neuralweb/daily_brief_history.jsonl consumed by engine/neuralweb/daily_brief.py"
+    },
+    {
+      "src": "module:scripts/build_attention_deterministic.py",
+      "dst": "artifact:attention-deterministic",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_attention_deterministic.py writes data/neuralweb/attention_deterministic.json"
+    },
+    {
+      "src": "artifact:attention-deterministic",
+      "dst": "module:templates/committee.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/attention_deterministic.json consumed by templates/committee.html.j2"
+    },
+    {
+      "src": "module:scripts/build_attention_deterministic.py",
+      "dst": "artifact:site-attention-deterministic",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_attention_deterministic.py writes site/neuralwebdata/attention_deterministic.json"
+    },
+    {
+      "src": "artifact:site-attention-deterministic",
+      "dst": "module:templates/committee.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/neuralwebdata/attention_deterministic.json consumed by templates/committee.html.j2"
     },
     {
       "src": "module:scripts/build_mechanism_pathways.py",
@@ -9275,23 +9495,13 @@
     },
     {
       "src": "artifact:site-mechanism-pathways",
-      "dst": "module:engine/neuralweb/world_state.py",
+      "dst": "module:templates/committee.html.j2",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: site/neuralwebdata/mechanism_pathways.json consumed by engine/neuralweb/world_state.py"
-    },
-    {
-      "src": "module:scripts/build_factor_series.py",
-      "dst": "artifact:site-factor-series",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: scripts/build_factor_series.py writes site/factordata/factor_series.json"
+      "note": "structural: site/neuralwebdata/mechanism_pathways.json consumed by templates/committee.html.j2"
     },
     {
       "src": "module:scripts/build_mechanism_pathways.py",
@@ -9305,23 +9515,263 @@
     },
     {
       "src": "artifact:mechanism-pathways-history",
+      "dst": "module:scripts/build_mechanism_pathways.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/mechanism_pathways_history.jsonl consumed by scripts/build_mechanism_pathways.py"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:theme-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes data/neuralweb/theme_state.json"
+    },
+    {
+      "src": "artifact:theme-state",
       "dst": "module:engine/neuralweb/world_state.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/neuralweb/mechanism_pathways_history.jsonl consumed by engine/neuralweb/world_state.py"
+      "note": "structural: data/neuralweb/theme_state.json consumed by engine/neuralweb/world_state.py"
     },
     {
-      "src": "module:scripts/build_site.py",
-      "dst": "artifact:site-alerts-triage",
+      "src": "artifact:theme-state",
+      "dst": "module:engine/neuralweb/ask_brain.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: scripts/build_site.py writes site/factordata/alerts_triage.json"
+      "note": "structural: data/neuralweb/theme_state.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "artifact:theme-state",
+      "dst": "module:engine/neuralweb/mastermind_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/theme_state.json consumed by engine/neuralweb/mastermind_context.py"
+    },
+    {
+      "src": "artifact:theme-state",
+      "dst": "module:engine/neuralweb/daily_brief.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/theme_state.json consumed by engine/neuralweb/daily_brief.py"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:site-theme-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes site/neuralwebdata/theme_state.json"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:theme-phase-history",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes data/neuralweb/theme_phase_history.jsonl"
+    },
+    {
+      "src": "artifact:theme-phase-history",
+      "dst": "module:scripts/build_thematic_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/theme_phase_history.jsonl consumed by scripts/build_thematic_state.py"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:theme-thesis-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes data/neuralweb/theme_thesis_ledger.jsonl"
+    },
+    {
+      "src": "artifact:theme-thesis-ledger",
+      "dst": "module:scripts/build_thematic_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/theme_thesis_ledger.jsonl consumed by scripts/build_thematic_state.py"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:site-theme-thesis",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes site/neuralwebdata/theme_thesis.json"
+    },
+    {
+      "src": "artifact:site-theme-thesis",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/neuralwebdata/theme_thesis.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "artifact:site-theme-thesis",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/neuralwebdata/theme_thesis.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "artifact:site-theme-thesis",
+      "dst": "module:engine/neuralweb/mastermind_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/neuralwebdata/theme_thesis.json consumed by engine/neuralweb/mastermind_context.py"
+    },
+    {
+      "src": "artifact:site-theme-thesis",
+      "dst": "module:engine/neuralweb/daily_brief.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/neuralwebdata/theme_thesis.json consumed by engine/neuralweb/daily_brief.py"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:theme-pathways",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes data/neuralweb/theme_pathways.json"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:site-theme-pathways",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes site/neuralwebdata/theme_pathways.json"
+    },
+    {
+      "src": "artifact:site-theme-pathways",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/neuralwebdata/theme_pathways.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:theme-asymmetry",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes data/neuralweb/theme_asymmetry.json"
+    },
+    {
+      "src": "module:scripts/build_thematic_state.py",
+      "dst": "artifact:site-theme-asymmetry",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_thematic_state.py writes site/neuralwebdata/theme_asymmetry.json"
+    },
+    {
+      "src": "module:scripts/grade_thematic.py",
+      "dst": "artifact:foresight-earliness-grades",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/grade_thematic.py writes data/foresight/earliness_grades.json"
+    },
+    {
+      "src": "module:scripts/grade_thematic.py",
+      "dst": "artifact:theme-placebo-tape",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/grade_thematic.py writes data/foresight/theme_placebo_tape.jsonl"
+    },
+    {
+      "src": "artifact:theme-placebo-tape",
+      "dst": "module:scripts/grade_thematic.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/foresight/theme_placebo_tape.jsonl consumed by scripts/grade_thematic.py"
+    },
+    {
+      "src": "module:scripts/grade_thematic.py",
+      "dst": "artifact:qledger-falsifier-evaluations",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/grade_thematic.py writes data/qledger/falsifier_evaluations.jsonl"
+    },
+    {
+      "src": "artifact:qledger-falsifier-evaluations",
+      "dst": "module:scripts/grade_thematic.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/qledger/falsifier_evaluations.jsonl consumed by scripts/grade_thematic.py"
     },
     {
       "src": "module:scripts/build_entity_thesis_mechanism_registry.py",
@@ -9342,6 +9792,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_cycle_pattern_lake.py writes data/cycle_pattern/state_monthly.parquet"
+    },
+    {
+      "src": "artifact:cycle-pattern-state-monthly",
+      "dst": "module:engine/neuralweb/causal_inventory.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/cycle_pattern/state_monthly.parquet consumed by engine/neuralweb/causal_inventory.py"
     },
     {
       "src": "module:scripts/build_cycle_pattern_outcomes.py",
@@ -9415,23 +9875,13 @@
     },
     {
       "src": "artifact:cycle-pattern-state",
-      "dst": "module:engine/neuralweb/world_state.py",
+      "dst": "module:cortex-read",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/neuralweb/cycle_pattern_state.json consumed by engine/neuralweb/world_state.py"
-    },
-    {
-      "src": "module:scripts/build_macro_snapshot.py",
-      "dst": "artifact:macro-snapshots-latest",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: scripts/build_macro_snapshot.py writes data/macro_snapshots/latest.json"
+      "note": "structural: data/neuralweb/cycle_pattern_state.json consumed by cortex-read"
     },
     {
       "src": "module:scripts/build_netliq_daily.py",
@@ -9442,6 +9892,96 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_netliq_daily.py writes data/macro/fed_net_liquidity.parquet"
+    },
+    {
+      "src": "artifact:fed-net-liquidity",
+      "dst": "module:engine/neuralweb/causal_inventory.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/macro/fed_net_liquidity.parquet consumed by engine/neuralweb/causal_inventory.py"
+    },
+    {
+      "src": "module:scripts/build_liquidity_plumbing.py",
+      "dst": "artifact:liquidity-plumbing",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_liquidity_plumbing.py writes data/neuralweb/liquidity_plumbing.json"
+    },
+    {
+      "src": "artifact:liquidity-plumbing",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/liquidity_plumbing.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "artifact:liquidity-plumbing",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/liquidity_plumbing.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "artifact:liquidity-plumbing",
+      "dst": "module:engine/neuralweb/contradictions.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/liquidity_plumbing.json consumed by engine/neuralweb/contradictions.py"
+    },
+    {
+      "src": "artifact:liquidity-plumbing",
+      "dst": "module:engine/neuralweb/causal_inventory.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/liquidity_plumbing.json consumed by engine/neuralweb/causal_inventory.py"
+    },
+    {
+      "src": "module:scripts/build_causal_inventory.py",
+      "dst": "artifact:causal-feature-inventory",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_causal_inventory.py writes data/neuralweb/causal_feature_inventory.json"
+    },
+    {
+      "src": "module:scripts/causal_ingest_brainstorm.py",
+      "dst": "artifact:causal-mechanisms",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/causal_ingest_brainstorm.py writes data/neuralweb/causal_mechanisms.jsonl"
+    },
+    {
+      "src": "artifact:causal-mechanisms",
+      "dst": "module:scripts/causal_brainstorm_pack.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/causal_mechanisms.jsonl consumed by scripts/causal_brainstorm_pack.py"
     },
     {
       "src": "module:scripts/oracle_nightly.py",
@@ -9535,23 +10075,13 @@
     },
     {
       "src": "artifact:dt-contra-state",
-      "dst": "module:engine/neuralweb/query.py",
+      "dst": "module:cortex-read",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/neuralweb/dt_contra_state.json consumed by engine/neuralweb/query.py"
-    },
-    {
-      "src": "module:scripts/build_macro_snapshot.py",
-      "dst": "artifact:macro-snapshots-ledger",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: scripts/build_macro_snapshot.py writes data/macro_snapshots/ledger.parquet"
+      "note": "structural: data/neuralweb/dt_contra_state.json consumed by cortex-read"
     },
     {
       "src": "module:scripts/build_stock_library.py",
@@ -9592,6 +10122,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: site/factordata/stock_personality.json consumed by scripts/oracle_nightly.py"
+    },
+    {
+      "src": "artifact:site-stock-personality",
+      "dst": "module:engine/neuralweb/context_api.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/stock_personality.json consumed by engine/neuralweb/context_api.py"
     },
     {
       "src": "artifact:site-stock-personality",
@@ -9702,6 +10242,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_regime_v2_pit.py writes data/regime/regime_v2_pit.parquet"
+    },
+    {
+      "src": "artifact:regime-v2-pit",
+      "dst": "module:engine/neuralweb/causal_inventory.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/regime/regime_v2_pit.parquet consumed by engine/neuralweb/causal_inventory.py"
     },
     {
       "src": "module:scripts/build_active_build_map.py",
@@ -9945,23 +10495,23 @@
     },
     {
       "src": "artifact:watchlist-alerts-jsonl",
-      "dst": "module:engine/neuralweb/query.py",
+      "dst": "module:engine/alert_triage.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/alerts/watchlist_alerts.jsonl consumed by engine/neuralweb/query.py"
+      "note": "structural: data/alerts/watchlist_alerts.jsonl consumed by engine/alert_triage.py"
     },
     {
-      "src": "module:scripts/build_macro_snapshot.py",
-      "dst": "artifact:macro-transitions",
+      "src": "artifact:watchlist-alerts-jsonl",
+      "dst": "module:engine/watchlist_alerts.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: scripts/build_macro_snapshot.py writes data/macro_snapshots/transitions.jsonl"
+      "note": "structural: data/alerts/watchlist_alerts.jsonl consumed by engine/watchlist_alerts.py"
     },
     {
       "src": "module:scripts/run_watchlist_sentinel.py",
@@ -9975,23 +10525,13 @@
     },
     {
       "src": "artifact:watchlist-sentinel-states",
-      "dst": "module:engine/neuralweb/world_state.py",
+      "dst": "module:scripts/run_watchlist_sentinel.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/alerts/watchlist_sentinel_states.json consumed by engine/neuralweb/world_state.py"
-    },
-    {
-      "src": "module:scripts/build_macro_context.py",
-      "dst": "artifact:macro-context-latest",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: scripts/build_macro_context.py writes data/macro_context/latest.json"
+      "note": "structural: data/alerts/watchlist_sentinel_states.json consumed by scripts/run_watchlist_sentinel.py"
     },
     {
       "src": "module:scripts/run_watchlist_sentinel.py",
@@ -10104,6 +10644,1286 @@
       "note": "structural: scripts/build_release_forecast.py writes site/macrodata/release_forecast.json"
     },
     {
+      "src": "module:scripts/build_tech_lab_data.py",
+      "dst": "artifact:site-factordata-tech-lab",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_tech_lab_data.py writes site/factordata/tech_lab.json"
+    },
+    {
+      "src": "artifact:site-factordata-tech-lab",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/tech_lab.json consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:scripts/build_forex.py",
+      "dst": "artifact:forex-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_forex.py writes data/forex/latest.json"
+    },
+    {
+      "src": "artifact:forex-latest",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "artifact:forex-latest",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "artifact:forex-latest",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "artifact:forex-latest",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "artifact:forex-latest",
+      "dst": "module:admin/neural_web.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by admin/neural_web.py"
+    },
+    {
+      "src": "module:scripts/build_transmission.py",
+      "dst": "artifact:transmission-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_transmission.py writes data/transmission/latest.json"
+    },
+    {
+      "src": "artifact:transmission-latest",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/transmission/latest.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "artifact:transmission-latest",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/transmission/latest.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "artifact:transmission-latest",
+      "dst": "module:scripts/build_stock_library.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/transmission/latest.json consumed by scripts/build_stock_library.py"
+    },
+    {
+      "src": "module:scripts/build_bonds.py",
+      "dst": "artifact:bond-health",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_bonds.py writes data/bonds/bond_health.json"
+    },
+    {
+      "src": "artifact:bond-health",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/bonds/bond_health.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "module:scripts/build_commodities.py",
+      "dst": "artifact:commodity-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_commodities.py writes data/commodity/latest.json"
+    },
+    {
+      "src": "artifact:commodity-latest",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/commodity/latest.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "artifact:commodity-latest",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/commodity/latest.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "module:engine/china_run.py",
+      "dst": "artifact:china-regime-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/china_run.py writes data/china_regime/latest.json"
+    },
+    {
+      "src": "artifact:china-regime-latest",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/china_regime/latest.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "module:engine/hk_run.py",
+      "dst": "artifact:hk-regime-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/hk_run.py writes data/hk_regime/latest.json"
+    },
+    {
+      "src": "artifact:hk-regime-latest",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/hk_regime/latest.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "module:engine/canada_run.py",
+      "dst": "artifact:canada-regime-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/canada_run.py writes data/canada_regime/latest.json"
+    },
+    {
+      "src": "artifact:canada-regime-latest",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/canada_regime/latest.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "module:scripts/build_briefing.py",
+      "dst": "artifact:site-intelligence-briefing",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_briefing.py writes site/intelligence/briefing.json"
+    },
+    {
+      "src": "artifact:site-intelligence-briefing",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/intelligence/briefing.json consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:scripts/build_factor_series.py",
+      "dst": "artifact:site-factor-series",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_factor_series.py writes site/factordata/factor_series.json"
+    },
+    {
+      "src": "artifact:site-factor-series",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/factor_series.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "artifact:site-factor-series",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/factor_series.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "module:scripts/build_site.py",
+      "dst": "artifact:site-alerts-triage",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_site.py writes site/factordata/alerts_triage.json"
+    },
+    {
+      "src": "artifact:site-alerts-triage",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/alerts_triage.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "module:scripts/build_macro_snapshot.py",
+      "dst": "artifact:macro-snapshots-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_macro_snapshot.py writes data/macro_snapshots/latest.json"
+    },
+    {
+      "src": "artifact:macro-snapshots-latest",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/macro_snapshots/latest.json consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:scripts/build_macro_snapshot.py",
+      "dst": "artifact:macro-snapshots-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_macro_snapshot.py writes data/macro_snapshots/ledger.parquet"
+    },
+    {
+      "src": "artifact:macro-snapshots-ledger",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/macro_snapshots/ledger.parquet consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:scripts/build_macro_snapshot.py",
+      "dst": "artifact:macro-transitions",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_macro_snapshot.py writes data/macro_snapshots/transitions.jsonl"
+    },
+    {
+      "src": "artifact:macro-transitions",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/macro_snapshots/transitions.jsonl consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "module:scripts/build_crossasset.py",
+      "dst": "artifact:crossasset-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_crossasset.py writes data/crossasset/latest.json"
+    },
+    {
+      "src": "artifact:crossasset-latest",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/crossasset/latest.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "artifact:crossasset-latest",
+      "dst": "module:scripts/build_vector.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/crossasset/latest.json consumed by scripts/build_vector.py"
+    },
+    {
+      "src": "module:scripts/build_macro_context.py",
+      "dst": "artifact:macro-context-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_macro_context.py writes data/macro_context/latest.json"
+    },
+    {
+      "src": "module:scripts/build_context_risk.py",
+      "dst": "artifact:context-risk",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_context_risk.py writes data/neuralweb/context_risk.json"
+    },
+    {
+      "src": "artifact:context-risk",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/context_risk.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "module:scripts/build_context_risk.py",
+      "dst": "artifact:site-context-risk",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_context_risk.py writes site/neuralwebdata/context_risk.json"
+    },
+    {
+      "src": "module:scripts/build_context_candidates.py",
+      "dst": "artifact:context-candidates",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_context_candidates.py writes data/neuralweb/context_candidates.jsonl"
+    },
+    {
+      "src": "artifact:context-candidates",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/context_candidates.jsonl consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "module:scripts/build_flip_confirmation.py",
+      "dst": "artifact:flip-confirmation-events",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_flip_confirmation.py writes data/flip_confirmation/events.jsonl"
+    },
+    {
+      "src": "artifact:flip-confirmation-events",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/flip_confirmation/events.jsonl consumed by scripts/build_site.py"
+    },
+    {
+      "src": "module:scripts/build_flip_confirmation.py",
+      "dst": "artifact:flip-confirmation-snapshot",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_flip_confirmation.py writes site/flip_confirmation_data.json"
+    },
+    {
+      "src": "artifact:flip-confirmation-snapshot",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/flip_confirmation_data.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "module:scripts/build_policy_lever.py",
+      "dst": "artifact:site-policy-lever",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_policy_lever.py writes site/policy_lever.json"
+    },
+    {
+      "src": "artifact:site-policy-lever",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/policy_lever.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "module:engine/shock_deescalation.py",
+      "dst": "artifact:shock-deescalation-firings",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/shock_deescalation.py writes data/reflexes/shock_deescalation/firings.jsonl"
+    },
+    {
+      "src": "artifact:shock-deescalation-firings",
+      "dst": "module:engine/shock_deescalation.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/reflexes/shock_deescalation/firings.jsonl consumed by engine/shock_deescalation.py"
+    },
+    {
+      "src": "module:engine/shock_deescalation.py",
+      "dst": "artifact:shock-deescalation-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/shock_deescalation.py writes site/live/shock_state.json"
+    },
+    {
+      "src": "artifact:shock-deescalation-state",
+      "dst": "module:templates/subsector_rotation.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/live/shock_state.json consumed by templates/subsector_rotation.html.j2"
+    },
+    {
+      "src": "artifact:shock-deescalation-state",
+      "dst": "module:templates/sector.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/live/shock_state.json consumed by templates/sector.html.j2"
+    },
+    {
+      "src": "artifact:shock-deescalation-state",
+      "dst": "module:templates/dashboard.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/live/shock_state.json consumed by templates/dashboard.html.j2"
+    },
+    {
+      "src": "module:scripts/build_stock_library.py",
+      "dst": "artifact:pick-lab-snapshots",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stock_library.py writes data/pick_lab/snapshots/"
+    },
+    {
+      "src": "artifact:pick-lab-snapshots",
+      "dst": "module:scripts/build_pick_lab.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/pick_lab/snapshots/ consumed by scripts/build_pick_lab.py"
+    },
+    {
+      "src": "module:scripts/build_pick_lab.py",
+      "dst": "artifact:pick-lab-entry-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_pick_lab.py writes site/labdata/pick_lab.json"
+    },
+    {
+      "src": "artifact:pick-lab-entry-ledger",
+      "dst": "module:engine/pick_lab/render.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/labdata/pick_lab.json consumed by engine/pick_lab/render.py"
+    },
+    {
+      "src": "module:scripts/build_pick_lab.py",
+      "dst": "artifact:pick-lab-longhold-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_pick_lab.py writes site/labdata/pick_lab_longhold.json"
+    },
+    {
+      "src": "artifact:pick-lab-longhold-ledger",
+      "dst": "module:engine/pick_lab/render.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/labdata/pick_lab_longhold.json consumed by engine/pick_lab/render.py"
+    },
+    {
+      "src": "module:scripts/build_china_library.py",
+      "dst": "artifact:cn-pick-lab-snapshots",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_library.py writes data/china_pick_lab/snapshots/"
+    },
+    {
+      "src": "artifact:cn-pick-lab-snapshots",
+      "dst": "module:scripts/build_china_pick_lab.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/china_pick_lab/snapshots/ consumed by scripts/build_china_pick_lab.py"
+    },
+    {
+      "src": "module:scripts/build_china_pick_lab.py",
+      "dst": "artifact:cn-pick-lab-entry-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_pick_lab.py writes site/labdata/china_pick_lab.json"
+    },
+    {
+      "src": "artifact:cn-pick-lab-entry-ledger",
+      "dst": "module:engine/pick_lab/render_cn.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/labdata/china_pick_lab.json consumed by engine/pick_lab/render_cn.py"
+    },
+    {
+      "src": "module:scripts/build_china_library.py",
+      "dst": "artifact:cn-reversion-desk-artifact",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_library.py writes site/factordata/china_reversion_desk.json"
+    },
+    {
+      "src": "artifact:cn-reversion-desk-artifact",
+      "dst": "module:scripts/build_china_pick_lab.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/china_reversion_desk.json consumed by scripts/build_china_pick_lab.py"
+    },
+    {
+      "src": "artifact:cn-reversion-desk-artifact",
+      "dst": "module:templates/china.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/china_reversion_desk.json consumed by templates/china.html.j2"
+    },
+    {
+      "src": "module:scripts/build_hk_library.py",
+      "dst": "artifact:hk-pick-lab-snapshots",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_hk_library.py writes data/hk_pick_lab/snapshots/"
+    },
+    {
+      "src": "artifact:hk-pick-lab-snapshots",
+      "dst": "module:scripts/build_hk_pick_lab.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/hk_pick_lab/snapshots/ consumed by scripts/build_hk_pick_lab.py"
+    },
+    {
+      "src": "module:scripts/build_hk_pick_lab.py",
+      "dst": "artifact:hk-pick-lab-entry-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_hk_pick_lab.py writes site/labdata/hk_pick_lab.json"
+    },
+    {
+      "src": "artifact:hk-pick-lab-entry-ledger",
+      "dst": "module:engine/pick_lab/render_hk.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/labdata/hk_pick_lab.json consumed by engine/pick_lab/render_hk.py"
+    },
+    {
+      "src": "module:scripts/build_hk_library.py",
+      "dst": "artifact:hk-1d-velocity-desk-artifact",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_hk_library.py writes site/factordata/hk_1d_velocity_desk.json"
+    },
+    {
+      "src": "artifact:hk-1d-velocity-desk-artifact",
+      "dst": "module:templates/hk.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/hk_1d_velocity_desk.json consumed by templates/hk.html.j2"
+    },
+    {
+      "src": "artifact:hk-1d-velocity-desk-artifact",
+      "dst": "module:templates/hk_stocks_lab.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/hk_1d_velocity_desk.json consumed by templates/hk_stocks_lab.html.j2"
+    },
+    {
+      "src": "module:scripts/build_causal_edges.py",
+      "dst": "artifact:causal-edges",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_causal_edges.py writes data/neuralweb/causal_edges.jsonl"
+    },
+    {
+      "src": "artifact:causal-edges",
+      "dst": "module:engine/neuralweb/causal_frontier.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/causal_edges.jsonl consumed by engine/neuralweb/causal_frontier.py"
+    },
+    {
+      "src": "module:scripts/build_causal_edges.py",
+      "dst": "artifact:causal-nulls",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_causal_edges.py writes data/neuralweb/causal_nulls.jsonl"
+    },
+    {
+      "src": "artifact:causal-nulls",
+      "dst": "module:engine/neuralweb/causal_frontier.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/causal_nulls.jsonl consumed by engine/neuralweb/causal_frontier.py"
+    },
+    {
+      "src": "artifact:causal-nulls",
+      "dst": "module:engine/neuralweb/causal_scout.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/causal_nulls.jsonl consumed by engine/neuralweb/causal_scout.py"
+    },
+    {
+      "src": "module:scripts/build_causal_frontier.py",
+      "dst": "artifact:causal-frontier",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_causal_frontier.py writes data/neuralweb/causal_frontier.json"
+    },
+    {
+      "src": "artifact:causal-frontier",
+      "dst": "module:scripts/build_causal_edges.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/causal_frontier.json consumed by scripts/build_causal_edges.py"
+    },
+    {
+      "src": "module:scripts/build_causal_frontier.py",
+      "dst": "artifact:causal-surprise-queue",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_causal_frontier.py writes data/neuralweb/causal_surprise_queue.jsonl"
+    },
+    {
+      "src": "module:scripts/build_causal_frontier.py",
+      "dst": "artifact:causal-lab-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_causal_frontier.py writes data/neuralweb/causal_lab_state.json"
+    },
+    {
+      "src": "module:scripts/build_causal_frontier.py",
+      "dst": "artifact:site-causal-lab-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_causal_frontier.py writes site/neuralwebdata/causal_lab_state.json"
+    },
+    {
+      "src": "module:collectors/dol_labor_certs.py",
+      "dst": "artifact:dol-certs-store",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/dol_labor_certs.py writes data/dol_certs/certs.parquet"
+    },
+    {
+      "src": "artifact:dol-certs-store",
+      "dst": "module:scripts/build_hiring_velocity.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/dol_certs/certs.parquet consumed by scripts/build_hiring_velocity.py"
+    },
+    {
+      "src": "module:scripts/build_hiring_velocity.py",
+      "dst": "artifact:hiring-velocity",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_hiring_velocity.py writes data/dol_certs/hiring_velocity.json"
+    },
+    {
+      "src": "module:scripts/build_hiring_velocity.py",
+      "dst": "artifact:site-hiring-intent",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_hiring_velocity.py writes site/basketdata/hiring_intent.json"
+    },
+    {
+      "src": "module:scripts/run_causal_brainstorm.py",
+      "dst": "artifact:causal-brainstorm-runs",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/run_causal_brainstorm.py writes data/neuralweb/causal_brainstorm_runs.jsonl"
+    },
+    {
+      "src": "module:scripts/run_causal_brainstorm.py",
+      "dst": "artifact:causal-llm-lane",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/run_causal_brainstorm.py writes data/neuralweb/causal_llm_lane.json"
+    },
+    {
+      "src": "artifact:causal-llm-lane",
+      "dst": "module:engine/neuralweb/causal_frontier.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/causal_llm_lane.json consumed by engine/neuralweb/causal_frontier.py"
+    },
+    {
+      "src": "module:scripts/build_causal_confluence_audit.py",
+      "dst": "artifact:causal-confluence-audit",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_causal_confluence_audit.py writes data/neuralweb/causal_confluence_audit.json"
+    },
+    {
+      "src": "artifact:causal-confluence-audit",
+      "dst": "module:engine/neuralweb/confluence.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/causal_confluence_audit.json consumed by engine/neuralweb/confluence.py"
+    },
+    {
+      "src": "artifact:causal-confluence-audit",
+      "dst": "module:admin/causal_lab.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/causal_confluence_audit.json consumed by admin/causal_lab.py"
+    },
+    {
+      "src": "module:scripts/oracle_nightly.py",
+      "dst": "artifact:oracle-tape-onset",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/oracle_nightly.py writes site/basketdata/oracle_tape_onset.json"
+    },
+    {
+      "src": "artifact:oracle-tape-onset",
+      "dst": "module:engine/neuralweb/causal_frontier.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/basketdata/oracle_tape_onset.json consumed by engine/neuralweb/causal_frontier.py"
+    },
+    {
+      "src": "module:scripts/oracle_nightly.py",
+      "dst": "artifact:oracle-tape-onset-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/oracle_nightly.py writes data/oracle/tape_onset_ledger.jsonl"
+    },
+    {
+      "src": "artifact:oracle-tape-onset-ledger",
+      "dst": "module:scripts/oracle_nightly.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/oracle/tape_onset_ledger.jsonl consumed by scripts/oracle_nightly.py"
+    },
+    {
+      "src": "module:engine/edgar_phrase_velocity.py",
+      "dst": "artifact:site-phrase-velocity",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/edgar_phrase_velocity.py writes site/basketdata/phrase_velocity.json"
+    },
+    {
+      "src": "artifact:site-phrase-velocity",
+      "dst": "module:scripts/build_discovery_confluence.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/basketdata/phrase_velocity.json consumed by scripts/build_discovery_confluence.py"
+    },
+    {
+      "src": "module:engine/theme_adoption.py",
+      "dst": "artifact:site-github-adoption",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/theme_adoption.py writes site/basketdata/github_adoption.json"
+    },
+    {
+      "src": "artifact:site-github-adoption",
+      "dst": "module:scripts/build_discovery_confluence.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/basketdata/github_adoption.json consumed by scripts/build_discovery_confluence.py"
+    },
+    {
+      "src": "module:scripts/build_discovery_confluence.py",
+      "dst": "artifact:neuralweb-discovery-confluence",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_discovery_confluence.py writes data/neuralweb/discovery_confluence.json"
+    },
+    {
+      "src": "module:engine/theme_trade_flows.py",
+      "dst": "artifact:neuralweb-theme-trade-flows",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/theme_trade_flows.py writes data/neuralweb/theme_trade_flows.json"
+    },
+    {
+      "src": "artifact:neuralweb-theme-trade-flows",
+      "dst": "module:engine/theme_trade_flows.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/theme_trade_flows.json consumed by engine/theme_trade_flows.py"
+    },
+    {
+      "src": "module:engine/theme_trade_flows.py",
+      "dst": "artifact:site-trade-flows",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/theme_trade_flows.py writes site/basketdata/trade_flows.json"
+    },
+    {
+      "src": "module:engine/theme_clinical.py",
+      "dst": "artifact:neuralweb-theme-clinical",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/theme_clinical.py writes data/neuralweb/theme_clinical.json"
+    },
+    {
+      "src": "module:engine/theme_clinical.py",
+      "dst": "artifact:site-clinical-pipeline",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/theme_clinical.py writes site/basketdata/clinical_pipeline.json"
+    },
+    {
+      "src": "module:engine/theme_options_witness.py",
+      "dst": "artifact:neuralweb-theme-options-witness",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/theme_options_witness.py writes data/neuralweb/theme_options_witness.json"
+    },
+    {
+      "src": "module:engine/theme_options_witness.py",
+      "dst": "artifact:site-options-witness",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/theme_options_witness.py writes site/basketdata/options_witness.json"
+    },
+    {
+      "src": "module:scripts/check_capability_redline.py",
+      "dst": "artifact:capability-manifest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/check_capability_redline.py writes config/capability_manifest.yml"
+    },
+    {
+      "src": "artifact:capability-manifest",
+      "dst": "module:engine/neuralweb/capability_broker.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: config/capability_manifest.yml consumed by engine/neuralweb/capability_broker.py"
+    },
+    {
+      "src": "module:engine/neuralweb/capability_broker.py",
+      "dst": "artifact:capability-audit",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/capability_broker.py writes data/neuralweb/capability_audit.jsonl"
+    },
+    {
+      "src": "module:scripts/metabolism_journal.py",
+      "dst": "artifact:metabolism-journal",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/metabolism_journal.py writes data/metabolism/journal/"
+    },
+    {
+      "src": "artifact:metabolism-journal",
+      "dst": "module:scripts/metabolism_budget.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/metabolism/journal/ consumed by scripts/metabolism_budget.py"
+    },
+    {
+      "src": "artifact:metabolism-journal",
+      "dst": "module:scripts/metabolism_verify.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/metabolism/journal/ consumed by scripts/metabolism_verify.py"
+    },
+    {
+      "src": "artifact:metabolism-journal",
+      "dst": "module:scripts/metabolism_gc.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/metabolism/journal/ consumed by scripts/metabolism_gc.py"
+    },
+    {
+      "src": "artifact:metabolism-journal",
+      "dst": "module:scripts/metabolism_digest.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/metabolism/journal/ consumed by scripts/metabolism_digest.py"
+    },
+    {
+      "src": "module:scripts/build_til_fitness.py",
+      "dst": "artifact:metabolism-til-fitness",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_til_fitness.py writes data/metabolism/fitness/til.json"
+    },
+    {
+      "src": "artifact:metabolism-til-fitness",
+      "dst": "module:scripts/metabolism_digest.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/metabolism/fitness/til.json consumed by scripts/metabolism_digest.py"
+    },
+    {
+      "src": "module:scripts/metabolism_verify.py",
+      "dst": "artifact:metabolism-verify",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/metabolism_verify.py writes data/metabolism/verify/"
+    },
+    {
+      "src": "artifact:metabolism-verify",
+      "dst": "module:scripts/metabolism_digest.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/metabolism/verify/ consumed by scripts/metabolism_digest.py"
+    },
+    {
+      "src": "module:scripts/metabolism_budget.py",
+      "dst": "artifact:metabolism-budget-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/metabolism_budget.py writes data/metabolism/budget_ledger.json"
+    },
+    {
+      "src": "artifact:metabolism-budget-ledger",
+      "dst": "module:scripts/metabolism_digest.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/metabolism/budget_ledger.json consumed by scripts/metabolism_digest.py"
+    },
+    {
+      "src": "module:scripts/metabolism_digest.py",
+      "dst": "artifact:metabolism-digest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/metabolism_digest.py writes data/metabolism/digest/"
+    },
+    {
       "src": "data/regime/latest.json:regime_vector",
       "dst": "data/regime/latest.json:risk_radar",
       "edge_type": "contradicts",
@@ -10111,7 +11931,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=regime_vector-vs-risk_radar kind=label-tension severity=note a=quad=Q1 growth_score=0.200 b=state=caution dominant_scare=bubble"
+      "note": "pair_id=regime_vector-vs-risk_radar kind=directional-opposition severity=tension a=quad=Q1 growth_score=0.067 (rising growth) b=state=caution dominant_scare=growth top_score=74.6"
     },
     {
       "src": "site/intelligence/by_ticker.json (demand/tape)",
@@ -10121,7 +11941,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=note a=13 ticker-level demand-vs-supply divergences b=n_divergences=13, top tickers=['AMZN', 'APTV', 'F', 'LVS', '"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=note a=2 ticker-level demand-vs-supply divergences b=n_divergences=2, top tickers=['AMZN', 'NVDA']"
     },
     {
       "src": "engine:altdata",
@@ -10208,7 +12028,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-06-24); e.g. JNJ, WST. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
+      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-06-30); e.g. ETN, WMB. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
     },
     {
       "src": "options.skew_decel",
@@ -10218,17 +12038,17 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-06-24); e.g. none. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
+      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-06-30); e.g. none. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
     },
     {
       "src": "options.ivspread_positive_call_doi",
       "dst": "us_board.watch_lane",
       "edge_type": "confirms",
-      "n": 0,
+      "n": 1,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-06-24); e.g. none. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
+      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-06-30); e.g. ROST. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
     },
     {
       "src": "options.skew_rising_or_call_wall_pin",
@@ -10284,7 +12104,8 @@
   "contradiction_summary": {
     "n": 2,
     "by_severity": {
-      "note": 2
+      "tension": 1,
+      "note": 1
     },
     "top_pair_ids": [
       "regime_vector-vs-risk_radar",
@@ -10296,39 +12117,39 @@
       "pair_id": "regime_vector-vs-risk_radar",
       "a": {
         "artifact": "data/regime/latest.json:regime_vector",
-        "reading": "quad=Q1 growth_score=0.200"
+        "reading": "quad=Q1 growth_score=0.067 (rising growth)"
       },
       "b": {
         "artifact": "data/regime/latest.json:risk_radar",
-        "reading": "state=caution dominant_scare=bubble"
+        "reading": "state=caution dominant_scare=growth top_score=74.6"
       },
-      "kind": "label-tension",
-      "severity": "note",
-      "as_of": "2026-07-06",
-      "note": "Rising growth regime (Q1) while risk_radar elevated with dominant scare=bubble.  Non-growth scare alongside positive growth vector is possible in a diverging-risk environment.  Display-only context.",
+      "kind": "directional-opposition",
+      "severity": "tension",
+      "as_of": "2026-07-08",
+      "note": "Regime vector places growth in positive territory while the risk radar flags an elevated growth scare (caution).  This is typical of early growth-scare onset before the regime flips.  Display-only; neither cancels the other.",
       "display_only": true
     },
     {
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "13 ticker-level demand-vs-supply divergences"
+        "reading": "2 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=13, top tickers=['AMZN', 'APTV', 'F', 'LVS', 'GM']"
+        "reading": "n_divergences=2, top tickers=['AMZN', 'NVDA']"
       },
       "kind": "directional-opposition",
       "severity": "note",
-      "as_of": "2026-07-07",
-      "note": "13 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: AMZN, APTV, F, LVS, GM.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-07-09",
+      "note": "2 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: AMZN, NVDA.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
   ],
   "independence": {
     "effective_independent_lobes": 1.0,
     "n_lobes_measurable": 1,
-    "n_lobes_total": 20,
+    "n_lobes_total": 21,
     "pctile_vs_null": 1.0,
     "same_bet_warning": null,
     "dominant_overlap_cluster": null,
@@ -10342,7 +12163,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-07T23:34:12Z",
-  "inputs_hash": "sha256:106853a2f43fa0af47cb8ef33abca34a5b747fa2851ebc16fbd77d82e044f559",
+  "produced_at": "2026-07-10T08:53:07Z",
+  "inputs_hash": "sha256:c3661fe93d566a4609587c9d1ec8c5261edb93543971ab030c03a98d5cf73e76",
   "tier": "display"
 }
