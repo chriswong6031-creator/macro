@@ -1,0 +1,126 @@
+{
+  "spec": {
+    "id": "SF-0004",
+    "name": "COT ES net-spec positioning extreme",
+    "market": "US equity",
+    "thesis": "Extreme speculative net length in ES fades forward; standalone single-series construction testing whether crowded spec-longs predict negative excess returns",
+    "mechanism": "CFTC legacy spec net-long in ES reflects retail/trend-follower positioning; extremes tend to be crowded and mean-revert. Weekly, 3-day publication lag enforced.",
+    "data": [
+      {
+        "path": "data/cot/cot_es_spx.parquet",
+        "column": "net_spec",
+        "pit": "weekly CFTC Tuesday data, published Friday, 3-day lag enforced in pipeline"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "zscore",
+          {
+            "window": 156
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 3
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "column": "close_price",
+      "kind": "absolute_return",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "registered_at": "2026-07-10",
+    "orthogonality_note": "CFTC net-spec positioning measures futures-market participant imbalance; mechanistically distinct from vol, credit spreads, and sentiment surveys.",
+    "evidence_note": "Wang (2003), Sanders, Irwin & Merrin (2010); COT net-spec as contrarian equity predictor has moderate literature support.",
+    "construction_hash": "17a90516431cfd688ae3",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered"
+  },
+  "stats": {
+    "n_obs": 1443,
+    "effective_months": 334,
+    "full_ic": -0.0695,
+    "hac": {
+      "mean": -0.50083,
+      "se": 0.16559,
+      "t": -3.024,
+      "p": 0.0025,
+      "n": 23
+    },
+    "split_half": {
+      "h1_ic": -0.1167,
+      "h2_ic": -0.0429,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": -0.0784,
+      "post_ic": -0.0759,
+      "era_n_pre": 595,
+      "era_n_post": 848,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.2095,
+      "ci_97p5": 0.1033,
+      "boot_mean": -0.0693,
+      "n_draws": 200,
+      "block_size": 37,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.354,
+      "sr_daily": 0.034244,
+      "sr_annual": 0.54,
+      "sr0_daily": 0.044184,
+      "sr0_annual": 0.7,
+      "n_trials": 12,
+      "T": 1443,
+      "skew": -0.345,
+      "kurt": 14.27,
+      "dsr_series": "strategy_net_return"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.765,
+      "obs_ic": -0.0695,
+      "placebo_pct_ge_abs_obs": 0.235,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": 0.0522,
+      "obs_ic_same_window": -0.0841,
+      "neg_dominates": false
+    }
+  },
+  "backtest": {
+    "net_sharpe": 0.544,
+    "gross_sharpe": 0.628,
+    "hold_sharpe": 1.003,
+    "cagr_net": 0.1192,
+    "cagr_gross": 0.1458,
+    "max_dd": -0.5351,
+    "cost_bps": 8.0,
+    "baseline": "buy_and_hold",
+    "years": 27.69
+  },
+  "verdict": "null",
+  "verdict_reasons": [
+    "time-shift placebo: IC at 76% of null distribution (floor=90%) \u2014 indistinguishable from lagged echo (DT-R14)"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-10",
+  "ledger_n_at_run": 12
+}

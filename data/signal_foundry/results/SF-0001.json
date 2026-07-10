@@ -1,0 +1,119 @@
+{
+  "spec": {
+    "id": "SF-0001",
+    "name": "VVIX/VIX ratio stress precursor",
+    "market": "US vol",
+    "thesis": "Vol-of-vol rich vs vol (VVIX/VIX ratio z) marks fragile hedging complexes that precede equity drawdowns",
+    "mechanism": "When VVIX is elevated relative to VIX, convexity demand exceeds spot-vol demand; this imbalance signals dealer stress and tail-risk accumulation in the hedging complex.",
+    "data": [
+      {
+        "path": "data/cboe/vvix.parquet",
+        "column": "vvix",
+        "pit": "live index prints, no revision"
+      },
+      {
+        "path": "data/fred/VIXCLS.parquet",
+        "column": "vix_close",
+        "pit": "live index prints, no revision"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "ratio",
+          {}
+        ],
+        [
+          "zscore",
+          {
+            "window": 252
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "column": "close_price",
+      "kind": "drawdown_onset",
+      "horizon_d": 21
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "registered_at": "2026-07-10",
+    "orthogonality_note": "Ratio of higher-order vol to spot vol is mechanistically distinct from spot VIX level or SKEW; captures vol-of-vol premium not SKEW tail insurance.",
+    "evidence_note": "VVIX as a predictor of equity vol regimes: Park (2015), Johnson (2017); vol-of-vol premium studied in Huang & Shaliastovich (2014).",
+    "construction_hash": "eb48c97f24f0dfdf0683",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered"
+  },
+  "stats": {
+    "n_obs": 4973,
+    "effective_months": 239,
+    "full_ic": -0.2064,
+    "hac": {
+      "mean": -0.23029,
+      "se": 0.07041,
+      "t": -3.271,
+      "p": 0.0011,
+      "n": 237
+    },
+    "split_half": {
+      "h1_ic": -0.1505,
+      "h2_ic": -0.2654,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": -0.2865,
+      "post_ic": -0.1553,
+      "era_n_pre": 843,
+      "era_n_post": 4130,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.2917,
+      "ci_97p5": -0.1286,
+      "boot_mean": -0.209,
+      "n_draws": 200,
+      "block_size": 21,
+      "ci_straddles_0": false
+    },
+    "dsr": {
+      "dsr": 0.0,
+      "sr_daily": -0.221336,
+      "sr_annual": -3.51,
+      "sr0_daily": 0.089795,
+      "sr0_annual": 1.43,
+      "n_trials": 12,
+      "T": 237,
+      "skew": -1.947,
+      "kurt": 10.587,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.99,
+      "obs_ic": -0.2064,
+      "placebo_pct_ge_abs_obs": 0.01,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.4495,
+      "obs_ic_same_window": -0.2077,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "null",
+  "verdict_reasons": [
+    "negative-lag placebo fires: future-shifted IC -0.4495 >= observed IC -0.2077 \u2014 reverse-causation concern"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-10",
+  "ledger_n_at_run": 12
+}

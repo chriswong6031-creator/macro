@@ -13,6 +13,17 @@ accrue_forward(repo_root, asof)
     For each spec in candidates.jsonl with status=registered and asof > registered_at,
     append that date's realized feature/target row to data/signal_foundry/forward/<id>.jsonl.
     Idempotent per (id, date).
+
+cohort_fdr(cohort_id, member_ids, results, fdr_alpha, trigger, repo_root)
+    Compute Benjamini-Hochberg FDR across cohort members (SF-R3).
+    Derives p-values from per-result HAC t-statistics, applies BH correction,
+    writes data/signal_foundry/cohorts/<cohort_id>.json.
+    Results files are NOT modified; q-values live only in the cohort file.
+
+    Formula:
+        p_i = 2 * t.sf(|t_HAC_i|, df = n_subsample_i - 1)
+        BH: sort p ascending, reject if p_k <= (k/m) * alpha where k is rank, m is total.
+        q_i = min(m * p_i / rank_i, 1.0) clipped to [0,1].
 """
 from __future__ import annotations
 
@@ -263,3 +274,206 @@ def accrue_forward(
             continue
 
     return written
+
+
+# ---------------------------------------------------------------------------
+# Cohort BH-FDR (SF-R3, E5)
+# ---------------------------------------------------------------------------
+
+def cohort_fdr(
+    cohort_id: str,
+    member_ids: list[str],
+    results: list[dict],
+    fdr_alpha: float = 0.10,
+    trigger: str = "operator",
+    repo_root: str | Path = ".",
+) -> dict:
+    """Compute Benjamini-Hochberg FDR across cohort members (SF-R3).
+
+    Derives a two-sided p-value from each result's HAC Newey-West t-statistic:
+
+        p_i = 2 * scipy.stats.t.sf(|t_HAC_i|, df = n_subsample - 1)
+
+    where n_subsample = hac["n"] in the result stats dict (the number of
+    non-overlapping subsamples used to compute the HAC t).
+
+    Benjamini-Hochberg procedure (1995): sort the m p-values ascending.
+    At rank k, reject if p_(k) <= (k / m) * alpha.
+    The BH q-value (adjusted p-value) is:
+
+        q_i = min(m / rank_i * p_i, 1.0)   (clipped to [0, 1])
+
+    where rank_i is the rank of p_i when sorted ascending (1-based).
+
+    Parameters
+    ----------
+    cohort_id : str
+        Unique identifier for this cohort run, e.g. "2026-W28-cohort1".
+    member_ids : list[str]
+        The SF spec ids included in this cohort (subset of results).
+    results : list[dict]
+        Full result dicts (from load_results() or run_spec()).
+    fdr_alpha : float
+        BH FDR threshold (from config/signal_foundry.yml default_gates.fdr_q).
+    trigger : str
+        "operator" or "scheduled" — the cohort's trigger source.
+    repo_root : Path
+        Repo root for writing data/signal_foundry/cohorts/<cohort_id>.json.
+
+    Returns
+    -------
+    dict — the cohort record (also written to disk).
+    """
+    import math
+    try:
+        from scipy.stats import t as _t_dist
+        def _p_from_t(t_val: float, df: int) -> float:
+            if df < 1 or math.isnan(t_val) or math.isinf(t_val):
+                return 1.0
+            return float(2.0 * _t_dist.sf(abs(t_val), df=max(1, df)))
+    except ImportError:
+        # Fallback: normal approximation
+        import math as _m
+        def _p_from_t(t_val: float, df: int) -> float:  # type: ignore[misc]
+            if math.isnan(t_val) or math.isinf(t_val):
+                return 1.0
+            # Two-sided normal CDF approximation
+            x = abs(t_val)
+            # Abramowitz & Stegun approximation for standard normal tail
+            p_one = 0.5 * math.erfc(x / math.sqrt(2))
+            return 2.0 * p_one
+
+    repo_root = Path(repo_root)
+
+    # Build a dict of results keyed by spec id
+    result_by_id: dict[str, dict] = {}
+    for r in results:
+        sid = (r.get("spec") or {}).get("id") or ""
+        if sid:
+            result_by_id[sid] = r
+
+    # Compute p-values for each member
+    member_data: list[dict] = []
+    for sid in member_ids:
+        r = result_by_id.get(sid)
+        if r is None:
+            # No result found — treat as p=1.0
+            member_data.append({
+                "id": sid,
+                "t_hac": None,
+                "n_subsample": None,
+                "p": 1.0,
+                "verdict": "data_missing",
+            })
+            continue
+        stats = r.get("stats") or {}
+        hac = stats.get("hac") or {}
+        t_val = hac.get("t")
+        n_sub = hac.get("n")
+        verdict = r.get("verdict", "")
+
+        if t_val is None or n_sub is None:
+            p = 1.0
+        else:
+            try:
+                p = _p_from_t(float(t_val), int(n_sub) - 1)
+            except Exception:
+                p = 1.0
+
+        member_data.append({
+            "id": sid,
+            "t_hac": t_val,
+            "n_subsample": n_sub,
+            "p": p,
+            "verdict": verdict,
+        })
+
+    # BH procedure
+    m = len(member_data)
+    if m == 0:
+        bh_rejects: list[str] = []
+        for md in member_data:
+            md["q"] = 1.0
+            md["bh_reject"] = False
+    else:
+        # Sort by p ascending for BH rank assignment
+        sorted_by_p = sorted(enumerate(member_data), key=lambda x: x[1]["p"])
+
+        # BH step-up: for each rank k (1-based), reject if p_(k) <= (k/m) * alpha
+        # q_i = min(m * p_i / rank_i, 1.0)
+        q_vals: list[float] = [1.0] * m
+        ranks: list[int] = [0] * m
+        for rank_k, (orig_idx, md) in enumerate(sorted_by_p, start=1):
+            ranks[orig_idx] = rank_k
+            q = min(m * md["p"] / rank_k, 1.0)
+            q_vals[orig_idx] = q
+
+        # Enforce monotonicity of q (q_i <= q_j when p_i <= p_j at higher rank)
+        # Enforce from highest rank down: q_{(k)} = min(q_{(k)}, q_{(k+1)})
+        q_sorted = [None] * m
+        for rank_k, (orig_idx, _) in enumerate(sorted_by_p, start=1):
+            q_sorted[rank_k - 1] = (orig_idx, q_vals[orig_idx])
+        # Traverse from last to first
+        for i in range(m - 2, -1, -1):
+            orig_i, q_i = q_sorted[i]
+            orig_next, q_next = q_sorted[i + 1]
+            if q_i > q_next:
+                q_vals[orig_i] = q_next
+                q_sorted[i] = (orig_i, q_next)
+
+        for i, md in enumerate(member_data):
+            md["q"] = round(q_vals[i], 6)
+            md["bh_rank"] = ranks[i]
+            md["bh_reject"] = bool(q_vals[i] <= fdr_alpha)
+
+        bh_rejects = [md["id"] for md in member_data if md.get("bh_reject")]
+
+    # Build cohort record
+    cohort_record = {
+        "cohort_id": cohort_id,
+        "trigger": trigger,
+        "fdr_alpha": fdr_alpha,
+        "n_members": m,
+        # bh_rejects: kept for backwards compatibility and programmatic use.
+        # bh_significant_by_q: human-readable alias — same content but clearly
+        # labelled to avoid confusion with a promotion pass list.
+        # BOTH lists are INFORMATIONAL ONLY: harness verdict governs promotion.
+        "bh_rejects": bh_rejects,
+        "bh_significant_by_q": bh_rejects,
+        "bh_significant_by_q_note": (
+            "bh_significant_by_q lists specs whose BH-adjusted q-value <= fdr_alpha. "
+            "INFORMATIONAL ONLY — harness verdict governs promotion docket admission. "
+            "A spec here with verdict='null' is NOT a pass_candidate. "
+            "m here = admitted cohort members; DSR uses ledger_n_at_run = all registered "
+            "trials including superseded constructions — different denominators by design."
+        ),
+        "members": {
+            md["id"]: {
+                "p": round(md["p"], 6),
+                "q": md.get("q", 1.0),
+                "t_hac": md.get("t_hac"),
+                "n_subsample": md.get("n_subsample"),
+                "verdict": md.get("verdict"),
+                "bh_reject": md.get("bh_reject", False),
+                "bh_significant": md.get("bh_reject", False),
+            }
+            for md in member_data
+        },
+        "formula_note": (
+            "p_i = 2 * t.sf(|t_HAC_i|, df=n_subsample-1); "
+            "q_i = min(m * p_i / rank_i, 1.0) with monotone enforcement; "
+            "bh_reject / bh_significant iff q_i <= fdr_alpha."
+        ),
+    }
+
+    # Write to data/signal_foundry/cohorts/<cohort_id>.json
+    try:
+        cohorts_dir = repo_root / "data" / "signal_foundry" / "cohorts"
+        cohorts_dir.mkdir(parents=True, exist_ok=True)
+        out_path = cohorts_dir / f"{cohort_id}.json"
+        with out_path.open("w", encoding="utf-8") as fh:
+            json.dump(cohort_record, fh, indent=2, default=str)
+    except Exception as exc:
+        cohort_record["write_error"] = str(exc)
+
+    return cohort_record
