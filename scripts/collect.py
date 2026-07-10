@@ -972,6 +972,16 @@ def main() -> int:
         log.debug("narrative/edgar_8k_velocity: skipped — not the nightly lane (COLLECT_LANE=%r)",
                   os.environ.get("COLLECT_LANE"))
 
+    # ---- Narrative Ignition W4 — source_registry + qledger claim families (2026-07-10) ----
+    # Registers narrative_source_call + narrative_flare_state claims and resolves matured
+    # source_call claims (Beta-Bernoulli registry update). All writes nightly-gated.
+    # Runs AFTER W2 collectors so first_coverage.parquet is fresh. Non-fatal.
+    try:
+        from engine.source_registry import run_as_collect_step as _src_reg_run
+        _src_reg_run()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("source_registry nightly_run step failed: %s", e)
+
     return 0 if ok > 0 else 1
 
 
