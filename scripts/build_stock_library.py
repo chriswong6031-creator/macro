@@ -672,6 +672,26 @@ def _json_safe(o):
 _ACTIONABLE_URGENCIES = ("now", "imminent")
 
 
+def _board_alpha_sort_key(ticker: str, row_by_t: dict, profile: dict | None = None) -> tuple:
+    """W8 alpha-desc sort key for wide-board buy rows (forward ledger #1062:
+    P@1 board-order 28.6% vs alpha-order 71.4%).
+
+    The scalar residual-alpha z lives on the BOARD ROW (``row_by_t[t]["alpha"]``,
+    set by engine.setups.setup_score) — NOT on the conviction profile, which never
+    carries an ``"alpha"`` key. The original in-closure key read the profile, so
+    the primary key was a constant -0.0 for every row and the #1494 determinism
+    tiebreaker silently became the whole sort — shipping a ticker-alphabetical
+    board that trips check_board_contradictions invariant (d) (negative-alpha
+    slot-1 above positive-alpha rows in the same lane). Falls back to the
+    profile's composite_z when the row carries no alpha (recovery-lane contract).
+    """
+    row = row_by_t.get(ticker) or {}
+    alpha = row.get("alpha")
+    if alpha is None and profile is not None:
+        alpha = profile.get("composite_z")
+    return (-(alpha or 0.0), ticker)
+
+
 def _enforce_blocked_buy_invariant(buy_rows: list[dict]) -> int:
     """W6-US invariant (b): a BUY row whose signal.last.quality == 'block' must not
     carry actionable urgency, and its label must carry the '(blocked)' marker.
@@ -2709,9 +2729,13 @@ def main() -> int:
             _recovery_cands.append((t, p))
 
         # Order recovery candidates by alpha desc (W8 verdict: no rank power; alpha is
-        # the only validated sort leg; forward ledger will stratify by lane)
+        # the only validated sort leg; forward ledger will stratify by lane).
+        # Alpha comes from the board row — the profile has no "alpha" key, so the
+        # previous profile read always fell through to composite_z here (see
+        # _board_alpha_sort_key; composite_z remains the fallback when the row
+        # carries no alpha).
         _recovery_cands.sort(
-            key=lambda tp: (-(tp[1].get("alpha") or tp[1].get("composite_z") or 0.0), tp[0]))
+            key=lambda tp: _board_alpha_sort_key(tp[0], row_by_t, tp[1]))
         _recovery_cands = _recovery_cands[:_RECOVERY_CAP]
         _recovery_tickers = {t for t, _ in _recovery_cands}
 
@@ -3026,11 +3050,13 @@ def main() -> int:
         # Replace entry_open_first as the terminal sort for the wide board:
         # within lane='trend' order by alpha desc; then lane='recovery' block
         # ordered by alpha desc. The entry status BADGE is kept (not removed).
-        def _alpha_key(r_tuple):
-            t, p, _tier = r_tuple
-            return (-(p.get("alpha") or 0.0), t)
-
-        buyable_trend = sorted(buyable, key=_alpha_key)    # alpha desc within trend
+        # Alpha is read from the board ROW, not the conviction profile — the
+        # profile has no "alpha" key, and reading it turned this sort into a
+        # ticker-alphabetical board (invariant (d) regression; see
+        # _board_alpha_sort_key).
+        buyable_trend = sorted(
+            buyable,
+            key=lambda x: _board_alpha_sort_key(x[0], row_by_t))  # alpha desc within trend
         # Recovery rows: tag and order by alpha desc
         _recovery_rows_ordered = [
             _tag(t, "recovery", lane="recovery")
@@ -3799,6 +3825,19 @@ def main() -> int:
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
                  len(wide["buy"]), wide["rank_by"], eligible, len(cand))
+        # Render-lane self-check: the board-invariants CI job only fires on PRs that
+        # touch the artifact, and the pages.yml deploy-gate twin is manual-dispatch
+        # only — a nightly render that regresses an invariant ships silently (the
+        # 2026-07 invariant-(d) latent red). Grade the fresh artifact here, warn-only:
+        # a display-tier guard must never fail the render.
+        try:
+            from scripts.check_board_contradictions import _check as _board_invariants
+            _bc_viol = _board_invariants(str(site / "factordata" / "us_standouts.json"))
+            if _bc_viol:
+                log.warning("board-contradictions self-check: %d violation(s) in fresh "
+                            "us_standouts.json: %s", len(_bc_viol), "; ".join(_bc_viol))
+        except Exception as _bc_e:  # noqa: BLE001 — guard must never break the render
+            log.debug("board-contradictions self-check skipped (%s)", _bc_e)
         # forward shadow book — freeze the live score at build time so it can be graded on
         # REALIZED forward returns later (engine/shadow_book; research/MEASUREMENT_FLOOR.md).
         # Additive + display-only + append-only; never fatal.
