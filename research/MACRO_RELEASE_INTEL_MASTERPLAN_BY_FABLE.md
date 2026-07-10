@@ -632,3 +632,198 @@ v3_factor (cpi_headline / cpi_core / nfp) and cpi_bridge (cpi_headline). Champio
 keeps every card until a promotion adjudication cites forward evidence. C-8
 committee still deferred (MRI-R14). PCE/PPI attempt-2 only via adjudication;
 retail attempt-1 pending data accrual.
+
+## 12. Wave 11 — robustness, revision intelligence, honest-benchmark restatement, UI rebuild (operator-directed, 2026-07-10, Fable main loop)
+
+Trigger: operator directive for a Fable audit + substantial upgrade (better
+projections, revision anticipation, surprise edge-case intelligence, UI fix).
+Basis: an 8-lane audit/research fan-out (3 Opus audits: engine-stats, ops-
+robustness, UI; 5 research lanes: institutional CPI methods, NFP revision
+mechanics, surprise anatomy 1998–2026, free-data census, vintage empirics on
+our own ALFRED store). This section is the program adjudication and FREEZES
+new-track specs before any backtest (§6). All standing law unchanged
+(display-only, benchmark honesty MRI-R5, no LLM origination MRI-R4, forward
+gates §7, claims benchmark-only).
+
+### 12.1 Verdict-integrity rulings (apply before any new modeling)
+
+- **MRI-R28 (strongest-naive law).** The last-MoM `naive_prior` is a strawman
+  benchmark for SA MoM targets (audit F1: pce_core's walk-forward MAE 0.2682
+  vs expanding-mean 0.2677 — the "MODEL" verdict tied a constant; cpi_headline
+  champion 0.2260 vs expanding-mean 0.2306). Rulings: (a) Wave-10 verdicts
+  STAND as frozen — they were honest under the pre-registered rule; moving the
+  goalposts post-results is reverse-mining. (b) The benchmark set gains
+  `expanding_mean`; scoreboard and all RESULTS files gain REPORTED (non-
+  binding, MRI-R13 pattern) columns vs strongest-of {naive_prior,
+  expanding_mean, trailing_3m}. (c) All §12 tracks onward use the STRONGEST
+  naive as their kill benchmark. (d) pce_core (and any target whose margin
+  over the strongest naive is ≈0) carries an honesty caveat in card copy.
+- **MRI-R29 (bridge claim voided; scope defect deferred).** The cpi_bridge
+  backtest reads latest-revised sub-index parquets (audit F2) — its "edges
+  champion" margin is revision-optimistic and is VOIDED as a promotion
+  argument; forward-ledger evidence is the only promotion basis (restating
+  existing law). The SASLE scope overlap (F3: core-goods dynamics enter via
+  both SASLE and the PPI pipeline block) is a real construction defect, but a
+  proxy-scope change = spec attempt #2, pointless until the sub-index series
+  are ALFRED-vintaged. Ruling: bridge stays frozen as-built; comeback C-10 =
+  vintage the sub-index series (add to vintage_series), then decide whether to
+  spend attempt #2 on a PIT-clean scope-fixed re-run.
+- **MRI-R30 (sanctioned interval recalibration).** Coverage falsifier is
+  TRIPPED (§6 [70%,95%] gate): cpi_core p10–p90 64.1% and pce_core 67.7% in
+  2021+ (bands regime-blind, F4). Execute the ONE §6-sanctioned recalibration
+  as **vol-scaled residual quantiles**: residuals standardized by a trailing
+  realized-error σ_t (rolling window, expanding-min guard), quantiles taken on
+  standardized residuals, re-scaled by current σ_t. ONE spec, applied
+  UNIFORMLY to every target (no per-target tuning), points untouched,
+  coverage re-reported per era. If coverage is still outside the gate after 12
+  more forward prints, quantile claims drop from the UI (existing §6 rule).
+- **MRI-R31 (scoring upgrades, reported-only).** Scoreboard gains pinball
+  loss (5-quantile sum) per target and model. The §7 skew arm is under-powered
+  at n=12 (Wilson LB for 9/12 ≈ 0.49); it is downgraded to DESCRIPTIVE display
+  until n ≥ 24 — the §7 MAE arm is unchanged. RESULTS_CPI_BRIDGE_V1.md is
+  regenerated so shipped numbers match shipped code (F7).
+
+### 12.2 Ops-robustness rulings (audit blockers/majors; W11-A)
+
+- **MRI-R32 (no-orphan law).** (a) Catch-up scoring sweep: every nightly,
+  score ANY unscored past-release projection (champion + shadows) whose
+  initial print exists in vintages — bounded lookback 120d, idempotent.
+  (b) The T-1 candidate filter becomes `asof_night <= release_date` preferring
+  the latest strictly-pre-release row; release-day-frozen rows are stamped
+  `frozen_on_release_day` and annotated on the scoreboard, never dropped.
+  (c) First nightly after an outage re-emits a projection for a just-passed
+  unprojected release only when no pre-release row exists, flagged `late`.
+  (d) ALFRED vintages for tracked release series refresh NIGHTLY (the 7-day
+  mtime gate caused the store to trail by ~2 weeks; claims 2026-07-09 print
+  was unscorable). (e) Missing/failed FRED_API_KEY or stale vintage store with
+  past-due unscored projections surfaces as a loud `capture_health` block on
+  latest.json (reasons: missing_vintage / no_t1_projection / api_key_absent),
+  rendered as a small health strip — silence is never success (HEALTH-CARD-1).
+- **MRI-R33 (ledger hygiene).** Revision rows get revision-value-aware append
+  keys (REV-DEDUP-1); ledger appends fsync (DURABILITY-1); enrichers carry
+  per-source TTL staleness gates and stale reasons (Kalshi/market-implied ≤5d,
+  GASREGW/ZORI/Cleveland recency checks) — a stale source nulls the field with
+  a reason, never silently extrapolates (STALE-ENRICH-1/2). input_snapshots:
+  keep the frozen T-1 receipt per (release, period) permanently; GC all other
+  snapshots older than 30d; nightly job enforces (SNAPSHOT-GC-1).
+- **MRI-R34 (Cleveland join fix).** data/cleveland_nowcast/ is live (rows
+  through today) yet benchmark_set.cleveland_nowcast is null — the
+  `_read_cleveland_nowcast` join is broken (period/series mapping). Fix with a
+  regression test against the real parquet; the declared institutional anchor
+  must actually populate. PIT law MRI-R6/R12 unchanged (first_seen basis).
+- **MRI-R35 (cutoff labels).** Projection rows gain `cutoff_label`: the
+  frozen pre-release row = `T-1`; the second-upcoming period row (frozen
+  nightly mid-flight) = `early`. Both are scored per cutoff on the ledger and
+  scoreboard (separate columns, forward-only). This creates the measured
+  substrate for early-read accuracy — where Track T's value claim lives.
+
+### 12.3 New chartered tracks (frozen specs; kill = MAE ≥ strongest-naive in BOTH full and 2021+ windows unless stated; pure numpy; PIT per MRI-R6)
+
+- **Track T (MRI-R36) — mixed-frequency energy-accumulator headline nowcast
+  (Cleveland-style), cpi_headline ONLY, attempt #1 of 1.** Motivation: the
+  champion is lag-based; institutional headline edges come from within-month
+  energy accumulation (research REC-1/REC-12; DCOILWTICO daily is collected +
+  effectively unrevised). Frozen spec: (leg 1: energy) reference-month retail
+  gasoline nowcast = mean of published GASREGW weeks in month M + remaining-
+  weeks projection via daily-WTI pass-through (beta from expanding-window OLS
+  of weekly GASREGW changes on trailing daily WTI changes, no look-ahead);
+  energy contribution = gasoline MoM × RI motor-fuel weight × expanding-OLS
+  pass-through to headline. (leg 2: ex-energy) AR(3) + sin/cos month terms on
+  the derived ex-energy MoM series (vintaged headline first-print MoM minus
+  computed energy contribution — self-consistent, PIT). Aggregation:
+  ridge(λ=1.0) walk-forward of headline MoM on [energy_contrib, exenergy_ar,
+  sin, cos]; MIN_TRAIN_OBS=60; standard quantiles (vol-scaled after MRI-R30).
+  Scored at BOTH cutoffs (T-1 and early, MRI-R35). Kill rule at T-1 vs
+  strongest naive; its VALUE claim (early-cutoff accuracy vs champion-at-
+  early) is evaluated on the forward ledger only. Shadow tag `mf_energy`.
+- **Track R (MRI-R37) — NFP first→third revision-direction model, attempt #1
+  of 2.** Empirical basis from OUR vintage store: fp-surprise↔revision corr
+  −0.60 (−0.73 recent non-covid), walk-forward sign hit 63.8% vs 54.3%
+  majority baseline, Wilson LB 55.1%, n=127 (research REC-1). Frozen target:
+  sign(payems_mom_change[T, vintage=release(T+2)] − payems_mom_change[T,
+  vintage=release(T)]) — the first→third revision to the MoM change, from a
+  NEW multi-vintage PAYEMS store (ALFRED output_type=2, additive collector;
+  the existing output_type=4 first-print pipeline is untouched). Frozen
+  features (pre-declared; the prior-revision feature EXCLUDED for leakage):
+  fp_surprise_vs_AR1, sin/cos month, ICSA 4m survey-week change (first-print
+  vintages). Estimator: ridge(λ=1.0) on z-scored features → sign;
+  MIN_TRAIN_OBS=60; COVID months excluded from era stats. Kill rule (sign
+  target): walk-forward hit-rate Wilson LB must exceed the majority-class
+  base rate in the full non-covid window; else no display. Output: a
+  DISPLAY-ONLY `revision_lean` field on the NFP card {up/down/none, strength,
+  n, hit-rate to date}, frozen on the ledger and scored forward when the
+  third print lands. NEVER touches point/interval/skew. Additionally
+  (descriptive, no model): the procyclical LEVEL-bias annotation (expansions
+  +216k mean cumulative level revision, contractions −262k; MoM-change bias
+  is NOT significant and must not be implied — research REC-5), and the
+  revision-risk composite gains collection-rate / birth-death-anomaly /
+  benchmark-cycle context fields as free collectors land (NFP-R5, comeback
+  C-11 for the Philly-Fed early-benchmark feed).
+- **Track S (MRI-R38) — surprise-anatomy flag engine + print-integrity chip
+  (display-only, MRI-R20 law: flags annotate uncertainty, never shift
+  values).** From the 33-episode catalog (research lane; catalog ships as
+  research/release_forecast/SURPRISE_ANATOMY_1998_2026.md): (a) new
+  deterministic quirk flags in engine/release_quirks.py — active-strike flag
+  (BLS work-stoppages monthly listing, free HTML, new keyless collector);
+  NFP preliminary-benchmark flag (September preliminary magnitude >±100k →
+  flag the following January print); government-shutdown/appropriations-gap
+  flag (deterministic calendar); census-hiring flag (decennial calendar,
+  currently inactive). (b) probabilistic display annotations — hurricane-
+  landfall flag (NOAA NHC public track data, ≤30d before NFP reference week);
+  birth-death-anomaly note. (c) **print-integrity chip**: CES collection/
+  response rates + CPI median standard errors + revision-streak length
+  (free BLS tables, new collector) → a data-quality regime read {normal /
+  degraded / disrupted} on each card. This is the honest, factual frame for
+  "releases differing from expectations": collection quality is measurable
+  and has degraded since 2019; we display it, we never speculate. (d) The
+  episode catalog is joined to the History surface (modal) as a static
+  reference table. CPI revision-direction modeling is KILLED before attempt
+  (annual seasonal-recalc revisions are tiny; empirics REC-3) — recorded in
+  DO_NOT_REBUILD.
+- **Data adoptions (W11 scope):** TRMMEANCPIM158SFRBCLE (Cleveland 16%
+  trimmed-mean CPI) + JTSQUR (quits) collected as context series (no champion
+  spec change — future chartered attempts may draw on them); work-stoppages,
+  CES response rates, CPI SE tables per Track S. DEFERRED to comebacks: NY Fed
+  SCE (C-12), DOL state-claims breadth (C-13), FAO food + Apartment List +
+  Manheim licensing reads (C-14). Brent/diesel: skipped, marginal over WTI.
+
+### 12.4 UI rebuild charter (MRI-R39; W11-H)
+
+Operator verdict accepted: the modal is 13 identically-styled stacked
+sections — a wall, not a desk. Rebuild per the UI audit (RR-1..RR-15):
+**5-tab modal** — OVERVIEW (large tabular point, SVG interval cone with
+same-basis benchmark ticks [RR-9], expectation/trend/coverage chips, one-line
+vs-benchmark delta) · MODELS (benchmark strip incl. expanding_mean, model-
+comparison dot plot on one shared axis: champion filled / v3_factor hollow /
+cpi_bridge diamond / mf_energy triangle, whiskers where available [RR-10];
+market-implied in its OWN row with explicit basis tag and never on the shared
+axis when bases differ [RR-6 — the current YoY-level-next-to-MoM% display is
+misleading and is a blocker]) · COMPONENTS (champion attribution, bridge
+waterfall, confidence composition) · HISTORY (scoreboard + pinball + per-
+cutoff accuracy, revision_lean track record, surprise-anatomy reference,
+sparklines once n>0 [RR-12]) · CONTEXT (policy backdrop, reaction
+sensitivity, quirk + integrity flags, capture-health strip). Null tabs don't
+render. Mobile ≤480px = full-screen sheet, ≥44px tap targets, sticky tab
+strip [RR-13, blocker]. Single de-duplicated display-only footnote [RR-2].
+4px-base spacing scale, tabular-nums for every figure, one label system
+[RR-3/4], chips consolidated to the two R24 chips + coverage dot-meter
+[RR-5/11], theme-token backdrop [RR-14], #2083 EN/ZH separation preserved
+[RR-15]. Cards stay R24-minimal. Mockup-first; browser-verified at 1280/375,
+light/dark, EN/ZH before merge (house UI law).
+
+### 12.5 Execution plan (collision-aware) + comebacks
+
+Round 1 (parallel): **W11-A** ops hardening (sole producer owner; R32–R35 +
+pinball/scoreboard + Cleveland join fix + snapshot GC) · **W11-B** restatement
+docs + backtest-harness expanding_mean columns + RESULTS regeneration (no
+producer edits) · **W11-C** Track T science (new files) · **W11-D** Track R
+science (new files + additive output_type=2 collector fn) · **W11-E** Track S
+flags/collectors + catalog (owns release_quirks.py) — each with an Opus
+review; Fable gates on kill rules. Round 2 (serial): **W11-F** interval
+recalibration (engine quantile path, MRI-R30, points byte-identical) →
+**W11-G** integration (wire mf_energy shadow + revision_lean + flags +
+integrity chip into producer/artifact). Round 3: **W11-H** UI rebuild.
+Comebacks: C-10 bridge sub-index vintaging + scope decision; C-11 Philly-Fed
+early-benchmark feed; C-12 NY Fed SCE; C-13 state-claims breadth; C-14
+licensing reads (Apartment List / Manheim / FAO). Claims 2026-07-09 orphan
+must be verified scored after W11-A lands (self-heals via R32a+R32d).
