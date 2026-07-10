@@ -1,93 +1,213 @@
 {% extends "report_base.html.j2" %}
-{% block title %}{{ t('13F Smart-Money Tracker — who made the excellent trades', '13F 聪明钱追踪 — 谁做出了卓越交易') }}{% endblock %}
+{% block title %}{{ t('Ownership Intelligence Desk — 13F Smart-Money Context', '持仓情报台 — 13F 聪明钱背景参考') }}{% endblock %}
 
 {% block base_css %}
-  .sm { --num: "SF Mono", ui-monospace, "DejaVu Sans Mono", monospace; max-width:1180px; margin:0 auto; }
-  .sm-eyebrow { font:600 12px/1 var(--num); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
-  .sm h1 { font-size:clamp(25px,4vw,37px); margin:.28em 0 .12em; letter-spacing:-.01em; }
-  .sm-sub { color:var(--muted); max-width:800px; font-size:14px; line-height:1.55; }
-  .sm-meta { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 4px; }
-  .sm-meta .chip { font-family:var(--num); }
-  .sm-sec { margin:34px 0 8px; }
-  .sm-sec h2 { font-size:18px; margin:0 0 3px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .sm-sec .h-note { font-size:12px; color:var(--muted); font-weight:400; }
-  .num { font-family:var(--num); }
-  /* excess-return colours (NOT tied to the zh red=up swap — base provides r-pos/r-neg) */
-  .big { font:650 25px/1.05 var(--num); }
-  .grade { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 6px;
-           border-radius:7px; font:700 13px/1 var(--num); border:1px solid var(--line); }
-  .grade.A { color:#0f8a4a; border-color:#0f8a4a66; background:#0f8a4a14; }
-  .grade.B { color:#3b82f6; border-color:#3b82f666; background:#3b82f614; }
-  .grade.C { color:#c98a1a; border-color:#c98a1a66; background:#c98a1a14; }
-  .grade.D { color:#d23f3f; border-color:#d23f3f66; background:#d23f3f14; }
-  .grade.na { color:var(--muted); }
-  html[data-theme="dark"] .grade.A { color:#3fc07e; } html[data-theme="dark"] .grade.C { color:#e0a93a; }
-  html[data-theme="dark"] .grade.D { color:#ef6a6a; }
+/* ---- core tokens ---- */
+.sm { --numf:"SF Mono",ui-monospace,"DejaVu Sans Mono",monospace; max-width:1220px; margin:0 auto; }
+.sm .num { font-family:var(--numf); font-variant-numeric:tabular-nums; }
+.grade { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px;
+         padding:0 5px; border-radius:6px; font:700 12px/1 var(--numf); border:1px solid var(--line); }
+.grade.A { color:#1f9a55; border-color:#1f9a5566; background:#1f9a5514; }
+.grade.B { color:#3b82f6; border-color:#3b82f666; background:#3b82f614; }
+.grade.C { color:#c98a1a; border-color:#c98a1a66; background:#c98a1a14; }
+.grade.D { color:#d23f3f; border-color:#d23f3f66; background:#d23f3f14; }
+.grade.na { color:var(--muted); }
+html[data-theme="dark"] .grade.A { color:#3fc07e; }
+html[data-theme="dark"] .grade.C { color:#e0a93a; }
+html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 
-  /* ---- featured head-to-head ---- */
-  .sm-vs { display:grid; grid-template-columns:1fr auto 1fr; gap:0; align-items:stretch; margin-top:10px; }
-  @media(max-width:760px){ .sm-vs { grid-template-columns:1fr; } .sm-vs .vs-mid { flex-direction:row; padding:10px 0; } }
-  .vs-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
-  .vs-card.win { border-left:4px solid var(--up); }
-  .vs-card.lag { border-left:4px solid var(--down); }
-  .vs-mid { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:0 14px; }
-  .vs-mid .vs-gap { font:700 22px/1 var(--num); }
-  .vs-mid .vs-lab { font:600 9px/1.2 var(--num); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); text-align:center; }
-  .vs-role { font:600 10px/1 var(--num); letter-spacing:.12em; text-transform:uppercase; }
-  .vs-card.win .vs-role { color:var(--up); } .vs-card.lag .vs-role { color:var(--down); }
-  .vs-name { font-size:18px; font-weight:700; margin:5px 0 2px; }
-  .vs-stat { display:flex; gap:18px; flex-wrap:wrap; margin:10px 0 6px; }
-  .vs-stat .k { font:600 9px/1.2 var(--num); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  .vs-stat .v { font:650 18px/1.1 var(--num); margin-top:3px; }
-  .vs-list { margin:8px 0 0; padding:0; list-style:none; }
-  .vs-list li { display:flex; align-items:baseline; gap:8px; padding:4px 0; border-top:1px solid var(--line); font-size:12.5px; }
-  .vs-list li .tk { font:700 12.5px/1 var(--num); min-width:46px; }
-  .vs-list li .act { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
-  .vs-sig { font-size:11.5px; color:var(--muted); margin-top:9px; }
+/* ---- axis tags ---- */
+.axis-tag { font:600 9px/1 var(--numf); letter-spacing:.08em; text-transform:uppercase;
+            padding:3px 6px; border-radius:5px; border:1px solid var(--line); color:var(--muted); }
+.axis-13f  { color:#c9a24a; border-color:#c9a24a55; }
+.axis-13fa { color:#c9a24a; border-color:#c9a24a55; }
+.axis-13dg { color:#5b9bf0; border-color:#5b9bf055; }
+.axis-form4 { color:#45b873; border-color:#45b87355; }
+.axis-short { color:#b07fd8; border-color:#b07fd855; }
 
-  /* ---- tables ---- */
-  table.sm-t { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; }
-  table.sm-t th { text-align:right; font:600 9.5px/1.2 var(--num); letter-spacing:.05em; text-transform:uppercase;
-                  color:var(--muted); padding:6px 9px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
-  table.sm-t th.l, table.sm-t td.l { text-align:left; }
-  table.sm-t td { padding:7px 9px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
-  table.sm-t tbody tr:hover { background:var(--panel2); }
-  table.sm-t tr.feat td { background:color-mix(in srgb, var(--up) 7%, transparent); }
-  table.sm-t .tk { font:700 12.5px/1 var(--num); }
-  table.sm-t .rk { color:var(--muted); font-family:var(--num); }
-  .star { color:#e0a93a; }
-  .act-pill { font:600 9px/1 var(--num); padding:3px 6px; border-radius:5px; border:1px solid var(--line); color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  .act-pill.new, .act-pill.add { color:var(--up); border-color:color-mix(in srgb, var(--up) 40%, transparent); }
-  .act-pill.trim, .act-pill.exit { color:var(--down); border-color:color-mix(in srgb, var(--down) 40%, transparent); }
-  .sub { font-size:10.5px; color:var(--muted); }
-  .sub2 { opacity:.72; font-weight:500; }
+/* ---- freshness chips ---- */
+.chip-fresh { display:inline-flex; align-items:center; gap:5px; padding:2px 9px;
+              border-radius:100px; font:600 10.5px/1.6 var(--numf); letter-spacing:.03em;
+              white-space:nowrap; border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
+.chip-fresh .fdot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+.t-green { color:var(--up); } .t-green .fdot { background:var(--up); }
+.t-amber { color:#e0a030; } .t-amber .fdot { background:#e0a030; }
+.t-red { color:var(--down); } .t-red .fdot { background:var(--down); }
 
-  /* ---- two-board grid + per-fund drilldown ---- */
-  .sm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-  @media(max-width:820px){ .sm-2col { grid-template-columns:1fr; } }
-  .sm-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 15px; margin-top:12px; }
-  details.fund { background:var(--panel); border:1px solid var(--line); border-radius:11px; margin-top:10px; }
-  details.fund > summary { list-style:none; cursor:pointer; padding:12px 15px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  details.fund > summary::-webkit-details-marker { display:none; }
-  details.fund[open] > summary { border-bottom:1px solid var(--line); }
-  .fund .f-name { font-weight:700; font-size:14.5px; }
-  .fund .f-body { padding:6px 15px 14px; }
-  .rot-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  @media(max-width:680px){ .rot-grid { grid-template-columns:1fr; } }
-  .rot-h { font:600 9.5px/1 var(--num); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:4px 0 2px; }
-  .rot-h.into { color:var(--up); } .rot-h.out { color:var(--down); }
-  .mini { width:100%; border-collapse:collapse; font-size:12px; }
-  .mini td { padding:4px 6px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
-  .mini td.l { text-align:left; }
-  .mini .tk { font:700 12px/1 var(--num); }
-  .hold { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-  .hold .h-pill { font:600 10.5px/1 var(--num); padding:4px 8px; border-radius:999px; border:1px solid var(--line); background:var(--panel2); }
-  .disc { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info); border-radius:10px;
-          padding:11px 14px; margin:14px 0 4px; font-size:12px; line-height:1.55; color:var(--muted); }
+/* ---- tier pills ---- */
+.tier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+        letter-spacing:.05em; text-transform:uppercase; }
+.tier.elevated { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
+.tier.moderate { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
+.tier.low { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.tier.unavail { color:var(--muted); background:transparent; border:1px dashed var(--line); }
+.tier.activist { color:#5b9bf0; background:rgba(91,155,240,.1); border:1px solid rgba(91,155,240,.35); }
+.tier.flip { color:#5b9bf0; background:rgba(91,155,240,.1); border:1px solid rgba(91,155,240,.35); }
+.tier.custodial { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+
+/* ---- turnover tier ---- */
+.tlow { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.tmed { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
+.thigh { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
+
+/* ---- S0 command deck ---- */
+.sm-deck { background:var(--panel); border:1px solid var(--line); border-radius:16px;
+           padding:20px 22px; display:grid; grid-template-columns:1.2fr 1fr 1.4fr; gap:22px;
+           margin-bottom:10px; }
+@media(max-width:960px){ .sm-deck { grid-template-columns:1fr; } }
+.sm-deck .deck-eyebrow { font:600 11px/1 var(--numf); letter-spacing:.14em;
+                          text-transform:uppercase; color:var(--muted); }
+.sm-deck h1 { font-size:clamp(22px,3vw,30px); margin:.25em 0 .1em; letter-spacing:-.01em; }
+.sm-deck .deck-sub { color:var(--muted); font-size:12.5px; max-width:420px; }
+.sm-clock { border-left:1px solid var(--line); border-right:1px solid var(--line);
+            padding:0 22px; display:flex; flex-direction:column; justify-content:center; gap:4px; }
+@media(max-width:960px){ .sm-clock { border:0; border-top:1px solid var(--line);
+                                     border-bottom:1px solid var(--line); padding:14px 0; } }
+.sm-clock .ck { font:600 9.5px/1 var(--numf); letter-spacing:.1em;
+                text-transform:uppercase; color:var(--muted); }
+.sm-clock .bignum { font:700 30px/1 var(--numf); }
+.sm-clock .bignum span { font-size:14px; color:var(--muted); font-weight:600; }
+.sm-clock .qstate { font:600 11px/1.5 var(--numf); color:#e0a030; }
+.sm-gridbox .gbk { font:600 9.5px/1 var(--numf); letter-spacing:.1em;
+                    text-transform:uppercase; color:var(--muted); margin-bottom:7px;
+                    display:flex; justify-content:space-between; }
+.dots-grid { display:grid; grid-template-columns:repeat(18,14px); gap:5px; }
+.dots-grid i { width:10px; height:10px; border-radius:50%; border:1.5px solid var(--muted);
+               display:block; }
+.dots-grid i.df { background:var(--up); border-color:var(--up); }
+.dots-grid i.dp { border-color:#e0a030; }
+.axis-rail { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+.hon-note { margin-top:12px; font-size:11px; color:var(--muted);
+            border-top:1px solid var(--line); padding-top:10px; }
+
+/* ---- section headers ---- */
+.sm-sec { margin:34px 0 10px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.sm-sec::after { content:''; flex:1; height:1px; background:var(--line); align-self:center; }
+.sm-sec h2 { font-size:17px; margin:0; }
+.sm-sec .h-note { font-size:12px; color:var(--muted); font-weight:400; }
+
+/* ---- cards / banners ---- */
+.sm-card { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:14px 16px; margin-top:10px; overflow-x:auto; }
+.banner { font-size:11.5px; color:var(--muted); background:var(--panel2); border:1px solid var(--line);
+          border-left:3px solid var(--info); border-radius:9px; padding:8px 12px; margin:8px 0 4px;
+          line-height:1.55; }
+.banner.hazard { border-left-color:var(--down); }
+
+/* ---- wire ---- */
+.wire { list-style:none; margin:0; padding:0; }
+.wire li { display:flex; align-items:center; gap:10px; padding:7px 2px;
+           border-top:1px solid var(--line); font-size:12.3px; flex-wrap:wrap; }
+.wire .wd { font:600 11px/1 var(--numf); color:var(--muted); min-width:74px; }
+.wire .wtk { font:700 12.3px/1 var(--numf); min-width:52px; }
+.wire .wdesc { color:var(--text); }
+.wire .wasof { margin-left:auto; }
+.filters { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 4px; }
+.filters .fpill { font:600 11px/1.8 var(--numf); padding:2px 11px; border-radius:99px;
+                  border:1px solid var(--line); color:var(--muted); cursor:pointer; user-select:none; }
+.filters .fpill.on { color:var(--text); border-color:var(--info); background:rgba(91,155,240,.08); }
+.wire-count { font-size:11.5px; color:var(--muted); margin:6px 0 2px; }
+
+/* ---- act pills ---- */
+.act-pill { font:600 9px/1 var(--numf); padding:3px 6px; border-radius:5px; border:1px solid var(--line);
+            color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.act-pill.new,.act-pill.add { color:var(--up); border-color:rgba(69,184,115,.4); }
+.act-pill.trim,.act-pill.exit { color:var(--down); border-color:rgba(224,100,100,.4); }
+
+/* ---- tables ---- */
+table.sm-t { width:100%; border-collapse:collapse; font-size:12.3px; margin-top:6px; }
+table.sm-t th { text-align:right; font:600 9.5px/1.25 var(--numf); letter-spacing:.05em;
+                text-transform:uppercase; color:var(--muted); padding:6px 8px 7px;
+                border-bottom:1px solid var(--line); white-space:nowrap; }
+table.sm-t th.l, table.sm-t td.l { text-align:left; }
+table.sm-t td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+table.sm-t tbody tr:hover { background:var(--panel2); }
+table.sm-t td .tk { font:700 12.3px/1 var(--numf); }
+table.sm-t tr.feat td { background:color-mix(in srgb, var(--up) 6%, transparent); }
+table.sm-t tr.closed td { opacity:.55; }
+table.sm-t .rk { color:var(--muted); font-family:var(--numf); }
+.sub { font-size:10.5px; color:var(--muted); }
+.sub2 { opacity:.72; font-weight:500; }
+.star { color:#e0a030; }
+.spark { font-family:var(--numf); font-size:11px; letter-spacing:1px; color:var(--info); }
+
+/* ---- vs card ---- */
+.sm-vs { display:grid; grid-template-columns:1fr auto 1fr; gap:0; align-items:stretch; margin-top:10px; }
+@media(max-width:760px){ .sm-vs { grid-template-columns:1fr; } .vs-mid { flex-direction:row; padding:10px 0; } }
+.vs-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+.vs-card.win { border-left:4px solid var(--up); }
+.vs-card.lag { border-left:4px solid var(--down); }
+.vs-mid { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:0 14px; }
+.vs-mid .vs-gap { font:700 22px/1 var(--numf); }
+.vs-mid .vs-lab { font:600 9px/1.2 var(--numf); letter-spacing:.1em; text-transform:uppercase;
+                  color:var(--muted); text-align:center; }
+.vs-role { font:600 10px/1 var(--numf); letter-spacing:.12em; text-transform:uppercase; }
+.vs-card.win .vs-role { color:var(--up); } .vs-card.lag .vs-role { color:var(--down); }
+.vs-name { font-size:17px; font-weight:700; margin:5px 0 2px; }
+.vs-stat { display:flex; gap:14px; flex-wrap:wrap; margin:10px 0 6px; }
+.vs-stat .k { font:600 9px/1.2 var(--numf); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.vs-stat .v { font:650 17px/1.1 var(--numf); margin-top:3px; }
+.vs-list { margin:8px 0 0; padding:0; list-style:none; }
+.vs-list li { display:flex; align-items:baseline; gap:8px; padding:4px 0;
+              border-top:1px solid var(--line); font-size:12px; }
+.vs-list li .vtk { font:700 12px/1 var(--numf); min-width:44px; }
+.vs-list li .vact { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+.vs-sig { font-size:11.5px; color:var(--muted); margin-top:8px; }
+
+/* ---- per-fund accordion ---- */
+details.fund { background:var(--panel); border:1px solid var(--line); border-radius:11px; margin-top:9px; }
+details.fund > summary { list-style:none; cursor:pointer; padding:11px 15px;
+                         display:flex; align-items:center; gap:11px; flex-wrap:wrap; font-size:13px; }
+details.fund > summary::-webkit-details-marker { display:none; }
+details.fund[open] > summary { border-bottom:1px solid var(--line); }
+.fund .f-name { font-weight:700; font-size:14px; }
+.fund .f-body { padding:6px 15px 14px; }
+.rot-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:680px){ .rot-grid { grid-template-columns:1fr; } }
+.rot-h { font:600 9.5px/1 var(--numf); letter-spacing:.1em; text-transform:uppercase;
+         color:var(--muted); margin:4px 0 2px; }
+.rot-h.into { color:var(--up); } .rot-h.out { color:var(--down); }
+.mini { width:100%; border-collapse:collapse; font-size:12px; }
+.mini td { padding:4px 6px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
+.mini td.l { text-align:left; }
+.mini .tk { font:700 12px/1 var(--numf); }
+.hold { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.hold .h-pill { font:600 10.5px/1 var(--numf); padding:4px 8px; border-radius:999px;
+               border:1px solid var(--line); background:var(--panel2); }
+
+/* ---- S7 dossier ---- */
+.sm-search { display:flex; gap:8px; margin:8px 0; align-items:center; flex-wrap:wrap; }
+.sm-search input { flex:1; max-width:340px; background:var(--panel2); border:1px solid var(--line);
+                   border-radius:9px; color:var(--text); font:600 13px var(--numf);
+                   padding:8px 13px; outline:none; }
+.sm-search input:focus { border-color:var(--info); }
+.dossier-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px; }
+@media(max-width:820px){ .dossier-grid { grid-template-columns:1fr; } }
+.axisblock { border:1px solid var(--line); border-radius:10px; padding:11px 13px; background:var(--panel2); }
+.axisblock .ab-h { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; }
+.axisblock .ab-body { font-size:12.3px; line-height:1.6; }
+#dossier-card { display:none; }
+
+/* ---- S8 ledger ---- */
+.ledgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px; }
+@media(max-width:960px){ .ledgrid { grid-template-columns:1fr 1fr; } }
+@media(max-width:600px){ .ledgrid { grid-template-columns:1fr; } }
+.led { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:12px 14px; }
+.led .led-nm { font-weight:700; font-size:12.5px; margin-bottom:3px; }
+.led .led-rule { font-size:10.5px; color:var(--muted); min-height:36px; margin-bottom:6px; }
+.led .led-row { display:flex; justify-content:space-between; font:600 11px/1.9 var(--numf); }
+.led .led-row .lk { color:var(--muted); font-weight:500; }
+
+/* ---- misc ---- */
+.disc { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info);
+        border-radius:10px; padding:11px 14px; margin:14px 0 4px; font-size:12px;
+        line-height:1.55; color:var(--muted); }
+.sm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media(max-width:820px){ .sm-2col { grid-template-columns:1fr; } }
 {% endblock %}
 
 {% block content %}
-{#- ---- formatting helpers -------------------------------------------------- -#}
+{#- ===== MACRO HELPERS ===== -#}
 {% macro exret(v, dp=0) -%}
   {%- if v is none -%}<span class="mut">—</span>
   {%- else -%}<span class="num {{ 'r-pos' if v >= 0 else 'r-neg' }}">{{ "%+.{}f".format(dp) | format(v * 100) }}%</span>
@@ -102,194 +222,916 @@
 {% macro tradeline(tr) -%}
   {{ exret(tr.since_excess) }} <span class="sub">({{ tr.ticker }} {{ "%+.0f" | format((tr.since_abs or 0) * 100) }}% vs SPY {{ "%+.0f" | format((tr.spy_since or 0) * 100) }}%, {{ tr.hold_days }}{{ t('d','天') }})</span>
 {%- endmacro %}
+{% macro sparkbar(series) -%}
+{%- set chars = ['▁','▂','▃','▄','▅','▆','▇','█'] -%}
+{%- if series and series | length > 0 -%}
+{%- set maxv = series | max -%}
+{%- set out = namespace(s='') -%}
+{%- for v in series[-6:] -%}
+  {%- if maxv and maxv > 0 -%}
+    {%- set idx = ((v / maxv) * 7) | int -%}
+    {%- set out.s = out.s ~ chars[idx if idx < 8 else 7] -%}
+  {%- else -%}
+    {%- set out.s = out.s ~ '▁' -%}
+  {%- endif -%}
+{%- endfor -%}
+{{ out.s }}
+{%- else -%}—{%- endif -%}
+{%- endmacro %}
+
+{#- ===== set desk shorthand ===== -#}
+{% set d_fresh = desk.get('freshness') or {} %}
+{% set d_wire = desk.get('wire') or [] %}
+{% set d_gp = desk.get('grand_portfolio') or [] %}
+{% set d_crowd = desk.get('crowding') or [] %}
+{% set d_init = desk.get('initiations') or [] %}
+{% set d_act = desk.get('activists') or [] %}
+{% set d_led = desk.get('ledger') or {} %}
 
 <div class="sm">
 
-  <div class="sm-eyebrow">{{ t('Institutional 13F · super-investor track record', '机构 13F · 超级投资者交易记录') }}</div>
-  <h1>{{ t('Smart-Money Trade Tracker', '聪明钱交易追踪器') }}</h1>
-  <p class="sm-sub">{{ t(
-     'Who actually made the excellent trades. Every curated super-investor\'s new / add / trim / exit is entered on its public 13F filing date and graded by return vs SPY — so skill (the rotation that worked) is separated from a rising tide.',
-     '谁真正做出了卓越交易。每位精选超级投资者的新建/加仓/减仓/清仓都以其 13F 公开申报日为入场点，并以相对标普500的超额收益评分——把"奏效的轮动"（真本事）与"水涨船高"区分开。') }}</p>
+{# ======================================================================== #}
+{# S0 COMMAND DECK                                                           #}
+{# ======================================================================== #}
+<div class="sm-deck">
 
-  <div class="sm-meta">
-    <span class="chip">{{ t('As of', '截至') }} {{ trk.as_of or '—' }}</span>
-    <span class="chip">{{ t('Latest filing', '最新申报') }} {{ trk.latest_filing or '—' }}</span>
-    <span class="chip">{{ t('Priced through', '价格更新至') }} {{ trk.coverage.price_thru or '—' }}</span>
-    <span class="chip">{{ trk.coverage.funds }} {{ t('funds', '基金') }} · {{ trk.coverage.trades_scored }} {{ t('scored trades', '已评分交易') }}</span>
-    <span class="chip">{{ t('Benchmark', '基准') }} {{ trk.benchmark }}</span>
+  {# Left: title + eyebrow + axis rail #}
+  <div>
+    <div class="deck-eyebrow">{{ t('Institutional 13F · Context Only · Never a Buy List', '机构 13F · 仅供背景参考 · 非买入清单') }}</div>
+    <h1>{{ t('Ownership Intelligence Desk', '持仓情报台') }}</h1>
+    <div class="deck-sub">{{ t('Who owns what, who just moved, and how stale each lens is. Five independent axes — read separately, never blended.', '谁持有什么、谁刚刚移仓，以及每个数据源的时效。五条独立视角——分开解读，切勿混合。') }}</div>
+    <div class="axis-rail">
+      {% for ax in d_fresh.get('axes') or [] %}
+        {% set tc = 't-' ~ (ax.tier or 'amber') %}
+        <span class="chip-fresh {{ tc }}"><span class="fdot"></span>{{ ax.label }} · {{ t('as of','截至') }} {{ ax.asof }} — {{ ax.lag_note }}</span>
+      {% endfor %}
+    </div>
   </div>
 
-  {#- ============================ FEATURED ============================ -#}
-  {% if trk.featured %}
-  {% set w = trk.featured.winner %}{% set l = trk.featured.laggard %}
-  <div class="sm-sec">
-    <h2>{{ t('The quality gap', '质量差距') }}
-      <span class="h-note">{{ t('two managers, two playbooks — graded on what they bought and how it has done since', '两位经理，两套打法——以"买了什么、之后表现如何"评分') }}</span></h2>
+  {# Centre: filing clock #}
+  <div class="sm-clock">
+    <div class="ck">{{ t('Next 13F deadline · Q2 2026','下一13F截止日 · 2026年Q2') }}</div>
+    <div class="bignum">{{ d_fresh.get('days_to_deadline') or '—' }} <span>{{ t('days','天') }} · {{ d_fresh.get('next_deadline') or '—' }}</span></div>
+    {% set qs = d_fresh.get('quarter_state') or '' %}
+    {% if qs == 'window_open' %}
+      {% set filed_ct = (d_fresh.get('filed_pending') or []) | selectattr('status','equalto','filed') | list | length %}
+      {% set total_ct = (d_fresh.get('filed_pending') or []) | length %}
+      <div class="qstate">{{ t('FILING WINDOW OPEN','申报窗口已开启') }} — {{ filed_ct }}/{{ total_ct }} {{ t('funds filed','家基金已申报') }}</div>
+    {% elif qs == 'closed' %}
+      <div class="qstate" style="color:var(--muted)">{{ t('WINDOW CLOSED','窗口已关闭') }}</div>
+    {% else %}
+      <div class="qstate" style="color:var(--muted)">{{ qs }}</div>
+    {% endif %}
+    <div class="ck" style="margin-top:6px">{{ t('Quarter on display: Q1 2026 (period end Mar 31)','展示季度：2026年Q1（期末3月31日）') }}</div>
   </div>
-  <div class="sm-vs">
-    <div class="vs-card win">
-      <div class="vs-role">★ {{ t('Rotated into the leaders', '轮动进入领涨') }}</div>
-      <div class="vs-name">{{ w.name }} {{ gradeb(w.grade) }}</div>
-      <div class="vs-stat">
-        <div><div class="k">{{ t('Median excess', '中位超额') }}</div><div class="v">{{ exret(w.median_buy_excess) }}</div></div>
-        <div><div class="k">{{ t('Buy hit-rate', '买入胜率') }}</div><div class="v">{{ hit(w.buy_hit_rate) }}</div></div>
-        <div><div class="k">{{ t('63d skill', '63日技巧') }}</div><div class="v">{{ exret(w.avg_buy_excess_h) }}</div></div>
-        <div><div class="k">{{ t('Realised', '已实现') }}</div><div class="v sub2">{{ exret(w.avg_buy_excess) }}</div></div>
-      </div>
-      {% if w.best_trade %}<div class="vs-sig">{{ t('Signature trade', '代表交易') }}: <b class="num">{{ w.best_trade.ticker }}</b> {{ w.best_trade.action }} {{ w.best_trade.period_end }} → {{ tradeline(w.best_trade) }}</div>{% endif %}
-      {% if w.rotation_into %}
-      <div class="rot-h into" style="margin-top:11px">{{ t('Latest rotation into', '最新轮入') }}</div>
-      <ul class="vs-list">
-        {% for tr in w.rotation_into %}
-        <li><span class="tk">{{ tr.ticker }}</span><span class="act">{{ tr.action }} · {{ pctf(tr.pct_portfolio) }}</span><span style="margin-left:auto">{{ exret(tr.since_excess) }}</span></li>
-        {% endfor %}
-      </ul>{% endif %}
+
+  {# Right: dot grid #}
+  <div class="sm-gridbox">
+    <div class="gbk">
+      <span>{{ t('Filed vs pending — Q2 2026 window','已申报 vs 待申报 — 2026年Q2窗口') }}</span>
+      <span>&#9679; {{ t('filed','已申报') }} · &#9675; {{ t('pending','待申报') }}</span>
     </div>
-    <div class="vs-mid">
-      <div class="vs-lab">{{ t('Median excess gap', '中位超额差距') }}</div>
-      <div class="vs-gap">{{ exret(trk.featured.excess_gap) }}</div>
-      {% if trk.featured.hit_gap is not none %}<div class="vs-lab">{{ t('hit-rate', '胜率') }} {{ hit(w.buy_hit_rate) }} {{ t('vs', '对') }} {{ hit(l.buy_hit_rate) }}</div>{% endif %}
-      {% if trk.featured.realised_gap is not none %}<div class="vs-lab" style="margin-top:4px">{{ t('realised P&L gap', '已实现盈亏差距') }} {{ exret(trk.featured.realised_gap) }}</div>{% endif %}
+    <div class="dots-grid">
+      {% for fp in d_fresh.get('filed_pending') or [] %}
+        {% if fp.get('status') == 'filed' %}
+          <i class="df" title="{{ fp.slug }} — filed {{ fp.filing_date }}"></i>
+        {% else %}
+          <i class="dp" title="{{ fp.slug }} — pending"></i>
+        {% endif %}
+      {% endfor %}
     </div>
-    <div class="vs-card lag">
-      <div class="vs-role">{{ t('Concentrated the laggards', '集中持有落后股') }}</div>
-      <div class="vs-name">{{ l.name }} {{ gradeb(l.grade) }}</div>
-      <div class="vs-stat">
-        <div><div class="k">{{ t('Median excess', '中位超额') }}</div><div class="v">{{ exret(l.median_buy_excess) }}</div></div>
-        <div><div class="k">{{ t('Buy hit-rate', '买入胜率') }}</div><div class="v">{{ hit(l.buy_hit_rate) }}</div></div>
-        <div><div class="k">{{ t('63d skill', '63日技巧') }}</div><div class="v">{{ exret(l.avg_buy_excess_h) }}</div></div>
-        <div><div class="k">{{ t('Realised', '已实现') }}</div><div class="v sub2">{{ exret(l.avg_buy_excess) }}</div></div>
-      </div>
-      {% if l.worst_trade %}<div class="vs-sig">{{ t('Costliest buy', '最贵买入') }}: <b class="num">{{ l.worst_trade.ticker }}</b> {{ l.worst_trade.action }} {{ l.worst_trade.period_end }} → {{ tradeline(l.worst_trade) }}</div>{% endif %}
-      {% if l.rotation_into %}
-      <div class="rot-h out" style="margin-top:11px">{{ t('Latest rotation into', '最新轮入') }}</div>
-      <ul class="vs-list">
-        {% for tr in l.rotation_into %}
-        <li><span class="tk">{{ tr.ticker }}</span><span class="act">{{ tr.action }} · {{ pctf(tr.pct_portfolio) }}</span><span style="margin-left:auto">{{ exret(tr.since_excess) }}</span></li>
-        {% endfor %}
-      </ul>{% endif %}
-    </div>
+    <div class="hon-note">{{ t(
+      '13F = quarterly, ~45-day lag, long-only US listed ≥$100M. No shorts, no cash, no non-US positions. This desk is context — ownership is never a directional signal here.',
+      '13F = 季度披露，约45天滞后，仅含美股多头且持仓≥1亿美元。不含空头、现金或非美股仓位。本台仅为背景参考——持仓数据在此永远不是方向性信号。'
+    ) }}</div>
   </div>
+
+</div>{# /sm-deck #}
+
+{# ======================================================================== #}
+{# S1 OWNERSHIP EVENT WIRE                                                   #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Ownership event wire','持仓事件播报') }}</h2>
+  <span class="h-note">{{ t('newest 60 of ' ~ (d_wire | length) ~ ' events across all axes — each row carries its own clock', '全轴事件最新60条（共' ~ (d_wire | length) ~ '条）——每行带独立时间戳') }}</span>
+</div>
+
+<div class="filters" id="wire-filters">
+  <span class="fpill on" data-axis="all">{{ t('All','全部') }}</span>
+  <span class="fpill" data-axis="13f">{{ t('13F','13F') }}</span>
+  <span class="fpill" data-axis="13fa">{{ t('Amendments','修正案') }}</span>
+  <span class="fpill" data-axis="13dg">{{ t('13D/G','13D/G') }}</span>
+  <span class="fpill" data-axis="insider">{{ t('Insider','内部人') }}</span>
+</div>
+
+<div class="sm-card">
+  <p class="wire-count">{{ t('Showing 60 of ' ~ (d_wire | length) ~ ' — full feed in data/wire','展示60条，共' ~ (d_wire | length) ~ '条，完整记录见数据文件') }}</p>
+  <ul class="wire" id="wire-list">
+  {% for row in d_wire[:60] %}
+    {% set ax = row.get('axis') or '' %}
+    {% set axis_class = 'axis-' ~ ax %}
+    {% if ax == '13f' %}{% set axis_label = '13F' %}
+    {% elif ax == '13fa' %}{% set axis_label = '13F/A' %}
+    {% elif ax == '13dg' %}{% set axis_label = row.get('type') or '13D/G' %}
+    {% elif ax == 'insider' %}{% set axis_label = 'FORM4' %}
+    {% elif ax == 'short' %}{% set axis_label = 'SHORT' %}
+    {% else %}{% set axis_label = ax | upper %}{% endif %}
+
+    {# Build description from action + magnitude + fund #}
+    {% set action = row.get('action') or '' %}
+    {% set fund = row.get('fund') or row.get('slug') or '' %}
+    {% set mag = row.get('magnitude') %}
+    {% set unit = row.get('unit') or '' %}
+    {% if action == '13d' %}{% set desc_en = fund ~ ' files 13D' ~ ((' — ' ~ (mag | string) ~ unit) if mag else '') %}
+    {% elif action == '13g' %}{% set desc_en = fund ~ ' files 13G' ~ ((' — ' ~ (mag | string) ~ unit) if mag else '') %}
+    {% elif action == 'amendment' %}{% set desc_en = fund ~ ' files amendment' ~ ((' — ' ~ (mag | string) ~ unit) if mag else '') %}
+    {% elif action == 'flip' %}{% set desc_en = fund ~ ' converts 13G → 13D (passive → active)' %}
+    {% elif action in ('new','add') %}{% set desc_en = fund ~ ' ' ~ action ~ ((' ' ~ (mag | string) ~ unit) if mag else '') %}
+    {% elif action in ('trim','exit') %}{% set desc_en = fund ~ ' ' ~ action ~ ((' ' ~ (mag | string) ~ unit) if mag else '') %}
+    {% else %}{% set desc_en = fund ~ ' ' ~ action %}{% endif %}
+
+    {% set asof_note = row.get('asof_note') or '' %}
+    {% set ax_tier = 'green' if ax in ('13dg','insider','short') else ('amber' if ax == 'short_interest' else 'red') %}
+
+    <li data-axis="{{ ax }}">
+      <span class="wd num">{{ row.get('date') or '' }}</span>
+      <span class="axis-tag {{ axis_class }}">{{ axis_label }}</span>
+      <span class="wtk num">{{ row.get('ticker') or '' }}</span>
+      <span class="wdesc">{{ desc_en | e }}</span>
+      <span class="chip-fresh t-{{ ax_tier }} wasof"><span class="fdot"></span>{{ asof_note | e }}</span>
+    </li>
+  {% else %}
+    <li><span class="sub">{{ t('No wire events available.','暂无播报事件。') }}</span></li>
+  {% endfor %}
+  </ul>
+</div>
+
+{# ======================================================================== #}
+{# S2 MANAGER DESK                                                           #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Manager desk','基金经理台') }}</h2>
+  <span class="h-note">{{ t('track record on public 13F filing dates, scored vs SPY — grades are descriptive ranks within a curated survivor cohort', '以13F公开申报日为锚的业绩记录，相对标普评分——评级为精选幸存者队列中的描述性排名') }}</span>
+</div>
+
+{# Featured head-to-head compact card #}
+{% if trk.featured %}
+{% set w = trk.featured.winner %}{% set l = trk.featured.laggard %}
+<div class="sm-vs">
+  <div class="vs-card win">
+    <div class="vs-role">&#9733; {{ t('Higher-quality rotation','更高质量轮动') }}</div>
+    <div class="vs-name">{{ w.name }} {{ gradeb(w.grade) }}</div>
+    <div class="vs-stat">
+      <div><div class="k">{{ t('Median excess','中位超额') }}</div><div class="v">{{ exret(w.median_buy_excess) }}</div></div>
+      <div><div class="k">{{ t('Hit','胜率') }}</div><div class="v">{{ hit(w.buy_hit_rate) }}</div></div>
+      <div><div class="k">{{ t('63d','63日') }}</div><div class="v">{{ exret(w.avg_buy_excess_h) }}</div></div>
+    </div>
+    {% if w.best_trade %}<div class="vs-sig">{{ t('Signature','代表') }}: <b class="num">{{ w.best_trade.ticker }}</b> {{ w.best_trade.action }} → {{ exret(w.best_trade.since_excess) }}</div>{% endif %}
+    {% if w.rotation_into %}
+    <div class="rot-h into" style="margin-top:10px">{{ t('Latest into','最新轮入') }}</div>
+    <ul class="vs-list">
+      {% for tr in w.rotation_into[:4] %}
+      <li><span class="vtk">{{ tr.ticker }}</span><span class="vact">{{ tr.action }}</span><span style="margin-left:auto">{{ exret(tr.since_excess) }}</span></li>
+      {% endfor %}
+    </ul>{% endif %}
+  </div>
+  <div class="vs-mid">
+    <div class="vs-lab">{{ t('Median excess gap','中位超额差') }}</div>
+    <div class="vs-gap">{{ exret(trk.featured.excess_gap) }}</div>
+    {% if trk.featured.hit_gap is not none %}<div class="vs-lab">{{ t('hit','胜率') }} {{ hit(w.buy_hit_rate) }} {{ t('vs','对') }} {{ hit(l.buy_hit_rate) }}</div>{% endif %}
+  </div>
+  <div class="vs-card lag">
+    <div class="vs-role">{{ t('Lower-quality rotation','较低质量轮动') }}</div>
+    <div class="vs-name">{{ l.name }} {{ gradeb(l.grade) }}</div>
+    <div class="vs-stat">
+      <div><div class="k">{{ t('Median excess','中位超额') }}</div><div class="v">{{ exret(l.median_buy_excess) }}</div></div>
+      <div><div class="k">{{ t('Hit','胜率') }}</div><div class="v">{{ hit(l.buy_hit_rate) }}</div></div>
+      <div><div class="k">{{ t('63d','63日') }}</div><div class="v">{{ exret(l.avg_buy_excess_h) }}</div></div>
+    </div>
+    {% if l.worst_trade %}<div class="vs-sig">{{ t('Costliest buy','最贵买入') }}: <b class="num">{{ l.worst_trade.ticker }}</b> {{ l.worst_trade.action }} → {{ exret(l.worst_trade.since_excess) }}</div>{% endif %}
+    {% if l.rotation_into %}
+    <div class="rot-h out" style="margin-top:10px">{{ t('Latest into','最新轮入') }}</div>
+    <ul class="vs-list">
+      {% for tr in l.rotation_into[:4] %}
+      <li><span class="vtk">{{ tr.ticker }}</span><span class="vact">{{ tr.action }}</span><span style="margin-left:auto">{{ exret(tr.since_excess) }}</span></li>
+      {% endfor %}
+    </ul>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="banner">{{ t(
+  'Grades are descriptive ranks within a curated survivor cohort — funds tracked because they are notable in 2026. They measure what filings did after their filing dates, not a manager-selection edge.',
+  '评级为精选幸存者队列中的描述性排名——追踪的基金在2026年具有代表性。衡量的是申报日后的持仓表现，而非经理选择能力。'
+) }}</div>
+
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">#</th>
+    <th class="l">{{ t('Fund','基金') }}</th>
+    <th>{{ t('Grade','评级') }}</th>
+    <th>{{ t('Median excess','中位超额') }}</th>
+    <th>{{ t('Sell skill','卖出能力') }}</th>
+    <th>{{ t('Hit','胜率') }}</th>
+    <th>{{ t('Turnover','换手') }}</th>
+    <th>{{ t('Hold (q)','持有(季)') }}</th>
+    <th>{{ t('Top-10 %','前10%') }}</th>
+    <th>{{ t('Decay 21→126d','衰减 21→126天') }}</th>
+    <th class="l">{{ t('Style','风格') }}</th>
+  </tr></thead>
+  <tbody>
+  {% for r in trk.leaderboard %}
+    {% set is_closed = r.get('status') == 'closed' %}
+    <tr class="{{ 'feat' if r.featured else '' }}{{ ' closed' if is_closed else '' }}">
+      <td class="l rk num">{{ r.rank if r.get('rank') else '—' }}</td>
+      <td class="l">
+        {% if r.featured %}<span class="star">&#9733;</span> {% endif %}
+        {{ r.name }}
+        {% if is_closed %}<span class="chip-fresh" style="margin-left:4px">{{ t('closed','已关闭') }}</span>{% endif %}
+      </td>
+      <td>{{ gradeb(r.grade) }}</td>
+      <td><b>{{ exret(r.median_buy_excess) }}</b></td>
+      <td>{{ exret(r.sell_skill) }}</td>
+      <td class="num">{{ hit(r.buy_hit_rate) }}</td>
+      <td>
+        {% set tt = r.get('turnover_tier') or '' %}
+        {% if tt == 'low' %}<span class="tier low">LOW {{ pctf(r.get('turnover_pct')) }}</span>
+        {% elif tt == 'med' %}<span class="tier moderate">MED {{ pctf(r.get('turnover_pct')) }}</span>
+        {% elif tt == 'high' %}<span class="tier elevated">HIGH {{ pctf(r.get('turnover_pct')) }}</span>
+        {% else %}<span class="sub">—</span>{% endif %}
+      </td>
+      <td class="num">{{ r.get('holding_period_q') if r.get('holding_period_q') is not none else '—' }}</td>
+      <td class="num">{{ pctf(r.get('concentration_pct'), 0) if r.get('concentration_pct') is not none else '—' }}</td>
+      <td class="num sub">
+        {% set dc = r.get('decay') %}
+        {% if dc %}
+          {% set h21 = dc.get('h21') %}{% set h126 = dc.get('h126') %}
+          {% if h21 and h126 %}
+            {{ exret(h21.med) }}→{{ exret(h126.med) }} <span class="mut">(n {{ h21.n }})</span>
+          {% elif h21 %}
+            {{ exret(h21.med) }} <span class="mut">(n {{ h21.n }})</span>
+          {% else %}—{% endif %}
+        {% else %}—{% endif %}
+      </td>
+      <td class="l sub">{{ r.get('style') or '—' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{# Per-fund rotation accordion #}
+<div class="sm-sec">
+  <h2>{{ t('Per-fund rotation','各基金轮动') }}</h2>
+  <span class="h-note">{{ t('what each fund rotated into vs out of last quarter — tap to expand', '每只基金上季度的轮入与轮出——点击展开') }}</span>
+</div>
+{% for r in trk.leaderboard %}
+  {% set f = trk.by_fund.get(r.slug) %}
+  {% if f %}
+  <details class="fund" {{ 'open' if r.featured else '' }}>
+    <summary>
+      {% if r.featured %}<span class="star">&#9733;</span>{% endif %}
+      <span class="rk num">{{ r.rank if r.get('rank') else '—' }}</span>
+      <span class="f-name">{{ f.name }}</span>
+      {{ gradeb(r.grade) }}
+      {% set tt2 = r.get('turnover_tier') or '' %}
+      {% if tt2 %}<span class="tier {{ 'low' if tt2 == 'low' else ('moderate' if tt2 == 'med' else 'elevated') }}" style="font-size:9px">{{ tt2 | upper }}</span>{% endif %}
+      <span class="sub">{{ t('median','中位') }} {{ exret(r.median_buy_excess) }} · {{ t('hit','胜率') }} {{ hit(r.buy_hit_rate) }} · {{ r.n_buys }} {{ t('buys','买入') }}</span>
+      <span class="sub" style="margin-left:auto">{{ usd(f.book_value_usd) }} · {{ t('filed','申报') }} {{ f.filing_date }}</span>
+    </summary>
+    <div class="f-body">
+      <div class="rot-grid">
+        <div>
+          <div class="rot-h into">{{ t('Rotated into','轮入') }} ({{ f.rotation.into | length }})</div>
+          <table class="mini"><tbody>
+          {% for tr in f.rotation.into %}
+            <tr><td class="l"><span class="tk">{{ tr.ticker }}</span> <span class="act-pill {{ tr.action }}">{{ tr.action }}</span></td>
+                <td>{{ pctf(tr.pct_portfolio) }}</td><td>{{ exret(tr.since_excess) }}</td></tr>
+          {% else %}<tr><td class="l sub">{{ t('no new buys last quarter','上季度无新买入') }}</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+        <div>
+          <div class="rot-h out">{{ t('Rotated out of','轮出') }} ({{ f.rotation.out | length }})</div>
+          <table class="mini"><tbody>
+          {% for tr in f.rotation.out %}
+            <tr><td class="l"><span class="tk">{{ tr.ticker }}</span> <span class="act-pill {{ tr.action }}">{{ tr.action }}</span></td>
+                <td class="sub">{% if tr.get('shares_change_pct') is not none %}{{ "%+.0f" | format(tr.shares_change_pct) }}%{% endif %}</td>
+                <td>{{ exret(tr.since_excess) }}</td></tr>
+          {% else %}<tr><td class="l sub">{{ t('no sells last quarter','上季度无卖出') }}</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+      </div>
+      {% if f.rotation.top_holdings %}
+      <div class="rot-h" style="margin-top:12px">{{ t('Current top holdings','当前主要持仓') }}</div>
+      <div class="hold">
+        {% for h in f.rotation.top_holdings %}
+          <span class="h-pill"><b class="num">{{ h.ticker }}</b> {{ pctf(h.pct) }} <span class="act-pill {{ h.action }}">{{ h.action }}</span></span>
+        {% endfor %}
+      </div>{% endif %}
+    </div>
+  </details>
   {% endif %}
+{% endfor %}
 
-  {#- ============================ LEADERBOARD ============================ -#}
-  <div class="sm-sec">
-    <h2>{{ t('Fund leaderboard', '基金排行榜') }}
-      <span class="h-note">{{ t('ranked by MEDIAN trade excess vs SPY (outlier-robust); realised mean & 63-day skill shown alongside; graded A–D cross-sectionally', '按交易超额收益中位数排名（相对标普·抗异常值）；并列显示已实现均值与63日技巧；横截面 A–D 评级') }}</span></h2>
-  </div>
-  <table class="sm-t">
+{# ======================================================================== #}
+{# S3 GRAND PORTFOLIO                                                        #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Grand portfolio','总持仓组合') }}</h2>
+  <span class="h-note">{{ t('what the tracked cohort owns, share-class collapsed — sorted by aggregate $ (a size fact, not a ranking)','所追踪队列持有的仓位，合并股票类别——按总美元金额排序（反映规模，非排名）') }}</span>
+</div>
+
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">{{ t('Ticker','标的') }}</th>
+    <th class="l">{{ t('Company','公司') }}</th>
+    <th>{{ t('Funds','基金数') }}</th>
+    <th>{{ t('Δ QoQ','季度变化') }}</th>
+    <th>{{ t('Holders 6q','持有者6季') }}</th>
+    <th>{{ t('Agg $','总金额') }}</th>
+    <th>{{ t('Max book %','最大仓位%') }}</th>
+    <th>{{ t('HHI','集中度') }}</th>
+    <th>{{ t('Top-10 in','前10持仓') }}</th>
+    <th>{{ t('Since filing','自申报') }}</th>
+  </tr></thead>
+  <tbody>
+  {% for row in d_gp %}
+    {% set n0 = (row.n_funds or 0) - (row.d_funds_qoq or 0) %}
+    <tr>
+      <td class="l"><span class="tk">{{ row.ticker }}</span></td>
+      <td class="l mut">{{ row.issuer | title if row.issuer else '—' }}</td>
+      <td class="num">{{ row.n_funds or '—' }}</td>
+      <td class="num">{{ n0 }} → {{ row.n_funds }}</td>
+      <td><span class="spark">{{ sparkbar(row.holders_series) }}</span></td>
+      <td class="num">{{ usd(row.agg_value_usd) }}</td>
+      <td class="num">{{ pctf(row.max_book_pct) if row.get('max_book_pct') is not none else '—' }}</td>
+      <td class="num">{{ "%.3f" | format(row.hhi) if row.get('hhi') is not none else '—' }}</td>
+      <td class="num">{{ row.n_top10 if row.get('n_top10') is not none else '—' }}</td>
+      <td>{{ exret(row.since_excess) }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="10" class="l sub">{{ t('No portfolio data available.','暂无组合数据。') }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{# ======================================================================== #}
+{# S4 CROWDING & UNWIND RADAR                                                #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Crowding &amp; unwind radar','拥挤度与平仓预警') }}</h2>
+  <span class="h-note">{{ t('the one direction standing law permits: hazard / de-escalation','现行规则唯一允许的方向性读法：危险/降温') }}</span>
+</div>
+
+<div class="banner hazard">{{ t(
+  'A crowded name carries elevated unwind risk — this is a hazard readout, not a buy or a sell. Short columns are separate axes with their own clocks; nothing here is combined into a score. Prior phase-0 on crowding fragility printed a weak, non-robust drawdown effect — this board accrues against that prior.',
+  '拥挤个股存在更高的平仓风险——这是危险预警，而非买卖信号。空头相关列属独立视角，有各自的时间戳；此处数据不会合并为评分。早期阶段0对拥挤脆弱性的测试得到了弱且不稳健的回撤效应——本板块正在针对该先验持续积累数据。'
+) }}</div>
+
+{% set sv_asof = (d_crowd[0].get('short_volume') or {}).get('asof') if d_crowd else '' %}
+{% set si_settle = (d_crowd[0].get('short_interest') or {}).get('settlement_date') if d_crowd else '' %}
+
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">{{ t('Ticker','标的') }}</th>
+    <th>{{ t('Holders','持有者') }}</th>
+    <th>{{ t('Agg $','总金额') }}</th>
+    <th>{{ t('HHI','集中度') }}</th>
+    <th>{{ t('Days-to-exit','平仓天数') }}</th>
+    <th>{{ t('Crowding','拥挤度') }}</th>
+    <th>{{ t('Entry band P50','入场中位价') }}</th>
+    <th>{{ t('Underwater','水下数') }}</th>
+    <th>{{ t('Short vol trend','空头量趋势') }} <span style="text-transform:none;font-weight:400">({{ t('daily','日频') }}{% if sv_asof %} · {{ sv_asof }}{% endif %})</span></th>
+    <th>{{ t('Days-to-cover','回补天数') }} <span style="text-transform:none;font-weight:400">({{ t('settle','结算') }}{% if si_settle %} {{ si_settle }}{% endif %})</span></th>
+  </tr></thead>
+  <tbody>
+  {% for row in d_crowd %}
+    {% set ct = row.get('crowding_tier') or 'unavail' %}
+    {% set sv = row.get('short_volume') or {} %}
+    {% set si = row.get('short_interest') or {} %}
+    {% set eb = row.get('entry_band') or {} %}
+    <tr>
+      <td class="l"><span class="tk">{{ row.ticker }}</span></td>
+      <td class="num">{{ row.n_funds }}</td>
+      <td class="num">{{ usd(row.agg_value_usd) }}</td>
+      <td class="num">{{ "%.3f" | format(row.hhi) if row.get('hhi') is not none else '—' }}</td>
+      <td class="num">{{ "%.1f" | format(row.days_to_exit) if row.get('days_to_exit') is not none else '—' }}</td>
+      <td><span class="tier {{ ct }}">{{ ct | upper }}</span></td>
+      <td class="num">{% if eb.get('p50') %}${{ "%.2f" | format(eb.p50) }} <span class="mut">{{ t('proxy','估算') }}</span>{% else %}—{% endif %}</td>
+      <td class="num">{% if eb.get('n_underwater') is not none and eb.get('n') %}{{ eb.n_underwater }} / {{ eb.n }}{% else %}—{% endif %}</td>
+      <td class="num">
+        {% if sv.get('trend_pp') is not none %}
+          <span class="{{ 'r-pos' if sv.trend_pp >= 0 else 'r-neg' }}">{{ "%+.1f" | format(sv.trend_pp) }}pp</span>
+          {% if sv.get('ratio_z') is not none %}<span class="sub"> z {{ "%+.2f" | format(sv.ratio_z) }}</span>{% endif %}
+        {% else %}—{% endif %}
+      </td>
+      <td class="num">{{ "%.1f" | format(si.days_to_cover) if si.get('days_to_cover') is not none else '—' }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="10" class="l sub">{{ t('No crowding data available.','暂无拥挤度数据。') }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{# ======================================================================== #}
+{# S5 INITIATIONS (RESEARCH QUEUE)                                           #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Initiations — research queue','新建仓——研究队列') }}</h2>
+  <span class="h-note">{{ t('every new position / material add ≥ 1% of book this cycle, newest filings first','本周期所有新建仓/重大加仓（≥账面1%），最新申报排前') }}</span>
+</div>
+
+<div class="banner">{{ t(
+  'Research queue, not a buy list. Ownership is context-only under standing law — it is never a positive signal here. Sort any column yourself; the desk orders by filing date only.',
+  '研究队列，而非买入清单。根据现行规则，持仓数据仅为背景参考——在此永远不是正面信号。可自行排序任意列；本台仅按申报日期排序。'
+) }}</div>
+
+<div class="filters" id="init-filters">
+  <span class="fpill on" data-filter="all">{{ t('All funds','所有基金') }}</span>
+  <span class="fpill" data-filter="lowturn">{{ t('Low-turnover only','仅低换手') }}</span>
+  <span class="fpill" data-filter="newonly">{{ t('New only','仅新建仓') }}</span>
+  <span class="fpill" data-filter="bigbook">{{ t('≥3% of book','≥账面3%') }}</span>
+</div>
+
+<div class="sm-card">
+{% if d_init | length > 50 %}
+<p class="sub">{{ t('Showing top 50 of ' ~ (d_init | length) ~ ' initiations','显示前50条，共' ~ (d_init | length) ~ '条新建仓') }}</p>
+{% endif %}
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">{{ t('Filed','申报日') }}</th>
+    <th class="l">{{ t('Ticker','标的') }}</th>
+    <th class="l">{{ t('Fund(s)','基金') }}</th>
+    <th>{{ t('Action','动作') }}</th>
+    <th>{{ t('Rank in fund','基金内排名') }}</th>
+    <th>{{ t('Tilt','权重偏差') }}</th>
+    <th>{{ t('% book','仓位%') }}</th>
+    <th>{{ t('# funds','基金数') }}</th>
+    <th>{{ t('Turnover','换手') }}</th>
+    <th>{{ t('Since filing','自申报') }}</th>
+    <th>{{ t('Persisted?','是否延续') }}</th>
+  </tr></thead>
+  <tbody id="init-body">
+  {% for row in d_init[:50] %}
+    {% set funds = row.get('funds') or [] %}
+    {% set first_fund = funds[0] if funds else {} %}
+    {% set extra = (funds | length) - 1 %}
+    {% set fund_display = first_fund.get('name', '') %}
+    {% set tt3 = first_fund.get('turnover_tier') or '' %}
+    {% set action3 = first_fund.get('action') or '' %}
+    {% set rank3 = first_fund.get('rank') %}
+    {% set tilt3 = first_fund.get('tilt') %}
+    {% set pct3 = first_fund.get('pct_book') %}
+    <tr data-turnover="{{ tt3 }}" data-action="{{ action3 }}" data-pct="{{ pct3 or 0 }}">
+      <td class="l num mut">{{ row.filing_date or '—' }}</td>
+      <td class="l"><span class="tk">{{ row.ticker }}</span></td>
+      <td class="l">{{ fund_display }}{% if extra > 0 %} <span class="mut">· +{{ extra }}</span>{% endif %}</td>
+      <td><span class="act-pill {{ action3 }}">{{ action3 }}</span></td>
+      <td class="num">{{ ('#' ~ rank3) if rank3 else '—' }}</td>
+      <td class="num">{{ ("%+.1f" | format(tilt3)) if tilt3 is not none else '—' }}</td>
+      <td class="num">{{ pctf(pct3) }}</td>
+      <td class="num">{{ row.n_funds_initiating or 1 }}</td>
+      <td>
+        {% if tt3 == 'low' %}<span class="tier low">LOW</span>
+        {% elif tt3 == 'med' %}<span class="tier moderate">MED</span>
+        {% elif tt3 == 'high' %}<span class="tier elevated">HIGH</span>
+        {% else %}<span class="sub">—</span>{% endif %}
+      </td>
+      <td>{{ exret(row.get('since_excess')) }}</td>
+      <td class="num mut">{{ t(row.persistence, row.persistence) if row.get('persistence') else t('pending','待确认') }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="11" class="l sub">{{ t('No initiations this cycle.','本周期暂无新建仓。') }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{# ======================================================================== #}
+{# S6 ACTIVIST SITUATION MONITOR                                             #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Activist situation monitor','维权情况监控') }}</h2>
+  <span class="h-note">{{ t('13D/G stream, ~5–10 day lag — the timeliest ownership lens on this desk','13D/G数据流，约5–10天滞后——本台最及时的持仓视角') }}</span>
+</div>
+
+{% set act_active = d_act | selectattr('state','in',['activist','flip']) | list %}
+{% set act_other = d_act | rejectattr('state','in',['activist','flip']) | list %}
+
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">{{ t('Filed','申报日') }}</th>
+    <th class="l">{{ t('Filer','申报人') }}</th>
+    <th class="l">{{ t('Ticker','标的') }}</th>
+    <th>{{ t('Form','表格') }}</th>
+    <th>{{ t('State','状态') }}</th>
+    <th>{{ t('Signal','信号') }}</th>
+    <th>{{ t('Tracked holders','追踪持有者') }}</th>
+    <th>{{ t('Since filing','自申报') }}</th>
+  </tr></thead>
+  <tbody>
+  {% for row in act_active[:25] %}
+    {% set st = row.get('state') or 'other' %}
+    <tr>
+      <td class="l num">{{ row.date_filed }}</td>
+      <td class="l">{{ row.filer }}</td>
+      <td class="l"><span class="tk">{{ row.ticker }}</span></td>
+      <td class="num">{{ row.form }}</td>
+      <td><span class="tier {{ st }}">{{ st | upper }}</span></td>
+      <td class="num">{{ row.get('signal') or '—' }}</td>
+      <td class="num">{{ row.n_tracked_holders if row.get('n_tracked_holders') is not none else '—' }}</td>
+      <td>{{ exret(row.get('since_excess')) }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="8" class="l sub">{{ t('No active activist situations.','暂无维权情况。') }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if act_other %}
+<details style="margin-top:10px">
+  <summary style="cursor:pointer;padding:8px 4px;font-size:12.3px;color:var(--muted)">
+    {{ t('passive &amp; other filings','被动及其他申报') }} ({{ act_other | length }})
+  </summary>
+  <table class="sm-t" style="margin-top:6px">
     <thead><tr>
-      <th class="l">#</th><th class="l">{{ t('Fund', '基金') }}</th><th>{{ t('Grade', '评级') }}</th>
-      <th>{{ t('Median excess', '中位超额') }}</th><th>{{ t('Realised mean', '已实现均值') }}</th><th>{{ t('63d skill', '63日技巧') }}</th>
-      <th>{{ t('Hit', '胜率') }}</th><th>{{ t('Buys', '买入数') }}</th><th>{{ t('Priced', '可定价') }}</th>
-      <th class="l">{{ t('Best buy', '最佳买入') }}</th><th class="l">{{ t('Worst buy', '最差买入') }}</th>
+      <th class="l">{{ t('Filed','申报日') }}</th>
+      <th class="l">{{ t('Filer','申报人') }}</th>
+      <th class="l">{{ t('Ticker','标的') }}</th>
+      <th>{{ t('Form','表格') }}</th>
+      <th>{{ t('State','状态') }}</th>
+      <th>{{ t('Signal','信号') }}</th>
+      <th>{{ t('Tracked holders','追踪持有者') }}</th>
+      <th>{{ t('Since filing','自申报') }}</th>
     </tr></thead>
     <tbody>
-    {% for r in trk.leaderboard %}
-      <tr class="{{ 'feat' if r.featured else '' }}">
-        <td class="l rk">{{ r.rank if r.rank else '—' }}</td>
-        <td class="l">{% if r.featured %}<span class="star">★</span> {% endif %}{{ r.name }}</td>
-        <td>{{ gradeb(r.grade) }}</td>
-        <td><b>{{ exret(r.median_buy_excess) }}</b></td>
-        <td class="sub2">{{ exret(r.avg_buy_excess) }}</td>
-        <td>{{ exret(r.avg_buy_excess_h) }}</td>
-        <td class="num">{{ hit(r.buy_hit_rate) }}</td>
-        <td class="num">{{ r.n_buys }}</td>
-        <td class="num sub">{{ pctf(r.coverage_pct, 0) if r.coverage_pct is not none else '—' }}</td>
-        <td class="l">{% if r.best_trade %}<span class="tk">{{ r.best_trade.ticker }}</span> {{ exret(r.best_trade.since_excess) }}{% else %}—{% endif %}</td>
-        <td class="l">{% if r.worst_trade %}<span class="tk">{{ r.worst_trade.ticker }}</span> {{ exret(r.worst_trade.since_excess) }}{% else %}—{% endif %}</td>
+    {% for row in act_other %}
+      {% set st2 = row.get('state') or 'other' %}
+      <tr>
+        <td class="l num mut">{{ row.date_filed }}</td>
+        <td class="l mut">{{ row.filer }}</td>
+        <td class="l"><span class="tk mut">{{ row.ticker }}</span></td>
+        <td class="num mut">{{ row.form }}</td>
+        <td><span class="tier custodial">{{ st2 | upper }}</span></td>
+        <td class="num mut">{{ row.get('signal') or '—' }}</td>
+        <td class="num mut">{{ row.n_tracked_holders if row.get('n_tracked_holders') is not none else '—' }}</td>
+        <td>{{ exret(row.get('since_excess')) }}</td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
-  <p class="sub" style="margin-top:7px">{{ t('“Median excess” is the ranking key (one or two long-held winners cannot mint a grade). “Realised mean” is the variable-hold P&L (outlier-sensitive). “63d skill” is the filing-anchored fixed-horizon read. “Priced” = share of the fund\'s resolvable moves we could price (off-index ADRs/small-caps are dropped).', '“中位超额”为排名依据（一两笔长期持有的赢家无法虚抬评级）。“已实现均值”为可变持有期盈亏（对异常值敏感）。“63日技巧”为以申报日为锚的固定持有期口径。“可定价”=该基金可解析操作中能够定价的比例（非指数 ADR／小盘股被剔除）。') }}</p>
-
-  {#- ============================ BEST / WORST BOARDS ============================ -#}
-  <div class="sm-sec">
-    <h2>{{ t('Best & worst trades', '最佳与最差交易') }}
-      <span class="h-note">{{ t('biggest SPY-relative winners and losers among conviction buys (≥ 1% of book), since the filing', '在重仓买入（≥账面1%）中，相对标普最大的赢家与输家，自申报起算') }}</span></h2>
-  </div>
-  <div class="sm-2col">
-    <div>
-      <div class="rot-h into">{{ t('Best buys', '最佳买入') }}</div>
-      <table class="sm-t">
-        <thead><tr><th class="l">{{ t('Fund', '基金') }}</th><th class="l">{{ t('Ticker', '标的') }}</th><th>{{ t('Move', '动作') }}</th><th>{{ t('Quarter', '季度') }}</th><th>{{ t('Conv', '仓位') }}</th><th>{{ t('Excess', '超额') }}</th><th>{{ t('Hold', '持有') }}</th></tr></thead>
-        <tbody>
-        {% for tr in trk.best_trades %}
-          <tr><td class="l">{{ tr.name }}</td><td class="l"><span class="tk">{{ tr.ticker }}</span></td>
-            <td><span class="act-pill {{ tr.action }}">{{ tr.action }}</span></td><td class="num">{{ tr.period_end }}</td>
-            <td class="num">{{ pctf(tr.pct_portfolio) }}</td><td>{{ exret(tr.since_excess) }}</td><td class="sub">{{ tr.hold_days }}{{ t('d','天') }}</td></tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <div class="rot-h out">{{ t('Worst buys', '最差买入') }}</div>
-      <table class="sm-t">
-        <thead><tr><th class="l">{{ t('Fund', '基金') }}</th><th class="l">{{ t('Ticker', '标的') }}</th><th>{{ t('Move', '动作') }}</th><th>{{ t('Quarter', '季度') }}</th><th>{{ t('Conv', '仓位') }}</th><th>{{ t('Excess', '超额') }}</th><th>{{ t('Hold', '持有') }}</th></tr></thead>
-        <tbody>
-        {% for tr in trk.worst_trades %}
-          <tr><td class="l">{{ tr.name }}</td><td class="l"><span class="tk">{{ tr.ticker }}</span></td>
-            <td><span class="act-pill {{ tr.action }}">{{ tr.action }}</span></td><td class="num">{{ tr.period_end }}</td>
-            <td class="num">{{ pctf(tr.pct_portfolio) }}</td><td>{{ exret(tr.since_excess) }}</td><td class="sub">{{ tr.hold_days }}{{ t('d','天') }}</td></tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  {#- ============================ PER-FUND ROTATION ============================ -#}
-  <div class="sm-sec">
-    <h2>{{ t('Per-fund rotation', '各基金轮动') }}
-      <span class="h-note">{{ t('what each fund rotated into vs out of last quarter — tap to expand', '每只基金上季度的轮入与轮出——点击展开') }}</span></h2>
-  </div>
-  {% for r in trk.leaderboard %}
-    {% set f = trk.by_fund.get(r.slug) %}
-    {% if f %}
-    <details class="fund" {{ 'open' if r.featured else '' }}>
-      <summary>
-        {% if r.featured %}<span class="star">★</span>{% endif %}
-        <span class="rk num">{{ r.rank if r.rank else '—' }}</span>
-        <span class="f-name">{{ f.name }}</span>
-        {{ gradeb(r.grade) }}
-        <span class="sub">{{ t('median', '中位') }} {{ exret(r.median_buy_excess) }} · {{ t('hit', '胜率') }} {{ hit(r.buy_hit_rate) }} · {{ r.n_buys }} {{ t('buys', '买入') }}{% if r.coverage_pct is not none %} · {{ pctf(r.coverage_pct, 0) }} {{ t('priced', '可定价') }}{% endif %}</span>
-        <span class="sub" style="margin-left:auto">{{ usd(f.book_value_usd) }} · {{ f.period_end }}</span>
-      </summary>
-      <div class="f-body">
-        <div class="rot-grid">
-          <div>
-            <div class="rot-h into">{{ t('Rotated into', '轮入') }} ({{ f.rotation.into | length }})</div>
-            <table class="mini"><tbody>
-            {% for tr in f.rotation.into %}
-              <tr><td class="l"><span class="tk">{{ tr.ticker }}</span> <span class="act-pill {{ tr.action }}">{{ tr.action }}</span></td>
-                  <td>{{ pctf(tr.pct_portfolio) }}</td><td>{{ exret(tr.since_excess) }}</td></tr>
-            {% else %}<tr><td class="l sub">{{ t('no new buys last quarter', '上季度无新买入') }}</td></tr>{% endfor %}
-            </tbody></table>
-          </div>
-          <div>
-            <div class="rot-h out">{{ t('Rotated out of', '轮出') }} ({{ f.rotation.out | length }})</div>
-            <table class="mini"><tbody>
-            {% for tr in f.rotation.out %}
-              <tr><td class="l"><span class="tk">{{ tr.ticker }}</span> <span class="act-pill {{ tr.action }}">{{ tr.action }}</span></td>
-                  <td class="sub">{% if tr.shares_change_pct is defined and tr.shares_change_pct is not none %}{{ "%+.0f" | format(tr.shares_change_pct) }}% {{ t('sh','股') }}{% endif %}</td><td>{{ exret(tr.since_excess) }}</td></tr>
-            {% else %}<tr><td class="l sub">{{ t('no sells last quarter', '上季度无卖出') }}</td></tr>{% endfor %}
-            </tbody></table>
-          </div>
-        </div>
-        {% if f.rotation.top_holdings %}
-        <div class="rot-h" style="margin-top:12px">{{ t('Current top holdings', '当前主要持仓') }}</div>
-        <div class="hold">
-          {% for h in f.rotation.top_holdings %}
-            <span class="h-pill"><b class="num">{{ h.ticker }}</b> {{ pctf(h.pct) }} <span class="act-pill {{ h.action }}">{{ h.action }}</span></span>
-          {% endfor %}
-        </div>{% endif %}
-      </div>
-    </details>
-    {% endif %}
-  {% endfor %}
-
-  <div class="disc">{{ t(trk.note.en, trk.note.zh) }}</div>
-  <p class="sub" style="margin-top:8px">{{ t('Generated', '生成于') }} {{ generated_utc }}</p>
-
+</details>
+{% endif %}
 </div>
+
+<div class="banner">{{ t(
+  '13D deadline is 5 business days since Feb 2024 (was 10 calendar days). Custodial 13Gs (index giants) are classified as noise and collapsed by default.',
+  '自2024年2月起，13D申报期限为5个工作日（此前为10个日历日）。指数巨头的被动13G申报被归类为噪音，默认折叠显示。'
+) }}</div>
+
+{# ======================================================================== #}
+{# S7 TICKER DOSSIER                                                         #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Ticker dossier','个股档案') }}</h2>
+  <span class="h-note">{{ t('one name, every lens — independent blocks, independent clocks, no composite','单个标的，所有视角——独立数据块，独立时间戳，无合成指标') }}</span>
+</div>
+
+<div class="sm-search">
+  <input type="text" id="dossier-input" placeholder="{{ t('Search ticker…','搜索标的…') }}" autocomplete="off">
+  <span id="dossier-hint" class="chip-fresh" style="display:none"></span>
+</div>
+<div id="dossier-card">
+  <div class="dossier-grid" id="dossier-grid"></div>
+  <p class="sub" style="margin-top:8px">{{ t('Independent lenses, independent clocks — never blended.','独立视角，独立时间戳——切勿混合解读。') }}</p>
+</div>
+
+{# Inline ticker index for autocomplete (small subset — only tickers from gp+crowding+initiations) #}
+{# Build index dicts via Jinja2 loops (no dict comprehension syntax in Jinja2) #}
+{% set _idx_ns = namespace(sm={}, crowd={}) %}
+{% for row in (d_gp + d_crowd) %}
+  {% if row.ticker %}
+    {% set _ = _idx_ns.sm.update({row.ticker: (row.issuer or row.ticker)}) %}
+  {% endif %}
+{% endfor %}
+{% for row in d_crowd %}
+  {% if row.ticker %}
+    {% set _ = _idx_ns.crowd.update({row.ticker: row}) %}
+  {% endif %}
+{% endfor %}
+<script>
+(function(){
+var _smIdx = {{ _idx_ns.sm | tojson }};
+var _crowdIdx = {{ _idx_ns.crowd | tojson }};
+var _actIdx = {};
+{% for row in d_act %}
+{% if row.ticker %}
+if(!_actIdx["{{ row.ticker | e }}"]) _actIdx["{{ row.ticker | e }}"] = [];
+_actIdx["{{ row.ticker | e }}"].push({{ row | tojson }});
+{% endif %}
+{% endfor %}
+
+/* freshness axes */
+var _axes = {{ (d_fresh.get('axes') or []) | tojson }};
+function _axisByKey(k){ return _axes.find(function(a){return a.key===k;})||{}; }
+
+var inp = document.getElementById('dossier-input');
+var hint = document.getElementById('dossier-hint');
+var card = document.getElementById('dossier-card');
+var grid = document.getElementById('dossier-grid');
+var _smCache = null;
+var _deskCache = null;
+
+function _tierClass(tier){ return 't-'+(tier||'amber'); }
+function _chip(tier,label){
+  var a = _axisByKey(tier)||{};
+  var tc = _tierClass(a.tier||'amber');
+  return '<span class="chip-fresh '+tc+'"><span class="fdot"></span>'+label+'</span>';
+}
+function _exret(v){
+  if(v===null||v===undefined) return '<span class="mut">—</span>';
+  var pct = (v*100).toFixed(1);
+  var cls = v>=0?'r-pos':'r-neg';
+  return '<span class="num '+cls+'">'+(v>=0?'+':'')+pct+'%</span>';
+}
+function _usd(v){
+  if(!v) return '—';
+  if(v>=1e9) return '$'+(v/1e9).toFixed(1)+'B';
+  if(v>=1e6) return '$'+(v/1e6).toFixed(0)+'M';
+  return '$'+v.toFixed(0);
+}
+
+function _renderDossier(ticker){
+  var issuer = _smIdx[ticker]||ticker;
+  hint.style.display='inline-flex';
+  hint.textContent = ticker + (issuer&&issuer!==ticker?' — '+issuer:'');
+  card.style.display='block';
+  grid.innerHTML='<p class="sub">Loading…</p>';
+
+  function _build(smData, deskData){
+    var bt = (smData&&smData.by_ticker&&smData.by_ticker[ticker])||{};
+    var crowdRow = _crowdIdx[ticker]||null;
+    var actRows = _actIdx[ticker]||[];
+
+    /* 13F block */
+    var ax13f = _axisByKey('13f');
+    var holders = bt.holders||[];
+    var hhi = bt.ownership_hhi;
+    var series = (bt.trend&&bt.trend.holders_series)||[];
+    var sfm = bt.since_filing||{};
+    var vip = bt.vip||[];
+    var b13f = '<div class="axisblock">';
+    b13f += '<div class="ab-h"><span class="axis-tag axis-13f">13F '+t_en('ownership','ownership')+'</span>'+_chip('13f','as of '+(ax13f.asof||'?')+' · '+(ax13f.lag_note||''))+'</div>';
+    b13f += '<div class="ab-body">';
+    b13f += holders.length+' '+'tracked holders'+(bt.agg_value_usd?' · '+_usd(bt.agg_value_usd):'')+(hhi?' · HHI '+hhi.toFixed(3):'');
+    if(sfm.ex_spy_pct!==undefined) b13f += ' · since filing '+_exret(sfm.ex_spy_pct);
+    b13f += '<br>';
+    vip.slice(0,3).forEach(function(h){b13f+='<span class="mut">'+h.fund_name+'</span> <span class="act-pill '+(h.action||'')+'">'+h.action+'</span> '+h.pct_portfolio.toFixed(1)+'% · ';});
+    if(crowdRow){
+      b13f += '<br>Days-to-exit: '+(crowdRow.days_to_exit!=null?crowdRow.days_to_exit.toFixed(1):'—')+' <span class="tier '+(crowdRow.crowding_tier||'low')+'">'+(crowdRow.crowding_tier||'').toUpperCase()+'</span>';
+      var eb=crowdRow.entry_band||{};
+      if(eb.p50) b13f += ' · entry P50 $'+eb.p50.toFixed(2)+' <span class="mut">(proxy)</span>';
+      if(eb.n_underwater!=null&&eb.n) b13f += ' · '+eb.n_underwater+'/'+eb.n+' underwater';
+    }
+    b13f += '</div></div>';
+
+    /* 13D/G block */
+    var ax13dg = _axisByKey('13dg');
+    var b13dg = '<div class="axisblock">';
+    b13dg += '<div class="ab-h"><span class="axis-tag axis-13dg">13D/G</span>'+_chip('13dg',(ax13dg.asof||'?')+' · '+(ax13dg.lag_note||''))+'</div>';
+    b13dg += '<div class="ab-body">';
+    if(actRows.length){
+      actRows.slice(0,3).forEach(function(r){
+        b13dg += r.date_filed+' '+r.filer+' '+r.form+' <span class="tier '+(r.state||'other')+'">'+(r.state||'').toUpperCase()+'</span><br>';
+      });
+    } else {
+      b13dg += 'No live activist state for this ticker.';
+    }
+    b13dg += '</div></div>';
+
+    /* Insider block */
+    var axins = _axisByKey('insider');
+    var bins = '<div class="axisblock">';
+    bins += '<div class="ab-h"><span class="axis-tag axis-form4">Insider · Form 4</span>'+_chip('insider',(axins.asof||'?'))+'</div>';
+    bins += '<div class="ab-body">Data via Form 4 wire — see S1 wire filtered to Insider for this ticker.</div></div>';
+
+    /* Short block */
+    var bsh = '<div class="axisblock">';
+    bsh += '<div class="ab-h"><span class="axis-tag axis-short">Short — two clocks</span>';
+    if(crowdRow){
+      var sv=crowdRow.short_volume||{};
+      var axsv=_axisByKey('short_volume');
+      bsh += _chip('short_volume','vol '+(axsv.asof||sv.asof||'?'));
+    }
+    bsh += '</div><div class="ab-body">';
+    if(crowdRow){
+      var sv2=crowdRow.short_volume||{};
+      var si2=crowdRow.short_interest||{};
+      bsh += 'Short-vol ratio '+(sv2.ratio!=null?(sv2.ratio*100).toFixed(1)+'%':'—');
+      if(sv2.trend_pp!=null) bsh += ' · trend '+(sv2.trend_pp>=0?'+':'')+sv2.trend_pp.toFixed(1)+'pp';
+      if(sv2.ratio_z!=null) bsh += ' · z '+(sv2.ratio_z>=0?'+':'')+sv2.ratio_z.toFixed(2)+' <span class="mut">(daily)</span>';
+      bsh += '<br>Short interest: days-to-cover '+(si2.days_to_cover!=null?si2.days_to_cover.toFixed(1):'—');
+      if(si2.si_change_pct!=null) bsh += ' · ΔSI '+(si2.si_change_pct>=0?'+':'')+si2.si_change_pct.toFixed(1)+'%';
+      if(si2.settlement_date) bsh += ' <span class="mut">(settle '+si2.settlement_date+')</span>';
+    } else {
+      bsh += 'No short data for this ticker.';
+    }
+    bsh += '</div></div>';
+
+    grid.innerHTML = b13f + b13dg + bins + bsh;
+  }
+
+  if(_smCache && _deskCache){ _build(_smCache,_deskCache); return; }
+  var loaded={sm:false,desk:false};
+  function tryBuild(){if(loaded.sm&&loaded.desk) _build(_smCache,_deskCache);}
+  fetch('factordata/smartmoney.json').then(function(r){return r.json();}).then(function(d){_smCache=d;loaded.sm=true;tryBuild();}).catch(function(){_smCache={};loaded.sm=true;tryBuild();});
+  fetch('factordata/smartmoney_desk.json').then(function(r){return r.json();}).then(function(d){_deskCache=d;loaded.desk=true;tryBuild();}).catch(function(){_deskCache={};loaded.desk=true;tryBuild();});
+}
+
+function t_en(en,zh){ return en; }
+
+var tickers = Object.keys(_smIdx);
+var _ac = null;
+inp.addEventListener('input',function(){
+  var v=inp.value.trim().toUpperCase();
+  if(!v){card.style.display='none';hint.style.display='none';return;}
+  if(tickers.indexOf(v)>=0){_renderDossier(v);return;}
+  /* simple autocomplete highlight */
+  var matches=tickers.filter(function(t){return t.startsWith(v);});
+  if(matches.length===1){_renderDossier(matches[0]);}
+});
+inp.addEventListener('keydown',function(e){if(e.key==='Enter'){var v=inp.value.trim().toUpperCase();if(tickers.indexOf(v)>=0)_renderDossier(v);}});
+})();
+</script>
+
+{# ======================================================================== #}
+{# S8 FORWARD LEDGER STRIP                                                   #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Forward ledger','前瞻账本') }}</h2>
+  <span class="h-note">{{ t('pre-registered display-only cohorts — evidence accrual, no authority, nulls printed','预登记的纯展示队列——积累证据，不具权威，空值照实显示') }}</span>
+</div>
+
+<div class="banner">{{ t(
+  'Pre-registered, display-only, no authority; nulls printed; first read 2026-10-15; entries begin accruing on the nightly cycle.',
+  '预登记，仅供展示，不具权威；空值照实打印；首次读取日：2026-10-15；条目从每夜循环开始积累。'
+) }}</div>
+
+<div class="ledgrid">
+{% for lid, lrec in d_led.items() %}
+  <div class="led">
+    <div class="led-nm">{{ lid }} · {{ t('Leg','支线') }}</div>
+    <div class="led-rule">{{ lrec.get('rule') or '—' }}</div>
+    <div class="led-row">
+      <span class="lk">{{ t('entered this cycle','本周期录入') }}</span>
+      <span>{{ lrec.get('entered_this_cycle') if lrec.get('entered_this_cycle') is not none else '—' }}</span>
+    </div>
+    <div class="led-row">
+      <span class="lk">{{ t('total','总计') }}</span>
+      <span>{{ lrec.get('n_total') if lrec.get('n_total') is not none else '—' }}</span>
+    </div>
+    {% set legs = lrec.get('legs') or {} %}
+    {% for horizon, hdata in legs.items() %}
+    <div class="led-row">
+      <span class="lk">{{ horizon }}</span>
+      <span>
+        {% if hdata is none or hdata == 'None' %}
+          <span class="mut">{{ t('accruing','积累中') }}</span>
+        {% elif hdata is mapping %}
+          {% set med = hdata.get('med') %}{% set n = hdata.get('n') %}
+          {% if med is not none %}{{ exret(med) }} <span class="mut">(n {{ n }})</span>{% else %}<span class="mut">{{ t('accruing','积累中') }}</span>{% endif %}
+        {% else %}
+          <span class="mut">{{ t('accruing','积累中') }}</span>
+        {% endif %}
+      </span>
+    </div>
+    {% endfor %}
+    <div class="led-row">
+      <span class="lk">{{ t('status','状态') }}</span>
+      <span class="mut">{{ lrec.get('status') or '—' }}</span>
+    </div>
+  </div>
+{% else %}
+  <div class="led"><div class="led-nm">{{ t('No ledger data','暂无账本数据') }}</div></div>
+{% endfor %}
+</div>
+
+{# ======================================================================== #}
+{# BEST / WORST BOARDS (from tracker)                                        #}
+{# ======================================================================== #}
+<div class="sm-sec">
+  <h2>{{ t('Best &amp; worst buys','最佳与最差买入') }}</h2>
+  <span class="h-note">{{ t('biggest SPY-relative winners and losers among conviction buys (≥1% of book), since the filing','重仓买入（≥账面1%）中，相对标普最大的赢家与输家，自申报起算') }}</span>
+</div>
+<div class="sm-2col">
+  <div>
+    <div class="rot-h into">{{ t('Best buys','最佳买入') }}</div>
+    <table class="sm-t">
+      <thead><tr><th class="l">{{ t('Fund','基金') }}</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Move','动作') }}</th><th>{{ t('Quarter','季度') }}</th><th>{{ t('Conv','仓位') }}</th><th>{{ t('Excess','超额') }}</th><th>{{ t('Hold','持有') }}</th></tr></thead>
+      <tbody>
+      {% for tr in trk.best_trades %}
+        <tr><td class="l sub">{{ tr.name }}</td><td class="l"><span class="tk">{{ tr.ticker }}</span></td>
+          <td><span class="act-pill {{ tr.action }}">{{ tr.action }}</span></td><td class="num">{{ tr.period_end }}</td>
+          <td class="num">{{ pctf(tr.pct_portfolio) }}</td><td>{{ exret(tr.since_excess) }}</td><td class="sub">{{ tr.hold_days }}{{ t('d','天') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <div class="rot-h out">{{ t('Worst buys','最差买入') }}</div>
+    <table class="sm-t">
+      <thead><tr><th class="l">{{ t('Fund','基金') }}</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Move','动作') }}</th><th>{{ t('Quarter','季度') }}</th><th>{{ t('Conv','仓位') }}</th><th>{{ t('Excess','超额') }}</th><th>{{ t('Hold','持有') }}</th></tr></thead>
+      <tbody>
+      {% for tr in trk.worst_trades %}
+        <tr><td class="l sub">{{ tr.name }}</td><td class="l"><span class="tk">{{ tr.ticker }}</span></td>
+          <td><span class="act-pill {{ tr.action }}">{{ tr.action }}</span></td><td class="num">{{ tr.period_end }}</td>
+          <td class="num">{{ pctf(tr.pct_portfolio) }}</td><td>{{ exret(tr.since_excess) }}</td><td class="sub">{{ tr.hold_days }}{{ t('d','天') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Honesty disclaimer #}
+<div class="disc">{{ t(trk.note.en, trk.note.zh) }}</div>
+<p class="sub" style="margin-top:8px">{{ t('Generated','生成于') }} {{ generated_utc }}</p>
+
+</div>{# /sm #}
+
+{# ======================================================================== #}
+{# WIRE FILTER JS                                                            #}
+{# ======================================================================== #}
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function(){
+/* Wire filter pills */
+var filters = document.getElementById('wire-filters');
+var wireList = document.getElementById('wire-list');
+if(filters && wireList){
+  filters.addEventListener('click', function(e){
+    var pill = e.target.closest('.fpill');
+    if(!pill) return;
+    var ax = pill.getAttribute('data-axis');
+    filters.querySelectorAll('.fpill').forEach(function(p){ p.classList.remove('on'); });
+    pill.classList.add('on');
+    wireList.querySelectorAll('li[data-axis]').forEach(function(li){
+      if(ax === 'all'){
+        li.style.display = '';
+      } else {
+        li.style.display = (li.getAttribute('data-axis') === ax) ? '' : 'none';
+      }
+    });
+  });
+}
+
+/* Initiations filter pills */
+var initFilters = document.getElementById('init-filters');
+var initBody = document.getElementById('init-body');
+if(initFilters && initBody){
+  var activeFilter = 'all';
+  initFilters.addEventListener('click', function(e){
+    var pill = e.target.closest('.fpill');
+    if(!pill) return;
+    var f = pill.getAttribute('data-filter');
+    /* toggle for non-all */
+    if(f === 'all'){
+      initFilters.querySelectorAll('.fpill').forEach(function(p){ p.classList.remove('on'); });
+      pill.classList.add('on');
+      activeFilter = 'all';
+    } else {
+      pill.classList.toggle('on');
+    }
+    /* collect active non-all filters */
+    var active = [];
+    initFilters.querySelectorAll('.fpill.on[data-filter]').forEach(function(p){
+      var ff = p.getAttribute('data-filter');
+      if(ff !== 'all') active.push(ff);
+    });
+    if(active.length === 0){
+      initFilters.querySelector('[data-filter="all"]').classList.add('on');
+    } else {
+      initFilters.querySelector('[data-filter="all"]').classList.remove('on');
+    }
+    initBody.querySelectorAll('tr[data-turnover]').forEach(function(tr){
+      if(active.length === 0){ tr.style.display = ''; return; }
+      var show = true;
+      active.forEach(function(fc){
+        if(fc === 'lowturn' && tr.getAttribute('data-turnover') !== 'low') show = false;
+        if(fc === 'newonly' && tr.getAttribute('data-action') !== 'new') show = false;
+        if(fc === 'bigbook' && parseFloat(tr.getAttribute('data-pct')||'0') < 3) show = false;
+      });
+      tr.style.display = show ? '' : 'none';
+    });
+  });
+}
+})();
+</script>
 {% endblock %}
