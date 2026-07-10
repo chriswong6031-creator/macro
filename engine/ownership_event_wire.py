@@ -713,17 +713,33 @@ def freshness_axes(wire_rows: list[dict], clock: dict) -> list[dict]:
             return "amber"
         return "red"
 
-    # 13F: use the latest filing_date from the clock's filed_pending grid
+    # 13F: the honest as-of is the MAJORITY quarter on display, not the newest single
+    # filing — one early filer must not paint the whole axis green while 50/51 funds
+    # sit on last quarter's data. asof = the modal period_end across funds; the tier is
+    # measured from that period_end (data age), and the note carries the bulk filing
+    # date plus how many funds have already filed a newer quarter.
     axes_map: dict[str, dict] = {}
     fp = clock.get("filed_pending", [])
-    fd_dates = [r["filing_date"] for r in fp if r.get("filing_date")]
-    latest_13f = max(fd_dates) if fd_dates else None
-    lag_13f = _lag_days(latest_13f)
+    pe_counts: dict[str, int] = {}
+    for r in fp:
+        pe = r.get("period_end") or ""
+        if pe:
+            pe_counts[pe] = pe_counts.get(pe, 0) + 1
+    majority_pe = max(pe_counts, key=lambda k: (pe_counts[k], k)) if pe_counts else None
+    maj_filings = [r["filing_date"] for r in fp
+                   if r.get("filing_date") and r.get("period_end") == majority_pe]
+    bulk_filed = max(maj_filings) if maj_filings else None
+    n_ahead = sum(1 for r in fp
+                  if r.get("period_end") and majority_pe and r["period_end"] > majority_pe)
+    lag_13f = _lag_days(majority_pe)
+    note = f"quarter-end data; bulk filed by {bulk_filed or 'unknown'} (~45-day lag)"
+    if n_ahead:
+        note += f"; {n_ahead}/{len(fp)} funds already filed a newer quarter"
     axes_map["13f"] = {
         "key": "13f",
         "label": "13F Holdings",
-        "asof": latest_13f or "unavailable",
-        "lag_note": f"~45-day filing lag (quarterly); latest filed {latest_13f or 'unknown'}",
+        "asof": majority_pe or "unavailable",
+        "lag_note": note,
         "tier": _tier(lag_13f),
     }
 

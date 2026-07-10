@@ -324,12 +324,25 @@ def _build_crowding(sm: dict) -> list[dict]:
 
 
 def _build_activists(wire_rows: list[dict], sm: dict) -> list[dict]:
-    """Activist situation monitor from the 13D/G wire axis."""
+    """Activist situation monitor from the 13D/G wire axis.
+
+    State comes from engine.beneficial_ownership.load_regime() — the per-ticker
+    regime machine (activist / flip / passive / custodial), which is the classifier
+    that carries the 13G→13D flip detection. The wire row's own form-derived label
+    is only the fallback when a ticker has no regime entry.
+    """
     bt = (sm or {}).get("by_ticker", {})
     slug_to_funds: dict[str, list[str]] = {}
     for tk, rec in bt.items():
         for h in rec.get("holders", []):
             slug_to_funds.setdefault(tk, []).append(h.get("fund", ""))
+
+    regime: dict[str, dict] = {}
+    try:
+        from engine.beneficial_ownership import load_regime
+        regime = load_regime() or {}
+    except Exception as e:  # noqa: BLE001 — board degrades to form-derived labels
+        log.warning("load_regime unavailable for activist board: %s", e)
 
     out = []
     for row in wire_rows:
@@ -338,6 +351,13 @@ def _build_activists(wire_rows: list[dict], sm: dict) -> list[dict]:
         if row.get("signal") not in ("high", "low"):
             continue
         ticker = row.get("ticker") or ""
+        reg = regime.get(ticker) or {}
+        state = reg.get("regime") or reg.get("state") or ""
+        if not state:
+            # form-derived fallback: 13D from a non-custodian reads activist-form,
+            # everything else passive-form (custodial rows never reach here — their
+            # signal is 'noise').
+            state = "activist" if row.get("action") == "13d" else "passive"
         sf = bt.get(ticker, {}).get("since_filing", {})
         n_tracked = len(slug_to_funds.get(ticker, []))
         out.append({
@@ -346,8 +366,8 @@ def _build_activists(wire_rows: list[dict], sm: dict) -> list[dict]:
             "ticker": ticker,
             "issuer": row.get("issuer", ""),
             "form": row.get("type", ""),
-            "state": row.get("action", ""),
-            "signal": row.get("signal", ""),
+            "state": state,
+            "signal": reg.get("signal") or row.get("signal", ""),
             "n_tracked_holders": n_tracked,
             "since_excess": sf.get("ex_spy_pct") if sf else None,
         })

@@ -328,8 +328,9 @@ class TestFreshnessTiers:
         keys = [a["key"] for a in axes]
         assert keys == ["13f", "13dg", "insider", "short_volume", "short_interest"]
 
-    def test_tier_green(self, monkeypatch):
-        """0-day lag → green tier for 13f when filing_date is today."""
+    def test_tier_majority_quarter(self, monkeypatch):
+        """13f axis reads the MAJORITY quarter, not the newest single filing —
+        one early filer must not paint the axis green (honest-lag fix)."""
         import datetime
         import engine.short_volume as sv_mod
         import engine.ownership_event_wire as wire_mod
@@ -338,15 +339,23 @@ class TestFreshnessTiers:
         monkeypatch.setattr(wire_mod.config, "data_dir",
                             lambda: pathlib.Path("/nonexistent/path"))
 
-        today_str = str(datetime.date.today())
-        clock = {"filed_pending": [{"slug": "x", "filing_date": today_str,
-                                    "period_end": "2026-06-30", "status": "filed",
-                                    "name": "X"}]}
+        today = datetime.date.today()
+        stale_pe = str(today - datetime.timedelta(days=100))
+        fresh_pe = str(today - datetime.timedelta(days=5))
+        clock = {"filed_pending": [
+            {"slug": "a", "filing_date": str(today - datetime.timedelta(days=56)),
+             "period_end": stale_pe, "status": "pending", "name": "A"},
+            {"slug": "b", "filing_date": str(today - datetime.timedelta(days=55)),
+             "period_end": stale_pe, "status": "pending", "name": "B"},
+            {"slug": "c", "filing_date": str(today),
+             "period_end": fresh_pe, "status": "filed", "name": "C"},
+        ]}
         axes = freshness_axes([], clock)
-        # 13f asof is today → tier should be green (0-day lag)
         ax_13f = next(a for a in axes if a["key"] == "13f")
-        assert ax_13f["asof"] == today_str
-        assert ax_13f["tier"] == "green"
+        # majority period_end (2 of 3 funds) wins; 100-day-old data → red tier
+        assert ax_13f["asof"] == stale_pe
+        assert ax_13f["tier"] == "red"
+        assert "1/3 funds already filed a newer quarter" in ax_13f["lag_note"]
         # All axes must have required keys and valid tier values
         for ax in axes:
             assert "key" in ax
