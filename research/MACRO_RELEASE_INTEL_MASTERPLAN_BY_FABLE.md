@@ -827,3 +827,63 @@ Comebacks: C-10 bridge sub-index vintaging + scope decision; C-11 Philly-Fed
 early-benchmark feed; C-12 NY Fed SCE; C-13 state-claims breadth; C-14
 licensing reads (Apartment List / Manheim / FAO). Claims 2026-07-09 orphan
 must be verified scored after W11-A lands (self-heals via R32a+R32d).
+
+### 12.6 Wave-11 close-out — shipped 2026-07-10 (8 PRs)
+
+Charter #2121 · W11-A ops #2127 · W11-B restatement #2123 · W11-C Track T
+#2134 · W11-D Track R #2132 · W11-E Track S #2125 · W11-F recal #2151 ·
+W11-G integration #2153 · W11-H UI #2158. Every lane passed an adversarial
+Opus review + fix cycle; two science verdicts were re-rendered after review
+caught estimator defects. Outcomes of record:
+
+- **Ops (A).** No-orphan capture law live: catch-up sweep (120d), nightly
+  ALFRED refresh for tracked series, `capture_health` on latest.json (verified
+  live: it reports the claims 2026-07-09 orphan with reason api_key_absent
+  locally; the runner's key + catch-up scores it on the next nightly), TTL
+  gates on Kalshi/market-implied, fsync appends, snapshot GC, Cleveland
+  benchmark join FIXED (was silently null forever), cutoff labels T-1/early
+  scored separately, pinball on the scoreboard. Review caught pinball
+  p25/p75 dead-legs (fixture-masked) + false 'late' semantics — both fixed.
+- **Restatement (B, MRI-R28/R29).** expanding_mean reported everywhere;
+  cpi_core stated honestly (beats strongest naive full, LAGS 2021+); bridge
+  "edges champion" formally VOIDED in RESULTS (revision-optimistic inputs).
+- **Track T (C, MRI-R36) — mf_energy ACTIVE.** Review proved the WTI
+  accumulator never fired (dead mechanism); after the fix (289/292 early
+  folds project; no-lookahead spike-test) the corrected run beats the
+  strongest naive decisively (T-1 MAE 0.1421 vs 0.2568 full; 0.1794 vs
+  0.2524 2021+). Wired as the third cpi_headline shadow. Early-cutoff value
+  claim stays descriptive (unmatched-sample caveat printed).
+- **Track R (D, MRI-R37) — KILLED, honest null.** The review-caught
+  training-label look-ahead had inflated HR 60.1%→56.9%; compliant re-run:
+  Wilson LB 50.6% ≤ majority base 54.7% (n=239, first→third basis via the
+  new output_type=2 multi-vintage store). revision_lean ships SUPPRESSED
+  (artifact carries only lean_display:false + the descriptive level-bias
+  annotation). Attempt #2 only via future adjudication. Collector + harness
+  remain as durable infrastructure.
+- **Track S (E, MRI-R38).** 33-episode surprise catalog + quirk flags
+  (active_strike — fires 2023-10 UAW on verified aggregated seeds;
+  nfp_preliminary_benchmark — fires 2026-01 on the verified −911k Sep-2025
+  preliminary, largest on record; shutdown/census calendars web-verified
+  after review caught FABRICATED 2025 dates) + print-integrity chip
+  (normal/degraded/disrupted) + TRMM/JTSQUR context series.
+- **Recalibration (F, MRI-R30).** Vol-scaled residual quantiles (W=24,
+  uniform, one-shot): cpi_core 2021+ coverage 64.1%→81.2%, pce_core
+  67.7%→81.5%, nfp 64.6%→81.5% — all falsifier targets back in [70,95].
+  Honest cost printed: champion NFP pinball 2.31× worse in 2021+ (COVID
+  residuals inflate trailing σ). §6 forward gate governs; any COVID-exclusion
+  amendment to σ_t requires a NEW adjudication.
+- **Integration (G).** mf_energy shadow wired (cpi_headline now carries 3
+  shadows); quirk-flag root-param fix (new flags were silently dead on the
+  live path — regression-tested); print_integrity + revision_context on the
+  artifact; capture_health extended.
+- **UI (H, MRI-R39).** 5-tab modal (Overview/Models/Components/History/
+  Context), SVG interval cone with benchmark ticks, model-comparison dot
+  plot with basis guard (market-implied off-axis, "different basis" tagged),
+  surprise-anatomy mini-table, capture-health strip, mobile full-screen
+  sheet, 4px spacing scale, tabular-nums, single footnote. Browser-QA'd
+  (desktop+375px, light+dark, EN+ZH) — QA caught the mockup's empty-state
+  bug (fixture element ordered after the IIFE) that green tests missed.
+
+Forward clocks: §7 gates unchanged; C-9 promotion now covers v3_factor +
+cpi_bridge + mf_energy (champion keeps every card); claims 2026-07-09
+catch-up verification on the next nightly; comebacks C-10..C-14 open.
