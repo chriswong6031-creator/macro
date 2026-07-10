@@ -1490,6 +1490,28 @@ def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
                 r["rate_str"], r["rate_pos"] = T("—", "—"), None
             r["season_str"], _ = _compact_season(st.get("season_this"))
             r["season_tip"] = _season_tooltip(st.get("season_all"), st.get("season_month") or month)
+            # TS-R6 two-reads reconciliation chip: when this ETF's setup-side verdict
+            # (3D tactical) conflicts with the cycle timing action (slow, cap-weighted).
+            # Fired when: setup side = BUY/SETUP/BUY_PARTIAL (entry-ready) AND cycle
+            # timing maps to take_profits or avoid (TAKE PROFITS / exit urgency).
+            r["two_reads_chip"] = None
+            if timing and r.get("side") == "buy":
+                tm = timing.get(r["ticker"]) or {}
+                e = tm.get("entry") or {}
+                u = e.get("urgency", "")
+                tag = e.get("tag", "")
+                cycle_label = tm.get("label", "")
+                # Cycle is on the reduce side when urgency=exit or caution+TAKE PROFITS
+                cycle_is_reduce = (u == "exit") or (
+                    u == "caution" and "TAKE PROFITS" in tag.upper()
+                )
+                if cycle_is_reduce:
+                    setup_label = r.get("label") or r.get("label_zh") or r["state"]
+                    r["two_reads_chip"] = {
+                        "cycle_label_en": cycle_label,
+                        "setup_label_en": setup_label,
+                        "setup_state": r["state"],
+                    }
         return bd
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("sector setup view failed: %s", e)

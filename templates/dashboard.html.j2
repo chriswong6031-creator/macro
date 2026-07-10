@@ -1414,6 +1414,73 @@
     body.page-macro #regime-radar > .howto { text-align: left; }
     body.page-macro .cb-tab { padding: 7px 12px; font-size: 12.5px; }
   }
+
+  /* ── TS-U3: two-speed tape band (stocks page only) ────────────────────── */
+  .dash-tape-band { background:var(--panel2); border-bottom:2px solid var(--line); display:none; margin:-16px -16px 14px; }
+  .dash-tape-band.visible { display:block; }
+  .dash-tape-hd { display:flex; align-items:center; gap:10px; padding:9px 16px 7px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .dash-tape-lbl { font-size:13px; font-weight:700; color:var(--text); }
+  .dash-tape-delay { font-size:11px; color:var(--muted); }
+  .dash-tape-asof { font-size:11px; color:var(--muted); margin-left:auto; }
+  .dash-tape-body { display:grid; grid-template-columns:1fr 1fr; }
+  @media(max-width:640px){ .dash-tape-body{ grid-template-columns:1fr; } }
+  .dash-tape-t1 { padding:5px 16px 6px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); }
+  .dash-tape-half { padding:7px 16px 9px; }
+  .dash-tape-half:first-child { border-right:1px solid var(--line); }
+  .dash-tape-half-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.07em; font-weight:700; margin-bottom:5px; }
+  .dash-tape-half-lbl.top { color:var(--up); }
+  .dash-tape-half-lbl.bot { color:var(--down); }
+  .dash-mrow { display:flex; align-items:center; gap:0; padding:2px 0; font-size:12px; }
+  .dash-mrow .mr-rank { width:24px; font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; flex:none; }
+  .dash-mrow .mr-name { flex:1; color:var(--text); font-weight:500; }
+  .dash-mrow .mr-chg  { font-weight:700; font-variant-numeric:tabular-nums; min-width:52px; text-align:right; }
+  .dash-mrow .mr-bar  { width:44px; height:4px; border-radius:2px; margin-left:7px; flex:none; }
+  .dash-mrow .mr-bar.up { background:var(--up); }
+  .dash-mrow .mr-bar.dn { background:var(--down); }
+
+  /* ── TS-U3: turn watch strip ────────────────────────────────────────────── */
+  .dash-tw-strip { background:color-mix(in srgb,var(--warn) 6%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line)); border-radius:9px; padding:9px 13px 10px; margin:0 0 12px; display:none; }
+  .dash-tw-strip.visible { display:block; }
+  .dash-tw-hdr { display:flex; align-items:center; gap:8px; margin-bottom:7px; flex-wrap:wrap; }
+  .dash-tw-title { font-size:12px; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.05em; }
+  .dash-tw-asof { font-size:10px; color:var(--muted); margin-left:auto; }
+  .dash-tw-rows { display:flex; flex-direction:column; gap:5px; }
+  .dash-tw-row { display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-size:12px; }
+  .dash-tw-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
+  .dash-tw-badge.ignition { background:color-mix(in srgb,var(--up) 15%,transparent); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); color:var(--up); }
+  .dash-tw-badge.watch { background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); color:var(--warn); }
+  .dash-tw-badge.member { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 32%,transparent); color:var(--info,var(--link)); }
+  .dash-tw-name { font-weight:600; color:var(--text); }
+  .dash-tw-slow { font-size:11px; color:var(--muted); }
+  .dash-tw-disc { font-size:10.5px; color:var(--muted); margin-top:6px; border-top:1px solid var(--line); padding-top:5px; }
+
+  /* ── TS-U3: salience chip on hold/avoid rows ────────────────────────────── */
+  .dash-turn-chip { display:inline-flex; align-items:center; gap:3px; padding:1px 5px; border-radius:5px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 32%,transparent); color:var(--warn); margin-left:4px; }
+
+  /* ── TS-U3: per-stock turn setups table ─────────────────────────────────── */
+  .dash-mtf-section { margin-top:14px; }
+  .dash-mtf-tbl { width:100%; border-collapse:collapse; margin-top:7px; font-size:11.5px; }
+  .dash-mtf-tbl th { text-align:left; font-weight:700; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:3px 6px; border-bottom:1px solid var(--line); }
+  .dash-mtf-tbl td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
+  .dash-mtf-tbl tr:hover { background:color-mix(in srgb,var(--muted) 4%,transparent); }
+  .dash-mtf-badge { display:inline-flex; align-items:center; padding:1px 6px; border-radius:10px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
+  .dash-mtf-badge.confirmed { background:color-mix(in srgb,var(--up) 14%,transparent); border:1px solid color-mix(in srgb,var(--up) 36%,transparent); color:var(--up); }
+  .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--info,var(--link)); }
+  .dash-mtf-badge.none { background:color-mix(in srgb,var(--muted) 8%,transparent); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); color:var(--muted); }
+  .dash-mtf-leg { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; }
+  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
+  .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
+  .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+  .dash-mtf-legs { display:flex; gap:3px; align-items:center; }
+  .dash-mtf-since { font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .dash-mtf-baskets { font-size:10px; color:var(--muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dash-mtf-phase { font-size:10px; color:var(--muted); }
+  .dash-mtf-absent { font-size:12px; color:var(--muted); padding:10px 0; }
+  .dash-mtf-k { font-weight:700; font-variant-numeric:tabular-nums; font-size:11px; }
+
+  /* ── TS-R6: two-reads reconciliation chip ───────────────────────────────── */
+  .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
+  .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
 </style>
 </head>
 <body class="{{ 'page-stocks' if mode == 'stocks' else 'page-macro' }}">
@@ -4071,6 +4138,50 @@
       ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
     </div>
     {% endif %}
+    {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
+       Clones the FTR W3 operator-ratified idiom (baskets.html.j2 .ftr-tape-*). #}
+    {% if mode == 'stocks' %}
+    <div id="dash-tape-band" class="dash-tape-band" aria-label="{{ t('Live basket tape','实时篮子行情') }}">
+      <div class="dash-tape-hd">
+        <span id="dash-session-pill" class="ftr-session-pill closed">
+          <span class="ftr-dot"></span>
+          <span id="dash-session-label">—</span>
+        </span>
+        <span class="dash-tape-lbl">{{ t('Live Basket Tape','实时篮子行情') }}</span>
+        <span class="dash-tape-delay" id="dash-tape-delay">{{ t('15-min delayed','15分钟延迟') }}</span>
+        <span id="dash-cx-badge"></span>
+        <span class="dash-tape-asof" id="dash-tape-asof"></span>
+      </div>
+      <div class="dash-tape-body">
+        <div class="dash-tape-half">
+          <div class="dash-tape-half-lbl top">{{ t('Top 5 live leaders','前5领涨') }}</div>
+          <div id="dash-top-movers"></div>
+        </div>
+        <div class="dash-tape-half">
+          <div class="dash-tape-half-lbl bot">{{ t('Bottom 3 live laggards','后3领跌') }}</div>
+          <div id="dash-bot-movers"></div>
+        </div>
+      </div>
+      <div class="dash-tape-t1">{{ t(
+        'Tape is context only — violent flips fade 58% at T+1 (n=26)',
+        '行情仅作参考 — 剧烈反转T+1消退概率58%（n=26）'
+      ) }}</div>
+    </div>
+    {# TS-U3: Turn Watch disagreement strip (mode=stocks only; client-side).
+       Shown ONLY when data exists: baskets with WATCH/IGNITION or ≥2 UPTURN_CONFIRMED members
+       while slow reco is hold/avoid. Does NOT reorder lanes or change recos. #}
+    <div id="dash-tw-strip" class="dash-tw-strip">
+      <div class="dash-tw-hdr">
+        <span class="dash-tw-title">{{ t('&#9889; Turn Watch — multi-timeframe divergence','&#9889; 拐点观察 — 多时间框架背离') }}</span>
+        <span class="dash-tw-asof" id="dash-tw-asof"></span>
+      </div>
+      <div class="dash-tw-rows" id="dash-tw-rows"></div>
+      <div class="dash-tw-disc">
+        <span class="l-en">Expected-null forward meter (basket-level turn fired NULL in backtest, Oracle P8). Slow reco labels unchanged. T+1 flip base rate: <strong>58% fade</strong> (n=26). Display context only.</span>
+        <span class="l-zh">预期空值前瞻计量（板块级别拐点回测为NULL，Oracle P8）。慢速评级标签未变。T+1翻转基础概率：<strong>58%消退</strong>（n=26）。仅作展示参考。</span>
+      </div>
+    </div>
+    {% endif %}
     {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
        lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
        and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the
@@ -4113,12 +4224,13 @@
         <div class="acth">⚪ {{ t('HOLD / avoid', '持有／回避') }}</div>
         {# Hold + avoid stack up the most items (sectors + baskets); cap the column at 6 rows
            and fold the rest behind a Show more toggle (shared .lst-collapse primitive). #}
-        <div class="lst-collapse lst-cap6 is-collapsed">
+        <div class="lst-collapse lst-cap6 is-collapsed" id="dash-hold-fold">
         {% for x in action_board.hold %}
-          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ t("hold — don't chase", '持有 — 勿追高') }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') not in ('hold', 'avoid') %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
+          {# TS-R5: data-theme-id enables client-side auto-expand when turn-watch fires on this basket #}
+          {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ themeitem(x) }}</div>{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ t("hold — don't chase", '持有 — 勿追高') }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') not in ('hold', 'avoid') %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
         {% endfor %}
         {% for x in action_board.avoid %}
-          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ t('wait', '等待') if x.tag == 'WAIT' else t('avoid', '回避') }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') not in ('hold', 'avoid') %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
+          {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ themeitem(x) }}</div>{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ t('wait', '等待') if x.tag == 'WAIT' else t('avoid', '回避') }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') not in ('hold', 'avoid') %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
         {% endfor %}
         </div>
         {% if (action_board.hold | length) + (action_board.avoid | length) > 6 %}
@@ -5028,6 +5140,20 @@
             <span style="color:{{ r.color }};letter-spacing:1px;font-size:10px">{{ r.conv_dots }}</span>
           </span>
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px">{{ r.action_txt }}</div>
+          {# TS-R6 two-reads reconciliation chip: same ETF, two house constructions disagree.
+             cycle = slow cap-weighted state (TAKE PROFITS); setup = 3D tactical (SETUP/BUY).
+             Different horizons — show disagreement; do not resolve it. #}
+          {% if r.get('two_reads_chip') %}{% set _tr = r.two_reads_chip %}
+          <div style="margin-top:4px">
+            <span class="two-reads-chip"
+              data-tip-en="Two house reads on {{ r.ticker }}: cycle timing = {{ _tr.cycle_label_en }} (slow, cap-weighted, cycle position); setup engine = {{ _tr.setup_label_en }} (3-day tactical, 3D MACD+StochRSI). Different instruments / different horizons — both reads shown, neither overrides the other."
+              data-tip-zh="{{ r.ticker }} 两个本系统读数：周期择时 = {{ _tr.cycle_label_en }}（慢速、市值加权、周期位置）；形态引擎 = {{ _tr.setup_label_en }}（3日战术、3日MACD+StochRSI）。不同工具／不同时间维度——两个读数同时显示，互不覆盖。">
+              <span class="tr-sep">⇔</span>
+              <span class="l-en">two reads: cycle <b>{{ _tr.cycle_label_en }}</b> (slow) vs setup <b>{{ _tr.setup_label_en }}</b> (3D tactical)</span>
+              <span class="l-zh">两个读数：周期 <b>{{ _tr.cycle_label_en }}</b>（慢速）vs 形态 <b>{{ _tr.setup_label_en }}</b>（3日战术）</span>
+            </span>
+          </div>
+          {% endif %}
         </td>
         <td class="l" style="font-size:12px">{{ r.signal_txt }}</td>
         <td class="{{ 'pos' if r.tech_ok else '' }}" style="font-size:12px">{{ r.tech_str }}</td>
@@ -5046,6 +5172,41 @@
     <p class="muted" style="font-size:12px">{{ t('Click any sector for its full drill-down: cycle position, multi-timeframe momentum, the confluence signal, and each top-10 holding analyzed individually.', '点击任意板块查看完整下钻：周期位置、多时间尺度动量、共振信号，以及逐一分析的每个前十大持仓。') }}</p>
   </div>
   {% endif %}{# /sector_setups #}
+
+  {# TS-U3 / TS-R7: Per-stock Turn Setups — multi-timeframe momentum (mode=stocks only).
+     Client-side from stockdata/mtf_upturn.json (U2 nightly artifact).
+     Schema: mtf_upturn.v1. Fail-open: absent until tonight's nightly. #}
+  {% if mode == 'stocks' %}
+  <div class="panel span12 dash-mtf-section" id="dash-mtf-section">
+    <h2>{{ t('Turn Setups — multi-timeframe momentum', '拐点形态 — 多时间框架动量') }}
+      <span class="help">?<span class="tip tip-wide">
+        <span class="l-en">
+          Forward-graded meter (expected-null; prior sector-level turn in backtest printed NULL — Oracle P8 / DO_NOT_REBUILD §2).
+          Display context only — not a directional signal or a return forecast. Tier = display.
+          <b>Legs:</b> D = daily MACD bull cross; 3D = house 3-day confluence (MACD+StochRSI, the primary setup engine);
+          W = weekly MACD (filled = confirmed cross, hollow circle = approaching); 2W = biweekly MACD cross.
+          <b>States:</b> UPTURN_CONFIRMED (K≥3 incl. ≥1 weekly/2W leg) · UPTURN_WATCH (K≥2) · NONE.
+          <b>Monthly phase</b> is anti-trap context only (not a gate). Fade base rate: 58% at T+1 (n=26).
+          Mag7 always shown. Data lands after nightly (~02:00 UTC). Accruing from ship date.
+        </span>
+        <span class="l-zh">
+          前瞻计量（预期空值；回测中板块级别拐点为NULL — Oracle P8 / DO_NOT_REBUILD §2）。
+          仅展示参考，非方向信号或收益预测。层级=展示。
+          <b>信号腿：</b>D=日线MACD金叉；3D=本系统3日共振（MACD+StochRSI，主要形态引擎）；
+          W=周线MACD（实心=确认交叉，空心=接近交叉）；2W=双周MACD交叉。
+          <b>状态：</b>UPTURN_CONFIRMED（K≥3含≥1周/双周腿）· UPTURN_WATCH（K≥2）· NONE。
+          <b>月线阶段</b>仅作防陷阱参考（非门控）。T+1翻转消退概率：58%（n=26）。
+          Mag7始终显示。数据在每晚收盘后更新（约UTC 02:00）。从上线日起积累。
+        </span>
+      </span></span>
+    </h2>
+    <div id="dash-mtf-body">
+      <p class="dash-mtf-absent l-en">Loading turn setup data…</p>
+      <p class="dash-mtf-absent l-zh">加载拐点形态数据…</p>
+    </div>
+  </div>
+  {% endif %}
+
   {% endif %}{# /mode != macro — size/style + sector heat #}
 
 
@@ -5364,6 +5525,342 @@ window.__CHART_SWAP__ = {
   }, true);
 })();
 </script>
+{% if mode == 'stocks' %}
+<script>
+/* TS-U3 dash-tape-band + dash-tw-strip + dash-mtf-section JS (mode=stocks only).
+   FT-R1/TS-R5: display-tier only; never mutates slow state; no buy verbs.
+   FT-R8: graceful absent-file. TS-R1: honest-delay modes. */
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function L(en,zh){return'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>';}
+function fmtPct(v){if(v==null)return'—';return(v>=0?'+':'')+v.toFixed(2)+'%';}
+function clsPct(v){return v==null?'muted':v>=0?'up':'dn';}
+
+function fetchJson(url, cb){
+  fetch(url,{cache:'no-cache'})
+    .then(function(r){if(!r.ok)throw 0;return r.json();})
+    .then(cb)
+    .catch(function(){});
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   TAPE BAND (TS-R7 — dashboard reach; clones FTR W3 idiom)
+   ──────────────────────────────────────────────────────────────────────── */
+var SESSION_LABELS = {
+  pre:  {cls:'pre',  en:'PREMARKET',   zh:'盘前'},
+  rth:  {cls:'live', en:'LIVE · RTH',  zh:'实盘 · 正常时段'},
+  post: {cls:'post', en:'POST-MARKET', zh:'盘后'},
+  closed:{cls:'closed',en:'CLOSED',   zh:'休市'}
+};
+function isChipSuppressed(pulse){ return !pulse || (pulse.mode||'live') !== 'live'; }
+function modePillHtml(pulse){
+  var mode = pulse.mode||'live';
+  if(mode==='live') return '';
+  var delay = pulse.delay_min_median;
+  var asof  = pulse.as_of_quotes || pulse.as_of_utc;
+  var asofStr='';
+  if(asof){try{asofStr=asof.length<=10?asof:new Date(asof).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});}catch(e){asofStr=asof;}}
+  var pills={delayed:{en:'DELAYED',zh:'延迟数据',cls:'pre'},last_rth:{en:'LAST SESSION',zh:'上一交易时段',cls:'post'},eod:{en:'EOD CLOSE',zh:'收盘价',cls:'closed'}};
+  var p=pills[mode]||{en:mode.toUpperCase(),zh:mode,cls:'closed'};
+  var delayNote='';
+  if(mode==='delayed'&&delay!=null){var h=Math.round(delay/60);delayNote=' · '+L('~'+h+'h delay','约'+h+'小时延迟');}
+  var asofNote=asofStr?(' · '+L('as of '+esc(asofStr),'截至 '+esc(asofStr))):'';
+  return '<span class="ftr-session-pill '+p.cls+'" style="margin-left:6px;font-size:10px">'+L(esc(p.en),esc(p.zh))+delayNote+asofNote+'</span>';
+}
+function renderTapeBand(pulse){
+  var band = document.getElementById('dash-tape-band');
+  if(!band) return;
+  if(!pulse){band.classList.remove('visible');return;}
+  band.classList.add('visible');
+  var session = pulse.session||'closed';
+  var mode    = pulse.mode||'live';
+  // Session pill
+  var info = SESSION_LABELS[session]||SESSION_LABELS.closed;
+  var pill = document.getElementById('dash-session-pill');
+  var lbl  = document.getElementById('dash-session-label');
+  if(pill){ pill.className='ftr-session-pill '+info.cls; }
+  if(lbl){ lbl.innerHTML=L(esc(info.en),esc(info.zh)); }
+  // Mode pill + as-of
+  var asofEl = document.getElementById('dash-tape-asof');
+  if(asofEl){
+    var ts = pulse.as_of_quotes||pulse.as_of_utc, tsStr='';
+    if(ts){try{tsStr=ts.length<=10?ts:new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});}catch(e){tsStr=ts;}}
+    asofEl.innerHTML=(tsStr?L('as of '+esc(tsStr),'截至 '+esc(tsStr)):'')+modePillHtml(pulse);
+  }
+  // Opacity
+  var hasAny=(pulse.baskets||[]).some(function(b){return b.live_ew_chg_pct!=null;});
+  band.style.opacity=(mode==='live')?'':(hasAny?'0.85':'0.65');
+  // AI-capex badge
+  var cxEl = document.getElementById('dash-cx-badge');
+  if(cxEl){
+    var cx=null;
+    (pulse.complexes||[]).forEach(function(c){if(c.complex_id==='ai_capex')cx=c;});
+    if(cx&&cx.live_ew_chg_pct!=null&&!isChipSuppressed(pulse)){
+      var isG=cx.live_ew_chg_pct>=0;
+      var col=isG?'rgba(35,192,138,.10)':'rgba(255,92,108,.07)';
+      var bdr=isG?'rgba(35,192,138,.28)':'rgba(255,92,108,.25)';
+      var vc=isG?'var(--up)':'var(--down)';
+      cxEl.innerHTML='<div class="ftr-cx-badge" style="background:'+col+';border-color:'+bdr+'">'
+        +'<div><div class="cx-name">'+L('AI-Capex Complex','AI资本开支复合板块')+'</div>'
+        +(cx.only_green_complex?'<div class="cx-note" style="color:'+vc+'">'+L('only green complex','唯一上涨复合板块')+'</div>':'')+'</div>'
+        +'<div class="cx-val" style="color:'+vc+'">'+fmtPct(cx.live_ew_chg_pct)+'</div></div>';
+    } else { cxEl.innerHTML=''; }
+  }
+  // Movers — top 5 / bottom 3
+  var topEl=document.getElementById('dash-top-movers'),botEl=document.getElementById('dash-bot-movers');
+  if(!topEl||!botEl) return;
+  var live=(pulse.baskets||[]).filter(function(b){return b.live_ew_chg_pct!=null&&b.tape_rank!=null;});
+  if(!live.length){
+    var noMsg='<span class="muted" style="font-size:11px">'+L('quotes loading…','报价加载中…')+'</span>';
+    topEl.innerHTML=noMsg; botEl.innerHTML=noMsg; return;
+  }
+  live.sort(function(a,b){return b.tape_rank-a.tape_rank;});
+  var top5=live.slice(0,5), bot3=live.slice(-3).reverse();
+  function mRow(b){
+    var chg=b.live_ew_chg_pct, isUp=chg>=0;
+    var barW=Math.min(44,Math.abs(chg)*10);
+    return '<div class="dash-mrow">'
+      +'<span class="mr-rank">#'+b.tape_rank+'</span>'
+      +'<span class="mr-name">'+esc(b.id)+'</span>'
+      +'<span class="mr-chg '+(isUp?'up':'dn')+'">'+fmtPct(chg)+'</span>'
+      +'<div class="mr-bar '+(isUp?'up':'dn')+'" style="width:'+barW.toFixed(0)+'px"></div>'
+      +'</div>';
+  }
+  topEl.innerHTML=top5.map(mRow).join('');
+  botEl.innerHTML=bot3.map(mRow).join('');
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   TURN WATCH STRIP + AUTO-EXPAND SALIENCE (TS-R5 / TS-R7)
+   Shows baskets with WATCH/IGNITION state OR ≥2 UPTURN_CONFIRMED members
+   while slow reco is hold/avoid. Removes is-collapsed from hold fold for
+   matched rows (TS-R5); adds ⚡ chip to those rows.
+   ──────────────────────────────────────────────────────────────────────── */
+function renderTurnWatch(turnWatch, mtfUpturn){
+  var stripEl=document.getElementById('dash-tw-strip');
+  var rowsEl=document.getElementById('dash-tw-rows');
+  var asofEl=document.getElementById('dash-tw-asof');
+  if(!stripEl||!rowsEl) return;
+
+  // Build mtfUpturn member-confirmed index: basket_id → confirmed count
+  var mtfBasketConfirmed={};
+  if(mtfUpturn&&mtfUpturn.tickers){
+    Object.keys(mtfUpturn.tickers).forEach(function(sym){
+      var t=mtfUpturn.tickers[sym];
+      if(t.state==='UPTURN_CONFIRMED'){
+        (t.basket_ids||[]).forEach(function(bid){
+          mtfBasketConfirmed[bid]=(mtfBasketConfirmed[bid]||0)+1;
+        });
+      }
+    });
+  }
+
+  // Build candidate list from turn_watch (basket-level)
+  var candidates=[];
+  var twBaskets=(turnWatch&&turnWatch.baskets)||[];
+  var twAsOf=(turnWatch&&turnWatch.as_of)||'';
+  twBaskets.forEach(function(tw){
+    var isActive=tw.state==='WATCH'||tw.state==='IGNITION';
+    var memberCount=mtfBasketConfirmed[tw.basket_id]||0;
+    // Show if: active state OR ≥2 members UPTURN_CONFIRMED
+    if(!isActive&&memberCount<2) return;
+    candidates.push({
+      id: tw.basket_id,
+      name: tw.basket_id,  // basket name from id; ideally enriched from pulse
+      tw_state: isActive?tw.state:null,
+      member_confirmed: memberCount,
+      reco: tw.slow_reco||'',
+      reco_as_of: tw.reco_as_of||'',
+      sort_key: (tw.state==='IGNITION'?0:tw.state==='WATCH'?1:2)*100 - memberCount
+    });
+  });
+  // Also add baskets with ≥2 UPTURN_CONFIRMED members even if NOT in turn_watch baskets
+  Object.keys(mtfBasketConfirmed).forEach(function(bid){
+    var count=mtfBasketConfirmed[bid];
+    if(count>=2&&!candidates.find(function(c){return c.id===bid;})){
+      candidates.push({
+        id:bid, name:bid, tw_state:null, member_confirmed:count,
+        reco:'', reco_as_of:'', sort_key:200-count
+      });
+    }
+  });
+
+  candidates.sort(function(a,b){return a.sort_key-b.sort_key;});
+  candidates=candidates.slice(0,6);
+
+  if(!candidates.length){stripEl.classList.remove('visible');return;}
+  stripEl.classList.add('visible');
+  if(asofEl&&twAsOf){asofEl.textContent=L('nightly · '+esc(twAsOf),'每晚 · '+esc(twAsOf));}
+
+  // Render rows
+  var html='';
+  candidates.forEach(function(c){
+    var badgeCls='member', badgeTxt='';
+    if(c.tw_state==='IGNITION'){ badgeCls='ignition'; badgeTxt=L('&#9889; IGNITION','&#9889; 点火'); }
+    else if(c.tw_state==='WATCH'){ badgeCls='watch'; badgeTxt=L('&#9889; WATCH','&#9889; 观察'); }
+    else { badgeTxt=L(c.member_confirmed+' members confirmed',c.member_confirmed+'个成分确认'); }
+    var slowPart='';
+    if(c.reco){
+      var dateStr=c.reco_as_of?c.reco_as_of.slice(5):'';
+      var recoEn='slow reco: '+esc(c.reco.toUpperCase())+(dateStr?' (as-of '+esc(dateStr)+')':'');
+      var recoZh='慢速评级: '+esc(c.reco.toUpperCase())+(dateStr?' (截至'+esc(dateStr)+'）':'');
+      slowPart='<span class="dash-tw-slow">'+L(recoEn,recoZh)+'</span>';
+    }
+    var fadeStr=L(' · T+1 58% fade',' · T+1 58%消退');
+    html+='<div class="dash-tw-row">'
+      +'<span class="dash-tw-badge '+badgeCls+'">'+badgeTxt+'</span>'
+      +'<span class="dash-tw-name">'+esc(c.name)+'</span>'
+      +slowPart
+      +'<span class="dash-tw-slow">'+fadeStr+'</span>'
+      +'</div>';
+  });
+  rowsEl.innerHTML=html;
+
+  // TS-R5: auto-expand hold fold for matched theme IDs; add ⚡ chip
+  var matchedIds=new Set(candidates.map(function(c){return c.id;}));
+  var fold=document.getElementById('dash-hold-fold');
+  if(fold&&matchedIds.size){
+    var needExpand=false;
+    fold.querySelectorAll('[data-theme-id]').forEach(function(wrapper){
+      var tid=wrapper.getAttribute('data-theme-id');
+      if(!tid||!matchedIds.has(tid)) return;
+      // Add ⚡ salience chip if not already present
+      if(!wrapper.querySelector('.dash-turn-chip')){
+        var chip=document.createElement('span');
+        chip.className='dash-turn-chip';
+        chip.innerHTML='&#9889; '+L('TURN WATCH','拐点观察');
+        wrapper.appendChild(chip);
+      }
+      // Check if this item is currently hidden (would be after n+7 sibling)
+      // We'll just un-collapse the whole fold when any match is hidden
+      needExpand=true;
+    });
+    if(needExpand&&fold.classList.contains('is-collapsed')){
+      fold.classList.remove('is-collapsed');
+      // Update button state
+      var btn=fold.parentElement&&fold.parentElement.querySelector('.lst-more');
+      if(btn){btn.setAttribute('aria-expanded','true');var sh=btn.querySelector('.lm-show'),hi=btn.querySelector('.lm-hide');if(sh)sh.style.display='none';if(hi)hi.style.display='inline';}
+    }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   PER-STOCK TURN SETUPS TABLE (TS-R3 / TS-R7 / TS-R3)
+   ──────────────────────────────────────────────────────────────────────── */
+var MAG7=['AAPL','AMZN','GOOGL','META','MSFT','NVDA','TSLA'];
+function renderMtfTable(mtfUpturn){
+  var bodyEl=document.getElementById('dash-mtf-body');
+  if(!bodyEl) return;
+
+  if(!mtfUpturn||!mtfUpturn.tickers){
+    bodyEl.innerHTML='<p class="dash-mtf-absent">'
+      +L('Turn setup data lands after tonight\'s nightly (~02:00 UTC). Mag7 + basket members will appear here.',
+         '拐点形态数据将在今晚收盘后更新（约UTC 02:00）。Mag7及篮子成分将在此显示。')
+      +'</p>';
+    return;
+  }
+
+  var tickers=mtfUpturn.tickers;
+  var asOf=mtfUpturn.as_of||'';
+
+  // Build row list: CONFIRMED first, then WATCH, then Mag7 NONE
+  var confirmed=[], watch=[], mag7None=[];
+  var seen=new Set();
+  (mtfUpturn.cohort&&mtfUpturn.cohort.confirmed||[]).forEach(function(sym){
+    if(tickers[sym]){confirmed.push(sym);seen.add(sym);}
+  });
+  (mtfUpturn.cohort&&mtfUpturn.cohort.watch||[]).forEach(function(sym){
+    if(tickers[sym]&&!seen.has(sym)){watch.push(sym);seen.add(sym);}
+  });
+  MAG7.forEach(function(sym){
+    if(tickers[sym]&&!seen.has(sym)){mag7None.push(sym);seen.add(sym);}
+  });
+
+  var rows=confirmed.concat(watch).concat(mag7None).slice(0,40);
+
+  if(!rows.length){
+    bodyEl.innerHTML='<p class="dash-mtf-absent">'+L('No turn setup data yet.','暂无拐点形态数据。')+'</p>';
+    return;
+  }
+
+  // Leg glyphs
+  function legEl(fired, isPartial, label){
+    var cls=fired?'on':(isPartial?'partial':'off');
+    return '<span class="dash-mtf-leg '+cls+'" title="'+esc(label)+'">'+esc(label.slice(0,2))+'</span>';
+  }
+  function wMacdEl(val){
+    if(val==='cross') return '<span class="dash-mtf-leg on">W</span>';
+    if(val==='approaching') return '<span class="dash-mtf-leg partial" style="border-style:dashed">W</span>';
+    return '<span class="dash-mtf-leg off">W</span>';
+  }
+
+  var html='<p class="muted" style="font-size:11px;margin:0 0 5px">'
+    +L('as of '+esc(asOf)+' · Mag7 always shown · forward-graded meter (expected null) · display only',
+       '截至 '+esc(asOf)+' · Mag7始终显示 · 前瞻计量（预期空值）· 仅展示')+'</p>';
+  html+='<table class="dash-mtf-tbl"><thead><tr>'
+    +'<th>'+L('ticker','代码')+'</th>'
+    +'<th>'+L('state','状态')+'</th>'
+    +'<th class="r">K</th>'
+    +'<th>'+L('legs (D / 3D / W / 2W)','信号腿 (D / 3D / W / 2W)')
+      +' <span class="help" style="vertical-align:middle">?<span class="tip">'
+      +'<span class="l-en">D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (solid=confirmed, dashed=approaching); 2W=biweekly MACD. Forward-graded meter; prior sector-level turn printed NULL (Oracle P8). Display context, not a signal.</span>'
+      +'<span class="l-zh">D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（实线=确认，虚线=接近）；2W=双周MACD。前瞻计量；板块级别拐点为NULL（Oracle P8）。展示参考，非信号。</span>'
+      +'</span></span></th>'
+    +'<th>'+L('monthly phase','月线阶段')+'</th>'
+    +'<th>'+L('since','起始')+'</th>'
+    +'<th>'+L('baskets','篮子')+'</th>'
+    +'</tr></thead><tbody>';
+
+  rows.forEach(function(sym){
+    var t=tickers[sym];
+    var legs=t.legs||{};
+    var stateCls=t.state==='UPTURN_CONFIRMED'?'confirmed':t.state==='UPTURN_WATCH'?'watch':'none';
+    var stateLbl=t.state==='UPTURN_CONFIRMED'?L('CONFIRMED','已确认'):t.state==='UPTURN_WATCH'?L('WATCH','观察'):L('—','—');
+    var basketStr=(t.basket_ids||[]).slice(0,3).join(', ')+(t.basket_ids&&t.basket_ids.length>3?'…':'');
+    html+='<tr>'
+      +'<td><b>'+esc(sym)+'</b></td>'
+      +'<td><span class="dash-mtf-badge '+stateCls+'">'+stateLbl+'</span></td>'
+      +'<td class="r"><span class="dash-mtf-k">'+(t.k||0)+'</span></td>'
+      +'<td><div class="dash-mtf-legs">'
+        +legEl(!!legs.d_macd,false,'D')
+        +legEl(!!legs.d3_confluence,false,'3D')
+        +wMacdEl(legs.w_macd||'none')
+        +legEl(!!legs.w2_macd,false,'2W')
+      +'</div></td>'
+      +'<td class="dash-mtf-phase">'+esc(t.monthly_phase||'—')+'</td>'
+      +'<td class="dash-mtf-since">'+esc(t.since||'—')+'</td>'
+      +'<td class="dash-mtf-baskets">'+esc(basketStr||'—')+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  bodyEl.innerHTML=html;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   FETCH + ORCHESTRATE
+   ──────────────────────────────────────────────────────────────────────── */
+var pulse=null, turnWatch=null, mtfUpturn=null;
+var pulseDone=false, twDone=false, mtfDone=false;
+
+function tryRender(){
+  if(!pulseDone||!twDone||!mtfDone) return;
+  renderTapeBand(pulse);
+  renderTurnWatch(turnWatch, mtfUpturn);
+  renderMtfTable(mtfUpturn);
+}
+
+fetchJson('live/basket_pulse.json',function(d){pulse=d;pulseDone=true;tryRender();});
+fetchJson('basketdata/turn_watch.json',function(d){turnWatch=d;twDone=true;tryRender();});
+fetchJson('stockdata/mtf_upturn.json',function(d){mtfUpturn=d;mtfDone=true;tryRender();});
+
+// Fail-open: if any fetch doesn't resolve, still render with what we have
+setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000);
+
+})();
+</script>
+{% endif %}
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
