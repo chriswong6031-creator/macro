@@ -327,6 +327,9 @@ LEX: dict[str, str] = {
     "Drawdown": "回撤",
     "Rates vol": "利率波动",
     "Plumbing": "资金管道",
+    # Macro regime prose phrases (board/chips path — rates transmission + real yields)
+    "Restrictive real yields": "实际收益率偏紧",
+    "Deep contraction (easing)": "深度收缩（宽松中）",
     # Fear <-> Euphoria synthesis panel (DISPLAY-ONLY, research/FEAR_EUPHORIA_PANEL_SPEC.md)
     # NB: unknown / risk-on / risk-off / mixed are already mapped above.
     "stand_aside": "观望",

@@ -700,3 +700,371 @@ def test_compose_macro_deltas_key_mapping(tmp_path: Path) -> None:
     assert tr.get("to") == "Q2", (
         f"Consumer key 'to' must be populated from 'to_value'; got: {tr!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# (20) commodity favored list → joined string; stringified list → same
+# ---------------------------------------------------------------------------
+
+def test_commodity_favored_list_join(tmp_path: Path) -> None:
+    """commodity_favored ['Gold', 'Copper'] must become 'Gold, Copper' (not the repr string)."""
+    _write_all_sources(tmp_path)
+    # Write commodity with a list for favored
+    p = tmp_path / "data" / "commodity"
+    p.mkdir(parents=True, exist_ok=True)
+    import json as _json
+    (p / "latest.json").write_text(
+        _json.dumps({"date": "2026-07-05", "regime": "range-bound", "favored": ["Gold", "Copper"]}),
+        encoding="utf-8",
+    )
+    snap = BMS.build_snapshot(root=tmp_path)
+    comm = snap["labels"].get("commodity", {})
+    assert comm.get("commodity_favored") == "Gold, Copper", (
+        f"List favored must be joined as 'Gold, Copper', got: {comm.get('commodity_favored')!r}"
+    )
+
+
+def test_commodity_favored_stringified_list(tmp_path: Path) -> None:
+    """commodity_favored as stringified "['Gold', 'Copper']" must also produce 'Gold, Copper'."""
+    _write_all_sources(tmp_path)
+    p = tmp_path / "data" / "commodity"
+    p.mkdir(parents=True, exist_ok=True)
+    import json as _json
+    (p / "latest.json").write_text(
+        _json.dumps({"date": "2026-07-05", "regime": "range-bound",
+                     "favored": "['Gold', 'Copper']"}),
+        encoding="utf-8",
+    )
+    snap = BMS.build_snapshot(root=tmp_path)
+    comm = snap["labels"].get("commodity", {})
+    assert comm.get("commodity_favored") == "Gold, Copper", (
+        f"Stringified list must be parsed and joined, got: {comm.get('commodity_favored')!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# (21) new us/bonds/fx/china/hk/canada labels present when source data has them
+# ---------------------------------------------------------------------------
+
+def _write_regime_v11(tmp_path: Path) -> None:
+    """Write regime/latest.json with v1.1 fields populated."""
+    p = tmp_path / "data" / "regime"
+    p.mkdir(parents=True, exist_ok=True)
+    import json as _json
+    payload = {
+        "quad": "Q1",
+        "transition_state": "STABLE",
+        "asof": "2026-07-05",
+        "cross_asset_confirm": {"verdict": "agree"},
+        "regime_vector": {
+            "fused_risk_label": "risk-on",
+            "vol_regime": "normal",
+            "risk_radar_state": "neutral",
+            "rate_pressure": None,
+        },
+        "business_cycle": {"phase": {"label": "recovery"}},
+        "liquidity_quality": {"label": "stress-expansion"},
+        "liquidity_overlay": "expanding",
+        "froth_fragility": {"band": "watch"},
+        "dislocation": {"verdict": "calm"},
+        "market_gamma": {"regime": "short"},
+        "market_drivers": {"repricing_coherence": {"state": "QUIET"}},
+        "vol_regime": {"ts_slope_state": "contango", "vrp_state": "normal"},
+    }
+    (p / "latest.json").write_text(_json.dumps(payload), encoding="utf-8")
+
+
+def test_new_us_labels_present(tmp_path: Path) -> None:
+    """v1.1 us labels must be extracted when present."""
+    _write_all_sources(tmp_path)
+    _write_regime_v11(tmp_path)
+    snap = BMS.build_snapshot(root=tmp_path)
+    us = snap["labels"].get("us", {})
+    assert us.get("us_business_cycle_phase") == "recovery", f"Got: {us.get('us_business_cycle_phase')!r}"
+    assert us.get("us_liquidity_quality") == "stress-expansion", f"Got: {us.get('us_liquidity_quality')!r}"
+    assert us.get("us_liquidity_overlay") == "expanding", f"Got: {us.get('us_liquidity_overlay')!r}"
+    assert us.get("us_froth_band") == "watch", f"Got: {us.get('us_froth_band')!r}"
+    assert us.get("us_dislocation") == "calm", f"Got: {us.get('us_dislocation')!r}"
+    assert us.get("us_gamma_regime") == "short", f"Got: {us.get('us_gamma_regime')!r}"
+    assert us.get("us_repricing_state") == "QUIET", f"Got: {us.get('us_repricing_state')!r}"
+    assert us.get("us_vol_ts_state") == "contango", f"Got: {us.get('us_vol_ts_state')!r}"
+    assert us.get("us_vrp_state") == "normal", f"Got: {us.get('us_vrp_state')!r}"
+
+
+def test_new_us_labels_absent_fail_open(tmp_path: Path) -> None:
+    """v1.1 us labels must be None when source keys absent (fail-open)."""
+    _write_all_sources(tmp_path)
+    # _write_regime (from _write_all_sources) has no v1.1 keys
+    snap = BMS.build_snapshot(root=tmp_path)
+    us = snap["labels"].get("us", {})
+    # These keys should exist but be None
+    assert us.get("us_business_cycle_phase") is None, f"Expected None, got {us.get('us_business_cycle_phase')!r}"
+    assert us.get("us_froth_band") is None, f"Expected None, got {us.get('us_froth_band')!r}"
+
+
+def test_new_bonds_labels_present(tmp_path: Path) -> None:
+    """v1.1 bond labels must be extracted when bond_compass present."""
+    _write_all_sources(tmp_path)
+    import json as _json
+    p = tmp_path / "data" / "bonds"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "bond_health.json").write_text(
+        _json.dumps({
+            "health_label": "healthy",
+            "cycle_phase": "mid",
+            "bond_compass": {
+                "duration": {"bucket": "lean_long"},
+                "curve_trade": {"lean": "steepener"},
+            },
+        }),
+        encoding="utf-8",
+    )
+    snap = BMS.build_snapshot(root=tmp_path)
+    bonds = snap["labels"].get("bonds", {})
+    assert bonds.get("bond_duration_bucket") == "lean_long", f"Got: {bonds.get('bond_duration_bucket')!r}"
+    assert bonds.get("bond_curve_lean") == "steepener", f"Got: {bonds.get('bond_curve_lean')!r}"
+
+
+def test_new_fx_label_present(tmp_path: Path) -> None:
+    """v1.1 fx_regime_radar must be extracted from forex.regime_radar.dominant."""
+    _write_all_sources(tmp_path)
+    import json as _json
+    p = tmp_path / "data" / "forex"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "latest.json").write_text(
+        _json.dumps({
+            "date": "2026-07-05",
+            "regime": "US growth premium",
+            "risk": "risk-on",
+            "regime_radar": {"dominant": "em_crisis_capital_flight"},
+        }),
+        encoding="utf-8",
+    )
+    snap = BMS.build_snapshot(root=tmp_path)
+    fx = snap["labels"].get("fx", {})
+    assert fx.get("fx_regime_radar") == "em_crisis_capital_flight", f"Got: {fx.get('fx_regime_radar')!r}"
+
+
+def test_new_fx_label_absent(tmp_path: Path) -> None:
+    """fx_regime_radar must be None when regime_radar key absent."""
+    _write_all_sources(tmp_path)
+    snap = BMS.build_snapshot(root=tmp_path)
+    fx = snap["labels"].get("fx", {})
+    assert fx.get("fx_regime_radar") is None, f"Expected None, got {fx.get('fx_regime_radar')!r}"
+
+
+def test_new_china_labels(tmp_path: Path) -> None:
+    """v1.1 china labels must be extracted: china_property_regime, china_fe_band."""
+    _write_all_sources(tmp_path)
+    import json as _json
+    p = tmp_path / "data" / "china_regime"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "latest.json").write_text(
+        _json.dumps({
+            "quad": "Q3",
+            "property": {"regime": "Deep contraction (easing)"},
+            "fear_euphoria": {"band": "Neutral"},
+        }),
+        encoding="utf-8",
+    )
+    snap = BMS.build_snapshot(root=tmp_path)
+    china = snap["labels"].get("china", {})
+    assert china.get("china_property_regime") == "Deep contraction (easing)", f"Got: {china.get('china_property_regime')!r}"
+    assert china.get("china_fe_band") == "Neutral", f"Got: {china.get('china_fe_band')!r}"
+
+
+def test_new_hk_label(tmp_path: Path) -> None:
+    """v1.1 hk_peg_state must be extracted."""
+    _write_all_sources(tmp_path)
+    import json as _json
+    p = tmp_path / "data" / "hk_regime"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "latest.json").write_text(
+        _json.dumps({"quad": "Q4", "risk_state": "Risk-off", "peg_state": "weak-side (outflow)"}),
+        encoding="utf-8",
+    )
+    snap = BMS.build_snapshot(root=tmp_path)
+    hk = snap["labels"].get("hk", {})
+    assert hk.get("hk_peg_state") == "weak-side (outflow)", f"Got: {hk.get('hk_peg_state')!r}"
+
+
+def test_new_canada_labels(tmp_path: Path) -> None:
+    """v1.1 canada_overlay_state and canada_cycle_tag must be extracted."""
+    _write_all_sources(tmp_path)
+    import json as _json
+    p = tmp_path / "data" / "canada_regime"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "latest.json").write_text(
+        _json.dumps({
+            "quad": "Q1",
+            "cycle_tag": "late",
+            "overlay": {"state": "Neutral"},
+        }),
+        encoding="utf-8",
+    )
+    snap = BMS.build_snapshot(root=tmp_path)
+    ca = snap["labels"].get("canada", {})
+    assert ca.get("canada_overlay_state") == "Neutral", f"Got: {ca.get('canada_overlay_state')!r}"
+    assert ca.get("canada_cycle_tag") == "late", f"Got: {ca.get('canada_cycle_tag')!r}"
+
+
+# ---------------------------------------------------------------------------
+# (22) intl extractor: tmp parquet fixture → labels + ledger domain "intl"
+# ---------------------------------------------------------------------------
+
+def _write_intl_parquets(tmp_path: Path, countries: list[str] | None = None) -> None:
+    """Write minimal intl_regime parquets for given countries (default AU, EZ)."""
+    import pandas as pd
+    import datetime
+
+    countries = countries or ["AU", "EZ"]
+    p = tmp_path / "data" / "intl_regime"
+    p.mkdir(parents=True, exist_ok=True)
+
+    for i, cc in enumerate(countries):
+        dates = pd.date_range("2026-07-08", periods=3, freq="D")
+        quads = ["Q2", "Q3", f"Q{(i % 4) + 1}"]
+        df = pd.DataFrame({"quad": quads}, index=dates)
+        df.to_parquet(p / f"{cc}_history.parquet")
+
+
+def test_intl_extractor_labels(tmp_path: Path) -> None:
+    """_extract_intl should read last row quad from each parquet."""
+    import pandas as pd
+
+    p = tmp_path / "data" / "intl_regime"
+    p.mkdir(parents=True, exist_ok=True)
+
+    # Write AU parquet: last row quad = Q1
+    dates = pd.date_range("2026-07-08", periods=2, freq="D")
+    df_au = pd.DataFrame({"quad": ["Q3", "Q1"]}, index=dates)
+    df_au.to_parquet(p / "AU_history.parquet")
+
+    # Write EZ parquet: last row quad = Q4
+    df_ez = pd.DataFrame({"quad": ["Q2", "Q4"]}, index=dates)
+    df_ez.to_parquet(p / "EZ_history.parquet")
+
+    intl_labels, source_asofs, gaps = BMS._extract_intl(tmp_path / "data")
+    assert intl_labels["intl"]["intl_au_quad"] == "Q1", f"Got: {intl_labels['intl']['intl_au_quad']!r}"
+    assert intl_labels["intl"]["intl_ez_quad"] == "Q4", f"Got: {intl_labels['intl']['intl_ez_quad']!r}"
+
+    # Source asofs should contain dates
+    assert "data/intl_regime/AU_history.parquet" in source_asofs
+    assert source_asofs["data/intl_regime/AU_history.parquet"] == "2026-07-09"
+
+
+def test_intl_extractor_missing_file(tmp_path: Path) -> None:
+    """Missing intl parquet must fail-open: None label + gap note."""
+    # No intl_regime directory at all
+    intl_labels, source_asofs, gaps = BMS._extract_intl(tmp_path / "data")
+    assert intl_labels["intl"].get("intl_au_quad") is None
+    assert any("AU" in g for g in gaps), f"Expected gap note for AU: {gaps}"
+
+
+def test_intl_ledger_domain(tmp_path: Path) -> None:
+    """After build_snapshot with intl parquets, ledger must have domain='intl' rows."""
+    _write_all_sources(tmp_path)
+    _write_intl_parquets(tmp_path, ["AU", "EZ"])
+
+    snap = BMS.build_snapshot(root=tmp_path)
+    out_dir = tmp_path / "data" / "macro_snapshots"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ledger = BMS.write_ledger(snap, out_dir)
+
+    intl_rows = ledger[ledger["domain"] == "intl"]
+    assert len(intl_rows) >= 2, f"Expected at least 2 intl ledger rows, got: {len(intl_rows)}"
+    assert "intl_au_quad" in intl_rows["field"].values
+    assert "intl_ez_quad" in intl_rows["field"].values
+
+
+# ---------------------------------------------------------------------------
+# (23) birth-suppression: new field → no transition; null-prior → transition
+# ---------------------------------------------------------------------------
+
+def test_birth_suppression_no_transition(tmp_path: Path) -> None:
+    """A field that did NOT exist in prior ledger must NOT emit a transition."""
+    _write_all_sources(tmp_path)
+    snap_today = BMS.build_snapshot(root=tmp_path)
+    out_dir = tmp_path / "data" / "macro_snapshots"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    full_ledger = BMS.write_ledger(snap_today, out_dir)
+
+    # Write a prior snapshot WITHOUT the field we want to test
+    import copy
+    prior_snap = copy.deepcopy(snap_today)
+    prior_snap["asof"] = "2026-07-04"
+    # Remove us_business_cycle_phase from prior to simulate it being a new field
+    prior_labels = prior_snap["labels"]
+    if "us" in prior_labels:
+        prior_labels["us"].pop("us_business_cycle_phase", None)
+        prior_labels["us"].pop("us_liquidity_quality", None)
+    prior_snap["macro_context_id"] = BMS._context_id(prior_labels)
+    full_ledger = BMS.write_ledger(prior_snap, out_dir)
+
+    BMS.write_transitions(snap_today, full_ledger, out_dir)
+    trans_path = out_dir / "transitions.jsonl"
+    today_asof = snap_today["asof"]
+    if trans_path.exists():
+        lines = [l for l in trans_path.read_text(encoding="utf-8").splitlines() if l]
+        today_births = [
+            json.loads(l) for l in lines
+            if json.loads(l).get("asof") == today_asof
+            and json.loads(l).get("field") in ("us_business_cycle_phase", "us_liquidity_quality")
+        ]
+        assert len(today_births) == 0, (
+            f"Birth-suppression failed: emitted {len(today_births)} transitions for new fields: {today_births}"
+        )
+
+
+def test_null_prior_transition_emitted(tmp_path: Path) -> None:
+    """A field that existed in prior with explicit null → transition IS emitted when value changes."""
+    _write_all_sources(tmp_path)
+    _write_regime_v11(tmp_path)
+    snap_today = BMS.build_snapshot(root=tmp_path)
+    out_dir = tmp_path / "data" / "macro_snapshots"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    full_ledger = BMS.write_ledger(snap_today, out_dir)
+
+    # Write prior with us_business_cycle_phase = None (key exists, value null)
+    import copy
+    prior_snap = copy.deepcopy(snap_today)
+    prior_snap["asof"] = "2026-07-04"
+    if "us" in prior_snap["labels"]:
+        prior_snap["labels"]["us"]["us_business_cycle_phase"] = None
+    prior_snap["macro_context_id"] = BMS._context_id(prior_snap["labels"])
+    full_ledger = BMS.write_ledger(prior_snap, out_dir)
+
+    BMS.write_transitions(snap_today, full_ledger, out_dir)
+    trans_path = out_dir / "transitions.jsonl"
+    today_asof = snap_today["asof"]
+    today_bcp_val = snap_today["labels"].get("us", {}).get("us_business_cycle_phase")
+
+    if today_bcp_val is not None and trans_path.exists():
+        lines = [l for l in trans_path.read_text(encoding="utf-8").splitlines() if l]
+        null_to_val = [
+            json.loads(l) for l in lines
+            if json.loads(l).get("asof") == today_asof
+            and json.loads(l).get("field") == "us_business_cycle_phase"
+            and json.loads(l).get("from_value") is None
+        ]
+        assert len(null_to_val) >= 1, (
+            f"Expected a transition from null to '{today_bcp_val}' but found none"
+        )
+
+
+# ---------------------------------------------------------------------------
+# (24) NaN in source value normalizes to None
+# ---------------------------------------------------------------------------
+
+def test_nan_source_value_normalizes_to_none(tmp_path: Path) -> None:
+    """A float NaN from a source field must become None, never the string 'nan'."""
+    import math
+    # Test _norm_str directly
+    assert BMS._norm_str(float("nan")) is None, "float NaN must normalize to None"
+    assert BMS._norm_str(None) is None
+    assert BMS._norm_str("nan") is None
+    assert BMS._norm_str("None") is None
+    assert BMS._norm_str("") is None
+    # A real string must pass through
+    assert BMS._norm_str("recovery") == "recovery"
+    assert BMS._norm_str("Q1") == "Q1"

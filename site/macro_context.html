@@ -14,107 +14,492 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 </style>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Macro Weather — 2026-07-10</title>
+<link rel="stylesheet" href="theme.css">
+<title>Macro Weather Station — 2026-07-10</title>
 
-<meta name="description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK and Canada reads — display-only context.">
+
+
+<meta name="description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK, Canada and international reads — display-only context.">
 <link rel="canonical" href="https://mastermind-x.com/macro_context.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mastermind">
 <meta property="og:title" content="Macro Weather Station — Regime Labels &amp; Context | Mastermind">
-<meta property="og:description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK and Canada reads — display-only context.">
+<meta property="og:description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK, Canada and international reads — display-only context.">
 <meta property="og:url" content="https://mastermind-x.com/macro_context.html">
 <meta property="og:image" content="https://mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Macro Weather Station — Regime Labels &amp; Context | Mastermind">
-<meta name="twitter:description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK and Canada reads — display-only context.">
+<meta name="twitter:description" content="Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK, Canada and international reads — display-only context.">
 <meta name="twitter:image" content="https://mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-:root{
-  --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
-  --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42; --green:#1a7f43; --teal:#1F8A70;
-  --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 14px; }
+html:not([data-lang="zh"]) .l-zh { display: none; }
+html[data-lang="zh"] .l-en { display: none; }
+html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif; }
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.5;
+  min-height: 100vh; overflow-x: hidden; margin: 0;
+  -webkit-font-smoothing: antialiased;
 }
-*{box-sizing:border-box}
-html:not([data-lang="zh"]) .l-zh{display:none}
-html[data-lang="zh"] .l-en{display:none}
-html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
-.grid{display:grid;gap:18px}
-.cols-2{grid-template-columns:1fr 1fr}
-.cols-3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
-.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0;overflow-wrap:break-word}
-.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
-.brand .gn{color:var(--blue)}
-.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
-.sub{font-size:13px;color:var(--muted);min-width:0}.faint{color:var(--faint)}
-.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
-.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
-/* jump nav */
-.jump-nav{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 20px}
-.jump-nav a{font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:5px 12px;white-space:nowrap;transition:color .15s,border-color .15s}
-.jump-nav a:hover{color:var(--ink);border-color:var(--blue)}
-/* weather board */
-.domain-block{margin-bottom:18px}
-.domain-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.domain-label{font-size:13px;font-weight:700;color:var(--ink)}
-.domain-asof{font-size:11px;color:var(--muted);margin-left:auto}
-.stale-ok{color:var(--green)}.stale-warn{color:var(--amber)}.stale-old{color:var(--red)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:10px;border:1px solid var(--grid);background:var(--card);min-width:0;max-width:200px}
-.chip-field{font-size:10.5px;color:var(--muted);font-weight:600;white-space:nowrap}
-.chip-val{font-size:13px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
-.chip-null .chip-val{color:var(--faint)}
-html[data-theme="dark"] .chip{background:#1e2230;border-color:#2a2f3a}
-/* headwind/tailwind matrix */
-.hw-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media(max-width:700px){.hw-grid{grid-template-columns:1fr}}
-.hw-section h3{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 10px}
-.hw-rows{display:flex;flex-direction:column;gap:7px}
-.hw-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;background:var(--card);border:1px solid var(--grid);font-size:13px}
-html[data-theme="dark"] .hw-row{background:#1e2230}
-.hw-asset{font-weight:700;color:var(--ink);flex:1;min-width:0}
-.hw-chip{padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap}
-.hw-head{background:var(--red)}.hw-tail{background:var(--green)}.hw-neut{background:var(--muted)}
-.hw-net{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;min-width:42px;text-align:right}
-/* transition timeline */
-.tl-wrap{overflow-x:auto}
-.tl-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
-.tl-tbl th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:700;white-space:nowrap}
-.tl-tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
-.tl-tbl tr:hover td{background:rgba(40,95,255,.04)}
-html[data-theme="dark"] .tl-tbl tr:hover td{background:rgba(40,95,255,.10)}
-.tl-asof{color:var(--muted);font-size:12px;white-space:nowrap}
-.tl-domain{font-weight:700;color:var(--ink)}
-.tl-field{color:var(--text)}
-.tl-from{color:var(--red)}.tl-to{color:var(--green)}.tl-arrow{color:var(--faint);padding:0 4px}
-/* contradiction census strip */
-.census-strip{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:14px 18px;background:var(--card);border:1px solid var(--grid);border-radius:14px;font-size:14px}
-html[data-theme="dark"] .census-strip{background:#1e2230}
-.census-kv{display:flex;flex-direction:column}
-.census-k{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.census-v{font-size:18px;font-weight:800;color:var(--ink);line-height:1}
-/* disclaimer */
-.disclaimer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:14px 18px;border-left:3px solid var(--amber);background:rgba(245,173,66,.07);border-radius:0 10px 10px 0;margin-top:10px}
-.disclaimer b{color:var(--ink)}
-html[data-theme="dark"] .disclaimer{background:rgba(245,173,66,.10)}
-/* footnote */
-.footnote{font-size:12px;color:var(--faint);margin-top:16px;line-height:1.7}
-.footnote a{color:var(--muted)}
-/* empty state */
-.empty-state{padding:24px;text-align:center;color:var(--muted);font-size:14px;border:1px dashed var(--grid);border-radius:14px}
-@media(max-width:560px){
-  .wrap{padding:0 12px 48px}
-  .card{padding:16px}
-  .site-footer{padding:16px 12px}
+a { color: var(--link); text-decoration: none; }
+
+/* Aurora backdrop */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 20%, color-mix(in srgb,var(--q1) 5%,transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 35% at 80% 10%, color-mix(in srgb,var(--info) 5%,transparent) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 30% at 90% 80%, color-mix(in srgb,var(--warn) 4%,transparent) 0%, transparent 60%);
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.page-wrap { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: 0 24px 60px; }
+
+/* ── Section headers ────────────────────────────────────────── */
+.sec-lbl {
+  font-size: 11px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase;
+  color: var(--muted); margin: 28px 0 14px; display: flex; align-items: center; gap: 8px;
+}
+.sec-lbl::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* ── Panel ──────────────────────────────────────────────────── */
+.panel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px; box-shadow: 0 1px 0 rgba(255,255,255,.02);
+}
+.panel2 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+
+/* ── Jump nav ───────────────────────────────────────────────── */
+.jump-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 20px; }
+.jump-nav a {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px 13px; white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.jump-nav a:hover { color: var(--text); border-color: var(--info); }
+.jump-nav .cnt {
+  display: inline-block; background: var(--warn); color: #fff;
+  border-radius: 999px; font-size: 10px; font-weight: 700;
+  padding: 1px 6px; margin-left: 4px; line-height: 1.4;
+}
+
+/* ── Chip base ──────────────────────────────────────────────── */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600;
+  letter-spacing: .03em; white-space: nowrap;
+}
+.c-q1  { background: color-mix(in srgb,var(--q1) 16%,var(--panel)); color: var(--q1); border: 1px solid color-mix(in srgb,var(--q1) 30%,transparent); }
+.c-q2  { background: color-mix(in srgb,var(--q2) 16%,var(--panel)); color: var(--q2); border: 1px solid color-mix(in srgb,var(--q2) 30%,transparent); }
+.c-q3  { background: color-mix(in srgb,var(--q3) 16%,var(--panel)); color: var(--q3); border: 1px solid color-mix(in srgb,var(--q3) 30%,transparent); }
+.c-q4  { background: color-mix(in srgb,var(--q4) 16%,var(--panel)); color: var(--q4); border: 1px solid color-mix(in srgb,var(--q4) 30%,transparent); }
+.c-up   { background: color-mix(in srgb,var(--up)   14%,var(--panel)); color: var(--up);   border: 1px solid color-mix(in srgb,var(--up)   25%,transparent); }
+.c-down { background: color-mix(in srgb,var(--down)  14%,var(--panel)); color: var(--down); border: 1px solid color-mix(in srgb,var(--down) 25%,transparent); }
+.c-warn { background: color-mix(in srgb,var(--warn)  14%,var(--panel)); color: var(--warn); border: 1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+.c-info { background: color-mix(in srgb,var(--info)  14%,var(--panel)); color: var(--info); border: 1px solid color-mix(in srgb,var(--info) 25%,transparent); }
+.c-muted { background: color-mix(in srgb,var(--muted) 12%,var(--panel)); color: var(--muted); border: 1px solid color-mix(in srgb,var(--muted) 20%,transparent); }
+
+/* ── Stale dots ─────────────────────────────────────────────── */
+.stale-ok   { color: var(--up);   }
+.stale-warn { color: var(--warn); }
+.stale-old  { color: var(--down); }
+
+/* ── Num ────────────────────────────────────────────────────── */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ── Display badge ──────────────────────────────────────────── */
+.display-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600; letter-spacing: .06em;
+  color: var(--muted); background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 3px 8px; margin-top: 8px;
+}
+
+/* ── Section spacing ────────────────────────────────────────── */
+.section { margin-bottom: 32px; }
+
+/* ─────────────────────────────────────────────────────────────
+   HERO
+   ───────────────────────────────────────────────────────────── */
+.hero {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden;
+  animation: fadeInUp .5s ease both;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg,
+    color-mix(in srgb,var(--up) 5%,transparent) 0%,
+    transparent 50%,
+    color-mix(in srgb,var(--info) 4%,transparent) 100%);
+  pointer-events: none;
+}
+.hero-content { position: relative; }
+.hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.hero-headline {
+  font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
+  background: linear-gradient(135deg, var(--up) 0%, var(--info) 55%, var(--warn) 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+.hero-sub { font-size: 13px; color: var(--muted); max-width: 520px; line-height: 1.6; margin-top: 4px; }
+.hero-score-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 110px; padding: 16px 20px; border-radius: 12px;
+  background: color-mix(in srgb,var(--up) 10%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--up) 25%,transparent); flex-shrink: 0;
+}
+.hero-score-label { font-size: 10px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; color: var(--up); opacity: .7; }
+.hero-score-num { font-size: 48px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.hero-score-tag { font-size: 11px; font-weight: 600; margin-top: 2px; }
+
+/* KPI strip */
+.hero-kpis {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.kpi-chip {
+  display: flex; flex-direction: column; gap: 3px;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 14px; min-width: 110px;
+  transition: transform .2s, box-shadow .2s;
+}
+.kpi-chip:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+.kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.kpi-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi-sub { font-size: 10px; color: var(--muted); }
+
+/* Recovery block */
+.hero-recovery {
+  display: flex; align-items: center; gap: 16px; margin-top: 20px;
+  background: color-mix(in srgb,var(--info) 6%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--info) 18%,var(--line));
+  border-radius: 10px; padding: 12px 16px; flex-wrap: wrap;
+}
+.recovery-text { flex: 1; min-width: 200px; }
+.recovery-hed { font-size: 13px; font-weight: 700; color: var(--text); }
+.recovery-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.spark-wrap { flex-shrink: 0; }
+
+/* ─────────────────────────────────────────────────────────────
+   RISK RADAR
+   ───────────────────────────────────────────────────────────── */
+.radar-board {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+}
+@media (max-width: 900px) { .radar-board { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 480px) { .radar-board { grid-template-columns: repeat(2,1fr); } }
+
+.scare-tile {
+  border-radius: 12px; padding: 18px 16px; border: 1px solid transparent;
+  transition: transform .2s, box-shadow .2s; cursor: default; position: relative; overflow: hidden;
+}
+.scare-tile:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.scare-tile.band-watch { background: color-mix(in srgb,var(--warn) 10%,var(--panel)); border-color: color-mix(in srgb,var(--warn) 30%,transparent); }
+.scare-tile.band-calm  { background: var(--panel); border-color: var(--line); }
+.scare-tile.dominant {
+  box-shadow: 0 0 0 2px color-mix(in srgb,var(--warn) 45%,transparent),
+              0 4px 20px color-mix(in srgb,var(--warn) 15%,transparent);
+}
+.scare-tile.dominant::after { content: '★'; position: absolute; top: 8px; right: 10px; font-size: 11px; color: var(--warn); opacity: .7; }
+.scare-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .10em; color: var(--muted); margin-bottom: 10px; }
+.scare-score { font-size: 32px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.scare-score.band-watch { color: var(--warn); }
+.scare-score.band-calm  { color: var(--muted); opacity: .6; }
+.scare-band { font-size: 10px; font-weight: 700; margin-top: 5px; text-transform: uppercase; letter-spacing: .07em; }
+.scare-band.band-watch { color: var(--warn); }
+.scare-band.band-calm  { color: var(--muted); }
+.scare-bar-track { height: 3px; background: var(--panel2); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+.scare-bar-fill { height: 100%; border-radius: 2px; }
+.scare-bar-fill.band-watch { background: linear-gradient(90deg,var(--warn),color-mix(in srgb,var(--warn) 60%,var(--down))); }
+.scare-bar-fill.band-calm  { background: var(--muted); opacity: .3; }
+.scare-lbl { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.3; }
+
+/* Drawdown ladder */
+.dd-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.dd-cell {
+  flex: 1; min-width: 90px; background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 14px;
+}
+.dd-cell-h { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.dd-cell-v { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--down); margin-top: 2px; }
+.dd-cell-base { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.dd-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--muted); align-items: center; }
+.dd-meta .traj { color: var(--up); font-weight: 600; }
+.deesc-chip { display: inline-flex; align-items: center; gap: 5px; background: color-mix(in srgb,var(--up) 10%,var(--panel2)); border: 1px solid color-mix(in srgb,var(--up) 25%,transparent); border-radius: 999px; padding: 3px 10px; font-size: 11px; color: var(--up); font-weight: 600; }
+
+/* Cycle context */
+.cycle-ctx {
+  margin-top: 14px; padding: 12px 16px;
+  background: color-mix(in srgb,var(--q4) 7%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--q4) 20%,var(--line));
+  border-radius: 10px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start;
+}
+.cycle-ctx-label { font-size: 11px; font-weight: 700; color: var(--q4); margin-bottom: 6px; }
+.cycle-ctx-sectors { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.cycle-ctx-text { font-size: 12px; color: var(--muted); line-height: 1.5; flex: 1; min-width: 200px; }
+
+/* ─────────────────────────────────────────────────────────────
+   WEATHER BOARD
+   ───────────────────────────────────────────────────────────── */
+.weather-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+}
+@media (max-width: 900px) { .weather-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 560px) { .weather-grid { grid-template-columns: 1fr; } }
+
+.domain-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 16px; transition: transform .2s, box-shadow .2s; position: relative;
+}
+.domain-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.domain-name {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .10em;
+  color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 7px;
+}
+.domain-name::before { content: ''; width: 3px; height: 14px; border-radius: 2px; background: var(--info); opacity: .45; display: inline-block; }
+.domain-name-en { flex: 1; }
+.domain-asof { font-size: 10px; margin-left: auto; }
+.domain-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.field-chip {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 6px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line);
+  min-width: 0; position: relative;
+}
+.field-chip.changed-today { box-shadow: 0 0 0 1.5px var(--warn); }
+.field-chip-name { font-size: 10px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.field-chip-val { font-size: 12px; font-weight: 700; margin-top: 1px; word-break: break-word; }
+.hist-dots { display: flex; gap: 3px; align-items: center; padding-top: 8px; border-top: 1px solid var(--line); margin-top: 8px; }
+.hist-d {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; opacity: 0.6;
+  background: var(--muted);
+}
+.hist-d:last-child { opacity: 1; }
+.hist-d.changed {
+  width: 10px; height: 10px; opacity: 1;
+  box-shadow: 0 0 0 2px color-mix(in srgb,var(--warn) 50%,transparent);
+  background: var(--warn);
+}
+.hist-hint { font-size: 9px; color: var(--muted); margin-left: 4px; font-style: italic; }
+
+/* ─────────────────────────────────────────────────────────────
+   GLOBAL QUAD MAP
+   ───────────────────────────────────────────────────────────── */
+.quad-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .quad-layout { grid-template-columns: 1fr; } }
+.quad-main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quad-cell {
+  border-radius: 12px; padding: 18px; border: 1px solid transparent;
+  position: relative; overflow: hidden; transition: transform .2s;
+}
+.quad-cell:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.quad-cell.q1 { background: linear-gradient(135deg, color-mix(in srgb,var(--q1) 14%,var(--panel)) 0%, var(--panel) 100%); border-color: color-mix(in srgb,var(--q1) 30%,transparent); }
+.quad-cell.q2 { background: linear-gradient(135deg, color-mix(in srgb,var(--q2) 14%,var(--panel)) 0%, var(--panel) 100%); border-color: color-mix(in srgb,var(--q2) 30%,transparent); }
+.quad-cell.q3 { background: linear-gradient(135deg, color-mix(in srgb,var(--q3) 14%,var(--panel)) 0%, var(--panel) 100%); border-color: color-mix(in srgb,var(--q3) 30%,transparent); }
+.quad-cell.q4 { background: linear-gradient(135deg, color-mix(in srgb,var(--q4) 14%,var(--panel)) 0%, var(--panel) 100%); border-color: color-mix(in srgb,var(--q4) 30%,transparent); }
+.quad-ticker { font-size: 22px; font-weight: 900; letter-spacing: -.02em; }
+.quad-cell.q1 .quad-ticker { color: var(--q1); }
+.quad-cell.q2 .quad-ticker { color: var(--q2); }
+.quad-cell.q3 .quad-ticker { color: var(--q3); }
+.quad-cell.q4 .quad-ticker { color: var(--q4); }
+.quad-name-lbl { font-size: 12px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.quad-conf { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.quad-note { font-size: 10px; font-style: italic; color: var(--muted); margin-top: 2px; }
+.quad-pending { font-size: 11px; color: var(--warn); margin-top: 4px; font-weight: 700; }
+.intl-rail { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.intl-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 10px; font-size: 12px;
+}
+.intl-code { font-weight: 700; }
+.intl-q { font-size: 10px; font-weight: 600; }
+.quad-tally { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.tally-item { font-size: 12px; }
+.dispersion-badge {
+  margin-top: 10px; display: inline-flex; align-items: center; gap: 6px;
+  background: color-mix(in srgb,var(--info) 10%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--info) 22%,var(--line));
+  border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--muted);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RATES & LIQUIDITY
+   ───────────────────────────────────────────────────────────── */
+.rates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .rates-grid { grid-template-columns: 1fr; } }
+
+.stat-row { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+.stat-item {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 7px 12px; background: var(--panel2); border-radius: 8px; border: 1px solid var(--line);
+}
+.stat-key { font-size: 12px; color: var(--muted); }
+.stat-val { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-pctile { font-size: 10px; color: var(--muted); margin-top: 1px; text-align: right; }
+
+/* Bond compass */
+.compass-block { margin-top: 12px; }
+.compass-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.compass-title { font-size: 12px; font-weight: 700; color: var(--text); }
+.compass-verdict { font-size: 13px; font-weight: 800; }
+.compass-legs { display: flex; flex-direction: column; gap: 5px; }
+.compass-leg {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 11px; border-radius: 8px; border: 1px solid transparent;
+}
+.compass-leg.bull { background: color-mix(in srgb,var(--up) 7%,var(--panel2)); border-color: color-mix(in srgb,var(--up) 18%,transparent); }
+.compass-leg.bear { background: color-mix(in srgb,var(--down) 7%,var(--panel2)); border-color: color-mix(in srgb,var(--down) 18%,transparent); }
+.compass-leg.neut { background: var(--panel2); border-color: var(--line); }
+.leg-name { font-size: 11px; color: var(--muted); }
+.leg-state { font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.leg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.leg-bull .leg-dot { background: var(--up); }
+.leg-bear .leg-dot { background: var(--down); }
+.leg-bull .leg-state { color: var(--up); }
+.leg-bear .leg-state { color: var(--down); }
+
+/* Liquidity plumbing */
+.liq-block { margin-top: 0; }
+.liq-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.liq-stat {
+  flex: 1; min-width: 80px; background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 12px;
+}
+.liq-stat-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.liq-stat-v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.liq-stat-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.spark-container { margin-top: 10px; }
+.spark-lbl { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+
+/* ─────────────────────────────────────────────────────────────
+   HEAD/TAILWIND MATRIX
+   ───────────────────────────────────────────────────────────── */
+.htw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .htw-grid { grid-template-columns: 1fr; } }
+.htw-title { font-size: 12px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+.htw-list { display: flex; flex-direction: column; gap: 7px; }
+.htw-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: 8px;
+}
+.htw-item.head { background: color-mix(in srgb,var(--down) 8%,var(--panel2)); border: 1px solid color-mix(in srgb,var(--down) 18%,transparent); }
+.htw-item.tail { background: color-mix(in srgb,var(--up) 8%,var(--panel2)); border: 1px solid color-mix(in srgb,var(--up) 18%,transparent); }
+.htw-asset { font-size: 12px; font-weight: 600; flex: 1; }
+.htw-net { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.htw-item.head .htw-net { color: var(--down); }
+.htw-item.tail .htw-net { color: var(--up); }
+.fx-block { margin-top: 14px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.fx-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+.fx-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.fx-item {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 7px; font-size: 11px; font-weight: 600;
+}
+.fx-item.head { background: color-mix(in srgb,var(--down) 12%,var(--panel)); color: var(--down); border: 1px solid color-mix(in srgb,var(--down) 22%,transparent); }
+.fx-item.tail { background: color-mix(in srgb,var(--up) 12%,var(--panel)); color: var(--up); border: 1px solid color-mix(in srgb,var(--up) 22%,transparent); }
+
+/* ─────────────────────────────────────────────────────────────
+   TRANSITIONS
+   ───────────────────────────────────────────────────────────── */
+.breaking-slug {
+  display: flex; align-items: center; gap: 12px;
+  background: color-mix(in srgb,var(--warn) 8%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--warn) 28%,var(--line));
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
+}
+.breaking-badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .10em;
+  color: #fff; background: var(--warn); border-radius: 5px; padding: 3px 7px; flex-shrink: 0;
+}
+.breaking-text { font-size: 13px; color: var(--text); }
+.tl-date-group { margin-bottom: 14px; }
+.tl-date-header {
+  font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .07em;
+  text-transform: uppercase; padding-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.tl-date-header.today { color: var(--warn); }
+.tl-date-header::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.tl-events { display: flex; flex-direction: column; gap: 6px; margin-left: 12px; }
+.tl-event {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; border-radius: 9px; background: var(--panel2); border: 1px solid var(--line);
+  font-size: 12px; flex-wrap: wrap;
+}
+.tl-event.hot { background: color-mix(in srgb,var(--warn) 8%,var(--panel2)); border-color: color-mix(in srgb,var(--warn) 22%,var(--line)); }
+.tl-domain { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); min-width: 70px; }
+.tl-event.hot .tl-domain { color: var(--warn); }
+.tl-arrow { color: var(--muted); font-size: 11px; }
+.tl-from { color: var(--muted); }
+.tl-to { font-weight: 700; color: var(--text); }
+.tl-event.hot .tl-to { color: var(--warn); }
+
+/* ─────────────────────────────────────────────────────────────
+   CONTRADICTIONS
+   ───────────────────────────────────────────────────────────── */
+.contra-callout {
+  background: color-mix(in srgb,var(--warn) 8%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--warn) 28%,var(--line));
+  border-radius: 10px; padding: 14px 18px; margin-bottom: 14px;
+  display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap;
+}
+.contra-count { font-size: 36px; font-weight: 900; color: var(--warn); line-height: 1; min-width: 48px; }
+.contra-body { flex: 1; min-width: 160px; }
+.contra-hd { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.contra-pairs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.contra-pair-chip { padding: 3px 10px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--muted); }
+.contra-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ─────────────────────────────────────────────────────────────
+   DISCLAIMER / FOOTNOTE
+   ───────────────────────────────────────────────────────────── */
+.disclaimer {
+  font-size: 12.5px; color: var(--muted); line-height: 1.6;
+  padding: 14px 18px; border-left: 3px solid var(--warn);
+  background: color-mix(in srgb,var(--warn) 6%,var(--panel2));
+  border-radius: 0 10px 10px 0; margin-top: 10px;
+}
+.disclaimer b { color: var(--text); }
+.footnote { font-size: 12px; color: var(--muted); margin-top: 16px; line-height: 1.7; }
+.footnote a { color: var(--muted); }
+.footnote code { font-family: monospace; font-size: 11px; }
+.meta-foot { font-size: 12px; color: var(--muted); margin-top: 6px; opacity: .6; }
+
+/* ── Empty state ────────────────────────────────────────────── */
+.empty-state {
+  padding: 24px; text-align: center; color: var(--muted); font-size: 14px;
+  border: 1px dashed var(--line); border-radius: 14px;
+}
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.section:nth-child(1) { animation: fadeInUp .5s .05s ease both; }
+.section:nth-child(2) { animation: fadeInUp .5s .10s ease both; }
+.section:nth-child(3) { animation: fadeInUp .5s .15s ease both; }
+.section:nth-child(4) { animation: fadeInUp .5s .20s ease both; }
+.section:nth-child(5) { animation: fadeInUp .5s .25s ease both; }
+.section:nth-child(6) { animation: fadeInUp .5s .30s ease both; }
+.section:nth-child(7) { animation: fadeInUp .5s .35s ease both; }
+.section:nth-child(8) { animation: fadeInUp .5s .40s ease both; }
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .page-wrap { padding: 0 12px 48px; }
+  .hero { padding: 18px 16px; }
+  .hero-kpis { gap: 7px; }
+  .kpi-chip { min-width: 90px; }
+  .quad-main-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>
 
@@ -293,8 +678,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 </style>
 </head>
 <body>
-<nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
-  
+
+
+<nav class="site-nav">
+
 
 
     <div class="nav-links">
@@ -343,6 +730,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
         <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
         <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
         <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
@@ -557,10 +945,19 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   
   <script src="live_config.js"></script>
   <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
-    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
     <div class="lang-toggle" role="group" aria-label="Language">
       <span class="pill"></span>
       <span class="opt en-opt" data-l="en">EN</span>
@@ -569,339 +966,1681 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   </div>
 </nav>
 
-<div class="wrap">
-  <div class="brand">🌦️ <span class="l-en">Macro Weather</span><span class="l-zh">Macro Weather</span><span class="gn"> <span class="l-en">Station</span><span class="l-zh">宏观气象台</span></span></div>
-  <p class="lead"><span class="l-en">Live macro label board — quadrant, FX, rates, bond health, commodity, China, HK, Canada. Display-only context; not signals.</span><span class="l-zh">宏观标签全景展示 — 象限、外汇、利率、债券健康、大宗、中港加。仅作背景参考，非信号。</span>
-  <span class="faint">· <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-10</span></p>
+<div class="page-wrap">
 
-  <!-- display-only disclaimer -->
-  <div class="disclaimer">
-    <b><span class="l-en">Display-only context.</span><span class="l-zh">仅供展示参考。</span></b>
-    <span class="l-en">Labels describe current regime reads — they are not trade signals and carry no forward-return claim. For committee-graded signals see</span><span class="l-zh">标签描述当前周期读数，不构成交易信号，不含任何前瞻收益声明。如需委员会评级信号，请参阅</span>
-    <a href="committee.html"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></a>.
+  <!-- ── Jump nav ──────────────────────────────────────────────── -->
+  <div class="jump-nav">
+    <a href="#hero"><span class="l-en">Overview</span><span class="l-zh">总览</span></a>
+    <a href="#radar"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></a>
+    <a href="#board"><span class="l-en">Weather Board</span><span class="l-zh">气象板</span></a>
+    <a href="#quad"><span class="l-en">Quad Map</span><span class="l-zh">象限地图</span></a>
+    <a href="#rates"><span class="l-en">Rates &amp; Liquidity</span><span class="l-zh">利率与流动性</span></a>
+    <a href="#matrix"><span class="l-en">Head/Tailwind</span><span class="l-zh">顺逆风</span></a>
+    <a href="#timeline">
+      <span class="l-en">Transitions</span><span class="l-zh">转换记录</span>
+      
+      <span class="cnt">6 <span class="l-en">today</span><span class="l-zh">今日</span></span>
+      
+    </a>
+    <a href="#census">
+      <span class="l-en">Contradictions</span><span class="l-zh">矛盾</span>
+      
+      <span class="cnt">2</span>
+      
+    </a>
+    <a href="#footnote"><span class="l-en">Footnote</span><span class="l-zh">注脚</span></a>
   </div>
 
-  <!-- section jump nav -->
-  <div class="jump-nav" style="margin-top:16px">
-    <a href="#board">🌡️ <span class="l-en">Weather Board</span><span class="l-zh">气象板</span></a>
-    <a href="#matrix">⚖️ <span class="l-en">Head/Tailwind Matrix</span><span class="l-zh">顺逆风矩阵</span></a>
-    <a href="#timeline">🕑 <span class="l-en">Transitions</span><span class="l-zh">转换记录</span></a>
-    <a href="#census">🔍 <span class="l-en">Contradictions</span><span class="l-zh">矛盾统计</span></a>
-    <a href="#footnote">📌 <span class="l-en">Footnote</span><span class="l-zh">注脚</span></a>
+  <!-- ── HERO ──────────────────────────────────────────────────── -->
+  <div id="hero" class="hero">
+    <div class="hero-content">
+      <div class="hero-top">
+        <div class="hero-headline-group">
+          <div class="hero-eyebrow"><span class="l-en">Macro Weather Station</span><span class="l-zh">宏观气象台</span> &bull; 2026-07-10</div>
+          <div class="hero-headline">
+            <span class="l-en">Risk receding — liquidity turning supportive</span><span class="l-zh">风险回落 — 流动性转向支持</span>
+          </div>
+          
+          <div class="hero-sub">
+            <span class="chip c-q1">Q1 <span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
+            &bull; <span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span>
+            &bull; <span class="l-en">conf</span><span class="l-zh">置信</span> 26%
+            &bull; <span class="l-en">stress-expansion</span><span class="l-zh">stress-expansion</span>
+            &bull; VIX 16.15
+          </div>
+          
+          <div class="display-badge">&#9432; <span class="l-en">Display-only context — not signals</span><span class="l-zh">仅展示背景 — 非信号</span></div>
+        </div>
+        
+        <div class="hero-score-box">
+          <div class="hero-score-label"><span class="l-en">Risk Score</span><span class="l-zh">风险评分</span></div>
+          <div class="hero-score-num c-up">77</div>
+          <div class="hero-score-tag c-up"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></div>
+        </div>
+        
+      </div>
+
+      <!-- KPI strip -->
+      <div class="hero-kpis">
+        
+        <div class="kpi-chip">
+          <span class="kpi-label"><span class="l-en">Regime</span><span class="l-zh">周期象限</span></span>
+          <span class="kpi-val c-q1">Q1 <span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
+          <span class="kpi-sub"><span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span> &bull; 26%</span>
+        </div>
+        
+        
+        <div class="kpi-chip">
+          <span class="kpi-label"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
+          <span class="kpi-val c-warn"><span class="l-en">stress-expansion</span><span class="l-zh">stress-expansion</span></span>
+          <span class="kpi-sub"><span class="l-en">expanding</span><span class="l-zh">扩张</span></span>
+        </div>
+        
+        
+        <div class="kpi-chip">
+          <span class="kpi-label">VIX</span>
+          <span class="kpi-val c-up">16.15</span>
+          <span class="kpi-sub"><span class="l-en">normalizing</span><span class="l-zh">normalizing</span></span>
+        </div>
+        
+        
+        <div class="kpi-chip">
+          <span class="kpi-label"><span class="l-en">Breadth &gt;200d</span><span class="l-zh">广度&gt;200日</span></span>
+          <span class="kpi-val c-up">64.6%</span>
+          <span class="kpi-sub">501 <span class="l-en">members</span><span class="l-zh">成员</span></span>
+        </div>
+        
+        
+        <div class="kpi-chip">
+          <span class="kpi-label"><span class="l-en">Radar</span><span class="l-zh">雷达</span></span>
+          <span class="kpi-val c-warn">WATCH</span>
+          <span class="kpi-sub">Bubble / blow-off </span>
+        </div>
+        
+        
+        <div class="kpi-chip">
+          <span class="kpi-label"><span class="l-en">Repricing</span><span class="l-zh">重定价</span></span>
+          <span class="kpi-val c-up">QUIET</span>
+          <span class="kpi-sub"><span class="l-en">coherence</span><span class="l-zh">一致性</span></span>
+        </div>
+        
+        
+        <div class="kpi-chip"
+             data-tip-en="HMM smoothed posterior (display-only). Scored use requires causal refit against live regime labels."
+             data-tip-zh="HMM平滑后验（仅展示）。评分使用需对实时周期标签进行因果重拟合。">
+          <span class="kpi-label"><span class="l-en">Regime HMM</span><span class="l-zh">象限HMM</span></span>
+          <span class="kpi-val c-info">P(Q1) 0.99</span>
+          <span class="kpi-sub l-en">hazard 0.48 &middot; ~2.1mo dwell &middot; 3mo in</span>
+          <span class="kpi-sub l-zh">风险0.48 &middot; 预期停留~2.1月 &middot; 已3月</span>
+        </div>
+        
+        
+        <div class="kpi-chip">
+          <span class="kpi-label"><span class="l-en">Net Liquidity</span><span class="l-zh">净流动性</span></span>
+          <span class="kpi-val c-info">$5981bn</span>
+          <span class="kpi-sub">&Delta;65d +49bn &bull; p84</span>
+        </div>
+        
+        
+        <div class="kpi-chip">
+          <span class="kpi-label"><span class="l-en">Transitions 14d</span><span class="l-zh">14日转换</span></span>
+          <span class="kpi-val c-warn">10</span>
+          <span class="kpi-sub">6 <span class="l-en">today</span><span class="l-zh">今日</span></span>
+        </div>
+        
+      </div>
+
+      <!-- Recovery spark -->
+      
+      <div class="hero-recovery">
+        <div class="recovery-text">
+          <div class="recovery-hed"><span class="l-en">Risk receding — liquidity turning supportive</span><span class="l-zh">风险回落 — 流动性转向支持</span></div>
+          <div class="recovery-sub"><span class="l-en">Pullback odds 19% → 13% (peaked 8 days ago).</span><span class="l-zh">回撤概率 19% → 13%（8 日前见顶）。</span></div>
+          
+          <div style="margin-top:6px" class="deesc-chip"><span class="l-en">De-escalation eligible</span><span class="l-zh">可降级</span></div>
+          
+        </div>
+        <div class="spark-wrap">
+          <svg width="100" height="30"
+               viewBox="-2 -2 100 30"
+               xmlns="http://www.w3.org/2000/svg">
+            <polyline
+              points="3.0,6.9 6.9,21.1 10.8,21.6 14.7,20.3 18.7,16.6 22.6,17.1 26.5,16.9 30.4,12.5 34.3,16.8 38.2,23.0 42.1,18.3 46.0,20.0 50.0,13.8 53.9,8.4 57.8,6.0 61.7,3.0 65.6,5.0 69.5,6.9 73.4,10.6 77.3,6.4 81.3,9.9 85.2,16.0 89.1,11.0 93.0,18.8"
+              fill="none" stroke="var(--warn)" stroke-width="1.8"
+              stroke-linejoin="round" stroke-linecap="round"/>
+            
+            <circle cx="61.7" cy="3.0" r="3" fill="var(--down)"/>
+            
+            
+            <circle cx="93.0" cy="18.8" r="3" fill="var(--up)"/>
+            
+          </svg>
+          <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px;">
+            <span class="l-en">24d intensity</span><span class="l-zh">24日强度</span> &bull;
+            <span style="color:var(--down)">&#9679;</span> <span class="l-en">peak</span><span class="l-zh">峰值</span>
+            <span style="color:var(--up)">&#9679;</span> <span class="l-en">now</span><span class="l-zh">当前</span>
+          </div>
+        </div>
+      </div>
+      
+
+      <!-- Market state mini bar -->
+      
+      <div style="display:flex;gap:4px;align-items:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+        <span style="font-size:10px;color:var(--muted);margin-right:6px;text-transform:uppercase;letter-spacing:.07em;line-height:1"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
+        
+        
+        <div data-tip-en="2026-07-03: RISK_OFF (34)"
+             data-tip-zh="2026-07-03: RISK_OFF (34)"
+             style="width:10px;height:12px;border-radius:3px 3px 0 0;
+               background:var(--down);
+               opacity:0.7;"></div>
+        
+        
+        <div data-tip-en="2026-07-04: RISK_OFF (34)"
+             data-tip-zh="2026-07-04: RISK_OFF (34)"
+             style="width:10px;height:12px;border-radius:3px 3px 0 0;
+               background:var(--down);
+               opacity:0.7;"></div>
+        
+        
+        <div data-tip-en="2026-07-05: RISK_OFF (40)"
+             data-tip-zh="2026-07-05: RISK_OFF (40)"
+             style="width:10px;height:13px;border-radius:3px 3px 0 0;
+               background:var(--down);
+               opacity:0.7;"></div>
+        
+        
+        <div data-tip-en="2026-07-06: RISK_OFF (40)"
+             data-tip-zh="2026-07-06: RISK_OFF (40)"
+             style="width:10px;height:13px;border-radius:3px 3px 0 0;
+               background:var(--down);
+               opacity:0.7;"></div>
+        
+        
+        <div data-tip-en="2026-07-07: RISK_OFF (40)"
+             data-tip-zh="2026-07-07: RISK_OFF (40)"
+             style="width:10px;height:13px;border-radius:3px 3px 0 0;
+               background:var(--down);
+               opacity:0.7;"></div>
+        
+        
+        <div data-tip-en="2026-07-10: RISK_ON (77)"
+             data-tip-zh="2026-07-10: RISK_ON (77)"
+             style="width:10px;height:22px;border-radius:3px 3px 0 0;
+               background:var(--up);
+               opacity:0.7;"></div>
+        
+        
+        <span style="font-size:10px;color:var(--muted);margin-left:4px">77/100</span>
+        
+      </div>
+      
+    </div>
   </div>
 
-  <!-- ==================== MACRO WEATHER BOARD ==================== -->
-  <div id="board">
-    <div class="sec-head">🌡️ <span class="l-en">Macro Weather Board</span><span class="l-zh">宏观气象板</span></div>
+  <!-- ── RISK RADAR ─────────────────────────────────────────────── -->
+  <div id="radar" class="section">
+    <div class="sec-lbl"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span> &bull; 6 <span class="l-en">Scares</span><span class="l-zh">风险</span></div>
     
+    <div class="radar-board">
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-09" data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
-            <span class="chip-val" style="color:#1a7f43">Q1</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
-            <span class="chip-val" style="color:#285FFF">TRANSITIONING</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
-            <span class="chip-val" style="color:#1a7f43">risk-on</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Vol Regime</span><span class="l-zh">波动率周期</span></span>
-            <span class="chip-val" style="color:#1F8A70">normalizing</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
-            <span class="chip-val" style="color:#285FFF">watch</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Rate Pressure</span><span class="l-zh">利率压力</span></span>
-            <span class="chip-val" style="color:#285FFF">pressure</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
-            <span class="chip-val" style="color:#F5AD42">mixed</span>
-          </div>
-          
-        </div>
+      <div class="scare-tile band-watch">
+        <div class="scare-name"><span class="l-en">Global breadth breakdown</span><span class="l-zh">全球广度破位</span></div>
+        <div class="scare-score band-watch">62</div>
+        <div class="scare-band band-watch">WATCH</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-watch" style="width:62%"></div></div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-09" data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
-            <span class="chip-val" style="color:#1a7f43">RISK_ON</span>
-          </div>
-          
-        </div>
+      <div class="scare-tile band-watch dominant">
+        <div class="scare-name"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span></div>
+        <div class="scare-score band-watch">58</div>
+        <div class="scare-band band-watch">WATCH</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-watch" style="width:58%"></div></div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-09" data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
-            <span class="chip-val" style="color:#D30B0B">bear_flattener</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Recession Risk</span><span class="l-zh">衰退风险</span></span>
-            <span class="chip-val" style="color:#1a7f43">low</span>
-          </div>
-          
-        </div>
+      <div class="scare-tile band-watch">
+        <div class="scare-name"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></div>
+        <div class="scare-score band-watch">55</div>
+        <div class="scare-band band-watch">WATCH</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-watch" style="width:55%"></div></div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-10" data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">USD Trend</span><span class="l-zh">美元趋势</span></span>
-            <span class="chip-val" style="color:#1a7f43">up</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">USD Regime</span><span class="l-zh">美元周期</span></span>
-            <span class="chip-val" style="color:#285FFF">US growth premium</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">FX Risk</span><span class="l-zh">外汇风险</span></span>
-            <span class="chip-val" style="color:#1a7f43">risk-on</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Real Rates</span><span class="l-zh">实际利率</span></span>
-            <span class="chip-val" style="color:#D30B0B">Restrictive real yields</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
-            <span class="chip-val" style="color:#285FFF">supportive</span>
-          </div>
-          
-        </div>
+      <div class="scare-tile band-calm">
+        <div class="scare-name"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></div>
+        <div class="scare-score band-calm">47</div>
+        <div class="scare-band band-calm">CALM</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:47%"></div></div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">Bonds &amp; Credit</span><span class="l-zh">债券与信用</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-09" data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Bond Health</span><span class="l-zh">债券健康</span></span>
-            <span class="chip-val" style="color:#1a7f43">healthy</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Cycle Phase</span><span class="l-zh">周期阶段</span></span>
-            <span class="chip-val" style="color:#285FFF">late</span>
-          </div>
-          
-        </div>
+      <div class="scare-tile band-calm">
+        <div class="scare-name"><span class="l-en">Rates / inflation shock</span><span class="l-zh">利率/通胀冲击</span></div>
+        <div class="scare-score band-calm">24</div>
+        <div class="scare-band band-calm">CALM</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:24%"></div></div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-10" data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Regime</span><span class="l-zh">周期</span></span>
-            <span class="chip-val" style="color:#1a7f43">Goldilocks</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Favored</span><span class="l-zh">偏好</span></span>
-            <span class="chip-val" style="color:#285FFF">[&#39;Gold&#39;, &#39;Copper&#39;]</span>
-          </div>
-          
-        </div>
+      <div class="scare-tile band-calm">
+        <div class="scare-name"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span></div>
+        <div class="scare-score band-calm">3</div>
+        <div class="scare-band band-calm">CALM</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:3%"></div></div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">China</span><span class="l-zh">中国</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-08" data-tip-zh="数据截至 2026-07-08">2026-07-08</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
-            <span class="chip-val" style="color:#D30B0B">Q3</span>
-          </div>
-          
-        </div>
+    </div>
+
+    <!-- Drawdown ladder -->
+    <div class="dd-row">
+      
+      
+      
+      <div class="dd-cell">
+        <div class="dd-cell-h">H5d</div>
+        <div class="dd-cell-v">2%</div>
+        <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 4%</div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-08" data-tip-zh="数据截至 2026-07-08">2026-07-08</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
-            <span class="chip-val" style="color:#4559DC">Q4</span>
-          </div>
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Risk State</span><span class="l-zh">风险状态</span></span>
-            <span class="chip-val" style="color:#285FFF">Neutral</span>
-          </div>
-          
-        </div>
+      
+      
+      <div class="dd-cell">
+        <div class="dd-cell-h">H10d</div>
+        <div class="dd-cell-v">6%</div>
+        <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 9%</div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-09" data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
-            <span class="chip-val" style="color:#4559DC">Q4</span>
-          </div>
-          
-        </div>
+      
+      
+      <div class="dd-cell">
+        <div class="dd-cell-h">H21d</div>
+        <div class="dd-cell-v">13%</div>
+        <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 18%</div>
       </div>
       
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label"><span class="l-en">Dispersion</span><span class="l-zh">离散度</span></span>
-          
-          <span class="domain-asof stale-ok" data-tip-en="Source as-of 2026-07-10" data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
-          
-        </div>
-        <div class="chips">
-          
-          <div class="chip">
-            <span class="chip-field"><span class="l-en">State</span><span class="l-zh">状态</span></span>
-            <span class="chip-val" style="color:#1a7f43">lean_in</span>
-          </div>
-          
-        </div>
-      </div>
+    </div>
+    
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;font-style:italic"><span class="l-en">&gt;=5% SPY pullback (empirical 2006-2026; rises with intensity + conjunction)</span><span class="l-zh">≥5% 标普回撤（2006–2026 实证；随强度与共振上升）</span></div>
+    
+
+    <!-- Trajectory -->
+    <div class="dd-meta">
       
+      <span class="traj"><span class="l-en">Phase</span><span class="l-zh">阶段</span>: receding</span>
+      
+      
+      <span><span class="l-en">Peak</span><span class="l-zh">峰值</span> 90.8
+        · 8d <span class="l-en">ago</span><span class="l-zh">前</span></span>
+      
+      
+      <span><span class="l-en">Velocity</span><span class="l-zh">速度</span> -16.7/d</span>
+      
+      
+      <span class="deesc-chip"><span class="l-en">De-escalation eligible</span><span class="l-zh">可降级</span></span>
+      
+    </div>
+
+    <!-- Cycle context -->
+    
+    
+    <div class="cycle-ctx">
+      <div>
+        <div class="cycle-ctx-label"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span></div>
+        
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px"><span class="l-en">Favor</span><span class="l-zh">偏好</span>:</div>
+        <div class="cycle-ctx-sectors">
+          
+          <span class="chip c-up"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
+          
+          <span class="chip c-up"><span class="l-en">Staples</span><span class="l-zh">必需消费</span></span>
+          
+          <span class="chip c-up"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
+          
+        </div>
+        
+        
+        <div style="font-size:11px;color:var(--muted);margin:6px 0 4px"><span class="l-en">Avoid</span><span class="l-zh">回避</span>:</div>
+        <div class="cycle-ctx-sectors">
+          
+          <span class="chip c-down"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
+          
+          <span class="chip c-down"><span class="l-en">Discretionary</span><span class="l-zh">可选消费</span></span>
+          
+        </div>
+        
+      </div>
+      <div class="cycle-ctx-text"><span class="l-en">Calendar context only — it modulates sizing/sensitivity, never originates an alert. The Dollar-Milkshake direction (firmer dollar in midterm H2) is actually reversed in history; trust the radar&#39;s measured dollar/rate/CNH legs, not the year.</span><span class="l-zh">仅为日历背景——只调节仓位/灵敏度，绝不独立触发警报。历史上「美元里程碑」方向（中期下半年美元更强）实际相反；请相信雷达已验证的美元/利率/离岸人民币因子，而非年份本身。</span></div>
+    </div>
+    
+
     
   </div>
 
-  <!-- ==================== HEADWIND / TAILWIND MATRIX ==================== -->
-  <div id="matrix">
-    <div class="sec-head">⚖️ <span class="l-en">Headwind / Tailwind Matrix</span><span class="l-zh">顺逆风矩阵</span></div>
-    <div class="hw-grid">
+  <!-- ── MACRO WEATHER BOARD ────────────────────────────────────── -->
+  <div id="board" class="section">
+    <div class="sec-lbl"><span class="l-en">Macro Weather Board</span><span class="l-zh">宏观气象板</span> &bull; <span class="l-en">ledger since 07-05</span><span class="l-zh">账本自07-05</span></div>
+    
+    <div class="weather-grid">
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-10"
+                data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip"
+               data-tip-en="Quadrant"
+               data-tip-zh="象限">
+            <span class="field-chip-name"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+            <span class="field-chip-val" style="color:var(--q1)">
+              <span class="l-en">Q1</span><span class="l-zh">Q1</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Transition"
+               data-tip-zh="转换状态">
+            <span class="field-chip-name"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
+            <span class="field-chip-val" style="color:var(--info)">
+              <span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Fused Risk"
+               data-tip-zh="融合风险">
+            <span class="field-chip-name"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">risk-on</span><span class="l-zh">偏好风险</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Vol Regime"
+               data-tip-zh="波动率周期">
+            <span class="field-chip-name"><span class="l-en">Vol Regime</span><span class="l-zh">波动率周期</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">normalizing</span><span class="l-zh">normalizing</span>
+            </span>
+          </div>
+          
+          <div class="field-chip changed-today"
+               data-tip-en="Risk Radar"
+               data-tip-zh="风险雷达">
+            <span class="field-chip-name"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">watch</span><span class="l-zh">watch</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Rate Pressure"
+               data-tip-zh="利率压力">
+            <span class="field-chip-name"><span class="l-en">Rate Pressure</span><span class="l-zh">利率压力</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">pressure</span><span class="l-zh">pressure</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Business Cycle"
+               data-tip-zh="商业周期">
+            <span class="field-chip-name"><span class="l-en">Business Cycle</span><span class="l-zh">商业周期</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">recovery</span><span class="l-zh">recovery</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Liquidity Quality"
+               data-tip-zh="流动性质量">
+            <span class="field-chip-name"><span class="l-en">Liquidity Quality</span><span class="l-zh">流动性质量</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">stress-expansion</span><span class="l-zh">stress-expansion</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Liquidity"
+               data-tip-zh="流动性">
+            <span class="field-chip-name"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">expanding</span><span class="l-zh">扩张</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Froth / Fragility"
+               data-tip-zh="泡沫/脆弱度">
+            <span class="field-chip-name"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">watch</span><span class="l-zh">watch</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Dislocation"
+               data-tip-zh="错位状态">
+            <span class="field-chip-name"><span class="l-en">Dislocation</span><span class="l-zh">错位状态</span></span>
+            <span class="field-chip-val" style="color:var(--muted)">
+              <span class="l-en">calm</span><span class="l-zh">平静</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Dealer Gamma"
+               data-tip-zh="做市商Gamma">
+            <span class="field-chip-name"><span class="l-en">Dealer Gamma</span><span class="l-zh">做市商Gamma</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">short</span><span class="l-zh">short</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Repricing Coherence"
+               data-tip-zh="重定价一致性">
+            <span class="field-chip-name"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">QUIET</span><span class="l-zh">QUIET</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="VIX Term Structure"
+               data-tip-zh="VIX期限结构">
+            <span class="field-chip-name"><span class="l-en">VIX Term Structure</span><span class="l-zh">VIX期限结构</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">contango</span><span class="l-zh">contango</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Vol Risk Premium"
+               data-tip-zh="波动风险溢价">
+            <span class="field-chip-name"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">normal</span><span class="l-zh">正常</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Cross-Asset"
+               data-tip-zh="跨资产">
+            <span class="field-chip-name"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">mixed</span><span class="l-zh">中性</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: Q1"
+               data-tip-zh="2026-07-05: Q1"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: Q1"
+               data-tip-zh="2026-07-06: Q1"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: Q1"
+               data-tip-zh="2026-07-07: Q1"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-10: Q1"
+               data-tip-zh="2026-07-10: Q1"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-09"
+                data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip changed-today"
+               data-tip-en="Verdict"
+               data-tip-zh="判定">
+            <span class="field-chip-name"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">RISK_ON</span><span class="l-zh">RISK_ON</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: RISK_OFF"
+               data-tip-zh="2026-07-05: RISK_OFF"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: RISK_OFF"
+               data-tip-zh="2026-07-06: RISK_OFF"></div>
+          
+          <div class="hist-d changed"
+               data-tip-en="2026-07-07: MIXED"
+               data-tip-zh="2026-07-07: MIXED"></div>
+          
+          <div class="hist-d changed"
+               data-tip-en="2026-07-10: RISK_ON"
+               data-tip-zh="2026-07-10: RISK_ON"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-09"
+                data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip changed-today"
+               data-tip-en="Curve Regime"
+               data-tip-zh="曲线周期">
+            <span class="field-chip-name"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
+            <span class="field-chip-val" style="color:var(--down)">
+              <span class="l-en">bear_flattener</span><span class="l-zh">bear_flattener</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Recession Risk"
+               data-tip-zh="衰退风险">
+            <span class="field-chip-name"><span class="l-en">Recession Risk</span><span class="l-zh">衰退风险</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">low</span><span class="l-zh">low</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: bull_flattener"
+               data-tip-zh="2026-07-05: bull_flattener"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: bull_flattener"
+               data-tip-zh="2026-07-06: bull_flattener"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: bull_flattener"
+               data-tip-zh="2026-07-07: bull_flattener"></div>
+          
+          <div class="hist-d changed"
+               data-tip-en="2026-07-10: bear_flattener"
+               data-tip-zh="2026-07-10: bear_flattener"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-10"
+                data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip"
+               data-tip-en="USD Trend"
+               data-tip-zh="美元趋势">
+            <span class="field-chip-name"><span class="l-en">USD Trend</span><span class="l-zh">美元趋势</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">up</span><span class="l-zh">up</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="USD Regime"
+               data-tip-zh="美元周期">
+            <span class="field-chip-name"><span class="l-en">USD Regime</span><span class="l-zh">美元周期</span></span>
+            <span class="field-chip-val" style="color:var(--info)">
+              <span class="l-en">US growth premium</span><span class="l-zh">美国增长溢价</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="FX Risk"
+               data-tip-zh="外汇风险">
+            <span class="field-chip-name"><span class="l-en">FX Risk</span><span class="l-zh">外汇风险</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">risk-on</span><span class="l-zh">偏好风险</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Real Rates"
+               data-tip-zh="实际利率">
+            <span class="field-chip-name"><span class="l-en">Real Rates</span><span class="l-zh">实际利率</span></span>
+            <span class="field-chip-val" style="color:var(--down)">
+              <span class="l-en">Restrictive real yields</span><span class="l-zh">实际收益率偏紧</span>
+            </span>
+          </div>
+          
+          <div class="field-chip changed-today"
+               data-tip-en="Liquidity"
+               data-tip-zh="流动性">
+            <span class="field-chip-name"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">supportive</span><span class="l-zh">偏积极</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="FX Regime Radar"
+               data-tip-zh="外汇局势雷达">
+            <span class="field-chip-name"><span class="l-en">FX Regime Radar</span><span class="l-zh">外汇局势雷达</span></span>
+            <span class="field-chip-val" style="color:var(--down)">
+              <span class="l-en">em_crisis_capital_flight</span><span class="l-zh">em_crisis_capital_flight</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: up"
+               data-tip-zh="2026-07-05: up"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: up"
+               data-tip-zh="2026-07-06: up"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: up"
+               data-tip-zh="2026-07-07: up"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-10: up"
+               data-tip-zh="2026-07-10: up"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">Bonds &amp; Credit</span><span class="l-zh">债券与信用</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-09"
+                data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip"
+               data-tip-en="Bond Health"
+               data-tip-zh="债券健康">
+            <span class="field-chip-name"><span class="l-en">Bond Health</span><span class="l-zh">债券健康</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">healthy</span><span class="l-zh">健康</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Cycle Phase"
+               data-tip-zh="周期阶段">
+            <span class="field-chip-name"><span class="l-en">Cycle Phase</span><span class="l-zh">周期阶段</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">late</span><span class="l-zh">晚期</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Duration Lean"
+               data-tip-zh="久期倾向">
+            <span class="field-chip-name"><span class="l-en">Duration Lean</span><span class="l-zh">久期倾向</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">lean_long</span><span class="l-zh">lean_long</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Curve Trade"
+               data-tip-zh="曲线交易">
+            <span class="field-chip-name"><span class="l-en">Curve Trade</span><span class="l-zh">曲线交易</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">steepener</span><span class="l-zh">steepener</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: healthy"
+               data-tip-zh="2026-07-05: healthy"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: healthy"
+               data-tip-zh="2026-07-06: healthy"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: healthy"
+               data-tip-zh="2026-07-07: healthy"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-10: healthy"
+               data-tip-zh="2026-07-10: healthy"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-10"
+                data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip"
+               data-tip-en="Regime"
+               data-tip-zh="周期">
+            <span class="field-chip-name"><span class="l-en">Regime</span><span class="l-zh">周期</span></span>
+            <span class="field-chip-val" style="color:var(--q1)">
+              <span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span>
+            </span>
+          </div>
+          
+          <div class="field-chip changed-today"
+               data-tip-en="Favored"
+               data-tip-zh="偏好">
+            <span class="field-chip-name"><span class="l-en">Favored</span><span class="l-zh">偏好</span></span>
+            <span class="field-chip-val" style="color:var(--info)">
+              <span class="l-en">Gold, Copper</span><span class="l-zh">Gold, Copper</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: Goldilocks"
+               data-tip-zh="2026-07-05: Goldilocks"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: Goldilocks"
+               data-tip-zh="2026-07-06: Goldilocks"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: Goldilocks"
+               data-tip-zh="2026-07-07: Goldilocks"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-10: Goldilocks"
+               data-tip-zh="2026-07-10: Goldilocks"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">China</span><span class="l-zh">中国</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-10"
+                data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip"
+               data-tip-en="Quadrant"
+               data-tip-zh="象限">
+            <span class="field-chip-name"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+            <span class="field-chip-val" style="color:var(--q3)">
+              <span class="l-en">Q3</span><span class="l-zh">Q3</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Property"
+               data-tip-zh="房地产">
+            <span class="field-chip-name"><span class="l-en">Property</span><span class="l-zh">房地产</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">Deep contraction (easing)</span><span class="l-zh">深度收缩（宽松中）</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Fear / Euphoria"
+               data-tip-zh="恐惧/亢奋">
+            <span class="field-chip-name"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
+            <span class="field-chip-val" style="color:var(--muted)">
+              <span class="l-en">Neutral</span><span class="l-zh">中性</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: Q3"
+               data-tip-zh="2026-07-05: Q3"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: Q3"
+               data-tip-zh="2026-07-06: Q3"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: Q3"
+               data-tip-zh="2026-07-07: Q3"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-10: Q3"
+               data-tip-zh="2026-07-10: Q3"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-08"
+                data-tip-zh="数据截至 2026-07-08">2026-07-08</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip"
+               data-tip-en="Quadrant"
+               data-tip-zh="象限">
+            <span class="field-chip-name"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+            <span class="field-chip-val" style="color:var(--q4)">
+              <span class="l-en">Q4</span><span class="l-zh">Q4</span>
+            </span>
+          </div>
+          
+          <div class="field-chip changed-today"
+               data-tip-en="Risk State"
+               data-tip-zh="风险状态">
+            <span class="field-chip-name"><span class="l-en">Risk State</span><span class="l-zh">风险状态</span></span>
+            <span class="field-chip-val" style="color:var(--muted)">
+              <span class="l-en">Neutral</span><span class="l-zh">中性</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Peg State"
+               data-tip-zh="联系汇率">
+            <span class="field-chip-name"><span class="l-en">Peg State</span><span class="l-zh">联系汇率</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">weak-side (outflow)</span><span class="l-zh">弱方（资金流出）</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: Q4"
+               data-tip-zh="2026-07-05: Q4"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: Q4"
+               data-tip-zh="2026-07-06: Q4"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: Q4"
+               data-tip-zh="2026-07-07: Q4"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-10: Q4"
+               data-tip-zh="2026-07-10: Q4"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-09"
+                data-tip-zh="数据截至 2026-07-09">2026-07-09</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip changed-today"
+               data-tip-en="Quadrant"
+               data-tip-zh="象限">
+            <span class="field-chip-name"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+            <span class="field-chip-val" style="color:var(--q4)">
+              <span class="l-en">Q4</span><span class="l-zh">Q4</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Overlay"
+               data-tip-zh="叠加状态">
+            <span class="field-chip-name"><span class="l-en">Overlay</span><span class="l-zh">叠加状态</span></span>
+            <span class="field-chip-val" style="color:var(--muted)">
+              <span class="l-en">Neutral</span><span class="l-zh">中性</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Cycle"
+               data-tip-zh="周期阶段">
+            <span class="field-chip-name"><span class="l-en">Cycle</span><span class="l-zh">周期阶段</span></span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">late</span><span class="l-zh">晚期</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: Q1"
+               data-tip-zh="2026-07-05: Q1"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: Q1"
+               data-tip-zh="2026-07-06: Q1"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: Q1"
+               data-tip-zh="2026-07-07: Q1"></div>
+          
+          <div class="hist-d changed"
+               data-tip-en="2026-07-10: Q4"
+               data-tip-zh="2026-07-10: Q4"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">Dispersion</span><span class="l-zh">离散度</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-10"
+                data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip"
+               data-tip-en="State"
+               data-tip-zh="状态">
+            <span class="field-chip-name"><span class="l-en">State</span><span class="l-zh">状态</span></span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">lean_in</span><span class="l-zh">lean_in</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-05: lean_in"
+               data-tip-zh="2026-07-05: lean_in"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-06: lean_in"
+               data-tip-zh="2026-07-06: lean_in"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-07: lean_in"
+               data-tip-zh="2026-07-07: lean_in"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-10: lean_in"
+               data-tip-zh="2026-07-10: lean_in"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en"><span class="l-en">International</span><span class="l-zh">国际</span></span>
+          
+          <span class="domain-asof stale-ok"
+                data-tip-en="Source as-of 2026-07-10"
+                data-tip-zh="数据截至 2026-07-10">2026-07-10</span>
+          
+        </div>
+        <div class="domain-chips">
+          
+          <div class="field-chip"
+               data-tip-en="Australia"
+               data-tip-zh="澳大利亚">
+            <span class="field-chip-name"><span class="l-en">Australia</span><span class="l-zh">澳大利亚</span></span>
+            <span class="field-chip-val" style="color:var(--q1)">
+              <span class="l-en">Q1</span><span class="l-zh">Q1</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Eurozone"
+               data-tip-zh="欧元区">
+            <span class="field-chip-name"><span class="l-en">Eurozone</span><span class="l-zh">欧元区</span></span>
+            <span class="field-chip-val" style="color:var(--q2)">
+              <span class="l-en">Q2</span><span class="l-zh">Q2</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="UK"
+               data-tip-zh="英国">
+            <span class="field-chip-name"><span class="l-en">UK</span><span class="l-zh">英国</span></span>
+            <span class="field-chip-val" style="color:var(--q1)">
+              <span class="l-en">Q1</span><span class="l-zh">Q1</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="India"
+               data-tip-zh="印度">
+            <span class="field-chip-name"><span class="l-en">India</span><span class="l-zh">印度</span></span>
+            <span class="field-chip-val" style="color:var(--q1)">
+              <span class="l-en">Q1</span><span class="l-zh">Q1</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Japan"
+               data-tip-zh="日本">
+            <span class="field-chip-name"><span class="l-en">Japan</span><span class="l-zh">日本</span></span>
+            <span class="field-chip-val" style="color:var(--q1)">
+              <span class="l-en">Q1</span><span class="l-zh">Q1</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Korea"
+               data-tip-zh="韩国">
+            <span class="field-chip-name"><span class="l-en">Korea</span><span class="l-zh">韩国</span></span>
+            <span class="field-chip-val" style="color:var(--q1)">
+              <span class="l-en">Q1</span><span class="l-zh">Q1</span>
+            </span>
+          </div>
+          
+          <div class="field-chip"
+               data-tip-en="Taiwan"
+               data-tip-zh="台湾">
+            <span class="field-chip-name"><span class="l-en">Taiwan</span><span class="l-zh">台湾</span></span>
+            <span class="field-chip-val" style="color:var(--q1)">
+              <span class="l-en">Q1</span><span class="l-zh">Q1</span>
+            </span>
+          </div>
+          
+        </div>
+        <!-- History dots -->
+        
+        
+        
+        <div class="hist-dots">
+          
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-10: Q1"
+               data-tip-zh="2026-07-10: Q1"></div>
+          
+          
+          <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
+        </div>
+        
+      </div>
+      
+    </div>
+    
+  </div>
+
+  <!-- ── GLOBAL QUAD MAP ───────────────────────────────────────── -->
+  <div id="quad" class="section">
+    <div class="sec-lbl"><span class="l-en">Global Quad Map</span><span class="l-zh">全球象限地图</span> &bull; <span class="l-en">Pressure Fronts</span><span class="l-zh">压力锋面</span></div>
+    
+    <div class="quad-layout">
+      <!-- 4-region grid -->
+      <div>
+        <div class="quad-main-grid">
+          
+          <div class="quad-cell q1">
+            <div class="quad-ticker">Q1</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px"><span class="l-en">US</span><span class="l-zh">美国</span></div>
+            <div class="quad-name-lbl"><span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></div>
+            
+            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 26%</div>
+            
+            
+            <div class="quad-note"><span class="l-en">expanding</span><span class="l-zh">扩张</span></div>
+            
+            
+            
+          </div>
+          
+          <div class="quad-cell q3">
+            <div class="quad-ticker">Q3</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px"><span class="l-en">CHINA</span><span class="l-zh">中国</span></div>
+            <div class="quad-name-lbl"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></div>
+            
+            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 18%</div>
+            
+            
+            <div class="quad-note"><span class="l-en">neutral</span><span class="l-zh">中性</span></div>
+            
+            
+            <div class="quad-pending">→ Q2 <span class="l-en">pending</span><span class="l-zh">待确认</span></div>
+            
+            
+          </div>
+          
+          <div class="quad-cell q4">
+            <div class="quad-ticker">Q4</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px"><span class="l-en">HK</span><span class="l-zh">香港</span></div>
+            <div class="quad-name-lbl"><span class="l-en">Growth-scare</span><span class="l-zh">增长恐慌</span></div>
+            
+            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 10%</div>
+            
+            
+            <div class="quad-note"><span class="l-en">neutral</span><span class="l-zh">中性</span></div>
+            
+            
+            
+            <div class="quad-note">weak-side (outflow)</div>
+            
+          </div>
+          
+          <div class="quad-cell q4">
+            <div class="quad-ticker">Q4</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px"><span class="l-en">CANADA</span><span class="l-zh">加拿大</span></div>
+            <div class="quad-name-lbl"><span class="l-en">Growth-scare</span><span class="l-zh">增长恐慌</span></div>
+            
+            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 40%</div>
+            
+            
+            <div class="quad-note"><span class="l-en">expanding</span><span class="l-zh">扩张</span></div>
+            
+            
+            
+          </div>
+          
+        </div>
+
+        <!-- Quad distribution tally -->
+        
+        <div class="quad-tally" style="margin-top:12px">
+          
+          
+          <span class="chip c-q1">Q1 &times;7</span>
+          
+          
+          
+          <span class="chip c-q2">Q2 &times;1</span>
+          
+          
+          
+          <span class="chip c-q3">Q3 &times;1</span>
+          
+          
+          
+          <span class="chip c-q4">Q4 &times;2</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="dispersion-badge" style="margin-top:10px">
+          &#9670; <span class="l-en">3 distinct quads across US/China/HK/Canada</span><span class="l-zh">美/中/港/加 呈现3种不同象限</span>
+        </div>
+        
+      </div>
+
+      <!-- Intl rail -->
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px"><span class="l-en">International</span><span class="l-zh">国际</span></div>
+        <div class="intl-rail">
+          
+          <div class="intl-chip">
+            <span class="intl-code">AU</span>
+            <span class="l-zh" style="font-size:11px;color:var(--muted)">澳大利亚</span>
+            <span class="chip c-q1 intl-q">Q1</span>
+            <span style="font-size:10px;color:var(--muted)"><span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
+          </div>
+          
+          <div class="intl-chip">
+            <span class="intl-code">EZ</span>
+            <span class="l-zh" style="font-size:11px;color:var(--muted)">欧元区</span>
+            <span class="chip c-q2 intl-q">Q2</span>
+            <span style="font-size:10px;color:var(--muted)"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></span>
+          </div>
+          
+          <div class="intl-chip">
+            <span class="intl-code">GB</span>
+            <span class="l-zh" style="font-size:11px;color:var(--muted)">英国</span>
+            <span class="chip c-q1 intl-q">Q1</span>
+            <span style="font-size:10px;color:var(--muted)"><span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
+          </div>
+          
+          <div class="intl-chip">
+            <span class="intl-code">IN</span>
+            <span class="l-zh" style="font-size:11px;color:var(--muted)">印度</span>
+            <span class="chip c-q1 intl-q">Q1</span>
+            <span style="font-size:10px;color:var(--muted)"><span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
+          </div>
+          
+          <div class="intl-chip">
+            <span class="intl-code">JP</span>
+            <span class="l-zh" style="font-size:11px;color:var(--muted)">日本</span>
+            <span class="chip c-q1 intl-q">Q1</span>
+            <span style="font-size:10px;color:var(--muted)"><span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
+          </div>
+          
+          <div class="intl-chip">
+            <span class="intl-code">KR</span>
+            <span class="l-zh" style="font-size:11px;color:var(--muted)">韩国</span>
+            <span class="chip c-q1 intl-q">Q1</span>
+            <span style="font-size:10px;color:var(--muted)"><span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
+          </div>
+          
+          <div class="intl-chip">
+            <span class="intl-code">TW</span>
+            <span class="l-zh" style="font-size:11px;color:var(--muted)">台湾</span>
+            <span class="chip c-q1 intl-q">Q1</span>
+            <span style="font-size:10px;color:var(--muted)"><span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- ── RATES & LIQUIDITY ─────────────────────────────────────── -->
+  <div id="rates" class="section">
+    <div class="sec-lbl"><span class="l-en">Rates &amp; Liquidity</span><span class="l-zh">利率与流动性</span></div>
+    <div class="rates-grid">
+      <!-- LEFT: Rates -->
+      <div class="panel">
+        <div style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text)"><span class="l-en">Rates</span><span class="l-zh">利率</span></div>
+        
+        <div class="stat-row">
+          
+          <div class="stat-item">
+            <span class="stat-key"><span class="l-en">Policy Rate</span><span class="l-zh">政策利率</span></span>
+            <span class="stat-val">3.62%</span>
+          </div>
+          
+          
+          <div class="stat-item">
+            <span class="stat-key"><span class="l-en">Implied Cuts (6m)</span><span class="l-zh">隐含降息(6月)</span></span>
+            <span class="stat-val">-1</span>
+          </div>
+          
+          
+          <div class="stat-item">
+            <span class="stat-key"><span class="l-en">Market vs Fed</span><span class="l-zh">市场vs美联储</span></span>
+            <span class="stat-val">+8bp</span>
+          </div>
+          
+          
+          <div class="stat-item">
+            <span class="stat-key"><span class="l-en">2s10s Spread</span><span class="l-zh">2s10s利差</span></span>
+            <div>
+              <span class="stat-val">38bp</span>
+              
+              <div class="stat-pctile">p65</div>
+              
+            </div>
+          </div>
+          
+          
+          <div class="stat-item">
+            <span class="stat-key"><span class="l-en">Real 10y</span><span class="l-zh">实际10年</span></span>
+            <div>
+              <span class="stat-val">2.31%</span>
+              
+              <div class="stat-pctile">p98</div>
+              
+            </div>
+          </div>
+          
+          
+          <div class="stat-item">
+            <span class="stat-key"><span class="l-en">Term Premium</span><span class="l-zh">期限溢价</span></span>
+            <span class="stat-val">1.11%</span>
+          </div>
+          
+        </div>
+
+        <!-- Bond compass -->
+        
+        
+        <div class="compass-block">
+          <div class="compass-header">
+            <span class="compass-title"><span class="l-en">Bond Compass</span><span class="l-zh">债券罗盘</span></span>
+            <span class="chip c-up"><span class="l-en">lean_long</span><span class="l-zh">lean_long</span></span>
+          </div>
+          
+          <div class="compass-legs">
+            
+            
+            <div class="compass-leg bearish">
+              <span class="leg-name"><span class="l-en">Trend (TSMOM)</span><span class="l-zh">趋势（时序动量）</span></span>
+              <span class="leg-state">
+                <span class="leg-dot"></span>
+                <span class="l-en">bearish</span><span class="l-zh">bearish</span>
+                
+                <span style="font-size:10px;color:var(--muted)">-0.33</span>
+                
+              </span>
+            </div>
+            
+            
+            <div class="compass-leg bullish">
+              <span class="leg-name"><span class="l-en">Carry &amp; roll (10y−3m)</span><span class="l-zh">套息与滚动（10年−3月）</span></span>
+              <span class="leg-state">
+                <span class="leg-dot"></span>
+                <span class="l-en">bullish</span><span class="l-zh">bullish</span>
+                
+                <span style="font-size:10px;color:var(--muted)">0.62</span>
+                
+              </span>
+            </div>
+            
+            
+            <div class="compass-leg bullish">
+              <span class="leg-name"><span class="l-en">Value (real-10y rich/cheap)</span><span class="l-zh">价值（10年实际利率高/低）</span></span>
+              <span class="leg-state">
+                <span class="leg-dot"></span>
+                <span class="l-en">bullish</span><span class="l-zh">bullish</span>
+                
+                <span style="font-size:10px;color:var(--muted)">0.96</span>
+                
+              </span>
+            </div>
+            
+            
+            <div class="compass-leg bullish">
+              <span class="leg-name"><span class="l-en">Term premium</span><span class="l-zh">期限溢价</span></span>
+              <span class="leg-state">
+                <span class="leg-dot"></span>
+                <span class="l-en">bullish</span><span class="l-zh">bullish</span>
+                
+                <span style="font-size:10px;color:var(--muted)">0.94</span>
+                
+              </span>
+            </div>
+            
+            
+            <div class="compass-leg bearish">
+              <span class="leg-name"><span class="l-en">Macro impulse (reflation)</span><span class="l-zh">宏观动能（再通胀）</span></span>
+              <span class="leg-state">
+                <span class="leg-dot"></span>
+                <span class="l-en">bearish</span><span class="l-zh">bearish</span>
+                
+                <span style="font-size:10px;color:var(--muted)">-0.44</span>
+                
+              </span>
+            </div>
+            
+          </div>
+          
+          
+        </div>
+        
+        
+      </div>
+
+      <!-- RIGHT: Liquidity -->
+      <div class="panel liq-block">
+        <div style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text)"><span class="l-en">Liquidity Plumbing</span><span class="l-zh">流动性管道</span></div>
+        
+        <div class="liq-row">
+          <div class="liq-stat">
+            <div class="liq-stat-k"><span class="l-en">Net Liq</span><span class="l-zh">净流动性</span></div>
+            <div class="liq-stat-v c-info">$5981bn</div>
+            <div class="liq-stat-sub">2026-07-09</div>
+          </div>
+          
+          <div class="liq-stat">
+            <div class="liq-stat-k">&Delta;20d</div>
+            <div class="liq-stat-v c-up">+57bn</div>
+          </div>
+          
+          
+          <div class="liq-stat">
+            <div class="liq-stat-k">&Delta;65d</div>
+            <div class="liq-stat-v c-up">+49bn</div>
+          </div>
+          
+          
+          <div class="liq-stat">
+            <div class="liq-stat-k"><span class="l-en">Pctile</span><span class="l-zh">分位数</span></div>
+            <div class="liq-stat-v c-info">p84</div>
+          </div>
+          
+        </div>
+
+        
+        <div class="spark-container">
+          <div class="spark-lbl"><span class="l-en">90d net liquidity</span><span class="l-zh">90日净流动性</span></div>
+          <svg width="140" height="32" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="0.0,20.9 1.6,20.6 3.1,19.8 4.7,21.9 6.3,22.3 7.9,15.7 9.4,16.0 11.0,15.8 12.6,27.4 14.2,26.7 15.7,21.1 17.3,21.7 18.9,20.6 20.4,24.1 22.0,21.1 23.6,17.6 25.2,16.3 26.7,18.6 28.3,20.3 29.9,23.8 31.5,13.1 33.0,10.5 34.6,8.6 36.2,10.4 37.8,7.6 39.3,1.9 40.9,1.0 42.5,2.4 44.0,7.3 45.6,9.2 47.2,20.9 48.8,25.1 50.3,27.5 51.9,31.0 53.5,30.3 55.1,28.1 56.6,24.8 58.2,25.2 59.8,27.7 61.3,26.7 62.9,27.1 64.5,26.1 66.1,15.5 67.6,17.5 69.2,15.8 70.8,15.3 72.4,13.8 73.9,13.1 75.5,14.5 77.1,13.6 78.7,8.9 80.2,8.3 81.8,4.3 83.4,7.3 84.9,11.0 86.5,9.8 88.1,8.3 89.7,11.6 91.2,16.6 92.8,14.0 94.4,14.5 96.0,20.2 97.5,15.2 99.1,16.1 100.7,13.6 102.2,13.4 103.8,11.7 105.4,13.5 107.0,12.1 108.5,8.3 110.1,8.2 111.7,9.6 113.3,24.1 114.8,25.1 116.4,21.6 118.0,17.4 119.6,20.2 121.1,18.9 122.7,16.7 124.3,14.1 125.8,16.3 127.4,14.4 129.0,20.2 130.6,9.0 132.1,5.8 133.7,6.4 135.3,7.0 136.9,7.3 138.4,3.1 140.0,3.3" fill="none" stroke="var(--info)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </div>
+        
+
+        <div class="liq-row" style="margin-top:14px">
+          <div class="liq-stat">
+            <div class="liq-stat-k"><span class="l-en">RRP</span><span class="l-zh">逆回购</span></div>
+            <div class="liq-stat-v c-down">$5.8bn</div>
+            
+            <div class="liq-stat-sub" style="color:var(--down)"><span class="l-en">EXHAUSTED</span><span class="l-zh">已耗尽</span></div>
+            
+          </div>
+          
+          <div class="liq-stat">
+            <div class="liq-stat-k">TGA</div>
+            <div class="liq-stat-v c-muted">$749bn</div>
+          </div>
+          
+          <div class="liq-stat">
+            <div class="liq-stat-k"><span class="l-en">Quality</span><span class="l-zh">质量</span></div>
+            <div class="liq-stat-v c-warn"><span class="l-en">stress-expansion</span><span class="l-zh">stress-expansion</span></div>
+          </div>
+        </div>
+
+        
+        <div class="liq-row" style="margin-top:10px">
+          <div class="liq-stat">
+            <div class="liq-stat-k">OFR FSI</div>
+            <div class="liq-stat-v c-up">-2.839</div>
+            <div class="liq-stat-sub"><span class="l-en">low stress</span><span class="l-zh">低压力</span></div>
+          </div>
+          
+          <div style="padding:10px 0">
+            <div class="spark-lbl"><span class="l-en">90d OFR FSI</span><span class="l-zh">90日OFR FSI</span></div>
+            <svg width="100" height="28" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
+              <polyline points="0.0,14.2 1.6,17.8 3.1,10.5 4.7,5.7 6.3,16.7 7.9,11.7 9.4,8.7 11.0,7.0 12.6,10.4 14.2,15.3 15.7,14.3 17.3,12.0 18.9,9.3 20.4,7.4 22.0,8.3 23.6,9.7 25.2,5.0 26.7,5.4 28.3,1.0 29.9,5.6 31.5,15.0 33.0,9.3 34.6,15.0 36.2,11.7 37.8,9.4 39.3,17.0 40.9,18.5 42.5,19.9 44.0,19.8 45.6,22.3 47.2,23.4 48.8,23.4 50.3,25.0 51.9,22.3 53.5,22.6 55.1,23.0 56.6,23.2 58.2,22.3 59.8,22.5 61.3,21.5 62.9,21.5 64.5,22.8 66.1,20.1 67.6,19.3 69.2,20.1 70.8,22.1 72.4,23.5 73.9,24.3 75.5,25.1 77.1,24.6 78.7,25.1 80.2,26.3 81.8,24.3 83.4,23.5 84.9,23.4 86.5,24.2 88.1,26.1 89.7,26.4 91.2,26.3 92.8,26.9 94.4,27.2 96.0,28.7 97.5,31.0 99.1,28.6 100.7,27.7 102.2,28.4 103.8,28.2 105.4,26.2 107.0,25.2 108.5,24.7 110.1,21.0 111.7,21.8 113.3,24.5 114.8,27.4 116.4,28.8 118.0,28.9 119.6,28.8 121.1,28.0 122.7,28.6 124.3,25.8 125.8,23.2 127.4,26.3 129.0,25.4 130.6,23.3 132.1,25.5 133.7,27.0 135.3,29.8 136.9,28.2 138.4,27.8 140.0,29.7" fill="none" stroke="var(--up)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </div>
+          
+        </div>
+        
+
+        
+        <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.5">Net liquidity is technically expanding but RRP is near-exhausted or stress indicators are confirming — expansion quality is poor; treat with caution, not as a clean tailwind.</div>
+        
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HEADWIND / TAILWIND MATRIX ────────────────────────────── -->
+  <div id="matrix" class="section">
+    <div class="sec-lbl"><span class="l-en">Headwind / Tailwind Matrix</span><span class="l-zh">顺逆风矩阵</span></div>
+    <div class="htw-grid">
       <!-- Rates Transmission -->
-      <div class="card hw-section">
-        <h2><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></h2>
+      <div class="panel">
+        <div class="htw-title"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></div>
         
         
-        <div class="hw-rows">
+        <div class="htw-list">
           
-          <div class="hw-row">
-            <span class="hw-asset">XLB</span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="hw-net">-0.43</span>
+          <div class="htw-item head">
+            <span class="htw-asset">XLB</span>
+            <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="htw-net">-0.43</span>
           </div>
           
-          <div class="hw-row">
-            <span class="hw-asset">SPY</span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="hw-net">-0.39</span>
+          <div class="htw-item head">
+            <span class="htw-asset">SPY</span>
+            <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="htw-net">-0.39</span>
           </div>
           
-          <div class="hw-row">
-            <span class="hw-asset">XLK</span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="hw-net">-0.39</span>
+          <div class="htw-item head">
+            <span class="htw-asset">XLK</span>
+            <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="htw-net">-0.39</span>
           </div>
           
-          <div class="hw-row">
-            <span class="hw-asset">XLF</span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="hw-net">-0.39</span>
+          <div class="htw-item head">
+            <span class="htw-asset">XLF</span>
+            <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="htw-net">-0.39</span>
           </div>
           
-          <div class="hw-row">
-            <span class="hw-asset">QQQ</span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="hw-net">-0.38</span>
+          <div class="htw-item head">
+            <span class="htw-asset">QQQ</span>
+            <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="htw-net">-0.38</span>
           </div>
           
-          <div class="hw-row">
-            <span class="hw-asset">XLV</span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="hw-net">-0.35</span>
+          <div class="htw-item head">
+            <span class="htw-asset">XLV</span>
+            <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="htw-net">-0.35</span>
           </div>
           
           
-          <div class="hw-row">
-            <span class="hw-asset">GC=F</span>
-            <span class="hw-chip hw-tail"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
-            <span class="hw-net">+0.23</span>
+          <div class="htw-item tail">
+            <span class="htw-asset">GC=F</span>
+            <span class="chip c-up"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
+            <span class="htw-net">+0.23</span>
           </div>
           
-          <div class="hw-row">
-            <span class="hw-asset">TLT</span>
-            <span class="hw-chip hw-tail"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
-            <span class="hw-net">+0.16</span>
+          <div class="htw-item tail">
+            <span class="htw-asset">TLT</span>
+            <span class="chip c-up"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
+            <span class="htw-net">+0.16</span>
           </div>
           
-          <div class="hw-row">
-            <span class="hw-asset">FXI</span>
-            <span class="hw-chip hw-tail"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
-            <span class="hw-net">+0.09</span>
+          <div class="htw-item tail">
+            <span class="htw-asset">FXI</span>
+            <span class="chip c-up"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
+            <span class="htw-net">+0.09</span>
           </div>
           
         </div>
@@ -910,227 +2649,234 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </div>
 
       <!-- FX / Dollar -->
-      <div class="card hw-section">
-        <h2><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></h2>
+      <div class="panel">
+        <div class="htw-title"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></div>
         
         
-        <div class="hw-rows">
-          
-          <div class="hw-row">
-            <span class="hw-asset"><span class="l-en">US equities</span><span class="l-zh">US equities</span></span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+        <div class="fx-block">
+          <div class="fx-title"><span class="l-en">Dollar Impact</span><span class="l-zh">美元影响</span></div>
+          <div class="fx-list">
+            
+            <div class="fx-item head">&#8595; <span class="l-en">US equities</span><span class="l-zh">US equities</span></div>
+            
+            <div class="fx-item head">&#8595; <span class="l-en">EM equities</span><span class="l-zh">EM equities</span></div>
+            
+            <div class="fx-item head">&#8595; <span class="l-en">Gold</span><span class="l-zh">黄金</span></div>
+            
+            <div class="fx-item head">&#8595; <span class="l-en">Copper</span><span class="l-zh">铜</span></div>
+            
+            <div class="fx-item head">&#8595; <span class="l-en">10y Treasury</span><span class="l-zh">10y Treasury</span></div>
+            
+            <div class="fx-item head">&#8595; <span class="l-en">Bitcoin</span><span class="l-zh">Bitcoin</span></div>
+            
+            
+            <div class="fx-item tail">&#8593; <span class="l-en">Oil (WTI)</span><span class="l-zh">Oil (WTI)</span></div>
+            
           </div>
-          
-          <div class="hw-row">
-            <span class="hw-asset"><span class="l-en">EM equities</span><span class="l-zh">EM equities</span></span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-          </div>
-          
-          <div class="hw-row">
-            <span class="hw-asset"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-          </div>
-          
-          <div class="hw-row">
-            <span class="hw-asset"><span class="l-en">Copper</span><span class="l-zh">铜</span></span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-          </div>
-          
-          <div class="hw-row">
-            <span class="hw-asset"><span class="l-en">10y Treasury</span><span class="l-zh">10y Treasury</span></span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-          </div>
-          
-          <div class="hw-row">
-            <span class="hw-asset"><span class="l-en">Bitcoin</span><span class="l-zh">Bitcoin</span></span>
-            <span class="hw-chip hw-head"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-          </div>
-          
-          
-          <div class="hw-row">
-            <span class="hw-asset"><span class="l-en">Oil (WTI)</span><span class="l-zh">Oil (WTI)</span></span>
-            <span class="hw-chip hw-tail"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
-          </div>
-          
         </div>
-        <div class="sub" style="margin-top:8px"><span class="l-en">USD trend</span><span class="l-zh">美元趋势</span>: <b><span class="l-en">up</span><span class="l-zh">up</span></b></div>
+        
+        <div style="margin-top:10px;font-size:13px"><span class="l-en">USD trend</span><span class="l-zh">美元趋势</span>: <span class="chip c-up"><span class="l-en">up</span><span class="l-zh">up</span></span></div>
+        
+        
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)"><span class="l-en">Regime</span><span class="l-zh">周期</span>: <b style="color:var(--text)">US growth premium</b></div>
+        
+        
+        <div style="margin-top:6px">
+          <span class="chip c-down"><span class="l-en">em_crisis_capital_flight</span><span class="l-zh">em_crisis_capital_flight</span></span>
+        </div>
+        
         
         <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-10</div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== TRANSITION TIMELINE ==================== -->
-  <div id="timeline">
-    <div class="sec-head">🕑 <span class="l-en">Transition Timeline</span><span class="l-zh">周期转换记录</span></div>
+  <!-- ── TRANSITIONS TIMELINE ──────────────────────────────────── -->
+  <div id="timeline" class="section">
+    <div class="sec-lbl"><span class="l-en">Transition Timeline</span><span class="l-zh">周期转换记录</span></div>
+
+    <!-- Breaking slug -->
     
-    <div class="tl-wrap">
-      <table class="tl-tbl">
-        <thead>
-          <tr>
-            <th><span class="l-en">Date</span><span class="l-zh">日期</span></th>
-            <th><span class="l-en">Domain</span><span class="l-zh">领域</span></th>
-            <th><span class="l-en">Field</span><span class="l-zh">字段</span></th>
-            <th><span class="l-en">Change</span><span class="l-zh">变化</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          
-          <tr>
-            <td class="tl-asof">2026-07-10</td>
-            <td class="tl-domain"><span class="l-en">canada</span><span class="l-zh">canada</span></td>
-            <td class="tl-field">canada_quad</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="tl-asof">2026-07-10</td>
-            <td class="tl-domain"><span class="l-en">hk</span><span class="l-zh">hk</span></td>
-            <td class="tl-field">hk_risk_state</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="tl-asof">2026-07-10</td>
-            <td class="tl-domain"><span class="l-en">fx</span><span class="l-zh">fx</span></td>
-            <td class="tl-field">fx_liquidity_dir</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="tl-asof">2026-07-10</td>
-            <td class="tl-domain"><span class="l-en">transmission</span><span class="l-zh">transmission</span></td>
-            <td class="tl-field">yield_curve_regime</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="tl-asof">2026-07-10</td>
-            <td class="tl-domain"><span class="l-en">market</span><span class="l-zh">market</span></td>
-            <td class="tl-field">market_state_verdict</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="tl-asof">2026-07-10</td>
-            <td class="tl-domain"><span class="l-en">us</span><span class="l-zh">us</span></td>
-            <td class="tl-field">us_risk_radar</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="tl-asof">2026-07-07</td>
-            <td class="tl-domain"><span class="l-en">market</span><span class="l-zh">market</span></td>
-            <td class="tl-field">market_state_verdict</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="tl-asof">2026-07-06</td>
-            <td class="tl-domain"><span class="l-en">us</span><span class="l-zh">us</span></td>
-            <td class="tl-field">cross_asset_verdict</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="tl-asof">2026-07-06</td>
-            <td class="tl-domain"><span class="l-en">us</span><span class="l-zh">us</span></td>
-            <td class="tl-field">us_rate_pressure</td>
-            <td>
-              <span class="tl-from">—</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">—</span>
-            </td>
-          </tr>
-          
-        </tbody>
-      </table>
+    <div class="breaking-slug">
+      <span class="breaking-badge"><span class="l-en">TODAY</span><span class="l-zh">今日</span></span>
+      <span class="breaking-text">
+        6 <span class="l-en">flip(s) this session</span><span class="l-zh">项转换本轮</span>
+        
+        — <span class="l-en">Canada</span><span class="l-zh">加拿大</span>: <span class="l-en">Quadrant</span><span class="l-zh">象限</span>, <span class="l-en">Hong Kong</span><span class="l-zh">香港</span>: <span class="l-en">Risk State</span><span class="l-zh">风险状态</span>, <span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span>: <span class="l-en">Liquidity</span><span class="l-zh">流动性</span> +3 <span class="l-en">more</span><span class="l-zh">更多</span>
+        
+      </span>
     </div>
+    
+
+    
+    
+    <div class="tl-date-group">
+      <div class="tl-date-header today">
+        2026-07-10
+         — <span class="l-en">TODAY</span><span class="l-zh">今日</span>
+      </div>
+      <div class="tl-events">
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
+          <span class="tl-from">Q1</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">Q4</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk State</span><span class="l-zh">风险状态</span></span>
+          <span class="tl-from">Risk-off</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">Neutral</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
+          <span class="tl-from">soft</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">supportive</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
+          <span class="tl-from">bull_flattener</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">bear_flattener</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
+          <span class="tl-from">MIXED</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">RISK_ON</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
+          <span class="tl-from">caution</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">watch</span>
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="tl-date-group">
+      <div class="tl-date-header">
+        2026-07-07
+        
+      </div>
+      <div class="tl-events">
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
+          <span class="tl-from">RISK_OFF</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">MIXED</span>
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="tl-date-group">
+      <div class="tl-date-header">
+        2026-07-06
+        
+      </div>
+      <div class="tl-events">
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
+          <span class="tl-from">diverge</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">mixed</span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Rate Pressure</span><span class="l-zh">利率压力</span></span>
+          <span class="tl-from">—</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">pressure</span>
+        </div>
+        
+      </div>
+    </div>
+    
     
   </div>
 
-  <!-- ==================== CONTRADICTION CENSUS STRIP ==================== -->
-  <div id="census">
-    <div class="sec-head">🔍 <span class="l-en">Contradiction Census</span><span class="l-zh">矛盾统计</span></div>
-    <div class="census-strip">
-      <div class="census-kv">
-        <span class="census-k"><span class="l-en">Contradictions</span><span class="l-zh">矛盾对数</span></span>
-        <span class="census-v">2</span>
+  <!-- ── CONTRADICTIONS ────────────────────────────────────────── -->
+  <div id="census" class="section">
+    <div class="sec-lbl"><span class="l-en">Contradictions</span><span class="l-zh">矛盾统计</span></div>
+
+    <div class="contra-callout">
+      <div class="contra-count">2</div>
+      <div class="contra-body">
+        <div class="contra-hd">
+          2 <span class="l-en">active contradiction(s)</span><span class="l-zh">条活跃矛盾</span>
+          · 1 <span class="l-en">tension</span><span class="l-zh">张力</span>
+          · 1 <span class="l-en">note</span><span class="l-zh">提示</span>
+        </div>
+        
+        
+        <div class="contra-sub"><span class="l-en">Intelligence divergences</span><span class="l-zh">情报分歧</span>: 10</div>
+        
+        
+        <div class="contra-pairs">
+          
+          <span class="contra-pair-chip">regime_vector-vs-risk_radar</span>
+          
+          <span class="contra-pair-chip">briefing-divergences</span>
+          
+        </div>
+        
       </div>
-      
-      
-      <div class="census-kv">
-        <span class="census-k"><span class="l-en">Intelligence Divergences</span><span class="l-zh">情报分歧数</span></span>
-        <span class="census-v">10</span>
-      </div>
-      
-      
-      <div class="census-kv" style="max-width:420px">
-        <span class="census-k"><span class="l-en">Active Pairs</span><span class="l-zh">活跃矛盾对</span></span>
-        <span style="font-size:12px;color:var(--muted);margin-top:4px">regime_vector-vs-risk_radar · briefing-divergences</span>
-      </div>
-      
     </div>
-    <div class="sub" style="margin-top:8px"><span class="l-en">Contradiction pairs are display-only — no gate, no rank raise. See committee.html for graded signal authority.</span><span class="l-zh">矛盾对仅供展示，不触发任何门槛或排名变化。如需评级信号权威，请参阅委员会视图。</span></div>
+
+    <div style="font-size:12px;color:var(--muted);margin-top:8px">
+      <span class="l-en">Contradiction pairs are display-only — no gate, no rank raise. See committee.html for graded signal authority.</span><span class="l-zh">矛盾对仅供展示，不触发任何门槛或排名变化。如需评级信号权威，请参阅委员会视图。</span>
+    </div>
   </div>
 
-  <!-- ==================== NEURAL WEB FOOTNOTE ==================== -->
-  <div id="footnote">
-    <div class="sec-head">📌 <span class="l-en">Neural Web Footnote</span><span class="l-zh">神经网络注脚</span></div>
+  <!-- ── FOOTNOTE ──────────────────────────────────────────────── -->
+  <div id="footnote" class="section">
+    <div class="sec-lbl"><span class="l-en">Footnote</span><span class="l-zh">注脚</span></div>
     <div class="footnote">
-      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>562a1b7c60824045</code>
+      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>d582ea4ec22254fa</code>
       &nbsp;·&nbsp;
       <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-07-10
       &nbsp;·&nbsp;
-      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 9
+      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 10
       &nbsp;·&nbsp;
       <a href="committee.html"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></a>
+      &nbsp;·&nbsp;
+      <span style="font-style:italic"><span class="l-en">Ledger starts 2026-07-05 (history dots reflect this window)</span><span class="l-zh">账本自2026-07-05起（历史点反映此窗口）</span></span>
     </div>
+
     <div class="disclaimer" style="margin-top:12px">
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot" style="margin-top:8px"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-10 16:45 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-10 19:11 UTC</div>
   </div>
 
-</div><!-- /wrap -->
+</div><!-- /page-wrap -->
 
-<footer class="site-footer">
+<footer class="site-footer" style="max-width:1440px;margin:30px auto 0;padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px">
   <span>© Mastermind-X</span>
-  <span class="faint"><span class="l-en">Macro Weather Station · display-only context · labels, not signals</span><span class="l-zh">宏观气象台 · 仅供展示 · 标签，非信号</span></span>
+  <span><span class="l-en">Macro Weather Station · display-only context · labels, not signals</span><span class="l-zh">宏观气象台 · 仅供展示 · 标签，非信号</span></span>
 </footer>
 
+<script src="theme.js"></script>
 </body>
 </html>

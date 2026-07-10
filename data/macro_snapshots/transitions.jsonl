@@ -1,9 +1,10 @@
 {"asof": "2026-07-06", "domain": "us", "field": "us_rate_pressure", "from_value": null, "to_value": "pressure", "macro_context_id": "a3e333211af405c0"}
 {"asof": "2026-07-06", "domain": "us", "field": "cross_asset_verdict", "from_value": "diverge", "to_value": "mixed", "macro_context_id": "a3e333211af405c0"}
 {"asof": "2026-07-07", "domain": "market", "field": "market_state_verdict", "from_value": "RISK_OFF", "to_value": "MIXED", "macro_context_id": "2cb7aded520102c9"}
-{"asof": "2026-07-10", "domain": "us", "field": "us_risk_radar", "from_value": "caution", "to_value": "watch", "macro_context_id": "562a1b7c60824045"}
-{"asof": "2026-07-10", "domain": "market", "field": "market_state_verdict", "from_value": "MIXED", "to_value": "RISK_ON", "macro_context_id": "562a1b7c60824045"}
-{"asof": "2026-07-10", "domain": "transmission", "field": "yield_curve_regime", "from_value": "bull_flattener", "to_value": "bear_flattener", "macro_context_id": "562a1b7c60824045"}
-{"asof": "2026-07-10", "domain": "fx", "field": "fx_liquidity_dir", "from_value": "soft", "to_value": "supportive", "macro_context_id": "562a1b7c60824045"}
-{"asof": "2026-07-10", "domain": "hk", "field": "hk_risk_state", "from_value": "Risk-off", "to_value": "Neutral", "macro_context_id": "562a1b7c60824045"}
-{"asof": "2026-07-10", "domain": "canada", "field": "canada_quad", "from_value": "Q1", "to_value": "Q4", "macro_context_id": "562a1b7c60824045"}
+{"asof": "2026-07-10", "domain": "us", "field": "us_risk_radar", "from_value": "caution", "to_value": "watch", "macro_context_id": "d582ea4ec22254fa"}
+{"asof": "2026-07-10", "domain": "market", "field": "market_state_verdict", "from_value": "MIXED", "to_value": "RISK_ON", "macro_context_id": "d582ea4ec22254fa"}
+{"asof": "2026-07-10", "domain": "transmission", "field": "yield_curve_regime", "from_value": "bull_flattener", "to_value": "bear_flattener", "macro_context_id": "d582ea4ec22254fa"}
+{"asof": "2026-07-10", "domain": "fx", "field": "fx_liquidity_dir", "from_value": "soft", "to_value": "supportive", "macro_context_id": "d582ea4ec22254fa"}
+{"asof": "2026-07-10", "domain": "commodity", "field": "commodity_favored", "from_value": "['Gold', 'Copper']", "to_value": "Gold, Copper", "macro_context_id": "d582ea4ec22254fa"}
+{"asof": "2026-07-10", "domain": "hk", "field": "hk_risk_state", "from_value": "Risk-off", "to_value": "Neutral", "macro_context_id": "d582ea4ec22254fa"}
+{"asof": "2026-07-10", "domain": "canada", "field": "canada_quad", "from_value": "Q1", "to_value": "Q4", "macro_context_id": "d582ea4ec22254fa"}

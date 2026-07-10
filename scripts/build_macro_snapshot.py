@@ -16,10 +16,27 @@ SAME-ASOF REPLACE (IDEMPOTENCY)
 Re-running on the same date replaces ledger rows and transitions for today.
 This is a BLOCKING requirement (§0.5 item 2): a nightly retry must be a no-op.
 
-LABEL VOCABULARY v1 (FROZEN — extending bumps schema minor)
-------------------------------------------------------------
+LABEL VOCABULARY v1.1 (FROZEN — extending bumps schema minor)
+--------------------------------------------------------------
 All values are verbatim strings from sources. NO derived numerics, NO banding.
 recession_risk ingests transmission's categorical yield_curve.recession.risk verbatim.
+
+Added in v1.1 vs v1:
+  us domain     : us_business_cycle_phase, us_liquidity_quality, us_liquidity_overlay,
+                  us_froth_band, us_dislocation, us_gamma_regime, us_repricing_state,
+                  us_vol_ts_state, us_vrp_state
+  bonds domain  : bond_duration_bucket, bond_curve_lean
+  fx domain     : fx_regime_radar
+  china domain  : china_property_regime, china_fe_band
+  hk domain     : hk_peg_state
+  canada domain : canada_overlay_state, canada_cycle_tag
+  intl domain   : intl_au_quad, intl_ez_quad, intl_gb_quad, intl_in_quad,
+                  intl_jp_quad, intl_kr_quad, intl_tw_quad
+  commodity     : bug fix — favored list now joined as "Gold, Copper"
+
+BIRTH-SUPPRESSION: transitions do NOT emit a record when a (domain, field) key
+did not exist in the prior ledger at all (field is new to the ledger). Only emits
+when the key existed before and the normalised value changed.
 
 RUL-M5: single-writer declaration satisfies RUL-P10 (not gitignored; not R2).
 
@@ -27,6 +44,7 @@ Never use the word "validated" in any output.
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import logging
@@ -138,11 +156,52 @@ def _safe(d: Any, *keys: str, default: Any = None) -> Any:
     return d
 
 
+def _norm_str(v: Any) -> str | None:
+    """Convert a value to string label, treating NaN/None/float-nan as None."""
+    if v is None:
+        return None
+    if isinstance(v, float) and v != v:  # NaN != NaN
+        return None
+    s = str(v)
+    if s.lower() in ("nan", "none", ""):
+        return None
+    return s
+
+
+def _join_list_field(v: Any) -> str | None:
+    """Join a list field (or stringified list) as 'Gold, Copper'.
+
+    Handles three cases:
+      - list: ['Gold', 'Copper'] → 'Gold, Copper'
+      - stringified list: "['Gold', 'Copper']" → parse then join
+      - plain string: 'Gold' → 'Gold'
+      - None / NaN → None
+    """
+    if v is None:
+        return None
+    if isinstance(v, float) and v != v:  # NaN
+        return None
+    if isinstance(v, list):
+        return ", ".join(str(x) for x in v)
+    s = str(v).strip()
+    if not s or s.lower() in ("nan", "none"):
+        return None
+    # Try to parse stringified list e.g. "['Gold', 'Copper']"
+    if s.startswith("["):
+        try:
+            parsed = ast.literal_eval(s)
+            if isinstance(parsed, list):
+                return ", ".join(str(x) for x in parsed)
+        except Exception:  # noqa: BLE001
+            pass
+    return s
+
+
 # ---------------------------------------------------------------------------
 # Label extractors — domain keyed
 # ---------------------------------------------------------------------------
 
-def _extract_us(regime_latest: dict) -> tuple[dict, str | None]:
+def _extract_us(regime_latest: dict) -> tuple[dict, str | None, list[str]]:
     """Extract US quad/regime labels from data/regime/latest.json."""
     gaps = []
     rv = regime_latest.get("regime_vector") or {}
@@ -150,6 +209,12 @@ def _extract_us(regime_latest: dict) -> tuple[dict, str | None]:
     cac = regime_latest.get("cross_asset_confirm") or {}
     vr = regime_latest.get("vol_regime") or {}
     rr = regime_latest.get("risk_radar") or {}
+    bc = regime_latest.get("business_cycle") or {}
+    lq = regime_latest.get("liquidity_quality") or {}
+    ff = regime_latest.get("froth_fragility") or {}
+    dis = regime_latest.get("dislocation") or {}
+    mg = regime_latest.get("market_gamma") or {}
+    md = regime_latest.get("market_drivers") or {}
 
     labels: dict[str, Any] = {
         "us_quad": regime_latest.get("quad"),
@@ -158,6 +223,16 @@ def _extract_us(regime_latest: dict) -> tuple[dict, str | None]:
         "us_vol_regime": rv.get("vol_regime") or (vr.get("regime") if vr else None),
         "us_risk_radar": rv.get("risk_radar_state") or (rr.get("state") if rr else None),
         "us_rate_pressure": rv.get("rate_pressure"),
+        # v1.1 additions
+        "us_business_cycle_phase": _safe(bc, "phase", "label"),
+        "us_liquidity_quality": _safe(lq, "label"),
+        "us_liquidity_overlay": _norm_str(regime_latest.get("liquidity_overlay")),
+        "us_froth_band": _safe(ff, "band"),
+        "us_dislocation": _safe(dis, "verdict"),
+        "us_gamma_regime": _safe(mg, "regime"),
+        "us_repricing_state": _safe(md, "repricing_coherence", "state"),
+        "us_vol_ts_state": _safe(vr, "ts_slope_state"),
+        "us_vrp_state": _safe(vr, "vrp_state"),
     }
 
     # cross_asset_confirm → to_brain.verdict → market_state_verdict proxy
@@ -172,14 +247,14 @@ def _extract_us(regime_latest: dict) -> tuple[dict, str | None]:
     if not any(v is not None for v in labels.values()):
         gaps.append("us: all regime labels null")
 
-    return {"us": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof_iso, gaps
+    return {"us": {k: _norm_str(v) for k, v in labels.items()}}, asof_iso, gaps
 
 
 def _extract_market_state(market_state: dict) -> tuple[dict, str | None]:
     """Extract market_state verdict from data/market_state/latest.json."""
     verdict = market_state.get("verdict")
     asof = _to_iso(market_state.get("asof") or market_state.get("date"))
-    return {"market": {"market_state_verdict": str(verdict) if verdict is not None else None}}, asof
+    return {"market": {"market_state_verdict": _norm_str(verdict)}}, asof
 
 
 def _extract_transmission(transmission: dict) -> tuple[dict, str | None]:
@@ -200,51 +275,70 @@ def _extract_transmission(transmission: dict) -> tuple[dict, str | None]:
         "recession_risk": recession_block.get("risk"),
     }
     asof = _to_iso(transmission.get("asof"))
-    return {"transmission": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof
+    return {"transmission": {k: _norm_str(v) for k, v in labels.items()}}, asof
 
 
 def _extract_forex(forex: dict) -> tuple[dict, str | None]:
     """Extract FX/dollar labels from data/forex/latest.json."""
     dd = forex.get("dollar_desk") or {}
+    rr = forex.get("regime_radar") or {}
     labels: dict[str, Any] = {
         "usd_trend": dd.get("trend"),
         "usd_regime": forex.get("regime"),
         "fx_risk": forex.get("risk"),
         "real_rate_regime": dd.get("real_rate_regime"),
         "fx_liquidity_dir": dd.get("liquidity_dir"),
+        # v1.1 addition
+        "fx_regime_radar": rr.get("dominant"),
     }
     # forex uses display date "Jul 05, 2026" — normalise
     asof = _to_iso(forex.get("date") or forex.get("asof"))
-    return {"fx": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof
+    return {"fx": {k: _norm_str(v) for k, v in labels.items()}}, asof
 
 
 def _extract_bonds(bonds: dict) -> tuple[dict, str | None]:
     """Extract bond/credit labels from data/bonds/bond_health.json."""
+    bc = bonds.get("bond_compass") or {}
+    dur = bc.get("duration") or {}
+    curve = bc.get("curve_trade") or {}
     labels: dict[str, Any] = {
         "bond_health_label": bonds.get("health_label"),
         "bond_cycle_phase": bonds.get("cycle_phase"),
+        # v1.1 additions
+        "bond_duration_bucket": dur.get("bucket"),
+        "bond_curve_lean": curve.get("lean"),
     }
     asof = _to_iso(bonds.get("as_of") or bonds.get("asof"))
-    return {"bonds": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof
+    return {"bonds": {k: _norm_str(v) for k, v in labels.items()}}, asof
 
 
 def _extract_commodity(commodity: dict) -> tuple[dict, str | None]:
-    """Extract commodity labels from data/commodity/latest.json."""
+    """Extract commodity labels from data/commodity/latest.json.
+
+    v1.1 bug fix: favored is a list ['Gold','Copper'] — joined as "Gold, Copper".
+    Also handles re-runs on old data where favored may already be a stringified
+    list "['Gold', 'Copper']" — parse-and-rejoin via ast.literal_eval.
+    """
     labels: dict[str, Any] = {
-        "commodity_regime": commodity.get("regime"),
-        "commodity_favored": commodity.get("favored"),
+        "commodity_regime": _norm_str(commodity.get("regime")),
+        "commodity_favored": _join_list_field(commodity.get("favored")),
     }
     asof = _to_iso(commodity.get("date") or commodity.get("asof"))
-    return {"commodity": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof
+    return {"commodity": labels}, asof
 
 
 def _extract_china(china: dict) -> tuple[dict, str | None]:
     """Extract China quad label from data/china_regime/latest.json."""
+    prop = china.get("property") or {}
+    fe = china.get("fear_euphoria") or {}
     labels: dict[str, Any] = {
         "china_quad": china.get("quad"),
+        # v1.1 additions
+        "china_property_regime": prop.get("regime"),
+        "china_fe_band": fe.get("band"),
     }
     asof = _to_iso(china.get("date") or china.get("asof"))
-    return {"china": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof
+    return {"china": {k: _norm_str(v) for k, v in labels.items()}}, asof
 
 
 def _extract_hk(hk: dict) -> tuple[dict, str | None]:
@@ -252,18 +346,24 @@ def _extract_hk(hk: dict) -> tuple[dict, str | None]:
     labels: dict[str, Any] = {
         "hk_quad": hk.get("quad"),
         "hk_risk_state": hk.get("risk_state"),
+        # v1.1 addition
+        "hk_peg_state": hk.get("peg_state"),
     }
     asof = _to_iso(hk.get("date") or hk.get("asof"))
-    return {"hk": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof
+    return {"hk": {k: _norm_str(v) for k, v in labels.items()}}, asof
 
 
 def _extract_canada(canada: dict) -> tuple[dict, str | None]:
     """Extract Canada quad label from data/canada_regime/latest.json."""
+    ov = canada.get("overlay") or {}
     labels: dict[str, Any] = {
         "canada_quad": canada.get("quad"),
+        # v1.1 additions
+        "canada_overlay_state": ov.get("state"),
+        "canada_cycle_tag": canada.get("cycle_tag"),
     }
     asof = _to_iso(canada.get("date") or canada.get("asof"))
-    return {"canada": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof
+    return {"canada": {k: _norm_str(v) for k, v in labels.items()}}, asof
 
 
 def _extract_dispersion(dispersion: dict) -> tuple[dict, str | None]:
@@ -272,7 +372,71 @@ def _extract_dispersion(dispersion: dict) -> tuple[dict, str | None]:
         "dispersion_state": dispersion.get("state") or dispersion.get("label"),
     }
     asof = _to_iso(dispersion.get("as_of") or dispersion.get("asof"))
-    return {"dispersion": {k: str(v) if v is not None else None for k, v in labels.items()}}, asof
+    return {"dispersion": {k: _norm_str(v) for k, v in labels.items()}}, asof
+
+
+# Country codes for intl domain
+_INTL_COUNTRIES = ["AU", "EZ", "GB", "IN", "JP", "KR", "TW"]
+
+
+def _extract_intl(data_dir: Path) -> tuple[dict, dict[str, str | None], list[str]]:
+    """Extract international quad labels from data/intl_regime/<CC>_history.parquet.
+
+    Reads the LAST row of each parquet's 'quad' column verbatim.
+    Returns:
+      labels  — {"intl": {"intl_au_quad": "Q1", ...}}
+      source_asofs — {"data/intl_regime/AU_history.parquet": "2026-07-10", ...}
+      gaps    — list of gap notes for missing/broken files
+
+    Per-file fail-open: missing parquet → gap note, label omitted/None.
+    If a DatetimeIndex date exists it is recorded in source_asofs; otherwise None
+    (excluded from global asof max/min computation).
+    """
+    intl_labels: dict[str, str | None] = {}
+    source_asofs: dict[str, str | None] = {}
+    gaps: list[str] = []
+
+    for cc in _INTL_COUNTRIES:
+        path = data_dir / "intl_regime" / f"{cc}_history.parquet"
+        key = f"intl_{cc.lower()}_quad"
+        src_key = f"data/intl_regime/{cc}_history.parquet"
+
+        if not path.exists():
+            gaps.append(f"intl/{cc}: absent {path}")
+            intl_labels[key] = None
+            source_asofs[src_key] = None
+            continue
+
+        try:
+            df = pd.read_parquet(path)
+            if df.empty or "quad" not in df.columns:
+                gaps.append(f"intl/{cc}: empty or no 'quad' column")
+                intl_labels[key] = None
+                source_asofs[src_key] = None
+                continue
+
+            # Sort defensively so quad and asof come from the same newest row
+            if isinstance(df.index, pd.DatetimeIndex):
+                df = df.sort_index()
+            last_quad = df["quad"].iloc[-1]
+            intl_labels[key] = _norm_str(last_quad)
+
+            # Extract date from DatetimeIndex
+            if isinstance(df.index, pd.DatetimeIndex) and len(df.index) > 0:
+                last_date = df.index[-1]
+                try:
+                    source_asofs[src_key] = str(last_date.date())
+                except Exception:  # noqa: BLE001
+                    source_asofs[src_key] = None
+            else:
+                source_asofs[src_key] = None
+
+        except Exception as e:  # noqa: BLE001
+            gaps.append(f"intl/{cc}: read error ({e})")
+            intl_labels[key] = None
+            source_asofs[src_key] = None
+
+    return {"intl": intl_labels}, source_asofs, gaps
 
 
 # ---------------------------------------------------------------------------
@@ -283,7 +447,7 @@ def build_snapshot(root: Path | None = None) -> dict:
     """Build the macro snapshot dict without writing anything.
 
     Returns a snapshot dict or raises on unrecoverable failure.
-    The snapshot is the canonical v1 representation.
+    The snapshot is the canonical v1.1 representation.
     """
     data = _data_dir(root)
     gaps: list[str] = []
@@ -292,7 +456,7 @@ def build_snapshot(root: Path | None = None) -> dict:
     source_asofs: list[str] = []
 
     # -----------------------------------------------------------------------
-    # 1. regime/latest.json (us quad, regime_vector, cross_asset)
+    # 1. regime/latest.json (us quad, regime_vector, cross_asset, + v1.1 fields)
     # -----------------------------------------------------------------------
     regime_raw, g = _read_json(data / "regime" / "latest.json")
     if g:
@@ -341,7 +505,7 @@ def build_snapshot(root: Path | None = None) -> dict:
             gaps.append(f"transmission extraction failed: {e}")
 
     # -----------------------------------------------------------------------
-    # 4. forex/latest.json
+    # 4. forex/latest.json (+ v1.1 fx_regime_radar)
     # -----------------------------------------------------------------------
     fx_raw, g = _read_json(data / "forex" / "latest.json")
     if g:
@@ -357,7 +521,7 @@ def build_snapshot(root: Path | None = None) -> dict:
             gaps.append(f"forex extraction failed: {e}")
 
     # -----------------------------------------------------------------------
-    # 5. bonds/bond_health.json
+    # 5. bonds/bond_health.json (+ v1.1 bond_duration_bucket, bond_curve_lean)
     # -----------------------------------------------------------------------
     bd_raw, g = _read_json(data / "bonds" / "bond_health.json")
     if g:
@@ -373,7 +537,7 @@ def build_snapshot(root: Path | None = None) -> dict:
             gaps.append(f"bonds extraction failed: {e}")
 
     # -----------------------------------------------------------------------
-    # 6. commodity/latest.json
+    # 6. commodity/latest.json (v1.1 bug fix: favored list → "Gold, Copper")
     # -----------------------------------------------------------------------
     cm_raw, g = _read_json(data / "commodity" / "latest.json")
     if g:
@@ -389,7 +553,7 @@ def build_snapshot(root: Path | None = None) -> dict:
             gaps.append(f"commodity extraction failed: {e}")
 
     # -----------------------------------------------------------------------
-    # 7. china_regime/latest.json
+    # 7. china_regime/latest.json (+ v1.1 china_property_regime, china_fe_band)
     # -----------------------------------------------------------------------
     cn_raw, g = _read_json(data / "china_regime" / "latest.json")
     if g:
@@ -405,7 +569,7 @@ def build_snapshot(root: Path | None = None) -> dict:
             gaps.append(f"china_regime extraction failed: {e}")
 
     # -----------------------------------------------------------------------
-    # 8. hk_regime/latest.json
+    # 8. hk_regime/latest.json (+ v1.1 hk_peg_state)
     # -----------------------------------------------------------------------
     hk_raw, g = _read_json(data / "hk_regime" / "latest.json")
     if g:
@@ -421,7 +585,7 @@ def build_snapshot(root: Path | None = None) -> dict:
             gaps.append(f"hk_regime extraction failed: {e}")
 
     # -----------------------------------------------------------------------
-    # 9. canada_regime/latest.json
+    # 9. canada_regime/latest.json (+ v1.1 canada_overlay_state, canada_cycle_tag)
     # -----------------------------------------------------------------------
     ca_raw, g = _read_json(data / "canada_regime" / "latest.json")
     if g:
@@ -453,6 +617,21 @@ def build_snapshot(root: Path | None = None) -> dict:
             gaps.append(f"dispersion extraction failed: {e}")
 
     # -----------------------------------------------------------------------
+    # 11. intl_regime/<CC>_history.parquet (v1.1 new domain)
+    # -----------------------------------------------------------------------
+    try:
+        intl_labels, intl_source_asofs, intl_gaps = _extract_intl(data)
+        labels.update(intl_labels)
+        sources.update(intl_source_asofs)
+        # Include only non-None intl asofs in the global computation
+        for src_asof in intl_source_asofs.values():
+            if src_asof:
+                source_asofs.append(src_asof)
+        gaps.extend(intl_gaps)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"intl extraction failed: {e}")
+
+    # -----------------------------------------------------------------------
     # PIT join key: MAX of present source asofs (§0.5 item 5)
     # oldest_component_asof: MIN (staleness diagnostic)
     # -----------------------------------------------------------------------
@@ -469,7 +648,7 @@ def build_snapshot(root: Path | None = None) -> dict:
     macro_context_id = _context_id(labels)
 
     snapshot: dict[str, Any] = {
-        "schema": "macro_snapshot.v1",
+        "schema": "macro_snapshot.v1.1",
         "asof": asof,
         "oldest_component_asof": oldest_component_asof,
         "macro_context_id": macro_context_id,
@@ -508,6 +687,7 @@ def _ledger_rows(snapshot: dict) -> list[dict]:
         "hk": "hk_regime",
         "canada": "canada_regime",
         "dispersion": "dispersion",
+        "intl": "intl_regime",
     }
     for domain, fragment in _domain_to_path_fragment.items():
         for src_path, src_asof in sources.items():
@@ -578,6 +758,9 @@ def write_transitions(snapshot: dict, full_ledger: pd.DataFrame, out_dir: Path) 
 
     Same-asof replace: drop today's existing transitions before re-deriving.
     First run (no prior asof): emits nothing, prints a note.
+    Birth-suppression (v1.1): when a (domain, field) key did NOT exist in the
+    prior ledger at all, do NOT emit a transition — only emit when the key
+    existed before and the normalised value changed.
     """
     transitions_path = out_dir / "transitions.jsonl"
     today_asof = snapshot["asof"]
@@ -632,9 +815,14 @@ def write_transitions(snapshot: dict, full_ledger: pd.DataFrame, out_dir: Path) 
         return s
 
     new_transitions: list[str] = []
+    birth_suppressed = 0
     for _, r in today_rows.iterrows():
         key = (r["domain"], r["field"])
-        prior_val = _norm(prior_map.get(key))
+        if key not in prior_map:
+            # Field is new to the ledger (birth) — suppress transition
+            birth_suppressed += 1
+            continue
+        prior_val = _norm(prior_map[key])
         curr_val = _norm(r["value"])
         if prior_val != curr_val:
             flip = {
@@ -646,6 +834,9 @@ def write_transitions(snapshot: dict, full_ledger: pd.DataFrame, out_dir: Path) 
                 "macro_context_id": r["macro_context_id"],
             }
             new_transitions.append(json.dumps(flip, ensure_ascii=True))
+
+    if birth_suppressed > 0:
+        print(f"transitions: suppressed {birth_suppressed} field-birth rows")
 
     all_lines = existing_lines + new_transitions
     transitions_tmp = transitions_path.with_name(transitions_path.name + ".tmp")

@@ -8,287 +8,1188 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% include "_interfonts.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Macro Weather — {{ vm.asof }}</title>
-{% set seo_title = 'Macro Weather Station — Regime Labels & Context | Mastermind' %}{% set seo_desc = 'Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK and Canada reads — display-only context.' %}{% set seo_path = 'macro_context.html' %}
+<link rel="stylesheet" href="theme.css">
+<title>Macro Weather Station — {{ vm.asof }}</title>
+{% set seo_title = 'Macro Weather Station — Regime Labels & Context | Mastermind' %}
+{% set seo_desc = 'Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK, Canada and international reads — display-only context.' %}
+{% set seo_path = 'macro_context.html' %}
 {% include "_seo_head.html.j2" %}
 <style>
-:root{
-  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
-  --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}}; --green:{{C.green}}; --teal:{{C.teal}};
-  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 14px; }
+html:not([data-lang="zh"]) .l-zh { display: none; }
+html[data-lang="zh"] .l-en { display: none; }
+html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif; }
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.5;
+  min-height: 100vh; overflow-x: hidden; margin: 0;
+  -webkit-font-smoothing: antialiased;
 }
-*{box-sizing:border-box}
-html:not([data-lang="zh"]) .l-zh{display:none}
-html[data-lang="zh"] .l-en{display:none}
-html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
-.grid{display:grid;gap:18px}
-.cols-2{grid-template-columns:1fr 1fr}
-.cols-3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
-.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0;overflow-wrap:break-word}
-.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
-.brand .gn{color:var(--blue)}
-.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
-.sub{font-size:13px;color:var(--muted);min-width:0}.faint{color:var(--faint)}
-.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
-.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
-/* jump nav */
-.jump-nav{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 20px}
-.jump-nav a{font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:5px 12px;white-space:nowrap;transition:color .15s,border-color .15s}
-.jump-nav a:hover{color:var(--ink);border-color:var(--blue)}
-/* weather board */
-.domain-block{margin-bottom:18px}
-.domain-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.domain-label{font-size:13px;font-weight:700;color:var(--ink)}
-.domain-asof{font-size:11px;color:var(--muted);margin-left:auto}
-.stale-ok{color:var(--green)}.stale-warn{color:var(--amber)}.stale-old{color:var(--red)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:10px;border:1px solid var(--grid);background:var(--card);min-width:0;max-width:200px}
-.chip-field{font-size:10.5px;color:var(--muted);font-weight:600;white-space:nowrap}
-.chip-val{font-size:13px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
-.chip-null .chip-val{color:var(--faint)}
-html[data-theme="dark"] .chip{background:#1e2230;border-color:#2a2f3a}
-/* headwind/tailwind matrix */
-.hw-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media(max-width:700px){.hw-grid{grid-template-columns:1fr}}
-.hw-section h3{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 10px}
-.hw-rows{display:flex;flex-direction:column;gap:7px}
-.hw-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;background:var(--card);border:1px solid var(--grid);font-size:13px}
-html[data-theme="dark"] .hw-row{background:#1e2230}
-.hw-asset{font-weight:700;color:var(--ink);flex:1;min-width:0}
-.hw-chip{padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap}
-.hw-head{background:var(--red)}.hw-tail{background:var(--green)}.hw-neut{background:var(--muted)}
-.hw-net{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;min-width:42px;text-align:right}
-/* transition timeline */
-.tl-wrap{overflow-x:auto}
-.tl-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
-.tl-tbl th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:700;white-space:nowrap}
-.tl-tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
-.tl-tbl tr:hover td{background:rgba(40,95,255,.04)}
-html[data-theme="dark"] .tl-tbl tr:hover td{background:rgba(40,95,255,.10)}
-.tl-asof{color:var(--muted);font-size:12px;white-space:nowrap}
-.tl-domain{font-weight:700;color:var(--ink)}
-.tl-field{color:var(--text)}
-.tl-from{color:var(--red)}.tl-to{color:var(--green)}.tl-arrow{color:var(--faint);padding:0 4px}
-/* contradiction census strip */
-.census-strip{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:14px 18px;background:var(--card);border:1px solid var(--grid);border-radius:14px;font-size:14px}
-html[data-theme="dark"] .census-strip{background:#1e2230}
-.census-kv{display:flex;flex-direction:column}
-.census-k{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.census-v{font-size:18px;font-weight:800;color:var(--ink);line-height:1}
-/* disclaimer */
-.disclaimer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:14px 18px;border-left:3px solid var(--amber);background:rgba(245,173,66,.07);border-radius:0 10px 10px 0;margin-top:10px}
-.disclaimer b{color:var(--ink)}
-html[data-theme="dark"] .disclaimer{background:rgba(245,173,66,.10)}
-/* footnote */
-.footnote{font-size:12px;color:var(--faint);margin-top:16px;line-height:1.7}
-.footnote a{color:var(--muted)}
-/* empty state */
-.empty-state{padding:24px;text-align:center;color:var(--muted);font-size:14px;border:1px dashed var(--grid);border-radius:14px}
-@media(max-width:560px){
-  .wrap{padding:0 12px 48px}
-  .card{padding:16px}
-  .site-footer{padding:16px 12px}
+a { color: var(--link); text-decoration: none; }
+
+/* Aurora backdrop */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 20%, color-mix(in srgb,var(--q1) 5%,transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 35% at 80% 10%, color-mix(in srgb,var(--info) 5%,transparent) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 30% at 90% 80%, color-mix(in srgb,var(--warn) 4%,transparent) 0%, transparent 60%);
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.page-wrap { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: 0 24px 60px; }
+
+/* ── Section headers ────────────────────────────────────────── */
+.sec-lbl {
+  font-size: 11px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase;
+  color: var(--muted); margin: 28px 0 14px; display: flex; align-items: center; gap: 8px;
+}
+.sec-lbl::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* ── Panel ──────────────────────────────────────────────────── */
+.panel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px; box-shadow: 0 1px 0 rgba(255,255,255,.02);
+}
+.panel2 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+
+/* ── Jump nav ───────────────────────────────────────────────── */
+.jump-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 20px; }
+.jump-nav a {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px 13px; white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.jump-nav a:hover { color: var(--text); border-color: var(--info); }
+.jump-nav .cnt {
+  display: inline-block; background: var(--warn); color: #fff;
+  border-radius: 999px; font-size: 10px; font-weight: 700;
+  padding: 1px 6px; margin-left: 4px; line-height: 1.4;
+}
+
+/* ── Chip base ──────────────────────────────────────────────── */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600;
+  letter-spacing: .03em; white-space: nowrap;
+}
+.c-q1  { background: color-mix(in srgb,var(--q1) 16%,var(--panel)); color: var(--q1); border: 1px solid color-mix(in srgb,var(--q1) 30%,transparent); }
+.c-q2  { background: color-mix(in srgb,var(--q2) 16%,var(--panel)); color: var(--q2); border: 1px solid color-mix(in srgb,var(--q2) 30%,transparent); }
+.c-q3  { background: color-mix(in srgb,var(--q3) 16%,var(--panel)); color: var(--q3); border: 1px solid color-mix(in srgb,var(--q3) 30%,transparent); }
+.c-q4  { background: color-mix(in srgb,var(--q4) 16%,var(--panel)); color: var(--q4); border: 1px solid color-mix(in srgb,var(--q4) 30%,transparent); }
+.c-up   { background: color-mix(in srgb,var(--up)   14%,var(--panel)); color: var(--up);   border: 1px solid color-mix(in srgb,var(--up)   25%,transparent); }
+.c-down { background: color-mix(in srgb,var(--down)  14%,var(--panel)); color: var(--down); border: 1px solid color-mix(in srgb,var(--down) 25%,transparent); }
+.c-warn { background: color-mix(in srgb,var(--warn)  14%,var(--panel)); color: var(--warn); border: 1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+.c-info { background: color-mix(in srgb,var(--info)  14%,var(--panel)); color: var(--info); border: 1px solid color-mix(in srgb,var(--info) 25%,transparent); }
+.c-muted { background: color-mix(in srgb,var(--muted) 12%,var(--panel)); color: var(--muted); border: 1px solid color-mix(in srgb,var(--muted) 20%,transparent); }
+
+/* ── Stale dots ─────────────────────────────────────────────── */
+.stale-ok   { color: var(--up);   }
+.stale-warn { color: var(--warn); }
+.stale-old  { color: var(--down); }
+
+/* ── Num ────────────────────────────────────────────────────── */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ── Display badge ──────────────────────────────────────────── */
+.display-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600; letter-spacing: .06em;
+  color: var(--muted); background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 3px 8px; margin-top: 8px;
+}
+
+/* ── Section spacing ────────────────────────────────────────── */
+.section { margin-bottom: 32px; }
+
+/* ─────────────────────────────────────────────────────────────
+   HERO
+   ───────────────────────────────────────────────────────────── */
+.hero {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden;
+  animation: fadeInUp .5s ease both;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg,
+    color-mix(in srgb,var(--up) 5%,transparent) 0%,
+    transparent 50%,
+    color-mix(in srgb,var(--info) 4%,transparent) 100%);
+  pointer-events: none;
+}
+.hero-content { position: relative; }
+.hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.hero-headline {
+  font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
+  background: linear-gradient(135deg, var(--up) 0%, var(--info) 55%, var(--warn) 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+.hero-sub { font-size: 13px; color: var(--muted); max-width: 520px; line-height: 1.6; margin-top: 4px; }
+.hero-score-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 110px; padding: 16px 20px; border-radius: 12px;
+  background: color-mix(in srgb,var(--up) 10%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--up) 25%,transparent); flex-shrink: 0;
+}
+.hero-score-label { font-size: 10px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; color: var(--up); opacity: .7; }
+.hero-score-num { font-size: 48px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.hero-score-tag { font-size: 11px; font-weight: 600; margin-top: 2px; }
+
+/* KPI strip */
+.hero-kpis {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.kpi-chip {
+  display: flex; flex-direction: column; gap: 3px;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 14px; min-width: 110px;
+  transition: transform .2s, box-shadow .2s;
+}
+.kpi-chip:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+.kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.kpi-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi-sub { font-size: 10px; color: var(--muted); }
+
+/* Recovery block */
+.hero-recovery {
+  display: flex; align-items: center; gap: 16px; margin-top: 20px;
+  background: color-mix(in srgb,var(--info) 6%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--info) 18%,var(--line));
+  border-radius: 10px; padding: 12px 16px; flex-wrap: wrap;
+}
+.recovery-text { flex: 1; min-width: 200px; }
+.recovery-hed { font-size: 13px; font-weight: 700; color: var(--text); }
+.recovery-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.spark-wrap { flex-shrink: 0; }
+
+/* ─────────────────────────────────────────────────────────────
+   RISK RADAR
+   ───────────────────────────────────────────────────────────── */
+.radar-board {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+}
+@media (max-width: 900px) { .radar-board { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 480px) { .radar-board { grid-template-columns: repeat(2,1fr); } }
+
+.scare-tile {
+  border-radius: 12px; padding: 18px 16px; border: 1px solid transparent;
+  transition: transform .2s, box-shadow .2s; cursor: default; position: relative; overflow: hidden;
+}
+.scare-tile:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.scare-tile.band-watch { background: color-mix(in srgb,var(--warn) 10%,var(--panel)); border-color: color-mix(in srgb,var(--warn) 30%,transparent); }
+.scare-tile.band-calm  { background: var(--panel); border-color: var(--line); }
+.scare-tile.dominant {
+  box-shadow: 0 0 0 2px color-mix(in srgb,var(--warn) 45%,transparent),
+              0 4px 20px color-mix(in srgb,var(--warn) 15%,transparent);
+}
+.scare-tile.dominant::after { content: '★'; position: absolute; top: 8px; right: 10px; font-size: 11px; color: var(--warn); opacity: .7; }
+.scare-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .10em; color: var(--muted); margin-bottom: 10px; }
+.scare-score { font-size: 32px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.scare-score.band-watch { color: var(--warn); }
+.scare-score.band-calm  { color: var(--muted); opacity: .6; }
+.scare-band { font-size: 10px; font-weight: 700; margin-top: 5px; text-transform: uppercase; letter-spacing: .07em; }
+.scare-band.band-watch { color: var(--warn); }
+.scare-band.band-calm  { color: var(--muted); }
+.scare-bar-track { height: 3px; background: var(--panel2); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+.scare-bar-fill { height: 100%; border-radius: 2px; }
+.scare-bar-fill.band-watch { background: linear-gradient(90deg,var(--warn),color-mix(in srgb,var(--warn) 60%,var(--down))); }
+.scare-bar-fill.band-calm  { background: var(--muted); opacity: .3; }
+.scare-lbl { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.3; }
+
+/* Drawdown ladder */
+.dd-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.dd-cell {
+  flex: 1; min-width: 90px; background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 14px;
+}
+.dd-cell-h { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.dd-cell-v { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--down); margin-top: 2px; }
+.dd-cell-base { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.dd-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--muted); align-items: center; }
+.dd-meta .traj { color: var(--up); font-weight: 600; }
+.deesc-chip { display: inline-flex; align-items: center; gap: 5px; background: color-mix(in srgb,var(--up) 10%,var(--panel2)); border: 1px solid color-mix(in srgb,var(--up) 25%,transparent); border-radius: 999px; padding: 3px 10px; font-size: 11px; color: var(--up); font-weight: 600; }
+
+/* Cycle context */
+.cycle-ctx {
+  margin-top: 14px; padding: 12px 16px;
+  background: color-mix(in srgb,var(--q4) 7%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--q4) 20%,var(--line));
+  border-radius: 10px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start;
+}
+.cycle-ctx-label { font-size: 11px; font-weight: 700; color: var(--q4); margin-bottom: 6px; }
+.cycle-ctx-sectors { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.cycle-ctx-text { font-size: 12px; color: var(--muted); line-height: 1.5; flex: 1; min-width: 200px; }
+
+/* ─────────────────────────────────────────────────────────────
+   WEATHER BOARD
+   ───────────────────────────────────────────────────────────── */
+.weather-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+}
+@media (max-width: 900px) { .weather-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 560px) { .weather-grid { grid-template-columns: 1fr; } }
+
+.domain-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 16px; transition: transform .2s, box-shadow .2s; position: relative;
+}
+.domain-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.domain-name {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .10em;
+  color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 7px;
+}
+.domain-name::before { content: ''; width: 3px; height: 14px; border-radius: 2px; background: var(--info); opacity: .45; display: inline-block; }
+.domain-name-en { flex: 1; }
+.domain-asof { font-size: 10px; margin-left: auto; }
+.domain-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.field-chip {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 6px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line);
+  min-width: 0; position: relative;
+}
+.field-chip.changed-today { box-shadow: 0 0 0 1.5px var(--warn); }
+.field-chip-name { font-size: 10px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.field-chip-val { font-size: 12px; font-weight: 700; margin-top: 1px; word-break: break-word; }
+.hist-dots { display: flex; gap: 3px; align-items: center; padding-top: 8px; border-top: 1px solid var(--line); margin-top: 8px; }
+.hist-d {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; opacity: 0.6;
+  background: var(--muted);
+}
+.hist-d:last-child { opacity: 1; }
+.hist-d.changed {
+  width: 10px; height: 10px; opacity: 1;
+  box-shadow: 0 0 0 2px color-mix(in srgb,var(--warn) 50%,transparent);
+  background: var(--warn);
+}
+.hist-hint { font-size: 9px; color: var(--muted); margin-left: 4px; font-style: italic; }
+
+/* ─────────────────────────────────────────────────────────────
+   GLOBAL QUAD MAP
+   ───────────────────────────────────────────────────────────── */
+.quad-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .quad-layout { grid-template-columns: 1fr; } }
+.quad-main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quad-cell {
+  border-radius: 12px; padding: 18px; border: 1px solid transparent;
+  position: relative; overflow: hidden; transition: transform .2s;
+}
+.quad-cell:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.quad-cell.q1 { background: linear-gradient(135deg, color-mix(in srgb,var(--q1) 14%,var(--panel)) 0%, var(--panel) 100%); border-color: color-mix(in srgb,var(--q1) 30%,transparent); }
+.quad-cell.q2 { background: linear-gradient(135deg, color-mix(in srgb,var(--q2) 14%,var(--panel)) 0%, var(--panel) 100%); border-color: color-mix(in srgb,var(--q2) 30%,transparent); }
+.quad-cell.q3 { background: linear-gradient(135deg, color-mix(in srgb,var(--q3) 14%,var(--panel)) 0%, var(--panel) 100%); border-color: color-mix(in srgb,var(--q3) 30%,transparent); }
+.quad-cell.q4 { background: linear-gradient(135deg, color-mix(in srgb,var(--q4) 14%,var(--panel)) 0%, var(--panel) 100%); border-color: color-mix(in srgb,var(--q4) 30%,transparent); }
+.quad-ticker { font-size: 22px; font-weight: 900; letter-spacing: -.02em; }
+.quad-cell.q1 .quad-ticker { color: var(--q1); }
+.quad-cell.q2 .quad-ticker { color: var(--q2); }
+.quad-cell.q3 .quad-ticker { color: var(--q3); }
+.quad-cell.q4 .quad-ticker { color: var(--q4); }
+.quad-name-lbl { font-size: 12px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.quad-conf { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.quad-note { font-size: 10px; font-style: italic; color: var(--muted); margin-top: 2px; }
+.quad-pending { font-size: 11px; color: var(--warn); margin-top: 4px; font-weight: 700; }
+.intl-rail { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.intl-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 10px; font-size: 12px;
+}
+.intl-code { font-weight: 700; }
+.intl-q { font-size: 10px; font-weight: 600; }
+.quad-tally { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.tally-item { font-size: 12px; }
+.dispersion-badge {
+  margin-top: 10px; display: inline-flex; align-items: center; gap: 6px;
+  background: color-mix(in srgb,var(--info) 10%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--info) 22%,var(--line));
+  border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--muted);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RATES & LIQUIDITY
+   ───────────────────────────────────────────────────────────── */
+.rates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .rates-grid { grid-template-columns: 1fr; } }
+
+.stat-row { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+.stat-item {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 7px 12px; background: var(--panel2); border-radius: 8px; border: 1px solid var(--line);
+}
+.stat-key { font-size: 12px; color: var(--muted); }
+.stat-val { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-pctile { font-size: 10px; color: var(--muted); margin-top: 1px; text-align: right; }
+
+/* Bond compass */
+.compass-block { margin-top: 12px; }
+.compass-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.compass-title { font-size: 12px; font-weight: 700; color: var(--text); }
+.compass-verdict { font-size: 13px; font-weight: 800; }
+.compass-legs { display: flex; flex-direction: column; gap: 5px; }
+.compass-leg {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 11px; border-radius: 8px; border: 1px solid transparent;
+}
+.compass-leg.bull { background: color-mix(in srgb,var(--up) 7%,var(--panel2)); border-color: color-mix(in srgb,var(--up) 18%,transparent); }
+.compass-leg.bear { background: color-mix(in srgb,var(--down) 7%,var(--panel2)); border-color: color-mix(in srgb,var(--down) 18%,transparent); }
+.compass-leg.neut { background: var(--panel2); border-color: var(--line); }
+.leg-name { font-size: 11px; color: var(--muted); }
+.leg-state { font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.leg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.leg-bull .leg-dot { background: var(--up); }
+.leg-bear .leg-dot { background: var(--down); }
+.leg-bull .leg-state { color: var(--up); }
+.leg-bear .leg-state { color: var(--down); }
+
+/* Liquidity plumbing */
+.liq-block { margin-top: 0; }
+.liq-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.liq-stat {
+  flex: 1; min-width: 80px; background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 12px;
+}
+.liq-stat-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.liq-stat-v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.liq-stat-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.spark-container { margin-top: 10px; }
+.spark-lbl { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+
+/* ─────────────────────────────────────────────────────────────
+   HEAD/TAILWIND MATRIX
+   ───────────────────────────────────────────────────────────── */
+.htw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .htw-grid { grid-template-columns: 1fr; } }
+.htw-title { font-size: 12px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+.htw-list { display: flex; flex-direction: column; gap: 7px; }
+.htw-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: 8px;
+}
+.htw-item.head { background: color-mix(in srgb,var(--down) 8%,var(--panel2)); border: 1px solid color-mix(in srgb,var(--down) 18%,transparent); }
+.htw-item.tail { background: color-mix(in srgb,var(--up) 8%,var(--panel2)); border: 1px solid color-mix(in srgb,var(--up) 18%,transparent); }
+.htw-asset { font-size: 12px; font-weight: 600; flex: 1; }
+.htw-net { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.htw-item.head .htw-net { color: var(--down); }
+.htw-item.tail .htw-net { color: var(--up); }
+.fx-block { margin-top: 14px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.fx-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+.fx-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.fx-item {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 7px; font-size: 11px; font-weight: 600;
+}
+.fx-item.head { background: color-mix(in srgb,var(--down) 12%,var(--panel)); color: var(--down); border: 1px solid color-mix(in srgb,var(--down) 22%,transparent); }
+.fx-item.tail { background: color-mix(in srgb,var(--up) 12%,var(--panel)); color: var(--up); border: 1px solid color-mix(in srgb,var(--up) 22%,transparent); }
+
+/* ─────────────────────────────────────────────────────────────
+   TRANSITIONS
+   ───────────────────────────────────────────────────────────── */
+.breaking-slug {
+  display: flex; align-items: center; gap: 12px;
+  background: color-mix(in srgb,var(--warn) 8%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--warn) 28%,var(--line));
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
+}
+.breaking-badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .10em;
+  color: #fff; background: var(--warn); border-radius: 5px; padding: 3px 7px; flex-shrink: 0;
+}
+.breaking-text { font-size: 13px; color: var(--text); }
+.tl-date-group { margin-bottom: 14px; }
+.tl-date-header {
+  font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .07em;
+  text-transform: uppercase; padding-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.tl-date-header.today { color: var(--warn); }
+.tl-date-header::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.tl-events { display: flex; flex-direction: column; gap: 6px; margin-left: 12px; }
+.tl-event {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; border-radius: 9px; background: var(--panel2); border: 1px solid var(--line);
+  font-size: 12px; flex-wrap: wrap;
+}
+.tl-event.hot { background: color-mix(in srgb,var(--warn) 8%,var(--panel2)); border-color: color-mix(in srgb,var(--warn) 22%,var(--line)); }
+.tl-domain { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); min-width: 70px; }
+.tl-event.hot .tl-domain { color: var(--warn); }
+.tl-arrow { color: var(--muted); font-size: 11px; }
+.tl-from { color: var(--muted); }
+.tl-to { font-weight: 700; color: var(--text); }
+.tl-event.hot .tl-to { color: var(--warn); }
+
+/* ─────────────────────────────────────────────────────────────
+   CONTRADICTIONS
+   ───────────────────────────────────────────────────────────── */
+.contra-callout {
+  background: color-mix(in srgb,var(--warn) 8%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--warn) 28%,var(--line));
+  border-radius: 10px; padding: 14px 18px; margin-bottom: 14px;
+  display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap;
+}
+.contra-count { font-size: 36px; font-weight: 900; color: var(--warn); line-height: 1; min-width: 48px; }
+.contra-body { flex: 1; min-width: 160px; }
+.contra-hd { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.contra-pairs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.contra-pair-chip { padding: 3px 10px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--muted); }
+.contra-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ─────────────────────────────────────────────────────────────
+   DISCLAIMER / FOOTNOTE
+   ───────────────────────────────────────────────────────────── */
+.disclaimer {
+  font-size: 12.5px; color: var(--muted); line-height: 1.6;
+  padding: 14px 18px; border-left: 3px solid var(--warn);
+  background: color-mix(in srgb,var(--warn) 6%,var(--panel2));
+  border-radius: 0 10px 10px 0; margin-top: 10px;
+}
+.disclaimer b { color: var(--text); }
+.footnote { font-size: 12px; color: var(--muted); margin-top: 16px; line-height: 1.7; }
+.footnote a { color: var(--muted); }
+.footnote code { font-family: monospace; font-size: 11px; }
+.meta-foot { font-size: 12px; color: var(--muted); margin-top: 6px; opacity: .6; }
+
+/* ── Empty state ────────────────────────────────────────────── */
+.empty-state {
+  padding: 24px; text-align: center; color: var(--muted); font-size: 14px;
+  border: 1px dashed var(--line); border-radius: 14px;
+}
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.section:nth-child(1) { animation: fadeInUp .5s .05s ease both; }
+.section:nth-child(2) { animation: fadeInUp .5s .10s ease both; }
+.section:nth-child(3) { animation: fadeInUp .5s .15s ease both; }
+.section:nth-child(4) { animation: fadeInUp .5s .20s ease both; }
+.section:nth-child(5) { animation: fadeInUp .5s .25s ease both; }
+.section:nth-child(6) { animation: fadeInUp .5s .30s ease both; }
+.section:nth-child(7) { animation: fadeInUp .5s .35s ease both; }
+.section:nth-child(8) { animation: fadeInUp .5s .40s ease both; }
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .page-wrap { padding: 0 12px 48px; }
+  .hero { padding: 18px 16px; }
+  .hero-kpis { gap: 7px; }
+  .kpi-chip { min-width: 90px; }
+  .quad-main-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
 <body>
-<nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
-  {% include "_navlinks.html.j2" %}
-  <div class="nav-ctrls">
-    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span>
-      <span class="opt en-opt" data-l="en">EN</span>
-      <span class="opt zh-opt" data-l="zh">中文</span>
-    </div>
-  </div>
-</nav>
+{% include "_site_nav.html.j2" %}
 
-<div class="wrap">
-  <div class="brand">🌦️ {{ t('Macro Weather', '') }}<span class="gn"> {{ t('Station', '宏观气象台') }}</span></div>
-  <p class="lead">{{ t('Live macro label board — quadrant, FX, rates, bond health, commodity, China, HK, Canada. Display-only context; not signals.', '宏观标签全景展示 — 象限、外汇、利率、债券健康、大宗、中港加。仅作背景参考，非信号。') }}
-  <span class="faint">· {{ t('As of', '截至') }} {{ vm.asof }}</span></p>
+<div class="page-wrap">
 
-  <!-- display-only disclaimer -->
-  <div class="disclaimer">
-    <b>{{ t('Display-only context.', '仅供展示参考。') }}</b>
-    {{ t('Labels describe current regime reads — they are not trade signals and carry no forward-return claim. For committee-graded signals see', '标签描述当前周期读数，不构成交易信号，不含任何前瞻收益声明。如需委员会评级信号，请参阅') }}
-    <a href="committee.html">{{ t('Committee View', '委员会视图') }}</a>.
-  </div>
-
-  <!-- section jump nav -->
-  <div class="jump-nav" style="margin-top:16px">
-    <a href="#board">🌡️ {{ t('Weather Board', '气象板') }}</a>
-    <a href="#matrix">⚖️ {{ t('Head/Tailwind Matrix', '顺逆风矩阵') }}</a>
-    <a href="#timeline">🕑 {{ t('Transitions', '转换记录') }}</a>
-    <a href="#census">🔍 {{ t('Contradictions', '矛盾统计') }}</a>
-    <a href="#footnote">📌 {{ t('Footnote', '注脚') }}</a>
+  <!-- ── Jump nav ──────────────────────────────────────────────── -->
+  <div class="jump-nav">
+    <a href="#hero">{{ t('Overview', '总览') }}</a>
+    <a href="#radar">{{ t('Risk Radar', '风险雷达') }}</a>
+    <a href="#board">{{ t('Weather Board', '气象板') }}</a>
+    <a href="#quad">{{ t('Quad Map', '象限地图') }}</a>
+    <a href="#rates">{{ t('Rates & Liquidity', '利率与流动性') }}</a>
+    <a href="#matrix">{{ t('Head/Tailwind', '顺逆风') }}</a>
+    <a href="#timeline">
+      {{ t('Transitions', '转换记录') }}
+      {% if vm.transitions_vm.today_count > 0 %}
+      <span class="cnt">{{ vm.transitions_vm.today_count }} {{ t('today', '今日') }}</span>
+      {% endif %}
+    </a>
+    <a href="#census">
+      {{ t('Contradictions', '矛盾') }}
+      {% if vm.contradictions.n > 0 %}
+      <span class="cnt">{{ vm.contradictions.n }}</span>
+      {% endif %}
+    </a>
+    <a href="#footnote">{{ t('Footnote', '注脚') }}</a>
   </div>
 
-  <!-- ==================== MACRO WEATHER BOARD ==================== -->
-  <div id="board">
-    <div class="sec-head">🌡️ {{ t('Macro Weather Board', '宏观气象板') }}</div>
-    {% if vm.weather_board %}
-      {% for domain_row in vm.weather_board %}
-      <div class="domain-block">
-        <div class="domain-head">
-          <span class="domain-label">{{ t(domain_row.domain_en, domain_row.domain_zh) }}</span>
-          {% if domain_row.asof %}
-          <span class="domain-asof {{ domain_row.stale_cls }}" data-tip-en="Source as-of {{ domain_row.asof }}" data-tip-zh="数据截至 {{ domain_row.asof }}">{{ domain_row.asof }}</span>
+  <!-- ── HERO ──────────────────────────────────────────────────── -->
+  <div id="hero" class="hero">
+    <div class="hero-content">
+      <div class="hero-top">
+        <div class="hero-headline-group">
+          <div class="hero-eyebrow">{{ t('Macro Weather Station', '宏观气象台') }} &bull; {{ vm.asof }}</div>
+          <div class="hero-headline">
+            {{ t(vm.hero.headline_en, vm.hero.headline_zh) }}
+          </div>
+          {% if vm.hero.quad %}
+          <div class="hero-sub">
+            <span class="chip {{ vm.hero.quad_cls }}">{{ vm.hero.quad }} {{ t(vm.hero.quad_name, vm.hero.quad_name_zh) }}</span>
+            {% if vm.hero.transition_state %}&bull; {{ td(vm.hero.transition_state) }}{% endif %}
+            {% if vm.hero.quad_conf is not none %}&bull; {{ t('conf', '置信') }} {{ "%.0f"|format(vm.hero.quad_conf * 100) }}%{% endif %}
+            {% if vm.hero.liq_quality %}&bull; {{ td(vm.hero.liq_quality) }}{% endif %}
+            {% if vm.hero.vix is not none %}&bull; VIX {{ vm.hero.vix }}{% endif %}
+          </div>
+          {% endif %}
+          <div class="display-badge">&#9432; {{ t('Display-only context — not signals', '仅展示背景 — 非信号') }}</div>
+        </div>
+        {% if vm.hero.score is not none %}
+        <div class="hero-score-box">
+          <div class="hero-score-label">{{ t('Risk Score', '风险评分') }}</div>
+          <div class="hero-score-num {{ vm.hero.score_cls }}">{{ vm.hero.score }}</div>
+          <div class="hero-score-tag {{ vm.hero.score_cls }}">{{ t(vm.hero.score_label_en, vm.hero.score_label_zh) }}</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- KPI strip -->
+      <div class="hero-kpis">
+        {% if vm.hero.quad %}
+        <div class="kpi-chip">
+          <span class="kpi-label">{{ t('Regime', '周期象限') }}</span>
+          <span class="kpi-val {{ vm.hero.quad_cls }}">{{ vm.hero.quad }} {{ t(vm.hero.quad_name, vm.hero.quad_name_zh) }}</span>
+          <span class="kpi-sub">{{ td(vm.hero.transition_state) }}{% if vm.hero.quad_conf is not none %} &bull; {{ "%.0f"|format(vm.hero.quad_conf * 100) }}%{% endif %}</span>
+        </div>
+        {% endif %}
+        {% if vm.hero.liq_quality %}
+        <div class="kpi-chip">
+          <span class="kpi-label">{{ t('Liquidity', '流动性') }}</span>
+          <span class="kpi-val {{ vm.hero.liq_cls }}">{{ td(vm.hero.liq_quality) }}</span>
+          <span class="kpi-sub">{{ td(vm.hero.liq_overlay) }}</span>
+        </div>
+        {% endif %}
+        {% if vm.hero.vix is not none %}
+        <div class="kpi-chip">
+          <span class="kpi-label">VIX</span>
+          <span class="kpi-val {{ vm.hero.vol_cls }}">{{ vm.hero.vix }}</span>
+          <span class="kpi-sub">{{ td(vm.hero.vol_regime) }}</span>
+        </div>
+        {% endif %}
+        {% if vm.hero.pct_above_200 is not none %}
+        <div class="kpi-chip">
+          <span class="kpi-label">{{ t('Breadth >200d', '广度>200日') }}</span>
+          <span class="kpi-val {% if vm.hero.pct_above_200 > 60 %}c-up{% elif vm.hero.pct_above_200 > 40 %}c-warn{% else %}c-down{% endif %}">{{ vm.hero.pct_above_200 }}%</span>
+          <span class="kpi-sub">{{ vm.hero.n_members }} {{ t('members', '成员') }}</span>
+        </div>
+        {% endif %}
+        {% if vm.hero.radar_state %}
+        <div class="kpi-chip">
+          <span class="kpi-label">{{ t('Radar', '雷达') }}</span>
+          <span class="kpi-val {{ vm.hero.radar_cls }}">{{ vm.hero.radar_state | upper }}</span>
+          <span class="kpi-sub">{{ vm.hero.dominant_scare[:18] if vm.hero.dominant_scare else '' }}</span>
+        </div>
+        {% endif %}
+        {% if vm.hero.repricing_state %}
+        <div class="kpi-chip">
+          <span class="kpi-label">{{ t('Repricing', '重定价') }}</span>
+          <span class="kpi-val {{ vm.hero.repricing_cls }}">{{ vm.hero.repricing_state }}</span>
+          <span class="kpi-sub">{{ t('coherence', '一致性') }}</span>
+        </div>
+        {% endif %}
+        {% if vm.hero.hmm_modal_quad is not none %}
+        <div class="kpi-chip"
+             data-tip-en="HMM smoothed posterior (display-only). Scored use requires causal refit against live regime labels."
+             data-tip-zh="HMM平滑后验（仅展示）。评分使用需对实时周期标签进行因果重拟合。">
+          <span class="kpi-label">{{ t('Regime HMM', '象限HMM') }}</span>
+          <span class="kpi-val c-info">P({{ vm.hero.hmm_modal_quad }}) {{ vm.hero.hmm_p_modal }}</span>
+          <span class="kpi-sub l-en">hazard {{ vm.hero.hmm_hazard }}{% if vm.hero.hmm_dwell is not none %} &middot; ~{{ vm.hero.hmm_dwell }}mo dwell{% endif %}{% if vm.hero.hmm_in_regime is not none %} &middot; {{ vm.hero.hmm_in_regime }}mo in{% endif %}</span>
+          <span class="kpi-sub l-zh">风险{{ vm.hero.hmm_hazard }}{% if vm.hero.hmm_dwell is not none %} &middot; 预期停留~{{ vm.hero.hmm_dwell }}月{% endif %}{% if vm.hero.hmm_in_regime is not none %} &middot; 已{{ vm.hero.hmm_in_regime }}月{% endif %}</span>
+        </div>
+        {% endif %}
+        {% if vm.hero.netliq_bn is not none %}
+        <div class="kpi-chip">
+          <span class="kpi-label">{{ t('Net Liquidity', '净流动性') }}</span>
+          <span class="kpi-val c-info">${{ vm.hero.netliq_bn | int }}bn</span>
+          <span class="kpi-sub">{% if vm.hero.netliq_chg_65d is not none %}&Delta;65d {{ "%+.0f"|format(vm.hero.netliq_chg_65d) }}bn{% endif %}{% if vm.hero.netliq_pctile is not none %} &bull; p{{ vm.hero.netliq_pctile }}{% endif %}</span>
+        </div>
+        {% endif %}
+        {% if vm.transitions_vm.today_count is defined %}
+        <div class="kpi-chip">
+          <span class="kpi-label">{{ t('Transitions 14d', '14日转换') }}</span>
+          <span class="kpi-val {% if vm.n_transitions_14d > 5 %}c-warn{% else %}c-muted{% endif %}">{{ vm.n_transitions_14d }}</span>
+          <span class="kpi-sub">{{ vm.transitions_vm.today_count }} {{ t('today', '今日') }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Recovery spark -->
+      {% if vm.hero.spark_pts %}
+      <div class="hero-recovery">
+        <div class="recovery-text">
+          <div class="recovery-hed">{{ t(vm.hero.headline_en, vm.hero.headline_zh) }}</div>
+          <div class="recovery-sub">{{ t(vm.hero.sub_en, vm.hero.sub_zh) }}</div>
+          {% if vm.hero.deesc_eligible %}
+          <div style="margin-top:6px" class="deesc-chip">{{ t('De-escalation eligible', '可降级') }}</div>
           {% endif %}
         </div>
-        <div class="chips">
-          {% for chip in domain_row.chips %}
-          <div class="chip{% if chip.null %} chip-null{% endif %}">
-            <span class="chip-field">{{ t(chip.field_en, chip.field_zh) }}</span>
-            <span class="chip-val" style="color:{{ chip.color }}">{{ chip.val }}</span>
+        <div class="spark-wrap">
+          <svg width="{{ vm.hero.spark_w + 4 }}" height="{{ vm.hero.spark_h + 4 }}"
+               viewBox="-2 -2 {{ vm.hero.spark_w + 4 }} {{ vm.hero.spark_h + 4 }}"
+               xmlns="http://www.w3.org/2000/svg">
+            <polyline
+              points="{{ vm.hero.spark_pts }}"
+              fill="none" stroke="var(--warn)" stroke-width="1.8"
+              stroke-linejoin="round" stroke-linecap="round"/>
+            {% if vm.hero.spark_peak_x is not none and vm.hero.spark_peak_y is not none %}
+            <circle cx="{{ vm.hero.spark_peak_x }}" cy="{{ vm.hero.spark_peak_y }}" r="3" fill="var(--down)"/>
+            {% endif %}
+            {% if vm.hero.spark_last_x is not none and vm.hero.spark_last_y is not none %}
+            <circle cx="{{ vm.hero.spark_last_x }}" cy="{{ vm.hero.spark_last_y }}" r="3" fill="var(--up)"/>
+            {% endif %}
+          </svg>
+          <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px;">
+            {{ t('24d intensity', '24日强度') }} &bull;
+            <span style="color:var(--down)">&#9679;</span> {{ t('peak', '峰值') }}
+            <span style="color:var(--up)">&#9679;</span> {{ t('now', '当前') }}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Market state mini bar -->
+      {% if vm.ms_history %}
+      <div style="display:flex;gap:4px;align-items:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+        <span style="font-size:10px;color:var(--muted);margin-right:6px;text-transform:uppercase;letter-spacing:.07em;line-height:1">{{ t('Market State', '市场状态') }}</span>
+        {% for ms in vm.ms_history %}
+        {% set bar_h = [4, ((ms.ms_score | int) * 24 // 100 + 4)] | max %}
+        <div data-tip-en="{{ ms.date }}: {{ ms.ms_verdict }} ({{ ms.ms_score }})"
+             data-tip-zh="{{ ms.date }}: {{ ms.ms_verdict }} ({{ ms.ms_score }})"
+             style="width:10px;height:{{ bar_h }}px;border-radius:3px 3px 0 0;
+               background:{% if ms.ms_verdict == 'RISK_ON' %}var(--up){% elif ms.ms_verdict == 'RISK_OFF' %}var(--down){% else %}var(--warn){% endif %};
+               opacity:0.7;"></div>
+        {% endfor %}
+        {% if vm.ms_history %}
+        <span style="font-size:10px;color:var(--muted);margin-left:4px">{{ vm.ms_history[-1].ms_score }}/100</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── RISK RADAR ─────────────────────────────────────────────── -->
+  <div id="radar" class="section">
+    <div class="sec-lbl">{{ t('Risk Radar', '风险雷达') }} &bull; {{ vm.risk_radar.n_scares }} {{ t('Scares', '风险') }}</div>
+    {% if vm.risk_radar.scares %}
+    <div class="radar-board">
+      {% for sc in vm.risk_radar.scares %}
+      <div class="scare-tile band-{{ sc.band }}{% if sc.dominant %} dominant{% endif %}">
+        <div class="scare-name">{{ t(sc.label_en, sc.label_zh) }}</div>
+        <div class="scare-score band-{{ sc.band }}">{{ sc.score | int }}</div>
+        <div class="scare-band band-{{ sc.band }}">{{ sc.band | upper }}</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-{{ sc.band }}" style="width:{{ sc.score | int }}%"></div></div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Drawdown ladder -->
+    <div class="dd-row">
+      {% for h, key, base_key in [('5d','dd_h5','dd_base_h5'), ('10d','dd_h10','dd_base_h10'), ('21d','dd_h21','dd_base_h21')] %}
+      {% set val = vm.risk_radar[key] %}
+      {% set base = vm.risk_radar[base_key] %}
+      <div class="dd-cell">
+        <div class="dd-cell-h">H{{ h }}</div>
+        <div class="dd-cell-v">{% if val is not none %}{{ "%.0f"|format(val * 100) }}%{% else %}—{% endif %}</div>
+        {% if base is not none %}<div class="dd-cell-base">{{ t('base', '基准') }} {{ "%.0f"|format(base * 100) }}%</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if vm.risk_radar.dd_measure %}
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;font-style:italic">{{ t(vm.risk_radar.dd_measure, '≥5% 标普回撤（2006–2026 实证；随强度与共振上升）') }}</div>
+    {% endif %}
+
+    <!-- Trajectory -->
+    <div class="dd-meta">
+      {% if vm.risk_radar.trajectory_phase %}
+      <span class="traj">{{ t('Phase', '阶段') }}: {{ vm.risk_radar.trajectory_phase }}</span>
+      {% endif %}
+      {% if vm.risk_radar.trajectory_peak is not none %}
+      <span>{{ t('Peak', '峰值') }} {{ vm.risk_radar.trajectory_peak }}
+        {% if vm.risk_radar.trajectory_peak_days_ago is not none %}· {{ vm.risk_radar.trajectory_peak_days_ago }}d {{ t('ago', '前') }}{% endif %}</span>
+      {% endif %}
+      {% if vm.risk_radar.trajectory_velocity is not none %}
+      <span>{{ t('Velocity', '速度') }} {{ "%.1f"|format(vm.risk_radar.trajectory_velocity) }}/d</span>
+      {% endif %}
+      {% if vm.risk_radar.deesc_eligible %}
+      <span class="deesc-chip">{{ t('De-escalation eligible', '可降级') }}</span>
+      {% endif %}
+    </div>
+
+    <!-- Cycle context -->
+    {% if vm.risk_radar.cycle_ctx %}
+    {% set cc = vm.risk_radar.cycle_ctx %}
+    <div class="cycle-ctx">
+      <div>
+        <div class="cycle-ctx-label">{{ t(cc.label_en, cc.label_zh) }}</div>
+        {% if cc.favor %}
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">{{ t('Favor', '偏好') }}:</div>
+        <div class="cycle-ctx-sectors">
+          {% for s in cc.favor %}
+          <span class="chip c-up">{{ t(s.en, s.zh) }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if cc.avoid %}
+        <div style="font-size:11px;color:var(--muted);margin:6px 0 4px">{{ t('Avoid', '回避') }}:</div>
+        <div class="cycle-ctx-sectors">
+          {% for s in cc.avoid %}
+          <span class="chip c-down">{{ t(s.en, s.zh) }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="cycle-ctx-text">{{ t(cc.caveat_en, cc.caveat_zh) }}</div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">{{ t('Risk radar data unavailable.', '风险雷达数据不可用。') }}</div>
+    {% endif %}
+  </div>
+
+  <!-- ── MACRO WEATHER BOARD ────────────────────────────────────── -->
+  <div id="board" class="section">
+    <div class="sec-lbl">{{ t('Macro Weather Board', '宏观气象板') }} &bull; {{ t('ledger since 07-05', '账本自07-05') }}</div>
+    {% if vm.weather_board %}
+    <div class="weather-grid">
+      {% for dom in vm.weather_board %}
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en">{{ t(dom.domain_en, dom.domain_zh) }}</span>
+          {% if dom.asof %}
+          <span class="domain-asof {{ dom.stale_cls }}"
+                data-tip-en="Source as-of {{ dom.asof }}"
+                data-tip-zh="数据截至 {{ dom.asof }}">{{ dom.asof }}</span>
+          {% endif %}
+        </div>
+        <div class="domain-chips">
+          {% for chip in dom.chips %}
+          <div class="field-chip{% if chip.changed_today %} changed-today{% endif %}"
+               data-tip-en="{{ chip.field_en }}"
+               data-tip-zh="{{ chip.field_zh }}">
+            <span class="field-chip-name">{{ t(chip.field_en, chip.field_zh) }}</span>
+            <span class="field-chip-val" style="color:{% if chip.cls == 'c-q1' %}var(--q1){% elif chip.cls == 'c-q2' %}var(--q2){% elif chip.cls == 'c-q3' %}var(--q3){% elif chip.cls == 'c-q4' %}var(--q4){% elif chip.cls == 'c-up' %}var(--up){% elif chip.cls == 'c-down' %}var(--down){% elif chip.cls == 'c-warn' %}var(--warn){% elif chip.cls == 'c-info' %}var(--info){% else %}var(--muted){% endif %}">
+              {{ td(chip.val) if chip.val != '—' else '—' }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        <!-- History dots -->
+        {% set has_hist = namespace(v=false) %}
+        {% for chip in dom.chips %}{% if chip.history %}{% set has_hist.v = true %}{% endif %}{% endfor %}
+        {% if has_hist.v %}
+        <div class="hist-dots">
+          {% for chip in dom.chips[:1] %}
+          {% for hd in chip.history %}
+          <div class="hist-d {% if hd.changed %}changed{% endif %}"
+               data-tip-en="{{ hd.asof }}: {{ hd.value }}"
+               data-tip-zh="{{ hd.asof }}: {{ hd.value }}"></div>
+          {% endfor %}
+          {% endfor %}
+          <span class="hist-hint">{{ t('ledger', '账本') }}</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">{{ t('Macro snapshot not yet available.', '宏观快照尚未生成。') }}</div>
+    {% endif %}
+  </div>
+
+  <!-- ── GLOBAL QUAD MAP ───────────────────────────────────────── -->
+  <div id="quad" class="section">
+    <div class="sec-lbl">{{ t('Global Quad Map', '全球象限地图') }} &bull; {{ t('Pressure Fronts', '压力锋面') }}</div>
+    {% if vm.global_quad_map.regions %}
+    <div class="quad-layout">
+      <!-- 4-region grid -->
+      <div>
+        <div class="quad-main-grid">
+          {% for r in vm.global_quad_map.regions %}
+          <div class="quad-cell {{ r.quad_cls }}">
+            <div class="quad-ticker">{{ r.quad }}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px">{{ t(r.market_en, r.market_zh) }}</div>
+            <div class="quad-name-lbl">{{ t(r.quad_name, r.quad_name_zh) }}</div>
+            {% if r.confidence is not none %}
+            <div class="quad-conf">{{ t('conf', '置信') }} {{ "%.0f"|format(r.confidence * 100) }}%</div>
+            {% endif %}
+            {% if r.liq_overlay %}
+            <div class="quad-note">{{ td(r.liq_overlay) }}</div>
+            {% endif %}
+            {% if r.pending_quad %}
+            <div class="quad-pending">→ {{ r.pending_quad }} {{ t('pending', '待确认') }}</div>
+            {% endif %}
+            {% if r.peg_state %}
+            <div class="quad-note">{{ r.peg_state }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Quad distribution tally -->
+        {% if vm.global_quad_map.quad_tally %}
+        <div class="quad-tally" style="margin-top:12px">
+          {% for q, cnt in vm.global_quad_map.quad_tally.items() %}
+          {% if cnt > 0 %}
+          <span class="chip c-{{ q | lower }}">{{ q }} &times;{{ cnt }}</span>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if vm.global_quad_map.dispersion_note_en or vm.global_quad_map.dispersion_note %}
+        <div class="dispersion-badge" style="margin-top:10px">
+          &#9670; {{ t(vm.global_quad_map.dispersion_note_en or vm.global_quad_map.dispersion_note, vm.global_quad_map.dispersion_note_zh or vm.global_quad_map.dispersion_note_en or vm.global_quad_map.dispersion_note) }}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Intl rail -->
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">{{ t('International', '国际') }}</div>
+        <div class="intl-rail">
+          {% for ic in vm.global_quad_map.intl_chips %}
+          <div class="intl-chip">
+            <span class="intl-code">{{ ic.code_en }}</span>
+            <span class="l-zh" style="font-size:11px;color:var(--muted)">{{ ic.country_zh }}</span>
+            <span class="chip c-{{ ic.quad | lower }} intl-q">{{ ic.quad }}</span>
+            <span style="font-size:10px;color:var(--muted)">{{ t(ic.quad_name, ic.quad_name_zh) }}</span>
           </div>
           {% endfor %}
         </div>
       </div>
-      {% endfor %}
+    </div>
     {% else %}
-    <div class="empty-state">{{ t('Macro snapshot not yet available — run build_macro_snapshot to populate.', '宏观快照尚未生成，请先运行 build_macro_snapshot。') }}</div>
+    <div class="empty-state">{{ t('Global regime data unavailable.', '全球周期数据不可用。') }}</div>
     {% endif %}
   </div>
 
-  <!-- ==================== HEADWIND / TAILWIND MATRIX ==================== -->
-  <div id="matrix">
-    <div class="sec-head">⚖️ {{ t('Headwind / Tailwind Matrix', '顺逆风矩阵') }}</div>
-    <div class="hw-grid">
+  <!-- ── RATES & LIQUIDITY ─────────────────────────────────────── -->
+  <div id="rates" class="section">
+    <div class="sec-lbl">{{ t('Rates & Liquidity', '利率与流动性') }}</div>
+    <div class="rates-grid">
+      <!-- LEFT: Rates -->
+      <div class="panel">
+        <div style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text)">{{ t('Rates', '利率') }}</div>
+        {% set rl = vm.rates_liquidity %}
+        <div class="stat-row">
+          {% if rl.policy_rate is not none %}
+          <div class="stat-item">
+            <span class="stat-key">{{ t('Policy Rate', '政策利率') }}</span>
+            <span class="stat-val">{{ "%.2f"|format(rl.policy_rate) }}%</span>
+          </div>
+          {% endif %}
+          {% if rl.implied_cuts_6m is not none %}
+          <div class="stat-item">
+            <span class="stat-key">{{ t('Implied Cuts (6m)', '隐含降息(6月)') }}</span>
+            <span class="stat-val">{{ rl.implied_cuts_6m }}</span>
+          </div>
+          {% endif %}
+          {% if rl.market_vs_fed_bp is not none %}
+          <div class="stat-item">
+            <span class="stat-key">{{ t('Market vs Fed', '市场vs美联储') }}</span>
+            <span class="stat-val">{{ "%+d"|format(rl.market_vs_fed_bp) }}bp</span>
+          </div>
+          {% endif %}
+          {% if rl.curve_2s10s is not none %}
+          <div class="stat-item">
+            <span class="stat-key">{{ t('2s10s Spread', '2s10s利差') }}</span>
+            <div>
+              <span class="stat-val">{{ "%.0f"|format(rl.curve_2s10s * 100) }}bp</span>
+              {% if rl.curve_pctile is not none %}
+              <div class="stat-pctile">p{{ "%.0f"|format(rl.curve_pctile * 100) }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          {% if rl.real_10y is not none %}
+          <div class="stat-item">
+            <span class="stat-key">{{ t('Real 10y', '实际10年') }}</span>
+            <div>
+              <span class="stat-val">{{ "%.2f"|format(rl.real_10y) }}%</span>
+              {% if rl.real_pctile is not none %}
+              <div class="stat-pctile">p{{ "%.0f"|format(rl.real_pctile * 100) }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          {% if rl.tp_adj is not none %}
+          <div class="stat-item">
+            <span class="stat-key">{{ t('Term Premium', '期限溢价') }}</span>
+            <span class="stat-val">{{ "%.2f"|format(rl.tp_adj) }}%</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Bond compass -->
+        {% set bc = rl.bond_compass %}
+        {% if bc.duration_bucket %}
+        <div class="compass-block">
+          <div class="compass-header">
+            <span class="compass-title">{{ t('Bond Compass', '债券罗盘') }}</span>
+            <span class="chip {{ 'c-up' if bc.duration_bucket == 'lean_long' else 'c-down' if bc.duration_bucket == 'lean_short' else 'c-muted' }}">{{ td(bc.duration_bucket) }}</span>
+          </div>
+          {% if bc.legs %}
+          <div class="compass-legs">
+            {% for leg in bc.legs %}
+            {% set ls = leg.state if leg.state else 'neut' %}
+            <div class="compass-leg {{ ls }}">
+              <span class="leg-name">{{ t(leg.label_en, leg.label_zh) }}</span>
+              <span class="leg-state">
+                <span class="leg-dot"></span>
+                {{ td(leg.state) }}
+                {% if leg.value is not none %}
+                <span style="font-size:10px;color:var(--muted)">{{ "%.2f"|format(leg.value) }}</span>
+                {% endif %}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if bc.curve_lean %}
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+            {{ t('Curve lean', '曲线倾向') }}: <b style="color:var(--text)">{{ td(bc.curve_lean) }}</b>
+            {% if bc.curve_rationale_en %}
+            <div style="font-size:11px;margin-top:3px">{{ t(bc.curve_rationale_en, bc.curve_rationale_zh) }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if not rl.policy_rate and not bc.duration_bucket %}
+        <div class="empty-state" style="padding:14px;font-size:13px">{{ t('Rates data unavailable.', '利率数据不可用。') }}</div>
+        {% endif %}
+      </div>
+
+      <!-- RIGHT: Liquidity -->
+      <div class="panel liq-block">
+        <div style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text)">{{ t('Liquidity Plumbing', '流动性管道') }}</div>
+        {% if rl.netliq_bn is not none %}
+        <div class="liq-row">
+          <div class="liq-stat">
+            <div class="liq-stat-k">{{ t('Net Liq', '净流动性') }}</div>
+            <div class="liq-stat-v c-info">${{ rl.netliq_bn | int }}bn</div>
+            <div class="liq-stat-sub">{{ rl.lp_asof }}</div>
+          </div>
+          {% if rl.netliq_chg_20d is not none %}
+          <div class="liq-stat">
+            <div class="liq-stat-k">&Delta;20d</div>
+            <div class="liq-stat-v {% if rl.netliq_chg_20d > 0 %}c-up{% else %}c-down{% endif %}">{{ "%+.0f"|format(rl.netliq_chg_20d) }}bn</div>
+          </div>
+          {% endif %}
+          {% if rl.netliq_chg_65d is not none %}
+          <div class="liq-stat">
+            <div class="liq-stat-k">&Delta;65d</div>
+            <div class="liq-stat-v {% if rl.netliq_chg_65d > 0 %}c-up{% else %}c-down{% endif %}">{{ "%+.0f"|format(rl.netliq_chg_65d) }}bn</div>
+          </div>
+          {% endif %}
+          {% if rl.netliq_pctile is not none %}
+          <div class="liq-stat">
+            <div class="liq-stat-k">{{ t('Pctile', '分位数') }}</div>
+            <div class="liq-stat-v c-info">p{{ rl.netliq_pctile }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if rl.netliq_spark %}
+        <div class="spark-container">
+          <div class="spark-lbl">{{ t('90d net liquidity', '90日净流动性') }}</div>
+          <svg width="140" height="32" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="{{ rl.netliq_spark }}" fill="none" stroke="var(--info)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </div>
+        {% endif %}
+
+        <div class="liq-row" style="margin-top:14px">
+          <div class="liq-stat">
+            <div class="liq-stat-k">{{ t('RRP', '逆回购') }}</div>
+            <div class="liq-stat-v {% if rl.rrp_exhausted %}c-down{% else %}c-muted{% endif %}">{% if rl.rrp_bn is not none %}${{ rl.rrp_bn }}bn{% else %}—{% endif %}</div>
+            {% if rl.rrp_exhausted %}
+            <div class="liq-stat-sub" style="color:var(--down)">{{ t('EXHAUSTED', '已耗尽') }}</div>
+            {% endif %}
+          </div>
+          {% if rl.tga_bn is not none %}
+          <div class="liq-stat">
+            <div class="liq-stat-k">TGA</div>
+            <div class="liq-stat-v c-muted">${{ rl.tga_bn | int }}bn</div>
+          </div>
+          {% endif %}
+          <div class="liq-stat">
+            <div class="liq-stat-k">{{ t('Quality', '质量') }}</div>
+            <div class="liq-stat-v {{ rl.quality_cls }}">{{ td(rl.quality_label) }}</div>
+          </div>
+        </div>
+
+        {% if rl.ofr_fsi_val is not none %}
+        <div class="liq-row" style="margin-top:10px">
+          <div class="liq-stat">
+            <div class="liq-stat-k">OFR FSI</div>
+            <div class="liq-stat-v {{ rl.ofr_fsi_cls }}">{{ "%.3f"|format(rl.ofr_fsi_val) }}</div>
+            <div class="liq-stat-sub">{% if rl.ofr_fsi_val < 0 %}{{ t('low stress', '低压力') }}{% elif rl.ofr_fsi_val < 1 %}{{ t('moderate', '中等') }}{% else %}{{ t('elevated', '偏高') }}{% endif %}</div>
+          </div>
+          {% if rl.ofr_fsi_spark %}
+          <div style="padding:10px 0">
+            <div class="spark-lbl">{{ t('90d OFR FSI', '90日OFR FSI') }}</div>
+            <svg width="100" height="28" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
+              <polyline points="{{ rl.ofr_fsi_spark }}" fill="none" stroke="var(--up)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if rl.lp_summary %}
+        <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.5">{{ rl.lp_summary }}</div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state" style="padding:14px;font-size:13px">{{ t('Liquidity data unavailable.', '流动性数据不可用。') }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HEADWIND / TAILWIND MATRIX ────────────────────────────── -->
+  <div id="matrix" class="section">
+    <div class="sec-lbl">{{ t('Headwind / Tailwind Matrix', '顺逆风矩阵') }}</div>
+    <div class="htw-grid">
       <!-- Rates Transmission -->
-      <div class="card hw-section">
-        <h2>{{ t('Rates Transmission', '利率传导') }}</h2>
+      <div class="panel">
+        <div class="htw-title">{{ t('Rates Transmission', '利率传导') }}</div>
         {% set rt = vm.headwind_tailwind.rates %}
         {% if rt.headwinds or rt.tailwinds %}
-        <div class="hw-rows">
+        <div class="htw-list">
           {% for hw in rt.headwinds %}
-          <div class="hw-row">
-            <span class="hw-asset">{{ hw.asset }}</span>
-            <span class="hw-chip hw-head">{{ t('headwind', '逆风') }}</span>
-            <span class="hw-net">{{ '%+.2f'|format(hw.net) if hw.net is not none else '' }}</span>
+          <div class="htw-item head">
+            <span class="htw-asset">{{ hw.asset }}</span>
+            <span class="chip c-down">{{ t('headwind', '逆风') }}</span>
+            <span class="htw-net">{{ '%+.2f'|format(hw.net) if hw.net is not none else '' }}</span>
           </div>
           {% endfor %}
           {% for tw in rt.tailwinds %}
-          <div class="hw-row">
-            <span class="hw-asset">{{ tw.asset }}</span>
-            <span class="hw-chip hw-tail">{{ t('tailwind', '顺风') }}</span>
-            <span class="hw-net">{{ '%+.2f'|format(tw.net) if tw.net is not none else '' }}</span>
+          <div class="htw-item tail">
+            <span class="htw-asset">{{ tw.asset }}</span>
+            <span class="chip c-up">{{ t('tailwind', '顺风') }}</span>
+            <span class="htw-net">{{ '%+.2f'|format(tw.net) if tw.net is not none else '' }}</span>
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <div class="empty-state" style="padding:16px;font-size:13px">{{ t('No rates transmission data.', '暂无利率传导数据。') }}</div>
+        <div class="empty-state" style="padding:14px;font-size:13px">{{ t('No rates transmission data.', '暂无利率传导数据。') }}</div>
         {% endif %}
         {% if rt.asof %}<div class="meta-foot">{{ t('As of', '截至') }} {{ rt.asof }}</div>{% endif %}
       </div>
 
       <!-- FX / Dollar -->
-      <div class="card hw-section">
-        <h2>{{ t('FX / Dollar', '外汇 / 美元') }}</h2>
+      <div class="panel">
+        <div class="htw-title">{{ t('FX / Dollar', '外汇 / 美元') }}</div>
         {% set fx = vm.headwind_tailwind.fx %}
         {% if fx.headwind_for or fx.tailwind_for %}
-        <div class="hw-rows">
-          {% for asset in fx.headwind_for %}
-          <div class="hw-row">
-            <span class="hw-asset">{{ td(asset) }}</span>
-            <span class="hw-chip hw-head">{{ t('headwind', '逆风') }}</span>
+        <div class="fx-block">
+          <div class="fx-title">{{ t('Dollar Impact', '美元影响') }}</div>
+          <div class="fx-list">
+            {% for asset in fx.headwind_for %}
+            <div class="fx-item head">&#8595; {{ td(asset) }}</div>
+            {% endfor %}
+            {% for asset in fx.tailwind_for %}
+            <div class="fx-item tail">&#8593; {{ td(asset) }}</div>
+            {% endfor %}
           </div>
-          {% endfor %}
-          {% for asset in fx.tailwind_for %}
-          <div class="hw-row">
-            <span class="hw-asset">{{ td(asset) }}</span>
-            <span class="hw-chip hw-tail">{{ t('tailwind', '顺风') }}</span>
-          </div>
-          {% endfor %}
         </div>
-        {% if fx.trend %}<div class="sub" style="margin-top:8px">{{ t('USD trend', '美元趋势') }}: <b>{{ td(fx.trend) }}</b></div>{% endif %}
+        {% if fx.trend %}
+        <div style="margin-top:10px;font-size:13px">{{ t('USD trend', '美元趋势') }}: <span class="chip {{ 'c-up' if fx.trend == 'up' else 'c-down' if fx.trend == 'down' else 'c-muted' }}">{{ td(fx.trend) }}</span></div>
+        {% endif %}
+        {% if fx.regime %}
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">{{ t('Regime', '周期') }}: <b style="color:var(--text)">{{ fx.regime }}</b></div>
+        {% endif %}
+        {% if fx.regime_radar %}
+        <div style="margin-top:6px">
+          <span class="chip {{ fx.regime_radar_cls }}">{{ td(fx.regime_radar) }}</span>
+        </div>
+        {% endif %}
         {% else %}
-        <div class="empty-state" style="padding:16px;font-size:13px">{{ t('No FX transmission data.', '暂无外汇传导数据。') }}</div>
+        <div class="empty-state" style="padding:14px;font-size:13px">{{ t('No FX transmission data.', '暂无外汇传导数据。') }}</div>
         {% endif %}
         {% if fx.asof %}<div class="meta-foot">{{ t('As of', '截至') }} {{ fx.asof }}</div>{% endif %}
       </div>
     </div>
   </div>
 
-  <!-- ==================== TRANSITION TIMELINE ==================== -->
-  <div id="timeline">
-    <div class="sec-head">🕑 {{ t('Transition Timeline', '周期转换记录') }}</div>
-    {% if vm.transitions %}
-    <div class="tl-wrap">
-      <table class="tl-tbl">
-        <thead>
-          <tr>
-            <th>{{ t('Date', '日期') }}</th>
-            <th>{{ t('Domain', '领域') }}</th>
-            <th>{{ t('Field', '字段') }}</th>
-            <th>{{ t('Change', '变化') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for tr_row in vm.transitions %}
-          <tr>
-            <td class="tl-asof">{{ tr_row.asof }}</td>
-            <td class="tl-domain">{{ t(tr_row.domain, tr_row.domain) }}</td>
-            <td class="tl-field">{{ tr_row.field }}</td>
-            <td>
-              <span class="tl-from">{{ tr_row.get('from', tr_row.get('prev', '—')) }}</span>
-              <span class="tl-arrow">→</span>
-              <span class="tl-to">{{ tr_row.get('to', tr_row.get('curr', '—')) }}</span>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <!-- ── TRANSITIONS TIMELINE ──────────────────────────────────── -->
+  <div id="timeline" class="section">
+    <div class="sec-lbl">{{ t('Transition Timeline', '周期转换记录') }}</div>
+
+    <!-- Breaking slug -->
+    {% if vm.transitions_vm.today_count > 0 %}
+    <div class="breaking-slug">
+      <span class="breaking-badge">{{ t('TODAY', '今日') }}</span>
+      <span class="breaking-text">
+        {{ vm.transitions_vm.today_count }} {{ t('flip(s) this session', '项转换本轮') }}
+        {% for dg in vm.transitions_vm.date_groups %}{% if dg.is_today %}
+        — {% for r in dg.rows[:3] %}{{ t(r.domain_label_en, r.domain_label_zh) }}: {{ t(r.field_label_en, r.field_label_zh) }}{% if not loop.last %}, {% endif %}{% endfor %}{% if dg.rows | length > 3 %} +{{ (dg.rows | length) - 3 }} {{ t('more', '更多') }}{% endif %}
+        {% endif %}{% endfor %}
+      </span>
     </div>
+    {% endif %}
+
+    {% if vm.transitions_vm.date_groups %}
+    {% for dg in vm.transitions_vm.date_groups %}
+    <div class="tl-date-group">
+      <div class="tl-date-header{% if dg.is_today %} today{% endif %}">
+        {{ dg.asof }}
+        {% if dg.is_today %} — {{ t('TODAY', '今日') }}{% endif %}
+      </div>
+      <div class="tl-events">
+        {% for r in dg.rows %}
+        <div class="tl-event{% if r.is_today %} hot{% endif %}">
+          <span class="tl-domain">{{ t(r.domain_label_en, r.domain_label_zh) }}</span>
+          <span style="font-size:12px;color:var(--muted)">{{ t(r.field_label_en, r.field_label_zh) }}</span>
+          <span class="tl-from">{{ r.from_val }}</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">{{ r.to_val }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
     {% else %}
     <div class="empty-state">{{ t('No transitions recorded yet — ledger builds from the first nightly run.', '暂无转换记录，将从首次每日运行后开始积累。') }}</div>
     {% endif %}
   </div>
 
-  <!-- ==================== CONTRADICTION CENSUS STRIP ==================== -->
-  <div id="census">
-    <div class="sec-head">🔍 {{ t('Contradiction Census', '矛盾统计') }}</div>
-    <div class="census-strip">
-      <div class="census-kv">
-        <span class="census-k">{{ t('Contradictions', '矛盾对数') }}</span>
-        <span class="census-v">{{ vm.contradiction_census.n_contradictions }}</span>
+  <!-- ── CONTRADICTIONS ────────────────────────────────────────── -->
+  <div id="census" class="section">
+    <div class="sec-lbl">{{ t('Contradictions', '矛盾统计') }}</div>
+
+    <div class="contra-callout">
+      <div class="contra-count">{{ vm.contradictions.n }}</div>
+      <div class="contra-body">
+        <div class="contra-hd">
+          {{ vm.contradictions.n }} {{ t('active contradiction(s)', '条活跃矛盾') }}
+          {% if vm.contradictions.n_tension > 0 %}· {{ vm.contradictions.n_tension }} {{ t('tension', '张力') }}{% endif %}
+          {% if vm.contradictions.n_note > 0 %}· {{ vm.contradictions.n_note }} {{ t('note', '提示') }}{% endif %}
+        </div>
+        {% if vm.contradictions.cross_asset_verdict %}
+        <div class="contra-sub">{{ t('Cross-asset verdict', '跨资产判定') }}: <b>{{ td(vm.contradictions.cross_asset_verdict) }}</b></div>
+        {% endif %}
+        {% if vm.contradictions.n_divergences is not none %}
+        <div class="contra-sub">{{ t('Intelligence divergences', '情报分歧') }}: {{ vm.contradictions.n_divergences }}</div>
+        {% endif %}
+        {% if vm.contradictions.top_pair_ids %}
+        <div class="contra-pairs">
+          {% for pid in vm.contradictions.top_pair_ids %}
+          <span class="contra-pair-chip">{{ pid }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
-      {% if vm.contradiction_census.cross_asset_verdict %}
-      <div class="census-kv">
-        <span class="census-k">{{ t('Cross-Asset', '跨资产') }}</span>
-        <span class="census-v">{{ td(vm.contradiction_census.cross_asset_verdict) }}</span>
-      </div>
-      {% endif %}
-      {% if vm.contradiction_census.n_divergences is not none %}
-      <div class="census-kv">
-        <span class="census-k">{{ t('Intelligence Divergences', '情报分歧数') }}</span>
-        <span class="census-v">{{ vm.contradiction_census.n_divergences }}</span>
-      </div>
-      {% endif %}
-      {% if vm.contradiction_census.top_pairs %}
-      <div class="census-kv" style="max-width:420px">
-        <span class="census-k">{{ t('Active Pairs', '活跃矛盾对') }}</span>
-        <span style="font-size:12px;color:var(--muted);margin-top:4px">{{ vm.contradiction_census.top_pairs | join(' · ') }}</span>
-      </div>
-      {% endif %}
     </div>
-    <div class="sub" style="margin-top:8px">{{ t('Contradiction pairs are display-only — no gate, no rank raise. See committee.html for graded signal authority.', '矛盾对仅供展示，不触发任何门槛或排名变化。如需评级信号权威，请参阅委员会视图。') }}</div>
+
+    <div style="font-size:12px;color:var(--muted);margin-top:8px">
+      {{ t('Contradiction pairs are display-only — no gate, no rank raise. See committee.html for graded signal authority.', '矛盾对仅供展示，不触发任何门槛或排名变化。如需评级信号权威，请参阅委员会视图。') }}
+    </div>
   </div>
 
-  <!-- ==================== NEURAL WEB FOOTNOTE ==================== -->
-  <div id="footnote">
-    <div class="sec-head">📌 {{ t('Neural Web Footnote', '神经网络注脚') }}</div>
+  <!-- ── FOOTNOTE ──────────────────────────────────────────────── -->
+  <div id="footnote" class="section">
+    <div class="sec-lbl">{{ t('Footnote', '注脚') }}</div>
     <div class="footnote">
       <b>{{ t('Context ID', '背景ID') }}:</b> <code>{{ vm.macro_context_id or '—' }}</code>
       &nbsp;·&nbsp;
@@ -297,20 +1198,24 @@ html[data-theme="dark"] .disclaimer{background:rgba(245,173,66,.10)}
       <b>{{ t('14-day transitions', '14天转换数') }}:</b> {{ vm.n_transitions_14d }}
       &nbsp;·&nbsp;
       <a href="committee.html">{{ t('Committee View', '委员会视图') }}</a>
+      &nbsp;·&nbsp;
+      <span style="font-style:italic">{{ t('Ledger starts 2026-07-05 (history dots reflect this window)', '账本自2026-07-05起（历史点反映此窗口）') }}</span>
     </div>
+
     <div class="disclaimer" style="margin-top:12px">
       <b>{{ t('Display-only — labels, not signals.', '仅展示标签，非信号。') }}</b>
       {{ t('This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.', '本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。') }}
     </div>
-    <div class="meta-foot" style="margin-top:8px">{{ t('Built', '构建于') }} {{ built }}</div>
+    <div class="meta-foot">{{ t('Built', '构建于') }} {{ built }}</div>
   </div>
 
-</div><!-- /wrap -->
+</div><!-- /page-wrap -->
 
-<footer class="site-footer">
+<footer class="site-footer" style="max-width:1440px;margin:30px auto 0;padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px">
   <span>© Mastermind-X</span>
-  <span class="faint">{{ t('Macro Weather Station · display-only context · labels, not signals', '宏观气象台 · 仅供展示 · 标签，非信号') }}</span>
+  <span>{{ t('Macro Weather Station · display-only context · labels, not signals', '宏观气象台 · 仅供展示 · 标签，非信号') }}</span>
 </footer>
 
+<script src="theme.js"></script>
 </body>
 </html>
