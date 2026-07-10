@@ -211,8 +211,12 @@ def assess(latest: dict) -> dict | None:
         n_cat = len(cats)
         n_fresh = sum(1 for c in cats if c.get("fresh"))
 
-        # Market-internal confirmation channel (W1, accruing — not yet forward-tested)
-        mkt = _market_catalysts(latest)
+        # Market-internal confirmation channel (W1, accruing — not yet forward-tested).
+        # US-ONLY: the chips read US stores (S&P breadth, SPY, VIX term, HY OAS) — attaching
+        # them to the CN/HK/CA radar latests would render US internals on intl cards
+        # (assess() serves BOTH call sites in engine/market_state.py). Intl ports are a
+        # W5 docket (masterplan §5); until then the intl market channel is N/A, not False.
+        mkt = _market_catalysts(latest) if market == "us" else None
 
         # Show ONLY once there was genuine risk to recede FROM, and it is no longer rising — OR a
         # broad liquidity turn is underway while the radar sits at/just past its peak.
@@ -235,11 +239,16 @@ def assess(latest: dict) -> dict | None:
         peaking = (phase == "peaking") and not suppressed
         turn_confirmed = bool(receding and n_fresh >= 1)   # risk derating + liquidity injection (UNCHANGED)
 
-        # Market channel: accruing, not yet forward-tested
-        mkt_confirmed = bool(mkt and mkt.get("market_confirmed"))
-        mkt_veto = bool(mkt and mkt.get("veto", {}).get("active"))
-        # turn_confirmed_full requires BOTH liquidity AND market channels
-        turn_confirmed_full = bool(turn_confirmed and mkt_confirmed)
+        # Market channel: accruing, not yet forward-tested. On intl radars (mkt is None by
+        # the scoping above) the channel is N/A: channels.market / turn_confirmed_full stay
+        # None so the card can distinguish "not confirmed" from "not applicable".
+        if market == "us":
+            mkt_confirmed = bool(mkt and mkt.get("market_confirmed"))
+            mkt_veto = bool(mkt and mkt.get("veto", {}).get("active"))
+            # turn_confirmed_full requires BOTH liquidity AND market channels
+            turn_confirmed_full = bool(turn_confirmed and mkt_confirmed)
+        else:
+            mkt_confirmed = mkt_veto = turn_confirmed_full = None
         channels = {
             "liquidity": bool(n_fresh >= 1),
             "market": mkt_confirmed,

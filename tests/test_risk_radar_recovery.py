@@ -150,6 +150,33 @@ def test_intl_assess_uses_market_and_never_crashes():
     assert isinstance(rec["catalysts"], list)        # market-aware catalyst read, no crash
 
 
+def test_intl_market_channel_is_not_applicable():
+    # US-ONLY scoping (masterplan §5 / RRX): the market-internal chips read US stores, so on an
+    # intl radar the market channel must be N/A (None), never a US-derived read or a hard False —
+    # and no US chips may attach to the intl recovery payload.
+    idx = pd.bdate_range("2025-01-01", periods=250)
+    comp = pd.Series(np.concatenate([np.linspace(0.20, 0.95, 200),
+                                     np.linspace(0.95, 0.70, 50)]), index=idx)
+    B = pd.Series(np.linspace(100, 80, 250), index=idx)
+    traj = risk_radar_intl._trajectory(comp, B, risk_radar_intl._calib(risk_radar_intl.CN_PROFILE))
+    rec = risk_radar_recovery.assess({"risk_radar": {"market": "cn", "trajectory": traj}})
+    assert rec and rec["present"] is True
+    assert rec["market"] is None                     # no US chips on an intl card
+    assert rec["channels"]["market"] is None         # N/A, not False
+    assert rec["channels"]["veto"] is None
+    assert rec["turn_confirmed_full"] is None        # conjunction not computed off-US
+    assert isinstance(rec["turn_confirmed"], bool)   # legacy liquidity-only turn unchanged
+
+
+def test_us_market_channel_attached():
+    # The US path must attach the market dict (or None on store failure) and boolean channels.
+    rec = risk_radar_recovery.assess(_receding_latest())
+    assert rec and rec["present"] is True
+    assert "market" in rec and "channels" in rec
+    assert rec["channels"]["market"] in (True, False)
+    assert rec["turn_confirmed_full"] in (True, False)
+
+
 # ---- DISPLAY-ONLY invariant -------------------------------------------------------------------
 def test_recovery_is_display_only_no_ceiling_or_amp():
     """The recovery read must never inject downward-pressure keys (ceiling/amp/amp_keys) — it
