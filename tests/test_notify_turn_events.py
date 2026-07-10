@@ -9,6 +9,9 @@ Covers:
   (6) Copy contract — no forbidden words in any emitted message
   (7) Dedup state loading — tolerant of missing file
   (8) run() never raises (exit-0 contract)
+  (9) MTF upturn confirmed cohort event (TS-R7)
+  (10) MTF upturn Mag7 transition detection (TS-R7)
+  (11) MTF upturn artifact isolation — absent/malformed artifact no-ops
 """
 from __future__ import annotations
 
@@ -556,3 +559,472 @@ class TestRunExitZeroContract:
 
         assert r1 >= 1
         assert r2 == 0  # no re-fire
+
+
+# ---------------------------------------------------------------------------
+# MTF upturn test fixtures
+# ---------------------------------------------------------------------------
+
+_MTF_UPTURN_WITH_CONFIRMED = {
+    "schema": "mtf_upturn.v1",
+    "as_of": _TODAY,
+    "universe_n": 10,
+    "skipped_n": 0,
+    "cohort": {
+        "confirmed": ["DGX", "FIS", "JNJ", "REG"],
+        "watch": ["MSFT", "AAPL"],
+    },
+    "tickers": {
+        "DGX": {
+            "state": "UPTURN_CONFIRMED",
+            "k": 3,
+            "legs": {"d_macd": True, "d3_confluence": True, "w_macd": "cross", "w2_macd": False},
+            "since": _TODAY,
+            "basket_ids": ["healthcare"],
+        },
+        "FIS": {
+            "state": "UPTURN_CONFIRMED",
+            "k": 4,
+            "legs": {"d_macd": True, "d3_confluence": True, "w_macd": "cross", "w2_macd": True},
+            "since": _TODAY,
+            "basket_ids": ["financials"],
+        },
+        "JNJ": {
+            "state": "UPTURN_CONFIRMED",
+            "k": 3,
+            "legs": {"d_macd": True, "d3_confluence": False, "w_macd": "cross", "w2_macd": True},
+            "since": _TODAY,
+            "basket_ids": ["healthcare"],
+        },
+        "REG": {
+            "state": "UPTURN_CONFIRMED",
+            "k": 3,
+            "legs": {"d_macd": True, "d3_confluence": True, "w_macd": "approaching", "w2_macd": True},
+            "since": _TODAY,
+            "basket_ids": ["reits"],
+        },
+        "MSFT": {
+            "state": "UPTURN_WATCH",
+            "k": 2,
+            "legs": {"d_macd": False, "d3_confluence": True, "w_macd": "cross", "w2_macd": False},
+            "since": _TODAY,
+            "basket_ids": ["mag7"],
+        },
+        "NVDA": {
+            "state": "NONE",
+            "k": 1,
+            "legs": {"d_macd": False, "d3_confluence": True, "w_macd": "none", "w2_macd": False},
+            "since": None,
+            "basket_ids": ["mag7"],
+        },
+    },
+    "tier": "display",
+    "fade_base_rate": "58% fade at T+1 (n=26)",
+}
+
+_MTF_UPTURN_EMPTY_CONFIRMED = {
+    "schema": "mtf_upturn.v1",
+    "as_of": _TODAY,
+    "cohort": {"confirmed": [], "watch": ["MSFT"]},
+    "tickers": {
+        "MSFT": {
+            "state": "UPTURN_WATCH",
+            "k": 2,
+            "legs": {"d_macd": False, "d3_confluence": True, "w_macd": "cross", "w2_macd": False},
+            "since": _TODAY,
+            "basket_ids": ["mag7"],
+        }
+    },
+    "tier": "display",
+}
+
+_MTF_UPTURN_WITH_NVDA_CONFIRMED = {
+    "schema": "mtf_upturn.v1",
+    "as_of": _TODAY,
+    "cohort": {"confirmed": ["NVDA"], "watch": []},
+    "tickers": {
+        "NVDA": {
+            "state": "UPTURN_CONFIRMED",
+            "k": 3,
+            "legs": {"d_macd": True, "d3_confluence": True, "w_macd": "cross", "w2_macd": False},
+            "since": _TODAY,
+            "basket_ids": ["mag7"],
+        },
+    },
+    "tier": "display",
+}
+
+
+# ---------------------------------------------------------------------------
+# (9) MTF upturn confirmed cohort event
+# ---------------------------------------------------------------------------
+
+class TestMtfUpturnCohortEvent:
+    def test_fires_when_confirmed_non_empty(self):
+        """_detect_mtf_upturn_confirmed fires once when cohort.confirmed is non-empty."""
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        assert len(results) == 1
+        subject, msg = results[0]
+        assert subject == "cohort"
+
+    def test_no_fire_when_confirmed_empty(self):
+        """_detect_mtf_upturn_confirmed does not fire when cohort.confirmed is empty."""
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_EMPTY_CONFIRMED, state, _TODAY
+        )
+        assert results == []
+
+    def test_dedup_same_session_day(self):
+        """Second call on the same session-day does not re-fire."""
+        state = {}
+        results1 = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        assert len(results1) == 1
+        # Simulate run() marking it as fired
+        for subject, _ in results1:
+            NTE._mark_fired(state, "mtf_upturn_confirmed", subject, _TODAY)
+
+        results2 = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        assert results2 == []
+
+    def test_refires_on_new_session_day(self):
+        """A different session date allows re-firing (state-day dedup)."""
+        state = {}
+        NTE._mark_fired(state, "mtf_upturn_confirmed", "cohort", "2026-07-08")
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        assert len(results) == 1
+
+    def test_message_contains_as_of(self):
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        assert len(results) == 1
+        _, msg = results[0]
+        assert _TODAY in msg
+
+    def test_message_contains_base_rate(self):
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        _, msg = results[0]
+        assert "58%" in msg
+        assert "T+1" in msg
+
+    def test_message_no_forbidden_words(self):
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        _, msg = results[0]
+        lower = msg.lower()
+        import re
+        for word in NTE.FORBIDDEN_WORDS:
+            assert not re.search(r"\b" + re.escape(word) + r"\b", lower), (
+                f"Forbidden word '{word}' found in: {msg}"
+            )
+
+    def test_message_contains_symbol_count(self):
+        """Message header shows the number of confirmed names."""
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        _, msg = results[0]
+        # cohort has 4 confirmed names
+        assert "4 names" in msg
+
+    def test_message_contains_leg_labels(self):
+        """Message references the 4 leg family names."""
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        _, msg = results[0]
+        assert "D-MACD" in msg
+        assert "W-MACD" in msg
+        assert "2W-MACD" in msg
+
+    def test_message_contains_per_symbol_lines(self):
+        """Per-symbol K= detail lines appear for confirmed names."""
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        _, msg = results[0]
+        assert "DGX" in msg
+        assert "K=3" in msg
+
+    def test_run_dispatches_cohort_event_with_webhook(self, tmp_path):
+        """End-to-end: run() dispatches when mtf_upturn.json is present with confirmed names."""
+        import json as _json
+        (tmp_path / "mtf_upturn.json").write_text(
+            _json.dumps(_MTF_UPTURN_WITH_CONFIRMED)
+        )
+        notify_state_path = tmp_path / "notify_state.json"
+
+        with (
+            patch.object(NTE, "_TURN_WATCH_PATH", tmp_path / "tw.json"),
+            patch.object(NTE, "_SHOCK_STATE_PATH", tmp_path / "ss.json"),
+            patch.object(NTE, "_BASKET_PULSE_PATH", tmp_path / "bp.json"),
+            patch.object(NTE, "_MTF_UPTURN_PATH", tmp_path / "mtf_upturn.json"),
+            patch.object(NTE, "_NOTIFY_STATE_PATH", notify_state_path),
+            patch("scripts.notify_turn_events.config") as mock_cfg,
+            patch("scripts.notify_turn_events.requests.post") as mock_post,
+        ):
+            mock_cfg.secret.return_value = "https://discord.example.com/webhook"
+            mock_response = MagicMock()
+            mock_response.status_code = 204
+            mock_post.return_value = mock_response
+
+            result = NTE.run(today_str=_TODAY)
+
+        assert result >= 1
+
+    def test_run_no_refire_second_call_same_day(self, tmp_path):
+        """run() called twice in same session-day dispatches cohort event only once."""
+        import json as _json
+        (tmp_path / "mtf_upturn.json").write_text(
+            _json.dumps(_MTF_UPTURN_WITH_CONFIRMED)
+        )
+        notify_state_path = tmp_path / "notify_state.json"
+
+        with (
+            patch.object(NTE, "_TURN_WATCH_PATH", tmp_path / "tw.json"),
+            patch.object(NTE, "_SHOCK_STATE_PATH", tmp_path / "ss.json"),
+            patch.object(NTE, "_BASKET_PULSE_PATH", tmp_path / "bp.json"),
+            patch.object(NTE, "_MTF_UPTURN_PATH", tmp_path / "mtf_upturn.json"),
+            patch.object(NTE, "_NOTIFY_STATE_PATH", notify_state_path),
+            patch("scripts.notify_turn_events.config") as mock_cfg,
+            patch("scripts.notify_turn_events.requests.post") as mock_post,
+        ):
+            mock_cfg.secret.return_value = "https://discord.example.com/webhook"
+            mock_response = MagicMock()
+            mock_response.status_code = 204
+            mock_post.return_value = mock_response
+
+            r1 = NTE.run(today_str=_TODAY)
+            r2 = NTE.run(today_str=_TODAY)
+
+        # r1 fires the cohort message; r2 should not re-fire it
+        assert r1 >= 1
+        assert r2 == 0
+
+
+# ---------------------------------------------------------------------------
+# (10) MTF upturn Mag7 transition detection
+# ---------------------------------------------------------------------------
+
+class TestMtfUpturnMag7Transition:
+    def test_fires_on_new_transition_into_confirmed(self):
+        """Fires when a Mag7 member transitions from non-CONFIRMED to UPTURN_CONFIRMED."""
+        state = {}
+        # No prior state for NVDA — treated as first-ever run, fire on first CONFIRMED
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        syms = [r[0] for r in results]
+        assert "NVDA" in syms
+
+    def test_no_fire_when_already_confirmed_prior_run(self):
+        """Does not fire if NVDA was already UPTURN_CONFIRMED in the previous run."""
+        state = {"mtf_upturn_mag7_last|NVDA": "UPTURN_CONFIRMED"}
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        syms = [r[0] for r in results]
+        assert "NVDA" not in syms
+
+    def test_fires_when_prior_state_was_watch(self):
+        """Fires when prior state was UPTURN_WATCH (transition into CONFIRMED)."""
+        state = {"mtf_upturn_mag7_last|NVDA": "UPTURN_WATCH"}
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        syms = [r[0] for r in results]
+        assert "NVDA" in syms
+
+    def test_fires_when_prior_state_was_none(self):
+        """Fires when prior state was NONE (transition into CONFIRMED)."""
+        state = {"mtf_upturn_mag7_last|NVDA": "NONE"}
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        syms = [r[0] for r in results]
+        assert "NVDA" in syms
+
+    def test_does_not_fire_for_non_mag7(self):
+        """Non-Mag7 confirmed symbols (DGX, FIS) do not trigger the Mag7 detector."""
+        state = {}
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        syms = [r[0] for r in results]
+        assert "DGX" not in syms
+        assert "FIS" not in syms
+        assert "REG" not in syms
+
+    def test_mag7_watch_does_not_fire(self):
+        """Mag7 member in UPTURN_WATCH (not CONFIRMED) does not fire Mag7 detector."""
+        state = {}
+        # MSFT is UPTURN_WATCH in _MTF_UPTURN_WITH_CONFIRMED
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
+        )
+        syms = [r[0] for r in results]
+        assert "MSFT" not in syms
+
+    def test_dedup_same_session_day(self):
+        """Mag7 transition fires at most once per symbol per session-day."""
+        state = {}
+        results1 = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        # Mark as fired
+        for sym, _ in results1:
+            NTE._mark_fired(state, "mtf_upturn_mag7", sym, _TODAY)
+
+        # Reset prior-state to simulate a re-run where NVDA is still CONFIRMED but
+        # it was already in CONFIRMED from previous run (no transition) — different path
+        # Here we test per-symbol per-day dedup directly:
+        # Override prior_state to "NONE" to create a "transition" scenario, but dedup should block
+        state["mtf_upturn_mag7_last|NVDA"] = "NONE"  # reset to trigger condition
+        results2 = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        syms2 = [r[0] for r in results2]
+        assert "NVDA" not in syms2
+
+    def test_updates_last_state_in_notify_state(self):
+        """_detect_mtf_upturn_mag7 updates 'mtf_upturn_mag7_last|SYM' keys in state."""
+        state = {}
+        NTE._detect_mtf_upturn_mag7(_MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY)
+        assert state.get("mtf_upturn_mag7_last|NVDA") == "UPTURN_CONFIRMED"
+
+    def test_message_no_forbidden_words(self):
+        """Mag7 alert message contains no forbidden direction words."""
+        state = {}
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        assert results, "Expected at least one Mag7 result"
+        _, msg = results[0]
+        lower = msg.lower()
+        import re
+        for word in NTE.FORBIDDEN_WORDS:
+            assert not re.search(r"\b" + re.escape(word) + r"\b", lower), (
+                f"Forbidden word '{word}' in Mag7 message: {msg}"
+            )
+
+    def test_message_contains_as_of(self):
+        state = {}
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        _, msg = results[0]
+        assert _TODAY in msg
+
+    def test_message_contains_base_rate(self):
+        state = {}
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        _, msg = results[0]
+        assert "58%" in msg
+        assert "T+1" in msg
+
+    def test_message_contains_symbol_name(self):
+        state = {}
+        results = NTE._detect_mtf_upturn_mag7(
+            _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
+        )
+        _, msg = results[0]
+        assert "NVDA" in msg
+
+
+# ---------------------------------------------------------------------------
+# (11) MTF upturn artifact isolation — absent/malformed artifact no-ops
+# ---------------------------------------------------------------------------
+
+class TestMtfUpturnArtifactIsolation:
+    def test_absent_artifact_no_op_cohort(self):
+        """Missing mtf_upturn.json → cohort detector returns no events."""
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed({}, state, _TODAY)
+        assert results == []
+
+    def test_absent_artifact_no_op_mag7(self):
+        """Missing mtf_upturn.json (empty dict) → Mag7 detector returns no events."""
+        state = {}
+        results = NTE._detect_mtf_upturn_mag7({}, state, _TODAY)
+        assert results == []
+
+    def test_malformed_artifact_does_not_raise_in_run(self, tmp_path):
+        """A malformed mtf_upturn.json must not affect other event sources in run()."""
+        import json as _json
+        (tmp_path / "turn_watch.json").write_text(_json.dumps(_TURN_WATCH_IGNITION))
+        (tmp_path / "shock_state.json").write_text(_json.dumps(_SHOCK_INACTIVE))
+        (tmp_path / "basket_pulse.json").write_text(_json.dumps({}))
+        (tmp_path / "mtf_upturn.json").write_text("{ this is not valid json !!")
+        notify_state_path = tmp_path / "notify_state.json"
+
+        with (
+            patch.object(NTE, "_TURN_WATCH_PATH", tmp_path / "turn_watch.json"),
+            patch.object(NTE, "_SHOCK_STATE_PATH", tmp_path / "shock_state.json"),
+            patch.object(NTE, "_BASKET_PULSE_PATH", tmp_path / "basket_pulse.json"),
+            patch.object(NTE, "_MTF_UPTURN_PATH", tmp_path / "mtf_upturn.json"),
+            patch.object(NTE, "_NOTIFY_STATE_PATH", notify_state_path),
+            patch("scripts.notify_turn_events.config") as mock_cfg,
+            patch("scripts.notify_turn_events.requests.post") as mock_post,
+        ):
+            mock_cfg.secret.return_value = "https://discord.example.com/webhook"
+            mock_response = MagicMock()
+            mock_response.status_code = 204
+            mock_post.return_value = mock_response
+
+            # Must not raise; IGNITION event from turn_watch should still fire
+            result = NTE.run(today_str=_TODAY)
+
+        # IGNITION from turn_watch should still fire even with bad mtf_upturn.json
+        assert result >= 1
+
+    def test_cohort_detector_tolerates_missing_cohort_key(self):
+        """mtf_upturn dict missing 'cohort' key returns empty results."""
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            {"schema": "mtf_upturn.v1", "as_of": _TODAY},
+            state,
+            _TODAY,
+        )
+        assert results == []
+
+    def test_cohort_detector_tolerates_none_confirmed(self):
+        """mtf_upturn with cohort.confirmed = None returns empty results."""
+        state = {}
+        results = NTE._detect_mtf_upturn_confirmed(
+            {"schema": "mtf_upturn.v1", "as_of": _TODAY, "cohort": {"confirmed": None}},
+            state,
+            _TODAY,
+        )
+        assert results == []
+
+    def test_mag7_detector_tolerates_missing_tickers(self):
+        """mtf_upturn without 'tickers' key → Mag7 detector returns no events."""
+        state = {}
+        results = NTE._detect_mtf_upturn_mag7(
+            {"schema": "mtf_upturn.v1", "as_of": _TODAY, "cohort": {"confirmed": []}},
+            state,
+            _TODAY,
+        )
+        # All Mag7 symbols absent → treated as NONE → no Mag7 transitions
+        assert results == []
