@@ -112,3 +112,20 @@ by post-asof-spike invariance), is the natural reading of the spec's intent
 by reference to results. Recorded here per §6; any alternative proxy would be
 a new spec attempt.
 This document constitutes the backtest-results record per §6 anti-mining law.
+
+---
+
+## MRI-R30 Recalibration (2026-07-10) — Vol-Scaled Residual Quantile Bands
+
+**Spec:** research/release_forecast/PREREG_INTERVAL_RECAL_V1.md (frozen before run)
+**Points unchanged** — only the bands move.
+
+### mf_energy (cpi_headline) — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 292 | 78.7% | 76.1% | 48.1% | 46.6% | 0.263329 | 0.259808 |
+| 2021+ | 64 | 70.3% | 71.9% | 48.4% | 45.3% | 0.349265 | 0.333935 |
+| 2015+ | 136 | 78.7% | 75.7% | 50.0% | 47.1% | 0.273111 | 0.266452 |
+
+**Verdict:** mf_energy was already in [70%,95%] before recalibration. Coverage decreases slightly on full window (78.7%→76.1%) but remains well within gate. 2021+ coverage improves marginally (70.3%→71.9%). Pinball improves on all eras. No coverage falsifier was triggered for this target. Shadow-eligible status (beat naive) unchanged.

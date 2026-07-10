@@ -137,3 +137,39 @@ expanding_mean benchmark added to all era tables above (REPORTED, non-binding pe
 Track N verdicts stand as frozen. All §12 new tracks use the STRONGEST naive (min of naive_prior, trailing3m, expanding_mean) as kill benchmark.
 See 'Vs strongest naive' lines per target above for exact margins.
 
+---
+
+## MRI-R30 Recalibration (2026-07-10) — Vol-Scaled Residual Quantile Bands
+
+**Spec:** research/release_forecast/PREREG_INTERVAL_RECAL_V1.md (frozen before run)
+**Points unchanged** — only the bands move.
+
+### pce_headline — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 250 | 78.8% | 79.2% | 44.2% | 48.7% | 0.662662 | 0.910773 |
+| 2021+ | 65 | 83.1% | 75.4% | 53.8% | 46.2% | 0.463982 | 0.636170 |
+| 2015+ | 137 | 80.3% | 81.0% | 47.4% | 46.0% | 0.577461 | 0.754243 |
+
+**Verdict:** pce_headline was already within [70%,95%] before recalibration. 2021+ coverage decreases (83.1%→75.4%) but remains in gate. Pinball worsens (bands widen in a period that was already well-covered). No coverage falsifier was triggered for this target.
+
+### pce_core — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 250 | 74.3% | 79.2% | 44.2% | 50.0% | 0.578114 | 0.846936 |
+| 2021+ | 65 | **67.7%** | **81.5%** | 32.3% | 47.7% | 0.558005 | 0.727853 |
+| 2015+ | 137 | 69.3% | 75.9% | 38.0% | 48.2% | 0.550618 | 0.712291 |
+
+**Verdict (PRIMARY — MRI-R30 trigger):** pce_core 2021+ coverage moves from **67.7%** (below [70%,95%] gate) to **81.5%** (within gate). This mirrors the cpi_core improvement: vol-scaling adapts to the elevated inflation-era residual dispersion. Note: pinball worsens (bands wider than necessary for a well-calibrated model), as expected when widening bands for a period that had low coverage. Forward gate: if coverage exits [70%,95%] after 12 more prints, quantile claims drop from UI.
+
+### ppi_finaldemand — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 87 | 76.2% | 77.8% | 44.4% | 42.9% | 0.578674 | 0.592393 |
+| 2021+ | 65 | 76.2% | 77.8% | 44.4% | 42.9% | 0.578674 | 0.592393 |
+
+**Verdict:** ppi_finaldemand was already in [70%,95%]. Minor coverage improvement. Thin-history caveat unchanged.
+
