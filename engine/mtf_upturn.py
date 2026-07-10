@@ -390,7 +390,14 @@ def _compute_symbol(
     prior_sessions_held: how many sessions the prior state has been held post-first-drop
                          (for hysteresis countdown).
 
-    Returns a dict with all leg values, K, state.
+    Returns a dict with all leg values, K, state, raw_state, htf_coverage.
+
+    htf_coverage: True when the series has enough bars for weekly AND 2W MACD to be
+    non-NaN (effective floor ~350 daily bars for 2W, ~245 for weekly). When False,
+    UPTURN_CONFIRMED is structurally unreachable for this symbol (requires an HTF
+    cross), and absence of w_macd/w2_macd cross should NOT be read as bearish — it is
+    a data-length limitation. Display this flag in U3 so the dashboard does not
+    misrepresent absence-of-signal as a bearish signal.
     """
     # Compute legs
     d_macd = _leg_d_macd(close)
@@ -399,6 +406,16 @@ def _compute_symbol(
     w_macd_cross = (w_macd_status == "cross")
     w2_macd = _leg_w2_macd(close)
     month_phase = _monthly_phase(close)
+
+    # HTF coverage flag: assess whether the 2W MACD can be non-NaN.
+    # Weekly MACD needs ~35 weekly bars (~245 daily); 2W needs ~35 2W bars (~350 daily).
+    # Use the biweekly bar count as the binding constraint (stricter).
+    try:
+        biweekly = _biweekly_close(close)
+        w2_hist = _price_macd_hist(biweekly).dropna()
+        htf_coverage = len(w2_hist) >= W2_MACD_CROSS_WINDOW + 1
+    except Exception:
+        htf_coverage = False
 
     # K = count of TRUE among {d_macd, d3_confluence, w_macd cross only, w2_macd}
     # 'approaching' does NOT count
@@ -421,6 +438,7 @@ def _compute_symbol(
 
     return {
         "state": state,
+        "raw_state": raw_state,  # pre-hysteresis state (used for held-counter tracking)
         "k": k,
         "legs": {
             "d_macd": d_macd,
@@ -429,6 +447,7 @@ def _compute_symbol(
             "w2_macd": w2_macd,
         },
         "monthly_phase": month_phase,
+        "htf_coverage": htf_coverage,
     }
 
 
@@ -543,9 +562,12 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
     transition_rows: list[dict] = []
     confirmed_list: list[str] = []
     watch_list: list[str] = []
+    max_bar_date: str | None = None  # max last-bar date across loaded symbols (for as_of)
 
-    # Track "since" date — last date state changed TO current state
-    # We read from ledger: if prior state == current state, carry forward "since"
+    # Track "since" date — last date state changed TO current state.
+    # NOTE: "since" is nightly-anchored — it reads from the nightly ledger, so in
+    # intraday builds (COLLECT_LANE != nightly) it may lag the true transition by up to
+    # one session. This is documented/acceptable for a display-tier field.
     prior_since: dict[str, str] = {}
     for row in _load_ledger(data_root):
         sym = row.get("symbol")
@@ -563,9 +585,9 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
 
         # as_of = last bar date from the series (UTC-date law)
         sym_asof = str(close.index[-1].date())
-        if as_of is None:
-            # Use max bar date across universe (set after first symbol)
-            pass
+        # Track max across all loaded symbols — used for computed_asof below
+        if max_bar_date is None or sym_asof > max_bar_date:
+            max_bar_date = sym_asof
 
         prior = prior_states.get(sym, {})
         prior_state = prior.get("state", "NONE")
@@ -588,9 +610,13 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
         else:
             since_date = sym_asof
 
-        # Hysteresis sessions held tracking
-        if state == "UPTURN_CONFIRMED" and prior_state == "UPTURN_CONFIRMED" and result["legs"].get("w_macd") != "cross" and not result["legs"].get("w2_macd"):
-            # We're in hysteresis hold — increment sessions held
+        # Hysteresis sessions held tracking.
+        # Increment whenever state is CONFIRMED but raw_state is not (i.e. hysteresis is
+        # actively holding the state). This is the correct invariant regardless of which
+        # legs are set — avoids prior bug where a persistent cross leg kept new_held at 0
+        # and allowed indefinite CONFIRMED hold past the HYSTERESIS_SESSIONS cap.
+        raw_state = result["raw_state"]
+        if state == "UPTURN_CONFIRMED" and raw_state != "UPTURN_CONFIRMED":
             new_held = prior_held + 1
         else:
             new_held = 0
@@ -607,6 +633,7 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
                 "monthly_phase": result["monthly_phase"],
                 "since": since_date,
                 "basket_ids": basket_ids,
+                "htf_coverage": result["htf_coverage"],
             }
             tickers_out[sym] = row_out
 
@@ -629,20 +656,18 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
                 "monthly_phase": result["monthly_phase"],
                 "since": None,
                 "basket_ids": basket_ids,
+                "htf_coverage": result["htf_coverage"],
             }
 
-    # Determine as_of from bar dates
+    # Determine as_of from bar dates.
+    # Use max_bar_date tracked during the main loop — no redundant re-loads of 4
+    # hardcoded symbols. Falls back to date.today() only when universe is empty.
     computed_asof = as_of
     if computed_asof is None:
-        # Derive from actual data — find max last-bar date across sampled symbols
-        # Use a quick scan of a few key symbols
-        for sym in ["SPY", "AAPL", "MSFT", "QQQ"]:
-            c = _load_close(sym, data_root)
-            if c is not None:
-                d = str(c.index[-1].date())
-                if computed_asof is None or d > computed_asof:
-                    computed_asof = d
-        if computed_asof is None:
+        if max_bar_date is not None:
+            computed_asof = max_bar_date
+        else:
+            log.warning("mtf_upturn: universe empty — falling back to date.today() for as_of")
             computed_asof = date.today().isoformat()
 
     # Stamp forward ledger (nightly-only)
