@@ -110,6 +110,15 @@ def _write_budget(root: Path, max_active: int = 100, max_probation: int = 10) ->
     )
 
 
+def _write_organism_state(root: Path, labels: dict) -> None:
+    # labels: {lobe_id: trajectory_label}
+    lobes = {lid: {"lobe_id": lid, "trajectory": {"label": lab}} for lid, lab in labels.items()}
+    (root / "data" / "metabolism" / "organism_state.json").write_text(
+        json.dumps({"schema": "metabolism.organism_state.v1", "lobes": lobes}),
+        encoding="utf-8",
+    )
+
+
 def _write_journal(root: Path, lobe_id: str, rows: list[dict]) -> None:
     p = root / "data" / "metabolism" / "lifecycle" / f"{lobe_id}.jsonl"
     with p.open("w", encoding="utf-8") as fh:
@@ -256,6 +265,59 @@ class TestScout:
         res = scout.scan("c1", root=root)
         assert "error" not in res
         assert len(res["emitted"]) == 1  # not suppressed by the garbage lines
+
+    def _covered_by(self, root: Path, lobe_id: str, label: str | None = None) -> None:
+        # A universe with one domain covered by `lobe_id`; optional trajectory label.
+        _write_domains(root, [
+            {"domain_id": "china_market", "label": "China", "coverage_match": ["china"]},
+        ])
+        _write_charters(root, {lobe_id: _charter(lobe_id)})
+        _write_budget(root)
+        if label is not None:
+            _write_organism_state(root, {lobe_id: label})
+
+    def test_thinly_covered_when_only_covering_lobe_degrading(self):
+        from engine.metabolism import scout
+        root = _tmp_root()
+        self._covered_by(root, "site-china-cycle-phase", label="degrading")
+        res = scout.scan("c1", root=root)
+        assert res["covered"] == ["china_market"]      # still covered
+        assert res["uncovered"] == []
+        assert res["emitted"] == []                     # NOT proposed
+        assert len(res["thinly_covered"]) == 1
+        assert res["thinly_covered"][0]["domain_id"] == "china_market"
+
+    def test_healthy_coverage_not_thin(self):
+        from engine.metabolism import scout
+        root = _tmp_root()
+        self._covered_by(root, "site-china-cycle-phase", label="compounding")
+        res = scout.scan("c1", root=root)
+        assert res["thinly_covered"] == []
+
+    def test_thin_requires_all_covering_lobes_labeled(self):
+        # Covered by a degrading lobe AND an unlabeled lobe → unknown health on one
+        # → honest-null, NOT flagged thin.
+        from engine.metabolism import scout
+        root = _tmp_root()
+        _write_domains(root, [
+            {"domain_id": "china_market", "label": "China", "coverage_match": ["china"]},
+        ])
+        _write_charters(root, {
+            "site-china-cycle-phase": _charter("site-china-cycle-phase"),
+            "site-china-market-state": _charter("site-china-market-state"),
+        })
+        _write_budget(root)
+        _write_organism_state(root, {"site-china-cycle-phase": "degrading"})  # other unlabeled
+        res = scout.scan("c1", root=root)
+        assert res["thinly_covered"] == []
+
+    def test_thin_failopen_without_organism_state(self):
+        from engine.metabolism import scout
+        root = _tmp_root()
+        self._covered_by(root, "site-china-cycle-phase", label=None)  # no organism_state.json
+        res = scout.scan("c1", root=root)
+        assert res["covered"] == ["china_market"]
+        assert res["thinly_covered"] == []
 
     def test_empty_universe_is_silent(self):
         from engine.metabolism import scout
