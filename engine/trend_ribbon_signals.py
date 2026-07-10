@@ -2,7 +2,9 @@
 
 Display-tier descriptive chart-grammar family. No authority, no buy/sell/stop
 commands, no composite scores. Routed per
-research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md (DT-R1..DT-R16).
+research/DANNYTRADES_INDICATOR_DOCKET_ADJUDICATION_2026-07-10_BY_FABLE.md (DT-R18);
+standing constraints DT-R1..R16 in
+research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md.
 
 Ribbon state is sourced from engine.dannytrades.ribbon_trend(), which is imported
 and reused — math is NOT duplicated here. The ribbon returns {+1, 0, -1}.

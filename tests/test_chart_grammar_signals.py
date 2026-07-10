@@ -9,8 +9,10 @@ Families under test:
 For each of the 18 signals:
   (a) fires on a constructed pattern that should trigger it
   (b) does not fire on a flat constant series
-  (c) PIT check for ichimoku: computing on df[:t] vs full df gives identical
-      values at bar t-1 for a sample of t values.
+  (c) displacement check for ichimoku: a price spike must not influence the
+      cloud signals in the windows before it lands at +displacement bars
+      (fault-injection-verified; see test_ichimoku_displacement_shields_spike_windows)
+      plus a warmup check that cloud signals stay 0 until both spans are valid.
 """
 from __future__ import annotations
 
@@ -216,60 +218,73 @@ class TestIchimokuSignals:
 
     # ---- PIT / displacement check -------------------------------------------
 
-    def test_ichimoku_displacement_isolates_spike(self):
-        """Displacement test: a price spike at bar T must not affect cloud values at T-26.
+    def test_ichimoku_displacement_shields_spike_windows(self):
+        """Displacement test: a spike at bar T enters the cloud only at T+displacement.
 
-        If the displacement shift were absent (or wrong-signed), span_a/span_b at
-        bar T would immediately be placed at T rather than T+26, causing signal
-        values at or near T-26 to change when data at T is appended.  This test
-        plants an extreme price spike at a single bar and verifies that all six
-        ichimoku signal values at bar T-27 (one bar before the spike could
-        possibly influence the displaced cloud) are identical whether computed on
-        the full series or on df[:T].
+        The senkou spans are computed from trailing windows and displaced FORWARD
+        by `displacement` bars, so data from bar T first appears in the cloud at
+        bar T+displacement.  With a huge high/close spike at bar T, the four
+        cloud-relative signals must satisfy, versus the spike-free series:
 
-        We verify two scenarios to make the test self-checking:
-          (a) baseline — spike bar outside the range: result must match (trivial).
-          (b) actual test — spike bar at T (displacement=26 before T+26): signal
-              values at T-27 must be unchanged; the spike should not bleed back.
+          * null window A (bars T-displacement..T-1): unchanged. A WRONG-SIGNED
+            shift(-displacement) would bleed the spike backward into this window.
+          * null window B (bars T+1..T+displacement-1): unchanged. A MISSING
+            shift would corrupt the cloud immediately after the spike.
+          * positive control (bars T+displacement..): at least one cloud signal
+            changes once the spike legitimately lands — proving the spike is big
+            enough to move signals, so the null windows cannot pass vacuously.
+
+        Verified discriminating by fault injection: deleting .shift(displacement)
+        in _ichimoku_components fails window B; using shift(-displacement) fails
+        window A.  tk-cross signals are excluded: tenkan/kijun legitimately react
+        to the spike at bar T regardless of displacement.
         """
         m = self._import()
-        n = 300
+        n = 320
         displacement = 26
+        spike_bar = 200
 
-        # Build a calm random-walk base
-        base_df = _make_ohlcv(n=n, seed=77)
-        spike_bar = 200  # the bar we'll inject the spike at
+        # Gentle deterministic uptrend => above_cloud is 1 through the windows,
+        # so a spike-absorbing cloud (~50k vs close ~160) flips it deterministically.
+        t = np.arange(n, dtype=float)
+        close = 100.0 + 0.3 * t + 2.0 * np.sin(t / 7.0)
+        calm = _as_df(close, close + 1.0, close - 1.0)
 
-        # Compute on the calm base only up to spike_bar (no spike in view)
-        baseline = base_df.iloc[:spike_bar]
+        spiked = calm.copy()
+        spiked.at[spiked.index[spike_bar], "high"] = 99_999.0
+        spiked.at[spiked.index[spike_bar], "close"] = 99_999.0
 
-        # Add an extreme spike at spike_bar
-        df_with_spike = base_df.copy()
-        df_with_spike.at[df_with_spike.index[spike_bar], "close"] = 99_999.0
-        df_with_spike.at[df_with_spike.index[spike_bar], "high"]  = 99_999.0
-
-        # The check bar: displacement bars before the spike bar
-        check_bar_pos = spike_bar - displacement - 1  # T-27
-
-        funcs = [
+        cloud_signals = [
             m.ichimoku_above_cloud,
             m.ichimoku_below_cloud,
-            m.ichimoku_tk_cross_up,
-            m.ichimoku_tk_cross_down,
             m.ichimoku_cloud_breakout_up,
             m.ichimoku_cloud_breakdown,
         ]
-        check_idx = base_df.index[check_bar_pos]
 
-        for fn in funcs:
-            val_no_spike = fn(baseline).iloc[check_bar_pos]
-            val_with_spike = fn(df_with_spike).loc[check_idx]
-            assert val_no_spike == val_with_spike, (
-                f"Displacement failure for {fn.__name__}: spike at bar {spike_bar} "
-                f"changed value at bar {check_bar_pos} (T-{displacement+1}). "
-                f"no_spike={val_no_spike}, with_spike={val_with_spike}. "
-                "This indicates the cloud displacement shift is missing or wrong."
-            )
+        # bar `spike_bar` itself is excluded: `close` differs there trivially.
+        win_a = (spike_bar - displacement, spike_bar)          # backward-bleed guard
+        win_b = (spike_bar + 1, spike_bar + displacement)      # missing-shift guard
+        ctrl = (spike_bar + displacement, n)                   # spike has landed
+
+        any_ctrl_diff = False
+        for fn in cloud_signals:
+            calm_vals = fn(calm).to_numpy()
+            spiked_vals = fn(spiked).to_numpy()
+            for name, (lo, hi) in (("A (backward-bleed)", win_a), ("B (pre-landing)", win_b)):
+                assert (calm_vals[lo:hi] == spiked_vals[lo:hi]).all(), (
+                    f"Displacement failure for {fn.__name__} in null window {name} "
+                    f"(bars {lo}..{hi - 1}): the spike at bar {spike_bar} changed "
+                    "cloud-signal values where the displaced cloud cannot yet (or "
+                    "can no longer) contain it — .shift(displacement) is missing "
+                    "or wrong-signed."
+                )
+            if (calm_vals[ctrl[0]:ctrl[1]] != spiked_vals[ctrl[0]:ctrl[1]]).any():
+                any_ctrl_diff = True
+
+        assert any_ctrl_diff, (
+            "Positive control failed: the spike never changed any cloud signal at "
+            f"bars {ctrl[0]}..{ctrl[1] - 1}; the null-window assertions would be vacuous."
+        )
 
     def test_ichimoku_warmup_no_signal_before_both_spans_valid(self):
         """Cloud signals must be 0 until BOTH span_a and span_b are non-NaN.
