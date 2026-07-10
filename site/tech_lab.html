@@ -468,7 +468,7 @@
   <div class="tl-meta">
     <span class="chip tag-equities"><span class="l-en">Technical Signals</span><span class="l-zh">技术信号</span></span>
     
-      <span class="chip"><span class="l-en">Screener</span><span class="l-zh">筛选器</span>: 2026-07-10 08:05 UTC</span>
+      <span class="chip"><span class="l-en">Screener</span><span class="l-zh">筛选器</span>: 2026-07-10 13:04 UTC</span>
       <span class="chip">46 <span class="l-en">signals</span><span class="l-zh">信号</span></span>
       <span class="chip">219 <span class="l-en">universe</span><span class="l-zh">覆盖标的</span></span>
     
@@ -488,32 +488,32 @@
     </button>
   </div>
   <select class="tl-sig-select" id="tl-sig-select" onchange="tlSelectSignal(this.value)">
-    <option value="COMPOSITE"><span class="l-en">★ Composite (all signals)</span><span class="l-zh">★ 综合评分（全部信号）</span></option>
+    <option value="COMPOSITE" data-en="★ Composite (all signals)" data-zh="★ 综合评分（全部信号）">★ Composite (all signals)</option>
     
     <optgroup label="Formations">
       
       
-      <option value="bollinger_breakout_down">Bollinger Breakout Down / 布林带向下突破</option>
+      <option value="bollinger_breakout_down" data-en="Bollinger Breakout Down" data-zh="布林带向下突破">Bollinger Breakout Down</option>
       
       
       
-      <option value="bollinger_breakout_up">Bollinger Breakout Up / 布林带向上突破</option>
+      <option value="bollinger_breakout_up" data-en="Bollinger Breakout Up" data-zh="布林带向上突破">Bollinger Breakout Up</option>
       
       
       
-      <option value="double_bottom_long">Double Bottom (Long-term) / 双底形态（长期）</option>
+      <option value="double_bottom_long" data-en="Double Bottom (Long-term)" data-zh="双底形态（长期）">Double Bottom (Long-term)</option>
       
       
       
-      <option value="double_bottom_short">Double Bottom (Short-term) / 双底形态（短期）</option>
+      <option value="double_bottom_short" data-en="Double Bottom (Short-term)" data-zh="双底形态（短期）">Double Bottom (Short-term)</option>
       
       
       
-      <option value="double_top_long">Double Top (Long-term) / 双顶形态（长期）</option>
+      <option value="double_top_long" data-en="Double Top (Long-term)" data-zh="双顶形态（长期）">Double Top (Long-term)</option>
       
       
       
-      <option value="double_top_short">Double Top (Short-term) / 双顶形态（短期）</option>
+      <option value="double_top_short" data-en="Double Top (Short-term)" data-zh="双顶形态（短期）">Double Top (Short-term)</option>
       
       
     </optgroup>
@@ -521,15 +521,15 @@
     <optgroup label="Fundamental Valuation">
       
       
-      <option value="overvalued_state">Overvalued — composite multiples in most expensive decile vs universe / 高估——综合估值倍数处于全市场最贵十分位</option>
+      <option value="overvalued_state" data-en="Overvalued — composite multiples in most expensive decile vs universe" data-zh="高估——综合估值倍数处于全市场最贵十分位">Overvalued — composite multiples in most expensive decile vs universe</option>
       
       
       
-      <option value="undervalued_state">Undervalued — composite multiples in cheapest decile vs universe / 低估——综合估值倍数处于全市场最便宜十分位</option>
+      <option value="undervalued_state" data-en="Undervalued — composite multiples in cheapest decile vs universe" data-zh="低估——综合估值倍数处于全市场最便宜十分位">Undervalued — composite multiples in cheapest decile vs universe</option>
       
       
       
-      <option value="valuation_pctile">Valuation cheapness percentile (0–1, higher = cheaper vs peers) / 估值便宜百分位（0–1，越高代表相对同业越便宜）</option>
+      <option value="valuation_pctile" data-en="Valuation cheapness percentile (0–1, higher = cheaper vs peers)" data-zh="估值便宜百分位（0–1，越高代表相对同业越便宜）">Valuation cheapness percentile (0–1, higher = cheaper vs peers)</option>
       
       
     </optgroup>
@@ -537,15 +537,15 @@
     <optgroup label="Insider">
       
       
-      <option value="insider_buy">Insider Buy signal — fires when Insider Power ≥ 60 (net buying on quality-weighted basis) / 内部人买入信号——力量得分≥60时触发</option>
+      <option value="insider_buy" data-en="Insider Buy signal — fires when Insider Power ≥ 60 (net buying on quality-weighted basis)" data-zh="内部人买入信号——力量得分≥60时触发">Insider Buy signal — fires when Insider Power ≥ 60 (net buying on quality-weighted basis)</option>
       
       
       
-      <option value="insider_power_state">Insider Power (0–100) — quality-weighted Form-4 open-market trades (role × size × recency); 50 = neutral / 内部人力量（0–100）—— 加权Form-4公开市场交易（职务×规模×时效）；50=中性</option>
+      <option value="insider_power_state" data-en="Insider Power (0–100) — quality-weighted Form-4 open-market trades (role × size × recency); 50 = neutral" data-zh="内部人力量（0–100）—— 加权Form-4公开市场交易（职务×规模×时效）；50=中性">Insider Power (0–100) — quality-weighted Form-4 open-market trades (role × size × recency); 50 = neutral</option>
       
       
       
-      <option value="insider_sell">Insider Sell signal — fires when Insider Power ≤ 40 (net selling on quality-weighted basis) / 内部人卖出信号——力量得分≤40时触发</option>
+      <option value="insider_sell" data-en="Insider Sell signal — fires when Insider Power ≤ 40 (net selling on quality-weighted basis)" data-zh="内部人卖出信号——力量得分≤40时触发">Insider Sell signal — fires when Insider Power ≤ 40 (net selling on quality-weighted basis)</option>
       
       
     </optgroup>
@@ -553,27 +553,27 @@
     <optgroup label="Ma Crosses">
       
       
-      <option value="death_cross_21_100">Death Cross (21/100) / 死亡交叉 (21/100)</option>
+      <option value="death_cross_21_100" data-en="Death Cross (21/100)" data-zh="死亡交叉 (21/100)">Death Cross (21/100)</option>
       
       
       
-      <option value="death_cross_50_200">Death Cross (50/200) / 死亡交叉 (50/200)</option>
+      <option value="death_cross_50_200" data-en="Death Cross (50/200)" data-zh="死亡交叉 (50/200)">Death Cross (50/200)</option>
       
       
       
-      <option value="death_cross_7_35">Death Cross (7/35) / 死亡交叉 (7/35)</option>
+      <option value="death_cross_7_35" data-en="Death Cross (7/35)" data-zh="死亡交叉 (7/35)">Death Cross (7/35)</option>
       
       
       
-      <option value="golden_cross_21_100">Golden Cross (21/100) / 黄金交叉 (21/100)</option>
+      <option value="golden_cross_21_100" data-en="Golden Cross (21/100)" data-zh="黄金交叉 (21/100)">Golden Cross (21/100)</option>
       
       
       
-      <option value="golden_cross_50_200">Golden Cross (50/200) / 黄金交叉 (50/200)</option>
+      <option value="golden_cross_50_200" data-en="Golden Cross (50/200)" data-zh="黄金交叉 (50/200)">Golden Cross (50/200)</option>
       
       
       
-      <option value="golden_cross_7_35">Golden Cross (7/35) / 黄金交叉 (7/35)</option>
+      <option value="golden_cross_7_35" data-en="Golden Cross (7/35)" data-zh="黄金交叉 (7/35)">Golden Cross (7/35)</option>
       
       
     </optgroup>
@@ -581,35 +581,35 @@
     <optgroup label="Ma Price">
       
       
-      <option value="ma_buy_100">MA Buy (100) / 均线买入 (100)</option>
+      <option value="ma_buy_100" data-en="MA Buy (100)" data-zh="均线买入 (100)">MA Buy (100)</option>
       
       
       
-      <option value="ma_buy_21">MA Buy (21) / 均线买入 (21)</option>
+      <option value="ma_buy_21" data-en="MA Buy (21)" data-zh="均线买入 (21)">MA Buy (21)</option>
       
       
       
-      <option value="ma_buy_35">MA Buy (35) / 均线买入 (35)</option>
+      <option value="ma_buy_35" data-en="MA Buy (35)" data-zh="均线买入 (35)">MA Buy (35)</option>
       
       
       
-      <option value="ma_buy_7">MA Buy (7) / 均线买入 (7)</option>
+      <option value="ma_buy_7" data-en="MA Buy (7)" data-zh="均线买入 (7)">MA Buy (7)</option>
       
       
       
-      <option value="ma_sell_100">MA Sell (100) / 均线卖出 (100)</option>
+      <option value="ma_sell_100" data-en="MA Sell (100)" data-zh="均线卖出 (100)">MA Sell (100)</option>
       
       
       
-      <option value="ma_sell_21">MA Sell (21) / 均线卖出 (21)</option>
+      <option value="ma_sell_21" data-en="MA Sell (21)" data-zh="均线卖出 (21)">MA Sell (21)</option>
       
       
       
-      <option value="ma_sell_35">MA Sell (35) / 均线卖出 (35)</option>
+      <option value="ma_sell_35" data-en="MA Sell (35)" data-zh="均线卖出 (35)">MA Sell (35)</option>
       
       
       
-      <option value="ma_sell_7">MA Sell (7) / 均线卖出 (7)</option>
+      <option value="ma_sell_7" data-en="MA Sell (7)" data-zh="均线卖出 (7)">MA Sell (7)</option>
       
       
     </optgroup>
@@ -617,15 +617,15 @@
     <optgroup label="Performance">
       
       
-      <option value="return_1d">1-Day Return (cross-sectional rank → top/bottom gainers) / 1日收益率（横截面排名 → 涨跌幅榜）</option>
+      <option value="return_1d" data-en="1-Day Return (cross-sectional rank → top/bottom gainers)" data-zh="1日收益率（横截面排名 → 涨跌幅榜）">1-Day Return (cross-sectional rank → top/bottom gainers)</option>
       
       
       
-      <option value="possible_runners">Possible Runner (Momentum Breakout) / 潜在突破股（动量突破）</option>
+      <option value="possible_runners" data-en="Possible Runner (Momentum Breakout)" data-zh="潜在突破股（动量突破）">Possible Runner (Momentum Breakout)</option>
       
       
       
-      <option value="is_strong_move">Strong 1-Day Move Flag / 强势单日波动标志</option>
+      <option value="is_strong_move" data-en="Strong 1-Day Move Flag" data-zh="强势单日波动标志">Strong 1-Day Move Flag</option>
       
       
     </optgroup>
@@ -633,11 +633,11 @@
     <optgroup label="Pivots">
       
       
-      <option value="pivot_bottom">Pivot Bottom / 转折底部</option>
+      <option value="pivot_bottom" data-en="Pivot Bottom" data-zh="转折底部">Pivot Bottom</option>
       
       
       
-      <option value="pivot_top">Pivot Top / 转折顶部</option>
+      <option value="pivot_top" data-en="Pivot Top" data-zh="转折顶部">Pivot Top</option>
       
       
     </optgroup>
@@ -645,19 +645,19 @@
     <optgroup label="Rsi Bands">
       
       
-      <option value="rsi14_overbought">RSI-14 Overbought Entry / RSI-14 超买入场</option>
+      <option value="rsi14_overbought" data-en="RSI-14 Overbought Entry" data-zh="RSI-14 超买入场">RSI-14 Overbought Entry</option>
       
       
       
-      <option value="rsi14_oversold">RSI-14 Oversold Entry / RSI-14 超卖入场</option>
+      <option value="rsi14_oversold" data-en="RSI-14 Oversold Entry" data-zh="RSI-14 超卖入场">RSI-14 Oversold Entry</option>
       
       
       
-      <option value="rsi21_overbought">RSI-21 Overbought Entry / RSI-21 超买入场</option>
+      <option value="rsi21_overbought" data-en="RSI-21 Overbought Entry" data-zh="RSI-21 超买入场">RSI-21 Overbought Entry</option>
       
       
       
-      <option value="rsi21_oversold">RSI-21 Oversold Entry / RSI-21 超卖入场</option>
+      <option value="rsi21_oversold" data-en="RSI-21 Oversold Entry" data-zh="RSI-21 超卖入场">RSI-21 Oversold Entry</option>
       
       
     </optgroup>
@@ -665,31 +665,31 @@
     <optgroup label="Tech Stars">
       
       
-      <option value="death_star_st_21_100">Death Star (21/100) — bearish three-entity cross with price gate / 死亡之星 (21/100) — 含价格接近门控的看跌三实体交叉</option>
+      <option value="death_star_st_21_100" data-en="Death Star (21/100) — bearish three-entity cross with price gate" data-zh="死亡之星 (21/100) — 含价格接近门控的看跌三实体交叉">Death Star (21/100) — bearish three-entity cross with price gate</option>
       
       
       
-      <option value="death_star_lt_50_200">Death Star (50/200) — bearish three-entity cross with price gate / 死亡之星 (50/200) — 含价格接近门控的看跌三实体交叉</option>
+      <option value="death_star_lt_50_200" data-en="Death Star (50/200) — bearish three-entity cross with price gate" data-zh="死亡之星 (50/200) — 含价格接近门控的看跌三实体交叉">Death Star (50/200) — bearish three-entity cross with price gate</option>
       
       
       
-      <option value="death_star_st_7_35">Death Star (7/35) — bearish three-entity cross with price gate / 死亡之星 (7/35) — 含价格接近门控的看跌三实体交叉</option>
+      <option value="death_star_st_7_35" data-en="Death Star (7/35) — bearish three-entity cross with price gate" data-zh="死亡之星 (7/35) — 含价格接近门控的看跌三实体交叉">Death Star (7/35) — bearish three-entity cross with price gate</option>
       
       
       
-      <option value="golden_star_st_21_100">Golden Star (21/100) — three-entity cross with price gate / 黄金之星 (21/100) — 含价格接近门控的三实体交叉</option>
+      <option value="golden_star_st_21_100" data-en="Golden Star (21/100) — three-entity cross with price gate" data-zh="黄金之星 (21/100) — 含价格接近门控的三实体交叉">Golden Star (21/100) — three-entity cross with price gate</option>
       
       
       
-      <option value="golden_star_lt_50_200">Golden Star (50/200) — three-entity cross with price gate / 黄金之星 (50/200) — 含价格接近门控的三实体交叉</option>
+      <option value="golden_star_lt_50_200" data-en="Golden Star (50/200) — three-entity cross with price gate" data-zh="黄金之星 (50/200) — 含价格接近门控的三实体交叉">Golden Star (50/200) — three-entity cross with price gate</option>
       
       
       
-      <option value="golden_star_st_7_35">Golden Star (7/35) — three-entity cross with price gate / 黄金之星 (7/35) — 含价格接近门控的三实体交叉</option>
+      <option value="golden_star_st_7_35" data-en="Golden Star (7/35) — three-entity cross with price gate" data-zh="黄金之星 (7/35) — 含价格接近门控的三实体交叉">Golden Star (7/35) — three-entity cross with price gate</option>
       
       
       
-      <option value="new_golden_star">New Golden Star — freshly fired Golden Star (7/35), age ≤ 1 trading day / 新黄金之星 — 最新触发的黄金之星 (7/35)，触发不超过1个交易日</option>
+      <option value="new_golden_star" data-en="New Golden Star — freshly fired Golden Star (7/35), age ≤ 1 trading day" data-zh="新黄金之星 — 最新触发的黄金之星 (7/35)，触发不超过1个交易日">New Golden Star — freshly fired Golden Star (7/35), age ≤ 1 trading day</option>
       
       
     </optgroup>
@@ -697,26 +697,28 @@
     <optgroup label="Trend">
       
       
-      <option value="trend_falling_long">Long-term Falling Trend / 长期下降趋势</option>
+      <option value="trend_falling_long" data-en="Long-term Falling Trend" data-zh="长期下降趋势">Long-term Falling Trend</option>
       
       
       
-      <option value="trend_rising_long">Long-term Rising Trend / 长期上升趋势</option>
+      <option value="trend_rising_long" data-en="Long-term Rising Trend" data-zh="长期上升趋势">Long-term Rising Trend</option>
       
       
       
-      <option value="trend_falling_short">Short-term Falling Trend / 短期下降趋势</option>
+      <option value="trend_falling_short" data-en="Short-term Falling Trend" data-zh="短期下降趋势">Short-term Falling Trend</option>
       
       
       
-      <option value="trend_rising_short">Short-term Rising Trend / 短期上升趋势</option>
+      <option value="trend_rising_short" data-en="Short-term Rising Trend" data-zh="短期上升趋势">Short-term Rising Trend</option>
       
       
     </optgroup>
     
   </select>
   <input class="tl-search" id="tl-ticker-search" type="text"
-    placeholder="Search ticker… / 搜索标的…"
+    placeholder="Search ticker…"
+    data-ph-en="Search ticker…"
+    data-ph-zh="搜索标的…"
     oninput="tlSearchTicker(this.value)"
     data-tip-en="Search for a stock to see its signal profile"
     data-tip-zh="搜索个股查看其信号档案">
@@ -798,6 +800,12 @@
 
 <script>
 (function() {
+  // ── i18n helper — dual-span switches via CSS (.l-en/.l-zh) ──
+  function L(en, zh) {
+    return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh != null ? zh : en) + '</span>';
+  }
+  function _isZh() { return document.documentElement.getAttribute('data-lang') === 'zh'; }
+
   // ── runtime state ──
   var SIGS = {};
   var STKS = {};
@@ -840,7 +848,7 @@
     document.getElementById('prof-ticker').textContent = tk;
     document.getElementById('prof-name').textContent   = s.name || '';
     document.getElementById('prof-active-buy').textContent   = s.active_buy   != null ? s.active_buy   : '—';
-    document.getElementById('prof-active-total').textContent = s.active_total != null ? '/ ' + s.active_total + ' total' : '';
+    document.getElementById('prof-active-total').innerHTML = s.active_total != null ? '/ ' + s.active_total + ' ' + L('total', '共') : '';
     document.getElementById('prof-score').textContent = s.score != null ? (s.score > 0 ? '+' : '') + s.score.toFixed(1) : '—';
     var bandEl = document.getElementById('prof-band');
     bandEl.textContent = s.band || '—';
@@ -864,7 +872,7 @@
       var rowCls = sig.state ? 'state-on' : 'state-off';
       sl.innerHTML += '<div class="tl-sig-row ' + rowCls + '">' +
         '<span class="' + dirCls + '">' + _glyph(sig.glyph) + '</span>' +
-        '<span>' + (sig.display_en || sig.id) + '</span>' +
+        L(sig.display_en || sig.id, sig.display_zh || SIGS[sig.id] && SIGS[sig.id].display_zh || sig.display_en || sig.id) +
         (sig.age_days ? '<span class="tl-sig-age">' + sig.age_days + 'd</span>' : '') +
         '</div>';
     });
@@ -913,17 +921,17 @@
         return { ticker: tk, name: s.name, price: s.price, score: s.score, band: s.band }; })
         .filter(function(r) { return r.score != null; })
         .sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
-      title = 'Composite — Top Names by Score'; dir = 1; glyph = 'star_gold'; countWord = ' names';
+      title = L('Composite — Top Names by Score', '综合 — 最高评分标的'); dir = 1; glyph = 'star_gold'; countWord = L(' names', ' 个标的');
     } else {
       tickers = (sig && sig.tickers) ? sig.tickers : [];
-      title = sig ? (sig.display_en + (sig.display_zh && sig.display_zh !== sig.display_en ? ' / ' + sig.display_zh : '')) : _sigId;
-      dir = sig ? sig.direction : 0; glyph = sig ? sig.glyph : null; countWord = ' firing';
+      title = sig ? L(sig.display_en, sig.display_zh || sig.display_en) : _sigId;
+      dir = sig ? sig.direction : 0; glyph = sig ? sig.glyph : null; countWord = L(' firing', ' 个触发中');
     }
     document.getElementById('tl-screener-title').innerHTML =
       '<span class="' + (dir > 0 ? 'glyph-up' : dir < 0 ? 'glyph-down' : 'glyph-neu') + '">' +
       _glyph(glyph) + '</span> ' + title +
       ' <span class="h-note" id="tl-screener-count"></span>';
-    document.getElementById('tl-screener-count').textContent = tickers.length + countWord;
+    document.getElementById('tl-screener-count').innerHTML = tickers.length + countWord;
 
     var tbody = document.getElementById('tl-screener-tbody');
     if (!tickers.length) {
@@ -947,7 +955,7 @@
         '</td>' +
         '<td><span class="band-chip ' + _bandClass(r.band) + '">' + (r.band || '—') + '</span></td>' +
         '<td class="tl-num">' + (r.price != null ? '$' + r.price.toFixed(2) : '—') + '</td>' +
-        '<td><span style="color:var(--link);cursor:pointer;font-size:11.5px" onclick="event.stopPropagation();tlOpenProfile(\'' + r.ticker + '\')">→ profile</span></td>' +
+        '<td><span style="color:var(--link);cursor:pointer;font-size:11.5px" onclick="event.stopPropagation();tlOpenProfile(\'' + r.ticker + '\')">' + L('→ profile', '→ 档案') + '</span></td>' +
         '</tr>';
     }).join('');
   }
@@ -967,7 +975,7 @@
         (wr != null ? '<rect x="0" y="3" width="' + wx.toFixed(1) + '" height="6" rx="3" fill="#5b8def"/>' : '') +
         (base != null ? '<line x1="' + bx.toFixed(1) + '" y1="0" x2="' + bx.toFixed(1) + '" y2="' + h + '" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2,2"/>' : '') +
       '</svg>' +
-      (edge != null ? '<span class="tl-wr-txt ' + edgeCls + '">' + (parseFloat(edge) >= 0 ? '+' : '') + edge + 'pp edge</span>' : '') +
+      (edge != null ? '<span class="tl-wr-txt ' + edgeCls + '">' + (parseFloat(edge) >= 0 ? '+' : '') + edge + L('pp edge', 'pp 优势') + '</span>' : '') +
       '</div>';
   }
 
@@ -975,24 +983,25 @@
     var sig = SIGS[_sigId];
     var lab = sig && sig.lab;
     document.getElementById('tl-lab-title').innerHTML =
-      '🔬 ' + (sig ? (sig.display_en || _sigId) : _sigId) + ' — <span class="h-note">descriptive profile</span>';
+      '🔬 ' + L(sig ? (sig.display_en || _sigId) : _sigId, sig ? (sig.display_zh || sig.display_en || _sigId) : _sigId) +
+      ' — <span class="h-note">' + L('descriptive profile', '描述性档案') + '</span>';
 
     var grid = document.getElementById('tl-lab-grid');
     if (!lab) {
-      grid.innerHTML = '<p class="tl-empty">' + (sig ? 'No lab profile for this signal yet.' : 'Select a signal.') + '</p>';
+      grid.innerHTML = '<p class="tl-empty">' + (sig ? L('No lab profile for this signal yet.', '该信号暂无实验室档案。') : L('Select a signal.', '请选择信号。')) + '</p>';
       return;
     }
     var cells = [
-      { k: 'Win Rate 21d', b: _wrBar(lab.wr_21d, lab.base_wr), note: _wr(lab.wr_21d) + ' vs base ' + _wr(lab.base_wr) },
-      { k: 'Mean Return 21d', v: _pct(lab.mean_21d != null ? lab.mean_21d : null), note: 'base ' + _pct(lab.base_mean != null ? lab.base_mean : null) },
-      { k: 'MFE/MAE', v: lab.mfe_mae_med != null ? lab.mfe_mae_med.toFixed(2) + '×' : '—', note: 'median favourable/adverse' },
-      { k: 'Durable Rate', v: _wr(lab.durable_rate), note: 'held above entry 15d' },
-      { k: 'Median Lag', v: lab.median_lag_pct != null ? (lab.median_lag_pct * 100).toFixed(1) + '%' : '—', note: 'above 60d low at fire' },
-      { k: 'Days Since Low', v: lab.days_since_low_med != null ? Math.round(lab.days_since_low_med) + 'd' : '—', note: 'median' },
-      { k: 'Up-Tape %', v: _wr(lab.up_tape_pct), note: 'SPX up on fire day' },
-      { k: 'Fires / Months', v: (lab.n_fires || '—') + ' / ' + (lab.n_months || '—'), note: 'in sample' },
-      { k: 'WR pre-2010', v: _wr(lab.wr_pre2010), note: lab.wr_pre2010 != null ? 'older regime' : 'no data' },
-      { k: 'WR post-2010', v: _wr(lab.wr_post2010), note: 'modern regime' },
+      { k: L('Win Rate 21d', '21日胜率'), b: _wrBar(lab.wr_21d, lab.base_wr), note: _wr(lab.wr_21d) + ' vs ' + L('base', '基准') + ' ' + _wr(lab.base_wr) },
+      { k: L('Mean Return 21d', '21日平均收益'), v: _pct(lab.mean_21d != null ? lab.mean_21d : null), note: L('base', '基准') + ' ' + _pct(lab.base_mean != null ? lab.base_mean : null) },
+      { k: 'MFE/MAE', v: lab.mfe_mae_med != null ? lab.mfe_mae_med.toFixed(2) + '×' : '—', note: L('median favourable/adverse', '中位有利/不利幅度') },
+      { k: L('Durable Rate', '持续率'), v: _wr(lab.durable_rate), note: L('held above entry 15d', '15日内维持在入场价上方') },
+      { k: L('Median Lag', '中位滞后'), v: lab.median_lag_pct != null ? (lab.median_lag_pct * 100).toFixed(1) + '%' : '—', note: L('above 60d low at fire', '触发时位于60日低点上方') },
+      { k: L('Days Since Low', '距低点天数'), v: lab.days_since_low_med != null ? Math.round(lab.days_since_low_med) + 'd' : '—', note: L('median', '中位数') },
+      { k: L('Up-Tape %', '上涨行情%'), v: _wr(lab.up_tape_pct), note: L('SPX up on fire day', '触发日标普500上涨') },
+      { k: L('Fires / Months', '触发次数 / 月数'), v: (lab.n_fires || '—') + ' / ' + (lab.n_months || '—'), note: L('in sample', '样本内') },
+      { k: L('WR pre-2010', '2010前胜率'), v: _wr(lab.wr_pre2010), note: lab.wr_pre2010 != null ? L('older regime', '旧周期') : L('no data', '无数据') },
+      { k: L('WR post-2010', '2010后胜率'), v: _wr(lab.wr_post2010), note: L('modern regime', '现代周期') },
     ];
     grid.innerHTML = cells.map(function(c) {
       return '<div class="tl-lab-stat"><div class="lk">' + c.k + '</div>' +
@@ -1013,8 +1022,8 @@
   function _showError(msg) {
     var loadingS = document.getElementById('tl-screener-loading');
     var loadingL = document.getElementById('tl-lab-loading');
-    if (loadingS) loadingS.textContent = msg;
-    if (loadingL) loadingL.textContent = msg;
+    if (loadingS) loadingS.innerHTML = msg;
+    if (loadingL) loadingL.innerHTML = msg;
   }
 
   // ── hide loading indicators, show table ──
@@ -1054,7 +1063,7 @@
         var s = labSignals[sid];
         merged[sid] = {
           display_en: s.display_en || sid,
-          display_zh: s.display_en || sid,
+          display_zh: s.display_zh || s.display_en || sid,
           family: s.family || 'other',
           direction: s.direction || 0,
           glyph: '○',
@@ -1071,13 +1080,43 @@
     _showReady();
     _render();
   }).catch(function(err) {
-    _showError('Data unavailable — ' + (err && err.message ? err.message : String(err)));
+    _showError(L('Data unavailable — ', '数据不可用 — ') + (err && err.message ? err.message : String(err)));
+  });
+
+  // ── langchange: re-render current view + swap option text + placeholder ──
+  function _swapOptionsAndPlaceholder(zh) {
+    // Signal <select> options
+    var sel = document.getElementById('tl-sig-select');
+    if (sel) {
+      [].forEach.call(sel.options, function(o) {
+        o.textContent = zh ? (o.getAttribute('data-zh') || o.textContent) : (o.getAttribute('data-en') || o.textContent);
+      });
+      // Also swap the optgroup <option> elements that were Jinja-rendered without data-en/zh
+      // (they are already fixed server-side; this pass handles fallback for dynamic additions)
+    }
+    // Ticker search placeholder
+    var inp = document.getElementById('tl-ticker-search');
+    if (inp) {
+      var phEn = inp.getAttribute('data-ph-en') || 'Search ticker…';
+      var phZh = inp.getAttribute('data-ph-zh') || '搜索标的…';
+      inp.placeholder = zh ? phZh : phEn;
+    }
+  }
+
+  // Initial swap on page load (in case stored lang is 'zh')
+  _swapOptionsAndPlaceholder(_isZh());
+
+  document.addEventListener('langchange', function(e) {
+    var zh = (e.detail === 'zh');
+    _swapOptionsAndPlaceholder(zh);
+    // Re-render so L()-built strings inside innerHTML get their CSS-toggled spans right
+    // (the CSS takes care of l-en/l-zh spans; a full re-render also refreshes option counts etc.)
+    _render();
   });
 
 })();
 </script>
 
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
