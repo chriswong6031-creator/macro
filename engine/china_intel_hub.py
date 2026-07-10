@@ -174,6 +174,30 @@ def _build_radar_by_ticker(radar_rows: list) -> dict:
     return out
 
 
+def _spine_name(ticker: str) -> str | None:
+    """中文 name via china_basket_spine (curated first, THS concept-board fallback) —
+    resolves names that live ONLY in THS boards (the 603129-hole). None on any failure."""
+    try:
+        from engine import china_basket_spine as sp
+        return sp.ticker_name(ticker)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _ths_concepts(ticker: str, cap: int = 3) -> list:
+    """THS concept boards a ticker belongs to — bounded bilingual display context
+    [{id, en, zh}], [] on any failure. Context-only; carries no score or direction."""
+    try:
+        from engine import china_basket_spine as sp
+        out = []
+        for bid in (sp.ths_ticker_to_baskets().get(str(ticker)) or [])[:cap]:
+            en, zh = sp.ths_basket_label(bid)
+            out.append({"id": bid, "en": en, "zh": zh})
+        return out
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def _load_board_membership() -> set:
     """Current buy-board members from site/factordata/china_standouts.json → {ticker}."""
     try:
@@ -598,10 +622,13 @@ def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
             name = nm.split("/", 1)[1].strip() or nm
         else:
             name = nm
+    else:
+        name = _spine_name(ticker) or name
 
     return {
         "ticker": ticker,
         "name": name,
+        "ths_concepts": _ths_concepts(ticker),
         "lean": lean,
         "stage": stage,
         "opportunity_score": opportunity,
@@ -715,7 +742,7 @@ def _disc_lhb_first_seat(today: date | None = None) -> list:
                           else "First institutional seat on LHB")
                 candidates.append({
                     "ticker": str(ticker),
-                    "name": str(rec.get("name") or ticker),
+                    "name": str(rec.get("name") or _spine_name(str(ticker)) or ticker),
                     "disc_score": round(dsc, 2),
                     "source": "lhb_first_seat",
                     "reason": reason,
@@ -772,7 +799,7 @@ def _disc_margin_velocity(today: date | None = None) -> list:
             dsc = _clamp01(0.4 + min(dz / 4.0, 0.4))
             candidates.append({
                 "ticker": str(row["ticker"]),
-                "name": str(row["ticker"]),
+                "name": str(_spine_name(str(row["ticker"])) or row["ticker"]),
                 "disc_score": round(dsc, 2),
                 "source": "margin_velocity",
                 "reason": f"Margin financing delta z={dz:.1f} (20d increase vs peers)",
@@ -835,7 +862,7 @@ def _disc_southbound_delta(today: date | None = None) -> list:
             dsc = _clamp01(0.35 + min(dp / 30.0, 0.45))
             candidates.append({
                 "ticker": str(ticker),
-                "name": str(row.get("name") or ticker),
+                "name": str(row.get("name") or _spine_name(str(ticker)) or ticker),
                 "disc_score": round(dsc, 2),
                 "source": "southbound_delta",
                 "reason": f"Southbound holdings +{dp:.1f}% over 20d",
@@ -904,7 +931,7 @@ def _disc_ths_emerging_concepts(today: date | None = None) -> list:
                 dsc = _clamp01(0.30 + score * 0.35)
                 candidates.append({
                     "ticker": t,
-                    "name": t,
+                    "name": _spine_name(t) or t,
                     "disc_score": round(dsc, 2),
                     "source": "ths_emerging_concepts",
                     "reason": f"THS emerging concept: {concept_name[:60]}",
