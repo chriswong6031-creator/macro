@@ -50,18 +50,22 @@ LaneRow = {
 
 Lane mapping
 -----------
-buy_now        ← theme act_now.buy (score desc) + sectors urgency in (now, imminent, soon)
-wait_pullback  ← theme act_now.add_on_pullback (score desc) + sectors urgency caution/
-                 tag=DON'T CHASE + urgency hold + tag=HOLD
+buy_now        ← theme act_now.buy (score desc) + sectors urgency now/imminent (clean entry)
+wait_pullback  ← theme act_now.add_on_pullback (score desc)
+                 + sectors urgency soon (WATCH/BUY-SOON — setting up, not yet actionable)
+                 + sectors urgency caution with non-REDUCE tag (DON'T CHASE, HOLD, etc.)
+                 + sectors urgency hold / later
 bottoming_watch← cycle_rows latest: phase=='Trough' AND osc_slope>0 (both kind=sector
                  and kind=basket); sorted osc_slope desc; never buy words
 reduce_avoid   ← theme act_now.reduce (score asc — worst first) + sectors urgency
-                 exit/avoid + tag in (TAKE PROFITS, SELL / REDUCE) + caution/UNCONFIRMED;
-                 dual-read rows carry secondary chip
+                 exit/avoid + caution with REDUCE tag (TAKE PROFITS, SELL / REDUCE,
+                 UNCONFIRMED — HIGH RISK); dual-read rows carry secondary chip
 
 DUAL-READ LAW (FT-R1)
 A name in reduce_avoid that is ALSO in bottoming_watch keeps entries in BOTH lanes.
 The reduce_avoid row gets dual_read=True + dual_chip_en/zh set.
+Basket cycle ids use a 'b-' prefix (e.g. 'b-cn_baijiu') while theme ids do not
+('cn_baijiu'); dual-read matching normalizes by stripping the 'b-' prefix.
 Never merged, never re-ranked.
 
 BUY-WORD PROHIBITION (F1/W8-R3)
@@ -78,17 +82,26 @@ log = logging.getLogger(__name__)
 # --------------------------------------------------------------------------- #
 #  Sector urgency routing (mirrors _china_action_board vocabulary)             #
 # --------------------------------------------------------------------------- #
-_BUY_URGENCIES = {"now", "imminent", "soon"}
-_WAIT_URGENCIES = {"caution", "hold"}
-_WAIT_TAGS = {"DON'T CHASE", "HOLD", "TAKE PROFITS", "BOTTOMING · EXTENDED — WAIT",
-              "BOTTOMING · UNCONFIRMED — WAIT"}
-_REDUCE_URGENCIES = {"exit", "avoid"}
+# buy_now: clean entry — now/imminent only.  'soon' (WATCH / WAIT tag) routes
+# to wait_pullback because it means "due in ~N days, don't front-run".
+_BUY_URGENCIES = {"now", "imminent"}
+_SOON_URGENCIES = {"soon"}           # setting-up / not-yet → wait_pullback
+_WAIT_URGENCIES = {"caution", "hold", "later"}
+# Within caution, tags determine the sub-route:
+#   TAKE PROFITS / SELL / REDUCE / UNCONFIRMED → reduce_avoid
+#   DON'T CHASE / HOLD / WAIT / anything else  → wait_pullback
 _REDUCE_TAGS = {
     "TAKE PROFITS", "SELL / REDUCE", "UNCONFIRMED — HIGH RISK",
     "SELL", "AVOID",
 }
+# Tags explicitly routed to wait_pullback (on_the_run / not-actionable-yet)
+_WAIT_TAGS = {
+    "DON'T CHASE", "HOLD", "WAIT",
+    "BOTTOMING · EXTENDED — WAIT", "BOTTOMING · UNCONFIRMED — WAIT",
+}
+_REDUCE_URGENCIES = {"exit", "avoid"}
 
-# Tag "DON'T CHASE" goes to wait_pullback (on_the_run)
+# Named constants used in routing logic
 _DONT_CHASE_TAG = "DON'T CHASE"
 _UNCONFIRMED_TAG = "UNCONFIRMED — HIGH RISK"
 
@@ -223,7 +236,7 @@ def assemble_act_now(
         # reduce sorted asc (worst/lowest score first)
         reduce_avoid.sort(key=lambda r: (r["score"] or 0))
     else:
-        notes.append("theme artifact absent or stale — themes omitted")
+        notes.append("theme artifact absent — themes omitted")
 
     # ── 2. SECTORS from cycle ladder urgency ──────────────────────────────
     for s in (sectors or []):
@@ -232,29 +245,28 @@ def assemble_act_now(
         tag = e.get("tag") or ""
 
         if urgency in _BUY_URGENCIES:
+            # now / imminent → clean-entry buy lane
             buy_now.append(_sector_row(s))
 
-        elif urgency in _WAIT_URGENCIES:
-            # caution + DON'T CHASE → wait_pullback (on_the_run)
-            # hold → wait_pullback
-            # caution + UNCONFIRMED → reduce_avoid
-            if urgency == "caution" and tag == _UNCONFIRMED_TAG:
+        elif urgency in _SOON_URGENCIES:
+            # soon (WATCH/BUY-SOON tag) → setting up, not yet actionable → wait
+            wait_pullback.append(_sector_row(s))
+
+        elif urgency == "caution":
+            # caution: route by tag first, urgency second
+            if tag in _REDUCE_TAGS:
+                # TAKE PROFITS, SELL / REDUCE, UNCONFIRMED — HIGH RISK → reduce lane
                 reduce_avoid.append(_sector_row(s))
             else:
+                # DON'T CHASE, HOLD, WAIT, or unlisted caution tag → wait lane
                 wait_pullback.append(_sector_row(s))
+
+        elif urgency == "hold" or urgency == "later":
+            # hold / later → wait lane (not-yet-actionable)
+            wait_pullback.append(_sector_row(s))
 
         elif urgency in _REDUCE_URGENCIES:
             reduce_avoid.append(_sector_row(s))
-
-        elif urgency == "caution" and tag:
-            # default caution fall-through (TAKE PROFITS, etc.) → reduce_avoid
-            reduce_avoid.append(_sector_row(s))
-
-        else:
-            # later/unknown → reduce_avoid as well if dir is down, else skip
-            dir_ = s.get("dir") or ""
-            if dir_ == "down":
-                reduce_avoid.append(_sector_row(s))
 
     # ── 3. BOTTOMING WATCH from cycle_rows ───────────────────────────────
     bottoming_ids: set[str] = set()
@@ -271,7 +283,12 @@ def assemble_act_now(
         for r in trough_rows:
             crow = _cycle_row(r)
             bottoming_watch.append(crow)
+            # Register the raw id AND the canonical id (strip leading 'b-' used by
+            # basket forward_log rows so that theme reduce ids like 'cn_baijiu'
+            # match basket cycle ids like 'b-cn_baijiu' (FT-R1 dual-read fix).
             bottoming_ids.add(crow["id"])
+            canonical = crow["id"][2:] if crow["id"].startswith("b-") else crow["id"]
+            bottoming_ids.add(canonical)
     else:
         if cycle_rows is None:
             notes.append("forward_log absent — bottoming lane empty")

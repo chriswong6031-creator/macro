@@ -97,10 +97,30 @@ class TestLaneMapping:
         r = assemble_act_now(s, None, None)
         assert "B" in [x["id"] for x in r["lanes"]["buy_now"]]
 
-    def test_soon_sector_to_buy_now(self):
-        s = [_sector("C", "soon")]
+    def test_soon_sector_to_wait_pullback(self):
+        # 'soon' means "cycle low due in ~N days — watch, don't front-run".
+        # Design W8-R3: Buy Now = clean-entry (now/imminent only); soon → wait lane.
+        s = [_sector("C", "soon", "WATCH")]
         r = assemble_act_now(s, None, None)
-        assert "C" in [x["id"] for x in r["lanes"]["buy_now"]]
+        assert "C" in [x["id"] for x in r["lanes"]["wait_pullback"]]
+        assert "C" not in [x["id"] for x in r["lanes"]["buy_now"]]
+
+    def test_caution_take_profits_to_reduce(self):
+        # TAKE PROFITS has urgency='caution' in cycles.py (TOP WATCH state).
+        # It must land in reduce_avoid, NOT wait_pullback.
+        s = [_sector("TP", "caution", "TAKE PROFITS")]
+        r = assemble_act_now(s, None, None)
+        assert "TP" in [x["id"] for x in r["lanes"]["reduce_avoid"]], \
+            "caution+TAKE PROFITS must route to reduce_avoid"
+        assert "TP" not in [x["id"] for x in r["lanes"]["wait_pullback"]]
+
+    def test_later_sector_to_wait_pullback(self):
+        # 'later' (mid-cycle dip, not yet the cycle low) → wait_pullback
+        s = [_sector("L", "later", "WAIT")]
+        r = assemble_act_now(s, None, None)
+        assert "L" in [x["id"] for x in r["lanes"]["wait_pullback"]]
+        assert "L" not in [x["id"] for x in r["lanes"]["buy_now"]]
+        assert "L" not in [x["id"] for x in r["lanes"]["reduce_avoid"]]
 
     def test_caution_dont_chase_to_wait_pullback(self):
         s = [_sector("D", "caution", "DON'T CHASE")]
@@ -212,18 +232,24 @@ class TestBaijuiDualRead:
         ids_bot = [x["id"] for x in r["lanes"]["bottoming_watch"]]
         assert "b-cn_baijiu" in ids_bot
 
-    def test_reduce_row_has_dual_chip(self):
+    def test_baijiu_dual_read_with_prefix_mismatch(self):
+        """FT-R1: theme reduce id='cn_baijiu' and basket cycle id='b-cn_baijiu' must trigger dual_read.
+        This is the real live scenario: forward_log basket rows use 'b-' prefix, theme ids do not.
+        The assembler must strip 'b-' to normalize before intersection."""
         ti, cycle = self._setup()
         r = assemble_act_now([], ti, cycle)
         reduce_rows = {x["id"]: x for x in r["lanes"]["reduce_avoid"]}
-        # theme id is "cn_baijiu" in reduce; cycle id is "b-cn_baijiu" in bottoming
-        # dual_read flag checks if reduce id appears in bottoming_ids
-        # The ids differ (cn_baijiu vs b-cn_baijiu) — no auto-dual-read unless ids match
-        # NOTE: The assembler matches by exact id. Since reduce id=cn_baijiu and
-        # bottoming id=b-cn_baijiu, they differ. Dual-read is triggered only when IDs match.
-        # This is the correct strict behaviour — a sector-level Trough row
-        # for the SAME id would trigger it. Test the mechanism when IDs match.
-        pass  # see test below for exact-id match
+        bot_ids = {x["id"] for x in r["lanes"]["bottoming_watch"]}
+        # cn_baijiu (theme) must be in reduce
+        assert "cn_baijiu" in reduce_rows, "theme reduce row must be present"
+        # b-cn_baijiu (basket cycle) must be in bottoming
+        assert "b-cn_baijiu" in bot_ids, "basket bottoming row must be present"
+        # dual_read must be True on the reduce row (b- stripped for matching)
+        row = reduce_rows["cn_baijiu"]
+        assert row["dual_read"] is True, \
+            "dual_read must fire when cycle id='b-cn_baijiu' matches theme id='cn_baijiu'"
+        assert row["dual_chip_en"] is not None
+        assert "洗盘" in (row["dual_chip_zh"] or "")
 
     def test_dual_read_when_ids_match(self):
         """When a reduce item's id appears in cycle rows, dual_read=True and chip is set."""

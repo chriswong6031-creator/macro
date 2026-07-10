@@ -2076,7 +2076,7 @@
         var anyBoost = (DATA[cur] || []).some(function (r) { return boostOf(r) > 0; });
         if (legend) {
           legend.style.display = anyBoost ? '' : 'none';
-          if (anyBoost) legend.innerHTML = '<span class="sbt-chip">▲ ' + bl('sector turned', '板块已转向') + '</span> ' + bl('= the name's sector washed out with it and just fired the validated 2D-MACD × 3D-StochRSI turn.', '＝该股所在板块随其一同洗盘，且刚在已验证的 2D-MACD × 3D-StochRSI 上转向。') + ' <span class="sbt-chip soft">' + bl('peers basing', '同板块筑底') + '</span> ' + bl('= the sector's washed-out peers have stopped falling (velocity collapsed, some ticking up).', '＝板块内洗盘个股大多已止跌（下跌骤减、部分回升）。') + ' ' + bl('Boosted rows float to the top of the default order — click any column for the pure sort. A display re-rank, never a filter.', '仅提升默认排序（点击任意列即为纯排序）。展示层重排、绝非过滤。');
+          if (anyBoost) legend.innerHTML = '<span class="sbt-chip">▲ ' + bl('sector turned', '板块已转向') + '</span> ' + bl('= the name’s sector washed out with it and just fired the validated 2D-MACD × 3D-StochRSI turn.', '＝该股所在板块随其一同洗盘，且刚在已验证的 2D-MACD × 3D-StochRSI 上转向。') + ' <span class="sbt-chip soft">' + bl('peers basing', '同板块筑底') + '</span> ' + bl('= the sector’s washed-out peers have stopped falling (velocity collapsed, some ticking up).', '＝板块内洗盘个股大多已止跌（下跌骤减、部分回升）。') + ' ' + bl('Boosted rows float to the top of the default order — click any column for the pure sort. A display re-rank, never a filter.', '仅提升默认排序（点击任意列即为纯排序）。展示层重排、绝非过滤。');
         }
         // header
         var hh = '<tr>';
