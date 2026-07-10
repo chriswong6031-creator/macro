@@ -318,3 +318,99 @@ def test_w8g_ca_table_not_in_macro_mode():
     html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="macro")
     assert 'id="stocktable-data"' not in html, "stocktable-data must not appear in macro mode"
     assert "StockTable.init" not in html, "StockTable.init must not appear in macro mode"
+    # W8-G table CSS is also gated — must not appear in macro mode
+    assert 'st-view-toggle' not in html, "st-view-toggle CSS must not appear in macro mode"
+
+
+def test_w8g_ca_zone_dropped_from_serialization():
+    """'zone' must NOT appear in the CA serialized rows — it is a CN-only field with no
+    CA column consumer; its removal closes the honest-null copy-paste residue (Issue 3)."""
+    import json, re
+    html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="stocks")
+    m = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    payload = json.loads(m.group(1))
+    for row in payload["rows"]:
+        assert "zone" not in row, (
+            f"'zone' key must not be serialized on CA rows — it is CN-only; "
+            f"found on {row.get('ticker')}"
+        )
+
+
+def test_w8g_ca_days_since_signal_passthrough():
+    """Template must faithfully pass through days_since_signal as an integer (not drop it
+    or coerce to null) when the builder stamps a real value. This guards against a regression
+    where the builder wires the field but the template serialization silently drops it."""
+    import json, re
+    vm = _w8g_vm()
+    # BIR.TO has days_since_signal=1 (fresh new), DPM.TO=5, TD.TO=None
+    html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
+    m = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    payload = json.loads(m.group(1))
+    rows = {r["ticker"]: r for r in payload["rows"]}
+    assert rows["BIR.TO"]["days_since_signal"] == 1, (
+        "days_since_signal=1 on BIR.TO must survive serialization as integer 1, "
+        "not be dropped or coerced to null"
+    )
+    assert rows["DPM.TO"]["days_since_signal"] == 5, (
+        "days_since_signal=5 on DPM.TO must survive serialization as integer 5"
+    )
+    assert rows["TD.TO"]["days_since_signal"] is None, (
+        "days_since_signal=None on TD.TO (setting_up, not yet in ledger) must render as null"
+    )
+
+
+def test_w8g_ca_days_since_signal_builder_enrichment():
+    """compute_canada_standouts must stamp days_since_signal on every buy row from the
+    CA board ledger. When the ledger parquet is provided (patched), the field must be a
+    real non-negative integer for tickers that appear in the ledger, and None for tickers
+    that do not. This tests the BUILDER path (not just the template passthrough)."""
+    import tempfile
+    import unittest.mock as mock
+    import pandas as _pd
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from scripts.build_canada_library import compute_canada_standouts
+
+    # Minimal setups dict with two buy rows — no per-stock JSON files (best-effort)
+    setups = {
+        "as_of": "2026-07-10",
+        "buy": [
+            {"ticker": "BIR.TO", "group": "entry_open"},
+            {"ticker": "TD.TO",  "group": "setting_up"},
+        ],
+    }
+
+    # Synthetic board ledger: BIR.TO appeared on multiple dates; min() picks 2026-07-05
+    # (5 days before as_of 2026-07-10). TD.TO is absent → days_since_signal=None.
+    ledger_df = _pd.DataFrame([
+        {"date": "2026-07-08", "ticker": "BIR.TO"},
+        {"date": "2026-07-05", "ticker": "BIR.TO"},
+    ])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        board_ledger_dir = Path(tmp) / "board_ledger"
+        board_ledger_dir.mkdir()
+        ledger_df.to_parquet(board_ledger_dir / "ca_board.parquet", index=False)
+
+        # Patch lib.config.data_dir to return our temp directory and suppress heavy
+        # per-stock / breadth-panel work so the test runs without production data.
+        with mock.patch("lib.config.data_dir", return_value=Path(tmp)), \
+             mock.patch("scripts.build_canada_library._breadth_panel",
+                        return_value=(_pd.DataFrame(), {}, {})), \
+             mock.patch("scripts.build_canada_library._branch_b_order",
+                        side_effect=lambda rows, _ov: rows), \
+             mock.patch("scripts.build_canada_library._confluence_stat",
+                        return_value={"crosses": 0, "board": 2}), \
+             mock.patch("scripts.build_canada_library._sector_concentration",
+                        return_value=None):
+            result = compute_canada_standouts(setups)
+
+    rows = {r["ticker"]: r for r in result["buy"]}
+    # BIR.TO first seen 2026-07-05 → 5 days before 2026-07-10
+    assert rows["BIR.TO"]["days_since_signal"] == 5, (
+        f"BIR.TO expected days_since_signal=5, got {rows['BIR.TO'].get('days_since_signal')}"
+    )
+    # TD.TO not in ledger → None
+    assert rows["TD.TO"]["days_since_signal"] is None, (
+        f"TD.TO not in ledger — expected None, got {rows['TD.TO'].get('days_since_signal')}"
+    )

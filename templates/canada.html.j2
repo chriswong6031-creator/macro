@@ -266,6 +266,7 @@
 {% include "_market_state.css.j2" %}
   body.page-canada { padding-top: 24px; }
 
+{% if mode == 'stocks' %}
   /* ── W8-G: Standout table view (CA port of W8-E) ──────────────────────── */
   .st-view-toggle { display:inline-flex; gap:3px; padding:3px; border-radius:8px;
     background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
@@ -371,6 +372,7 @@
     .st-filters { gap:4px; }
     .st-filter-sel { font-size:11px; min-width:70px; padding:3px 6px; }
   }
+{% endif %}{# /stocks mode: W8-G table CSS #}
 </style>
 </head>
 <body class="page-canada">
@@ -627,7 +629,6 @@
     'sector':            _r.sector or '',
     'stage':             'ENTRY' if _r.get('group') == 'entry_open' else 'RIPENING',
     '_stage':            'ENTRY' if _r.get('group') == 'entry_open' else 'RIPENING',
-    'zone':              none,
     'tier':              _sig.get('tier_cascade') or '',
     'price':             _r.get('price'),
     'off_high':          _r.get('off_high'),
