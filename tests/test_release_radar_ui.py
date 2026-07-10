@@ -909,3 +909,80 @@ def test_r39_fixture_benchmark_only_claims_handled():
     open_start = src.find("function openModal(")
     open_body = src[open_start:open_start + 3000] if open_start >= 0 else ""
     assert "isBenchmarkOnly" in open_body, "openModal missing isBenchmarkOnly check for tab skipping"
+
+
+# ---------------------------------------------------------------------------
+# MRI-R39 QA fixes — regression guards (added 2026-07-10)
+# ---------------------------------------------------------------------------
+
+MOCKUP_PATH = ROOT / "research" / "release_forecast" / "mockup_release_radar.html"
+
+
+def test_mockup_contains_inlined_fixture_element():
+    """Self-containment guard: mockup must ship with a <script type='application/json' id='rr-fixture'>
+    element so it renders fully with no network dependency on macrodata/."""
+    if not MOCKUP_PATH.exists():
+        pytest.skip("mockup file not found")
+    src = MOCKUP_PATH.read_text(encoding="utf-8")
+    assert 'id="rr-fixture"' in src, (
+        "Mockup is missing <script type='application/json' id='rr-fixture'>…</script>. "
+        "The file is not self-contained: it fetches macrodata/release_forecast.json which "
+        "doesn't exist next to the file (Fix 1 regression)."
+    )
+    assert 'type="application/json"' in src, (
+        "rr-fixture element must have type='application/json' so browsers don't execute it"
+    )
+    # Verify the shim loader reads the element
+    assert "getElementById('rr-fixture')" in src or 'getElementById("rr-fixture")' in src, (
+        "Mockup loader shim must read from #rr-fixture element instead of (only) fetching"
+    )
+
+
+def test_mockup_fixture_element_is_valid_json():
+    """The inlined rr-fixture element must contain valid JSON matching the release_forecast schema."""
+    if not MOCKUP_PATH.exists():
+        pytest.skip("mockup file not found")
+    src = MOCKUP_PATH.read_text(encoding="utf-8")
+    import re as _re
+    # Extract content between the script tags
+    m = _re.search(
+        r'<script[^>]+id=["\']rr-fixture["\'][^>]*>(.*?)</script>',
+        src, _re.DOTALL
+    )
+    assert m is not None, "Could not find rr-fixture script element in mockup"
+    raw = m.group(1).strip()
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        pytest.fail(f"rr-fixture element contains invalid JSON: {e}")
+    assert "upcoming" in data, "rr-fixture JSON missing 'upcoming' key"
+    assert len(data["upcoming"]) >= 1, "rr-fixture JSON has empty 'upcoming' list"
+
+
+def test_models_tab_market_implied_not_duplicated():
+    """Fix 2 regression guard: Models tab must render market-implied exactly once per item.
+
+    modelDotPlot() already appends the rr-mkt-row. A second standalone
+    marketImpliedRow() call in tab1 would produce a duplicate.
+    Asserts that the tab1-building block in renderModal does NOT contain
+    a direct call to marketImpliedRow() after v3FactorRow.
+    """
+    src = _rr_section_src()
+    # Isolate the TAB 1: MODELS block
+    tab1_start = src.find("TAB 1: MODELS")
+    tab1_end = src.find("TAB 2: COMPONENTS", tab1_start) if tab1_start >= 0 else -1
+    assert tab1_start >= 0, "TAB 1: MODELS block not found in renderModal"
+    tab1_src = src[tab1_start:tab1_end] if tab1_end > tab1_start else src[tab1_start:tab1_start + 3000]
+
+    # Count direct marketImpliedRow() calls in the tab1 block.
+    # modelDotPlot() is called once (it internally adds the row); there should be
+    # NO additional standalone marketImpliedRow() call in tab1.
+    direct_calls = [m.start() for m in
+                    __import__('re').finditer(r'marketImpliedRow\s*\(', tab1_src)]
+    # The only acceptable occurrence is INSIDE modelDotPlot's own definition
+    # which is NOT in the tab1 building block — so direct_calls here should be 0.
+    assert len(direct_calls) == 0, (
+        f"Fix 2 regression: found {len(direct_calls)} direct marketImpliedRow() call(s) "
+        f"in the TAB 1 building block. modelDotPlot() already adds the row — "
+        f"a duplicate call produces two market-implied rows in the Models tab."
+    )

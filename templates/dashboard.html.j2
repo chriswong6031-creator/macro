@@ -2638,7 +2638,7 @@
   /* ---- Tab strip (sticky) ---- */
   .rr-tab-strip{display:flex;gap:0;border-bottom:1px solid var(--line);
     position:sticky;top:0;background:var(--panel2);z-index:2;overflow-x:auto;
-    scrollbar-width:none;-ms-overflow-style:none}
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
   .rr-tab-strip::-webkit-scrollbar{display:none}
   .rr-tab{padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;
     letter-spacing:.07em;cursor:pointer;border:none;background:none;color:var(--muted);
@@ -2786,6 +2786,10 @@
       max-height:90vh;overflow-y:auto}
     .rr-modal-close{min-width:48px;min-height:48px}
     .rr-tab{padding:10px 12px;min-height:44px}
+  }
+  /* Compress tab padding on narrow viewports so all 5 tabs fit without clipping */
+  @media(max-width:479px){
+    .rr-tab{padding:8px 8px;font-size:10px;letter-spacing:.04em}
   }
   </style>
   <div class="panel span12" id="release-radar">
@@ -3193,7 +3197,7 @@
       var h10 = rs.dgs10_h1_hot_bp, c10 = rs.dgs10_h1_cold_bp;
       var hS = rs.spy_h1_hot_pct, cS = rs.spy_h1_cold_pct;
       if (h10 == null && c10 == null && hS == null && cS == null) return '';
-      var n = rs.regime_cells_used != null ? rs.regime_cells_used : null;
+      var n = rs.regime_cells_used;
       var note = rs.note ? esc(rs.note) : '';
       var hotParts = [];
       if (h10 != null) hotParts.push('10y '+(h10>0?'+':'')+fmtNum(h10,0)+'bp');
@@ -3203,7 +3207,8 @@
       if (cS != null) coldParts.push('SPY '+(cS>0?'+':'')+fmtNum(cS,2)+'%');
       var hotStr = hotParts.length ? hotParts.join(', ') : '—';
       var coldStr = coldParts.length ? coldParts.join(', ') : '—';
-      var nStr = n != null ? ' (n='+n+')' : '';
+      /* guard: only show (n=…) when field is a finite number, not boolean/null */
+      var nStr = (typeof n === 'number' && isFinite(n)) ? ' (n='+n+')' : '';
       return '<div class="rr-sens-footer">'
         +'<span class="l-en">Hot print historically: <b>'+esc(hotStr)+'</b> next session'+nStr+'</span>'
         +'<span class="l-zh">历史上热数据：<b>'+esc(hotStr)+'</b>（次交易日）'+nStr+'</span>'
@@ -3475,16 +3480,19 @@
       var vMin = Math.min.apply(null,allVals), vMax = Math.max.apply(null,allVals);
       if (vMin === vMax){ vMin -= 0.05; vMax += 0.05; }
       var span = vMax - vMin;
-      var W = 280, H = models.length * 22 + 28, PAD = 28;
-      var iW = W - 2*PAD;
-      function xOf(v){ return PAD + Math.max(0,Math.min(iW,(v-vMin)/span*iW)); }
-      var svgParts = ['<svg viewBox="0 0 280 '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:280px;height:'+H+'px;display:block;margin:6px 0;overflow:visible">'];
-      /* axis line */
-      svgParts.push('<line x1="'+PAD+'" y1="'+(H-16)+'" x2="'+(W-PAD)+'" y2="'+(H-16)+'" stroke="var(--line)" stroke-width="1"/>');
+      /* LABEL_W: fixed gutter for row labels (left); VAL_W: gutter for value chips (right).
+         Axis line starts at AXIS_L and ends at AXIS_R so it never crosses label or value text. */
+      var W = 300, LABEL_W = 68, VAL_W = 36, AXIS_L = LABEL_W + 4, AXIS_R = W - VAL_W - 4;
+      var H = models.length * 22 + 28;
+      var iW = AXIS_R - AXIS_L;
+      function xOf(v){ return AXIS_L + Math.max(0,Math.min(iW,(v-vMin)/span*iW)); }
+      var svgParts = ['<svg viewBox="0 0 300 '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:300px;height:'+H+'px;display:block;margin:6px 0;overflow:visible">'];
+      /* axis line — starts after label gutter, ends before value gutter */
+      svgParts.push('<line x1="'+AXIS_L+'" y1="'+(H-16)+'" x2="'+AXIS_R+'" y2="'+(H-16)+'" stroke="var(--line)" stroke-width="1"/>');
       models.forEach(function(m,i){
         var y = 14 + i*22;
         var cx = xOf(m.pt);
-        /* whisker */
+        /* whisker — clipped to axis range */
         if (m.p10 != null && m.p90 != null){
           svgParts.push('<line x1="'+xOf(m.p10)+'" y1="'+y+'" x2="'+xOf(m.p90)+'" y2="'+y+'" stroke="var(--muted)" stroke-width="1"/>');
         }
@@ -3499,10 +3507,12 @@
         } else if (m.shape==='triangle'){
           svgParts.push('<polygon points="'+cx+','+(y-6)+' '+(cx+5)+','+(y+5)+' '+(cx-5)+','+(y+5)+'" fill="none" stroke="'+col+'" stroke-width="1.5"/>');
         }
-        /* label + value */
+        /* label: left gutter, clipped width so it never reaches axis */
         var valStr = useK ? fmtK(m.pt) : fmtNum(m.pt,2);
-        svgParts.push('<text x="'+PAD+'" y="'+(y+4)+'" font-size="9" fill="'+col+'" font-family="ui-monospace,monospace">'+esc(m.label)+'</text>');
-        svgParts.push('<text x="'+(W-PAD)+'" y="'+(y+4)+'" text-anchor="end" font-size="9" fill="'+col+'" font-family="ui-monospace,monospace" font-weight="bold">'+esc(valStr)+'</text>');
+        svgParts.push('<text x="2" y="'+(y+4)+'" font-size="9" fill="'+col+'" font-family="ui-monospace,monospace" textLength="'+(LABEL_W-6)+'" lengthAdjust="spacingAndGlyphs">'+esc(m.label)+'</text>');
+        /* value chip: right gutter with background rect so axis line never crosses text */
+        svgParts.push('<rect x="'+(W-VAL_W)+'" y="'+(y-7)+'" width="'+VAL_W+'" height="13" fill="var(--panel2)" rx="2"/>');
+        svgParts.push('<text x="'+(W-2)+'" y="'+(y+4)+'" text-anchor="end" font-size="9" fill="'+col+'" font-family="ui-monospace,monospace" font-weight="bold">'+esc(valStr)+'</text>');
       });
       svgParts.push('</svg>');
       var html = svgParts.join('');
@@ -3697,11 +3707,7 @@
         if (!isBenchmarkOnly && v3){
           tab1 += '<div class="rr-grp">'+v3FactorRow(v3, isClaims, isNfp)+'</div>';
         }
-        /* market-implied — own row with explicit basis tag, never on shared axis when basis differs */
-        if (!isBenchmarkOnly && item.benchmark_set && item.benchmark_set.market_implied){
-          var miRow = marketImpliedRow(item.benchmark_set.market_implied);
-          if (miRow) tab1 += '<div class="rr-grp">'+miRow+'</div>';
-        }
+        /* market-implied: already rendered inside modelDotPlot() with basis tag — do NOT add again here */
         /* surprise distribution — gated on !isBenchmarkOnly */
         var sd = item.surprise_distribution;
         if (!isBenchmarkOnly && !isNoData && sd){

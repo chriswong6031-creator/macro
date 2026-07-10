@@ -326,19 +326,28 @@ def test_v2_revision_risk_line_function_defined():
 # ---- All helpers are called from renderCard ----
 
 def test_v2_all_helpers_wired_into_rendermodal():
-    """MRI-R24: All 6 v2 helpers are called inside renderModal (detail modal); renderCard is compact.
+    """MRI-R24: All v2 detail helpers are reachable from renderModal (detail modal); renderCard is compact.
 
     The MRI-R24 redesign moves detail helpers out of renderCard and into renderModal.
     renderCard shows only: name+countdown, projection point, 2 chips, confidence.
+
+    MRI-R39 QA update: marketImpliedRow() is now called only inside modelDotPlot() (which is
+    called from renderModal) to avoid rendering it twice in the Models tab. The other 5 helpers
+    are still called directly from renderModal's body.
     """
     src = _rr_section_src()
-    # renderModal contains all detail helpers
+    # renderModal contains most detail helpers directly
     rm_start = src.find("function renderModal(")
     rm_end = src.find("\n    /* ---- modal open", rm_start) if rm_start >= 0 else -1
     assert rm_start >= 0, "renderModal not found (MRI-R24 required)"
     modal_body = src[rm_start:rm_end] if rm_end > rm_start else src[rm_start:rm_start + 10000]
-    for fn in ("componentsBar(", "confidenceBar(", "marketImpliedRow(", "surpriseDistGauge(", "reactionSensRow(", "revisionRiskLine("):
+    # These 5 must still be called directly from renderModal
+    for fn in ("componentsBar(", "confidenceBar(", "surpriseDistGauge(", "reactionSensRow(", "revisionRiskLine("):
         assert fn in modal_body, f"{fn} not called inside renderModal"
+    # marketImpliedRow is called via modelDotPlot() — check it's called from renderModal
+    assert "modelDotPlot(" in modal_body, "modelDotPlot() not called inside renderModal"
+    # marketImpliedRow must be defined in the same script scope (reachable from modelDotPlot)
+    assert "function marketImpliedRow(" in src, "marketImpliedRow() function definition missing"
     # renderCard must NOT call the heavy detail helpers (it is compact)
     rc_start = src.find("function renderCard(")
     rc_end = src.find("function renderModal(", rc_start) if rc_start >= 0 else -1
