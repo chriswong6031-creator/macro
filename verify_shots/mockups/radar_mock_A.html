@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html data-theme="dark" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Divergence Radar — Triage Desk (Variant A)</title>
+<link rel="stylesheet" href="../../site/theme.css">
+<style>
+/* ── base ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 12.5px/1.5 Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.page { max-width: 1280px; margin: 0 auto; padding: 14px 16px; }
+
+/* ── dev toggle bar ───────────────────────────────────────────────────────── */
+.dev-bar {
+  position: fixed; top: 0; right: 0; z-index: 999;
+  display: flex; gap: 6px; padding: 6px 10px;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+.dev-bar button {
+  padding: 3px 10px; border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel2);
+  color: var(--text); font-size: 11px;
+}
+.dev-bar button:hover { border-color: var(--link); }
+body { padding-top: 36px; }
+
+/* ── page header ──────────────────────────────────────────────────────────── */
+.pg-head { margin-bottom: 12px; }
+.pg-head h1 {
+  margin: 0 0 3px; font-size: 16px; font-weight: 700; letter-spacing: -.3px;
+  display: flex; align-items: center; gap: 8px;
+}
+.pg-head .sub {
+  margin: 0; color: var(--muted); font-size: 11.5px;
+}
+
+/* ── TRIAGE STRIP ─────────────────────────────────────────────────────────── */
+.triage-strip {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;
+}
+.triage-as-of { color: var(--muted); font-size: 11px; }
+.triage-regime {
+  display: flex; align-items: center; gap: 5px;
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--link) 28%, transparent);
+  border-radius: 5px; padding: 2px 8px; font-size: 11.5px; font-weight: 600;
+}
+.triage-regime .mult { color: var(--muted); font-weight: 400; font-size: 10.5px; }
+.triage-sep { color: var(--line); font-size: 13px; }
+.state-count {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11.5px; padding: 2px 7px; border-radius: 5px;
+  border: 1px solid transparent;
+}
+.state-count.neg { background: color-mix(in srgb,#e06464 10%,transparent); border-color: color-mix(in srgb,#e06464 20%,transparent); color: #e06464; }
+.state-count.cdn { background: color-mix(in srgb,#e08b45 10%,transparent); border-color: color-mix(in srgb,#e08b45 20%,transparent); color: #e08b45; }
+.state-count.qui { background: color-mix(in srgb, var(--muted) 10%,transparent); border-color: color-mix(in srgb, var(--muted) 20%,transparent); color: var(--muted); }
+.state-count.pos { background: color-mix(in srgb,#45b873 10%,transparent); border-color: color-mix(in srgb,#45b873 20%,transparent); color: #45b873; }
+.triage-cov { color: var(--muted); font-size: 11px; }
+.triage-grade {
+  margin-left: auto;
+  color: var(--muted); font-size: 11px;
+  background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 5px; padding: 2px 8px;
+}
+
+/* ── DELTA TODAY strip ────────────────────────────────────────────────────── */
+.delta-strip {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
+  background: color-mix(in srgb, var(--warn) 6%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--warn) 22%, var(--line));
+  border-radius: 8px; padding: 7px 12px; margin-bottom: 8px;
+  font-size: 11.5px;
+}
+.delta-label { color: var(--warn); font-weight: 600; font-size: 11px; margin-right: 4px; }
+.delta-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 4px; font-size: 11px;
+}
+.delta-chip.new { background: color-mix(in srgb,#e06464 12%,transparent); color: #e06464; }
+.delta-chip.resolved { background: color-mix(in srgb,#45b873 12%,transparent); color: #45b873; }
+.delta-chip.flip { background: color-mix(in srgb,#e0a030 12%,transparent); color: #e0a030; }
+.delta-arrow { opacity: .7; }
+
+/* ── LIFECYCLE pipeline ───────────────────────────────────────────────────── */
+.lc-section { margin-bottom: 10px; }
+.lc-section-h {
+  font-size: 10.5px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 5px;
+}
+.lc-pipeline {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+@media (max-width: 700px) {
+  .lc-pipeline { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 390px) {
+  .lc-pipeline { grid-template-columns: repeat(2, 1fr); }
+}
+.lc-lane {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 7px; padding: 7px 9px; min-width: 0;
+}
+.lc-lane-h {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10.5px; font-weight: 600; margin-bottom: 5px;
+  color: var(--muted);
+}
+.lc-lane-h .lc-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.lc-lane-h .lc-ct { background: var(--panel2); border-radius: 4px; padding: 1px 5px; }
+.lc-chip {
+  display: block; padding: 2px 0;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px; line-height: 1.3;
+}
+.lc-chip:first-child { border-top: none; padding-top: 0; }
+.lc-chip .lc-name { font-weight: 600; }
+.lc-chip .lc-state { color: var(--muted); font-size: 10px; }
+.lc-chip .lc-dv { font-size: 10px; }
+.lc-more {
+  display: block; padding: 3px 0; border-top: 1px solid var(--line);
+  font-size: 10.5px; color: var(--link); cursor: pointer;
+  background: none; border-left: none; border-right: none; border-bottom: none;
+  width: 100%; text-align: left;
+}
+.lc-more:hover { color: var(--text); }
+.lc-hidden { display: none; }
+.lc-empty { color: var(--muted); font-size: 10.5px; padding: 2px 0; }
+
+/* ── SPOTLIGHT section ────────────────────────────────────────────────────── */
+.spot-section { margin-bottom: 8px; }
+.section-h {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10.5px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 6px;
+}
+.section-h-ctrl { text-transform: none; letter-spacing: 0; }
+
+/* Full spotlight card (top 3-4) */
+.spot-cards { display: flex; flex-direction: column; gap: 7px; margin-bottom: 7px; }
+.spot-card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 8px; padding: 11px 13px;
+}
+.spot-card.s-neg { border-left: 3px solid #e06464; }
+.spot-card.s-pos { border-left: 3px solid #45b873; }
+.spot-card.s-cup { border-left: 3px solid var(--link); }
+.spot-card.s-cdn { border-left: 3px solid #e08b45; }
+.spot-card-h {
+  display: flex; align-items: center; gap: 7px;
+  flex-wrap: wrap; margin-bottom: 6px;
+}
+.spot-card-h .theme-name { font-weight: 700; font-size: 13px; }
+.spot-card-h .edge-badge {
+  margin-left: auto; font-weight: 700; font-size: 11px;
+  padding: 2px 7px; border-radius: 6px;
+}
+.state-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
+}
+.state-badge.s-neg { background: color-mix(in srgb,#e06464 14%,transparent); color: #e06464; }
+.state-badge.s-pos { background: color-mix(in srgb,#45b873 14%,transparent); color: #45b873; }
+.state-badge.s-cup { background: color-mix(in srgb, var(--link) 14%,transparent); color: var(--link); }
+.state-badge.s-cdn { background: color-mix(in srgb,#e08b45 14%,transparent); color: #e08b45; }
+.state-badge.s-quiet { background: color-mix(in srgb, var(--muted) 14%,transparent); color: var(--muted); }
+.life-pill {
+  font-size: 10px; padding: 1px 6px; border-radius: 3px;
+  border: 1px solid currentColor; opacity: .75;
+}
+.spot-note { font-size: 11.5px; color: var(--text); margin-bottom: 5px; line-height: 1.4; }
+.spot-meta-row {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px;
+}
+.meta-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 4px; padding: 2px 7px; font-size: 11px;
+}
+.meta-chip b { font-weight: 700; }
+.meta-chip.muted { opacity: .65; }
+.src-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
+.src-chip {
+  font-size: 10.5px; padding: 1px 6px; border-radius: 3px;
+  border: 1px solid transparent;
+}
+.confirm-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
+.confirm-chip {
+  font-size: 11px; padding: 2px 7px; border-radius: 4px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.cov-line { font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+
+/* headlines toggle */
+.news-toggle {
+  display: flex; align-items: center; gap: 5px;
+  cursor: pointer; font-size: 11px; color: var(--link);
+  background: none; border: none; padding: 0; margin-top: 4px;
+}
+.news-toggle:hover { color: var(--text); }
+.news-block {
+  margin-top: 6px; padding-top: 6px;
+  border-top: 1px solid var(--line);
+  display: none;
+}
+.news-block.open { display: block; }
+.news-item {
+  display: block; margin-bottom: 4px; font-size: 11.5px; line-height: 1.4;
+}
+.news-item a { color: var(--link); text-decoration: none; }
+.news-item a:hover { text-decoration: underline; }
+.news-item .ns { color: var(--muted); font-size: 10.5px; }
+
+/* ── COMPACT ROWS (remaining divergences) ─────────────────────────────────── */
+.compact-rows { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.compact-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-bottom: 1px solid var(--line);
+  cursor: pointer; transition: background .12s;
+}
+.compact-row:last-child { border-bottom: none; }
+.compact-row:hover { background: var(--panel2); }
+.compact-row.expanded { background: var(--panel2); }
+.cr-name { font-size: 12px; font-weight: 600; min-width: 160px; flex: 1; }
+.cr-edge { font-size: 11.5px; font-weight: 700; min-width: 52px; text-align: right; }
+.cr-div { font-size: 11px; color: var(--muted); min-width: 52px; text-align: right; }
+.cr-days { font-size: 10.5px; color: var(--muted); min-width: 52px; text-align: right; }
+.cr-strip { display: flex; gap: 2px; align-items: center; }
+.strip-dot {
+  width: 8px; height: 8px; border-radius: 2px; flex: none;
+}
+.cr-expand-icon { color: var(--muted); font-size: 10px; margin-left: 4px; transition: transform .15s; }
+.compact-row.expanded .cr-expand-icon { transform: rotate(90deg); }
+.cr-expanded-content {
+  display: none; padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel2);
+}
+.cr-expanded-content.open { display: block; }
+
+/* show-all / collapse control */
+.spot-ctrl {
+  display: flex; gap: 8px; align-items: center;
+  padding: 7px 12px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; cursor: pointer;
+  font-size: 11.5px; color: var(--link);
+}
+.spot-ctrl:hover { color: var(--text); }
+
+/* ── ALL-THEMES table ─────────────────────────────────────────────────────── */
+.themes-section { margin-bottom: 10px; }
+.themes-filters { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.filter-chip {
+  padding: 3px 10px; border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel2);
+  color: var(--muted); font-size: 11.5px; transition: all .12s;
+}
+.filter-chip.active {
+  background: color-mix(in srgb, var(--link) 14%, var(--panel));
+  border-color: color-mix(in srgb, var(--link) 35%, transparent);
+  color: var(--link);
+}
+.themes-table-wrap { overflow-x: auto; }
+.themes-table {
+  width: 100%; border-collapse: collapse; font-size: 11.5px;
+  min-width: 520px;
+}
+.themes-table thead th {
+  padding: 4px 9px; text-align: left;
+  color: var(--muted); font-size: 10.5px; font-weight: 600;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer; white-space: nowrap; user-select: none;
+}
+.themes-table thead th:hover { color: var(--text); }
+.themes-table thead th.sorted { color: var(--link); }
+.themes-table tbody tr {
+  border-bottom: 1px solid var(--line); transition: background .1s;
+}
+.themes-table tbody tr:last-child { border-bottom: none; }
+.themes-table tbody tr:hover { background: var(--panel2); }
+.themes-table tbody tr.hidden { display: none; }
+.themes-table td { padding: 3px 9px; }
+.td-name { font-weight: 600; }
+.td-lc { font-size: 10px; color: var(--muted); }
+.td-num { font-variant-numeric: tabular-nums; text-align: right; }
+.strip-mini { display: inline-flex; gap: 1.5px; }
+.strip-mini .sd {
+  width: 7px; height: 7px; border-radius: 1.5px;
+}
+.quiet-toggle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; cursor: pointer;
+  font-size: 11.5px; color: var(--link); border-top: 1px solid var(--line);
+}
+.quiet-toggle:hover { color: var(--text); }
+
+/* ── PER-NAME section ─────────────────────────────────────────────────────── */
+.names-section { margin-bottom: 10px; }
+.names-controls {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; align-items: center;
+}
+.names-controls input[type=text] {
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--panel2);
+  color: var(--text); font-size: 12px; flex: 1; min-width: 140px;
+}
+.names-controls select {
+  padding: 5px 8px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--panel2);
+  color: var(--text); font-size: 12px;
+}
+.names-list { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.name-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px; border-bottom: 1px solid var(--line);
+  cursor: pointer; transition: background .1s;
+  font-size: 11.5px;
+}
+.name-row:last-child { border-bottom: none; }
+.name-row:hover { background: var(--panel2); }
+.name-row.expanded { background: var(--panel2); }
+.nr-ticker { font-family: ui-monospace,Menlo,monospace; font-weight: 700; min-width: 56px; font-size: 12px; }
+.nr-basket { color: var(--muted); font-size: 10.5px; flex: 1; }
+.nr-edge { font-weight: 700; font-size: 11.5px; min-width: 44px; text-align: right; }
+.nr-rs { font-size: 11px; min-width: 52px; text-align: right; }
+.nr-note-wrap {
+  display: none; padding: 7px 12px; background: var(--panel2);
+  border-bottom: 1px solid var(--line); font-size: 11.5px;
+  color: var(--muted); line-height: 1.5;
+}
+.nr-note-wrap.open { display: block; }
+.names-more {
+  display: block; width: 100%; padding: 8px; text-align: center;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 0 0 8px 8px; cursor: pointer;
+  font-size: 11.5px; color: var(--link);
+  border-top: none;
+}
+.names-more:hover { color: var(--text); }
+
+/* ── ACCOUNTABILITY panel ─────────────────────────────────────────────────── */
+.account-section { margin-bottom: 10px; }
+.account-panel {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 8px; padding: 11px 13px;
+}
+.account-panel h3 {
+  margin: 0 0 7px; font-size: 12px; font-weight: 600; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.account-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 6px; margin-bottom: 6px;
+}
+.account-stat {
+  background: var(--panel2); border-radius: 6px; padding: 8px 10px;
+}
+.account-stat .as-label { font-size: 10.5px; color: var(--muted); margin-bottom: 2px; }
+.account-stat .as-val { font-size: 16px; font-weight: 700; color: var(--muted); }
+.account-stat .as-sub { font-size: 10.5px; color: var(--muted); opacity: .7; }
+.account-note { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.5; }
+
+/* ── Narrative Brain ──────────────────────────────────────────────────────── */
+.brain-section { margin-bottom: 14px; }
+.brain-degraded {
+  padding: 7px 12px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 7px; font-size: 11.5px; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.brain-degraded .bd-reason { opacity: .6; }
+
+/* ── Utility ──────────────────────────────────────────────────────────────── */
+.muted { color: var(--muted); }
+.up { color: var(--up); }
+.dn { color: var(--down); }
+.warn { color: var(--warn); }
+
+/* mobile tweaks */
+@media (max-width: 540px) {
+  .triage-strip { gap: 4px; }
+  .cr-days, .cr-div { display: none; }
+  .themes-table { font-size: 11px; }
+  .names-controls { flex-direction: column; }
+  .names-controls input, .names-controls select { width: 100%; }
+}
+</style>
+</head>
+<body>
+<!-- dev controls -->
+<div class="dev-bar">
+  <button onclick="toggleTheme()"><span class="l-en">Dark / Light</span><span class="l-zh">深色/浅色</span></button>
+  <button onclick="toggleLang()"><span class="l-en">EN / 中文</span><span class="l-zh">中文 / EN</span></button>
+</div>
+
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="pg-head">
+    <h1>
+      🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:400">
+        <span class="l-en">— federal money vs price · edge signal</span>
+        <span class="l-zh">— 联邦资金 vs 价格 · 边际信号</span>
+      </span>
+    </h1>
+    <p class="sub">
+      <span class="l-en">Where government spending disagrees with what price implies. Display-only context — not a trade trigger.</span>
+      <span class="l-zh">政府支出与价格隐含预期的分歧。仅供参考，非交易触发。</span>
+    </p>
+  </div>
+
+  <!-- A: TRIAGE STRIP -->
+  <div class="triage-strip" id="triage-strip">
+    <span class="triage-as-of" id="triage-asof">—</span>
+    <span class="triage-sep">·</span>
+    <span class="triage-regime" id="triage-regime">—</span>
+    <span class="triage-sep">·</span>
+    <span class="state-count neg" id="cnt-neg">—</span>
+    <span class="state-count cdn" id="cnt-cdn">—</span>
+    <span class="state-count pos" id="cnt-pos" style="display:none">—</span>
+    <span class="state-count qui" id="cnt-qui">—</span>
+    <span class="triage-sep">·</span>
+    <span class="triage-cov" id="triage-cov">—</span>
+    <span class="triage-grade" id="triage-grade">
+      <span class="l-en">grading: accruing</span>
+      <span class="l-zh">评分：累积中</span>
+    </span>
+  </div>
+
+  <!-- B: DELTA TODAY -->
+  <div class="delta-strip" id="delta-strip" style="display:none">
+    <span class="delta-label">
+      <span class="l-en">Δ TODAY</span><span class="l-zh">Δ 今日</span>
+    </span>
+    <span id="delta-chips"></span>
+  </div>
+
+  <!-- C: LIFECYCLE PIPELINE -->
+  <div class="lc-section">
+    <div class="lc-section-h">
+      <span class="l-en">LIFECYCLE PIPELINE</span>
+      <span class="l-zh">生命周期管道</span>
+    </div>
+    <div class="lc-pipeline" id="lc-pipeline">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <!-- D: SPOTLIGHT -->
+  <div class="spot-section">
+    <div class="section-h">
+      <span>
+        <span class="l-en">DIVERGENCE SPOTLIGHT</span>
+        <span class="l-zh">背离聚焦</span>
+      </span>
+      <span class="section-h-ctrl muted" id="spot-ctrl-label">—</span>
+    </div>
+    <div class="spot-cards" id="spot-full-cards"></div>
+    <div id="spot-compact-section">
+      <div class="compact-rows" id="spot-compact-rows"></div>
+    </div>
+    <div id="spot-show-ctrl" style="margin-top:6px;display:none">
+      <button class="spot-ctrl" onclick="toggleCompactAll()">
+        <span id="spot-show-label">
+          <span class="l-en">Show all remaining</span>
+          <span class="l-zh">显示全部</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- E: ALL-THEMES TABLE -->
+  <div class="themes-section">
+    <div class="section-h">
+      <span>
+        <span class="l-en">ALL THEMES</span>
+        <span class="l-zh">全部主题</span>
+      </span>
+      <span class="muted section-h-ctrl" style="font-size:11px">
+        <span class="l-en">click header to sort · quiet hidden by default</span>
+        <span class="l-zh">点击表头排序 · 平静默认隐藏</span>
+      </span>
+    </div>
+    <div class="themes-filters" id="themes-filters">
+      <button class="filter-chip active" data-filter="all">
+        <span class="l-en">All</span><span class="l-zh">全部</span>
+      </button>
+      <button class="filter-chip" data-filter="div">
+        <span class="l-en">Divergences</span><span class="l-zh">背离</span>
+      </button>
+      <button class="filter-chip" data-filter="confirmed">
+        <span class="l-en">Confirmed</span><span class="l-zh">确认</span>
+      </button>
+      <button class="filter-chip" data-filter="quiet">
+        <span class="l-en">Quiet</span><span class="l-zh">平静</span>
+      </button>
+    </div>
+    <div class="themes-table-wrap">
+      <table class="themes-table" id="themes-table">
+        <thead>
+          <tr>
+            <th data-col="name">
+              <span class="l-en">Theme</span><span class="l-zh">主题</span>
+            </th>
+            <th data-col="accel" class="td-num">
+              <span class="l-en">Fed activity</span><span class="l-zh">联邦活动</span>
+            </th>
+            <th data-col="price" class="td-num">
+              <span class="l-en">Price 60d</span><span class="l-zh">价格60日</span>
+            </th>
+            <th data-col="edge" class="td-num">edge</th>
+            <th data-col="days" class="td-num">
+              <span class="l-en">days</span><span class="l-zh">天数</span>
+            </th>
+            <th>
+              <span class="l-en">14d strip</span><span class="l-zh">14日条</span>
+            </th>
+            <th data-col="state">
+              <span class="l-en">State</span><span class="l-zh">状态</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="themes-tbody"></tbody>
+      </table>
+    </div>
+    <div class="quiet-toggle" id="quiet-toggle" onclick="toggleQuiet()">
+      <span id="quiet-toggle-label">
+        <span class="l-en">▶ Show 25 quiet themes</span>
+        <span class="l-zh">▶ 显示25个平静主题</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- F: PER-NAME -->
+  <div class="names-section">
+    <div class="section-h">
+      <span>
+        <span class="l-en">PER-NAME DIVERGENCE</span>
+        <span class="l-zh">个股背离</span>
+      </span>
+      <span class="muted section-h-ctrl" id="names-count-label">211 names</span>
+    </div>
+    <div class="names-controls">
+      <input type="text" id="names-search" placeholder="Search ticker or theme…" oninput="filterNames()">
+      <select id="names-state-filter" onchange="filterNames()">
+        <option value="all">All states</option>
+        <option value="NEGATIVE_DIVERGENCE">NEG DIV</option>
+        <option value="POSITIVE_DIVERGENCE">POS DIV</option>
+        <option value="CONFIRMED_DOWN">CONF DOWN</option>
+        <option value="CONFIRMED_UP">CONF UP</option>
+        <option value="QUIET">Quiet</option>
+      </select>
+      <select id="names-basket-filter" onchange="filterNames()">
+        <option value="all">All themes</option>
+      </select>
+    </div>
+    <div class="names-list" id="names-list"></div>
+    <button class="names-more" id="names-more-btn" onclick="showMoreNames()">
+      <span class="l-en">Show 20 more</span><span class="l-zh">显示更多20个</span>
+    </button>
+  </div>
+
+  <!-- G: ACCOUNTABILITY -->
+  <div class="account-section">
+    <div class="section-h">
+      <span>
+        <span class="l-en">ACCOUNTABILITY</span>
+        <span class="l-zh">问责面板</span>
+      </span>
+    </div>
+    <div class="account-panel">
+      <h3>
+        📊
+        <span class="l-en">Track Record + IC Grading</span>
+        <span class="l-zh">战绩 + IC 评分</span>
+      </h3>
+      <div class="account-grid">
+        <div class="account-stat">
+          <div class="as-label">
+            <span class="l-en">Open theses</span><span class="l-zh">未结论点</span>
+          </div>
+          <div class="as-val">112</div>
+          <div class="as-sub">
+            <span class="l-en">awaiting check-by dates</span>
+            <span class="l-zh">待核查日期到期</span>
+          </div>
+        </div>
+        <div class="account-stat">
+          <div class="as-label">
+            <span class="l-en">Matured · graded</span><span class="l-zh">已到期 · 已评分</span>
+          </div>
+          <div class="as-val">0</div>
+          <div class="as-sub">
+            <span class="l-en">of 4,073 snapshots</span>
+            <span class="l-zh">共4,073个快照</span>
+          </div>
+        </div>
+        <div class="account-stat">
+          <div class="as-label">
+            <span class="l-en">Hit rate</span><span class="l-zh">命中率</span>
+          </div>
+          <div class="as-val">—</div>
+          <div class="as-sub">
+            <span class="l-en">accruing (21d, 63d)</span>
+            <span class="l-zh">累积中</span>
+          </div>
+        </div>
+        <div class="account-stat">
+          <div class="as-label">
+            <span class="l-en">IC (rolling 90d)</span><span class="l-zh">IC（滚动90日）</span>
+          </div>
+          <div class="as-val">—</div>
+          <div class="as-sub">
+            <span class="l-en">min 3 matured to compute</span>
+            <span class="l-zh">至少3个到期才计算</span>
+          </div>
+        </div>
+      </div>
+      <p class="account-note">
+        <span class="l-en">No theses scored yet — grading accrues as 21d and 63d horizons elapse. 4,073 snapshots recorded; 112 open. Keep conviction modest until a track record exists.</span>
+        <span class="l-zh">尚无论点被评分——随着21日和63日周期到期，评分将逐步累积。已记录4,073个快照；112个待结。在战绩建立之前保持克制。</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- H: NARRATIVE BRAIN -->
+  <div class="brain-section">
+    <div class="section-h">
+      <span>
+        <span class="l-en">NARRATIVE BRAIN</span>
+        <span class="l-zh">叙事大脑</span>
+      </span>
+    </div>
+    <div id="brain-slot">
+      <div class="brain-degraded">
+        🧠
+        <span>
+          <span class="l-en">Deterministic only — AI read unavailable</span>
+          <span class="l-zh">仅确定性——AI解读不可用</span>
+        </span>
+        <span class="bd-reason" id="brain-reason"></span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .page -->
+
+<script>
+"use strict";
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function bi(en,zh){ var z=(zh==null||zh==='')?en:zh; return '<span class="l-en">'+esc(en)+'</span><span class="l-zh">'+esc(z)+'</span>'; }
+function fetchJ(url){ return fetch(url,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null); }
+function relpct(x){ return x==null?'—':(x>0?'+':'')+(x*100).toFixed(0)+'%'; }
+function usd(x){
+  if(x==null)return '—';
+  var v=Math.abs(x);
+  if(v>=1e9) return '$'+(x/1e9).toFixed(1)+'B';
+  if(v>=1e6) return '$'+Math.round(x/1e6)+'M';
+  return '$'+Math.round(x/1e3)+'K';
+}
+function edgeColor(e){ return e>=70?'#45b873':e>=45?'#e0a030':'#8b93a1'; }
+
+var SMAP = {
+  NEGATIVE_DIVERGENCE: {cls:'s-neg', en:'NEG DIV',  zh:'价格领先', ico:'⬇'},
+  POSITIVE_DIVERGENCE: {cls:'s-pos', en:'POS DIV',  zh:'资金领先', ico:'⬆'},
+  CONFIRMED_UP:        {cls:'s-cup', en:'CONF UP',  zh:'同步上行', ico:'✓'},
+  CONFIRMED_DOWN:      {cls:'s-cdn', en:'CONF DOWN',zh:'同步下行', ico:'✓'},
+  QUIET:               {cls:'s-quiet',en:'QUIET',   zh:'平静',    ico:'·'}
+};
+function sm(s){ return SMAP[s]||SMAP.QUIET; }
+
+var LIFE_COLOR = {
+  emerging:'var(--up)', forming:'var(--up)', confirming:'var(--link)',
+  mature:'var(--muted)', fading:'var(--down)', quiet:'var(--muted)'
+};
+
+// ── State-strip color ─────────────────────────────────────────────────────────
+function stateStripColor(s){
+  if(s==='NEGATIVE_DIVERGENCE') return '#e06464';
+  if(s==='POSITIVE_DIVERGENCE') return '#45b873';
+  if(s==='CONFIRMED_UP')        return '#7aa7e0';
+  if(s==='CONFIRMED_DOWN')      return '#e08b45';
+  return '#2a2f3a';
+}
+
+// ── Fake enrichment data (changes / prev_state / state_strip) ─────────────────
+var FAKE_CHANGES = {
+  prev_date: '2026-07-09',
+  new_flags: [
+    {basket:'ai_semiconductors', name:'AI Semiconductors', name_zh:'AI半导体', state:'NEGATIVE_DIVERGENCE'}
+  ],
+  resolved: [
+    {basket:'travel', name:'Travel', name_zh:'旅游', prev_state:'NEGATIVE_DIVERGENCE'}
+  ],
+  flips: [
+    {basket:'defense', name:'Defense', name_zh:'国防', from:'POSITIVE_DIVERGENCE', to:'CONFIRMED_UP'}
+  ]
+};
+
+function makeFakeStrip(currentState){
+  var states = ['QUIET','QUIET','QUIET','QUIET','QUIET','QUIET','QUIET','QUIET','QUIET','QUIET','QUIET','QUIET','QUIET',currentState];
+  var dates = [];
+  for(var i=13;i>=0;i--){
+    var d = new Date('2026-07-10'); d.setDate(d.getDate()-i);
+    dates.push((d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0'));
+  }
+  // inject some earlier state for divergence flags
+  if(currentState.indexOf('DIVERGENCE')>=0 || currentState==='CONFIRMED_DOWN'){
+    states[10]=currentState; states[11]=currentState; states[12]=currentState;
+  }
+  return states.map((s,i)=>({d:dates[i],s:s}));
+}
+
+// ── Main data stores ──────────────────────────────────────────────────────────
+var ALL_FLAGS = [];
+var ALL_TICKERS = [];
+var namesPage = 0;
+var namesPerPage = 15;
+var filteredNames = [];
+var sortCol = null, sortDir = 1;
+var quietShown = false;
+var themeFilter = 'all';
+var compactExpanded = false;
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+Promise.all([
+  fetchJ('../../site/basketdata/radar.json'),
+  fetchJ('../../site/basketdata/radar_enriched.json'),
+  fetchJ('../../site/basketdata/radar_news.json'),
+  fetchJ('../../site/basketdata/radar_ticker.json'),
+  fetchJ('../../site/basketdata/radar_ic.json'),
+  fetchJ('../../site/basketdata/radar_track_record.json'),
+  fetchJ('../../site/basketdata/narrative_brain.json')
+]).then(function([base, enriched, news, tickers, ic, tr, brain]){
+  if(!base || !base.flags) return;
+
+  // Merge enrichment
+  var eidx = {};
+  ((enriched||{}).flags||[]).forEach(ef=>{ if(ef.basket) eidx[ef.basket]=ef; });
+  var newsBaskets = ((news||{}).baskets||{});
+
+  base.flags.forEach(f=>{
+    var ef = eidx[f.basket]||{};
+    ['edge_score','confirm','regime','decay','drivers'].forEach(k=>{ if(ef[k]!=null) f[k]=ef[k]; });
+    f._headlines = (newsBaskets[f.basket]||{}).headlines||[];
+    // Fake new fields
+    f.prev_state = 'QUIET';
+    f.state_strip = makeFakeStrip(f.state);
+  });
+
+  // Use enriched top-level regime if available
+  var regime = (enriched||{}).regime || null;
+
+  ALL_FLAGS = base.flags;
+  ALL_TICKERS = ((tickers||{}).tickers||[]).slice().sort((a,b)=>(b.edge_score||0)-(a.edge_score||0));
+
+  renderTriageStrip(base, regime, ic, tr);
+  renderDeltaStrip(FAKE_CHANGES);
+  renderLifecyclePipeline(ALL_FLAGS);
+  renderSpotlight(ALL_FLAGS);
+  renderThemesTable(ALL_FLAGS);
+  renderNamesSection(ALL_FLAGS, tickers);
+  renderBrain(brain);
+});
+
+// ── A: Triage strip ───────────────────────────────────────────────────────────
+function renderTriageStrip(base, regime, ic, tr){
+  document.getElementById('triage-asof').textContent = 'as of ' + (base.as_of||'—');
+
+  if(regime){
+    document.getElementById('triage-regime').innerHTML =
+      bi(regime.quad_name||regime.quad, regime.quad_name||regime.quad) +
+      ' <span class="mult">×'+regime.mult+'</span>';
+  }
+
+  var states={NEGATIVE_DIVERGENCE:0,POSITIVE_DIVERGENCE:0,CONFIRMED_DOWN:0,CONFIRMED_UP:0,QUIET:0};
+  ALL_FLAGS.forEach(f=>{ states[f.state]=(states[f.state]||0)+1; });
+
+  var neg=states.NEGATIVE_DIVERGENCE||0, pos=states.POSITIVE_DIVERGENCE||0;
+  var cdn=states.CONFIRMED_DOWN||0, cup=states.CONFIRMED_UP||0, qui=states.QUIET||0;
+
+  document.getElementById('cnt-neg').innerHTML = bi(neg+' neg div', neg+' 负背离');
+  document.getElementById('cnt-cdn').innerHTML = bi(cdn+' conf↓', cdn+' 确认↓');
+  if(pos>0){
+    document.getElementById('cnt-pos').style.display='';
+    document.getElementById('cnt-pos').innerHTML = bi(pos+' pos div', pos+' 正背离');
+  }
+  document.getElementById('cnt-qui').innerHTML = bi(qui+' quiet', qui+' 平静');
+
+  var cov = base.coverage||{};
+  document.getElementById('triage-cov').innerHTML = bi(cov.themes_covered+' themes · '+cov.members_with_data+' names', cov.themes_covered+'主题 · '+cov.members_with_data+'个股');
+
+  if(ic){
+    document.getElementById('triage-grade').innerHTML =
+      bi('grading: '+ic.n_matured+' matured · '+ic.n_snapshots+' snapshots · accruing',
+         '评分: '+ic.n_matured+'已到期 · '+ic.n_snapshots+'快照 · 累积中');
+  }
+}
+
+// ── B: Delta strip ────────────────────────────────────────────────────────────
+function renderDeltaStrip(changes){
+  if(!changes) return;
+  var chips = [];
+  (changes.new_flags||[]).forEach(f=>{
+    chips.push('<span class="delta-chip new">⬇ '+bi(f.name,f.name_zh)+' <span class="delta-arrow l-en">new neg div</span><span class="delta-arrow l-zh">新负背离</span></span>');
+  });
+  (changes.resolved||[]).forEach(f=>{
+    chips.push('<span class="delta-chip resolved">✓ '+bi(f.name,f.name_zh)+' <span class="delta-arrow l-en">resolved</span><span class="delta-arrow l-zh">已解除</span></span>');
+  });
+  (changes.flips||[]).forEach(f=>{
+    var fromS=sm(f.from), toS=sm(f.to);
+    chips.push('<span class="delta-chip flip">⇄ '+bi(f.name,f.name_zh)+' <span class="l-en">'+fromS.en+' → '+toS.en+'</span><span class="l-zh">'+fromS.zh+' → '+toS.zh+'</span></span>');
+  });
+  if(chips.length){
+    document.getElementById('delta-strip').style.display='';
+    document.getElementById('delta-chips').innerHTML = chips.join('');
+  }
+}
+
+// ── C: Lifecycle pipeline ──────────────────────────────────────────────────────
+var LANE_DEFS = [
+  {key:'emerging',  en:'Emerging',   zh:'新兴'},
+  {key:'forming',   en:'Forming',    zh:'形成中'},
+  {key:'confirming',en:'Confirming', zh:'确认中'},
+  {key:'mature',    en:'Mature',     zh:'成熟'},
+  {key:'fading',    en:'Fading',     zh:'退潮'},
+  {key:'quiet',     en:'Quiet',      zh:'平静'}
+];
+var VISIBLE_PER_LANE = 3;
+
+function renderLifecyclePipeline(flags){
+  var pipe = document.getElementById('lc-pipeline');
+  pipe.innerHTML = LANE_DEFS.map(L=>{
+    var chips = flags.filter(f=>f.lifecycle===L.key);
+    var col = LIFE_COLOR[L.key]||'var(--muted)';
+    var visChips = chips.slice(0, VISIBLE_PER_LANE);
+    var hidChips = chips.slice(VISIBLE_PER_LANE);
+    var laneId = 'lc-lane-'+L.key;
+    var moreId = 'lc-more-'+L.key;
+    var hidId = 'lc-hid-'+L.key;
+
+    var chipsHtml = visChips.map(f=>{
+      var s=sm(f.state);
+      return '<div class="lc-chip">'+
+        '<div class="lc-name">'+bi(f.name||f.basket, f.name_zh||f.name||f.basket)+'</div>'+
+        '<div class="lc-state" style="color:'+col+'">'+s.ico+' '+bi(s.en,s.zh)+'</div>'+
+        (f.divergence!=null?'<div class="lc-dv muted">'+(f.divergence>0?'+':'')+f.divergence.toFixed(1)+'σ</div>':'')+
+        '</div>';
+    }).join('');
+
+    var hidHtml = hidChips.length ? hidChips.map(f=>{
+      var s=sm(f.state);
+      return '<div class="lc-chip lc-hidden" data-lid="'+L.key+'">'+
+        '<div class="lc-name">'+bi(f.name||f.basket, f.name_zh||f.name||f.basket)+'</div>'+
+        '<div class="lc-state" style="color:'+col+'">'+s.ico+' '+bi(s.en,s.zh)+'</div>'+
+        '</div>';
+    }).join('') : '';
+
+    var moreBtn = hidChips.length ?
+      '<button class="lc-more" id="'+moreId+'" onclick="toggleLane(\''+L.key+'\')">'+
+      '<span class="l-en">+'+hidChips.length+' more</span><span class="l-zh">+'+hidChips.length+'个</span></button>' : '';
+
+    return '<div class="lc-lane" id="'+laneId+'">'+
+      '<div class="lc-lane-h">'+
+        '<span style="display:flex;align-items:center;gap:5px">'+
+          '<span class="lc-dot" style="background:'+col+'"></span>'+
+          bi(L.en, L.zh)+
+        '</span>'+
+        '<span class="lc-ct muted">'+chips.length+'</span>'+
+      '</div>'+
+      (chips.length ? chipsHtml+hidHtml+moreBtn : '<div class="lc-empty">—</div>')+
+      '</div>';
+  }).join('');
+}
+
+function toggleLane(key){
+  var hid = document.querySelectorAll('[data-lid="'+key+'"]');
+  var btn = document.getElementById('lc-more-'+key);
+  var open = btn && btn.dataset.open==='1';
+  hid.forEach(el=>{ el.style.display = open?'none':''; });
+  if(btn){ btn.dataset.open=open?'':'1'; }
+  if(btn){
+    if(open){
+      var c = hid.length;
+      btn.innerHTML = '<span class="l-en">+'+c+' more</span><span class="l-zh">+'+c+'个</span>';
+    } else {
+      btn.innerHTML = '<span class="l-en">collapse</span><span class="l-zh">收起</span>';
+    }
+  }
+}
+
+// ── D: Spotlight ──────────────────────────────────────────────────────────────
+function stripHtml(strips){
+  if(!strips||!strips.length) return '';
+  return '<div class="cr-strip">'+strips.map(d=>{
+    return '<div class="strip-dot" title="'+d.d+' '+d.s+'" style="background:'+stateStripColor(d.s)+'"></div>';
+  }).join('')+'</div>';
+}
+
+function srcChipsHtml(o){
+  var ss=(o||{}).sources||[];
+  if(!ss.length) return '';
+  var chips = ss.map(s=>{
+    var z=s.z==null?0:s.z;
+    var col=z>0.2?'var(--up)':z<-0.2?'var(--down)':'var(--muted)';
+    return '<span class="src-chip" style="border-color:'+col+';color:'+col+'">'+
+      bi(s.label_en||s.name, s.label_zh||s.name)+
+      ' <b>'+(z>0?'+':'')+z.toFixed(1)+'</b></span>';
+  });
+  return '<div class="src-row"><span class="muted" style="font-size:10.5px;margin-right:2px">'+bi('drivers','驱动')+'</span>'+chips.join('')+'</div>';
+}
+
+function confirmHtml(f){
+  var c=f.confirm; if(!c) return '';
+  var chips=[];
+  function leg(name,lg){
+    if(!lg||!lg.present) return;
+    var d=lg.lean>0?'▲':lg.lean<0?'▼':'·';
+    var col=lg.lean>0?'var(--up)':lg.lean<0?'var(--down)':'var(--muted)';
+    chips.push('<span class="confirm-chip" style="color:'+col+'">'+name+' '+d+'</span>');
+  }
+  leg(bi('smart $','聪明钱'),c.alt); leg('ETF',c.flows); leg(bi('options','期权'),c.options);
+  if(c.crowd&&c.crowd.penalty>0) chips.push('<span class="confirm-chip warn">'+bi('crowd','拥挤')+' −'+c.crowd.penalty+'</span>');
+  if(f.regime&&f.regime.mult!=null) chips.push('<span class="confirm-chip muted">'+bi('regime','周期')+' ×'+f.regime.mult+'</span>');
+  if(f.decay&&f.decay.days_in_state>1) chips.push('<span class="confirm-chip muted">'+f.decay.days_in_state+bi('d in state','天')+'</span>');
+  return chips.length ? '<div class="confirm-row">'+chips.join('')+'</div>' : '';
+}
+
+function fullCardHtml(f, idx){
+  var s=sm(f.state), o=f.observable||{}, c=f.consensus||{};
+  var edge=f.edge_score, ecol=edgeColor(edge||0);
+  var cov=(o.covered||[]).slice(0,10).join(', ')+((o.covered||[]).length>10?'…':'');
+  var newsHtml='';
+  if(f._headlines&&f._headlines.length){
+    var items=f._headlines.slice(0,3).map(h=>{
+      var sent=h.sentiment==='pos'?' ▲':h.sentiment==='neg'?' ▼':'';
+      return '<div class="news-item"><a href="'+esc(h.url||'#')+'" target="_blank" rel="noopener noreferrer">'+esc(h.title||'')+'</a> <span class="ns">· '+esc(h.source||'')+sent+'</span></div>';
+    }).join('');
+    newsHtml='<button class="news-toggle" onclick="toggleNews(\'news-'+idx+'\')">'+
+      '<span class="l-en">📰 '+f._headlines.length+' headlines</span>'+
+      '<span class="l-zh">📰 '+f._headlines.length+'条新闻</span> ▾</button>'+
+      '<div class="news-block" id="news-'+idx+'">'+items+'</div>';
+  }
+
+  return '<div class="spot-card '+s.cls+'">'+
+    '<div class="spot-card-h">'+
+      '<span class="state-badge '+s.cls+'">'+s.ico+' '+bi(s.en,s.zh)+'</span>'+
+      (f.lifecycle?'<span class="life-pill" style="color:'+(LIFE_COLOR[f.lifecycle]||'var(--muted)')+'">'+bi(f.lifecycle,f.lifecycle)+'</span>':'')+
+      '<span class="theme-name">'+bi(f.name||f.basket,f.name_zh||f.name||f.basket)+'</span>'+
+      (edge!=null?'<span class="edge-badge" style="background:color-mix(in srgb,'+ecol+' 15%,transparent);color:'+ecol+'">edge '+edge+'</span>':'')+
+    '</div>'+
+    '<div class="spot-note">'+bi(f.note||'',f.note_zh||'')+'</div>'+
+    srcChipsHtml(o)+
+    '<div class="spot-meta-row">'+
+      '<span class="meta-chip"><span class="l-en">activity</span><span class="l-zh">活动</span> <b>'+(o.accel!=null?o.accel.toFixed(2)+'×':'—')+'</b> YoY</span>'+
+      (o.recent_3m_usd!=null?'<span class="meta-chip">'+bi('vs yr-ago','对比去年')+' <b>'+usd(o.recent_3m_usd)+'</b> / '+usd(o.base_3m_usd)+'</span>':'')+
+      '<span class="meta-chip">'+bi('price 60d','价格60日')+' <b style="color:'+(c.rel_60d>0?'var(--up)':c.rel_60d<0?'var(--down)':'var(--muted)')+'">'+relpct(c.rel_60d)+'</b></span>'+
+    '</div>'+
+    confirmHtml(f)+
+    (cov?'<div class="cov-line">'+bi('Covered:','覆盖:')+' '+esc(cov)+'</div>':'')+
+    newsHtml+
+    '</div>';
+}
+
+function compactRowHtml(f, idx){
+  var s=sm(f.state), o=f.observable||{}, c=f.consensus||{};
+  var edge=f.edge_score, ecol=edgeColor(edge||0);
+  var dv=f.divergence;
+  var days=(f.decay||{}).days_in_state||'—';
+  var strip=stripHtml(f.state_strip);
+
+  return '<div class="compact-row" id="cr-'+idx+'" onclick="toggleCR('+idx+',\''+f.basket+'\')" data-basket="'+esc(f.basket)+'">'+
+    '<span class="state-badge '+s.cls+'" style="flex:none">'+s.ico+'</span>'+
+    '<span class="cr-name">'+bi(f.name||f.basket,f.name_zh||f.name||f.basket)+'</span>'+
+    (edge!=null?'<span class="cr-edge" style="color:'+ecol+'">'+edge+'</span>':'')+
+    '<span class="cr-div muted">'+(dv!=null?(dv>0?'+':'')+dv.toFixed(1)+'σ':'—')+'</span>'+
+    '<span class="cr-days muted">'+days+bi('d','天')+'</span>'+
+    strip+
+    '<span class="cr-expand-icon">▶</span>'+
+    '</div>'+
+    '<div class="cr-expanded-content" id="cre-'+idx+'">'+
+    fullCardHtml(f, 'ce-'+idx)+
+    '</div>';
+}
+
+function toggleCR(idx, basket){
+  var row=document.getElementById('cr-'+idx);
+  var content=document.getElementById('cre-'+idx);
+  if(!row||!content) return;
+  var isOpen=row.classList.contains('expanded');
+  row.classList.toggle('expanded',!isOpen);
+  content.classList.toggle('open',!isOpen);
+  // scroll names section to basket if filtering is desired
+}
+
+function toggleNews(id){
+  var el=document.getElementById(id);
+  if(el) el.classList.toggle('open');
+}
+
+function renderSpotlight(flags){
+  var divs=flags.filter(f=>f.state.indexOf('DIVERGENCE')>=0);
+  divs.sort((a,b)=>(b.edge_score||0)-(a.edge_score||0));
+
+  var topN=Math.min(3, divs.length);
+  var top=divs.slice(0,topN);
+  var rest=divs.slice(topN);
+
+  document.getElementById('spot-ctrl-label').textContent =
+    divs.length + (document.documentElement.lang==='zh'?' 个背离':' divergences ranked by edge');
+
+  document.getElementById('spot-full-cards').innerHTML = top.map((f,i)=>fullCardHtml(f,i)).join('');
+
+  if(rest.length){
+    // Show first 5, hide rest
+    var SHOW_COMPACT = 5;
+    var visible = rest.slice(0,SHOW_COMPACT);
+    var hidden  = rest.slice(SHOW_COMPACT);
+    document.getElementById('spot-compact-rows').innerHTML =
+      visible.map((f,i)=>compactRowHtml(f, 'v'+i)).join('') +
+      hidden.map((f,i)=>{
+        var h=compactRowHtml(f,'h'+i);
+        // wrap in hidden divs
+        return '<div class="cr-extra-hidden" style="display:none">'+h+'</div>';
+      }).join('');
+
+    if(hidden.length){
+      document.getElementById('spot-show-ctrl').style.display='';
+      document.getElementById('spot-show-label').innerHTML =
+        '<span class="l-en">Show '+hidden.length+' more divergences</span>'+
+        '<span class="l-zh">显示更多'+hidden.length+'个</span>';
+    }
+  }
+}
+
+function toggleCompactAll(){
+  var items=document.querySelectorAll('.cr-extra-hidden');
+  compactExpanded=!compactExpanded;
+  items.forEach(el=>{ el.style.display=compactExpanded?'':'none'; });
+  var label=document.getElementById('spot-show-label');
+  if(compactExpanded){
+    label.innerHTML='<span class="l-en">Collapse</span><span class="l-zh">收起</span>';
+  } else {
+    var c=items.length;
+    label.innerHTML='<span class="l-en">Show '+c+' more divergences</span><span class="l-zh">显示更多'+c+'个</span>';
+  }
+}
+
+// ── E: All-themes table ───────────────────────────────────────────────────────
+function renderThemesTable(flags){
+  var tbody=document.getElementById('themes-tbody');
+  var rows=flags.map(f=>{
+    var s=sm(f.state), o=f.observable||{}, c=f.consensus||{};
+    var edge=f.edge_score, ecol=edgeColor(edge||0);
+    var days=(f.decay||{}).days_in_state;
+    var strip=(f.state_strip||[]).map(d=>'<div class="sd" title="'+d.d+'" style="background:'+stateStripColor(d.s)+'"></div>').join('');
+    var isQuiet=f.state==='QUIET';
+
+    return '<tr data-state="'+f.state+'" data-basket="'+esc(f.basket)+'" data-accel="'+(o.accel||0)+'" data-price="'+(c.rel_60d||0)+'" data-edge="'+(edge||0)+'" data-days="'+(days||0)+'" class="'+(isQuiet?'quiet-row':'')+'">'+
+      '<td><div class="td-name">'+bi(f.name||f.basket,f.name_zh||f.name||f.basket)+'</div>'+
+        '<div class="td-lc" style="color:'+(LIFE_COLOR[f.lifecycle]||'var(--muted)')+'">'+f.lifecycle+'</div></td>'+
+      '<td class="td-num">'+(o.accel!=null?o.accel.toFixed(2)+'×':'—')+'</td>'+
+      '<td class="td-num" style="color:'+(c.rel_60d>0?'var(--up)':c.rel_60d<0?'var(--down)':'var(--muted)')+'">'+relpct(c.rel_60d)+'</td>'+
+      '<td class="td-num" style="color:'+ecol+';font-weight:700">'+(edge!=null?edge:'—')+'</td>'+
+      '<td class="td-num muted">'+(days!=null?days:'—')+'</td>'+
+      '<td><div class="strip-mini">'+strip+'</div></td>'+
+      '<td><span class="state-badge '+s.cls+'">'+bi(s.en,s.zh)+'</span></td>'+
+      '</tr>';
+  });
+  tbody.innerHTML = rows.join('');
+
+  // initially hide quiet rows
+  applyThemeFilter();
+
+  // sort headers
+  document.querySelectorAll('.themes-table thead th[data-col]').forEach(th=>{
+    th.addEventListener('click',()=>sortThemes(th.dataset.col));
+  });
+}
+
+function applyThemeFilter(){
+  var rows=document.querySelectorAll('#themes-tbody tr');
+  rows.forEach(row=>{
+    var state=row.dataset.state||'';
+    var isQuiet=state==='QUIET';
+    var matchFilter=true;
+    if(themeFilter==='div') matchFilter=state.indexOf('DIVERGENCE')>=0;
+    else if(themeFilter==='confirmed') matchFilter=state.indexOf('CONFIRMED')>=0;
+    else if(themeFilter==='quiet') matchFilter=isQuiet;
+
+    if(!matchFilter){ row.classList.add('hidden'); return; }
+    // quiet visibility
+    if(isQuiet&&!quietShown&&themeFilter==='all'){ row.classList.add('hidden'); }
+    else { row.classList.remove('hidden'); }
+  });
+
+  // update quiet toggle label
+  var qt=document.getElementById('quiet-toggle');
+  var ql=document.getElementById('quiet-toggle-label');
+  if(themeFilter!=='all'||themeFilter==='quiet'){
+    qt.style.display='none';
+  } else {
+    qt.style.display='';
+    ql.innerHTML=quietShown?
+      '<span class="l-en">▼ Hide quiet themes</span><span class="l-zh">▼ 隐藏平静主题</span>':
+      '<span class="l-en">▶ Show 25 quiet themes</span><span class="l-zh">▶ 显示25个平静主题</span>';
+  }
+}
+
+function toggleQuiet(){
+  quietShown=!quietShown;
+  applyThemeFilter();
+}
+
+// filter chips
+document.querySelectorAll('.filter-chip').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    themeFilter=this.dataset.filter;
+    applyThemeFilter();
+  });
+});
+
+function sortThemes(col){
+  var tbody=document.getElementById('themes-tbody');
+  var rows=Array.from(tbody.querySelectorAll('tr'));
+  if(sortCol===col){ sortDir*=-1; } else { sortCol=col; sortDir=1; }
+
+  // update header highlight
+  document.querySelectorAll('.themes-table thead th').forEach(th=>{
+    th.classList.toggle('sorted', th.dataset.col===col);
+  });
+
+  rows.sort((a,b)=>{
+    var av=a.dataset[col==='price'?'price':col]==='name'?a.textContent:parseFloat(a.dataset[col]||0);
+    var bv=b.dataset[col==='price'?'price':col]==='name'?b.textContent:parseFloat(b.dataset[col]||0);
+    if(col==='name'){ av=a.querySelector('.td-name').textContent; bv=b.querySelector('.td-name').textContent; return av.localeCompare(bv)*sortDir; }
+    return (bv-av)*sortDir;
+  });
+  rows.forEach(r=>tbody.appendChild(r));
+  applyThemeFilter();
+}
+
+// ── F: Per-name section ───────────────────────────────────────────────────────
+function renderNamesSection(flags, tickers){
+  // Populate basket dropdown
+  var baskets = {};
+  flags.forEach(f=>{ baskets[f.basket]=f.name||f.basket; });
+  var bsel=document.getElementById('names-basket-filter');
+  Object.entries(baskets).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([k,v])=>{
+    var opt=document.createElement('option'); opt.value=k; opt.textContent=v; bsel.appendChild(opt);
+  });
+
+  filteredNames=ALL_TICKERS.slice();
+  renderNamesList();
+}
+
+function filterNames(){
+  var search=document.getElementById('names-search').value.toLowerCase();
+  var stateF=document.getElementById('names-state-filter').value;
+  var basketF=document.getElementById('names-basket-filter').value;
+
+  filteredNames=ALL_TICKERS.filter(t=>{
+    if(stateF!=='all'&&t.state!==stateF) return false;
+    if(basketF!=='all'&&t.basket!==basketF) return false;
+    if(search){
+      if(!((t.ticker||'').toLowerCase().includes(search)||(t.basket_name||'').toLowerCase().includes(search)||(t.note||'').toLowerCase().includes(search))) return false;
+    }
+    return true;
+  });
+  namesPage=0;
+  renderNamesList();
+}
+
+function renderNamesList(){
+  var show=filteredNames.slice(0, namesPerPage*(namesPage+1));
+  var list=document.getElementById('names-list');
+  var more=document.getElementById('names-more-btn');
+
+  list.innerHTML=show.map((t,i)=>{
+    var s=sm(t.state), edge=t.edge_score||0, ecol=edgeColor(edge);
+    var rs=t.rs_vs_spy_60d;
+    return '<div class="name-row" id="nr-'+i+'" onclick="toggleNR('+i+')">'+
+      '<span class="nr-ticker">'+esc(t.ticker)+'</span>'+
+      '<span class="state-badge '+s.cls+'" style="font-size:10px">'+bi(s.en,s.zh)+'</span>'+
+      '<span class="nr-basket muted">'+esc(t.basket_name||t.basket)+'</span>'+
+      '<span class="nr-edge" style="color:'+ecol+'">'+edge+'</span>'+
+      '<span class="nr-rs" style="color:'+(rs>0?'var(--up)':rs<0?'var(--down)':'var(--muted)')+'">'+
+        (rs!=null?(rs>0?'+':'')+rs.toFixed(1)+'%':'—')+'</span>'+
+      '</div>'+
+      '<div class="nr-note-wrap" id="nrn-'+i+'">'+esc(t.note||'—')+'</div>';
+  }).join('');
+
+  var total=filteredNames.length;
+  var shown=show.length;
+  document.getElementById('names-count-label').textContent=shown+' / '+total;
+  more.style.display=shown<total?'':'none';
+}
+
+function toggleNR(i){
+  var row=document.getElementById('nr-'+i);
+  var note=document.getElementById('nrn-'+i);
+  if(!row||!note) return;
+  row.classList.toggle('expanded');
+  note.classList.toggle('open');
+}
+
+function showMoreNames(){
+  namesPage++;
+  renderNamesList();
+}
+
+// ── H: Narrative Brain ─────────────────────────────────────────────────────────
+function renderBrain(brain){
+  var slot=document.getElementById('brain-slot');
+  var reasonEl=document.getElementById('brain-reason');
+  if(!brain){
+    if(reasonEl) reasonEl.textContent='(no data)';
+    return;
+  }
+  var hasBrain=brain.assessments&&brain.assessments.length;
+  if(brain.degraded_reason||!hasBrain){
+    if(reasonEl) reasonEl.textContent='('+brain.degraded_reason+')';
+    return;
+  }
+  // Non-degraded form (design for when data exists)
+  var rows=brain.assessments.slice(0,4).map(a=>{
+    var verdict=a.verdict||'MONITOR';
+    var vcol=verdict==='ENTER'?'var(--up)':verdict==='AVOID'?'var(--down)':'var(--muted)';
+    return '<div style="display:flex;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid var(--line)">'+
+      '<span style="font-size:10.5px;font-weight:600;color:'+vcol+';min-width:50px">'+bi(verdict,verdict)+'</span>'+
+      '<span style="font-weight:600;font-size:12px">'+bi(a.name||a.basket,a.name_zh||a.name||a.basket)+'</span>'+
+      '<span class="muted" style="font-size:11px">'+bi('durability','持续力')+' '+(a.composite||'—')+'</span>'+
+      '<span class="muted" style="font-size:11px">'+esc(a.confidence||'')+'</span>'+
+      '</div>';
+  }).join('');
+  slot.innerHTML='<div class="account-panel">'+
+    '<h3>🧠 '+bi('Narrative Brain','叙事大脑')+
+    '<span class="muted" style="font-weight:400;font-size:11px"> · '+bi('AI durability read, graded later','AI持续力解读，事后评分')+'</span></h3>'+
+    rows+'</div>';
+}
+
+// ── Dev toggles ───────────────────────────────────────────────────────────────
+function toggleTheme(){
+  var html=document.documentElement;
+  html.dataset.theme=html.dataset.theme==='light'?'dark':'light';
+}
+function toggleLang(){
+  var html=document.documentElement;
+  html.dataset.lang=html.dataset.lang==='zh'?'en':'zh';
+}
+</script>
+</body>
+</html>

@@ -476,6 +476,295 @@ def test_enrich_does_not_write_real_state_history(monkeypatch, tmp_path):
         assert real_path.stat().st_mtime == mtime_before, "enrich() must not modify the real state_history.jsonl"
 
 
+# ============================================================================ #
+# _prev_state_and_strip
+# ============================================================================ #
+
+def _make_hist_for_strip(basket: str, prior_rows: list, today: date) -> dict:
+    """Build a hist dict from explicit prior rows + a fake path."""
+    return {"_rows": prior_rows, "_path": Path("/tmp/fake_strip.jsonl"), "_today": today}
+
+
+def test_prev_state_no_history():
+    hist = _make_hist_for_strip("basket_a", [], _TODAY)
+    prev, strip = rp._prev_state_and_strip("basket_a", hist)
+    assert prev is None
+    assert strip == []  # no prior rows; today entry appended by enrich(), not _prev_state_and_strip
+
+
+def test_prev_state_returns_last_prior_date():
+    rows = [
+        {"date": "2026-06-18", "basket": "basket_a", "state": "QUIET"},
+        {"date": "2026-06-19", "basket": "basket_a", "state": "POSITIVE_DIVERGENCE"},
+        # today row should be excluded (date == _TODAY)
+        {"date": _TODAY.isoformat(), "basket": "basket_a", "state": "CONFIRMED_UP"},
+    ]
+    hist = _make_hist_for_strip("basket_a", rows, _TODAY)
+    prev, strip = rp._prev_state_and_strip("basket_a", hist)
+    # most recent PRIOR to today is 2026-06-19
+    assert prev == "POSITIVE_DIVERGENCE"
+
+
+def test_prev_state_today_rows_excluded():
+    """Rows with date == today must not influence prev_state."""
+    rows = [
+        {"date": "2026-06-15", "basket": "basket_a", "state": "QUIET"},
+        {"date": _TODAY.isoformat(), "basket": "basket_a", "state": "CONFIRMED_UP"},
+    ]
+    hist = _make_hist_for_strip("basket_a", rows, _TODAY)
+    prev, strip = rp._prev_state_and_strip("basket_a", hist)
+    assert prev == "QUIET"  # today's row excluded
+
+
+def test_state_strip_oldest_first():
+    rows = [
+        {"date": "2026-06-01", "basket": "basket_a", "state": "QUIET"},
+        {"date": "2026-06-10", "basket": "basket_a", "state": "POSITIVE_DIVERGENCE"},
+        {"date": "2026-06-19", "basket": "basket_a", "state": "CONFIRMED_UP"},
+    ]
+    hist = _make_hist_for_strip("basket_a", rows, _TODAY)
+    _, strip = rp._prev_state_and_strip("basket_a", hist)
+    # Strip from _prev_state_and_strip is prior rows only (oldest→newest), no today entry yet
+    assert strip[0]["d"] == "06-01"
+    assert strip[-1]["d"] == "06-19"
+    assert strip[-1]["s"] == "CONFIRMED_UP"
+
+
+def test_state_strip_max_14():
+    # Create 20 prior rows
+    rows = [
+        {"date": (date(2026, 5, 1) + timedelta(days=i)).isoformat(), "basket": "basket_a", "state": "QUIET"}
+        for i in range(20)
+    ]
+    hist = _make_hist_for_strip("basket_a", rows, _TODAY)
+    _, strip = rp._prev_state_and_strip("basket_a", hist)
+    assert len(strip) == 14  # max 14 prior rows
+
+
+def test_state_strip_different_basket_excluded():
+    rows = [
+        {"date": "2026-06-18", "basket": "other_basket", "state": "QUIET"},
+        {"date": "2026-06-19", "basket": "basket_a", "state": "POSITIVE_DIVERGENCE"},
+    ]
+    hist = _make_hist_for_strip("basket_a", rows, _TODAY)
+    prev, strip = rp._prev_state_and_strip("basket_a", hist)
+    assert prev == "POSITIVE_DIVERGENCE"
+    assert len(strip) == 1
+
+
+# ============================================================================ #
+# enrich() — prev_state, state_strip, changes
+# ============================================================================ #
+
+def _make_enrich_monkeypatches(monkeypatch, tmp_path, hist_rows: list, today: date = _TODAY):
+    """Helper: wire up monkeypatches for enrich() with seeded history."""
+    monkeypatch.setattr(rp, "_load", lambda _: {})
+    monkeypatch.setattr(rp, "_regime", lambda: {"mult": 1.0, "quad": None, "quad_name": None, "liquidity": None})
+    fake_hist_path = tmp_path / "state_history.jsonl"
+
+    def fake_state_history(td):
+        return {"_rows": hist_rows, "_path": fake_hist_path, "_today": td}
+
+    monkeypatch.setattr(rp, "_state_history", fake_state_history)
+
+
+def test_enrich_prev_state_and_strip_from_history(monkeypatch, tmp_path):
+    """prev_state reflects the prior date; state_strip ends with today's state."""
+    today = date(2026, 6, 25)
+    hist_rows = [
+        {"date": "2026-06-23", "basket": "basket_a", "state": "QUIET"},
+        {"date": "2026-06-24", "basket": "basket_a", "state": "POSITIVE_DIVERGENCE"},
+        # today row already present in history — must be excluded from prev computation
+        {"date": today.isoformat(), "basket": "basket_a", "state": "QUIET"},
+    ]
+    _make_enrich_monkeypatches(monkeypatch, tmp_path, hist_rows, today)
+
+    radar = {
+        "flags": [
+            {"basket": "basket_a", "name": "A", "state": "CONFIRMED_UP",
+             "salience": 1.0, "observable": {"dir": 1, "covered": []}}
+        ]
+    }
+    result = rp.enrich(radar, today=today)
+    flag = result["flags"][0]
+
+    # prev_state should be from 2026-06-24 (today row excluded)
+    assert flag["prev_state"] == "POSITIVE_DIVERGENCE"
+    # state_strip ends with today entry
+    assert flag["state_strip"][-1]["d"] == "06-25"
+    assert flag["state_strip"][-1]["s"] == "CONFIRMED_UP"
+    # strip has 2 prior rows + today
+    assert len(flag["state_strip"]) == 3
+
+
+def test_enrich_state_strip_empty_history(monkeypatch, tmp_path):
+    """With no history, state_strip is just today's entry."""
+    _make_enrich_monkeypatches(monkeypatch, tmp_path, [], _TODAY)
+
+    radar = {
+        "flags": [
+            {"basket": "basket_b", "name": "B", "state": "QUIET",
+             "salience": 0.5, "observable": {"dir": 0, "covered": []}}
+        ]
+    }
+    result = rp.enrich(radar, today=_TODAY)
+    flag = result["flags"][0]
+
+    assert flag["prev_state"] is None
+    assert len(flag["state_strip"]) == 1
+    assert flag["state_strip"][0]["s"] == "QUIET"
+    assert flag["state_strip"][0]["d"] == _TODAY.isoformat()[5:]
+
+
+def test_enrich_changes_new_divergence(monkeypatch, tmp_path):
+    """Basket that was NOT a _DIVERGENCE and now IS one → new_divergences."""
+    today = date(2026, 6, 25)
+    hist_rows = [
+        {"date": "2026-06-24", "basket": "basket_a", "state": "QUIET"},
+    ]
+    _make_enrich_monkeypatches(monkeypatch, tmp_path, hist_rows, today)
+
+    radar = {
+        "flags": [
+            {"basket": "basket_a", "name": "A", "name_zh": "A中", "state": "POSITIVE_DIVERGENCE",
+             "salience": 1.0, "observable": {"dir": 1, "covered": []}}
+        ]
+    }
+    result = rp.enrich(radar, today=today)
+    changes = result["changes"]
+
+    assert changes["prev_date"] == "2026-06-24"
+    assert len(changes["new_divergences"]) == 1
+    assert changes["new_divergences"][0]["basket"] == "basket_a"
+    assert changes["new_divergences"][0]["from"] == "QUIET"
+    assert changes["new_divergences"][0]["to"] == "POSITIVE_DIVERGENCE"
+    assert len(changes["resolved"]) == 0
+    assert len(changes["flips"]) == 0
+
+
+def test_enrich_changes_resolved(monkeypatch, tmp_path):
+    """Basket that WAS a _DIVERGENCE and now is NOT → resolved."""
+    today = date(2026, 6, 25)
+    hist_rows = [
+        {"date": "2026-06-24", "basket": "basket_a", "state": "NEGATIVE_DIVERGENCE"},
+    ]
+    _make_enrich_monkeypatches(monkeypatch, tmp_path, hist_rows, today)
+
+    radar = {
+        "flags": [
+            {"basket": "basket_a", "name": "A", "name_zh": "", "state": "QUIET",
+             "salience": 0.5, "observable": {"dir": 0, "covered": []}}
+        ]
+    }
+    result = rp.enrich(radar, today=today)
+    changes = result["changes"]
+
+    assert len(changes["resolved"]) == 1
+    assert changes["resolved"][0]["from"] == "NEGATIVE_DIVERGENCE"
+    assert changes["resolved"][0]["to"] == "QUIET"
+    assert len(changes["new_divergences"]) == 0
+    assert len(changes["flips"]) == 0
+
+
+def test_enrich_changes_flip(monkeypatch, tmp_path):
+    """Any other prev!=now change (neither new divergence nor resolved) → flips."""
+    today = date(2026, 6, 25)
+    hist_rows = [
+        {"date": "2026-06-24", "basket": "basket_a", "state": "CONFIRMED_UP"},
+    ]
+    _make_enrich_monkeypatches(monkeypatch, tmp_path, hist_rows, today)
+
+    radar = {
+        "flags": [
+            {"basket": "basket_a", "name": "A", "name_zh": "", "state": "QUIET",
+             "salience": 0.0, "observable": {"dir": 0, "covered": []}}
+        ]
+    }
+    result = rp.enrich(radar, today=today)
+    changes = result["changes"]
+
+    assert len(changes["flips"]) == 1
+    assert changes["flips"][0]["from"] == "CONFIRMED_UP"
+    assert changes["flips"][0]["to"] == "QUIET"
+    assert len(changes["new_divergences"]) == 0
+    assert len(changes["resolved"]) == 0
+
+
+def test_enrich_changes_unchanged_not_in_any_list(monkeypatch, tmp_path):
+    """Unchanged state appears in none of the change lists."""
+    today = date(2026, 6, 25)
+    hist_rows = [
+        {"date": "2026-06-24", "basket": "basket_a", "state": "QUIET"},
+    ]
+    _make_enrich_monkeypatches(monkeypatch, tmp_path, hist_rows, today)
+
+    radar = {
+        "flags": [
+            {"basket": "basket_a", "name": "A", "name_zh": "", "state": "QUIET",
+             "salience": 0.0, "observable": {"dir": 0, "covered": []}}
+        ]
+    }
+    result = rp.enrich(radar, today=today)
+    changes = result["changes"]
+
+    assert len(changes["new_divergences"]) == 0
+    assert len(changes["resolved"]) == 0
+    assert len(changes["flips"]) == 0
+
+
+def test_enrich_changes_empty_history(monkeypatch, tmp_path):
+    """No history → prev_date None, all change lists empty."""
+    _make_enrich_monkeypatches(monkeypatch, tmp_path, [], _TODAY)
+
+    radar = {
+        "flags": [
+            {"basket": "basket_a", "name": "A", "name_zh": "", "state": "POSITIVE_DIVERGENCE",
+             "salience": 1.0, "observable": {"dir": 1, "covered": []}}
+        ]
+    }
+    result = rp.enrich(radar, today=_TODAY)
+    changes = result["changes"]
+
+    assert changes["prev_date"] is None
+    assert changes["new_divergences"] == []
+    assert changes["resolved"] == []
+    assert changes["flips"] == []
+
+
+def test_enrich_changes_mixed_baskets(monkeypatch, tmp_path):
+    """Multiple baskets: one new div, one resolved, one unchanged, one flip."""
+    today = date(2026, 6, 25)
+    hist_rows = [
+        {"date": "2026-06-24", "basket": "basket_new_div", "state": "QUIET"},
+        {"date": "2026-06-24", "basket": "basket_resolved", "state": "POSITIVE_DIVERGENCE"},
+        {"date": "2026-06-24", "basket": "basket_unchanged", "state": "QUIET"},
+        {"date": "2026-06-24", "basket": "basket_flip", "state": "CONFIRMED_UP"},
+    ]
+    _make_enrich_monkeypatches(monkeypatch, tmp_path, hist_rows, today)
+
+    radar = {
+        "flags": [
+            {"basket": "basket_new_div", "name": "ND", "name_zh": "", "state": "NEGATIVE_DIVERGENCE",
+             "salience": 1.0, "observable": {"dir": -1, "covered": []}},
+            {"basket": "basket_resolved", "name": "R", "name_zh": "", "state": "QUIET",
+             "salience": 0.5, "observable": {"dir": 0, "covered": []}},
+            {"basket": "basket_unchanged", "name": "U", "name_zh": "", "state": "QUIET",
+             "salience": 0.0, "observable": {"dir": 0, "covered": []}},
+            {"basket": "basket_flip", "name": "F", "name_zh": "", "state": "CONFIRMED_DOWN",
+             "salience": 0.5, "observable": {"dir": -1, "covered": []}},
+        ]
+    }
+    result = rp.enrich(radar, today=today)
+    changes = result["changes"]
+
+    assert len(changes["new_divergences"]) == 1
+    assert changes["new_divergences"][0]["basket"] == "basket_new_div"
+    assert len(changes["resolved"]) == 1
+    assert changes["resolved"][0]["basket"] == "basket_resolved"
+    assert len(changes["flips"]) == 1
+    assert changes["flips"][0]["basket"] == "basket_flip"
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:
