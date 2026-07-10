@@ -56,6 +56,9 @@ curated, not generated. Do not build an extractor.
 | Election / midterm cycle as standalone signal | REFUTED — survives only as US-only Risk-Radar modulator | Election-cycle modulator study |
 | Gating A-share reversal by subsector state | FALSIFIED — hurts vs flat | China subsector-gate study (#791 era) |
 | Label-faltering B1/B3 | NO-GO | Phase-0 verdicts (#1031) |
+| PM1 AVWAP-from-base-low distance (standalone, as-constructed) | FALSIFIED phase-0 — nulls + unfavorable dead-money read; retained as display-tier confluence input | EI-PM0 run (2026-07-10, r4) |
+| PM3 unfilled-overhead-gap map (as-constructed, incl. sign-flip revival) | FALSIFIED phase-0 — DIRECTION-CONTRADICTED (clean-sky fires stop MORE, BH 0.0031); inverse reading needs a new PREREG | EI-PM0 run (2026-07-10, r4) |
+| PM4 overhead-supply fraction (any promotion path) | REDUNDANT — \|ρ\| 0.95/0.88/0.875 vs ext_atr / poc_dist_126 / dist_to_52wh (§4.3 fence) | EI-PM0 run (2026-07-10, r4) |
 | Codex rotation Time Machine KEEPs (A18/A19/A24 same-complex) | REJECT-REDUNDANT / INVALID — complex already screened dead | `ORACLE_ROTATION_TM_CODEX_ADJUDICATION` (#1750) |
 | "Thesis lobe" | KILL — duplicate of long-hold program | NW next-lobes adjudication (#1666/#1669/#1671) |
 | BD-4 species | PARKED — sign-reversed in Phase-0b | Next3-upgrades program (#1710 era) |
@@ -89,7 +92,7 @@ curated, not generated. Do not build an extractor.
 | Ontology W4.7 pos_v2 acceptance | HOLD — peak gate IQR 48.8 > 25 | Open PR #1639 (do not accidentally revive) |
 | Theta tape | SUSPENDED | Final3-lobes program (2026-07-06) |
 | DISP-GATE-1 | DEFER ×2-replicated | Final3-lobes program (#1696) |
-| PM5 × 6 price-memory trials | SUSPENDED `data_blocked` (pre-declared) | PM0 prereg (#1761) |
+| PM5 × 6 price-memory trials | SUSPENDED `data_blocked` (pre-declared; coverage measured 55.3% < 60% floor at execution) | PM0 prereg (#1761) + EI-PM0 run (2026-07-10) |
 | G1 | DEFERRED | Long-hold thesis program (#1507/#1588) |
 | W-F (options) | PARKED until preconditions (1)+(2) | Options→NW masterplan |
 | CODEOWNERS / branch protection | DEFERRED to RF codegen lane scope | ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md` |

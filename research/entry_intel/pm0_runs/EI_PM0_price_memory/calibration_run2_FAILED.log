@@ -1,0 +1,109 @@
+========================================================================
+EI-PM0 — CALIBRATION STAGE (§7)
+========================================================================
+
+VG fires loaded: 49,939
+
+§7.1 NEGATIVE CONTROL — within-month episode permutation
+  200 draws per instrument, seed tuple (777, feature_name)
+  Pass thresholds: rej@0.05 <= 0.12, mean/median p in [0.4,0.6], KS-p >= 0.05
+
+  Instrument: PM1 (pm1 state_8_21 STOPPED)
+    Mixed-label episode fraction: 1398/21969 = 0.064
+    rej@0.05: 0.0800 PASS (threshold <= 0.12)
+    mean_p:   0.4847 PASS (target [0.4,0.6])
+    median_p: 0.4627 PASS (target [0.4,0.6])
+    KS_p:     0.1951 PASS (threshold >= 0.05)
+    (param/perm divergence gate runs at trial level on the same MWU statistic — EX-7)
+    Instrument: PASS
+
+  Instrument: PM2 (pm2 state_8_21 STOPPED)
+    Mixed-label episode fraction: 1859/21969 = 0.085
+    rej@0.05: 0.0800 PASS (threshold <= 0.12)
+    mean_p:   0.4546 PASS (target [0.4,0.6])
+    median_p: 0.4452 PASS (target [0.4,0.6])
+    KS_p:     0.0412 FAIL (threshold >= 0.05)
+    (param/perm divergence gate runs at trial level on the same MWU statistic — EX-7)
+    Instrument: FAIL
+
+  Instrument: PM3 (pm3 state_8_21 STOPPED)
+    Mixed-label episode fraction: 1675/21969 = 0.076
+    rej@0.05: 0.0600 PASS (threshold <= 0.12)
+    mean_p:   0.5139 PASS (target [0.4,0.6])
+    median_p: 0.5089 PASS (target [0.4,0.6])
+    KS_p:     0.6356 PASS (threshold >= 0.05)
+    (param/perm divergence gate runs at trial level on the same MWU statistic — EX-7)
+    Instrument: PASS
+
+  Instrument: PM4 (pm4 state_8_21 STOPPED)
+    Mixed-label episode fraction: 966/21969 = 0.044
+    rej@0.05: 0.0800 PASS (threshold <= 0.12)
+    mean_p:   0.4721 PASS (target [0.4,0.6])
+    median_p: 0.4721 PASS (target [0.4,0.6])
+    KS_p:     0.3401 PASS (threshold >= 0.05)
+    (param/perm divergence gate runs at trial level on the same MWU statistic — EX-7)
+    Instrument: PASS
+
+§7.2 POSITIVE CONTROL — injected effects
+
+  Positive-return injection on PM1 (pm1)...
+    ep_perm_p (injected return) = 4.9975e-04  PASS (< 0.05)
+    rank_biserial_injected = -0.2778
+    mwu_param_p_injected = 0.0000e+00
+
+  Positive-return injection on PM2 (pm2)...
+    ep_perm_p (injected return) = 4.9975e-04  PASS (< 0.05)
+    rank_biserial_injected = -0.2238
+    mwu_param_p_injected = 0.0000e+00
+
+  Positive-return injection on PM3 (pm3)...
+    ep_perm_p (injected return) = 4.9975e-04  PASS (< 0.05)
+    rank_biserial_injected = -0.2126
+    mwu_param_p_injected = 0.0000e+00
+
+  Positive-return injection on PM4 (pm4)...
+    ep_perm_p (injected return) = 4.9975e-04  PASS (< 0.05)
+    rank_biserial_injected = -0.2169
+    mwu_param_p_injected = 0.0000e+00
+
+  Positive-incidence injection (5pp of favorable group, whole episodes,
+  drawn uniformly across qualifying months, seed 4242)...
+
+  Incidence injection on PM1 (pm1)...
+    n_injected_eps: 1088  n_rows_relabeled: 1977
+    achieved_injection_pp_of_fav_group: 5.00pp (target 5pp)
+    delta_hat_injected: -5.6149pp
+    boot_p_injected: 0.0006
+    BH_adj_p (synthetic m=20): 0.0120
+    PASS (BH_adj <= 0.10 required)
+
+  Incidence injection on PM2 (pm2)...
+    n_injected_eps: 702  n_rows_relabeled: 1231
+    achieved_injection_pp_of_fav_group: 5.00pp (target 5pp)
+    delta_hat_injected: -10.7963pp
+    boot_p_injected: 0.0002
+    BH_adj_p (synthetic m=20): 0.0040
+    PASS (BH_adj <= 0.10 required)
+
+  Incidence injection on PM3 (pm3)...
+    n_injected_eps: 903  n_rows_relabeled: 1588
+    achieved_injection_pp_of_fav_group: 5.01pp (target 5pp)
+    delta_hat_injected: -3.7970pp
+    boot_p_injected: 0.0022
+    BH_adj_p (synthetic m=20): 0.0440
+    PASS (BH_adj <= 0.10 required)
+
+  Incidence injection on PM4 (pm4)...
+    n_injected_eps: 719  n_rows_relabeled: 1231
+    achieved_injection_pp_of_fav_group: 5.00pp (target 5pp)
+    delta_hat_injected: -8.7811pp
+    boot_p_injected: 0.0002
+    BH_adj_p (synthetic m=20): 0.0040
+    PASS (BH_adj <= 0.10 required)
+
+Calibration overall: FAIL
+Calibration saved: /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/beautiful-hermann-9d7190/research/entry_intel/pm0_runs/EI_PM0_price_memory/calibration.json
+
+BLOCKER: Calibration controls FAILED. Inference is not permitted.
+Diagnose and report to Fable before proceeding.
+exit=1

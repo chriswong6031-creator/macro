@@ -1,0 +1,175 @@
+{
+  "gate1_pit_audit": {
+    "gate": "pit_spot_audit",
+    "n_sampled": 60,
+    "n_mismatches": 0,
+    "pass": true,
+    "mismatches": []
+  },
+  "gate2_fence_census": {
+    "gate": "fence_census",
+    "per_feature": {
+      "pm1": {
+        "ok": 71519,
+        "split_suspect": 1174
+      },
+      "pm2": {
+        "ok": 71519,
+        "split_suspect": 1174
+      },
+      "pm3": {
+        "ok": 71519,
+        "split_suspect": 1174
+      },
+      "pm4": {
+        "ok": 71519,
+        "split_suspect": 1174
+      },
+      "poc_dist_126": {
+        "ok": 71519,
+        "split_suspect": 1174
+      }
+    },
+    "n_gaps_ignored_total": 515,
+    "so_split_suspect": 0,
+    "so_prehistory": 0,
+    "so_corrupt": 0,
+    "so_stale": 7721,
+    "so_missing": 23604,
+    "pass": true
+  },
+  "gate3_coverage": {
+    "gate": "coverage_table",
+    "table": {
+      "vg_fires": {
+        "pm1": {
+          "n_defined": 49239,
+          "n_total": 49939,
+          "pct": 0.986
+        },
+        "pm2": {
+          "n_defined": 49239,
+          "n_total": 49939,
+          "pct": 0.986
+        },
+        "pm3": {
+          "n_defined": 49239,
+          "n_total": 49939,
+          "pct": 0.986
+        },
+        "pm4": {
+          "n_defined": 49239,
+          "n_total": 49939,
+          "pct": 0.986
+        },
+        "pm5": {
+          "n_defined": 27623,
+          "n_total": 49939,
+          "pct": 0.5531
+        },
+        "poc_dist_126": {
+          "n_defined": 49239,
+          "n_total": 49939,
+          "pct": 0.986
+        }
+      },
+      "all_fires": {
+        "pm1": {
+          "n_defined": 56678,
+          "n_total": 57640,
+          "pct": 0.9833
+        },
+        "pm2": {
+          "n_defined": 56678,
+          "n_total": 57640,
+          "pct": 0.9833
+        },
+        "pm3": {
+          "n_defined": 56678,
+          "n_total": 57640,
+          "pct": 0.9833
+        },
+        "pm4": {
+          "n_defined": 56678,
+          "n_total": 57640,
+          "pct": 0.9833
+        },
+        "pm5": {
+          "n_defined": 31941,
+          "n_total": 57640,
+          "pct": 0.5541
+        },
+        "poc_dist_126": {
+          "n_defined": 56678,
+          "n_total": 57640,
+          "pct": 0.9833
+        }
+      },
+      "vg_near_miss": {
+        "pm1": {
+          "n_defined": 14841,
+          "n_total": 15053,
+          "pct": 0.9859
+        },
+        "pm2": {
+          "n_defined": 14841,
+          "n_total": 15053,
+          "pct": 0.9859
+        },
+        "pm3": {
+          "n_defined": 14841,
+          "n_total": 15053,
+          "pct": 0.9859
+        },
+        "pm4": {
+          "n_defined": 14841,
+          "n_total": 15053,
+          "pct": 0.9859
+        },
+        "pm5": {
+          "n_defined": 8253,
+          "n_total": 15053,
+          "pct": 0.5483
+        },
+        "poc_dist_126": {
+          "n_defined": 14841,
+          "n_total": 15053,
+          "pct": 0.9859
+        }
+      }
+    },
+    "pm5_vg_fire_pct": 0.5531,
+    "pm5_floor_60pct": false,
+    "pm5_floor_note": "PRE-DECLARED data_blocked (expected fail; < 60% is the blocked condition)",
+    "pass": true
+  },
+  "gate4_anchor_sanity": {
+    "gate": "anchor_sanity",
+    "n_defined": 49239,
+    "n_degenerate_anchor": 75,
+    "distribution": {
+      "min": 0.0,
+      "p25": 20.0,
+      "median": 127.0,
+      "p75": 212.0,
+      "max": 249.0
+    },
+    "pass": true
+  },
+  "gate5_determinism": {
+    "gate": "determinism",
+    "n_sampled": 200,
+    "n_mismatches": 0,
+    "pass": true,
+    "mismatches": []
+  },
+  "medians_vg_fires": {
+    "pm2_median": 0.16057472505964107,
+    "pm2_n_defined": 49239,
+    "pm4_median": 0.5507388878262659,
+    "pm4_n_defined": 49239,
+    "pm5_median": 0.49462000384089194,
+    "pm5_n_defined": 27623
+  },
+  "overall_pass": true
+}
