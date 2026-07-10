@@ -1054,6 +1054,120 @@
   .rm-tbl td.l, .rm-tbl th.l { text-align: left; }
   .rm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 
+  /* ── W8-R6: US Standout table view (mirrors CN implementation) ──────── */
+  .st-view-toggle { display:inline-flex; gap:3px; padding:3px; border-radius:8px;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
+    border:1px solid var(--line); margin-left:10px; vertical-align:middle; }
+  .st-view-toggle button { font:inherit; font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid transparent; background:transparent; color:var(--muted);
+    padding:4px 9px; border-radius:5px; line-height:1; transition:all .12s; }
+  .st-view-toggle button[aria-selected="true"] { background:var(--panel); color:var(--text);
+    border-color:var(--line); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  #us-stocktable-wrap { display:none; }
+  #us-standouts.st-table-mode #us-stocktable-wrap { display:block; }
+  #us-standouts.st-table-mode .nb-grid-section { display:none; }
+  /* count chips row (id matches stocktable.js hard-coded lookup) */
+  #st-count-chips { display:inline-flex; gap:5px; flex-wrap:wrap; align-items:center; margin:8px 0; }
+  .st-chip { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px;
+    border-radius:999px; white-space:nowrap; }
+  .st-chip-lane { background:color-mix(in srgb,var(--link) 14%,transparent);
+    color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
+  /* filter row */
+  .st-filters { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:8px 0 10px; }
+  .st-filter-sel { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:4px 8px; cursor:pointer;
+    min-width:90px; }
+  .st-filter-txt { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:4px 8px; outline:none; }
+  .st-filter-txt:focus { border-color:var(--link); }
+  .st-filter-chk { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px;
+    cursor:pointer; user-select:none; }
+  .st-reset-btn, .st-col-btn { font:inherit; font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid var(--line); background:var(--panel); color:var(--muted);
+    padding:4px 10px; border-radius:7px; white-space:nowrap; transition:color .12s; }
+  .st-reset-btn:hover, .st-col-btn:hover { color:var(--text); border-color:var(--link); }
+  /* table wrapper — horizontal scroll, sticky first col */
+  .st-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;
+    border:1px solid var(--line); border-radius:9px; }
+  .st-table { border-collapse:collapse; width:100%; font-size:12px;
+    font-variant-numeric:tabular-nums; }
+  .st-table thead { position:sticky; top:0; z-index:4;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 9%,var(--panel))); }
+  .st-table th { padding:7px 10px; font-size:11px; font-weight:700; color:var(--muted);
+    text-align:left; white-space:nowrap; border-bottom:2px solid var(--line);
+    user-select:none; }
+  .st-table th.st-sortable { cursor:pointer; }
+  .st-table th.st-sortable:hover { color:var(--text); }
+  .st-table td { padding:6px 10px; border-bottom:1px solid var(--line);
+    text-align:left; white-space:nowrap; vertical-align:middle; }
+  .st-table td.st-r, .st-table th.st-r { text-align:right; }
+  .st-table tbody tr:last-child td { border-bottom:none; }
+  .st-table tbody tr:hover td { background:color-mix(in srgb,var(--link) 5%,transparent); }
+  /* sticky first column */
+  .st-sticky-col { position:sticky; left:0; z-index:2; background:var(--panel); }
+  thead .st-sticky-col { z-index:5;
+    background:var(--panel2,color-mix(in srgb,var(--muted) 9%,var(--panel))); }
+  /* row accents by lane */
+  .st-row-bottoming td { background:color-mix(in srgb,var(--up) 4%,transparent); }
+  .st-row-bottoming td.st-sticky-col { background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .st-row-bottoming td:first-child { box-shadow:inset 3px 0 0 var(--up); }
+  .st-row-continuation td:first-child { box-shadow:inset 3px 0 0 var(--link); }
+  .st-row-trend td:first-child { box-shadow:inset 3px 0 0 color-mix(in srgb,var(--link) 55%,var(--up)); }
+  .st-row-recovery td:first-child { box-shadow:inset 3px 0 0 color-mix(in srgb,var(--g-cold) 65%,var(--muted)); }
+  .st-row-watch td:first-child { box-shadow:inset 3px 0 0 var(--muted); }
+  .st-row-watch td { color:var(--muted); }
+  /* sort arrow */
+  .st-sarrow { font-size:8px; margin-left:2px; opacity:.28; }
+  .st-sarrow-idle { font-size:8px; }
+  .st-table th:has(.st-sarrow:not(.st-sarrow-idle)) .st-sarrow { opacity:.9; color:var(--link); }
+  /* cell colors */
+  .st-pos { color:var(--up); font-weight:600; }
+  .st-neg { color:var(--down); font-weight:600; }
+  .st-muted { color:var(--muted); }
+  .st-new-dot::before { content:"NEW"; display:inline-block; font-size:8px; font-weight:800;
+    background:var(--up); color:#fff; padding:0 4px; border-radius:4px; margin-right:4px;
+    vertical-align:1px; }
+  /* column chooser panel */
+  .st-chooser-wrap { position:relative; }
+  .st-chooser { position:absolute; top:0; right:0; z-index:20; min-width:240px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 8px 28px rgba(0,0,0,.22); padding:0; overflow:hidden; }
+  .st-chooser-hidden .st-chooser { display:none; }
+  .st-chooser-hdr { display:flex; align-items:center; gap:8px; padding:10px 12px 8px;
+    border-bottom:1px solid var(--line); font-weight:700; font-size:12.5px; }
+  .st-chooser-note { font-size:10.5px; color:var(--muted); font-weight:400; margin-left:auto; }
+  .st-chooser-close { font:inherit; font-size:15px; cursor:pointer; background:none;
+    border:none; color:var(--muted); padding:0 2px; line-height:1; }
+  .st-chooser-list { max-height:340px; overflow-y:auto; padding:6px 0; }
+  .st-chooser-row { display:flex; align-items:center; gap:8px; padding:5px 12px;
+    cursor:grab; user-select:none; font-size:12px; }
+  .st-chooser-row:hover { background:var(--panel2,color-mix(in srgb,var(--muted) 7%,var(--panel))); }
+  .st-chooser-row.st-dragging { opacity:.5; }
+  .st-drag-handle { color:var(--muted); font-size:11px; flex:none; }
+  .st-chooser-footer { padding:8px 12px; border-top:1px solid var(--line); }
+  .st-chooser-reset { font:inherit; font-size:12px; cursor:pointer; background:none;
+    border:1px solid var(--line); border-radius:7px; padding:4px 10px; color:var(--muted); }
+  .st-chooser-reset:hover { color:var(--text); border-color:var(--link); }
+  /* th tooltip */
+  .st-th-tip { display:inline-flex; align-items:center; justify-content:center;
+    width:13px; height:13px; border-radius:50%; border:1px solid var(--muted);
+    color:var(--muted); font-size:9px; font-weight:700; cursor:help;
+    position:relative; vertical-align:1px; margin-left:3px; }
+  .st-th-tip::after { content:attr(data-tip-en); display:none; position:absolute;
+    bottom:150%; left:50%; transform:translateX(-50%); width:220px; max-width:90vw;
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:7px 10px; font-size:11px; font-weight:400; color:var(--text); text-align:left;
+    white-space:normal; box-shadow:var(--popover-shadow,0 3px 12px rgba(0,0,0,.18)); z-index:30; }
+  html[data-lang="zh"] .st-th-tip::after { content:attr(data-tip-zh); }
+  .st-th-tip:hover::after { display:block; }
+  /* mobile: table scrolls, first col sticky */
+  @media (max-width:680px) {
+    .st-table { font-size:11px; }
+    .st-table td, .st-table th { padding:5px 7px; }
+    .st-filters { gap:4px; }
+    .st-filter-sel { font-size:11px; min-width:70px; padding:3px 6px; }
+  }
+
   /* ======================================================================
      MACRO TERMINAL — scoped enhancement layer (macro.html only)
      Everything here is gated under body.page-macro, which is emitted ONLY for
@@ -4242,9 +4356,16 @@
     </div>
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {% if _su or action_board.notable %}
-    <div class="notable">
+    <div class="notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <span style="font-weight:700;font-size:13px">{{ t('Standout individual stocks', '表现突出的个股') }}</span>
+        {# W8-R6: grid/table view toggle (US market) #}
+        {% if _su %}
+        <span class="st-view-toggle" id="us-st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
+          <button id="us-st-btn-grid" aria-selected="true" onclick="USStockTable._setView('grid')">&#8862; <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
+          <button id="us-st-btn-table" aria-selected="false" onclick="USStockTable._setView('table')">&#9776; <span class="l-en">Table</span><span class="l-zh">表格</span></button>
+        </span>
+        {% endif %}
         {% if _su %}<span class="muted" style="font-size:11.5px">{{ _su.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ _su.eligible }} {{ t('aligned bottoming setups · conviction and entry are separate; green dot = entry open now, yellow = wait for pullback.', '个筑底共振标的 · 信念与入场分开看；绿点＝现在可入场，黄点＝等回调。') }}
           <span class="help">?<span class="tip tip-wide"><span class="l-en">Cards answer two questions. Conviction asks: is this a name worth owning? Entry asks: is today a good price? A high conviction score can still mean wait. Use the green dot for open entries, the pullback price for patience, and the α chip for selection-edge rank. Click a card for the full breakdown.</span><span class="l-zh">卡片回答两个问题：信念＝这是不是值得持有的标的；入场＝今天价格是否合适。高信念不等于立刻买。绿点表示入场窗口已开；黄点看回调价；α 标记是选股优势排名。点击卡片看完整拆解。</span></span></span></span>{% endif %}
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t('from each sector’s top-10 holdings · grouped by cycle entry, ranked by sector-neutral momentum (α)', '来自各板块前十大持仓 · 按周期入场分组，以行业中性动量（α）排序') }}
@@ -4336,6 +4457,40 @@
         </div>
       </details>
       {% endif %}{# end delta strip #}
+      {# ── W8-R6: US stocktable JSON data block + mount points ───────────
+         Serializes us_standouts.buy rows with flat keys for StockTable.init.
+         No re-ordering: system order is preserved (CN no-mutation pattern).
+         Rendered only when us_standouts.buy is populated (mode=stocks only). #}
+      {% if _su %}
+      <script type="application/json" id="us-stocktable-data">
+      {
+        "rows": [{% for _n in _su.buy %}{% if not loop.first %},{% endif %}{
+          "ticker":        {{ _n.ticker | tojson }},
+          "name":          {{ _n.name | tojson }},
+          "sector":        {{ (_n.sector or '') | tojson }},
+          "lane":          {{ (_n.get('lane') or '') | tojson }},
+          "stage":         {{ ({'bottoming':'ENTRY','continuation':'ENTRY','trend':'ENTRY','recovery':'RIPENING','watch':'RAN_LATE'}.get(_n.get('lane') or 'watch', 'ENTRY')) | tojson }},
+          "price":         {{ _n.get('price') | tojson }},
+          "conviction_score": {{ ((_n.conviction or {}).get('score')) | tojson }},
+          "alpha":         {{ _n.get('alpha') | tojson }},
+          "off_high":      {{ _n.get('off_high') | tojson }},
+          "factor_z":      {{ _n.get('factor_z') | tojson }},
+          "sue_z":         {{ _n.get('sue_z') | tojson }},
+          "insider_buyers": {{ _n.get('insider_buyers') | tojson }},
+          "sig_tier":      {{ ((_n.signal or {}).get('tier_cascade') or '') | tojson }},
+          "entry_status":  {{ ((_n.entry_signal or {}).get('status') or '') | tojson }},
+          "dir":           {{ (_n.get('dir') or '') | tojson }}
+        }{% endfor %}],
+        "as_of": {{ (_su.get('as_of') or '') | tojson }}
+      }
+      </script>
+      {# ── count chips (id must match the hard-coded id in stocktable.js line 376) ── #}
+      <div id="st-count-chips" style="display:none"></div>
+      {# ── table view mount point ── #}
+      <div id="us-stocktable-wrap"></div>
+      {% endif %}
+      {# ── grid section (hidden in table mode via CSS) ── #}
+      <div class="nb-grid-section">
       <div class="nbgrid" data-showmore-rows="3">
       {% if _su %}
       {# BOTTOMING-ALIGNED board: shows only names whose weekly/3-day/daily cycles are
@@ -4811,7 +4966,8 @@
         </a>
       {% endfor %}
       {% endif %}
-      </div>
+      </div>{# end .nbgrid #}
+      </div>{# end .nb-grid-section #}
       {# W2 outcomes strip: recently surfaced → outcome. Renders only when the artifact
          exists and has rows (us_board_outcomes is None when empty:true or absent).
          Ticker links mirror the standout card href pattern (stock.html#TICKER).
@@ -5866,6 +6022,116 @@ fetchJson('stockdata/mtf_upturn.json',function(d){mtfUpturn=d;mtfDone=true;tryRe
 // Fail-open: if any fetch doesn't resolve, still render with what we have
 setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;tryRender();},4000);
 
+})();
+</script>
+<script src="stocktable.js"></script>
+<script>
+/* W8-R6: USStockTable init — standout board table view (US market).
+   Mirrors the CN implementation (china.html.j2 StockTable init block).
+   Safe no-op if stocktable data element is absent. */
+(function(){
+  var SECZH = {"Technology":"科技","Industrials":"工业","Basic Materials":"原材料","Financial Services":"金融","Consumer Cyclical":"可选消费","Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费","Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产"};
+  var LANE_LABELS_EN = {"bottoming":"Bottoming","continuation":"Continuation","trend":"Trend","recovery":"Recovery","watch":"Watch"};
+  var LANE_LABELS_ZH = {"bottoming":"筑底","continuation":"延续","trend":"趋势","recovery":"复苏","watch":"观察"};
+  var ENTRY_STATUS_EN = {"buy_now":"Buy now","partial":"Partial buy","wait":"Wait","extended":"Extended","watch":"Watch","avoid":"Avoid","topping":"Topping","blocked":"Blocked"};
+  var ENTRY_STATUS_ZH = {"buy_now":"立即买入","partial":"分批买入","wait":"等待","extended":"过热","watch":"观察","avoid":"回避","topping":"做顶","blocked":"封锁"};
+  var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;
+
+  var cols = [
+    { key:'lane', labelEn:'Lane', labelZh:'通道', default:true, sortable:true,
+      fmt:function(v){
+        if(!v) return '<span class="st-muted">—</span>';
+        var len = LANE_LABELS_EN[v] || v;
+        var lzh = LANE_LABELS_ZH[v] || v;
+        var cls = v==='bottoming'?'st-chip-entry':v==='watch'?'st-chip-ran':'st-chip-lane';
+        return '<span class="st-chip '+cls+'">' + b(esc(len), esc(lzh)) + '</span>';
+      },
+      tip:{en:'Cycle lane (system order preserved — table view does not re-sort by default)',zh:'周期通道（保留系统顺序）'} },
+    { key:'ticker', labelEn:'Ticker', labelZh:'代码', default:true, sortable:true,
+      fmt:function(v,r){
+        var entOpen = r.entry_status==='buy_now'||r.entry_status==='partial';
+        return (entOpen?'<span class="st-pos" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:4px;vertical-align:2px"></span>':'') + '<b>' + esc(v||'') + '</b>';
+      },
+      tip:{en:'Green dot = entry window open now',zh:'绿点＝现在入场窗口已开'} },
+    { key:'name', labelEn:'Name', labelZh:'名称', default:true, sortable:true,
+      fmt:function(v){ return '<b>' + esc(v||'') + '</b>'; }},
+    { key:'sector', labelEn:'Sector', labelZh:'板块', default:true, sortable:true,
+      fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
+        return b(esc(v), esc(SECZH[v]||v)); }},
+    { key:'price', labelEn:'Price', labelZh:'价格', default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>':'$'+fn(v,2); }},
+    { key:'conviction_score', labelEn:'Score', labelZh:'评分', default:true, sortable:true, right:true,
+      fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
+        var n = parseInt(v); var cls = n>=70?'st-pos':n>=40?'':'st-neg';
+        return '<span class="'+cls+'">'+n+'</span>'; },
+      tip:{en:'Conviction buy-readiness score 0–100',zh:'信念买入就绪度 0–100'} },
+    { key:'alpha', labelEn:'Alpha', labelZh:'Alpha', default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>':
+        '<span class="'+(v>0?'st-pos':v<0?'st-neg':'')+'">'+fp(v*100,2)+'</span>'; },
+      tip:{en:'Sector-neutral residual momentum (display context — ranking leg)',zh:'行业中性残差动量（展示情境）'} },
+    { key:'off_high', labelEn:'Off High', labelZh:'距高点', default:true, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fp(v,1); },
+      tip:{en:'% off 52-week high',zh:'距52周高点百分比'} },
+    { key:'entry_status', labelEn:'Entry', labelZh:'入场', default:true, sortable:true,
+      fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
+        var en = ENTRY_STATUS_EN[v]||v; var zh = ENTRY_STATUS_ZH[v]||v;
+        var cls = (v==='buy_now'||v==='partial')?'st-pos':(v==='extended'||v==='avoid'||v==='topping'||v==='blocked')?'st-neg':'';
+        return '<span class="'+cls+'">'+b(esc(en),esc(zh))+'</span>'; },
+      tip:{en:'Entry signal status from the cycle engine',zh:'周期引擎入场信号状态'} },
+    { key:'factor_z', labelEn:'Factor Z', labelZh:'因子Z', default:false, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>':
+        '<span class="'+(v>0?'st-pos':v<0?'st-neg':'')+'">'+fn(v,1)+'</span>'; },
+      tip:{en:'Cross-sectional factor composite z-score (value / quality / low-vol)',zh:'横截面因子综合z分（价值/质量/低波）'} },
+    { key:'sue_z', labelEn:'SUE Z', labelZh:'盈利动量', default:false, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>':
+        '<span class="'+(v>0?'st-pos':v<0?'st-neg':'')+'">'+fn(v,1)+'</span>'; },
+      tip:{en:'Earnings momentum z vs S&P 1500 (post-earnings-announcement drift context; display only)',zh:'盈利动量z（相对标普1500，展示情境）'} },
+    { key:'insider_buyers', labelEn:'Insider', labelZh:'内部人', default:false, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': '<span class="st-pos">'+esc(String(v))+' 👤</span>'; },
+      tip:{en:'# distinct insiders net-bought in the last 6 months (Form-4 cluster — context only)',zh:'近6个月净买入的不同内部人数量（Form-4集群，情境）'} },
+  ];
+
+  /* ── view persistence ── */
+  var LS_VIEW = 'mdx_stocktable_us';
+  var currentView = localStorage.getItem(LS_VIEW) || 'grid';
+
+  function applyView(v) {
+    currentView = v;
+    localStorage.setItem(LS_VIEW, v);
+    var el = document.getElementById('us-standouts');
+    var chipsEl = document.getElementById('st-count-chips');
+    var gbtn = document.getElementById('us-st-btn-grid');
+    var tbtn = document.getElementById('us-st-btn-table');
+    if (!el) return;
+    if (v === 'table') {
+      el.classList.add('st-table-mode');
+      if (chipsEl) chipsEl.style.display = '';
+      if (gbtn) gbtn.setAttribute('aria-selected','false');
+      if (tbtn) tbtn.setAttribute('aria-selected','true');
+    } else {
+      el.classList.remove('st-table-mode');
+      if (chipsEl) chipsEl.style.display = 'none';
+      if (gbtn) gbtn.setAttribute('aria-selected','true');
+      if (tbtn) tbtn.setAttribute('aria-selected','false');
+    }
+  }
+
+  /* ── init ── */
+  var dataEl = document.getElementById('us-stocktable-data');
+  if (!dataEl) return;  /* no data — safe no-op */
+
+  window.USStockTable = { _setView: applyView };
+
+  StockTable.init({
+    dataId: 'us-stocktable-data',
+    containerId: 'us-stocktable-wrap',
+    market: 'us',
+    linkPattern: 'stock.html#{ticker}',
+    columns: cols,
+  });
+
+  /* restore persisted view */
+  applyView(currentView);
 })();
 </script>
 {% endif %}
