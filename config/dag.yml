@@ -279,7 +279,7 @@ lanes:
         module: scripts.build_congress
       - id: build_tech_lab
         module: scripts.build_tech_lab
-        note: StockInvest Technical Lab hub render (display-only); data-gen build_tech_lab_data runs off the render path
+        note: StockInvest Technical Lab hub render (display-only); data-gen build_tech_lab_data wired as daily.yml/tech_lab_offrender (TLT-R2)
       - id: build_foresight
         module: scripts.build_foresight
       - id: backfill_regime_stamps
@@ -699,6 +699,21 @@ lanes:
       - id: publish_r2_stockdata
         module: scripts.publish_r2
         note: non-fatal; syncs stockdata store to R2
+
+  # ── daily.yml / tech_lab_offrender ──────────────────────────────────────
+  # TLT-R2: off-render Technical Lab data rebuild; writes site/factordata/
+  # tech_screener.json + tech_lab.json.  Runs after engine (needs data/stocks/).
+  - workflow: .github/workflows/daily.yml
+    job: tech_lab_offrender
+    steps:
+      - id: build_tech_lab_data
+        module: scripts.build_tech_lab_data
+        note: >
+          TLT-R2 — rebuild 64-signal Technical Lab screener + lab artifacts
+          (site/factordata/tech_screener.json + tech_lab.json) off the render
+          path. Display-only / research framing; no gauntlet-promotion. Reads
+          data/stocks/ parquets (committed, ~219 tickers). Non-fatal: exits 0
+          on script error, commits only if artifacts changed.
 
   # ── daily.yml / cortex ───────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
