@@ -54,6 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | stock-personality | 5 |
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
+| til-w10-clinical | 2 |
 | til-w7-hiring-intent | 3 |
 | til-w8-trade-flows | 2 |
 | til-w9-discovery-v2 | 3 |
@@ -63,7 +64,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 196 |
+| display | 198 |
 | infrastructure | 79 |
 | scored | 4 |
 | shadow | 48 |
@@ -72,7 +73,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 313 |
+| git | 315 |
 | gitignored-local | 8 |
 | r2 | 6 |
 
@@ -614,6 +615,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-theme-state | `site/neuralwebdata/theme_state.json` | json | daily-engine | display | 0 | 0 |
 | theme-asymmetry | `data/neuralweb/theme_asymmetry.json` | json | daily-engine | display | 0 | 0 |
 | theme-pathways | `data/neuralweb/theme_pathways.json` | json | daily-engine | display | 0 | 0 |
+
+### til-w10-clinical
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| neuralweb-theme-clinical | `data/neuralweb/theme_clinical.json` | json | collect | display | 0 | 0 |
+| site-clinical-pipeline | `site/basketdata/clinical_pipeline.json` | json | collect | display | 0 | 0 |
 
 ### til-w7-hiring-intent
 
