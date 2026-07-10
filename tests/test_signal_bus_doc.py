@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 327, (
-        f"Expected 327 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 329, (
+        f"Expected 329 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (TIL W10 added neuralweb-theme-clinical, site-clinical-pipeline = 327->329"
+        " — pin healed post-merge; W10's rebase auto-merged the pin hunk without conflict"
+        " and the stale pin rode in;"
         " (TIL W8 added neuralweb-theme-trade-flows, site-trade-flows = 325->327;"
         " TIL W9 added site-phrase-velocity, site-github-adoption, neuralweb-discovery-confluence = 322->325;"
         " CHF-W6 added causal-confluence-audit = 321->322;"
