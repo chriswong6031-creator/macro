@@ -344,6 +344,48 @@ with sync_playwright() as pw:
           page.locator(".pane-title", has_text="Markets").count() == 1
           and page.locator(".toast-danger").count() == 1)
 
+    # --- COMMAND PALETTE ---
+    page.keyboard.press("Control+k")
+    page.wait_for_timeout(250)
+    check("palette: opens on ctrl+k", page.locator(".palette").count() == 1)
+    check("palette: quick actions on empty query",
+          page.locator(".palette-group", has_text="Actions").count() == 1)
+    page.locator(".palette-input").fill("espresso")
+    page.wait_for_timeout(200)
+    check("palette: finds card across views",
+          page.locator(".palette-row", has_text="Buy espresso beans").count() == 1)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(600)
+    check("palette: opens card in boards view",
+          page.evaluate("document.body.dataset.view") == "tasks"
+          and page.locator(".modal-title").count() == 1
+          and page.locator(".modal-title").input_value() == "Buy espresso beans")
+    page.mouse.click(30, 550)
+    page.wait_for_timeout(300)
+    page.locator("#searchBtn").click()
+    page.wait_for_timeout(250)
+    check("palette: search button opens it", page.locator(".palette").count() == 1)
+    page.locator(".palette-input").fill("trends persist")
+    page.wait_for_timeout(200)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(700)
+    check("palette: opens note in library",
+          page.evaluate("document.body.dataset.view") == "brain"
+          and page.locator(".bnote-edit").count() == 1
+          and "Trends persist" in page.locator(".bnote-edit").input_value())
+    page.mouse.click(30, 600)
+    page.wait_for_timeout(300)
+    page.keyboard.press("Control+k")
+    page.wait_for_timeout(200)
+    page.locator(".palette-input").fill("dark")
+    page.wait_for_timeout(200)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(250)
+    check("palette: action runs (toggle theme)",
+          page.evaluate("document.documentElement.dataset.theme") == "dark")
+    page.locator("#themeBtn").click()
+    page.wait_for_timeout(200)
+
     # back to tasks for the remaining regressions
     page.locator("#viewSeg .seg-btn[data-view='tasks']").click()
     page.wait_for_timeout(300)
@@ -417,6 +459,19 @@ with sync_playwright() as pw:
     check("regression: no script execution", "pwned" not in page.title(), page.title())
 
     page.screenshot(path=str(SHOTS / "06_final.png"))
+
+    # --- PWA (served modular app only: the single-file build strips SW/manifest) ---
+    if BASE.startswith("http") and not BASE.endswith(".html"):
+        reg = page.evaluate(
+            "async () => { const r = await navigator.serviceWorker.getRegistration();"
+            " return !!(r && (r.active || r.installing || r.waiting)); }")
+        check("pwa: service worker registered", reg)
+        check("pwa: manifest served",
+              page.evaluate("async () => (await fetch('manifest.webmanifest')).status") == 200)
+        check("pwa: icons served",
+              page.evaluate("async () => (await fetch('icons/icon-192.png')).status") == 200)
+        tc = page.evaluate("document.querySelector('meta[name=\"theme-color\"]').content")
+        check("pwa: theme-color meta synced", tc in ("#F5F6F8", "#0F1216"), str(tc))
 
     # --- RESPONSIVE SMOKE (phone viewport, fresh context) ---
     ctx3 = browser.new_context(viewport={"width": 390, "height": 844},

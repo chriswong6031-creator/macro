@@ -11,6 +11,10 @@ function applyTheme() {
     sun.style.display = state.theme === 'dark' ? 'none' : '';
     moon.style.display = state.theme === 'dark' ? '' : 'none';
   }
+  // live browser chrome tracks the theme; manifest.webmanifest colors are static JSON
+  // (no per-theme mechanism exists), so the PWA install splash always uses the light value
+  const meta = $('meta[name="theme-color"]');
+  if (meta) meta.content = state.theme === 'dark' ? '#0F1216' : '#F5F6F8';
 }
 
 function renderTopbar() {
@@ -215,15 +219,27 @@ function doneCardEl(c, board) {
 }
 
 /* full re-render, dispatching on the active view */
+let lastViewRendered = null;
 function renderAll() {
   applyTheme();
   document.body.dataset.view = state.view || 'tasks';
   document.body.dataset.tab = state.view === 'brain' ? brainTab : 'board';
   renderTopbar();
+  const viewChanged = lastViewRendered !== state.view;
+  lastViewRendered = state.view;
   if (state.view === 'brain') {
     renderBrain();
   } else {
     lastBrainTabRendered = null; // next brain entry is a fresh tab entry
     renderCanvas();
   }
+  if (viewChanged) fadeIn($('#viewport'));
+}
+
+function fadeIn(node) {
+  if (!node) return;
+  node.classList.remove('view-enter');
+  node.getBoundingClientRect();
+  node.classList.add('view-enter');
+  setTimeout(() => node.classList.remove('view-enter'), 260);
 }
