@@ -19,6 +19,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{% include "_interfonts.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Rate & Inflation Transmission — {{ as_of }}</title>
 {% set seo_title = 'Rate & Inflation Transmission | Mastermind' %}{% set seo_desc = 'How interest rates and inflation drive every asset class — headwinds, tailwinds, and regime-aware transmission reads.' %}{% set seo_path = 'transmission.html' %}
