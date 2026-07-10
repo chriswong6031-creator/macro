@@ -166,6 +166,7 @@
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
         <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
         <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
         <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
@@ -1169,7 +1170,7 @@
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.4σ (distance above its 200-day average, z-scored over a year), 45.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.4σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
-  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -2.8"><span class="l-en">Quality</span><span class="l-zh">质量</span> -2.8</span><span class="vchip val-cheap" data-tip-en="Earnings yield at the 95th percentile of this name's OWN ~3-year history — cheaper than its own norm (re-rating headroom). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 95 百分位；仅作展示，不计入评分。"><span class="l-en">Cheap vs own</span><span class="l-zh">相对自身偏低</span></span></span></td>
+  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -2.8"><span class="l-en">Quality</span><span class="l-zh">质量</span> -2.8</span></span></td>
   <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">-1.38 <span class="xs">#181/192</span></td>
   <td class="r muted sm">$51.38</td>
 </tr><tr data-grade="steady">
@@ -2628,7 +2629,7 @@
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z +0.7σ (distance above its 200-day average, z-scored over a year), 98.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">+0.7σ</span></span></td>
   <td><span class="echip tp-extended"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
-  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -2.1"><span class="l-en">Quality</span><span class="l-zh">质量</span> -2.1</span><span class="cchip up" title="low_vol z +0.9"><span class="l-en">LowVol</span><span class="l-zh">低波</span> +0.9</span><span class="vchip val-cheap" data-tip-en="Earnings yield at the 95th percentile of this name's OWN ~3-year history — cheaper than its own norm (re-rating headroom). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 95 百分位；仅作展示，不计入评分。"><span class="l-en">Cheap vs own</span><span class="l-zh">相对自身偏低</span></span></span></td>
+  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -2.1"><span class="l-en">Quality</span><span class="l-zh">质量</span> -2.1</span><span class="cchip up" title="low_vol z +0.9"><span class="l-en">LowVol</span><span class="l-zh">低波</span> +0.9</span><span class="vchip val-cheap" data-tip-en="Earnings yield at the 87th percentile of this name's OWN ~3-year history — cheaper than its own norm (re-rating headroom). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 87 百分位；仅作展示，不计入评分。"><span class="l-en">Cheap vs own</span><span class="l-zh">相对自身偏低</span></span></span></td>
   <td class="r muted sm">+1.63</td>
 </tr><tr data-grade="steady">
   <td><a href="stock.html#KRYS"><b>KRYS</b></a> <span class="muted sm">Krystal Biotech, I</span></td>
@@ -3188,7 +3189,7 @@
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.4σ (distance above its 200-day average, z-scored over a year), 45.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.4σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
-  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -2.8"><span class="l-en">Quality</span><span class="l-zh">质量</span> -2.8</span><span class="vchip val-cheap" data-tip-en="Earnings yield at the 95th percentile of this name's OWN ~3-year history — cheaper than its own norm (re-rating headroom). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 95 百分位；仅作展示，不计入评分。"><span class="l-en">Cheap vs own</span><span class="l-zh">相对自身偏低</span></span></span></td>
+  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -2.8"><span class="l-en">Quality</span><span class="l-zh">质量</span> -2.8</span></span></td>
   <td class="r muted sm">-1.38</td>
 </tr><tr data-grade="steady">
   <td><a href="stock.html#WING"><b>WING</b></a> <span class="muted sm">Wingstop</span></td>
@@ -4182,7 +4183,7 @@
 
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: engine/top_picks.py — an alpha-led conviction blend (engine/residual_alpha.py + engine/equity_factors.py + Form-4 insider) over the S&amp;P 1500, validated point-in-time in reports/top-picks-phase0.md. The stretch / exhaustion axis, valuation-vs-own-history chip and cohort banner (engine/extension.py) are DISPLAY-ONLY risk reads — never in the rank: a point-in-time downside test (reports/top-picks-freshness-phase0.md) found no extension screen reduces drawdown, but the parabolic (&gt;2σ own-history) tail is a genuine bubble-pullback hazard, so it is flagged per-name. Ranks recompute daily with prices/filings. A modest, decayed, crowded edge — a research lens with risk context, not a buy list. See LIMITATIONS.md.</span><span class="l-zh">来源：engine/top_picks.py — 覆盖标普 1500 的以阿尔法为主的信念混合（engine/residual_alpha.py + engine/equity_factors.py + Form-4 内部人），已在 reports/top-picks-phase0.md 做点对点验证。拉伸/过热维度、相对自身估值标签与群体横幅（engine/extension.py）均为仅展示的风险读数，不计入排名：点对点下行测试（reports/top-picks-freshness-phase0.md）发现任何拉伸筛选都无法降低回撤，但抛物（相对自身历史&gt;2σ）尾部确为真实的泡沫回撤风险，故逐股标注。排名随价格/申报每日重算。温和、已衰减、拥挤的边际信号 — 带风险背景的研究视角，而非买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-10 17:55 UTC</p>
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-10 19:00 UTC</p>
 </div>
 
 <script>
