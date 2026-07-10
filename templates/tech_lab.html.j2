@@ -30,7 +30,9 @@
 html[data-theme="dark"] .tl-sample-banner { color:#e0973a; }
 
 /* ── Tab bar ── */
-.tab-bar { display:flex;gap:2px;margin:20px 0 0;border-bottom:2px solid var(--line); }
+.tab-bar { display:flex;gap:2px;margin:20px 0 0;border-bottom:2px solid var(--line);overflow-x:auto;scrollbar-width:none; }
+.tab-bar::-webkit-scrollbar { display:none; }
+.tbl-scroll { overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch; }
 .tab-btn { padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:color .15s;position:relative;white-space:nowrap; }
 .tab-btn:hover { color:var(--text); }
 .tab-btn.active { color:var(--link); }
@@ -243,7 +245,9 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
 .how-card p,.how-card li { font-size:12.5px;color:var(--muted);line-height:1.7; }
 .how-card ul { padding-left:16px;margin-top:6px; }
 .code-block { margin-top:10px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;font-family:"SF Mono","Fira Code","JetBrains Mono",Consolas,monospace;font-size:11.5px;color:var(--text);line-height:1.7;overflow-x:auto;white-space:pre;position:relative; }
-.code-block-wrap { position:relative; }
+.code-block-wrap { position:relative;max-width:100%; }
+.how-grid > * { min-width:0; }
+.how-card h3, .how-card p { overflow-wrap:anywhere; }
 .copy-btn { position:absolute;top:8px;right:8px;padding:3px 8px;font-size:10px;font-weight:600;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--muted);cursor:pointer;transition:all .12s;z-index:1; }
 .copy-btn:hover { color:var(--text);border-color:var(--muted); }
 .copy-btn.copied { color:var(--ok);border-color:var(--ok); }

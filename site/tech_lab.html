@@ -60,7 +60,9 @@
 html[data-theme="dark"] .tl-sample-banner { color:#e0973a; }
 
 /* ── Tab bar ── */
-.tab-bar { display:flex;gap:2px;margin:20px 0 0;border-bottom:2px solid var(--line); }
+.tab-bar { display:flex;gap:2px;margin:20px 0 0;border-bottom:2px solid var(--line);overflow-x:auto;scrollbar-width:none; }
+.tab-bar::-webkit-scrollbar { display:none; }
+.tbl-scroll { overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch; }
 .tab-btn { padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:color .15s;position:relative;white-space:nowrap; }
 .tab-btn:hover { color:var(--text); }
 .tab-btn.active { color:var(--link); }
@@ -273,7 +275,9 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
 .how-card p,.how-card li { font-size:12.5px;color:var(--muted);line-height:1.7; }
 .how-card ul { padding-left:16px;margin-top:6px; }
 .code-block { margin-top:10px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;font-family:"SF Mono","Fira Code","JetBrains Mono",Consolas,monospace;font-size:11.5px;color:var(--text);line-height:1.7;overflow-x:auto;white-space:pre;position:relative; }
-.code-block-wrap { position:relative; }
+.code-block-wrap { position:relative;max-width:100%; }
+.how-grid > * { min-width:0; }
+.how-card h3, .how-card p { overflow-wrap:anywhere; }
 .copy-btn { position:absolute;top:8px;right:8px;padding:3px 8px;font-size:10px;font-weight:600;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--muted);cursor:pointer;transition:all .12s;z-index:1; }
 .copy-btn:hover { color:var(--text);border-color:var(--muted); }
 .copy-btn.copied { color:var(--ok);border-color:var(--ok); }
@@ -588,7 +592,7 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
   <p class="tl-sub"><span class="l-en">Signal screener + descriptive backtest profiles. Build confluence filters to find names where multiple signals align. Drill into any ticker for a per-stock signal breakdown. Descriptive framing — survivor mega-cap universe, not a verdict.</span><span class="l-zh">信号筛选器 + 描述性回测档案。构建多因子共振筛选条件，聚焦多信号同向股票。点击任意标的查看个股信号分解。描述性研究框架 — 幸存大盘股宇宙，非结论性研究。</span></p>
   <div class="tl-meta">
     <span class="chip tag-equities"><span class="l-en">Technical Signals</span><span class="l-zh">技术信号</span></span>
-    <span class="chip" id="hero-ts">2026-07-10 14:41 UTC</span>
+    <span class="chip" id="hero-ts">2026-07-10 14:47 UTC</span>
     <span class="chip" id="hero-n-signals">64 <span class="l-en">signals</span><span class="l-zh">信号</span></span>
     <span class="chip" id="hero-n-stocks">225 <span class="l-en">universe</span><span class="l-zh">覆盖标的</span></span>
     
