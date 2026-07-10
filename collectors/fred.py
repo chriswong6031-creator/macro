@@ -240,3 +240,186 @@ def initial_release(series: str, vintages: pd.DataFrame | None = None) -> pd.Ser
         return pd.Series(dtype=float)
     sub = v[v["series"] == series]
     return sub.set_index("period")["value"].sort_index() if not sub.empty else pd.Series(dtype=float)
+
+
+# ---------------------------------------------------------------------------
+# Multi-vintage collector (output_type=2) — additive; Track R W11-D MRI-R37
+# The existing output_type=4 pipeline (initial-print-only) is untouched.
+# ---------------------------------------------------------------------------
+
+def fetch_all_vintages(
+    series_id: str,
+    output_type: int = 2,
+    realtime_start: str = "1997-01-01",
+    api_key: str | None = None,
+) -> pd.DataFrame:
+    """Fetch the full vintage matrix for a single series from ALFRED.
+
+    output_type=2 returns ALL observation vintages in a WIDE matrix format:
+    one row per observation period, one column per vintage (realtime) date,
+    named "{series_id}_{YYYYMMDD}". This function melts it to LONG format:
+    one row per (period, realtime_start) pair.
+
+    output_type=4 returns the initial-release-only path (one row per period,
+    long format directly from FRED). This function supports both output types.
+
+    Requires FRED_API_KEY (no keyless path for vintage data).
+    Returns an empty DataFrame if the key is unavailable (fail-open).
+
+    Schema returned (long format):
+        period (datetime), realtime_start (datetime), realtime_end (datetime),
+        value (float).
+
+    For output_type=2, realtime_end is inferred as the next vintage date minus 1 day
+    (the period when that vintage value was the "current" value), with 9999-12-31
+    for the latest vintage. This mirrors the ALFRED output_type=4 convention.
+
+    Parameters
+    ----------
+    series_id:
+        FRED series identifier, e.g. "PAYEMS".
+    output_type:
+        2 = all vintages/wide matrix, melted to long (default);
+        4 = initial releases only, already long.
+    realtime_start:
+        ALFRED real-time start date (FRED's archive begins ~1997).
+    api_key:
+        Override the environment FRED_API_KEY; defaults to config.secret().
+    """
+    key = api_key or config.secret("FRED_API_KEY")
+    if not key:
+        log.warning(
+            "fetch_all_vintages(%s): FRED_API_KEY absent — returning empty DataFrame",
+            series_id,
+        )
+        return pd.DataFrame(
+            columns=["period", "realtime_start", "realtime_end", "value"]
+        )
+
+    cfg = config.load()["fred"]
+    api_url = cfg["api_url"]
+    retries = cfg.get("retries", 4)
+    backoff_base = cfg.get("backoff_base_s", 3)
+
+    # Use a minimal Adapter subclass instance for the retry-capable http_get
+    adapter = _VintageAdapter()
+
+    all_chunks: list[pd.DataFrame] = []
+    offset = 0
+    limit = 100000
+
+    while True:
+        params = {
+            "series_id": series_id,
+            "api_key": key,
+            "file_type": "json",
+            "output_type": output_type,
+            "realtime_start": realtime_start,
+            "realtime_end": "9999-12-31",
+            "sort_order": "asc",
+            "limit": limit,
+            "offset": offset,
+        }
+        r = adapter.http_get(api_url, retries=retries, backoff_base=backoff_base,
+                             timeout=90, params=params)
+        data = r.json()
+        obs = data.get("observations", [])
+        if not obs:
+            break
+        all_chunks.append(pd.DataFrame(obs))
+
+        # FRED paginates at `limit` rows; if fewer returned, we're done
+        if len(obs) < limit:
+            break
+        offset += limit
+        log.debug(
+            "fetch_all_vintages(%s): paginating, offset=%d, rows_so_far=%d",
+            series_id,
+            offset,
+            sum(len(x) for x in all_chunks),
+        )
+
+    if not all_chunks:
+        log.warning("fetch_all_vintages(%s): zero observations returned", series_id)
+        return pd.DataFrame(
+            columns=["period", "realtime_start", "realtime_end", "value"]
+        )
+
+    raw = pd.concat(all_chunks, ignore_index=True)
+
+    if output_type == 2:
+        # Wide format: columns are 'date' (the observation period) and
+        # '{series_id}_{YYYYMMDD}' per vintage date. Melt to long.
+        if "date" not in raw.columns:
+            log.warning("fetch_all_vintages(%s): 'date' column missing in wide response", series_id)
+            return pd.DataFrame(columns=["period", "realtime_start", "realtime_end", "value"])
+
+        # Identify vintage columns: those named '{series_id}_YYYYMMDD'
+        prefix = f"{series_id}_"
+        vintage_cols = [c for c in raw.columns if c.startswith(prefix)]
+        if not vintage_cols:
+            log.warning(
+                "fetch_all_vintages(%s): no vintage columns found (prefix=%s)", series_id, prefix
+            )
+            return pd.DataFrame(columns=["period", "realtime_start", "realtime_end", "value"])
+
+        # Melt to long: id_vars='date', value_vars=vintage_cols
+        melted = raw[["date"] + vintage_cols].melt(
+            id_vars="date", var_name="vintage_col", value_name="value"
+        )
+        # Extract realtime_start date from column name suffix
+        melted["realtime_start"] = pd.to_datetime(
+            melted["vintage_col"].str[len(prefix):], format="%Y%m%d", errors="coerce"
+        )
+        melted = melted.rename(columns={"date": "period"})
+        melted["period"] = pd.to_datetime(melted["period"], errors="coerce")
+        melted["value"] = pd.to_numeric(melted["value"], errors="coerce")
+        melted = melted.dropna(subset=["period", "realtime_start", "value"])
+        melted = melted[["period", "realtime_start", "value"]].copy()
+        melted = melted.sort_values(["period", "realtime_start"]).reset_index(drop=True)
+
+        # Infer realtime_end: the next vintage date for each vintage column minus 1 day,
+        # 9999-12-31 for the latest vintage per period.
+        # Sort vintage dates globally
+        all_rt_dates = sorted(pd.to_datetime(vintage_cols, format=f"{prefix}%Y%m%d", errors="coerce").dropna())
+
+        def _rt_end(rt: pd.Timestamp) -> pd.Timestamp:
+            idx = all_rt_dates.index(rt) if rt in all_rt_dates else -1
+            if idx == -1 or idx == len(all_rt_dates) - 1:
+                return pd.Timestamp("9999-12-31")
+            return all_rt_dates[idx + 1] - pd.Timedelta(days=1)
+
+        melted["realtime_end"] = melted["realtime_start"].map(_rt_end)
+        out = melted[["period", "realtime_start", "realtime_end", "value"]]
+
+    else:
+        # output_type=4: long format directly; columns: date, value, realtime_start, realtime_end
+        raw = raw.rename(columns={"date": "period"})
+        raw["value"] = pd.to_numeric(raw["value"], errors="coerce")
+        for col in ("period", "realtime_start", "realtime_end"):
+            if col in raw.columns:
+                raw[col] = pd.to_datetime(raw[col], errors="coerce")
+        raw = raw.dropna(subset=["period", "realtime_start", "value"])
+        out = raw[["period", "realtime_start", "realtime_end", "value"]].sort_values(
+            ["period", "realtime_start"]
+        )
+
+    out = out.reset_index(drop=True)
+    log.info(
+        "fetch_all_vintages(%s, output_type=%d): %d rows, %d unique periods",
+        series_id,
+        output_type,
+        len(out),
+        out["period"].nunique(),
+    )
+    return out
+
+
+class _VintageAdapter(Adapter):
+    """Minimal Adapter subclass for module-level multi-vintage fetches."""
+
+    name = "fred_vintage_all"
+    group = "fred_vintage"
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:  # type: ignore[override]
+        return {}
