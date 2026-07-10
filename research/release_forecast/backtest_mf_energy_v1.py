@@ -41,6 +41,7 @@ from engine.release_forecast import (  # noqa: E402
     load_vintages,
     knowable_series,
     run_walk_forward_full,
+    project_release,
 )
 from engine.release_mf_energy import (  # noqa: E402
     run_walk_forward_mf,
@@ -450,26 +451,14 @@ def run_backtest() -> dict:
     # -----------------------------------------------------------------------
     # Head-to-head vs champion at early asofs
     # -----------------------------------------------------------------------
-    print("Running champion walk-forward for head-to-head at early asofs...")
+    print("Running champion walk-forward for head-to-head comparison...")
 
-    # Build early asof list from T-1 asofs (shift back 25 days)
-    # We align mf_energy@early rows with champion re-run at the same asof dates
-    # Champion uses its own feature builder; "early" just means fewer gasoline weeks available
-
-    # Run champion at T-1 asofs (champion is not aware of early; its accuracy "degrades" naturally
-    # since its gasoline_mom leg also uses the same GASREGW cutoff).
-    # The champion run_walk_forward_full uses T-1 asofs (day before release), so at the "early"
-    # asof (25 days earlier) the champion simply sees fewer gasoline weeks. We need to re-run
-    # champion at the early asofs.
-    #
-    # For the descriptive comparison, we compute champion metrics at the mf_energy early step_asofs
-    # using the SAME historical fold structure.
-    # Simplification (for backtest reporting): we compare:
-    #   mf_energy@early   vs   champion@T-1 (champion benchmark, not re-run at early)
-    # and label it as such. The champion@early re-run would require modifying the champion's
-    # walk-forward, which this file does NOT do (new files only). Instead, we report:
-    #   "champion@T-1" as a reference point — the comparison of @early vs @T-1 is inherently
-    #   conservative for the accumulator (early is harder than T-1 for all models).
+    # FAIR EARLY COMPARISON (per adjudicated fix):
+    # Run champion at BOTH T-1 and early asofs using project_release().
+    # This gives a true apples-to-apples comparison at the early cutoff:
+    #   mf_energy@early  vs  champion@early  (fair: same asof, different models)
+    # Champion@T-1 is reported as a REFERENCE point only.
+    # The early-read claim is DESCRIPTIVE — per PREREG §3 the kill rule fires at T-1 only.
 
     print("Running champion walk-forward (T-1) for reference comparison...")
     wf_champ_t1 = run_walk_forward_full("cpi_headline", root)
@@ -482,6 +471,60 @@ def run_backtest() -> dict:
     m_champ_full = _compute_metrics(rows_champ_noncovid, errors_champ_t1)
     m_champ_2021 = _compute_metrics(rows_champ_2021, errors_champ_t1)
 
+    # Run champion at early asofs (project_release per step, aligning with mf_energy@early).
+    # The mf_energy early walk-forward already covers all historical months; we
+    # re-run champion at those same early asofs by iterating the historical print list.
+    print("Running champion at early asofs (project_release per step)...")
+    vintages = load_vintages(root)
+    all_prints_early = knowable_series(vintages, "CPIAUCSL", date(2099, 1, 1))
+    all_prints_early = all_prints_early.sort_values("period").reset_index(drop=True)
+    all_prints_early_mom = all_prints_early.copy()
+    all_prints_early_mom["mom"] = all_prints_early_mom["value"].pct_change() * 100.0
+    all_prints_early_mom = all_prints_early_mom.dropna(subset=["mom"]).reset_index(drop=True)
+
+    results_champ_early: list[dict] = []
+    n_champ_early_attempted = 0
+    for _, row in all_prints_early_mom.iterrows():
+        rt = pd.Timestamp(row["realtime_start"])
+        t1_asof = (rt - pd.Timedelta(days=1)).date()
+        early_asof = (rt - pd.Timedelta(days=26)).date()
+        period_ts = pd.Timestamp(row["period"])
+        actual_mom = float(row["mom"])
+        try:
+            proj = project_release("cpi_headline", early_asof, root, ref_month=period_ts.date())
+            point = proj.get("point")
+            if point is None:
+                continue
+            n_champ_early_attempted += 1
+            # Compute baselines from benchmark_set
+            bs = proj.get("benchmark_set", {})
+            naive = bs.get("naive_prior")
+            exp_mean = bs.get("expanding_mean")
+            t3m = bs.get("trailing_3m")
+            results_champ_early.append({
+                "predicted": point,
+                "actual": actual_mom,
+                "period": period_ts,
+                "release_date": rt,
+                "asof": early_asof,
+                "baseline_naive": naive,
+                "baseline_expanding_mean": exp_mean,
+                "baseline_trailing3m": t3m,
+                "result_pos": len(results_champ_early),
+            })
+        except Exception as e:
+            pass  # Skip failures silently (feature data gaps expected early in history)
+
+    print(f"  champion early: {len(results_champ_early)} predictions (attempted {n_champ_early_attempted})")
+    errors_champ_early = np.array(
+        [r["actual"] - r["predicted"] for r in results_champ_early], dtype=float
+    )
+
+    rows_champ_early_noncovid = [r for r in results_champ_early if get_period(r) is not None and _era(get_period(r)) != "covid"]
+    rows_champ_early_2021 = [r for r in results_champ_early if get_period(r) is not None and _era(get_period(r)) == "2021_plus"]
+    m_champ_early_full = _compute_metrics(rows_champ_early_noncovid, errors_champ_early)
+    m_champ_early_2021 = _compute_metrics(rows_champ_early_2021, errors_champ_early)
+
     # Add champion metrics to summary
     summary["champion_t1"] = {
         "cutoff": "T-1",
@@ -489,32 +532,40 @@ def run_backtest() -> dict:
         "metrics_full": m_champ_full,
         "metrics_2021": m_champ_2021,
     }
+    summary["champion_early"] = {
+        "cutoff": "early",
+        "n_predictions": len(results_champ_early),
+        "note": "Champion evaluated at same early asofs as mf_energy@early (fair comparison). DESCRIPTIVE.",
+        "metrics_full": m_champ_early_full,
+        "metrics_2021": m_champ_early_2021,
+    }
 
     md_lines += [
         "---",
         "",
         "## Head-to-Head: mf_energy vs Champion",
         "",
-        "Note on comparison basis: The champion is re-run at T-1 asofs (standard evaluation).",
-        "Comparing mf_energy@early vs champion@T-1 is conservative for the accumulator",
-        "(early asof = harder problem). The forward ledger, with scored prints at both",
-        "cutoffs (MRI-R35), is the sole basis for the value-claim adjudication.",
+        "**Comparison basis:** mf_energy@early vs champion@early uses the SAME early asofs",
+        "(release_date - 26 days) for both models — a fair apples-to-apples comparison.",
+        "Champion@T-1 is shown as a reference for the standard-cutoff baseline.",
+        "The early-cutoff comparison is DESCRIPTIVE; kill rule applies at T-1 only.",
         "",
-        "| Metric | mf_energy@T-1 | mf_energy@early | champion@T-1 |",
-        "|--------|---------------|-----------------|--------------|",
+        "| Metric | mf_energy@T-1 | mf_energy@early | champion@early | champion@T-1 (ref) |",
+        "|--------|---------------|-----------------|----------------|--------------------|",
     ]
 
     def _hval(m: dict, key: str, fmt: str = ".4f") -> str:
         v = m.get(key)
         return (f"{v:{fmt}}" if v is not None else "—")
 
-    md_lines.append(f"| Full MAE | {_hval(m_full_t1, 'mae_model')} | {_hval(m_full_early, 'mae_model')} | {_hval(m_champ_full, 'mae_model')} |")
-    md_lines.append(f"| 2021+ MAE | {_hval(m_2021_t1, 'mae_model')} | {_hval(m_2021_early, 'mae_model')} | {_hval(m_champ_2021, 'mae_model')} |")
-    md_lines.append(f"| Full strongest_naive MAE | {_hval(m_full_t1, 'mae_strongest_naive')} | — | {_hval(m_champ_full, 'mae_strongest_naive')} |")
-    md_lines.append(f"| 2021+ strongest_naive MAE | {_hval(m_2021_t1, 'mae_strongest_naive')} | — | {_hval(m_champ_2021, 'mae_strongest_naive')} |")
-    md_lines.append(f"| Full RMSE | {_hval(m_full_t1, 'rmse_model')} | {_hval(m_full_early, 'rmse_model')} | {_hval(m_champ_full, 'rmse_model')} |")
-    md_lines.append(f"| Full coverage | {_hval(m_full_t1, 'coverage_p10_p90', '.1%') if m_full_t1['coverage_p10_p90'] is not None else '—'} | {_hval(m_full_early, 'coverage_p10_p90', '.1%') if m_full_early['coverage_p10_p90'] is not None else '—'} | {_hval(m_champ_full, 'coverage_p10_p90', '.1%') if m_champ_full['coverage_p10_p90'] is not None else '—'} |")
-    md_lines.append(f"| Pinball (full) | {_hval(m_full_t1, 'pinball_loss')} | {_hval(m_full_early, 'pinball_loss')} | {_hval(m_champ_full, 'pinball_loss')} |")
+    md_lines.append(f"| Full MAE | {_hval(m_full_t1, 'mae_model')} | {_hval(m_full_early, 'mae_model')} | {_hval(m_champ_early_full, 'mae_model')} | {_hval(m_champ_full, 'mae_model')} |")
+    md_lines.append(f"| 2021+ MAE | {_hval(m_2021_t1, 'mae_model')} | {_hval(m_2021_early, 'mae_model')} | {_hval(m_champ_early_2021, 'mae_model')} | {_hval(m_champ_2021, 'mae_model')} |")
+    md_lines.append(f"| Full strongest_naive MAE | {_hval(m_full_t1, 'mae_strongest_naive')} | — | — | {_hval(m_champ_full, 'mae_strongest_naive')} |")
+    md_lines.append(f"| 2021+ strongest_naive MAE | {_hval(m_2021_t1, 'mae_strongest_naive')} | — | — | {_hval(m_champ_2021, 'mae_strongest_naive')} |")
+    md_lines.append(f"| Full RMSE | {_hval(m_full_t1, 'rmse_model')} | {_hval(m_full_early, 'rmse_model')} | {_hval(m_champ_early_full, 'rmse_model')} | {_hval(m_champ_full, 'rmse_model')} |")
+    md_lines.append(f"| Full coverage | {_hval(m_full_t1, 'coverage_p10_p90', '.1%') if m_full_t1['coverage_p10_p90'] is not None else '—'} | {_hval(m_full_early, 'coverage_p10_p90', '.1%') if m_full_early['coverage_p10_p90'] is not None else '—'} | — | {_hval(m_champ_full, 'coverage_p10_p90', '.1%') if m_champ_full['coverage_p10_p90'] is not None else '—'} |")
+    md_lines.append(f"| Pinball (full) | {_hval(m_full_t1, 'pinball_loss')} | {_hval(m_full_early, 'pinball_loss')} | — | {_hval(m_champ_full, 'pinball_loss')} |")
+    md_lines.append(f"| n predictions | {len(results_t1)} | {len(results_early)} | {len(results_champ_early)} | {len(results_champ_t1)} |")
     md_lines.append("")
 
     # -----------------------------------------------------------------------

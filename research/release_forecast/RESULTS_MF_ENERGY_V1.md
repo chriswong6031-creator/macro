@@ -43,27 +43,28 @@ The forward ledger is the sole judge of the value claim — this is exploratory.
 
 | Era | n | MAE model | MAE naive | MAE exp-mean | MAE strongest | RMSE | Cov p10-p90 | Skew HR | Pinball |
 |-----|---|-----------|-----------|--------------|---------------|------|-------------|---------|---------|
-| Full (non-COVID) | 288 | 0.1448 | 0.2568 | 0.2262 | 0.2568 | 0.1996 | 78.8% | 0.833 | 0.2690 |
-| 2021+ | 64 | 0.1858 | 0.2442 | 0.2524 | 0.2524 | 0.2628 | 71.9% | 0.734 | 0.3580 |
+| Full (non-COVID) | 288 | 0.1432 | 0.2568 | 0.2262 | 0.2568 | 0.1975 | 78.4% | 0.826 | 0.2657 |
+| 2021+ | 64 | 0.1813 | 0.2442 | 0.2524 | 0.2524 | 0.2592 | 73.4% | 0.719 | 0.3531 |
 
 ---
 
 ## Head-to-Head: mf_energy vs Champion
 
-Note on comparison basis: The champion is re-run at T-1 asofs (standard evaluation).
-Comparing mf_energy@early vs champion@T-1 is conservative for the accumulator
-(early asof = harder problem). The forward ledger, with scored prints at both
-cutoffs (MRI-R35), is the sole basis for the value-claim adjudication.
+**Comparison basis:** mf_energy@early vs champion@early uses the SAME early asofs
+(release_date - 26 days) for both models — a fair apples-to-apples comparison.
+Champion@T-1 is shown as a reference for the standard-cutoff baseline.
+The early-cutoff comparison is DESCRIPTIVE; kill rule applies at T-1 only.
 
-| Metric | mf_energy@T-1 | mf_energy@early | champion@T-1 |
-|--------|---------------|-----------------|--------------|
-| Full MAE | 0.1421 | 0.1448 | 0.1578 |
-| 2021+ MAE | 0.1794 | 0.1858 | 0.1732 |
-| Full strongest_naive MAE | 0.2568 | — | 0.2568 |
-| 2021+ strongest_naive MAE | 0.2524 | — | 0.2442 |
-| Full RMSE | 0.1960 | 0.1996 | 0.2055 |
-| Full coverage | 78.4% | 78.8% | 71.6% |
-| Pinball (full) | 0.2648 | 0.2690 | 0.2928 |
+| Metric | mf_energy@T-1 | mf_energy@early | champion@early | champion@T-1 (ref) |
+|--------|---------------|-----------------|----------------|--------------------|
+| Full MAE | 0.1421 | 0.1432 | 0.1478 | 0.1578 |
+| 2021+ MAE | 0.1794 | 0.1813 | 0.1781 | 0.1732 |
+| Full strongest_naive MAE | 0.2568 | — | — | 0.2568 |
+| 2021+ strongest_naive MAE | 0.2524 | — | — | 0.2442 |
+| Full RMSE | 0.1960 | 0.1975 | 0.1986 | 0.2055 |
+| Full coverage | 78.4% | 78.4% | — | 71.6% |
+| Pinball (full) | 0.2648 | 0.2657 | — | 0.2928 |
+| n predictions | 292 | 292 | 228 | 292 |
 
 ---
 

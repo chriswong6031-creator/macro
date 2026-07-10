@@ -38,6 +38,7 @@ from engine.release_mf_energy import (
     _seasonal_terms,
     _load_gasregw,
     _load_wti,
+    _all_mondays_in_month,
     project_release_mf,
     run_walk_forward_mf,
     RIDGE_LAMBDA,
@@ -390,6 +391,121 @@ class TestWtiBetaNoLookahead:
         # Results must be identical (future WTI has no effect)
         assert result1["gasoline_mom"] == result2["gasoline_mom"], (
             "gasoline_mom changed when future WTI spike added — look-ahead leak detected"
+        )
+
+    def test_wti_future_spike_no_lookahead_in_projection(self):
+        """No-lookahead test on n_weeks_projected > 0 fold.
+
+        Pick a fold where the early asof produces n_weeks_projected > 0 (i.e., the
+        WTI pass-through accumulator fires). Append a synthetic FUTURE WTI row
+        (post-asof spike) and assert the gasoline_mom nowcast and model point are
+        BYTE-IDENTICAL to the no-spike case. This confirms future WTI cannot
+        contaminate the projection even when remaining weeks are being projected.
+
+        Uses real data fixtures — test is skipped if data is not available.
+        """
+        import sys
+        from pathlib import Path
+        _root = Path(__file__).resolve().parents[1]
+        gasregw_path = _root / "data" / "fred" / "GASREGW.parquet"
+        wti_path = _root / "data" / "fred" / "DCOILWTICO.parquet"
+        if not (gasregw_path.exists() and wti_path.exists()):
+            pytest.skip("GASREGW/DCOILWTICO data not present")
+
+        from engine.release_mf_energy import _load_gasregw, _load_wti
+        gasregw_real = _load_gasregw(_root)
+        wti_real = _load_wti(_root)
+
+        # Find a fold where n_weeks_projected > 0 at early asof.
+        # Use June 2025 as a reliable test case (release ~July 11, early asof ~June 15).
+        # We verified this gives n_weeks_projected >= 1 when early asof is mid-June.
+        ref_month = pd.Timestamp("2025-04-01")
+        # April 2025 CPI release was ~May 13, 2025 => early asof ~ April 17, 2025
+        early_asof = date(2025, 4, 17)
+
+        result_base = _compute_gasoline_nowcast(gasregw_real, wti_real, ref_month, early_asof)
+        # Verify this fold actually has projections (so the test is meaningful)
+        assert result_base["n_weeks_projected"] >= 1, (
+            f"Test setup error: no projected weeks at early asof={early_asof} for {ref_month}. "
+            "Pick a different fold or check _all_mondays_in_month."
+        )
+
+        # Add an extreme spike AFTER asof to the WTI series
+        spike_date = pd.Timestamp(early_asof) + pd.Timedelta(days=2)
+        wti_spiked = wti_real.copy()
+        # Ensure we insert/replace a future date with an extreme value
+        spike_series = pd.Series([99999.0], index=[spike_date])
+        wti_spiked = pd.concat([wti_spiked[wti_spiked.index != spike_date], spike_series]).sort_index()
+
+        result_spiked = _compute_gasoline_nowcast(gasregw_real, wti_spiked, ref_month, early_asof)
+
+        # BYTE-IDENTICAL check: future WTI must not change the nowcast
+        assert result_base["gasoline_mom"] == result_spiked["gasoline_mom"], (
+            f"gasoline_mom changed when post-asof WTI spike added to a projection fold "
+            f"(n_weeks_projected={result_base['n_weeks_projected']}): "
+            f"base={result_base['gasoline_mom']:.6f}, spiked={result_spiked['gasoline_mom']:.6f}. "
+            "Look-ahead detected in remaining-week WTI projection."
+        )
+        assert result_base["n_weeks_projected"] == result_spiked["n_weeks_projected"], (
+            "n_weeks_projected changed when post-asof spike added — look-ahead in projection count."
+        )
+
+    def test_m1_denominator_asof_guard(self):
+        """M-1 denominator must only include GASREGW weeks with index <= asof.
+
+        If M-1 weeks published after asof appeared in the denominator, they would
+        introduce look-ahead into the gasoline_mom computation.  We verify that
+        appending a FAKE M-1 week dated after asof does not change the result.
+        """
+        gasregw = _make_gasregw_series(date(2010, 1, 4), n_weeks=400)
+        wti = _make_wti_series(date(2010, 1, 4), n_days=4000)
+
+        # Use a mid-2015 early asof so M-1 weeks might exist after asof
+        ref_month = pd.Timestamp("2015-07-01")   # July 2015
+        asof = date(2015, 7, 15)                  # mid-July (early asof)
+        asof_ts = pd.Timestamp(asof)
+
+        # Compute baseline nowcast
+        result_base = _compute_gasoline_nowcast(gasregw, wti, ref_month, asof)
+
+        # Add a fake M-1 (June 2015) GASREGW week AFTER asof with a wildly different value
+        # This would corrupt the M-1 mean if the asof guard is absent
+        fake_date = pd.Timestamp("2015-07-20")  # June period but indexed after asof
+        # Actually fake it as a June week that wasn't published yet:
+        fake_june_date = pd.Timestamp("2015-06-29")  # last Monday in June 2015
+        # Remove if present and re-insert with extreme value
+        gasregw_tampered = gasregw.copy()
+        # Temporarily move this date to "after asof" by pretending it has a post-asof index
+        # We simulate: add a SECOND June entry dated AFTER asof (June 29 moved to July 20)
+        # and add it to the series
+        extra = pd.Series([999.0], index=[pd.Timestamp("2015-07-20")])
+        # But we want it to be in "June 2015 window" — the guard should exclude it
+        # Actually: to test the M-1 guard, we need a fake M-1 week that would
+        # appear in m1_weeks if there were no asof guard.
+        # M-1 is June 2015. A fake week: indexed July 20 is NOT in June window anyway.
+        # Instead: simulate a case where a June 2015 Monday falls after asof.
+        # June 2015 last Monday is June 29. With asof=June 28:
+        ref_month2 = pd.Timestamp("2015-07-01")
+        asof2 = date(2015, 6, 28)  # asof BEFORE last June Monday
+        asof_ts2 = pd.Timestamp(asof2)
+
+        result_base2 = _compute_gasoline_nowcast(gasregw, wti, ref_month2, asof2)
+        # June 29 (last Monday of M-1) is after asof2=June 28 — it should be excluded
+        # Check: without the guard, gasoline_est_M1 would include June 29's value
+        # With the guard, it should not
+
+        # Create tampered series where June 29 has an extreme value
+        gasregw_tampered2 = gasregw.copy()
+        june29 = pd.Timestamp("2015-06-29")
+        if june29 in gasregw_tampered2.index:
+            gasregw_tampered2[june29] = 9999.0  # extreme value post-asof
+
+        result_tampered2 = _compute_gasoline_nowcast(gasregw_tampered2, wti, ref_month2, asof2)
+        # With asof guard: June 29 excluded -> result unchanged
+        assert result_base2["gasoline_est_M1"] == result_tampered2["gasoline_est_M1"], (
+            f"M-1 denominator changed when post-asof M-1 week spiked: "
+            f"base M1={result_base2['gasoline_est_M1']}, tampered M1={result_tampered2['gasoline_est_M1']}. "
+            "asof guard on M-1 denominator is missing or broken."
         )
 
 

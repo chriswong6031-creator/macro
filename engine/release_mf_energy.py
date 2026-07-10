@@ -152,6 +152,27 @@ def _month_window(ref_month: pd.Timestamp) -> tuple[pd.Timestamp, pd.Timestamp]:
     return first, last
 
 
+def _all_mondays_in_month(ref_month: pd.Timestamp) -> list[pd.Timestamp]:
+    """Return all Monday dates (GASREGW index convention) that fall in calendar month M.
+
+    GASREGW uses Monday-of-week as the index date. A week 'belongs' to month M if
+    its Monday index falls in [first_day_M, last_day_M]. This function enumerates all
+    such Mondays regardless of whether they have been published yet, enabling the
+    remaining-week loop to correctly identify weeks where asof < Monday (i.e., not yet
+    published in GASREGW at decision date asof).
+    """
+    first, last = _month_window(ref_month)
+    # Find first Monday >= first day of M (weekday 0 = Monday)
+    dow = first.weekday()  # 0=Mon, ..., 6=Sun
+    days_to_monday = (7 - dow) % 7  # 0 if already Monday
+    current = first + pd.Timedelta(days=days_to_monday)
+    mondays: list[pd.Timestamp] = []
+    while current <= last:
+        mondays.append(current)
+        current += pd.Timedelta(days=7)
+    return mondays
+
+
 def _wti_weekly_avg_pit(wti: pd.Series, week_start: pd.Timestamp, asof_ts: pd.Timestamp) -> float | None:
     """Average daily WTI over trading days in [week_start, week_start+6] where date <= asof.
 
@@ -228,7 +249,8 @@ def _compute_gasoline_nowcast(
     ref_m1 = (ref_month.to_period("M") - 1).to_timestamp(how="S")
     ref_m1_first, ref_m1_last = _month_window(ref_m1)
 
-    # Published weeks in M (index date <= asof AND in month M)
+    # Published weeks in M: only weeks whose Monday index date is in month M AND <= asof.
+    # GASREGW only contains published (historical) rows — we use the series for published weeks.
     published_M_mask = (
         (gasregw.index >= ref_first) &
         (gasregw.index <= ref_last) &
@@ -236,19 +258,24 @@ def _compute_gasoline_nowcast(
     )
     published_M = gasregw[published_M_mask]
 
-    # Remaining weeks in M (index date > asof but still in month M)
-    remaining_M_mask = (
-        (gasregw.index >= ref_first) &
-        (gasregw.index <= ref_last) &
-        (gasregw.index > asof_ts)
-    )
-    remaining_M = gasregw[remaining_M_mask]
+    # Remaining weeks in M: enumerate all expected Monday dates in month M, then keep
+    # only those whose date is strictly AFTER asof (not yet published in GASREGW at asof).
+    # FIX: previously this looked in gasregw for rows with index > asof, which was always
+    # empty because GASREGW only contains published (historical) data.  We now enumerate
+    # all Mondays in month M and retain those that are unpublished at asof.
+    all_m_mondays = _all_mondays_in_month(ref_month)
+    remaining_week_starts = [m for m in all_m_mondays if m > asof_ts]
 
-    # M-1 average: all available weeks (M-1 should be fully published at T-1 asof)
-    m1_weeks = gasregw[(gasregw.index >= ref_m1_first) & (gasregw.index <= ref_m1_last)]
+    # M-1 average: PIT-filtered to dates <= asof (prevents lookahead when asof falls
+    # before the last M-1 week has been published in corner cases).
+    m1_weeks = gasregw[
+        (gasregw.index >= ref_m1_first) &
+        (gasregw.index <= ref_m1_last) &
+        (gasregw.index <= asof_ts)  # asof guard on M-1 denominator
+    ]
     if m1_weeks.empty:
-        # Fallback: last available value before M
-        fallback = gasregw[gasregw.index < ref_first]
+        # Fallback: last available value strictly before M, within asof constraint
+        fallback = gasregw[(gasregw.index < ref_first) & (gasregw.index <= asof_ts)]
         gasoline_est_M1 = float(fallback.iloc[-1]) if not fallback.empty else None
     else:
         gasoline_est_M1 = float(m1_weeks.mean())
@@ -289,19 +316,44 @@ def _compute_gasoline_nowcast(
     else:
         beta_intercept, beta_slope = 0.0, 1.0
 
-    # Project remaining weeks using WTI delta
+    # Project remaining weeks using WTI delta.
+    # remaining_week_starts: Mondays in month M that fall strictly after asof
+    # (i.e., not yet published in GASREGW at the decision date).
+    #
+    # For each remaining week (Monday > asof), the spec calls for:
+    #   delta_wti = wti_avg(that_week) - wti_avg(prev_week)
+    # However, since Monday > asof, the future week's WTI days are all after asof
+    # and therefore unavailable. The correct PIT-consistent approximation:
+    #   wti_cur  = avg(WTI days in [week_idx - 7, asof])   — last observable 7-day window
+    #   wti_prev = avg(WTI days in [week_idx - 14, week_idx - 8])  — window before that
+    # This represents the WTI delta observable RIGHT NOW (at asof) and is the best
+    # available pass-through for the unpublished week's price.  Each remaining week
+    # uses the same current WTI window (the 7 days leading up to asof), so the first
+    # remaining week in M drives the projected price for all subsequent ones
+    # (compounded via prev_gas_val which advances after each projection).
     projected_prices: list[float] = []
-    for week_idx, _ in remaining_M.items():
-        wti_avg = _wti_weekly_avg_pit(wti, week_idx, asof_ts)
-        if wti_avg is None:
+    for week_idx in remaining_week_starts:
+        # 'Current' WTI: WTI days in the 7-day window ending at asof
+        # (the most recently observable WTI level, proxy for this remaining week).
+        wti_cur_window_start = week_idx - pd.Timedelta(days=7)
+        mask_cur = (wti.index >= wti_cur_window_start) & (wti.index <= asof_ts)
+        cur_days = wti[mask_cur]
+        if cur_days.empty:
             continue
-        prev_week_idx = week_idx - pd.Timedelta(days=7)
-        prev_wti = _wti_weekly_avg_pit(wti, prev_week_idx, asof_ts)
-        if prev_wti is None:
+        wti_cur = float(cur_days.mean())
+
+        # 'Prev' WTI: the 7-day window before the current window.
+        wti_prev_window_end = wti_cur_window_start - pd.Timedelta(days=1)
+        wti_prev_window_start = wti_cur_window_start - pd.Timedelta(days=7)
+        mask_prev = (wti.index >= wti_prev_window_start) & (wti.index <= min(wti_prev_window_end, asof_ts))
+        prev_days = wti[mask_prev]
+        if prev_days.empty:
             continue
-        delta_wti = wti_avg - prev_wti
-        # Use last known gasoline as base for projection
-        gas_before = gasregw[gasregw.index < week_idx]
+        wti_prev = float(prev_days.mean())
+
+        delta_wti = wti_cur - wti_prev
+        # Use last known gasoline (within asof) as base for projection
+        gas_before = gasregw[(gasregw.index < week_idx) & (gasregw.index <= asof_ts)]
         if gas_before.empty:
             continue
         prev_gas_val = float(gas_before.iloc[-1])
@@ -309,7 +361,7 @@ def _compute_gasoline_nowcast(
         projected_prices.append(projected)
 
     n_published = len(published_M)
-    n_projected = len(projected_prices)
+    n_projected = len(projected_prices)  # successfully projected weeks (had WTI data)
 
     all_prices = list(published_M.values) + projected_prices
     if not all_prices:
@@ -851,11 +903,12 @@ def run_walk_forward_mf(
 
     wf_results = _walk_forward_mf(records, _HEAD_FEATURES, "target")
 
-    # Attach period metadata
+    # Attach period metadata + n_weeks_projected for accumulator diagnostics
     for r in wf_results:
         meta = records[r["idx"]]
         r["period"] = meta.get("period")
         r["release_date"] = meta.get("release_date")
+        r["n_weeks_projected"] = meta.get("_n_weeks_proj", 0)  # per-fold projection count
 
     errors = np.array(
         [r["actual"] - r["predicted"] for r in wf_results],

@@ -144,47 +144,47 @@
     "note": "DESCRIPTIVE ONLY \u2014 no kill rule. Value claim vs champion at same asofs.",
     "metrics_full": {
       "n": 288,
-      "mae_model": 0.1448,
-      "rmse_model": 0.1996,
+      "mae_model": 0.1432,
+      "rmse_model": 0.1975,
       "mae_naive": 0.2568,
       "rmse_naive": 0.3359,
       "mae_expanding_mean": 0.2262,
       "rmse_expanding_mean": 0.322,
       "mae_trailing3m": 0.2564,
       "rmse_trailing3m": 0.3489,
-      "mae_ar3": 0.1478,
-      "rmse_ar3": 0.2011,
+      "mae_ar3": 0.1463,
+      "rmse_ar3": 0.1993,
       "mae_strongest_naive": 0.2568,
-      "coverage_p10_p90": 0.7879,
-      "skew_hit_rate": 0.8327,
+      "coverage_p10_p90": 0.7841,
+      "skew_hit_rate": 0.8255,
       "skew_wilson_ci": [
-        0.784,
-        0.872
+        0.776,
+        0.866
       ],
       "skew_n": 275,
-      "pinball_loss": 0.269
+      "pinball_loss": 0.2657
     },
     "metrics_2021": {
       "n": 64,
-      "mae_model": 0.1858,
-      "rmse_model": 0.2628,
+      "mae_model": 0.1813,
+      "rmse_model": 0.2592,
       "mae_naive": 0.2442,
       "rmse_naive": 0.3361,
       "mae_expanding_mean": 0.2524,
       "rmse_expanding_mean": 0.3565,
       "mae_trailing3m": 0.2233,
       "rmse_trailing3m": 0.2958,
-      "mae_ar3": 0.1911,
-      "rmse_ar3": 0.266,
+      "mae_ar3": 0.1873,
+      "rmse_ar3": 0.2624,
       "mae_strongest_naive": 0.2524,
-      "coverage_p10_p90": 0.7188,
-      "skew_hit_rate": 0.7344,
+      "coverage_p10_p90": 0.7344,
+      "skew_hit_rate": 0.7188,
       "skew_wilson_ci": [
-        0.615,
-        0.827
+        0.599,
+        0.814
       ],
       "skew_n": 64,
-      "pinball_loss": 0.358
+      "pinball_loss": 0.3531
     }
   },
   "champion_t1": {
@@ -233,6 +233,55 @@
       ],
       "skew_n": 64,
       "pinball_loss": 0.2982
+    }
+  },
+  "champion_early": {
+    "cutoff": "early",
+    "n_predictions": 228,
+    "note": "Champion evaluated at same early asofs as mf_energy@early (fair comparison). DESCRIPTIVE.",
+    "metrics_full": {
+      "n": 224,
+      "mae_model": 0.1478,
+      "rmse_model": 0.1986,
+      "mae_naive": 0.2679,
+      "rmse_naive": 0.3537,
+      "mae_expanding_mean": null,
+      "rmse_expanding_mean": null,
+      "mae_trailing3m": 0.2761,
+      "rmse_trailing3m": 0.3743,
+      "mae_ar3": null,
+      "rmse_ar3": null,
+      "mae_strongest_naive": 0.2761,
+      "coverage_p10_p90": 0.73,
+      "skew_hit_rate": 0.8214,
+      "skew_wilson_ci": [
+        0.766,
+        0.866
+      ],
+      "skew_n": 224,
+      "pinball_loss": 0.2838
+    },
+    "metrics_2021": {
+      "n": 64,
+      "mae_model": 0.1781,
+      "rmse_model": 0.2235,
+      "mae_naive": 0.2442,
+      "rmse_naive": 0.3361,
+      "mae_expanding_mean": null,
+      "rmse_expanding_mean": null,
+      "mae_trailing3m": 0.2233,
+      "rmse_trailing3m": 0.2958,
+      "mae_ar3": null,
+      "rmse_ar3": null,
+      "mae_strongest_naive": 0.2442,
+      "coverage_p10_p90": 0.75,
+      "skew_hit_rate": 0.6875,
+      "skew_wilson_ci": [
+        0.566,
+        0.788
+      ],
+      "skew_n": 64,
+      "pinball_loss": 0.3078
     }
   }
 }
