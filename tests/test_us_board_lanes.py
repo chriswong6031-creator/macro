@@ -201,6 +201,100 @@ class TestAlphaOrdering:
 
 
 # ---------------------------------------------------------------------------
+# 2b. Regression: the REAL sort key with prod-shaped inputs (invariant (d))
+# ---------------------------------------------------------------------------
+
+class TestBoardAlphaSortKeyRegression:
+    """Regression for the 2026-07 invariant-(d) latent red (ticker-alphabetical board).
+
+    In production the conviction profile carries NO "alpha" key — the scalar
+    residual-alpha z lives on the BOARD ROW (engine.setups.setup_score). The
+    original in-closure sort key read the profile, so the primary key was a
+    constant -0.0 and the #1494 ticker tiebreaker silently became the whole
+    sort: the board shipped ticker-alphabetical (live: ARES alpha=-1.32 at
+    continuation slot-1 above MS alpha=1.20). The TestAlphaOrdering tests above
+    re-implement the sort inline, which is why the bug survived them — these
+    tests exercise the REAL module-level key with prod-shaped fixtures.
+    """
+
+    # Live regression shape (2026-07-10 artifact): alphabetically-first ticker
+    # has the most negative alpha; alphabetical order != alpha order everywhere.
+    _ROWS = {
+        "ARES": {"ticker": "ARES", "alpha": -1.32},
+        "CDNS": {"ticker": "CDNS", "alpha": -0.55},
+        "FHI":  {"ticker": "FHI",  "alpha": 0.97},
+        "MS":   {"ticker": "MS",   "alpha": 1.20},
+        "SBUX": {"ticker": "SBUX", "alpha": 0.64},
+    }
+
+    @staticmethod
+    def _prod_profile(composite_z: float = 0.5) -> dict:
+        """Prod-shaped conviction profile: composite_z present, NO 'alpha' key."""
+        return {"composite_z": composite_z, "alignment": {}, "axes": {}}
+
+    def _buyable(self):
+        """(ticker, profile, tier) triples as the builder sorts them."""
+        return [(t, self._prod_profile(), "aligned") for t in sorted(self._ROWS)]
+
+    def test_sorts_by_row_alpha_not_ticker(self):
+        from scripts.build_stock_library import _board_alpha_sort_key
+        ordered = sorted(self._buyable(),
+                         key=lambda x: _board_alpha_sort_key(x[0], self._ROWS))
+        tickers = [t for t, _, _ in ordered]
+        assert tickers == ["MS", "FHI", "SBUX", "CDNS", "ARES"], (
+            f"board must be alpha-desc, got {tickers} — a ticker-alphabetical "
+            "order means the key is reading a dict without an 'alpha' field")
+
+    def test_old_profile_read_reproduces_the_bug(self):
+        """Counterfactual: the pre-fix key (profile read) yields the broken order."""
+        buyable = self._buyable()
+        old_key = lambda x: (-(x[1].get("alpha") or 0.0), x[0])  # noqa: E731
+        tickers = [t for t, _, _ in sorted(buyable, key=old_key)]
+        assert tickers == sorted(self._ROWS), (
+            "fixture no longer reproduces the profile-read bug — keep profiles "
+            "prod-shaped (no 'alpha' key) so this class stays a real regression test")
+
+    def test_alpha_tie_breaks_by_ticker(self):
+        from scripts.build_stock_library import _board_alpha_sort_key
+        rows = {"NXPI": {"ticker": "NXPI", "alpha": -0.06},
+                "CVSA": {"ticker": "CVSA", "alpha": -0.06}}
+        ordered = sorted(rows, key=lambda t: _board_alpha_sort_key(t, rows))
+        assert ordered == ["CVSA", "NXPI"], "equal alphas must tie-break by ticker (#1494)"
+
+    def test_recovery_falls_back_to_composite_z(self):
+        from scripts.build_stock_library import _board_alpha_sort_key
+        rows = {"AAA": {"ticker": "AAA"}, "BBB": {"ticker": "BBB"}}  # no row alpha
+        profs = {"AAA": self._prod_profile(0.2), "BBB": self._prod_profile(0.9)}
+        ordered = sorted(rows, key=lambda t: _board_alpha_sort_key(t, rows, profs[t]))
+        assert ordered == ["BBB", "AAA"], (
+            "recovery-lane contract: composite_z desc when the row has no alpha")
+
+    def test_assembled_board_passes_invariant_d(self, tmp_path, monkeypatch):
+        """End-to-end: rows ordered by the real key pass the REAL checker's (d)."""
+        import json
+        from scripts.build_stock_library import _board_alpha_sort_key
+        import scripts.check_board_contradictions as cbc
+
+        lanes = {"ARES": "continuation", "MS": "continuation", "FHI": "continuation",
+                 "CDNS": "bottoming", "SBUX": "bottoming"}
+        ordered = sorted(self._ROWS.values(),
+                         key=lambda r: _board_alpha_sort_key(r["ticker"], self._ROWS))
+        buy = [{**r, "lane": lanes[r["ticker"]]} for r in ordered]
+        artifact = tmp_path / "us_standouts.json"
+        artifact.write_text(json.dumps({"buy": buy}))
+        # Point the checker's ROOT at tmp so invariant (e)'s repo artifacts don't leak in.
+        monkeypatch.setattr(cbc, "ROOT", tmp_path)
+        assert cbc._check(str(artifact)) == []
+
+        # Counterfactual: ticker-alphabetical assembly must trip invariant (d).
+        buy_alpha_order = sorted(buy, key=lambda r: r["ticker"])
+        artifact.write_text(json.dumps({"buy": buy_alpha_order}))
+        viols = cbc._check(str(artifact))
+        assert any(v.startswith("(d)") for v in viols), (
+            f"checker must flag the alphabetical board, got {viols}")
+
+
+# ---------------------------------------------------------------------------
 # 3. Arbiter: ELV-like row (state FRESH BUY, cross old, extended) gets downgraded
 # ---------------------------------------------------------------------------
 
