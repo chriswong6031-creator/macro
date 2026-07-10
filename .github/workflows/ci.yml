@@ -936,8 +936,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: install minimal deps
-        run: pip install pytest pyyaml
+      - name: install deps
+        # pandas/numpy: the metabolism v2 suite includes tests/test_metabolism.py, whose
+        # TestAdaptCortexAttention imports engine/neuralweb/query.py (numpy+pandas). This
+        # job is the ONLY CI runner of that suite — importorskip would silence the tests.
+        run: pip install pytest pandas numpy pyyaml
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         run: python3 scripts/check_capability_redline.py --selftest
       - name: capability-redline live scan (hard fail on secret values or value-capture)
