@@ -2122,6 +2122,41 @@ artifacts:
     external_consumers: []
     notes: "FTR W4. K-of-N confluence (6 legs) per US basket. Disclosure: sector-level standalone washout-to-turn printed NULL (Oracle P8 P-W1/S-W3); this construction is display-tier expected-NULL forward meter (FT-R9). authority.may_rank/gate/size/escalate=false."
 
+  # TS-U2 — mtf_upturn.v1 per-stock multi-timeframe upturn-confluence organ
+  stock-mtf-upturn:
+    path: site/stockdata/mtf_upturn.json
+    format: json
+    producer: engine/mtf_upturn.py
+    known_extra_writers: []
+    owner_program: turn-sensitivity
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: mtf_upturn.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_baskets.py
+    external_consumers: []
+    notes: >
+      TS-R3/TS-R4. Per-stock K-of-N multi-timeframe upturn confluence organ
+      (universe: US basket members + Mag7 + SPDR sectors + SPY/QQQ/SOXX/SMH).
+      Legs: d_macd (daily MACD cross <=5d), d3_confluence (house 3D MACD+StochRSI),
+      w_macd (weekly MACD cross <=3 bars; approaching=display-only), w2_macd (2W
+      epoch-anchored PIT-safe cross <=2 bars). States: UPTURN_CONFIRMED (K>=3 + htf
+      cross), UPTURN_WATCH (K>=2). Hysteresis: CONFIRMED holds while K>=2 for <=2
+      sessions. Context: monthly_phase (display-only, never counts toward K).
+      Registered as an expected-NULL forward meter. Prior sector-level standalone
+      washout-to-turn constructions printed NULL (Oracle P8 P-W1/S-W3;
+      DO_NOT_REBUILD §2 'Washout x turn'); this is a different construction
+      (per-stock granularity, MACD/StochRSI K-of-N, no washout seed) shipped
+      display-tier; grading unit is the catalyst-day cohort (DT-R14), pre-declared
+      ruler 21d excess-vs-SPY; promotion question earliest 2027.
+      authority.may_rank/gate/size/escalate=false.
+
   # FTR W9 — basket_turn.v1 cohort qledger claims ledger
   basket-turn-cohort-claims-log:
     path: data/basket_turn/cohort_claims_log.jsonl
