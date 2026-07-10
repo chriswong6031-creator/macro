@@ -1,6 +1,6 @@
 {
-  "date": "2026-07-08",
-  "generated_utc": "2026-07-10 01:35",
+  "date": "2026-07-09",
+  "generated_utc": "2026-07-10 03:03",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4114,7 +4114,7 @@
       "skew_pctile": 0.6170634920634921,
       "stock_bond_corr": 0.5687441514634146,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.3636076580680498,
+      "roro": 0.49023088006280074,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.7784150547841912,
       "news_sentiment": 0.09985840320587158,
@@ -4225,7 +4225,7 @@
   "fear_euphoria": {
     "fe_score": 79,
     "band": "Greed",
-    "roro": 0.3636076580680498,
+    "roro": 0.49023088006280074,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -4531,7 +4531,7 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4089.5,
+      "price": 4132.6,
       "above50": false,
       "above200": false,
       "pct_vs_50dma": -6.1,
@@ -4546,17 +4546,17 @@
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 73.37,
+      "price": 71.81,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -14.9,
-      "pct_vs_200dma": -1.4,
-      "rsi14": 43.0,
+      "pct_vs_50dma": -16.7,
+      "pct_vs_200dma": -3.5,
+      "rsi14": 40.0,
       "macd_pos": true,
-      "off_52w_high_pct": -35.0,
-      "season_this": "Jul: +0.9% avg, up 69% of years (n=26)",
-      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +0.9%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -12.5
+      "off_52w_high_pct": -36.4,
+      "season_this": "Jul: +0.8% avg, up 69% of years (n=26)",
+      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +0.8%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+      "mom_60d_pct": -14.4
     },
     {
       "ticker": "HG=F",
@@ -4564,9 +4564,9 @@
       "price": 6.15,
       "above50": false,
       "above200": true,
-      "pct_vs_50dma": -2.2,
-      "pct_vs_200dma": 7.8,
-      "rsi14": 47.0,
+      "pct_vs_50dma": -0.7,
+      "pct_vs_200dma": 9.4,
+      "rsi14": 51.0,
       "macd_pos": false,
       "off_52w_high_pct": -7.5,
       "season_this": "Jul: +1.4% avg, up 58% of years (n=26)",
