@@ -525,7 +525,8 @@ def _clean_title(title: str) -> str:
 
 
 def _importance(title: str, summary: str = "", theme: str = "macro", source_tier: str = "",
-                source_name: str = "", source: str = "") -> tuple[int, str, list[str]]:
+                source_name: str = "", source: str = "",
+                wire_important: bool = False) -> tuple[int, str, list[str]]:
     blob = f"{title} {summary}"
     low = blob.lower()
     score = 22
@@ -534,6 +535,12 @@ def _importance(title: str, summary: str = "", theme: str = "macro", source_tier
     if sw:
         score += sw
         reasons.append(source_reason)
+    # 金十/华尔街见闻 red-flag their own market-moving flashes (important==1 /
+    # score>=2) — a vendor editorial judgment worth a nudge, applied BEFORE the
+    # off-China damp so a flagged foreign flash still ranks as context, not lead.
+    if wire_important:
+        score += 8
+        reasons.append("wire-flagged high impact")
     hi = [k for k in HIGH_IMPACT_TERMS if _has_term(blob, low, k)]
     med = [k for k in MEDIUM_IMPACT_TERMS if _has_term(blob, low, k)]
     if hi:
@@ -565,7 +572,8 @@ def enrich_item(h: dict) -> dict:
     summary = h.get("summary", "")
     theme = h.get("theme") or classify_theme(f"{title} {summary}") or "macro"
     source_tier = h.get("source_tier") or ("official" if h.get("source") == "official" else "wire")
-    score, band, reasons = _importance(title, summary, theme, source_tier, h.get("source_name", ""), h.get("source", ""))
+    score, band, reasons = _importance(title, summary, theme, source_tier, h.get("source_name", ""), h.get("source", ""),
+                                       wire_important=bool(h.get("wire_important")))
     text = f"{title} {summary} {h.get('source_name','')}"
     ticker_hits = _ticker_hits(text)
     channels = _channels(text) or ([theme] if theme != "macro" else [])
@@ -711,7 +719,8 @@ def filter_flashes(items: list[dict], cfg: dict | None = None) -> list[dict]:
                      "source": source,
                      "source_name": a.get("source_name", "Eastmoney"),
                      "source_lang": a.get("source_lang", "zh" if source in {"eastmoney", "cn_news_page"} else "en"),
-                     "source_tier": a.get("source_tier", default_tier)})
+                     "source_tier": a.get("source_tier", default_tier),
+                     "wire_important": bool(a.get("wire_important"))})
         if enriched.get("importance_score", 0) < min_score:
             continue
         seen.add(key)
@@ -757,6 +766,9 @@ def _synthesis(headlines: list[dict]) -> dict:
 
 
 def _attach_translations(headlines: list[dict], cfg: dict | None = None) -> list[dict]:
+    """Bilingual spans for the kept feed: EN items gain title_zh/summary_zh, zh
+    items gain title_en/summary_en (both directions cached; either degrades to
+    the original text via the template's `or` fallback). Never raises."""
     if not headlines:
         return headlines
     try:
@@ -764,23 +776,30 @@ def _attach_translations(headlines: list[dict], cfg: dict | None = None) -> list
         titles = [h.get("title", "") for h in headlines]
         summaries = [h.get("summary", "") for h in headlines]
         title_zh = news_translate.translate_to_zh(titles)
+        title_en = news_translate.translate_to_en(titles)
         nonempty_summaries = [s for s in summaries if s]
         summary_zh = news_translate.translate_to_zh(nonempty_summaries)
+        summary_en = news_translate.translate_to_en(nonempty_summaries)
         si = 0
         out = []
-        for h, tz, s in zip(headlines, title_zh, summaries, strict=False):
+        for h, tz, te, s in zip(headlines, title_zh, title_en, summaries, strict=False):
             hh = dict(h)
             if tz:
                 hh["title_zh"] = tz
             elif hh.get("source_lang") == "zh":
                 hh["title_zh"] = hh.get("title", "")
+            if te and te != hh.get("title"):
+                hh["title_en"] = te
             if s:
                 sz = summary_zh[si] if si < len(summary_zh) else None
+                se = summary_en[si] if si < len(summary_en) else None
                 si += 1
                 if sz:
                     hh["summary_zh"] = sz
                 elif hh.get("source_lang") == "zh":
                     hh["summary_zh"] = s
+                if se and se != s:
+                    hh["summary_en"] = se
             out.append(hh)
         return out
     except Exception as e:  # noqa: BLE001
@@ -1174,7 +1193,8 @@ def _fetch_cn_wires(cfg: dict, today: date | None = None) -> tuple[list[dict], s
                       "source": "cn_wire",
                       "source_name": a.get("source_name", a.get("source", "CN wire")),
                       "source_tier": "china_native",
-                      "source_lang": a.get("source_lang", "zh")})
+                      "source_lang": a.get("source_lang", "zh"),
+                      "wire_important": bool(a.get("wire_important"))})
     return items, (None if items else "cn_wire_no_headlines")
 
 

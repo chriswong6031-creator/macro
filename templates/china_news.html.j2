@@ -88,9 +88,9 @@
       <div>
         <p class="eyebrow"><span class="live"></span>{{ t('China News Intelligence', '中国新闻情报流') }}<span>{{ asof or '' }}</span></p>
         {% if feature %}
-        <h1><a href="{{ feature.url }}" target="_blank" rel="noopener"><span class="l-en">{{ feature.title }}</span><span class="l-zh">{{ feature.title_zh or feature.title }}</span></a></h1>
+        <h1><a href="{{ feature.url }}" target="_blank" rel="noopener"><span class="l-en">{{ feature.title_en or feature.title }}</span><span class="l-zh">{{ feature.title_zh or feature.title }}</span></a></h1>
         {% if feature.summary %}
-        <p class="dek"><span class="l-en">{{ feature.summary }}</span><span class="l-zh">{{ feature.summary_zh or feature.summary }}</span></p>
+        <p class="dek"><span class="l-en">{{ feature.summary_en or feature.summary }}</span><span class="l-zh">{{ feature.summary_zh or feature.summary }}</span></p>
         {% else %}
         <p class="dek">{{ t('Chinese-native flash wires, financial media, official policy pages and global wire normalized into importance, channel and market-proxy tags.',
           '中文快讯线、财经媒体、官方政策页面与全球新闻线被统一为重要性、传导通道与市场代理标签。') }}</p>
@@ -157,7 +157,7 @@
       <div class="feed" id="feed">
         {% for h in heads[1:] %}
         <a class="card" href="{{ h.url or '#' }}" target="_blank" rel="noopener"
-           data-theme="{{ h.theme }}" data-importance="{{ h.importance }}" data-search="{{ (h.title ~ ' ' ~ (h.title_zh or '') ~ ' ' ~ h.summary ~ ' ' ~ (h.summary_zh or '') ~ ' ' ~ h.source_name ~ ' ' ~ h.channels|join(' ') ~ ' ' ~ h.tickers|join(' '))|lower }}">
+           data-theme="{{ h.theme }}" data-importance="{{ h.importance }}" data-search="{{ (h.title ~ ' ' ~ (h.title_en or '') ~ ' ' ~ (h.title_zh or '') ~ ' ' ~ h.summary ~ ' ' ~ (h.summary_en or '') ~ ' ' ~ (h.summary_zh or '') ~ ' ' ~ h.source_name ~ ' ' ~ h.channels|join(' ') ~ ' ' ~ h.tickers|join(' '))|lower }}">
           <div class="rank"><b>#{{ loop.index + 1 }}</b><span>{{ t('story', '条目') }}</span></div>
           <div class="body">
             <div class="top">
@@ -166,8 +166,8 @@
               <span class="chip"><b>{{ h.source_name or 'source' }}</b>{% if h.source_tier %} · {{ h.source_tier }}{% endif %}</span>
               <span class="chip imp-{{ h.importance }}"><b>{{ h.importance_score }}</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></h2>
-            {% if h.summary %}<p class="summary"><span class="l-en">{{ h.summary }}</span><span class="l-zh">{{ h.summary_zh or h.summary }}</span></p>{% endif %}
+            <h2 class="title"><span class="l-en">{{ h.title_en or h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></h2>
+            {% if h.summary %}<p class="summary"><span class="l-en">{{ h.summary_en or h.summary }}</span><span class="l-zh">{{ h.summary_zh or h.summary }}</span></p>{% endif %}
             <div class="intel">{% for c in h.channels[:5] %}<span class="chip">{{ c }}</span>{% endfor %}{% for tk in h.tickers[:7] %}<span class="chip tk">{{ tk }}</span>{% endfor %}{% for r in h.importance_reasons[:2] %}<span class="chip">{{ r }}</span>{% endfor %}</div>
           </div>
         </a>
