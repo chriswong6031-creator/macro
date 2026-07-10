@@ -1,0 +1,136 @@
+name: metabolism-build
+# Metabolism Phase V2-B — BUILD lane (write-serialization, R-V2-5).  INERT.
+#
+# For each ADJUDICATE-granted proposal in the docket:
+#   (a) CLAIMS its target_files → data/metabolism/claims.jsonl + regen ACTIVE_BUILD_MAP
+#   (b) SKIPS if target_files already claimed this cycle (collision → later cycle)
+#   (c) Creates a git worktree on metabolism/build-<lobe>-<cycle> off FRESH origin/main
+#   (d) Dispatches a headless Sonnet build session (OAuth key from dispatcher)
+#       — IN THIS PR the dispatch is a DOCUMENTED STUB: lane wiring ships here;
+#         the live LLM call fires only when armed (AUTONOMY_PAUSED=false + operator grant)
+#   (e) Opens a DRAFT PR (never merges)
+#   (f) if:always() GCs the worktree (metabolism_gc)
+#
+# KILL SWITCH (R-AUT-2):
+#   gh variable set AUTONOMY_PAUSED --body true    # pause (default-safe)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm (operator-only)
+# Absent OR anything other than the exact string 'false' → clean no-op.
+#
+# INERTNESS GUARANTEE:
+#   - Double-gated: `if: vars.AUTONOMY_PAUSED != 'true'` AND shell re-check.
+#   - Opens DRAFT PRs only — the whole job no-ops when paused.
+#   - NO scored-surface writes; any scored-surface change requires T2 metabolism_live flag.
+#   - NO autonomous merge (that lives exclusively in metabolism-merge.yml).
+
+on:
+  workflow_dispatch:
+    inputs:
+      cycle_id:
+        description: "Cycle id whose docket to build"
+        type: string
+        required: true
+      docket_branch:
+        description: "Branch carrying the docket (default: metabolism/propose-<cycle_id>)"
+        type: string
+        default: ""
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # commit claims.jsonl + worktree branches
+  pull-requests: write   # open DRAFT PRs
+
+concurrency:
+  group: metabolism-build-${{ github.event.inputs.cycle_id }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # KILL SWITCH — absent variable → treated as paused (default-safe).
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: BUILD (claim + worktree + dispatch-stub + draft PR + GC)
+        if: always()
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          CYCLE_ID: ${{ github.event.inputs.cycle_id }}
+          DOCKET_BRANCH_INPUT: ${{ github.event.inputs.docket_branch }}
+          # OAuth pool (capability_ids only — dispatcher reads env-var NAMES)
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          # Fallback single-key (V2-A compat)
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          # Double-gate: runner-side AUTONOMY_PAUSED re-check (defends against race).
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
+            exit 0
+          fi
+
+          BRANCH="${DOCKET_BRANCH_INPUT:-metabolism/propose-$CYCLE_ID}"
+          echo "cycle_id=$CYCLE_ID docket_branch=$BRANCH"
+
+          # Check out the docket branch
+          git fetch origin "$BRANCH" || echo "branch $BRANCH not on origin — using current ref"
+          git checkout "$BRANCH" 2>/dev/null || git checkout -B "$BRANCH" "origin/$BRANCH" 2>/dev/null || true
+
+          DOCKET="data/metabolism/dockets/$CYCLE_ID.json"
+          if [ ! -f "$DOCKET" ]; then
+            echo "docket $DOCKET not found on this ref — clean no-op."
+            exit 0
+          fi
+
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Run BUILD lane
+          python -m scripts.metabolism_build \
+            --cycle-id "$CYCLE_ID" \
+            --docket-file "$DOCKET"
+
+          # Commit any new claims.jsonl rows + ACTIVE_BUILD_MAP updates
+          git add data/metabolism/claims.jsonl docs/ACTIVE_BUILD_MAP.md 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "metabolism: BUILD claims + ACTIVE_BUILD_MAP $CYCLE_ID [Phase V2-B]" \
+                       -m "Loop-Authored: build run=${GITHUB_RUN_ID:-local}"
+            git pull --rebase --autostash origin "$BRANCH" 2>/dev/null || true
+            git push origin HEAD:"$BRANCH"
+          else
+            echo "no claim changes staged — no commit needed."
+          fi
+
+      - name: GC orphan worktrees (if:always)
+        if: always()
+        run: |
+          python -m scripts.metabolism_gc || echo "GC completed (any errors above are non-fatal)"

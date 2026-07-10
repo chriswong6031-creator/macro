@@ -35,7 +35,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mastermind-feedback-contract | 2 |
 | metabolism-phase-a | 5 |
 | metabolism-phase-v2a | 4 |
-| metabolism-phase-v2b | 1 |
+| metabolism-phase-v2b | 2 |
 | metabolism-phase-v2c | 4 |
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
@@ -76,13 +76,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 208 |
 | infrastructure | 87 |
 | scored | 4 |
-| shadow | 62 |
+| shadow | 63 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 345 |
+| git | 346 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -367,6 +367,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| metabolism-build-claims | `data/metabolism/claims.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
 | metabolism-key-ledger | `data/metabolism/key_ledger.jsonl` | jsonl | on-demand | infrastructure | 2 | 0 |
 
 ### metabolism-phase-v2c

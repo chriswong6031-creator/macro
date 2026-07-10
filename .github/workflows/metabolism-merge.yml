@@ -1,0 +1,127 @@
+name: metabolism-merge
+# Metabolism Phase V2-B — SERIALIZED MERGE LANE (R-V2-5).  INERT.
+#
+# Reads DRAFT PRs from the build lane that have BOTH:
+#   (i)  CI green
+#   (ii) A resolve_two_key AUTHORIZED grant in governance.jsonl
+#
+# Then:
+#   1. Marks the PR ready (un-drafts it)
+#   2. Merges via git pull --rebase --autostash + retry
+#      ONE AT A TIME (concurrency group below) so synapse.yml /
+#      ruling_graph.yml / dag.yml / ACTIVE_BUILD_MAP never merge-race.
+#
+# FENCE ENFORCEMENT (R-AUT-5):
+#   REFUSES to merge any PR that check_self_mod_fence would block.
+#   No --admin bypass. A loop PR touching the IMMUTABLE set is CI-blocked
+#   by check_self_mod_fence on the build PR itself — the merge lane adds
+#   a second, independent layer of refusal.
+#
+# KILL SWITCH (R-AUT-2):
+#   gh variable set AUTONOMY_PAUSED --body true    # pause (default-safe)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm (operator-only)
+# Absent OR anything other than 'false' → clean no-op; ZERO merges.
+#
+# INERTNESS GUARANTEE:
+#   - Double-gated: `if: vars.AUTONOMY_PAUSED != 'true'` AND shell re-check.
+#   - Actual merge fires ONLY when:
+#       AUTONOMY_PAUSED == 'false'  (operator arming)
+#       resolve_two_key returned authorized=True for the proposal
+#       CI is green on the build PR
+#       check_self_mod_fence passes on the build PR
+#   - A paused run returns zero merges (asserted by tests/test_metabolism_buildlane.py).
+#   - concurrency group: metabolism-merge-lane ensures SINGLE active run at a time
+#     so registries (synapse, ruling_graph, dag, ACTIVE_BUILD_MAP) never race.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cycle_id:
+        description: "Cycle id whose build PRs to merge"
+        type: string
+        required: true
+      docket_branch:
+        description: "Branch carrying the docket (default: metabolism/propose-<cycle_id>)"
+        type: string
+        default: ""
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # push merged commits
+  pull-requests: write   # mark PRs ready + merge them
+
+# ── SINGLE CONCURRENCY GROUP ────────────────────────────────────────────────
+# This is the mechanical registry-race-safety guarantee from R-V2-5:
+# only ONE metabolism-merge-lane run is active at any time.
+# cancel-in-progress: false ensures a queued merge waits rather than being dropped.
+concurrency:
+  group: metabolism-merge-lane
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    # KILL SWITCH — absent variable → treated as paused (default-safe).
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: MERGE (two-key-gated + fence-checked + rebase-autostash)
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          CYCLE_ID: ${{ github.event.inputs.cycle_id }}
+          DOCKET_BRANCH_INPUT: ${{ github.event.inputs.docket_branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          # Double-gate: runner-side AUTONOMY_PAUSED re-check.
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op. Zero merges."
+            exit 0
+          fi
+
+          BRANCH="${DOCKET_BRANCH_INPUT:-metabolism/propose-$CYCLE_ID}"
+          echo "cycle_id=$CYCLE_ID docket_branch=$BRANCH"
+
+          # Check out the docket branch to read the adjudication
+          git fetch origin "$BRANCH" || echo "branch not on origin — using current ref"
+          git checkout "$BRANCH" 2>/dev/null || git checkout -B "$BRANCH" "origin/$BRANCH" 2>/dev/null || true
+
+          DOCKET="data/metabolism/dockets/$CYCLE_ID.json"
+          if [ ! -f "$DOCKET" ]; then
+            echo "docket $DOCKET not found — clean no-op."
+            exit 0
+          fi
+
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Run MERGE lane — single-threaded by the concurrency group above
+          python -m scripts.metabolism_merge \
+            --cycle-id "$CYCLE_ID" \
+            --docket-file "$DOCKET"
