@@ -1580,6 +1580,20 @@ divergences:
       exits 0 even without a parquet — safe to wire immediately.
     evidence: "collectors/clinicaltrials_themes.py:_STUDIES_URL VERIFIED LIVE 2026-07-09"
 
+  - lanes: [collect]
+    differs: >
+      engine.theme_options_witness is declared in dag.yml collect lane
+      (TIL W11 PR-W11) but is NOT yet present in the live
+      .github/workflows/daily.yml collect job.
+    reason: >
+      New collect-lane step (TIL W11 options-tape crowding-hazard witness).
+      Reads the runner-local ThetaData EOD store (THETADATA_STORE / theta-ops-wt
+      path); emits full honest-null artifact + exit 0 when the store is absent,
+      so wiring is safe anywhere the box lacks the store. daily.yml wiring
+      follows the same deferred pattern as W7/W8/W9/W10: invoke standalone
+      first; workflow PR closes this divergence.
+    evidence: "engine/theme_options_witness.py:_theta_store resolution + store-absent null-path tests"
+
 # ---------------------------------------------------------------------------
 # MODULES — 25-module IO table from the W5a scout
 # (reads, writes, impure, needs_secrets, event_driven flags)
