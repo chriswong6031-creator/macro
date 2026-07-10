@@ -172,3 +172,40 @@ Kill rule: challenger MAE >= naive MAE in BOTH full window AND 2021+ -> benchmar
 expanding_mean benchmark added to era tables above (REPORTED, non-binding per MRI-R28b).
 V3_factor verdicts stand as frozen. All §12 new tracks use the STRONGEST naive (min of naive_prior, trailing3m, expanding_mean) as kill benchmark.
 See 'Vs Strongest Naive' subsections per target above for exact margins.
+
+---
+
+## MRI-R30 Recalibration (2026-07-10) — Vol-Scaled Residual Quantile Bands
+
+**Spec:** research/release_forecast/PREREG_INTERVAL_RECAL_V1.md (frozen before run)
+**Points unchanged** — only the bands move. Shadow-eligible status (beat naive) unchanged.
+
+### v3_factor cpi_headline — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 292 | 75.8% | 78.0% | 42.5% | 48.1% | 0.426327 | 0.425350 |
+| 2021+ | 64 | 81.2% | 75.0% | 56.2% | 51.6% | 0.382317 | 0.390680 |
+| 2015+ | 136 | 85.3% | 79.4% | 48.5% | 46.3% | 0.363663 | 0.367929 |
+
+**Verdict:** v3_cpi_headline was already in [70%,95%]. 2021+ coverage decreases slightly (81.2%→75.0%) but remains in gate. No coverage falsifier was triggered for this target.
+
+### v3_factor cpi_core — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 292 | 76.1% | 79.1% | 48.5% | 51.5% | 0.171613 | 0.168670 |
+| 2021+ | 64 | **64.1%** | **81.2%** | 40.6% | 51.6% | 0.246815 | 0.233256 |
+| 2015+ | 136 | 69.1% | 80.9% | 43.4% | 51.5% | 0.207149 | 0.201504 |
+
+**Verdict:** v3_cpi_core 2021+ coverage improves from **64.1%** to **81.2%** — same pattern as champion cpi_core (the inflation-regime vol expansion is the shared driver). Pinball improves. Shadow-eligible status unchanged.
+
+### v3_factor nfp — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFT | p25-p75 BEFORE | p25-p75 AFT | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|-------------|----------------|-------------|----------------|---------------|
+| Full | 293 | 71.8% | 80.7% | 46.5% | 54.3% | 955.269564 | 1085.473700 |
+| 2021+ | 65 | 61.5% | 86.2% | 33.9% | 64.6% | 509.396386 | 1202.454538 |
+| 2015+ | 137 | 69.3% | 78.8% | 46.0% | 51.8% | 1544.286236 | 1800.091055 |
+
+**Verdict:** v3_nfp coverage improves (2021+: 61.5%→86.2%). However, pinball worsens substantially for 2021+ (bands widen significantly). This reflects the NFP-specific dynamics: the 2020 COVID outliers inflate the trailing sigma, causing persistent over-widening. The vol-scaling spec is uniform per MRI-R30 and cannot be tuned per-target. Note: champion NFP shows the same pinball pattern. Shadow-eligible status unchanged (beat naive on points — bands are separate from the MAE gate).

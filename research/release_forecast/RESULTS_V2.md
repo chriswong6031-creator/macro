@@ -130,3 +130,37 @@ Key question: does the shelter leg fix cpi_core's 2021+ loss to naive (V1: MAE m
 expanding_mean benchmark added to era tables above (REPORTED, non-binding per MRI-R28b).
 V2 verdicts stand as frozen. All §12 new tracks use the STRONGEST naive as kill benchmark.
 See RESULTS_V1.md §12 Restatement for per-target vs-strongest-naive detail.
+
+---
+
+## MRI-R30 Recalibration (2026-07-10) — Vol-Scaled Residual Quantile Bands
+
+**Spec:** research/release_forecast/PREREG_INTERVAL_RECAL_V1.md (frozen before run)
+**Implementation:** `engine/release_forecast._compute_quantiles_volscaled` (W=24, MIN_SIGMA_OBS=12)
+**Points unchanged** — only the bands move (byte-identity on point estimates verified by test suite).
+
+Coverage falsifier that triggered recalibration (§6 gate [70%,95%]):
+- cpi_core 2021+: **64.1%** (BEFORE) — below 70%
+- pce_core 2021+: **67.7%** (BEFORE) — below 70%
+
+### cpi_headline — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 292 | 71.3% | 76.9% | 39.6% | 46.3% | 0.294470 | 0.293403 |
+| 2021+ | 64 | 79.7% | 73.4% | 42.2% | 42.2% | 0.298165 | 0.299316 |
+| 2015+ | 136 | 72.1% | 77.2% | 39.0% | 45.6% | 0.316736 | 0.314082 |
+
+**Verdict:** Coverage remains in [70%,95%] before and after. 2021+ coverage decreases slightly (79.7%→73.4%) but stays within gate. Full-window coverage improves (71.3%→76.9%). Pinball marginally improves on full window.
+
+### cpi_core — BEFORE vs AFTER
+
+| Era | n | p10-p90 BEFORE | p10-p90 AFTER | p25-p75 BEFORE | p25-p75 AFTER | Pinball BEFORE | Pinball AFTER |
+|-----|---|----------------|---------------|----------------|---------------|----------------|---------------|
+| Full | 292 | 77.2% | 81.3% | 48.9% | 50.4% | 0.171620 | 0.168916 |
+| 2021+ | 64 | **64.1%** | **81.2%** | 37.5% | 56.2% | 0.261833 | 0.250759 |
+| 2015+ | 136 | 67.7% | 83.1% | 41.9% | 52.9% | 0.216444 | 0.211488 |
+
+**Verdict (PRIMARY — MRI-R30 trigger):** cpi_core 2021+ coverage moves from **64.1%** (below [70%,95%] gate) to **81.2%** (within gate). Pinball improves on all eras. Vol-scaling successfully adapts to the elevated inflation-regime residual dispersion. Forward gate (§6): if coverage exits [70%,95%] after 12 more prints, quantile claims drop from UI.
+
+Note: cpi_core was the primary falsifier target. Before recalibration, the static bands underestimated the 2021+ regime's residual dispersion. Vol-scaling recognizes the widening uncertainty and expands bands appropriately.

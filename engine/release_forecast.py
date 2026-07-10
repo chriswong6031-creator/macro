@@ -506,18 +506,125 @@ def _walk_forward(
     return results
 
 
-def _compute_quantiles(residuals: np.ndarray, point: float, min_obs: int = MIN_QUANTILE_OBS) -> dict:
-    """Return p10/p25/p50/p75/p90 intervals centered on point from residual history."""
+def _compute_quantiles_volscaled(
+    residuals: np.ndarray,
+    point: float,
+    min_obs: int = MIN_QUANTILE_OBS,
+    vol_window: int = 24,
+    min_sigma_obs: int = 12,
+) -> dict:
+    """Vol-scaled residual quantile bands (MRI-R30, PREREG_INTERVAL_RECAL_V1.md).
+
+    Residuals are standardized by a trailing realized-error sigma_t at each walk-forward
+    step, quantiles taken on standardized residuals, then re-scaled by sigma_now.
+    Points are completely unchanged — only the bands move.
+
+    Parameters
+    ----------
+    residuals : np.ndarray
+        Walk-forward residuals in chronological order (actual - predicted).
+        Each element residuals[i] corresponds to walk-forward step i.
+    point : float
+        The model's point prediction (unchanged by this function).
+    min_obs : int
+        Minimum standardized residuals required to compute quantiles.
+        Below this threshold, falls back to full-history unscaled bands.
+    vol_window : int
+        Rolling window W for trailing sigma estimation. Frozen at 24 (spec).
+    min_sigma_obs : int
+        Minimum trailing residuals required to estimate sigma_t for step i.
+        If fewer are available, that step is excluded from standardized accumulation.
+
+    Returns
+    -------
+    dict with keys p10, p25, p50, p75, p90 (or all None if insufficient data).
+
+    Fallback
+    --------
+    Returns full-history unscaled quantiles (pre-recal behavior) when:
+      - Not enough standardized residuals (< min_obs), or
+      - sigma_now is 0 or cannot be computed (degenerate).
+    """
+    n = len(residuals)
+    if n < min_obs:
+        return {"p10": None, "p25": None, "p50": None, "p75": None, "p90": None}
+
+    # Minimum sigma threshold: below this, sigma is treated as degenerate and the
+    # step is excluded (or falls back for sigma_now). Using a small epsilon rather
+    # than exact-zero to handle floating-point precision (e.g. np.std of constant
+    # array gives ~7e-18 not exactly 0 due to ddof=1 rounding).
+    _SIGMA_EPS = 1e-10
+
+    # Build standardized residuals: each r_std_i = r_i / sigma_i
+    # sigma_i = std of trailing residuals BEFORE step i (no lookahead)
+    r_std_list: list[float] = []
+    for i in range(n):
+        trailing = residuals[max(0, i - vol_window): i]
+        if len(trailing) < min_sigma_obs:
+            # Not enough history to estimate sigma at this step — skip
+            continue
+        sigma_i = float(np.std(trailing, ddof=1))
+        if sigma_i < _SIGMA_EPS:
+            # Degenerate (constant or near-constant history): skip this step
+            continue
+        r_std_list.append(float(residuals[i]) / sigma_i)
+
+    r_std = np.array(r_std_list)
+
+    # Compute sigma_now from the last vol_window residuals
+    trailing_now = residuals[max(0, n - vol_window):]
+    if len(trailing_now) < min_sigma_obs:
+        # Not enough trailing residuals for sigma_now — fall back
+        return _compute_quantiles_unscaled(residuals, point, min_obs)
+    sigma_now = float(np.std(trailing_now, ddof=1))
+    if sigma_now < _SIGMA_EPS:
+        # Degenerate sigma_now (constant recent history) — fall back to unscaled
+        return _compute_quantiles_unscaled(residuals, point, min_obs)
+
+    if len(r_std) < min_obs:
+        # Not enough standardized residuals — fall back
+        return _compute_quantiles_unscaled(residuals, point, min_obs)
+
+    qs = np.quantile(r_std, [0.10, 0.25, 0.50, 0.75, 0.90])
+    return {
+        "p10": round(point + float(qs[0]) * sigma_now, 4),
+        "p25": round(point + float(qs[1]) * sigma_now, 4),
+        "p50": round(point + float(qs[2]) * sigma_now, 4),
+        "p75": round(point + float(qs[3]) * sigma_now, 4),
+        "p90": round(point + float(qs[4]) * sigma_now, 4),
+    }
+
+
+def _compute_quantiles_unscaled(
+    residuals: np.ndarray,
+    point: float,
+    min_obs: int = MIN_QUANTILE_OBS,
+) -> dict:
+    """Full-history unscaled quantile bands — pre-recal fallback behavior.
+
+    Preserved for backward compatibility and as the explicit fallback path when
+    vol-scaled bands cannot be computed (insufficient history, sigma_now == 0).
+    """
     if len(residuals) < min_obs:
         return {"p10": None, "p25": None, "p50": None, "p75": None, "p90": None}
     qs = np.quantile(residuals, [0.10, 0.25, 0.50, 0.75, 0.90])
     return {
-        "p10": round(point + qs[0], 4),
-        "p25": round(point + qs[1], 4),
-        "p50": round(point + qs[2], 4),
-        "p75": round(point + qs[3], 4),
-        "p90": round(point + qs[4], 4),
+        "p10": round(point + float(qs[0]), 4),
+        "p25": round(point + float(qs[1]), 4),
+        "p50": round(point + float(qs[2]), 4),
+        "p75": round(point + float(qs[3]), 4),
+        "p90": round(point + float(qs[4]), 4),
     }
+
+
+def _compute_quantiles(residuals: np.ndarray, point: float, min_obs: int = MIN_QUANTILE_OBS) -> dict:
+    """Return p10/p25/p50/p75/p90 intervals centered on point from residual history.
+
+    MRI-R30: delegates to _compute_quantiles_volscaled (vol-scaled residual quantiles).
+    The old unscaled behavior is preserved in _compute_quantiles_unscaled for fallback
+    and backward-compatibility in tests.
+    """
+    return _compute_quantiles_volscaled(residuals, point, min_obs=min_obs)
 
 
 # ---------------------------------------------------------------------------

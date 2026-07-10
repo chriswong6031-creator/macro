@@ -822,17 +822,13 @@ def _walk_forward_mf(
 
 
 def _compute_quantiles_mf(residuals: np.ndarray, point: float, min_obs: int = MIN_QUANTILE_OBS) -> dict:
-    """Return p10/p25/p50/p75/p90 from residual history centered on point."""
-    if len(residuals) < min_obs:
-        return {"p10": None, "p25": None, "p50": None, "p75": None, "p90": None}
-    qs = np.quantile(residuals, [0.10, 0.25, 0.50, 0.75, 0.90])
-    return {
-        "p10": round(point + float(qs[0]), 4),
-        "p25": round(point + float(qs[1]), 4),
-        "p50": round(point + float(qs[2]), 4),
-        "p75": round(point + float(qs[3]), 4),
-        "p90": round(point + float(qs[4]), 4),
-    }
+    """Return p10/p25/p50/p75/p90 from residual history centered on point.
+
+    MRI-R30: delegates to the shared vol-scaled implementation in engine.release_forecast.
+    Uniform application across all four engines (PREREG_INTERVAL_RECAL_V1.md).
+    """
+    from engine.release_forecast import _compute_quantiles_volscaled
+    return _compute_quantiles_volscaled(residuals, point, min_obs=min_obs)
 
 
 def _wilson(k: int, n: int, z: float = 1.96) -> list[float] | None:
