@@ -362,17 +362,32 @@ function r2Url(path) {
 function computeLegs(leader, quote, pulse, flow) {
   var ticker = leader.ticker;
 
-  // L1: washout_recent — from nightly base (bb_lower_reclaim or drawdown field)
-  // The nightly base currently doesn't carry bb_lower_reclaim days-ago directly,
-  // but entry_signal.status carries context; use vol_squeeze coiled as proxy for now.
-  // A richer L1 will accrue as intraday_flow/ledger builds.
-  var L1 = false;
-  if (leader.entry_signal && leader.entry_signal.status) {
-    var st = (leader.entry_signal.status || '').toLowerCase();
-    L1 = st.indexOf('washout') >= 0 || st.indexOf('reclaim') >= 0 ||
-         st.indexOf('bounce') >= 0 || st.indexOf('buy') >= 0;
+  // L1: washout_recent — engine def: bb_lower_reclaim_days <= washout_lookback
+  //     OR (drawdown_21d_pct <= -12% AND recovery_begun).
+  // base.json carries bb_lower_reclaim_days / drawdown_21d_pct / recovery_begun when
+  // the stockdata reader surfaces them; when absent, L1 is null (not counted).
+  var L1 = null;
+  // WASHOUT_LB comes from BASE_DATA.washout_lookback (nightly config) or defaults to 10.
+  if (leader.bb_lower_reclaim_days != null) {
+    L1 = leader.bb_lower_reclaim_days <= WASHOUT_LB;
+  } else if (leader.drawdown_21d_pct != null && leader.recovery_begun != null) {
+    L1 = leader.drawdown_21d_pct <= -0.12 && leader.recovery_begun;
   }
-  if (leader.vol_squeeze && leader.vol_squeeze.coiled) L1 = true;
+  // Fallback proxy when structured fields absent: entry_signal.status keyword or
+  // vol_squeeze.coiled — clearly marked as a proxy so it accrues as confluence input.
+  if (L1 === null) {
+    var hasWashoutProxy = false;
+    if (leader.entry_signal && leader.entry_signal.status) {
+      var st = (leader.entry_signal.status || '').toLowerCase();
+      hasWashoutProxy = st.indexOf('washout') >= 0 || st.indexOf('reclaim') >= 0 ||
+                        st.indexOf('bounce') >= 0 || st.indexOf('buy') >= 0;
+    }
+    if (!hasWashoutProxy && leader.vol_squeeze && leader.vol_squeeze.coiled) {
+      hasWashoutProxy = true;
+    }
+    // Only set to true on proxy — never to false (absent ≠ false per engine semantics).
+    if (hasWashoutProxy) L1 = true;
+  }
 
   // L2: reclaim — price > VWAP AND price > prevClose
   var L2 = false;
@@ -396,26 +411,33 @@ function computeLegs(leader, quote, pulse, flow) {
     L5 = ncpPos && flowDurOk;
   }
 
-  // L6: upturn_organ — mtf_upturn K from nightly base
+  // L6: upturn_organ — qualifying mtf_upturn states (UPTURN_WATCH or UPTURN_CONFIRMED).
+  // Mirror engine._UPTURN_QUALIFYING; use state string as primary key.
+  // K >= 2 matches engine.mtf_upturn.STATE_WATCH_K (=2). UPTURN_MOMENTUM is not a
+  // valid mtf_upturn state and is excluded here to match the engine qualifying set.
   var L6 = false;
-  if (leader.mtf_upturn_K != null) {
-    L6 = leader.mtf_upturn_K >= 3;  // UPTURN_WATCH threshold from mtf_upturn
-  } else if (leader.mtf_upturn_state) {
+  if (leader.mtf_upturn_state) {
     var mst = (leader.mtf_upturn_state || '').toUpperCase();
-    L6 = mst === 'UPTURN_WATCH' || mst === 'UPTURN_CONFIRMED' || mst === 'UPTURN_MOMENTUM';
+    L6 = mst === 'UPTURN_WATCH' || mst === 'UPTURN_CONFIRMED';
+  } else if (leader.mtf_upturn_K != null) {
+    L6 = leader.mtf_upturn_K >= 2;  // STATE_WATCH_K = 2 in engine/mtf_upturn.py
   }
 
-  // L7: leader_quality — NOT failed_breakout_trap
-  var L7 = leader.failed_breakout_trap !== true;
+  // L7: leader_quality — NOT failed_breakout_trap.
+  // Mirror engine semantics: null/absent = data unknown → absent (not counted in K).
+  // Only true when field is explicitly false (i.e. confirmed NOT a trap).
+  var L7 = leader.failed_breakout_trap === false ? true : null;
 
   var legs = [L1, L2, L3, L4, L5, L6, L7];
-  var K = legs.filter(Boolean).length;
+  // Mirror engine K semantics: count only true legs; null = absent (not counted).
+  var K = legs.filter(function(v){ return v === true; }).length;
   return { legs: legs, K: K };
 }
 
 // ── RVOL computation ──────────────────────────────────────────────────────
 function computeRvol(leader, quote) {
-  if (!quote || !quote.day_volume || !leader.adv20_shares) return null;
+  // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
+  if (!quote || !quote.vol || !leader.adv20_shares) return null;
   var curve = leader.vol_share_curve;
   if (!curve || !curve.length) return null;
 
@@ -433,20 +455,21 @@ function computeRvol(leader, quote) {
   var total = mkt_close - mkt_open;
   var frac = Math.min(elapsed / total, 1.0);
 
-  // Cumulative vol share up to this point in the curve
+  // vol_share_curve is CUMULATIVE (each entry = cumulative fraction through end of hour i).
+  // Read the single value at the current index — do NOT sum.
   var n = curve.length;
   var cumIdx = Math.min(Math.floor(frac * n), n - 1);
-  var cumShare = 0;
-  for (var i = 0; i <= cumIdx; i++) cumShare += (curve[i] || 0);
+  var cumShare = curve[cumIdx] || 0;
 
   if (cumShare <= 0) return null;
-  return quote.day_volume / (leader.adv20_shares * cumShare);
+  return quote.vol / (leader.adv20_shares * cumShare);
 }
 
 // ── Day range position computation ────────────────────────────────────────
 function computeRangePos(quote) {
   if (!quote) return null;
-  var lo = quote.day_low, hi = quote.day_high, px = quote.price;
+  // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
+  var lo = quote.lo, hi = quote.hi, px = quote.price;
   if (lo == null || hi == null || px == null) return null;
   var rng = hi - lo;
   if (rng <= 0) return null;
@@ -598,8 +621,11 @@ function buildRow(leader) {
     return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNames[i]+'">'
       +(on?'✓':'✗')+' '+legNames[i]+'</span>';
   }).join('');
+  // Use English leg names in title= attribute even for ZH chips — localized title=
+  // would render in the wrong language regardless of the active l-en/l-zh toggle
+  // (static check_title_i18n guard; i18n intent is the dual-span label itself).
   var legHtmlZh = legs.map(function(on, i){
-    return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNamesZh[i]+'">'
+    return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNames[i]+'">'
       +(on?'✓':'✗')+' '+legNamesZh[i]+'</span>';
   }).join('');
   var kCell = '<td><span class="k-label '+kColor+'">'+K+'/7</span>'
@@ -611,7 +637,7 @@ function buildRow(leader) {
   // Risk ladder cell
   var stopPx = entry.stop != null ? fmtDollar(entry.stop) : null;
   var vwapPx = pulse && pulse.vwap != null ? fmtDollar(pulse.vwap) : null;
-  var loPx = quote && quote.day_low != null ? fmtDollar(quote.day_low) : null;
+  var loPx = quote && quote.lo != null ? fmtDollar(quote.lo) : null;
   var atrPct = entry.atr_pct != null ? entry.atr_pct.toFixed(2) + '%' : (leader.atr14_pct != null ? (leader.atr14_pct * 100).toFixed(2) + '%' : null);
   var riskParts = [];
   if (stopPx) riskParts.push('<span class="level"><span class="l-en">stop</span><span class="l-zh">止损</span>: <span class="neg">'+stopPx+'</span></span>');

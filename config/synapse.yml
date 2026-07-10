@@ -10579,7 +10579,7 @@ artifacts:
     known_extra_writers: []
     owner_program: intraday-flow-tracker
     cadence: intraday
-    storage: r2
+    storage: git  # committed via git add -f site/live/ in intraday-fastpath.yml; R2 mirror optional
     asof_field: as_of
     freshness_sla_hours: 1
     schema: flow_pulse.v1

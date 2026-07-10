@@ -362,14 +362,17 @@ def _adv20_and_curve(ticker: str, data_root: Path) -> tuple[float | None, list[f
     if df.empty:
         return None, None
 
-    df["_date"] = df[ts_col].dt.date
+    # Convert to ET before extracting calendar date — bars are tz-aware ET epochs.
+    # date.today() uses the runner locale; pd.Timestamp.now(tz='America/New_York').date()
+    # is always ET regardless of runner timezone (fixes the UTC/locale date-boundary mismatch).
+    df["_date"] = df[ts_col].dt.tz_convert("America/New_York").dt.date
     unique_dates = sorted(df["_date"].unique())
 
     if len(unique_dates) < 2:
         return None, None
 
     # Use up to trailing 20 sessions (excluding today) for the baseline.
-    today = date.today()
+    today = pd.Timestamp.now(tz="America/New_York").date()
     hist_dates = [d for d in unique_dates if d < today][-20:]
     if len(hist_dates) < 2:
         # Include today as well when not enough history.
@@ -397,6 +400,9 @@ def _adv20_and_curve(ticker: str, data_root: Path) -> tuple[float | None, list[f
             daily_totals.append(total_vol)
 
     adv20 = float(np.mean(daily_totals)) if len(daily_totals) >= 2 else None
+    # Enforce minimum ADV floor: skip vol-share curve for illiquid names (§3 design).
+    if adv20 is not None and adv20 < _MIN_ADV_SHARES:
+        return adv20, None
     curve = vol_share_curve(sessions_bars) if len(sessions_bars) >= 2 else None
     return adv20, curve
 
@@ -454,8 +460,9 @@ def _today_bars(ticker: str, data_root: Path) -> list[dict]:
         return []
     df[ts_col] = pd.to_datetime(df[ts_col], errors="coerce", utc=True)
     df = df.dropna(subset=[ts_col]).sort_values(ts_col)
-    today = date.today()
-    day_df = df[df[ts_col].dt.date == today]
+    # Convert to ET before comparing dates (design: bars are tz-aware ET epochs).
+    today_et = pd.Timestamp.now(tz="America/New_York").date()
+    day_df = df[df[ts_col].dt.tz_convert("America/New_York").dt.date == today_et]
     rows = []
     for _, row in day_df.iterrows():
         rows.append({
@@ -539,6 +546,14 @@ def _extract_stockdata_context(sd: dict) -> dict:
     # prevClose — from tech.price.
     tech = sd.get("tech") or {}
     ctx["prev_close"] = tech.get("price")
+
+    # L1 washout inputs — surfaced when stockdata carries them (graceful null otherwise).
+    # bb_lower_reclaim_days: sessions since last BB lower-band reclaim event.
+    # drawdown_21d_pct: 21-session max drawdown (negative float, e.g. -0.15).
+    # recovery_begun: bool, True when close has recovered above the drawdown low.
+    ctx["bb_lower_reclaim_days"] = sd.get("bb_lower_reclaim_days")
+    ctx["drawdown_21d_pct"] = sd.get("drawdown_21d_pct")
+    ctx["recovery_begun"] = sd.get("recovery_begun")
 
     return ctx
 
@@ -868,6 +883,25 @@ def _advance_ledger(
 
 # ── fastpath mode ─────────────────────────────────────────────────────────────
 
+def _load_base_json_index(site_root: Path) -> dict[str, dict]:
+    """Load site/flowtracker/base.json and return a dict keyed by ticker.
+
+    Used by the fastpath to access per-ticker ADV20 and vol_share_curve for the
+    full L4 metric definition (volume ≥ time-of-day baseline gate, §2.2/§2.5).
+    Returns an empty dict when the file is absent (graceful; first-run or off-hours).
+    """
+    p = site_root / "flowtracker" / "base.json"
+    if not p.exists():
+        return {}
+    try:
+        d = json.loads(p.read_text())
+        leaders = d.get("leaders") or []
+        return {r["ticker"]: r for r in leaders if r.get("ticker")}
+    except Exception as e:  # noqa: BLE001
+        log.debug("_run_fastpath: base.json load failed: %s", e)
+        return {}
+
+
 def _run_fastpath(cfg: dict, data_root: Path, site_root: Path) -> None:
     """Fastpath mode: compute live pulse from today's intraday bars.
 
@@ -886,6 +920,11 @@ def _run_fastpath(cfg: dict, data_root: Path, site_root: Path) -> None:
     live_dir = site_root / "live"
     live_dir.mkdir(parents=True, exist_ok=True)
 
+    # Load nightly base.json for per-ticker vol_share_curve and adv20_shares.
+    # These are needed for the full L4 volume_durability definition (upper half AND
+    # volume ≥ time-of-day baseline — design §2.2/§2.5 + engine docstring §4).
+    base_index = _load_base_json_index(site_root)
+
     now_utc = datetime.now(timezone.utc)
     tickers_out: list[dict] = []
 
@@ -900,9 +939,16 @@ def _run_fastpath(cfg: dict, data_root: Path, site_root: Path) -> None:
                 })
                 continue
 
+            # Retrieve vol_share_curve and adv20_shares from nightly base for L4.
+            base_rec = base_index.get(ticker) or {}
+            baseline_curve = base_rec.get("vol_share_curve")
+            adv20_shares = base_rec.get("adv20_shares")
+
             vwap = session_vwap(bars)
             cum_vol = sum(b.get("volume") or 0 for b in bars)
-            vol_dur = volume_durability(bars, baseline_curve=None)
+            vol_dur = volume_durability(
+                bars, baseline_curve=baseline_curve, adv20_shares=adv20_shares
+            )
             hl = higher_lows(bars)
             tickers_out.append({
                 "ticker": ticker,
