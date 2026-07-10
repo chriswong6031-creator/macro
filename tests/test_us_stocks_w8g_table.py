@@ -367,8 +367,9 @@ class TestUSStocktableVocabularyCompleteness:
         for row in self._all_rows(standouts):
             sec = row.get("sector")
             # Ignore spurious data-quality values: real GICS sector names start with
-            # an uppercase letter (e.g. 'history' is a known bad row in the artifact —
-            # issue flagged to us_standouts producer; do not add to the SECZH map).
+            # an uppercase letter (a 'history' file-stem leak shipped once; the
+            # producer now drops such rows — build_stock_library
+            # _drop_spurious_sector_rows — do not add junk keys to the SECZH map).
             if sec and sec[0].isupper():
                 artifact_sectors.add(sec)
 
