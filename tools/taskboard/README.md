@@ -1,5 +1,10 @@
 # Slate — personal task boards + Brain
 
+> **Moved:** the canonical home is now https://github.com/chriswong6031-creator/slate,
+> which deploys to **https://slate.greydeercapital.com** (origin `/opt/slate` on the VPS;
+> Caddy block in `app/deploy/Caddyfile` here). This copy is the frozen originating
+> snapshot — make app changes in the slate repo.
+
 A single-user, local-first, responsive web app: Trello-style task boards plus a
 "Brain" for writing down learned truths. No accounts, no network, no teams:
 everything lives in your browser (state in localStorage, attachments in IndexedDB).

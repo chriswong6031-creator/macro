@@ -203,6 +203,47 @@ maltese.greydeercapital.com {
 	tls internal
 }
 
+# ---- slate.greydeercapital.com — Slate personal task boards + Brain (static PWA) ----
+# Same greydeercapital.com Cloudflare zone, proxied to this origin (A record
+# slate -> 146.190.142.17, proxied, zone SSL mode "Full"). Files rsync'd to
+# /opt/slate by the slate repo's deploy tooling
+# (github.com/chriswong6031-creator/slate — push-to-main workflow or
+# deploy/deploy.sh); this block only serves them. Fully client-side app
+# (localStorage/IndexedDB in the visitor's browser) — the origin holds no user
+# data, so no auth here; noindex keeps it out of search. Like the other
+# CF-fronted hosts it uses `tls internal`; without this SNI block the
+# Cloudflare<->origin handshake fails with HTTP 525.
+slate.greydeercapital.com {
+	root * /opt/slate
+	encode zstd gzip
+	file_server {
+		index index.html
+	}
+
+	# The service worker script must revalidate on every update check so app
+	# updates roll immediately (its precache VERSION is content-hashed).
+	@sw path /sw.js
+	header @sw Cache-Control "no-cache"
+	# file_server has no MIME mapping for .webmanifest; combined with nosniff
+	# an untyped manifest breaks PWA installs (same lesson as the
+	# greydeercapital.com site.webmanifest bug, 2026-07-02).
+	@webmanifest path /manifest.webmanifest
+	header @webmanifest Content-Type "application/manifest+json"
+	@html path *.html /
+	header @html Cache-Control "public, max-age=60, must-revalidate"
+	@static path /css/* /js/* /icons/*
+	header @static Cache-Control "public, max-age=300, must-revalidate"
+
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	tls internal
+}
+
 # ---- greydeercapital.com — Grey Deer Capital brand site (static) + intake API ----
 # Behind Cloudflare (proxied, SSL mode "Full"): `tls internal` serves a self-signed
 # origin cert so the edge<->origin hop is encrypted, matching mastermind-x.com.
