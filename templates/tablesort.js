@@ -127,6 +127,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('table'), function (t) {
       if (t.closest('.tip')) return;           // skip tooltip tables
       if (t.classList && t.classList.contains('sb-table')) return; // self-managed screener (own sort/toggle)
+      if (t.classList && t.classList.contains('st-table')) return; // StockTable (own sort/filter/cols)
       if (dataRows(t).length < 2) return;       // nothing to sort
       enhance(t);
     });

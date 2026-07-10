@@ -2871,9 +2871,9 @@ window.__CHART_SWAP__ = {
   }
 
   var cols = [
-    { key:'_stage_zone', labelEn:'Stage', labelZh:'阶段', default:true, sortable:true,
+    { key:'_stage_zone', labelEn:'Stage', labelZh:'阶段', default:true, sortable:false,
       fmt:function(v,r){ return stageBadge(r.stage||r._stage, r.zone); },
-      tip:{en:'Signal stage and zone',zh:'信号阶段与区域'} },
+      tip:{en:'Signal stage and zone (rows are pre-ranked by system)',zh:'信号阶段与区域（行已按系统排序）'} },
     { key:'ticker', labelEn:'Ticker', labelZh:'代码', default:true, sortable:true,
       fmt:function(v,r){
         var fresh = (r.days_since_signal != null && r.days_since_signal <= 2);
