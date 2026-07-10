@@ -6,591 +6,1794 @@
 {% block title %}{{ t('Technical Lab', '技术实验室') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
 
 {% block base_css %}
-  /* ── layout ── */
-  .tl-hero { margin: 26px auto 10px; max-width: 1060px; }
-  .tl-hero h1 { font-size: 26px; margin: 6px 0 4px; }
-  .tl-sub { color: var(--muted); font-size: 13px; max-width: 820px; }
-  .tl-meta { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+/* ── Four-tab workbench layout ── */
+.tl-page { max-width:1080px; margin:0 auto; padding:0 20px 48px; }
+.tl-hero { margin:24px 0 0; }
+.eyebrow { font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px; }
+.tl-hero h1 { font-size:26px;font-weight:800;margin-bottom:6px; }
+.tl-sub { color:var(--muted);font-size:13px;max-width:820px;line-height:1.6; }
+.tl-meta { display:flex;gap:7px;flex-wrap:wrap;margin-top:12px; }
+.chip { display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--panel2);color:var(--muted);border:1px solid var(--line); }
+.chip.tag-equities { background:rgba(91,155,240,.15);color:var(--info);border-color:rgba(91,155,240,.3); }
+.chip.tag-warn { background:rgba(224,160,48,.12);color:var(--warn);border-color:rgba(224,160,48,.25); }
 
-  /* ── controls ── */
-  .tl-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-    max-width: 1060px; margin: 14px auto 0; }
-  .tl-mode-wrap { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .tl-mode-btn { padding: 6px 16px; font-size: 12.5px; font-weight: 600; cursor: pointer;
-    background: var(--panel2); color: var(--muted); border: none; transition: background .15s, color .15s; }
-  .tl-mode-btn.active { background: var(--link); color: #fff; }
-  .tl-sig-select { padding: 6px 10px; font-size: 12.5px; border: 1px solid var(--line);
-    border-radius: 8px; background: var(--panel); color: var(--text);
-    min-width: 220px; cursor: pointer; }
-  .tl-search { padding: 6px 10px; font-size: 12.5px; border: 1px solid var(--line);
-    border-radius: 8px; background: var(--panel); color: var(--text); width: 140px; }
+/* ── Display-only banner ── */
+.display-banner { margin:14px 0 0;padding:12px 16px;background:rgba(224,160,48,.08);border:1px solid rgba(224,160,48,.25);border-radius:10px;font-size:12.5px;color:var(--warn);display:flex;align-items:flex-start;gap:10px;line-height:1.6; }
+.display-banner .icon { font-size:16px;flex:none;margin-top:1px; }
+.display-banner strong { color:var(--text); }
+.hb-dots { display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px; }
+.hb-dot::before { content:"·";margin-right:5px; }
+.hb-dot { font-size:11.5px;color:var(--warn); }
 
-  /* ── sample notice ── */
-  .tl-sample-banner { max-width: 1060px; margin: 10px auto 0;
-    background: #e0973a22; border: 1px solid #e0973a55; border-radius: 10px;
-    padding: 10px 14px; font-size: 12.5px; color: #c77a1f; }
-  html[data-theme="dark"] .tl-sample-banner { color: #e0973a; }
+/* ── Sample banner ── */
+.tl-sample-banner { margin:10px 0 0;background:rgba(224,151,58,.13);border:1px solid rgba(224,151,58,.35);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#c77a1f; }
+html[data-theme="dark"] .tl-sample-banner { color:#e0973a; }
 
-  /* ── card chrome ── */
-  .tl-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-    padding: 14px 16px; margin: 14px auto 0; max-width: 1060px; }
-  .tl-card h2 { font-size: 15px; margin: 0 0 4px; display: flex; align-items: center;
-    gap: 7px; flex-wrap: wrap; }
-  .tl-card .h-note { font-size: 12px; color: var(--muted); font-weight: 400; }
-  .tl-empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+/* ── Tab bar ── */
+.tab-bar { display:flex;gap:2px;margin:20px 0 0;border-bottom:2px solid var(--line);overflow-x:auto;scrollbar-width:none; }
+.tab-bar::-webkit-scrollbar { display:none; }
+.tbl-scroll { overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch; }
+.tab-btn { padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:color .15s;position:relative;white-space:nowrap; }
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--link); }
+.tab-btn.active::after { content:"";position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--link);border-radius:2px 2px 0 0; }
+.tab-badge { display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;background:var(--panel2);border-radius:9px;font-size:10px;font-weight:700;color:var(--muted);margin-left:6px; }
+.tab-btn.active .tab-badge { background:rgba(122,167,224,.2);color:var(--link); }
+.tab-panel { display:none;padding-top:20px; }
+.tab-panel.active { display:block; }
 
-  /* ── screener table ── */
-  table.tl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  table.tl th { text-align: left; color: var(--muted); font-weight: 600;
-    border-bottom: 1px solid var(--line); padding: 6px 8px; white-space: nowrap; }
-  table.tl td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-  table.tl tr:last-child td { border-bottom: none; }
-  table.tl tr.tl-row:hover { background: var(--panel2); cursor: pointer; }
-  td.tl-num, th.tl-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .tl-tk { font-weight: 700; font-variant-numeric: tabular-nums; }
-  .tl-name { color: var(--muted); font-size: 10.5px; }
-  .mut { color: var(--muted); }
-  .mut2 { color: var(--muted); font-size: 10.5px; }
+/* ── Section card ── */
+.tl-card { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0;box-sizing:border-box; }
+.tl-card-header { display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap; }
+.tl-card-header h2 { font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px; }
+.h-note { font-size:11px;color:var(--muted);font-weight:400; }
 
-  /* ── score gauge ── */
-  .tl-gauge-wrap { display: inline-flex; align-items: center; gap: 7px; min-width: 110px; }
-  .tl-gauge { position: relative; flex: 1; min-width: 60px; height: 7px; border-radius: 4px;
-    background: var(--panel2); overflow: hidden; }
-  .tl-gauge i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--link); }
-  .tl-gauge.g-hi i  { background: #1f9a55; }
-  .tl-gauge.g-mod i { background: #5b8def; }
-  .tl-gauge.g-lo i  { background: var(--muted); }
-  .tl-gauge.g-neg i { background: #d23f3f; }
-  html[data-theme="dark"] .tl-gauge.g-hi i  { background: #3fc07e; }
-  html[data-theme="dark"] .tl-gauge.g-neg i { background: #ef6a6a; }
-  .tl-score { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12.5px; }
+/* ── Table ── */
+.tbl-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch; }
+table.tl { width:100%;border-collapse:collapse;font-size:12.5px;min-width:480px; }
+table.tl th { text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);padding:7px 9px;white-space:nowrap;font-size:11px;letter-spacing:.03em; }
+table.tl th.sortable { cursor:pointer;user-select:none; }
+table.tl th.sortable:hover { color:var(--text); }
+table.tl th.sorted { color:var(--link); }
+table.tl td { padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:middle; }
+table.tl tr:last-child td { border-bottom:none; }
+table.tl tbody tr { cursor:pointer;transition:background .1s; }
+table.tl tbody tr:hover { background:var(--panel2); }
+table.tl tbody tr.selected { background:rgba(122,167,224,.08); }
+td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap; }
+.tl-tk { font-weight:700;font-size:13px; }
+.tl-name { color:var(--muted);font-size:10.5px;display:block;margin-top:1px; }
+.tbl-footer { display:flex;align-items:center;justify-content:space-between;padding-top:10px;font-size:11.5px;color:var(--muted);flex-wrap:wrap;gap:8px; }
+.tbl-page-btns { display:flex;gap:4px; }
+.tbl-page-btn { width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
+.tbl-page-btn.active { background:var(--link);color:#fff;border-color:var(--link); }
 
-  /* ── band chips ── */
-  .band-chip { display: inline-block; padding: 1px 7px; border-radius: 5px;
-    font-size: 10px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
-  .band-strong { background: #1f9a5522; color: #1f9a55; }
-  .band-high   { background: #1f9a5511; color: #1f9a55; }
-  .band-mod    { background: #5b8def22; color: #5b8def; }
-  .band-low    { background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
-  .band-avoid  { background: #d23f3f22; color: #d23f3f; }
-  .band-none   { background: var(--panel2); color: var(--muted); }
-  html[data-theme="dark"] .band-strong { color: #3fc07e; }
-  html[data-theme="dark"] .band-high   { color: #3fc07e; }
-  html[data-theme="dark"] .band-avoid  { color: #ef6a6a; }
+/* ── Color helpers ── */
+.r-pos { color:#1f9a55;font-weight:600; } html[data-theme="dark"] .r-pos { color:#3fc07e; }
+.r-neg { color:#d23f3f;font-weight:600; } html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+.r-neu { color:var(--muted); }
 
-  /* ── glyph direction ── */
-  .glyph-up   { color: #1f9a55; } html[data-theme="dark"] .glyph-up   { color: #3fc07e; }
-  .glyph-down { color: #d23f3f; } html[data-theme="dark"] .glyph-down { color: #ef6a6a; }
-  .glyph-neu  { color: var(--muted); }
+/* ── Score gauge ── */
+.gauge-wrap { display:inline-flex;align-items:center;gap:7px;min-width:100px; }
+.gauge { flex:1;min-width:52px;height:6px;border-radius:3px;background:var(--panel2);overflow:hidden; }
+.gauge i { display:block;height:100%;border-radius:3px; }
+.g-hi i  { background:#1f9a55; } html[data-theme="dark"] .g-hi i { background:#3fc07e; }
+.g-mod i { background:#5b8def; }
+.g-lo i  { background:var(--muted); }
+.g-neg i { background:#d23f3f; } html[data-theme="dark"] .g-neg i { background:#ef6a6a; }
+.gauge-score { font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px;min-width:36px;text-align:right; }
 
-  /* ── lab profile card ── */
-  .tl-lab-card { max-width: 1060px; margin: 14px auto 0; }
-  .tl-lab-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 10px; }
-  @media (max-width: 680px) { .tl-lab-grid { grid-template-columns: repeat(2,1fr); } }
-  .tl-lab-stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-    padding: 10px 12px; }
-  .tl-lab-stat .lk { font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--muted); }
-  .tl-lab-stat .lv { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums;
-    margin-top: 4px; }
-  .tl-lab-stat .lb { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
-  .tl-lab-caveat { font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; }
+/* ── Band chips ── */
+.band-chip { display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.03em;white-space:nowrap; }
+.band-Buy  { background:rgba(31,154,85,.18);color:#1f9a55; } html[data-theme="dark"] .band-Buy { color:#3fc07e; }
+.band-Hold { background:rgba(91,141,239,.15);color:#5b8def; }
+.band-Sell { background:rgba(210,63,63,.18);color:#d23f3f; } html[data-theme="dark"] .band-Sell { color:#ef6a6a; }
 
-  /* ── inline WR bar SVG ── */
-  .tl-wr-bar { display: inline-flex; align-items: center; gap: 6px; }
-  .tl-wr-bar svg { flex: none; }
-  .tl-wr-txt { font-size: 11px; color: var(--muted); }
+/* ── Signal dots ── */
+.sig-dots { display:flex;gap:3px;flex-wrap:wrap;max-width:96px; }
+.sig-dot { width:7px;height:7px;border-radius:50%; }
+.dot-buy { background:var(--up); }
+.dot-sell { background:var(--down); }
+.dot-off { background:var(--line); }
 
-  /* ── per-stock profile ── */
-  .tl-profile-panel { display: none; max-width: 1060px; margin: 14px auto 0; }
-  .tl-profile-panel.active { display: block; }
-  .tl-profile-header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-    margin-bottom: 12px; }
-  .tl-profile-ticker { font-size: 22px; font-weight: 800; }
-  .tl-profile-name { font-size: 14px; color: var(--muted); }
-  .tl-profile-back { font-size: 12px; color: var(--link); cursor: pointer; margin-left: auto; }
-  .tl-confl { display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
-    padding: 4px 12px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); }
-  .tl-confl .cn { font-size: 18px; font-weight: 800; color: var(--link); }
-  .tl-perf-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
-  .tl-perf-cell { background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
-    padding: 8px 12px; min-width: 100px; }
-  .tl-perf-cell .pk { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
-  .tl-perf-cell .pv { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
-  .tl-sig-list { display: flex; flex-direction: column; gap: 4px; }
-  .tl-sig-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
-    border-radius: 8px; background: var(--panel2); font-size: 12.5px; }
-  .tl-sig-row.state-on  { background: #1f9a5511; }
-  .tl-sig-row.state-off { opacity: .55; }
-  html[data-theme="dark"] .tl-sig-row.state-on { background: #3fc07e11; }
-  .tl-sig-age { font-size: 10.5px; color: var(--muted); margin-left: auto; }
+/* ═══ TAB 1: SCREENER ═══ */
+.screener-layout { display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px; }
+@media(max-width:900px){ .screener-layout { grid-template-columns:minmax(0,1fr); } }
+.screener-controls { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px; }
+.sc-input { padding:7px 11px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);outline:none;transition:border-color .15s;flex:1;min-width:120px; }
+.sc-input:focus { border-color:var(--link); }
+.sc-select { padding:7px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);cursor:pointer;outline:none; }
 
-  /* ── family section headers ── */
-  .tl-family-h { font-size: 10px; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted); padding: 10px 0 4px; margin-top: 6px; }
+/* ── Confluence builder ── */
+.confl-builder { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%;box-sizing:border-box; }
+.confl-title { font-size:13px;font-weight:700;margin-bottom:2px; }
+.confl-desc { font-size:11.5px;color:var(--muted);line-height:1.5; }
+.confl-section-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px; }
+.confl-chips { display:flex;flex-wrap:wrap;gap:6px; }
+.confl-chip { padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;transition:all .13s;user-select:none; }
+.confl-chip:hover { border-color:var(--link);color:var(--text); }
+.confl-chip.active { background:rgba(122,167,224,.18);border-color:var(--link);color:var(--link); }
+.confl-chip.buy-chip.active { background:rgba(31,154,85,.15);border-color:var(--up);color:var(--up); } html[data-theme="dark"] .confl-chip.buy-chip.active { color:#3fc07e;border-color:#3fc07e; }
+.logic-toggle { display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;width:fit-content; }
+.logic-btn { padding:5px 14px;font-size:12px;font-weight:700;border:none;background:var(--panel2);color:var(--muted);transition:all .12s;cursor:pointer; }
+.logic-btn.active { background:var(--link);color:#fff; }
+.confl-result { display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:10px;background:var(--panel2);border:1px solid var(--line); }
+.confl-count { font-size:28px;font-weight:800;color:var(--link);font-variant-numeric:tabular-nums; }
+.confl-count-label { font-size:11px;color:var(--muted);margin-top:2px; }
+.confl-result-tickers { font-size:11px;color:var(--muted);max-width:140px;text-align:right;line-height:1.6; }
+.tl-empty { color:var(--muted);font-size:13px;padding:20px 0;text-align:center; }
+.confl-empty { color:var(--warn);font-size:12px;padding:8px 0; }
 
-  /* ── r-pos / r-neg already in base; local extensions ── */
-  .r-pos { color: #1f9a55; font-weight: 600; }
-  .r-neg { color: #d23f3f; font-weight: 600; }
-  html[data-theme="dark"] .r-pos { color: #3fc07e; }
-  html[data-theme="dark"] .r-neg { color: #ef6a6a; }
+/* ═══ TAB 2: SIGNAL LAB ═══ */
+.lab-layout { display:grid;grid-template-columns:280px 1fr;gap:16px; }
+@media(max-width:800px){ .lab-layout { grid-template-columns:1fr; } }
 
-  /* ── eyebrow ── */
-  p.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+/* Signal browser picker */
+.sig-picker-wrap { display:flex;flex-direction:column;gap:0; }
+.sig-family-label { font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:10px 4px 4px; }
+.sig-row { width:100%;text-align:left;padding:7px 8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:12px;transition:all .13s;cursor:pointer;display:flex;align-items:center;gap:8px; }
+.sig-row:hover { background:var(--panel2);color:var(--text); }
+.sig-row.active { background:rgba(122,167,224,.12);border:1px solid rgba(122,167,224,.3);color:var(--text);font-weight:600; }
+.sig-dir-badge { width:16px;height:16px;border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800; }
+.dir-up   { background:rgba(31,154,85,.2);color:var(--up); } html[data-theme="dark"] .dir-up { color:#3fc07e; }
+.dir-down { background:rgba(210,63,63,.2);color:var(--down); } html[data-theme="dark"] .dir-down { color:#ef6a6a; }
+.dir-neu  { background:var(--panel2);color:var(--muted); }
+.sig-row-name { flex:1;font-size:11.5px;text-align:left; }
+.wr-bar-mini { display:flex;align-items:center;gap:4px;flex:none; }
+.wr-track { width:36px;height:5px;background:var(--panel2);border-radius:3px;overflow:hidden;flex:none; }
+.wr-fill  { height:100%;border-radius:3px; }
+.wr-val   { font-size:10px;font-variant-numeric:tabular-nums;min-width:30px;text-align:right; }
+.fire-badge { font-size:9.5px;color:var(--muted);white-space:nowrap;min-width:20px;text-align:right; }
+.fire-badge.active { color:var(--up); } html[data-theme="dark"] .fire-badge.active { color:#3fc07e; }
+
+/* Signal catalog (sortable table) */
+.catalog-table-wrap { overflow-x:auto; }
+.tl-edge-chip { display:inline-block;padding:1px 7px;border-radius:5px;font-size:10px;font-weight:700;white-space:nowrap; }
+.edge-strong { background:rgba(31,154,85,.18);color:#1f9a55; } html[data-theme="dark"] .edge-strong { color:#3fc07e; }
+.edge-pos    { background:rgba(91,155,240,.15);color:var(--info); }
+.edge-neu    { background:var(--panel2);color:var(--muted);border:1px solid var(--line); }
+.edge-neg    { background:rgba(210,63,63,.15);color:#d23f3f; } html[data-theme="dark"] .edge-neg { color:#ef6a6a; }
+.era-badge2  { display:inline-block;padding:1px 7px;border-radius:5px;font-size:9.5px;font-weight:700;white-space:nowrap; }
+.era-stable  { background:rgba(91,155,240,.12);color:var(--info); }
+.era-post    { background:rgba(224,160,48,.12);color:var(--warn); }
+.era-divg    { background:rgba(210,63,63,.12);color:#d23f3f; }
+
+/* Signal profile (detail pane) */
+.sig-profile { padding-left:2px; }
+.sig-profile h2 { font-size:18px;font-weight:800;margin-bottom:4px; }
+.sig-profile-sub { font-size:12px;color:var(--muted);margin-bottom:14px; }
+.stat-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px; }
+@media(max-width:600px){ .stat-grid { grid-template-columns:repeat(2,1fr); } }
+.stat-cell { background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px; }
+.stat-cell .sk { font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted); }
+.stat-cell .sv { font-size:22px;font-weight:750;font-variant-numeric:tabular-nums;margin-top:4px;line-height:1; }
+.stat-cell .sb { font-size:10.5px;color:var(--muted);margin-top:3px; }
+.sv-up  { color:#1f9a55; } html[data-theme="dark"] .sv-up { color:#3fc07e; }
+.sv-neg { color:#d23f3f; } html[data-theme="dark"] .sv-neg { color:#ef6a6a; }
+.sv-neu { color:var(--text); }
+
+/* Era split 3-row table */
+.era-table-wrap { margin-bottom:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden; }
+.era-table-wrap table { width:100%;border-collapse:collapse;font-size:12px; }
+.era-table-wrap th { text-align:left;color:var(--muted);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--line);font-size:10.5px; }
+.era-table-wrap td { padding:8px 12px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums; }
+.era-table-wrap tr:last-child td { border-bottom:none; }
+.era-tag { display:inline-block;padding:1px 7px;border-radius:4px;font-size:9.5px;font-weight:700;white-space:nowrap; }
+.era-pre  { background:rgba(224,160,48,.12);color:var(--warn); }
+.era-post { background:rgba(91,155,240,.12);color:var(--info); }
+.era-pool { background:var(--panel2);color:var(--muted);border:1px solid var(--line); }
+
+/* Chart area */
+.mini-chart-wrap { background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px; }
+.mini-chart-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px; }
+.mini-chart-title { font-size:12.5px;font-weight:700; }
+.chart-note { font-size:10.5px;color:var(--muted);margin-top:6px;font-style:italic; }
+.chart-ctrl { display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px; }
+.chart-ctrl select { padding:5px 8px;font-size:11.5px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);color:var(--text);cursor:pointer;outline:none; }
+.chart-container { width:100%;height:220px;position:relative; }
+.chart-fallback { display:flex;align-items:center;justify-content:center;min-height:220px;color:var(--muted);font-size:12px;font-style:italic;border:1px dashed var(--line);border-radius:8px; }
+
+/* null caveat */
+.null-banner { padding:10px 14px;border-radius:9px;background:rgba(139,147,161,.1);border:1px solid rgba(139,147,161,.25);font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px; }
+.null-banner strong { color:var(--text); }
+
+/* ═══ TAB 3: STOCK PROFILE ═══ */
+.stock-profile-layout { display:grid;grid-template-columns:1fr 300px;gap:16px; }
+@media(max-width:860px){ .stock-profile-layout { grid-template-columns:1fr; } }
+.profile-header { display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px; }
+.profile-ticker { font-size:32px;font-weight:900;line-height:1; }
+.profile-name { font-size:15px;color:var(--muted);margin-bottom:4px; }
+.profile-price { font-size:22px;font-weight:700;font-variant-numeric:tabular-nums; }
+.profile-actions { display:flex;gap:8px;align-items:flex-start;margin-left:auto; }
+.open-terminal-btn { display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:12.5px;font-weight:700;background:var(--link);color:#fff;border:none;cursor:pointer;transition:opacity .13s; }
+.open-terminal-btn:hover { opacity:.88; }
+.perf-row { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px; }
+.perf-cell { background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 14px;min-width:90px; }
+.pk { font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted); }
+.pv { font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px; }
+.confl-callout { display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:rgba(122,167,224,.08);border:1px solid rgba(122,167,224,.2);margin-bottom:16px;flex-wrap:wrap; }
+.confl-n { font-size:36px;font-weight:900;color:var(--link);line-height:1; }
+.confl-label { font-size:12px;color:var(--muted);line-height:1.5; }
+.confl-label strong { color:var(--text); }
+.stock-chart-card { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px; }
+.chart-ticker-label { font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px; }
+.stock-chart-container { width:100%;height:240px;position:relative; }
+.sig-state-list { display:flex;flex-direction:column;gap:4px; }
+.sig-state-row { display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;font-size:12.5px;transition:background .1s; }
+.sig-state-row:hover { background:var(--panel2); }
+.sig-state-row.on { background:rgba(31,154,85,.08); } html[data-theme="dark"] .sig-state-row.on { background:rgba(63,192,126,.08); }
+.sig-state-row.off { opacity:.5; }
+.sig-state-name { flex:1; }
+.sig-state-age { font-size:10.5px;color:var(--muted);margin-left:auto;white-space:nowrap; }
+.sig-on-mark  { color:var(--up);font-size:13px; } html[data-theme="dark"] .sig-on-mark { color:#3fc07e; }
+.sig-off-mark { color:var(--muted);font-size:13px; }
+.family-divider { font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:10px 0 4px;margin-top:4px; }
+.ticker-search-card { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px; }
+.ts-input { width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);font-size:14px;outline:none;transition:border-color .15s; }
+.ts-input:focus { border-color:var(--link); }
+.ts-results { display:flex;flex-direction:column;gap:3px;margin-top:8px; }
+.ts-result-row { display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .1s; }
+.ts-result-row:hover,.ts-result-row.sel { background:var(--panel2); }
+.ts-tk { font-weight:700;font-size:13px;min-width:44px; }
+.ts-name { font-size:12px;color:var(--muted);flex:1; }
+
+/* ═══ TAB 4: HOW TO TEST ═══ */
+.how-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+@media(max-width:700px){ .how-grid { grid-template-columns:1fr; } }
+.how-card { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px; }
+.how-card h3 { font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px; }
+.how-card p,.how-card li { font-size:12.5px;color:var(--muted);line-height:1.7; }
+.how-card ul { padding-left:16px;margin-top:6px; }
+.code-block { margin-top:10px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;font-family:"SF Mono","Fira Code","JetBrains Mono",Consolas,monospace;font-size:11.5px;color:var(--text);line-height:1.7;overflow-x:auto;white-space:pre;position:relative; }
+.code-block-wrap { position:relative;max-width:100%; }
+.how-grid > * { min-width:0; }
+.how-card h3, .how-card p { overflow-wrap:anywhere; }
+.copy-btn { position:absolute;top:8px;right:8px;padding:3px 8px;font-size:10px;font-weight:600;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--muted);cursor:pointer;transition:all .12s;z-index:1; }
+.copy-btn:hover { color:var(--text);border-color:var(--muted); }
+.copy-btn.copied { color:var(--ok);border-color:var(--ok); }
+.code-comment { color:var(--muted); }
+.code-kw { color:var(--link); }
+.code-str { color:#1f9a55; } html[data-theme="dark"] .code-str { color:#3fc07e; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:6px;height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--line);border-radius:3px; }
+
 {% endblock %}
 
 {% block content %}
+<div class="tl-page">
+
 {# ── Hero ── #}
 <section class="tl-hero">
-  <p class="eyebrow">🔬 {{ t('Research · Display only', '研究 · 仅供展示') }}</p>
+  <p class="eyebrow">{{ t('Research · Display Only', '研究 · 仅供展示') }}</p>
   <h1>{{ t('Technical Lab', '技术实验室') }}</h1>
   <p class="tl-sub">{{ t(
-    'Signal screener + descriptive backtest profiles. Choose a signal from the dropdown to see which stocks are currently firing it (Screener mode) or to read its historical profile (Lab mode). Drill into any ticker for a per-stock signal breakdown. All data is display-only, research framing — not a trade recommendation.',
-    '信号筛选器 + 描述性回测档案。从下拉菜单选择信号，可查看当前触发该信号的股票（筛选模式）或其历史特征档案（实验室模式）。点击任意标的查看个股信号分解。所有数据仅供展示与研究，不构成交易建议。'
+    'Signal screener + descriptive backtest profiles. Build confluence filters to find names where multiple signals align. Drill into any ticker for a per-stock signal breakdown. Descriptive framing — survivor mega-cap universe, not a verdict.',
+    '信号筛选器 + 描述性回测档案。构建多因子共振筛选条件，聚焦多信号同向股票。点击任意标的查看个股信号分解。描述性研究框架 — 幸存大盘股宇宙，非结论性研究。'
   ) }}</p>
   <div class="tl-meta">
     <span class="chip tag-equities">{{ t('Technical Signals', '技术信号') }}</span>
-    {% if not is_sample %}
-      <span class="chip">{{ t('Screener', '筛选器') }}: {{ generated_utc }}</span>
-      <span class="chip">{{ n_signals }} {{ t('signals', '信号') }}</span>
-      {% if universe_n_screener %}<span class="chip">{{ universe_n_screener }} {{ t('universe', '覆盖标的') }}</span>{% endif %}
-    {% else %}
-      <span class="chip">{{ t('Sample data — nightly generation pending', '样本数据 — 等待夜间生成') }}</span>
+    <span class="chip" id="hero-ts">{{ generated_utc }}</span>
+    <span class="chip" id="hero-n-signals">{{ n_signals }} {{ t('signals', '信号') }}</span>
+    <span class="chip" id="hero-n-stocks">{{ universe_n_screener or '—' }} {{ t('universe', '覆盖标的') }}</span>
+    {% if is_sample %}
+    <span class="chip tag-warn">{{ t('Sample data — nightly pending', '样本数据 — 等待夜间生成') }}</span>
     {% endif %}
   </div>
 </section>
 
 {% if is_sample %}
 <div class="tl-sample-banner">
-  ⚠️ {{ t(
-    'Data files (site/factordata/tech_screener.json, tech_lab.json) are absent — showing sample fixture. Real data will populate after the first nightly run.',
+  &#9888; {{ t(
+    'Data files (tech_screener.json, tech_lab.json) are absent — showing sample fixture. Real data populates after the first nightly run.',
     '数据文件（tech_screener.json, tech_lab.json）尚未生成，当前显示样本。首次夜间运行后将填充真实数据。'
   ) }}
 </div>
 {% endif %}
 
-{# ── Controls ── #}
-<div class="tl-controls" id="tl-controls">
-  <div class="tl-mode-wrap">
-    <button class="tl-mode-btn active" id="btn-screener" onclick="tlSetMode('screener')">
-      {{ t('Screener', '筛选') }}
-    </button>
-    <button class="tl-mode-btn" id="btn-lab" onclick="tlSetMode('lab')">
-      {{ t('Lab', '实验室') }}
-    </button>
-  </div>
-  <select class="tl-sig-select" id="tl-sig-select" onchange="tlSelectSignal(this.value)">
-    <option value="COMPOSITE" data-en="★ Composite (all signals)" data-zh="★ 综合评分（全部信号）">★ Composite (all signals)</option>
-    {% for group in signal_groups %}
-    <optgroup label="{{ group.family | replace('_',' ') | title }}">
-      {% for sig in group.signals %}
-      {% if sig.id != 'COMPOSITE' %}
-      <option value="{{ sig.id }}" data-en="{{ sig.get('display_en', sig.id) }}" data-zh="{{ sig.get('display_zh') or sig.get('display_en', sig.id) }}">{{ sig.get('display_en', sig.id) }}</option>
-      {% endif %}
-      {% endfor %}
-    </optgroup>
-    {% endfor %}
-  </select>
-  <input class="tl-search" id="tl-ticker-search" type="text"
-    placeholder="Search ticker…"
-    data-ph-en="Search ticker…"
-    data-ph-zh="搜索标的…"
-    oninput="tlSearchTicker(this.value)"
-    data-tip-en="Search for a stock to see its signal profile"
-    data-tip-zh="搜索个股查看其信号档案">
-</div>
-
-{# ── Screener panel ── #}
-<div class="tl-card" id="tl-screener-panel">
-  <h2 id="tl-screener-title">
-    ★ {{ t('Composite — Top Buy-Signal Names', '综合 — 最佳买入信号标的') }}
-    <span class="h-note" id="tl-screener-count"></span>
-  </h2>
-  <div id="tl-screener-body">
-    <p class="tl-empty" id="tl-screener-loading" style="padding:14px 0">{{ t('Loading…', '加载中…') }}</p>
-    <table class="tl" id="tl-screener-table" style="display:none">
-      <thead><tr>
-        <th>#</th>
-        <th>{{ t('Ticker', '标的') }}</th>
-        <th>{{ t('Name', '名称') }}</th>
-        <th class="tl-num">{{ t('Score', '评分') }}</th>
-        <th>{{ t('Band', '区间') }}</th>
-        <th class="tl-num">{{ t('Price', '价格') }}</th>
-        <th>{{ t('Action', '操作') }}</th>
-      </tr></thead>
-      <tbody id="tl-screener-tbody">
-      </tbody>
-    </table>
-  </div>
-</div>
-
-{# ── Lab panel ── #}
-<div class="tl-card" id="tl-lab-panel" style="display:none">
-  <h2 id="tl-lab-title">
-    🔬 {{ t('Signal Profile', '信号档案') }}
-    <span class="h-note">— {{ t('descriptive · survivor universe · not a §5.9 verdict', '描述性 · 幸存者宇宙 · 非§5.9认证结论') }}</span>
-  </h2>
-  <div id="tl-lab-body">
-    <p class="tl-empty" id="tl-lab-loading" style="padding:14px 0">{{ t('Loading…', '加载中…') }}</p>
-    <div class="tl-lab-grid" id="tl-lab-grid" style="display:none">
+{# ── Display-only banner (four structural dot-chips from v2) ── #}
+<div class="display-banner">
+  <span class="icon">&#9432;</span>
+  <div>
+    <strong>{{ t('Descriptive · Survivor Universe · Not a Verdict.', '描述性 · 幸存者宇宙 · 非结论。') }}</strong>
+    <div class="hb-dots">
+      <span class="hb-dot">{{ t('Survivor mega-caps only — no delisted stocks', '仅含幸存大盘股，不含退市标的') }}</span>
+      <span class="hb-dot">{{ t('Pooled stats include up-market concentration bias', '汇总统计含牛市集中偏差') }}</span>
+      <span class="hb-dot">{{ t('Pre/post-2010 era split shown — pooled WR is post-2010 when pre-2010 is absent', '显示2010前后分期，前期缺失时汇总=2010后') }}</span>
+      <span class="hb-dot">{{ t('Signal fires are observation counts, not trade recommendations', '触发次数为观察计数，非交易建议') }}</span>
     </div>
-    <p class="tl-lab-caveat" id="tl-lab-caveat">
-      {{ universe_caveat or t(
-        'Survivor mega-caps only; descriptive statistics, not a forward verdict. Display-only research.',
-        '仅覆盖幸存者大盘股；为描述性统计，非前瞻性结论。仅供研究展示。'
-      ) }}
+  </div>
+</div>
+
+{# ── Tab bar ── #}
+<div class="tab-bar" id="tab-bar">
+  <button class="tab-btn" data-tab="screener" id="tb-screener">
+    <span class="l-en">Screener</span><span class="l-zh">筛选器</span>
+    <span class="tab-badge" id="badge-screener">{{ universe_n_screener or '—' }}</span>
+  </button>
+  <button class="tab-btn" data-tab="siglab" id="tb-siglab">
+    <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span>
+    <span class="tab-badge" id="badge-siglab">{{ n_signals }}</span>
+  </button>
+  <button class="tab-btn" data-tab="stock" id="tb-stock">
+    <span class="l-en">Stock Profile</span><span class="l-zh">个股档案</span>
+  </button>
+  <button class="tab-btn" data-tab="test" id="tb-test">
+    <span class="l-en">How to Test</span><span class="l-zh">如何检验</span>
+  </button>
+</div>
+
+{# ═══════════════════════════════════════════
+   TAB 1: SCREENER
+═══════════════════════════════════════════ #}
+<div class="tab-panel" id="tab-screener">
+  <div class="screener-layout">
+
+    <!-- Left: composite table -->
+    <div>
+      <div class="tl-card">
+        <div class="tl-card-header">
+          <h2>
+            <span class="l-en">Composite Screener</span>
+            <span class="l-zh">综合筛选器</span>
+            <span class="h-note">
+              <span class="l-en">score = buy signals ÷ total signals</span>
+              <span class="l-zh">评分 = 买入信号 ÷ 信号总数</span>
+            </span>
+          </h2>
+        </div>
+        <div class="screener-controls">
+          <input class="sc-input" type="text" id="screener-search"
+            data-ph-en="Search ticker…"
+            data-ph-zh="搜索标的…"
+            placeholder="Search ticker…"
+            oninput="tlFilterScreener()">
+          <select class="sc-select" id="band-filter" onchange="tlFilterScreener()">
+            <option value="" data-en="All Bands" data-zh="全部评级">All Bands</option>
+            <option value="Buy" data-en="Buy" data-zh="买入">Buy</option>
+            <option value="Hold" data-en="Hold" data-zh="持有">Hold</option>
+            <option value="Sell" data-en="Sell" data-zh="卖出">Sell</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tl" id="screener-table">
+            <thead>
+              <tr>
+                <th>
+                  <span class="l-en">Ticker</span>
+                  <span class="l-zh">标的</span>
+                </th>
+                <th class="tl-num">
+                  <span class="l-en">Price</span>
+                  <span class="l-zh">价格</span>
+                </th>
+                <th class="tl-num sortable sorted" data-sort="score" onclick="tlSortScreener('score',this)">
+                  <span class="l-en">Score ↓</span>
+                  <span class="l-zh">评分 ↓</span>
+                </th>
+                <th>
+                  <span class="l-en">Band</span>
+                  <span class="l-zh">评级</span>
+                </th>
+                <th class="tl-num sortable" data-sort="perf7d" onclick="tlSortScreener('perf7d',this)">
+                  <span class="l-en">7D</span>
+                  <span class="l-zh">7日</span>
+                </th>
+                <th class="tl-num sortable" data-sort="perf30d" onclick="tlSortScreener('perf30d',this)">
+                  <span class="l-en">30D</span>
+                  <span class="l-zh">30日</span>
+                </th>
+                <th>
+                  <span class="l-en">Active signals</span>
+                  <span class="l-zh">活跃信号</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="screener-tbody"></tbody>
+          </table>
+        </div>
+        <div class="tbl-footer">
+          <span id="screener-count" class="l-en">Loading…</span>
+          <div class="tbl-page-btns" id="screener-pages"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Confluence builder -->
+    <div class="confl-builder">
+      <div>
+        <div class="confl-title">
+          <span class="l-en">Confluence Builder</span>
+          <span class="l-zh">共振筛选器</span>
+        </div>
+        <div class="confl-desc">
+          <span class="l-en">Pick 2–4 signals, choose logic, and see how many names currently satisfy the conditions.</span>
+          <span class="l-zh">选择 2–4 个信号，设置逻辑，查看当前满足条件的标的数量。</span>
+        </div>
+      </div>
+
+      <div id="confl-chip-area">
+        <!-- Populated from JS after data load -->
+        <p class="r-neu" style="font-size:12px;">
+          <span class="l-en">Loading signals…</span>
+          <span class="l-zh">加载信号中…</span>
+        </p>
+      </div>
+
+      <div>
+        <div class="confl-section-label">
+          <span class="l-en">Logic</span>
+          <span class="l-zh">逻辑</span>
+        </div>
+        <div class="logic-toggle">
+          <button class="logic-btn active" id="logic-all" onclick="tlConflSetLogic('ALL')">
+            <span class="l-en">ALL match</span>
+            <span class="l-zh">全部匹配</span>
+          </button>
+          <button class="logic-btn" id="logic-any" onclick="tlConflSetLogic('ANY')">
+            <span class="l-en">ANY match</span>
+            <span class="l-zh">任一匹配</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="confl-result" id="confl-result">
+        <div>
+          <div class="confl-count" id="confl-count">—</div>
+          <div class="confl-count-label" id="confl-count-label">
+            <span class="l-en">pick signals above</span>
+            <span class="l-zh">请选择信号</span>
+          </div>
+        </div>
+        <div class="confl-result-tickers" id="confl-tickers"></div>
+      </div>
+      <div id="confl-empty-msg" style="display:none;" class="confl-empty">
+        <span class="l-en">0 names match — loosen to ANY or drop a signal</span>
+        <span class="l-zh">0个标的匹配 — 改为任一匹配或减少信号</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════
+   TAB 2: SIGNAL LAB
+═══════════════════════════════════════════ #}
+<div class="tab-panel" id="tab-siglab">
+  <div class="lab-layout">
+
+    <!-- Left: signal picker with WR bars (from v1 graft) -->
+    <div class="tl-card" style="padding:10px;overflow-y:auto;max-height:800px;">
+      <div class="sig-picker-wrap" id="sig-picker">
+        <p class="r-neu" style="font-size:12px;padding:8px;">
+          <span class="l-en">Loading signals…</span>
+          <span class="l-zh">加载信号中…</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Right: either catalog table (landing) or signal detail pane -->
+    <div id="lab-right">
+
+      <!-- Catalog table (default landing view) -->
+      <div id="lab-catalog" class="tl-card">
+        <div class="tl-card-header">
+          <h2>
+            <span class="l-en">Signal Catalog</span>
+            <span class="l-zh">信号目录</span>
+            <span class="h-note" id="catalog-count-note">
+              <span class="l-en">click a row to drill in</span>
+              <span class="l-zh">点击行查看详情</span>
+            </span>
+          </h2>
+        </div>
+        <div class="catalog-table-wrap">
+          <table class="tl" id="catalog-table">
+            <thead>
+              <tr>
+                <th class="sortable sorted" data-sort="edge_wr" onclick="tlSortCatalog('edge_wr',this)">
+                  <span class="l-en">Signal ↓</span>
+                  <span class="l-zh">信号 ↓</span>
+                </th>
+                <th>
+                  <span class="l-en">Family</span>
+                  <span class="l-zh">族群</span>
+                </th>
+                <th>
+                  <span class="l-en">Dir</span>
+                  <span class="l-zh">方向</span>
+                </th>
+                <th>
+                  <span class="l-en">WR vs Base</span>
+                  <span class="l-zh">胜率/基准</span>
+                </th>
+                <th class="sortable" data-sort="edge_wr" onclick="tlSortCatalog('edge_wr',this)">
+                  <span class="l-en">Edge</span>
+                  <span class="l-zh">优势</span>
+                </th>
+                <th>
+                  <span class="l-en">Era</span>
+                  <span class="l-zh">时代</span>
+                </th>
+                <th class="sortable tl-num" data-sort="up_tape_pct" onclick="tlSortCatalog('up_tape_pct',this)">
+                  <span class="l-en">Up Tape</span>
+                  <span class="l-zh">上涨市占</span>
+                </th>
+                <th class="sortable tl-num" data-sort="n_fires" onclick="tlSortCatalog('n_fires',this)">
+                  <span class="l-en">Fires</span>
+                  <span class="l-zh">触发</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="catalog-tbody">
+              <tr><td colspan="8" class="tl-empty">
+                <span class="l-en">Loading…</span>
+                <span class="l-zh">加载中…</span>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Signal detail pane (hidden until row clicked) -->
+      <div id="lab-detail" style="display:none;">
+        <div style="margin-bottom:10px;">
+          <button onclick="tlShowCatalog()" style="font-size:12px;color:var(--link);background:none;border:none;cursor:pointer;padding:0;">
+            ← <span class="l-en">Back to catalog</span><span class="l-zh">返回目录</span>
+          </button>
+        </div>
+
+        <div class="sig-profile">
+          <h2 id="det-name">—</h2>
+          <div class="sig-profile-sub" id="det-sub">—</div>
+
+          <!-- 8-cell stat grid -->
+          <div class="stat-grid" id="det-stat-grid"></div>
+
+          <!-- Era-split 3-row table (v1 graft) -->
+          <div class="era-table-wrap" id="det-era-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th><span class="l-en">Era</span><span class="l-zh">时代</span></th>
+                  <th><span class="l-en">WR 21d</span><span class="l-zh">21日胜率</span></th>
+                  <th><span class="l-en">Edge WR</span><span class="l-zh">优势胜率</span></th>
+                  <th class="tl-num"><span class="l-en">Fires / Months</span><span class="l-zh">触发/月数</span></th>
+                </tr>
+              </thead>
+              <tbody id="det-era-body"></tbody>
+            </table>
+          </div>
+
+          <!-- Real chart with LWC + tech_events fire markers -->
+          <div class="mini-chart-wrap">
+            <div class="mini-chart-header">
+              <span class="mini-chart-title">
+                <span class="l-en">Price chart · signal fires</span>
+                <span class="l-zh">价格图 · 信号触发</span>
+              </span>
+              <div class="chart-ctrl">
+                <select id="det-ticker-select" onchange="tlLabChartDraw()">
+                  <option value="" data-en="Select ticker with fires…" data-zh="选择触发标的…">Select ticker with fires…</option>
+                </select>
+              </div>
+            </div>
+            <div class="chart-container" id="det-chart-container"></div>
+            <div class="chart-fallback" id="det-chart-fallback">
+              <span class="l-en">Illustrative sketch — select a ticker above to load real bars</span>
+              <span class="l-zh">示意图 — 请在上方选择标的以加载真实行情</span>
+            </div>
+            <div class="chart-note" id="det-chart-note" style="display:none;"></div>
+          </div>
+
+          <!-- Null caveat -->
+          <div class="null-banner" id="det-null-banner" style="display:none;">
+            <strong>
+              <span class="l-en">No fires accrued yet —</span>
+              <span class="l-zh">尚无触发记录 —</span>
+            </strong>
+            <span class="l-en"> pre-2010 data absent = data gap, not a verdict. Signal retained as a confluence input.</span>
+            <span class="l-zh"> 2010年前数据缺失 = 数据空白，非研究结论。信号作为共振输入保留。</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════
+   TAB 3: STOCK PROFILE
+═══════════════════════════════════════════ #}
+<div class="tab-panel" id="tab-stock">
+  <div class="stock-profile-layout">
+
+    <!-- Left: chart + signal list -->
+    <div>
+      <div class="profile-header">
+        <div>
+          <div class="profile-ticker" id="prof-ticker">—</div>
+          <div class="profile-name" id="prof-name"></div>
+        </div>
+        <div>
+          <div class="profile-price" id="prof-price"></div>
+        </div>
+        <div class="profile-actions">
+          <a class="open-terminal-btn" id="prof-terminal-link" href="https://app.mastermind-x.com/terminal" target="_blank" rel="noopener">
+            <span>&#8599;</span>
+            <span class="l-en">Open in Terminal</span>
+            <span class="l-zh">在终端中打开</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="perf-row" id="prof-perf-row">
+        <div class="perf-cell">
+          <div class="pk">7D</div>
+          <div class="pv r-neu" id="prof-7d">—</div>
+        </div>
+        <div class="perf-cell">
+          <div class="pk">30D</div>
+          <div class="pv r-neu" id="prof-30d">—</div>
+        </div>
+        <div class="perf-cell">
+          <div class="pk">
+            <span class="l-en">Active Buy</span>
+            <span class="l-zh">活跃买入</span>
+          </div>
+          <div class="pv" id="prof-active" style="color:var(--link)">—</div>
+        </div>
+        <div class="perf-cell">
+          <div class="pk">
+            <span class="l-en">Score</span>
+            <span class="l-zh">评分</span>
+          </div>
+          <div class="pv" id="prof-score">—</div>
+        </div>
+      </div>
+
+      <div class="confl-callout" id="prof-callout">
+        <div class="confl-n" id="prof-confl-n">—</div>
+        <div class="confl-label">
+          <strong>
+            <span class="l-en">buy signals active</span>
+            <span class="l-zh">个买入信号活跃</span>
+          </strong><br>
+          <span id="prof-callout-sub" class="l-en">out of — tracked</span>
+        </div>
+        <div>
+          <span class="band-chip" id="prof-band"></span>
+        </div>
+      </div>
+
+      <!-- Real chart with fire markers from tech_events -->
+      <div class="stock-chart-card">
+        <div class="chart-ticker-label" id="prof-chart-label">
+          <span class="l-en">Select a ticker to load the chart</span>
+          <span class="l-zh">选择标的以加载图表</span>
+        </div>
+        <div class="stock-chart-container" id="prof-chart-container"></div>
+        <div class="chart-fallback" id="prof-chart-fallback">
+          <span class="l-en">Illustrative sketch — real bars unavailable</span>
+          <span class="l-zh">示意图 — 真实行情不可用</span>
+        </div>
+        <div class="chart-note" id="prof-chart-note" style="display:none;"></div>
+      </div>
+
+      <!-- Signal state list grouped by family -->
+      <div class="tl-card">
+        <div class="tl-card-header">
+          <h2>
+            <span class="l-en">All Signal States</span>
+            <span class="l-zh">全部信号状态</span>
+          </h2>
+          <span class="chip" id="prof-sig-counts"></span>
+        </div>
+        <div id="prof-sig-list">
+          <p class="tl-empty">
+            <span class="l-en">Select a ticker on the right to see its signal states.</span>
+            <span class="l-zh">在右侧选择标的查看信号状态。</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: ticker search + era context -->
+    <div>
+      <div class="ticker-search-card" style="margin-bottom:16px;">
+        <div class="confl-title" style="margin-bottom:10px;">
+          <span class="l-en">Switch Ticker</span>
+          <span class="l-zh">切换标的</span>
+        </div>
+        <input class="ts-input" type="text" id="ticker-search-input"
+          data-ph-en="e.g. AAPL, NVDA…"
+          data-ph-zh="如 AAPL, NVDA…"
+          placeholder="e.g. AAPL, NVDA…"
+          oninput="tlTickerSearch(this.value)">
+        <div class="ts-results" id="ts-results"></div>
+      </div>
+
+      <div class="tl-card">
+        <div class="tl-card-header">
+          <h2>
+            <span class="l-en">Era-split context</span>
+            <span class="l-zh">时代分割背景</span>
+          </h2>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.7;">
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+            <span class="era-badge2 era-pre">pre-2010</span>
+            <span class="l-en">No data for most signals</span>
+            <span class="l-zh">多数信号缺乏数据</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span class="era-badge2 era-post">post-2010</span>
+            <span class="l-en">All pooled stats — QE regime, rates cycle</span>
+            <span class="l-zh">所有汇总统计 — QE周期，利率周期</span>
+          </div>
+          <div class="null-banner" style="margin-top:10px;">
+            <strong><span class="l-en">Null reminder:</span><span class="l-zh">空值提示：</span></strong>
+            <span class="l-en"> pre-2010 absent = data gap, not a verdict. Signals are retained as confluence inputs.</span>
+            <span class="l-zh"> 2010年前缺失 = 数据空白，非研究结论。信号作为共振输入保留。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════
+   TAB 4: HOW TO TEST
+═══════════════════════════════════════════ #}
+<div class="tab-panel" id="tab-test">
+  <div style="margin-bottom:16px;">
+    <h2 style="font-size:16px;font-weight:700;margin-bottom:6px;">
+      <span class="l-en">How to Test — CLI &amp; pytest reference</span>
+      <span class="l-zh">如何检验 — CLI 与 pytest 参考</span>
+    </h2>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6;">
+      <span class="l-en">For LLM sessions and human reviewers. All code runs against prod-shaped fixtures under <code>tests/fixtures/tech_parity/</code>. Exit 0 on honest nulls.</span>
+      <span class="l-zh">适用于 LLM 会话和人工审核者。所有代码运行于 <code>tests/fixtures/tech_parity/</code> 下的生产形态测试夹具。零触发为诚实空值，退出码为0。</span>
     </p>
   </div>
+  <div class="how-grid">
+
+    <div class="how-card">
+      <h3>&#9654; <span class="l-en">Signal inventory</span><span class="l-zh">信号列表</span></h3>
+      <p>
+        <span class="l-en">Print the full catalog as JSON: id, family, kind, direction, bilingual names.</span>
+        <span class="l-zh">以 JSON 格式打印完整目录：id、族群、类型、方向、双语名称。</span>
+      </p>
+      <div class="code-block-wrap">
+        <button class="copy-btn" onclick="tlCopyCode(this)">Copy</button>
+        <div class="code-block"><span class="code-comment"># list all signals</span>
+<span class="code-kw">python</span> -m scripts.tech_lab_cli list
+
+<span class="code-comment"># filter to one family</span>
+<span class="code-kw">python</span> -m scripts.tech_lab_cli list --family ichimoku</div>
+      </div>
+    </div>
+
+    <div class="how-card">
+      <h3>&#128203; <span class="l-en">Per-ticker state</span><span class="l-zh">个股信号状态</span></h3>
+      <p>
+        <span class="l-en">Emit latest per-signal state for one ticker. Output: JSON dict keyed by signal_id with <code>{state, direction, kind, display_en}</code>.</span>
+        <span class="l-zh">输出单只股票的最新信号状态。输出：以 signal_id 为键的 JSON，含 <code>{state, direction, kind, display_en}</code>。</span>
+      </p>
+      <div class="code-block-wrap">
+        <button class="copy-btn" onclick="tlCopyCode(this)">Copy</button>
+        <div class="code-block"><span class="code-kw">python</span> -m scripts.tech_lab_cli state NVDA
+<span class="code-kw">python</span> -m scripts.tech_lab_cli state AAPL | python -m json.tool</div>
+      </div>
+    </div>
+
+    <div class="how-card">
+      <h3>&#128270; <span class="l-en">Descriptive fire profile</span><span class="l-zh">描述性触发档案</span></h3>
+      <p>
+        <span class="l-en">Horizons: <code>{10, 21, 42, 63}</code> days only (TLT-R6). Era split (pre/post 2010) always printed. <code>--sample N</code> for quick runs.</span>
+        <span class="l-zh">窗口期：仅限 <code>{10, 21, 42, 63}</code> 日（TLT-R6）。始终打印时代分割（2010前/后）。<code>--sample N</code> 用于快速运行。</span>
+      </p>
+      <div class="code-block-wrap">
+        <button class="copy-btn" onclick="tlCopyCode(this)">Copy</button>
+        <div class="code-block"><span class="code-comment"># single signal, all tickers, horizon 21d</span>
+<span class="code-kw">python</span> -m scripts.tech_lab_cli profile rsi14_oversold --horizon 21
+
+<span class="code-comment"># specific tickers, multiple horizons</span>
+<span class="code-kw">python</span> -m scripts.tech_lab_cli profile golden_star_st_7_35 \
+  --tickers NVDA,AAPL,MSFT --horizon 10 --horizon 21
+
+<span class="code-comment"># quick sample of universe</span>
+<span class="code-kw">python</span> -m scripts.tech_lab_cli profile ichimoku_tk_cross_up \
+  --sample 20 --horizon 21</div>
+      </div>
+    </div>
+
+    <div class="how-card">
+      <h3>&#128200; <span class="l-en">Per-bar series tail</span><span class="l-zh">逐K信号序列</span></h3>
+      <p>
+        <span class="l-en">Emit the last N bars of the raw signal series for a ticker (for chart debugging and indicator parity checks).</span>
+        <span class="l-zh">输出指定标的的最近 N 根K线信号序列（用于图表调试和指标一致性验证）。</span>
+      </p>
+      <div class="code-block-wrap">
+        <button class="copy-btn" onclick="tlCopyCode(this)">Copy</button>
+        <div class="code-block"><span class="code-kw">python</span> -m scripts.tech_lab_cli series rsi14_oversold NVDA --tail 30
+<span class="code-kw">python</span> -m scripts.tech_lab_cli series ichimoku_above_cloud AAPL --tail 50</div>
+      </div>
+    </div>
+
+    <div class="how-card">
+      <h3>&#9989; <span class="l-en">Run the test suite</span><span class="l-zh">运行测试套件</span></h3>
+      <p>
+        <span class="l-en">Correctness, era-split logic, CLI tier stamps, fixture determinism, parity with Terminal TypeScript.</span>
+        <span class="l-zh">正确性、时代分割逻辑、CLI 层级标签、夹具确定性、与终端 TypeScript 的一致性。</span>
+      </p>
+      <div class="code-block-wrap">
+        <button class="copy-btn" onclick="tlCopyCode(this)">Copy</button>
+        <div class="code-block"><span class="code-comment"># full tech lab test suite</span>
+<span class="code-kw">python</span> -m pytest tests/test_tech_stars_metrics.py \
+               tests/test_tech_events_export.py \
+               tests/test_tech_lab_cli.py \
+               tests/test_tech_parity_fixtures.py \
+               tests/test_tech_catalog.py -q
+
+<span class="code-comment"># smoke-test the export pipeline (5 tickers)</span>
+<span class="code-kw">python</span> scripts/build_tech_lab_data.py --sample 5 \
+  --output-dir /tmp/te_check</div>
+      </div>
+    </div>
+
+    <div class="how-card">
+      <h3>&#9888; <span class="l-en">Gauntlet protocol reminder</span><span class="l-zh">检验协议提醒</span></h3>
+      <p>
+        <span class="l-en">All data here is <strong>display-tier</strong>. The gauntlet applies only at promotion to authority (rank/size/gate).</span>
+        <span class="l-zh">所有数据为<strong>展示级别</strong>。检验协议仅在晋升为权威时适用（排名/规模/门控）。</span>
+      </p>
+      <ul>
+        <li><span class="l-en">Null as standalone ≠ worthless — retain as confluence input</span><span class="l-zh">空值单独成立 ≠ 无价值 — 保留为共振输入</span></li>
+        <li><span class="l-en">Survivor bias: mega-caps only; n_months varies by signal</span><span class="l-zh">幸存偏差：仅大盘股；覆盖月数因信号而异</span></li>
+        <li><span class="l-en">Pre-2010 absent for most signals — pooled = post-2010</span><span class="l-zh">多数信号缺乏2010年前数据 — 汇总即为2010年后</span></li>
+        <li><span class="l-en">Era split required before promotion: use <code>wr_pre2010</code> / <code>wr_post2010</code></span><span class="l-zh">晋升前需进行时代分割：使用 <code>wr_pre2010</code> / <code>wr_post2010</code></span></li>
+        <li><span class="l-en">The CI guard blocks affirmative authority claims ("this signal has a gauntleted edge") without a backing artifact — do not claim gauntlet results you do not have</span><span class="l-zh">CI保护阻止未经认证的权威声明 — 未有检验结果时不得声明信号已通过检验</span></li>
+      </ul>
+      <div class="null-banner">
+        <span class="l-en">Parity fixtures: <code>tests/fixtures/tech_parity/</code> — byte-identical regeneration via <code>python scripts/build_tech_parity_fixtures.py</code>. Tolerance: 1e-6 relative per bar.</span>
+        <span class="l-zh">一致性夹具：<code>tests/fixtures/tech_parity/</code> — 通过 <code>python scripts/build_tech_parity_fixtures.py</code> 字节级重现。容差：每根K线 1e-6 相对误差。</span>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-{# ── Per-stock profile panel (drill-in) ── #}
-<div class="tl-card tl-profile-panel" id="tl-profile-panel">
-  <div class="tl-profile-header">
-    <span class="tl-profile-ticker" id="prof-ticker"></span>
-    <span class="tl-profile-name" id="prof-name"></span>
-    <span class="tl-profile-back" onclick="tlCloseProfile()">
-      ← {{ t('Back to list', '返回列表') }}
-    </span>
-  </div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-    <div class="tl-confl">
-      <span class="cn" id="prof-active-buy">—</span>
-      <span>{{ t('/ active buy signals', '/ 活跃买入信号') }}</span>
-      <span id="prof-active-total" class="mut"></span>
-    </div>
-    <div class="tl-confl" id="prof-score-wrap">
-      <span class="cn" id="prof-score">—</span>
-      <span>{{ t('score', '评分') }}</span>
-      <span class="band-chip" id="prof-band"></span>
-    </div>
-  </div>
-  <div class="tl-perf-row" id="prof-perf-row"></div>
-  <div class="tl-sig-list" id="prof-sig-list"></div>
-  <p class="mut2" style="margin-top:8px">
-    {{ t('Signal list shows all tracked signals (active = currently firing, greyed = not firing). Age = bars since first fire.',
-         '信号列表显示所有已跟踪信号（活跃=当前触发，灰色=未触发）。年龄=首次触发后的K线数。') }}
-  </p>
-</div>
-
+</div><!-- .tl-page -->
 {% endblock %}
 
 {% block body_scripts %}
+<script src="lightweight-charts.js"></script>
 <script>
-(function() {
-  // ── i18n helper — dual-span switches via CSS (.l-en/.l-zh) ──
-  function L(en, zh) {
-    return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh != null ? zh : en) + '</span>';
-  }
-  function _isZh() { return document.documentElement.getAttribute('data-lang') === 'zh'; }
+(function () {
+'use strict';
 
-  // ── runtime state ──
-  var SIGS = {};
-  var STKS = {};
-  var _loaded = false;
+/* ─── i18n helper ─────────────────────────────────────────────────────── */
+function L(en, zh) {
+  return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh != null ? zh : en) + '</span>';
+}
+function isZh() { return document.documentElement.getAttribute('data-lang') === 'zh'; }
 
-  // current state
-  var _mode   = 'screener';
-  var _sigId  = 'COMPOSITE';
-  var _search = '';
+/* ─── Global state ─────────────────────────────────────────────────────── */
+var SIGS = {};          // tech_lab.json signals
+var STKS = {};          // tech_screener.json stocks
+var SIG_FIRES = {};     // signal_id → [ticker,...] (from screener)
+var EVENTS = {};        // ticker → tech_events payload (cached)
+var _loaded = false;
 
-  // ── mode toggle ──
-  window.tlSetMode = function(m) {
-    _mode = m;
-    document.getElementById('btn-screener').classList.toggle('active', m === 'screener');
-    document.getElementById('btn-lab').classList.toggle('active', m === 'lab');
-    document.getElementById('tl-screener-panel').style.display = m === 'screener' ? '' : 'none';
-    document.getElementById('tl-lab-panel').style.display      = m === 'lab'      ? '' : 'none';
-    _render();
-  };
+/* screener */
+var _screenerRows = [];
+var _screenerSort = 'score';
+var _screenerAsc  = false;
+var _screenerFilter = '';
+var _screenerBand = '';
+var _screenerPage = 0;
+var PAGE_SIZE = 25;
 
-  // ── signal select ──
-  window.tlSelectSignal = function(id) {
-    _sigId = id;
-    tlCloseProfile();
-    _render();
-  };
+/* catalog */
+var _catalogRows = [];
+var _catalogSort = 'edge_wr';
+var _catalogAsc  = false;
 
-  // ── ticker search → open profile ──
-  window.tlSearchTicker = function(v) {
-    _search = v.trim().toUpperCase();
-    if (_search && STKS[_search]) {
-      tlOpenProfile(_search);
-    }
-  };
+/* confluence */
+var _activeConfl = new Set();
+var _conflLogic  = 'ALL';
+var _MAX_CONFL   = 4;
 
-  // ── open per-stock profile ──
-  window.tlOpenProfile = function(tk) {
+/* signal lab */
+var _activeSigId = null;
+var _labChart    = null;
+var _labChartSeries = null;
+var _labMarkers  = [];
+
+/* stock profile */
+var _profTk = null;
+var _profChart = null;
+var _profChartSeries = null;
+
+/* ─── Tab router (hash-based) ─────────────────────────────────────────── */
+var TABS = ['screener','siglab','stock','test'];
+function tlSwitchTab(id) {
+  TABS.forEach(function(t) {
+    var el = document.getElementById('tab-' + t);
+    var btn = document.getElementById('tb-' + t);
+    if (el) el.classList.toggle('active', t === id);
+    if (btn) btn.classList.toggle('active', t === id);
+  });
+  try { localStorage.setItem('tl_tab', id); } catch(e){}
+  if (history.replaceState) history.replaceState(null,'','#'+id);
+}
+function tlInitTab() {
+  var hash = (location.hash||'').replace('#','');
+  var stored = '';
+  try { stored = localStorage.getItem('tl_tab')||''; } catch(e){}
+  var tab = TABS.indexOf(hash) >= 0 ? hash : (TABS.indexOf(stored) >= 0 ? stored : 'screener');
+  tlSwitchTab(tab);
+}
+window.addEventListener('hashchange', function() {
+  var h = (location.hash||'').replace('#','');
+  if (TABS.indexOf(h) >= 0) tlSwitchTab(h);
+});
+
+/* Tab buttons */
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var t = btn.getAttribute('data-tab');
+    if (t) tlSwitchTab(t);
+  });
+});
+
+/* ─── Helpers ─────────────────────────────────────────────────────────── */
+function _pct(v) { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
+function _wr(v)  { return v != null ? (v * 100).toFixed(1) + '%' : '—'; }
+function _edge(v){ return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + 'pp' : '—'; }
+function _gaugeClass(score) {
+  if (score == null) return 'g-lo';
+  if (score >= 0.7) return 'g-hi';
+  if (score >= 0.2) return 'g-mod';
+  if (score >= -0.2) return 'g-lo';
+  return 'g-neg';
+}
+function _bandClass(b) {
+  if (!b) return 'band-Hold';
+  if (b === 'Buy') return 'band-Buy';
+  if (b === 'Sell') return 'band-Sell';
+  return 'band-Hold';
+}
+function _dirBadge(dir) {
+  if (dir > 0) return '<span class="sig-dir-badge dir-up">&#9650;</span>';
+  if (dir < 0) return '<span class="sig-dir-badge dir-down">&#9660;</span>';
+  return '<span class="sig-dir-badge dir-neu">&#8212;</span>';
+}
+function _edgeChip(e) {
+  if (e == null) return '<span class="tl-edge-chip edge-neu">—</span>';
+  var pp = e * 100;
+  var cls = pp >= 4 ? 'edge-strong' : pp >= 1 ? 'edge-pos' : pp <= -1 ? 'edge-neg' : 'edge-neu';
+  return '<span class="tl-edge-chip ' + cls + '">' + (pp >= 0 ? '+' : '') + pp.toFixed(1) + 'pp</span>';
+}
+function _eraChip(sig) {
+  var pre = sig.wr_pre2010;
+  var post = sig.wr_post2010;
+  if (pre == null) return '<span class="era-badge2 era-post">post-2010 only</span>';
+  if (post == null) return '<span class="era-badge2 era-pre">pre-2010 only</span>';
+  var agree = (pre >= sig.base_wr) === (post >= sig.base_wr);
+  if (agree) return '<span class="era-badge2 era-stable">stable</span>';
+  return '<span class="era-badge2 era-divg">era-divergent</span>';
+}
+function _familyLabel(f) {
+  return (f||'').replace(/_/g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─── Screener ─────────────────────────────────────────────────────────── */
+function tlBuildScreenerRows() {
+  _screenerRows = Object.keys(STKS).map(function(tk) {
     var s = STKS[tk];
-    if (!s) return;
-    document.getElementById('prof-ticker').textContent = tk;
-    document.getElementById('prof-name').textContent   = s.name || '';
-    document.getElementById('prof-active-buy').textContent   = s.active_buy   != null ? s.active_buy   : '—';
-    document.getElementById('prof-active-total').innerHTML = s.active_total != null ? '/ ' + s.active_total + ' ' + L('total', '共') : '';
-    document.getElementById('prof-score').textContent = s.score != null ? (s.score > 0 ? '+' : '') + s.score.toFixed(1) : '—';
-    var bandEl = document.getElementById('prof-band');
-    bandEl.textContent = s.band || '—';
-    bandEl.className = 'band-chip ' + _bandClass(s.band);
+    return { tk: tk, name: s.name, price: s.price, score: s.score, band: s.band,
+      buy: s.active_buy, total: s.active_total,
+      perf7d: s.perf_7d, perf30d: s.perf_30d };
+  });
+}
 
-    // perf row
-    var perfRow = document.getElementById('prof-perf-row');
-    perfRow.innerHTML = '';
-    [['7d','perf_7d'],['30d','perf_30d'],['12m','perf_12m']].forEach(function(p) {
-      var v = s[p[1]];
-      var cls = v == null ? '' : (v >= 0 ? 'r-pos' : 'r-neg');
-      perfRow.innerHTML += '<div class="tl-perf-cell"><div class="pk">' + p[0] + '</div>' +
-        '<div class="pv ' + cls + '">' + _pct(v) + '</div></div>';
+function tlFilterScreener() {
+  _screenerFilter = (document.getElementById('screener-search').value || '').trim().toLowerCase();
+  _screenerBand   = document.getElementById('band-filter').value || '';
+  _screenerPage   = 0;
+  tlRenderScreener();
+}
+
+function tlSortScreener(key, th) {
+  if (_screenerSort === key) { _screenerAsc = !_screenerAsc; } else { _screenerSort = key; _screenerAsc = false; }
+  document.querySelectorAll('#screener-table th').forEach(function(t){ t.classList.remove('sorted'); });
+  if (th) th.classList.add('sorted');
+  tlRenderScreener();
+}
+
+function tlRenderScreener() {
+  if (!_loaded) return;
+  var rows = _screenerRows.filter(function(r) {
+    if (_screenerFilter && !(r.tk.toLowerCase().includes(_screenerFilter) || (r.name||'').toLowerCase().includes(_screenerFilter))) return false;
+    if (_screenerBand && r.band !== _screenerBand) return false;
+    return true;
+  });
+  rows.sort(function(a,b) {
+    var key = _screenerSort;
+    var va = a[key] != null ? a[key] : -999;
+    var vb = b[key] != null ? b[key] : -999;
+    return _screenerAsc ? va - vb : vb - va;
+  });
+  var total = rows.length;
+  var pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  _screenerPage = Math.min(_screenerPage, pages - 1);
+  var slice = rows.slice(_screenerPage * PAGE_SIZE, (_screenerPage + 1) * PAGE_SIZE);
+
+  var tbody = document.getElementById('screener-tbody');
+  tbody.innerHTML = slice.map(function(r) {
+    var scorePct = Math.max(0, Math.min(100, (r.score + 1) / 2.2 * 100));
+    var gCls = _gaugeClass(r.score);
+    var sCls = r.score > 0.5 ? 'r-pos' : r.score < 0 ? 'r-neg' : 'r-neu';
+    var dots = '';
+    for (var i=0; i<(r.buy||0); i++) dots += '<span class="sig-dot dot-buy"></span>';
+    for (var j=0; j<Math.max(0,(r.total||0)-(r.buy||0)); j++) dots += '<span class="sig-dot dot-off"></span>';
+    return '<tr onclick="tlOpenProfile(\'' + r.tk + '\')">' +
+      '<td><span class="tl-tk">' + esc(r.tk) + '</span><span class="tl-name">' + esc(r.name||'') + '</span></td>' +
+      '<td class="tl-num">' + (r.price != null ? '$'+r.price.toFixed(2) : '—') + '</td>' +
+      '<td class="tl-num"><div class="gauge-wrap"><div class="gauge '+gCls+'"><i style="width:'+scorePct.toFixed(0)+'%"></i></div>' +
+        '<span class="gauge-score '+sCls+'">' + (r.score != null ? (r.score > 0 ? '+' : '')+r.score.toFixed(2) : '—') + '</span></div></td>' +
+      '<td><span class="band-chip '+_bandClass(r.band)+'">' + esc(r.band||'—') + '</span></td>' +
+      '<td class="tl-num">' + (r.perf7d != null ? '<span class="'+(r.perf7d>=0?'r-pos':'r-neg')+'">' + _pct(r.perf7d) + '</span>' : '<span class="r-neu">—</span>') + '</td>' +
+      '<td class="tl-num">' + (r.perf30d != null ? '<span class="'+(r.perf30d>=0?'r-pos':'r-neg')+'">' + _pct(r.perf30d) + '</span>' : '<span class="r-neu">—</span>') + '</td>' +
+      '<td><div class="sig-dots">' + dots + '</div></td>' +
+      '</tr>';
+  }).join('');
+
+  var from = total === 0 ? 0 : _screenerPage * PAGE_SIZE + 1;
+  var to = Math.min((_screenerPage + 1) * PAGE_SIZE, total);
+  var countEl = document.getElementById('screener-count');
+  countEl.innerHTML = L('Showing ' + from + '–' + to + ' of ' + total, '显示 '+from+'–'+to+' 共 '+total);
+
+  // Pagination
+  var pgEl = document.getElementById('screener-pages');
+  pgEl.innerHTML = '';
+  if (pages > 1) {
+    for (var p=0; p<pages; p++) {
+      (function(pg) {
+        var btn = document.createElement('button');
+        btn.className = 'tbl-page-btn' + (pg === _screenerPage ? ' active' : '');
+        btn.textContent = pg + 1;
+        btn.onclick = function(){ _screenerPage = pg; tlRenderScreener(); };
+        pgEl.appendChild(btn);
+      })(p);
+    }
+  }
+}
+
+/* ─── Confluence Builder ─────────────────────────────────────────────── */
+function tlBuildConflChips() {
+  // Group by family, show signals with fires first
+  var families = {};
+  Object.keys(SIG_FIRES).forEach(function(sid) {
+    var sc = (window._SCREENER_SIGS||{})[sid];
+    if (!sc) return;
+    var fam = sc.family || 'other';
+    if (!families[fam]) families[fam] = [];
+    families[fam].push(sid);
+  });
+
+  var html = '';
+  Object.keys(families).sort().forEach(function(fam) {
+    var sids = families[fam];
+    if (!sids.length) return;
+    html += '<div><div class="confl-section-label">' + esc(_familyLabel(fam)) + '</div><div class="confl-chips">';
+    sids.forEach(function(sid) {
+      var sc = (window._SCREENER_SIGS||{})[sid];
+      var lab = SIGS[sid];
+      var enName = esc((sc&&sc.display_en)||sid);
+      var dir = (sc&&sc.direction) || 0;
+      var isBuy = dir > 0 ? ' buy-chip' : '';
+      html += '<button class="confl-chip' + isBuy + '" data-sid="' + sid + '" onclick="tlConflToggle(this,\'' + sid + '\')">' + enName + '</button>';
     });
+    html += '</div></div>';
+  });
+  var area = document.getElementById('confl-chip-area');
+  if (area) area.innerHTML = html || '<p class="r-neu" style="font-size:12px;">No signals with current fires</p>';
 
-    // signal list
-    var sl = document.getElementById('prof-sig-list');
-    sl.innerHTML = '';
-    (s.signals || []).forEach(function(sig) {
-      var dirCls = sig.direction > 0 ? 'glyph-up' : sig.direction < 0 ? 'glyph-down' : 'glyph-neu';
-      var rowCls = sig.state ? 'state-on' : 'state-off';
-      sl.innerHTML += '<div class="tl-sig-row ' + rowCls + '">' +
-        '<span class="' + dirCls + '">' + _glyph(sig.glyph) + '</span>' +
-        L(sig.display_en || sig.id, sig.display_zh || SIGS[sig.id] && SIGS[sig.id].display_zh || sig.display_en || sig.id) +
-        (sig.age_days ? '<span class="tl-sig-age">' + sig.age_days + 'd</span>' : '') +
-        '</div>';
+  // Set default: pick 2 signals with non-empty intersection (computed dynamically)
+  var pairs = Object.keys(SIG_FIRES);
+  var defaultA = null, defaultB = null;
+  for (var i=0; i<pairs.length && !defaultA; i++) {
+    var setA = new Set(SIG_FIRES[pairs[i]]);
+    for (var j=i+1; j<pairs.length && !defaultA; j++) {
+      var setB = SIG_FIRES[pairs[j]];
+      var inter = setB.filter(function(t){ return setA.has(t); });
+      if (inter.length >= 1) { defaultA = pairs[i]; defaultB = pairs[j]; }
+    }
+  }
+  if (defaultA && defaultB) {
+    _activeConfl.add(defaultA);
+    _activeConfl.add(defaultB);
+    document.querySelectorAll('#confl-chip-area .confl-chip').forEach(function(btn) {
+      var sid = btn.getAttribute('data-sid');
+      if (sid === defaultA || sid === defaultB) btn.classList.add('active');
     });
-
-    document.getElementById('tl-profile-panel').classList.add('active');
-  };
-
-  window.tlCloseProfile = function() {
-    document.getElementById('tl-profile-panel').classList.remove('active');
-    document.getElementById('tl-ticker-search').value = '';
-    _search = '';
-  };
-
-  // ── helpers ──
-  function _bandClass(band) {
-    var b = (band || '').toLowerCase();
-    if (b === 'strong buy') return 'band-strong';
-    if (b === 'buy') return 'band-high';
-    if (b === 'hold') return 'band-low';
-    if (b === 'sell' || b === 'strong sell') return 'band-avoid';
-    return 'band-none';
   }
-  function _glyph(g) {
-    var m = { arrow_up:'▲', arrow_down:'▼', cross_up:'↗', cross_down:'↘',
-      star_gold:'★', star_red:'★', circle_green:'●', circle_red:'●',
-      band:'▬', line:'─', double_bottom:'W', double_top:'M' };
-    return m[g] || '○';
-  }
-  function _gaugeClass(score) {
-    if (score == null) return 'g-lo';
-    if (score >= 7)  return 'g-hi';
-    if (score >= 3)  return 'g-mod';
-    if (score >= 0)  return 'g-lo';
-    return 'g-neg';
-  }
-  function _pct(v) { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }  // v is a 0-1 ratio
-  function _wr(v)  { return v != null ? Math.round(v * 100) + '%' : '—'; }
-  function _fmtNum(v, dec) { return v != null ? v.toFixed(dec != null ? dec : 1) : '—'; }
+  tlConflUpdate();
+}
 
-  // ── screener render ──
-  function _renderScreener() {
-    var sig = SIGS[_sigId];
-    var tickers, title, dir, glyph, countWord;
-    if (_sigId === 'COMPOSITE') {
-      tickers = Object.keys(STKS).map(function(tk) { var s = STKS[tk];
-        return { ticker: tk, name: s.name, price: s.price, score: s.score, band: s.band }; })
-        .filter(function(r) { return r.score != null; })
-        .sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
-      title = L('Composite — Top Names by Score', '综合 — 最高评分标的'); dir = 1; glyph = 'star_gold'; countWord = L(' names', ' 个标的');
+window.tlConflToggle = function(btn, sid) {
+  if (_activeConfl.has(sid)) {
+    _activeConfl.delete(sid);
+    btn.classList.remove('active');
+  } else if (_activeConfl.size < _MAX_CONFL) {
+    _activeConfl.add(sid);
+    btn.classList.add('active');
+  }
+  tlConflUpdate();
+};
+
+window.tlConflSetLogic = function(l) {
+  _conflLogic = l;
+  document.getElementById('logic-all').classList.toggle('active', l==='ALL');
+  document.getElementById('logic-any').classList.toggle('active', l==='ANY');
+  tlConflUpdate();
+};
+
+function tlConflUpdate() {
+  var countEl = document.getElementById('confl-count');
+  var labelEl = document.getElementById('confl-count-label');
+  var tksEl   = document.getElementById('confl-tickers');
+  var emptyEl = document.getElementById('confl-empty-msg');
+
+  if (_activeConfl.size === 0) {
+    countEl.textContent = '—';
+    labelEl.innerHTML = L('pick signals above','请选择信号');
+    tksEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'none';
+    return;
+  }
+  var sets = Array.from(_activeConfl).map(function(sid){ return new Set(SIG_FIRES[sid]||[]); });
+  var result;
+  if (_conflLogic === 'ALL') {
+    result = sets.reduce(function(acc, s){ return new Set(Array.from(acc).filter(function(x){ return s.has(x); })); });
+  } else {
+    result = new Set(sets.reduce(function(acc,s){ return acc.concat(Array.from(s)); }, []));
+  }
+  var tks = Array.from(result);
+  countEl.textContent = tks.length;
+  var logic_zh = _conflLogic === 'ALL' ? '全部' : '任一';
+  labelEl.innerHTML = L('names match · ' + _conflLogic, '个标的匹配 · ' + logic_zh);
+  if (tks.length === 0) {
+    tksEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = '';
+  } else {
+    if (emptyEl) emptyEl.style.display = 'none';
+    var show = tks.slice(0,5).map(function(t){ return '<span style="color:var(--link);font-weight:600;">'+esc(t)+'</span>'; }).join(' · ');
+    var more = tks.length > 5 ? ' <span>+' + (tks.length-5) + ' more</span>' : '';
+    tksEl.innerHTML = show + more;
+  }
+}
+
+/* ─── Signal Picker (Tab 2) ─────────────────────────────────────────────── */
+function tlBuildPicker() {
+  var families = {};
+  Object.keys(SIGS).forEach(function(sid) {
+    var sig = SIGS[sid];
+    var fam = sig.family || 'other';
+    if (!families[fam]) families[fam] = [];
+    families[fam].push(sid);
+  });
+
+  var html = '';
+  Object.keys(families).sort().forEach(function(fam) {
+    var sids = families[fam];
+    html += '<div class="sig-family-label">' + esc(_familyLabel(fam)) + '</div>';
+    sids.forEach(function(sid) {
+      var sig = SIGS[sid];
+      var sc = (window._SCREENER_SIGS||{})[sid];
+      var nFire = (sc&&sc.n_firing) || 0;
+      var wr = sig.wr_post2010 != null ? sig.wr_post2010 : sig.wr_21d;
+      var wrFill = wr != null ? Math.max(0,Math.min(100,(wr-0.48)/0.24*100)) : 0;
+      var wrColor = wr != null ? (wr > 0.6 ? 'var(--up)' : wr > 0.55 ? 'var(--info)' : 'var(--muted)') : 'var(--line)';
+      html += '<button class="sig-row" data-sid="' + sid + '" onclick="tlSelectSignal(\'' + sid + '\')">' +
+        _dirBadge(sig.direction) +
+        '<span class="sig-row-name">' + esc(sig.display_en||sid) + '</span>' +
+        '<span class="wr-bar-mini"><span class="wr-track"><span class="wr-fill" style="width:'+wrFill.toFixed(0)+'%;background:'+wrColor+'"></span></span>' +
+        '<span class="wr-val" style="color:'+wrColor+'">' + (wr != null ? (wr*100).toFixed(1)+'%' : '—') + '</span></span>' +
+        '<span class="fire-badge' + (nFire > 0 ? ' active' : '') + '">' + (nFire > 0 ? nFire+'▲' : '0') + '</span>' +
+        '</button>';
+    });
+  });
+
+  var picker = document.getElementById('sig-picker');
+  if (picker) picker.innerHTML = html;
+}
+
+/* ─── Catalog Table ─────────────────────────────────────────────────────── */
+function tlBuildCatalogRows() {
+  _catalogRows = Object.keys(SIGS).map(function(sid) {
+    var s = SIGS[sid];
+    return { sid: sid, display_en: s.display_en||sid, family: s.family||'', direction: s.direction||0,
+      wr_21d: s.wr_21d, base_wr: s.base_wr, edge_wr: s.edge_wr, up_tape_pct: s.up_tape_pct,
+      n_fires: s.n_fires, n_months: s.n_months, wr_pre2010: s.wr_pre2010, wr_post2010: s.wr_post2010, kind: s.kind };
+  });
+}
+
+window.tlSortCatalog = function(key, th) {
+  if (_catalogSort === key) { _catalogAsc = !_catalogAsc; } else { _catalogSort = key; _catalogAsc = false; }
+  document.querySelectorAll('#catalog-table th').forEach(function(t){ t.classList.remove('sorted'); });
+  if (th) th.classList.add('sorted');
+  tlRenderCatalog();
+};
+
+function tlRenderCatalog() {
+  if (!_loaded) return;
+  var rows = _catalogRows.slice().sort(function(a,b) {
+    var key = _catalogSort;
+    var va = a[key] != null ? a[key] : -999;
+    var vb = b[key] != null ? b[key] : -999;
+    return _catalogAsc ? va - vb : vb - va;
+  });
+
+  var note = document.getElementById('catalog-count-note');
+  if (note) note.innerHTML = L(rows.length + ' signals — click a row to drill in', rows.length + ' 个信号 — 点击行查看详情');
+
+  var tbody = document.getElementById('catalog-tbody');
+  tbody.innerHTML = rows.map(function(r) {
+    var wrBar = '';
+    if (r.wr_21d != null) {
+      var bx = (r.base_wr||0) * 80;
+      var wx = r.wr_21d * 80;
+      wrBar = '<svg width="80" height="12" viewBox="0 0 80 12">' +
+        '<rect x="0" y="3" width="80" height="6" rx="3" fill="var(--panel2)"/>' +
+        '<rect x="0" y="3" width="'+bx.toFixed(1)+'" height="6" rx="3" fill="var(--muted)" opacity=".4"/>' +
+        '<rect x="0" y="3" width="'+wx.toFixed(1)+'" height="6" rx="3" fill="#5b8def"/>' +
+        '<line x1="'+bx.toFixed(1)+'" y1="0" x2="'+bx.toFixed(1)+'" y2="12" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2,2"/>' +
+        '</svg><span style="font-size:10px;color:var(--muted);">'+_wr(r.wr_21d)+'</span>';
     } else {
-      tickers = (sig && sig.tickers) ? sig.tickers : [];
-      title = sig ? L(sig.display_en, sig.display_zh || sig.display_en) : _sigId;
-      dir = sig ? sig.direction : 0; glyph = sig ? sig.glyph : null; countWord = L(' firing', ' 个触发中');
+      wrBar = '<span class="r-neu" style="font-size:11px;">—</span>';
     }
-    document.getElementById('tl-screener-title').innerHTML =
-      '<span class="' + (dir > 0 ? 'glyph-up' : dir < 0 ? 'glyph-down' : 'glyph-neu') + '">' +
-      _glyph(glyph) + '</span> ' + title +
-      ' <span class="h-note" id="tl-screener-count"></span>';
-    document.getElementById('tl-screener-count').innerHTML = tickers.length + countWord;
+    return '<tr onclick="tlSelectSignal(\'' + r.sid + '\')">' +
+      '<td><span style="font-size:12.5px;font-weight:600;">' + esc(r.display_en) + '</span></td>' +
+      '<td><span style="font-size:11px;color:var(--muted);">' + esc(_familyLabel(r.family)) + '</span></td>' +
+      '<td>' + _dirBadge(r.direction) + '</td>' +
+      '<td><div style="display:flex;align-items:center;gap:6px;">' + wrBar + '</div></td>' +
+      '<td>' + _edgeChip(r.edge_wr) + '</td>' +
+      '<td>' + _eraChip(r) + '</td>' +
+      '<td class="tl-num" style="font-size:11.5px;">' + (r.up_tape_pct != null ? (r.up_tape_pct*100).toFixed(0)+'%' : '—') + '</td>' +
+      '<td class="tl-num" style="font-size:11.5px;">' + (r.n_fires!=null?r.n_fires.toLocaleString():'—') + ' / ' + (r.n_months!=null?r.n_months:'—') + '</td>' +
+      '</tr>';
+  }).join('');
+}
 
-    var tbody = document.getElementById('tl-screener-tbody');
-    if (!tickers.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="tl-empty" style="padding:14px 0">—</td></tr>';
-      return;
-    }
-    tbody.innerHTML = tickers.map(function(r, i) {
-      var sc = r.score != null ? r.score : null;
-      // score is on -10..+10 scale; normalise to 0-100% for bar
-      var pct = sc != null ? Math.max(0, Math.min(100, (sc + 10) / 20 * 100)) : 50;
-      var gCls = _gaugeClass(sc);
-      return '<tr class="tl-row" onclick="tlOpenProfile(\'' + r.ticker + '\')">' +
-        '<td class="mut">' + (i+1) + '</td>' +
-        '<td><span class="tl-tk">' + r.ticker + '</span></td>' +
-        '<td><span class="tl-name">' + (r.name || '') + '</span></td>' +
-        '<td class="tl-num">' +
-          '<div class="tl-gauge-wrap">' +
-          '<div class="tl-gauge ' + gCls + '"><i style="width:' + pct.toFixed(0) + '%"></i></div>' +
-          '<span class="tl-score">' + (sc != null ? (sc >= 0 ? '+' : '') + sc.toFixed(1) : '—') + '</span>' +
-          '</div>' +
-        '</td>' +
-        '<td><span class="band-chip ' + _bandClass(r.band) + '">' + (r.band || '—') + '</span></td>' +
-        '<td class="tl-num">' + (r.price != null ? '$' + r.price.toFixed(2) : '—') + '</td>' +
-        '<td><span style="color:var(--link);cursor:pointer;font-size:11.5px" onclick="event.stopPropagation();tlOpenProfile(\'' + r.ticker + '\')">' + L('→ profile', '→ 档案') + '</span></td>' +
-        '</tr>';
-    }).join('');
+/* ─── Signal detail pane ─────────────────────────────────────────────────── */
+window.tlSelectSignal = function(sid) {
+  _activeSigId = sid;
+  var sig = SIGS[sid];
+  if (!sig) return;
+
+  // Highlight picker
+  document.querySelectorAll('#sig-picker .sig-row').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-sid') === sid);
+  });
+
+  // Switch to detail view
+  tlShowDetail();
+
+  // Name + subtitle
+  document.getElementById('det-name').textContent = sig.display_en || sid;
+  document.getElementById('det-sub').innerHTML = L(
+    'Family: ' + _familyLabel(sig.family) + ' · Kind: ' + (sig.kind||'event') + ' · ' + (sig.n_fires||0) + ' fires · ' + (sig.n_months||0) + ' months',
+    '族群：' + _familyLabel(sig.family) + ' · 类型：' + (sig.kind||'event') + ' · ' + (sig.n_fires||0) + '次触发 · ' + (sig.n_months||0) + '个月'
+  );
+
+  // Stat grid (8 cells)
+  var baseWr = sig.base_wr;
+  var cells = [
+    { k:L('WR 21d','21日胜率'), v:_wr(sig.wr_21d), cls: sig.wr_21d>baseWr?'sv-up':sig.wr_21d<baseWr-0.02?'sv-neg':'sv-neu',
+      b:L('vs base '+_wr(baseWr),'对比基准'+_wr(baseWr)) },
+    { k:L('Edge WR','优势胜率'), v:_edge(sig.edge_wr), cls: sig.edge_wr>0.01?'sv-up':sig.edge_wr<-0.01?'sv-neg':'sv-neu',
+      b:L('pp above base','pp超基准') },
+    { k:'MFE/MAE', v:sig.mfe_mae_med!=null?sig.mfe_mae_med.toFixed(2)+'×':'—', cls:sig.mfe_mae_med>=1?'sv-up':'sv-neu',
+      b:L('>1 = reward > risk','>1 = 盈亏比正向') },
+    { k:L('Durable %','持续率'), v:_wr(sig.durable_rate), cls:'sv-neu', b:L('persists 5d+','持续5日以上') },
+    { k:L('Median Lag','中位滞后'), v:sig.median_lag_pct!=null?(sig.median_lag_pct*100).toFixed(1)+'%':'—', cls:'sv-neu', b:L('from low to fire','从低点到触发') },
+    { k:L('Days Since Low','距低点天数'), v:sig.days_since_low_med!=null?Math.round(sig.days_since_low_med)+'d':'—', cls:'sv-neu', b:L('median','中位数') },
+    { k:L('Up Tape %','上涨市占%'), v:_wr(sig.up_tape_pct), cls:'sv-neu', b:L('fired in uptrend','上涨行情中触发') },
+    { k:L('Fires / Months','触发/月数'), v:(sig.n_fires!=null?sig.n_fires.toLocaleString():'—')+' / '+(sig.n_months||'—'),
+      cls:(sig.n_fires>=2000)?'sv-neg':'sv-neu', b:sig.n_fires>=2000?L('capped at 2000','上限2000次'):'' }
+  ];
+  document.getElementById('det-stat-grid').innerHTML = cells.map(function(c){
+    return '<div class="stat-cell"><div class="sk">'+c.k+'</div><div class="sv '+c.cls+'">'+c.v+'</div><div class="sb">'+c.b+'</div></div>';
+  }).join('');
+
+  // Era-split 3-row table
+  var pre = sig.wr_pre2010;
+  var post = sig.wr_post2010;
+  var pool = sig.wr_21d;
+  var preNote = pre != null ? '' : L('no data — pooled ≡ post-2010','无数据 — 汇总同等于2010后');
+  var eraRows = [
+    { tag:'post', cls:'era-post', en:'Post-2010', zh:'2010后', wr:post, edge:sig.edge_wr, fires:sig.n_fires, months:sig.n_months },
+    { tag:'pre',  cls:'era-pre',  en:'Pre-2010',  zh:'2010前', wr:pre, edge:null, fires:null, months:null },
+    { tag:'pool', cls:'era-pool', en:'Pooled',    zh:'汇总', wr:pool, edge:sig.edge_wr, fires:sig.n_fires, months:sig.n_months }
+  ];
+  var eraTbody = document.getElementById('det-era-body');
+  eraTbody.innerHTML = eraRows.map(function(r) {
+    var wrCls = r.wr!=null ? (r.wr>(baseWr||0.55)?'r-pos':r.wr<(baseWr||0.55)-0.02?'r-neg':'') : 'r-neu';
+    var eCls  = r.edge!=null ? (r.edge>0.01?'r-pos':r.edge<-0.01?'r-neg':'') : 'r-neu';
+    var note  = (r.tag==='pre' && pre == null) ? ' <span style="color:var(--muted);font-size:10px;">'+preNote+'</span>' : '';
+    return '<tr>'+
+      '<td><span class="era-tag '+r.cls+'"><span class="l-en">'+r.en+'</span><span class="l-zh">'+r.zh+'</span></span>'+note+'</td>'+
+      '<td class="'+wrCls+'" style="font-variant-numeric:tabular-nums;">'+(r.wr!=null?_wr(r.wr):'—')+'</td>'+
+      '<td class="'+eCls+'" style="font-variant-numeric:tabular-nums;">'+(r.edge!=null?_edge(r.edge):'—')+'</td>'+
+      '<td class="tl-num" style="font-size:11px;color:var(--muted);">'+(r.fires!=null?r.fires.toLocaleString():'—')+(r.months!=null?' / '+r.months:'')+'</td>'+
+      '</tr>';
+  }).join('');
+
+  // Populate ticker select for chart
+  var sc = (window._SCREENER_SIGS||{})[sid];
+  var firingTickers = sc ? (sc.tickers||[]).map(function(t){return t.ticker;}) : [];
+  var sel = document.getElementById('det-ticker-select');
+  sel.innerHTML = '<option value="" data-en="Select ticker with fires…" data-zh="选择触发标的…">'+(isZh()?'选择触发标的…':'Select ticker with fires…')+'</option>' +
+    firingTickers.map(function(tk){ return '<option value="'+tk+'">'+tk+'</option>'; }).join('');
+  if (firingTickers.length > 0) {
+    sel.value = firingTickers[0];
+    tlLabChartDraw();
   }
 
-  // ── lab render ──
-  function _wrBar(wr, base, width) {
-    width = width || 80;
-    var h = 12;
-    var bx = base != null ? (base * width) : 0;
-    var wx = wr != null ? (wr * width) : 0;
-    var edge = wr != null && base != null ? ((wr - base) * 100).toFixed(1) : null;
-    var edgeCls = edge != null ? (parseFloat(edge) >= 4 ? 'r-pos' : parseFloat(edge) <= -4 ? 'r-neg' : 'mut') : '';
-    return '<div class="tl-wr-bar">' +
-      '<svg width="' + width + '" height="' + h + '" viewBox="0 0 ' + width + ' ' + h + '">' +
-        '<rect x="0" y="3" width="' + width + '" height="6" rx="3" fill="var(--panel2)"/>' +
-        (base != null ? '<rect x="0" y="3" width="' + bx.toFixed(1) + '" height="6" rx="3" fill="var(--muted)" opacity=".4"/>' : '') +
-        (wr != null ? '<rect x="0" y="3" width="' + wx.toFixed(1) + '" height="6" rx="3" fill="#5b8def"/>' : '') +
-        (base != null ? '<line x1="' + bx.toFixed(1) + '" y1="0" x2="' + bx.toFixed(1) + '" y2="' + h + '" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2,2"/>' : '') +
-      '</svg>' +
-      (edge != null ? '<span class="tl-wr-txt ' + edgeCls + '">' + (parseFloat(edge) >= 0 ? '+' : '') + edge + L('pp edge', 'pp 优势') + '</span>' : '') +
-      '</div>';
-  }
+  // Show null banner if needed
+  var nullBanner = document.getElementById('det-null-banner');
+  if (nullBanner) nullBanner.style.display = (sig.n_fires === 0) ? '' : 'none';
+};
 
-  function _renderLab() {
-    var sig = SIGS[_sigId];
-    var lab = sig && sig.lab;
-    document.getElementById('tl-lab-title').innerHTML =
-      '🔬 ' + L(sig ? (sig.display_en || _sigId) : _sigId, sig ? (sig.display_zh || sig.display_en || _sigId) : _sigId) +
-      ' — <span class="h-note">' + L('descriptive profile', '描述性档案') + '</span>';
+window.tlShowCatalog = function() {
+  document.getElementById('lab-catalog').style.display = '';
+  document.getElementById('lab-detail').style.display = 'none';
+};
+function tlShowDetail() {
+  document.getElementById('lab-catalog').style.display = 'none';
+  document.getElementById('lab-detail').style.display = '';
+}
 
-    var grid = document.getElementById('tl-lab-grid');
-    if (!lab) {
-      grid.innerHTML = '<p class="tl-empty">' + (sig ? L('No lab profile for this signal yet.', '该信号暂无实验室档案。') : L('Select a signal.', '请选择信号。')) + '</p>';
-      return;
-    }
-    var cells = [
-      { k: L('Win Rate 21d', '21日胜率'), b: _wrBar(lab.wr_21d, lab.base_wr), note: _wr(lab.wr_21d) + ' vs ' + L('base', '基准') + ' ' + _wr(lab.base_wr) },
-      { k: L('Mean Return 21d', '21日平均收益'), v: _pct(lab.mean_21d != null ? lab.mean_21d : null), note: L('base', '基准') + ' ' + _pct(lab.base_mean != null ? lab.base_mean : null) },
-      { k: 'MFE/MAE', v: lab.mfe_mae_med != null ? lab.mfe_mae_med.toFixed(2) + '×' : '—', note: L('median favourable/adverse', '中位有利/不利幅度') },
-      { k: L('Durable Rate', '持续率'), v: _wr(lab.durable_rate), note: L('held above entry 15d', '15日内维持在入场价上方') },
-      { k: L('Median Lag', '中位滞后'), v: lab.median_lag_pct != null ? (lab.median_lag_pct * 100).toFixed(1) + '%' : '—', note: L('above 60d low at fire', '触发时位于60日低点上方') },
-      { k: L('Days Since Low', '距低点天数'), v: lab.days_since_low_med != null ? Math.round(lab.days_since_low_med) + 'd' : '—', note: L('median', '中位数') },
-      { k: L('Up-Tape %', '上涨行情%'), v: _wr(lab.up_tape_pct), note: L('SPX up on fire day', '触发日标普500上涨') },
-      { k: L('Fires / Months', '触发次数 / 月数'), v: (lab.n_fires || '—') + ' / ' + (lab.n_months || '—'), note: L('in sample', '样本内') },
-      { k: L('WR pre-2010', '2010前胜率'), v: _wr(lab.wr_pre2010), note: lab.wr_pre2010 != null ? L('older regime', '旧周期') : L('no data', '无数据') },
-      { k: L('WR post-2010', '2010后胜率'), v: _wr(lab.wr_post2010), note: L('modern regime', '现代周期') },
-    ];
-    grid.innerHTML = cells.map(function(c) {
-      return '<div class="tl-lab-stat"><div class="lk">' + c.k + '</div>' +
-        '<div class="lv">' + (c.b || c.v || '—') + '</div>' +
-        (c.note ? '<div class="lb">' + c.note + '</div>' : '') +
-        '</div>';
-    }).join('');
-  }
+/* ─── Chart helper ─────────────────────────────────────────────────────── */
+function tlChartOpts() {
+  var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  return {
+    autoSize: true,
+    layout: { background: { type: 'solid', color: 'transparent' },
+      textColor: isDark ? '#8b93a1' : '#5d6b7e', fontSize: 11 },
+    grid: { vertLines: { visible: false }, horzLines: { color: isDark ? '#2a2f3a' : '#eaecf0' } },
+    rightPriceScale: { borderColor: isDark ? '#2a2f3a' : '#eaecf0' },
+    timeScale: { borderColor: isDark ? '#2a2f3a' : '#eaecf0', timeVisible: false },
+    crosshair: { mode: 1 }
+  };
+}
 
-  // ── top-level render ──
-  function _render() {
-    if (!_loaded) return;
-    if (_mode === 'screener') _renderScreener();
-    else _renderLab();
-  }
+function tlFetchOhlc(ticker, cb) {
+  // Uses the same dbase-resolved URL as stock pages: ohlc/<T>.json
+  var url = 'ohlc/' + ticker + '.json';
+  fetch(url).then(function(r) {
+    if (!r.ok) { cb(null, 'HTTP ' + r.status); return; }
+    return r.json();
+  }).then(function(d) {
+    if (!d) return;
+    cb(d, null);
+  }).catch(function(e) { cb(null, String(e)); });
+}
 
-  // ── show error state ──
-  function _showError(msg) {
-    var loadingS = document.getElementById('tl-screener-loading');
-    var loadingL = document.getElementById('tl-lab-loading');
-    if (loadingS) loadingS.innerHTML = msg;
-    if (loadingL) loadingL.innerHTML = msg;
-  }
+function tlFetchEvents(ticker, cb) {
+  if (EVENTS[ticker]) { cb(EVENTS[ticker]); return; }
+  var url = 'factordata/tech_events/' + ticker + '.json';
+  fetch(url).then(function(r) {
+    if (!r.ok) { cb(null); return; }
+    return r.json();
+  }).then(function(d) {
+    EVENTS[ticker] = d || null;
+    cb(d);
+  }).catch(function() { cb(null); });
+}
 
-  // ── hide loading indicators, show table ──
-  function _showReady() {
-    var loadingS = document.getElementById('tl-screener-loading');
-    var tableEl  = document.getElementById('tl-screener-table');
-    var loadingL = document.getElementById('tl-lab-loading');
-    var gridEl   = document.getElementById('tl-lab-grid');
-    if (loadingS) loadingS.style.display = 'none';
-    if (tableEl)  tableEl.style.display  = '';
-    if (loadingL) loadingL.style.display = 'none';
-    if (gridEl)   gridEl.style.display   = '';
-  }
-
-  // ── async data load: fetch both JSONs, merge client-side ──
-  Promise.all(
-    ['factordata/tech_screener.json', 'factordata/tech_lab.json']
-      .map(function(url) { return fetch(url).then(function(r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status + ' loading ' + url);
-        return r.json();
-      }); })
-  ).then(function(results) {
-    var screener = results[0];
-    var lab      = results[1];
-
-    var screenerSignals = screener.signals || {};
-    var labSignals      = lab.signals      || {};
-    var merged = {};
-
-    // Attach each lab profile onto its matching screener signal
-    Object.keys(screenerSignals).forEach(function(sid) {
-      merged[sid] = Object.assign({}, screenerSignals[sid], { lab: labSignals[sid] || null });
-    });
-    // Lab-only signals (no screener tickers yet)
-    Object.keys(labSignals).forEach(function(sid) {
-      if (!merged[sid]) {
-        var s = labSignals[sid];
-        merged[sid] = {
-          display_en: s.display_en || sid,
-          display_zh: s.display_zh || s.display_en || sid,
-          family: s.family || 'other',
-          direction: s.direction || 0,
-          glyph: '○',
-          n_firing: 0,
-          tickers: [],
-          lab: s,
-        };
+function _parseOhlc(d) {
+  // Supports two store shapes:
+  //   R2 prod:  {o:1, bars:[[date,o,h,l,c,v],...], ...}   (no top-level dates)
+  //   Legacy:   {dates:[...], bars:[[o,h,l,c,v],...], o:1} or {dates,closes}
+  var bars = [];
+  if (!d) return bars;
+  if (Array.isArray(d.bars) && d.bars.length) {
+    var first = d.bars[0];
+    if (Array.isArray(first) && typeof first[0] === 'string') {
+      // R2 shape: each bar is [date, o, h, l, c, v]
+      for (var i=0; i<d.bars.length; i++) {
+        var b = d.bars[i];
+        if (b.length >= 5) bars.push({ time: b[0], open: b[1], high: b[2], low: b[3], close: b[4] });
+        else if (b.length >= 2) bars.push({ time: b[0], open: b[1], high: b[1], low: b[1], close: b[1] });
       }
-    });
-
-    SIGS = merged;
-    STKS = screener.stocks || {};
-    _loaded = true;
-    _showReady();
-    _render();
-  }).catch(function(err) {
-    _showError(L('Data unavailable — ', '数据不可用 — ') + (err && err.message ? err.message : String(err)));
-  });
-
-  // ── langchange: re-render current view + swap option text + placeholder ──
-  function _swapOptionsAndPlaceholder(zh) {
-    // Signal <select> options
-    var sel = document.getElementById('tl-sig-select');
-    if (sel) {
-      [].forEach.call(sel.options, function(o) {
-        o.textContent = zh ? (o.getAttribute('data-zh') || o.textContent) : (o.getAttribute('data-en') || o.textContent);
-      });
-      // Also swap the optgroup <option> elements that were Jinja-rendered without data-en/zh
-      // (they are already fixed server-side; this pass handles fallback for dynamic additions)
+    } else if (d.dates) {
+      // Legacy shape: dates array separate, bars are [o,h,l,c,v]
+      var dates = d.dates;
+      for (var i=0; i<dates.length; i++) {
+        if (!d.bars[i]) continue;
+        bars.push({ time: dates[i], open: d.bars[i][0], high: d.bars[i][1], low: d.bars[i][2], close: d.bars[i][3] });
+      }
     }
-    // Ticker search placeholder
-    var inp = document.getElementById('tl-ticker-search');
-    if (inp) {
-      var phEn = inp.getAttribute('data-ph-en') || 'Search ticker…';
-      var phZh = inp.getAttribute('data-ph-zh') || '搜索标的…';
-      inp.placeholder = zh ? phZh : phEn;
+  } else if (d.dates && d.closes) {
+    // Legacy closes-only shape
+    var dates = d.dates;
+    for (var i=0; i<dates.length; i++) {
+      var c = d.closes[i];
+      if (c == null) continue;
+      bars.push({ time: dates[i], open: c, high: c, low: c, close: c });
+    }
+  }
+  return bars;
+}
+
+function tlDrawChart(containerId, fallbackId, noteId, ticker, sigId, ohlcData, eventsData, chartRef) {
+  var container = document.getElementById(containerId);
+  var fallback  = document.getElementById(fallbackId);
+  if (!container) return chartRef;
+
+  // Clear existing chart
+  if (chartRef && chartRef._lwChart) {
+    try { chartRef._lwChart.remove(); } catch(e){}
+    chartRef._lwChart = null;
+  }
+  container.innerHTML = '';
+
+  if (!ohlcData) {
+    if (fallback) { fallback.style.display = ''; fallback.innerHTML = L('Illustrative sketch — real bars unavailable','示意图 — 真实行情不可用'); }
+    return chartRef;
+  }
+
+  var bars = _parseOhlc(ohlcData);
+  if (bars.length < 5) {
+    if (fallback) { fallback.style.display = ''; fallback.innerHTML = L('Illustrative sketch — real bars unavailable','示意图 — 真实行情不可用'); }
+    return chartRef;
+  }
+
+  if (fallback) fallback.style.display = 'none';
+
+  if (typeof LightweightCharts === 'undefined') {
+    container.innerHTML = '<div class="chart-fallback">'+L('Charting library failed to load — the rest of the page is unaffected.','图表库加载失败，页面其余部分不受影响。')+'</div>';
+    return chartRef;
+  }
+
+  var lw = LightweightCharts.createChart(container, tlChartOpts());
+  var series = lw.addCandlestickSeries({
+    upColor: '#1f9a55', downColor: '#d23f3f',
+    borderUpColor: '#1f9a55', borderDownColor: '#d23f3f',
+    wickUpColor: '#1f9a55', wickDownColor: '#d23f3f'
+  });
+  series.setData(bars);
+
+  // Fire markers from tech_events
+  if (eventsData && eventsData.signals && sigId && eventsData.signals[sigId]) {
+    var sig = eventsData.signals[sigId];
+    var fireDates = sig.fires || [];
+    var dir = sig.dir || 0;
+    var markers = fireDates.map(function(d) {
+      return {
+        time: d,
+        position: dir >= 0 ? 'belowBar' : 'aboveBar',
+        color: dir >= 0 ? '#3fc07e' : '#ef6a6a',
+        shape: dir >= 0 ? 'arrowUp' : 'arrowDown',
+        text: (SIGS[sigId]&&SIGS[sigId].display_en)||sigId
+      };
+    }).filter(function(m) {
+      return bars.some(function(b){ return b.time === m.time; });
+    });
+    if (markers.length > 0) series.setMarkers(markers);
+    var noteEl = document.getElementById(noteId);
+    if (noteEl) {
+      noteEl.style.display = '';
+      noteEl.innerHTML = L(
+        ticker + ' · ' + markers.length + ' signal fire markers from tech_events (real dates)',
+        ticker + ' · ' + markers.length + ' 个信号触发标记来自 tech_events（真实日期）'
+      );
     }
   }
 
-  // Initial swap on page load (in case stored lang is 'zh')
-  _swapOptionsAndPlaceholder(_isZh());
+  lw.timeScale().fitContent();
+  return { _lwChart: lw, _series: series };
+}
 
-  document.addEventListener('langchange', function(e) {
-    var zh = (e.detail === 'zh');
-    _swapOptionsAndPlaceholder(zh);
-    // Re-render so L()-built strings inside innerHTML get their CSS-toggled spans right
-    // (the CSS takes care of l-en/l-zh spans; a full re-render also refreshes option counts etc.)
-    _render();
+/* ─── Signal Lab chart ─────────────────────────────────────────────────── */
+window.tlLabChartDraw = function() {
+  var sel = document.getElementById('det-ticker-select');
+  var ticker = sel ? sel.value : '';
+  if (!ticker || !_activeSigId) return;
+
+  tlFetchOhlc(ticker, function(ohlc, err) {
+    tlFetchEvents(ticker, function(events) {
+      _labChart = tlDrawChart(
+        'det-chart-container', 'det-chart-fallback', 'det-chart-note',
+        ticker, _activeSigId, ohlc, events, _labChart
+      );
+    });
   });
+};
+
+/* ─── Stock profile ─────────────────────────────────────────────────────── */
+window.tlOpenProfile = function(tk) {
+  _profTk = tk;
+  tlSwitchTab('stock');
+  var s = STKS[tk];
+  if (!s) return;
+
+  document.getElementById('prof-ticker').textContent = tk;
+  document.getElementById('prof-name').textContent = s.name || '';
+  document.getElementById('prof-price').textContent = s.price != null ? '$'+s.price.toFixed(2) : '';
+
+  var p7 = s.perf_7d, p30 = s.perf_30d;
+  var p7el = document.getElementById('prof-7d');
+  p7el.textContent = _pct(p7); p7el.className = 'pv '+(p7!=null?(p7>=0?'r-pos':'r-neg'):'r-neu');
+  var p30el = document.getElementById('prof-30d');
+  p30el.textContent = _pct(p30); p30el.className = 'pv '+(p30!=null?(p30>=0?'r-pos':'r-neg'):'r-neu');
+
+  var actEl = document.getElementById('prof-active');
+  actEl.textContent = (s.active_buy||0) + ' / ' + (s.active_total||0);
+  var scEl = document.getElementById('prof-score');
+  scEl.textContent = s.score != null ? (s.score > 0?'+':'')+s.score.toFixed(2) : '—';
+  scEl.className = 'pv '+(s.score>0.5?'r-pos':s.score<0?'r-neg':'r-neu');
+
+  document.getElementById('prof-confl-n').textContent = s.active_buy || 0;
+  document.getElementById('prof-callout-sub').innerHTML = L(
+    'out of ' + (s.active_total||0) + ' tracked',
+    '共 ' + (s.active_total||0) + ' 个信号中'
+  );
+  var bandEl = document.getElementById('prof-band');
+  bandEl.textContent = s.band || '';
+  bandEl.className = 'band-chip ' + _bandClass(s.band);
+
+  // Terminal deep-link with indicator keys
+  var famMap = { 'ichimoku': 'ichimoku', 'trend_ribbon': 'ribbon', 'trend': 'ribbon',
+    'rsi_stack': 'rsistack', 'rsi_bands': 'rsistack', 'bollinger_events': 'volbox', 'formations': 'volbox' };
+  var indKeys = new Set();
+  (s.signals||[]).forEach(function(sig) {
+    if (sig.state) {
+      var k = famMap[sig.family||''];
+      if (!k && SIGS[sig.id]) k = famMap[SIGS[sig.id].family||''];
+      if (k) indKeys.add(k);
+    }
+  });
+  var linkEl = document.getElementById('prof-terminal-link');
+  var indStr = Array.from(indKeys).slice(0,3).join(',');
+  linkEl.href = 'https://app.mastermind-x.com/terminal?sym=' + tk + (indStr ? '&ind=' + indStr : '');
+
+  // Signal state list grouped by family
+  var famGroups = {};
+  (s.signals||[]).forEach(function(sig) {
+    var lab = SIGS[sig.id];
+    var fam = (lab&&lab.family) || 'other';
+    if (!famGroups[fam]) famGroups[fam] = [];
+    sig._fam = fam;
+    famGroups[fam].push(sig);
+  });
+  var listEl = document.getElementById('prof-sig-list');
+  var listHtml = '';
+  Object.keys(famGroups).sort().forEach(function(fam) {
+    var isFundamental = fam.indexOf('fundamental') >= 0 || fam.indexOf('insider') >= 0;
+    listHtml += '<div class="family-divider">' + esc(_familyLabel(fam));
+    if (isFundamental) listHtml += ' <span style="color:var(--warn);font-size:9.5px;">' + L('(display-only)','（仅供展示）') + '</span>';
+    listHtml += '</div><div class="sig-state-list">';
+    famGroups[fam].forEach(function(sig) {
+      var isOn = !!sig.state;
+      var label = (SIGS[sig.id]&&SIGS[sig.id].display_en) || sig.display_en || sig.id;
+      var ageStr = sig.age_days != null ? sig.age_days + 'd' : '';
+      var rowClass = isOn ? 'on' : 'off';
+      if (isFundamental) rowClass = 'off';
+      listHtml += '<div class="sig-state-row ' + rowClass + '">' +
+        (isOn && !isFundamental ? '<span class="sig-on-mark">&#9679;</span>' : '<span class="sig-off-mark">&#9675;</span>') +
+        '<span class="sig-state-name">' + esc(label) + '</span>' +
+        '<span class="sig-state-age">' + esc(ageStr) + '</span>' +
+        '</div>';
+    });
+    listHtml += '</div>';
+  });
+  listEl.innerHTML = listHtml || '<p class="tl-empty">No signal data</p>';
+  var onCount = (s.signals||[]).filter(function(sig){ return sig.state && !['fundamental_valuation','insider'].includes(sig._fam||''); }).length;
+  var offCount = (s.signals||[]).length - onCount;
+  document.getElementById('prof-sig-counts').textContent = onCount + ' on / ' + offCount + ' off';
+
+  // Chart label
+  document.getElementById('prof-chart-label').innerHTML = L(
+    tk + ' · Daily price chart · fire markers from tech_events',
+    tk + ' · 日线图 · tech_events 触发标记'
+  );
+
+  // Draw stock chart with all fire markers
+  tlFetchOhlc(tk, function(ohlc, err) {
+    tlFetchEvents(tk, function(events) {
+      var container = document.getElementById('prof-chart-container');
+      var fallback  = document.getElementById('prof-chart-fallback');
+      if (!container) return;
+
+      if (_profChart && _profChart._lwChart) {
+        try { _profChart._lwChart.remove(); } catch(e){} _profChart._lwChart = null;
+      }
+      container.innerHTML = '';
+
+      if (!ohlc) {
+        if (fallback) { fallback.style.display = ''; fallback.innerHTML = L('Illustrative sketch — real bars unavailable','示意图 — 真实行情不可用'); }
+        return;
+      }
+      var bars = _parseOhlc(ohlc);
+      if (bars.length < 5) {
+        if (fallback) { fallback.style.display = ''; fallback.innerHTML = L('Illustrative sketch — real bars unavailable','示意图 — 真实行情不可用'); }
+        return;
+      }
+      if (fallback) fallback.style.display = 'none';
+      if (typeof LightweightCharts === 'undefined') {
+        container.innerHTML = '<div class="chart-fallback">'+L('Charting library failed to load.','图表库加载失败。')+'</div>'; return;
+      }
+
+      var lw = LightweightCharts.createChart(container, tlChartOpts());
+      var series = lw.addCandlestickSeries({
+        upColor:'#1f9a55', downColor:'#d23f3f',
+        borderUpColor:'#1f9a55', borderDownColor:'#d23f3f',
+        wickUpColor:'#1f9a55', wickDownColor:'#d23f3f'
+      });
+      series.setData(bars);
+
+      // ALL signals' fire markers clustered
+      var allMarkers = [];
+      if (events && events.signals) {
+        Object.keys(events.signals).forEach(function(sigId) {
+          var sigData = events.signals[sigId];
+          var lab = SIGS[sigId];
+          var dir = sigData.dir || 0;
+          (sigData.fires||[]).forEach(function(d) {
+            if (bars.some(function(b){ return b.time === d; })) {
+              allMarkers.push({ time: d, position: dir >= 0 ? 'belowBar' : 'aboveBar',
+                color: dir >= 0 ? '#3fc07e' : '#ef6a6a',
+                shape: dir >= 0 ? 'arrowUp' : 'arrowDown',
+                text: (lab&&lab.display_en)||sigId });
+            }
+          });
+        });
+        allMarkers.sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+        if (allMarkers.length > 0) series.setMarkers(allMarkers);
+        var noteEl = document.getElementById('prof-chart-note');
+        if (noteEl) {
+          noteEl.style.display = '';
+          noteEl.innerHTML = L(
+            tk + ' · ' + allMarkers.length + ' fire markers across all signals (real dates from tech_events)',
+            tk + ' · ' + allMarkers.length + ' 个信号触发标记（来自 tech_events 真实日期）'
+          );
+        }
+      }
+      lw.timeScale().fitContent();
+      _profChart = { _lwChart: lw };
+    });
+  });
+};
+
+/* ─── Ticker search for Stock Profile tab ─────────────────────────────── */
+var _tsAll = [];
+function tlBuildTickerList() {
+  _tsAll = Object.keys(STKS).map(function(tk) {
+    return { tk: tk, name: STKS[tk].name||'', score: STKS[tk].score, band: STKS[tk].band };
+  }).sort(function(a,b){ return (b.score||0) - (a.score||0); });
+}
+
+window.tlTickerSearch = function(v) {
+  var q = v.trim().toLowerCase();
+  var res = q ? _tsAll.filter(function(r){ return r.tk.toLowerCase().startsWith(q) || r.name.toLowerCase().includes(q); }).slice(0,10)
+              : _tsAll.slice(0,10);
+  var el = document.getElementById('ts-results');
+  el.innerHTML = res.map(function(r) {
+    return '<div class="ts-result-row' + (r.tk === _profTk ? ' sel' : '') + '" onclick="tlOpenProfile(\'' + r.tk + '\')">' +
+      '<span class="ts-tk">'+esc(r.tk)+'</span>' +
+      '<span class="ts-name">'+esc(r.name)+'</span>' +
+      '<span class="band-chip '+_bandClass(r.band)+'">'+esc(r.band||'')+'</span>' +
+      '</div>';
+  }).join('');
+};
+
+/* ─── Copy-to-clipboard ─────────────────────────────────────────────────── */
+window.tlCopyCode = function(btn) {
+  var block = btn.parentElement.querySelector('.code-block');
+  if (!block) return;
+  var text = block.textContent || '';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = 'Copied!'; btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+};
+
+/* ─── i18n: swap placeholders & option text ─────────────────────────────── */
+function _swapI18n(zh) {
+  // Screener search placeholder
+  var si = document.getElementById('screener-search');
+  if (si) si.placeholder = zh ? (si.getAttribute('data-ph-zh')||'') : (si.getAttribute('data-ph-en')||'');
+  // Band filter options
+  var bf = document.getElementById('band-filter');
+  if (bf) [].forEach.call(bf.options, function(o){
+    o.textContent = zh ? (o.getAttribute('data-zh')||o.textContent) : (o.getAttribute('data-en')||o.textContent);
+  });
+  // Ticker search placeholder
+  var ti = document.getElementById('ticker-search-input');
+  if (ti) ti.placeholder = zh ? (ti.getAttribute('data-ph-zh')||'') : (ti.getAttribute('data-ph-en')||'');
+}
+_swapI18n(isZh());
+document.addEventListener('langchange', function(e) {
+  _swapI18n(e.detail === 'zh');
+  tlRenderScreener();
+  tlRenderCatalog();
+  tlConflUpdate();
+});
+
+/* ─── Data load ─────────────────────────────────────────────────────────── */
+Promise.all([
+  fetch('factordata/tech_screener.json').then(function(r){ if(!r.ok) throw new Error('screener '+r.status); return r.json(); }),
+  fetch('factordata/tech_lab.json').then(function(r){ if(!r.ok) throw new Error('lab '+r.status); return r.json(); })
+]).then(function(results) {
+  var screener = results[0];
+  var lab      = results[1];
+
+  // screener signals (for confluence builder + picker fire counts)
+  window._SCREENER_SIGS = screener.signals || {};
+
+  // Build SIG_FIRES map
+  SIG_FIRES = {};
+  Object.keys(window._SCREENER_SIGS).forEach(function(sid) {
+    var sc = window._SCREENER_SIGS[sid];
+    SIG_FIRES[sid] = (sc.tickers||[]).map(function(t){ return t.ticker; });
+  });
+
+  // Lab signals
+  SIGS = lab.signals || {};
+
+  // Stocks
+  STKS = screener.stocks || {};
+
+  // Assign family from screener to SIGS (lab may not have it for all)
+  Object.keys(window._SCREENER_SIGS).forEach(function(sid) {
+    if (SIGS[sid] && !SIGS[sid].family) SIGS[sid].family = window._SCREENER_SIGS[sid].family;
+  });
+
+  _loaded = true;
+
+  // Build rows
+  tlBuildScreenerRows();
+  tlBuildCatalogRows();
+  tlBuildTickerList();
+
+  // Render
+  tlRenderScreener();
+  tlRenderCatalog();
+  tlBuildPicker();
+  tlBuildConflChips();
+
+  // Populate ticker list in stock tab
+  tlTickerSearch('');
+
+  // Init tab
+  tlInitTab();
+
+  // Update badges
+  var nb = document.getElementById('badge-screener');
+  if (nb) nb.textContent = Object.keys(STKS).length;
+  var sb = document.getElementById('badge-siglab');
+  if (sb) sb.textContent = Object.keys(SIGS).length;
+
+}).catch(function(err) {
+  console.error('tech_lab data load failed:', err);
+  // Show error in screener
+  var tbody = document.getElementById('screener-tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="tl-empty">' + L('Data unavailable — ' + err.message,'数据不可用 — ' + err.message) + '</td></tr>';
+  tlInitTab();
+});
 
 })();
 </script>
