@@ -145,6 +145,32 @@ lanes:
           phase; cross-cohort comparison is confounded and not published as
           "migration" signal). FENCE: SEPARATE display leg — never fused into
           fused_obs_z. Always exits 0 (tolerant; absent parquet → honest null).
+      - id: build_theme_options_witness
+        module: engine.theme_options_witness
+        note: >
+          TIL W11 (PR-W11) per-theme options-tape crowding-hazard witness.
+          Reads from ThetaData EOD store (THETADATA_STORE env;
+          /Users/chriswong/theta-ops-wt/data/thetadata_eod default; runner-local).
+          STORE ABSENT → honest null artifact emitted, exit 0. This step is
+          dispatched from the launchd ops-wt lane with THETADATA_STORE set
+          (same pattern as com.mastermind.optionshub); on the render-path runner
+          (no store) it is a fast no-op that writes the honest null artifact.
+          Three legs (no composite — R-TIL-3 / WA-R1):
+            Leg A: call-OI HHI concentration per basket (median HHI across members)
+            Leg B: put/call OI ratio (PCR) per basket — EXIT-CROWD L3 accrual
+            Leg C: IV premium vs realized-vol (event-premium hazard)
+          OI timing law: oi[t-1] throughout (same-day OI = lookahead bug).
+          Bounded reads: current + prior year only; theme baskets only (18 themes).
+          Coverage suppression: baskets with <40% member OI coverage → null legs.
+          Per-underlying isolation: one bad root never voids the basket.
+          Produces:
+            data/neuralweb/theme_options_witness.json  (git-tracked; NW artifact)
+            site/basketdata/options_witness.json        (git-tracked; compact site)
+          HAZARD framing only: high = crowded/fragile, never bullish.
+          FENCE: SEPARATE display leg — never fused into any score.
+          Authority: all may_rank/gate/size/escalate=false; is_context_only=true.
+          Banned: DOI family (dead W-E1); skew-deceleration (unsupported).
+          Always exits 0 (tolerant).
       - id: build_discovery_confluence
         module: scripts.build_discovery_confluence
         note: >
