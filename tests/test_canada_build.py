@@ -162,3 +162,159 @@ def test_canada_stocks_shows_real_tier_badge_when_cross_fires():
     assert "gate-tier" in html and ">🎯 T2" in html       # real tier badge on the card
     assert "no confluence cross" not in html              # not the RAN-no-cross state
     assert "buyable cross" in html                        # confluence stat present
+
+
+# ── W8-G: CA table-view port tests ────────────────────────────────────────────
+
+def _w8g_vm():
+    """Synthetic VM with 3 board rows (2 entry_open, 1 setting_up) to test
+    serialization completeness, system-order preservation, and field coverage."""
+    import copy
+    vm = _vm()
+    # extend buy list with two more rows to cover both groups + multiple entries
+    vm["setups"]["buy"] = [
+        {"ticker": "BIR.TO", "name": "BIRCHCLIFF ENERGY LTD.", "alpha": -1.51,
+         "label": "BOTTOMING", "dir": "flat", "sector": "Energy",
+         "off_high": -21.0, "price": 4.82, "group": "entry_open", "board_pos": 1,
+         "oil_tailwind": True, "days_since_signal": 1,
+         "signal": {"eligible": False, "tier": None, "sub": None,
+                    "reason": "flat: cut", "tier_cascade": None},
+         "conviction": {"score": None, "verdict": "—", "verdict_zh": "—",
+                        "alignment": None,
+                        "axes": {"selection": {"pct": 60}, "entry": {"pct": 55},
+                                 "tailwind": {"pct": None}, "quality": {"pct": 40}},
+                        "cautions": [], "cautions_zh": []},
+         "entry_signal": {"status": "partial", "buy_zone": {}, "headline": "Partial entry",
+                          "headline_zh": "部分入场", "action": "buy", "act_level": 3},
+         "lead_en": "Energy sector tailwind.", "lead_zh": "能源顺风。",
+         "spark_svg": "<svg></svg>"},
+        {"ticker": "DPM.TO", "name": "DPM METALS INC", "alpha": 1.10,
+         "label": "UPTREND", "dir": "up", "sector": "Materials",
+         "off_high": -16.0, "price": 12.75, "group": "entry_open", "board_pos": 2,
+         "oil_tailwind": False, "days_since_signal": 5,
+         "signal": {"eligible": True, "tier": "T1", "sub": "master",
+                    "reason": "full", "tier_cascade": "T1"},
+         "conviction": {"score": None, "verdict": "—", "verdict_zh": "—",
+                        "alignment": None,
+                        "axes": {"selection": {"pct": 70}, "entry": {"pct": 80},
+                                 "tailwind": {"pct": None}, "quality": {"pct": 65}},
+                        "cautions": [], "cautions_zh": []},
+         "entry_signal": {"status": "buy_now", "buy_zone": {}, "headline": "Buy now",
+                          "headline_zh": "立即买入", "action": "buy", "act_level": 3},
+         "lead_en": "Materials breakout.", "lead_zh": "材料突破。",
+         "spark_svg": "<svg></svg>"},
+        {"ticker": "TD.TO", "name": "TD Bank", "alpha": 1.8,
+         "label": "UPTREND", "dir": "up", "sector": "Financials",
+         "off_high": -3.0, "price": 88.50, "group": "setting_up", "board_pos": 3,
+         "oil_tailwind": False, "days_since_signal": None,
+         "signal": {"eligible": False, "tier": None, "sub": None,
+                    "reason": "flat: cut", "tier_cascade": None},
+         "conviction": {"score": None, "verdict": "—", "verdict_zh": "—",
+                        "alignment": None,
+                        "axes": {"selection": {"pct": 50}, "entry": {"pct": 30},
+                                 "tailwind": {"pct": None}, "quality": {"pct": 55}},
+                        "cautions": [], "cautions_zh": []},
+         "entry_signal": {"status": "wait_pullback", "buy_zone": {}, "headline": "Wait",
+                          "headline_zh": "等待", "action": "wait", "act_level": 1},
+         "lead_en": "Financials leader.", "lead_zh": "金融龙头。",
+         "spark_svg": "<svg></svg>"},
+    ]
+    vm["setups"]["confluence"] = {"crosses": 1, "board": 3}
+    vm["setups"]["sector_concentration"] = None
+    return vm
+
+
+# Configured columns for the CA table (must match what the template configures for JS)
+_CA_TABLE_COLS = [
+    "ticker", "name", "tier", "sector", "price",
+    "off_high", "alpha", "entry_status", "days_since_signal", "conviction",
+]
+
+
+def test_w8g_ca_stocktable_data_block_present():
+    """stocks mode must emit a <script type=application/json id=stocktable-data> block."""
+    import json
+    html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="stocks")
+    assert 'id="stocktable-data"' in html, "stocktable-data block missing"
+    # extract JSON
+    import re
+    m = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    assert m, "Could not find stocktable-data script block"
+    payload = json.loads(m.group(1))
+    rows = payload["rows"]
+    assert len(rows) == 3, f"Expected 3 rows, got {len(rows)}"
+
+
+def test_w8g_ca_serialization_completeness():
+    """Every configured column key must be present-or-None on every serialized row.
+    Catches schema/field-name drift between template serialization and JS column config."""
+    import json, re
+    html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="stocks")
+    m = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    payload = json.loads(m.group(1))
+    rows = payload["rows"]
+    # Each configured column key must exist as a key on every row (None is OK)
+    for row in rows:
+        for col_key in _CA_TABLE_COLS:
+            assert col_key in row, (
+                f"Column key '{col_key}' missing from serialized row for {row.get('ticker')}; "
+                f"keys present: {sorted(row.keys())}"
+            )
+
+
+def test_w8g_ca_no_ordering_mutation():
+    """System (board) order must be preserved verbatim in serialization — tickers in
+    the same sequence as setups.buy, no re-sort."""
+    import json, re
+    vm = _w8g_vm()
+    expected_order = [r["ticker"] for r in vm["setups"]["buy"]]
+    html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
+    m = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    payload = json.loads(m.group(1))
+    actual_order = [r["ticker"] for r in payload["rows"]]
+    assert actual_order == expected_order, (
+        f"Serialization mutated system order. Expected {expected_order}, got {actual_order}"
+    )
+
+
+def test_w8g_ca_stage_mapping():
+    """entry_open group maps to stage=ENTRY; setting_up maps to stage=RIPENING."""
+    import json, re
+    html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="stocks")
+    m = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    payload = json.loads(m.group(1))
+    rows = payload["rows"]
+    for row in rows:
+        if row.get("group") == "entry_open":
+            assert row["stage"] == "ENTRY", f"{row['ticker']} entry_open should map to ENTRY"
+            assert row["_stage"] == "ENTRY"
+        elif row.get("group") == "setting_up":
+            assert row["stage"] == "RIPENING", f"{row['ticker']} setting_up should map to RIPENING"
+            assert row["_stage"] == "RIPENING"
+
+
+def test_w8g_ca_view_toggle_present():
+    """stocks mode must include the grid/table view toggle and mount point."""
+    html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="stocks")
+    assert 'id="st-view-toggle"' in html, "view toggle missing"
+    assert 'id="st-btn-grid"' in html
+    assert 'id="st-btn-table"' in html
+    assert 'id="stocktable-wrap"' in html, "table mount point missing"
+    assert 'id="st-count-chips"' in html, "count chips missing"
+    assert 'class="nb-grid-section"' in html, "nb-grid-section wrapper missing"
+
+
+def test_w8g_ca_stocktable_js_include():
+    """stocks mode must include stocktable.js and the StockTable.init call."""
+    html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="stocks")
+    assert 'src="stocktable.js"' in html, "stocktable.js include missing"
+    assert "StockTable.init" in html, "StockTable.init missing"
+    assert "mdx_stocktable_ca_view" in html, "CA localStorage key missing"
+    assert "canada_stock.html#{ticker}" in html, "CA link pattern missing"
+
+
+def test_w8g_ca_table_not_in_macro_mode():
+    """macro mode must NOT include the stocktable data block or JS init."""
+    html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="macro")
+    assert 'id="stocktable-data"' not in html, "stocktable-data must not appear in macro mode"
+    assert "StockTable.init" not in html, "StockTable.init must not appear in macro mode"
