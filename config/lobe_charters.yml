@@ -1,0 +1,1103 @@
+schema: lobe_charters.v1
+generated_at: '2026-07-10'
+note: OPERATOR-CURATED (not immutable). tier field is CI-MIRRORED from synapse.yml
+  (R-V2-7) — edit synapse.yml to change a tier, not this file. lifecycle_state may
+  be updated via lifecycle.py proposals.
+charters:
+  attention-deterministic:
+    lobe_id: attention-deterministic
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  bottom-sensors-json:
+    lobe_id: bottom-sensors-json
+    tier: display
+    lifecycle_state: active
+    information_domain: tactical_entry
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: entry-stack-expansion
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  bottom-sensors-parquet:
+    lobe_id: bottom-sensors-parquet
+    tier: display
+    lifecycle_state: active
+    information_domain: tactical_entry
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: entry-stack-expansion
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  capability-audit:
+    lobe_id: capability-audit
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: metabolism-phase0
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-brainstorm-runs:
+    lobe_id: causal-brainstorm-runs
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-confluence-audit:
+    lobe_id: causal-confluence-audit
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-edges:
+    lobe_id: causal-edges
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-feature-inventory:
+    lobe_id: causal-feature-inventory
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-frontier:
+    lobe_id: causal-frontier
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-lab-state:
+    lobe_id: causal-lab-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-llm-lane:
+    lobe_id: causal-llm-lane
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-mechanisms:
+    lobe_id: causal-mechanisms
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-nulls:
+    lobe_id: causal-nulls
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  causal-surprise-queue:
+    lobe_id: causal-surprise-queue
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  claim-accountability:
+    lobe_id: claim-accountability
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  confluence-graph:
+    lobe_id: confluence-graph
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  context-candidates:
+    lobe_id: context-candidates
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: nw-context-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  context-risk:
+    lobe_id: context-risk
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: nw-context-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  cortex-attention-firings:
+    lobe_id: cortex-attention-firings
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  cortex-attention-grades:
+    lobe_id: cortex-attention-grades
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  cortex-memo:
+    lobe_id: cortex-memo
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  cortex-probation:
+    lobe_id: cortex-probation
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  covariance-spine:
+    lobe_id: covariance-spine
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: nw-rails
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  covariance-spine-history:
+    lobe_id: covariance-spine-history
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: nw-rails
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  cycle-pattern-state:
+    lobe_id: cycle-pattern-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: cycle-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  dt-contra-state:
+    lobe_id: dt-contra-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: dannytrades
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  entity-thesis-mechanism-registry:
+    lobe_id: entity-thesis-mechanism-registry
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  evidence-clock:
+    lobe_id: evidence-clock
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  evidence-clock-reviews:
+    lobe_id: evidence-clock-reviews
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  factor-contradictions-ledger:
+    lobe_id: factor-contradictions-ledger
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: factor-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  factor-intelligence-state:
+    lobe_id: factor-intelligence-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: factor-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  feeds-plane:
+    lobe_id: feeds-plane
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  governance-ledger:
+    lobe_id: governance-ledger
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  hypothesis-inbox:
+    lobe_id: hypothesis-inbox
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  kernel-decisions:
+    lobe_id: kernel-decisions
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  kernel-estimates:
+    lobe_id: kernel-estimates
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  kernel-families:
+    lobe_id: kernel-families
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  kernel-half-lives:
+    lobe_id: kernel-half-lives
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: signal-commons
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  lagging-signals:
+    lobe_id: lagging-signals
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  liquidity-plumbing:
+    lobe_id: liquidity-plumbing
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  machine-registry:
+    lobe_id: machine-registry
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  mechanism-pathways:
+    lobe_id: mechanism-pathways
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  mechanism-pathways-history:
+    lobe_id: mechanism-pathways-history
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  nasdaq-internals:
+    lobe_id: nasdaq-internals
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: nasdaq-internals
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  neuralweb-daily-brief:
+    lobe_id: neuralweb-daily-brief
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  neuralweb-daily-brief-history:
+    lobe_id: neuralweb-daily-brief-history
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  neuralweb-discovery-confluence:
+    lobe_id: neuralweb-discovery-confluence
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: til-w9-discovery-v2
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  neuralweb-health:
+    lobe_id: neuralweb-health
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  neuralweb-mastermind-context:
+    lobe_id: neuralweb-mastermind-context
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: nw-mastermind-bridge
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  neuralweb-theme-clinical:
+    lobe_id: neuralweb-theme-clinical
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: til-w10-clinical
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  neuralweb-theme-options-witness:
+    lobe_id: neuralweb-theme-options-witness
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: til-w11-options-witness
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  neuralweb-theme-trade-flows:
+    lobe_id: neuralweb-theme-trade-flows
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: til-w8-trade-flows
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  nw-health-run-history:
+    lobe_id: nw-health-run-history
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  ops-push-basket-freeze:
+    lobe_id: ops-push-basket-freeze
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  ops-push-healthcheck:
+    lobe_id: ops-push-healthcheck
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  ops-push-nw-health:
+    lobe_id: ops-push-nw-health
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  ops-push-signal-sanity:
+    lobe_id: ops-push-signal-sanity
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  options-entry-gate:
+    lobe_id: options-entry-gate
+    tier: shadow
+    lifecycle_state: active
+    information_domain: tactical_entry
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: options-nw-entry-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  options-entry-state:
+    lobe_id: options-entry-state
+    tier: display
+    lifecycle_state: active
+    information_domain: tactical_entry
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: options-nw-entry-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  reflex-firings-commodity-shock:
+    lobe_id: reflex-firings-commodity-shock
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  reflex-firings-pattern:
+    lobe_id: reflex-firings-pattern
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  reflex-firings-regime-selfheal:
+    lobe_id: reflex-firings-regime-selfheal
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  reflex-push-dedup-store:
+    lobe_id: reflex-push-dedup-store
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  release-forecast-latest:
+    lobe_id: release-forecast-latest
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: macro-release-intel
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  research-queue:
+    lobe_id: research-queue
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  risk-radar-review-log:
+    lobe_id: risk-radar-review-log
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  rule-experiment-registry:
+    lobe_id: rule-experiment-registry
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  rule-experiment-summaries:
+    lobe_id: rule-experiment-summaries
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-altdata-mastermind:
+    lobe_id: site-altdata-mastermind
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: qualitative-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-artifact-manifest:
+    lobe_id: site-artifact-manifest
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-attention-deterministic:
+    lobe_id: site-attention-deterministic
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-causal-lab-state:
+    lobe_id: site-causal-lab-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: causal-hypothesis-factory
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-china-cycle-phase:
+    lobe_id: site-china-cycle-phase
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: china-system
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-china-market-state:
+    lobe_id: site-china-market-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: china-system
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-context-risk:
+    lobe_id: site-context-risk
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: nw-context-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-covariance-spine:
+    lobe_id: site-covariance-spine
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: nw-rails
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-factor-intelligence-state:
+    lobe_id: site-factor-intelligence-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: factor-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-golden-signals:
+    lobe_id: site-golden-signals
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-mechanism-pathways:
+    lobe_id: site-mechanism-pathways
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-neuralweb-daily-brief:
+    lobe_id: site-neuralweb-daily-brief
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-neuralweb-health:
+    lobe_id: site-neuralweb-health
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-neuralweb-mastermind-context:
+    lobe_id: site-neuralweb-mastermind-context
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: nw-mastermind-bridge
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-neuralweb-ruling-graph:
+    lobe_id: site-neuralweb-ruling-graph
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-qledger-track-record:
+    lobe_id: site-qledger-track-record
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: qualitative-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-radar-ticker:
+    lobe_id: site-radar-ticker
+    tier: display
+    lifecycle_state: active
+    information_domain: tactical_entry
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: oracle
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-theme-asymmetry:
+    lobe_id: site-theme-asymmetry
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-theme-pathways:
+    lobe_id: site-theme-pathways
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-theme-state:
+    lobe_id: site-theme-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-theme-thesis:
+    lobe_id: site-theme-thesis
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  site-us-standouts:
+    lobe_id: site-us-standouts
+    tier: display
+    lifecycle_state: active
+    information_domain: tactical_entry
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: us-stocks-prebreakout
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  spine-index:
+    lobe_id: spine-index
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  theme-asymmetry:
+    lobe_id: theme-asymmetry
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  theme-pathways:
+    lobe_id: theme-pathways
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  theme-phase-history:
+    lobe_id: theme-phase-history
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  theme-state:
+    lobe_id: theme-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  theme-thesis-ledger:
+    lobe_id: theme-thesis-ledger
+    tier: shadow
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    - logic_breach_counter
+    owner_program: thematic-intelligence
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+  world-state:
+    lobe_id: world-state
+    tier: infrastructure
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    owner_program: neural-web
+    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
+      do not edit independently.
+

@@ -36,6 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-a | 5 |
 | metabolism-phase-v2a | 4 |
 | metabolism-phase-v2b | 1 |
+| metabolism-phase-v2c | 4 |
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
 | momoedge | 8 |
@@ -75,13 +76,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 208 |
 | infrastructure | 87 |
 | scored | 4 |
-| shadow | 58 |
+| shadow | 62 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 341 |
+| git | 345 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -367,6 +368,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | metabolism-key-ledger | `data/metabolism/key_ledger.jsonl` | jsonl | on-demand | infrastructure | 2 | 0 |
+
+### metabolism-phase-v2c
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| metabolism-lobe-charters | `config/lobe_charters.yml` | other | on-demand | shadow | 3 | 0 |
+| metabolism-authority-audit | `data/metabolism/authority_audit/` | json | on-demand | shadow | 1 | 0 |
+| metabolism-lifecycle-docket | `data/metabolism/lifecycle_docket/` | json | on-demand | shadow | 1 | 0 |
+| metabolism-lifecycle-journal | `data/metabolism/lifecycle/` | jsonl | on-demand | shadow | 1 | 0 |
 
 ### metabolism-phase-v2d
 
