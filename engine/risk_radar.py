@@ -97,6 +97,20 @@ _LEG_CALIB = {
     # graded on this engine's forward-outcome log — so it enters accruing (lift_2020 unknown),
     # display/escalator-only, never a US-state originator, until the audit loop matures it.
     "global_breadth":   {"lift_2020": None, "lift_full": None, "lead_d": 21, "thr_pct": 0.70, "era_robust": False, "accruing": True},
+    # --- RRX masterplan §4B W3 Tier-B accruing legs (scripts/study_rrx_tierb_phase0.py) ----------
+    # nh_contraction: pct_rank_window(-nh_share_21d, 504) on near-high (SPY >= 0.98×252d-max) days,
+    # 0.0 elsewhere.  Phase-0 measured: lift_full=0.275, lift_2020=0.000, fire_rate=0.0107,
+    # perm_p=0.978 — NULL at strict bar (near-high mask + contraction combo rarely fires in 2020+
+    # holdout). Q4 52wk-window seasonality caveat on nh window. 2010/2011 false-negatives on record.
+    # Realistic ceiling: permanent confluence input under the 'internals' Tier-B scare; can escalate
+    # a hot Tier-A bubble read but CANNOT originate state. Come-back 2026-10-15.
+    "nh_contraction":   {"lift_2020": 0.0,   "lift_full": 0.275, "lead_d": 15, "thr_pct": 0.85, "era_robust": False, "accruing": True},
+    # jpy_carry: -(DEXJPUS/DEXJPUS.shift(10)-1) gated to 0 when DEXJPUS >= 50d MA → causal 504d pctile.
+    # Phase-0 measured: lift_full=1.188, lift_2020=1.450, fire_rate=0.0961, perm_p=0.036 — PASS.
+    # Joins the 'global' scare (weight 0.3) as a complementary carry-stress channel alongside
+    # global_breadth (weight 0.7). 2022 sign-inversion documented: in a pure Fed-hike regime,
+    # USD/JPY weakness ≠ risk-off — WHY it is Tier-B escalator-only (never originates state).
+    "jpy_carry":        {"lift_2020": 1.450, "lift_full": 1.188, "lead_d": 5,  "thr_pct": 0.85, "era_robust": False, "accruing": True},
 }
 _VALIDATED_MIN = 1.20   # a leg is a real LEADING leg only if its 2020+ lift clears this
 
@@ -123,15 +137,26 @@ _SCARES = {
     # the domestic legs (C3 verdict), but rides Tier-B so it can only escalate a hot Tier-A read,
     # never originate a US state on its own — and it accrues a forward-outcome log first. Its single
     # leg is absent from leading_signals() when data/intl_etf is stale (>8d) or thin (<10 ETFs).
-    "global":  {"tier": "B", "legs": [("global_breadth", 1.0)]},
+    # RRX §4B W3: jpy_carry (weight 0.3) added as a carry-stress channel alongside global_breadth
+    # (weight 0.7). Both Tier-B accruing; jpy_carry PASS at phase-0 (lift_2020=1.45, p=0.036).
+    "global":  {"tier": "B", "legs": [("global_breadth", 0.7), ("jpy_carry", 0.3)]},
+    # internals = Tier-B (display/escalator-only). NH-contraction at fresh highs: index near 252d
+    # high while the fraction of members making new 52wk highs contracts vs recent peaks. Distinct
+    # from the killed continuous breadth_div self-canceller — this is event-conditioned narrowing.
+    # RRX masterplan §4B R1. Phase-0 NULL (lift_2020=0.0, perm_p=0.978) — retained as confluence
+    # input per context-accrual law (kills are construction-specific; null ≠ worthless). Can escalate
+    # a hot Tier-A bubble read but CANNOT originate state. Come-back 2026-10-15.
+    "internals": {"tier": "B", "legs": [("nh_contraction", 1.0)]},
 }
 _SCARE_LABEL = {
-    "credit":  ("Credit stress", "信用压力"),
-    "rates":   ("Rates / inflation shock", "利率/通胀冲击"),
-    "bubble":  ("Bubble / blow-off unwind", "泡沫/见顶回吐"),
-    "growth":  ("Growth scare / defensive rotation", "增长恐慌/防御轮动"),
-    "vol":     ("Volatility event", "波动率事件"),
-    "global":  ("Global breadth breakdown", "全球广度破位"),
+    "credit":    ("Credit stress", "信用压力"),
+    "rates":     ("Rates / inflation shock", "利率/通胀冲击"),
+    "bubble":    ("Bubble / blow-off unwind", "泡沫/见顶回吐"),
+    "growth":    ("Growth scare / defensive rotation", "增长恐慌/防御轮动"),
+    "vol":       ("Volatility event", "波动率事件"),
+    "global":    ("Global breadth breakdown", "全球广度破位"),
+    # RRX masterplan §4B R1 — Tier-B accruing; display/escalator only
+    "internals": ("Breadth internals deterioration", "内部广度恶化"),
 }
 
 # LOUD + EARLY tiers on the 0-100 sub-score scale. CALIBRATED via a band sweep vs forward
@@ -268,6 +293,58 @@ def _global_breadth_raw() -> pd.Series | None:
         return None
 
 
+def build_nh_contraction(spy: pd.Series, breadth_df: "pd.DataFrame") -> "pd.Series":
+    """NH-contraction Tier-B leg (RRX masterplan §4B R1).
+
+    pct_rank_window(-nh_share_21d, 504) on near-high days (SPY >= 0.98 * rolling 252d max),
+    0.0 elsewhere. Near-high mask makes the signal event-conditioned — it fires only when the
+    index is at/near a 252d high while internal breadth (% of members at new 52wk highs) is
+    contracting, a topping narrowing read.
+
+    Caveats: Q4 52wk-window seasonality — nh counts are naturally elevated in Q4 (bias toward
+    false-silence during genuine market topping). 2010/2011 false-negatives on record (Fed-put
+    support). Phase-0 measured NULL (lift_2020=0.0, perm_p=0.978) — retained as confluence
+    input. Tier-B: display/escalator only under 'internals' scare; CANNOT originate state.
+
+    Single source: scripts/study_rrx_tierb_phase0.py imports this function — no study/engine drift.
+    """
+    idx = spy.index
+    nh = breadth_df["nh"].astype(float).reindex(idx).ffill()
+    nm = breadth_df["n_members"].astype(float).reindex(idx).ffill().replace(0, float("nan"))
+    nh_share = nh / nm
+    nh_share_21d = nh_share.rolling(21, min_periods=10).mean()
+    # near-high mask: causal (trailing only)
+    roll_max_252 = spy.rolling(252, min_periods=126).max()
+    near_high = spy >= 0.98 * roll_max_252
+    neg_nh_share = -nh_share_21d
+    pctile = pct_rank_window(neg_nh_share, _PCT_WIN)
+    leg = pctile.where(near_high, other=0.0)
+    return leg.rename("nh_contraction")
+
+
+def build_jpy_carry(spy: pd.Series, dexjpus: "pd.Series") -> "pd.Series":
+    """JPY carry-unwind stress Tier-B leg (RRX masterplan §4B R3).
+
+    -(DEXJPUS/DEXJPUS.shift(10) - 1) gated to 0.0 when DEXJPUS >= 50d MA → causal 504d pctile.
+    DEXJPUS = JPY per USD (higher = weaker yen). Falling USD/JPY = yen strengthening = forced
+    JPY-funded carry unwind. Negated so RISING stress = RISING percentile (risk-rising convention).
+    The 50d-MA regime gate strips safe-haven false positives when USD/JPY is already elevated.
+
+    Caveat: 2022 sign-inversion — in a pure Fed-hiking regime USD/JPY weakness ≠ risk-off (the
+    carry was crowded long-USD there). That is WHY this is Tier-B escalator-only; most potent
+    with VIX also rising. Phase-0 PASS: lift_2020=1.45, perm_p=0.036, fire_rate=0.096.
+
+    Single source: scripts/study_rrx_tierb_phase0.py imports this function — no study/engine drift.
+    """
+    idx = spy.index
+    x = dexjpus.reindex(idx).ffill()
+    ma50 = x.rolling(50, min_periods=25).mean()
+    roc10 = x / x.shift(10) - 1.0
+    stress = (-roc10).where(x < ma50, other=0.0)
+    pctile = pct_rank_window(stress, _PCT_WIN)
+    return pctile.rename("jpy_carry")
+
+
 def leading_signals() -> pd.DataFrame:
     """DataFrame of causal 0-1 'risk-rising' percentiles, one column per leg, on the SPY trading
     calendar. Slower (FRED) series are ffilled onto trading days = causal (carries past forward).
@@ -338,6 +415,29 @@ def leading_signals() -> pd.DataFrame:
     gb = _global_breadth_raw()
     if gb is not None and len(gb) >= _PCT_MINP:
         out["global_breadth"] = pcol(-gb)
+    # --- RRX §4B W3 Tier-B accruing legs (scripts/study_rrx_tierb_phase0.py) -----------------
+    # jpy_carry: JPY carry-unwind stress → 'global' scare (weight 0.3 alongside global_breadth 0.7).
+    # Phase-0 PASS (lift_2020=1.45, perm_p=0.036). 2022 sign-inversion caveat → Tier-B only.
+    # Absent (degrade-don't-crash) when FRED DEXJPUS store is missing.
+    dex_df = store.read("fred", "DEXJPUS")
+    if dex_df is not None and len(dex_df) >= _PCT_MINP:
+        dex_col = dex_df.columns[0]
+        dex_s = dex_df[dex_col].dropna()
+        dex_s.index = pd.to_datetime(dex_s.index)
+        jpy_leg = build_jpy_carry(spy, dex_s)
+        jpy_leg_clean = jpy_leg.dropna()
+        if len(jpy_leg_clean) >= _PCT_MINP:
+            out["jpy_carry"] = jpy_leg.reindex(idx).fillna(0.0)
+    # nh_contraction: breadth internals deterioration at fresh index highs → 'internals' scare.
+    # Phase-0 NULL (lift_2020=0.0, perm_p=0.978) — accruing confluence input, Tier-B only.
+    # Absent (degrade-don't-crash) when breadth.parquet is missing or lacks 'nh'/'n_members'.
+    b_df = store.read("breadth", "breadth")
+    if b_df is not None and "nh" in b_df.columns and "n_members" in b_df.columns:
+        b_df.index = pd.to_datetime(b_df.index)
+        nhc_leg = build_nh_contraction(spy, b_df)
+        nhc_leg_clean = nhc_leg.dropna()
+        if len(nhc_leg_clean) >= _PCT_MINP:
+            out["nh_contraction"] = nhc_leg.reindex(idx).fillna(0.0)
     return out
 
 
