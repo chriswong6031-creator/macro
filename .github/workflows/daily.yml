@@ -393,6 +393,25 @@ jobs:
         run: |
           python -m scripts.export_signal_contracts \
             || echo "::warning::export_signal_contracts failed (non-fatal) -- keeping last committed contract"
+      - name: S&P 500 heatmap real-cap reference (weekly Polygon refresh; committed)
+        # (Re)builds data/sp500_heatmap/reference.parquet (~503 rows: ticker → shares +
+        # SIC) so build_site's S&P heatmap sizes tiles by REAL market cap (shares × latest
+        # close) on EVERY lane. Since site/stockdata left git for R2, the render /
+        # engine-render / earlyclose lanes run on fresh checkouts with no cap source and
+        # size_basis silently degraded to the ETF weight_proxy. The parquet is small and
+        # git-tracked — `git add data/` in "commit engine outputs" below lands it, so all
+        # other lanes read real caps at checkout. Runs BEFORE build_site so tonight's
+        # payload already sizes by market cap. The script self-gates to a weekly Polygon
+        # sweep via the cache's embedded asof stamp (shares move slowly; ~1-2 min when it
+        # does sweep). Non-fatal: a failed refresh leaves the previous cache in place and
+        # build_sp500_heatmap falls back to site/stockdata caps, then to the last
+        # committed marketcap payload's sizes.
+        continue-on-error: true
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+        run: |
+          python -m scripts.build_sp500_heatmap --refresh-caps-only || echo "::warning title=sp500 heatmap cap refresh::rc!=0 (non-fatal — previous cache/fallbacks remain)"
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the

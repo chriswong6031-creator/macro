@@ -213,21 +213,37 @@ def _complete_caps(caps: dict[str, float], symbols: list[str]) -> dict[str, floa
     if not all_ratios:
         return caps
     k_global = float(np.median(all_ratios))
-    # best (largest-weight) ETF placement for each missing ticker.
+
+    def _implied(s: str) -> float:
+        # best (largest-weight) ETF placement, scaled by that fund's own ratio.
+        best_w, best_k = 0.0, k_global
+        for etf, wmap in weights_by_etf.items():
+            w = wmap.get(s, 0.0)
+            if w > best_w:
+                best_w, best_k = w, k_etf.get(etf, k_global)
+        return best_k * best_w
+
     filled = dict(caps)
+    # Plausibility screen: the weight proxy is calibrated on cap/weight ratios, so a
+    # correct real cap cannot sit 8x UNDER its ETF-weight-implied value — one that does
+    # is a poisoned upstream record (e.g. BKNG's nightly mktcap_bn arriving ~30x low)
+    # and would otherwise "win" over the estimate and ship a visibly wrong tile.
+    for s in symbols:
+        cap = filled.get(s, 0)
+        if cap <= 0:
+            continue
+        imp = _implied(s)
+        if imp > 0 and cap < imp / 8:
+            log.info("cap screen: %s real cap %.1fbn << implied %.0fbn — re-estimated",
+                     s, cap / 1e9, imp / 1e9)
+            filled[s] = imp
     n = 0
     for s in symbols:
         if filled.get(s, 0) > 0:
             continue
-        best_w = 0.0
-        best_k = k_global
-        for etf, wmap in weights_by_etf.items():
-            w = wmap.get(s, 0.0)
-            if w > best_w:
-                best_w = w
-                best_k = k_etf.get(etf, k_global)
-        if best_w > 0:
-            filled[s] = best_k * best_w
+        imp = _implied(s)
+        if imp > 0:
+            filled[s] = imp
             n += 1
     if n:
         log.info("cap-completion: estimated %d caps from ETF weights", n)
@@ -251,6 +267,21 @@ def _load_intraday(symbols: list[str]) -> dict[str, pd.DataFrame]:
         except Exception:  # noqa: BLE001
             continue
     return bars
+
+
+def _cap_cache_age_days() -> float | None:
+    """Age of the reference cache via its embedded ``asof`` stamp (git checkouts
+    don't preserve mtimes, so file age is meaningless on CI). None = cache absent
+    or unstamped — both count as stale."""
+    p = _data("sp500_heatmap", "reference.parquet")
+    if not p.exists():
+        return None
+    try:
+        ref = pd.read_parquet(p, columns=["asof"])
+        asof = pd.to_datetime(ref["asof"].iloc[0]).date()
+    except Exception:  # noqa: BLE001 — pre-asof caches refresh once, gaining the stamp
+        return None
+    return float((datetime.now(timezone.utc).date() - asof).days)
 
 
 def _load_caps(closes: pd.DataFrame) -> dict[str, float]:
@@ -297,9 +328,18 @@ def _fetch_live(symbols: list[str]) -> dict[str, dict]:
     return q or {}
 
 
-def refresh_caps(constituents: pd.DataFrame) -> None:
+def refresh_caps(constituents: pd.DataFrame, *, force: bool = False) -> None:
     """(Re)build data/sp500_heatmap/reference.parquet with shares + SIC industry
-    from Polygon /v3/reference/tickers/{ticker}. Best-effort; never fatal."""
+    from Polygon /v3/reference/tickers/{ticker}. Best-effort; never fatal.
+    Shares outstanding move slowly, so a cache younger than _CAP_REFRESH_DAYS is
+    kept as-is unless forced — the nightly step calls this every run and only
+    actually sweeps Polygon weekly."""
+    if not force:
+        age = _cap_cache_age_days()
+        if age is not None and age < _CAP_REFRESH_DAYS:
+            log.info("reference cache fresh (%.0fd < %dd) — refresh skipped",
+                     age, _CAP_REFRESH_DAYS)
+            return
     key = config.secret("POLYGON_API_KEY") or config.secret("MASSIVE_API_KEY")
     if not key:
         log.warning("--refresh-caps needs a Polygon key; skipping")
@@ -328,6 +368,7 @@ def refresh_caps(constituents: pd.DataFrame) -> None:
             log.debug("ref %s failed: %s", sym, e)
             recs.append({"ticker": sym, "shares": None})
     df = pd.DataFrame(recs).set_index("ticker")
+    df["asof"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     out = _data("sp500_heatmap", "reference.parquet")
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out)
@@ -352,6 +393,9 @@ def build(site: Path | None = None, *, live: bool = True,
     # every tile sizes on one scale rather than collapsing to a floor.
     caps = (_load_caps(closes) or _load_caps_from_stockdata(site, symbols)
             or _load_caps_from_prev_payload(site))
+    if not caps:
+        log.warning("no real-cap source (reference.parquet / site/stockdata / prev "
+                    "marketcap payload all absent) — tiles degrade to weight_proxy")
     if caps:
         static = _load_static_caps()
         if static:
@@ -393,11 +437,19 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Build the S&P 500 sector heatmap feed")
     ap.add_argument("--no-live", action="store_true", help="skip the live snapshot splice")
     ap.add_argument("--refresh-caps", action="store_true",
-                    help="rebuild the real market-cap reference cache via Polygon")
+                    help="rebuild the real market-cap reference cache via Polygon "
+                         "(no-op while the cache is fresh; see --force)")
+    ap.add_argument("--refresh-caps-only", action="store_true",
+                    help="refresh the cap cache and exit without building the payload "
+                         "(the nightly pre-render step)")
+    ap.add_argument("--force", action="store_true",
+                    help="refresh the cap cache even when it is fresh")
     args = ap.parse_args(argv)
 
-    if args.refresh_caps:
-        refresh_caps(_load_constituents())
+    if args.refresh_caps or args.refresh_caps_only:
+        refresh_caps(_load_constituents(), force=args.force)
+        if args.refresh_caps_only:
+            return 0
     build(live=not args.no_live)
     return 0
 

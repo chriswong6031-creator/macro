@@ -226,6 +226,14 @@ lanes:
       - id: export_signal_contracts
         module: scripts.export_signal_contracts
         note: non-fatal
+      - id: build_sp500_heatmap_caps
+        module: scripts.build_sp500_heatmap
+        note: >
+          --refresh-caps-only pre-render step: (re)builds the committed
+          data/sp500_heatmap/reference.parquet (ticker -> shares, weekly
+          Polygon sweep self-gated on the embedded asof stamp) so every lane
+          sizes heatmap tiles by real market cap. Non-fatal,
+          continue-on-error; the payload itself is built inside build_site.
       - id: engine_run
         module: engine.run
       - id: build_shock_deescalation
