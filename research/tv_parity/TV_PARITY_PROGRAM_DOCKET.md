@@ -150,3 +150,25 @@ ChartPanel-adjacent surfaces. Phase 0 ships immediately on disjoint-ish surfaces
 24. **Object tree**: right-rail tab listing the symbol node + every indicator with eye
     toggles + remove; sub-pane grouping; Data-window tab only if crosshair plumbing is
     free (no dead tab).
+
+## Phase 8 — overnight/extended-hours pricing + watchlist columns (operator brief 2026-07-10 early, 2 TV screenshots)
+
+25. **Session-price semantics (TV parity)**: from the close until the NEXT session's
+    open, the primary price everywhere (watchlist Last, header, pane card) is the
+    previous EOD close with its day change. Extended/overnight trade data is a
+    SEPARATE secondary display: pane card shows a second price block beneath the
+    primary — "<ext price> USD <chg vs close>" + "☾ Overnight" + its own
+    "Last update at <ts>" — which DISAPPEARS at market open (TV's "Overnight via
+    BOATS" mechanic; we label by our actual source, never a borrowed brand).
+26. **Watchlist "Ext" column + column customizer**: watchlist ⋯ menu gains
+    CUSTOMIZE COLUMNS (Last / Change / Change % / Volume / Extended Hours) and
+    SYMBOL DISPLAY (Logo · Symbol/Name), persisted per user. "Ext" = extended/
+    overnight chg% vs close (dash when no ext print).
+27. **Overnight data source**: research free/grey options hard (Alpaca free ws +
+    overnight feed availability, Finnhub, Twelve Data, Yahoo endpoints (grey ok),
+    Tradier, Webull grey). v1 = Alpaca leg in the QUOTE HUB (server-side singleton →
+    ONE connection multiplexed across ALL users; ≤30 dynamic subs, LRU by /quotes
+    demand) behind ALPACA_API_KEY/ALPACA_API_SECRET (graceful keyless no-op) + best
+    keyless fallback so Ext works before the key lands. FMP later.
+28. **Golden Oracle indicator default OFF** — on by explicit user choice only;
+    existing explicit saved prefs respected.
