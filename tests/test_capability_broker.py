@@ -358,3 +358,59 @@ def test_redline_selftest_passes():
     """The redline scanner's built-in selftest passes."""
     rc = redline_selftest()
     assert rc == 0, "check_capability_redline selftest must pass"
+
+
+# ── Redline hardening regressions (post-review security pass) ──────────────────
+# Each of these fails on the pre-hardening scanner.
+
+from scripts.check_capability_redline import (
+    _ENV_VALUE_READ, _env_key_is_safe, _scan_file, SCAN_IF_PRESENT,
+)
+
+
+class TestRedlineHardening:
+    def _flagged(self, line: str) -> bool:
+        return any(not _env_key_is_safe(m.group("key"))
+                   for m in _ENV_VALUE_READ.finditer(line))
+
+    def test_safe_attribution_reads_pass(self):
+        assert not self._flagged('run_id = os.environ.get("GITHUB_RUN_ID", "")')
+        assert not self._flagged('sha = os.environ.get("GITHUB_SHA", "")')
+
+    def test_literal_secret_read_flagged(self):
+        assert self._flagged('tok = os.environ["CLAUDE_CODE_OAUTH_TOKEN"]')
+        assert self._flagged('tok = os.getenv("VPS_DEPLOY_KEY")')
+        assert self._flagged('x = os.getenv("SOME_API_KEY")')
+
+    def test_dynamic_key_read_flagged(self):
+        # The broker returning a secret VALUE — the most dangerous form.
+        assert self._flagged('return os.environ[ref_name]')
+        assert self._flagged('row["tok"] = os.environ.get(ref_name)')
+
+    def test_docstring_mention_not_flagged(self):
+        assert not self._flagged('    # read os.environ[ref_name] at call site')
+        assert not self._flagged('the caller reads os.environ[ref_name] independently')
+
+    def test_secret_on_hash_line_caught(self, tmp_path):
+        # No bare-'#' entropy exemption: a secret after a YAML comment is caught.
+        f = tmp_path / "capability_manifest.yml"
+        f.write_text("id: x  # " + "a1b2c3d4" * 5 + "\n")  # 40-hex after '#'
+        findings = _scan_file(f, "capability_manifest.yml")
+        assert any(x["kind"].startswith("high_entropy") for x in findings)
+
+    def test_secret_ref_field_value_caught(self, tmp_path):
+        # A secret pasted as a secret_ref VALUE must not be whole-line-exempted.
+        f = tmp_path / "capability_manifest.yml"
+        f.write_text("secret_ref: " + "deadbeef" * 5 + "\n")  # 40-hex value
+        findings = _scan_file(f, "capability_manifest.yml")
+        assert any(x["kind"].startswith("high_entropy") for x in findings)
+
+    def test_audit_tape_in_scan_if_present(self):
+        assert "data/neuralweb/capability_audit.jsonl" in SCAN_IF_PRESENT
+
+    def test_audit_tape_scanned_when_present(self, tmp_path):
+        # If the committed audit tape ever holds a secret, it is caught.
+        f = tmp_path / "capability_audit.jsonl"
+        f.write_text('{"run_id":"1","tok":"' + "cafe1234" * 5 + '"}\n')
+        findings = _scan_file(f, "data/neuralweb/capability_audit.jsonl")
+        assert any(x["kind"].startswith("high_entropy") for x in findings)
