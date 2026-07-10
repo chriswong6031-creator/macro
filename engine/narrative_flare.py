@@ -1037,7 +1037,11 @@ def _load_first_coverage(data_root: Path) -> pd.DataFrame:
 
 
 def _append_first_coverage(new_rows: list[dict], data_root: Path) -> None:
-    """Append-only; dedup on (source_id, ticker). Nightly-gated."""
+    """Append-only; dedup on (source_id, ticker, date). Nightly-gated.
+
+    Dedup key is (source_id, ticker, date) so that a legitimate re-coverage event
+    >90d after the last one for the same source/ticker still lands in the store.
+    """
     if not new_rows:
         return
     p = _fc_path(data_root)
@@ -1048,11 +1052,16 @@ def _append_first_coverage(new_rows: list[dict], data_root: Path) -> None:
         combined = new_df
     else:
         existing_keys = set(
-            zip(existing["source_id"].astype(str), existing["ticker"].astype(str))
+            zip(
+                existing["source_id"].astype(str),
+                existing["ticker"].astype(str),
+                existing["date"].astype(str),
+            )
         )
         new_df_filt = new_df[
             ~new_df.apply(
-                lambda r: (str(r["source_id"]), str(r["ticker"])) in existing_keys, axis=1
+                lambda r: (str(r["source_id"]), str(r["ticker"]), str(r["date"])) in existing_keys,
+                axis=1,
             )
         ]
         combined = pd.concat([existing, new_df_filt], ignore_index=True)
@@ -1135,10 +1144,9 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
     # Build alias map
     alias_map = _build_alias_map(reg)
 
-    # Load stores once
+    # Load stores once (edgar_df removed — edgar_8k_counts is loaded but unused; MINOR 4)
     substack_df = _load_substack(data_root)
     hn_df = _load_hn(data_root)
-    edgar_df = _load_edgar(data_root)
     polygon_df = _load_polygon_news(data_root)
     attention_df = _load_attention(data_root, today)
 
@@ -1161,7 +1169,6 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
                 data_root=data_root,
                 substack_df=substack_df,
                 hn_df=hn_df,
-                edgar_df=edgar_df,
                 polygon_df=polygon_df,
                 attention_df=attention_df,
                 alias_map=alias_map,
@@ -1201,6 +1208,42 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
     }
 
 
+def _min_substack_conf_today(
+    ticker: str,
+    today: date,
+    substack_df: pd.DataFrame | None,
+    alias_map: dict[str, tuple[str, float]],
+) -> float | None:
+    """Return the minimum alias-map confidence among today's substack rows that match ticker.
+
+    Returns None if no substack row matches ticker today (channel did not contribute).
+    Used by _process_ticker to compute row-level join_confidence (NAR-R9 fix).
+    """
+    if substack_df is None or substack_df.empty:
+        return None
+    min_conf: float | None = None
+    try:
+        for _, row in substack_df.iterrows():
+            pub = row.get("published_date")
+            if pub is None:
+                continue
+            try:
+                d = date.fromisoformat(str(pub)[:10])
+            except ValueError:
+                continue
+            if d != today:
+                continue
+            text = str(row.get("title", "")) + " " + str(row.get("teaser_text", ""))
+            match_ticker, conf = _join_text_to_ticker(text, alias_map)
+            if match_ticker != ticker:
+                continue
+            if min_conf is None or conf < min_conf:
+                min_conf = conf
+    except Exception as e:  # noqa: BLE001
+        log.warning("narrative_flare _min_substack_conf_today %s: %s", ticker, e)
+    return min_conf
+
+
 def _process_ticker(
     ticker: str,
     today: date,
@@ -1208,7 +1251,6 @@ def _process_ticker(
     data_root: Path,
     substack_df: pd.DataFrame | None,
     hn_df: pd.DataFrame | None,
-    edgar_df: pd.DataFrame | None,
     polygon_df: pd.DataFrame | None,
     attention_df: pd.DataFrame | None,
     alias_map: dict[str, tuple[str, float]],
@@ -1239,14 +1281,16 @@ def _process_ticker(
         alias_map, existing_fc,
     )
 
-    # 6. Join confidence (best confidence from any channel that fired)
-    # Use 1.0 for ticker column channels; alias-joined channels inherit their conf
-    join_conf = 1.0  # HN and Polygon use direct ticker column => 1.0
-    # Check if substack fired with lower conf
-    if today_texts and substack_df is not None:
-        # Join confidence for substack already captured in new_fc; use 0.8 default for now
-        # (if substack-sourced texts exist, max conf from alias_map)
-        pass  # 1.0 still valid for HN/Polygon channels
+    # 6. Join confidence — minimum confidence among channels that lit (NAR-R9).
+    # HN and Polygon use direct ticker columns => conf = 1.0.
+    # Substack uses alias_map text join => conf can be 1.0, 0.8, or 0.5.
+    # _min_substack_conf_today returns non-None iff at least one today row matched ticker.
+    # When substack contributed, lower from 1.0 to the minimum alias-map conf seen.
+    substack_min_conf = _min_substack_conf_today(ticker, today, substack_df, alias_map)
+    if substack_min_conf is not None:
+        join_conf = substack_min_conf
+    else:
+        join_conf = 1.0
 
     # 7. Hazard percentile (NAR-R7)
     hazard_pctile = _compute_hazard_pctile(ticker, attention_df, hn_df, today)

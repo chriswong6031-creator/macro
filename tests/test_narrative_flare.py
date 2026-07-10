@@ -78,6 +78,8 @@ from engine.narrative_flare import (
     _kleinberg_burst,
     _ledger_advance_enabled,
     _load_first_coverage,
+    _min_substack_conf_today,
+    _process_ticker,
     _tokenize,
     compute,
     write_site_artifact,
@@ -489,8 +491,8 @@ class TestFirstCoverageSchema:
         df = pd.read_parquet(p)
         assert list(df.columns) == FIRST_COVERAGE_COLS
 
-    def test_first_coverage_dedup_on_source_ticker(self, tmp_path):
-        """Appending the same (source_id, ticker) twice should not duplicate."""
+    def test_first_coverage_dedup_on_source_ticker_date(self, tmp_path):
+        """Appending the exact same (source_id, ticker, date) row twice must not duplicate."""
         from engine.narrative_flare import _append_first_coverage, _fc_path, _load_first_coverage
 
         row = {
@@ -503,9 +505,64 @@ class TestFirstCoverageSchema:
             "fetch_date": "2026-07-10",
         }
         _append_first_coverage([row], tmp_path)
-        _append_first_coverage([row], tmp_path)  # second call
+        _append_first_coverage([row], tmp_path)  # second call — same-day rerun
         df = _load_first_coverage(tmp_path)
         assert len(df) == 1, f"Expected 1 row after dedup, got {len(df)}"
+
+    def test_first_coverage_gap_recoverage_persists(self, tmp_path):
+        """Two first-coverage events for the same (source, ticker) 100 days apart must both persist.
+
+        MAJOR 2 fix: dedup is on (source_id, ticker, date), not (source_id, ticker).
+        A re-coverage event after >90d gap is a legitimate new event and must be stored.
+        """
+        from engine.narrative_flare import _append_first_coverage, _load_first_coverage
+
+        row_day1 = {
+            "source_id": "hn",
+            "ticker": "NVDA",
+            "date": "2026-04-01",
+            "url": "https://hn.example/1",
+            "title": "NVDA first coverage",
+            "join_confidence": 1.0,
+            "fetch_date": "2026-04-01",
+        }
+        row_day2 = {
+            "source_id": "hn",
+            "ticker": "NVDA",
+            "date": "2026-07-10",  # 100 days later
+            "url": "https://hn.example/2",
+            "title": "NVDA re-coverage",
+            "join_confidence": 1.0,
+            "fetch_date": "2026-07-10",
+        }
+        _append_first_coverage([row_day1], tmp_path)
+        _append_first_coverage([row_day2], tmp_path)
+        df = _load_first_coverage(tmp_path)
+        assert len(df) == 2, (
+            f"Expected 2 rows (100-day-apart events), got {len(df)}. "
+            "Dedup must key on (source_id, ticker, date), not (source_id, ticker)."
+        )
+        dates_stored = set(df["date"].astype(str))
+        assert "2026-04-01" in dates_stored
+        assert "2026-07-10" in dates_stored
+
+    def test_first_coverage_same_day_rerun_idempotent(self, tmp_path):
+        """Running nightly twice on same day must not create duplicate rows."""
+        from engine.narrative_flare import _append_first_coverage, _load_first_coverage
+
+        row = {
+            "source_id": "substack:semianalysis",
+            "ticker": "NVDA",
+            "date": "2026-07-10",
+            "url": "https://substack.example/1",
+            "title": "NVDA substack re-coverage",
+            "join_confidence": 0.8,
+            "fetch_date": "2026-07-10",
+        }
+        for _ in range(3):  # simulate 3 re-runs same day
+            _append_first_coverage([row], tmp_path)
+        df = _load_first_coverage(tmp_path)
+        assert len(df) == 1, f"Expected 1 row after 3 same-day reruns, got {len(df)}"
 
     def test_first_coverage_new_ticker_appended(self, tmp_path):
         """A new (source_id, ticker) pair should be appended."""
@@ -582,6 +639,147 @@ class TestFirstCoverageSchema:
         )
         hn_events = [r for r in new_rows if r["source_id"] == "hn"]
         assert len(hn_events) == 0, "Should not fire when seen within 90d"
+
+
+# ---------------------------------------------------------------------------
+# 7b. NAR-R9: row-level join_confidence (BLOCKER 1 fix)
+# ---------------------------------------------------------------------------
+
+
+class TestJoinConfidence:
+    """NAR-R9: join_confidence must be minimum conf among channels that lit.
+
+    Substack contributes alias-map tier conf (1.0/0.8/0.5).
+    HN and Polygon contribute 1.0 (ticker-column keyed).
+    A substack-only flare through a 0.5-tier ambiguous alias must print 0.5.
+    """
+
+    def _make_substack_ambiguous_df(self, ticker_word: str, pub_date: date) -> pd.DataFrame:
+        """Substack post with an ambiguous alias that maps to 0.5 confidence."""
+        rows = [{
+            "feed_id": "fintwit-daily",
+            "url": "https://example.com/ambig",
+            "title": f"{ticker_word} interesting development",
+            "published_date": pub_date.isoformat(),
+            "teaser_text": f"Short analysis of {ticker_word}.",
+            "fetch_date": pub_date.isoformat(),
+        }]
+        return pd.DataFrame(rows, columns=["feed_id", "url", "title", "published_date", "teaser_text", "fetch_date"])
+
+    def test_substack_only_05_alias_join_conf_is_05(self, tmp_path):
+        """_process_ticker: substack-only flare via 0.5-tier alias => join_confidence == 0.5.
+
+        Registry: NVDA has keywords ["NVIDIA", "NV"] where "NV" is index>0 => conf 0.5.
+        The substack post title contains "NV" only (ambiguous), so alias match = 0.5.
+        With no HN or Polygon data, the flare fires substack-only.
+        Expected: site_row['join_confidence'] == 0.5 and hist_row['join_confidence'] == 0.5.
+        """
+        today = date(2026, 7, 10)
+        # Build alias map: NVDA keyword[0]="NVIDIA" (0.8), keyword[1]="NV" (0.5)
+        reg = {"hn_keywords": {"NVDA": ["NVIDIA", "NV"]}}
+        alias_map = _build_alias_map(reg)
+
+        # Verify conf for "NV" is 0.5
+        assert alias_map["nv"][1] == 0.5, f"Expected conf=0.5 for 'NV', got {alias_map['nv']}"
+
+        # Substack post mentioning only "NV" (ambiguous alias)
+        substack_df = self._make_substack_ambiguous_df("NV", today)
+
+        existing_fc = pd.DataFrame(columns=FIRST_COVERAGE_COLS)
+
+        site_row, hist_row, new_fc = _process_ticker(
+            ticker="NVDA",
+            today=today,
+            fetch_date_str=today.isoformat(),
+            data_root=tmp_path,
+            substack_df=substack_df,
+            hn_df=None,
+            polygon_df=None,
+            attention_df=None,
+            alias_map=alias_map,
+            existing_fc=existing_fc,
+        )
+
+        # The substack channel must have lit (novel_substack = first-ever) or
+        # tfidf fired; either way join_confidence must be 0.5
+        assert site_row["join_confidence"] == 0.5, (
+            f"Expected join_confidence=0.5 for substack-only 0.5-tier alias flare, "
+            f"got {site_row['join_confidence']}. channels_lit={site_row['channels_lit_names']}"
+        )
+        assert hist_row["join_confidence"] == 0.5, (
+            f"hist_row join_confidence must also be 0.5, got {hist_row['join_confidence']}"
+        )
+
+    def test_hn_channel_forces_10_join_conf(self, tmp_path):
+        """HN hit with no substack must yield join_confidence == 1.0."""
+        today = date(2026, 7, 10)
+        reg = {"hn_keywords": {"NVDA": ["NVIDIA"]}}
+        alias_map = _build_alias_map(reg)
+
+        hn_df = _make_hn_df("NVDA", [(today, 50)])
+        existing_fc = pd.DataFrame(columns=FIRST_COVERAGE_COLS)
+
+        site_row, hist_row, _ = _process_ticker(
+            ticker="NVDA",
+            today=today,
+            fetch_date_str=today.isoformat(),
+            data_root=tmp_path,
+            substack_df=None,
+            hn_df=hn_df,
+            polygon_df=None,
+            attention_df=None,
+            alias_map=alias_map,
+            existing_fc=existing_fc,
+        )
+        assert site_row["join_confidence"] == 1.0, (
+            f"HN-only flare should have join_confidence=1.0, got {site_row['join_confidence']}"
+        )
+
+    def test_min_substack_conf_today_returns_min(self):
+        """_min_substack_conf_today returns the minimum conf among today's matching rows."""
+        today = date(2026, 7, 10)
+        reg = {"hn_keywords": {"NVDA": ["NVIDIA", "NV"]}}
+        alias_map = _build_alias_map(reg)
+        # Two posts today: one matches "NVIDIA" (0.8), one matches "NV" (0.5)
+        rows = [
+            {
+                "feed_id": "feed1",
+                "url": "u1",
+                "title": "NVIDIA earnings beat",
+                "published_date": today.isoformat(),
+                "teaser_text": "",
+                "fetch_date": today.isoformat(),
+            },
+            {
+                "feed_id": "feed2",
+                "url": "u2",
+                "title": "NV semiconductor trend",
+                "published_date": today.isoformat(),
+                "teaser_text": "",
+                "fetch_date": today.isoformat(),
+            },
+        ]
+        substack_df = pd.DataFrame(rows, columns=["feed_id", "url", "title", "published_date", "teaser_text", "fetch_date"])
+        result = _min_substack_conf_today("NVDA", today, substack_df, alias_map)
+        assert result == 0.5, f"Expected min conf 0.5, got {result}"
+
+    def test_min_substack_conf_today_no_match_returns_none(self):
+        """_min_substack_conf_today returns None when no substack row matches ticker today."""
+        today = date(2026, 7, 10)
+        reg = {"hn_keywords": {"META": ["Meta Platforms", "Meta"]}}
+        alias_map = _build_alias_map(reg)
+        # Substack only has NVDA text — no META match
+        rows = [{
+            "feed_id": "feed1",
+            "url": "u1",
+            "title": "NVIDIA GPU showcase",
+            "published_date": today.isoformat(),
+            "teaser_text": "",
+            "fetch_date": today.isoformat(),
+        }]
+        substack_df = pd.DataFrame(rows, columns=["feed_id", "url", "title", "published_date", "teaser_text", "fetch_date"])
+        result = _min_substack_conf_today("META", today, substack_df, alias_map)
+        assert result is None, f"Expected None when no substack match, got {result}"
 
 
 # ---------------------------------------------------------------------------
