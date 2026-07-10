@@ -26,6 +26,7 @@ import json
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -36,7 +37,7 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from engine.thetadata_store import _load_parquets, _normalise_date, store_root
+from engine.thetadata_store import _load_parquets, _normalise_date, store_root, clear_parquet_cache
 from engine.options_hub import (
     compute_vol,
     compute_gex,
@@ -52,6 +53,16 @@ log = logging.getLogger(__name__)
 
 # ── R2 publish prefix ─────────────────────────────────────────────────────────
 R2_PREFIX = "options_hub/"
+
+# ── per-root wall-clock budget ────────────────────────────────────────────────
+# Roots with large option chains (e.g. RCL, NVDA) can take 30-60 s legitimately;
+# anything beyond ROOT_WALL_BUDGET_S indicates a hang and should be skipped.
+ROOT_WALL_BUDGET_S: float = float(os.environ.get("HUB_ROOT_BUDGET_S", "120"))
+
+# ── incremental aggregate publish interval ────────────────────────────────────
+# Publish cross-root aggregates (oi_movers / hot_contracts / context) after every
+# N roots so a mid-run OOM leaves the feeds only N roots stale, not entirely frozen.
+INCREMENTAL_N: int = int(os.environ.get("HUB_INCREMENTAL_N", "50"))
 
 # ── standard data paths (relative to data_root) ───────────────────────────────
 _POLYGON_GEX_SUBDIR = "polygon_gex"
@@ -124,6 +135,85 @@ def _upload_r2(s3, bucket: str, local_path: Path, r2_key: str) -> bool:
 def _write_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, allow_nan=False, default=str), encoding="utf-8")
+
+
+def _publish_aggregates(
+    roots_ok: list[str],
+    asof: str,
+    theta_store,
+    out_dir: Path,
+    s3,
+    bucket: str,
+    fear_greed_path: Path,
+    gex_latest_path: Path,
+    live_flow_out_dir: Path,
+    label: str = "incremental",
+) -> dict | None:
+    """Compute and publish cross-root aggregate artifacts from roots processed so far.
+
+    Called both incrementally (every INCREMENTAL_N roots) and at end-of-run.
+    Returns the oi_movers payload (for oi_confirmed chaining) or None on failure.
+    """
+    if not roots_ok:
+        return None
+    log.info(
+        "options_hub_builder: [%s] publishing aggregates over %d roots …",
+        label, len(roots_ok),
+    )
+    oi_movers_payload: dict | None = None
+    try:
+        oi_movers, hot_contracts = build_cross_root(roots_ok, asof, theta_store)
+        oi_movers_payload = oi_movers
+        oi_path  = out_dir / "oi_movers.json"
+        hot_path = out_dir / "hot_contracts.json"
+        _write_json(oi_path,  oi_movers)
+        _write_json(hot_path, hot_contracts)
+        if s3 and bucket:
+            _upload_r2(s3, bucket, oi_path,  f"{R2_PREFIX}oi_movers.json")
+            _upload_r2(s3, bucket, hot_path, f"{R2_PREFIX}hot_contracts.json")
+        log.info("options_hub_builder: [%s] oi_movers + hot_contracts done", label)
+    except Exception as e:  # noqa: BLE001
+        log.warning("options_hub_builder: [%s] cross-root build FAILED — %s", label, e)
+
+    try:
+        ctx_payload = build_context_payload(
+            asof=asof,
+            gex_latest_path=gex_latest_path,
+            fear_greed_path=fear_greed_path,
+        )
+        ctx_path = out_dir / "context.json"
+        _write_json(ctx_path, ctx_payload)
+        if s3 and bucket:
+            _upload_r2(s3, bucket, ctx_path, f"{R2_PREFIX}context.json")
+        log.info("options_hub_builder: [%s] context.json done", label)
+    except Exception as e:  # noqa: BLE001
+        log.warning("options_hub_builder: [%s] context.json build FAILED — %s", label, e)
+
+    try:
+        oi_confirmed_list = build_oi_confirmed(
+            asof=asof,
+            live_flow_out_dir=live_flow_out_dir,
+            oi_movers_today=oi_movers_payload,
+        )
+        oi_conf_payload = {
+            "schema": "options_hub.oi_confirmed/v1",
+            "asof": asof,
+            "confirmed": oi_confirmed_list,
+        }
+        oi_conf_path = out_dir / "oi_confirmed.json"
+        _write_json(oi_conf_path, oi_conf_payload)
+        if s3 and bucket:
+            _upload_r2(s3, bucket, oi_conf_path, f"{R2_PREFIX}oi_confirmed.json")
+        log.info(
+            "options_hub_builder: [%s] oi_confirmed.json done (%d confirmed)",
+            label, len(oi_confirmed_list),
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning(
+            "options_hub_builder: [%s] oi_confirmed.json build FAILED — %s", label, e,
+        )
+
+    return oi_movers_payload
 
 
 # --------------------------------------------------------------------------- #
@@ -470,11 +560,26 @@ def main() -> None:
     roots_ok: list[str] = []
     roots_skipped: list[str] = []
     roots_gex_skipped: list[str] = []  # roots where GEX R2 upload was suppressed (guard)
+    roots_timeout: list[str] = []      # roots skipped due to wall-clock budget
 
-    for root in roots:
+    _last_incremental: int = 0         # index of last incremental aggregate publish
+
+    for _root_idx, root in enumerate(roots):
         log.info("options_hub_builder: processing %s …", root)
+        _root_start = time.monotonic()
         try:
             vol_payload, gex_payload = build_root(root, asof, theta_store, polygon_gex_dir)
+
+            _elapsed = time.monotonic() - _root_start
+            if _elapsed > ROOT_WALL_BUDGET_S:
+                log.warning(
+                    "options_hub_builder: %s budget exceeded (%.1fs > %.0fs) — "
+                    "skipping upload, continuing",
+                    root, _elapsed, ROOT_WALL_BUDGET_S,
+                )
+                roots_timeout.append(root)
+                clear_parquet_cache()
+                continue
 
             # ── COMPLETENESS GUARD (CONTRACT) ────────────────────────────────────
             gex_publish, gex_payload, is_guarded = _gex_publish_decision(
@@ -507,104 +612,92 @@ def main() -> None:
                     _upload_r2(s3, bucket, gex_path, f"{R2_PREFIX}gex/{root}.json")
 
             roots_ok.append(root)
-            log.info("options_hub_builder: %s done", root)
+            log.info(
+                "options_hub_builder: %s done (%.1fs)", root,
+                time.monotonic() - _root_start,
+            )
 
         except Exception as e:  # noqa: BLE001
             log.warning("options_hub_builder: %s FAILED — %s", root, e)
             roots_skipped.append(root)
 
-    # ── cross-root payloads ───────────────────────────────────────────────────
-    log.info("options_hub_builder: building cross-root payloads …")
-    oi_movers_payload: dict | None = None
-    try:
-        oi_movers, hot_contracts = build_cross_root(roots_ok, asof, theta_store)
-        oi_movers_payload = oi_movers
+        finally:
+            # Release per-root parquet cache after every root to bound peak memory.
+            # Without this, the cache accumulates ALL year-files for ALL roots
+            # (49 GB+ of greeks) which OOM-kills the process mid-universe.
+            clear_parquet_cache()
 
-        oi_path  = out_dir / "oi_movers.json"
-        hot_path = out_dir / "hot_contracts.json"
-        _write_json(oi_path,  oi_movers)
-        _write_json(hot_path, hot_contracts)
+        # ── incremental aggregate publish ──────────────────────────────────────
+        # Publish cross-root aggregates from roots processed so far every
+        # INCREMENTAL_N roots.  A mid-run death then degrades to N-root-stale feeds
+        # rather than freezing all aggregates for the entire day.
+        if len(roots_ok) >= _last_incremental + INCREMENTAL_N:
+            _publish_aggregates(
+                roots_ok=list(roots_ok),   # snapshot
+                asof=asof,
+                theta_store=theta_store,
+                out_dir=out_dir,
+                s3=s3,
+                bucket=bucket,
+                fear_greed_path=fear_greed_path,
+                gex_latest_path=gex_latest_path,
+                live_flow_out_dir=live_flow_out_dir,
+                label=f"incremental@{len(roots_ok)}",
+            )
+            _last_incremental = len(roots_ok)
 
-        if s3 and bucket:
-            _upload_r2(s3, bucket, oi_path,  f"{R2_PREFIX}oi_movers.json")
-            _upload_r2(s3, bucket, hot_path, f"{R2_PREFIX}hot_contracts.json")
+    # ── final cross-root payloads (full universe) ─────────────────────────────
+    # This overwrites any incremental checkpoint with the complete universe.
+    oi_movers_payload = _publish_aggregates(
+        roots_ok=roots_ok,
+        asof=asof,
+        theta_store=theta_store,
+        out_dir=out_dir,
+        s3=s3,
+        bucket=bucket,
+        fear_greed_path=fear_greed_path,
+        gex_latest_path=gex_latest_path,
+        live_flow_out_dir=live_flow_out_dir,
+        label="final",
+    )
 
-    except Exception as e:  # noqa: BLE001
-        log.warning("options_hub_builder: cross-root build FAILED — %s", e)
+    # ── summary / completion sentinel ────────────────────────────────────────
+    _total_roots = len(roots)
+    _processed   = len(roots_ok) + len(roots_skipped) + len(roots_timeout)
+    _is_partial  = (roots_skipped or roots_timeout or _processed < _total_roots)
 
-    # ── CONTRACT v2: context.json ─────────────────────────────────────────────
-    log.info("options_hub_builder: building context.json …")
-    try:
-        ctx_payload = build_context_payload(
-            asof=asof,
-            gex_latest_path=gex_latest_path,
-            fear_greed_path=fear_greed_path,
-        )
-        ctx_path = out_dir / "context.json"
-        _write_json(ctx_path, ctx_payload)
-        if s3 and bucket:
-            _upload_r2(s3, bucket, ctx_path, f"{R2_PREFIX}context.json")
-        log.info("options_hub_builder: context.json done")
-    except Exception as e:  # noqa: BLE001
-        log.warning("options_hub_builder: context.json build FAILED — %s", e)
-
-    # ── CONTRACT v2: oi_confirmed.json ────────────────────────────────────────
-    log.info("options_hub_builder: building oi_confirmed.json …")
-    try:
-        oi_confirmed_list = build_oi_confirmed(
-            asof=asof,
-            live_flow_out_dir=live_flow_out_dir,
-            oi_movers_today=oi_movers_payload,
-        )
-        oi_conf_payload = {
-            "schema": "options_hub.oi_confirmed/v1",
-            "asof": asof,
-            "confirmed": oi_confirmed_list,
-        }
-        oi_conf_path = out_dir / "oi_confirmed.json"
-        _write_json(oi_conf_path, oi_conf_payload)
-        if s3 and bucket:
-            _upload_r2(s3, bucket, oi_conf_path, f"{R2_PREFIX}oi_confirmed.json")
-        log.info(
-            "options_hub_builder: oi_confirmed.json done (%d confirmed)",
-            len(oi_confirmed_list),
-        )
-    except Exception as e:  # noqa: BLE001
-        log.warning("options_hub_builder: oi_confirmed.json build FAILED — %s", e)
-
-    # ── summary ──────────────────────────────────────────────────────────────
     log.info(
-        "options_hub_builder: complete. asof=%s roots_ok=%d roots_skipped=%d "
-        "roots_gex_guarded=%d",
-        asof, len(roots_ok), len(roots_skipped), len(roots_gex_skipped),
+        "options_hub_builder: COMPLETE asof=%s roots_ok=%d roots_skipped=%d "
+        "roots_timeout=%d roots_gex_guarded=%d total=%d partial=%s",
+        asof, len(roots_ok), len(roots_skipped), len(roots_timeout),
+        len(roots_gex_skipped), _total_roots, _is_partial,
     )
     if roots_skipped:
-        log.warning("options_hub_builder: skipped roots: %s", roots_skipped)
+        log.warning("options_hub_builder: error-skipped roots: %s", roots_skipped)
+    if roots_timeout:
+        log.warning("options_hub_builder: timeout-skipped roots: %s", roots_timeout)
     if roots_gex_skipped:
         log.warning(
             "options_hub_builder: GEX R2 upload suppressed (guard) for %d roots: %s",
             len(roots_gex_skipped), roots_gex_skipped,
         )
 
-    # Item 6 — register options_hub_nightly in the run_status/circuit-breaker pattern.
+    # ── run_status ───────────────────────────────────────────────────────────
+    # Register options_hub_nightly in the run_status/circuit-breaker pattern.
     # Mirrors the established pattern in scripts/collect.py + lib/store.write_status.
     try:
-        import sys as _sys                      # noqa: PLC0415
-        _repo = Path(__file__).resolve().parent.parent
-        if str(_repo) not in _sys.path:
-            _sys.path.insert(0, str(_repo))
         from lib import store as _store         # noqa: PLC0415
         from datetime import datetime as _dt, timezone as _tz  # noqa: PLC0415
         _rs = _store.read_status()
         _rs.setdefault("sources", {})["options_hub_nightly"] = {
-            "status":                "ok" if not roots_skipped else "partial",
+            "status":                "ok" if not _is_partial else "partial",
             "roots_ok":              len(roots_ok),
             "roots_skipped":         len(roots_skipped),
+            "roots_timeout":         len(roots_timeout),
             "roots_gex_guarded":     len(roots_gex_skipped),
             "roots_gex_guarded_list": roots_gex_skipped,
-            # CONTRACT v2 object counts (None when build failed / skipped)
+            # CONTRACT v2 object counts
             "context_json":          "ok" if (out_dir / "context.json").exists() else "missing",
-            "oi_confirmed_n":        len(oi_confirmed_list) if "oi_confirmed_list" in dir() else None,
             "asof":                  asof,
             "checked_at":            _dt.now(_tz.utc).isoformat(),
         }
@@ -612,6 +705,12 @@ def main() -> None:
         log.info("options_hub_builder: run_status updated")
     except Exception as _rs_err:   # noqa: BLE001
         log.debug("options_hub_builder: run_status write failed (non-fatal): %s", _rs_err)
+
+    # ── exit code ────────────────────────────────────────────────────────────
+    # Non-zero exit on partial run so launchd/monitoring surfaces the failure
+    # rather than swallowing it silently.
+    if _is_partial:
+        sys.exit(2)
 
 
 if __name__ == "__main__":

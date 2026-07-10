@@ -144,9 +144,79 @@ fi
 if [ "${MATRIX_NO_PUBLISH:-0}" = "1" ]; then
     echo "[options_matrix] MATRIX_NO_PUBLISH=1 — launching build_options_matrix (local only, no R2 publish)"
     cd "$REPO"
-    exec "$PYTHON" -m scripts.build_options_matrix
+    "$PYTHON" -m scripts.build_options_matrix
+    BUILD_RC=$?
 else
     echo "[options_matrix] launching build_options_matrix --publish"
     cd "$REPO"
-    exec "$PYTHON" -m scripts.build_options_matrix --publish
+    "$PYTHON" -m scripts.build_options_matrix --publish
+    BUILD_RC=$?
+
+    # ── gex_state R2 mirror ───────────────────────────────────────────────────
+    # site/options_structure/gex_state/*.json are written by build_gex_board.py
+    # (nightly render) and git-committed to site/, but were NEVER mirrored to R2.
+    # The terminal's f=gexstate proxies R2 → 503 → GEX tab regime chip breaks.
+    # Upload them here, after the matrix build, using the same R2 credentials.
+    # This is idempotent — objects in R2 are simply overwritten each nightly run.
+    GEX_STATE_DIR="$REPO/site/options_structure/gex_state"
+    if [ -d "$GEX_STATE_DIR" ]; then
+        GEX_FILES=$(find "$GEX_STATE_DIR" -name "*.json" 2>/dev/null | wc -l | tr -d ' ')
+        echo "[options_matrix] uploading ${GEX_FILES} gex_state JSON(s) to R2 …"
+        "$PYTHON" - "$GEX_STATE_DIR" <<'PYEOF'
+import os, sys, json, pathlib, logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("gex_state_mirror")
+
+gex_dir = pathlib.Path(sys.argv[1])
+ep = os.environ.get("R2_ENDPOINT", "")
+ak = os.environ.get("R2_ACCESS_KEY_ID", "")
+sk = os.environ.get("R2_SECRET_ACCESS_KEY", "")
+bucket = os.environ.get("R2_BUCKET", "")
+
+if not (ep and ak and sk and bucket):
+    log.warning("gex_state_mirror: R2 creds incomplete — skipping gex_state upload")
+    sys.exit(0)
+
+try:
+    import boto3
+    from botocore.config import Config
+    kw = dict(region_name="auto", signature_version="s3v4",
+              retries={"max_attempts": 3, "mode": "standard"})
+    try:
+        cfg = Config(**kw, request_checksum_calculation="when_required",
+                     response_checksum_validation="when_required")
+    except TypeError:
+        cfg = Config(**kw)
+    s3 = boto3.client("s3", endpoint_url=ep, aws_access_key_id=ak,
+                      aws_secret_access_key=sk, config=cfg)
+except Exception as e:
+    log.warning("gex_state_mirror: boto3 client failed: %s", e)
+    sys.exit(0)
+
+ok = 0
+fail = 0
+for f in sorted(gex_dir.glob("*.json")):
+    r2_key = f"options_structure/gex_state/{f.name}"
+    try:
+        s3.upload_file(str(f), bucket, r2_key,
+                       ExtraArgs={"ContentType": "application/json"})
+        log.info("gex_state_mirror: uploaded %s", r2_key)
+        ok += 1
+    except Exception as e:
+        log.warning("gex_state_mirror: FAILED %s: %s", r2_key, e)
+        fail += 1
+
+log.info("gex_state_mirror: done ok=%d fail=%d", ok, fail)
+if fail:
+    sys.exit(1)
+PYEOF
+        GEX_RC=$?
+        if [ "$GEX_RC" -ne 0 ]; then
+            echo "[options_matrix] WARNING: gex_state mirror exited with rc=$GEX_RC"
+        fi
+    else
+        echo "[options_matrix] WARNING: gex_state dir not found at $GEX_STATE_DIR — skipping mirror"
+    fi
 fi
+
+exit "$BUILD_RC"

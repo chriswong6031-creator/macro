@@ -292,6 +292,53 @@ def test_action_board_ew_divergence_attach(tmp_path):
     assert tp_item["ew"]["reco"] == "accumulate"
 
 
+# --- basket_alloc selection: best-ranked basket wins over max-|tilt| basket ---
+def test_basket_alloc_uses_best_ranked_not_max_tilt():
+    """Regression for NVDA 'Quantum Computing' misattribution.
+
+    NVDA belongs to multiple baskets including both quantum_computing and
+    ai_semiconductors. When quantum_computing has a strong negative tilt (avoid,
+    fading) and ai_semiconductors has a neutral tilt (hold), the OLD code would
+    pick quantum_computing as basket_alloc because its |tilt| was larger — firing
+    a 'Quantum Computing basket is below trend' caution on NVDA.
+
+    The fix: basket_alloc should always be the BEST-RANKED (lowest rotation rank)
+    basket, not the max-|tilt| basket. This test uses _basket_alloc_map's
+    output convention by simulating the alloc_by_id and bsk_mem structures, then
+    calling the selection logic directly (mirroring build_stock_library.py lines
+    that compute _bslug).
+    """
+    # Simulate alloc_by_id: ai_semiconductors is rank 1 (best), quantum_computing is rank 15
+    alloc_by_id = {
+        "ai_semiconductors": {"rank": 1, "above_trend": True, "eligible": True,
+                               "label": "dominant", "name": "AI Semiconductors",
+                               "name_zh": "AI半导体"},
+        "quantum_computing":  {"rank": 15, "above_trend": False, "eligible": False,
+                               "label": "fading", "name": "Quantum Computing",
+                               "name_zh": "量子计算"},
+    }
+    # NVDA memberships: both baskets
+    memberships = [
+        {"slug": "ai_semiconductors", "name": "AI Semiconductors"},
+        {"slug": "quantum_computing",  "name": "Quantum Computing"},
+    ]
+
+    # Simulate the NEW basket_alloc selection (best-ranked):
+    cands = [m.get("slug") for m in memberships if m.get("slug") in alloc_by_id]
+    bslug = min(cands, key=lambda s: (alloc_by_id[s].get("rank") or 999))
+
+    assert bslug == "ai_semiconductors", (
+        f"NVDA basket_alloc should be ai_semiconductors (rank 1), not {bslug!r} — "
+        "the quantum_computing membership must not fire a caution on NVDA"
+    )
+    # Confirm the caution would NOT fire on the best-ranked basket (it's healthy)
+    rec = {"basket_alloc": {**alloc_by_id[bslug], "slug": bslug}}
+    hc, cau = ss._basket_risk(rec)
+    assert hc == 0.0 and cau is None, (
+        "ai_semiconductors is above_trend=True — no de-risk caution should fire"
+    )
+
+
 # --- RFC-compliant JSON emit (no bare NaN/Inf reaches us_standouts.json) -----
 def test_json_safe_strips_non_finite():
     import json

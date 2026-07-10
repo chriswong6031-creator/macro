@@ -1862,14 +1862,22 @@ def main() -> int:
         if ext_map.get(ticker):
             rec["ext"] = ext_map[ticker]            # re-arms the parabolic/stretched entry brake
         spot = _spotlight_for(sector, bsk_mem.get(ticker), spotlight_ctx)
-        # primary narrative basket = the spotlight theme (strongest tilt the name belongs to);
-        # attach its allocation/trend-gate state for the validated size de-risk + Mastermind.
+        # basket_alloc: the allocation/trend-gate state used for the VALIDATED size de-risk
+        # caution (engine.stock_score._basket_risk) and Mastermind display.
+        #
+        # SELECTION RULE: always use the BEST-RANKED basket (lowest rotation rank = most
+        # in-favor) from the name's memberships, regardless of which basket drives the
+        # spotlight tilt. This keeps the caution anchored to the name's PRIMARY narrative.
+        #
+        # Why NOT the spotlight max-|tilt| basket: when a name belongs to a minor basket
+        # that is currently fading (e.g. NVDA tagged into quantum_computing alongside its
+        # primary ai_semiconductors membership), the spotlight engine may pick that minor
+        # basket because its negative tilt is the largest |z| — but attributing the
+        # de-risk caution to that minor basket is a credibility misattribution. The
+        # spotlight tilt (used for scoring) is UNCHANGED; only the caution anchor differs.
         _alloc_by_id = spotlight_ctx.get("alloc_by_id") or {}
-        _bslug = ((spot or {}).get("theme") or {}).get("slug")
-        if not _bslug and bsk_mem.get(ticker):
-            # spotlight neutral but the name IS in basket(s): attach its best-ranked (most
-            # in-favor) narrative so Mastermind + the de-blur still see it (de-risk stays inert
-            # unless that basket is itself below-trend / deteriorating).
+        _bslug = None
+        if bsk_mem.get(ticker):
             _cands = [m.get("slug") for m in bsk_mem[ticker] if m.get("slug") in _alloc_by_id]
             if _cands:
                 _bslug = min(_cands, key=lambda s: (_alloc_by_id[s].get("rank") or 999))
