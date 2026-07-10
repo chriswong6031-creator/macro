@@ -3,10 +3,12 @@ Mirrors tests/test_pit_fundamentals.py: feed synthetic inputs into the pure
 parser / resolver / diff and assert behaviour.
 """
 import sys
+import unittest.mock as mock
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -229,3 +231,180 @@ def test_smart_money_trend_never_keys_scoring_on_quarter_end():
     tr = sm.accumulation_trend(s)
     asof = sm.as_of_for_scoring(tr)
     assert asof == "2025-02-14" and asof != tr["to_period"] and asof > tr["to_period"]
+
+
+# ---- 13F-HR/A amendment support (SM2-R7) ------------------------------------
+
+# Synthetic submissions JSON containing both 13F-HR and 13F-HR/A rows
+_SUBMISSIONS_WITH_AMENDMENTS = {
+    "name": "TEST FUND LLC",
+    "filings": {
+        "recent": {
+            "form": [
+                "13F-HR/A",    # amendment to Q1 2026
+                "13F-HR",      # Q1 2026 original
+                "13F-HR/A",    # amendment to Q4 2025
+                "13F-HR",      # Q4 2025 original
+                "13F-HR",      # Q3 2025 (no amendment)
+                "13F-NT",      # notice only — must be excluded
+            ],
+            "accessionNumber": [
+                "0001234567-26-000010",
+                "0001234567-26-000005",
+                "0001234567-25-000020",
+                "0001234567-25-000015",
+                "0001234567-25-000008",
+                "0001234567-25-000003",
+            ],
+            "reportDate": [
+                "2026-03-31",
+                "2026-03-31",
+                "2025-12-31",
+                "2025-12-31",
+                "2025-09-30",
+                "2025-09-30",
+            ],
+            "filingDate": [
+                "2026-05-20",
+                "2026-05-15",
+                "2026-02-18",
+                "2026-02-14",
+                "2025-11-14",
+                "2025-11-13",
+            ],
+        }
+    },
+}
+
+
+def test_list_13f_separates_originals_and_amendments():
+    """_list_13f must return (originals_list, amendments_list) with 13F-NT excluded."""
+    from collectors import edgar as _edgar  # noqa: PLC0415
+    adapter = e13.Edgar13FAdapter.__new__(e13.Edgar13FAdapter)
+
+    with mock.patch("collectors.edgar_13f._get_json", return_value=_SUBMISSIONS_WITH_AMENDMENTS), \
+         mock.patch.object(_edgar, "_cfg", return_value={"retries": 3}), \
+         mock.patch("collectors.edgar_13f.time.sleep"):
+        originals, amendments = adapter._list_13f(1234567)
+
+    # 3 originals: Q1 2026, Q4 2025, Q3 2025 (13F-NT excluded)
+    assert len(originals) == 3
+    orig_periods = [r["period_end"] for r in originals]
+    assert orig_periods == ["2026-03-31", "2025-12-31", "2025-09-30"]  # newest-first
+
+    # 2 amendments: Q1 2026 /A and Q4 2025 /A
+    assert len(amendments) == 2
+    amend_periods = [r["period_end"] for r in amendments]
+    assert "2026-03-31" in amend_periods
+    assert "2025-12-31" in amend_periods
+    # 13F-NT must NOT appear in either list
+    all_periods = orig_periods + amend_periods
+    assert "2025-09-30" not in amend_periods  # Q3 has no amendment
+
+
+def test_amendment_file_naming_and_pathing(tmp_path):
+    """Amendments must be written to amendments/<period_end>__<filing_date>.parquet."""
+    slug = "testfund"
+    spec = {"cik": 1234567, "name": "Test Fund LLC"}
+
+    adapter = e13.Edgar13FAdapter.__new__(e13.Edgar13FAdapter)
+    adapter.cfg = {"enabled": True, "history_quarters": 4, "backfill_quarters": 5}
+    adapter.dir = tmp_path
+
+    # One original (Q1 2026) + one amendment (Q1 2026 /A)
+    originals = [{"accession": "0001234567-26-000005",
+                  "period_end": "2026-03-31", "filing_date": "2026-05-15"}]
+    amendments = [{"accession": "0001234567-26-000010",
+                   "period_end": "2026-03-31", "filing_date": "2026-05-20"}]
+
+    # Minimal info table XML for the fetch
+    fake_idx = {"directory": {"item": [{"name": "infotable.xml"}]}}
+    fake_xml = INFO_XML
+
+    with mock.patch.object(adapter, "_list_13f", return_value=(originals, amendments)), \
+         mock.patch("collectors.edgar_13f._get_json", return_value=fake_idx), \
+         mock.patch.object(adapter, "_get_text", return_value=fake_xml), \
+         mock.patch("collectors.edgar_13f.time.sleep"):
+        written = adapter._fetch_fund(slug, spec, keep=4)
+
+    fund_dir = tmp_path / slug
+    # Original: top-level parquet
+    assert (fund_dir / "2026-03-31.parquet").exists(), "original must be at top-level"
+    # Amendment: in amendments/ subdir with period_end__filing_date naming
+    amend_file = fund_dir / "amendments" / "2026-03-31__2026-05-20.parquet"
+    assert amend_file.exists(), f"amendment file not found at {amend_file}"
+    assert written == 2  # original + amendment both written
+
+
+def test_amendment_immutability_skip(tmp_path):
+    """If an amendment file already exists, it must be skipped (immutability)."""
+    slug = "testfund"
+    spec = {"cik": 1234567, "name": "Test Fund LLC"}
+
+    adapter = e13.Edgar13FAdapter.__new__(e13.Edgar13FAdapter)
+    adapter.cfg = {"enabled": True, "history_quarters": 4, "backfill_quarters": 5}
+    adapter.dir = tmp_path
+
+    originals = [{"accession": "0001234567-26-000005",
+                  "period_end": "2026-03-31", "filing_date": "2026-05-15"}]
+    amendments = [{"accession": "0001234567-26-000010",
+                   "period_end": "2026-03-31", "filing_date": "2026-05-20"}]
+
+    # Pre-create both files to simulate "already fetched"
+    fund_dir = tmp_path / slug
+    fund_dir.mkdir()
+    dummy = pd.DataFrame([{"cusip": "X", "val": 1}])
+
+    orig_file = fund_dir / "2026-03-31.parquet"
+    dummy.to_parquet(orig_file)
+
+    amend_dir = fund_dir / "amendments"
+    amend_dir.mkdir()
+    amend_file = amend_dir / "2026-03-31__2026-05-20.parquet"
+    dummy.to_parquet(amend_file)
+
+    call_count = {"n": 0}
+
+    def fake_fetch(cik, slug, name, f):
+        call_count["n"] += 1
+        return dummy.copy()
+
+    with mock.patch.object(adapter, "_list_13f", return_value=(originals, amendments)), \
+         mock.patch.object(adapter, "_fetch_filing", side_effect=fake_fetch), \
+         mock.patch("collectors.edgar_13f.time.sleep"):
+        written = adapter._fetch_fund(slug, spec, keep=4)
+
+    assert written == 0, "nothing should be written when files already exist"
+    assert call_count["n"] == 0, "_fetch_filing must not be called for existing files"
+
+
+def test_amendments_outside_kept_window_are_skipped(tmp_path):
+    """Amendments whose period_end is not in the kept-quarters window must be skipped."""
+    slug = "testfund"
+    spec = {"cik": 1234567, "name": "Test Fund LLC"}
+
+    adapter = e13.Edgar13FAdapter.__new__(e13.Edgar13FAdapter)
+    adapter.cfg = {"enabled": True, "history_quarters": 4, "backfill_quarters": 5}
+    adapter.dir = tmp_path
+
+    # keep=1 means only Q1 2026 is retained
+    originals = [{"accession": "0001234567-26-000005",
+                  "period_end": "2026-03-31", "filing_date": "2026-05-15"}]
+    # Amendment for Q4 2025 — outside the window since keep=1
+    amendments = [{"accession": "0001234567-25-000020",
+                   "period_end": "2025-12-31", "filing_date": "2026-02-18"}]
+
+    fake_idx = {"directory": {"item": [{"name": "infotable.xml"}]}}
+
+    with mock.patch.object(adapter, "_list_13f", return_value=(originals, amendments)), \
+         mock.patch("collectors.edgar_13f._get_json", return_value=fake_idx), \
+         mock.patch.object(adapter, "_get_text", return_value=INFO_XML), \
+         mock.patch("collectors.edgar_13f.time.sleep"):
+        written = adapter._fetch_fund(slug, spec, keep=1)
+
+    fund_dir = tmp_path / slug
+    assert (fund_dir / "2026-03-31.parquet").exists()         # original present
+    amend_dir = fund_dir / "amendments"
+    if amend_dir.exists():
+        outside_files = list(amend_dir.glob("2025-12-31*.parquet"))
+        assert len(outside_files) == 0, "amendment outside kept window must not be written"
