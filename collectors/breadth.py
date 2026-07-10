@@ -138,6 +138,65 @@ def repair_seams(merged: pd.DataFrame, fresh: pd.DataFrame | None,
     return merged, healed
 
 
+def compute_updown(closes: pd.DataFrame, volume: pd.DataFrame) -> pd.DataFrame:
+    """Market-wide up/down volume and up/down points aggregates.
+
+    Accruing store for the Lowry/Desmond 90%-day family (masterplan W2).
+    Deep history is impossible: the volume cache is a ~35-row tail accrued nightly
+    from the breadth OHLCV extras. The store grows forward from first collection;
+    no backfill claim is made (label honesty). All history is this-panel-derived,
+    never sourced from third-party Desmond/Lowry event rosters (universe differs).
+
+    Columns returned (all float64, date-indexed):
+      up_vol      — total share volume on members with a positive close-to-close change
+      down_vol    — total share volume on members with a negative close-to-close change
+      up_pts      — sum of positive close-to-close price changes (Desmond points; NOT volume-weighted)
+      down_pts    — sum of |negative| close-to-close price changes
+      n_reporting — member count with both a price change and non-NaN volume
+
+    Rows where n_reporting < 300 are dropped (S&P panel with <300 reporting = data gap).
+
+    Args:
+        closes:  Wide date×ticker close-price matrix (any adjustment basis; only diff used).
+        volume:  Wide date×ticker share-volume matrix; must share the closes index/columns layout.
+
+    Returns:
+        DataFrame indexed by date; empty if inputs are empty or produce no qualifying rows.
+        Never raises; caller should wrap in try/except for extra safety.
+    """
+    if closes is None or closes.empty or volume is None or volume.empty:
+        return pd.DataFrame(columns=["up_vol", "down_vol", "up_pts", "down_pts", "n_reporting"])
+
+    dpx = closes.diff()  # price change vs prior close
+    vol = volume.reindex(columns=closes.columns)  # align columns
+
+    up_mask = dpx > 0
+    dn_mask = dpx < 0
+    both_present = dpx.notna() & vol.notna()
+
+    up_vol = (vol.where(up_mask & both_present)).sum(axis=1, min_count=1)
+    down_vol = (vol.where(dn_mask & both_present)).sum(axis=1, min_count=1)
+    up_pts = (dpx.where(up_mask & both_present)).sum(axis=1, min_count=1)
+    down_pts = ((-dpx).where(dn_mask & both_present)).sum(axis=1, min_count=1)
+    n_reporting = both_present.sum(axis=1)
+
+    out = pd.DataFrame({
+        "up_vol": up_vol,
+        "down_vol": down_vol,
+        "up_pts": up_pts,
+        "down_pts": down_pts,
+        "n_reporting": n_reporting.astype(float),
+    })
+    out = out[out["n_reporting"] >= 300]
+    # On extreme days (all-up or all-down) min_count=1 leaves the empty side as NaN.
+    # Fill those to 0 so that ratio metrics (e.g. down_vol/(up_vol+down_vol)) produce
+    # 0/1 on the very days that matter most for Lowry/Desmond 90%-day detection.
+    out[["up_vol", "down_vol", "up_pts", "down_pts"]] = (
+        out[["up_vol", "down_vol", "up_pts", "down_pts"]].fillna(0.0)
+    )
+    return out.dropna(how="all", subset=["up_vol", "down_vol"])
+
+
 class BreadthAdapter(Adapter):
     name = "breadth"
     group = "breadth"
@@ -347,6 +406,31 @@ class BreadthAdapter(Adapter):
                 out["sector_breadth"] = sb
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("breadth sector split failed (%s) — market-wide only", e)
+        # W2: up/down volume + points aggregate — accruing nightly into updown.parquet.
+        # Volume comes from _volume_cache.parquet, a TRACKED committed store written
+        # earlier in this same breadth run.  The try/except is a fail-soft for the case
+        # where the cache write was skipped (e.g. network outage) or the file is corrupt.
+        try:
+            vcache = self.cache_path.parent / "_volume_cache.parquet"
+            if vcache.exists():
+                vol_df = pd.read_parquet(vcache).reindex(index=closes.index,
+                                                          columns=closes.columns)
+                new_updown = compute_updown(closes, vol_df)
+                if not new_updown.empty:
+                    udpath = self.cache_path.parent / "updown.parquet"
+                    if udpath.exists():
+                        old_updown = pd.read_parquet(udpath)
+                        # combine_first by date: new rows win, old history preserved (no-regress)
+                        merged_ud = new_updown.combine_first(old_updown)
+                        merged_ud = merged_ud.sort_index()
+                    else:
+                        merged_ud = new_updown.sort_index()
+                    merged_ud.to_parquet(udpath)
+                    log.info("breadth updown: %d total rows (W2 accrual)", len(merged_ud))
+            else:
+                log.info("breadth updown: volume cache absent — updown.parquet not updated")
+        except Exception as e:  # noqa: BLE001 — updown must never break the breadth build
+            log.warning("breadth updown accrual failed (%s) — breadth.parquet unaffected", e)
         return out
 
     def compute_sectors(self, closes: pd.DataFrame,

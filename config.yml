@@ -393,7 +393,8 @@ fred:
                    EWJ, EWA, EWH, EWS, EWC,
                    INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
                    EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
-    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
+    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX",
+           "^COR1M", "^COR3M"]   # ^VVIX=vol-of-vol; ^COR1M/^COR3M=CBOE implied correlation 1m/3m (data/yahoo/_COR1M|_COR3M; ~2007->); RRX W2 R2 collector
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
@@ -5570,7 +5571,8 @@ yahoo:
                    EWJ, EWA, EWH, EWS, EWC,
                    INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
                    EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
-    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
+    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX",
+           "^COR1M", "^COR3M"]   # ^VVIX=vol-of-vol; ^COR1M/^COR3M=CBOE implied correlation 1m/3m (data/yahoo/_COR1M|_COR3M; ~2007->); RRX W2 R2 collector
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
