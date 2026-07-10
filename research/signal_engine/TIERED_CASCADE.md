@@ -419,3 +419,45 @@ forward data. OV3/OV4 are the open half of the registration and re-arm once PIT 
 
 **Net.** As of 2026-07-06 no overlay earns a T2 eligibility change; T2's demonstrated edge remains
 entry/fill quality (§8), and the tested overlays remain display-context only.
+
+---
+
+## §11 — 2026-07-10 display-vocabulary v2 (china_alpha W8-R4)
+
+**PR:** `claude/w8c-badge-vocab`  **Status:** shipped  **Scope:** display strings only — keys, weights, ledger columns, `_CASCADE_RANK`, `BUYABLE_TIERS` are ALL unchanged.
+
+### Rename map
+
+| Old display string (EN) | New display string (EN) | Tier key (unchanged) |
+|---|---|---|
+| `✓ BUY` (T1 take) | `✓ CONFIRMED / 确认` | `T1` (take) |
+| `◔ forming` (T1 pending) | `◔ CONFIRMING / 确认中` | `T1` (pending) |
+| `◑ early✓` | `★ PRIME / 最佳入场` | `T2` |
+| `⋯ approaching` | `⋯ APPROACHING / 临近` | `T3` |
+| `· earliest` | `· FIRST SPARK / 初现` | `T4` |
+
+EN/ZH display strings are now bilingual inline (both rendered in the badge span); `l-en`/`l-zh` CSS classes continue to toggle visibility per language setting.
+
+The tier code sub-chip (`T2·1.0`, `T1·0.9`, etc.) is retained unchanged as the `sig-w` span.
+
+### Rationale
+
+The old `T1`/`T2` numeric labels created a direct misread: users interpreted "T1 = best, T2 = second-best" — the opposite of the operator-ratified weight ordering (`T2 1.00 > T1 0.90`, §8). Stage-name vocabulary eliminates the numeric ordering confusion while keeping the tier key visible in the sub-chip for engine/ledger continuity.
+
+The `T2 leads T1` framing from prior tooltip copy has been removed entirely (disjoint-setups finding: only 0.5% of T1 US onsets had a T2 precursor within 12 sessions at full-universe scale; sequential T1→T2 progression is NOT the dominant pattern).
+
+### PRIME tooltip law (red-team blocker B3)
+
+The PRIME (T2) tooltip is **comparative and measurement-framed only**: "2D cross with 3D support — historically filled at a lower median premium above the 20d trough than CONFIRMED (measured, not a forward promise)." It does NOT claim T2 fills "nearest the low" (false — T4 fills nearer at 4.1% vs T2 7.7% above trough), does NOT claim excess edge (T2 US 21d CI straddles zero), and does NOT imply a forward return promise. ZH equivalent present.
+
+### Repaint figures updated (T3 APPROACHING tooltip)
+
+The stale pre-hardening repaint figures (23.8% US / 15.1% CN) have been replaced with the post-N=2 persistence actuals (9.4% US / 0% CN) per the T3 persistence hardening amendment (§Amendment 2026-07-06). Updated in:
+- `templates/_sig_badge.html.j2` — comment header, inline PROVISIONAL tooltip, prov-flag tooltip
+
+### What is NOT changed
+
+- `engine/confluence_tiers.py` — WEIGHTS, tier definitions, cascade logic
+- `engine/signal_gate.py` — `_CASCADE_RANK`, `BUYABLE_TIERS`, gate semantics
+- `data/` ledger keys, parquet schemas, forward ledger columns
+- Any ranking, eligibility, or promotion logic
