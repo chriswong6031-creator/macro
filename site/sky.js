@@ -156,7 +156,46 @@
   }
 
   var lastScrollT = -9999;   // timestamp of last scroll event (for scroll-skip)
-  window.addEventListener('scroll', function () { lastScrollT = performance.now(); }, { passive: true });
+
+  // --- scroll-coupled moon-set (dark mode only) --------------------------------
+  // p = 0 at top, 1 when hero has scrolled 90vh past (scroll-driven, not time-driven).
+  // The stylesheet centers the disc with transform:translate(-50%,-50%) on its left/top
+  // anchor, so every inline transform written here MUST re-state that centering before
+  // adding the scroll offset (an inline transform fully replaces the stylesheet one).
+  var _moonP = -1;   // last applied p (skip writes when delta < 0.01)
+  function _applyMoonScroll() {
+    if (!moonEl) return;
+    var dark = theme() === 'dark';
+    if (!dark) {
+      // light mode: ensure moon is invisible regardless of scroll
+      if (_moonP !== 0) {
+        _moonP = 0;
+        moonEl.style.opacity = '0';
+        moonEl.style.transform = 'translate(-50%,-50%)';
+      }
+      return;
+    }
+    var vH = window.innerHeight || 1;
+    var p = Math.max(0, Math.min(1, window.scrollY / (vH * 0.9)));
+    if (Math.abs(p - _moonP) < 0.01) return;   // skip write if barely changed
+    _moonP = p;
+    moonEl.style.opacity = (1 - p).toFixed(3);
+    moonEl.style.transform = 'translate(-50%,-50%) translateY(' + (p * 90).toFixed(1) + 'px)';
+    // also dim the star canvas (not in light mode — only the dark path reaches here)
+    // We do this by adjusting globalAlpha of the canvas element itself rather than
+    // patching starAlpha (which belongs to the rAF loop). Use canvas style opacity.
+    // Fade canvas to ~35% alpha as p→1.
+    canvas.style.opacity = (1 - p * 0.65).toFixed(3);
+  }
+  var _moonScrollRaf = 0;
+  window.addEventListener('scroll', function () {
+    lastScrollT = performance.now();
+    if (_moonScrollRaf) return;
+    _moonScrollRaf = requestAnimationFrame(function () {
+      _moonScrollRaf = 0;
+      _applyMoonScroll();
+    });
+  }, { passive: true });
 
   var lastDrawT = 0;         // timestamp of last drawStars call (for twinkle throttle)
 
@@ -197,8 +236,19 @@
       entryTarget = 1;
       if (animate && motionOK) entry = 0;     // replay the fly-in
       else entry = 1;
+      // restore canvas opacity (may have been dimmed by scroll in a prior dark session)
+      canvas.style.opacity = '';
+      // re-apply scroll-based moon position for the current scroll offset
+      _moonP = -1;   // force recalculate
+      _applyMoonScroll();
     } else {
       starTarget = 0;                          // fade stars out (sun takes over)
+      // Explicitly hide moon in light mode — the CSS data-sky contract should do this,
+      // but we also zero it here to cover any timing gap before CSS takes over.
+      if (moonEl) { moonEl.style.opacity = '0'; moonEl.style.transform = 'translate(-50%,-50%)'; }
+      _moonP = 0;
+      // restore canvas opacity (scroll may have dimmed it while in dark mode)
+      canvas.style.opacity = '';
     }
     if (!motionOK) { starAlpha = starTarget; entry = 1; drawStars(nowMs()); }
     run();

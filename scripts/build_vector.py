@@ -1312,7 +1312,7 @@ html{overflow-x:hidden}
 
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
- font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
+ font-family:var(--font-ui);display:flex;flex-direction:column;align-items:center;
  padding:22px max(20px,env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));position:relative;overflow-x:hidden}
 .wrap{width:100%;max-width:1180px;display:flex;flex-direction:column}
 @media(min-width:1600px){.wrap{max-width:1360px}}
@@ -1352,7 +1352,7 @@ html[data-lang="zh"] .h h1{letter-spacing:0}
  background:none;-webkit-text-fill-color:currentColor;color:var(--text);filter:none}
 .h h1.hub-logo .brand-glyph{width:clamp(48px,6.4vw,66px);height:clamp(48px,6.4vw,66px);flex:none;
  filter:drop-shadow(0 6px 18px rgba(40,56,128,.42)) drop-shadow(0 1px 2px var(--bg)) drop-shadow(0 0 18px var(--bg)) drop-shadow(0 0 34px var(--bg))}
-.h h1.hub-logo .logo-word{font-family:Inter,-apple-system,"Segoe UI",sans-serif;font-weight:900;letter-spacing:.015em;-webkit-text-fill-color:transparent;
+.h h1.hub-logo .logo-word{font-family:var(--font-ui);font-weight:900;letter-spacing:.015em;-webkit-text-fill-color:transparent;
  background:linear-gradient(176deg,var(--text) 24%,color-mix(in srgb,var(--text) 56%,var(--muted)));
  -webkit-background-clip:text;background-clip:text;color:transparent;
  filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 12px var(--bg)) drop-shadow(0 0 26px var(--bg)) drop-shadow(0 0 46px var(--bg))}
@@ -1445,7 +1445,7 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 /* ===== compact alerts (secondary, bottom) ===== */
 .alerts{margin-top:4px}
 .al-card{padding:6px 18px}
-.ha-item{border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.ha-item{position:relative;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
 .ha-item:last-child{border-bottom:none}
 .ha-item summary{display:flex;align-items:center;gap:10px;padding:11px 0;cursor:pointer;list-style:none;flex-wrap:wrap;transition:padding-left .16s ease}
 .ha-item summary:hover{padding-left:5px}
@@ -1470,6 +1470,60 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .ha-toggle .l-zh{display:none}
 html[data-lang="zh"] .ha-toggle .l-en{display:none}
 html[data-lang="zh"] .ha-toggle .l-zh{display:inline}
+
+/* ===== graded-timeline alerts (W3 reskin) ===== */
+/* 3-px gradient spine running down the left edge of the section */
+.alerts{position:relative;overflow:hidden}
+.alerts::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+ background:linear-gradient(180deg,var(--act) 0%,var(--info) 40%,var(--muted) 100%);
+ border-radius:2px;pointer-events:none}
+.al-card{padding-left:22px!important}
+/* severity node on the spine */
+.ha-node{position:absolute;left:-16px;top:50%;transform:translateY(-50%);
+ width:9px;height:9px;border-radius:50%;flex:none;border:2px solid var(--panel)}
+.ha-node.d-high{background:var(--act);box-shadow:0 0 6px var(--act)}
+.ha-node.d-medium{background:var(--info);box-shadow:0 0 6px var(--info)}
+.ha-node.d-info{background:var(--muted)}
+/* high-severity rows get a subtle left accent */
+.ha-item.sev-high{border-left:2px solid color-mix(in srgb,var(--act) 38%,transparent)}
+/* one-shot pulse on the newest row — gated by prefers-reduced-motion + html.fx-min */
+@keyframes ha-pulse-in{0%{background:color-mix(in srgb,var(--act) 18%,transparent)}100%{background:transparent}}
+.ha-item.newest{animation:ha-pulse-in 2s ease-out forwards}
+@media(prefers-reduced-motion:reduce){.ha-item.newest{animation:none}}
+
+/* ===== three-part footer (W3) ===== */
+/* faint horizon gradient above the footer */
+.b-footer{width:100%;margin-top:40px;padding-top:0;position:relative;overflow:hidden}
+.b-footer::before{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;
+ background:linear-gradient(0deg,color-mix(in srgb,var(--info) 8%,transparent),transparent);
+ pointer-events:none}
+.b-foot-inner{border-top:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+ padding:28px 0 36px;display:grid;grid-template-columns:auto 1fr auto;gap:32px;align-items:start}
+@media(max-width:780px){.b-foot-inner{grid-template-columns:1fr;gap:24px}}
+@media(max-width:560px){.b-foot-inner{gap:20px;padding:22px 0 28px}}
+/* brand column */
+.b-foot-brand{display:flex;align-items:center;gap:12px}
+.b-foot-brand .b-m-glyph{width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#7c5cff);
+ border-radius:9px;display:flex;align-items:center;justify-content:center;
+ color:#fff;font-weight:900;font-size:16px;box-shadow:0 4px 12px rgba(59,130,246,.35);flex:none}
+.b-foot-brand .b-wordmark{font-size:14px;font-weight:900;color:var(--text);letter-spacing:.04em}
+.b-foot-brand .b-tagline{font-size:11px;color:var(--muted);margin-top:2px}
+/* link columns */
+.b-foot-links{display:flex;gap:32px;flex-wrap:wrap}
+.b-foot-link-group h4{font-size:10.5px;font-weight:800;color:var(--muted);
+ letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px}
+.b-foot-link-group a{display:block;font-size:12px;color:var(--text);text-decoration:none;
+ padding:2px 0;opacity:.8;transition:opacity .15s,color .15s}
+.b-foot-link-group a:hover{opacity:1;color:var(--link)}
+/* bilingual link labels */
+.b-foot-link-group a .l-zh{display:none}
+html[data-lang="zh"] .b-foot-link-group a .l-en{display:none}
+html[data-lang="zh"] .b-foot-link-group a .l-zh{display:inline}
+/* legal column */
+.b-foot-legal{font-size:10.5px;color:var(--muted);line-height:1.55;max-width:200px;text-align:right}
+@media(max-width:780px){.b-foot-legal{text-align:left;max-width:none}}
+/* suppress old footer when new footer present */
+.has-new-footer .foot,.has-new-footer .site-footer{display:none}
 
 .site-footer{margin:34px auto 0;padding-top:22px;border-top:1px solid var(--line);text-align:center;line-height:1.6}
 .site-footer .made{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
@@ -1562,6 +1616,8 @@ html[data-theme="light"] .gd-isl .body:hover,html[data-theme="light"] .gd-isl .b
 .gd-isl .isl-chg{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;font-style:normal}
 .gd-isl .isl-chg.up{color:var(--up)} .gd-isl .isl-chg.down{color:var(--down)} .gd-isl .isl-chg.stale{color:var(--muted)}
 .gd-isl .isl-px{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:1px}
+html.soft-contrast[data-theme="light"]{--bg:#eceef1;--panel:#f5f5f7;--panel2:#e8eaed;--text:#2e3950;--muted:#4c5a6c;--line:#d0d4db;--glass-bg:color-mix(in srgb,#f5f5f7 64%,transparent);--glass-brd:color-mix(in srgb,#2e3950 9%,transparent);--card-shadow:0 1px 3px rgba(20,30,50,.05)}
+html.soft-contrast[data-theme="dark"]{--bg:#0d1018;--panel:#151820;--panel2:#1b1f28;--text:#c8d0dc;--line:#262c38}
 @media(max-width:560px){.h .eyebrow{display:none}}
 @media(max-width:560px){.gd-isl .body{gap:6px;padding:5px 10px 5px 8px} .gd-isl .isl-chg{font-size:12px} .gd-isl .isl-px{display:none} .gd-isl .isl-flag{font-size:14px}}
 @media(max-width:560px){.gd-isl .body{overflow:visible}.gd-isl .body::after{content:'';position:absolute;inset:-10px;height:auto;width:auto;border-radius:0;background:transparent;box-shadow:none;opacity:1}}
@@ -1656,6 +1712,10 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
 #sky-sun::after{content:'';position:absolute;inset:12%;border-radius:50%;mix-blend-mode:screen;
  background:radial-gradient(circle at 44% 40%,rgba(255,255,255,.95) 0%,rgba(255,247,214,.25) 42%,transparent 62%);
  animation:sky-breathe 6.5s ease-in-out infinite}
+/* ===== light mode: dim the sun ~45% so text stays legible ===== */
+html[data-theme="light"] #sky-sun{box-shadow:0 0 22px 3px rgba(255,210,100,.28),0 0 52px 10px rgba(255,180,70,.16),0 0 110px 36px rgba(255,160,60,.08),0 0 180px 64px rgba(255,150,50,.04)}
+html[data-theme="light"] #sky-sun::before{opacity:.2}
+html[data-theme="light"] #sky-sun::after{opacity:.55}
 /* moon — a 3-D shaded sphere: soft terminator, faint craters, cool halo */
 #sky-moon{background:radial-gradient(circle at 34% 28%,#ffffff 0%,#eef2fb 26%,#cdd8ee 58%,#9fafcf 100%);
  box-shadow:inset -24px -20px 50px rgba(16,26,54,.58),inset 12px 9px 24px rgba(255,255,255,.42),0 0 56px 10px rgba(150,182,242,.3),0 0 160px 60px rgba(120,162,232,.15)}
@@ -1694,19 +1754,19 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
 .gd-clock .nb-chg.stale{color:var(--muted)}
 
 /* ===== scroll CTA pill ===== */
-@keyframes gd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes gd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 @keyframes gd-halo-glow{0%,100%{opacity:0.7}50%{opacity:1}}
-@keyframes gd-conv-top{0%{transform:translateY(0);opacity:1}45%{transform:translateY(6px);opacity:0.35}46%{transform:translateY(-10px);opacity:0}47%{transform:translateY(-10px);opacity:0}75%{transform:translateY(0);opacity:1}100%{transform:translateY(0);opacity:1}}
-@keyframes gd-conv-bot{0%{transform:translateY(0);opacity:0.55}45%{transform:translateY(8px);opacity:0}46%{transform:translateY(-8px);opacity:0}75%{transform:translateY(0);opacity:0.55}100%{transform:translateY(0);opacity:0.55}}
+@keyframes gd-chev-drift{0%,100%{transform:translateY(0);opacity:.95}50%{transform:translateY(3.5px);opacity:.4}}
 .gd-cta{display:flex;justify-content:center;margin:6px 0 2px}
-.gd-scroll{position:relative;display:inline-flex;align-items:center;gap:9px;padding:10px 20px 10px 22px;border-radius:999px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;letter-spacing:.01em;color:var(--text);background:color-mix(in srgb,var(--panel2) 90%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px -12px rgba(0,0,0,.6);animation:gd-float 2.8s ease-in-out infinite;overflow:visible}
+.gd-scroll{position:relative;display:inline-flex;align-items:center;gap:11px;padding:14px 28px 14px 30px;border-radius:999px;border:none;cursor:pointer;font-family:inherit;font-size:14.5px;font-weight:700;letter-spacing:.015em;color:var(--text);background:color-mix(in srgb,var(--panel2) 90%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px -12px rgba(0,0,0,.6);animation:gd-float 5.6s cubic-bezier(.37,0,.63,1) infinite;transition:box-shadow .45s ease;overflow:visible}
 .gd-scroll::before{content:'';position:absolute;inset:-1px;border-radius:999px;background:linear-gradient(135deg,var(--info),#7c5cff);-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;pointer-events:none}
-.gd-scroll::after{content:'';position:absolute;inset:-10px;border-radius:999px;background:radial-gradient(closest-side,color-mix(in srgb,var(--info) 22%,transparent),transparent 70%);z-index:-1;opacity:0.7;animation:gd-halo-glow 2.8s ease-in-out infinite;pointer-events:none}
+.gd-scroll::after{content:'';position:absolute;inset:-10px;border-radius:999px;background:radial-gradient(closest-side,color-mix(in srgb,var(--info) 22%,transparent),transparent 70%);z-index:-1;opacity:0.7;animation:gd-halo-glow 5.6s cubic-bezier(.37,0,.63,1) infinite;pointer-events:none}
 .gd-scroll-chev{position:relative;width:16px;height:18px;overflow:hidden}
 .gd-scroll-chev svg{position:absolute;left:0}
-.gd-scroll-chev svg:first-child{top:0;animation:gd-conv-top 1.6s ease-in-out infinite}
-.gd-scroll-chev svg:last-child{top:8px;animation:gd-conv-bot 1.6s ease-in-out infinite}
-.gd-scroll:hover{transform:scale(1.05);animation:none}
+.gd-scroll-chev svg:first-child{top:0;animation:gd-chev-drift 2.6s cubic-bezier(.45,0,.55,1) infinite}
+.gd-scroll-chev svg:last-child{top:8px;animation:gd-chev-drift 2.6s cubic-bezier(.45,0,.55,1) infinite;animation-delay:-1.3s}
+.gd-scroll:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 16px 40px -12px rgba(0,0,0,.68)}
+.gd-scroll:active{filter:brightness(1.08)}
 .gd-scroll:hover::after{opacity:1;animation:none}
 .gd-scroll:hover .gd-scroll-chev svg{animation-duration:.9s}
 .gd-scroll:active{transform:scale(1.02)}
@@ -1786,7 +1846,7 @@ html[data-lang="zh"] .regime-changed .l-en{display:none}
 html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 
 /* ===== standout ticker chips in stock splitbtn em ===== */
-.sb-tickers{display:inline;font-family:"SF Mono","Fira Code",Consolas,monospace;font-size:10.5px;opacity:.8;letter-spacing:.01em}
+.sb-tickers{display:inline;font-family:var(--font-mono);font-size:10.5px;opacity:.8;letter-spacing:.01em}
 
 /* ===== report teaser badge on reports card ===== */
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
@@ -2149,7 +2209,15 @@ def _g_alerts(alerts):
                 out.append(
                     '<div class="ha-more-wrap" id="ha-more" style="display:none">'
                 )
-            out.append('<details class="ha-item"><summary><span class="ha-dot d-' + dot + '"></span>'
+            # W3: graded timeline — newest row gets pulse; high-severity rows get accent border
+            item_cls = "ha-item"
+            if idx == 0:
+                item_cls += " newest"
+            if dot == "high":
+                item_cls += " sev-high"
+            out.append('<details class="' + item_cls + '"><summary>'
+                       '<span class="ha-node d-' + dot + '"></span>'
+                       '<span class="ha-dot d-' + dot + '"></span>'
                        '<span class="ha-src ' + src_cls + '">' + src + '</span>'
                        '<span class="ha-head">' + head_t + '</span>'
                        '<span class="ha-when">' + _bi(when, when_zh) + '</span></summary>'
@@ -2179,6 +2247,87 @@ def _g_alerts(alerts):
 
 def _hub_alert_rows(alerts):  # retained name for back-compat; delegates to the compact strip
     return _g_alerts(alerts)
+
+
+def _hub_footer_html() -> str:
+    """Three-part footer: M-glyph lockup · grouped link columns · legal disclaimer.
+    Replaces the old .foot + .site-footer pair (suppressed via .has-new-footer).
+    Fully bilingual (l-en/l-zh spans); responsive (stacks at <=780px). """
+    links_en = [
+        ("Dashboards", [
+            ("US Macro", "macro.html"),
+            ("China", "china.html"),
+            ("Hong Kong", "hk.html"),
+            ("Canada", "canada.html"),
+        ]),
+        ("Vectors", [
+            ("Bitcoin", "vector.html"),
+            ("Bonds", "bonds.html"),
+            ("Commodities", "commodities.html"),
+            ("Forex", "forex.html"),
+        ]),
+        ("Intelligence", [
+            ("Cycle Intel", "cycle.html"),
+            ("Sector Central", "sector_central.html"),
+            ("Reports", "reports.html"),
+            ("Neural Web", "committee.html"),
+        ]),
+    ]
+    links_zh = [
+        ("看板", [
+            ("美国宏观", "macro.html"),
+            ("中国", "china.html"),
+            ("香港", "hk.html"),
+            ("加拿大", "canada.html"),
+        ]),
+        ("向量", [
+            ("比特币", "vector.html"),
+            ("债券", "bonds.html"),
+            ("大宗商品", "commodities.html"),
+            ("外汇", "forex.html"),
+        ]),
+        ("智能", [
+            ("周期智能", "cycle.html"),
+            ("行业轮动", "sector_central.html"),
+            ("研究报告", "reports.html"),
+            ("神经网络", "committee.html"),
+        ]),
+    ]
+    # Build bilingual link groups
+    groups_html = ""
+    for (head_en, items_en), (head_zh, items_zh) in zip(links_en, links_zh):
+        rows = ""
+        for (label_en, href), (label_zh, _) in zip(items_en, items_zh):
+            rows += ('<a href="' + href + '">'
+                     '<span class="l-en">' + label_en + '</span>'
+                     '<span class="l-zh">' + label_zh + '</span>'
+                     '</a>')
+        groups_html += ('<div class="b-foot-link-group">'
+                        '<h4><span class="l-en">' + head_en + '</span>'
+                        '<span class="l-zh">' + head_zh + '</span></h4>'
+                        + rows + '</div>')
+    legal_en = "Rigorously tested data · powered by AI · not investment advice"
+    legal_zh = "经严格测试的数据 · 由 AI 驱动 · 非投资建议"
+    return (
+        '<div class="b-footer">'
+        '<div class="b-foot-inner">'
+        # brand
+        '<div class="b-foot-brand">'
+        '<div class="b-m-glyph" aria-hidden="true">M</div>'
+        '<div>'
+        '<div class="b-wordmark">MASTERMIND</div>'
+        '<div class="b-tagline">'
+        + _bi("Global Macro Intelligence", "全球宏观智能")
+        + '</div></div></div>'
+        # links
+        '<div class="b-foot-links">' + groups_html + '</div>'
+        # legal
+        '<div class="b-foot-legal">'
+        '<p>© 2026 MastermindX Inc</p>'
+        '<p>' + _bi(legal_en, legal_zh) + '</p>'
+        '</div>'
+        '</div></div>'
+    )
 
 
 def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
@@ -2250,9 +2399,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
             '<title>' + _seo_title + '</title>\n'
             + _seo +
-            "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>\n"
+            "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);if(localStorage.getItem('contrast')==='soft')document.documentElement.classList.add('soft-contrast');}catch(e){}</script>\n"
             '<link rel="stylesheet" href="theme.css">\n'
-            '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">\n'
             + _GLOBE_HUB_CSS + "</head><body>")
 
     body = (
@@ -2278,7 +2426,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<g class="sat-fine"><path d="M67 22 60 8" stroke="#c9d3e6" stroke-width="1.1" stroke-linecap="round"/><circle cx="60" cy="8" r="1.5" fill="#dfe7f5"/></g>'
         '<g transform="rotate(-17 76 14)"><line x1="74" y1="21" x2="76" y2="15" stroke="#9aa7c2" stroke-width="1.3"/><ellipse cx="76" cy="13.5" rx="8.6" ry="5" fill="url(#satDish)" stroke="#75839f" stroke-width=".8"/><circle cx="74.2" cy="12" r="1.5" fill="#5f6c88"/></g>'
         '</svg></div></div>'
-        '<div class="wrap">'
+        '<div class="wrap has-new-footer">'
         '<div class="hub-top">'
         '<button id="hub-signin" class="hub-signin" hidden type="button"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>'
         '<button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>'
@@ -2298,10 +2446,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         + '<div class="vc-sec">' + vectors + '</div>'
         + '</div>'
         + alerts_html
-        + '<div class="foot">' + _bi("Rigorously tested data · powered by AI · not investment advice",
-                                      "经严格测试的数据 · 由 AI 驱动 · 非投资建议") + '</div>'
-        '<footer class="site-footer"><span class="made">' + _bi("© 2026 MastermindX Inc", "© 2026 MastermindX Inc") + '</span></footer>'
-        '</div>'
+        + _hub_footer_html()
+        + '</div>'
         '<script id="globe-data" type="application/json">' + blob_json + '</script>'
         '<script defer src="vendor/d3-array.min.js"></script>'
         '<script defer src="vendor/d3-geo.min.js"></script>'

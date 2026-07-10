@@ -26,7 +26,6 @@
 
   // ---- visibility & quality state ------------------------------------------
   var inView = true;             // set by IntersectionObserver; keeps frame loop cheap when off-screen
-  var _loopRender = false;       // true only while frame() renders — island skip-frames apply in-loop only
   var _skipSizeRender = false;   // governor tier changes: frame() renders next, skip size()'s repaint
   var lastScrollT = -1e4;        // timestamp of last scroll event (performance.now())
   window.addEventListener("scroll", function () { lastScrollT = performance.now(); }, { passive: true });
@@ -532,7 +531,7 @@
     ctx.beginPath(); ctx.arc(xy[0], xy[1], 4.2, 0, 6.283); ctx.fillStyle = rgba(q, 0.95); ctx.fill();
     ctx.restore();
     // leader + label
-    ctx.font = "700 10.5px Inter, sans-serif";
+    ctx.font = "700 10.5px Inter,-apple-system,sans-serif";
     var label = mk.m.flag + " HK";
     ctx.fillStyle = PAL["--text"];
     ctx.strokeStyle = rgba(PAL["--bg"], 0.9); ctx.lineWidth = 3; ctx.lineJoin = "round";
@@ -833,7 +832,7 @@
   }
 
   function drawLabels() {
-    ctx.font = "700 10px Inter, sans-serif"; ctx.textAlign = "center";
+    ctx.font = "700 10px Inter,-apple-system,sans-serif"; ctx.textAlign = "center";
     for (var k = 0; k < paint.length; k++) {
       var p = paint[k]; if (!onFront(p.centroid)) continue;
       var xy = projection(p.centroid); if (!xy) continue;
@@ -872,13 +871,21 @@
       // handled by pointermove
     } else if (Math.abs(velX) > 0.02 || Math.abs(velY) > 0.02) {
       rot[0] += velX; rot[1] = clampLat(rot[1] + velY); velX *= 0.94; velY *= 0.94; apply();
-    } else if (motionOK && !selected && (t - lastInteract) > 1500) {
-      rot[0] += 0.12 * spd; apply();   // idle auto-rotate, eased to half-speed while hovered
+    } else if (motionOK && !selected && !_tour.hold && (t - lastInteract) > 1500) {
+      rot[0] += 0.12 * spd; apply();   // idle auto-rotate, eased to half-speed while hovered; parked mid-tour-step
     }
-    _loopRender = true; render(t); _loopRender = false;
+    render(t);
     raf = requestAnimationFrame(frame);
   }
   function clampLat(p) { return Math.max(-78, Math.min(78, p)); }
+  // Fly-to longitudes must take the SHORT way around: rot[0] grows unbounded from the
+  // idle auto-rotate, so a naive tween to the raw target can spin the globe most of a
+  // full turn (or several). Returns a target equivalent to `to` within ±180° of `from`.
+  function shortestLon(from, to) {
+    var d = (to - from) % 360;
+    if (d > 180) d -= 360; else if (d < -180) d += 360;
+    return from + d;
+  }
   // instrumentation tier field kept in sync (set after frame ends)
   function _syncPerfTier() { if (window.__gdPerf) window.__gdPerf.tier = Q; }
 
@@ -959,7 +966,9 @@
     if (m) toggleSelect(m, cx, cy); else deselect();
   }
   // press an already-open market again to close it; otherwise open / switch
-  function toggleSelect(m, cx, cy) { if (selected === m.cc) deselect(); else selectMarket(m, cx, cy); }
+  // Any select/deselect — pebble, legend, canvas click — counts as user interaction
+  // for the tour (a bare deselect must not let the tour resume with no grace period).
+  function toggleSelect(m, cx, cy) { _tourPause(); if (selected === m.cc) deselect(); else selectMarket(m, cx, cy); }
   function deselect() {
     selected = null; hovered = null; tip.classList.remove("pinned"); tip.hidden = true;
     tip.removeAttribute("role"); tip.tabIndex = -1;
@@ -969,7 +978,7 @@
   function selectMarket(m, cx, cy) {
     selected = m.cc; hovered = null; lastInteract = performance.now();
     var ll = m.kind === "marker" ? m.marker_lonlat : (byCC[m.cc] && paintCentroid(m.cc)) || [0, 0];
-    flying = { t0: performance.now(), dur: 700, a0: rot[0], b0: rot[1], a1: -ll[0], b1: clampLat(-ll[1]), s0: scale, s1: fitScale * 1.12 };
+    flying = { t0: performance.now(), dur: 700, a0: rot[0], b0: rot[1], a1: shortestLon(rot[0], -ll[0]), b1: clampLat(-ll[1]), s0: scale, s1: fitScale * 1.12 };
     showTip(m, cx || (W / 2 + stage.getBoundingClientRect().left), cy || (H / 2 + stage.getBoundingClientRect().top), true);
     syncRows();
     if (live) {
@@ -987,7 +996,10 @@
     var side = pos >= 0 ? "left:50%;width:" + pct + "%" : "right:50%;width:" + pct + "%";
     return '<span class="gd-bar"><i style="' + side + ';background:' + color + '"></i></span>';
   }
-  function showTip(m, cx, cy, pinned) {
+  // showTip(m, cx, cy, pinned, isTour)
+  // isTour=true: suppress role=dialog, suppress focus(), suppress live announcement,
+  // add pointer-events:none so hover flows keep working during tour flyover.
+  function showTip(m, cx, cy, pinned, isTour) {
     var q = m.quad, up = (m.index_chg_pct || 0) >= 0;
     var risk = (m.recession != null || m.drawdown_risk != null)
       ? (m.recession != null ? bilingual("Recession " + m.recession + "/100", "衰退 " + m.recession + "/100") : "")
@@ -1014,17 +1026,26 @@
         (m.macro_asof ? ' · ' + bilingual("as of " + m.macro_asof, "截至 " + m.macro_asof) : '') + '</div>' +
       '<a class="gd-tip-go" href="' + m.href + '">' + bilingual("Open dashboard →", "打开看板 →") + '</a>';
     tip.hidden = false;
-    tip.classList.toggle("pinned", !!pinned);
-    if (pinned) {
+    tip.classList.toggle("pinned", !isTour && !!pinned);
+    // Tour tooltips: non-interactive (pointer-events:none), role=tooltip, no focus
+    // User-pinned tooltips: role=dialog, interactive, receive focus
+    if (isTour) {
+      tip.removeAttribute("role");
+      tip.setAttribute("role", "tooltip");
+      tip.tabIndex = -1;
+      tip.style.pointerEvents = "none";
+    } else if (pinned) {
       tip.setAttribute("role", "dialog");
       tip.tabIndex = -1;
+      tip.style.pointerEvents = "";
     } else {
       tip.removeAttribute("role");
       tip.tabIndex = -1;
+      tip.style.pointerEvents = "";
     }
     // mobile: a pinned tooltip becomes a BOTTOM SHEET — always fully on-screen even
     // when the tap came from the sidebar far below the globe (no more half-off-screen).
-    if (pinned && window.innerWidth <= 560) {
+    if (!isTour && pinned && window.innerWidth <= 560) {
       tip.style.left = "10px"; tip.style.right = "10px"; tip.style.width = "auto";
       tip.style.top = "auto"; tip.style.bottom = "calc(12px + env(safe-area-inset-bottom))";
       try { tip.focus({ preventScroll: true }); } catch (e) {}
@@ -1032,7 +1053,7 @@
     }
     tip.style.right = ""; tip.style.bottom = ""; tip.style.width = "";  // clear any prior bottom-sheet
     var tw = tip.offsetWidth, th = tip.offsetHeight, pad = 10, x, y;
-    if (pinned) {
+    if (!isTour && pinned) {
       // a clicked country flies to the globe centre, so anchor the tooltip BESIDE
       // the centre (whichever side has room) rather than at the click point — which
       // may sit at the viewport edge and push the tooltip off-screen.
@@ -1049,8 +1070,8 @@
     x = Math.max(pad, Math.min(x, window.innerWidth - tw - pad));
     y = Math.max(pad, Math.min(y, window.innerHeight - th - pad));
     tip.style.left = x + "px"; tip.style.top = y + "px";
-    tip.classList.toggle("pinned", !!pinned);
-    if (pinned) { try { tip.focus({ preventScroll: true }); } catch (e) {} }
+    tip.classList.toggle("pinned", !isTour && !!pinned);
+    if (!isTour && pinned) { try { tip.focus({ preventScroll: true }); } catch (e) {} }
   }
   function hideTip() { if (selected) return; tip.hidden = true; }
   function fmt(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(2); }
@@ -1136,9 +1157,6 @@
     updateClocks();
     setInterval(updateClocks, 1000);
   }
-  // island position skip-frame state (recompute every 2nd frame unless dragging/flying)
-  var _islFrame = 0, _islLabCache = [];
-
   // per-element last-written CSS custom property strings (skip identical writes)
   function _setprop(el, prop, val) {
     var key = "_gd" + prop;
@@ -1151,29 +1169,15 @@
     var off = mob ? 16 : 26;                          // how far the balloon floats off its dot
     var hw = mob ? 52 : 76, hh = 14, gapY = mob ? 8 : 10;  // body half-size + min vertical gap
     var padX = mob ? 14 : 12, topPad = 40;           // viewport clamp insets (extra margin on mobile)
-    _islFrame++;
-    // full recompute every 2nd loop frame, or always when moving — and always on DIRECT
-    // render() calls (resize/recolor outside the loop, e.g. reduced-motion), where a
-    // skipped frame would leave pebble DOM transforms stale with no next frame to fix them
-    var doFull = !_loopRender || !(_islFrame & 1) || dragging || flying;
-    if (!doFull && _islLabCache.length) {
-      // skipped frame: just redraw leader lines from the cache
-      for (var ci = 0; ci < _islLabCache.length; ci++) {
-        var cp = _islLabCache[ci];
-        ctx.beginPath(); ctx.moveTo(cp.ax, cp.ay); ctx.lineTo(cp.bx, cp.by);
-        ctx.strokeStyle = rgba(cp.q, 0.62); ctx.lineWidth = 1; ctx.stroke();
-      }
-      return;
-    }
     var lab = [];
     DATA.forEach(function (m) {
       var el = islEls[m.cc], ll = posMap[m.cc]; if (!el || !ll) return;
       var xy = projection(ll); if (!xy) return;
       var f = frontness(ll);
       var dx = xy[0] - cx, dy = xy[1] - cy, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
-      // quantize to 0.5px and skip identical setProperty calls
-      _setprop(el, "--x", (Math.round(xy[0] * 2) / 2).toFixed(1));
-      _setprop(el, "--y", (Math.round(xy[1] * 2) / 2).toFixed(1));
+      // anchor pins exactly to the projected point (0.1px grain); offsets are smoothed below
+      _setprop(el, "--x", xy[0].toFixed(1));
+      _setprop(el, "--y", xy[1].toFixed(1));
       _setprop(el, "--f", f.toFixed(3));
       // hysteresis reparent across the limb so the opaque globe clips back-side pebbles
       var isF = islFrontState[m.cc];
@@ -1187,25 +1191,35 @@
         lab.push({ el: el, m: m, ax: xy[0], ay: xy[1], bx: xy[0] + ux * off, by: xy[1] + uy * off });
       } else {
         // fading/back: just sit a touch off the dot, no leader, no declutter
-        _setprop(el, "--ox", (Math.round(ux * off * 2) / 2).toFixed(1));
-        _setprop(el, "--oy", (Math.round(uy * off * 2) / 2).toFixed(1));
+        _smoothOff(el, ux * off, uy * off);
       }
     });
     // fan overlapping balloons apart (mostly vertical → a readable column on strings)
     declutter(lab, hw * 2 * 0.72, hh * 2 + gapY);
     // commit positions (clamped to the viewport) + draw the leader "strings"
-    _islLabCache = [];
     for (var i = 0; i < lab.length; i++) {
       var p = lab[i];
       if (p.bx < hw + padX) p.bx = hw + padX; else if (p.bx > W - hw - padX) p.bx = W - hw - padX;
       if (p.by < topPad) p.by = topPad; else if (p.by > H - hh - padX) p.by = H - hh - padX;
-      _setprop(p.el, "--ox", (Math.round((p.bx - p.ax) * 2) / 2).toFixed(1));
-      _setprop(p.el, "--oy", (Math.round((p.by - p.ay) * 2) / 2).toFixed(1));
+      _smoothOff(p.el, p.bx - p.ax, p.by - p.ay);
       var q = qcolor(p.m.quad);
-      ctx.beginPath(); ctx.moveTo(p.ax, p.ay); ctx.lineTo(p.bx, p.by);
+      // leader tracks the SMOOTHED balloon position so the string never detaches
+      ctx.beginPath(); ctx.moveTo(p.ax, p.ay); ctx.lineTo(p.ax + p.el._gdOx, p.ay + p.el._gdOy);
       ctx.strokeStyle = rgba(q, 0.62); ctx.lineWidth = 1; ctx.stroke();
-      _islLabCache.push({ ax: p.ax, ay: p.ay, bx: p.bx, by: p.by, q: q });
     }
+  }
+  // Exponential smoothing of the balloon offset (--ox/--oy). The declutter relaxation can
+  // settle differently frame-to-frame (the old CSS transform transition used to hide that);
+  // smoothing here kills the jitter without per-frame transition churn. ~95% in ~9 frames.
+  function _smoothOff(el, tx, ty) {
+    if (el._gdOx === undefined) { el._gdOx = tx; el._gdOy = ty; }
+    else {
+      el._gdOx += (tx - el._gdOx) * 0.3; el._gdOy += (ty - el._gdOy) * 0.3;
+      if (Math.abs(el._gdOx - tx) < 0.05) el._gdOx = tx;
+      if (Math.abs(el._gdOy - ty) < 0.05) el._gdOy = ty;
+    }
+    _setprop(el, "--ox", el._gdOx.toFixed(1));
+    _setprop(el, "--oy", el._gdOy.toFixed(1));
   }
   // greedy relaxation: separate overlapping label bodies, pushing mostly vertically so
   // a tight knot (East Asia) fans into a readable column of balloons-on-strings while
@@ -1263,9 +1277,15 @@
     else if (k === "ArrowUp") rot[1] = clampLat(rot[1] + 6); else if (k === "ArrowDown") rot[1] = clampLat(rot[1] - 6);
     else if (k === "+" || k === "=") scale = Math.min(fitScale * 1.3, scale * 1.1);
     else if (k === "-") scale = Math.max(fitScale * 0.8, scale * 0.9);
-    else if (k === "Escape") { deselect(); }
+    else if (k === "Escape") { deselect(); }   // (document-level fallback covers tip/legend focus)
     else return;
     e.preventDefault(); apply();
+  });
+  // Escape closes a pinned tooltip from ANYWHERE: the canvas handler above only fires
+  // with canvas focus, but a pinned tip takes focus itself (dialog behavior), and the
+  // sr-only legend buttons hold focus during keyboard selection.
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && selected) deselect();
   });
   stage.querySelectorAll(".gd-leg").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -1289,13 +1309,7 @@
       "pointer-events:none;white-space:nowrap;opacity:1;",
       "transition:opacity .6s ease;z-index:4;}",
       ".gd-hint-chip.gd-hint-hidden{opacity:0;}",
-      "@media(prefers-reduced-motion:reduce){.gd-hint-chip{transition:none;}}",
-      ".gd-eyebrow-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}",
-      ".gd-eb-chip{font-size:11px;color:var(--muted,rgba(255,255,255,.45));",
-      "background:color-mix(in srgb,var(--panel,#1a1e2a) 70%,transparent);",
-      "border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;",
-      "padding:2px 7px;white-space:nowrap;}",
-      "@media(max-width:559px){.gd-eb-chip-bell{display:none;}}"
+      "@media(prefers-reduced-motion:reduce){.gd-hint-chip{transition:none;}}"
     ].join("");
     document.head.appendChild(s);
   }());
@@ -1328,77 +1342,6 @@
   }
 
   // ---- eyebrow chips (next-bell + data vintage) ----------------------------
-  var _bellChipEl = null, _vintChipEl = null, _eyebrowInterval = null;
-  function _fmtMinutes(mins) {
-    var h = Math.floor(mins / 60), m = mins % 60;
-    if (h > 0 && m > 0) return h + "h " + m + "m";
-    if (h > 0) return h + "h";
-    return m + "m";
-  }
-  function _fmtMinutesZH(mins) {
-    var h = Math.floor(mins / 60), m = mins % 60;
-    if (h > 0 && m > 0) return h + "小时" + m + "分";
-    if (h > 0) return h + "小时";
-    return m + "分";
-  }
-  function updateEyebrowChips() {
-    if (!_bellChipEl && !_vintChipEl) return;
-    // next-bell
-    if (_bellChipEl && DATA && DATA.length) {
-      var best = null, bestMins = Infinity;
-      DATA.forEach(function (m) {
-        if (!m.tz || !m.open || !m.close) return;
-        try {
-          var st = clockState(m);
-          if (st.next < bestMins) { bestMins = st.next; best = { m: m, st: st }; }
-        } catch (e) {}
-      });
-      if (best) {
-        var mm = best.m, st = best.st;
-        var ev_en = st.open ? "closes" : "opens", ev_zh = st.open ? "收盘" : "开盘";
-        var t_en = _fmtMinutes(bestMins), t_zh = _fmtMinutesZH(bestMins);
-        var flag = mm.flag || "";
-        var name_en = (mm.name_en || mm.cc) + " " + ev_en + " in " + t_en;
-        var name_zh = (mm.name_zh || mm.cc) + " " + t_zh + "后" + ev_zh;
-        _bellChipEl.innerHTML =
-          '<span class="l-en">' + flag + " " + name_en + '</span>' +
-          '<span class="l-zh">' + flag + " " + name_zh + '</span>';
-      }
-    }
-  }
-  function buildEyebrowChips() {
-    // find the eyebrow's parent: the hub-clock's parent container
-    var hubClock = document.querySelector(".hub-clock");
-    if (!hubClock) return;
-    var eyebrowParent = hubClock.parentElement;
-    if (!eyebrowParent) return;
-    // wrap existing children if not already wrapped
-    var wrap = eyebrowParent.querySelector(".gd-eyebrow-chips");
-    if (!wrap) {
-      wrap = document.createElement("span");
-      wrap.className = "gd-eyebrow-chips";
-      eyebrowParent.appendChild(wrap);
-    }
-    // next-bell chip
-    _bellChipEl = document.createElement("span");
-    _bellChipEl.className = "gd-eb-chip gd-eb-chip-bell";
-    wrap.appendChild(_bellChipEl);
-    // data vintage chip
-    if (DATA && DATA.length) {
-      var maxAsof = null;
-      DATA.forEach(function (m) { if (m.macro_asof && (!maxAsof || m.macro_asof > maxAsof)) maxAsof = m.macro_asof; });
-      if (maxAsof) {
-        _vintChipEl = document.createElement("span");
-        _vintChipEl.className = "gd-eb-chip";
-        _vintChipEl.innerHTML =
-          '<span class="l-en">data as of ' + maxAsof + '</span>' +
-          '<span class="l-zh">数据截至 ' + maxAsof + '</span>';
-        wrap.appendChild(_vintChipEl);
-      }
-    }
-    updateEyebrowChips();
-    _eyebrowInterval = setInterval(updateEyebrowChips, 30000);
-  }
 
   // ---- Manual Effects API --------------------------------------------------
   // _tierPinned declared near _pushDt above; once set, the governor never auto-changes Q.
@@ -1422,14 +1365,167 @@
       if (inView && ready && !raf) raf = requestAnimationFrame(frame);
     }
   };
-  // read fx setting from localStorage on boot
-  function _applyFxLocalStorage() {
-    try {
-      if (localStorage.getItem("fx") === "min") {
-        window.__gdSetTier(0);
-        window.__gdSetMotion(false);
-      }
-    } catch (e) {}
+
+  // ---- auto-tour -----------------------------------------------------------
+  // Every ~6.5s the globe glides to the next covered market and shows its tooltip
+  // for ~2.6s, then deselects and resumes rotating. Loops through paint[] order.
+  //
+  // Hard requirements (per brief):
+  //   - Never steals focus (tip.focus() suppressed via isTour flag in showTip)
+  //   - Never sets role=dialog (uses role=tooltip, pointer-events:none)
+  //   - Suppresses #gd-live announcement during tour steps
+  //   - Pauses 15s on any user interaction; a user-pinned selection blocks entirely
+  //   - Skips when: prefers-reduced-motion, __gdSetMotion(false), globe off-screen,
+  //     document hidden
+  //   - First step starts ~5s after boot (after hint chip has its moment)
+  //   - Does NOT call flying (which sets lastInteract and would fight idle rotation)
+  //     — instead uses the existing flying mechanism but with isTour=true path
+  var _tour = {
+    active: false,       // true once boot arms the tour
+    idx: 0,              // next paint[] index to visit
+    phase: "wait",       // "wait" | "show" | "hide"
+    phaseT: 0,           // performance.now() when phase started
+    pauseUntil: 0,       // tour is paused until this timestamp
+    STEP_MS: 6500,       // full step (fly + show + hide gap)
+    SHOW_MS: 2600,       // how long the tooltip stays open per step
+    PAUSE_MS: 15000,     // pause duration on any user interaction
+    hold: false          // true from fly-start to tip-hide: parks the idle auto-rotate
+                         // so the featured country stays under its tooltip
+  };
+
+  // Called by user interaction events to pause the tour.
+  // Does NOT clear a user-pinned selection (that blocks the tour separately via selected!==null).
+  function _tourPause() {
+    if (!_tour.active) return;
+    _tour.pauseUntil = performance.now() + _tour.PAUSE_MS;
+    _tour.hold = false;   // hand rotation back to the user immediately
+    // Hide any current tour tooltip (but not a user-pinned one)
+    if (_tour.phase === "show" && !selected) {
+      tip.hidden = true;
+      tip.style.pointerEvents = "";
+    }
+    _tour.phase = "wait";
+    _tour.phaseT = performance.now();
+  }
+
+  // Register user-interaction pause hooks on the existing event sources.
+  // We wire these AFTER the tour is armed so the references are valid.
+  function _armTourPauseListeners() {
+    canvas.addEventListener("pointerdown", _tourPause, { passive: true });
+    canvas.addEventListener("wheel", function (e) {
+      if (e.ctrlKey || e.metaKey) _tourPause();
+    }, { passive: true });
+    document.addEventListener("keydown", _tourPause, { passive: true });
+    stage.querySelectorAll(".gd-leg").forEach(function (btn) {
+      btn.addEventListener("click", _tourPause, { passive: true });
+    });
+    // pebble clicks are wired per-island via bodyEl — the island click calls toggleSelect
+    // which sets selected, blocking the tour. No extra listener needed.
+  }
+
+  // Get the centroid lonlat for a paint entry (same logic as selectMarket)
+  function _tourLL(p) {
+    var m = p.m;
+    if (m.kind === "marker") return m.marker_lonlat;
+    return p.centroid || [0, 0];
+  }
+
+  // Execute one tour step: fly to paint[idx], show tooltip, schedule hide.
+  function _tourStep() {
+    if (!_tour.active) return;
+    if (!motionOK) return;          // reduced-motion: skip entirely
+    if (!inView) return;            // off-screen: skip
+    if (document.hidden) return;    // tab hidden: skip
+    if (selected) return;           // user has pinned a selection: skip
+    if (performance.now() < _tour.pauseUntil) return;   // paused by interaction
+
+    if (!paint.length) return;
+    _tour.idx = _tour.idx % paint.length;
+    var p = paint[_tour.idx];
+    var m = p.m;
+    var ll = _tourLL(p);
+
+    // Fly to the market (same mechanism as selectMarket but does NOT set selected,
+    // does NOT call live.textContent, does NOT focus the tip)
+    flying = {
+      t0: performance.now(),
+      dur: 700,
+      a0: rot[0], b0: rot[1],
+      a1: shortestLon(rot[0], -ll[0]), b1: clampLat(-ll[1]),
+      s0: scale, s1: fitScale * 1.12
+    };
+    _tour.hold = true;   // park the idle auto-rotate while this step plays out
+    // Advance the index for the NEXT call BEFORE the show timer fires;
+    // the closure below already captures `m` for its own step.
+    _tour.idx = (_tour.idx + 1) % paint.length;
+
+    // After the fly, show the tip at the stage centre (isTour=true).
+    setTimeout(function () {
+      if (!_tour.active) return;
+      if (selected) { _tour.hold = false; return; }   // user pinned something during the fly — bail
+      if (_tour.pauseUntil > performance.now()) { _tour.hold = false; return; }   // paused during fly
+      var sr = stage.getBoundingClientRect();
+      var tipCx = sr.left + W / 2, tipCy = sr.top + H / 2;
+      // isTour=true: no focus, role=tooltip, pointer-events:none
+      showTip(m, tipCx, tipCy, false, true);
+      _tour.phase = "show";
+      _tour.phaseT = performance.now();
+    }, 750);   // wait for fly to finish (~700ms) + tiny buffer
+
+    // After show duration, hide the tip, glide the zoom back out and resume rotation
+    setTimeout(function () {
+      if (!_tour.active) return;
+      if (selected) { _tour.hold = false; return; }
+      if (_tour.pauseUntil > performance.now()) { _tour.hold = false; return; }
+      tip.hidden = true;
+      tip.style.pointerEvents = "";
+      flying = {
+        t0: performance.now(), dur: 600,
+        a0: rot[0], b0: rot[1], a1: rot[0], b1: rot[1],
+        s0: scale, s1: fitScale        // undo the step's 1.12x zoom-in
+      };
+      _tour.hold = false;
+      _tour.phase = "wait";
+      _tour.phaseT = performance.now();
+    }, 750 + _tour.SHOW_MS);
+  }
+
+  // Main tour ticker — called on a setInterval every STEP_MS.
+  // Guards all the skip conditions before calling _tourStep.
+  var _tourInterval = null;
+  function _tourTick() {
+    if (!_tour.active) return;
+    if (!motionOK) return;
+    if (!inView) return;
+    if (document.hidden) return;
+    if (selected) return;   // user-pinned: block entirely until deselected
+    if (performance.now() < _tour.pauseUntil) return;
+    _tourStep();
+  }
+
+  // Boot the tour: called from boot() after geometry is ready.
+  // Delays 5s (hint chip moment), then arms setInterval.
+  function _bootTour() {
+    if (!motionOK) return;   // reduced-motion: never arm
+    if (!paint.length) return;
+    _tour.active = false;   // not yet ticking
+    setTimeout(function () {
+      // If hint chip is still visible, wait for it to clear (~8s from boot → we're at ~5s
+      // here so we add another 3.5s). The hint chip auto-hides at 8s; we just schedule
+      // slightly after it to avoid competing for visual attention.
+      setTimeout(function () {
+        _tour.active = true;
+        _armTourPauseListeners();
+        // First step immediately, then repeat
+        _tourStep();
+        _tourInterval = setInterval(_tourTick, _tour.STEP_MS);
+      }, 3500);
+    }, 5000);
+
+    // Pause on document visibility change
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) _tourPause();
+    }, { passive: true });
   }
 
   // ---- boot ----------------------------------------------------------------
@@ -1439,9 +1535,7 @@
     buildGeometry(topo); buildRoutes(); readPalette(); buildStars(); buildCities(); buildIslands(); size();
     // hint chip + eyebrow chips (new self-owned UI)
     buildHintChip();
-    buildEyebrowChips();
     // apply fx localStorage preset (must run after __gdSetTier/__gdSetMotion are defined)
-    _applyFxLocalStorage();
     // The islands are built lazily (after a topo fetch + idle callback), so live.js's
     // first poll already ran against an empty DOM — nudge it to patch the fresh
     // .nb-px/.nb-chg index nodes now instead of waiting a full poll interval.
@@ -1450,6 +1544,8 @@
     canvas.style.opacity = "1";
     render(performance.now());
     if (motionOK) raf = requestAnimationFrame(frame);
+    // arm auto-tour (delayed 5+3.5s so hint chip has its moment first)
+    _bootTour();
   }
   function start() {
     fetch(canvas.getAttribute("data-topo") || "world-110m.json").then(function (r) { return r.json(); })
