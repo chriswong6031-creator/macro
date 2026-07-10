@@ -41,7 +41,7 @@ html[data-theme="dark"] .tl-sample-banner { color:#e0973a; }
 .tab-panel.active { display:block; }
 
 /* ── Section card ── */
-.tl-card { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px; }
+.tl-card { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0;box-sizing:border-box; }
 .tl-card-header { display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap; }
 .tl-card-header h2 { font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px; }
 .h-note { font-size:11px;color:var(--muted);font-weight:400; }
@@ -95,15 +95,15 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
 .dot-off { background:var(--line); }
 
 /* ═══ TAB 1: SCREENER ═══ */
-.screener-layout { display:grid;grid-template-columns:1fr 320px;gap:16px; }
-@media(max-width:900px){ .screener-layout { grid-template-columns:1fr; } }
+.screener-layout { display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px; }
+@media(max-width:900px){ .screener-layout { grid-template-columns:minmax(0,1fr); } }
 .screener-controls { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px; }
 .sc-input { padding:7px 11px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);outline:none;transition:border-color .15s;flex:1;min-width:120px; }
 .sc-input:focus { border-color:var(--link); }
 .sc-select { padding:7px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);cursor:pointer;outline:none; }
 
 /* ── Confluence builder ── */
-.confl-builder { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px; }
+.confl-builder { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%;box-sizing:border-box; }
 .confl-title { font-size:13px;font-weight:700;margin-bottom:2px; }
 .confl-desc { font-size:11.5px;color:var(--muted);line-height:1.5; }
 .confl-section-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px; }
@@ -189,7 +189,7 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
 .chart-ctrl { display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px; }
 .chart-ctrl select { padding:5px 8px;font-size:11.5px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);color:var(--text);cursor:pointer;outline:none; }
 .chart-container { width:100%;height:220px;position:relative; }
-.chart-fallback { display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:12px;font-style:italic;border:1px dashed var(--line);border-radius:8px; }
+.chart-fallback { display:flex;align-items:center;justify-content:center;min-height:220px;color:var(--muted);font-size:12px;font-style:italic;border:1px dashed var(--line);border-radius:8px; }
 
 /* null caveat */
 .null-banner { padding:10px 14px;border-radius:9px;background:rgba(139,147,161,.1);border:1px solid rgba(139,147,161,.25);font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px; }
@@ -575,11 +575,10 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
                 </select>
               </div>
             </div>
-            <div class="chart-container" id="det-chart-container">
-              <div class="chart-fallback" id="det-chart-fallback">
-                <span class="l-en">Illustrative sketch — select a ticker above to load real bars</span>
-                <span class="l-zh">示意图 — 请在上方选择标的以加载真实行情</span>
-              </div>
+            <div class="chart-container" id="det-chart-container"></div>
+            <div class="chart-fallback" id="det-chart-fallback">
+              <span class="l-en">Illustrative sketch — select a ticker above to load real bars</span>
+              <span class="l-zh">示意图 — 请在上方选择标的以加载真实行情</span>
             </div>
             <div class="chart-note" id="det-chart-note" style="display:none;"></div>
           </div>
@@ -670,11 +669,10 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
           <span class="l-en">Select a ticker to load the chart</span>
           <span class="l-zh">选择标的以加载图表</span>
         </div>
-        <div class="stock-chart-container" id="prof-chart-container">
-          <div class="chart-fallback" id="prof-chart-fallback">
-            <span class="l-en">Illustrative sketch — real bars unavailable</span>
-            <span class="l-zh">示意图 — 真实行情不可用</span>
-          </div>
+        <div class="stock-chart-container" id="prof-chart-container"></div>
+        <div class="chart-fallback" id="prof-chart-fallback">
+          <span class="l-en">Illustrative sketch — real bars unavailable</span>
+          <span class="l-zh">示意图 — 真实行情不可用</span>
         </div>
         <div class="chart-note" id="prof-chart-note" style="display:none;"></div>
       </div>
@@ -1400,27 +1398,35 @@ function tlFetchEvents(ticker, cb) {
 }
 
 function _parseOhlc(d) {
-  // tech_screener ohlc format: {dates:[...], bars:[[o,h,l,c,v],...], o:1} or {dates,closes}
+  // Supports two store shapes:
+  //   R2 prod:  {o:1, bars:[[date,o,h,l,c,v],...], ...}   (no top-level dates)
+  //   Legacy:   {dates:[...], bars:[[o,h,l,c,v],...], o:1} or {dates,closes}
   var bars = [];
-  if (!d || !d.dates) return bars;
-  var dates = d.dates;
-  if (d.bars && d.o === 1) {
-    for (var i=0; i<dates.length; i++) {
-      if (!d.bars[i]) continue;
-      bars.push({ time: dates[i], open: d.bars[i][0], high: d.bars[i][1], low: d.bars[i][2], close: d.bars[i][3] });
+  if (!d) return bars;
+  if (Array.isArray(d.bars) && d.bars.length) {
+    var first = d.bars[0];
+    if (Array.isArray(first) && typeof first[0] === 'string') {
+      // R2 shape: each bar is [date, o, h, l, c, v]
+      for (var i=0; i<d.bars.length; i++) {
+        var b = d.bars[i];
+        if (b.length >= 5) bars.push({ time: b[0], open: b[1], high: b[2], low: b[3], close: b[4] });
+        else if (b.length >= 2) bars.push({ time: b[0], open: b[1], high: b[1], low: b[1], close: b[1] });
+      }
+    } else if (d.dates) {
+      // Legacy shape: dates array separate, bars are [o,h,l,c,v]
+      var dates = d.dates;
+      for (var i=0; i<dates.length; i++) {
+        if (!d.bars[i]) continue;
+        bars.push({ time: dates[i], open: d.bars[i][0], high: d.bars[i][1], low: d.bars[i][2], close: d.bars[i][3] });
+      }
     }
-  } else if (d.closes) {
+  } else if (d.dates && d.closes) {
+    // Legacy closes-only shape
+    var dates = d.dates;
     for (var i=0; i<dates.length; i++) {
       var c = d.closes[i];
       if (c == null) continue;
       bars.push({ time: dates[i], open: c, high: c, low: c, close: c });
-    }
-  } else if (Array.isArray(d.bars) && d.bars.length) {
-    // array of [date,o,h,l,c] or [date,c]
-    for (var i=0; i<d.bars.length; i++) {
-      var b = d.bars[i];
-      if (b.length >= 5) bars.push({ time: b[0], open: b[1], high: b[2], low: b[3], close: b[4] });
-      else if (b.length >= 2) bars.push({ time: b[0], open: b[1], high: b[1], low: b[1], close: b[1] });
     }
   }
   return bars;
