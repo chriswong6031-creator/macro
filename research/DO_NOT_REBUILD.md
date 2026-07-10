@@ -76,6 +76,12 @@ curated, not generated. Do not build an extractor.
 | Fused 100-point "sponsorship breakaway" score (Codex Moderna docket §5.2) | STRUCK — positioning-fusion illegal + Signal Commons R3; replaced by per-axis AND-gate | WA-R1, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` |
 | 13F/ownership as a POSITIVE breakaway signal (Codex Moderna docket §4.1 ownership_pressure) | STRUCK — restates NEXTL-U13 (opposite sign to 3 filed verdicts); survives as context/crowding-hazard only | WA-R2, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` |
 | `cn_supply_absorption` family (incl. D4-01b staged re-entry) | CLOSED — Stage-0 falsifier dead in both 减持新规 regimes at the frozen ruler (EW +1.1pp/21d, t_NW 1.91/1.77 < 2; overlap-lag sensitivity confirms); construct kill (price-only absorption ≡ momentum) stands per #1944. Close-call POSITIVE null retained as confluence context; re-entry needs a fresh operator-ratified prereg (post-规 cell ~doubles by ~2028) | D4-01b Stage 0, `reports/d4-cn-supply-absorption-d401b-stage0.md`; Day-4 adjudication §D4-01 reassessment |
+| Hindenburg Omen / Titanic Syndrome as Risk-Radar inputs | REJECT-DATA/STAT — needs uncollected NYSE full-universe NH/NL; N~20–30 clusters/40y; ~40% 1y WR (≤ random) | RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
+| IBD distribution-day count as a radar leg | REJECT-REDUNDANT — coincident down-day counter; froth_fragility owns distribution physics | RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
+| McClellan MCO thrust / MCO-oversold+MSI-washout *bounce* as radar legs | REJECT-KILLED — coincident-by-construction (SIGNAL_AUDIT); display homes (advanced_breadth, fear_greed) stand; rare Summation low→high *upswing* adjudicated separately as recovery chip | RRX-R4/R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
+| Absolute-VIX spike-and-fade thresholds | REJECT-STAT — non-stationary absolute anchors (R-SP21); <10 episodes in >50 bucket | RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
+| Lumber/gold ratio (daily growth filter) | REJECT-DATA — FRED monthly-only, LBS=F thin, supply-shock contaminated; use copper/gold | RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
+| Dow Theory transports non-confirmation as a radar leg | REJECT — lagging (2007 signal fired post-peak), oil-confounded; rotation physics covered by validated XLY/XLP + XLU legs | RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
 
 ## 3. Wrong-ruler / estimator laws (methodology — using these invalidates the study)
 
