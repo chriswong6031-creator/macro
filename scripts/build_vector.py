@@ -1157,6 +1157,190 @@ def _ipo_state() -> dict:
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
 
+# ---------------------------------------------------------------------------
+# Translation map for macro alert detail bodies baked into alerts_log.parquet
+# before the message_zh column existed.  These are RE-based prefix matches
+# on the stored English `message` string; each returns a Chinese detail string
+# with the same embedded numbers/tickers (Latin numerals stay Latin).
+# New emitter firings already carry message_zh from engine/alerts.py so
+# these patterns only activate as fallback when message_zh is empty/absent.
+# ---------------------------------------------------------------------------
+import re as _re
+
+def _translate_macro_detail(msg_en: str) -> str:
+    """Attempt to translate a baked English macro alert message to Chinese.
+    Returns the Chinese string if the pattern matches, or empty string to
+    signal "no match — caller should fall back to English"."""
+    # Inflation / Growth axis confidence floor
+    # EN: "Inflation axis confidence dropped below 30%: 42% -> 24%"
+    # EN: "Growth axis confidence dropped below 30%: 42% -> 24%"
+    m = _re.match(
+        r"(Inflation|Growth) axis confidence dropped below ([^:]+): (.+)",
+        msg_en)
+    if m:
+        axis_zh = "通胀" if m.group(1) == "Inflation" else "增长"
+        return f"{axis_zh} 轴一致度跌破 {m.group(2)}：{m.group(3)}"
+
+    # Net liquidity RoC flip — positive (expanding)
+    # EN: "Net liquidity 4-week RoC flipped positive (expanding) and held 2d: -46bn -> +86bn"
+    m = _re.match(
+        r"Net liquidity 4-week RoC flipped positive \(expanding\) and held (\d+)d: (.+)",
+        msg_en)
+    if m:
+        return f"净流动性 4 周 RoC 转为正值（扩张）并持续 {m.group(1)} 天：{m.group(2)}"
+
+    # Net liquidity RoC flip — negative (contracting)
+    m = _re.match(
+        r"Net liquidity 4-week RoC flipped negative \(contracting\) and held (\d+)d: (.+)",
+        msg_en)
+    if m:
+        return f"净流动性 4 周 RoC 转为负值（收缩）并持续 {m.group(1)} 天：{m.group(2)}"
+
+    # Cycle falsifier FIRED
+    # EN: "Cycle falsifier FIRED — credit: <claim>. Direction: refutes. Coverage: ..."
+    m = _re.match(r"Cycle falsifier FIRED — ([^:]+): (.+)", msg_en)
+    if m:
+        cycle = m.group(1)
+        rest = m.group(2)
+        # strip trailing "Direction: X. Coverage: Y." suffix if present
+        rest_clean = _re.sub(r"\.\s*Direction:.*$", "", rest, flags=_re.DOTALL).strip()
+        return f"周期证伪条件触发 — {cycle}：{rest_clean}。"
+
+    # HY OAS widening
+    # EN: "HY OAS 1-day widening +0.12pp is 2.3 sigma (level 4.56%)"
+    m = _re.match(
+        r"HY OAS 1-day widening ([^ ]+) is ([^ ]+) sigma \(level ([^)]+)\)",
+        msg_en)
+    if m:
+        return (f"HY OAS 单日走阔 {m.group(1)}，达 {m.group(2)} 个标准差"
+                f"（水平 {m.group(3)}）")
+
+    # GEX flip cross
+    # EN: "GEX: spot crossed the gamma flip (net +5bn, spot vs flip +1.2%)"
+    m = _re.match(r"GEX: (.+?) \(net ([^,]+), spot vs flip ([^)]+)\)", msg_en)
+    if m:
+        what = m.group(1)
+        what_zh = ("现价穿越 gamma 翻转点" if "spot crossed" in what
+                   else "净 GEX 转变方向")
+        return f"GEX：{what_zh}（净 {m.group(2)}，现价相对翻转点 {m.group(3)}）"
+
+    # Transition state change
+    # EN: "Transition state STABLE -> TRANSITIONING (3 flags active)"
+    m = _re.match(r"Transition state (\w+) -> (\w+) \((\d+) flags active\)", msg_en)
+    if m:
+        _ts_zh = {"STABLE": "稳定", "TRANSITIONING": "转换中", "TURBULENT": "动荡"}
+        return (f"转换状态 {_ts_zh.get(m.group(1), m.group(1))} -> {_ts_zh.get(m.group(2), m.group(2))}"
+                f"（{m.group(3)} 个预警激活）")
+
+    # Recession risk band change
+    # EN: "Recession-risk band low -> elevated (score 62/100)"
+    m = _re.match(r"Recession-risk band (\w+) -> (\w+) \(score ([^)]+)\)", msg_en)
+    if m:
+        _band_zh = {"low": "低", "moderate": "中等", "elevated": "偏高", "high": "高"}
+        return (f"衰退风险等级 {_band_zh.get(m.group(1), m.group(1))} -> "
+                f"{_band_zh.get(m.group(2), m.group(2))}（评分 {m.group(3)}）")
+
+    # NFCI tightening
+    # EN: "Financial conditions tightened: NFCI crossed above +0.30 (now +0.45) — broad risk-off"
+    m = _re.match(
+        r"Financial conditions tightened: NFCI crossed above ([^ ]+) \(now ([^)]+)\)",
+        msg_en)
+    if m:
+        return (f"金融条件收紧：NFCI 上穿 {m.group(1)}"
+                f"（现 {m.group(2)}）— 广泛避险")
+
+    # Sahm rule
+    # EN: "Sahm rule triggered (0.54 >= 0.50) — labor market signalling a recession is underway"
+    m = _re.match(r"Sahm rule triggered \(([^)]+)\)", msg_en)
+    if m:
+        return f"Sahm 法则触发（{m.group(1)}）— 劳动力市场显示衰退已开始"
+
+    # Excess bond premium
+    # EN: "Excess Bond Premium jumped +0.15 (2.3 sigma) — credit risk-appetite deteriorating (level +0.45)"
+    m = _re.match(
+        r"Excess Bond Premium jumped ([^ ]+) \(([^)]+)\) — .+ \(level ([^)]+)\)",
+        msg_en)
+    if m:
+        return (f"超额债券溢价跳升 {m.group(1)}（{m.group(2)} 个标准差）— "
+                f"信用风险偏好恶化（水平 {m.group(3)}）")
+
+    # Drawdown risk high
+    # EN: "Macro-stress gauge crossed into the HIGH band (72/100) — P(>=10% drawdown..."
+    m = _re.match(
+        r"Macro-stress gauge crossed into the HIGH band \(([^)]+)\) — "
+        r"P\(>=10% drawdown in 3 months\) ~(\d+)% vs ~(\d+)% base",
+        msg_en)
+    if m:
+        return (f"宏观压力指标进入高位区（{m.group(1)}）— 未来三个月 >=10% 回撤"
+                f"的概率约 {m.group(2)}%（基准约 {m.group(3)}%）；减小仓位、放宽止损")
+
+    # Capitulation
+    # EN: "Capitulation gauge fired (2 of 3 panic signals) — historically a contrarian..."
+    m = _re.match(r"Capitulation gauge fired \((\d+) of 3 panic signals\)", msg_en)
+    if m:
+        return (f"恐慌触底指标触发（3 个恐慌信号中的 {m.group(1)} 个）— 历史上的逆向布局："
+                f"S&P 未来三月 +9.3%，86% 为正（基准 +2.8%）。是恐慌而非预测。")
+
+    # Risk state elevated
+    m = _re.match(r"Equity risk-state crossed into (RISK-OFF|ELEVATED) \((\d+)/100\)", msg_en)
+    if m:
+        label = "风险规避" if m.group(1) == "RISK-OFF" else "偏高"
+        return (f"股票风险状态进入{label}区（{m.group(2)}/100）— "
+                f"仓位/波动/宽度脆弱性上升；降低敞口、择优入场而非追高")
+
+    # Breadth divergence
+    # EN: "Breadth divergence: index near its 1y high while %>200dma is weak (23% pctile) — ..."
+    m = _re.match(
+        r"Breadth divergence: index near its 1y high while %>200dma is weak \(([^)]+)\)",
+        msg_en)
+    if m:
+        return (f"宽度背离：指数接近一年高点但 %>200日均线偏弱"
+                f"（{m.group(1)}）— 抬指数的个股在减少")
+
+    # Hidden fragility
+    if "Hidden fragility:" in msg_en:
+        return "隐性脆弱：平静表象（低VIX、contango）下内部走弱（宽度变薄、HY走阔）— 典型的自满型回撤前夜"
+    if "Complacency watch:" in msg_en:
+        return "自满预警：平静走势开始掩盖走弱的内部结构"
+
+    # Circuit breaker
+    # EN: "Source 'fred' marked dead after 3 consecutive failures — ..."
+    m = _re.match(r"Source '([^']+)' marked dead after (\d+) consecutive failures", msg_en)
+    if m:
+        return (f"数据源 '{m.group(1)}' 连续 {m.group(2)} 次失败后被标记为中断 —"
+                f"采集器暂停直至恢复；相关信号置信度下降")
+
+    # Sector holdings accumulation
+    # EN: "XLC: OMC weight +1.39pp beyond price (≈+$324M est. rebalance flow) (accumulating), 2026-06-26..2026-07-01 — cycle BUY ZONE·BUY"
+    # EN (no flow): "XLC: OMC weight +1.39pp beyond price (trimming), 2026-06-26..2026-07-01"
+    m = _re.match(
+        r"(\w+): (\w+) weight ([+\-]?[\d.]+pp) beyond price"
+        r"(?: \(≈([^)]+) est\. rebalance flow\))?"
+        r" \((accumulating|trimming)\), (\d{4}-\d{2}-\d{2}\.\.\d{4}-\d{2}-\d{2})(.*)?",
+        msg_en)
+    if m:
+        fund, ticker, change, flow, verb_en, dates, rest = (
+            m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7) or "")
+        verb_zh = "增持" if verb_en == "accumulating" else "减持"
+        flow_zh = f"（≈{flow} 估算再平衡资金流）" if flow else ""
+        # "— cycle BUY ZONE·BUY" → " — 周期 BUY ZONE·BUY"
+        cyc_m = _re.search(r" — cycle (.+)$", rest)
+        cyc_zh = f" — 周期 {cyc_m.group(1)}" if cyc_m else ""
+        return (f"{fund}：{ticker} 权重较价格多变动 {change}"
+                f"{flow_zh}（{verb_zh}），{dates}{cyc_zh}")
+
+    # Holdings active change (manager move)
+    # EN: "AAPL: manager added GOOG by +12% of position (2026-01-01..2026-03-31, flow-normalized)"
+    m = _re.match(
+        r"(\w+): manager (added|cut) (\S+) by ([+\-]?[\d.]+%) of position \(([^,]+),",
+        msg_en)
+    if m:
+        ticker, verb_en, pos, pct, window = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
+        verb_zh = "加仓" if verb_en == "added" else "减仓"
+        return f"{ticker}：经理 {verb_zh} {pos} 仓位 {pct}（{window}，已按资金流标准化）"
+
+    return ""   # no match — caller falls back to English
+
 
 def home_alert_feed() -> list[dict]:
     """Normalize MAJOR alerts from both dashboards into one timeline for the hub.
@@ -1181,6 +1365,14 @@ def home_alert_feed() -> list[dict]:
         for _, r in major.iterrows():
             v = alert_view(r["rule"], r["severity"], r["message"])
             link = ("macro.html#" + v["anchor"]) if v["anchor"] else "macro.html"
+            # Resolve detail_zh: prefer persisted message_zh (written by the emitter
+            # after the zh column landed in the parquet schema), then try the
+            # template-prefix translation map for backlog entries that predate the
+            # column (returns "" on no-match, falling back to English).
+            stored_zh = str(r.get("message_zh", "") or "").strip()
+            if not stored_zh:
+                stored_zh = _translate_macro_detail(r["message"])
+            detail_zh = stored_zh or r["message"]
             out.append({
                 "source": "macro", "source_label": h["macro_label"],
                 "source_label_zh": _tr(h["macro_label"]),
@@ -1189,9 +1381,7 @@ def home_alert_feed() -> list[dict]:
                 "type": r["rule"],
                 "headline": v["icon"] + " " + v["plain_en"],
                 "headline_zh": v["icon"] + " " + (v.get("plain_zh") or v["plain_en"]),
-                # the macro alert LOG stores only the English message (no message_zh
-                # column), so the numeric detail line falls back to English in zh mode
-                "detail": r["message"], "detail_zh": r["message"],
+                "detail": r["message"], "detail_zh": detail_zh,
                 "what": v["what_en"], "what_zh": v.get("what_zh") or v["what_en"],
                 "link": link, "tier": v["tier"],
                 "edge": v["edge_en"], "edge_zh": v.get("edge_zh") or v["edge_en"],

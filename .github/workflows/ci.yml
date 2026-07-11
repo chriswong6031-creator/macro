@@ -18,6 +18,10 @@ on:
       - "scripts/check_ms_board_coherence.py"
       - "tests/test_check_ms_board_coherence.py"
       - "engine/market_state.py"
+      # hub-a11y guard: five static a11y regressions on globe-deck pages.
+      - "scripts/check_hub_a11y.py"
+      - "tests/test_check_hub_a11y.py"
+      - "site/theme.js"
       # title-i18n guard: bilingual/CJK text must never sit in a title= attribute.
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
@@ -959,3 +963,28 @@ jobs:
         run: python3 scripts/check_self_mod_fence.py --selftest
       - name: grader manifest (fitness graders + immutable configs unchanged)
         run: python3 scripts/check_grader_manifest.py
+
+  hub-a11y:
+    # Hub UX program (W5 — a11y regression guard): five static checks on every
+    # committed page that embeds the globe deck (gd-stage presence):
+    #   (a) no focusable element (button/a/input/[tabindex] without tabindex="-1")
+    #       statically inside an aria-hidden="true" subtree.
+    #   (b) html tag has a non-empty lang= attribute AND the inline boot script in
+    #       <head> references data-lang (bilingual language-detection before paint).
+    #   (c) the light-theme pill contrast override rule exists with accent share <= 60%.
+    #   (d) viewport meta includes viewport-fit=cover; body CSS references
+    #       env(safe-area-inset for notch/home-indicator padding.
+    #   (e) site/theme.js contains documentElement.lang sync (WCAG 3.1.1 tripwire).
+    # Pure stdlib / html.parser — no browser, no extra deps, safe on ubuntu CI.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: hub a11y guard (5 checks on globe-deck pages)
+        run: python -m scripts.check_hub_a11y site
+      - name: hub a11y guard unit tests (violating + passing fixtures per check)
+        run: python -m pytest tests/test_check_hub_a11y.py -q

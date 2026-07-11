@@ -83,7 +83,11 @@ def live_tech(close: pd.Series, live_price: float,
 # ----------------------------------------------------------- market region ----
 
 def region_for(symbol: str) -> str:
-    """Coarse exchange region from a (canonical) symbol suffix."""
+    """Coarse exchange region from a (canonical) symbol suffix or caret-index name.
+
+    Mirrors the client-side ``regionOf()`` in live.js so consumers calling this
+    server-side function get the same session lookup the browser uses.
+    """
     s = str(symbol or "").upper()
     if s.endswith(".HK"):
         return "hk"
@@ -91,18 +95,47 @@ def region_for(symbol: str) -> str:
         return "cn"
     if s.endswith((".TO", ".V")):
         return "ca"
-    return "us"  # plain US tickers, ^indices, =F futures, -USD crypto
+    # Foreign caret-index tickers: explicit mapping mirrors live.js regionOf().
+    if s == "^HSI":
+        return "hk"
+    if s == "^GSPC":
+        return "us"
+    if s == "^GSPTSE":
+        return "ca"
+    if s == "^N225":
+        return "jp"
+    if s == "^KS11":
+        return "kr"
+    if s == "^TWII":
+        return "tw"
+    if s == "^FTSE":
+        return "gb"
+    if s == "^STOXX50E":
+        return "eu"
+    return "us"  # plain US tickers, =F futures, -USD crypto
 
 
 # Local-time trading windows per region (DST handled via zoneinfo). These are an
 # ADVISORY hint only — no exchange holiday calendar and no half-days; a consumer
 # uses them to tell "stale because the market is closed" from "feed broke during
 # RTH", not as an authoritative session oracle.
+#
+# Hours cross-verified against the globe-data lunch fields in site/index.html:
+#   JP 09:00-15:00 with lunch 11:30-12:30 Asia/Tokyo
+#   KR 09:00-15:30 no lunch     Asia/Seoul
+#   TW 09:00-13:30 no lunch     Asia/Taipei
+#   GB 08:00-16:30 no lunch     Europe/London
+#   EU 09:00-17:30 no lunch     Europe/Berlin (STOXX50E / XETRA)
 _REGION_HOURS = {
     "us": ("America/New_York", [("09:30", "16:00")]),
     "ca": ("America/Toronto", [("09:30", "16:00")]),
     "cn": ("Asia/Shanghai", [("09:30", "11:30"), ("13:00", "15:00")]),
     "hk": ("Asia/Hong_Kong", [("09:30", "12:00"), ("13:00", "16:00")]),
+    "jp": ("Asia/Tokyo",     [("09:00", "11:30"), ("12:30", "15:00")]),
+    "kr": ("Asia/Seoul",     [("09:00", "15:30")]),
+    "tw": ("Asia/Taipei",    [("09:00", "13:30")]),
+    "gb": ("Europe/London",  [("08:00", "16:30")]),
+    "eu": ("Europe/Berlin",  [("09:00", "17:30")]),
 }
 
 

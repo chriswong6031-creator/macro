@@ -31,8 +31,8 @@ def test_offline_build_emits_valid_v2_overlay():
     assert out["n_quotes"] == 0 and out["n"] >= 1
     for rec in out["tickers"].values():
         assert rec["stale"] is True and "tech" in rec and "region" in rec
-    # new blocks present
-    assert set(out["sessions"]) == {"us", "cn", "hk", "ca"}
+    # new blocks present — all 9 globe regions (W2b: jp/kr/tw/gb/eu added)
+    assert set(out["sessions"]) == {"us", "cn", "hk", "ca", "jp", "kr", "tw", "gb", "eu"}
     assert "VIX" in out["market"] and "band" in out["market"]["VIX"]
     assert (site / "live_config.js").exists()
 

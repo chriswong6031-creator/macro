@@ -89,3 +89,13 @@ def test_fetch_quotes_routes_without_polygon_key(monkeypatch):
     assert "polygon" not in seen               # no key -> polygon not called
     assert set(out) == {"AAPL", "GC=F"}        # both resolved via Yahoo
     assert diag["polygon_status"] == "unused"
+
+
+def test_globe_index_symbols_route_to_yahoo():
+    """W2b: the 9 globe pebble index symbols are non-US (caret/suffix) -> Yahoo path."""
+    INDEX_SYMS = [
+        "^GSPC", "^GSPTSE", "000001.SS", "^HSI",
+        "^N225", "^KS11", "^TWII", "^FTSE", "^STOXX50E",
+    ]
+    for sym in INDEX_SYMS:
+        assert not lq.is_us_symbol(sym), f"{sym} should route to Yahoo (not US/Polygon)"

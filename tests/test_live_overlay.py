@@ -122,6 +122,66 @@ def test_region_for():
     assert lo.region_for("AAPL") == "us" and lo.region_for("^VIX") == "us"
 
 
+def test_region_for_globe_index_pebbles():
+    """W2b: caret-index tickers map to their exchange region (mirrors live.js regionOf)."""
+    assert lo.region_for("^GSPC") == "us"
+    assert lo.region_for("^GSPTSE") == "ca"
+    assert lo.region_for("000001.SS") == "cn"
+    assert lo.region_for("^HSI") == "hk"
+    assert lo.region_for("^N225") == "jp"
+    assert lo.region_for("^KS11") == "kr"
+    assert lo.region_for("^TWII") == "tw"
+    assert lo.region_for("^FTSE") == "gb"
+    assert lo.region_for("^STOXX50E") == "eu"
+
+
+def test_market_session_new_regions_open_and_closed():
+    """W2b: jp/kr/tw/gb/eu sessions report a plausible open/closed state and shape."""
+    # Thursday 02:00 UTC = 11:00 Tokyo — JP market open (09:00-11:30 morning leg)
+    jp_open = datetime(2026, 6, 18, 2, 0, tzinfo=timezone.utc)
+    assert lo.market_session("jp", jp_open)["open"] is True
+    # Thursday 03:15 UTC = 12:15 Tokyo — JP lunch closed (11:30-12:30, exclusive end)
+    jp_lunch = datetime(2026, 6, 18, 3, 15, tzinfo=timezone.utc)
+    assert lo.market_session("jp", jp_lunch)["open"] is False
+    # Thursday 04:30 UTC = 13:30 Tokyo — JP afternoon open (12:30-15:00)
+    jp_afternoon = datetime(2026, 6, 18, 4, 30, tzinfo=timezone.utc)
+    assert lo.market_session("jp", jp_afternoon)["open"] is True
+
+    # Thursday 01:00 UTC = 10:00 Seoul — KR open (09:00-15:30 KST = UTC+9)
+    kr_open = datetime(2026, 6, 18, 1, 0, tzinfo=timezone.utc)
+    assert lo.market_session("kr", kr_open)["open"] is True
+    # Thursday 07:00 UTC = 16:00 Seoul — KR closed
+    kr_closed = datetime(2026, 6, 18, 7, 0, tzinfo=timezone.utc)
+    assert lo.market_session("kr", kr_closed)["open"] is False
+
+    # Thursday 01:30 UTC = 09:30 Taipei — TW open (09:00-13:30 CST = UTC+8)
+    tw_open = datetime(2026, 6, 18, 1, 30, tzinfo=timezone.utc)
+    assert lo.market_session("tw", tw_open)["open"] is True
+    # Thursday 06:00 UTC = 14:00 Taipei — TW closed (after 13:30)
+    tw_closed = datetime(2026, 6, 18, 6, 0, tzinfo=timezone.utc)
+    assert lo.market_session("tw", tw_closed)["open"] is False
+
+    # Thursday 09:00 UTC = 10:00 London (BST = UTC+1 in June) — GB open
+    gb_open = datetime(2026, 6, 18, 9, 0, tzinfo=timezone.utc)
+    assert lo.market_session("gb", gb_open)["open"] is True
+    # Thursday 15:45 UTC = 16:45 London — GB closed (after 16:30)
+    gb_closed = datetime(2026, 6, 18, 15, 45, tzinfo=timezone.utc)
+    assert lo.market_session("gb", gb_closed)["open"] is False
+
+    # Thursday 08:30 UTC = 10:30 Berlin (CEST = UTC+2 in June) — EU open
+    eu_open = datetime(2026, 6, 18, 8, 30, tzinfo=timezone.utc)
+    assert lo.market_session("eu", eu_open)["open"] is True
+    # Thursday 16:00 UTC = 18:00 Berlin — EU closed (after 17:30)
+    eu_closed = datetime(2026, 6, 18, 16, 0, tzinfo=timezone.utc)
+    assert lo.market_session("eu", eu_closed)["open"] is False
+
+    # All new region records have the standard shape
+    for region in ("jp", "kr", "tw", "gb", "eu"):
+        sess = lo.market_session(region, jp_open)
+        assert set(sess) == {"region", "open", "local_time"}
+        assert sess["region"] == region
+
+
 def test_market_session_open_and_closed():
     open_us = datetime(2026, 6, 18, 15, 0, tzinfo=timezone.utc)   # Thu 10:00 ET
     assert lo.market_session("us", open_us)["open"] is True
