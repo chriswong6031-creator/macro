@@ -1350,6 +1350,24 @@ def build(
         out_path, len(rows), len(fire_precipice_set), len(fire_onset_set),
         elapsed, stale,
     )
+
+    # ── Render HTML ───────────────────────────────────────────────────────────
+    tpl_root = config.ROOT / "templates"
+    tpl_path = tpl_root / "leader_radar.html.j2"
+    if tpl_path.exists():
+        try:
+            from jinja2 import Environment, FileSystemLoader
+            env = Environment(loader=FileSystemLoader(str(tpl_root)), autoescape=False)
+            tpl = env.get_template("leader_radar.html.j2")
+            rendered = tpl.render(leader_radar=payload)
+            html_out = site_root / "leader_radar.html"
+            html_out.write_text(rendered)
+            log.info("build_leader_radar: rendered %s", html_out)
+        except Exception as e:  # noqa: BLE001
+            log.warning("build_leader_radar: HTML render failed: %s", e)
+    else:
+        log.info("build_leader_radar: template %s absent — skipping HTML", tpl_path)
+
     return payload
 
 
