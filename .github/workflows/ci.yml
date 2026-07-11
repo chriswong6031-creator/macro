@@ -175,6 +175,9 @@ on:
       - "tests/test_ask_brain.py"
       - "tests/test_world_state.py"
       - "tests/test_admin_neural_web.py"
+      - "tests/test_admin_metabolism.py"
+      - "admin/metabolism_panel.py"
+      - "admin/github_api.py"
       - "tests/test_macro_snapshot.py"
       - "tests/test_macro_context_authority.py"
       - "tests/test_law_dates.py"
@@ -660,7 +663,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
-        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py -q
+        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_metabolism.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py -q
       - name: "HARD | entity/thesis/mechanism registry integrity (ETM-C1..C7)"
         run: |
           python3 -m scripts.check_entity_thesis_registry --selftest
