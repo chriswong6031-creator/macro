@@ -957,7 +957,9 @@ def _fetch_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str 
         r = None
         attempts = max(1, int(cfg.get("gdelt_attempts", 2)))
         timeout_s = max(5, int(cfg.get("gdelt_timeout_s", 15)))
+        from engine import gdelt_client
         for attempt in range(attempts):
+            gdelt_client.wait_turn(max(6, cfg.get("min_request_interval_s", 6)))
             r = requests.get(GDELT_URL, params=params, timeout=timeout_s,
                              headers={"User-Agent": "macro-dashboard/1.0 (research)"})
             if r.status_code == 429 and attempt < attempts - 1:

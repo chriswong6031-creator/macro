@@ -155,7 +155,8 @@ def test_llm_extract_stays_off_even_when_bus_enabled():
 # --------------------------------------------------------------------------- #
 # news_vector may import only these engine siblings (other LEAF modules).
 # qbus is a W2 LEAF — allowed for the ingest_to_qbus boundary call.
-_ALLOWED_ENGINE = {"macro_news", "event_calendar", "qbus"}
+# gdelt_client is the shared GDELT transport LEAF (lib.config only) — allowed.
+_ALLOWED_ENGINE = {"macro_news", "event_calendar", "qbus", "gdelt_client"}
 # mechanical-core modules nothing in any scoring path may pull into this leaf.
 _FORBIDDEN_ROOTS = {"engine.conditions", "engine.regime", "engine.run", "engine.inputs",
                     "engine.cycles", "engine.equity_alloc", "engine.calibrate"}
@@ -235,12 +236,13 @@ def test_failed_fetch_result_is_not_cached(tmp_path):
     }
     today = d(2026, 6, 25)
 
-    # Simulate a 429 rate-limited response from GDELT
+    # Simulate a 429 rate-limited response from GDELT. time.sleep is patched:
+    # engine.gdelt_client's bounded retry sleeps 30s+75s on persistent 429.
     mock_resp = MagicMock()
     mock_resp.status_code = 429
     mock_resp.headers = {}
 
-    with patch("requests.get", return_value=mock_resp):
+    with patch("requests.get", return_value=mock_resp), patch("time.sleep"):
         articles, reason = nv._fetch_gdelt(cfg, today)
 
     assert articles == [], "rate_limited should return empty articles"
@@ -356,6 +358,130 @@ def test_ingest_to_qbus_no_raise_when_parquet_missing(tmp_path):
         result = nv.ingest_to_qbus()
     # Should return None (no parquet found) without raising
     assert result is None
+
+
+# --------------------------------------------------------------------------- #
+# 2026-06-20..07-10 outage regression: GDELT rejected the single 288-char query
+# ("Your query was too short or too long.", HTTP 200 + text/html) daily for
+# three weeks; the generic "fetch_error" label hid the structural cause.
+# --------------------------------------------------------------------------- #
+def test_queries_split_under_gdelt_limit():
+    """Every sub-query must stay under _MAX_QUERY_LEN and no term may be lost."""
+    qs = nv._queries({})
+    assert len(qs) >= 2, "the default core must split (single query was 288 chars)"
+    for q in qs:
+        assert len(q) <= nv._MAX_QUERY_LEN, f"sub-query too long ({len(q)}): {q!r}"
+        assert q.startswith("(") and " sourcecountry:US sourcelang:eng" in q
+    joined = " ".join(qs)
+    for term in nv._QUERY_CORE:
+        assert term in joined, f"term lost in the split: {term}"
+
+
+def test_queries_respects_config_override():
+    qs = nv._queries({"query_terms": ["alpha", "beta"], "lang": "eng"})
+    assert qs == ["(alpha OR beta) sourcecountry:US sourcelang:eng"]
+
+
+def test_query_rejected_is_structural_and_not_cached(tmp_path):
+    """A GDELT 200+text/html 'too short or too long' rejection must surface as
+    query_rejected (NOT fetch_error) and must not be cached."""
+    from datetime import date as d
+    from unittest.mock import patch, MagicMock
+
+    cfg = {"enabled": True, "window_days": 2, "max_records": 10,
+           "min_request_interval_s": 0, "cache_ttl_hours": 12,
+           "cache_dir": str(tmp_path / "cache"), "lang": "eng", "query_terms": []}
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.headers = {"Content-Type": "text/html; charset=utf-8"}
+    mock_resp.text = "Your query was too short or too long."
+
+    with patch("requests.get", return_value=mock_resp):
+        articles, reason = nv._fetch_gdelt(cfg, d(2026, 7, 10))
+
+    assert articles == []
+    assert reason == "query_rejected", (
+        "structural rejection must be labeled query_rejected — the generic "
+        "fetch_error label is what hid the 2026-06-20 stall for three weeks")
+    cache_dir = tmp_path / "cache"
+    assert not (cache_dir.exists() and list(cache_dir.glob("*.json")))
+
+
+def test_partial_rejection_stays_loud(tmp_path):
+    """If ONE sub-query is rejected while another returns articles, the articles
+    are kept AND degraded_reason still says query_rejected (structural beats
+    partial success — it never self-heals)."""
+    from datetime import date as d
+    from unittest.mock import patch, MagicMock
+
+    cfg = {"enabled": True, "window_days": 2, "max_records": 10,
+           "min_request_interval_s": 0, "cache_ttl_hours": 12,
+           "cache_dir": str(tmp_path / "cache"), "lang": "eng", "query_terms": []}
+
+    ok = MagicMock()
+    ok.status_code = 200
+    ok.headers = {"Content-Type": "application/json"}
+    ok.json.return_value = {"articles": [
+        {"title": "Fed holds rates", "url": "https://reuters.com/1",
+         "domain": "reuters.com", "seendate": "20260710T120000Z"}]}
+    rejected = MagicMock()
+    rejected.status_code = 200
+    rejected.headers = {"Content-Type": "text/html"}
+    rejected.text = "Your query was too short or too long."
+
+    with patch("requests.get", side_effect=[ok, rejected]):
+        with patch.object(nv, "_queries", return_value=["(qa) x", "(qb) x"]):
+            articles, reason = nv._fetch_gdelt(cfg, d(2026, 7, 10))
+
+    assert len(articles) == 1, "the healthy sub-query's articles must be kept"
+    assert reason == "query_rejected"
+
+
+def test_fetch_dedups_across_subqueries(tmp_path):
+    """The same story matched by two sub-queries must appear once."""
+    from datetime import date as d
+    from unittest.mock import patch, MagicMock
+
+    cfg = {"enabled": True, "window_days": 2, "max_records": 10,
+           "min_request_interval_s": 0, "cache_ttl_hours": 12,
+           "cache_dir": str(tmp_path / "cache"), "lang": "eng", "query_terms": []}
+    ok = MagicMock()
+    ok.status_code = 200
+    ok.headers = {"Content-Type": "application/json"}
+    ok.json.return_value = {"articles": [
+        {"title": "Tariffs hit semiconductor stocks", "url": "https://reuters.com/2",
+         "domain": "reuters.com", "seendate": "20260710T120000Z"}]}
+
+    with patch("requests.get", return_value=ok):
+        articles, reason = nv._fetch_gdelt(cfg, d(2026, 7, 10))
+
+    assert len(articles) == 1, "cross-sub-query duplicates must be deduped"
+    assert reason is None
+
+
+def test_freshness_escalates_to_error_after_a_week(tmp_path):
+    """3 < age <= 7 days -> warn only; age > _FRESHNESS_ERROR_DAYS -> escalated."""
+    import pandas as pd
+    from datetime import date as dt, timedelta
+
+    def _store(age_days: int) -> Path:
+        p = tmp_path / f"events_{age_days}.parquet"
+        day = (dt.today() - timedelta(days=age_days)).isoformat()
+        pd.DataFrame([{
+            "event_id": "abc123", "first_seen_utc": day + "T00:00:00+00:00",
+            "seendate": day, "title": "old news", "url": "http://reuters.com",
+            "domain": "reuters.com", "theme": "trade", "source_tier": 1,
+            "scheduled_ref": "",
+        }]).to_parquet(p, index=False)
+        return p
+
+    mild = nv._check_freshness(_store(nv._FRESHNESS_WARN_DAYS + 2), dt.today())
+    assert mild["warn"] is True and mild["escalated"] is False
+
+    stalled = nv._check_freshness(_store(nv._FRESHNESS_ERROR_DAYS + 13), dt.today())
+    assert stalled["warn"] is True and stalled["escalated"] is True, (
+        "a 20-day stall must escalate past WARNING — daily warnings with no "
+        "escalation is how the 2026-06 outage ran for three weeks")
 
 
 if __name__ == "__main__":
