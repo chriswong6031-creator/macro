@@ -650,12 +650,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-experiments | `site/marketdata/experiments.json` | json | daily-engine | display | 2 | 1 |
 | altdata-feed | `data/altdata/feed.json` | json | daily-engine | display | 2 | 0 |
 | altdata-track-record | `data/altdata/track_record.json` | json | daily-engine | display | 2 | 0 |
+| foresight-earliness-log | `data/foresight/earliness_log.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | hub-signal-snapshots | `data/hub/signal_snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | master-brain-theses | `data/master_brain/theses.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | site-ai-desk-us | `site/allocationdata/ai_desk_us.json` | json | daily-engine | display | 1 | 1 |
 | stock-desk-theses | `data/stock_desk/theses.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | thematic-desk-theses | `data/thematic_desk/theses.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
-| foresight-earliness-log | `data/foresight/earliness_log.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-foresight-cascade | `site/basketdata/foresight_cascade.json` | json | daily-engine | display | 0 | 1 |
 
 ### research-factory
