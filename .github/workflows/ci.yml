@@ -272,6 +272,11 @@ on:
       - "engine/trial_ledger.py"
       - "engine/validation.py"
       - "engine/llm_auth.py"
+      # M7C-R8 basket staleness warning: build_baskets.py is the producer; a change
+      # to it alone (without touching ci.yml or engine/**) must still retrigger the
+      # basket-staleness-warn test job — belt-and-suspenders, per reviewer nit.
+      - "scripts/build_baskets.py"
+      - "tests/test_basket_staleness_warn.py"
   workflow_dispatch:
 
 permissions:
@@ -1114,3 +1119,17 @@ jobs:
         run: pip install pytest pandas numpy scipy pyyaml pyarrow
       - name: ratio lens test suite
         run: python -m pytest tests/test_oracle_ratio_lens.py -q
+
+  basket-staleness-warn:
+    # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
+    # fires a ::warning annotation and ops alert when collect timed out upstream.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas pyarrow jinja2 pyyaml
+      - name: basket staleness warn tests
+        run: python -m pytest tests/test_basket_staleness_warn.py -q

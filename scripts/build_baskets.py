@@ -28,6 +28,57 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets")
 
 
+def _check_basket_store_staleness(data: dict) -> None:
+    """Emit a GitHub Actions warning (and an ops alert if available) when the basket
+    price store is older than the last completed NYSE session.
+
+    This is a WARN-ONLY guard — it never raises, never returns a non-zero exit code,
+    and never blocks the build.  Intent: when the upstream collect job dies silently
+    (timeout-cancelled, conclusion=cancelled fires no built-in alert) the next engine
+    run still publishes stale data.  This warning makes the staleness visible in the
+    Actions log and, when alert_triage is reachable, in ops channels (M7C-R8).
+    """
+    try:
+        from datetime import date as _date
+        from lib.nyse_calendar import expected_last_session  # noqa: PLC0415
+
+        as_of_str: str | None = data.get("as_of")
+        if not as_of_str:
+            return  # no date in payload — nothing to compare
+
+        last_bar: _date = _date.fromisoformat(str(as_of_str))
+        expected: _date = expected_last_session()
+
+        if last_bar >= expected:
+            return  # store is current
+
+        msg = (
+            f"basket store stale: last bar {last_bar}, expected {expected} "
+            f"— collect job likely timed-out or was cancelled upstream (M7C-R8)"
+        )
+        # GitHub Actions annotation — visible in the step log
+        print(f"::warning ::{msg}", flush=True)
+        log.warning(msg)
+
+        # Ops alert via the W6b spine (dispatch-always channel).  Fail-open: if
+        # alert_triage is unreachable we still have the ::warning annotation above.
+        try:
+            from engine.alert_triage import push_ops_alert  # noqa: PLC0415
+            push_ops_alert(
+                source="build_baskets",
+                type_="basket_store_stale",
+                message=msg,
+                severity="major",
+                lane="collect",
+                window_hours=20,  # suppress repeats within same nightly window
+            )
+        except Exception as _ae:  # noqa: BLE001
+            log.debug("_check_basket_store_staleness: push_ops_alert unavailable (%s)", _ae)
+
+    except Exception as _e:  # noqa: BLE001 — staleness check must never crash the build
+        log.debug("_check_basket_store_staleness failed (%s)", _e)
+
+
 def _write_score_snapshot(ti: dict) -> None:
     """Slim per-theme score snapshot -> data/baskets/latest.json (archived daily by
     scripts.archive_signals into the 'baskets' stream → detail-page score history)."""
@@ -59,6 +110,10 @@ def main() -> int:
     if not data:
         log.warning("no baskets (need data/baskets/membership.json + price caches) — skipping")
         return 0
+
+    # M7C-R8: basket-store staleness warning — fires when collect died upstream (e.g.
+    # timeout-cancelled).  WARN ONLY; never fails the build (stale site > broken site).
+    _check_basket_store_staleness(data)
 
     # THEME ROTATION DESK (engine.theme_scoring) — score / label / recommend every theme,
     # 5-day rotation, impulse + new-hi-lo scorecards. Rides inside baskets_json. Then
