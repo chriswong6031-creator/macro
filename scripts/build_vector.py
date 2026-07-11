@@ -992,65 +992,6 @@ def _market_stocks_state(market: str) -> dict:
         return {"label": "", "n_setups": 0}
 
 
-def _rotation_strip_data(run_date: str | None = None) -> list[dict] | None:
-    """Return top-4 sector rotation chips (2 Accumulate + 2 Reduce by |score|, latest date).
-    Returns None when the parquet is absent or the latest date is >7d stale vs run_date."""
-    try:
-        p = config.data_dir().parent / "sector_central" / "calls.parquet"
-        if not p.exists():
-            p = Path(config.ROOT) / "data" / "sector_central" / "calls.parquet"
-        if not p.exists():
-            return None
-        df = pd.read_parquet(p)
-        # latest date only
-        latest = df["date"].max()
-        run_dt = pd.Timestamp(run_date) if run_date else pd.Timestamp.utcnow().tz_localize(None)
-        if (run_dt - pd.Timestamp(latest)).days > 7:
-            return None
-        rows = df[df["date"] == latest].copy()
-        accum = rows[rows["label"] == "Accumulate"].nlargest(2, "score")
-        reduce = rows[rows["label"] == "Reduce"].nlargest(2, "score")
-        out = []
-        for _, r in accum.iterrows():
-            out.append({"name": r["name"], "label": "Accumulate", "label_zh": "积累",
-                        "dir": str(r["dir"]), "score": int(r["score"]), "side": "add"})
-        for _, r in reduce.iterrows():
-            out.append({"name": r["name"], "label": "Reduce", "label_zh": "减持",
-                        "dir": str(r["dir"]), "score": int(r["score"]), "side": "reduce"})
-        return out if out else None
-    except Exception:  # noqa: BLE001
-        return None
-
-
-def _rotation_strip_html(chips: list[dict] | None) -> str:
-    """Render the slim rotation snapshot strip HTML. Returns '' when chips is None/empty."""
-    if not chips:
-        return ""
-    parts = []
-    for c in chips:
-        arrow = "▲" if c["dir"] == "up" else ("▼" if c["dir"] == "down" else "—")
-        cls = "rot-add" if c["side"] == "add" else "rot-red"
-        parts.append(
-            '<span class="rot-chip ' + cls + '">'
-            + '<span class="rot-arr" aria-hidden="true">' + arrow + '</span>'
-            + '<span class="rot-nm">' + c["name"] + '</span>'
-            + '<span class="rot-lbl">'
-            + '<span class="l-en">' + c["label"] + '</span>'
-            + '<span class="l-zh">' + c["label_zh"] + '</span>'
-            + '</span>'
-            + '</span>'
-        )
-    return (
-        '<div class="rot-strip">'
-        '<a class="rot-hd" href="sector_central.html">'
-        '<span class="l-en">Rotation desk</span>'
-        '<span class="l-zh">轮动台</span>'
-        '</a>'
-        + "".join(parts)
-        + '</div>'
-    )
-
-
 def _regime_change_ccs(alerts: list[dict], run_date: str | None = None) -> set[str]:
     """Return the set of market CCs (e.g. 'US') with a regime-label-change alert
     within the past 7 days. Cross-references the home alert feed — no new detection.
@@ -1661,32 +1602,21 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 html[data-lang="zh"] .ha-toggle .l-en{display:none}
 html[data-lang="zh"] .ha-toggle .l-zh{display:inline}
 
-/* ===== graded-timeline alerts (W3 reskin) ===== */
-/* 3-px gradient spine running down the left edge of the section */
-.alerts{position:relative;overflow:hidden}
-.alerts::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
- background:linear-gradient(180deg,var(--act) 0%,var(--info) 40%,var(--muted) 100%);
- border-radius:2px;pointer-events:none}
-.al-card{padding-left:22px!important}
-/* severity node on the spine */
-.ha-node{position:absolute;left:-16px;top:50%;transform:translateY(-50%);
- width:9px;height:9px;border-radius:50%;flex:none;border:2px solid var(--panel)}
-.ha-node.d-high{background:var(--act);box-shadow:0 0 6px var(--act)}
-.ha-node.d-medium{background:var(--info);box-shadow:0 0 6px var(--info)}
-.ha-node.d-info{background:var(--muted)}
-/* high-severity rows get a subtle left accent */
-.ha-item.sev-high{border-left:2px solid color-mix(in srgb,var(--act) 38%,transparent)}
+/* ===== alerts list ===== */
 /* one-shot pulse on the newest row — gated by prefers-reduced-motion + html.fx-min */
 @keyframes ha-pulse-in{0%{background:color-mix(in srgb,var(--act) 18%,transparent)}100%{background:transparent}}
 .ha-item.newest{animation:ha-pulse-in 2s ease-out forwards}
 @media(prefers-reduced-motion:reduce){.ha-item.newest{animation:none}}
+/* mobile: dot + source chip + timestamp on line one, headline on its own full-width line */
+@media(max-width:560px){
+.ha-item summary{gap:8px;padding:10px 0}
+.ha-head{flex-basis:100%;order:5;min-width:0}
+.ha-when{margin-left:auto}
+.ha-detail{padding-left:0}
+}
 
 /* ===== three-part footer (W3) ===== */
-/* faint horizon gradient above the footer */
 .b-footer{width:100%;margin-top:40px;padding-top:0;position:relative;overflow:hidden}
-.b-footer::before{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;
- background:linear-gradient(0deg,color-mix(in srgb,var(--info) 8%,transparent),transparent);
- pointer-events:none}
 .b-foot-inner{border-top:1px solid color-mix(in srgb,var(--line) 80%,transparent);
  padding:28px 0 36px;display:grid;grid-template-columns:auto 1fr auto;gap:32px;align-items:start}
 @media(max-width:780px){.b-foot-inner{grid-template-columns:1fr;gap:24px}}
@@ -1853,6 +1783,16 @@ html.soft-contrast[data-theme="dark"]{--bg:#0d1018;--panel:#151820;--panel2:#1b1
 .gd-tip-go{display:inline-block;font-size:12px;font-weight:700;color:var(--link);text-decoration:none}
 .gd-tip .l-zh{display:none} html[data-lang="zh"] .gd-tip .l-en{display:none} html[data-lang="zh"] .gd-tip .l-zh{display:inline}
 
+/* compact auto-tour popup — a one-line pill (flag · name · regime chip · risk) pinned to the
+   bottom of the globe stage so the cycling tour never blocks the view (esp. on mobile) */
+.gd-tip.mini{width:auto;max-width:min(92vw,380px);padding:7px 13px;border-radius:999px;
+ display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
+.gd-tip.mini[hidden]{display:none}
+.gd-tip.mini .gd-tip-flag{font-size:15px;flex:none}
+.gd-tip.mini .gd-chip{flex:none}
+.gd-mini-name{font-weight:800;font-size:12.5px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.gd-mini-risk{font-size:11.5px;font-weight:600;color:var(--muted);flex:none}
+
 /* ===== sidebar clock ===== */
 .gd-clock{display:flex;flex-direction:column;padding:14px 14px 12px;min-width:0;max-width:100%}
 .gd-clock>header{font-size:12px;font-weight:800;color:var(--text);letter-spacing:-.01em;margin:0 2px 11px;display:flex;gap:6px;align-items:baseline}
@@ -1947,7 +1887,7 @@ html[data-theme="light"] #sky-sun::after{opacity:.55}
 @keyframes gd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 @keyframes gd-halo-glow{0%,100%{opacity:0.7}50%{opacity:1}}
 @keyframes gd-chev-drift{0%,100%{transform:translateY(0);opacity:.95}50%{transform:translateY(3.5px);opacity:.4}}
-.gd-cta{display:flex;justify-content:center;margin:6px 0 2px}
+.gd-cta{display:flex;justify-content:center;margin:6px 0 2px;padding-bottom:26px}
 .gd-scroll{position:relative;display:inline-flex;align-items:center;gap:11px;padding:14px 28px 14px 30px;border-radius:999px;border:none;cursor:pointer;font-family:inherit;font-size:14.5px;font-weight:700;letter-spacing:.015em;color:var(--text);background:color-mix(in srgb,var(--panel2) 90%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px -12px rgba(0,0,0,.6);animation:gd-float 5.6s cubic-bezier(.37,0,.63,1) infinite;transition:box-shadow .45s ease;overflow:visible}
 .gd-scroll::before{content:'';position:absolute;inset:-1px;border-radius:999px;background:linear-gradient(135deg,var(--info),#7c5cff);-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;pointer-events:none}
 .gd-scroll::after{content:'';position:absolute;inset:-10px;border-radius:999px;background:radial-gradient(closest-side,color-mix(in srgb,var(--info) 22%,transparent),transparent 70%);z-index:-1;opacity:0.7;animation:gd-halo-glow 5.6s cubic-bezier(.37,0,.63,1) infinite;pointer-events:none}
@@ -2007,25 +1947,6 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 .nav.vc .go .go-tx{display:none}
 }
 .go-tx{display:inline}
-
-/* ===== rotation snapshot strip ===== */
-.rot-strip{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 13px;padding:9px 13px;border-radius:12px;
- background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
-.rot-hd{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-right:4px;white-space:nowrap;flex:none}
-.rot-hd:hover{color:var(--link)}
-.rot-hd .l-zh{display:none}
-html[data-lang="zh"] .rot-hd .l-en{display:none}
-html[data-lang="zh"] .rot-hd .l-zh{display:inline}
-.rot-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;border:1px solid transparent}
-.rot-chip.rot-add{background:color-mix(in srgb,var(--up) 12%,transparent);border-color:color-mix(in srgb,var(--up) 28%,transparent);color:var(--up)}
-.rot-chip.rot-red{background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 22%,transparent);color:var(--down)}
-.rot-arr{font-size:10px;flex:none}
-.rot-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:14ch}
-.rot-lbl{font-size:10px;opacity:.8;flex:none}
-.rot-lbl .l-zh{display:none}
-html[data-lang="zh"] .rot-lbl .l-en{display:none}
-html[data-lang="zh"] .rot-lbl .l-zh{display:inline}
-@media(max-width:560px){.rot-strip{padding:7px 10px;gap:5px}.rot-nm{max-width:10ch}}
 
 /* ===== regime-change badge on market cards ===== */
 .regime-changed{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;
@@ -2199,7 +2120,6 @@ def _g_legend(blob):
 
 
 def _g_markets(blob, us_n, cn_n, hk_n,
-               rotation_strip: str = "",
                regime_changed_ccs: "set[str] | None" = None,
                standout_tickers: "dict[str, list[str]] | None" = None):
     by = {m["cc"]: m for m in blob}
@@ -2257,8 +2177,7 @@ def _g_markets(blob, us_n, cn_n, hk_n,
                      + changed_badge + '</div>'
                      '<div class="split">' + "".join(btns) + '</div></div>')
     return ('<div class="band"><h2>' + _bi("Markets", "市场") + '</h2><span class="ln"></span></div>'
-            + rotation_strip
-            + '<div class="nav mk reveal">' + "".join(cards) + '</div>')
+            '<div class="nav mk reveal">' + "".join(cards) + '</div>')
 
 
 def _latest_report_data() -> dict | None:
@@ -2399,14 +2318,11 @@ def _g_alerts(alerts):
                 out.append(
                     '<div class="ha-more-wrap" id="ha-more" style="display:none">'
                 )
-            # W3: graded timeline — newest row gets pulse; high-severity rows get accent border
+            # newest row gets a one-shot pulse; severity is carried by the dot colour
             item_cls = "ha-item"
             if idx == 0:
                 item_cls += " newest"
-            if dot == "high":
-                item_cls += " sev-high"
             out.append('<details class="' + item_cls + '"><summary>'
-                       '<span class="ha-node d-' + dot + '"></span>'
                        '<span class="ha-dot d-' + dot + '"></span>'
                        '<span class="ha-src ' + src_cls + '">' + src + '</span>'
                        '<span class="ha-head">' + head_t + '</span>'
@@ -2540,8 +2456,6 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     legend = _g_legend(blob)
     globe_deck = _GLOBE_DECK_DOM.replace("__LEGEND__", legend)
     # --- new hub sections ---
-    rot_chips = _rotation_strip_data()
-    rot_strip_html = _rotation_strip_html(rot_chips)
     regime_ccs = _regime_change_ccs(alerts)
     _tickers: dict[str, list[str]] = {}
     for _mkt, _key in (("US", "us"), ("CN", "china"), ("HK", "hk")):
@@ -2551,7 +2465,6 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     latest_rpt = _latest_report_data()
     # --- end new hub sections ---
     markets = _g_markets(blob, us_n, cn_n, hk_n,
-                         rotation_strip=rot_strip_html,
                          regime_changed_ccs=regime_ccs,
                          standout_tickers=_tickers)
     vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist,
