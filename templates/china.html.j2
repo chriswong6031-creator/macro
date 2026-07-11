@@ -1052,18 +1052,21 @@
       </div>
 
       {# ── CENTER: context chips ── #}
+      {# who_controls slug → plain label (STANCE_ZH/BAND_ZH pattern, doctrine Law 2); prettified fallback — never block render on a map miss #}
+      {% set WHO_EN = {'retail':'retail money','institutional':'institutions','margin':'leveraged money','state_proxy':'state funds','offshore':'foreign money','mixed':'no single group','unclear':'unclear'} %}
+      {% set WHO_ZH = {'retail':'散户','institutional':'机构','margin':'融资盘','state_proxy':'国家队','offshore':'外资','mixed':'各方混杂','unclear':'暂不明朗'} %}
       <div style="flex:1;min-width:200px">
-        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">{{ t('Context chips', '背景芯片') }}</div>
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">{{ t('Market context', '市场背景') }}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           {# who_controls chip #}
-          <span class="chip {{ 'c-info' if _who == 'offshore' else ('c-warn' if _who in ('retail','margin') else ('c-up' if _who == 'institutional' else 'c-muted')) }}">
-            {{ t('controls: ' + _who.replace('_',' '), '控盘：' + tr(_who.replace('_',' '))) }}</span>
+          <span class="chip {{ 'c-info' if _who == 'offshore' else ('c-warn' if _who in ('retail','margin') else ('c-up' if _who == 'institutional' else 'c-muted')) }}" data-tip-en="Whose money is steering the tape right now — read from turnover heat, limit-up breadth, margin balances, southbound flow and broker strength. State funds is a proxy read. Context only — not a signal." data-tip-zh="当前盘面由哪路资金主导 — 依据成交热度、涨停广度、融资余额、南向资金与券商相对强弱推断。国家队为代理读数。仅供参考，非信号。">
+            {{ t('in control: ' + WHO_EN.get(_who, _who.replace('_',' ')), '控盘方：' + WHO_ZH.get(_who, tr(_who.replace('_',' ')))) }}</span>
           {# policy_impulse chip #}
           <span class="chip {{ 'c-up' if _impulse in ('easing','market_rescue') else ('c-info' if _impulse == 'targeted_support' else ('c-down' if _impulse == 'tightening' else 'c-muted')) }}">
             {{ t('policy: ' + _impulse.replace('_',' '), '政策：' + tr(_impulse.replace('_',' '))) }}</span>
           {# risk chip #}
           <span class="chip {{ 'c-down' if _risk in ('frothy','fire_sale') else ('c-warn' if _risk == 'normal' else 'c-muted') }}">
-            {{ t('risk: ' + _risk, '风险：' + tr(_risk)) }}</span>
+            {{ t('risk: ' + _risk.replace('_',' '), '风险：' + tr(_risk.replace('_',' '))) }}</span>
         </div>
         {# top contradiction line #}
         {% if _contradictions %}
@@ -2123,39 +2126,39 @@
             {# Metrics grid #}
             <div class="rip-metrics">
               {# 2W Stoch + reclaim arrow #}
-              <div class="rip-metric">
-                <div class="rip-metric-lbl"><span class="l-en">2W Stoch</span><span class="l-zh">双周随机</span></div>
+              <div class="rip-metric" data-tip-en="Oversold gauge — the 2-week StochRSI. 35 and below = washout zone, 20 and below = deeply oversold; the arrow is its direction." data-tip-zh="超卖量表 — 双周随机RSI。≤35＝洗盘区，≤20＝深度超卖；箭头为其方向。">
+                <div class="rip-metric-lbl"><span class="l-en">Oversold gauge</span><span class="l-zh">超卖程度</span></div>
                 <div class="rip-metric-val {% if _r_stoch is not none and _r_stoch <= 20 %}pos{% elif _r_stoch is not none and _r_stoch > 35 %}mut{% endif %}">
                   {% if _r_stoch is not none %}{{ '%.1f'|format(_r_stoch) }}{% else %}—{% endif %}
                   {% if _r_arrow == 1 %}<span class="rip-arrow up">↑</span>{% elif _r_arrow == -1 %}<span class="rip-arrow dn">↓</span>{% else %}<span class="rip-arrow fl">→</span>{% endif %}
                 </div>
               </div>
               {# MACD D hist #}
-              <div class="rip-metric">
-                <div class="rip-metric-lbl"><span class="l-en">MACD D hist</span><span class="l-zh">日MACD柱</span></div>
+              <div class="rip-metric" data-tip-en="Daily momentum — the daily MACD histogram. Above zero = short-term momentum has turned up; the small arrow is its recent slope." data-tip-zh="日线动能 — 日MACD柱。高于零＝短线动能转正；小箭头为近期斜率。">
+                <div class="rip-metric-lbl"><span class="l-en">Daily momentum</span><span class="l-zh">日线动能</span></div>
                 <div class="rip-metric-val {% if _r_hist is not none and _r_hist >= 0 %}pos{% elif _r_hist is not none %}neg{% endif %}">
                   {% if _r_hist is not none %}{{ '%+.3f'|format(_r_hist) }}{% else %}—{% endif %}
                   {%- if _r_slope == 1 %}<span style="font-size:9px">↑</span>{%- elif _r_slope == -1 %}<span style="font-size:9px">↓</span>{%- endif %}
                 </div>
               </div>
               {# Washout depth (d at cross) #}
-              <div class="rip-metric">
+              <div class="rip-metric" data-tip-en="How oversold the weekly gauge was when it turned up (weekly StochRSI %D at the cross, 0–100 scale). Below 25 = turned up from a true washout; lower = deeper reset." data-tip-zh="周线量表转向时的超卖深度（周随机RSI %D，0–100）。低于25＝从真正的洗盘区转向；越低洗盘越深。">
                 <div class="rip-metric-lbl"><span class="l-en">Washout depth</span><span class="l-zh">超卖深度</span></div>
-                <div class="rip-metric-val mut">{% if _r_d is not none %}d={{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
+                <div class="rip-metric-val mut">{% if _r_d is not none %}{{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
               </div>
               {# Range position #}
-              <div class="rip-metric">
-                <div class="rip-metric-lbl"><span class="l-en">Range pos.</span><span class="l-zh">区间位置</span></div>
+              <div class="rip-metric" data-tip-en="Where the price sits inside its 2-year range — 0% = at the low, 100% = at the high." data-tip-zh="价格在两年区间中的位置 — 0%＝区间底部，100%＝区间顶部。">
+                <div class="rip-metric-lbl"><span class="l-en">Range position</span><span class="l-zh">区间位置</span></div>
                 <div class="rip-metric-val mut">{% if _r_rng is not none %}{{ '%.0f'|format(_r_rng) }}%{% else %}—{% endif %}</div>
               </div>
               {# Days in washout #}
-              <div class="rip-metric">
+              <div class="rip-metric" data-tip-en="How many trading days this name has spent in the washout zone so far." data-tip-zh="该股迄今处于洗盘（超卖）状态的交易日数。">
                 <div class="rip-metric-lbl"><span class="l-en">Days in washout</span><span class="l-zh">超卖天数</span></div>
                 <div class="rip-metric-val mut">{% if _r_diw %}~{{ _r_diw }}d{% else %}—{% endif %}</div>
               </div>
               {# 2W MACD imminence #}
-              <div class="rip-metric">
-                <div class="rip-metric-lbl"><span class="l-en">2W MACD ETA</span><span class="l-zh">双周MACD距交叉</span></div>
+              <div class="rip-metric" data-tip-en="Time to turn — estimated weeks until the 2-week MACD crosses upward at its current pace (the ripening clock). An estimate, not a promise." data-tip-zh="距转向 — 按当前速度估算双周MACD上穿还需的周数（成熟时钟）。仅为估算，非承诺。">
+                <div class="rip-metric-lbl"><span class="l-en">Time to turn</span><span class="l-zh">距转向</span></div>
                 <div class="rip-metric-val mut">{% if _r_imm is not none %}~{{ '%.1f'|format(_r_imm) }}{{ t('W','周') }}{% else %}—{% endif %}</div>
               </div>
             </div>
@@ -2220,34 +2223,34 @@
             </div>
             {% if r.get('spark_svg') %}<div class="rip-card-spark">{{ r.get('spark_svg') | safe }}</div>{% endif %}
             <div class="rip-metrics">
-              <div class="rip-metric">
-                <div class="rip-metric-lbl"><span class="l-en">2W Stoch</span><span class="l-zh">双周随机</span></div>
+              <div class="rip-metric" data-tip-en="Oversold gauge — the 2-week StochRSI. 35 and below = washout zone, 20 and below = deeply oversold; the arrow is its direction." data-tip-zh="超卖量表 — 双周随机RSI。≤35＝洗盘区，≤20＝深度超卖；箭头为其方向。">
+                <div class="rip-metric-lbl"><span class="l-en">Oversold gauge</span><span class="l-zh">超卖程度</span></div>
                 <div class="rip-metric-val mut">
                   {% if _r_stoch is not none %}{{ '%.1f'|format(_r_stoch) }}{% else %}—{% endif %}
                   {% if _r_arrow == 1 %}<span class="rip-arrow up">↑</span>{% elif _r_arrow == -1 %}<span class="rip-arrow dn">↓</span>{% else %}<span class="rip-arrow fl">→</span>{% endif %}
                 </div>
               </div>
-              <div class="rip-metric">
-                <div class="rip-metric-lbl"><span class="l-en">MACD D hist</span><span class="l-zh">日MACD柱</span></div>
+              <div class="rip-metric" data-tip-en="Daily momentum — the daily MACD histogram. Above zero = short-term momentum has turned up; the small arrow is its recent slope." data-tip-zh="日线动能 — 日MACD柱。高于零＝短线动能转正；小箭头为近期斜率。">
+                <div class="rip-metric-lbl"><span class="l-en">Daily momentum</span><span class="l-zh">日线动能</span></div>
                 <div class="rip-metric-val {% if _r_hist is not none and _r_hist >= 0 %}pos{% elif _r_hist is not none %}neg{% endif %}">
                   {% if _r_hist is not none %}{{ '%+.3f'|format(_r_hist) }}{% else %}—{% endif %}
                   {%- if _r_slope == 1 %}<span style="font-size:9px">↑</span>{%- elif _r_slope == -1 %}<span style="font-size:9px">↓</span>{%- endif %}
                 </div>
               </div>
-              <div class="rip-metric">
+              <div class="rip-metric" data-tip-en="How oversold the weekly gauge was when it turned up (weekly StochRSI %D at the cross, 0–100 scale). Below 25 = turned up from a true washout; lower = deeper reset." data-tip-zh="周线量表转向时的超卖深度（周随机RSI %D，0–100）。低于25＝从真正的洗盘区转向；越低洗盘越深。">
                 <div class="rip-metric-lbl"><span class="l-en">Washout depth</span><span class="l-zh">超卖深度</span></div>
-                <div class="rip-metric-val mut">{% if _r_d is not none %}d={{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
+                <div class="rip-metric-val mut">{% if _r_d is not none %}{{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
               </div>
-              <div class="rip-metric">
-                <div class="rip-metric-lbl"><span class="l-en">Range pos.</span><span class="l-zh">区间位置</span></div>
+              <div class="rip-metric" data-tip-en="Where the price sits inside its 2-year range — 0% = at the low, 100% = at the high." data-tip-zh="价格在两年区间中的位置 — 0%＝区间底部，100%＝区间顶部。">
+                <div class="rip-metric-lbl"><span class="l-en">Range position</span><span class="l-zh">区间位置</span></div>
                 <div class="rip-metric-val mut">{% if _r_rng is not none %}{{ '%.0f'|format(_r_rng) }}%{% else %}—{% endif %}</div>
               </div>
-              <div class="rip-metric">
+              <div class="rip-metric" data-tip-en="How many trading days this name has spent in the washout zone so far." data-tip-zh="该股迄今处于洗盘（超卖）状态的交易日数。">
                 <div class="rip-metric-lbl"><span class="l-en">Days in washout</span><span class="l-zh">超卖天数</span></div>
                 <div class="rip-metric-val mut">{% if _r_diw %}~{{ _r_diw }}d{% else %}—{% endif %}</div>
               </div>
-              <div class="rip-metric">
-                <div class="rip-metric-lbl"><span class="l-en">2W MACD ETA</span><span class="l-zh">双周MACD距交叉</span></div>
+              <div class="rip-metric" data-tip-en="Time to turn — estimated weeks until the 2-week MACD crosses upward at its current pace (the ripening clock). An estimate, not a promise." data-tip-zh="距转向 — 按当前速度估算双周MACD上穿还需的周数（成熟时钟）。仅为估算，非承诺。">
+                <div class="rip-metric-lbl"><span class="l-en">Time to turn</span><span class="l-zh">距转向</span></div>
                 <div class="rip-metric-val mut">{% if _r_imm is not none %}~{{ '%.1f'|format(_r_imm) }}{{ t('W','周') }}{% else %}—{% endif %}</div>
               </div>
             </div>
