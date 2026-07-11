@@ -29,6 +29,16 @@ Coverage:
   20. treasury_block_keys            — treasury block has required keys
   21. entry_effect_block             — entry_effect block present with correct non-score keys
   22. gaps_is_list                   — gaps key is a list
+
+Phase-3 robust-readout coverage (funding spreads + components + reserves +
+stress-overlay carry-through — additive to schema v1):
+  23. spread_helpers                 — _to_series/_spread_bp/_level_d20_pctile known values
+  24. reserve_scarcity_state         — descriptive-vocabulary derivation table
+  25. funding_spreads_compute        — synthetic funding frames → known bp levels/deltas/pctiles
+  26. components_block               — walcl/rrp/tga {level,d20,d65,pctile} + netliq sparkline
+  27. reserve_balances               — WRESBAL frame consumed (incl. millions guard); fail-open null
+  28. quality_stress_overlay         — regime stress_overlay dict carried through, bool tolerated
+  29. phase_status                   — additive integration-status field present
 """
 from __future__ import annotations
 
@@ -51,7 +61,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # ---------------------------------------------------------------------------
 
 try:
-    from engine.neuralweb.liquidity_plumbing import compute  # noqa: F401
+    from engine.neuralweb.liquidity_plumbing import (  # noqa: F401
+        _derive_reserve_scarcity_state,
+        _level_d20_pctile,
+        _spread_bp,
+        _to_series,
+        compute,
+    )
     _ENGINE_AVAILABLE = True
 except ImportError:
     _ENGINE_AVAILABLE = False
@@ -493,34 +509,45 @@ class TestFailOpen:
 # ---------------------------------------------------------------------------
 
 class TestFundingBlockNull:
+    """Fail-open: with NO funding frames supplied, every spread nulls out."""
+
     _FUNDING_NULL_KEYS = [
         "effr_minus_iorb_bp",
         "sofr_minus_iorb_bp",
+        "sofr_99pctl_minus_iorb_bp",
         "srf_takeup_bn",
         "discount_window_primary_credit_bn",
     ]
 
     def test_funding_fields_all_null(self):
-        """All funding numeric fields must be null in Phase 1 (no data source yet)."""
+        """All funding numeric fields must be null when no funding frames are passed."""
         result = _full_compute()
         funding = result["funding"]
         for key in self._FUNDING_NULL_KEYS:
             assert key in funding, f"funding block missing key {key!r}"
             assert funding[key] is None, (
-                f"funding.{key} must be null in Phase 1, got {funding[key]!r}"
+                f"funding.{key} must be null without funding inputs, got {funding[key]!r}"
             )
 
     def test_funding_reserve_scarcity_state(self):
-        """funding.reserve_scarcity_state must equal 'unknown' in Phase 1."""
+        """funding.reserve_scarcity_state must equal 'unknown' without funding inputs."""
         result = _full_compute()
         assert result["funding"]["reserve_scarcity_state"] == "unknown"
 
     def test_gaps_mentions_funding(self):
-        """gaps[] must include a note about funding scarcity spreads not being integrated."""
+        """gaps[] must note the missing funding spread inputs."""
         result = _full_compute()
         gaps_text = " ".join(str(g) for g in result["gaps"]).lower()
-        assert "funding" in gaps_text or "phase 3" in gaps_text, (
-            f"gaps must mention funding scarcity spreads not integrated; got: {result['gaps']}"
+        assert "funding" in gaps_text or "iorb" in gaps_text, (
+            f"gaps must mention missing funding spread inputs; got: {result['gaps']}"
+        )
+
+    def test_gaps_mentions_srf_discount_window(self):
+        """gaps[] must always note that SRF/discount-window are not collected yet."""
+        result = _full_compute()
+        gaps_text = " ".join(str(g) for g in result["gaps"]).lower()
+        assert "srf" in gaps_text and "discount" in gaps_text, (
+            f"gaps must mention SRF/discount-window pending collection; got: {result['gaps']}"
         )
 
 
@@ -686,7 +713,7 @@ class TestFedBlockKeys:
             assert key in f, f"fed block missing key {key!r}"
 
     def test_reserve_balances_null(self):
-        """fed.reserve_balances_bn must be null in Phase 1 (H.4.1 not integrated)."""
+        """fed.reserve_balances_bn must be null when no WRESBAL frame is passed."""
         result = _full_compute()
         assert result["fed"]["reserve_balances_bn"] is None
 
@@ -776,3 +803,388 @@ class TestGapsIsList:
             assert isinstance(entry, str), (
                 f"gaps entries must be strings, got {type(entry).__name__}: {entry!r}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Phase-3 robust readout — synthetic funding / components / reserves fixtures
+# ---------------------------------------------------------------------------
+
+def _funding_frames(n: int = 300) -> dict[str, pd.DataFrame]:
+    """Deterministic single-column rate frames mirroring the real parquet shapes.
+
+    IORB flat at 4.40. EFFR at 4.33 (−7bp) then 4.36 (−4bp) for the last 20
+    rows — a +3bp 20d drift. SOFR flat at 4.35 (−5bp). SOFR-99pctl flat at
+    4.50 (+10bp).
+    """
+    dates = pd.bdate_range("2025-01-01", periods=n)
+    k = min(20, n)
+    effr_vals = [4.33] * (n - k) + [4.36] * k
+    return {
+        "effr": pd.DataFrame({"effr": effr_vals}, index=dates),
+        "iorb": pd.DataFrame({"iorb": [4.40] * n}, index=dates),
+        "sofr": pd.DataFrame({"sofr": [4.35] * n}, index=dates),
+        "sofr_p99": pd.DataFrame({"sofr_p99": [4.50] * n}, index=dates),
+    }
+
+
+def _reserves_frame(n: int = 30, base: float = 3300.0) -> pd.DataFrame:
+    """Deterministic WRESBAL-shaped frame ($bn weekly, rising +1/wk)."""
+    dates = pd.date_range("2026-01-07", periods=n, freq="7D")
+    return pd.DataFrame({"reserve_balances": [base + i for i in range(n)]}, index=dates)
+
+
+# ---------------------------------------------------------------------------
+# 23. Spread helpers — known values on synthetic series
+# ---------------------------------------------------------------------------
+
+class TestSpreadHelpers:
+    def test_to_series_datetime_index(self):
+        frames = _funding_frames(10)
+        s = _to_series(frames["iorb"])
+        assert s is not None and len(s) == 10
+        assert float(s.iloc[-1]) == 4.40
+
+    def test_to_series_date_column(self):
+        """Frames with a 'date' column (netliq parquet style) also normalize."""
+        df = pd.DataFrame({"date": pd.bdate_range("2026-01-01", periods=5),
+                           "v": [1.0, 2.0, 3.0, 4.0, 5.0]})
+        s = _to_series(df)
+        assert s is not None and float(s.iloc[-1]) == 5.0
+
+    def test_to_series_none_and_empty(self):
+        assert _to_series(None) is None
+        assert _to_series(pd.DataFrame()) is None
+
+    def test_spread_bp_known_value(self):
+        frames = _funding_frames(50)
+        sp = _spread_bp(_to_series(frames["sofr"]), _to_series(frames["iorb"]))
+        assert sp is not None
+        assert round(float(sp.iloc[-1]), 2) == -5.0
+
+    def test_spread_bp_alignment_intersection_only(self):
+        """Spread must use intersecting dates only (EFFR publishes T+1 vs IORB)."""
+        frames = _funding_frames(50)
+        effr_short = frames["effr"].iloc[:-2]  # EFFR lags two sessions
+        sp = _spread_bp(_to_series(effr_short), _to_series(frames["iorb"]))
+        assert sp is not None
+        assert sp.index[-1] == effr_short.index[-1]
+
+    def test_spread_bp_none_inputs(self):
+        assert _spread_bp(None, _to_series(_funding_frames(5)["iorb"])) is None
+        assert _spread_bp(_to_series(_funding_frames(5)["effr"]), None) is None
+
+    def test_level_d20_pctile_known_values(self):
+        frames = _funding_frames(300)
+        sp = _spread_bp(_to_series(frames["effr"]), _to_series(frames["iorb"]))
+        level, d20, pctile = _level_d20_pctile(sp)
+        assert level == -4.0
+        assert d20 == 3.0          # −4bp now vs −7bp 20 rows ago
+        assert pctile == 1.0       # latest is the joint-highest of the history
+
+    def test_level_d20_pctile_short_series(self):
+        """≤ 20 rows → level + pctile present, d20 null."""
+        frames = _funding_frames(10)
+        sp = _spread_bp(_to_series(frames["sofr"]), _to_series(frames["iorb"]))
+        level, d20, pctile = _level_d20_pctile(sp)
+        assert level == -5.0
+        assert d20 is None
+        assert pctile == 1.0
+
+    def test_level_d20_pctile_empty(self):
+        assert _level_d20_pctile(None) == (None, None, None)
+        assert _level_d20_pctile(pd.Series(dtype=float)) == (None, None, None)
+
+
+# ---------------------------------------------------------------------------
+# 24. reserve_scarcity_state derivation — descriptive vocabulary only
+# ---------------------------------------------------------------------------
+
+class TestReserveScarcityState:
+    _VALID = {"comfortable", "normalizing", "tightening", "scarce", "unknown"}
+
+    def test_unknown_when_no_levels(self):
+        assert _derive_reserve_scarcity_state(None, None, None, None) == "unknown"
+
+    def test_scarce_effr_at_iorb(self):
+        """EFFR at/above IORB (Sep-2019 signature) → scarce."""
+        assert _derive_reserve_scarcity_state(1.0, -5.0, 2.0, 0.0) == "scarce"
+
+    def test_scarce_sofr_squeeze(self):
+        """SOFR ≥ +10bp over IORB (repo squeeze) → scarce."""
+        assert _derive_reserve_scarcity_state(-6.0, 12.0, 0.0, 8.0) == "scarce"
+
+    def test_tightening_both_near_iorb(self):
+        """Both EFFR and SOFR within 5bp below IORB → tightening."""
+        assert _derive_reserve_scarcity_state(-4.0, -5.0, 3.0, 0.0) == "tightening"
+
+    def test_normalizing_effr_near_iorb_only(self):
+        """EFFR compressed but SOFR still comfortably below → normalizing."""
+        assert _derive_reserve_scarcity_state(-4.0, -8.0, 0.0, 0.0) == "normalizing"
+
+    def test_normalizing_on_drift(self):
+        """Levels comfortable but spreads drifting up ≥ +2bp / 20d → normalizing."""
+        assert _derive_reserve_scarcity_state(-8.0, -8.0, 3.0, 0.0) == "normalizing"
+
+    def test_comfortable(self):
+        assert _derive_reserve_scarcity_state(-8.0, -8.0, 0.0, -1.0) == "comfortable"
+
+    def test_vocabulary_is_frozen(self):
+        """Every reachable output is inside the frozen descriptive vocabulary."""
+        cases = [
+            (None, None, None, None), (1.0, -5.0, 0.0, 0.0),
+            (-4.0, -5.0, 0.0, 0.0), (-4.0, -8.0, 0.0, 0.0),
+            (-8.0, -8.0, 3.0, 0.0), (-8.0, -8.0, 0.0, 0.0),
+            (None, -8.0, None, 0.0), (-8.0, None, 0.0, None),
+        ]
+        for args in cases:
+            assert _derive_reserve_scarcity_state(*args) in self._VALID, args
+
+
+# ---------------------------------------------------------------------------
+# 25. Funding spreads through compute() — synthetic frames, known values
+# ---------------------------------------------------------------------------
+
+class TestFundingSpreadsCompute:
+    def _result(self, frames: dict | None = None) -> dict:
+        return compute(
+            _regime_latest(), _netliq_frame(), _treasury_frames(),
+            _auction_snapshot(), _config(),
+            funding_frames=frames if frames is not None else _funding_frames(),
+        )
+
+    def test_known_spread_levels(self):
+        f = self._result()["funding"]
+        assert f["effr_minus_iorb_bp"] == -4.0
+        assert f["sofr_minus_iorb_bp"] == -5.0
+        assert f["sofr_99pctl_minus_iorb_bp"] == 10.0
+
+    def test_known_20d_deltas(self):
+        f = self._result()["funding"]
+        assert f["effr_minus_iorb_d20_bp"] == 3.0
+        assert f["sofr_minus_iorb_d20_bp"] == 0.0
+        assert f["sofr_99pctl_minus_iorb_d20_bp"] == 0.0
+
+    def test_expanding_percentiles(self):
+        f = self._result()["funding"]
+        assert f["effr_minus_iorb_pctile"] == 1.0
+        assert f["sofr_minus_iorb_pctile"] == 1.0
+        assert f["sofr_99pctl_minus_iorb_pctile"] == 1.0
+
+    def test_scarcity_state_derived(self):
+        """−4bp EFFR + −5bp SOFR (both within 5bp of IORB) → tightening."""
+        f = self._result()["funding"]
+        assert f["reserve_scarcity_state"] == "tightening"
+
+    def test_funding_asof(self):
+        frames = _funding_frames()
+        f = self._result(frames)["funding"]
+        assert f["asof"] == str(frames["iorb"].index[-1].date())
+
+    def test_srf_discount_window_stay_null(self):
+        f = self._result()["funding"]
+        assert f["srf_takeup_bn"] is None
+        assert f["discount_window_primary_credit_bn"] is None
+
+    def test_partial_inputs_fail_open(self):
+        """Missing SOFR → SOFR fields null + gap, other spreads intact."""
+        frames = _funding_frames()
+        frames["sofr"] = None
+        result = self._result(frames)
+        f = result["funding"]
+        assert f["sofr_minus_iorb_bp"] is None
+        assert f["effr_minus_iorb_bp"] == -4.0
+        gaps_text = " ".join(result["gaps"]).lower()
+        assert "sofr.parquet" in gaps_text
+
+    def test_missing_iorb_nulls_everything(self):
+        frames = _funding_frames()
+        frames["iorb"] = None
+        result = self._result(frames)
+        f = result["funding"]
+        assert f["effr_minus_iorb_bp"] is None
+        assert f["sofr_minus_iorb_bp"] is None
+        assert f["reserve_scarcity_state"] == "unknown"
+        gaps_text = " ".join(result["gaps"]).lower()
+        assert "iorb" in gaps_text
+
+    def test_no_validated_word_with_funding(self):
+        result = self._result()
+        assert "validated" not in json.dumps(result, default=str).lower()
+
+
+# ---------------------------------------------------------------------------
+# 26. Components block — per-component stats + netliq sparkline
+# ---------------------------------------------------------------------------
+
+class TestComponentsBlock:
+    def _result(self) -> dict:
+        # n=100 → d20 and d65 both computable (need > 65 rows)
+        return compute(
+            _regime_latest(), _netliq_frame(100), _treasury_frames(),
+            _auction_snapshot(), _config(),
+        )
+
+    def test_component_keys_present(self):
+        comps = self._result()["components"]
+        for comp in ("walcl", "rrp", "tga"):
+            for key in ("level_bn", "d20_bn", "d65_bn", "pctile"):
+                assert key in comps[comp], f"components.{comp} missing {key!r}"
+
+    def test_walcl_known_values(self):
+        """walcl_bn = 7500 + 5i → level 7995, d20 = +100, d65 = +325, pctile 1.0."""
+        w = self._result()["components"]["walcl"]
+        assert w["level_bn"] == 7995.0
+        assert w["d20_bn"] == 100.0
+        assert w["d65_bn"] == 325.0
+        assert w["pctile"] == 1.0
+
+    def test_rrp_known_values(self):
+        """rrp_bn = 200 − 2i → level 2, d20 = −40, d65 = −130, pctile = 1/100."""
+        r = self._result()["components"]["rrp"]
+        assert r["level_bn"] == 2.0
+        assert r["d20_bn"] == -40.0
+        assert r["d65_bn"] == -130.0
+        assert r["pctile"] == 0.01
+
+    def test_tga_known_values(self):
+        """tga_bn = 800 + i → level 899, d20 = +20, d65 = +65."""
+        t = self._result()["components"]["tga"]
+        assert t["level_bn"] == 899.0
+        assert t["d20_bn"] == 20.0
+        assert t["d65_bn"] == 65.0
+
+    def test_sparkline_shape_and_window(self):
+        result = self._result()
+        spark = result["components"]["netliq_sparkline_90d"]
+        assert isinstance(spark, list) and len(spark) > 0
+        for pt in spark:
+            assert set(pt.keys()) == {"d", "v"}
+            assert isinstance(pt["d"], str) and isinstance(pt["v"], float)
+        # last point equals the latest netliq level; window is ≤ 90 calendar days
+        assert spark[-1]["v"] == 6495.0
+        first = pd.Timestamp(spark[0]["d"])
+        last = pd.Timestamp(spark[-1]["d"])
+        assert (last - first).days <= 90
+
+    def test_short_frame_nulls_deltas_keeps_levels(self):
+        """10-row frame → levels + pctile present, d20/d65 null (honest nulls)."""
+        result = compute(
+            _regime_latest(), _netliq_frame(10), _treasury_frames(),
+            _auction_snapshot(), _config(),
+        )
+        w = result["components"]["walcl"]
+        assert w["level_bn"] is not None
+        assert w["d20_bn"] is None and w["d65_bn"] is None
+
+    def test_missing_netliq_fails_open(self):
+        result = compute(
+            _regime_latest(), None, _treasury_frames(),
+            _auction_snapshot(), _config(),
+        )
+        comps = result["components"]
+        assert comps["walcl"]["level_bn"] is None
+        assert comps["netliq_sparkline_90d"] == []
+        gaps_text = " ".join(result["gaps"]).lower()
+        assert "components" in gaps_text or "fed_net_liquidity" in gaps_text
+
+
+# ---------------------------------------------------------------------------
+# 27. Reserve balances (WRESBAL) — consumed when present, fail-open when not
+# ---------------------------------------------------------------------------
+
+class TestReserveBalances:
+    def test_reserves_consumed(self):
+        result = compute(
+            _regime_latest(), _netliq_frame(100), _treasury_frames(),
+            _auction_snapshot(), _config(),
+            reserves_frame=_reserves_frame(),
+        )
+        assert result["fed"]["reserve_balances_bn"] == 3329.0
+        assert "reserves" in result["components"]
+        assert result["components"]["reserves"]["level_bn"] == 3329.0
+
+    def test_reserves_millions_guard(self):
+        """A millions-denominated WRESBAL store (WALCL-style) normalizes to $bn."""
+        frame = _reserves_frame(base=3_300_000.0)
+        result = compute(
+            _regime_latest(), _netliq_frame(), _treasury_frames(),
+            _auction_snapshot(), _config(),
+            reserves_frame=frame,
+        )
+        assert result["fed"]["reserve_balances_bn"] == 3300.029
+
+    def test_reserves_absent_fail_open(self):
+        result = _full_compute()
+        assert result["fed"]["reserve_balances_bn"] is None
+        assert "reserves" not in result["components"]
+        gaps_text = " ".join(result["gaps"]).lower()
+        assert "wresbal" in gaps_text
+
+
+# ---------------------------------------------------------------------------
+# 28. Quality block — stress overlay carried through
+# ---------------------------------------------------------------------------
+
+class TestQualityStressOverlay:
+    _OVERLAY_KEYS = {"hy_oas_pct", "hy_oas_z", "nfci", "nfci_trend", "confirming_stress"}
+
+    def test_dict_overlay_carried_through(self):
+        """The real regime stress_overlay dict must survive into quality.stress_overlay."""
+        regime = _regime_latest()
+        regime["liquidity_quality"]["stress_overlay"] = {
+            "confirming_stress": False,
+            "hy_oas_pct": 2.7,
+            "hy_oas_chg_20d": -0.01,
+            "hy_oas_z": 0.03,
+            "nfci": -0.515,
+            "nfci_trend": "loose",
+        }
+        result = compute(regime, _netliq_frame(), _treasury_frames(),
+                         _auction_snapshot(), _config())
+        so = result["quality"]["stress_overlay"]
+        assert set(so.keys()) == self._OVERLAY_KEYS
+        assert so["hy_oas_pct"] == 2.7
+        assert so["hy_oas_z"] == 0.03
+        assert so["nfci"] == -0.515
+        assert so["nfci_trend"] == "loose"
+        assert so["confirming_stress"] is False
+
+    def test_bool_overlay_tolerated(self):
+        """Synthetic bool stress_overlay → confirming_stress set, detail keys null."""
+        result = _full_compute({"stress_overlay": True})
+        so = result["quality"]["stress_overlay"]
+        assert so["confirming_stress"] is True
+        for k in ("hy_oas_pct", "hy_oas_z", "nfci", "nfci_trend"):
+            assert so[k] is None
+
+    def test_missing_overlay_all_null(self):
+        regime = _regime_latest()
+        del regime["liquidity_quality"]["stress_overlay"]
+        result = compute(regime, _netliq_frame(), _treasury_frames(),
+                         _auction_snapshot(), _config())
+        so = result["quality"]["stress_overlay"]
+        assert all(so[k] is None for k in self._OVERLAY_KEYS)
+
+    def test_walcl_stale_days_in_quality(self):
+        result = _full_compute({"walcl_stale_days": 4})
+        assert result["quality"]["walcl_stale_days"] == 4
+        # fed block copy stays (template renders it today)
+        assert result["fed"]["walcl_stale_days"] == 4
+
+
+# ---------------------------------------------------------------------------
+# 29. phase_status — additive integration-status field
+# ---------------------------------------------------------------------------
+
+class TestPhaseStatus:
+    def test_phase_status_present(self):
+        result = _full_compute()
+        ps = result["phase_status"]
+        assert ps["p3_funding_spreads"] == "integrated"
+        assert ps["p3_srf_discount_window"] == "pending_collection"
+        assert ps["p5_swap_fima"] == "pending"
+
+    def test_schema_still_v1(self):
+        """phase_status is additive — schema string must NOT bump."""
+        result = _full_compute()
+        assert result["schema"] == "neuralweb.liquidity_plumbing.v1"

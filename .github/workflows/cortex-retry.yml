@@ -1,0 +1,166 @@
+name: cortex-retry
+# Overnight cortex re-deliberation — OAuth quota-window retry.
+#
+# WHY: the nightly cortex job (daily.yml) runs at ~09:20 UTC = 17:20 HKT, inside
+# the operator's active Claude-Code working hours.  CLAUDE_CODE_OAUTH_TOKEN shares
+# the operator's 5h rolling session quota, so deliberation 429s every night
+# (run_status.status='degraded', degradation_reason='model_unavailable') and
+# cortex.py's provider ladder + in-process retry (4 attempts, 15/60/180s) cannot
+# escape an already-drained window.  This workflow re-runs the SAME cortex
+# invocation at 19:30 UTC = 03:30 HKT, when the operator is asleep and the OAuth
+# quota window has recovered.
+#
+# GATE: reads site/neuralweb/cortex_memo.json from committed main.  If TODAY's
+# (UTC) memo exists and run_status.status is neither 'degraded' nor 'skipped',
+# the nightly run was healthy — exit 0, no retry.  Retry fires when the memo is
+# degraded/skipped for today, stale (as_of != today: nightly never wrote one), or
+# unreadable (fail-open toward retrying — a wasted retry is cheap, a silent
+# missed night is not).
+#
+# FAIL-OPEN: every retry step uses the daily.yml `set +e` pattern and exits 0.
+# If the retry ALSO 429s, cortex.py writes an honest degraded memo, the health
+# refresh + brief keep their degraded state, and the M3 escalation organ
+# (scripts/check_nw_health_escalation.py, engine job) keeps counting the streak.
+# This workflow never masks a failure and never blocks anything.
+#
+# CORTEX_ANTHROPIC_API_KEY: mapped identically to daily.yml's cortex job.  The
+# secret does not exist yet (operator/billing decision); absent = transparent
+# fallback to the shared ANTHROPIC_API_KEY — nothing breaks.
+on:
+  schedule:
+    - cron: "30 19 * * *"   # 19:30 UTC = 03:30 HKT — operator asleep, OAuth 5h window recovered
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Own lane (mirrors daily.yml's own-lane rationale): the retry must never
+  # queue-cancel or be starved by the pipeline lanes.  Push race-safety against
+  # any concurrent workflow comes from the rebase-retry loop below, same as
+  # every push step in daily.yml.
+  group: cortex-retry
+  cancel-in-progress: false
+
+jobs:
+  cortex-retry:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30
+    env:
+      # SAME env mapping as daily.yml's cortex job (provider ladder inputs).
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Dedicated metered API key for the cortex job — decouples deliberation from
+      # the shared OAuth session quota (root cause of 429 rate_limit_error runs).
+      # OPERATOR ACTION: create a GitHub secret CORTEX_ANTHROPIC_API_KEY with a
+      # metered Anthropic API key.  Absent/empty = transparent fallback to the
+      # shared ANTHROPIC_API_KEY above; nothing breaks if the secret is not set.
+      CORTEX_ANTHROPIC_API_KEY: ${{ secrets.CORTEX_ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: gate — retry only when today's memo is degraded/skipped/absent
+        id: gate
+        # stdlib-only (runs before the venv/pip steps so a healthy night costs
+        # nothing).  Writes retry=yes|no to GITHUB_OUTPUT; never fails the job.
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+
+          today = datetime.now(timezone.utc).date().isoformat()
+          retry, reason = "no", ""
+          try:
+              memo = json.load(open("site/neuralweb/cortex_memo.json", encoding="utf-8"))
+              status = str((memo.get("run_status") or {}).get("status", "")).lower()
+              memo_date = str(memo.get("as_of", ""))[:10]
+              if memo_date == today and status not in ("degraded", "skipped"):
+                  reason = f"memo healthy, no retry (status={status}, as_of={memo_date})"
+              elif memo_date != today:
+                  retry = "yes"
+                  reason = f"memo stale (as_of={memo_date} != {today}) — nightly cortex never completed; retrying"
+              else:
+                  retry = "yes"
+                  reason = f"memo status={status} for {today} — retrying in recovered quota window"
+          except Exception as exc:  # noqa: BLE001 — fail-open toward retrying
+              retry = "yes"
+              reason = f"memo unreadable ({exc}) — retrying fail-open"
+          print(reason)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"retry={retry}\n")
+          PY
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        if: steps.gate.outputs.retry == 'yes'
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - name: install requirements
+        if: steps.gate.outputs.retry == 'yes'
+        run: pip install -r requirements.txt
+      - name: cortex deliberation (Opus-class tool loop — attention queue, memo, hypothesis metabolism)
+        if: steps.gate.outputs.retry == 'yes'
+        # EXACT invocation from daily.yml's cortex job.  A second 429 is fine:
+        # cortex.py writes an honest degraded memo and we still exit 0.
+        run: |
+          set +e
+          python -m engine.neuralweb.cortex > /tmp/cortex.log 2>&1; rc=$?
+          cat /tmp/cortex.log
+          if [ "$rc" -ne 0 ]; then echo "::warning title=cortex-retry::rc=$rc (non-fatal — last committed outputs remain valid)"; fi
+          exit 0
+      - name: refresh neuralweb health — cortex section (PR-C)
+        if: steps.gate.outputs.retry == 'yes'
+        run: |
+          set +e
+          python -m scripts.build_neuralweb_health --refresh-cortex > /tmp/nw_health_refresh.log 2>&1; rc=$?
+          cat /tmp/nw_health_refresh.log
+          if [ "$rc" -ne 0 ]; then echo "::warning title=nw_health_refresh::rc=$rc (non-fatal — keeping previous health.json)"; fi
+          exit 0
+      - name: build neuralweb daily brief — finalize (PR-D, cortex phase)
+        if: steps.gate.outputs.retry == 'yes'
+        # Same rebuild as daily.yml's cortex job: phase='final' from post-refresh
+        # health.json, rewrite both copies, upsert history row keyed by as_of.
+        run: |
+          set +e
+          python -m scripts.build_neuralweb_brief --finalize > /tmp/nw_brief_finalize.log 2>&1; rc=$?
+          cat /tmp/nw_brief_finalize.log
+          if [ "$rc" -ne 0 ]; then echo "::warning title=nw_brief_finalize::rc=$rc (non-fatal — keeping previous daily_brief.json)"; fi
+          exit 0
+      - name: commit cortex retry outputs
+        if: steps.gate.outputs.retry == 'yes'
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # SAME file set as daily.yml 'commit cortex outputs' (STAGING LAW).
+          git add data/reflexes/cortex_attention/ 2>/dev/null || true
+          git add data/reflexes/factor_attention/grades.jsonl 2>/dev/null || true
+          git add data/reflexes/factor_attention/probation.json 2>/dev/null || true
+          git add data/neuralweb/cortex/ 2>/dev/null || true
+          git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
+          git add data/neuralweb/governance.jsonl 2>/dev/null || true
+          git add data/trial_ledger.jsonl 2>/dev/null || true
+          git add site/neuralweb/ 2>/dev/null || true
+          git add data/neuralweb/health.json 2>/dev/null || true
+          git add site/neuralwebdata/health.json 2>/dev/null || true
+          git add data/neuralweb/daily_brief.json 2>/dev/null || true
+          git add site/neuralwebdata/daily_brief.json 2>/dev/null || true
+          git add data/neuralweb/daily_brief_history.jsonl 2>/dev/null || true
+          git add data/neuralweb/context_risk.json 2>/dev/null || true
+          git add site/neuralwebdata/context_risk.json 2>/dev/null || true
+          git add data/neuralweb/context_candidates.jsonl 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no cortex retry output changes"; exit 0; fi
+          git commit -m "cortex-retry: overnight re-deliberation (quota-window retry)"
+          # Retry-rebase push loop (same pattern as daily.yml cortex job)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash -X theirs origin main && git push; then
+              echo "pushed cortex retry outputs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "cortex retry push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push cortex retry after 5 attempts (non-fatal — downstream reads last committed)"
+          exit 0

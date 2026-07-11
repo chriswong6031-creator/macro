@@ -188,6 +188,31 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 .kf-hl { font-size:11px; color:var(--muted); margin-top:5px; }
 .kf-hl-val { color:var(--link); font-weight:600; cursor:help; }
 .kf-hl .kf-null { font-style:italic; cursor:help; }
+.kf-unit-chip { display:inline-block; font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; margin-left:6px; vertical-align:middle; background:color-mix(in srgb,var(--warn) 14%,var(--panel2)); color:var(--warn); cursor:help; line-height:1.5; }
+.kf-spark { display:block; margin-top:6px; }
+.kf-meter { height:4px; border-radius:2px; background:var(--panel); overflow:hidden; margin-top:7px; }
+.kf-meter-fill { height:100%; background:color-mix(in srgb,var(--link) 55%,transparent); }
+.kf-accrue-strip { background:var(--panel2); border:1px dashed var(--line); border-radius:10px; padding:9px 14px; font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.7; }
+.kf-progress { margin-top:12px; font-size:11px; color:var(--muted); line-height:1.7; border-top:1px solid var(--line); padding-top:9px; }
+.kf-fresh-chip { font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:5px; background:var(--panel2); color:var(--muted); }
+.kf-fresh-chip.kf-fresh-stale { background:color-mix(in srgb,var(--warn) 12%,var(--panel2)); color:var(--warn); }
+
+/* ── Liquidity plumbing compact cells ── */
+.lq-cells { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+.lq-cell { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+.lq-cell-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:3px; }
+.lq-cell-val { font-size:15px; font-weight:800; font-variant-numeric:tabular-nums; }
+.lq-cell-sub { font-size:10.5px; color:var(--muted); margin-top:2px; }
+.lq-sec-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:2px 0 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.lq-state-chip { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:5px; }
+
+/* ── Market plane hero strip ── */
+.mp-strip { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
+.mp-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:20px; font-size:11.5px; font-weight:600; background:var(--panel2); border:1px solid var(--line); color:var(--text); }
+.mp-pill { font-weight:800; font-size:12.5px; }
+.mp-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex:none; }
+.mp-sub { font-size:10px; color:var(--muted); font-weight:400; }
+.mp-stale .mp-chip { opacity:.45; filter:grayscale(.7); }
 
 /* ── Plain-English explainer box ── */
 .plain-eng { background:color-mix(in srgb,var(--link) 8%,var(--panel2)); border-left:3px solid var(--link); border-radius:0 9px 9px 0; padding:12px 16px; margin:14px 0; font-size:13.5px; line-height:1.65; }
@@ -229,6 +254,25 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 /* ── Empty / loading states ── */
 .cm-empty { color:var(--muted); font-style:italic; padding:20px 0; text-align:center; }
 .cm-loading { display:none; color:var(--muted); font-size:13px; padding:10px 0; }
+
+/* ── NW read layer: Web Health / Disagreements / Constitution ledger ── */
+.nwh-status-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:800; letter-spacing:.05em; border:1px solid var(--line); }
+.nwh-counts { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 12px; }
+.nwh-count { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:11px; color:var(--muted); }
+.nwh-count b { display:block; font-size:16px; font-weight:800; line-height:1.2; }
+.nwh-item { display:flex; align-items:baseline; gap:8px; padding:5px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent); font-size:13px; }
+.nwh-item:last-child { border-bottom:none; }
+.nwh-dot { display:inline-block; width:10px; height:10px; border-radius:50%; flex:none; }
+.contra-row { border-left:3px solid var(--muted); background:var(--panel2); border-radius:0 8px 8px 0; padding:9px 12px; margin:8px 0; font-size:13px; }
+.contra-row.contra-tension { border-left-color:var(--warn); }
+.contra-sev { display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; letter-spacing:.05em; margin-right:7px; background:var(--panel); color:var(--muted); border:1px solid var(--line); }
+.contra-sev-tension { background:color-mix(in srgb,var(--warn) 16%,var(--panel2)); color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,transparent); }
+.gov-row { display:flex; align-items:baseline; gap:9px; padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent); font-size:13px; flex-wrap:wrap; }
+.gov-row:last-child { border-bottom:none; }
+.gov-date { font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; flex:none; }
+.gov-type { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; font-weight:700; background:color-mix(in srgb,var(--link) 12%,var(--panel2)); color:var(--link); padding:2px 7px; border-radius:5px; flex:none; }
+.gov-target { font-weight:600; }
+.gov-note { flex-basis:100%; font-size:12px; color:var(--muted); line-height:1.5; }
 
 /* ── W1 Role badges ── */
 .role-badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:10.5px; font-weight:700; letter-spacing:.04em; cursor:default; }
@@ -368,6 +412,10 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       <span id="chip_indep_plain_text"></span>
       <span id="chip_indep_same_bet" style="display:none"></span>
     </div>
+    <!-- Market Plane strip: always-on US regime/vol/liquidity context from
+         neuralwebdata/market_plane.json (display tier, is_context_only=true).
+         Fail-open: fetch 404 → strip stays hidden. -->
+    <div class="mp-strip" id="mp_strip" style="display:none"></div>
   </div>
 
   <!-- 2. SYNAPSE MAP -->
@@ -408,6 +456,60 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       <span class="gl-line" style="background:rgba(239,68,68,.75);height:2.5px;border-radius:1px;border-top:2px dashed rgba(239,68,68,.9)"></span> <span class="l-en">Contradicts (graded)</span><span class="l-zh">矛盾（评分）</span> &nbsp;
       <span class="gl-line" style="background:rgba(100,130,180,.45);height:1px;border-radius:1px"></span> <span class="l-en">Structure (display-only)</span><span class="l-zh">结构（展示用）</span> &nbsp;
       <span class="gl-dot" style="background:rgba(91,157,255,.5);width:7px;height:7px"></span> <span class="l-en">Moving light = signal transmission, refreshed nightly</span><span class="l-zh">移动光点 = 信号传输（每晚刷新）</span>
+    </div>
+  </div>
+
+  <!-- 2b. WEB HEALTH (NW read layer) -->
+  <div class="panel section-lazy" id="cm_health_section">
+    <div class="panel-head">
+      <h1>{{ t('Web Health — is the brain fresh?', '网络健康 — 大脑是否新鲜？') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('The web takes its own pulse every night. Every lobe — each data organ the brain reads from — has its own freshness deadline (SLA). This panel shows which lobes are on time, which are running late, and whether the overnight deliberation completed cleanly. Self-diagnostic only: nothing here originates a signal or moves any score.',
+      '网络每晚为自己把脉。每个脑叶——大脑读取的每个数据器官——都有自己的新鲜度时限（SLA）。本面板显示哪些脑叶按时更新、哪些已经迟到、以及昨夜审议是否顺利完成。仅为自检信息：此处任何内容都不产生信号、不影响任何评分。') }}
+    </div>
+    <div class="cm-loading" id="health_loading">{{ t('Loading web health…', '加载网络健康中…') }}</div>
+    <div id="cm_health_content" style="display:none">
+      <div id="health_status_row" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div class="nwh-counts" id="health_counts_row"></div>
+      <div class="tr-section-label">{{ t('Needs attention', '需要关注') }}</div>
+      <div id="health_attention" style="margin-bottom:10px"></div>
+      <div id="health_missing_row" style="display:none;font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+      <div id="health_cortex_row" style="font-size:13px;margin-bottom:10px"></div>
+      <div id="health_history_row" style="display:none;font-size:12px;color:var(--muted)"></div>
+    </div>
+    <div id="health_absent" style="display:none">
+      <p class="cm-empty">
+        <span class="l-en">Web health data not yet available — accruing from the next nightly build.</span>
+        <span class="l-zh">网络健康数据尚未生成，将于下次每日构建后可用。</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- 2c. DISAGREEMENTS (NW read layer) -->
+  <div class="panel section-lazy" id="cm_contra_section">
+    <div class="panel-head">
+      <h1>{{ t('What disagrees right now', '当前的分歧') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('When two engines read the same tape differently, the web writes the disagreement down instead of papering over it. Each record below is a typed disagreement — graded only as note or tension, nothing stronger — kept as context. Neither side cancels the other, and no disagreement changes any rank or score.',
+      '当两个引擎对同一份行情读出不同结论时，网络会把分歧如实记下，而不是粉饰太平。下方每条都是类型化分歧记录——只分"备注"与"张力"两档，仅作背景保留。双方互不否定，任何分歧都不会改变排名或评分。') }}
+    </div>
+    <div class="cm-loading" id="contra_loading">{{ t('Loading disagreements…', '加载分歧记录中…') }}</div>
+    <div id="cm_contra_content" style="display:none">
+      <div id="contra_summary" style="font-size:13px;margin-bottom:6px"></div>
+      <div id="contra_list"></div>
+      <div id="contra_gaps" style="display:none;margin-top:12px;font-size:11.5px;color:var(--muted)"></div>
+    </div>
+    <div id="contra_absent" style="display:none">
+      <p class="cm-empty">
+        <span class="l-en">Disagreement records not yet available.</span>
+        <span class="l-zh">分歧记录尚未生成。</span>
+      </p>
     </div>
   </div>
 
@@ -474,31 +576,6 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         <span class="cm-quick-chip" data-t="AMZN">AMZN</span>
         <span class="cm-quick-chip" data-t="GOOGL">GOOGL</span>
       </div>
-    </div>
-  </div>
-
-  <!-- 5. CORTEX MEMO -->
-  <div class="panel section-lazy" id="cm_memo_section">
-    <div class="panel-head">
-      <h1>{{ t('Cortex Memo — the overnight deliberation', '皮层备忘录 — 隔夜审议') }}</h1>
-      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
-    </div>
-    <div class="plain-eng">
-      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
-      {{ t('Each node is an engine, sector, regime, thesis, or episode. Blue edges confirm (signals firing together); red edges contradict (signals pointing opposite directions). Edges pulse when the graph was refreshed in the last 24 hours.',
-      '每个节点代表引擎、板块、周期、论点或事件。蓝色边确认（信号共同触发）；红色边矛盾（信号方向相反）。当图表在过去24小时内刷新时，边会闪烁。') }}
-    </div>
-    <div class="cm-loading" id="graph_loading">{{ t('Loading graph…', '加载图中…') }}</div>
-    <canvas id="graph_canvas" aria-label="{{ t('Confluence graph', '汇聚图') | striptags }}"></canvas>
-    <div id="graph_subset_note" class="graph-subset-note" style="font-size:0.82em;color:var(--muted);margin:0.35em 0 0.1em"></div>
-    <div class="graph-legend">
-      <span class="gl-dot" style="background:var(--link)"></span> {{ t('Engine / Sector node', '引擎/板块节点') }} &nbsp;
-      <span class="gl-dot" style="background:color-mix(in srgb,var(--link) 60%,transparent);border:1px solid var(--link)"></span> {{ t('Regime / Thesis', '周期/论点') }} &nbsp;
-      <span class="gl-dot" style="background:rgba(167,139,250,0.65);border:1px solid #a78bfa"></span> {{ t('Macro node', '宏观节点') }} &nbsp;
-      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--up) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Confirms edge', '确认边') }} &nbsp;
-      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--down) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Contradicts edge', '矛盾边') }} &nbsp;
-      <span style="width:28px;height:2px;background:#d97706;display:inline-block;vertical-align:middle;border-top:2px dashed #d97706;height:0"></span> {{ t('Headwind', '逆风') }} &nbsp;
-      <span style="width:28px;height:0;border-top:2px dashed #0d9488;display:inline-block;vertical-align:middle"></span> {{ t('Tailwind', '顺风') }}
     </div>
   </div>
 
@@ -573,6 +650,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
   <div class="panel section-lazy" id="cm_kernel_section">
     <div class="panel-head">
       <h1>{{ t('Kernel Family Estimates', '核心族估计') }}</h1>
+      <span class="kf-fresh-chip" id="kf_freshness" style="display:none"></span>
     </div>
     <div class="plain-eng">
       <strong>{{ t('In plain English:', '用白话说：') }}</strong>
@@ -583,6 +661,10 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     <div class="kf-grid" id="cm_kf_grid">
       <p class="cm-empty">{{ t('Kernel data loading…', '核心数据加载中…') }}</p>
     </div>
+    <!-- Families below the n_eff decision floor collapse into one compact strip -->
+    <div class="kf-accrue-strip" id="kf_accruing" style="display:none"></div>
+    <!-- Progress-to-decision strip: per ARMED family, n_eff vs decision floor -->
+    <div class="kf-progress" id="kf_progress" style="display:none"></div>
   </div>
 
   <!-- 8. LIQUIDITY PLUMBING LOBE -->
@@ -605,16 +687,16 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       <!-- Quantity / Quality / RRP / TGA mini-grid -->
       <div id="liqplumb_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:14px"></div>
 
-      <!-- Pending note (Phase 3/5) -->
-      <div style="font-size:11.5px;color:var(--muted);background:color-mix(in srgb,var(--warn) 8%,var(--panel2));
-                  border-left:3px solid color-mix(in srgb,var(--warn) 35%,transparent);
-                  border-radius:2px 8px 8px 2px;padding:7px 11px;line-height:1.55;">
-        <span class="l-en"><strong>Pending (Phase 3/5):</strong> funding-scarcity spreads (EFFR−IORB, SOFR−IORB, SRF/discount-window) and foreign-dollar integration (H.4.1 swap lines, FIMA repo) are not yet collected — those blocks are null and will be added in later phases.</span>
-        <span class="l-zh"><strong>待接入（第 3/5 阶段）：</strong>融资稀缺利差（EFFR−IORB、SOFR−IORB、SRF/贴现窗口）及外元整合（H.4.1 互换额度、FIMA 回购）尚未采集——相关块为空，将在后续阶段补充。</span>
-      </div>
+      <!-- Funding stress row: EFFR/SOFR/SOFR-99th vs IORB + reserve scarcity chip -->
+      <div id="liqplumb_funding" style="display:none;margin-bottom:14px"></div>
 
-      <!-- Gaps list (shown only if non-empty) -->
-      <div id="liqplumb_gaps" style="display:none;margin-top:10px;font-size:11px;color:var(--muted)"></div>
+      <!-- Components strip: WALCL / RRP / TGA (+ Reserves when collected) -->
+      <div id="liqplumb_components" style="display:none;margin-bottom:14px"></div>
+
+      <!-- Pending-collection note, built dynamically from gaps[] -->
+      <div id="liqplumb_pending" style="display:none;font-size:11.5px;color:var(--muted);background:color-mix(in srgb,var(--warn) 8%,var(--panel2));
+                  border-left:3px solid color-mix(in srgb,var(--warn) 35%,transparent);
+                  border-radius:2px 8px 8px 2px;padding:7px 11px;line-height:1.55;"></div>
 
       <!-- asof footer -->
       <div id="liqplumb_asof" style="margin-top:10px;font-size:11px;color:var(--muted)"></div>
@@ -625,6 +707,20 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         <span class="l-zh">流动性管道数据尚未生成，将于下次每日构建后可用。</span>
       </p>
     </div>
+  </div>
+
+  <!-- 8b. CONSTITUTION LEDGER (NW read layer) -->
+  <div class="panel section-lazy" id="cm_gov_section" style="display:none">
+    <div class="panel-head">
+      <h1>{{ t('Constitution ledger — recent governance events', '宪章台账 — 近期治理事件') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('This is the append-only ledger of the web\'s constitution — every authority grant, lapse, and gate review lands here with a timestamp. The web cannot change its own rules silently: if a lobe ever earns or loses authority, the paper trail is on this list.',
+      '这是网络宪章的只追加台账——每一次权限授予、失效与门控审查都在此留档并带时间戳。网络不能悄悄改写自己的规则：任何脑叶获得或失去权限，都能在这份清单上查到全程记录。') }}
+    </div>
+    <div id="gov_list"></div>
   </div>
 
   <!-- 9. POLICY-PUT DOCTRINE -->
@@ -718,6 +814,10 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     loadMemo();
     loadKernelFamilies();
     loadLiquidityPlumbing();
+    loadMarketPlane();
+    loadWebHealth();
+    loadContradictions();
+    loadGovernanceLedger();
     setupQuickTries();
   }
 
@@ -1163,8 +1263,15 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         document.getElementById('graph_loading').style.display = 'none';
         initGraph(d);
       })
-      .catch(function () {
-        document.getElementById('graph_loading').textContent = 'Synapse map unavailable.';
+      .catch(function (err) {
+        // Re-show the loader: initGraph can throw AFTER the loader was hidden,
+        // which used to leave a blank canvas with no failure indication.
+        var gl = document.getElementById('graph_loading');
+        gl.style.display = 'block';
+        gl.textContent = (document.documentElement.getAttribute('data-lang') === 'zh')
+          ? '突触地图渲染失败 — ' + (err && err.message ? err.message : 'unknown error')
+          : 'Synapse map failed to render — ' + (err && err.message ? err.message : 'unknown error');
+        if (window.console && console.error) console.error('synapse map:', err);
       });
   }
 
@@ -2501,30 +2608,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         if (e.edge_type !== 'structure') return;
         var pa = positions[e.src], pb = positions[e.dst];
         if (!pa || !pb) return;
-        var isPulse = (now - asofTs) < PULSE_WINDOW_MS;
-        var isCon = e.edge_type === 'confirms';
-        var isContra = e.edge_type === 'contradicts';
-        var isFeeds = e.edge_type === 'feeds';
-        var isHeadwind = e.edge_type === 'headwind';
-        var isTailwind = e.edge_type === 'tailwind';
-        if (isFeeds) return; // skip feeds edges to reduce clutter
-
-        // headwind: muted amber/orange dashed; tailwind: muted teal dashed
-        var COL_HEADWIND = '#d97706'; // amber-600, muted
-        var COL_TAILWIND = '#0d9488'; // teal-600, muted
-        var baseAlpha = isCon ? 0.7 : isContra ? 0.8 : isHeadwind ? 0.55 : isTailwind ? 0.55 : 0.25;
-        var col = isCon ? COL_UP : isContra ? COL_DOWN : isHeadwind ? COL_HEADWIND : isTailwind ? COL_TAILWIND : COL_MUTED;
-        if (isPulse && (isCon || isContra)) {
-          var pulse = 0.5 + 0.5 * Math.sin(phase + (isCon ? 0 : Math.PI));
-          ctx.globalAlpha = baseAlpha * (0.6 + 0.4 * pulse);
-          ctx.lineWidth = isCon ? 2.5 : 2;
-        } else {
-          ctx.globalAlpha = isContra ? 0.5 : (isHeadwind || isTailwind) ? 0.5 : 0.4;
-          ctx.lineWidth = (isHeadwind || isTailwind) ? 1.5 : 1.5;
-        }
-        ctx.strokeStyle = col;
-        ctx.setLineDash(isContra ? [5, 4] : (isHeadwind ? [3, 4] : (isTailwind ? [6, 3] : [])));
-        if (!pa || !pb || e._cx == null) return;
+        if (e._cx == null) return;
         // Color by child node's type (src is typically the "child")
         var childNode = allNodes.filter(function(n){ return n.id === e.src; })[0];
         var col = childNode ? nodeDisplayColor(childNode) : '#5b7090';
@@ -2936,7 +3020,14 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       var tapeAltsEl = document.getElementById('tr_tape_alts');
 
       if (tape.available && primary.direction) {
-        if (tapePrimaryEl) tapePrimaryEl.textContent = escB(primary.direction);
+        if (tapePrimaryEl) {
+          var covTxt = (typeof primary.coverage === 'number')
+            ? ' <span style="font-size:11px;color:var(--muted);font-weight:400">(' + Math.round(primary.coverage * 100) + '% <span class="l-en">coverage</span><span class="l-zh">覆盖</span>)</span>' : '';
+          tapePrimaryEl.innerHTML =
+            '<span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">'
+            + '<span class="l-en">Primary driver</span><span class="l-zh">主要驱动</span></span> '
+            + escB(primary.direction) + covTxt;
+        }
         var legs = primary.evidence_legs || [];
         if (tapeLegsEl && legs.length) {
           tapeLegsEl.innerHTML = '<span class="l-en">Evidence: </span><span class="l-zh">证据：</span>'
@@ -2944,8 +3035,10 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         }
         var alts = tape.alternates || [];
         if (tapeAltsEl && alts.length) {
-          tapeAltsEl.innerHTML = '<span class="l-en">Alternates: </span><span class="l-zh">备选：</span>'
-            + escB(alts.join(', '));
+          tapeAltsEl.innerHTML = '<span class="l-en">Other families considered: </span><span class="l-zh">其他考虑过的驱动：</span>'
+            + escB(alts.join(', '))
+            + ' <span style="font-size:11px;color:var(--muted)"><span class="l-en">— attribution picks the single best-covered family; these were weaker, not absent</span>'
+            + '<span class="l-zh">— 归因只选覆盖度最高的一族；其余较弱，并非缺席</span></span>';
         }
         if (tapeEl) tapeEl.style.display = '';
       } else {
@@ -3285,6 +3378,17 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         + '<span class="l-en">its reasoning engine failed before deliberation started. This placeholder will be replaced after the next successful overnight run.</span>'
         + '<span class="l-zh">推理引擎在审议开始前失败。下次成功的隔夜运行后将替换此占位符。</span>'
         + '</div>';
+      // Surface WHY it failed — degradation_reason + last provider attempt are
+      // already in run_status; hiding them made every outage look identical.
+      var frs = memo.run_status || {};
+      if (frs.degradation_reason) {
+        var lastAtt = (frs.provider_attempts && frs.provider_attempts.length)
+          ? frs.provider_attempts[frs.provider_attempts.length - 1] : null;
+        html += '<p style="font-size:12px;color:var(--muted);margin:4px 0">'
+          + '<span class="l-en">Reason:</span><span class="l-zh">原因：</span> ' + esc(frs.degradation_reason)
+          + (lastAtt ? ' (' + esc(lastAtt.provider || '') + '/' + esc(lastAtt.model || '') + ' → ' + esc(lastAtt.error_type || 'error') + ')' : '')
+          + '</p>';
+      }
       if (memo.as_of) html += '<p style="font-size:12px;color:var(--muted);margin:4px 0">as_of: ' + esc(memo.as_of) + '</p>';
       if (prob.tier) html += '<p style="font-size:12px;color:var(--muted);margin:4px 0"><span class="l-en">Probation tier:</span><span class="l-zh">试用层级：</span> ' + esc(prob.tier) + '</p>';
       html += '<details class="memo-raw"><summary><span class="l-en">Raw memo (for operators)</span><span class="l-zh">原始备忘录（供运营人员查看）</span></summary>'
@@ -3552,14 +3656,43 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         var kf = results[0];
         var hl = results[1];
         var hlFamilies = (hl && hl.families) ? hl.families : {};
-        renderKernelFamilies(kf.families || kf, hlFamilies);
+        renderKernelFamilies(kf.families || kf, hlFamilies, kf.produced_at || null);
       })
       .catch(function() {
         document.getElementById('kf_loading').textContent = 'Kernel data unavailable.';
       });
   }
 
-  function _formatHalfLife(hlEntry) {
+  // Tiny inline SVG sparkline of the horizon curve (x = horizon, y = IC).
+  // Per-point <title> gives a native hover tooltip: "h=21d: +0.90% (n=915)".
+  function _kfSpark(detail, horizons) {
+    if (!detail || !horizons || horizons.length < 2) return '';
+    var w = 150, h = 34, pad = 5;
+    var ics = [0];
+    horizons.forEach(function (k) { if (detail[k] && detail[k].ic != null) ics.push(detail[k].ic); });
+    var min = Math.min.apply(null, ics), max = Math.max.apply(null, ics);
+    if (max === min) max = min + 1e-9;
+    var x = function (i) { return pad + i * (w - 2 * pad) / (horizons.length - 1); };
+    var y = function (v) { return h - pad - (v - min) * (h - 2 * pad) / (max - min); };
+    var pts = [], circles = '';
+    horizons.forEach(function (k, i) {
+      var dd = detail[k];
+      if (!dd || dd.ic == null) return;
+      pts.push(x(i).toFixed(1) + ',' + y(dd.ic).toFixed(1));
+      var tip = 'h=' + k + 'd: ' + (dd.ic > 0 ? '+' : '') + (dd.ic * 100).toFixed(2) + '%'
+        + (dd.n_eff != null ? ' (n=' + dd.n_eff + ')' : '');
+      circles += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(dd.ic).toFixed(1)
+        + '" r="2.6" fill="var(--link)"><title>' + esc(tip) + '</title></circle>';
+    });
+    if (pts.length < 2) return '';
+    return '<svg class="kf-spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" role="img">'
+      + '<line x1="' + pad + '" y1="' + y(0).toFixed(1) + '" x2="' + (w - pad) + '" y2="' + y(0).toFixed(1)
+      + '" stroke="var(--line)" stroke-width="1" stroke-dasharray="3,3"/>'
+      + '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--link)" stroke-width="1.5"/>'
+      + circles + '</svg>';
+  }
+
+  function _formatHalfLife(hlEntry, topHorizon) {
     if (!hlEntry) {
       return {
         en: '<span class="kf-null" data-tip-en="Half-life data not available for this family." data-tip-zh="该系列半衰期数据暂不可用。">H½ —</span>',
@@ -3572,40 +3705,54 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     var unit = hlEntry.outcome_unit || '';
     var kind = hlEntry.decay_kind;
     var nEff = hlEntry.n_eff;
+    var trend = hlEntry.trend;
+    var icRatio = hlEntry.ic_ratio_long_short;
 
-    var magCaveat   = (unit==='magnitude') ? ' ⚠ favorable-excursion magnitude, not signed edge' : '';
-    var magCaveatZh = (unit==='magnitude') ? ' ⚠ 有利偏移幅度，非有符号预测优势' : '';
+    var magCaveat   = (unit==='magnitude'||unit==='magnitude_nonneg') ? ' ⚠ favorable-excursion magnitude, not signed edge' : '';
+    var magCaveatZh = (unit==='magnitude'||unit==='magnitude_nonneg') ? ' ⚠ 有利偏移幅度，非有符号预测优势' : '';
+
+    // Measured non-decaying trend: the informative statement, not a dead "unmeasured".
+    if (hl == null && trend === 'non_decaying') {
+      var ratioTxt   = (icRatio != null) ? ' — ×' + Number(icRatio).toFixed(1) + (topHorizon ? ' at ' + topHorizon + 'd' : '') : '';
+      var ratioTxtZh = (icRatio != null) ? ' — ' + (topHorizon ? topHorizon + '日达' : '') + '×' + Number(icRatio).toFixed(1) : '';
+      var tipTr = 'Half-life is undefined on a rising curve: the IC grows with holding horizon'
+        + (icRatio != null ? ' (longest/shortest horizon IC ratio ×' + Number(icRatio).toFixed(2) + ')' : '') + '.'
+        + (hlEntry.fit_direction ? ' Fit direction: ' + hlEntry.fit_direction + '.' : '') + magCaveat;
+      var tipTrZh = '上升曲线无法定义半衰期：IC随持有期增长'
+        + (icRatio != null ? '（最长/最短周期IC比 ×' + Number(icRatio).toFixed(2) + '）' : '') + '。' + magCaveatZh;
+      return {
+        en: '<span class="kf-hl-val" data-tip-en="'+tipTr.replace(/"/g,'&quot;')+'" data-tip-zh="'+tipTrZh.replace(/"/g,'&quot;')+'">edge grows with horizon'+ratioTxt+'</span>',
+        zh: '<span class="kf-hl-val">边际随持有期增长'+ratioTxtZh+'</span>'
+      };
+    }
 
     if (hl == null) {
       var tipEn, tipZh, labelEn, labelZh;
-      if (reason==='edge_non_decaying') {
-        labelEn='unmeasured'; labelZh='未测量';
-        tipEn='Edge does not decay over holding horizons (monotone-increase gate failed). Half-life is not defined on a rising curve.'+magCaveat;
-        tipZh='边际在持有期内不衰减（单调递增门控未通过）。上升曲线无法定义半衰期。'+magCaveatZh;
-      } else if (reason && reason.indexOf('no graded outcomes')!==-1) {
-        labelEn='unmeasured'; labelZh='未测量';
+      if (reason && reason.indexOf('no graded outcomes')!==-1) {
+        labelEn='no graded outcomes yet'; labelZh='尚无已评分结果';
         tipEn='No graded outcomes yet for this family — half-life cannot be estimated.'+magCaveat;
         tipZh='该系列尚无已评分结果，无法估算半衰期。'+magCaveatZh;
       } else if (reason && reason.indexOf('admissible horizon')!==-1) {
-        labelEn='unmeasured'; labelZh='未测量';
+        labelEn='needs ≥3 horizons'; labelZh='需≥3个周期';
         tipEn='Insufficient graded horizons for fitting (need ≥3). '+esc(reason)+magCaveat;
         tipZh='可用的已评分时间跨度不足（需≥3个）。'+esc(reason)+magCaveatZh;
       } else if (reason && reason.indexOf('n_eff')!==-1) {
-        labelEn='unmeasured'; labelZh='未测量';
+        labelEn='n below floor ('+nEff+'&lt;200)'; labelZh='样本低于门槛（'+nEff+'&lt;200）';
         tipEn='Insufficient event count (n='+nEff+' < floor=200). '+magCaveat;
         tipZh='事件数量不足（n='+nEff+' < 门槛=200）。'+magCaveatZh;
       } else if (reason==='unstable_ci') {
-        labelEn='unmeasured'; labelZh='未测量';
+        labelEn='unstable fit'; labelZh='拟合不稳定';
         tipEn='Bootstrap CI is unstable. Per prereg: unstable fit = unmeasured.'+magCaveat;
         tipZh='自举置信区间不稳定。按预注册规则：不稳定拟合=未测量。'+magCaveatZh;
       } else {
-        labelEn='unmeasured'; labelZh='未测量';
+        labelEn=reason ? esc(reason.length>32 ? reason.slice(0,32)+'…' : reason) : 'unmeasured';
+        labelZh=reason ? esc(reason.length>32 ? reason.slice(0,32)+'…' : reason) : '未测量';
         tipEn='Not measured: '+esc(reason||'unknown')+'.'+magCaveat;
         tipZh='未测量：'+esc(reason||'未知')+'。'+magCaveatZh;
       }
       return {
-        en: '<span class="kf-null" data-tip-en="'+tipEn.replace(/"/g,'&quot;')+'" data-tip-zh="'+tipZh.replace(/"/g,'&quot;')+'">H½ '+labelEn+'</span>',
-        zh: '<span class="kf-null">H½ '+labelZh+'</span>'
+        en: '<span class="kf-null" data-tip-en="'+tipEn.replace(/"/g,'&quot;')+'" data-tip-zh="'+tipZh.replace(/"/g,'&quot;')+'">H½ — '+labelEn+'</span>',
+        zh: '<span class="kf-null">H½ — '+labelZh+'</span>'
       };
     }
 
@@ -3623,19 +3770,55 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     };
   }
 
-  function renderKernelFamilies(families, hlFamilies) {
+  function renderKernelFamilies(families, hlFamilies, producedAt) {
     var grid = document.getElementById('cm_kf_grid');
     var FAMILY_LABELS = {
       'altdata':'Altdata','radar':'Divergence Radar','us_board':'US Board',
       'track_record':'Track Record','policy':'Policy','desk:ai_desk':'AI Desk'
     };
+    // Decision constants from kernel_decisions.json (decision_rule.n_eff_floor,
+    // next_batch_due) — that artifact is not mirrored to site/, so baked here.
+    var N_EFF_FLOOR = 25;
+    var FDR_BATCH   = '2026-10-01';
+    var _dayMs = 86400000;
+    var _daysAgo = function (dateStr) {
+      // Client-side age — the baked days_since_last_fire goes stale between builds.
+      if (!dateStr) return null;
+      var t = Date.parse(String(dateStr).slice(0,10) + 'T00:00:00Z');
+      return isNaN(t) ? null : Math.max(0, Math.round((Date.now() - t) / _dayMs));
+    };
+
+    // Panel-level freshness chip: produced_at + amber when older than 48h.
+    var freshEl = document.getElementById('kf_freshness');
+    if (freshEl && producedAt) {
+      var ageH = (Date.now() - Date.parse(producedAt)) / 3600000;
+      var isOld = isFinite(ageH) && ageH > 48;
+      var prodTxt = String(producedAt).slice(0,16).replace('T',' ') + ' UTC';
+      freshEl.className = 'kf-fresh-chip' + (isOld ? ' kf-fresh-stale' : '');
+      freshEl.innerHTML =
+        '<span class="l-en">' + (isOld ? '⚠ ' : '') + 'estimates ' + esc(prodTxt) + (isOld ? ' — over 48h old' : '') + '</span>'
+        + '<span class="l-zh">' + (isOld ? '⚠ ' : '') + '估计生成于 ' + esc(prodTxt) + (isOld ? ' — 已超过48小时' : '') + '</span>';
+      freshEl.style.display = '';
+    }
+
+    var nEffOf = function (k) {
+      var r = ((families[k] || {}).recency_trend || {})['all'] || {};
+      return r.n_eff != null ? r.n_eff : 0;
+    };
+    // Sort by n_eff desc; sub-floor families collapse into one accruing strip.
+    var keys = Object.keys(families).sort(function (a, b) { return nEffOf(b) - nEffOf(a); });
+    var fullKeys    = keys.filter(function (k) { return nEffOf(k) >= N_EFF_FLOOR; });
+    var accruingKeys = keys.filter(function (k) { return nEffOf(k) < N_EFF_FLOOR; });
+
     var html = '';
-    Object.keys(families).forEach(function(key) {
+    fullKeys.forEach(function(key) {
       var f = families[key];
       var hc = f.horizon_curve || {};
+      var hd = f.horizon_detail || {};
       var horizons = Object.keys(hc).sort(function(a,b){ return +a-+b; });
       var firstH = horizons[0];
       var ic = firstH!=null ? hc[firstH] : null;
+      var det = firstH!=null ? (hd[firstH] || null) : null;
       var recency = (f.recency_trend||{})['all'] || {};
       var wlb = recency.wilson_ci_low;
       var nEff = recency.n_eff;
@@ -3648,20 +3831,112 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       else if (ic>0) { icStr='+' + (ic*100).toFixed(3)+'%'; icClass='kf-pos'; }
       else { icStr=(ic*100).toFixed(3)+'%'; icClass='kf-neg'; }
 
+      // outcome_unit badge ON the IC figure: magnitude families are not
+      // comparable to signed-excess families — annotate, never rank.
+      var isMag = f.outcome_unit === 'magnitude_nonneg' || f.outcome_unit === 'magnitude';
+      var unitChip = isMag
+        ? '<span class="kf-unit-chip" data-tip-en="Outcome unit is non-negative favorable-excursion magnitude — larger figures are NOT comparable to signed-excess families." data-tip-zh="结果单位为非负有利偏移幅度——数值偏大，不可与带符号收益族直接比较。">'
+          + '<span class="l-en">magnitude, not signed edge</span><span class="l-zh">幅度而非带符号收益</span></span>'
+        : '';
+
+      // Headline IC labeled with its horizon + 1σ band from horizon_detail.sd.
+      var band = (det && det.sd != null) ? '±' + (det.sd*100).toFixed(3) + '%' : '';
+      var icLabel = '<div class="kf-sub">'
+        + '<span class="l-en">IC @ '+esc(String(firstH))+'d'+(band?' '+band+' (1σ)':'')+'</span>'
+        + '<span class="l-zh">IC @ '+esc(String(firstH))+'日'+(band?' '+band+'（1σ）':'')+'</span></div>';
+
+      // Wilson LB vs the 50% coin-flip reference; grey when within ±3pts.
+      var wilsonHtml = '';
+      if (wlb != null) {
+        var nearCoin = Math.abs(wlb - 0.5) <= 0.03;
+        var wCol = nearCoin ? 'var(--muted)' : (wlb > 0.5 ? 'var(--up)' : 'var(--down)');
+        var wPct = (wlb*100).toFixed(1) + '%';
+        wilsonHtml = '<div class="kf-sub">'
+          + '<span class="l-en">Wilson LB (hit-rate): <b style="color:'+wCol+'">'+wPct+'</b> · ref 50% coin-flip'+(nearCoin?' — ≈ coin-flip':'')+(nEff!=null?' · n='+nEff:'')+'</span>'
+          + '<span class="l-zh">Wilson下界（命中率）：<b style="color:'+wCol+'">'+wPct+'</b> · 参考值50%（抛硬币）'+(nearCoin?' — 接近随机':'')+(nEff!=null?' · n='+nEff:'')+'</span></div>';
+      }
+
+      // Regime coverage meter.
+      var rc = f.regime_coverage;
+      var regimeHtml = '';
+      if (rc != null && rc > 0) {
+        var rcPct = Math.round(rc*100);
+        regimeHtml = '<div class="kf-meter"><div class="kf-meter-fill" style="width:'+rcPct+'%"></div></div>'
+          + '<div class="kf-sub"><span class="l-en">'+rcPct+'% regime-stamped</span><span class="l-zh">'+rcPct+'% 已标记周期</span></div>';
+      } else if (rc === 0) {
+        regimeHtml = '<div class="kf-sub" style="opacity:.7"><span class="l-en">no regime stamps yet</span><span class="l-zh">尚未标记周期</span></div>';
+      }
+
+      // Last fired — recomputed client-side from date_last.
+      var firedHtml = '';
+      if (stale.date_last) {
+        var dAgo = _daysAgo(stale.date_last);
+        firedHtml = '<div class="kf-stale">'
+          + '<span class="l-en">Last fired: '+esc(stale.date_last)+(dAgo!=null?' ('+dAgo+'d ago)':'')+'</span>'
+          + '<span class="l-zh">最近触发：'+esc(stale.date_last)+(dAgo!=null?'（'+dAgo+' 天前）':'')+'</span></div>';
+      }
+
       var hlEntry = hlFamilies[key] || null;
-      var hlFormatted = _formatHalfLife(hlEntry);
+      var hlFormatted = _formatHalfLife(hlEntry, horizons.length ? horizons[horizons.length-1] : null);
+
+      var badge = armed
+        ? '<span class="kf-armed-badge kf-armed-yes" data-tip-en="ARMED = enough history to display. Informational only — never decision-grade. First FDR decision batch: '+FDR_BATCH+'." data-tip-zh="已就绪 = 历史数据足以展示。仅供参考，绝非决策依据。首批FDR判定：'+FDR_BATCH+'。">'
+          + '<span class="l-en">ARMED (informational)</span><span class="l-zh">已就绪（仅供展示）</span></span>'
+        : '<span class="kf-armed-badge kf-armed-no"><span class="l-en">DISPLAY</span><span class="l-zh">展示</span></span>';
 
       html += '<div class="kf-card">'
-        + '<div class="kf-name"><span>'+esc(label)+'</span>'
-        + '<span class="kf-armed-badge '+(armed?'kf-armed-yes':'kf-armed-no')+'">'+(armed?'ARMED':'DISPLAY')+'</span></div>'
-        + '<div class="kf-ic '+icClass+'">'+icStr+'</div>'
-        + '<div class="kf-sub">'+(wlb!=null?'Wilson LB (hit-rate): '+(wlb*100).toFixed(1)+'%':'')+' '+(nEff!=null?'· n='+nEff:'')+'</div>'
-        + '<div class="kf-sub">Horizons: '+horizons.join(', ')+'d</div>'
-        + (stale.days_since_last_fire!=null?'<div class="kf-stale">Last fired: '+esc(stale.date_last||'')+' ('+stale.days_since_last_fire+'d ago)</div>':'')
+        + '<div class="kf-name"><span>'+esc(label)+'</span>'+badge+'</div>'
+        + '<div class="kf-ic '+icClass+'">'+icStr+unitChip+'</div>'
+        + icLabel
+        + _kfSpark(hd, horizons)
+        + wilsonHtml
+        + '<div class="kf-sub"><span class="l-en">Horizons: '+horizons.join(', ')+'d</span><span class="l-zh">周期：'+horizons.join(', ')+'日</span></div>'
+        + regimeHtml
+        + firedHtml
         + '<div class="kf-hl"><span class="l-en">'+hlFormatted.en+'</span><span class="l-zh">'+hlFormatted.zh+'</span></div>'
         + '</div>';
     });
     grid.innerHTML = html || '<p class="cm-empty">No kernel data.</p>';
+
+    // Accruing-evidence strip: one compact line for sub-floor families.
+    var accEl = document.getElementById('kf_accruing');
+    if (accEl) {
+      if (accruingKeys.length) {
+        var accItems = accruingKeys.map(function (k) {
+          var st = (families[k] || {}).staleness || {};
+          var first = st.date_first || null;
+          var dTxt = first || st.date_last || '';
+          return '<span style="white-space:nowrap"><strong>'+esc(FAMILY_LABELS[k]||k)+'</strong> n_eff '+nEffOf(k)
+            + (dTxt ? ' · <span class="l-en">'+(first?'since ':'last ')+esc(dTxt)+'</span><span class="l-zh">'+(first?'始于 ':'最近 ')+esc(dTxt)+'</span>' : '')
+            + '</span>';
+        });
+        accEl.innerHTML = '<span class="l-en"><strong>Accruing evidence</strong> (n_eff &lt; '+N_EFF_FLOOR+' decision floor): </span>'
+          + '<span class="l-zh"><strong>证据积累中</strong>（有效样本 &lt; 判定门槛 '+N_EFF_FLOOR+'）：</span>'
+          + accItems.join(' · ');
+        accEl.style.display = '';
+      } else {
+        accEl.style.display = 'none';
+      }
+    }
+
+    // Progress-to-decision strip: per ARMED family, n_eff vs the decision floor.
+    var progEl = document.getElementById('kf_progress');
+    if (progEl) {
+      var armedKeys = keys.filter(function (k) { return (families[k] || {}).armed; });
+      if (armedKeys.length) {
+        progEl.innerHTML =
+          '<div style="font-weight:700;margin-bottom:2px"><span class="l-en">Progress to first decision batch</span><span class="l-zh">距首次判定批次的进度</span></div>'
+          + armedKeys.map(function (k) {
+              var n = nEffOf(k);
+              return '<div><strong>'+esc(FAMILY_LABELS[k]||k)+'</strong> · '
+                + '<span class="l-en">n_eff '+n+' / floor '+N_EFF_FLOOR+' · first FDR batch '+FDR_BATCH+'</span>'
+                + '<span class="l-zh">有效样本 '+n+' / 门槛 '+N_EFF_FLOOR+' · 首批FDR判定 '+FDR_BATCH+'</span></div>';
+            }).join('');
+        progEl.style.display = '';
+      } else {
+        progEl.style.display = 'none';
+      }
+    }
   }
 
   // ── Liquidity Plumbing lobe card ──────────────────────────────────────────
@@ -3737,6 +4012,15 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     var stateZhLabel = STATE_ZH[state] || escT(state);
     var stateColor   = STATE_COLOR[state] || 'var(--muted)';
 
+    // WALCL staleness chip (H.4.1 is weekly; flag only when unusually old)
+    var walclStale = (d.quality && d.quality.walcl_stale_days != null) ? d.quality.walcl_stale_days
+                   : (d.fed && d.fed.walcl_stale_days != null) ? d.fed.walcl_stale_days : null;
+    var walclChip = (walclStale != null && walclStale > 2)
+      ? '<span class="lq-state-chip" style="color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2))">'
+        + '<span class="l-en">WALCL ' + walclStale + 'd stale</span>'
+        + '<span class="l-zh">WALCL 数据滞后 ' + walclStale + ' 天</span></span>'
+      : '';
+
     // Headline row
     var headEl = document.getElementById('liqplumb_headline');
     if (headEl) {
@@ -3748,6 +4032,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         + '</span>'
         + (d.degraded ? '<span style="font-size:11px;font-weight:700;color:var(--warn);padding:2px 8px;border-radius:5px;background:color-mix(in srgb,var(--warn) 12%,var(--panel2))">'
             + '<span class="l-en">DEGRADED</span><span class="l-zh">数据降级</span></span>' : '')
+        + walclChip
         + '</div>'
         + (summary ? '<div style="font-size:13px;color:var(--muted);line-height:1.55">' + escT(summary) + '</div>' : '');
     }
@@ -3772,20 +4057,65 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     var RRP_BUF_ZH  = { abundant:'充裕', adequate:'充分', exhausted:'耗尽', unknown:'未知' };
     var RRP_BUF_COL = { abundant:'var(--up)', adequate:'var(--up)', exhausted:'var(--down)', unknown:'var(--muted)' };
 
+    // 90d net-liquidity sparkline (components.netliq_sparkline_90d)
+    var comp = d.components || {};
+    var sparkPts = Array.isArray(comp.netliq_sparkline_90d) ? comp.netliq_sparkline_90d
+                 : (Array.isArray(d.netliq_sparkline_90d) ? d.netliq_sparkline_90d : []);
+    var netliqSpark = '';
+    if (sparkPts.length >= 2) {
+      var sw = 150, sh = 30, sp = 3;
+      var vals = sparkPts.map(function (p) { return p.v; }).filter(function (v) { return v != null; });
+      if (vals.length >= 2) {
+        var vMin = Math.min.apply(null, vals), vMax = Math.max.apply(null, vals);
+        if (vMax === vMin) vMax = vMin + 1e-9;
+        var pts = [];
+        sparkPts.forEach(function (p, i) {
+          if (p.v == null) return;
+          var px = sp + i * (sw - 2 * sp) / (sparkPts.length - 1);
+          var py = sh - sp - (p.v - vMin) * (sh - 2 * sp) / (vMax - vMin);
+          pts.push(px.toFixed(1) + ',' + py.toFixed(1));
+        });
+        var trendUp = vals[vals.length - 1] >= vals[0];
+        var sparkTip = '90d net liquidity: $' + vals[0].toFixed(0) + 'bn → $' + vals[vals.length - 1].toFixed(0) + 'bn';
+        netliqSpark = '<svg class="kf-spark" width="' + sw + '" height="' + sh + '" viewBox="0 0 ' + sw + ' ' + sh + '" role="img">'
+          + '<title>' + escT(sparkTip) + '</title>'
+          + '<polyline points="' + pts.join(' ') + '" fill="none" stroke="'
+          + (trendUp ? 'var(--up)' : 'var(--down)') + '" stroke-width="1.5"/></svg>';
+      }
+    }
+
+    // Quality stress-overlay evidence line (HY-OAS z / NFCI / confirmation)
+    var so = ql.stress_overlay || {};
+    var qualityExtra = '';
+    if (so.hy_oas_z != null || so.nfci != null) {
+      var NFCI_TREND_ZH = { loose:'宽松', loosening:'趋松', tight:'偏紧', tightening:'趋紧', neutral:'中性' };
+      var soEn = 'HY-OAS z ' + (so.hy_oas_z != null ? (so.hy_oas_z > 0 ? '+' : '') + so.hy_oas_z.toFixed(2) : '—')
+        + ' · NFCI ' + (so.nfci != null ? so.nfci.toFixed(2) : '—')
+        + (so.nfci_trend ? ' (' + so.nfci_trend + ')' : '');
+      var soZh = 'HY-OAS z ' + (so.hy_oas_z != null ? (so.hy_oas_z > 0 ? '+' : '') + so.hy_oas_z.toFixed(2) : '—')
+        + ' · NFCI ' + (so.nfci != null ? so.nfci.toFixed(2) : '—')
+        + (so.nfci_trend ? '（' + escT(NFCI_TREND_ZH[so.nfci_trend] || so.nfci_trend) + '）' : '');
+      qualityExtra = '<div style="font-size:10px;color:var(--muted);margin-top:3px">'
+        + '<span class="l-en">' + escT(soEn) + ' · ' + (so.confirming_stress ? 'stress confirming' : 'stress not confirming') + '</span>'
+        + '<span class="l-zh">' + soZh + ' · ' + (so.confirming_stress ? '压力确认中' : '压力未确认') + '</span></div>';
+    }
+
     var cards = [
       {
         fieldEn: 'Net Liquidity', fieldZh: '净流动性',
         valEn:   fmtBn(qty.netliq_bn),
         subEn:   '20d: ' + fmt1(qty.netliq_chg_20d_bn),
         color:   qty.netliq_chg_20d_bn == null ? 'var(--muted)' :
-                   (qty.netliq_chg_20d_bn >= 0 ? 'var(--up)' : 'var(--down)')
+                   (qty.netliq_chg_20d_bn >= 0 ? 'var(--up)' : 'var(--down)'),
+        extra:   netliqSpark
       },
       {
         fieldEn: 'Quality', fieldZh: '质量',
         valEn:   escT(ql.label || '—'),
         subEn:   (ql.mechanical != null ? (ql.mechanical ? 'mechanical' : 'organic') : '—')
                + (ql.fed_share != null ? ' · fed share ' + (ql.fed_share * 100).toFixed(0) + '%' : ''),
-        color:   'var(--muted)'
+        color:   'var(--muted)',
+        extra:   qualityExtra
       },
       {
         fieldEn: 'RRP Buffer', fieldZh: '逆回购缓冲',
@@ -3826,6 +4156,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
           + (c.rawHtml ? c.valEn : escT(c.valEn))
           + '</div>'
           + '<div style="font-size:11px;color:var(--muted);margin-top:3px">' + escT(c.subEn) + '</div>'
+          + (c.extra || '')
           + (c.note ? '<div style="font-size:10px;color:var(--muted);opacity:.75;margin-top:3px">'
               + '<span class="l-en">cycle-ladder 21d basis only; context, no score raise</span>'
               + '<span class="l-zh">仅基于周期阶梯21日；背景参考，不提升评分</span>'
@@ -3835,16 +4166,107 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       gridEl.innerHTML = html;
     }
 
-    // Gaps list
-    var gaps = Array.isArray(d.gaps) ? d.gaps : [];
-    var gapsEl = document.getElementById('liqplumb_gaps');
-    if (gapsEl) {
-      if (gaps.length) {
-        gapsEl.innerHTML = '<span class="l-en"><strong>Data gaps:</strong> ' + escT(gaps.join(' · ')) + '</span>'
-          + '<span class="l-zh"><strong>数据缺口：</strong>' + escT(gaps.join(' · ')) + '</span>';
-        gapsEl.style.display = '';
+    // ── Funding stress row (P3): three IORB spreads + reserve scarcity chip ──
+    var fu = d.funding || {};
+    var fundEl = document.getElementById('liqplumb_funding');
+    if (fundEl) {
+      var hasFunding = fu.effr_minus_iorb_bp != null || fu.sofr_minus_iorb_bp != null
+        || fu.sofr_99pctl_minus_iorb_bp != null || fu.reserve_scarcity_state;
+      if (hasFunding) {
+        var fmtBp = function (v) { return v == null ? '—' : (v > 0 ? '+' : '') + Number(v).toFixed(0) + ' bp'; };
+        // Widening spread = funding deteriorating (red); narrowing = easing (green).
+        var dArrow = function (dv) {
+          if (dv == null) return '';
+          var sym = dv > 0 ? '▲' : (dv < 0 ? '▼' : '→');
+          var col = dv > 0 ? 'var(--down)' : (dv < 0 ? 'var(--up)' : 'var(--muted)');
+          return ' <span style="color:' + col + '">' + sym + fmtBp(dv) + '</span>';
+        };
+        var spreads = [
+          { en: 'EFFR−IORB',      zh: 'EFFR−IORB',      lv: fu.effr_minus_iorb_bp,       dd: fu.effr_minus_iorb_d20_bp,       p: fu.effr_minus_iorb_pctile },
+          { en: 'SOFR−IORB',      zh: 'SOFR−IORB',      lv: fu.sofr_minus_iorb_bp,       dd: fu.sofr_minus_iorb_d20_bp,       p: fu.sofr_minus_iorb_pctile },
+          { en: 'SOFR 99th−IORB', zh: 'SOFR 99分位−IORB', lv: fu.sofr_99pctl_minus_iorb_bp, dd: fu.sofr_99pctl_minus_iorb_d20_bp, p: fu.sofr_99pctl_minus_iorb_pctile }
+        ];
+        var SCAR_EN  = { comfortable:'Comfortable', normalizing:'Normalizing', tightening:'Tightening', scarce:'Scarce', unknown:'Unknown' };
+        var SCAR_ZH  = { comfortable:'宽松', normalizing:'正常化', tightening:'趋紧', scarce:'稀缺', unknown:'未知' };
+        var SCAR_COL = { comfortable:'var(--up)', normalizing:'var(--muted)', tightening:'var(--warn)', scarce:'var(--down)', unknown:'var(--muted)' };
+        var scState  = fu.reserve_scarcity_state || 'unknown';
+        var scCol    = SCAR_COL[scState] || 'var(--muted)';
+        var fHtml = '<div class="lq-sec-label">'
+          + '<span><span class="l-en">Funding stress</span><span class="l-zh">融资压力</span></span>'
+          + '<span class="lq-state-chip" style="color:' + scCol + ';background:color-mix(in srgb,' + scCol + ' 12%,var(--panel2))">'
+          + '<span class="l-en">reserves: ' + escT(SCAR_EN[scState] || scState) + '</span>'
+          + '<span class="l-zh">准备金：' + escT(SCAR_ZH[scState] || scState) + '</span></span>'
+          + (fu.asof ? '<span style="font-weight:400;text-transform:none;letter-spacing:0">'
+              + '<span class="l-en">funding asof ' + escT(fu.asof) + '</span>'
+              + '<span class="l-zh">融资数据截至 ' + escT(fu.asof) + '</span></span>' : '')
+          + '</div><div class="lq-cells">';
+        spreads.forEach(function (s) {
+          fHtml += '<div class="lq-cell">'
+            + '<div class="lq-cell-label"><span class="l-en">' + s.en + '</span><span class="l-zh">' + s.zh + '</span></div>'
+            + '<div class="lq-cell-val">' + fmtBp(s.lv) + dArrow(s.dd) + '</div>'
+            + '<div class="lq-cell-sub"><span class="l-en">20d Δ · pct ' + fmtPct(s.p) + '</span>'
+            + '<span class="l-zh">20日变化 · 分位 ' + fmtPct(s.p) + '</span></div>'
+            + '</div>';
+        });
+        fHtml += '</div>';
+        fundEl.innerHTML = fHtml;
+        fundEl.style.display = '';
       } else {
-        gapsEl.style.display = 'none';
+        fundEl.style.display = 'none';
+      }
+    }
+
+    // ── Components strip: WALCL / RRP / TGA (+ Reserves when collected) ──────
+    // TGA delta color is inverted — TGA DOWN = liquidity ADD (matches the TGA
+    // card convention above). RRP keeps the buffer framing: rebuild = green.
+    var compEl = document.getElementById('liqplumb_components');
+    if (compEl) {
+      var compDefs = [
+        { key: 'walcl',    en: 'WALCL',    zh: 'WALCL（联储资产）', invert: false },
+        { key: 'rrp',      en: 'RRP',      zh: '逆回购',           invert: false },
+        { key: 'tga',      en: 'TGA',      zh: '财政部账户',        invert: true  },
+        { key: 'reserves', en: 'Reserves', zh: '准备金余额',        invert: false }
+      ];
+      var cHtml = '';
+      compDefs.forEach(function (cd) {
+        var c = comp[cd.key];
+        if (!c || c.level_bn == null) return; // reserves fail-open until WRESBAL collects
+        var dCol = function (dv) {
+          if (dv == null) return 'var(--muted)';
+          var pos = cd.invert ? dv < 0 : dv > 0;
+          return dv === 0 ? 'var(--muted)' : (pos ? 'var(--up)' : 'var(--down)');
+        };
+        var fmtD = function (dv) { return dv == null ? '—' : (dv > 0 ? '+' : '') + Number(dv).toFixed(0) + 'bn'; };
+        cHtml += '<div class="lq-cell">'
+          + '<div class="lq-cell-label"><span class="l-en">' + cd.en + '</span><span class="l-zh">' + cd.zh + '</span></div>'
+          + '<div class="lq-cell-val">' + fmtBn(c.level_bn)
+          + ' <span style="font-size:11.5px;color:' + dCol(c.d20_bn) + '">' + fmtD(c.d20_bn) + '</span></div>'
+          + '<div class="lq-cell-sub"><span class="l-en">Δ65d ' + fmtD(c.d65_bn) + ' · pct ' + fmtPct(c.pctile) + '</span>'
+          + '<span class="l-zh">65日Δ ' + fmtD(c.d65_bn) + ' · 分位 ' + fmtPct(c.pctile) + '</span></div>'
+          + '</div>';
+      });
+      if (cHtml) {
+        compEl.innerHTML = '<div class="lq-sec-label">'
+          + '<span><span class="l-en">Components (Δ20d signed)</span><span class="l-zh">构成项（20日变化）</span></span>'
+          + '<span style="font-weight:400;text-transform:none;letter-spacing:0">'
+          + '<span class="l-en">TGA down = liquidity add</span><span class="l-zh">TGA下降 = 流动性增加</span></span>'
+          + '</div><div class="lq-cells">' + cHtml + '</div>';
+        compEl.style.display = '';
+      } else {
+        compEl.style.display = 'none';
+      }
+    }
+
+    // ── Pending-collection note, built from gaps[] ───────────────────────────
+    var gaps = Array.isArray(d.gaps) ? d.gaps : [];
+    var pendEl = document.getElementById('liqplumb_pending');
+    if (pendEl) {
+      if (gaps.length) {
+        pendEl.innerHTML = '<span class="l-en"><strong>Pending collection:</strong> ' + escT(gaps.join(' · ')) + '</span>'
+          + '<span class="l-zh"><strong>待采集：</strong>' + escT(gaps.join(' · ')) + '</span>';
+        pendEl.style.display = '';
+      } else {
+        pendEl.style.display = 'none';
       }
     }
 
@@ -3857,6 +4279,394 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
           + '<span class="l-zh">截至 ' + escT(asofVal) + ' · 仅供展示 · 权限：仅可降级</span>'
         : '<span class="l-en">As of date unavailable</span><span class="l-zh">截至日期不可用</span>';
     }
+  }
+
+  // ── Market Plane hero strip ────────────────────────────────────────────────
+  // Reads neuralwebdata/market_plane.json (schema neuralweb.market_plane.v1,
+  // display tier, is_context_only=true): the page's always-on US regime / vol /
+  // liquidity state, so single-family tape days still show the market plane.
+  // Fail-open: 404 or malformed JSON → strip stays hidden.
+  function loadMarketPlane() {
+    var el = document.getElementById('mp_strip');
+    if (!el) return;
+    fetch('neuralwebdata/market_plane.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) { renderMarketPlane(d || {}); })
+      .catch(function () { /* fail-open: strip stays hidden */ });
+  }
+
+  function renderMarketPlane(d) {
+    var el = document.getElementById('mp_strip');
+    if (!el) return;
+    var v  = d.verdict || {};
+    var rg = d.regime || {};
+    var vol = d.vol || {};
+    var lq = d.liquidity_plumbing || {};
+    var cx = d.cortex || {};
+
+    var VERDICT_COL = { RISK_ON: 'var(--up)', RISK_OFF: 'var(--down)', NEUTRAL: 'var(--muted)', MIXED: 'var(--warn)' };
+    var vCol = VERDICT_COL[v.verdict] || 'var(--muted)';
+    var TRANS_ZH = { TRANSITIONING: '切换中', STABLE: '稳定', FLIPPING: '翻转中' };
+    var VOL_ZH = { normalizing: '正常化', calm: '平静', elevated: '偏高', stressed: '紧张', crisis: '危机' };
+    var LQ_EN = {
+      benign_liquidity_tailwind: 'Benign Tailwind', mechanical_liquidity_tailwind: 'Mechanical Tailwind',
+      stress_liquidity_expansion: 'Stress Expansion', neutral_with_buffer: 'Neutral — Buffer Intact',
+      neutral_hollow: 'Neutral — Hollow', orderly_drain: 'Orderly Drain', data_degraded: 'Data Degraded'
+    };
+    var LQ_ZH = {
+      benign_liquidity_tailwind: '良性顺风', mechanical_liquidity_tailwind: '机械性顺风',
+      stress_liquidity_expansion: '压力扩张', neutral_with_buffer: '中性 — 缓冲充足',
+      neutral_hollow: '中性 — 缓冲耗尽', orderly_drain: '有序收缩', data_degraded: '数据降级'
+    };
+    var RRP_ZH = { abundant: '充裕', adequate: '充分', exhausted: '耗尽', unknown: '未知' };
+
+    var html = '';
+
+    // Verdict pill
+    if (v.label_en || v.label_zh) {
+      html += '<span class="mp-chip mp-pill" style="color:' + vCol
+        + ';border-color:color-mix(in srgb,' + vCol + ' 45%,var(--line))'
+        + ';background:color-mix(in srgb,' + vCol + ' 10%,var(--panel2))">'
+        + '<span class="l-en">' + esc(v.label_en || v.label_zh) + '</span>'
+        + '<span class="l-zh">' + esc(v.label_zh || v.label_en) + '</span>'
+        + (v.score != null ? '<span class="mp-sub">' + esc(String(v.score)) + '</span>' : '')
+        + '</span>';
+    }
+    // Regime chip: quad_name + transition_state
+    if (rg.quad_name || rg.quad) {
+      html += '<span class="mp-chip">'
+        + '<span class="mp-sub"><span class="l-en">regime</span><span class="l-zh">周期</span></span>'
+        + esc(((rg.quad ? rg.quad + ' ' : '') + (rg.quad_name || '')).trim())
+        + (rg.transition_state ? '<span class="mp-sub"><span class="l-en">' + esc(rg.transition_state.toLowerCase())
+            + '</span><span class="l-zh">' + esc(TRANS_ZH[rg.transition_state] || rg.transition_state) + '</span></span>' : '')
+        + '</span>';
+    }
+    // Vol chip
+    if (vol.regime) {
+      html += '<span class="mp-chip">'
+        + '<span class="mp-sub"><span class="l-en">vol</span><span class="l-zh">波动</span></span>'
+        + '<span class="l-en">' + esc(vol.regime) + '</span>'
+        + '<span class="l-zh">' + esc(VOL_ZH[vol.regime] || vol.regime) + '</span>'
+        + '</span>';
+    }
+    // Liquidity chip: state + RRP buffer
+    if (lq.state || lq.rrp_buffer_state) {
+      html += '<span class="mp-chip">'
+        + '<span class="mp-sub"><span class="l-en">liquidity</span><span class="l-zh">流动性</span></span>'
+        + (lq.state ? '<span class="l-en">' + esc(LQ_EN[lq.state] || lq.state) + '</span>'
+            + '<span class="l-zh">' + esc(LQ_ZH[lq.state] || lq.state) + '</span>' : '')
+        + (lq.rrp_buffer_state ? '<span class="mp-sub"><span class="l-en">RRP ' + esc(lq.rrp_buffer_state)
+            + '</span><span class="l-zh">逆回购' + esc(RRP_ZH[lq.rrp_buffer_state] || lq.rrp_buffer_state) + '</span></span>' : '')
+        + '</span>';
+    }
+    // Contradictions count
+    if (d.contradiction_count != null) {
+      html += '<span class="mp-chip">' + d.contradiction_count + ' '
+        + '<span class="l-en">contradiction' + (d.contradiction_count === 1 ? '' : 's') + '</span>'
+        + '<span class="l-zh">项矛盾</span></span>';
+    }
+    // Cortex dot: green ok / amber degraded
+    var cxOk = cx.status === 'ok';
+    var cxTipEn = 'cortex ' + (cx.status || 'unknown') + (cx.degradation_reason ? ': ' + cx.degradation_reason : '');
+    var cxTipZh = '皮层 ' + (cx.status || 'unknown') + (cx.degradation_reason ? '：' + cx.degradation_reason : '');
+    html += '<span class="mp-chip" data-tip-en="' + esc(cxTipEn) + '" data-tip-zh="' + esc(cxTipZh) + '">'
+      + '<span class="mp-dot" style="background:' + (cxOk ? 'var(--up)' : 'var(--warn)') + '"></span>'
+      + '<span class="l-en">cortex</span><span class="l-zh">皮层</span></span>';
+    // Stale marker: grey the whole strip
+    if (d.stale === true) {
+      el.classList.add('mp-stale');
+      html += '<span class="mp-chip" style="color:var(--warn);opacity:1">'
+        + '<span class="l-en">stale</span><span class="l-zh">已过期</span></span>';
+    } else {
+      el.classList.remove('mp-stale');
+    }
+
+    el.innerHTML = html;
+    el.style.display = '';
+  }
+
+  // ── NW read layer: Web Health panel ───────────────────────────────────────
+  // Reads neuralwebdata/health.json (per-lobe freshness vs SLA, nightly) plus
+  // the optional neuralwebdata/health_history.json run-history tail. Annotates
+  // only — never gates, ranks, or scores. Fails open: absent artifact → muted
+  // "not yet available" line; absent history → the dots row stays hidden.
+  function loadWebHealth() {
+    var loadEl    = document.getElementById('health_loading');
+    var contentEl = document.getElementById('cm_health_content');
+    var absentEl  = document.getElementById('health_absent');
+    if (!loadEl) return;
+    loadEl.style.display = 'block';
+
+    fetch('neuralwebdata/health.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) {
+        loadEl.style.display = 'none';
+        renderWebHealth(d || {});
+        if (contentEl) contentEl.style.display = '';
+        // 7-night run-history dots — optional artifact; hide the row if absent.
+        return fetch('neuralwebdata/health_history.json')
+          .then(function (r) { if (!r.ok) return null; return r.json(); })
+          .then(function (h) { if (Array.isArray(h) && h.length) renderHealthHistory(h); })
+          .catch(function () {});
+      })
+      .catch(function () {
+        loadEl.style.display = 'none';
+        if (absentEl) absentEl.style.display = '';
+      });
+  }
+
+  function renderWebHealth(d) {
+    var STATUS_META = {
+      fresh:    { en: 'FRESH',    zh: '新鲜', color: 'var(--up)'   },
+      degraded: { en: 'DEGRADED', zh: '降级', color: 'var(--warn)' }
+    };
+    var st   = String(d.overall_status || 'unknown');
+    var meta = STATUS_META[st] || { en: st.toUpperCase(), zh: st.toUpperCase(), color: 'var(--down)' };
+
+    // (a) overall status chip + as_of + produced_at
+    var rowEl = document.getElementById('health_status_row');
+    if (rowEl) {
+      var producedTxt = d.produced_at ? String(d.produced_at).slice(0, 16).replace('T', ' ') + ' UTC' : '—';
+      rowEl.innerHTML =
+        '<span class="nwh-status-chip" style="color:' + meta.color
+        + ';border-color:color-mix(in srgb,' + meta.color + ' 45%,var(--line))'
+        + ';background:color-mix(in srgb,' + meta.color + ' 10%,var(--panel2))">'
+        + '<span class="l-en">' + esc(meta.en) + '</span><span class="l-zh">' + esc(meta.zh) + '</span></span>'
+        + '<span style="font-size:12px;color:var(--muted)">'
+        + '<span class="l-en">as of ' + esc(d.as_of || '—') + ' · produced ' + esc(producedTxt) + '</span>'
+        + '<span class="l-zh">数据截至 ' + esc(d.as_of || '—') + ' · 生成于 ' + esc(producedTxt) + '</span>'
+        + '</span>';
+    }
+
+    // (b) counts strip from summary_counts
+    var sc = d.summary_counts || {};
+    var countsEl = document.getElementById('health_counts_row');
+    if (countsEl) {
+      var counts = [
+        { key: 'total_lobes',   en: 'Lobes total',    zh: '脑叶总数', color: 'var(--text)'  },
+        { key: 'fresh',         en: 'Fresh',          zh: '新鲜',     color: 'var(--up)'    },
+        { key: 'fresh_partial', en: 'Fresh partial',  zh: '部分新鲜', color: 'var(--warn)'  },
+        { key: 'stale',         en: 'Stale',          zh: '过期',     color: 'var(--down)'  },
+        { key: 'missing',       en: 'Never produced', zh: '尚未生成', color: 'var(--muted)' }
+      ];
+      countsEl.innerHTML = counts.map(function (c) {
+        var v = sc[c.key];
+        return '<div class="nwh-count"><b style="color:' + c.color + '">' + (v == null ? '—' : v) + '</b>'
+          + '<span class="l-en">' + c.en + '</span><span class="l-zh">' + c.zh + '</span></div>';
+      }).join('');
+    }
+
+    // (c) needs-attention list: stale lobes sorted by SLA-breach ratio (worst
+    // first), then degraded lobes with their reason. status='missing' lobes
+    // (never-yet-produced ledgers with placeholder SLAs) are deliberately
+    // excluded here so real breaches are never buried — they collapse to one
+    // muted line below.
+    var lobes = Array.isArray(d.lobes) ? d.lobes : [];
+    var attEl = document.getElementById('health_attention');
+    if (attEl) {
+      var stale = lobes.filter(function (l) { return l.status === 'stale'; })
+        .map(function (l) {
+          var ratio = (l.age_hours != null && l.freshness_sla_hours) ? (l.age_hours / l.freshness_sla_hours) : 0;
+          return { l: l, ratio: ratio };
+        })
+        .sort(function (a, b) { return b.ratio - a.ratio; })
+        .slice(0, 5);
+      var degraded = lobes.filter(function (l) { return l.status === 'degraded'; });
+      var html = '';
+      stale.forEach(function (s) {
+        var l = s.l;
+        var age = l.age_hours != null ? Math.round(l.age_hours) : null;
+        var sla = l.freshness_sla_hours;
+        var ratioTxt = s.ratio ? s.ratio.toFixed(1) + '×' : '';
+        html += '<div class="nwh-item">'
+          + '<span class="nwh-dot" style="background:var(--warn)"></span>'
+          + '<strong>' + esc(l.id || '') + '</strong>'
+          + '<span style="color:var(--muted)">'
+          + '<span class="l-en">— ' + (age != null ? age + 'h old vs ' + sla + 'h SLA' : 'age unknown vs ' + sla + 'h SLA')
+          + (ratioTxt ? ' (' + ratioTxt + ')' : '') + '</span>'
+          + '<span class="l-zh">— ' + (age != null ? '已过 ' + age + ' 小时，时限 ' + sla + ' 小时' : '时限 ' + sla + ' 小时，实际时长未知')
+          + (ratioTxt ? '（' + ratioTxt + '）' : '') + '</span>'
+          + '</span></div>';
+      });
+      degraded.forEach(function (l) {
+        var reason = l.degradation_reason || (Array.isArray(l.gaps) && l.gaps.length ? l.gaps.join('; ') : '');
+        html += '<div class="nwh-item">'
+          + '<span class="nwh-dot" style="background:var(--warn)"></span>'
+          + '<strong>' + esc(l.id || '') + '</strong>'
+          + '<span style="color:var(--muted)">'
+          + '<span class="l-en">— degraded' + (reason ? ': ' + esc(reason) : '') + '</span>'
+          + '<span class="l-zh">— 降级' + (reason ? '：' + esc(reason) : '') + '</span>'
+          + '</span></div>';
+      });
+      attEl.innerHTML = html || ('<div style="font-size:13px;color:var(--muted)">'
+        + '<span class="l-en">No SLA breaches — every produced lobe is inside its freshness window.</span>'
+        + '<span class="l-zh">无超时项 — 所有已生成脑叶均在新鲜度时限内。</span></div>');
+    }
+
+    // status='missing' collapse: one muted line + <details> expander
+    var missing = lobes.filter(function (l) { return l.status === 'missing'; });
+    var missEl = document.getElementById('health_missing_row');
+    if (missEl && missing.length) {
+      var ids = missing.map(function (l) { return esc(l.id || ''); });
+      missEl.innerHTML = '<details><summary style="cursor:pointer">'
+        + '<span class="l-en">' + missing.length + ' lobes never produced yet — expected first builds, not SLA breaches</span>'
+        + '<span class="l-zh">' + missing.length + ' 个脑叶尚未首次生成 — 属预期中的首次构建，并非超时</span>'
+        + '</summary><div style="margin-top:6px;line-height:1.7">' + ids.join(' · ') + '</div></details>';
+      missEl.style.display = '';
+    }
+
+    // (d) cortex row: status + degradation reason from the cortex section
+    var cx = d.cortex || {};
+    var rs = cx.run_status || {};
+    var cxStatus = rs.status || cx.status || '—';
+    var cxReason = rs.degradation_reason || cx.degradation_reason || '';
+    var cxEl = document.getElementById('health_cortex_row');
+    if (cxEl) {
+      var cxColor = cxStatus === 'ok' ? 'var(--up)' : (cxStatus === 'degraded' ? 'var(--warn)' : 'var(--muted)');
+      cxEl.innerHTML =
+        '<span class="l-en"><strong>Cortex:</strong> </span><span class="l-zh"><strong>皮层：</strong></span>'
+        + '<span style="font-weight:700;color:' + cxColor + '">' + esc(cxStatus) + '</span>'
+        + (cxReason ? '<span style="color:var(--muted)"> — ' + esc(cxReason) + '</span>' : '')
+        + (rs.model_used ? '<span style="color:var(--muted);font-size:11px"> · ' + esc(rs.model_used) + '</span>' : '');
+    }
+  }
+
+  // (e) 7-night run-history dots (rows arrive oldest→newest; keep the tail)
+  function renderHealthHistory(rows) {
+    var el = document.getElementById('health_history_row');
+    if (!el) return;
+    var last = rows.slice(-7);
+    var dots = last.map(function (r) {
+      var color = r.degraded ? 'var(--warn)' : 'var(--up)';
+      var tip = (r.run_date || '') + ' · ' + (r.reasons_count != null ? r.reasons_count : 0) + ' reason(s)';
+      return '<span class="nwh-dot" title="' + esc(tip) + '" style="background:' + color + ';margin-right:5px"></span>';
+    }).join('');
+    el.innerHTML = '<span class="l-en">Last ' + last.length + ' nights: </span>'
+      + '<span class="l-zh">最近 ' + last.length + ' 晚：</span>' + dots;
+    el.style.display = '';
+  }
+
+  // ── NW read layer: Disagreements panel ────────────────────────────────────
+  // Own fetch of confluence_graph.json: section load order vs the synapse-map
+  // loader is not guaranteed, and the browser HTTP cache dedupes the request.
+  // Fails open: absent artifact → muted "not yet available" line.
+  function loadContradictions() {
+    var loadEl    = document.getElementById('contra_loading');
+    var contentEl = document.getElementById('cm_contra_content');
+    var absentEl  = document.getElementById('contra_absent');
+    if (!loadEl) return;
+    loadEl.style.display = 'block';
+    fetch('neuralwebdata/confluence_graph.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) {
+        loadEl.style.display = 'none';
+        renderContradictions(d || {});
+        if (contentEl) contentEl.style.display = '';
+      })
+      .catch(function () {
+        loadEl.style.display = 'none';
+        if (absentEl) absentEl.style.display = '';
+      });
+  }
+
+  function _humanizePair(pairId) {
+    return String(pairId || '').replace(/-vs-/g, ' vs ').replace(/[_-]+/g, ' ').trim();
+  }
+
+  function renderContradictions(d) {
+    var recs    = Array.isArray(d.contradiction_records) ? d.contradiction_records : [];
+    var summary = d.contradiction_summary || {};
+    var bySev   = summary.by_severity || {};
+    var n        = (summary.n != null) ? summary.n : recs.length;
+    var nTension = bySev.tension || 0;
+    var nNote    = bySev.note || 0;
+
+    var sumEl = document.getElementById('contra_summary');
+    if (sumEl) {
+      if (n > 0) {
+        sumEl.innerHTML =
+          '<span class="l-en"><strong>' + n + ' active</strong>: ' + nTension + ' tension · ' + nNote + ' note</span>'
+          + '<span class="l-zh"><strong>当前 ' + n + ' 项</strong>：张力 ' + nTension + ' · 备注 ' + nNote + '</span>';
+      } else {
+        sumEl.innerHTML =
+          '<span class="l-en">No typed disagreements today — the web agrees with itself.</span>'
+          + '<span class="l-zh">今日无类型化分歧 — 网络自洽。</span>';
+      }
+    }
+
+    var listEl = document.getElementById('contra_list');
+    if (listEl) {
+      listEl.innerHTML = recs.map(function (rec) {
+        var sev   = rec.severity === 'tension' ? 'tension' : 'note';
+        var sevZh = sev === 'tension' ? '张力' : '备注';
+        var asOf  = String(rec.as_of || rec.detected || '');
+        var detectedHtml = '';
+        if (asOf) {
+          var dt = new Date(asOf.length <= 10 ? asOf + 'T00:00:00Z' : asOf);
+          var ageDays = isNaN(dt.getTime()) ? null : Math.max(0, Math.round((Date.now() - dt.getTime()) / 86400000));
+          detectedHtml = '<span style="font-size:11px;color:var(--muted);margin-left:8px">'
+            + '<span class="l-en">detected ' + esc(asOf.slice(0, 10)) + (ageDays != null ? ' (' + ageDays + 'd ago)' : '') + '</span>'
+            + '<span class="l-zh">记录于 ' + esc(asOf.slice(0, 10)) + (ageDays != null ? '（' + ageDays + ' 天前）' : '') + '</span>'
+            + '</span>';
+        }
+        return '<div class="contra-row' + (sev === 'tension' ? ' contra-tension' : '') + '">'
+          + '<div style="margin-bottom:3px">'
+          + '<span class="contra-sev' + (sev === 'tension' ? ' contra-sev-tension' : '') + '">'
+          + '<span class="l-en">' + sev + '</span><span class="l-zh">' + sevZh + '</span></span>'
+          + '<strong>' + esc(_humanizePair(rec.pair_id)) + '</strong>'
+          + detectedHtml
+          + '</div>'
+          + (rec.note ? '<div style="color:var(--muted);line-height:1.55">' + esc(rec.note) + '</div>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    // gaps[] footnote: known blind spots (muted, raw artifact strings)
+    var gaps = Array.isArray(d.gaps) ? d.gaps : [];
+    var gapsEl = document.getElementById('contra_gaps');
+    if (gapsEl && gaps.length) {
+      gapsEl.innerHTML =
+        '<div class="tr-section-label"><span class="l-en">Known blind spots</span><span class="l-zh">已知盲区</span></div>'
+        + gaps.map(function (g) { return '<div style="padding:2px 0">· ' + esc(g) + '</div>'; }).join('');
+      gapsEl.style.display = '';
+    }
+  }
+
+  // ── NW read layer: Constitution ledger panel ──────────────────────────────
+  // Reads neuralwebdata/governance_recent.json (last ~20 governance.jsonl
+  // events distilled by build_site.py, newest last). Fail-open: if the file
+  // 404s or is empty, the whole section stays hidden.
+  function loadGovernanceLedger() {
+    var secEl  = document.getElementById('cm_gov_section');
+    var listEl = document.getElementById('gov_list');
+    if (!secEl || !listEl) return;
+    fetch('neuralwebdata/governance_recent.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (rows) {
+        if (!Array.isArray(rows) || !rows.length) return; // nothing to show — stay hidden
+        renderGovernanceLedger(rows);
+        secEl.style.display = '';
+      })
+      .catch(function () { /* fail-open: section stays hidden */ });
+  }
+
+  function renderGovernanceLedger(rows) {
+    var listEl = document.getElementById('gov_list');
+    if (!listEl) return;
+    var recent = rows.slice().sort(function (a, b) {
+      return String(b.ts || '').localeCompare(String(a.ts || ''));
+    }).slice(0, 8);
+    listEl.innerHTML = recent.map(function (ev) {
+      var noteFull  = String(ev.note || (ev.evidence && ev.evidence.reason) || '');
+      var noteShort = noteFull.length > 140 ? noteFull.slice(0, 140) + '…' : noteFull;
+      return '<div class="gov-row">'
+        + '<span class="gov-date">' + esc(String(ev.ts || '').slice(0, 10)) + '</span>'
+        + '<span class="gov-type">' + esc(ev.event_type || '') + '</span>'
+        + '<span class="gov-target">' + esc(ev.target || '') + '</span>'
+        + (noteShort ? '<span class="gov-note"' + (noteFull.length > 140 ? ' title="' + esc(noteFull) + '"' : '')
+            + '>' + esc(noteShort) + '</span>' : '')
+        + '</div>';
+    }).join('');
   }
 
 })();

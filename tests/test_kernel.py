@@ -623,3 +623,243 @@ def test_no_amplification_wrong_sign_cell(tmp_path):
             f"AMPLIFICATION at h={cell['horizon']}: "
             f"|shrunken|={abs(shrunken):.6f} > |raw|={abs(raw):.6f}"
         )
+
+
+# ---------------------------------------------------------------------------
+# (10) AUDIT FIX: __unstamped__ excluded from family pooling at 0% coverage
+# ---------------------------------------------------------------------------
+
+def test_unstamped_excluded_from_pooling_at_zero_coverage(tmp_path):
+    """At 0% regime coverage, __unstamped__ cells are byte-identical to __all__
+    and must NOT enter the pooling family (they'd double-count every horizon in
+    the family denominator). The rows are still emitted (display parity) and
+    inherit the posterior of their identical __all__ twin.
+
+    Hand-computed check: the kernel's __all__ shrunken_ic must equal
+    pooled_edges() over ONLY the de-duplicated (__all__-only) member set —
+    and must NOT equal the value from the duplicated 4-member family.
+    """
+    from engine.pooling import MemberStat, pooled_edges
+
+    # Two horizons, all quad_hard_label=None → coverage 0.0
+    rows: list[dict] = []
+    for i in range(1, 21):  # h=5: n_eff=20, mean=0.04
+        rows.append(_row(engine="eng_z", as_of=f"2025-01-{(i % 28) + 1:02d}",
+                         symbol=f"Z5_{i}", horizon=5, outcome_excess=0.04,
+                         quad_hard_label=None, idx=i))
+    for i in range(1, 11):  # h=21: n_eff=10, mean=0.01
+        rows.append(_row(engine="eng_z", as_of=f"2025-02-{(i % 28) + 1:02d}",
+                         symbol=f"Z21_{i}", horizon=21, outcome_excess=0.01,
+                         quad_hard_label=None, idx=i))
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import (
+        build_estimates, MARGINAL_BUCKET, UNSTAMPED_BUCKET,
+    )
+    df, meta = build_estimates(tmp_path)
+    eng = df[df["engine"] == "eng_z"]
+
+    # (a) __unstamped__ rows are still emitted (display parity)
+    unstamped = eng[eng["regime"] == UNSTAMPED_BUCKET]
+    marginal = eng[eng["regime"] == MARGINAL_BUCKET]
+    assert len(unstamped) == 2 and len(marginal) == 2
+
+    # (b) __unstamped__ inherits its identical __all__ twin's posterior
+    for h in (5, 21):
+        ic_u = float(unstamped[unstamped["horizon"] == h].iloc[0]["shrunken_ic"])
+        ic_a = float(marginal[marginal["horizon"] == h].iloc[0]["shrunken_ic"])
+        assert abs(ic_u - ic_a) < 1e-12, (
+            f"h={h}: __unstamped__ ic {ic_u} != __all__ twin ic {ic_a}"
+        )
+
+    # (c) hand-computed: __all__ posterior == pooled_edges over DE-DUPED family
+    # (constant outcomes → sample var 0 → kernel floors var at 1e-9)
+    dedup_members = [
+        MemberStat(key="eng_z:__all__:5", n=20.0, mean=0.04, var=1e-9, noise=0.0),
+        MemberStat(key="eng_z:__all__:21", n=10.0, mean=0.01, var=1e-9, noise=0.0),
+    ]
+    expected = pooled_edges(dedup_members)
+    got_h5 = float(marginal[marginal["horizon"] == 5].iloc[0]["shrunken_ic"])
+    assert abs(got_h5 - round(expected["eng_z:__all__:5"], 6)) < 1e-9, (
+        f"__all__ h=5 posterior {got_h5} != de-duplicated pooled value "
+        f"{expected['eng_z:__all__:5']:.6f}"
+    )
+
+    # (d) regression guard: the duplicated 4-member family gives a DIFFERENT
+    # value (inflated family precision) — the kernel must not reproduce it.
+    dup_members = dedup_members + [
+        MemberStat(key="eng_z:__unstamped__:5", n=20.0, mean=0.04, var=1e-9, noise=0.0),
+        MemberStat(key="eng_z:__unstamped__:21", n=10.0, mean=0.01, var=1e-9, noise=0.0),
+    ]
+    dup_expected = pooled_edges(dup_members)["eng_z:__all__:5"]
+    assert abs(got_h5 - round(dup_expected, 6)) > 1e-9, (
+        "kernel __all__ posterior matches the DOUBLE-COUNTED family value — "
+        "__unstamped__ duplicates are back in the pooling denominator"
+    )
+
+
+def test_unstamped_is_member_when_coverage_positive(tmp_path):
+    """Once real stamps accrue (coverage > 0), __unstamped__ is a genuine
+    sub-population and must rejoin the family as its own pooling member
+    (posterior computed from its own rows, not copied from __all__)."""
+    rows = [
+        _row(engine="eng_mix", as_of=f"2025-01-{i:02d}", symbol=f"G{i}",
+             horizon=21, outcome_excess=0.05, quad_hard_label="Goldilocks", idx=i)
+        for i in range(1, 9)
+    ] + [
+        _row(engine="eng_mix", as_of=f"2025-02-{i:02d}", symbol=f"U{i}",
+             horizon=21, outcome_excess=-0.03, quad_hard_label=None, idx=i)
+        for i in range(1, 5)
+    ]
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import (
+        build_estimates, MARGINAL_BUCKET, UNSTAMPED_BUCKET,
+    )
+    df, meta = build_estimates(tmp_path)
+    eng = df[df["engine"] == "eng_mix"]
+
+    cov = float(eng.iloc[0]["regime_coverage"])
+    assert abs(cov - 8.0 / 12.0) < 1e-3, f"coverage should be 8/12; got {cov}"
+
+    ic_u = float(eng[eng["regime"] == UNSTAMPED_BUCKET].iloc[0]["shrunken_ic"])
+    ic_a = float(eng[eng["regime"] == MARGINAL_BUCKET].iloc[0]["shrunken_ic"])
+    # Different populations (negative vs blended) → different posteriors
+    assert abs(ic_u - ic_a) > 1e-9, (
+        "__unstamped__ posterior equals __all__ despite coverage > 0 — "
+        "it is being copied instead of pooled as its own member"
+    )
+    assert ic_u < ic_a, "wrong-sign __unstamped__ population must sit below the blend"
+
+
+# ---------------------------------------------------------------------------
+# (11) regime_coverage on the family record and per cell
+# ---------------------------------------------------------------------------
+
+def test_regime_coverage_family_record_and_cells(tmp_path):
+    """regime_coverage = fraction of graded deduped events carrying a
+    quad_hard_label; present on both meta.families and every cell."""
+    rows = [
+        _row(engine="eng_cov", as_of="2026-01-01", symbol="A", horizon=21,
+             quad_hard_label="Goldilocks", outcome_excess=0.02),
+        _row(engine="eng_cov", as_of="2026-01-02", symbol="B", horizon=21,
+             quad_hard_label=None, outcome_excess=0.02),
+    ]
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import build_estimates
+    df, meta = build_estimates(tmp_path)
+
+    fam = meta["families"]["eng_cov"]
+    assert "regime_coverage" in fam, "family record missing regime_coverage"
+    assert abs(fam["regime_coverage"] - 0.5) < 1e-9
+
+    cells = df[df["engine"] == "eng_cov"]
+    assert "regime_coverage" in cells.columns
+    assert (abs(cells["regime_coverage"].astype(float) - 0.5) < 1e-9).all()
+
+
+def test_regime_coverage_zero_when_no_stamps(tmp_path):
+    rows = [
+        _row(engine="eng_cov0", as_of="2026-01-01", symbol="A", horizon=21,
+             quad_hard_label=None, outcome_excess=0.02),
+    ]
+    _write_index(tmp_path, rows)
+    from engine.neuralweb.kernel import build_estimates
+    df, meta = build_estimates(tmp_path)
+    assert meta["families"]["eng_cov0"]["regime_coverage"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# (12) shrunken_ic_sd — per-cell posterior sd
+# ---------------------------------------------------------------------------
+
+def test_shrunken_ic_sd_hand_computed(tmp_path):
+    """At zero noise, shrunken_ic_sd == sqrt(var/(n_eff + K_POOL)) — the
+    normal-normal posterior sd matching reliability = n/(n+K)."""
+    from engine.pooling import K_POOL
+
+    n = 15
+    # Alternate outcomes so sample var is non-degenerate
+    rows = [
+        _row(engine="eng_sd", as_of=f"2026-01-{i:02d}", symbol=f"S{i}",
+             horizon=21, outcome_excess=(0.02 if i % 2 == 0 else 0.06),
+             quad_hard_label="Goldilocks", idx=i)
+        for i in range(1, n + 1)
+    ]
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import build_estimates, MARGINAL_BUCKET
+    df, _ = build_estimates(tmp_path)
+    cell = df[(df["engine"] == "eng_sd") & (df["regime"] == MARGINAL_BUCKET)]
+    assert len(cell) == 1
+    sd = cell.iloc[0]["shrunken_ic_sd"]
+    assert sd is not None and isinstance(sd, float) and math.isfinite(sd)
+    assert sd > 0
+
+    # Hand-computed: sample var (ddof=1) of the signed outcomes / (n + K_POOL)
+    vals = pd.Series([0.02 if i % 2 == 0 else 0.06 for i in range(1, n + 1)])
+    var_raw = float(vals.var())
+    expected = math.sqrt(var_raw / n * (1.0 - n / (n + K_POOL)))
+    assert abs(sd - round(expected, 6)) < 1e-9, (
+        f"shrunken_ic_sd {sd} != hand-computed {expected:.6f} "
+        f"(= sqrt(var/(n+K)) at zero noise)"
+    )
+
+
+def test_shrunken_ic_sd_shrinks_with_n(tmp_path):
+    """More events → tighter posterior band (same outcome dispersion)."""
+    def _mk(engine: str, n: int) -> list[dict]:
+        return [
+            _row(engine=engine, as_of=f"2025-{(i % 12) + 1:02d}-{(i % 28) + 1:02d}",
+                 symbol=f"{engine}_{i}", horizon=21,
+                 outcome_excess=(0.02 if i % 2 == 0 else 0.06),
+                 quad_hard_label=None, idx=i)
+            for i in range(1, n + 1)
+        ]
+    _write_index(tmp_path, _mk("eng_small", 4) + _mk("eng_big", 40))
+
+    from engine.neuralweb.kernel import build_estimates, MARGINAL_BUCKET
+    df, _ = build_estimates(tmp_path)
+    sd_small = float(df[(df["engine"] == "eng_small") &
+                        (df["regime"] == MARGINAL_BUCKET)].iloc[0]["shrunken_ic_sd"])
+    sd_big = float(df[(df["engine"] == "eng_big") &
+                      (df["regime"] == MARGINAL_BUCKET)].iloc[0]["shrunken_ic_sd"])
+    assert sd_big < sd_small, (
+        f"posterior sd must tighten with n: n=40 sd {sd_big} !< n=4 sd {sd_small}"
+    )
+
+
+def test_empty_index_parquet_schema_includes_new_columns(tmp_path):
+    """The empty-but-schema-valid parquet must carry the new columns."""
+    _write_index(tmp_path, [])  # empty spine
+
+    from engine.neuralweb.kernel import write_estimates
+    write_estimates(tmp_path)
+    out = pd.read_parquet(tmp_path / "data" / "neuralweb" / "kernel_estimates.parquet")
+    for col in ("shrunken_ic_sd", "armed_reason", "regime_coverage"):
+        assert col in out.columns, f"empty-schema parquet missing {col!r}"
+
+
+# ---------------------------------------------------------------------------
+# (13) armed_reason persisted to the parquet (reason-drop fix)
+# ---------------------------------------------------------------------------
+
+def test_armed_reason_persisted_to_cells(tmp_path):
+    """pooling.arming()'s explicit reason must survive to the parquet cells
+    (previously only the bool did, so the reason never reached any artifact)."""
+    rows = [
+        _row(engine="eng_ar", as_of="2026-01-01", symbol="A", horizon=21,
+             outcome_excess=0.02, quad_hard_label=None),
+    ]
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import build_estimates
+    df, meta = build_estimates(tmp_path)
+    cells = df[df["engine"] == "eng_ar"]
+    assert "armed_reason" in cells.columns
+    reasons = cells["armed_reason"].dropna().astype(str)
+    assert not reasons.empty, "armed_reason missing from cells"
+    assert (reasons.str.strip() != "").all(), "armed_reason must never be empty"
+    # Must match the family record's reason (n=1 → accruing)
+    assert reasons.iloc[0] == meta["families"]["eng_ar"]["reason"]

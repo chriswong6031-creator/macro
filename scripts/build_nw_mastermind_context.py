@@ -77,6 +77,25 @@ def main(argv: list[str] | None = None) -> int:
     print(f"written: {canonical}")
     print(f"written: {site_copy}")
 
+    # NW→dashboards export lane (written by build_and_write, fail-open)
+    plane_canonical = root / "data" / "neuralweb" / "market_plane.json"
+    plane_site = root / "site" / "neuralwebdata" / "market_plane.json"
+    if plane_canonical.exists():
+        try:
+            import json  # noqa: PLC0415
+            plane = json.loads(plane_canonical.read_text(encoding="utf-8"))
+            plane_gaps = plane.get("gaps") or []
+            print(
+                f"market_plane OK — asof={plane.get('asof')} stale={plane.get('stale')} "
+                f"gaps={len(plane_gaps)} bytes={plane_canonical.stat().st_size}"
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("market_plane: summary read failed — %s", exc)
+        print(f"written: {plane_canonical}")
+        print(f"written: {plane_site}")
+    else:
+        print("::warning::market_plane.json not written (see log — non-fatal)")
+
     return 0
 
 

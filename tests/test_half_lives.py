@@ -155,6 +155,9 @@ def test_schema_mandatory_keys(tmp_path: Path):
         assert "n_horizons" in entry, f"{key}: missing n_horizons"
         assert "reason_null" in entry, f"{key}: missing reason_null"
         assert "fit_rho" in entry, f"{key}: missing fit_rho"
+        assert "trend" in entry, f"{key}: missing trend"
+        assert "ic_ratio_long_short" in entry, f"{key}: missing ic_ratio_long_short"
+        assert "fit_direction" in entry, f"{key}: missing fit_direction"
 
         hl = entry["half_life"]
         assert hl is None or isinstance(hl, float), f"{key}: half_life must be float|None, got {type(hl)}"
@@ -752,3 +755,152 @@ def test_ci_coherence_guard_well_spread_events(tmp_path: Path):
             f"ci_basis must be None when half_life is None, got {entry['ci_basis']!r}"
         )
         assert entry["reason_null"] is not None, "reason_null must be set when half_life is None"
+
+
+# ---------------------------------------------------------------------------
+# (19) edge_non_decaying emits the useful facts, not a bare null (audit fix)
+# ---------------------------------------------------------------------------
+
+def test_edge_non_decaying_emits_curve_facts(tmp_path: Path):
+    """A rising curve keeps half_life=None but must emit trend='non_decaying',
+    ic_ratio_long_short (126d/5d) and fit_direction='rising' — the real
+    track_record pattern (5d 0.0487 → 126d 0.1578)."""
+    from engine.neuralweb.half_life import build_half_lives
+
+    _make_estimates_parquet(tmp_path, [
+        _minimal_estimates_row("track_record", 5, 0.0487, 200),
+        _minimal_estimates_row("track_record", 10, 0.0573, 200),
+        _minimal_estimates_row("track_record", 21, 0.0717, 200),
+        _minimal_estimates_row("track_record", 63, 0.1112, 200),
+        _minimal_estimates_row("track_record", 126, 0.1578, 200),
+    ])
+    graded_rows = [_minimal_graded_row("track_record", f"S{i}", "2026-01-01", 21, 0.01)
+                   for i in range(250)]
+    _make_spine_parquet(tmp_path, graded_rows)
+
+    payload = build_half_lives(tmp_path)
+    entry = payload["families"]["track_record"]
+
+    assert entry["half_life"] is None
+    assert entry["reason_null"] == "edge_non_decaying"
+    assert entry["trend"] == "non_decaying"
+    assert entry["fit_direction"] == "rising"
+    ratio = entry["ic_ratio_long_short"]
+    assert ratio is not None, "ic_ratio_long_short must be emitted for a rising curve"
+    assert abs(ratio - round(0.1578 / 0.0487, 4)) < 1e-9, (
+        f"expected 126d/5d ratio {0.1578 / 0.0487:.4f}, got {ratio}"
+    )
+    # Python-native types (json safety)
+    assert isinstance(ratio, float) and not isinstance(ratio, np.floating)
+
+
+def test_ic_ratio_none_when_short_ic_nonpositive(tmp_path: Path):
+    """A sign flip (short-horizon IC <= 0) makes the long/short ratio
+    uninterpretable — emit None, never a misleading negative ratio."""
+    from engine.neuralweb.half_life import build_half_lives
+
+    _make_estimates_parquet(tmp_path, [
+        _minimal_estimates_row("flip_eng", 5, -0.01, 200),
+        _minimal_estimates_row("flip_eng", 10, 0.02, 200),
+        _minimal_estimates_row("flip_eng", 21, 0.05, 200),
+        _minimal_estimates_row("flip_eng", 63, 0.09, 200),
+        _minimal_estimates_row("flip_eng", 126, 0.15, 200),
+    ])
+    graded_rows = [_minimal_graded_row("flip_eng", f"S{i}", "2026-01-01", 21, 0.01)
+                   for i in range(250)]
+    _make_spine_parquet(tmp_path, graded_rows)
+
+    entry = build_half_lives(tmp_path)["families"]["flip_eng"]
+    assert entry["reason_null"] == "edge_non_decaying"
+    assert entry["trend"] == "non_decaying"
+    assert entry["ic_ratio_long_short"] is None, (
+        "ratio must be None when the short-horizon IC is non-positive"
+    )
+
+
+def test_other_nulls_keep_none_curve_facts(tmp_path: Path):
+    """Families nulled for OTHER reasons (family floor, few horizons) keep
+    honest nulls: trend/ratio/direction all None, reason_null explicit."""
+    from engine.neuralweb.half_life import build_half_lives
+
+    _make_estimates_parquet(tmp_path, [
+        _minimal_estimates_row("thin_eng", 5, 0.03, 200),
+        _minimal_estimates_row("thin_eng", 10, 0.02, 200),
+        _minimal_estimates_row("thin_eng", 21, 0.01, 200),
+    ])
+    # Only 10 graded rows — below FAMILY_FLOOR_N
+    graded_rows = [_minimal_graded_row("thin_eng", f"S{i}", "2026-01-01", 5, 0.005)
+                   for i in range(10)]
+    _make_spine_parquet(tmp_path, graded_rows)
+
+    entry = build_half_lives(tmp_path)["families"]["thin_eng"]
+    assert entry["half_life"] is None
+    assert entry["trend"] is None
+    assert entry["ic_ratio_long_short"] is None
+    assert entry["fit_direction"] is None
+    assert isinstance(entry["reason_null"], str) and entry["reason_null"].strip() != ""
+
+
+# ---------------------------------------------------------------------------
+# (20) REGRESSION (audit critic OPEN item): reason strings must reach the
+# written artifact NON-EMPTY. site/neuralwebdata/half_life.json is a byte-copy
+# of this file (scripts/build_site.py), so this pins the site contract too.
+# ---------------------------------------------------------------------------
+
+def test_reasons_reach_written_artifact_non_empty(tmp_path: Path, monkeypatch):
+    """Every null family in the WRITTEN half_life.json must carry a non-empty
+    reason_null string — empty reasons render as 'unknown' on the committee
+    chip and were flagged by the audit critic."""
+    import engine.neuralweb.envelope as _env_mod
+    monkeypatch.setattr(_env_mod, "load_registry", lambda: _REG)
+    from engine.neuralweb.half_life import write_half_lives
+
+    # Rising curve + a thin family → two different null reasons in one artifact
+    _make_estimates_parquet(tmp_path, [
+        _minimal_estimates_row("track_record", 5, 0.0487, 200),
+        _minimal_estimates_row("track_record", 10, 0.0573, 200),
+        _minimal_estimates_row("track_record", 21, 0.0717, 200),
+        _minimal_estimates_row("track_record", 63, 0.1112, 200),
+        _minimal_estimates_row("track_record", 126, 0.1578, 200),
+        _minimal_estimates_row("thin_eng", 5, 0.03, 50),
+    ])
+    graded_rows = [_minimal_graded_row("track_record", f"S{i}", "2026-01-01", 21, 0.01)
+                   for i in range(250)]
+    graded_rows += [_minimal_graded_row("thin_eng", f"T{i}", "2026-01-01", 5, 0.005)
+                    for i in range(10)]
+    _make_spine_parquet(tmp_path, graded_rows)
+
+    stats = write_half_lives(tmp_path)
+    written = json.loads(Path(stats["output_path"]).read_text(encoding="utf-8"))
+
+    checked = 0
+    for key, entry in written["families"].items():
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("half_life") is None:
+            reason = entry.get("reason_null")
+            assert isinstance(reason, str) and reason.strip() != "", (
+                f"{key}: null family reached the written artifact with an "
+                f"EMPTY/missing reason ({reason!r}) — reasons must survive to "
+                f"the site copy"
+            )
+            checked += 1
+    assert checked >= 2, "fixture should produce at least two null families"
+
+    # The staleness lane must also carry an explicit reason when null
+    staleness = written.get("staleness", {})
+    for key, entry in staleness.items():
+        if isinstance(entry, dict) and entry.get("staleness_half_life") is None:
+            reason = entry.get("reason_null")
+            assert isinstance(reason, str) and reason.strip() != "", (
+                f"staleness[{key}]: null without an explicit reason"
+            )
+
+
+def test_null_entry_coerces_empty_reason():
+    """_null_entry must never emit an empty reason string."""
+    from engine.neuralweb.half_life import _null_entry
+    entry = _null_entry("radar", reason="   ")
+    assert entry["reason_null"] == "unspecified"
+    entry2 = _null_entry("radar", reason="edge_non_decaying")
+    assert entry2["reason_null"] == "edge_non_decaying"

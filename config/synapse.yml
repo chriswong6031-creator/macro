@@ -3708,6 +3708,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/check_nw_health_escalation.py
+      - scripts/build_site.py  # NW read layer: distills the 14-run tail to site/neuralwebdata/health_history.json (display-only)
     notes: >
       M3 escalation organ (PR-3 review fix): per-nightly-run health status log.
       Keyed by produced_at date (not data-vintage as_of) so frozen as_of across
@@ -3772,6 +3773,7 @@ artifacts:
     consumers:
       - engine/neuralweb/cortex.py
       - engine/neuralweb/evidence_clock.py
+      - scripts/build_site.py  # NW read layer: distills the 20-event tail to site/neuralwebdata/governance_recent.json (display-only)
     external_consumers: []
     notes: >
       W7a: Neural Web constitutional governance ledger.  Append-only JSONL — one event
@@ -6038,6 +6040,72 @@ artifacts:
       visibility sub-blocks, projection-only/display).
       See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
 
+  # --- NW → dashboards export lane: market_plane (site-wide macro header feed, 2026-07-10) ---
+  neuralweb-market-plane:
+    path: data/neuralweb/market_plane.json
+    format: json
+    producer: engine/neuralweb/mastermind_context.py
+    known_extra_writers:
+      - "scripts/build_nw_mastermind_context.py — CLI lane; build_and_write() calls build_and_write_market_plane() defined in the producer; no independent write logic"
+    owner_program: nw-mastermind-bridge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: neuralweb.market_plane.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NW → dashboards export lane, canonical copy (git-committed per RUL-P10, same
+      commit path as sibling data/neuralweb artifacts). Site-wide macro header feed
+      (~1.3KB) for the Terminal top bar + committee hero strip. Envelope
+      sibling-stamped in place under artifact_id neuralweb-market-plane — producer
+      and tier here MUST stay engine/neuralweb/mastermind_context.py / display:
+      stamp() used an identical inline fallback registry before this entry landed,
+      and changing either value would churn produced_by/tier (and inputs_hash) across
+      runs. is_context_only=true; no authority booleans; weekend-aware stale flag.
+      Sources: world_state.json (verdict/regime/vol/breadth), liquidity_plumbing.json
+      (fallback: the world_state embedded block), confluence_graph.json
+      contradiction_summary, cortex/memo.json run_status. Fail-open: each missing
+      input yields nulls for its block plus a gaps[] entry — never an exception.
+      Dual-write: byte-identical public twin at site/neuralwebdata/market_plane.json
+      (site-neuralweb-market-plane), both written by build_and_write_market_plane()
+      inside build_and_write().
+
+  site-neuralweb-market-plane:
+    path: site/neuralwebdata/market_plane.json
+    format: json
+    producer: engine/neuralweb/mastermind_context.py
+    known_extra_writers:
+      - "scripts/build_nw_mastermind_context.py — CLI lane; build_and_write() calls build_and_write_market_plane() defined in the producer; no independent write logic"
+    owner_program: nw-mastermind-bridge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: neuralweb.market_plane.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers:
+      - terminal:pull_macro_intel
+    notes: >
+      Public site twin of neuralweb-market-plane (byte-identical shutil.copy2 of the
+      stamped canonical, written by the same build_and_write_market_plane() call;
+      git-committed per RUL-P10). Serves the Terminal top-bar macro header
+      (external pull of site/) and the committee hero strip — client-side fetch;
+      no template wiring yet, so consumers stays [] until the display stage lands
+      (committee.html.j2 is then added here, mirroring the sibling
+      site/neuralwebdata mirrors). Display/context only — is_context_only=true,
+      no authority booleans, all fields fail-open nulls + gaps[].
+
   # --- NW Context Build 3: Analyst Price Targets (free yfinance, display-only) ---
   analyst-targets:
     path: data/analyst/targets.parquet
@@ -6407,6 +6475,67 @@ artifacts:
       across 9 families; basket/amalgam rows flagged pit_membership=False). Rebuilt by
       scripts/build_cycle_pattern_lake.py. Infrastructure/display only — no authority.
       (Notes were a copy-paste of the neuralweb-health artifact until 2026-07-06; fixed.)
+
+  # --- NW read layer: committee-page ledger distills (2026-07-10) ---
+  site-neuralweb-health-history:
+    path: site/neuralwebdata/health_history.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      NW read layer: distilled tail of data/neuralweb/nw_health_run_history.jsonl
+      (nw-health-run-history) — last 14 rows, JSON array, newest last — for
+      committee.html client-side fetch. Fail-open: a missing/malformed ledger or a
+      failed distill never breaks the site render (malformed lines skipped).
+      Git-committed under site/neuralwebdata/ (RUL-P10). A top-level JSON array
+      cannot carry in-place envelope sibling keys; the envelope rides in the
+      health_history.json.envelope.json sidecar via
+      engine/neuralweb/envelope.write_sidecar (the sanctioned non-dict mechanism).
+      asof_field null: rows carry per-run run_date; the 30h SLA covers the nightly
+      re-render, not run-date recency. Display/ops only — no authority.
+
+  site-neuralweb-governance-recent:
+    path: site/neuralwebdata/governance_recent.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      NW read layer: distilled tail of data/neuralweb/governance.jsonl
+      (governance-ledger) — last 20 events, JSON array, newest last — for
+      committee.html client-side fetch. Fail-open (malformed lines skipped; a failed
+      distill never breaks the site render). Git-committed under site/neuralwebdata/
+      (RUL-P10). Envelope rides in the governance_recent.json.envelope.json sidecar
+      via engine/neuralweb/envelope.write_sidecar — a top-level array cannot carry
+      in-place sibling keys. asof_field null: events carry ts, and the source ledger
+      appends only 5-20 events/quarter, so event recency is NOT a freshness signal —
+      the 30h SLA covers the nightly re-render only. Like the source ledger, the
+      distill has NO authority; display/ops only.
 
   # --- PR-D: NW daily brief surface ---
 
@@ -7173,6 +7302,38 @@ artifacts:
       SUSPENDED by truth cycle_truth_ft2_credit_hazard_null_v1
       (data/cycle_pattern/truths.jsonl); FT-3 may only be registered under that
       truth's reopening conditions.
+
+  # --- NW liquidity-plumbing lobe input: H.4.1 reserve balances (2026-07-10) ---
+  fred-wresbal:
+    path: data/fred/WRESBAL.parquet
+    format: parquet
+    producer: collectors/fred.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: collect
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 240  # weekly H.4.1 series (Wednesday publication); 10 days absorbs holiday weeks without hiding a dead collector
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/liquidity_plumbing.py
+    external_consumers: []
+    notes: >
+      Raw FRED collector store for WRESBAL (reserve balances with Federal Reserve
+      Banks; H.4.1, weekly Wednesday; $ BILLIONS per FRED). Declared in config.yml
+      fred.series.liquidity as `WRESBAL: reserve_balances`; FredAdapter writes the
+      parquet on the nightly collect run — the file first appears on the next
+      collect after this registration (registry entry intentionally precedes the
+      artifact; the path-existence gate does not apply to artifacts). Input to the
+      NW liquidity-plumbing lobe: engine/neuralweb/liquidity_plumbing.snapshot()
+      consumes it FAIL-OPEN (fed.reserve_balances_bn null + gaps[] entry until the
+      store exists); the lobe carries a millions guard in case the store convention
+      differs from $bn. Raw store only — no scoring, no netliq composite here
+      (macro-signal-lab owns the scored netliq signal).
 
   liquidity-plumbing:
     path: data/neuralweb/liquidity_plumbing.json

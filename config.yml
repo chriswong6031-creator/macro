@@ -148,6 +148,7 @@ fred:
       DTWEXBGS: broad_dollar      # broad trade-weighted USD (2006->); better commodity driver than DXY for copper/oil (EM/China weight)
     liquidity:
       WALCL: fed_balance_sheet    # weekly (Wed), $ millions
+      WRESBAL: reserve_balances   # weekly (Wed), $ billions — H.4.1 reserve balances (NW liquidity-plumbing lobe fed.reserve_balances_bn)
       RRPONTSYD: on_rrp           # daily, $ billions
       M2SL: us_m2                 # US M2 broad money ($bn, monthly) — global-M2 leg
       ECBASSETSW: ecb_assets      # ECB total assets (€ millions, weekly) — global-CB liquidity leg

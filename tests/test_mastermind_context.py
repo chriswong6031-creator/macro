@@ -23,9 +23,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.neuralweb.mastermind_context import (  # noqa: E402
+    MARKET_PLANE_SCHEMA,
     SCHEMA,
     build_context,
     build_and_write,
+    build_and_write_market_plane,
+    build_market_plane,
     _coerce_numpy,
     _sparse,
     _is_stale,
@@ -132,16 +135,45 @@ def _minimal_bottom_sensors(tmp_path: Path, tickers: list[str] | None = None) ->
 def _minimal_world_state(tmp_path: Path) -> Path:
     (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
     obj = {
-        "verdict": {"verdict": "RISK_OFF", "score": 40},
+        "verdict": {"verdict": "RISK_OFF", "score": 40,
+                    "label_en": "Risk-off", "label_zh": "风险规避"},
         "regime": {
             "quad": 1, "quad_name": "Goldilocks", "confidence": 0.5,
             "cycle_tag": "expansion", "transition_state": "STABLE",
             "flip_margin": 0.1, "liquidity_overlay": "neutral", "asof": "2026-07-05",
         },
+        "vol": {"regime": "normalizing", "risk_score": 0.24, "vix": 16.2,
+                "asof": "2026-07-05"},
+        "breadth": {"pct_above_50": 64.5, "pct_above_200": 64.6,
+                    "nh": 16, "nl": 1, "date": "2026-07-05"},
         "as_of": "2026-07-05",
         "produced_at": "2026-07-05T12:00:00Z",
     }
     p = tmp_path / "data" / "neuralweb" / "world_state.json"
+    p.write_text(json.dumps(obj))
+    return p
+
+
+def _minimal_liquidity_plumbing(tmp_path: Path) -> Path:
+    """Write a minimal data/neuralweb/liquidity_plumbing.json fixture."""
+    (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
+    obj = {
+        "schema": "neuralweb.liquidity_plumbing.v1",
+        "asof": "2026-07-05",
+        "headline": {"state": "stress_liquidity_expansion", "summary": "test"},
+        "quantity": {"netliq_bn": 5980.5, "netliq_chg_20d_bn": 56.7,
+                     "overlay": "expanding"},
+        "rrp": {"rrp_bn": 5.8, "buffer_state": "exhausted"},
+        "treasury": {"tga_bn": 749.2, "tga_chg_20d_bn": -81.2},
+        "entry_effect": {
+            "direction": "tailwind",
+            "quality": "low_quality_tailwind",
+            "measured_basis": "cycle_ladder_21d_odds",
+            "use": "support existing buy setup, never originate one",
+        },
+        "gaps": [],
+    }
+    p = tmp_path / "data" / "neuralweb" / "liquidity_plumbing.json"
     p.write_text(json.dumps(obj))
     return p
 
@@ -227,6 +259,8 @@ def _minimal_cortex(tmp_path: Path) -> Path:
         "summary": "test memo",
         "decaying_families": [],
         "is_context_only": True,
+        "run_status": {"status": "ok", "degraded": False,
+                       "degradation_reason": None},
     }
     prob = {
         "schema": "neuralweb.cortex_probation.v1",
@@ -251,6 +285,7 @@ def _build_minimal_tree(tmp_path: Path) -> None:
         "ALTDATA_A", "ALTDATA_B", "RADAR_COILED",
     ])
     _minimal_world_state(tmp_path)
+    _minimal_liquidity_plumbing(tmp_path)
     _minimal_kernel_families(tmp_path)
     _minimal_kernel_decisions(tmp_path, survivors=[])
     _minimal_confluence_graph(tmp_path)
@@ -1159,3 +1194,285 @@ class TestAnalystBlock:
         assert CONTEXT_SIZE_CAP_BYTES == 300 * 1024, (
             f"Expected CONTEXT_SIZE_CAP_BYTES=307200, got {CONTEXT_SIZE_CAP_BYTES}"
         )
+
+
+# ---------------------------------------------------------------------------
+# 13. Weekend-aware staleness (freshness contract fix)
+# ---------------------------------------------------------------------------
+
+class TestWeekendStaleness:
+    """_is_stale measures staleness in TRADING time.
+
+    2026-07-03 = Friday, 2026-07-04 = Saturday, 2026-07-05 = Sunday,
+    2026-07-06 = Monday, 2026-07-07 = Tuesday. SLA = 30h.
+    """
+
+    def test_friday_asof_not_stale_on_sunday(self):
+        now = datetime(2026, 7, 5, 12, 0, 0, tzinfo=timezone.utc)  # Sunday noon
+        assert _is_stale("2026-07-03", now=now) is False, (
+            "Friday as_of must not be stale on Sunday (weekend allowance)"
+        )
+
+    def test_friday_asof_fresh_through_monday_sla(self):
+        """as_of Friday → allow until Monday + SLA (clock restarts Monday)."""
+        now = datetime(2026, 7, 7, 5, 0, 0, tzinfo=timezone.utc)  # Tue 05:00 (29h after Mon 00:00)
+        assert _is_stale("2026-07-03", now=now) is False
+
+    def test_friday_asof_stale_after_monday_sla(self):
+        now = datetime(2026, 7, 7, 12, 0, 0, tzinfo=timezone.utc)  # Tue noon (36h after Mon 00:00)
+        assert _is_stale("2026-07-03", now=now) is True
+
+    def test_saturday_asof_clock_starts_monday(self):
+        now = datetime(2026, 7, 6, 23, 0, 0, tzinfo=timezone.utc)  # Monday 23:00
+        assert _is_stale("2026-07-04", now=now) is False
+
+    def test_weekday_behaviour_unchanged_stale(self):
+        """Wednesday as_of checked Friday noon (60h) is stale — no allowance."""
+        now = datetime(2026, 7, 3, 12, 0, 0, tzinfo=timezone.utc)  # Friday noon
+        assert _is_stale("2026-07-01", now=now) is True
+
+    def test_weekday_behaviour_unchanged_fresh(self):
+        """Thursday as_of checked Friday 05:00 (29h) is fresh — within SLA."""
+        now = datetime(2026, 7, 3, 5, 0, 0, tzinfo=timezone.utc)
+        assert _is_stale("2026-07-02", now=now) is False
+
+    def test_absent_asof_still_stale(self):
+        assert _is_stale(None) is True
+        assert _is_stale("") is True
+
+    def test_naive_now_accepted(self):
+        """now without tzinfo must work (internal callers use naive UTC)."""
+        now = datetime(2026, 7, 5, 12, 0, 0)  # naive Sunday noon
+        assert _is_stale("2026-07-03", now=now) is False
+
+
+# ---------------------------------------------------------------------------
+# 14. freshest_market_asof (freshness contract fix)
+# ---------------------------------------------------------------------------
+
+class TestFreshestMarketAsof:
+    def test_freshest_is_max_over_market_lobes_only(self, tmp_path):
+        """freshest_market_asof = max over MARKET-DATA lobes; min() as_of
+        semantics unchanged (ruling §3.3)."""
+        _build_minimal_tree(tmp_path)
+
+        # market lobe (regime asof) newest of the market-data lobes
+        ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
+        ws = json.loads(ws_path.read_text())
+        ws["regime"]["asof"] = "2026-07-06"
+        ws_path.write_text(json.dumps(ws))
+
+        # bottom_sensors older
+        bs_path = tmp_path / "site" / "neuralwebdata" / "bottom_sensors.json"
+        bs = json.loads(bs_path.read_text())
+        bs["as_of"] = "2026-07-03"
+        bs_path.write_text(json.dumps(bs))
+
+        # cortex memo: OLDEST (drives min) — and a second variant below proves
+        # a NEWER memo cannot drive the max.
+        memo_path = tmp_path / "data" / "neuralweb" / "cortex" / "memo.json"
+        memo = json.loads(memo_path.read_text())
+        memo["as_of"] = "2026-07-01"
+        memo_path.write_text(json.dumps(memo))
+
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert payload["as_of"] == "2026-07-01", (
+            "conservative min() as_of semantics must be unchanged"
+        )
+        assert payload["freshest_market_asof"] == "2026-07-06", (
+            f"expected max over market-data lobes; got {payload['freshest_market_asof']!r}"
+        )
+
+    def test_newer_non_market_lobe_does_not_inflate_freshest(self, tmp_path):
+        """A cortex memo newer than all market data must NOT raise
+        freshest_market_asof (cortex is not a market-data lobe)."""
+        _build_minimal_tree(tmp_path)
+        memo_path = tmp_path / "data" / "neuralweb" / "cortex" / "memo.json"
+        memo = json.loads(memo_path.read_text())
+        memo["as_of"] = "2026-07-09"
+        memo_path.write_text(json.dumps(memo))
+
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert payload["freshest_market_asof"] == "2026-07-05", (
+            "cortex memo date leaked into freshest_market_asof"
+        )
+
+    def test_freshest_null_when_no_market_asof(self, tmp_path):
+        """Empty tree → freshest_market_asof is None (fail-open null), key present."""
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "freshest_market_asof" in payload
+        assert payload["freshest_market_asof"] is None
+
+
+# ---------------------------------------------------------------------------
+# 15. market_plane.json (NW→dashboards export lane)
+# ---------------------------------------------------------------------------
+
+_PLANE_TOP_KEYS = (
+    "schema", "asof", "is_context_only", "verdict", "regime", "vol", "breadth",
+    "liquidity_plumbing", "contradiction_count", "cortex", "stale", "gaps",
+)
+
+# Authority-shaped keys that must never be True anywhere in the plane
+_AUTHORITY_KEYS = {
+    "can_add_candidates", "can_raise_size", "can_lower_size",
+    "can_block_entry", "can_force_exit", "hard_gate", "score_raise",
+}
+
+
+def _walk_items(obj, prefix=""):
+    """Yield (dotted_key_path, leaf_value) pairs for nested dict/list."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _walk_items(v, f"{prefix}.{k}" if prefix else str(k))
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            yield from _walk_items(v, f"{prefix}[{i}]")
+    else:
+        yield prefix, obj
+
+
+class TestMarketPlane:
+    def test_schema_and_all_keys_present(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        plane = build_market_plane(root=tmp_path, now=_NOW)
+        assert plane["schema"] == MARKET_PLANE_SCHEMA
+        for key in _PLANE_TOP_KEYS:
+            assert key in plane, f"market_plane missing top-level key {key!r}"
+        for key in ("verdict", "score", "label_en", "label_zh"):
+            assert key in plane["verdict"], f"verdict missing {key!r}"
+        for key in ("quad", "quad_name", "confidence", "cycle_tag",
+                    "transition_state", "flip_margin", "liquidity_overlay"):
+            assert key in plane["regime"], f"regime missing {key!r}"
+        for key in ("regime", "risk_score"):
+            assert key in plane["vol"], f"vol missing {key!r}"
+        for key in ("state", "netliq_bn", "netliq_d20_bn", "rrp_buffer_state",
+                    "tga_bn", "entry_effect"):
+            assert key in plane["liquidity_plumbing"], f"liquidity_plumbing missing {key!r}"
+        for key in ("status", "degradation_reason"):
+            assert key in plane["cortex"], f"cortex missing {key!r}"
+
+    def test_values_from_fixtures(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        plane = build_market_plane(root=tmp_path, now=_NOW)
+        assert plane["verdict"]["verdict"] == "RISK_OFF"
+        assert plane["verdict"]["score"] == 40
+        assert plane["verdict"]["label_en"] == "Risk-off"
+        assert plane["verdict"]["label_zh"] == "风险规避"
+        assert plane["regime"]["quad_name"] == "Goldilocks"
+        assert plane["vol"]["regime"] == "normalizing"
+        assert plane["vol"]["risk_score"] == pytest.approx(0.24)
+        assert plane["breadth"]["nh"] == 16
+        lp = plane["liquidity_plumbing"]
+        assert lp["state"] == "stress_liquidity_expansion"
+        assert lp["netliq_bn"] == pytest.approx(5980.5)
+        assert lp["netliq_d20_bn"] == pytest.approx(56.7)
+        assert lp["rrp_buffer_state"] == "exhausted"
+        assert lp["tga_bn"] == pytest.approx(749.2)
+        assert lp["entry_effect"]["direction"] == "tailwind"
+        assert plane["contradiction_count"] == 1
+        assert plane["cortex"]["status"] == "ok"
+        # as_of 2026-07-05 is a Sunday; built at Sunday noon → not stale
+        assert plane["asof"] == "2026-07-05"
+        assert plane["stale"] is False
+
+    def test_envelope_stamped(self, tmp_path):
+        """Dual-write output must carry all five envelope keys as SIBLINGS
+        (never a wrapper), even before synapse.yml registration lands."""
+        _build_minimal_tree(tmp_path)
+        stamped = build_and_write_market_plane(root=tmp_path, now=_NOW)
+        for key in ENVELOPE_KEYS:
+            assert key in stamped, f"envelope key {key!r} missing from market_plane"
+        assert stamped["tier"] == "display"
+        assert stamped["produced_by"], "produced_by must be non-empty"
+        # sibling keys, not a wrapper: payload keys still at top level
+        assert stamped["schema"] == MARKET_PLANE_SCHEMA
+        assert "verdict" in stamped
+
+    def test_dual_write_byte_identical(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        build_and_write_market_plane(root=tmp_path, now=_NOW)
+        canonical = tmp_path / "data" / "neuralweb" / "market_plane.json"
+        site_copy = tmp_path / "site" / "neuralwebdata" / "market_plane.json"
+        assert canonical.exists(), "canonical market_plane.json not written"
+        assert site_copy.exists(), "site market_plane.json not written"
+        assert canonical.read_bytes() == site_copy.read_bytes(), (
+            "site copy must be byte-identical to canonical"
+        )
+
+    def test_build_and_write_also_writes_plane(self, tmp_path):
+        """The main build_and_write() must dual-write market_plane too."""
+        _build_minimal_tree(tmp_path)
+        build_and_write(root=tmp_path, now=_NOW)
+        assert (tmp_path / "data" / "neuralweb" / "market_plane.json").exists()
+        assert (tmp_path / "site" / "neuralwebdata" / "market_plane.json").exists()
+
+    def test_is_context_only_and_no_authority_true(self, tmp_path):
+        """is_context_only semantics: the plane may carry NO authority boolean
+        set true anywhere in its tree."""
+        _build_minimal_tree(tmp_path)
+        stamped = build_and_write_market_plane(root=tmp_path, now=_NOW)
+        assert stamped["is_context_only"] is True
+        for path, value in _walk_items(stamped):
+            leaf = path.rsplit(".", 1)[-1]
+            if leaf in _AUTHORITY_KEYS:
+                assert value is not True, (
+                    f"authority-shaped key {path!r} is True in market_plane"
+                )
+
+    def test_fail_open_empty_tree(self, tmp_path):
+        """No inputs at all → nulls per block + gaps[] entries, never a raise."""
+        plane = build_market_plane(root=tmp_path, now=_NOW)
+        for key in _PLANE_TOP_KEYS:
+            assert key in plane, f"missing key {key!r} on empty tree"
+        assert plane["verdict"]["verdict"] is None
+        assert plane["regime"]["quad"] is None
+        assert plane["vol"]["regime"] is None
+        assert plane["breadth"] is None
+        assert plane["liquidity_plumbing"]["netliq_bn"] is None
+        assert plane["contradiction_count"] is None
+        assert plane["cortex"]["status"] is None
+        assert plane["asof"] is None
+        assert plane["stale"] is True
+        assert plane["gaps"], "gaps[] must record the missing inputs"
+
+    def test_liquidity_fallback_to_world_state_embedded(self, tmp_path):
+        """When liquidity_plumbing.json is absent, the world_state embedded
+        block (flat keys) is used and a gap is recorded."""
+        _build_minimal_tree(tmp_path)
+        (tmp_path / "data" / "neuralweb" / "liquidity_plumbing.json").unlink()
+        ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
+        ws = json.loads(ws_path.read_text())
+        ws["liquidity_plumbing"] = {
+            "available": True,
+            "state": "clean_expansion",
+            "netliq_bn": 6000.0,
+            "netliq_chg_20d_bn": 10.0,
+            "rrp_buffer_state": "thin",
+            "tga_bn": 700.0,
+            "entry_effect_direction": "tailwind",
+            "entry_effect_quality": "clean",
+            "entry_effect_basis": "cycle_ladder_21d_odds",
+            "entry_effect_use": "support existing buy setup, never originate one",
+        }
+        ws_path.write_text(json.dumps(ws))
+        plane = build_market_plane(root=tmp_path, now=_NOW)
+        lp = plane["liquidity_plumbing"]
+        assert lp["state"] == "clean_expansion"
+        assert lp["netliq_d20_bn"] == pytest.approx(10.0)
+        assert lp["rrp_buffer_state"] == "thin"
+        assert lp["entry_effect"]["measured_basis"] == "cycle_ladder_21d_odds"
+        assert any("liquidity_plumbing" in g for g in plane["gaps"])
+
+    def test_no_validated_string(self, tmp_path):
+        """The word 'validated' is banned in any user-facing string (CI rule)."""
+        _build_minimal_tree(tmp_path)
+        stamped = build_and_write_market_plane(root=tmp_path, now=_NOW)
+        assert "validated" not in json.dumps(stamped).lower()
+
+    def test_plane_is_compact(self, tmp_path):
+        """Header-feed budget: compact JSON stays well under 8KB (~2KB target)."""
+        _build_minimal_tree(tmp_path)
+        build_and_write_market_plane(root=tmp_path, now=_NOW)
+        size = (tmp_path / "data" / "neuralweb" / "market_plane.json").stat().st_size
+        assert size <= 8 * 1024, f"market_plane.json too large: {size} bytes"

@@ -1443,6 +1443,16 @@ jobs:
         # cortex_source=previous_run is correct here: day-2 detection still holds.
         # Fail-open: any failure exits 0, never blocks the pipeline.
         # Ledger covered by 'git add data/' in 'commit engine outputs' below.
+        # TRANSPORT SECRETS REQUIRED (2026-07-10 fix): transports are step-scoped
+        # in this workflow, and this step shipped without them — send_telegram/
+        # send_discord skip silently when the env vars are absent, push_ops_alert
+        # returns False, and the nw_health ledger can NEVER be written even when
+        # the >=3-night streak is met. Same env block as the notify/push-alerts
+        # steps above.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.check_nw_health_escalation || echo "::warning::check_nw_health_escalation failed (non-fatal)"
       - name: build neuralweb daily brief (PR-D — NW daily brief surface, engine phase)
         if: always()

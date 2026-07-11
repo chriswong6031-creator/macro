@@ -4021,6 +4021,61 @@ def main() -> int:
         if _ad_src.exists():
             (nwd / "attention_deterministic.json").write_bytes(_ad_src.read_bytes())
             log.info("neuralwebdata: copied attention_deterministic.json")
+        # NW read layer: distill the health run-history tail (last 14 runs, newest
+        # last) for committee.html client-side fetch.  Fail-open: a missing or
+        # malformed ledger never breaks the committee render.
+        try:
+            _hh_src = config.data_dir() / "neuralweb" / "nw_health_run_history.jsonl"
+            if _hh_src.exists():
+                _hh_rows: list = []
+                for _hh_ln in _hh_src.read_text(encoding="utf-8").splitlines():
+                    _hh_ln = _hh_ln.strip()
+                    if _hh_ln:
+                        try:
+                            _hh_rows.append(json.loads(_hh_ln))
+                        except Exception:  # noqa: BLE001 — skip malformed lines
+                            pass
+                _hh_rows = _hh_rows[-14:]
+                (nwd / "health_history.json").write_text(
+                    json.dumps(_hh_rows, ensure_ascii=False), encoding="utf-8")
+                log.info("neuralwebdata: wrote health_history.json (%d rows)", len(_hh_rows))
+                # Envelope: a top-level JSON array cannot carry in-place sibling
+                # keys, so the stamp rides in the .envelope.json sidecar (the
+                # sanctioned non-dict mechanism).  Best-effort — never breaks render.
+                try:
+                    from engine.neuralweb.envelope import write_sidecar as _nw_sidecar
+                    _nw_sidecar(nwd / "health_history.json",
+                                artifact_id="site-neuralweb-health-history")
+                except Exception as _hh_env_e:  # noqa: BLE001 — envelope is best-effort
+                    log.warning("neuralwebdata: health_history envelope sidecar failed (%s)", _hh_env_e)
+        except Exception as _hh_e:  # noqa: BLE001 — additive; never break main build
+            log.warning("neuralwebdata: health_history distill failed (%s); skipped", _hh_e)
+        # NW read layer: distill the governance ledger tail (last 20 events, newest
+        # last) for committee.html client-side fetch.  Same fail-open shape.
+        try:
+            _gv_src = config.data_dir() / "neuralweb" / "governance.jsonl"
+            if _gv_src.exists():
+                _gv_rows: list = []
+                for _gv_ln in _gv_src.read_text(encoding="utf-8").splitlines():
+                    _gv_ln = _gv_ln.strip()
+                    if _gv_ln:
+                        try:
+                            _gv_rows.append(json.loads(_gv_ln))
+                        except Exception:  # noqa: BLE001 — skip malformed lines
+                            pass
+                _gv_rows = _gv_rows[-20:]
+                (nwd / "governance_recent.json").write_text(
+                    json.dumps(_gv_rows, ensure_ascii=False), encoding="utf-8")
+                log.info("neuralwebdata: wrote governance_recent.json (%d rows)", len(_gv_rows))
+                # Envelope sidecar (same rationale as health_history above).
+                try:
+                    from engine.neuralweb.envelope import write_sidecar as _nw_sidecar
+                    _nw_sidecar(nwd / "governance_recent.json",
+                                artifact_id="site-neuralweb-governance-recent")
+                except Exception as _gv_env_e:  # noqa: BLE001 — envelope is best-effort
+                    log.warning("neuralwebdata: governance_recent envelope sidecar failed (%s)", _gv_env_e)
+        except Exception as _gv_e:  # noqa: BLE001 — additive; never break main build
+            log.warning("neuralwebdata: governance_recent distill failed (%s); skipped", _gv_e)
         # Supabase config (same as watchlist / theme.js)
         committee_html = env.get_template("committee.html.j2").render(
             generated_utc=generated,
