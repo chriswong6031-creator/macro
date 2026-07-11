@@ -32,6 +32,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | intraday-flow-tracker | 3 |
+| leader-radar | 4 |
 | long-hold | 28 |
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
@@ -77,8 +78,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 225 |
-| infrastructure | 88 |
+| display | 226 |
+| infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
 
@@ -86,7 +87,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 364 |
+| git | 368 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -298,6 +299,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intraday-flow-base | `site/flowtracker/base.json` | json | daily-engine | display | 1 | 0 |
 | intraday-flow-pulse | `site/live/flow_pulse.json` | json | intraday | display | 1 | 0 |
 | intraday-flow-ledger | `data/intraday_flow/ledger.parquet` | parquet | daily-engine | display | 0 | 0 |
+
+### leader-radar
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| leader-radar-revisions-history | `data/leader_radar/revisions_history.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| leader-radar-state-history | `data/leader_radar/state_history.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| rs-series-store | `data/rs_series/` | parquet | daily-engine | infrastructure | 1 | 0 |
+| site-leader-radar | `site/leaderradar/radar.json` | json | daily-engine | display | 1 | 0 |
 
 ### long-hold
 

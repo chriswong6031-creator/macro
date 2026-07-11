@@ -511,10 +511,52 @@ _G = [
     ),
 ]
 
+# ------------------------------------------------------------------ Family H — Leader Radar (LR W2a) ---
+_H = [
+    _entry(
+        engine_id="plab_leader_precipice",
+        name_en="Leader Radar Precipice (pre-breakaway alert)",
+        name_zh="领导雷达临界 (突破前预警)",
+        family="H",
+        ruler="21d_spy_excess",
+        max_picks=12,
+        refire_lockout_sessions=21,
+        config={
+            # Entry rule: fire_precipice==true rows in site/leaderradar/radar.json
+            # Candidates: CATALYST_WINDOW confirmed state + (revision_positive OR rs_line_nh)
+            # LR-R8: consumption-not-recomputation law — no leg re-evaluation here
+            "source_artifact": "site/leaderradar/radar.json",
+            "fire_field": "fire_precipice",
+            "rank_by": "days_in_state",
+            "rank_asc": True,  # fewer days in CATALYST_WINDOW = more recent entry
+        },
+        kill_adjacency="",
+    ),
+    _entry(
+        engine_id="plab_leader_onset",
+        name_en="Leader Radar Onset (BREAKAWAY entry)",
+        name_zh="领导雷达起爆 (突破入场)",
+        family="H",
+        ruler="21d_spy_excess",
+        max_picks=12,
+        refire_lockout_sessions=21,
+        config={
+            # Entry rule: fire_onset==true rows in site/leaderradar/radar.json
+            # Candidates: BREAKAWAY confirmed state (Detector-D onset; LR-R8)
+            # LR-R8: consumption-not-recomputation law — radar.json fire flags consumed as-is
+            "source_artifact": "site/leaderradar/radar.json",
+            "fire_field": "fire_onset",
+            "rank_by": "days_in_state",
+            "rank_asc": True,  # most recent BREAKAWAY entry ranks first
+        },
+        kill_adjacency="",
+    ),
+]
+
 # ------------------------------------------------------------------ Exports ---
-REGISTRY: list[dict] = _A + _B + _C + _D + _E + _F + _LH + _G
+REGISTRY: list[dict] = _A + _B + _C + _D + _E + _F + _LH + _G + _H
 BY_ID: dict[str, dict] = {b["engine_id"]: b for b in REGISTRY}
 
-# Sanity check at module load: 25 books, all config_hashes unique
-assert len(REGISTRY) == 25, f"Expected 25 books, got {len(REGISTRY)}"
-assert len({b["config_hash"] for b in REGISTRY}) == 25, "Duplicate config_hash detected"
+# Sanity check at module load: 27 books, all config_hashes unique
+assert len(REGISTRY) == 27, f"Expected 27 books, got {len(REGISTRY)}"
+assert len({b["config_hash"] for b in REGISTRY}) == 27, "Duplicate config_hash detected"

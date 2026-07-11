@@ -312,14 +312,14 @@ class TestSignals1D:
 
 class TestRegistry:
     def test_count(self):
-        assert len(REGISTRY) == 25
+        assert len(REGISTRY) == 27  # LR W2a added plab_leader_precipice, plab_leader_onset (25->27)
 
     def test_by_id_completeness(self):
         assert set(BY_ID.keys()) == {b["engine_id"] for b in REGISTRY}
 
     def test_config_hashes_unique(self):
         hashes = [b["config_hash"] for b in REGISTRY]
-        assert len(set(hashes)) == 25, "Duplicate config_hash detected"
+        assert len(set(hashes)) == 27, "Duplicate config_hash detected"  # LR W2a: 25->27
 
     def test_config_hash_stable(self):
         """config_hash is stable (same input → same output)."""
@@ -360,7 +360,7 @@ class TestRegistry:
 
     def test_entry_books_count(self):
         entry = [b for b in REGISTRY if b["horizon_role"] == "entry"]
-        assert len(entry) == 22  # 20 original + 2 family G (plab_flow_leader, plab_flow_washout)
+        assert len(entry) == 24  # 20 original + 2 family G (flow) + 2 family H (leader radar LR W2a)
 
     def test_kill_adjacency_present_on_books_8_10_13_19(self):
         kill_books = {"plab_hi_base", "plab_sector_trough", "plab_edge_1d", "plab_topping_avoid"}
