@@ -67,6 +67,12 @@
 {# theme labels #}
 {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
 
+{# event-type labels — keys mirror engine/news_events.py _EVENT_CLASSES names #}
+{% set EVL = {'earnings_result':['Earnings Result','财报发布'],'preannouncement':['Preannouncement','业绩预告'],'guidance_raise':['Guidance Raise','上调指引'],'guidance_cut':['Guidance Cut','下调指引'],'analyst_estimate_revision':['Estimate Revision','盈测调整'],'rating_change':['Rating Change','评级变动'],'mna_confirmed':['M&amp;A Confirmed','并购确认'],'mna_rumor':['M&amp;A Rumor','并购传闻'],'equity_offering':['Equity Offering','股票增发'],'buyback':['Buyback','股票回购'],'dividend_change':['Dividend Change','股息变动'],'contract_award':['Contract Award','合同中标'],'customer_win':['Customer Win','赢得客户'],'customer_loss':['Customer Loss','客户流失'],'product_launch':['Product Launch','产品发布'],'product_delay':['Product Delay','产品延期'],'management_change':['Management Change','管理层变动'],'activist_campaign':['Activist','股东维权'],'litigation':['Litigation','诉讼'],'regulatory_probe':['Regulatory Probe','监管调查'],'bankruptcy_restructuring':['Restructuring','破产重组'],'policy_trade_control':['Trade Controls','贸易管制'],'macro_release':['Macro Release','宏观数据']} %}
+
+{# source-tier labels #}
+{% set TIERL = {'official':['Official','官方'],'tier1':['Tier 1','一级来源'],'quality':['Quality','精选来源'],'stock_wire':['Wire','快讯']} %}
+
 {# ---- direction helpers --------------------------------------------------- #}
 {% macro dir_badge(direction) %}
   {% if direction == 'bullish' %}<span class="nb-dir bull">{{ t('Bullish','利多') }}</span>
@@ -381,7 +387,8 @@
                 {% if h.get('event') %}
                   {% set ev = h.event %}
                   {% set _ev_type = ev.get('event_type') or ev.get('name','') %}
-                  <span class="nb-event ev-{{ _ev_type }}">{{ _ev_type|replace('_',' ')|title }}</span>
+                  {% set _evl = EVL.get(_ev_type) %}
+                  <span class="nb-event ev-{{ _ev_type }}">{% if _evl %}{{ t(_evl[0], _evl[1]) }}{% else %}{{ _ev_type|replace('_',' ')|title }}{% endif %}</span>
                   {{ dir_badge(ev.get('direction','')) }}
                 {% endif %}
                 {% if h.get('theme') %}
@@ -410,7 +417,8 @@
               {% endif %}
               {% if h.get('source_tier') %}
               <span class="em-item">
-                <span class="tier-badge tier-{{ h.source_tier }}">T{{ h.source_tier }}</span>
+                {% set _tl = TIERL.get(h.source_tier) %}
+                <span class="tier-badge tier-{{ h.source_tier }}">{% if _tl %}{{ t(_tl[0], _tl[1]) }}{% else %}T{{ h.source_tier }}{% endif %}</span>
                 <span class="em-v">{{ h.source_name or h.domain }}</span>
               </span>
               {% else %}

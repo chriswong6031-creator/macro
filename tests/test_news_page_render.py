@@ -439,6 +439,42 @@ def test_event_badge_uses_event_type_key():
     assert 'class="nb-event ev-"' not in html, "empty ev- class means name key regression"
 
 
+def test_badges_bilingual_labels_and_string_tier():
+    """Prod emits source_tier as STRINGS ('stock_wire', 'tier1', ...) — the tier
+    badge must render a human label ('Wire'/'快讯'), never the raw 'Tstock_wire'
+    code the page shipped with.  Event badges must carry the ZH label span too.
+    """
+    env = _env()
+    tmpl = env.get_template("news.html.j2")
+    headline = {
+        "title": "Analyst upgrades AAPL to Buy",
+        "theme": "analyst",
+        "source_tier": "stock_wire",  # prod shape: string, not int
+        "source_name": "CNBC - Markets",
+        "seendate": "2026-07-04T10:00:00Z",
+        "novelty_z": None,
+        "tickers": ["AAPL"],
+        "event": {"event_type": "rating_change", "direction": "bullish", "numbers": {}},
+    }
+    vm = dict(
+        _empty_vm(),
+        macro_news={
+            "headlines": [headline],
+            "synthesis": None,
+            "fetched_at": "2026-07-04T06:00:00Z",
+            "n_raw": 1, "n_kept": 1, "n_official": 0, "n_news_rss": 1, "n_gdelt": 0,
+        },
+    )
+    html = tmpl.render(**vm)
+    assert "Tstock_wire" not in html, "raw internal tier code must not render"
+    assert "Wire" in html and "快讯" in html, "tier badge must render bilingual label"
+    assert "评级变动" in html, "event badge must render the ZH label"
+    # unknown tier falls back to the T<code> form rather than crashing
+    headline2 = dict(headline, source_tier="mystery_tier")
+    vm["macro_news"]["headlines"] = [headline2]
+    assert "Tmystery_tier" in tmpl.render(**vm)
+
+
 # --------------------------------------------------------------------------- #
 # Tests — Delta Board sort (W3 fix: build_site.py ev_heads pre-sort)
 # --------------------------------------------------------------------------- #
