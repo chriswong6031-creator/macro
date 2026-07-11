@@ -597,3 +597,71 @@ class TestOpenLanesScoping:
         cl = adj._load_case_law(tmp_path)
         assert "openlane" in cl["active"]
         assert "plumbing" not in cl["active"], "merged-PR titles must not enter the screen corpus"
+
+
+# ===========================================================================
+# BUG 1 regression — lobe threading into contract and proposal dict
+# ===========================================================================
+
+class TestLobeThreading:
+    """Regression: _mint_contract and build_docket must carry lobe into every proposal/contract."""
+
+    def test_contract_carries_lobe_from_docket(self):
+        """The fitness_contract['lobe'] must equal the docket-level lobe (BUG 1 fix)."""
+        from engine.metabolism.propose import build_docket
+        root = _tmp_root()
+        d = build_docket("cycle-lobe-t1", [_sample_proposal()], root=root,
+                         max_docket_size=5, lobe="til")
+        assert len(d["proposals"]) == 1
+        proposal = d["proposals"][0]
+        # Proposal dict must carry lobe
+        assert proposal.get("lobe") == "til", (
+            f"proposal dict missing lobe; got {proposal.get('lobe')!r}"
+        )
+        # fitness_contract must also carry lobe
+        fc = proposal["fitness_contract"]
+        assert fc.get("lobe") == "til", (
+            f"fitness_contract missing lobe; got {fc.get('lobe')!r}"
+        )
+
+    def test_contract_lobe_reaches_strategic_memory(self):
+        """End-to-end: contract from build_docket → _append_strategic_memory_from_verify
+        → build_strategic_memory_block(lobe=<that lobe>) must return the row.
+
+        Exercises the full BUG 1 path without the shadow harness hardcode.
+        """
+        import tempfile, json  # noqa: PLC0415, E401
+        from pathlib import Path  # noqa: PLC0415
+        from engine.metabolism.propose import build_docket  # noqa: PLC0415
+        from engine.metabolism.verify import _append_strategic_memory_from_verify  # noqa: PLC0415
+        from engine.metabolism.mission import build_strategic_memory_block  # noqa: PLC0415
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            lobe = "til"
+            # Build a real docket (real propose path, not shadow)
+            d = build_docket("cycle-lobe-e2e", [_sample_proposal()], root=root,
+                             max_docket_size=5, lobe=lobe)
+            contract = d["proposals"][0]["fitness_contract"]
+
+            # Verify the contract carries the lobe
+            assert contract.get("lobe") == lobe, (
+                f"contract lobe missing after build_docket; got {contract.get('lobe')!r}"
+            )
+
+            # Simulate what verify does: append strategic memory from this contract
+            fake_triage = {"classification": "overfit", "action": "revert_plan"}
+            _append_strategic_memory_from_verify(
+                cycle_id="cycle-lobe-e2e",
+                contract=contract,
+                triage=fake_triage,
+                outcome="FALSIFIER_TRIPPED",
+                root=root,
+            )
+
+            # Now build the strategic memory block filtering by lobe — must find the row
+            block = build_strategic_memory_block(lobe=lobe, root=root, n_tail=20)
+            assert "cycle-lobe-e2e" in block, (
+                f"strategic memory block filtered out the row for lobe={lobe!r}. "
+                f"Block was: {block!r}"
+            )

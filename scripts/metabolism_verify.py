@@ -150,6 +150,44 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def _build_triage_context(root: Path) -> dict:
+    """Deterministically populate regime/estimator triage flags from committed stores.
+
+    Reads data/regime/regime_one.json (written nightly by the regime engine) and
+    extracts the flip_attribution.flipped boolean.  This is a deterministic read —
+    no LLM involvement, no origination.
+
+    If the store is absent or unreadable, returns an empty context (fail-open):
+    verify will then use the operator_tap fallback rather than silently defaulting
+    to clean-overfit — per the measurement-lens reassessment law.
+
+    Returns a dict suitable for passing as context= to verify_proposal().
+    NEVER raises.
+    """
+    try:
+        p = root / "data" / "regime" / "regime_one.json"
+        if not p.exists():
+            log.info("metabolism_verify: regime_one.json absent — triage context empty")
+            return {}
+        d = json.loads(p.read_text(encoding="utf-8"))
+        flip = (d.get("flip_attribution") or {})
+        flipped = flip.get("flipped", False)
+        degraded = bool(d.get("degraded", False))
+        if flipped or degraded:
+            log.info(
+                "metabolism_verify: regime_one flip_attribution.flipped=%s degraded=%s "
+                "→ regime_change_suspected=True",
+                flipped, degraded,
+            )
+        return {
+            "regime_change_suspected": bool(flipped or degraded),
+            "estimator_broken_suspected": False,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_verify: _build_triage_context failed (%s) — context empty", exc)
+        return {}
+
+
 def _run_single(
     cycle_id: str,
     contract: dict,
@@ -167,9 +205,14 @@ def _run_single(
     try:
         from engine.metabolism.verify import verify_proposal, write_verify_record  # type: ignore[import]
 
+        # Populate regime/estimator triage flags from deterministic committed stores
+        # (measurement-lens law: separate mechanism-false vs regime-change vs estimator-broken).
+        triage_context = _build_triage_context(root)
+
         record = verify_proposal(
             cycle_id=cycle_id,
             contract=contract,
+            context=triage_context,
             root=root,
             today=today,
         )
