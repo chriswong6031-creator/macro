@@ -1034,6 +1034,41 @@ checks:
       wrapper now annotates failures; this sentinel catches whatever class of
       freeze comes next, on every surface it audits.
 
+  - law_id: ops.workflow_yaml_parses
+    summary: >
+      Every file under .github/workflows/ must load as YAML and carry an on:
+      trigger block plus a non-empty jobs: mapping. An unparseable workflow
+      file makes GitHub stamp a FAILED zero-job run on every push to every
+      branch carrying it (2026-07-10→11 incident: metabolism-agenda.yml
+      shipped with column-0 python -c continuation lines that terminated the
+      run: | block scalar — ~325 failed runs in ~26h from a schedule-only
+      workflow; introduced #2135, file repaired #2260). dag-conformance only
+      yaml-loads workflows declared as dag.yml lanes, so non-lane workflows
+      had no parse guard at all.
+    source_ref:
+      - scripts/check_workflow_yaml.py
+      - "PR #2260 (file repair)"
+      - "PR #2135 (regression origin)"
+    severity: hard
+    check_script: scripts/check_workflow_yaml.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        PyYAML (YAML 1.1) is not GitHub's exact parser; semantic errors GitHub
+        rejects (bad expression syntax, unknown keys) can still pass here. The
+        guard covers the observed lethal class: parse failure and missing
+        on:/jobs: blocks.
+    owner_program: null
+    notes: >
+      Complements nw.dag_conformance (lane-sequence drift on declared lanes)
+      by asserting bare loadability of ALL workflow files, lane or not.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry
