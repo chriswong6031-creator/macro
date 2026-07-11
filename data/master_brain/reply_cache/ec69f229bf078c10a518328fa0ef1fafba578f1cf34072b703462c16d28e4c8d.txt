@@ -1,0 +1,37 @@
+**Crowding‑Skeptic Desk Note | China A‑shares  
+As‑of 2026‑07‑10 | Benchmark CSI 300  
+Trust‑graded detector, display only; no forecast edge, size‑down only**  
+
+---
+
+### 1. Most over‑extended theme → SIZE‑DOWN
+**Innovative Pharma & CXO** (cn_pharma_cxo)  
+- **crowding_z = 1.21** (only theme with `crowded: true`; highest z across all eligibles).  
+- **breadth = 1.00** – every constituent participating; this is not “healthy broad strength”, this is “no more marginal buyer” in a trend where full participation often marks late‑cycle tops.  
+- **durability_bar = 0.90** – strong trend health, but the combination of max breadth + elevated crowding‑z creates **asymmetric drawdown risk**, not extra upside.  
+- **RS stretch** (score 0.295, rank 6) is NOT parabolic – good – but the congestion signal is not about price extension; it’s about positioning and participation exhaustion.  
+
+**Action permitted** (per guardrails): **Cap/size‑down any allocation to cn_pharma_cxo.** Not a fade, not a short – simply a risk‑management reduction on a theme where the detector flags consensus positioning. The detector’s own absolute‑trend gate did not hold in this market, so the discipline’s best edge (drawdown avoidance) is experimental here; lowering exposure to the most crowded strand is the only crowding‑validated move.
+
+---
+
+### 2. Sharpest bear case on each long (eligible, positive‑score, scorable)
+
+| Theme (rank) | Bear case – not a fade, just the reason to be humble |
+|--------------|------------------------------------------------------|
+| **AI Compute & Optics** (1) | Score 2.87, leader, yet **breadth of rotation is narrowing** (32% of themes eligible) and absorption 0.35 is moderate. The macro narrative flow is 75% unscheduled – policy/geo headlines can yank a theme tethered to export‑restriction hopes. A single US‑sanctions leak would hit the optics chain; the “AI capex” story is real but the China‑A basket has repeatedly repriced on regulatory noise. The durability bar (0.75) is high but not infallible. |
+| **Semiconductors** (2) | Score 2.61, durability 0.92, breadth 0.955 – dangerously close to the Pharma “full‑boat” signal. crowding_z 0.93 is not yet flagged, but the trend is mature. The bear case: SMIC/equipment names are already pricing in years of domestic‑substitution; any earnings miss or utilisation pull‑back would trigger a sharp decompression. The theme’s breadth means no hiding inside the basket. |
+| **Consumer Electronics** (3) | Score 1.245, breadth 0.60, crowding_z –0.10 (non‑crowded). The bear case is simple: it’s a derivative play on AI‑device upgrade cycles that may be 6–9 months out; in a mean‑reverting tape (gate_helps false) this theme could give back RS rapidly if the “next big thing” narrative shifts. Low conviction – treat as a satellite, not a conviction layer. |
+| **Rare Earth & Magnets** (5) | Score 0.685, but durability 0.44 and **hurst_tag = mean‑revert**. This is not a durable trend; the bear case is that the rare‑earth spike is geopolitical headline‑driven, and the historical pattern is sharp reversals. Breadth 0.222 – very thin. A few large‑caps moving a non‑cohesive theme. Mean‑reversion plus low durability is the worst combination for a trend‐follower. Size minimal if any. |
+| **Innovative Pharma & CXO** (6) | (already covered as crowded) The bear case: policy‑price‑cut overhangs, US BIOSECURE Act lingering, and full participation has historically preceded mean‑reversion in China healthcare baskets. The trend is strong, but the sizing caution is the only edge – the detector won’t time a top. |
+
+---
+
+### 3. Falsifiable conditional lean (no forecast, just hypothesis)
+**If Innovative Pharma & CXO’s breadth falls below 0.80 within the next 10‑15 trading days, without a corresponding break in its absolute trend gate, then the crowding‑related drawdown risk has failed to materialise in a way that invalidates my sizing concern.**  
+Conversely, if breadth stays pinned at 1.00 and the relative score starts to roll (score drops by > 0.15), the “participation exhaustion” bear case gains empirical support.  
+Check‑back: 2026‑07‑24.
+
+---
+
+**Reminder** (per detector guardrails): _Momentum rank ≈ attention lens (rank‑IC ~0). Rotation timing has no validated edge. The absolute‑trend gate did not cut drawdown in this market. I am not forecasting; I am only flagging a sizing caution on the most crowded theme, per the discipline’s single validated downsizing signal._

@@ -1,0 +1,27 @@
+{
+  "summary": "AI/semis leadership drives a narrow risk-on tape in US equities, but rising real yields and a bear-flattening curve from the leading rates/credit family signal a fragile Goldilocks regime, with Bitcoin and ex-US assets showing risk-off, and entry-quality breadth confirming narrow participation.",
+  "regime_read": "Dominant driver: AI/semis leadership — a narrow tech-led tape, per macro.market_drivers (growth vs value +1.4σ, tech vs utilities +0.8σ, cap vs equal-weight +0.9σ; confidence low). The headline macro quad is Goldilocks (Q1) with low macro risk, loose financial conditions, expanding liquidity, and risk-on sentiment (RORO 0.61, optimistic news), while inflation remains transitory. Beneath the surface, the leading-family rates/credit block tells a different story: real 10y at 2.31% (restrictive, rising), a bear flattener curve with policy restrictive, and credit starting to widen (HY OAS 2.7). This cross-family divergence puts the equity risk-on regime at odds with a tightening financial backdrop — an attention flag that the Goldilocks read is built on narrow AI/semis momentum, not a broad cycle. BTC's risk-off composite state (momentum -0.5, high risk) despite macro liquidity expansion, and China/HK languishing in Stagflation with outflows, reinforce that the risk-on impulse is concentrated in US large-cap growth, leaving the broader tape fragile.",
+  "conflicts": [
+    "Price_regime decomposition (same tape): Equities risk-on, Bitcoin risk-off, USD strong — under expanding macro liquidity. This indicates a 'risk-on' pulse concentrated in US large-cap tech/semis, not a broad asset-class rally; narrow leadership, not a macro tide.",
+    "Leading-family divergence (rates_credit vs price_regime): The bond block reads late-cycle, bear flattener, restrictive real yields (2.31%) pressuring growth/duration, while the equity quad shows Goldilocks with AI leadership. This is a genuine cross-family attention flag; it suggests the equity regime may be vulnerable if real rates keep rising or credit widens further.",
+    "Forex regime vs commodities & risk appetite: US growth premium favoring USD, with dollar-supportive backdrop, is a documented headwind for gold, copper, and Bitcoin (forex.transmission). Yet commodity regime favors Gold and Copper within a risk-on macro. This decomposition suggests dollar strength is driven by relative growth/real yields, not risk appetite; it is a drag on non-USD assets and may be blocking the rotation ex-US/crypto.",
+    "BTC risk-off divergence: Composite state RISK-OFF with negative momentum, despite macro risk-on and net liquidity ~$5.98T. Per bond drivers, real 10y at 2.31% is a headwind; the risk-off gate is not triggered, but BTC is not participating in the risk-on move — possibly a leading signal that the rally is exhausted or that crypto is more sensitive to real rates than equity sentiment."
+  ],
+  "rotation_check": "The working thesis (semis → software/growth → ex-US → crypto) is partially tracking: semis and growth leadership confirm the first leg (growth vs value +1.4σ), consistent with the thesis. However, the expected handoff to ex-US and crypto is absent: China and Hong Kong are in Stagflation (Q3) with weak-peg outflows and neutral liquidity, and Bitcoin is risk-off despite macro liquidity expanding. The thesis depends on broad liquidity flows; current USD strength and high real yields appear to be blocking the rotation, confining excess liquidity to US large-cap tech. The thesis remains valid only if these headwinds ease — specifically a break in DXY and/or a decline in real yields.",
+  "transmission": [
+    "If real 10y continues to rise from 2.31%, expect further pressure on growth/duration (QQQ, BTC, gold) and possible rotation toward value, challenging AI/semis leadership.",
+    "Credit widening (HY OAS 2.7, direction widening): per bonds' leading-family signal, a credit canary widening past typical thresholds would lead equity drawdowns, even if equities appear calm now.",
+    "USD strength via US growth premium is a persistent headwind for EM, commodities, and Bitcoin; a decisive break in DXY trend would be necessary for the ex-US/crypto rotation to resume.",
+    "Fed on hold with market pricing only 38bps of easing provides no near-term tailwind; policy_intel suggests the pivot is a post-midterm optionality, not imminent, so the restrictive rates regime persists, pressuring long-duration assets."
+  ],
+  "watch_items": [
+    "Semis relative strength reversal (macro.market_drivers invalidation condition) — would signal the narrow leadership is cracking.",
+    "Break in 10-year real yield above 2.35% or HY OAS widening through 3.0% — would confirm the rates/credit headwind is actively biting equities.",
+    "DXY trend reversal: a decisive move below recent support would indicate a rotation out of USD, potentially unlocking EM and crypto flows.",
+    "BTC reclaiming risk-on state (momentum flipping positive) — an early sign that the risk-on pulse is broadening beyond tech.",
+    "Entry_quality_breadth take_pct rising above 50% — would signal the narrow rally is building broader conviction.",
+    "China/HK quad improving from Stagflation — would validate a genuine rotation into ex-US assets."
+  ],
+  "confidence": "low",
+  "theses": []
+}

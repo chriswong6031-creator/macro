@@ -189,7 +189,7 @@
    "last_price": 39.32,
    "pct_since": 4.9,
    "days_on_board": 1,
-   "exit_date": "2026-07-08",
+   "exit_date": "2026-07-09",
    "status": "running",
    "lane": "buy"
   },
@@ -213,7 +213,7 @@
    "last_price": 36.69,
    "pct_since": 4.5,
    "days_on_board": 1,
-   "exit_date": "2026-07-08",
+   "exit_date": "2026-07-09",
    "status": "running",
    "lane": "buy"
   },
@@ -225,7 +225,7 @@
    "last_price": 17.51,
    "pct_since": -4.5,
    "days_on_board": 1,
-   "exit_date": "2026-07-08",
+   "exit_date": "2026-07-09",
    "status": "stopped",
    "lane": "buy"
   },
@@ -381,7 +381,7 @@
    "last_price": 28.83,
    "pct_since": 3.2,
    "days_on_board": 2,
-   "exit_date": "2026-07-08",
+   "exit_date": "2026-07-09",
    "status": "running",
    "lane": "buy"
   },
@@ -405,7 +405,7 @@
    "last_price": 27.49,
    "pct_since": 3.2,
    "days_on_board": 1,
-   "exit_date": "2026-07-08",
+   "exit_date": "2026-07-09",
    "status": "running",
    "lane": "buy"
   },
@@ -418,18 +418,6 @@
    "pct_since": -2.9,
    "days_on_board": 1,
    "exit_date": "2026-07-06",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "EOG",
-   "sector": "Energy",
-   "first_surfaced": "2026-07-08",
-   "surfaced_price": 137.59,
-   "last_price": 133.54,
-   "pct_since": -2.9,
-   "days_on_board": 1,
-   "exit_date": "2026-07-09",
    "status": "stopped",
    "lane": "buy"
   },
@@ -477,7 +465,7 @@
    "last_price": 74.35,
    "pct_since": 2.7,
    "days_on_board": 1,
-   "exit_date": "2026-07-08",
+   "exit_date": "2026-07-09",
    "status": "running",
    "lane": "buy"
   },
@@ -537,7 +525,7 @@
    "last_price": 22.58,
    "pct_since": 2.3,
    "days_on_board": 1,
-   "exit_date": "2026-07-08",
+   "exit_date": "2026-07-09",
    "status": "running",
    "lane": "buy"
   },
@@ -644,7 +632,7 @@
    "surfaced_price": 80.3,
    "last_price": 79.02,
    "pct_since": -1.6,
-   "days_on_board": 4,
+   "days_on_board": 3,
    "exit_date": "2026-07-06",
    "status": "flat",
    "lane": "buy"
@@ -705,7 +693,7 @@
    "last_price": 351.16,
    "pct_since": -1.5,
    "days_on_board": 1,
-   "exit_date": "2026-07-08",
+   "exit_date": "2026-07-09",
    "status": "flat",
    "lane": "buy"
   },
@@ -720,18 +708,30 @@
    "exit_date": "2026-07-02",
    "status": "flat",
    "lane": "buy"
+  },
+  {
+   "ticker": "GATX",
+   "sector": "Industrials",
+   "first_surfaced": "2026-06-30",
+   "surfaced_price": 177.19,
+   "last_price": 174.95,
+   "pct_since": -1.3,
+   "days_on_board": 1,
+   "exit_date": "2026-07-01",
+   "status": "flat",
+   "lane": "buy"
   }
  ],
  "summary": {
   "n_running": 30,
-  "n_stopped": 19,
-  "n_flat": 42,
-  "n_total": 91,
+  "n_stopped": 18,
+  "n_flat": 37,
+  "n_total": 85,
   "n_shown": 60,
   "median_pct": 0.6,
   "n_skipped_no_price": 0,
   "skipped_no_price": [],
-  "win_rate": 0.612,
+  "win_rate": 0.625,
   "avg_pct": 0.7
  }
 }

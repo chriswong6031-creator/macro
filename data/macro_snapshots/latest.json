@@ -1,8 +1,8 @@
 {
   "schema": "macro_snapshot.v1.1",
-  "asof": "2026-07-10",
-  "oldest_component_asof": "2026-07-08",
-  "macro_context_id": "d582ea4ec22254fa",
+  "asof": "2026-07-11",
+  "oldest_component_asof": "2026-07-09",
+  "macro_context_id": "69b5b1debed9e81a",
   "labels": {
     "us": {
       "us_quad": "Q1",
@@ -14,7 +14,7 @@
       "us_business_cycle_phase": "recovery",
       "us_liquidity_quality": "stress-expansion",
       "us_liquidity_overlay": "expanding",
-      "us_froth_band": "watch",
+      "us_froth_band": "calm",
       "us_dislocation": "calm",
       "us_gamma_regime": "short",
       "us_repricing_state": "QUIET",
@@ -35,7 +35,7 @@
       "fx_risk": "risk-on",
       "real_rate_regime": "Restrictive real yields",
       "fx_liquidity_dir": "supportive",
-      "fx_regime_radar": "em_crisis_capital_flight"
+      "fx_regime_radar": null
     },
     "bonds": {
       "bond_health_label": "healthy",
@@ -53,7 +53,7 @@
       "china_fe_band": "Neutral"
     },
     "hk": {
-      "hk_quad": "Q4",
+      "hk_quad": "Q3",
       "hk_risk_state": "Neutral",
       "hk_peg_state": "weak-side (outflow)"
     },
@@ -76,16 +76,16 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-07-09",
-    "data/market_state/latest.json": "2026-07-09",
-    "data/transmission/latest.json": "2026-07-09",
-    "data/forex/latest.json": "2026-07-10",
-    "data/bonds/bond_health.json": "2026-07-09",
+    "data/regime/latest.json": "2026-07-10",
+    "data/market_state/latest.json": "2026-07-10",
+    "data/transmission/latest.json": "2026-07-10",
+    "data/forex/latest.json": "2026-07-11",
+    "data/bonds/bond_health.json": "2026-07-10",
     "data/commodity/latest.json": "2026-07-10",
     "data/china_regime/latest.json": "2026-07-10",
-    "data/hk_regime/latest.json": "2026-07-08",
+    "data/hk_regime/latest.json": "2026-07-10",
     "data/canada_regime/latest.json": "2026-07-09",
-    "data/dispersion/regime.json": "2026-07-10",
+    "data/dispersion/regime.json": "2026-07-11",
     "data/intl_regime/AU_history.parquet": "2026-07-10",
     "data/intl_regime/EZ_history.parquet": "2026-07-09",
     "data/intl_regime/GB_history.parquet": "2026-07-09",

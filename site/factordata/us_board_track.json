@@ -1,7 +1,7 @@
 {
- "generated": "2026-07-10T08:51:55.768438+00:00",
+ "generated": "2026-07-11T08:35:34.015825+00:00",
  "source": "git-archaeology + forward snapshots (unioned, de-duped on as_of)",
- "board_dates_total": 6,
+ "board_dates_total": 5,
  "board_dates_range": [
   "2026-06-30",
   "2026-07-09"
@@ -22,7 +22,7 @@
  "survivorship": {
   "n_skipped_no_price": 0,
   "n_rows_skipped_no_price": 0,
-  "n_board_rows_total": 364,
+  "n_board_rows_total": 318,
   "tickers_skipped": [],
   "n_recovered_by_dead_store": 0,
   "dead_store_active": true,
@@ -876,14 +876,6 @@
      }
     },
     "by_confluence_k": {
-     "None": {
-      "n": 611,
-      "hit_rate": 0.6268,
-      "wilson_lo": 0.5878,
-      "wilson_hi": 0.6643,
-      "median_excess": 0.01595,
-      "mean_excess": 0.0161
-     },
      "0.0": {
       "n": 34,
       "hit_rate": 0.3824,
@@ -891,6 +883,14 @@
       "wilson_hi": 0.5496,
       "median_excess": -0.01068,
       "mean_excess": -0.00456
+     },
+     "None": {
+      "n": 611,
+      "hit_rate": 0.6268,
+      "wilson_lo": 0.5878,
+      "wilson_hi": 0.6643,
+      "median_excess": 0.01595,
+      "mean_excess": 0.0161
      }
     },
     "mae_close_excess_spy": {

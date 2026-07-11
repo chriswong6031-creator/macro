@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LRN-BULL-20260605",
-  "asof": "2026-07-10",
+  "asof": "2026-07-11",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 60.7,
@@ -11,26 +11,26 @@
   "human_state": "Approaching Trigger",
   "components": {
     "validity": 100.0,
-    "progress": 3.8,
-    "pace": 3.1,
+    "progress": 3.4,
+    "pace": 2.4,
     "retention": 50.0,
-    "overlay": 53.0
+    "overlay": 50.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.032,
-    "dist_to_t1_r": 1.468,
-    "dist_to_t2_r": 2.968,
-    "horizon_pct_used": 77.8,
-    "p1": 0.0215,
-    "p2": 0.0107,
+    "dist_to_stop_r": 1.028,
+    "dist_to_t1_r": 1.472,
+    "dist_to_t2_r": 2.972,
+    "horizon_pct_used": 80.0,
+    "p1": 0.0185,
+    "p2": 0.0093,
     "p3": null,
-    "move_r": 0.032,
+    "move_r": 0.028,
     "mfe_r": 0.032,
     "mae_r": 0.0
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 35,
-  "tau": 0.7778
+  "days_elapsed": 36,
+  "tau": 0.8
 }

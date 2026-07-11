@@ -1,6 +1,6 @@
 {
   "schema": "prophet.index/v1",
-  "asof": "2026-07-10",
+  "asof": "2026-07-11",
   "cadence": "nightly-EOD",
   "authority_tier": "display",
   "gate_go": false,
@@ -22,13 +22,13 @@
       "_r_unit": 5.05,
       "_conviction_score": 89,
       "_signal_date": "2026-07-03",
-      "phase": "pre_trigger",
-      "management_confidence": 66.1,
-      "recommended_action": "wait",
+      "phase": "triggered_pre_t1",
+      "management_confidence": 72.5,
+      "recommended_action": "hold",
       "what_to_do_now": [
-        "Watch for price to reach the trigger level ($31.52) before entering. No position until trigger is confirmed.",
-        "Keep size small on initial entry; the buy zone extends from trigger up to $38.62 (T1). There is no need to rush.",
-        "If trigger confirms, scale in gradually. Invalidation is $25.99; exit on a close below that level."
+        "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($38.62).",
+        "Add to the position on short-term pullbacks as long as price remains above $25.99 (invalidation level).",
+        "Continue building as the move confirms. Full position size targets T2 at $46.19. Do not chase \u2014 add into weakness."
       ],
       "profit_plan": [
         {
@@ -62,7 +62,7 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-03",
       "phase": "pre_trigger",
-      "management_confidence": 66.4,
+      "management_confidence": 66.9,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($25.99) before entering. No position until trigger is confirmed.",
@@ -139,7 +139,7 @@
       "_conviction_score": 79,
       "_signal_date": "2026-07-03",
       "phase": "pre_trigger",
-      "management_confidence": 66.6,
+      "management_confidence": 66.2,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($147.20) before entering. No position until trigger is confirmed.",
@@ -178,7 +178,7 @@
       "_conviction_score": 70,
       "_signal_date": "2026-06-23",
       "phase": "pre_trigger",
-      "management_confidence": 65.2,
+      "management_confidence": 63.4,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($75.59) before entering. No position until trigger is confirmed.",
@@ -255,7 +255,7 @@
       "_conviction_score": 67,
       "_signal_date": "2026-07-09",
       "phase": "pre_trigger",
-      "management_confidence": 67.4,
+      "management_confidence": 64.9,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($195.20) before entering. No position until trigger is confirmed.",
@@ -379,7 +379,7 @@
       "_conviction_score": 46,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 57.0,
+      "management_confidence": 56.3,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($228.50) before entering. No position until trigger is confirmed.",
@@ -418,7 +418,7 @@
       "_conviction_score": 42,
       "_signal_date": "2026-07-02",
       "phase": "triggered_pre_t1",
-      "management_confidence": 64.2,
+      "management_confidence": 62.9,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($135.31).",

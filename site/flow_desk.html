@@ -138,7 +138,6 @@
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
         <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
         <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
-        <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
         <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
         <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
@@ -393,20 +392,20 @@
 <!-- Section 1: Market Tide -->
 <div class="panel">
   <h2><span class="l-en">Market Tide</span><span class="l-zh">市场资金潮汐</span>
-    <span class="lag-tag">368 names · EOD · direction approx</span>
+    <span class="lag-tag">369 names · EOD · direction approx</span>
     <span class="help">?<span class="tip"><span class="l-en">Whole-market gross premium = total $ committed to options across the universe. Net tone is SOFT — net direction from minute tick-rule signing is approximate (bar 0.70 agreement). 0DTE share weighted by gross premium.</span><span class="l-zh">全市场名义权利金 = 所有名义期权美元总额。净向近似 — 逐分钟打单签名方向为软性估计（一致率门槛0.70）。0DTE权重按名义权利金加权。</span></span></span>
   </h2>
   <div class="tide-grid">
     <div class="tide-stat">
       <div class="label"><span class="l-en">Gross Premium</span><span class="l-zh">名义权利金</span></div>
-      <div class="val tabnum" id="fd-gross">$19602M</div>
+      <div class="val tabnum" id="fd-gross">$17334M</div>
       <div class="sub"><span class="l-en">total $ committed</span><span class="l-zh">期权总投入金额</span></div>
     </div>
     <div class="tide-stat">
       <div class="label"><span class="l-en">Net Tone</span><span class="l-zh">净向倾向</span> <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span></div>
       <div class="val tabnum pos" id="fd-net">
         
-          +$980M
+          +$762M
         
       </div>
       <div class="sub"><span class="l-en">net call vs put premium (approx)</span><span class="l-zh">看涨-看跌净额（近似）</span></div>
@@ -414,14 +413,14 @@
     <div class="tide-stat">
       <div class="label"><span class="l-en">0DTE Share</span><span class="l-zh">0DTE占比</span></div>
       <div class="val tabnum" id="fd-zerodte">
-        13%
+        52%
       </div>
       <div class="sub"><span class="l-en">by gross premium weight</span><span class="l-zh">按名义权利金加权</span></div>
     </div>
     <div class="tide-stat">
       <div class="label"><span class="l-en">Coverage</span><span class="l-zh">覆盖数量</span></div>
-      <div class="val tabnum">368</div>
-      <div class="sub"><span class="l-en">names · asof</span><span class="l-zh">标的 · 截至</span> 2026-07-09</div>
+      <div class="val tabnum">369</div>
+      <div class="sub"><span class="l-en">names · asof</span><span class="l-zh">标的 · 截至</span> 2026-07-10</div>
     </div>
   </div>
   
@@ -443,19 +442,19 @@
     
     <div class="hm-cell">
       <div class="sec-name">Technology</div>
-      <div class="sec-prem neg">
-        $10023M
+      <div class="sec-prem pos">
+        $7527M
       </div>
       <div class="sec-meta">
         
           <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
         
-        <span class="tone-chip tone-neg">
-          <span class="l-en">put~</span><span class="l-zh">偏空~</span>
+        <span class="tone-chip tone-pos">
+          <span class="l-en">call~</span><span class="l-zh">偏多~</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>51<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 52%</span>
       </div>
       
     </div>
@@ -465,7 +464,7 @@
     <div class="hm-cell">
       <div class="sec-name">Index ETFs</div>
       <div class="sec-prem pos">
-        $3701M
+        $2962M
       </div>
       <div class="sec-meta">
         
@@ -476,7 +475,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>4<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 69%</span>
+        <span>0DTE 72%</span>
       </div>
       
       <div class="breadth-bar">
@@ -490,9 +489,30 @@
     
     
     <div class="hm-cell">
+      <div class="sec-name">Communication</div>
+      <div class="sec-prem ">
+        $2363M
+      </div>
+      <div class="sec-meta">
+        
+          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+        
+        <span class="tone-chip tone-neu">
+          <span class="l-en">neutral</span><span class="l-zh">中性</span>
+          <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
+        </span>
+        <span>4<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
+        <span>0DTE 48%</span>
+      </div>
+      
+    </div>
+    
+    
+    
+    <div class="hm-cell">
       <div class="sec-name">Consumer Disc.</div>
       <div class="sec-prem pos">
-        $1696M
+        $1653M
       </div>
       <div class="sec-meta">
         
@@ -503,28 +523,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>26<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
-      </div>
-      
-    </div>
-    
-    
-    
-    <div class="hm-cell">
-      <div class="sec-name">Communication</div>
-      <div class="sec-prem pos">
-        $1117M
-      </div>
-      <div class="sec-meta">
-        
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
-        
-        <span class="tone-chip tone-pos">
-          <span class="l-en">call~</span><span class="l-zh">偏多~</span>
-          <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
-        </span>
-        <span>4<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 61%</span>
       </div>
       
     </div>
@@ -534,7 +533,7 @@
     <div class="hm-cell">
       <div class="sec-name">Financials</div>
       <div class="sec-prem ">
-        $258M
+        $320M
       </div>
       <div class="sec-meta">
         
@@ -545,7 +544,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>25<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 44%</span>
       </div>
       
     </div>
@@ -555,7 +554,7 @@
     <div class="hm-cell">
       <div class="sec-name">Industrials</div>
       <div class="sec-prem ">
-        $233M
+        $252M
       </div>
       <div class="sec-meta">
         
@@ -566,28 +565,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>41<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
-      </div>
-      
-    </div>
-    
-    
-    
-    <div class="hm-cell">
-      <div class="sec-name">Staples</div>
-      <div class="sec-prem ">
-        $222M
-      </div>
-      <div class="sec-meta">
-        
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
-        
-        <span class="tone-chip tone-neu">
-          <span class="l-en">neutral</span><span class="l-zh">中性</span>
-          <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
-        </span>
-        <span>21<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 29%</span>
       </div>
       
     </div>
@@ -597,7 +575,7 @@
     <div class="hm-cell">
       <div class="sec-name">Health Care</div>
       <div class="sec-prem ">
-        $193M
+        $195M
       </div>
       <div class="sec-meta">
         
@@ -608,7 +586,28 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>15<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 27%</span>
+      </div>
+      
+    </div>
+    
+    
+    
+    <div class="hm-cell">
+      <div class="sec-name">Staples</div>
+      <div class="sec-prem ">
+        $107M
+      </div>
+      <div class="sec-meta">
+        
+          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+        
+        <span class="tone-chip tone-neu">
+          <span class="l-en">neutral</span><span class="l-zh">中性</span>
+          <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
+        </span>
+        <span>21<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
+        <span>0DTE 26%</span>
       </div>
       
     </div>
@@ -618,7 +617,7 @@
     <div class="hm-cell">
       <div class="sec-name">Energy</div>
       <div class="sec-prem ">
-        $64M
+        $68M
       </div>
       <div class="sec-meta">
         
@@ -629,7 +628,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>19<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 21%</span>
       </div>
       
     </div>
@@ -639,7 +638,7 @@
     <div class="hm-cell">
       <div class="sec-name">Utilities</div>
       <div class="sec-prem ">
-        $28M
+        $25M
       </div>
       <div class="sec-meta">
         
@@ -650,7 +649,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>11<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 14%</span>
       </div>
       
     </div>
@@ -671,7 +670,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>3<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 13%</span>
       </div>
       
     </div>
@@ -714,245 +713,98 @@
   <div class="movers-list">
     
     <div class="mover-row">
-      <div class="tk">META</div>
+      <div class="tk">NVDA</div>
       <div class="net pos">
-        +$512M
+        +$558M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
+        0DTE 55%
       </div>
     </div>
     
     <div class="mover-row">
       <div class="tk">TSLA</div>
       <div class="net pos">
-        +$493M
+        +$425M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">MU</div>
-      <div class="net neg">
-        $-473M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
+        0DTE 68%
       </div>
     </div>
     
     <div class="mover-row">
       <div class="tk">SPY</div>
       <div class="net pos">
-        +$245M
+        +$126M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 70%
-        
-        
-        
-        
+        0DTE 72%
       </div>
     </div>
     
     <div class="mover-row">
-      <div class="tk">SNDK</div>
+      <div class="tk">ARM</div>
       <div class="net pos">
-        +$228M
+        +$118M
       </div>
-      <div class="tone-chip tone-pos">
-        <span class="l-en">call~</span><span class="l-zh">多~</span>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
+        0DTE 25%
       </div>
     </div>
     
     <div class="mover-row">
       <div class="tk">QQQ</div>
-      <div class="net pos">
-        +$151M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 70%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">NVDA</div>
       <div class="net neg">
-        $-130M
+        $-61M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
+        0DTE 75%
       </div>
     </div>
     
     <div class="mover-row">
-      <div class="tk">AAPL</div>
-      <div class="net pos">
-        +$99M
+      <div class="tk">PLTR</div>
+      <div class="net neg">
+        $-60M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">AMZN</div>
-      <div class="net pos">
-        +$88M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
+        0DTE 56%
       </div>
     </div>
     
     <div class="mover-row">
       <div class="tk">MSFT</div>
       <div class="net neg">
-        $-78M
+        $-47M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">AMD</div>
-      <div class="net pos">
-        +$74M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">OKLO</div>
-      <div class="net pos">
-        +$62M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">AVGO</div>
-      <div class="net pos">
-        +$60M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
+        0DTE 47%
       </div>
     </div>
     
     <div class="mover-row">
       <div class="tk">MRVL</div>
-      <div class="net pos">
-        +$54M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">SMH</div>
       <div class="net neg">
         $-44M
       </div>
@@ -960,11 +812,98 @@
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
+        0DTE 34%
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">AAPL</div>
+      <div class="net pos">
+        +$34M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 56%
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">ORCL</div>
+      <div class="net neg">
+        $-34M
+      </div>
+      <div class="tone-chip tone-pos">
+        <span class="l-en">call~</span><span class="l-zh">多~</span>
+      </div>
+      <div class="details muted">
+        0DTE 36%
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">MU</div>
+      <div class="net pos">
+        +$33M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 51%
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">DELL</div>
+      <div class="net neg">
+        $-29M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 50%
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">MSTR</div>
+      <div class="net neg">
+        $-28M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 45%
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">HOOD</div>
+      <div class="net neg">
+        $-28M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 51%
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">AVGO</div>
+      <div class="net neg">
+        $-26M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 43%
       </div>
     </div>
     
@@ -1139,14 +1078,14 @@
 </div>
 
 <p class="muted xs" style="margin-top:6px;text-align:center">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-10 ·
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-11 ·
   <span class="l-en">EOD options flow · gross premium magnitude reliable · net direction ~soft (minute tick-rule) · ETF flows are creation/redemption proxy · no score or rank path</span><span class="l-zh">EOD期权资金 · 名义权利金绝对值可信 · 净方向~软性（逐分钟打单） · ETF资金流为申购/赎回代理 · 不进入评分或排名</span>
 </p>
 
 <script>
 (function(){
   // ── Data injected from Python ────────────────────────────────────
-  var SPARK = [{"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}];
+  var SPARK = [{"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}, {"date": "2026-07-10", "net_premium_mn": 51.18, "premium_mn": 2962.08}];
 
   // ── Sparkline canvas ─────────────────────────────────────────────
   var canvas = document.getElementById('fd-spark');

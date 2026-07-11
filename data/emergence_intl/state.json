@@ -1,13 +1,13 @@
 {
-  "03f30e01ffe3": {
-    "name_en": "Emerging Consumer Staples cluster",
-    "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 49.6
-  },
   "69d956580b52": {
     "name_en": "Cross-sector cluster \u00b7 Industrials + Utilities",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Utilities",
     "score": 72.0
+  },
+  "860b4941b551": {
+    "name_en": "Emerging Consumer Staples cluster",
+    "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
+    "score": 50.1
   },
   "8b38428033c7": {
     "name_en": "Cross-sector cluster \u00b7 Health Care + Financials",

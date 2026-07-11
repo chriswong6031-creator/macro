@@ -1,0 +1,29 @@
+**Desk Note — TREND-RIDER Thematic (Canada / TSX)**  
+**Date:** 2026-07-09  
+**Theme in focus:** Big Banks (ca_banks), Insurers (ca_insurers), Pipelines & Midstream (ca_pipelines)
+
+**1. Where the durable leadership sits**  
+- **Big Banks** (rank #1, score +1.86, durability 0.73, breadth 1.0). The full constituency is participating, and the durability bar sits well into the “persistent” zone. Hurst tag is “mixed”, but the absolute-trend gate is the validated edge — and here gate_helps = true, meaning the discipline of staying with this trend has historically cut drawdowns on the TSX. The positive score and top rank are a *focus lens*, not an alpha call, but they tell us the leadership is still here. ETF proxy: ZEB.TO.  
+- **Insurers** (rank #2, score +0.59, durability 0.78, breadth 1.0). Durability is even higher, and the Hurst tag is “trend” — the structure is favourable for trend-following. No ETF proxy limits direct reference, but the theme serves as a confirming durable pocket within Financials.  
+- **Pipelines & Midstream** (rank #3, score +0.48, durability 0.73, breadth 0.89). Again durable, Hurst “trend”, high breadth. A third leg of persistent leadership, all sitting comfortably above the absolute-trend gate.
+
+**2. The honest case for staying with them**  
+The detector’s verified edge is **drawdown avoidance through the absolute-trend gate**, not momentum alpha or rotation timing. The gate is currently *supporting* these themes: they remain above the thresholds that define an ongoing trend. Historical backtests on this market show that respecting the gate reduces volatility and tail risk. Since gate_helps is true, the discipline has demonstrated its risk-control value here.  
+Rotation timing (breadth, absorption, one_narrative) is display-only; no early-handoff forecast is reliable. Therefore, the strongest evidence-based action is to **continue riding the current leaders** until the absolute-trend gate signals a break. Top-picking or rotation calls would be a known failure mode.
+
+**3. Crowding — a sizing flag, not an exit signal**  
+Banks (crowding z=1.49) and Insurers (z=1.79) are crowded. Per guardrails, crowding flag is a *cap*, not a fade. Reflexivity can keep crowded leaders running; fading them prematurely is the documented failure mode. The appropriate response: stay with the theme but **size conservatively**, respecting the elevated crowding score. Extension metrics have no basket-level timing edge, so we do not treat this as a systematic sell signal.
+
+**4. Falsifiable conditional lean**  
+*Conditional lean:* The absolute-trend gate continues to favour Big Banks, Insurers, and Pipelines.  
+*Check-by horizon:* If ZEB.TO (proxy for Big Banks) closes below its current absolute-trend gate level for two consecutive weeks, the stay case weakens and would warrant a defensive reduction. Until then, the gate argues for persistence.  
+*This is a fallible statement — not a prediction, not a position size, not a trade.*  
+
+**5. Guardrail compliance**  
+- Not treating momentum rank as a return forecast.  
+- Not fading the leader on crowding.  
+- Not predicting the next theme.  
+- Not using crowding/extension as a sell trigger.  
+- No sizing, weight, or trading instruction.  
+
+*Accountable, falsifiable, humble.*

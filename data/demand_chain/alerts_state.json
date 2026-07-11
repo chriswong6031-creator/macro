@@ -6,6 +6,7 @@
   "BA": "ahead_of_consensus",
   "CARR": "consensus_at_risk",
   "CEG": "ahead_of_consensus",
+  "CMC": "consensus_at_risk",
   "DUK": "ahead_of_consensus",
   "GEV": "ahead_of_consensus",
   "GLW": "ahead_of_consensus",

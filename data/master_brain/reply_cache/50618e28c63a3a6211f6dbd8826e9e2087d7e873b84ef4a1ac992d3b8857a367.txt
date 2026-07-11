@@ -1,0 +1,23 @@
+**TREND-RIDER DESK NOTE**  
+2026-07-09 | US Thematic Equities  
+**Subject:** Staying with Memory, HBM & Storage – the honest case from the absolute‑trend discipline  
+
+**Prevailing narrative (focus lens, not alpha)**  
+The detector’s momentum rank places **Memory, HBM & Storage** at #1 (score 5.36, far ahead of #2 AI Semiconductors at 1.76). Rank-IC on clean sectors is ~0, so this is a *concentration‑of‑leadership* lens, not a return forecast. The theme’s durability bar (0.76) is high; all constituents are participating (breadth = 1.0); and it is **not crowded** (z = –0.44). The absolute‑trend gate—the one validated edge—is the anchor here.
+
+**Why this theme still deserves staying power**  
+1. **Absolute‑trend gate (drawdown‑control discipline):** Multi‑decade backtests show that the *only* robust edge is sticking with a theme while it holds above its trend filter. The gate‑helps flag is true on this market, meaning the discipline has cut volatility and drawdowns. The headline theme is eligible and, by virtue of its #1 rank and durability, the strong presumption is that it remains above its trend.  
+2. **Durability & participation:** A 0.76 durability bar (coincident measure, not a predictor) and perfect breadth signal that the theme is still internally healthy. The Hurst tag is “mixed,” so the trend is not perfectly smooth, but the absolute‑trend gate does not demand a pure trend; it only requires staying above the filter.  
+3. **No crowding flag, no rotation signal:** The theme is not crowded, so the guardrail “cap it, don’t fade it” is not even triggered. The margin to the next theme is enormous (3.6 points), and the rotation structure is broad (0.74 eligible, one‑narrative = false). No confirmed leadership handoff is in sight. The challenger (AI Semiconductors) has lower durability, lower breadth, and a trend tag that is already reflected in its rank; it does not constitute a rotation signal.  
+
+**What the discipline says we must not do** (per detector guardrails)  
+- Do not treat the high rank as a return forecast or a buy list.  
+- Do not fade the leader; do not attempt to call the next narrative.  
+- Do not treat the absence of crowding as a green light to size up—sizing is a separate decision outside this note.  
+
+**Falsifiable conditional** (the one lean permitted)  
+*If* the Memory, HBM & Storage theme (proxied broadly by SMH, or the theme’s own trend‑gate composite) closes a week below its absolute‑trend filter (e.g., 10‑month moving average or the detector’s internal gate), *then* the discipline would signal an exit for drawdown control. Until such a confirmed break, the honest process is to stay with the leading durable theme.  
+
+**Check‑by horizon:** review after the July monthly close (31 July 2026) or earlier if the proxy breaks its trend filter intra‑month.  
+
+This note contains no size, no weight, no trade recommendation. It is a fallible, falsifiable reading of the detector, framed strictly within the one validated edge—drawdown avoidance via the absolute‑trend gate.

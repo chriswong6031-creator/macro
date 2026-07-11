@@ -1,0 +1,31 @@
+**Desk Note – Narrative-Emergence Scout**
+**Date:** 2026-07-09  
+**Market Context (US):** Memory/HBM & Storage is the clear, high‑score, high‑breadth leader (score 5.36, breadth 1.0, not crowded). AI Semiconductors trails at rank‑2 but with substantially lower momentum and breadth. Rotation is broad (0.74 frac eligible) and not one‑narrative extreme. Absolute‑trend gate is helping (validated risk control).  
+**Dominant framework:** The detector provides a focus lens, not alpha; the only validated edge is drawdown avoidance via the trend gate. Durability, crowding, and rotation are coincident, not predictive.
+
+---
+
+### Emerging Watch Hypothesis (drawn from noisy theme_candidates radar – low persistence, ~10% survive)
+
+**Candidate Group: “Defense IT & Digital Modernization”**  
+*Tickers:* BAH, CACI, FCN, LDOS, PSN, SAIC  
+*Source:* `theme_candidates` group labelled “Industrials” – cohesion 0.576, cohesion_chg +0.213, IPO‑wave = false.  
+*Observation:* These six companies share a common thread of government‑focused IT services, intelligence, and digital infrastructure for defence. Cohesion is rising and is the highest in the candidate list, though the group remains un‑named and un‑basketed by the formal detector.
+
+**Thesis (minimal, falsifiable):**  
+The group may be cohering into a distinctive theme of **defence‑centric digital modernization**, potentially fuelled by steady government spending, geopolitical urgency, and post‑pandemic digitisation of national security. It is *not* a buy signal – it is a **watch hypothesis** that deserves monitoring for a durable, detector‑confirmed formation over the coming weeks.
+
+**Kill‑Criterion (time‑bound & specific):**  
+- **Primary kill:** If, within **20 trading days (by 2026‑08‑06)**, the detector has not assigned any of these names to a named theme basket with a durability_bar ≥ 0.55, **OR** the group’s cohesion falls below 0.40, the hypothesis is considered invalid.  
+- **Secondary kill:** If any of these names experience an unaccompanied attention/inflow spike (e.g., headline surge without simultaneous breadth improvement), treat that as a hype‑driven top and abandon the organic‑emergence thesis immediately.
+
+**Falsifiable conditional lean (for internal tracking only, no size, no trade):**  
+*If* the group survives the 20‑day coherence test and a new defence‑IT theme crystallises with breadth >0.5, *then* we would have a conditional indication that a durable narrative is forming – at which point the absolute‑trend gate would determine any risk‑controlled exposure. Until then, it remains a low‑probability watch item, consistent with the radar’s ~10% persistence baseline.
+
+**Humility & guardrails (explicit):**  
+- This note does **not** imply a return forecast, position size, or trade.  
+- The candidate radar has no forward edge; emergence is usually detected late.  
+- Crowding and inflow spikes mark tops – if hype enters, the hypothesis is killed.  
+- We do **not** fade the dominant Memory/Semis theme; we only note a possible new formation for future leadership handoff, not a prediction.
+
+*Check‑back horizon:* 2026‑08‑06 for the primary kill criterion.

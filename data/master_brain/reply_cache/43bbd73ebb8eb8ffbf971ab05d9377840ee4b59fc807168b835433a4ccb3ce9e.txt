@@ -1,0 +1,24 @@
+{
+  "stance": "Flow concentration is thinning in Information Technology while it sits at extreme relative strength, and Health Care's confirmed rally rests on very narrow, low-cohesion leadership. The relief snap is dormant with fear rebuilding, offering no imminent snap fade. Given the display-only nature of the lens, the strongest honest lean is to underweight sectors where flow is cooling from highs and avoid those with fragile breadth.",
+  "candidates": [
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "rationale": "Cooling stage with negative flow_score, rs_pctile 0.937, and non-cohering breadth — the flow that lifted it is receding while it's historically stretched.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Health Care",
+      "lean": "underweight",
+      "rationale": "Confirmed flow but extremely low cohesion (0.203) and rs_pctile 0.976, driven by outlier MRNA; the move relies on single-name alpha, not broad sector participation.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "underweight",
+      "rationale": "Also cooling with negative flow_score and rs_pctile 0.687; the cluster member with Consumer Discretionary shows a cooldown from that earlier rotation.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "A sharp macro reversal that reignites broad-based mega-cap tech buying would invalidate the cooling flow signal overnight, as the lens captures coincident concentration shifts with no forward edge."
+}

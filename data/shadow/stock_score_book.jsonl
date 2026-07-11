@@ -1561,3 +1561,5 @@
 {"date": "2026-07-09", "ticker": "VRRM", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-09", "ticker": "CG", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-09", "ticker": "WYNN", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-09", "ticker": "CARG", "score": 32.0, "percentile": 32.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-09", "ticker": "CART", "score": 45.0, "percentile": 45.0, "regime": "mixed", "horizons": [21, 63, 126]}

@@ -1,0 +1,29 @@
+**TREND-RIDER Desk Note**
+**Hong Kong Thematic Detector — 2026-07-10**
+*For internal discussion; no position size, weight, or trade recommendation. All statements are contingent and falsifiable.*
+
+### 1. Current Leading Durable Theme(s)
+
+- **Headline allocation (from absolute-trend model):** Banks (H + HK), weight 0.25, cash 0.5.  
+- **Rank among themes:** #2 (momentum-score rank), **eligible** for risk‑controlled exposure.  
+- **Durability bar:** 0.46 — the theme’s trend is live but not explosive; a robust drawdown gate is still warranted.  
+- **Absolute‑trend gate status:** On‑side. The model’s partial‑capital posture (`cash = 0.5`) is the output of the validated drawdown‑control edge — the only edge the backtest confirms for this market. The gate materially reduces volatility and tail risk relative to full long exposure.
+
+Other eligible themes appear below in the detector, notably:
+- **High-Dividend Blue Chips** (#3, durability 0.59, trend‑tagged, eligible) — stronger trend durability than Banks, but the absolute‑trend model has not rotated to it.  
+- **Conglomerates & Exchange** (#4, durability 0.45, mean‑revert, eligible) — marginal.  
+
+Rotation breadth is narrow (3 of 14 themes eligible), absorption is moderate (0.57), and there is no “one‑narrative” concentration. **China Tech & Internet** tops the momentum rank (#1) but is not eligible for the trend‑gated exposure; it is a focus lens, not a position.
+
+### 2. Strongest Honest Case for Staying with the Leading Durable Theme (Banks)
+
+The discipline’s sole validated edge is **drawdown avoidance** through the absolute‑trend gate, not return forecasting. The current stance — a partial allocation to Banks, buffered by cash — is the direct result of that gate. Historical evidence shows the gate cuts deeper drawdowns and damps volatility, even when the underlying theme is only modestly durable (mean‑revert Hurst). Staying with this allocation means **respecting the risk‑control rule that survived multi‑decade out‑of‑sample sector tests**. It does not require predicting a strong uptrend; it only requires not calling a top. The durability bar of 0.46 is above the usual “broken trend” threshold, and crowding flags are subdued (`crowded = false`), which removes the most common trap — reflexivity-driven fades that the guardrails explicitly forbid.  
+
+If one were to deviate purely by theme “attractiveness,” one might be tempted by the higher‑durability High-Dividend Blue Chips (0.59, trend), but **fading the current leader or predicting the next narrative is the documented failure mode** — the discipline asks us to follow the trend gate, not the durability rank. Therefore, maintaining the Banks + cash posture is the strongest honest case consistent with the validated edge.
+
+### 3. Falsifiable Conditional Lean (Check‑by Date)
+
+**Lean:** The risk‑managed exposure to Banks will be sustained through the near term, provided the absolute‑trend gate does not trigger a close‑out.  
+**Falsifiable condition:** If, by **close of trading on 2026-08-07** (4 weeks), the Banks theme’s **absolute‑trend gate remains unbroken** (i.e., the system’s trend‑following signal stays “risk‑on” for that theme), the current discipline of partial Banks + cash exists. Conversely, an absolute‑trend breach by that date would flip the system to full cash, confirming the drawdown‑control rule.  
+
+*This is not a return forecast. Its only purpose is to set a concrete horizon against which the gating rule — not a price‑direction call — can be assessed. Any subsequent rotation will be a function of the model, not of this note.*

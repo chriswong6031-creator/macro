@@ -1,0 +1,33 @@
+**Desk Note: China A‑Shares Thematic Trend Rider**
+**As of:** 2026-07-10 | **Benchmark:** CSI 300
+**Prevailing narrative:** AI infrastructure build‑out (AI Compute & Optics, Semiconductors, Consumer Electronics) – a technology‑investment cycle still showing persistent price trends and healthy breadth, but not yet a one‑narrative market.
+
+---
+
+### The strongest honest case FOR staying with the leading durable themes
+
+**1. AI Compute & Optics (cn_ai_compute) – Rank 1**
+- **Score** 2.87 | **Durability bar** 0.75 | **Trend gate** “trend” (Hurst) | **Crowded** No
+- **Why stay:** The theme holds the widest momentum‑rank lead, and its durability bar (0.75) signals a persistent uptrend with no sign of reflexive exhaustion (crowding z ≈ 0). Breadth is 0.588, meaning roughly 59% of constituent names are participating – not a blow‑off, but a cohesive trend. In a tape where mean‑reversion historically whipsaws absolute‑trend signals (*gate_helps = false*), the discipline is not to fade the leader but to accept the risk of whipsaw and stay with the only edge we have: drawdown avoidance via the trend gate. As long as price remains above its own trend gate, the case for staying is that the narrative – China’s AI compute self‑sufficiency push – remains the strongest, most durable theme in the market.
+
+**2. Semiconductors (cn_semis) – Rank 2**
+- **Score** 2.61 | **Durability bar** 0.92 | **Trend gate** “trend” | **Crowded** No
+- **Why stay:** The highest durability bar in the universe (0.92) – this trend rarely reverses abruptly. Breadth is exceptional at 0.955, almost universal participation; the move is broad‑based, not concentrated in a few large caps. It is the natural challenger to AI Compute, but the margin (0.26) and the absorption reading (0.35, one‑narrative = false) suggest the market is comfortably holding both, not switching. The honest case: if anything, semiconductors’ extreme durability makes it the least fragile leg of the AI complex; exiting it pre‑emptively would be a bet against the machine’s strongest trend signal, which has no validated edge on this tape but is the only systematic guardrail we have.
+
+**3. Consumer Electronics (cn_consumer_elec) – Rank 3**
+- **Score** 1.245 | **Durability bar** 0.79 | **Trend gate** “trend” | **Crowded** No
+- **Why stay:** A lower score but still positive, and still firmly in trend. Durability (0.79) is similar to AI Compute, breadth (0.60) indicates decent participation. This theme often piggybacks on the AI hardware cycle (edge devices, upgrades). There is no crowding warning, and the trend gate is intact. The case: it’s a second‑tier hold, not a new leader, but there is no evidence to rotate out — the rotation‑timing signal has no validated edge. Staying with the trend is the discipline; this theme’s trend is unbroken.
+
+**Other scorable themes:** Robotics & Automation (rank 4, score 0.90, durability 0.72) is eligible but lacks an ETF proxy (scorable=false) — it’s an observation, not an actionable hold. Innovative Pharma & CXO (rank 6) is the only *crowded* theme (z = 1.21), but it is not a top‑3 leader, so the crowding flag serves only as a sizing caution for anyone holding it, not a fade signal. The dominant themes remain AI Compute and Semiconductors.
+
+**The crucial context (market‑specific humility):**
+The backtest verdict is blunt: *gate_helps = false* on China A‑shares. In this market’s history, the absolute‑trend gate did **not** reduce drawdown – mean‑reverting whipsaws undermined the discipline. Therefore, any allocation here is **experimental/display**, and the strongest case is not “the gate will protect you” but rather “if you must stay exposed to thematic trends, the only disciplined exit is a confirmed trend break; otherwise, you are guessing.” The guardrails forbid fading the leader, predicting the next narrative, or reading the momentum rank as a return forecast. We are obeying those.
+
+---
+
+### Falsifiable conditional lean (as required)
+**Lean:** As long as the absolute‑trend gates (e.g., price > key moving average) remain intact for **AI Compute & Optics** and **Semiconductors**, the AI infrastructure narrative is judged durable and the themes should be held (with the humility that the gate may whipsaw here).  
+**Check‑by horizon:** End of Q3 2026 (2026‑09‑30).  
+**Invalidation condition:** A simultaneous breach of the trend gate in *both* AI Compute and Semiconductors, or a drop in their breadth below 0.4, would signal the narrative is losing internal cohesion and the hold case weakens.
+
+*This is a falsifiable view, not a forecast. No position size, no trade.*

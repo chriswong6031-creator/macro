@@ -1,12 +1,12 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-10",
+  "as_of": "2026-07-11",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
       "scored": 3,
-      "open": 24,
+      "open": 25,
       "hit_rate": 0.667,
       "dir_accuracy": 0.667,
       "conviction_monotone": null,
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 164,
+      "open": 165,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -53,20 +53,20 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 3,
-      "open": 94,
-      "hit_rate": 0.333,
+      "scored": 4,
+      "open": 98,
+      "hit_rate": 0.25,
       "dir_accuracy": 0.0,
       "conviction_monotone": null,
       "regimes": [],
       "health": "cold",
-      "health_note": "only 3 scored \u2014 check-by windows still maturing; treat as provisional"
+      "health_note": "only 4 scored \u2014 check-by windows still maturing; treat as provisional"
     },
     {
       "name": "Demand Chain",
       "slug": "demand_chain",
       "scored": 0,
-      "open": 40,
+      "open": 41,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -392,6 +392,12 @@
         "family": "short_side",
         "itemized": 12,
         "declared": 6,
+        "effective_n": 12
+      },
+      {
+        "family": "signal_foundry",
+        "itemized": 12,
+        "declared": 0,
         "effective_n": 12
       },
       {
@@ -779,8 +785,8 @@
         "effective_n": 1
       }
     ],
-    "total_families": 116,
-    "total_effective_n": 2720
+    "total_families": 117,
+    "total_effective_n": 2732
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

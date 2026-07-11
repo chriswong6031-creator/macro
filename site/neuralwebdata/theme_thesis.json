@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-10",
-  "generated_at": "2026-07-10T09:00:13Z",
+  "as_of": "2026-07-11",
+  "generated_at": "2026-07-11T08:45:11Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -388,10 +388,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-11",
       "thesis_id": "cybersecurity.v1",
-      "content_hash": "sha256:4eaba2044658a706dc1d4bea3ad5bd6441b2f2576d8d91e6ee4b265e190306bc",
-      "prev_content_hash": null,
+      "content_hash": "sha256:371d76360d3f30b9c949017f85c97bf4e44ca2e517b3b1d23a6f4c7533a89f0a",
+      "prev_content_hash": "sha256:4eaba2044658a706dc1d4bea3ad5bd6441b2f2576d8d91e6ee4b265e190306bc",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -445,7 +445,7 @@
           "rule_en": "If revision_breadth for cybersecurity falls below 0.1, software IT budget compression is overriding the platform cycle tailwind.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.539"
+          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.541"
         },
         {
           "id": "cyber_f2",
@@ -554,10 +554,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-11",
       "thesis_id": "fintech_payments.v1",
-      "content_hash": "sha256:1c3657d108c5d99dede6703b6be0525c861a9b3c5ca49feceb8857485ba6bf6b",
-      "prev_content_hash": null,
+      "content_hash": "sha256:395114b59dd6b3210e323b1e42ffe0442a1d36c34dac0272a85d8a9f993e038f",
+      "prev_content_hash": "sha256:1c3657d108c5d99dede6703b6be0525c861a9b3c5ca49feceb8857485ba6bf6b",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -611,7 +611,7 @@
           "rule_en": "If revision_breadth for fintech_payments falls negative, earnings consensus is cutting; stablecoin disruption may be larger than the on-ramp toll revenue offset.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.298"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.412"
         },
         {
           "id": "finpay_f2",
@@ -631,10 +631,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-11",
       "thesis_id": "nuclear_power.v1",
-      "content_hash": "sha256:04f4cc55532790211bcee36e4a721b237d06fece790e9a76c592d78855719406",
-      "prev_content_hash": null,
+      "content_hash": "sha256:5276fe9e607f1e1889c9d7b69c67704c891c88d5d0dcf4e77b56951c3bb4ce14",
+      "prev_content_hash": "sha256:04f4cc55532790211bcee36e4a721b237d06fece790e9a76c592d78855719406",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -693,7 +693,7 @@
           "rule_en": "If revision_breadth for nuclear_power turns negative, earnings estimate cuts are spreading — hyperscaler PPA momentum may be stalling.\n",
           "state": "FIRED",
           "fired": true,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.106"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.156"
         },
         {
           "id": "nuke_f2",
@@ -1072,10 +1072,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-11",
       "thesis_id": "medical_devices.v1",
-      "content_hash": "sha256:d1d20e3c737a6feac606135d530e3fa18486735f75d7cb2d414fb5c4624ce743",
-      "prev_content_hash": "sha256:6a523d73eb6737f749159c4a7123d91de3454323d348cfb15cddb77314001502",
+      "content_hash": "sha256:ccf2abe5fdc6d2e29e7f0a834ae0374866b5e4b575de76246a0b54d94451d8a1",
+      "prev_content_hash": "sha256:d1d20e3c737a6feac606135d530e3fa18486735f75d7cb2d414fb5c4624ce743",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1129,7 +1129,7 @@
           "rule_en": "If revision_breadth for medical_devices falls below 0.0, hospital capex cycles are overriding the installed-base recurring revenue thesis.\n",
           "state": "FIRED",
           "fired": true,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=-0.057"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=-0.077"
         },
         {
           "id": "meddev_f2",
@@ -1226,10 +1226,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-11",
       "thesis_id": "rare_earth_critical_min.v1",
-      "content_hash": "sha256:c0fa740583385f82d34a7f2cf1b4fc83770c9b9af83a36a93fa4aac74b66f597",
-      "prev_content_hash": null,
+      "content_hash": "sha256:722241a850cbf5d8b2769699307ce61026c69f20f792d45a47373669ceee3c6b",
+      "prev_content_hash": "sha256:c0fa740583385f82d34a7f2cf1b4fc83770c9b9af83a36a93fa4aac74b66f597",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1283,7 +1283,7 @@
           "rule_en": "If revision_breadth for rare_earth_critical_min falls negative, government offtake commitments are not yet driving earnings estimate upgrades — policy support may be insufficient.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.333"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.111"
         },
         {
           "id": "ree_f2",
@@ -1303,10 +1303,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-11",
       "thesis_id": "copper_steel_electrify.v1",
-      "content_hash": "sha256:1ebdc561c9a6ceda2f86c7664579b58b36011994404c3d5be2d35cab682db962",
-      "prev_content_hash": "sha256:8344682b3cde62123249de8c114b46159e70c8e3b5cbd30f17fce4d3b71b6cd7",
+      "content_hash": "sha256:3aa76d78c214adbf96832d73f9758ac51a9805110f861c83e6e8134049e22ae6",
+      "prev_content_hash": "sha256:1ebdc561c9a6ceda2f86c7664579b58b36011994404c3d5be2d35cab682db962",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1360,7 +1360,7 @@
           "rule_en": "If revision_breadth for copper_steel_electrify falls below 0.0, earnings upgrades from the electrification story are reversing — macro headwinds may be overwhelming structural demand.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.614"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.586"
         },
         {
           "id": "cu_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-10T09:00:13Z",
-  "inputs_hash": "sha256:b6397839975af9c378153b7fb75170ddab977fc6cc46bd63d4f2dabcfcdf47fd",
+  "produced_at": "2026-07-11T08:45:11Z",
+  "inputs_hash": "sha256:060cc588eea2ef728712f0f13a2c64e86b0213174a67f01a660ca86d185442ed",
   "tier": "display"
 }

@@ -8,3 +8,6 @@
 {"asof": "2026-07-10", "domain": "commodity", "field": "commodity_favored", "from_value": "['Gold', 'Copper']", "to_value": "Gold, Copper", "macro_context_id": "d582ea4ec22254fa"}
 {"asof": "2026-07-10", "domain": "hk", "field": "hk_risk_state", "from_value": "Risk-off", "to_value": "Neutral", "macro_context_id": "d582ea4ec22254fa"}
 {"asof": "2026-07-10", "domain": "canada", "field": "canada_quad", "from_value": "Q1", "to_value": "Q4", "macro_context_id": "d582ea4ec22254fa"}
+{"asof": "2026-07-11", "domain": "us", "field": "us_froth_band", "from_value": "watch", "to_value": "calm", "macro_context_id": "69b5b1debed9e81a"}
+{"asof": "2026-07-11", "domain": "fx", "field": "fx_regime_radar", "from_value": "em_crisis_capital_flight", "to_value": null, "macro_context_id": "69b5b1debed9e81a"}
+{"asof": "2026-07-11", "domain": "hk", "field": "hk_quad", "from_value": "Q4", "to_value": "Q3", "macro_context_id": "69b5b1debed9e81a"}

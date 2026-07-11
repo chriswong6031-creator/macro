@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-10",
+  "date": "2026-07-11",
   "regime": "mixed / no clear trend",
   "breadth": 0.3,
   "favored": [
@@ -10,13 +10,13 @@
     "dollar"
   ],
   "correlation": "concentrated",
-  "asof": "2026-07-10",
+  "asof": "2026-07-11",
   "flows": {
     "schema": "crossasset_flows.v1",
     "display_only": true,
     "correlation": {
       "verdict": "concentrated",
-      "absorption_pctile": 0.96,
+      "absorption_pctile": 0.97,
       "n_markets": 6
     },
     "breadth": 0.3,
@@ -60,7 +60,7 @@
       },
       {
         "pair": "gold_silver",
-        "ratio": 68.114,
+        "ratio": 68.62,
         "trend": "mid"
       },
       {
@@ -70,7 +70,7 @@
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.182,
+        "ratio": 0.184,
         "trend": "mid"
       }
     ],
@@ -94,41 +94,41 @@
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.346,
-          "t": 4.791,
+          "r": 0.349,
+          "t": 4.832,
           "q": 0.0
         },
         {
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.299,
-          "t": 4.446,
+          "r": 0.301,
+          "t": 4.478,
           "q": 0.0
         },
         {
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.268,
-          "t": 4.041,
-          "q": 0.0038
+          "r": 0.265,
+          "t": 3.932,
+          "q": 0.005
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.273,
-          "t": 3.969,
-          "q": 0.0038
+          "r": 0.257,
+          "t": 3.63,
+          "q": 0.0112
         },
         {
           "leader": "Crypto",
           "follower": "China",
           "lag": 1,
-          "r": 0.22,
-          "t": 3.225,
-          "q": 0.039
+          "r": 0.206,
+          "t": 3.066,
+          "q": 0.066
         }
       ]
     },

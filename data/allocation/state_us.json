@@ -12,7 +12,6 @@
     "defense",
     "defensives",
     "energy_complex",
-    "housing",
     "industrial_distribution",
     "insurance",
     "mag7",
@@ -28,7 +27,6 @@
     "semicap_equipment",
     "space_economy",
     "travel",
-    "us_sector_discretionary",
     "us_sector_energy",
     "us_sector_financials",
     "us_sector_health",
@@ -42,8 +40,8 @@
   "held": [
     "memory_storage",
     "ai_neoclouds",
-    "managed_care",
-    "cybersecurity"
+    "cybersecurity",
+    "managed_care"
   ],
   "leader": "memory_storage",
   "names": {

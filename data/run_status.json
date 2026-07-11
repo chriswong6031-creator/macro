@@ -1788,6 +1788,13 @@
       "probed_at": null,
       "elapsed_sec": 0.0,
       "checked_at": "2026-07-11T04:21:07.791054+00:00"
+    },
+    "intraday_flow_nightly": {
+      "status": "ok",
+      "n_leaders": 116,
+      "base_json": "site/flowtracker/base.json",
+      "as_of": "2026-07-11T07:59:20.747536+00:00",
+      "checked_at": "2026-07-11T07:59:21.747192+00:00"
     }
   },
   "circuit_breaker": {
@@ -2858,6 +2865,14 @@
       "cadence_days": 5,
       "age_days": 39,
       "detected_at": "2026-07-10T06:02:30.945830+00:00"
+    },
+    {
+      "group": "yahoo",
+      "series": "CNH=F",
+      "last_obs": "2026-06-12",
+      "cadence_days": 5,
+      "age_days": 29,
+      "detected_at": "2026-07-11T06:58:08.532987+00:00"
     }
   ]
 }

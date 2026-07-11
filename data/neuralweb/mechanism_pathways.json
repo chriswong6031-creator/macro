@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-10",
+  "as_of": "2026-07-11",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -25,144 +25,12 @@
   },
   "pathways": [
     {
-      "family": "china",
-      "driver": "china_stimulus",
-      "pathway_role": "primary",
-      "as_of": "2026-07-10",
-      "direction_en": "China risk-on — A-shares/HK & copper lead up",
-      "direction_zh": "中国偏好风险 — A股/港股与铜领涨",
-      "confidence_ceiling": "context_only",
-      "coverage_score": 1.0,
-      "coherence": "supported",
-      "stale_legs": [],
-      "nodes": [
-        {
-          "node_id": "driver_china_stimulus",
-          "as_of": "2026-07-10",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "china_stimulus",
-          "observation": {
-            "en": "China risk-on — A-shares/HK & copper lead up",
-            "zh": "中国偏好风险 — A股/港股与铜领涨"
-          },
-          "direction": 1,
-          "value": 0.9,
-          "z_or_percentile": 1.37,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "trigger",
-          "evidence_refs": [
-            "market_drivers.primary"
-          ]
-        },
-        {
-          "node_id": "leg_china_stimulus_0",
-          "as_of": "2026-07-10",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "Hong Kong",
-          "observation": {
-            "en": "Hong Kong (+2.2σ)",
-            "zh": "香港 (+2.2σ)"
-          },
-          "direction": "positive",
-          "value": 2.2,
-          "z_or_percentile": 2.2,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[0]"
-          ]
-        },
-        {
-          "node_id": "leg_china_stimulus_1",
-          "as_of": "2026-07-10",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "China A-shares",
-          "observation": {
-            "en": "China A-shares (+0.5σ)",
-            "zh": "中国A股 (+0.5σ)"
-          },
-          "direction": "positive",
-          "value": 0.5,
-          "z_or_percentile": 0.5,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[1]"
-          ]
-        },
-        {
-          "node_id": "leg_china_stimulus_2",
-          "as_of": "2026-07-10",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "copper",
-          "observation": {
-            "en": "copper (+0.3σ)",
-            "zh": "铜 (+0.3σ)"
-          },
-          "direction": "positive",
-          "value": 0.3,
-          "z_or_percentile": 0.3,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[2]"
-          ]
-        }
-      ],
-      "edges": [
-        {
-          "src_node": "driver_china_stimulus",
-          "dst_node": "leg_china_stimulus_0",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "positive",
-          "observed_sign": "positive",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[0]"
-          ]
-        },
-        {
-          "src_node": "driver_china_stimulus",
-          "dst_node": "leg_china_stimulus_1",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "positive",
-          "observed_sign": "positive",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[1]"
-          ]
-        },
-        {
-          "src_node": "driver_china_stimulus",
-          "dst_node": "leg_china_stimulus_2",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "positive",
-          "observed_sign": "positive",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[2]"
-          ]
-        }
-      ]
-    },
-    {
-      "family": "equity-leadership",
+      "family": "ai_semis",
       "driver": "ai_semis",
-      "pathway_role": "alternate",
-      "as_of": "2026-07-10",
-      "direction_en": "AI/semis leadership — narrow tech-led tape",
-      "direction_zh": "",
+      "pathway_role": "primary",
+      "as_of": "2026-07-11",
+      "direction_en": "Bubble / blow-off unwind",
+      "direction_zh": "泡沫/见顶回吐",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
       "coherence": "partial",
@@ -170,16 +38,16 @@
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-07-10",
+          "as_of": "2026-07-11",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
           "observation": {
-            "en": "AI/semis leadership — narrow tech-led tape",
-            "zh": ""
+            "en": "Bubble / blow-off unwind",
+            "zh": "泡沫/见顶回吐"
           },
           "direction": "",
-          "value": 0.66,
+          "value": 62.1,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -190,13 +58,15 @@
         }
       ],
       "edges": [],
-      "coverage_basis": "scare_trigger"
+      "coverage_basis": "scare_trigger",
+      "source_trigger": "risk_radar",
+      "scare": "bubble"
     },
     {
       "family": "liquidity",
       "driver": "liquidity_impulse",
       "pathway_role": "alternate",
-      "as_of": "2026-07-10",
+      "as_of": "2026-07-11",
       "direction_en": "net liquidity expanding — broad risk-on tailwind",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -206,7 +76,7 @@
       "nodes": [
         {
           "node_id": "driver_liquidity_impulse",
-          "as_of": "2026-07-10",
+          "as_of": "2026-07-11",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "liquidity_impulse",
@@ -215,7 +85,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.58,
+          "value": 0.6,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

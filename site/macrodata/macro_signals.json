@@ -1,6 +1,6 @@
 {
-  "date": "2026-07-09",
-  "generated_utc": "2026-07-11 07:24",
+  "date": "2026-07-10",
+  "generated_utc": "2026-07-11 07:07",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4107,14 +4107,14 @@
       "vrp_pctile": 0.21031746031746032,
       "vrp_state": "normal",
       "realized_vol": 13.358719892255868,
-      "vix_term": 0.8093699504561819,
-      "vix_term_state": "contango (calm)",
+      "vix_term": null,
+      "vix_term_state": null,
       "vix_term_lead_lag": "coincident",
       "skew": 144.67,
       "skew_pctile": 0.40575396825396826,
       "stock_bond_corr": 0.5591876513012746,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.686862015785229,
+      "roro": 0.6123557857928646,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.8982896637391486,
       "news_sentiment": 0.09985840320587158,
@@ -4160,8 +4160,8 @@
       "state": "calm",
       "vix_low": true,
       "vix_pctile": 0.12003968253968254,
-      "contango": true,
-      "vix_term": 0.8093699504561819,
+      "contango": false,
+      "vix_term": null,
       "breadth_div": false,
       "spy_high_prox": 0.9964781564088152,
       "breadth_above200_pctile": 0.5902777777777778,
@@ -4223,24 +4223,24 @@
     }
   },
   "fear_euphoria": {
-    "fe_score": 90,
+    "fe_score": 93,
     "band": "Euphoria",
-    "roro": 0.686862015785229,
+    "roro": 0.6123557857928646,
     "roro_state": "risk-on",
     "legs": [
       {
         "key": "vix",
         "name_en": "VIX",
         "name_zh": "\u6ce2\u52a8\u7387 VIX",
-        "value": 0.679,
-        "pct": 68,
+        "value": 0.92,
+        "pct": 77,
         "lean": "risk-on"
       },
       {
         "key": "hy_oas",
         "name_en": "HY credit spread",
         "name_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee",
-        "value": 1.202,
+        "value": 1.196,
         "pct": 75,
         "lean": "risk-on"
       },
@@ -4248,7 +4248,7 @@
         "key": "skew",
         "name_en": "SKEW (tail pricing)",
         "name_zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7",
-        "value": 0.255,
+        "value": 0.248,
         "pct": 55,
         "lean": "risk-on"
       },
@@ -4272,7 +4272,7 @@
         "key": "copper_gold",
         "name_en": "Copper/Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.805,
+        "value": 1.964,
         "pct": 99,
         "lean": "risk-on"
       },
@@ -4280,8 +4280,8 @@
         "key": "dxy",
         "name_en": "Dollar (20d %\u0394)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09",
-        "value": -0.613,
-        "pct": 33,
+        "value": -0.715,
+        "pct": 30,
         "lean": "risk-off"
       }
     ],
@@ -4507,7 +4507,7 @@
     ],
     "n_legs_qualifying": 11,
     "as_of": "2026-07-11",
-    "generated_utc": "2026-07-11T06:38:11Z",
+    "generated_utc": "2026-07-11T05:15:41Z",
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
@@ -4531,52 +4531,52 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4128.9,
+      "price": 4104.1,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -5.0,
-      "pct_vs_200dma": -7.8,
-      "rsi14": 45.0,
+      "pct_vs_50dma": -5.6,
+      "pct_vs_200dma": -8.3,
+      "rsi14": 44.0,
       "macd_pos": true,
-      "off_52w_high_pct": -22.4,
+      "off_52w_high_pct": -22.8,
       "season_this": "Jul: +1.0% avg, up 58% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.0%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -14.1
+      "mom_60d_pct": -14.6
     },
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 71.51,
+      "price": 71.41,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -16.3,
-      "pct_vs_200dma": -3.9,
+      "pct_vs_50dma": -16.5,
+      "pct_vs_200dma": -4.1,
       "rsi14": 39.0,
       "macd_pos": true,
-      "off_52w_high_pct": -36.7,
+      "off_52w_high_pct": -36.8,
       "season_this": "Jul: +0.8% avg, up 69% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +0.8%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -20.2
+      "mom_60d_pct": -20.3
     },
     {
       "ticker": "HG=F",
       "name": "Copper",
-      "price": 6.28,
+      "price": 6.23,
       "above50": false,
       "above200": true,
-      "pct_vs_50dma": -0.2,
-      "pct_vs_200dma": 10.0,
-      "rsi14": 53.0,
+      "pct_vs_50dma": -1.0,
+      "pct_vs_200dma": 9.1,
+      "rsi14": 51.0,
       "macd_pos": true,
-      "off_52w_high_pct": -5.5,
-      "season_this": "Jul: +1.5% avg, up 62% of years (n=26)",
-      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.5%\uff0c62% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": 4.1
+      "off_52w_high_pct": -6.3,
+      "season_this": "Jul: +1.4% avg, up 62% of years (n=26)",
+      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.4%\uff0c62% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+      "mom_60d_pct": 3.3
     },
     {
       "ticker": "DX-Y.NYB",
       "name": "US Dollar",
-      "price": 100.96,
+      "price": 100.97,
       "above50": true,
       "above200": true,
       "pct_vs_50dma": 1.2,
@@ -4590,18 +4590,18 @@
     }
   ],
   "vix": {
-    "last": 15.84000015258789,
-    "chg": -1.0599994659423828,
-    "pct": -6.272186330585061,
+    "last": 15.029999732971191,
+    "chg": -0.8100004196166992,
+    "pct": -5.113638963471622,
     "hi": 22.219999313354492,
-    "lo": 15.319999694824219,
-    "prev": 16.899999618530273,
+    "lo": 15.029999732971191,
+    "prev": 15.84000015258789,
     "days": 30,
     "regime": "<span class=\"l-en\">normal</span><span class=\"l-zh\">\u6b63\u5e38</span>",
     "tone": "muted",
     "ratio": 0.8471637807334557,
     "rword": "<span class=\"l-en\">contango</span><span class=\"l-zh\">\u6b63\u5411</span>",
-    "pctile": 37.70990764063812
+    "pctile": 32.39584426487564
   },
   "positioning": [
     {

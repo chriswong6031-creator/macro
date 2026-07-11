@@ -1,8 +1,8 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-07-10 08:41 UTC",
-  "asof": "2026-07-09",
+  "built": "2026-07-11 08:25 UTC",
+  "asof": "2026-07-10",
   "stale_after_min": 1440,
   "cards": [
     {
@@ -11,7 +11,7 @@
       "cagr": 7.88,
       "sharpe": 1.12,
       "maxdd": -17.3,
-      "asof": "2026-07-09",
+      "asof": "2026-07-10",
       "gross_now": 0.82,
       "alloc": [
         {
@@ -61,10 +61,10 @@
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.41,
+      "cagr": 11.42,
       "sharpe": 1.06,
       "maxdd": -24.1,
-      "asof": "2026-07-09",
+      "asof": "2026-07-10",
       "gross_now": 1.47,
       "alloc": [
         {
@@ -117,7 +117,7 @@
       "cagr": 17.18,
       "sharpe": 0.99,
       "maxdd": -34.9,
-      "asof": "2026-07-09",
+      "asof": "2026-07-10",
       "gross_now": 2.5,
       "alloc": [
         {

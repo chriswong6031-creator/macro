@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-10",
+  "as_of": "2026-07-11",
   "authority": {
     "allowed_actions": [
       "display",
@@ -90,12 +90,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 700,
-          "graded_5d_share": 0.817757,
+          "graded_5d_share": 0.815851,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 856,
+        "n_claims": 858,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -119,12 +119,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 700,
-          "graded_5d_share": 0.817757,
+          "graded_5d_share": 0.815851,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 856,
+        "n_claims": 858,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -153,8 +153,37 @@
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 20,
+        "n_claims": 25,
         "n_hit_gradeable": 0,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "intel_hub": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 0,
+          "next_bar_count": 0,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 1.0,
+        "maturity_mix": {
+          "graded_5d_count": 0,
+          "graded_5d_share": 0.0,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 60,
+        "n_hit_gradeable": 60,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
           "channels_fill_rate": 0.0,
@@ -264,12 +293,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 1010,
-          "graded_5d_share": 0.370506,
+          "graded_5d_share": 0.283072,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 2726,
+        "n_claims": 3568,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -293,12 +322,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 1010,
-          "graded_5d_share": 0.370506,
+          "graded_5d_share": 0.283072,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 2726,
+        "n_claims": 3568,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -313,9 +342,9 @@
       }
     },
     "global": {
-      "falsifier_coverage": 0.013305,
+      "falsifier_coverage": 0.011473,
       "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure",
-      "n_claims": 10973,
+      "n_claims": 12726,
       "n_grades": 6716,
       "n_with_falsifier": 146
     }
@@ -325,13 +354,13 @@
     "edges_by_kind": {
       "governed_by": 10,
       "member_of_thesis": 7,
-      "mirrored_experiment": 19,
+      "mirrored_experiment": 27,
       "rf_candidate_of_mechanism": 7
     },
     "rows_by_type": {
       "entity": 7,
       "mechanism": 8,
-      "species_link": 22,
+      "species_link": 27,
       "thesis": 2
     }
   },
@@ -580,6 +609,69 @@
       "src": "species:DISLOC@1.0"
     },
     {
+      "dst": "species-EI-F1D-RW",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-EI-F1D-RW'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:EI-F1D-RW@1.0"
+    },
+    {
+      "dst": "species-EI-PM1-AVWAP",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-EI-PM1-AVWAP'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:EI-PM1-AVWAP@1.0"
+    },
+    {
+      "dst": "species-EI-PM2-SHELF",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-EI-PM2-SHELF'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:EI-PM2-SHELF@1.0"
+    },
+    {
+      "dst": "species-EI-PM3-GAP",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-EI-PM3-GAP'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:EI-PM3-GAP@1.0"
+    },
+    {
+      "dst": "species-EI-PM4-OVERHEAD",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-EI-PM4-OVERHEAD'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:EI-PM4-OVERHEAD@1.0"
+    },
+    {
+      "dst": "species-EI-PM5-FLOATTURN",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-EI-PM5-FLOATTURN'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:EI-PM5-FLOATTURN@1.0"
+    },
+    {
+      "dst": "species-F3_ANTICHASE",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-F3_ANTICHASE'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:F3_ANTICHASE@1.0"
+    },
+    {
       "dst": "species-S10",
       "kind": "mirrored_experiment",
       "source": {
@@ -623,6 +715,15 @@
         "path": "data/experiments/registry_seed.json"
       },
       "src": "species:S14@1"
+    },
+    {
+      "dst": "species-S15",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S15'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S15@1.0"
     },
     {
       "dst": "species-S16",
@@ -724,7 +825,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-07-10T09:00:12.677820+00:00",
+  "generated_utc": "2026-07-11T08:45:10.646394+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -899,6 +1000,122 @@
       "suggestion_only": true
     },
     {
+      "a": "species:EI-PM1-AVWAP@1.0",
+      "b": "species:EI-PM3-GAP@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "falsified",
+        "memory",
+        "phase",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM1-AVWAP@1.0",
+      "b": "species:EI-PM4-OVERHEAD@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "memory",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM1-AVWAP@1.0",
+      "b": "species:EI-PM5-FLOATTURN@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "memory",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM2-SHELF@1.0",
+      "b": "species:EI-PM1-AVWAP@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "memory",
+        "phase",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM2-SHELF@1.0",
+      "b": "species:EI-PM3-GAP@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "memory",
+        "phase",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM2-SHELF@1.0",
+      "b": "species:EI-PM4-OVERHEAD@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "memory",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM2-SHELF@1.0",
+      "b": "species:EI-PM5-FLOATTURN@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "memory",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM3-GAP@1.0",
+      "b": "species:EI-PM4-OVERHEAD@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "memory",
+        "overhead",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM3-GAP@1.0",
+      "b": "species:EI-PM5-FLOATTURN@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "memory",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:EI-PM4-OVERHEAD@1.0",
+      "b": "species:EI-PM5-FLOATTURN@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "blocked",
+        "memory",
+        "price"
+      ],
+      "suggestion_only": true
+    },
+    {
       "a": "species:S1@1.0",
       "b": "species:S5@1.0",
       "basis": "token_overlap_suggestion_only",
@@ -913,7 +1130,7 @@
   "rows": {
     "entity:US:AVGO": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-10",
+      "funnel_as_of": "2026-07-11",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:AVGO",
@@ -926,7 +1143,7 @@
     },
     "entity:US:EWBC": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-10",
+      "funnel_as_of": "2026-07-11",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:EWBC",
@@ -939,7 +1156,7 @@
     },
     "entity:US:HWM": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-10",
+      "funnel_as_of": "2026-07-11",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:HWM",
@@ -952,7 +1169,7 @@
     },
     "entity:US:JXN": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-10",
+      "funnel_as_of": "2026-07-11",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:JXN",
@@ -965,7 +1182,7 @@
     },
     "entity:US:NVDA": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-10",
+      "funnel_as_of": "2026-07-11",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:NVDA",
@@ -978,7 +1195,7 @@
     },
     "entity:US:STT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-10",
+      "funnel_as_of": "2026-07-11",
       "funnel_state": "thesis_candidate_shadow",
       "market": "US",
       "registry_id": "entity:US:STT",
@@ -991,7 +1208,7 @@
     },
     "entity:US:VRT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-10",
+      "funnel_as_of": "2026-07-11",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:VRT",
@@ -1698,7 +1915,7 @@
           "tag": "context"
         }
       ],
-      "experiment_ref": null,
+      "experiment_ref": "species-EI-F1D-RW",
       "governance_refs": [],
       "horizon_class": "positional",
       "market_scope": [
@@ -1735,6 +1952,184 @@
       "validation_status": "accruing",
       "version": "1.0"
     },
+    "species:EI-PM1-AVWAP@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "pm1 >= 0 (frozen split)",
+          "tag": "phase0_split"
+        }
+      ],
+      "experiment_ref": "species-EI-PM1-AVWAP",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Distance of signal close above/below the VWAP anchored at the 250-bar minimum close. Hypothesis: above-anchor = post-low buyer base in profit = support. Phase-0 verdict: NO separability on any of 5 registered trials (best favorable BH 0.27); the one significant read (grid-A DEAD_MONEY +1.37pp, BH 0.074) runs in the UNFAVORABLE direction. Kill is construction-specific (this anchor, this window, this split) — the feature is retained as display-tier context/confluence input; NOT a search-space kill.",
+      "name": "AVWAP-from-base-low distance (price-memory PM1) — falsified (phase-0, standalone)",
+      "registry_id": "species:EI-PM1-AVWAP@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "re-running the same construction against a fresh budget",
+          "rule": "Standalone separability falsified at phase-0; any revival = new construction + new PREREG"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "EI-PM1-AVWAP",
+      "trial_count": 5,
+      "validation_status": "falsified",
+      "version": "1.0"
+    },
+    "species:EI-PM2-SHELF@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "pm2 >= 0.1606 (frozen vg-fire median, outcome-blind)",
+          "tag": "phase0_split"
+        },
+        {
+          "condition": "features from data/massive_stock_day via split_adjust; PIT at signal close",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-EI-PM2-SHELF",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Dollar-volume fraction within ±3% of the signal close over the trailing 250 bars. Thick shelf = dense prior ownership at the entry price that absorbs selling. Phase-0 (m=20 family, within-month contrast + within-month episode-label permutation, r4): favorable (>= median 0.1606) shelf fires stop out LESS (grid-A STOPPED -5.76pp, BH 0.0005) and cushion MORE (grid-A CUSHIONED +4.09pp BH 0.0005; grid-B CUSHIONED +2.95pp BH 0.0005), all sign-stable, THIN-clear. HONEST TEXTURE: favorable-shelf fires also go DEAD-MONEY more (grid-A +7.03pp, BH 0.0005, unfavorable direction) — the shelf holds you but caps momentum; any downstream design must carry this trade-off.",
+      "name": "Volume shelf density at entry (price-memory PM2) — phase-0 SURVIVOR",
+      "registry_id": "species:EI-PM2-SHELF@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "authority smuggling from a phase-0 separability read",
+          "rule": "Display-only ceiling (DT-R7): survivor earns §6.2's two rights only — context-chip eligibility (separate Fable build ruling) and a promotion PREREG with its own family/budget"
+        },
+        {
+          "prevents": "forbidden composite shape",
+          "rule": "No composite: never fused into a price-memory score (prereg §3)"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "EI-PM2-SHELF",
+      "trial_count": 5,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:EI-PM3-GAP@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "pm3 == 0 (frozen split: favorable = no unfilled overhead gap)",
+          "tag": "phase0_split"
+        }
+      ],
+      "experiment_ref": "species-EI-PM3-GAP",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Binary: any unfilled down-gap zone with lower edge within (close, close*1.10] over the trailing 250 bars. Hypothesis: clean sky (no gap) = no trapped-seller cohort = fewer stop-outs. Phase-0 verdict: the DATA CONTRADICT THE DIRECTION — clean-sky fires stop out MORE (grid-B STOPPED +2.21pp, BH 0.0031; grid-A +1.33pp, BH 0.079), sign-stable. The gap-overhead cohort reads as a momentum/continuation marker on this tape, not resistance. Falsified as constructed; the inverse reading is NOT promoted (would be a post-hoc sign flip = new trial).",
+      "name": "Unfilled overhead gap map (price-memory PM3) — falsified (phase-0, direction-contradicted)",
+      "registry_id": "species:EI-PM3-GAP@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "harvesting the contradiction as a free signal",
+          "rule": "Sign-flip revival forbidden without a new PREREG (species law: post-hoc variation = new recorded trial)"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "EI-PM3-GAP",
+      "trial_count": 5,
+      "validation_status": "falsified",
+      "version": "1.0"
+    },
+    "species:EI-PM4-OVERHEAD@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "pm4 <= 0.5507 (frozen vg-fire median)",
+          "tag": "phase0_split"
+        }
+      ],
+      "experiment_ref": "species-EI-PM4-OVERHEAD",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Dollar-volume fraction traded above the signal close over the trailing 250 bars. Grid-A trials were significant in the favorable direction (STOPPED -3.43pp, CUSHIONED +2.55pp, BH 0.0005) BUT the pre-registered redundancy fence closed promotion regardless: Spearman |rho| = 0.953 vs ext_atr, 0.884 vs poc_dist_126, 0.875 vs dist_to_52wh/near_52wh (>= 0.80 bar) — PM4 is 52-week-high/extension information wearing a volume costume, exactly the collision prereg §2/PM4 pre-declared. Retired as redundant, NOT falsified: the information is real but already carried by live/adjudicated columns.",
+      "name": "Overhead supply fraction (price-memory PM4) — REDUNDANT (promotion-blocked)",
+      "registry_id": "species:EI-PM4-OVERHEAD@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "double-counting extension/52wh information as a new signal",
+          "rule": "REDUNDANT under prereg §4.3 (|rho| >= 0.8 vs reference set): cannot promote in any form regardless of p"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "EI-PM4-OVERHEAD",
+      "trial_count": 5,
+      "validation_status": "retired",
+      "version": "1.0"
+    },
+    "species:EI-PM5-FLOATTURN@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "pm5 >= median (frozen for the future run)",
+          "tag": "phase0_split_suspended"
+        }
+      ],
+      "experiment_ref": "species-EI-PM5-FLOATTURN",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "63-bar share volume over PIT shares outstanding (FLOAT-PROXY: SO not free float, direction of bias disclosed). SUSPENDED data_blocked at registration (red-team B3): EDGAR statements coverage 55.3% of vg fires < 60% floor (ceiling 59.25% at infinite staleness; 603/992 fire tickers in panel). Never tested; never falsified. Features computed and accruing display-tier in the pm0 artifact (median 0.495 post pm5-unit-fix). Unblock: panel coverage >= 60% of the vg-fire population under the 270d staleness rule; then 6 trials run as a labeled family extension with fresh calibration (retro-pooling into the m=20 family pre-forbidden).",
+      "name": "Float turnover FLOAT-PROXY (price-memory PM5) — data_blocked (pre-declared)",
+      "registry_id": "species:EI-PM5-FLOATTURN@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "multiplicity laundering across run dates",
+          "rule": "Retro-pooling into the spent m=20 family forbidden (prereg §2/PM5)"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "EI-PM5-FLOATTURN",
+      "trial_count": 0,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
     "species:F3_ANTICHASE@1.0": {
       "authority": "display_only",
       "deployment_status": "chip",
@@ -1752,7 +2147,7 @@
           "tag": "context"
         }
       ],
-      "experiment_ref": null,
+      "experiment_ref": "species-F3_ANTICHASE",
       "governance_refs": [],
       "horizon_class": "positional",
       "market_scope": [
@@ -2072,7 +2467,7 @@
           "tag": "context"
         }
       ],
-      "experiment_ref": null,
+      "experiment_ref": "species-S15",
       "governance_refs": [],
       "horizon_class": "rotational",
       "market_scope": [
@@ -2731,7 +3126,7 @@
       "present": true
     },
     "data/experiments/registry_seed.json": {
-      "n": 175,
+      "n": 183,
       "present": true
     },
     "data/governance/claim_accountability.json": {
@@ -2739,7 +3134,7 @@
       "present": true
     },
     "data/neuralweb/governance.jsonl": {
-      "n": 30,
+      "n": 31,
       "present": true
     },
     "data/research/thesis_funnel_states.parquet": {
@@ -2755,11 +3150,11 @@
       "present": true
     },
     "data/species/registry.json": {
-      "n": 22,
+      "n": 27,
       "present": true
     },
     "data/trial_ledger.jsonl": {
-      "n": 1108,
+      "n": 1120,
       "present": true
     },
     "site/factordata/reflexivity_overlay.json": {
@@ -3331,6 +3726,12 @@
       "last_ts": "2026-06-21T15:04:20.144408+00:00",
       "n_config_hashes": 5,
       "n_trials": 5
+    },
+    "signal_foundry": {
+      "first_ts": "2026-07-10T14:15:14.421135+00:00",
+      "last_ts": "2026-07-10T14:16:49.091105+00:00",
+      "n_config_hashes": 12,
+      "n_trials": 12
     },
     "slf001_ftd_pressure": {
       "first_ts": "2026-07-06T11:31:17.617202+00:00",
