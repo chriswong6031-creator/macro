@@ -1,7 +1,6 @@
 /* risk_state_live.js — progressive enhancement: poll the intraday live risk-state
    (site/live/risk_state.json, written by scripts/build_risk_state.py every few minutes
-   during market hours) and patch the Market State headline on macro.html + the Sector
-   Central regime banner on sector_central.html.
+   during market hours) and patch the Market State headline on macro.html.
 
    Additive + defensive: no-ops when the file or the target elements are absent (so it is
    safe on every page and on the static/no-live deploy). The CONTINUOUS 0-100 score moves
@@ -79,31 +78,12 @@
     if (pill) pill.classList.toggle("on", !!(d.live_active && d.realtime));
   }
 
-  /* sector_central.html — the regime banner headline */
-  function patchCentral(d) {
-    var el = document.getElementById("scc-ms-verdict");
-    if (!el) return;
-    var disp = d.display || {};
-    if (!disp.verdict) return;
-    verdictBL(el, disp);
-    var tone = { RISK_ON: "rg-on", MIXED: "rg-mix", RISK_OFF: "rg-off" }[disp.verdict] || "rg-mix";
-    el.classList.remove("rg-on", "rg-mix", "rg-off");
-    el.classList.add(tone);
-    var bar = document.getElementById("scc-ms-bar");
-    if (bar && disp.score != null) {
-      bar.style.width = disp.score + "%";
-      bar.style.background = tone === "rg-off" ? "var(--down)"
-                          : tone === "rg-on" ? "var(--up)" : "var(--muted)";
-    }
-  }
-
   function tick() {
     fetch(URL + "?t=" + Date.now(), { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || d.schema !== "risk_state.v1") return;
         try { patchMacro(d); } catch (e) {}
-        try { patchCentral(d); } catch (e) {}
       })
       .catch(function () {});
   }
