@@ -150,6 +150,72 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def _build_triage_context(root: Path, today: str | None = None) -> dict:
+    """Deterministically populate regime/estimator triage flags from committed stores.
+
+    Reads data/regime/regime_one.json (written nightly by the regime engine) and
+    extracts the flip_attribution.flipped boolean.  This is a deterministic read —
+    no LLM involvement, no origination.
+
+    Staleness: a stale ``flipped=False`` is the only dangerous direction (it would
+    let a regime-era miss auto-revert), so when ``flip_attribution.asof`` lags
+    ``today`` by more than one calendar day the read fails TOWARD caution
+    (``regime_change_suspected=True``), routing the miss to operator_tap rather
+    than a clean-overfit auto-revert.  A stale ``flipped=True`` already holds the
+    kill, so it needs no special handling.
+
+    Absence/unreadability returns an empty context.  NOTE: an empty context is
+    NOT an operator_tap fallback — verify.py reads missing flags as False, so a
+    clean-miss is then triaged as clean-overfit (the pre-existing no-context
+    default).  The ``asof`` is always logged so staleness is auditable.
+
+    Returns a dict suitable for passing as context= to verify_proposal().
+    NEVER raises.
+    """
+    try:
+        p = root / "data" / "regime" / "regime_one.json"
+        if not p.exists():
+            log.info("metabolism_verify: regime_one.json absent — triage context empty "
+                     "(missing flags read as False → clean-overfit default)")
+            return {}
+        d = json.loads(p.read_text(encoding="utf-8"))
+        flip = (d.get("flip_attribution") or {})
+        flipped = bool(flip.get("flipped", False))
+        degraded = bool(d.get("degraded", False))
+        asof = str(flip.get("asof") or d.get("asof") or "")
+
+        stale = _regime_asof_is_stale(asof, today)
+        suspected = bool(flipped or degraded or stale)
+        log.info(
+            "metabolism_verify: regime_one flipped=%s degraded=%s asof=%s stale=%s "
+            "→ regime_change_suspected=%s",
+            flipped, degraded, asof or "(none)", stale, suspected,
+        )
+        return {
+            "regime_change_suspected": suspected,
+            "estimator_broken_suspected": False,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_verify: _build_triage_context failed (%s) — context empty", exc)
+        return {}
+
+
+def _regime_asof_is_stale(asof: str, today: str | None = None) -> bool:
+    """True when the regime asof lags today by more than one calendar day, or is
+    missing/unparseable.  Fails toward stale=True so a garbled asof routes misses
+    to caution (operator_tap).  NEVER raises."""
+    try:
+        from datetime import datetime, timezone
+        if not asof:
+            return True
+        ad = datetime.fromisoformat(asof.replace("Z", "+00:00")).date()
+        td = (datetime.fromisoformat(today).date() if today
+              else datetime.now(timezone.utc).date())
+        return (td - ad).days > 1
+    except Exception:  # noqa: BLE001
+        return True
+
+
 def _run_single(
     cycle_id: str,
     contract: dict,
@@ -167,9 +233,14 @@ def _run_single(
     try:
         from engine.metabolism.verify import verify_proposal, write_verify_record  # type: ignore[import]
 
+        # Populate regime/estimator triage flags from deterministic committed stores
+        # (measurement-lens law: separate mechanism-false vs regime-change vs estimator-broken).
+        triage_context = _build_triage_context(root, today)
+
         record = verify_proposal(
             cycle_id=cycle_id,
             contract=contract,
+            context=triage_context,
             root=root,
             today=today,
         )

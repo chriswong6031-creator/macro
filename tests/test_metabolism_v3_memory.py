@@ -690,3 +690,165 @@ class TestPathFormSlaResolution:
         result = stamp_context(blocks, now_iso=now, root=tmp_path)
         assert result[0]["sla_days"] == 7
         assert result[0]["is_stale"] is False  # 1 day < SLA 7
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# G. BUG 3 regression — lesson lobe field written + recall lobe-match fires
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestLessonLobeField:
+    """Regression tests for BUG 3: lessons carry a lobe field and recall scores it."""
+
+    def test_append_lesson_writes_lobe_field(self, tmp_path):
+        """append_lesson with lobe= must persist the lobe field in the JSONL row."""
+        from engine.metabolism.memory import append_lesson  # noqa: PLC0415
+
+        ok = append_lesson(
+            cycle_id="lobe-t1",
+            verdict="PASS",
+            what_worked="good",
+            what_failed="",
+            construction="sensor=x kind=factor tier=T1 title='test'",
+            lobe="til",
+            root=tmp_path,
+        )
+        assert ok is True
+        p = tmp_path / "data" / "metabolism" / "lessons.jsonl"
+        rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+        assert len(rows) == 1
+        assert rows[0].get("lobe") == "til", (
+            f"lobe field missing or wrong in lesson row: {rows[0]}"
+        )
+
+    def test_append_lesson_empty_lobe_is_backward_compat(self, tmp_path):
+        """append_lesson without lobe= (old callers) must not break."""
+        from engine.metabolism.memory import append_lesson  # noqa: PLC0415
+
+        ok = append_lesson(
+            cycle_id="lobe-t2",
+            verdict="FAIL",
+            what_worked="",
+            what_failed="failed",
+            construction="sensor=y kind=factor tier=T1 title='old'",
+            root=tmp_path,
+        )
+        assert ok is True
+        p = tmp_path / "data" / "metabolism" / "lessons.jsonl"
+        rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+        assert rows[0].get("lobe") == ""  # empty string, not absent
+
+    def test_recall_lobe_exact_match_fires(self, tmp_path):
+        """recall_lesson_rows with lobe='til' must give +_WEIGHT_LOBE_MATCH to rows
+        that carry lobe='til' in the structured field (BUG 3 fix: lobe_exact)."""
+        from engine.metabolism.recall import recall_lesson_rows  # noqa: PLC0415
+
+        # Row A: has lobe='til' in structured field AND construction matches
+        row_a = {
+            "schema": "metabolism.lessons.v1",
+            "ts": _now_iso(-5),
+            "cycle_id": "lobe-exact-001",
+            "proposal_id": "p001",
+            "lobe": "til",
+            "verdict": "PASS",
+            "what_worked": "good",
+            "what_failed": "",
+            "construction": "sensor=theme_velocity kind=factor",
+        }
+        # Row B: has lobe='' (old style) and same construction — should still score
+        # via broad-bag fallback but no lobe_exact bonus
+        row_b = {
+            "schema": "metabolism.lessons.v1",
+            "ts": _now_iso(-3),
+            "cycle_id": "lobe-exact-002",
+            "proposal_id": "p002",
+            "lobe": "",
+            "verdict": "PASS",
+            "what_worked": "ok",
+            "what_failed": "",
+            "construction": "sensor=theme_velocity kind=factor",
+        }
+        p = tmp_path / "data" / "metabolism" / "lessons.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(row_a) + "\n" + json.dumps(row_b) + "\n", encoding="utf-8")
+
+        top = recall_lesson_rows(lobe="til", construction_terms="theme_velocity", root=tmp_path)
+        assert len(top) >= 1
+
+        # Row A (lobe='til' exact match) must rank first
+        assert top[0]["cycle_id"] == "lobe-exact-001", (
+            f"Expected lobe-exact row to rank first; got {[r['cycle_id'] for r in top]}"
+        )
+        # Its reasons must mention lobe_exact (structured field match)
+        reasons = " ".join(top[0].get("_reasons", []))
+        assert "lobe_exact" in reasons, (
+            f"Expected lobe_exact in reasons; got {top[0].get('_reasons')}"
+        )
+
+    def test_recall_old_rows_without_lobe_field_still_score(self, tmp_path):
+        """Old rows without a lobe field must still score via broad-bag fallback."""
+        from engine.metabolism.recall import recall_lesson_rows  # noqa: PLC0415
+
+        old_row = {
+            "schema": "metabolism.lessons.v1",
+            "ts": _now_iso(),
+            "cycle_id": "old-no-lobe",
+            "verdict": "FAIL",
+            "construction": "til momentum factor dead",
+            "what_failed": "til lobe: construction C failed",
+        }
+        p = tmp_path / "data" / "metabolism" / "lessons.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(old_row) + "\n", encoding="utf-8")
+
+        top = recall_lesson_rows(lobe="til", root=tmp_path)
+        assert len(top) == 1
+        reasons = " ".join(top[0].get("_reasons", []))
+        # Should fire via broad-bag fallback (lobe_match) since 'til' appears in text
+        assert "lobe_match" in reasons or "lobe_exact" in reasons, (
+            f"Expected lobe scoring reason; got {top[0].get('_reasons')}"
+        )
+
+
+# ── Regime triage staleness (learning-wire follow-up) ────────────────────────
+
+class TestRegimeAsofStaleness:
+    """_regime_asof_is_stale fails toward caution on missing/stale/garbled asof."""
+
+    def test_fresh_asof_not_stale(self):
+        from scripts.metabolism_verify import _regime_asof_is_stale
+        assert _regime_asof_is_stale("2026-07-11", today="2026-07-11") is False
+        assert _regime_asof_is_stale("2026-07-10", today="2026-07-11") is False
+
+    def test_lagging_asof_is_stale(self):
+        from scripts.metabolism_verify import _regime_asof_is_stale
+        assert _regime_asof_is_stale("2026-07-08", today="2026-07-11") is True
+
+    def test_missing_or_garbled_asof_is_stale(self):
+        from scripts.metabolism_verify import _regime_asof_is_stale
+        assert _regime_asof_is_stale("", today="2026-07-11") is True
+        assert _regime_asof_is_stale("not-a-date", today="2026-07-11") is True
+
+    def test_stale_regime_file_forces_suspected(self, tmp_path):
+        """A stale flipped=False file must route misses to caution (suspected=True)."""
+        import json
+        from scripts.metabolism_verify import _build_triage_context
+        reg = tmp_path / "data" / "regime"
+        reg.mkdir(parents=True)
+        (reg / "regime_one.json").write_text(json.dumps(
+            {"flip_attribution": {"flipped": False, "asof": "2026-06-01"}}))
+        ctx = _build_triage_context(tmp_path, today="2026-07-11")
+        assert ctx["regime_change_suspected"] is True
+
+    def test_fresh_clean_regime_not_suspected(self, tmp_path):
+        import json
+        from scripts.metabolism_verify import _build_triage_context
+        reg = tmp_path / "data" / "regime"
+        reg.mkdir(parents=True)
+        (reg / "regime_one.json").write_text(json.dumps(
+            {"flip_attribution": {"flipped": False, "asof": "2026-07-11"}}))
+        ctx = _build_triage_context(tmp_path, today="2026-07-11")
+        assert ctx["regime_change_suspected"] is False
+
+    def test_absent_file_empty_context(self, tmp_path):
+        from scripts.metabolism_verify import _build_triage_context
+        assert _build_triage_context(tmp_path, today="2026-07-11") == {}

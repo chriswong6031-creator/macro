@@ -136,12 +136,22 @@ def _score_row(
     # what_failed prose doesn't inflate the union and drive FAIL rows DOWN)
     row_construction_tokens = frozenset(_tokenize(str(row.get("construction") or "")))
 
-    # 1. Lobe match (uses broad bag so lobe keywords in any field count)
+    # 1. Lobe match — prefer exact row["lobe"] match (new structured field from BUG 3 fix);
+    #    fall back to broad-bag text-overlap so old rows without the field still score.
     if lobe_tokens:
-        overlap = lobe_tokens & row_all_tokens
-        if overlap:
+        row_lobe_str = str(row.get("lobe") or "").strip()
+        row_lobe_tokens = frozenset(_tokenize(row_lobe_str)) if row_lobe_str else frozenset()
+        if lobe_tokens and row_lobe_tokens and lobe_tokens == row_lobe_tokens:
+            # Exact lobe field match — strong signal
             score += _WEIGHT_LOBE_MATCH
-            reasons.append(f"lobe_match:{','.join(sorted(overlap))}")
+            reasons.append(f"lobe_exact:{row_lobe_str}")
+        else:
+            # Fall back to broad-bag overlap (works for old rows without lobe field
+            # and for partial matches where lobe keyword appears in text fields)
+            overlap = lobe_tokens & row_all_tokens
+            if overlap:
+                score += _WEIGHT_LOBE_MATCH
+                reasons.append(f"lobe_match:{','.join(sorted(overlap))}")
 
     # 2. Construction-token overlap (Jaccard on construction field ONLY — B1a fix)
     construction_jaccard = 0.0

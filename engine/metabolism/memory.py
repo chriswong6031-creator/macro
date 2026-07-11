@@ -177,12 +177,15 @@ def append_lesson(
     what_failed: str,
     construction: str,
     proposal_id: str | None = None,
+    lobe: str = "",
     root: Path | None = None,
 ) -> bool:
     """Append a lesson to data/metabolism/lessons.jsonl.
 
     Called by VERIFY after each proposal outcome so PROPOSE stops repeating
-    dead constructions.
+    dead constructions.  The optional lobe field enables lobe-exact recall
+    scoring in engine.metabolism.recall (BUG 3 fix).  Old rows without the
+    field parse fine — recall falls back to text-bag matching.
 
     Returns True on success, False on error.  NEVER raises.
     """
@@ -195,6 +198,7 @@ def append_lesson(
             "ts": _now_iso(),
             "cycle_id": cycle_id,
             "proposal_id": proposal_id,
+            "lobe": lobe or "",
             "verdict": verdict,
             "what_worked": what_worked or "",
             "what_failed": what_failed or "",
@@ -202,7 +206,7 @@ def append_lesson(
         }
         with p.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(row, separators=(",", ":"), default=str) + "\n")
-        log.info("memory.append_lesson: cycle=%s verdict=%s", cycle_id, verdict)
+        log.info("memory.append_lesson: cycle=%s verdict=%s lobe=%s", cycle_id, verdict, lobe or "")
         return True
     except Exception as exc:  # noqa: BLE001
         log.warning("memory.append_lesson: %s", exc)

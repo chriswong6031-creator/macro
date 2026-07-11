@@ -653,7 +653,7 @@ def _slice_bracketed(s: str) -> str:
 
 # ── Proposal validation + contract minting ────────────────────────────────────
 
-def _mint_contract(prop: dict[str, Any], proposal_id: str, today: str) -> dict[str, Any]:
+def _mint_contract(prop: dict[str, Any], proposal_id: str, today: str, lobe: str = "") -> dict[str, Any]:
     """Build the fitness contract in the exact shape engine.metabolism.verify reads."""
     raw = prop.get("fitness_contract") or {}
     sensor = str(raw.get("sensor") or prop.get("targets_sensor") or "").strip()
@@ -670,6 +670,7 @@ def _mint_contract(prop: dict[str, Any], proposal_id: str, today: str) -> dict[s
         check_by = max(check_by, _FIRST_REAL_CHECK_BY)
     return {
         "proposal_id": proposal_id,
+        "lobe": lobe,                  # threaded from docket so verify/mission can filter by lobe
         "sensor": sensor,
         "expected_sign": sign,
         "band": str(raw.get("band") or "unspecified").strip(),
@@ -793,12 +794,13 @@ def build_docket(
             proposals.append({
                 "proposal_id": pid,
                 "content_hash": pid,
+                "lobe": lobe,          # docket-level lobe threaded into every proposal
                 "title": title,
                 "tier": tier,
                 "kind": kind,
                 "targets_sensor": sensor,
                 "rationale": str(prop.get("rationale") or "").strip(),
-                "fitness_contract": _mint_contract(prop, pid, day),
+                "fitness_contract": _mint_contract(prop, pid, day, lobe=lobe),
             })
         except Exception as exc:  # noqa: BLE001
             log.warning("propose: proposal skipped (%s)", exc)

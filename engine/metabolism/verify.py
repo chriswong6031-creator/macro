@@ -389,6 +389,7 @@ def _append_lesson_from_verify(
             f"sensor={contract.get('sensor')} kind={contract.get('kind')} "
             f"tier={contract.get('tier')} title={contract.get('title','')!r}"
         )
+        lobe = str(contract.get("lobe") or contract.get("lobe_id") or "")
         append_lesson(
             cycle_id=cycle_id,
             verdict=classification,
@@ -396,6 +397,7 @@ def _append_lesson_from_verify(
             what_failed=what_failed,
             construction=construction,
             proposal_id=str(contract.get("proposal_id") or contract.get("dedup_hash") or ""),
+            lobe=lobe,
             root=root,
         )
     except Exception as exc:  # noqa: BLE001
