@@ -1731,6 +1731,7 @@
   .dtp-bar.dn { background:color-mix(in srgb,var(--down) 65%,transparent); }
   .dtp-2d  { font-size:10px; color:var(--muted); font-family:var(--font-mono,monospace); white-space:nowrap; }
   .dtp-fn  { padding:5px 16px 7px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); line-height:1.45; }
+  .ftr-t1-help { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--line); color:var(--muted); font-size:9.5px; font-weight:700; cursor:help; line-height:1; vertical-align:middle; }
   @media(max-width:640px){
     .dtp-row { gap:5px 10px; padding:8px 12px 7px; }
     .dtp-chip-name { font-size:12px; }
@@ -11624,15 +11625,21 @@ function renderTapeBand(pulse){
   /* footnote (single quiet line; flow segment added when ≥1 chip has flow) */
   var fnEl=document.getElementById('dtp-fn');
   if(fnEl){
-    var baseEn='Context only — violent flips fade 58% at T+1 (n=26)';
-    var baseZh='行情仅供参考 — 剧烈反转T+1消退概率58%（n=26）';
+    /* FT-R3 fade note — plain words on Tier 1, 58% receipt demoted to the ? tip
+       (doctrine Law 2/3; same form as baskets #2232/#2236) */
+    var fadeEn='Not a buy signal: sharp one-day flips usually don\'t hold — in 26 past cases about 6 in 10 faded within a day.';
+    var fadeZh='非买入信号：剧烈的单日反转多难持续 — 历史26次中约六成在一天内消退。';
+    var tipEn='Technical receipt: T+1 violent-flip base rate 58% fade (n=26) · flip-confirmation lens · descriptive only, not a directional signal · display tier.';
+    var tipZh='技术说明：T+1剧烈反转基础概率58%消退（n=26）· 翻转确认透镜 · 仅描述、非方向信号 · 展示层。';
+    var flowSeg='';
     if(flowShown){
       var aoEn=flowAsOf?' (as of '+esc(flowAsOf)+')':'';
       var aoZh=flowAsOf?'（截至 '+esc(flowAsOf)+'）':'';
-      baseEn+=' · flow in tooltips = nightly dollar-volume read'+aoEn+', descriptive only';
-      baseZh+=' · 提示框中资金流 = 每晚美元成交量'+aoZh+'，仅供描述';
+      flowSeg=' · '+L('flow in tooltips = nightly dollar-volume read'+aoEn+', descriptive only','提示框中资金流 = 每晚美元成交量'+aoZh+'，仅供描述');
     }
-    fnEl.innerHTML=L(baseEn,baseZh);
+    fnEl.innerHTML=L(fadeEn,fadeZh)
+      +' <span class="ftr-t1-help" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">?</span>'
+      +flowSeg;
   }
 }
 
