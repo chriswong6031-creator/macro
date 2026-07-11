@@ -400,23 +400,29 @@ class TestCopyContract:
         assert "75.00%" not in msg
 
     def test_ignition_message_contains_fade_copy(self):
+        """Fade base rate in plain words (doctrine Law 3), not '58% at T+1 (n=26)'."""
         legs = {"impulse_day": True, "rs_z": True}
         msg = NTE._ignition_message("test_basket", legs, _TODAY)
-        assert "58%" in msg
-        assert "T+1" in msg
+        assert "6 in 10" in msg
+        assert "faded within a day" in msg
+        assert "26 past cases" in msg
 
     def test_ignition_message_contains_as_of(self):
         legs = {"impulse_day": True, "rs_z": True}
         msg = NTE._ignition_message("test_basket", legs, _TODAY)
         assert _TODAY in msg
 
-    def test_shock_message_contains_display_tier(self):
+    def test_shock_message_plain_word_heads_up(self):
+        """Doctrine Law 2/5: plain-word null disclosure, no 'display-tier' jargon."""
         msg = NTE._shock_activation_message(75, _TODAY, None)
-        assert "display-tier" in msg.lower()
+        assert "not an entry signal" in msg.lower()
+        assert "display-tier" not in msg.lower()
 
-    def test_disagreement_message_contains_expected_null(self):
+    def test_disagreement_message_plain_word_heads_up(self):
+        """Doctrine Law 2: 'expected-null meter' jargon replaced with plain words."""
         msg = NTE._tape_disagreement_message("test_basket", 0.20, _TODAY)
-        assert "expected-null" in msg.lower()
+        assert "not an entry signal" in msg.lower()
+        assert "expected-null" not in msg.lower()
 
     def test_ignition_message_contains_k_count(self):
         legs = {
@@ -455,6 +461,43 @@ class TestCopyContract:
         pulse_as_of = _TODAY + "T14:30:00Z"
         msg = NTE._tape_disagreement_message("test_basket", 0.50, pulse_as_of)
         assert pulse_as_of in msg
+
+
+class TestGlanceTierDoctrineCompliance:
+    """docs/DESIGN_DOCTRINE.md Laws 2/3 — notifications are pure glance tier.
+
+    Bare base-rate percentages, n= receipts, and internal vocabulary
+    ("display-tier", "expected-null", "forward meter") must not appear in any
+    emitted message body.  The precise receipt (58% fade at T+1, n=26) lives
+    on Tier-2 site tips (see tests/test_ftr_w3_ui.py), not in notifications.
+    """
+
+    BANNED = ("display-tier", "expected-null", "forward meter", "n=26", "58%", "T+1")
+
+    def _all_messages(self):
+        legs = {"impulse_day": True, "rs_z": True}
+        mtf_legs = {"d_macd": True, "d3_confluence": True, "w_macd": "cross", "w2_macd": False}
+        return [
+            NTE._ignition_message("test_basket", legs, _TODAY),
+            NTE._shock_activation_message(75, _TODAY, "test"),
+            NTE._tape_disagreement_message("test_basket", 0.40, _TODAY),
+            NTE._mtf_upturn_cohort_message(
+                ["NVDA"], {"NVDA": {"k": 3, "legs": mtf_legs}}, _TODAY
+            ),
+            NTE._mtf_upturn_mag7_message("NVDA", 3, mtf_legs, _TODAY),
+        ]
+
+    def test_no_banned_glance_tier_tokens(self):
+        for msg in self._all_messages():
+            for token in self.BANNED:
+                assert token.lower() not in msg.lower(), (
+                    f"Banned glance-tier token '{token}' in: {msg}"
+                )
+
+    def test_plain_word_fade_disclosure_everywhere(self):
+        for msg in self._all_messages():
+            assert "not an entry signal" in msg.lower()
+            assert "faded within a day" in msg.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -718,8 +761,8 @@ class TestMtfUpturnCohortEvent:
             _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
         )
         _, msg = results[0]
-        assert "58%" in msg
-        assert "T+1" in msg
+        assert "6 in 10" in msg
+        assert "faded within a day" in msg
 
     def test_message_no_forbidden_words(self):
         state = {}
@@ -940,8 +983,8 @@ class TestMtfUpturnMag7Transition:
             _MTF_UPTURN_WITH_NVDA_CONFIRMED, state, _TODAY
         )
         _, msg = results[0]
-        assert "58%" in msg
-        assert "T+1" in msg
+        assert "6 in 10" in msg
+        assert "faded within a day" in msg
 
     def test_message_contains_symbol_name(self):
         state = {}
