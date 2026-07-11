@@ -411,6 +411,57 @@
     .igx .igx-narrow, .igx .igx-xref { display: none; }
   }
 
+  /* ==========================================================================
+     IGNITION RADAR STRIP (.igs) — compact span12 variant (us_stocks page).
+     Rides the page's .panel card chrome; adds only a state-tinted left accent.
+     ========================================================================== */
+  .igs { --ic-col: var(--muted); border-left: 4px solid var(--ic-col); }
+  .igs.igs-ignited { --ic-col: var(--ok); }
+  .igs.igs-warming { --ic-col: var(--warn); }
+  /* header row */
+  .igs .igs-top { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .igs .igs-ic { font-size: 16px; line-height: 1; flex: none; }
+  .igs .igs-ttl { font-weight: 800; font-size: 13px; letter-spacing: .01em; white-space: nowrap; }
+  .igs .igs-state { font-weight: 800; font-size: 11px; letter-spacing: .05em;
+         text-transform: uppercase; color: var(--ic-col); padding: 1px 8px; border-radius: 99px;
+         background: color-mix(in srgb, var(--ic-col) 14%, transparent);
+         border: 1px solid color-mix(in srgb, var(--ic-col) 36%, transparent); white-space: nowrap; }
+  .igs .igs-glance { font-size: 12.5px; font-weight: 600; color: var(--text);
+         flex: 1 1 240px; min-width: 0; }
+  .igs .igs-frag { color: var(--warn); }
+  /* evidence row */
+  .igs .igs-ev { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-top: 9px; }
+  .igs .igs-k { font-size: 10px; color: var(--muted); font-weight: 700;
+         text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
+  .igs .igs-dots { display: inline-flex; align-items: center; gap: 5px; }
+  .igs .igs-dot { width: 10px; height: 10px; border-radius: 50%; cursor: help;
+         background: var(--panel2); border: 1px solid var(--line); }
+  .igs .igs-dot.lit { background: var(--ok);
+         border-color: color-mix(in srgb, var(--ok) 70%, var(--line)); }
+  .igs .igs-dot.fresh { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 30%, transparent); }
+  .igs .igs-kcount { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
+         white-space: nowrap; }
+  .igs .igs-div { width: 1px; height: 16px; background: var(--line); flex: none; }
+  .igs .igs-theme { display: inline-flex; align-items: center; gap: 4px; cursor: help;
+         padding: 2px 9px; border-radius: 6px; font-size: 11px; white-space: nowrap;
+         background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
+  .igs .igs-theme b { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .igs .igs-theme.igniting { color: var(--ok);
+         border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+         background: color-mix(in srgb, var(--ok) 10%, var(--panel)); }
+  .igs .igs-theme.running { color: var(--info);
+         border-color: color-mix(in srgb, var(--info) 35%, var(--line)); }
+  .igs .igs-theme.fading { color: var(--muted); }
+  .igs .igs-xref { font-size: 10.5px; color: var(--muted); cursor: help; white-space: nowrap;
+         padding: 2px 8px; border-radius: 99px; border: 1px dashed var(--line); margin-left: auto; }
+  /* one merged footer */
+  .igs .igs-ft { margin-top: 9px; padding-top: 8px; font-size: 11px; color: var(--muted);
+         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line)); }
+  @media (max-width: 560px) {
+    .igs .igs-glance { flex-basis: 100%; }
+    .igs .igs-xref { margin-left: 0; }
+  }
+
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
           color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
@@ -488,55 +539,64 @@
           border-radius: 10px; font-size: 12px; border: 1px solid var(--line); }
 
   /* action board */
-  .actiongrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+  .actiongrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; align-items: start; }
   @media (max-width: 1100px) { .actiongrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 900px) { .actiongrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 560px) { .actiongrid { grid-template-columns: minmax(0, 1fr); } }
-  /* V2 action board — lane column card */
-  .actcol { background: var(--panel2); border: 1px solid var(--line); min-width: 0;
-            border-radius: 10px; padding: 0; border-top: 3px solid var(--line); overflow: hidden; }
-  .act-buy  { border-top-color: var(--up); }
-  .act-soon { border-top-color: var(--g-cold); }
-  .act-run  { border-top-color: #8b5cf6; }   /* neutral violet — NOT green/buy */
-  .act-trim { border-top-color: var(--warn); }
-  .act-hold { border-top-color: var(--muted); }
-  /* Lane header */
-  .acth { padding: 10px 12px 8px; border-bottom: 1px solid var(--line); }
-  .acth-title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
-  .acth-emoji { font-size: 14px; line-height: 1; flex: none; }
-  .acth-name { font-size: 12.5px; font-weight: 700; letter-spacing: -0.01em; flex: 1; min-width: 0;
+  /* V2 action board — lane column card, restyled to the china anv2 lane idiom
+     (operator request 2026-07-11): panel card, 14px radius, 3px accent bar inside
+     the header, colored uppercase lane titles, chips-below-name rows.
+     Class names unchanged — fold JS (.actcol/.actbody/.act-fold) and the View-all
+     modal (.acth-name/.acth-sub) query them. */
+  .actcol { background: var(--panel); border: 1px solid var(--line); min-width: 0;
+            border-radius: 14px; padding: 0; overflow: hidden;
+            display: flex; flex-direction: column; --act-accent: var(--muted); }
+  .act-buy  { --act-accent: var(--up); }
+  .act-soon { --act-accent: var(--info); }
+  .act-run  { --act-accent: #8b5cf6; }   /* neutral violet — NOT green/buy */
+  .act-trim { --act-accent: var(--warn); }
+  .act-hold { --act-accent: var(--muted); }
+  /* Lane header — accent top bar via ::before (anv2-lane-hd idiom) */
+  .acth { padding: 10px 13px 8px; border-bottom: 1px solid var(--line); position: relative; }
+  .acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+                  border-radius: 14px 14px 0 0; background: var(--act-accent); }
+  .acth-title-row { display: flex; align-items: center; gap: 5px; }
+  .acth-emoji { font-size: 13px; line-height: 1; flex: none; }
+  .acth-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+               color: var(--act-accent); flex: 0 1 auto; min-width: 0;
                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .act-buy  .acth-name { color: var(--up); }
-  .act-soon .acth-name { color: var(--g-cold); }
-  .act-run  .acth-name { color: #8b5cf6; }
-  .act-trim .acth-name { color: var(--warn); }
-  .act-hold .acth-name { color: var(--muted); }
-  .acth-count { flex: none; font-size: 10.5px; font-weight: 600; color: var(--muted);
-                background: color-mix(in srgb, var(--line) 80%, transparent);
-                padding: 1px 6px; border-radius: 99px; }
-  .acth-sub { font-size: 10.5px; color: var(--muted); line-height: 1.35; }
+  .acth-count { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); }
+  .acth-count::before { content: "("; } .acth-count::after { content: ")"; }
+  .acth-sub { font-size: 10.5px; color: var(--muted); line-height: 1.4; margin-top: 3px; }
   /* Lane body list */
-  .actbody { padding: 4px 0; }
-  /* V2 row — sector/theme */
-  .actitem { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px;
-             border-bottom: 1px solid var(--line); font-size: 13px; min-width: 0;
+  .actbody { padding: 6px 0; flex: 1; }
+  /* V2 row — anv2-row anatomy: name row on top, chips row below, stat line last */
+  .actitem { display: block; padding: 7px 13px;
+             border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+             font-size: 13px; min-width: 0; overflow: hidden;
              text-decoration: none; color: inherit; cursor: pointer;
              transition: background 0.1s; position: relative; }
   .actitem:last-child { border-bottom: none; }
-  .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--line) 55%, transparent); outline: none; }
-  .actitem.hovered { background: color-mix(in srgb, var(--line) 75%, transparent); }
-  .ai-bdg { font-size: 12px; flex: none; opacity: .9; cursor: default; margin-top: 1px; }
-  .act-row-main { flex: 1; min-width: 0; }
-  .act-row-name { display: block; font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1.3;
-                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  /* V2 stat line — muted grey, no color tokens; own line under the name; hidden on mobile */
-  .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 2px;
+  .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--panel2) 55%, transparent); outline: none; }
+  .actitem.hovered { background: color-mix(in srgb, var(--panel2) 80%, transparent); }
+  .act-row-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .ai-bdg { font-size: 11.5px; flex: none; opacity: .85; cursor: default; }
+  .act-row-name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--text);
+                  line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* theme composite score — anv2-score idiom (big number, right of the name) */
+  .act-row-score { flex: none; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
+                   white-space: nowrap; }
+  .act-score-hi  { color: var(--up); }
+  .act-score-mid { color: var(--warn); }
+  .act-score-lo  { color: var(--down); }
+  /* V2 stat line — muted grey, no color tokens; last line of the row; hidden on mobile */
+  .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 3px;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   @media (max-width: 560px) { .act-row-stat { display: none; } }
-  .act-row-chips { display: flex; align-items: center; gap: 4px; flex: none; margin-top: 2px; }
-  /* V2 action chip — 10-11px pill */
-  .ab-chip { font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
-             padding: 2px 7px; border-radius: 99px; line-height: 16px; white-space: nowrap; flex: none; }
+  .act-row-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 4px; }
+  /* V2 action chip — anv2-chip idiom (uppercase 10px, 4px radius) */
+  .ab-chip { font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+             padding: 2px 6px; border-radius: 4px; line-height: 15px; white-space: nowrap; flex: none; }
   .ab-chip--warn { background: color-mix(in srgb, var(--warn) 14%, transparent);
                    color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent); }
   .ab-chip--pos  { background: color-mix(in srgb, var(--up) 14%, transparent);
@@ -550,8 +610,8 @@
   /* gate-override ✓ pill */
   .ab-chip--gate { background: color-mix(in srgb, var(--up) 10%, transparent);
                    color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
-                   font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px;
-                   line-height: 16px; flex: none; cursor: help; }
+                   font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+                   line-height: 15px; flex: none; cursor: help; }
   /* theme item star/check/lens glyphs */
   .ai-book { flex: none; margin-left: 4px; font-size: 10px; font-weight: 800; cursor: help;
              color: var(--up); white-space: nowrap; }
@@ -1110,18 +1170,6 @@
            background: color-mix(in srgb, var(--up) 13%, var(--panel)); }
   .vf-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
   .vf-exp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
-  /* market dealer-gamma vol-regime context banner */
-  .gamma-note { margin-top: 9px; padding: 7px 11px; border-radius: 9px; font-size: 11.5px;
-                line-height: 1.5; border: 1px solid var(--line); border-left-width: 3px; }
-  .gamma-note .gn-ic { font-size: 13px; }
-  .gamma-note b { font-weight: 800; }
-  .gn-short { border-left-color: var(--warn);
-              background: color-mix(in srgb, var(--warn) 8%, var(--panel2)); }
-  .gn-short b { color: var(--warn); }
-  .gn-long { border-left-color: var(--g-cold, var(--link));
-             background: color-mix(in srgb, var(--link) 8%, var(--panel2)); }
-  .gn-long b { color: var(--link); }
-  .gn-cav { color: var(--muted); font-size: 10px; }
   /* SUE earnings-momentum confirmer chip (display context, never scored). Blue
      (--info) so it reads distinct from the green insider cluster + the green/red
      alpha, and is immune to the Asia red/green up/down swap. */
@@ -1831,7 +1879,11 @@
 /* Buy/soon/run/aside lanes: cap 6 visible */
 .actbody.act-fold.is-collapsed > a.actitem:nth-child(n+7),
 .actbody.act-fold.is-collapsed > div:nth-child(n+7) { display: none; }
-.actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(7)):not(:has(.actbody.act-fold > div:nth-child(7)))) .lst-more.act-more { display: none; }
+/* Hide the Show-more button when the lane holds fewer rows than its cap.
+   2026-07-11 fix: the old selector only knew the .act-fold cap-6 lanes, so the
+   take-profits lane (.ab-trim-fold, cap 5) could NEVER show its button — rows
+   6+ were unreachable whenever take_profits held more than 5 entries. */
+.actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(7))):not(:has(.actbody.act-fold > div:nth-child(7))):not(:has(.ab-trim-fold > a.actitem:nth-child(6))):not(:has(.ab-trim-fold > div:nth-child(6))) .lst-more.act-more { display: none; }
 /* Take-profits lane: cap 5 visible */
 .ab-trim-fold.is-collapsed > a.actitem:nth-child(n+6),
 .ab-trim-fold.is-collapsed > div:nth-child(n+6) { display: none; }
@@ -2196,7 +2248,61 @@
       <a href="us_stocks_lab.html" style="color:var(--link);font-weight:600">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
   </div>
   
-  
+  <div class="panel span12 igs igs-off">
+  <div class="igs-top">
+    <span class="igs-ic">⚪</span>
+    <span class="igs-ttl"><span class="l-en">Ignition Radar</span><span class="l-zh">点火雷达</span></span>
+    <span class="igs-state"><span class="l-en">Quiet</span><span class="l-zh">静默</span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Risk-ON evidence gauge — the Risk Radar's mirror. Counts eight broad-market signals (breadth thrusts + participation confirms — hover each dot for what it watches) and theme-level turn evidence across the narrative baskets and sector ETFs. Self-graded nightly against what actually happened next; stays display-only until 30+ graded calls and an operator ruling. Evidence, not a buy signal.</span><span class="l-zh">正向风险偏好证据仪表 — 风险雷达的镜像。统计八个大盘信号（广度推进 + 参与度确认 — 悬停各圆点查看含义）及叙事篮子与行业ETF的主题级转折证据。每晚以后续实际走势自评；累计30次评分并经运营员裁定前仅供展示。仅为证据，非买入信号。</span></span></span>
+    <span class="igs-glance"><span class="igs-frag">⚠</span> <span class="l-en">Narrow ignition — XLY; fragile until participation broadens</span><span class="l-zh">局部点火 — XLY；需参与度扩散方可确认</span></span>
+  </div>
+  <div class="igs-ev">
+    <span class="igs-k"><span class="l-en">Broad market</span><span class="l-zh">大盘</span></span>
+    <span class="igs-dots">
+      <span class="igs-dot"
+        data-tip-en="Breadth thrust confluence — Lit stats (not our record): ZBT ~14-18 NYSE events 1945+, 6m +17%/12m +23%; S&P proxy fires more often. ONE chip regardless of components lit (RRX-R3)."
+        data-tip-zh="广度推进共振 — Lit stats (not our record): ZBT ~14-18 NYSE events 1945+, 6m +17%/12m +23%; S&P proxy fires more often. ONE chip regardless of components lit (RRX-R3)."></span>
+      <span class="igs-dot"
+        data-tip-en="Summation low→high swing — Lit (SentimenTrader): ~29 events since 1962 on NYSE. S&P proxy fires more often. Distinct from killed MCO-bounce constructs (RRX-R4)."
+        data-tip-zh="麦克伦求和指数低位跃升 — Lit (SentimenTrader): ~29 events since 1962 on NYSE. S&P proxy fires more often. Distinct from killed MCO-bounce constructs (RRX-R4)."></span>
+      <span class="igs-dot"
+        data-tip-en="%>20dma washout→thrust — ONE canonical %>20dma lookback (RRX-R5). ~2 events/yr. Single-condition >90% fires ~8x/yr — context descriptor only."
+        data-tip-zh="20日线上比例洗出→推进 — ONE canonical %>20dma lookback (RRX-R5). ~2 events/yr. Single-condition >90% fires ~8x/yr — context descriptor only."></span>
+      <span class="igs-dot"
+        data-tip-en="Follow-through day — O'Neil FTD: day 4..13 of rally attempt after >=6% drawdown, +>=1.2% on higher volume. Lit (QE): ~55% success rate. Orthogonal to breadth chips — pure price+volume. fired=within-21bd (display wider context); fresh=within-10bd (standard gate used by market_confirmed/n_fresh — spec §C4)."
+        data-tip-zh="放量确认日 — O'Neil FTD: day 4..13 of rally attempt after >=6% drawdown, +>=1.2% on higher volume. Lit (QE): ~55% success rate. Orthogonal to breadth chips — pure price+volume. fired=within-21bd (display wider context); fresh=within-10bd (standard gate used by market_confirmed/n_fresh — spec §C4)."></span>
+      <span class="igs-dot"
+        data-tip-en="Breadth >50dma recovery — pct_above_50=64.5% (was 63.6% 10d ago)"
+        data-tip-zh="50日线广度回升 — 50日线上比例=64.5%（10日前63.6%）"></span>
+      <span class="igs-dot"
+        data-tip-en="New highs flipping positive — 10d mean(nh-nl)=31.0 (was 12.6 10d ago)"
+        data-tip-zh="新高翻正 — 10日均(新高-新低)=31.0（10日前12.6）"></span>
+      <span class="igs-dot"
+        data-tip-en="Equal-weight RS (RSP/SPY) — 20d log-RS slope=-0.0017 (negative)"
+        data-tip-zh="等权RS（RSP/SPY） — 20日对数RS斜率=-0.0017（负向）"></span>
+      <span class="igs-dot"
+        data-tip-en="Sector breadth (8-of-11) — 6/11 ETFs above rising 50dma (need 8)"
+        data-tip-zh="板块广度（11中8） — 6/11个ETF高于上升中50日线（需8个）"></span>
+    </span>
+    <span class="igs-kcount">0 <span class="l-en">of 8 lit</span><span class="l-zh">/ 8 亮起</span></span>
+    <span class="igs-div"></span>
+    <span class="igs-k"><span class="l-en">Hottest themes</span><span class="l-zh">最热主题</span></span>
+    <span class="igs-theme igniting"
+      data-tip-en="Turn evidence 77% — how much of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now"
+      data-tip-zh="转折证据 77% — 该主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例">XLY <b>77%</b></span>
+    <span class="igs-theme igniting"
+      data-tip-en="Turn evidence 70% — how much of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now · above a rising 200-day average"
+      data-tip-zh="转折证据 70% — 该主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例 · 高于上升中的200日均线">Magnificent Seven <b>70%</b> ↗</span>
+    <span class="igs-theme igniting"
+      data-tip-en="Turn evidence 69% — how much of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now · relative strength at a 6-month high · above a rising 200-day average"
+      data-tip-zh="转折证据 69% — 该主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例 · 相对强度创6个月新高 · 高于上升中的200日均线">AI Semiconductors <b>69%</b> 🔺 ↗</span>
+    <span class="igs-xref" data-tip-en="The risk-OFF gauge this one mirrors — its current read, from the Macro dashboard." data-tip-zh="本仪表所镜像的风险预警雷达当前读数（见宏观看板）。"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>: watch</span>
+  </div>
+  <div class="igs-ft">
+    <span class="l-en">Theme-level evidence only. Fragile until RSP or sector breadth confirms. Evidence read, not a buy call.</span><span class="l-zh">仅主题级证据，RSP或板块广度未确认前存在脆弱性。证据读取，非买入信号。</span>
+    · <span class="l-en">still building its self-graded track record</span><span class="l-zh">自评记录积累中</span>
+  </div>
+</div>
   
 
   
@@ -2240,8 +2346,6 @@
     
     
     
-    
-    
     <div class="actiongrid"><div class="actcol act-buy">
         <div class="acth">
           <div class="acth-title-row">
@@ -2254,9 +2358,9 @@
         <div class="actbody act-fold is-collapsed" id="ab-buy-fold">
           
             <a class="actitem ai-theme" data-rpop href="basket/insurance.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span><span class="act-row-score act-score-hi">70</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2289,9 +2393,9 @@
     </a>
           
             <a class="actitem ai-theme" data-rpop href="basket/big_pharma.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span><span class="act-row-score act-score-hi">64</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2324,9 +2428,9 @@
     </a>
           
             <a class="actitem ai-theme" data-rpop href="basket/ai_software.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span><span class="act-row-score act-score-hi">62</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2372,11 +2476,11 @@
         <div class="actbody act-fold is-collapsed" id="ab-soon-fold">
           
             <a class="actitem" data-rpop href="basket/us_sector_utilities.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="act-row-stat"><span class="l-en">unconfirmed — wait</span><span class="l-zh">未确认 — 等待</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--warn"><span class="l-en">WAIT</span><span class="l-zh">等待</span></span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--warn"><span class="l-en">WAIT</span><span class="l-zh">等待</span></span></span><span class="act-row-stat"><span class="l-en">unconfirmed — wait</span><span class="l-zh">未确认 — 等待</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
@@ -2424,11 +2528,10 @@
         <div class="actbody act-fold is-collapsed" id="ab-run-fold">
           
             <a class="actitem" data-rpop href="basket/us_sector_financials.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="act-row-stat"><span class="l-en">extended · wait for pullback</span><span class="l-zh">已延伸 · 等回调</span></span>
-      </span>
-      <span class="act-row-chips"></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Financials</span><span class="l-zh">金融</span></span>
+      </span><span class="act-row-stat"><span class="l-en">extended · wait for pullback</span><span class="l-zh">已延伸 · 等回调</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Financials</span><span class="l-zh">金融</span></span>
@@ -2476,9 +2579,9 @@
         <div class="actbody ab-trim-fold is-collapsed" id="ab-trim-fold">
           
             <a class="actitem ai-theme" data-rpop href="basket/managed_care.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span><span class="act-row-score act-score-mid">59</span>
       </span>
       <span class="act-row-chips"><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -2515,9 +2618,9 @@
     </a>
           
             <a class="actitem ai-theme" data-rpop href="basket/regional_banks.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span><span class="act-row-score act-score-hi">61</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -2552,9 +2655,9 @@
     </a>
           
             <a class="actitem ai-theme" data-rpop href="basket/memory_storage.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span><span class="act-row-score act-score-hi">62</span>
       </span>
       <span class="act-row-chips"><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -2591,11 +2694,10 @@
     </a>
           
             <a class="actitem" data-rpop href="basket/us_sector_staples.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Cons Staples</span><span class="l-zh">必需消费</span></span><span class="act-row-stat"><span class="l-en">late cycle · today</span><span class="l-zh">周期晚期 · 今日</span></span>
-      </span>
-      <span class="act-row-chips"></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Cons Staples</span><span class="l-zh">必需消费</span></span>
+      </span><span class="act-row-stat"><span class="l-en">late cycle · today</span><span class="l-zh">周期晚期 · 今日</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
@@ -2642,9 +2744,9 @@
         </div>
         <div class="actbody lst-collapse lst-cap6 is-collapsed" id="dash-hold-fold">
           <div data-theme-id="cybersecurity"><a class="actitem ai-theme" data-rpop href="basket/cybersecurity.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span><span class="act-row-score act-score-hi">74</span>
       </span>
       <span class="act-row-chips"><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2678,9 +2780,9 @@
     </span>
     </a></div>
           <div data-theme-id="obesity_glp1"><a class="actitem ai-theme" data-rpop href="basket/obesity_glp1.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span><span class="act-row-score act-score-hi">66</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2712,9 +2814,9 @@
     </span>
     </a></div>
           <div data-theme-id="payments_fintech"><a class="actitem ai-theme" data-rpop href="basket/payments_fintech.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span><span class="act-row-score act-score-hi">62</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2746,9 +2848,9 @@
     </span>
     </a></div>
           <div data-theme-id="travel"><a class="actitem ai-theme" data-rpop href="basket/travel.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></span><span class="act-row-score act-score-hi">60</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2780,9 +2882,9 @@
     </span>
     </a></div>
           <div data-theme-id="ai_infra"><a class="actitem ai-theme" data-rpop href="basket/ai_infra.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span><span class="act-row-score act-score-mid">59</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2814,9 +2916,9 @@
     </span>
     </a></div>
           <div data-theme-id="non_ai_software"><a class="actitem ai-theme" data-rpop href="basket/non_ai_software.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Non-AI Software</span><span class="l-zh">非AI软件</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Non-AI Software</span><span class="l-zh">非AI软件</span></span><span class="act-row-score act-score-mid">58</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2848,9 +2950,9 @@
     </span>
     </a></div>
           <div data-theme-id="semicap_equipment"><a class="actitem ai-theme" data-rpop href="basket/semicap_equipment.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span><span class="act-row-score act-score-mid">57</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2882,9 +2984,9 @@
     </span>
     </a></div>
           <div data-theme-id="ai_agents"><a class="actitem ai-theme" data-rpop href="basket/ai_agents.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></span><span class="act-row-score act-score-mid">54</span>
       </span>
       <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
       </span>
@@ -2918,9 +3020,9 @@
           
           
             <div data-theme-id="space_economy"><a class="actitem ai-theme" data-rpop href="basket/space_economy.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></span><span class="act-row-score act-score-lo">31</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -2955,9 +3057,9 @@
     </a></div>
           
             <div data-theme-id="uranium_miners"><a class="actitem ai-theme" data-rpop href="basket/uranium_miners.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></span><span class="act-row-score act-score-lo">33</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -2992,9 +3094,9 @@
     </a></div>
           
             <div data-theme-id="defense"><a class="actitem ai-theme" data-rpop href="basket/defense.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></span><span class="act-row-score act-score-lo">34</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -3029,9 +3131,9 @@
     </a></div>
           
             <div data-theme-id="critical_minerals"><a class="actitem ai-theme" data-rpop href="basket/critical_minerals.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></span><span class="act-row-score act-score-lo">34</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -3066,9 +3168,9 @@
     </a></div>
           
             <div data-theme-id="retail"><a class="actitem ai-theme" data-rpop href="basket/retail.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Retail</span><span class="l-zh">零售</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Retail</span><span class="l-zh">零售</span></span><span class="act-row-score act-score-lo">36</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -3103,9 +3205,9 @@
     </a></div>
           
             <div data-theme-id="crypto"><a class="actitem ai-theme" data-rpop href="basket/crypto.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></span><span class="act-row-score act-score-lo">37</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -3140,9 +3242,9 @@
     </a></div>
           
             <div data-theme-id="quantum_computing"><a class="actitem ai-theme" data-rpop href="basket/quantum_computing.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></span><span class="act-row-score act-score-mid">41</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -3177,9 +3279,9 @@
     </a></div>
           
             <div data-theme-id="housing"><a class="actitem ai-theme" data-rpop href="basket/housing.html">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
+        <span class="act-row-name"><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></span><span class="act-row-score act-score-mid">45</span>
       </span>
       <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
       </span>
@@ -3214,11 +3316,11 @@
     </a></div>
           
             <a class="actitem" data-rpop href="basket/us_sector_materials.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -3253,11 +3355,11 @@
     </a>
           
             <a class="actitem" data-rpop href="basket/us_sector_comm.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Communications</span><span class="l-zh">通讯</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Communications</span><span class="l-zh">通讯</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Communications</span><span class="l-zh">通讯</span></span>
@@ -3292,11 +3394,11 @@
     </a>
           
             <a class="actitem" data-rpop href="basket/us_sector_energy.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--pos"><span class="l-en">HALF SIZE</span><span class="l-zh">半仓</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--pos"><span class="l-en">HALF SIZE</span><span class="l-zh">半仓</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
@@ -3331,11 +3433,11 @@
     </a>
           
             <a class="actitem" data-rpop href="basket/us_sector_industrials.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span>
@@ -3370,11 +3472,11 @@
     </a>
           
             <a class="actitem" data-rpop href="basket/us_sector_tech.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Technology</span><span class="l-zh">科技</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--pos"><span class="l-en">HALF SIZE</span><span class="l-zh">半仓</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--pos"><span class="l-en">HALF SIZE</span><span class="l-zh">半仓</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
@@ -3409,11 +3511,11 @@
     </a>
           
             <a class="actitem" data-rpop href="basket/us_sector_realestate.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
@@ -3448,11 +3550,11 @@
     </a>
           
             <a class="actitem" data-rpop href="basket/us_sector_health.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span><span class="act-row-stat"><span class="l-en">wait for a new setup</span><span class="l-zh">等待新形态</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--warn"><span class="l-en">WAIT</span><span class="l-zh">等待</span></span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--warn"><span class="l-en">WAIT</span><span class="l-zh">等待</span></span></span><span class="act-row-stat"><span class="l-en">wait for a new setup</span><span class="l-zh">等待新形态</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
@@ -3487,11 +3589,11 @@
     </a>
           
             <a class="actitem" data-rpop href="basket/us_sector_discretionary.html">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
-        <span class="act-row-name"><span class="l-en">Cons Disc</span><span class="l-zh">可选消费</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
+        <span class="act-row-name"><span class="l-en">Cons Disc</span><span class="l-zh">可选消费</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></span>
@@ -3546,14 +3648,6 @@
         <span class="muted" style="font-size:11.5px">21 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 22 <span class="l-en">setups · green dot = entry open, yellow = wait for pullback.</span><span class="l-zh">个形态 · 绿点＝现在可入场，黄点＝等回调。</span>
           <span class="help">?<span class="tip tip-wide"><span class="l-en">Cards answer two questions. Conviction asks: is this a name worth owning? Entry asks: is today a good price? A high conviction score can still mean wait. Use the green dot for open entries, the pullback price for patience, and the alpha chip for selection-edge rank. Conviction and entry are separate — a high conviction score can still mean wait for the pullback. Click a card for the full breakdown.</span><span class="l-zh">卡片回答两个问题：信念＝这是不是值得持有的标的；入场＝今天价格是否合适。高信念不等于立刻买。绿点表示入场窗口已开；黄点看回调价；alpha 标记是选股优势排名。信念与入场分开判断 — 高信念分也可能需要等待回调。点击卡片看完整拆解。</span></span></span></span>
         
-      </div>
-      
-      <div class="gamma-note gn-short">
-        <span class="gn-ic">🌀</span>
-          <b><span class="l-en">Short-gamma market</span><span class="l-zh">空头 Gamma 市场</span></b> — <span class="l-en">S&P 500 trades</span><span class="l-zh">标普500 现</span> 0.6% <span class="l-en">below its dealer gamma-flip</span><span class="l-zh">低于做市商 Gamma 翻转位</span> (7590): <span class="l-en">dealer hedging AMPLIFIES moves — momentum extends but reversals snap back hard. Wider stops; don’t chase entries.</span><span class="l-zh">做市商对冲会放大波动 — 动量延伸但反转剧烈。放宽止损，不要追高入场。</span>
-        
-        <span class="help">?<span class="tip"><span class="l-en">The whole-market dealer-gamma regime, from the VALIDATED index dealer-gamma read (S&P 500, engine.gex_engine — the same that drives the dealer-gamma board). ABOVE the gamma 'flip' strike dealers are net long gamma and hedge AGAINST price (pinning, vol suppressed); BELOW it they are short gamma and hedge WITH price (amplifying). This is market-wide vol CONTEXT for the setups below — how moves behave right now — NOT a per-stock signal. An estimate from delayed CBOE chains, not ground truth.</span><span class="l-zh">全市场做市商 Gamma 状态，来自已验证的指数做市商 Gamma 读数（标普500，engine.gex_engine — 与做市商 Gamma 看板同源）。在 Gamma“翻转”行权价之上，做市商净多头 Gamma，逆价格对冲（钉住、压制波动）；之下则为空头 Gamma，顺价格对冲（放大波动）。这是对下方布局的全市场波动情境 — 当下波动的表现方式 — 并非个股信号。基于延迟的 CBOE 链估算，并非真实值。</span></span></span>
-        <span class="gn-cav"><span class="l-en">market-wide context, not a per-stock signal · est., as of</span><span class="l-zh">全市场情境，非个股信号 · 估算，截至</span> 2026-07-09</span>
       </div>
       
       
