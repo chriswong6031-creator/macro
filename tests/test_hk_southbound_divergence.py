@@ -162,18 +162,25 @@ def test_scoring_modules_expose_no_divergence_symbol():
 # 5. bilingual render of the REAL template chip block
 # --------------------------------------------------------------------------- #
 def _render_chip(divergence: dict) -> str:
-    """Render the actual SOUTHBOUND-vs-PRICE chip extracted from templates/hk.html.j2
-    (with its in-template t()/help() macros) — so the test tracks real markup drift."""
+    """Render the actual Flow-vs-price card extracted from templates/hk.html.j2
+    (with its in-template t()/help() macros) — so the test tracks real markup drift.
+
+    The standalone SOUTHBOUND-vs-PRICE chip was folded into the combined
+    SOUTHBOUND & A/H panel by the HK dashboard UX overhaul (#2017); the
+    divergence read now renders as the panel's "Flow vs price" card.
+    """
     src = (ROOT / "templates" / "hk.html.j2").read_text()
     macros = src[: src.index("<!DOCTYPE")]
-    start = src.index("<!-- ===== SOUTHBOUND vs PRICE DIVERGENCE")
-    # stop at the chip's own closing region (the chip lives inside the mode!=macro
-    # block beside the southbound panel) so the extracted fragment is balanced Jinja
+    start = src.index("<!-- ===================== SOUTHBOUND & A/H")
+    # stop at the combined panel's closing region (it lives inside the mode!=macro
+    # block) so the extracted fragment is balanced Jinja
     end = src.index("{% endif %}{# /mode != macro", start)
     chip = src[start:end]
     env = Environment(autoescape=False)
     tmpl = env.from_string(macros + chip)
-    return tmpl.render(internals={"sb_divergence": divergence})
+    # Only sb_divergence supplied: the sibling southbound-flow and A/H cards
+    # must gate themselves off without their data.
+    return tmpl.render(internals={"sb_divergence": divergence}, ah=None)
 
 
 @pytest.mark.parametrize("state,en_word,zh_word", [
@@ -184,13 +191,19 @@ def _render_chip(divergence: dict) -> str:
 def test_bilingual_render_states(state, en_word, zh_word):
     html = _render_chip({"state": state, "flow_z": 1.2, "px_ret_pct": 3.4, "window_d": 63})
     assert "{{" not in html and "{%" not in html         # fully rendered
-    assert "Southbound vs price" in html and "南向 vs 价格" in html
+    assert "Flow vs price" in html and "资金 vs 价格" in html
     assert en_word in html and zh_word in html
 
 
 def test_bilingual_render_insufficient():
+    """insufficient → the Flow-vs-price card must not render at all.
+
+    #2017 replaced the old in-chip honesty note ("Not enough history…") with a
+    render guard (state != 'insufficient'): the honest degrade is now the card's
+    absence, so no state words or stats may leak through.
+    """
     html = _render_chip({"state": "insufficient", "n_flow": 50, "n_px": 400})
-    assert "Not enough history" in html
-    assert "历史数据不足" in html
+    assert "Flow vs price" not in html
+    assert "资金 vs 价格" not in html
     # the stat-row (state/flow/price numbers) must NOT render for insufficient
     assert "σ" not in html
