@@ -97,7 +97,9 @@ _POST_CLOSE_END_ET = 20   # 20:00 ET = after-hours end
 # Shock day relative-bid gate (FT-R3)
 _SHOCK_PRIMARY_KEYS: frozenset[str] = frozenset({"oil_shock"})
 _SHOCK_FAMILIES: frozenset[str] = frozenset({"geopolitical"})
-_T1_FADE_NOTE: str = "58% of violent flips fade at T+1 (n=26)"
+# Plain-word form per docs/DESIGN_DOCTRINE.md Laws 2/3 (matches the #2246
+# notifier copy); the precise receipt (58% at T+1, n=26) lives on Tier-2 tips.
+_T1_FADE_NOTE: str = "in 26 past cases about 6 in 10 sharp flips faded within a day"
 
 
 # ── session detection ──────────────────────────────────────────────────────────

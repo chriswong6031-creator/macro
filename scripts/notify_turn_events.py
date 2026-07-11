@@ -42,9 +42,12 @@ or dark-mode ticks.  The fastpath git add uses '|| true' to tolerate absence.
 
 COPY CONTRACT (FT-R13)
 -----------------------
-- State name, evidence legs, as-of, T+1 fade base rate inline — the fade rate
-  in plain words per docs/DESIGN_DOCTRINE.md Laws 2/3 (glance tier: no bare
-  percentages / n= / "display-tier" vocabulary; Tier-2 site tips hold the receipt).
+- Plain words per docs/DESIGN_DOCTRINE.md Law 2 — a push notification is pure
+  glance tier: no internal state names (IGNITION / UPTURN_CONFIRMED), no raw
+  machine slugs (display names with prettified fallback), no leg jargon
+  (K=N / D-MACD / rs_z — translated via the slug→label dicts below), no set
+  notation. Fade base rate in plain words (Laws 2/3: no bare percentages / n=;
+  Tier-2 site tips hold the receipt).
 - No direction words: buy, sell, long, short, add, chase.
 - No alert may originate a signal, score, or escalation (A7 ORIGINATE ban).
 - Notification of already-computed display states ONLY.
@@ -89,6 +92,7 @@ _SITE_BASKETDATA = ROOT / "site" / "basketdata"
 _SITE_LIVE = ROOT / "site" / "live"
 
 _TURN_WATCH_PATH = _SITE_BASKETDATA / "turn_watch.json"
+_BASKETS_JSON_PATH = _SITE_BASKETDATA / "baskets.json"
 _SHOCK_STATE_PATH = _SITE_LIVE / "shock_state.json"
 _BASKET_PULSE_PATH = _SITE_LIVE / "basket_pulse.json"
 _NOTIFY_STATE_PATH = _SITE_LIVE / "notify_state.json"
@@ -111,6 +115,28 @@ _HEADS_UP_COPY = "a heads-up, not an entry signal"
 
 # Forbidden words that must never appear in emitted copy.
 FORBIDDEN_WORDS = frozenset(["buy", "sell", "long", "short", "add", "chase"])
+
+# Slug → plain-word translation dicts (doctrine Law 2 — the STANCE_ZH/BAND_ZH
+# render-dict pattern). Turn-watch leg names come from the frozen six-leg set
+# in engine/basket_turn_watch.py; unknown legs fall back to a prettified slug.
+# Every label must clear _assert_no_forbidden_words.
+_TURN_LEG_LABELS = {
+    "impulse_day": "big one-day pops",
+    "rs_z": "outpacing the market",
+    "breadth_surge": "many members turning up",
+    "volume_confirm": "heavy volume",
+    "complex_confirm": "related groups moving too",
+    "shock_relative_bid": "bid up on a shock day",
+}
+
+# MTF upturn legs (engine/mtf_upturn.py) → plain timeframe labels.
+_MTF_LEG_ORDER = ("d_macd", "d3_confluence", "w_macd", "w2_macd")
+_MTF_LEG_LABELS = {
+    "d_macd": "daily",
+    "d3_confluence": "3-day",
+    "w_macd": "weekly",
+    "w2_macd": "2-week",
+}
 
 # Mag7 member set (mirrors engine/mtf_upturn.py MAG7 constant).
 MAG7 = frozenset(["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"])
@@ -197,20 +223,71 @@ def _send_discord(msg: str, dry_run: bool = False) -> bool:
 # Message builders (FT-R13 copy contract)
 # ---------------------------------------------------------------------------
 
+# Lazy basket_id → display-name map from site/basketdata/baskets.json.
+# None = not loaded yet; tests preset {} for deterministic prettified fallback.
+_BASKET_NAMES: dict[str, str] | None = None
+
+
+def _load_basket_names() -> dict[str, str]:
+    """Read {basket_id: display name} from baskets.json. {} on any failure.
+
+    Tolerates both artifact shapes: baskets as a flat list (current) and as a
+    dict of region → list (legacy).
+    """
+    data = _load_json(_BASKETS_JSON_PATH) or {}
+    raw = data.get("baskets") or []
+    groups = list(raw.values()) if isinstance(raw, dict) else [raw]
+    names: dict[str, str] = {}
+    for group in groups:
+        for b in group or []:
+            if isinstance(b, dict) and b.get("id") and isinstance(b.get("name"), str):
+                names[b["id"]] = b["name"]
+    return names
+
+
+def _basket_display_name(basket_id: str) -> str:
+    """Display name for a basket id (doctrine Law 2: no raw machine slugs).
+
+    Prettified-slug fallback ("semicap_equipment" → "Semicap Equipment") — a
+    name-map miss must never block the alert.
+    """
+    global _BASKET_NAMES
+    if _BASKET_NAMES is None:
+        _BASKET_NAMES = _load_basket_names()
+    return _BASKET_NAMES.get(basket_id) or basket_id.replace("_", " ").title()
+
+
+def _mtf_active_leg_labels(legs: dict) -> list[str]:
+    """Plain timeframe labels for fired MTF legs (weekly counts only on a cross)."""
+    labels: list[str] = []
+    for leg in _MTF_LEG_ORDER:
+        val = legs.get(leg)
+        if leg == "w_macd":
+            if val == "cross":
+                labels.append(_MTF_LEG_LABELS[leg])
+        elif val:
+            labels.append(_MTF_LEG_LABELS[leg])
+    return labels
+
 
 def _ignition_message(basket_id: str, legs: dict, as_of: str) -> str:
-    """Build FT-R13-compliant IGNITION alert message.
+    """Build FT-R13-compliant strong-turn-sign alert message.
 
-    Format: "TURN-WATCH IGNITION — {basket} (K={k}: {leg names}) · as-of {date}
-             · {heads-up copy} — {fade copy}"
+    Format: "STRONG TURN SIGN — {display name}: {n} turn signs firing
+             ({plain leg labels}) · as-of {date} · {heads-up} — {fade copy}"
     No direction words (buy/sell/long/short/add/chase).
     """
-    active_legs = [name for name, fired in legs.items() if fired]
-    k = len(active_legs)
-    leg_str = ", ".join(active_legs) if active_legs else "none"
+    active = [
+        _TURN_LEG_LABELS.get(name, name.replace("_", " "))
+        for name, fired in legs.items()
+        if fired
+    ]
+    n = len(active)
+    sign_word = "sign" if n == 1 else "signs"
+    leg_part = f" ({', '.join(active)})" if active else ""
     msg = (
-        f"TURN-WATCH IGNITION — {basket_id} "
-        f"(K={k}: {leg_str}) "
+        f"STRONG TURN SIGN — {_basket_display_name(basket_id)}: "
+        f"{n} turn {sign_word} firing{leg_part} "
         f"· as-of {as_of} "
         f"· {_HEADS_UP_COPY} — {_FADE_COPY}"
     )
@@ -219,10 +296,10 @@ def _ignition_message(basket_id: str, legs: dict, as_of: str) -> str:
 
 
 def _shock_activation_message(score: Any, as_of: str, reason: str | None) -> str:
-    """Build FT-R13-compliant shock activation alert message."""
-    reason_part = f" ({reason})" if reason else ""
+    """Build FT-R13-compliant market-shock alert message."""
+    reason_part = f" ({reason.replace('_', ' ')})" if reason else ""
     msg = (
-        f"SHOCK ACTIVATION{reason_part} — repricing coherence score {score} "
+        f"MARKET SHOCK{reason_part} — sharp market-wide repricing, score {score} "
         f"· as-of {as_of} "
         f"· {_HEADS_UP_COPY}; scores shown were computed on pre-shock data "
         f"· {_FADE_COPY}"
@@ -232,20 +309,30 @@ def _shock_activation_message(score: Any, as_of: str, reason: str | None) -> str
 
 
 def _tape_disagreement_message(
-    basket_id: str, live_chg_pct: float, tape_as_of: str
+    basket_id: str,
+    live_chg_pct: float,
+    tape_as_of: str,
+    slow_reco: str | None = None,
 ) -> str:
     """Build FT-R13-compliant tape disagreement alert message.
 
     live_chg_pct is the value from basket_pulse.baskets[].live_ew_chg_pct, which
     is ALREADY in percent units (e.g. 0.40 means +0.40%, not +40%).  Display it
     directly — no multiply-by-100 heuristic.
+
+    slow_reco (hold/reduce/avoid/…) names the rating when known; the caller
+    only fires when it is outside {enter, accumulate}, so "we still rate it X"
+    is always an honest statement here.
     """
     sign = "+" if live_chg_pct >= 0 else ""
     chg_str = f"{sign}{live_chg_pct:.2f}%"
+    if slow_reco:
+        rating_part = f"while we still rate it {slow_reco.title()}"
+    else:
+        rating_part = "while the slower basket rating has not turned positive yet"
     msg = (
-        f"TAPE DISAGREEMENT — {basket_id} IGNITION basket "
-        f"live tape {chg_str} "
-        f"while slow state not in {{enter, accumulate}} "
+        f"TAPE DISAGREEMENT — {_basket_display_name(basket_id)}: "
+        f"live tape {chg_str} on a strong turn sign, {rating_part} "
         f"· as-of {tape_as_of} "
         f"· {_HEADS_UP_COPY} — {_FADE_COPY}"
     )
@@ -258,10 +345,11 @@ def _mtf_upturn_cohort_message(
     tickers: dict,
     as_of: str,
 ) -> str:
-    """Build FT-R13-compliant MTF UPTURN CONFIRMED cohort alert message.
+    """Build FT-R13-compliant stocks-turning-up cohort alert message.
 
-    Format: cohort summary line + up to 10 per-symbol detail lines.
-    Copy contract: state name, evidence legs, as-of, fade base rate.
+    Format: cohort summary line + up to 10 per-symbol detail lines, all in
+    plain words (doctrine Law 2: "N stocks turning up", timeframe labels
+    instead of D-MACD/K-of-N leg jargon).
     No direction words (buy/sell/long/short/add/chase).
     """
     n = len(confirmed)
@@ -269,60 +357,49 @@ def _mtf_upturn_cohort_message(
     preview_str = ", ".join(preview)
     if n > 8:
         preview_str += "…"
+    stock_word = "STOCK" if n == 1 else "STOCKS"
 
     lines = [
-        f"MTF UPTURN CONFIRMED — {n} names ({preview_str})"
-        f" | legs: D-MACD/3D-confluence/W-MACD/2W-MACD K-of-N"
+        f"{n} {stock_word} TURNING UP — {preview_str}"
+        f" | momentum turned up on daily-to-2-week checks"
         f" | as-of {as_of}"
         f" | {_HEADS_UP_COPY}; {_FADE_COPY}"
     ]
 
     # Per-symbol detail lines (up to 10)
-    leg_keys = ("d_macd", "d3_confluence", "w_macd", "w2_macd")
-    leg_glyphs = {"d_macd": "D-MACD", "d3_confluence": "3D", "w_macd": "W-MACD", "w2_macd": "2W"}
+    total = len(_MTF_LEG_ORDER)
     for sym in confirmed[:10]:
         ticker_data = tickers.get(sym, {})
-        k = ticker_data.get("k", "?")
-        legs = ticker_data.get("legs", {})
-        # Build glyph string: active legs shown, w_macd special (cross vs approaching vs none)
-        active_glyphs = []
-        for leg in leg_keys:
-            val = legs.get(leg)
-            if leg == "w_macd":
-                if val == "cross":
-                    active_glyphs.append(leg_glyphs[leg])
-            elif val:
-                active_glyphs.append(leg_glyphs[leg])
-        glyphs_str = "+".join(active_glyphs) if active_glyphs else "–"
-        lines.append(f"  {sym}: K={k} [{glyphs_str}]")
+        labels = _mtf_active_leg_labels(ticker_data.get("legs") or {})
+        if labels:
+            lines.append(
+                f"  {sym}: {len(labels)} of {total} timeframes ({', '.join(labels)})"
+            )
+        else:
+            lines.append(f"  {sym}: detail unavailable")
 
     msg = "\n".join(lines)
     _assert_no_forbidden_words(msg)
     return msg
 
 
-def _mtf_upturn_mag7_message(sym: str, k: int | str, legs: dict, as_of: str) -> str:
-    """Build FT-R13-compliant Mag7 UPTURN_CONFIRMED entry alert message.
+def _mtf_upturn_mag7_message(sym: str, legs: dict, as_of: str) -> str:
+    """Build FT-R13-compliant Mag7 turning-up entry alert message.
 
-    Triggered when a Mag7 member transitions INTO UPTURN_CONFIRMED state.
-    Copy contract: state name, evidence legs, as-of, fade base rate.
+    Triggered when a Mag7 member transitions INTO the confirmed-upturn state.
+    Plain words per doctrine Law 2 — no state names, no leg jargon.
     No direction words.
     """
-    leg_keys = ("d_macd", "d3_confluence", "w_macd", "w2_macd")
-    leg_glyphs = {"d_macd": "D-MACD", "d3_confluence": "3D", "w_macd": "W-MACD", "w2_macd": "2W"}
-    active_glyphs = []
-    for leg in leg_keys:
-        val = legs.get(leg)
-        if leg == "w_macd":
-            if val == "cross":
-                active_glyphs.append(leg_glyphs[leg])
-        elif val:
-            active_glyphs.append(leg_glyphs[leg])
-    glyphs_str = "+".join(active_glyphs) if active_glyphs else "–"
-
+    labels = _mtf_active_leg_labels(legs)
+    total = len(_MTF_LEG_ORDER)
+    detail = (
+        f"{len(labels)} of {total} timeframes ({', '.join(labels)})"
+        if labels
+        else "detail unavailable"
+    )
     msg = (
-        f"MTF UPTURN CONFIRMED — Mag7 member {sym} entered state"
-        f" | K={k} [{glyphs_str}]"
+        f"{sym} TURNING UP — Mag7 name confirmed a momentum upturn"
+        f" | {detail}"
         f" | as-of {as_of}"
         f" | {_HEADS_UP_COPY}; {_FADE_COPY}"
     )
@@ -453,13 +530,14 @@ def _detect_tape_disagreement(
     """
     results: list[tuple[str, str]] = []
 
-    # Build IGNITION set from turn_watch
-    ignition_baskets: set[str] = set()
+    # Build IGNITION row map from turn_watch (rows carry slow_reco, enriched
+    # from sector_pulse at build time by engine/basket_turn_watch.py)
+    ignition_rows: dict[str, dict] = {}
     for b in (turn_watch.get("baskets") or []):
         if b.get("state") == "IGNITION":
-            ignition_baskets.add(b.get("basket_id", ""))
+            ignition_rows[b.get("basket_id", "")] = b
 
-    if not ignition_baskets:
+    if not ignition_rows:
         return results
 
     # Build pulse map from basket_pulse
@@ -470,7 +548,7 @@ def _detect_tape_disagreement(
 
     pulse_as_of = basket_pulse.get("as_of_utc") or today_str
 
-    for basket_id in ignition_baskets:
+    for basket_id, row in ignition_rows.items():
         pb = pulse_map.get(basket_id)
         if pb is None:
             continue
@@ -480,15 +558,10 @@ def _detect_tape_disagreement(
         live_chg = pb.get("live_ew_chg_pct")
         if live_chg is None or live_chg <= 0:
             continue
-        # Slow reco check: absence of enter/accumulate means disagreement
-        # (basket_pulse does not carry slow_reco directly; the turn_watch org
-        #  is the IGNITION gate — the basket being IGNITION but live-positive
-        #  while slow_reco is neutral/hold/reduce is the disagreement condition.
-        #  We don't need to re-read slow_reco here: if the basket is in IGNITION
-        #  and the live tape is positive, that's a concrete disagreement
-        #  displayable as-is per FT-R13.)
-        # For baskets.json slow_reco cross-check: attempt optional enrichment.
-        slow_reco = _lookup_slow_reco(basket_id)
+        # Slow reco check: absence of enter/accumulate means disagreement.
+        # Prefer the turn_watch row enrichment (present in the live artifact);
+        # fall back to the baskets.json lookup for older artifacts.
+        slow_reco = row.get("slow_reco") or _lookup_slow_reco(basket_id)
         ENTER_ACCUMULATE = {"enter", "accumulate"}
         if slow_reco is not None and slow_reco.lower() in ENTER_ACCUMULATE:
             # Tape and slow state agree (both positive) — not a disagreement
@@ -500,7 +573,7 @@ def _detect_tape_disagreement(
 
         # Stamp with basket_pulse as_of_utc (the live tape freshness) not the
         # nightly turn_watch date — the live_ew_chg_pct is an intraday figure.
-        msg = _tape_disagreement_message(basket_id, live_chg, pulse_as_of)
+        msg = _tape_disagreement_message(basket_id, live_chg, pulse_as_of, slow_reco)
         results.append((basket_id, msg))
 
     return results
@@ -596,8 +669,7 @@ def _detect_mtf_upturn_mag7(
             continue
 
         legs = ticker_data.get("legs") or {} if ticker_data else {}
-        k = ticker_data.get("k", 0) if ticker_data else 0
-        msg = _mtf_upturn_mag7_message(sym, k, legs, as_of)
+        msg = _mtf_upturn_mag7_message(sym, legs, as_of)
         results.append((sym, msg))
 
     return results
@@ -606,16 +678,18 @@ def _detect_mtf_upturn_mag7(
 def _lookup_slow_reco(basket_id: str) -> str | None:
     """Attempt to read slow_reco from site/basketdata/baskets.json.
 
-    Returns None on any failure (tolerant).
+    Returns None on any failure (tolerant).  Handles both artifact shapes
+    (flat list — current — and dict of region → list).
     """
-    baskets_path = _SITE_BASKETDATA / "baskets.json"
-    if not baskets_path.exists():
+    if not _BASKETS_JSON_PATH.exists():
         return None
     try:
-        data = json.loads(baskets_path.read_text())
-        for region_baskets in (data.get("baskets") or {}).values():
-            for b in region_baskets:
-                if b.get("id") == basket_id:
+        data = json.loads(_BASKETS_JSON_PATH.read_text())
+        raw = data.get("baskets") or []
+        groups = list(raw.values()) if isinstance(raw, dict) else [raw]
+        for group in groups:
+            for b in group or []:
+                if isinstance(b, dict) and b.get("id") == basket_id:
                     return b.get("reco")
         return None
     except Exception:  # noqa: BLE001
