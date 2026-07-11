@@ -420,6 +420,94 @@ def _record_key_session(
         log.warning("BUILD: _record_key_session(%s): %s", cap_id, exc)
 
 
+# ── Key-failover helpers (V4 follow-up: revert to a working key instead of
+#    stranding the cycle when the chosen key is revoked or rate-limited) ──────
+
+# Env var holding the chosen key's env-var NAME for the bash wrapper below.
+_KEY_REF_ENV = "METABOLISM_KEY_REF"
+
+# Failure markers in a failed session's output that indict the KEY itself
+# (not the build).  Matched case-insensitively against stderr+stdout ONLY
+# when the session exits non-zero.
+_AUTH_FAIL_MARKERS = (
+    "401", "403", "authentication_error", "permission_error",
+    "invalid bearer", "oauth token has expired", "invalid api key",
+)
+_RATE_FAIL_MARKERS = (
+    "429", "529", "rate limit", "rate_limit", "usage limit",
+    "quota", "overloaded",
+)
+
+
+def _build_session_cmd(task_prompt: str) -> list[str]:
+    """Command for one build session.
+
+    The `claude` CLI authenticates via CLAUDE_CODE_OAUTH_TOKEN, but the chosen
+    pool key lives under a different env name (e.g. CLAUDE_CODE_OAUTH_TOKEN_1).
+    The bash wrapper maps the NAME held in $METABOLISM_KEY_REF onto
+    CLAUDE_CODE_OAUTH_TOKEN via indirect expansion, so the token VALUE never
+    transits this module (REDLINE).  The task prompt stays a plain argv
+    element — it is never shell-parsed.
+    """
+    return [
+        "bash", "-c",
+        'if [ -n "${METABOLISM_KEY_REF:-}" ]; then '
+        'export CLAUDE_CODE_OAUTH_TOKEN="${!METABOLISM_KEY_REF}"; fi; '
+        'exec "$@"',
+        "metabolism-build",
+        "claude",
+        "--model", _BUILD_SESSION_MODEL,
+        "--print",           # non-interactive: print final answer only
+        "--dangerously-skip-permissions",  # headless build — no interactive prompts
+        "-p", task_prompt,
+    ]
+
+
+def _classify_key_failure(run_result: dict) -> str | None:
+    """Classify a FAILED session as key-indicting, or None (build's own fault).
+
+    Returns "auth" (revoked/expired token), "window" (rate/usage limited), or
+    None.  A None means: do NOT retry with another key — burning a second key
+    on a broken build wastes quota.  NEVER raises.
+    """
+    try:
+        blob = ((run_result.get("stderr") or "") + "\n"
+                + (run_result.get("stdout") or "")).lower()
+        if any(m in blob for m in _AUTH_FAIL_MARKERS):
+            return "auth"
+        if any(m in blob for m in _RATE_FAIL_MARKERS):
+            return "window"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _classify_key_failure: %s", exc)
+    return None
+
+
+def _cool_failed_key(cap_id: str, kind: str, root: Path | None = None) -> None:
+    """Persist a cooling row for a key that failed ("auth" or "window") so all
+    later stages and processes skip it.  NEVER raises."""
+    try:
+        from engine.neuralweb.key_pool import mark_cooling
+        mark_cooling(cap_id, cool_kind=kind, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _cool_failed_key(%s, %s): %s", cap_id, kind, exc)
+
+
+def _worktree_is_clean(wt_path: str) -> bool:
+    """True when the build worktree has no uncommitted changes — the only state
+    where a retry with a fresh key is safe (never resume into a half-applied
+    tree).  Fail-closed: any error → False (no retry)."""
+    try:
+        import subprocess
+        out = subprocess.run(
+            ["git", "-C", str(wt_path), "status", "--porcelain"],
+            capture_output=True, text=True, timeout=60,
+        )
+        return out.returncode == 0 and not out.stdout.strip()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _worktree_is_clean(%s): %s", wt_path, exc)
+        return False
+
+
 def _journal_dispatch(
     cycle_id: str,
     proposal_id: str,
@@ -731,18 +819,15 @@ def _dispatch_build_session(
             proposal, wt_path, branch, cycle_id,
             target_files=target_files_resolved,
         )
-        cmd = [
-            "claude",
-            "--model", _BUILD_SESSION_MODEL,
-            "--print",           # non-interactive: print final answer only
-            "--dangerously-skip-permissions",  # headless build — no interactive prompts
-            "-p", task_prompt,
-        ]
+        cmd = _build_session_cmd(task_prompt)
 
-        # Build env: pass the token under its ref name; never capture the value here
-        session_env = {**os.environ}
-        # The token is already in session_env under ref_name from the runner's env.
-        # We do NOT read or log it; we pass the full env so the subprocess inherits it.
+        # Build env: hand the subprocess the chosen key's env-var NAME via
+        # METABOLISM_KEY_REF; the bash wrapper in _build_session_cmd maps it
+        # onto CLAUDE_CODE_OAUTH_TOKEN by indirect expansion so the `claude`
+        # CLI actually authenticates with the POOL key the dispatcher chose
+        # (previously the CLI silently used the legacy single token no matter
+        # which key was picked).  The token VALUE never transits this module.
+        session_env = {**os.environ, _KEY_REF_ENV: ref_name}
 
         log.info(
             "BUILD: dispatching proposal=%s model=%s wt=%s branch=%s key_ref=%s",
@@ -774,23 +859,69 @@ def _dispatch_build_session(
         # Record session start in the key ledger (quota accounting)
         _record_key_session(cap_id, cycle_id, outcome="ok", root=root)
 
-        # ── Step 6: launch the build session ─────────────────────────────────
-        run_result = _launch_build_subprocess(cmd, session_env, wt_path, timeout_s=1800)
-        returncode = run_result.get("returncode", -1)
-        log.info(
-            "BUILD: session ended proposal=%s rc=%d stdout_len=%d",
-            pid, returncode, len(run_result.get("stdout", "")),
-        )
+        # ── Step 6: launch the build session (with key failover) ─────────────
+        # When a session fails in a way that indicts the KEY (401/403 auth,
+        # 429/529 quota), cool that key in the ledger and retry with the next
+        # available pool key — at most once per remaining key, never on other
+        # failure kinds (a broken build is not a key problem), and never into
+        # a dirty worktree.  This is what keeps a revoked or exhausted key
+        # from stranding the whole cycle.
+        tried_keys: set[str] = {cap_id}
+        while True:
+            run_result = _launch_build_subprocess(cmd, session_env, wt_path, timeout_s=1800)
+            returncode = run_result.get("returncode", -1)
+            log.info(
+                "BUILD: session ended proposal=%s rc=%d stdout_len=%d",
+                pid, returncode, len(run_result.get("stdout", "")),
+            )
+            if returncode == 0:
+                break
 
-        if returncode != 0:
             _record_key_session(cap_id, cycle_id, outcome="error", root=root)
-            result["reason"] = f"session_nonzero_rc: {returncode}"
-            result["returncode"] = returncode
-            result["stderr_snippet"] = run_result.get("stderr", "")[:200]
-            if cycle_id:
-                _journal_dispatch(cycle_id, pid, {"status": "session_error",
-                                                   "returncode": returncode}, root=root)
-            return result
+            failure_kind = _classify_key_failure(run_result)
+            next_cap: str | None = None
+            next_ref: str | None = None
+            if failure_kind is not None:
+                _cool_failed_key(cap_id, failure_kind, root=root)
+                if _worktree_is_clean(wt_path):
+                    next_cap = _pick_build_key(root=root, exclude=tried_keys)
+                    if next_cap is not None:
+                        next_ref, _ref_err = _resolve_key_ref(next_cap, root=root)
+                        if next_ref is None or not os.environ.get(next_ref, ""):
+                            log.warning(
+                                "BUILD: fallback key cap=%s unusable (%s) — stopping retries",
+                                next_cap, _ref_err or "env absent",
+                            )
+                            next_cap = None
+                else:
+                    log.warning(
+                        "BUILD: %s failure on key=%s but worktree is dirty — "
+                        "not retrying into a half-applied tree",
+                        failure_kind, cap_id,
+                    )
+
+            if next_cap is None or next_ref is None:
+                result["reason"] = f"session_nonzero_rc: {returncode}"
+                result["returncode"] = returncode
+                result["stderr_snippet"] = run_result.get("stderr", "")[:200]
+                if failure_kind is not None:
+                    result["key_failure"] = failure_kind
+                    result["keys_tried"] = sorted(tried_keys)
+                if cycle_id:
+                    _journal_dispatch(cycle_id, pid, {"status": "session_error",
+                                                       "returncode": returncode,
+                                                       "key_failure": failure_kind},
+                                      root=root)
+                return result
+
+            log.warning(
+                "BUILD: key %s failed (%s) — retrying proposal=%s with fallback key %s",
+                cap_id, failure_kind, pid, next_cap,
+            )
+            cap_id = next_cap
+            tried_keys.add(cap_id)
+            session_env[_KEY_REF_ENV] = next_ref
+            _record_key_session(cap_id, cycle_id, outcome="ok", root=root)
 
         # ── Step 7: foreign-file diff check ──────────────────────────────────
         changed_files = _diff_worktree_files(wt_path)
@@ -1054,11 +1185,13 @@ def run_build_lane(
     return results
 
 
-def _pick_build_key(root: Path | None = None) -> str | None:
+def _pick_build_key(root: Path | None = None,
+                    exclude: set[str] | None = None) -> str | None:
     """Pick a build key via the dispatcher. NEVER raises."""
     try:
         from scripts.metabolism_dispatch import pick_key
-        return pick_key(stage="build", root=root, notify_on_freeze=False)
+        return pick_key(stage="build", root=root, notify_on_freeze=False,
+                        exclude=exclude)
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_build._pick_build_key: %s", exc)
         return None

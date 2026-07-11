@@ -81,9 +81,11 @@ capabilities:
     storage_locus: gh-secret
     allowed_lanes:
       - metabolism-dispatch
+      - metabolism-agenda
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
+      - metabolism-dream
     allowed_tiers:
       - T0
       - T1
@@ -105,9 +107,11 @@ capabilities:
     storage_locus: gh-secret
     allowed_lanes:
       - metabolism-dispatch
+      - metabolism-agenda
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
+      - metabolism-dream
     allowed_tiers:
       - T0
       - T1
@@ -127,9 +131,11 @@ capabilities:
     storage_locus: gh-secret
     allowed_lanes:
       - metabolism-dispatch
+      - metabolism-agenda
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
+      - metabolism-dream
     allowed_tiers:
       - T0
       - T1

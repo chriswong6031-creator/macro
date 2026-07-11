@@ -114,6 +114,7 @@ AUTHORITY_BLOCK: dict[str, Any] = {
 _LLM_CFG: dict[str, Any] = {
     "provider_order": ["oauth", "anthropic", "deepseek"],
     "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+    "oauth_pool_lane": "metabolism-propose",
     "api_key_env": "ANTHROPIC_API_KEY",
     "deepseek_key_env": "DEEPSEEK_API_KEY",
     "deepseek_base_url": "https://api.deepseek.com/anthropic",
