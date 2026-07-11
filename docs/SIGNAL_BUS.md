@@ -379,8 +379,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | mag7-regime-latest | `data/mag7_regime/latest.json` | json | daily-engine | display | 2 | 0 |
+| mag7-regime-site | `site/stockdata/mag7_regime.json` | json | daily-engine | display | 1 | 0 |
 | mag7-regime-ledger | `data/mag7_regime/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
-| mag7-regime-site | `site/stockdata/mag7_regime.json` | json | daily-engine | display | 0 | 0 |
 
 ### mastermind-feedback-contract
 
