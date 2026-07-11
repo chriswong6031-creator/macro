@@ -40,6 +40,8 @@ data/intraday/
 # regenerated every build. NOT committed: a keyless local cache must never shadow
 # CI's keyed (Polygon/Finnhub) fetch within the TTL window.
 data/financial_news/
+# GDELT cross-process throttle stamp (runtime-only; written by engine/gdelt_client._throttle)
+data/gdelt/
 data/breadth/_closes_cache.parquet
 data/smallcap_breadth/_closes_cache.parquet
 data/midcap_breadth/_closes_cache.parquet
