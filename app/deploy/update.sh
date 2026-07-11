@@ -7,6 +7,15 @@
 set -euo pipefail
 APP_DIR="/opt/macro"
 
+# Serialize runs. Cron fires every 3 min, but a big nightly render commit can
+# take longer than that (fetch + reset + rsync of a multi-hundred-MB site/).
+# Without the lock, a second run's `git reset --hard` truncates-and-rewrites
+# work-tree files WHILE the first run's rsync is still READING them — and rsync
+# then renames a partial/0-byte copy into site.served with a perfectly atomic
+# rename. Skipping is free: the next cron tick picks up whatever this run got.
+exec 9>/var/lock/macro-update.lock
+flock -n 9 || exit 0
+
 git -C "$APP_DIR" fetch --depth 1 -q origin main
 OLD=$(git -C "$APP_DIR" rev-parse HEAD)
 NEW=$(git -C "$APP_DIR" rev-parse FETCH_HEAD)
@@ -24,8 +33,29 @@ git -C "$APP_DIR" reset --hard -q FETCH_HEAD
 # here by rsync — whose per-file temp-write + rename() is atomic on the same
 # filesystem, so a concurrent read sees either the whole old file or the whole new
 # one, never a partial. --delete prunes pages removed upstream.
+# --min-size=1 is the 0-byte guard: an empty source file (interrupted checkout,
+# disk-full, any future race this script hasn't met yet) is never transferred,
+# so the last GOOD copy keeps serving — an empty page can't reach the CDN from
+# here. site/ legitimately contains no empty files (verified 2026-07-11);
+# revisit the flag if a deliberately-empty file ever ships.
 mkdir -p "$APP_DIR/site.served"
-rsync -a --delete "$APP_DIR/site/" "$APP_DIR/site.served/"
+rsync -a --delete --min-size=1 "$APP_DIR/site/" "$APP_DIR/site.served/"
+
+# Self-update: setup.sh installs this script ONCE at provisioning; without this
+# block a repo-side fix to update.sh only reaches the box when an operator
+# re-runs setup.sh by hand. `install` unlinks the destination first, so the
+# RUNNING copy (bash holds an fd on the old inode) is untouched — the new
+# version simply takes over from the next cron tick. `bash -n` gates a
+# syntax-broken file from ever being installed. Runs BEFORE the Caddyfile
+# block so a script fix still lands even if a bad Caddyfile aborts the run.
+if ! cmp -s "$APP_DIR/app/deploy/update.sh" /usr/local/bin/macro-update; then
+	if bash -n "$APP_DIR/app/deploy/update.sh"; then
+		install -m 0755 "$APP_DIR/app/deploy/update.sh" /usr/local/bin/macro-update
+		echo "macro-update: self-updated from repo"
+	else
+		echo "macro-update: refusing self-update — bash -n failed" >&2
+	fi
+fi
 
 # Caddyfile: reinstall + validate + reload ONLY when it actually changed (a bad
 # config can never take the site down — reload is gated on `caddy validate`).

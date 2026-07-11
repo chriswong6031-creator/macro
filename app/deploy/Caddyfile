@@ -15,6 +15,9 @@
 # does NOT redirect (an origin redirect behind a CDN can loop the edge's origin
 # pull — see disable_redirects below); it only ADDS the HSTS response header on the
 # site block, which is safe to emit from behind the CDN and hardens return visits.
+# Until the edge toggle is on, :80 serves the SAME site as :443 (mirror block
+# below) — never Caddy's implicit empty 200, which the edge can cache for the
+# httpS URLs too (the 2026-07-11 /china.html poisoning; scheme-less cache key).
 #
 # Pre-launch: the whole site is served but marked noindex so it can't be crawled
 # before launch. Product login (Supabase) arrives in Slice 2; for a private beta
@@ -32,7 +35,13 @@
 	}
 }
 
-mastermind-x.com, www.mastermind-x.com {
+# Shared serving body for mastermind-x.com — imported by BOTH the https site
+# block and the plain-HTTP mirror below it, so the two schemes can never drift
+# apart. EdgeOne's GET cache key IGNORES the scheme (verified live 2026-07-11
+# with a throwaway ?query key): whatever port 80 answers for a path can be
+# served from cache to httpS visitors — so :80 must serve the real site with
+# the real Cache-Control, never Caddy's implicit empty 200.
+(mastermind_static) {
 	# Root is /opt/macro/site.served, NOT the git work-tree /opt/macro/site.
 	# macro-update rsyncs site/ -> site.served (atomic per-file rename) so a
 	# `git reset --hard` refresh can never expose a half-written 0-byte file to be
@@ -51,14 +60,12 @@ mastermind-x.com, www.mastermind-x.com {
 	}
 
 	# --- CDN cache safety (2026-07-03 white-page incident) ----------------------
-	# macro-update refreshes the served tree with `git reset --hard`, which rewrites
-	# changed files IN PLACE — so Caddy can briefly serve a 0-byte file mid-write.
-	# With NO Cache-Control the EdgeOne edge cached that empty 200 with no TTL bound
-	# and served a white page for ~an hour across us_stocks/macro/china/etc. A short,
+	# A response with NO Cache-Control gets EdgeOne's LONG default TTL, so any
+	# transient bad body would be STUCK at the edge for hours. A short,
 	# must-revalidate TTL caps any bad edge entry (HTML <=60s, other static <=300s)
-	# and forces the edge to revalidate against the (healthy) origin, so a transient
-	# bad render can never get STUCK in cache. Mirrors the greydeercapital.com block
-	# below. The zero-window structural fix (atomic swap) lives in update.sh.
+	# and forces the edge to revalidate against the (healthy) origin. Mirrors the
+	# greydeercapital.com block below. The zero-window structural fix (atomic
+	# swap + flock + 0-byte rsync guard) lives in update.sh.
 	@html {
 		path *.html /
 		not path /api/*
@@ -75,17 +82,20 @@ mastermind-x.com, www.mastermind-x.com {
 		# The old `X-Robots-Tag "noindex, nofollow, noarchive"` header was removed
 		# here so crawlers can index it (paired with robots.txt + sitemap.xml in
 		# site/). Re-add that header to pull the whole site back out of search.
-		# NOTE: the LIVE header is emitted by the VPS /etc/caddy/Caddyfile, which
-		# has diverged from this repo copy — remove the noindex THERE too and
-		# `systemctl reload caddy`, or the site stays de-indexed. See
-		# [[mastermind-x-origin-tls-direct]].
 		# Basic hardening.
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+mastermind-x.com, www.mastermind-x.com {
+	import mastermind_static
+
+	header {
 		# Enforce HTTPS on return visits (the edge should set this too). 1 year,
 		# matching admin.*; no includeSubDomains — other subdomains manage their own.
 		Strict-Transport-Security "max-age=31536000"
-		-Server
 	}
 
 	# Self-signed origin cert; pair with the CDN's non-strict HTTPS origin pull.
@@ -95,6 +105,36 @@ mastermind-x.com, www.mastermind-x.com {
 	# write a file log: the stock caddy.service systemd sandbox only permits writes
 	# under /var/lib/caddy, so a /var/log/caddy file sink fails with EACCES and
 	# crashes startup. journald is the idiomatic, sandbox-safe sink.
+}
+
+# ---- plain-HTTP (:80) mirror — the 2026-07-11 /china.html poisoning fix ------
+# With `auto_https disable_redirects` and https-only site blocks, Caddy answered
+# ANY plain-HTTP request for these hosts with its IMPLICIT catch-all: an empty
+# 200 with no body and no Cache-Control. EdgeOne's origin pull follows the
+# visitor's scheme (Force-HTTPS off at the edge), so one bot GET of
+# http://mastermind-x.com/china.html primed the edge with that empty 200 —
+# and because the edge cache key ignores the scheme, httpS visitors got the
+# dead page for hours (no Cache-Control -> EdgeOne's long default TTL).
+# Serving the REAL site on :80 means an http origin pull can only ever cache a
+# real page bounded by max-age=60. Deliberately NOT a redirect: if the edge's
+# origin-pull were ever http-only, an origin http->https redirect would loop
+# (see the header notes above) — the edge console owns Force-HTTPS.
+http://mastermind-x.com, http://www.mastermind-x.com {
+	import mastermind_static
+}
+
+# ---- plain-HTTP catch-all — kill Caddy's implicit empty 200 -------------------
+# Every OTHER hostname that reaches this box over :80 (app./bot./greydeer/
+# slate/maltese/stray Host headers) used to fall into the same implicit empty
+# 200 — the exact cacheable-poison shape above, just waiting for a CDN in front
+# of any of those hosts. A 421 with no-store is never cacheable, so the port-80
+# path can't poison anything again. Explicit http:// blocks (the mastermind
+# mirror above, the admin redirect below) outrank this hostless block, and
+# Caddy answers ACME HTTP-01 challenges before routing, so admin.* cert
+# issuance is unaffected.
+http:// {
+	header Cache-Control "no-store"
+	respond "Misdirected: use https://" 421
 }
 
 # ---- app.mastermind-x.com — the Mastermind Terminal (Next.js) ----------------
