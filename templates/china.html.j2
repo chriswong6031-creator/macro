@@ -737,7 +737,7 @@
     <div class="anv2-hd">
       <h2 style="margin:0">⚡ {{ t('What to Act On Now', '现在行动') }}
         <span class="anv2-v2pill">v2</span>
-        {{ help('Four lanes, read left to right: Buy Now = a clean entry point today. Wait for Pullback = still in favour, but it has run — wait for a dip. Bottoming Watch = beaten-down groups showing the first signs of turning up (watch only, never a buy signal). Reduce / Avoid = the trend is weakening. Rows mix investment themes (scored 0-100 by the basket engine) and sectors (timed by the cycle ladder). A name can honestly sit in two lanes at once — e.g. weakening trend but an early bottom forming — and is shown in both, never merged.', '四个分栏从左到右：立即买入＝今天有干净入场点。等待回调＝仍看好但已涨高，等回调再买。洗盘观察＝超跌板块初现回升迹象（仅观察，绝非买入信号）。减仓/回避＝趋势转弱。行内混合投资主题（篮子引擎0-100打分）与行业板块（周期阶梯定时机）。同一名称可能同时出现在两个分栏——例如趋势转弱但初现筑底——两种判读并列显示，永不合并。') }}
+        {{ help('Four lanes, read left to right: Buy Now = a clean entry point today. In Favour = still in favour, but it has run — wait for a dip. Bottoming Watch = beaten-down groups showing the first signs of turning up (watch only, never a buy signal). Reduce / Avoid = the trend is weakening. Rows mix investment themes (scored 0-100 by the basket engine) and sectors (timed by the cycle ladder). A name can honestly sit in two lanes at once — e.g. weakening trend but an early bottom forming — and is shown in both, never merged.', '四个分栏从左到右：立即买入＝今天有干净入场点。看好＝仍看好但已涨高，等回调再买。洗盘观察＝超跌板块初现回升迹象（仅观察，绝非买入信号）。减仓/回避＝趋势转弱。行内混合投资主题（篮子引擎0-100打分）与行业板块（周期阶梯定时机）。同一名称可能同时出现在两个分栏——例如趋势转弱但初现筑底——两种判读并列显示，永不合并。') }}
       </h2>
       <div class="anv2-meta">
         {% if _anv2.as_of %}<span class="muted" style="font-size:11px">{{ t('themes as of','主题截至') }} {{ _anv2.as_of }}</span>{% endif %}
@@ -834,9 +834,6 @@
         </ul>
         {%- endif -%}
         <div class="row-pop-ft">
-          {%- if lane == 'bot' -%}
-          <span><span class="l-en">early signs of a bottom — NOT a buy signal</span><span class="l-zh">初现筑底迹象 — 非买入信号</span></span>
-          {%- endif -%}
           <span>{{ _anv2.as_of if _anv2.as_of else '' }}</span>
         </div>
       </span>
@@ -888,11 +885,6 @@
         {% if subtitle_en %}<div class="anv2-lane-sub"><span class="l-en">{{ subtitle_en }}</span><span class="l-zh">{{ subtitle_zh }}</span></div>{% endif %}
       </div>
       <div class="anv2-lane-body lst-wrap">
-      {% if lane_key == 'bot' %}
-      <div class="anv2-bot-disc">
-        <strong>{{ t('early signs of a bottom — NOT a buy signal','洗盘转向 — 非买入信号') }}</strong>
-      </div>
-      {% endif %}
       <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
         {% for row in items %}{{ _anrow(row, lane_key) }}{% endfor %}
       </div>
@@ -904,7 +896,7 @@
     {{ _anlane('buy',  'buy',  'Buy Now',               '立即买入',
                'Clean entry point today', '今日有干净入场点',
                _anl.buy_now, 'anv2-buy') }}
-    {{ _anlane('pull', 'pull', 'In Favour — Wait for Pullback', '看好 — 等待回调',
+    {{ _anlane('pull', 'pull', 'In Favour', '看好',
                'Still in favour — wait for a dip before adding', '仍看好 — 等回调再加仓',
                _anl.wait_pullback, 'anv2-pull') }}
     {{ _anlane('bot',  'bot',  'Bottoming Watch',        '洗盘观察',
