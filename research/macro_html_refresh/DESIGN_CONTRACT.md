@@ -48,3 +48,11 @@ BINDING DESIGN = `v2_final.html` in this directory (judged 43/50 over a hover-fi
 - fed_stance + turning_point → RISK tray chips (sx-risk-v2 top area, above scares ladder)
 - event_risk → EVENTS tray (sx-events-v2)
 - 2026-07-11 rebase adjudication: the Risk-Radar banner card + the new Ignition-Radar card (#2229) render at the TOP of the RISK tray (glance state stays on the summary row) — neither is dropped, neither returns to the front surface.
+
+## OPERATOR RULING — 2026-07-11 (v3 ISLANDS — content redesign + 3D container-island interaction)
+Operator: v2 trays shipped with transplanted legacy content ("really bad") and flat expansion made section context unclear. BINDING DESIGN = `v3_final.html` (judged: dimensional-lift base 43+42/50, glass grafts):
+- Pressing a ledger row expands IN-FLOW (never a popup) AND lifts the section into a 3D container island: elevated (translateY/scale/rotateX fractional), tri-layer shadows + backdrop blur (dark), per-section accent token (--isle-*: evidence teal · events amber · markets blue · risk red · policy violet · brief green · news/deep slate) driving border + promoted island header + colored under-glow floor; siblings dim/recede (opacity .45, desaturate, scale .998).
+- ALIVE: 5-6s breathing bob + glow pulse + 14s aurora edge drift (NO continuous spinning borders); prefers-reduced-motion = static elevation.
+- Expand-all = 80ms cascade of individual islands; body.many-open (≥3 open) halves glow mass so the all-open page stays calm.
+- ALL tray contents rebuilt to mockup grade (no legacy chrome transplants): evidence factor rows w/ direction badges + axis bars + subtexts, events day-cards + release-radar card chrome + fed strip, markets index-health cards + hot/cold sector columns + heatmap + 8 asset tiles, risk scare rows + drawdown boxes + sentiment decomposition, policy lever cards, brief reading card, news impact-dot rows, deep-context icon chips.
+- Operator granted full autonomy to completion (2026-07-11) — no approval gates for this program.
