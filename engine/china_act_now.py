@@ -325,8 +325,11 @@ def assemble_act_now(
     for r in reduce_avoid:
         if r["id"] in bottoming_ids:
             r["dual_read"] = True
-            r["dual_chip_en"] = "washout turning (tape)"
-            r["dual_chip_zh"] = "洗盘转向（纸带）"
+            # Plain-language chip copy (operator request 2026-07-10): no house
+            # jargon ("washout turning (tape)") on user-facing chips. ZH keeps
+            # 洗盘 — standard A-share vernacular.
+            r["dual_chip_en"] = "may be bottoming"
+            r["dual_chip_zh"] = "洗盘转向"
 
     # Any bottoming-watch id that is also in reduce_avoid already has the
     # dual_chip on the reduce side; the bottoming row keeps its normal copy.

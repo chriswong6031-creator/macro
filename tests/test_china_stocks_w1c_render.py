@@ -170,17 +170,27 @@ def _make_ran_row(ticker="603129.SS", sublabel="signal live - entry passed; wait
 
 
 def _make_ripening_row(ticker="688306.SS"):
+    # W8-R1 (#2102): ripening rows carry a zone (READY / BASING); the rip-shelf
+    # partitions on it via selectattr, so the fixture must set one for cards to render.
     return {
         "ticker": ticker,
         "name": "Ripening Name / 待熟名称",
         "sector": "Technology",
+        "zone": "READY",
         "reasons": "2W washout,approaching MACD cross",
         "imminence": 4.9,
         "w2_stoch": 22,
+        "w2_stoch_arrow": 1,
         "w2_macd_approaching": True,
         "w2_macd_cross_up": False,
         "w1_cross_date": None,
+        "w1_cross_bars_since": None,
         "w1_d_at_cross": None,
+        "macd_hist_d": -0.02,
+        "macd_hist_slope": 0.01,
+        "days_in_washout": 12,
+        "ret_5d": 0.021,
+        "price": 18.4,
         "spot_pct_in_range": 35.0,
     }
 
@@ -273,14 +283,18 @@ def test_shelf_headers_have_dual_spans():
     The ENTRY shelf header was intentionally removed (the ENTRY grid is the default top
     list — no banner needed), so st-entry no longer appears as a shelf tag. The per-card
     stg-entry badge still marks each ENTRY card.
+
+    W8-R1 (#2102) replaced the compact st-ripe shelf with the three-zone rip-shelf
+    (READY / BASING / FALLING); this test was stale against that merge and now pins
+    the rip-shelf header instead.
     """
     start = SRC.index("{# ── W1-C: ENTRY SHELF")
     end = SRC.index("{# ── BOARD TRACK RECORD")
     section = SRC[start:end]
     assert 'class="l-en"' in section, "No l-en span found in W1-C shelf section"
     assert 'class="l-zh"' in section, "No l-zh span found in W1-C shelf section"
-    # The RIPENING and RAN/LATE shelves still carry headers
-    assert "st-ripe" in section, "RIPENING shelf tag class missing"
+    # The RIPENING (W8-R1 rip-shelf) and RAN/LATE shelves still carry headers
+    assert "rip-shelf-title" in section, "RIPENING shelf header class missing"
     assert "st-ran" in section, "RAN shelf tag class missing"
 
 
@@ -316,14 +330,13 @@ def test_ran_cards_render_with_stage_badge_and_detail():
 
 
 def test_ripening_shelf_renders_compact_cards():
-    """RIPENING shelf must appear with compact cards showing ticker and reason chips."""
+    """RIPENING shelf (W8-R1 rip-shelf) must render zone cards with the ticker."""
     html = _render_w1c(_full_setups())
     assert "688306.SS" in html, "Ripening ticker missing"
-    assert "nb-rip-card" in html, "RIPENING nb-rip-card class missing"
-    # Reason chips must appear
-    assert "2W washout" in html or "approaching MACD cross" in html, (
-        "Ripening reason chips missing"
-    )
+    assert "rip-card" in html, "RIPENING rip-card class missing"
+    assert "RIPENING SHELF" in html, "RIPENING shelf header missing"
+    # NOT-a-signal honesty line must appear on the shelf header
+    assert "NOT an entry signal" in html, "Ripening honesty sublabel missing"
 
 
 def test_ran_array_renders_honesty_rows():
@@ -383,8 +396,11 @@ def test_ripening_shelf_absent_when_array_empty():
     """RIPENING shelf must NOT render when setups.ripening is empty."""
     setups = _full_setups(ripening=[], ran=[])
     html = _render_w1c(setups)
-    assert "nb-rip-card" not in html, (
-        "RIPENING compact cards rendered despite empty ripening array"
+    assert "rip-card" not in html, (
+        "RIPENING cards rendered despite empty ripening array"
+    )
+    assert "RIPENING SHELF" not in html, (
+        "RIPENING shelf header rendered despite empty ripening array"
     )
 
 
@@ -394,7 +410,8 @@ def test_bilingual_shelf_headers_contain_zh_text():
     cjk = re.search(r"[一-鿿]", html)
     assert cjk, "No CJK characters found in rendered W1-C section"
     assert "入场" in html, "ENTRY zh label (入场) missing"
-    assert "待熟" in html, "RIPENING zh label (待熟) missing"
+    # W8-R1 rip-shelf zh title (replaced the old 待熟 compact-shelf label)
+    assert "筑底观察区" in html, "RIPENING zh label (筑底观察区) missing"
     assert "信号已过" in html, "RAN zh label (信号已过) missing"
 
 

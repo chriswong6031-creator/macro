@@ -26,7 +26,15 @@ def _render_stocks_header() -> str:
     from engine import i18n
 
     env = Environment(loader=DictLoader({"blk": snippet}), autoescape=False)
-    env.globals.update(t=i18n.t, td=i18n.td, tr=i18n.tr, help=lambda *a, **k: "")
+    # help() renders its copy: since the 2026-07-10 declutter the header's archetype
+    # description is user-facing via the (?) tooltip, so the stub must not drop it.
+    env.globals.update(
+        t=i18n.t, td=i18n.td, tr=i18n.tr,
+        help=lambda en, zh="", cls="": (
+            f'<span class="help-tip l-en">{en}</span>'
+            f'<span class="help-tip l-zh">{zh}</span>'
+        ),
+    )
 
     class FakeLatest:
         quad = "Q1"
@@ -93,9 +101,15 @@ def test_seo_description_names_true_archetype() -> None:
 
 
 def test_stocks_header_names_washout_base_turn() -> None:
-    """Stocks header must describe the washed-out → fresh-turn archetype (plain wording)."""
+    """Stocks header must describe the washed-out → fresh-turn archetype (plain wording).
+
+    2026-07-10 operator declutter: the archetype description moved into the h1
+    help() tooltip and was re-worded to plain English ("sold off hard") — the
+    intent (header names the sold-off/washed-out archetype) is unchanged.
+    """
     html = _render_stocks_header()
-    assert "washed-out" in html.lower() or "washout" in html.lower(), (
+    low = html.lower()
+    assert "washed-out" in low or "washout" in low or "sold off hard" in low, (
         "Header does not name the washed-out archetype"
     )
     assert "turn" in html.lower() or "转向" in html, (

@@ -26,12 +26,21 @@
   'use strict';
 
   /* ── constants ───────────────────────────────────────────────────────── */
-  var LS_PREFIX = 'mdx_stocktable_';
+  // v2 prefix: v1 persisted 15-column defaults that overflowed the viewport and
+  // the chooser was unreachable, so stale v1 state is deliberately abandoned.
+  var LS_PREFIX = 'mdx_stocktable2_';
   var FRESH_DAYS = 2;  // days_since_signal <= 2 → show NEW dot
 
   /* ── helpers ─────────────────────────────────────────────────────────── */
   function bi(en, zh) {
     return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>';
+  }
+
+  // Active UI language. <option> elements and input placeholders cannot carry the
+  // dual l-en/l-zh spans (CSS can't restyle inside them), so the filter row renders
+  // in ONE language and relabels itself on theme.js's 'langchange' event.
+  function curLang() {
+    return document.documentElement.getAttribute('data-lang') === 'zh' ? 'zh' : 'en';
   }
 
   function esc(s) {
@@ -124,6 +133,15 @@
     var filters = { stage: 'all', zone: 'all', tier: 'all', sector: 'all',
                     theme: '', capBucket: 'all', freshOnly: false };
 
+    // Per-value display labels for filter options (cfg.optionLabels =
+    // { filterName: { VALUE: [en, zh] } }), raw value as fallback. Declared
+    // BEFORE the skeleton build below — _buildFilterRow reads these at call time.
+    var optionLabels = cfg.optionLabels || {};
+    var FILTER_TITLES = { stage: ['All stages','全部阶段'], zone: ['All zones','全部区域'],
+                          tier: ['All tiers','全部级别'], sector: ['All sectors','全部板块'],
+                          capBucket: ['All sizes','全部市值'] };
+    var SEARCH_PH = cfg.searchPlaceholder || ['Search name or theme…','搜索名称或主题…'];
+
     /* ── sort state ───────────────────────────────────────────────────── */
     var sortKey   = null;  // null = system order
     var sortDir   = null;  // 'asc' / 'desc' / null
@@ -138,6 +156,16 @@
     frow.innerHTML = _buildFilterRow(allRows, payload);
     container.appendChild(frow);
 
+    // ── column chooser panel ──
+    // Anchored between the filter row and the table (NOT after the table): the
+    // panel is absolutely positioned at the top of this zero-height wrapper, so
+    // it must sit here to drop down next to the "Columns" button — appended after
+    // the table it opened thousands of pixels below the fold, i.e. invisibly.
+    var chooserWrap = document.createElement('div');
+    chooserWrap.className = 'st-chooser-wrap st-chooser-hidden';
+    chooserWrap.innerHTML = _buildChooser(columns, colOrder, visibleCols, market);
+    container.appendChild(chooserWrap);
+
     // ── table wrapper ──
     var tableWrap = document.createElement('div');
     tableWrap.className = 'st-table-wrap';
@@ -151,12 +179,6 @@
     table.appendChild(tbody);
     tableWrap.appendChild(table);
     container.appendChild(tableWrap);
-
-    // ── column chooser panel ──
-    var chooserWrap = document.createElement('div');
-    chooserWrap.className = 'st-chooser-wrap st-chooser-hidden';
-    chooserWrap.innerHTML = _buildChooser(columns, colOrder, visibleCols, market);
-    container.appendChild(chooserWrap);
 
     // ── render header ──
     renderHeader();
@@ -185,6 +207,7 @@
       orderedCols().forEach(function(col, idx) {
         var th = document.createElement('th');
         if (idx === 0) th.className = 'st-sticky-col';
+        if (col.cls) th.className += (th.className ? ' ' : '') + col.cls;
         if (col.sortable !== false) {
           th.className += (th.className ? ' ' : '') + 'st-sortable';
           th.setAttribute('data-key', col.key);
@@ -283,6 +306,7 @@
           var td = document.createElement('td');
           if (col.right) td.className = 'st-r';
           if (idx === 0) td.className = (td.className ? td.className + ' ' : '') + 'st-sticky-col';
+          if (col.cls) td.className = (td.className ? td.className + ' ' : '') + col.cls;
 
           var val = row[col.key];
           var html;
@@ -320,19 +344,37 @@
     }
 
     /* ── filter row builder ──────────────────────────────────────────────── */
+    // <option> text is single-language (spans don't work inside <option>),
+    // stored as data-en/data-zh and swapped in place on 'langchange'.
+
+    function _optPair(name, value) {
+      var m = optionLabels[name];
+      var pair = m && m[value];
+      if (pair) return [pair[0] || value, pair[1] || pair[0] || value];
+      return [value, value];
+    }
 
     function _buildFilterRow(rows, payload) {
+      var zhNow = curLang() === 'zh';
       // Collect unique values
       var stages   = _uniq(rows.map(function(r){ return r.stage || r._stage || ''; }).filter(Boolean));
       var zones    = _uniq(rows.map(function(r){ return r.zone || ''; }).filter(Boolean));
       var tiers    = _uniq(rows.map(function(r){ return r.tier || ''; }).filter(Boolean));
-      var sectors  = _uniq(rows.map(function(r){ return r.sector || ''; }).filter(Boolean));
-      var capBkts  = _uniq(rows.map(function(r){ return r.cap_bucket || ''; }).filter(Boolean));
+      var sectors  = _uniq(rows.map(function(r){ return r.sector || ''; }).filter(Boolean)).sort();
+      var capBkts  = ['large','mid','small'].filter(function(cb){
+        return rows.some(function(r){ return (r.cap_bucket||'') === cb; }); });
 
-      function sel(name, opts, labelEn, labelZh) {
-        var html = '<select class="st-filter-sel" data-filter="' + name + '" aria-label="' + labelEn + '">';
-        html += '<option value="all">' + labelEn + ' / ' + labelZh + '</option>';
-        opts.forEach(function(o) { if (o) html += '<option value="' + esc(o) + '">' + esc(o) + '</option>'; });
+      function sel(name, opts) {
+        var title = FILTER_TITLES[name] || [name, name];
+        var html = '<select class="st-filter-sel" data-filter="' + name + '" aria-label="' + esc(title[0]) + '">';
+        html += '<option value="all" data-en="' + esc(title[0]) + '" data-zh="' + esc(title[1]) + '">' +
+                esc(zhNow ? title[1] : title[0]) + '</option>';
+        opts.forEach(function(o) {
+          if (!o) return;
+          var p = _optPair(name, o);
+          html += '<option value="' + esc(o) + '" data-en="' + esc(p[0]) + '" data-zh="' + esc(p[1]) + '">' +
+                  esc(zhNow ? p[1] : p[0]) + '</option>';
+        });
         html += '</select>';
         return html;
       }
@@ -343,13 +385,14 @@
                       .filter(function(t){ return tiers.indexOf(t) !== -1 || rows.some(function(r){ return (r.tier||'') === t; }); });
 
       var html = '<div class="st-filters">';
-      if (stageOpts.length > 0) html += sel('stage', stageOpts, 'Stage', '阶段');
-      if (zoneOpts.length > 0) html += sel('zone', zoneOpts, 'Zone', '区域');
+      if (stageOpts.length > 0) html += sel('stage', stageOpts);
+      if (zoneOpts.length > 0) html += sel('zone', zoneOpts);
       var tierList = tierOpts.length > 0 ? tierOpts : tiers;
-      if (tierList.length > 0) html += sel('tier', tierList, 'Tier', '级别');
-      html += sel('sector', sectors, 'Sector', '板块');
-      if (capBkts.length > 0) html += sel('capBucket', capBkts, 'Cap', '市值');
-      html += '<input class="st-filter-txt" type="text" data-filter="theme" placeholder="Theme search / 主题" style="min-width:120px">';
+      if (tierList.length > 0) html += sel('tier', tierList);
+      html += sel('sector', sectors);
+      if (capBkts.length > 0) html += sel('capBucket', capBkts);
+      html += '<input class="st-filter-txt" type="text" data-filter="theme" placeholder="' +
+              esc(zhNow ? SEARCH_PH[1] : SEARCH_PH[0]) + '" style="min-width:120px">';
       html += '<label class="st-filter-chk"><input type="checkbox" data-filter="freshOnly"> ';
       html += bi('Fresh only (≤2d)', '仅新信号(≤2天)') + '</label>';
 
@@ -365,6 +408,19 @@
       return html;
     }
 
+    // Swap <option> text + search placeholder to the active language in place
+    // (values, selection and all bound listeners untouched).
+    function _relabelFilters() {
+      var zhNow = curLang() === 'zh';
+      frow.querySelectorAll('option[data-en]').forEach(function(o) {
+        o.textContent = zhNow ? (o.getAttribute('data-zh') || o.getAttribute('data-en'))
+                              : o.getAttribute('data-en');
+      });
+      var txt = frow.querySelector('.st-filter-txt');
+      if (txt) txt.placeholder = zhNow ? SEARCH_PH[1] : SEARCH_PH[0];
+    }
+    document.addEventListener('langchange', _relabelFilters);
+
     function _updateCountChips(allR, filteredR) {
       var counts = { ENTRY:0, RAN_LATE:0, RIPENING:0, KNIFE:0 };
       filteredR.forEach(function(r){
@@ -376,10 +432,10 @@
       var chipEl = document.getElementById('st-count-chips');
       if (chipEl) {
         var html = '';
-        if (counts.ENTRY > 0)    html += '<span class="st-chip st-chip-entry">ENTRY ' + counts.ENTRY + '</span>';
-        if (counts.RAN_LATE > 0) html += '<span class="st-chip st-chip-ran">RAN ' + counts.RAN_LATE + '</span>';
-        if (counts.RIPENING > 0) html += '<span class="st-chip st-chip-rip">RIPENING ' + counts.RIPENING + '</span>';
-        if (counts.KNIFE > 0)    html += '<span class="st-chip st-chip-knife">KNIFE ' + counts.KNIFE + '</span>';
+        if (counts.ENTRY > 0)    html += '<span class="st-chip st-chip-entry">' + bi('ENTRY', '入场') + ' ' + counts.ENTRY + '</span>';
+        if (counts.RAN_LATE > 0) html += '<span class="st-chip st-chip-ran">' + bi('RAN / LATE', '信号已过') + ' ' + counts.RAN_LATE + '</span>';
+        if (counts.RIPENING > 0) html += '<span class="st-chip st-chip-rip">' + bi('RIPENING', '蓄势中') + ' ' + counts.RIPENING + '</span>';
+        if (counts.KNIFE > 0)    html += '<span class="st-chip st-chip-knife">' + bi('KNIFE', '下跌中') + ' ' + counts.KNIFE + '</span>';
         chipEl.innerHTML = html;
       }
       // reset-order button visibility
@@ -434,7 +490,9 @@
         var col = cols.find(function(c){ return c.key === k; });
         if (!col) return;
         var chk = visible.indexOf(k) !== -1;
-        html += '<div class="st-chooser-row" draggable="true" data-key="' + esc(k) + '">';
+        // carry the column's display class so columns force-hidden on mobile
+        // (.st-hide-sm) also hide their chooser checkbox there — no dead toggles
+        html += '<div class="st-chooser-row' + (col.cls ? ' ' + esc(col.cls) : '') + '" draggable="true" data-key="' + esc(k) + '">';
         html += '<span class="st-drag-handle">☰</span>';
         html += '<label><input type="checkbox" class="st-col-chk" data-key="' + esc(k) + '"' +
                 (chk ? ' checked' : '') + '> ' +
