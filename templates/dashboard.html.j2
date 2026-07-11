@@ -363,26 +363,7 @@
   /* legacy chips kept for non-board uses */
   .ew-chip { display: none; }  /* hidden in V2 board; moved to popover */
   .acttag, .actage, .acteta, .eqmini { display: none; }  /* moved to popover in V2 */
-  /* popover source — always hidden inline, cloned by JS */
-  .act-pop-src { display: none !important; }
-  /* action board popover (JS-placed, body-appended) */
-  .act-pop { position: fixed; z-index: 9999; width: 340px; max-width: calc(100vw - 24px);
-             background: var(--panel2); border: 1px solid var(--line); border-radius: 12px;
-             box-shadow: 0 8px 32px rgba(0,0,0,.35); padding: 16px 18px;
-             pointer-events: none; transition: opacity 0.1s; }
-  .act-pop-hdr { margin-bottom: 10px; }
-  .act-pop-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; margin-bottom: 2px; }
-  .act-pop-ticker { font-size: 10.5px; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; }
-  .act-pop-state { display: inline-flex; align-items: center; gap: 5px;
-                   font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
-                   padding: 4px 9px; border-radius: 6px; margin: 8px 0; }
-  .act-pop-text { font-size: 11.5px; color: color-mix(in srgb, var(--text) 82%, var(--muted));
-                  line-height: 1.6; margin-bottom: 10px; }
-  .act-pop-div { height: 1px; background: var(--line); margin: 8px 0; }
-  .act-pop-grid { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: baseline; }
-  .act-pop-lbl { font-size: 10px; color: var(--muted); font-weight: 500; white-space: nowrap; }
-  .act-pop-val { font-size: 11px; color: var(--text); font-weight: 600; text-align: right; }
-  .act-pop-val.up { color: var(--up); } .act-pop-val.dn { color: var(--down); }
+  /* action-board rows opt in to the shared row-pop engine via [data-rpop] */
   .notable { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
   .sm { font-size: 12px; margin: 4px 0; }
   /* keep legacy references alive for non-board code */
@@ -5436,7 +5417,7 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
         Each lane: header (emoji + EN/ZH name + count + subtitle) + row list.
         Sector rows: glyph + name + optional chip + optional gate-✓ + stat line.
         Theme rows: name + star/check/lens glyphs (% moves to popover).
-        Popover data stored in hidden .act-pop-src span, cloned by JS on hover.
+        Popover data stored in hidden .rp-src span, cloned by theme.js row-pop engine on hover.
         Folds: take_profits cap 5, stand-aside (hold+avoid) cap 6.
         TS-R5 dash-hold-fold id PRESERVED on the stand-aside column.
     -#}
@@ -5448,76 +5429,136 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
     {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: {{ x.get('ew', {}).get('label', '') }}" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：{{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}">&#10003;</span>{% endif -%}
     {%- endmacro -%}
     {#- Popover source for a SECTOR row (hidden inline, cloned by JS) -#}
+    {#- Conditions popover for a SECTOR row — shared .rp-src payload for theme.js row-pop engine.
+        DO NOT REBUILD LAW #1513: FRESH BUY is the worst state on the board (not a buy edge);
+        the state tag is rendered with a neutral/warn tone — never green/up. -#}
     {%- macro ab_sector_pop(x) -%}
-    <span class="act-pop-src" hidden>
-      <div class="act-pop-hdr">
-        <div class="act-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></div>
-        <div class="act-pop-ticker">{{ x.ticker }}</div>
-        {%- set _pcol = 'var(--up)' if x.get('style') == 'pos' else ('var(--down)' if x.get('style') == 'neg' else 'var(--muted)') -%}
-        <span class="act-pop-state" style="color:{{ _pcol }};background:color-mix(in srgb,{{ _pcol }} 10%,transparent);border:1px solid color-mix(in srgb,{{ _pcol }} 22%,transparent)">{{ td(x.label) }}</span>
+    <span class="rp-src" hidden>
+      <div class="row-pop-hd">
+        <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
+        <span class="row-pop-kind">{{ x.ticker }}</span>
+        {#- State tag tone: FRESH BUY/BOTTOM WATCH/NEARING A LOW = warn (not-yet-confirmed or worst state per #1513);
+            TOP WATCH/ROLLING OVER/DECLINE/COUNTERTREND BOUNCE = dn; RALLY ON/TURN SIGNALED/UPTREND = up -#}
+        {%- set _reduce_labels = ['TOP WATCH','ROLLING OVER','DECLINE','COUNTERTREND BOUNCE'] -%}
+        {%- set _warn_labels = ['FRESH BUY','BOTTOM WATCH','NEARING A LOW'] -%}
+        {%- set _lbl = x.get('label', '') -%}
+        {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else 'up') -%}
+        <span class="row-pop-tag {{ _stag_tone }}">{{ td(x.label) }}</span>
       </div>
-      {%- if x.get('text') or x.get('text_zh') %}
-      <p class="act-pop-text"><span class="l-en">{{ x.get('text', '')|e }}</span><span class="l-zh">{{ x.get('text_zh', '')|e }}</span></p>
-      {%- endif %}
-      <div class="act-pop-div"></div>
-      <div class="act-pop-grid">
+      <div class="row-pop-div"></div>
+      <div class="row-pop-grid">
         {%- if x.get('age_short') %}
-        <span class="act-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-        <span class="act-pop-val"><span class="l-en">{{ x.age_short }}</span><span class="l-zh">{{ x.get('age_short_zh', x.age_short) }}</span></span>
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
+          <span class="row-pop-val"><span class="l-en">{{ x.age_short }}</span><span class="l-zh">{{ x.get('age_short_zh', x.age_short) }}</span></span></div>
         {%- endif %}
         {%- if x.get('eq_badge') %}
-        <span class="act-pop-lbl"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span>
-        <span class="act-pop-val {{ 'up' if x.eq_dir == 'up' else ('dn' if x.eq_dir == 'down' else '') }}"><span class="l-en">{{ x.eq_badge }} — {{ x.eq_tip }}</span><span class="l-zh">{{ x.eq_badge }} — {{ x.get('eq_tip_zh', x.eq_tip) }}</span></span>
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
+          <span class="row-pop-val"><span class="{{ 'up' if x.eq_dir == 'up' else ('dn' if x.eq_dir == 'down' else '') }}">{{ x.eq_badge }}</span><span class="mut"> · <span class="l-en">{{ x.eq_tip }}</span><span class="l-zh">{{ x.get('eq_tip_zh', x.eq_tip) }}</span></span></span></div>
         {%- endif %}
-        {%- if x.get('ew') %}
-        {%- set _ewl = x.ew.get('label', '') %}{%- set _ewlz = x.ew.get('label_zh', _ewl) %}
-        <span class="act-pop-lbl"><span class="l-en">Basket overlay</span><span class="l-zh">篮子参考</span></span>
-        <span class="act-pop-val"><span class="l-en">Equal-weight basket: {{ _ewl }} — context only</span><span class="l-zh">等权篮子：{{ _ewlz }} — 仅供参考</span></span>
+        {%- if x.get('rs_60d') is not none and x.get('rs_60d') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
+          <span class="row-pop-val"><span class="{{ 'up' if x.rs_60d >= 0 else 'dn' }}">{{ '%+.1f'|format(x.rs_60d) }}%</span></span></div>
+        {%- endif %}
+        {%- if x.get('dc_day') is not none and x.get('dc_day') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
+          <span class="row-pop-val"><span class="l-en">day {{ x.dc_day }} of cycle</span><span class="l-zh">周期第 {{ x.dc_day }} 日</span></span></div>
+        {%- endif %}
+        {%- if x.get('buy_zone') is not none and x.get('n_holdings') %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
+          <span class="row-pop-val">{{ x.buy_zone }} / {{ x.n_holdings }}</span></div>
+        {%- endif %}
+        {%- if x.get('rsi_3d') is not none and x.get('rsi_3d') is defined and x.get('stoch_3d') is not none and x.get('stoch_3d') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
+          <span class="row-pop-val">RSI {{ '%.0f'|format(x.rsi_3d) }} · Stoch {{ '%.0f'|format(x.stoch_3d) }}</span></div>
+        {%- endif %}
+        {%- if x.get('rate_str') is not none and x.get('rate_str') is defined %}
+        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
+          <span class="row-pop-val {{ 'up' if x.get('rate_pos') else ('dn' if x.get('rate_pos') is not none and not x.get('rate_pos') else '') }}">{{ x.rate_str }}</span></div>
+        {%- endif %}
+        {%- if x.get('season_str') is not none and x.get('season_str') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
+          <span class="row-pop-val">{{ x.season_str }}</span></div>
+        {%- endif %}
+      </div>
+      {%- if x.get('text') or x.get('text_zh') or x.get('two_reads_chip') %}
+      <ul class="row-pop-why">
+        {%- if x.get('text') or x.get('text_zh') %}
+        <li><span class="l-en">{{ x.get('text', '')|e }}</span><span class="l-zh">{{ x.get('text_zh', '')|e }}</span></li>
         {%- endif %}
         {%- if x.get('two_reads_chip') %}
-        {%- set _tr = x.two_reads_chip %}
-        <span class="act-pop-lbl"><span class="l-en">Two reads</span><span class="l-zh">两个读数</span></span>
-        <span class="act-pop-val"><span class="l-en">cycle <b>{{ _tr.cycle_label_en }}</b> · setup <b>{{ _tr.setup_label_en }}</b></span><span class="l-zh">周期 <b>{{ _tr.get('cycle_label_zh', _tr.cycle_label_en) }}</b> · 形态 <b>{{ _tr.get('setup_label_zh', _tr.setup_label_en) }}</b></span></span>
+        {%- set _tr2 = x.two_reads_chip %}
+        <li><span class="l-en">Two reads: cycle <b>{{ _tr2.cycle_label_en }}</b> vs setup <b>{{ _tr2.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _tr2.get('cycle_label_zh', _tr2.cycle_label_en) }}</b> vs 形态 <b>{{ _tr2.get('setup_label_zh', _tr2.setup_label_en) }}</b></span></li>
         {%- endif %}
-        <span class="act-pop-lbl"><span class="l-en">ETF reference</span><span class="l-zh">ETF参考</span></span>
-        <span class="act-pop-val">{{ x.ticker }}</span>
+      </ul>
+      {%- endif %}
+      <div class="row-pop-ft">
+        <span>{{ x.ticker }}</span>
       </div>
     </span>
     {%- endmacro -%}
-    {#- Popover source for a THEME (narrative basket) row -#}
+    {#- Conditions popover for a THEME (narrative basket) row — shared .rp-src payload. -#}
     {%- macro ab_theme_pop(x) -%}
-    <span class="act-pop-src" hidden>
-      <div class="act-pop-hdr">
-        <div class="act-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></div>
-        {%- if x.get('book_wt') %}<div class="act-pop-ticker"><span class="l-en">In model book: {{ '%.0f'|format(x.book_wt*100) }}%</span><span class="l-zh">模型组合权重 {{ '%.0f'|format(x.book_wt*100) }}%</span></div>{%- endif %}
-        <span class="act-pop-state" style="color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)"><span class="l-en">Narrative basket 🧩</span><span class="l-zh">叙事篮子 🧩</span></span>
+    <span class="rp-src" hidden>
+      <div class="row-pop-hd">
+        <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
+        <span class="row-pop-kind"><span class="l-en">BASKET</span><span class="l-zh">篮子</span></span>
+        {%- set _rtone = 'dn' if x.get('reco') in ('trim','avoid') else ('up' if x.get('reco') in ('accumulate','enter') else 'warn') -%}
+        <span class="row-pop-tag {{ _rtone }}"><span class="l-en">{{ x.get('label', x.get('reco', '')) }}</span><span class="l-zh">{{ x.get('label_zh', x.get('label', '')) }}</span></span>
       </div>
-      {%- if x.get('text') or x.get('text_zh') %}
-      <p class="act-pop-text"><span class="l-en">{{ x.get('text', '')|e }}</span><span class="l-zh">{{ x.get('text_zh', '')|e }}</span></p>
-      {%- endif %}
-      <div class="act-pop-div"></div>
-      <div class="act-pop-grid">
-        {%- if x.get('book_wt') %}
-        <span class="act-pop-lbl"><span class="l-en">Model book weight</span><span class="l-zh">模型组合权重</span></span>
-        <span class="act-pop-val up">{{ '%.0f'|format(x.book_wt*100) }}%</span>
+      <div class="row-pop-div"></div>
+      <div class="row-pop-grid">
+        {%- if x.get('score') is not none and x.get('score') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
+          <span class="row-pop-val">{{ '%.0f'|format(x.score) }}</span></div>
+        {%- endif %}
+        {%- if x.get('book_wt') is not none and x.get('book_wt') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Model book</span><span class="l-zh">模型组合</span></span>
+          <span class="row-pop-val up">{{ '%.0f'|format(x.book_wt*100) }}%</span></div>
+        {%- endif %}
+        {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
+          <span class="row-pop-val"><span class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</span></span></div>
+        {%- endif %}
+        {%- if x.get('breadth_pct50') is not none and x.get('breadth_pct50') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Breadth &gt;50d</span><span class="l-zh">广度&gt;50日</span></span>
+          <span class="row-pop-val">{{ '%.0f'|format(x.breadth_pct50 * 100) }}%</span></div>
+        {%- endif %}
+        {%- if x.get('rs_pctile') is not none and x.get('rs_pctile') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">RS分位</span></span>
+          <span class="row-pop-val">{{ '%.0f'|format(x.rs_pctile * 100) }}</span></div>
+        {%- endif %}
+        {%- if x.get('flip_distance') is not none and x.get('flip_distance') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Flip distance</span><span class="l-zh">翻转距离</span></span>
+          <span class="row-pop-val">{{ '%.1f'|format(x.flip_distance) }}%</span></div>
+        {%- endif %}
+        {%- if x.get('rollover_band') is not none and x.get('rollover_band') is defined %}
+        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Rollover risk</span><span class="l-zh">回落风险</span></span>
+          <span class="row-pop-val {{ 'warn' if x.rollover_band != 'low' else '' }}"><span class="l-en">{{ x.rollover_band }}</span><span class="l-zh">{{ x.get('rollover_band_zh', x.rollover_band) }}</span></span></div>
+        {%- endif %}
+        {%- if x.get('top_members') %}
+        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Leaders</span><span class="l-zh">龙头</span></span>
+          <span class="row-pop-val">{{ x.top_members | join(' · ') }}</span></div>
         {%- endif %}
         {%- if x.validated %}
-        <span class="act-pop-lbl"><span class="l-en">Gate</span><span class="l-zh">门槛</span></span>
-        <span class="act-pop-val up"><span class="l-en">&#10003; Backtested absolute-trend gate</span><span class="l-zh">&#10003; 经回测绝对趋势门槛</span></span>
-        {%- else %}
-        <span class="act-pop-lbl"><span class="l-en">Lens</span><span class="l-zh">透镜</span></span>
-        <span class="act-pop-val"><span class="l-en">&#8776; Leadership LENS — descriptive</span><span class="l-zh">&#8776; 领先度透镜 — 描述性</span></span>
-        {%- endif %}
-        {%- if x.get('run_reason_en') %}
-        <span class="act-pop-lbl"><span class="l-en">Why extended</span><span class="l-zh">延伸原因</span></span>
-        <span class="act-pop-val"><span class="l-en">{{ x.run_reason_en }}</span><span class="l-zh">{{ x.get('run_reason_zh', x.run_reason_en) }}</span></span>
+        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Gate</span><span class="l-zh">门槛</span></span>
+          <span class="row-pop-val up"><span class="l-en">&#10003; Backtested absolute-trend gate</span><span class="l-zh">&#10003; 经回测绝对趋势门槛</span></span></div>
         {%- endif %}
       </div>
+      {%- if x.get('reco_why_en') or x.get('run_reason_en') %}
+      <ul class="row-pop-why">
+        {%- if x.get('reco_why_en') %}
+        <li><span class="l-en">{{ x.reco_why_en|e }}</span><span class="l-zh">{{ x.get('reco_why_zh', x.reco_why_en)|e }}</span></li>
+        {%- endif %}
+        {%- if x.get('run_reason_en') %}
+        <li><span class="l-en">{{ x.run_reason_en|e }}</span><span class="l-zh">{{ x.get('run_reason_zh', x.run_reason_en)|e }}</span></li>
+        {%- endif %}
+      </ul>
+      {%- endif %}
     </span>
     {%- endmacro -%}
     {#- V2 sector row macro -#}
     {%- macro ab_sector_row(x) -%}
-    <a class="actitem" href="{{ x.href }}">
+    <a class="actitem" data-rpop href="{{ x.href }}">
       <span class="ai-bdg">🏛</span>
       <span class="act-row-main">
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
@@ -5532,7 +5573,7 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
     {%- endmacro -%}
     {#- V2 theme (narrative basket) row macro -#}
     {%- macro ab_theme_row(x) -%}
-    <a class="actitem ai-theme" href="{{ x.href }}">
+    <a class="actitem ai-theme" data-rpop href="{{ x.href }}">
       <span class="ai-bdg">🧩</span>
       <span class="act-row-main">
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
@@ -7536,77 +7577,7 @@ document.addEventListener('click',function(e){
 // is CSS ([aria-expanded] rules in theme.css). A page-scoped duplicate here would
 // double-toggle into a no-op — deliberately no handler.
 
-// ---- V2 ACTION BOARD POPOVER ----
-// Body-appended single div, hover-anchored right of row (fallback left/below).
-// Only on pointer:hover devices — mobile is untouched.
-(function(){
-  if(!window.matchMedia||!window.matchMedia('(hover:hover)').matches)return;
-  var pop=document.createElement('div');
-  pop.className='act-pop';
-  pop.style.display='none';
-  document.body.appendChild(pop);
-  var _cur=null,_hideTimer=null;
-
-  function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
-
-  function showPop(item){
-    var src=item.querySelector('.act-pop-src');
-    if(!src)return;
-    pop.innerHTML=src.innerHTML;
-    // language filter
-    var zh=isZh();
-    pop.querySelectorAll('.l-en').forEach(function(el){el.style.display=zh?'none':'';});
-    pop.querySelectorAll('.l-zh').forEach(function(el){el.style.display=zh?'':'none';});
-    pop.style.display='block';
-    pop.style.opacity='0';
-    placePop(item);
-    pop.style.opacity='1';
-  }
-
-  function placePop(item){
-    var r=item.getBoundingClientRect();
-    var pw=pop.offsetWidth||340;
-    var ph=pop.offsetHeight||200;
-    var vw=window.innerWidth, vh=window.innerHeight, m=10;
-    var left, top;
-    // prefer right of row
-    if(r.right+m+pw<=vw){
-      left=r.right+m;
-    } else if(r.left-m-pw>=0){
-      left=r.left-m-pw;
-    } else {
-      left=Math.max(m, Math.min(r.left, vw-pw-m));
-    }
-    // vertical: align to row top, flip below viewport top if too high
-    if(r.top+ph+m<=vh){
-      top=r.top;
-    } else {
-      top=Math.max(m, vh-ph-m);
-    }
-    pop.style.left=left+'px';
-    pop.style.top=top+'px';
-  }
-
-  function hidePop(){pop.style.display='none';_cur=null;}
-
-  document.addEventListener('pointerover',function(e){
-    var item=e.target&&e.target.closest&&e.target.closest('.actitem');
-    if(!item){
-      if(_hideTimer)clearTimeout(_hideTimer);
-      _hideTimer=setTimeout(hidePop,120);
-      return;
-    }
-    if(item===_cur)return;
-    if(_hideTimer)clearTimeout(_hideTimer);
-    _cur=item;
-    showPop(item);
-  });
-  document.addEventListener('pointerout',function(e){
-    if(_hideTimer)clearTimeout(_hideTimer);
-    _hideTimer=setTimeout(hidePop,80);
-  });
-  document.addEventListener('scroll',hidePop,{passive:true,capture:true});
-})();
+// Action-board row popovers handled by theme.js shared row-pop engine ([data-rpop] / .rp-src).
 
 })();
 </script>
