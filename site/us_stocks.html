@@ -1757,18 +1757,12 @@
     /* separator becomes a row break — LAGGARDS group starts its own line */
     .dtp-sep { flex-basis:100%; width:auto; height:0; background:transparent; }
   }
-/* page-scoped fold — V2 action board uses .actbody wrapper containing .actitem children */
-/* Buy/soon/run/aside lanes: cap 6 visible */
-.actbody.act-fold.is-collapsed > a.actitem:nth-child(n+7),
-.actbody.act-fold.is-collapsed > div:nth-child(n+7) { display: none; }
-.actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(7)):not(:has(.actbody.act-fold > div:nth-child(7)))) .lst-more.act-more { display: none; }
-/* Take-profits lane: cap 5 visible */
-.ab-trim-fold.is-collapsed > a.actitem:nth-child(n+6),
-.ab-trim-fold.is-collapsed > div:nth-child(n+6) { display: none; }
-/* Stand-aside uses .lst-collapse .lst-cap6 — cap 6 via actitem children */
-.lst-collapse.lst-cap6.is-collapsed > a.actitem:nth-child(n+7),
-.lst-collapse.lst-cap6.is-collapsed > div:nth-child(n+7) { display: none; }
-/* Sector-setups table (unchanged) */
+/* page-scoped fold (.act-fold) — the shared .lst-collapse plumbing assumes
+   one-element-per-item direct children; the TAKE PROFITS list is <a>+chip
+   sibling PAIRS and the sector-setups table hides rows behind an implicit
+   tbody, so both get their own cap rules + a tiny delegated toggler. */
+.act-fold.is-collapsed > a.actitem:nth-of-type(n+7), .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .ew-chip, .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .two-reads-chip, .act-fold.is-collapsed > a.actitem:nth-of-type(n+7) + .ew-chip + .two-reads-chip { display:none; }
+.actcol .act-fold:not(:has(> a.actitem:nth-of-type(7))) ~ .lst-more.act-more { display:none; }
 #sectors table.act-fold.is-collapsed > tbody > tr:nth-child(n+8), #sectors table.act-fold.is-collapsed > tr:nth-child(n+8) { display:none; }
 
   /* ── TS-U3: turn watch strip ────────────────────────────────────────────── */
@@ -2237,6 +2231,51 @@
     </span>
     </a>
           
+          <div data-theme-id="payments_fintech"><a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Payments &amp; Fintech"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
+        
+          
+          <div data-theme-id="travel"><a class="actitem ai-theme" href="basket/travel.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Travel &amp; Experiences"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
+        
+          
+          <div data-theme-id="ai_infra"><a class="actitem ai-theme" href="basket/ai_infra.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="AI Infrastructure"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
+        
+          
+          <div data-theme-id="non_ai_software"><a class="actitem ai-theme" href="basket/non_ai_software.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Non-AI Software"><span class="l-en">Non-AI Software</span><span class="l-zh">非AI软件</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
+        
+          
+          <div data-theme-id="semicap_equipment"><a class="actitem ai-theme" href="basket/semicap_equipment.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Semiconductor Equipment (WFE)"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
+        
+          
+          <div data-theme-id="ai_agents"><a class="actitem ai-theme" href="basket/ai_agents.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="AI Agents &amp; Applications"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a></div>
+        
+          
+          <a class="actitem" href="basket/us_sector_health.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Health Care"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
+        
+        
+          <div data-theme-id="space_economy"><a class="actitem ai-theme" href="basket/space_economy.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Space Economy"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
+          <div data-theme-id="uranium_miners"><a class="actitem ai-theme" href="basket/uranium_miners.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Uranium &amp; Nuclear Fuel"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
+          <div data-theme-id="defense"><a class="actitem ai-theme" href="basket/defense.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Defense &amp; Aerospace"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
+          <div data-theme-id="critical_minerals"><a class="actitem ai-theme" href="basket/critical_minerals.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Critical Minerals &amp; Rare Earths"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
+          <div data-theme-id="retail"><a class="actitem ai-theme" href="basket/retail.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Retail"><span class="l-en">Retail</span><span class="l-zh">零售</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
+          <div data-theme-id="crypto"><a class="actitem ai-theme" href="basket/crypto.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Crypto &amp; Digital Assets"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
+          <div data-theme-id="quantum_computing"><a class="actitem ai-theme" href="basket/quantum_computing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Quantum Computing"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
+          <div data-theme-id="housing"><a class="actitem ai-theme" href="basket/housing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Housing Chain"><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a></div>
+        
+          <a class="actitem" href="basket/us_sector_materials.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Materials"><span class="l-en">Materials</span><span class="l-zh">原材料</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+        
+          <a class="actitem" href="basket/us_sector_comm.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Communications"><span class="l-en">Communications</span><span class="l-zh">通讯</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+        
+          <a class="actitem" href="basket/us_sector_energy.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Energy"><span class="l-en">Energy</span><span class="l-zh">能源</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+        
+          <a class="actitem" href="basket/us_sector_discretionary.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Consumer Discretionary"><span class="l-en">Cons Disc</span><span class="l-zh">可选消费</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+        
         </div>
         
       </div><div class="actcol act-soon">
@@ -5134,7 +5173,7 @@
           <a class="nb-head-link" href="stock.html#WMB">
           <div class="nb-top">
             <span class="nb-tk">WMB</span>
-            <span class="nb-sec nb-spot nb-spot-link spot-dn" data-href="basket/us_sector_energy.html" tabindex="0" title="Theme/sector spotlight tilt (×0.89) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Energy (Equal-Weight) (AVOID). Sector: Energy — lagging. Open the theme →"><span class="sp-tag l-en">Energy</span><span class="sp-tag l-zh">能源</span><span class="sp-ar">▼</span></span>
+            <span class="nb-sec nb-spot nb-spot-link spot-dn" data-href="basket/us_sector_energy.html" tabindex="0" title="Theme/sector spotlight tilt (×0.88) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Energy (Equal-Weight) (AVOID). Sector: Energy — lagging. Open the theme →"><span class="sp-tag l-en">Energy</span><span class="sp-tag l-zh">能源</span><span class="sp-ar">▼</span></span>
             
             <span class="nb-px" data-sym="WMB" data-mkt="us">$75.45</span>
           </div>
