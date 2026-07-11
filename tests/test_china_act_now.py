@@ -562,3 +562,154 @@ class TestBasketTurnOrganRider:
         # Both lanes should contain the row
         bw = r["lanes"]["bottoming_watch"]
         assert any(row["id"] in ("b-cn_baijiu", "cn_baijiu") for row in bw)
+
+
+# ─────────────── 10. organ-rider enrichment (Fix 1/2) ────────────────────────
+
+def _minimal_theme_intel_with_theme(tid: str, name: str, name_zh: str,
+                                     score: int, rel20: float) -> dict:
+    """theme_intel dict containing one theme in themes[], no act_now items."""
+    return {
+        "as_of": "2026-07-08",
+        "themes": [{
+            "id": tid, "name": name, "name_zh": name_zh,
+            "score": score, "action": "hold", "action_en": "HOLD", "action_zh": "持有",
+            "perf": {"20d": {"rel": rel20}},
+        }],
+        "act_now": {"buy": [], "add_on_pullback": [], "reduce": []},
+    }
+
+
+def _minimal_ths_baskets(bid: str, name: str, name_zh: str, rel20: float) -> dict:
+    """ths_baskets {id: basket} dict for a single THS basket."""
+    return {bid: {"id": bid, "name": name, "name_zh": name_zh,
+                  "perf": {"20d": {"rel": rel20}}}}
+
+
+class TestOrganRiderEnrichment:
+    """Fix 1: organ-rider rows get name/name_zh/score/reco/rel20 from theme_intel or ths_baskets."""
+
+    def _basket_turn(self, states: dict) -> dict:
+        return {
+            "schema": "basket_turn_cn.v1",
+            "as_of": "2026-07-08",
+            "baskets": {bid: {"state": st, "evidence": []} for bid, st in states.items()},
+        }
+
+    def test_cn_id_enriched_from_theme_intel(self):
+        """organ-rider row with a cn_* id present in theme_intel.themes gets name/name_zh/score/rel20."""
+        ti = _minimal_theme_intel_with_theme("cn_pharma", "Pharma", "医药", 72, 0.15)
+        bt = self._basket_turn({"cn_pharma": "TURNING"})
+        r = assemble_act_now([], ti, [], basket_turn=bt, ths_baskets=None)
+        bw = r["lanes"]["bottoming_watch"]
+        rows = [row for row in bw if row["id"] == "cn_pharma"]
+        assert rows, "cn_pharma organ row must be surfaced"
+        row = rows[0]
+        assert row["name"] == "Pharma", f"expected name='Pharma', got {row['name']!r}"
+        assert row["name_zh"] == "医药"
+        assert row["score"] == 72
+        assert abs((row["rel20"] or 0) - 0.15) < 1e-9
+        assert row["organ_chip_en"] is not None
+
+    def test_cn_id_enriched_reco_from_theme_intel(self):
+        """organ-rider row gets reco_en/reco_zh when theme_intel has them."""
+        ti = _minimal_theme_intel_with_theme("cn_semis", "Semis", "半导体", 65, 0.08)
+        bt = self._basket_turn({"cn_semis": "CONFIRMED"})
+        r = assemble_act_now([], ti, [], basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        rows = [row for row in bw if row["id"] == "cn_semis"]
+        assert rows
+        assert rows[0]["reco_en"] == "HOLD"
+        assert rows[0]["reco_zh"] == "持有"
+
+    def test_thsc_id_enriched_from_ths_baskets(self):
+        """organ-rider row with a thsc* id gets name/name_zh/rel20 from ths_baskets."""
+        ths = _minimal_ths_baskets("thsc309128", "Beer", "啤酒", 0.05)
+        bt = self._basket_turn({"thsc309128": "TURNING"})
+        r = assemble_act_now([], None, [], basket_turn=bt, ths_baskets=ths)
+        bw = r["lanes"]["bottoming_watch"]
+        rows = [row for row in bw if row["id"] == "thsc309128"]
+        assert rows, "thsc309128 organ row must be surfaced"
+        row = rows[0]
+        assert row["name"] == "Beer"
+        assert row["name_zh"] == "啤酒"
+        assert abs((row["rel20"] or 0) - 0.05) < 1e-9
+
+    def test_ths_id_enriched_from_ths_baskets(self):
+        """ths_* ids also resolved from ths_baskets."""
+        ths = _minimal_ths_baskets("ths_baijiu", "Baijiu", "白酒", -0.03)
+        bt = self._basket_turn({"ths_baijiu": "CONFIRMED"})
+        r = assemble_act_now([], None, [], basket_turn=bt, ths_baskets=ths)
+        bw = r["lanes"]["bottoming_watch"]
+        rows = [row for row in bw if row["id"] == "ths_baijiu"]
+        assert rows
+        assert rows[0]["name"] == "Baijiu"
+        assert rows[0]["name_zh"] == "白酒"
+
+    def test_unknown_id_falls_back_to_slug(self):
+        """Unknown id falls back to slug as name, no crash."""
+        bt = self._basket_turn({"unknown_xyz": "TURNING"})
+        r = assemble_act_now([], None, [], basket_turn=bt, ths_baskets=None)
+        bw = r["lanes"]["bottoming_watch"]
+        rows = [row for row in bw if row["id"] == "unknown_xyz"]
+        assert rows, "unknown id should still produce a row"
+        assert rows[0]["name"] == "unknown_xyz"  # slug fallback
+
+    def test_b_prefix_id_canonical_lookup(self):
+        """b-cn_x id resolves name via canonical cn_x key in theme_intel."""
+        ti = _minimal_theme_intel_with_theme("cn_gold", "Gold Miners", "黄金", 58, 0.20)
+        bt = self._basket_turn({"b-cn_gold": "TURNING"})
+        r = assemble_act_now([], ti, [], basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        rows = [row for row in bw if row["id"] == "b-cn_gold"]
+        assert rows, "b-cn_gold row must be surfaced"
+        assert rows[0]["name"] == "Gold Miners"
+
+    def test_backward_compat_no_ths_baskets_kwarg(self):
+        """Calling assemble_act_now without ths_baskets kwarg works (backward-compat)."""
+        bt = self._basket_turn({"cn_pharma": "TURNING"})
+        # Must not raise
+        r = assemble_act_now([], None, [], basket_turn=bt)
+        assert "lanes" in r
+
+
+class TestOrganRiderDedup:
+    """Fix 2: dedup hardening — b-/non-b- variants produce at most one row."""
+
+    def _basket_turn(self, states: dict) -> dict:
+        return {
+            "schema": "basket_turn_cn.v1",
+            "as_of": "2026-07-08",
+            "baskets": {bid: {"state": st, "evidence": []} for bid, st in states.items()},
+        }
+
+    def test_bprefix_and_canonical_produce_one_row(self):
+        """organ_state_map has both b-cn_x and cn_x mapped; only one row emitted."""
+        # Both keys will be in the map after the canonical registration inside the organ block
+        bt = self._basket_turn({"b-cn_x": "TURNING", "cn_x": "TURNING"})
+        r = assemble_act_now([], None, [], basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        ids = [row["id"] for row in bw]
+        # At most one of b-cn_x or cn_x should appear
+        count = ids.count("b-cn_x") + ids.count("cn_x")
+        assert count == 1, f"expected 1 row, got {count}: {ids}"
+
+    def test_forward_log_row_and_organ_same_id_no_dup(self):
+        """Basket already in forward_log (b-cn_x); organ also fires — no duplicate row."""
+        cycle = [_cycle_row("b-cn_x", "X Basket", "basket", "Trough", osc_slope=1.0)]
+        bt = self._basket_turn({"cn_x": "TURNING"})  # canonical (non-b) key
+        r = assemble_act_now([], None, cycle, basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        ids = [row["id"] for row in bw]
+        count = ids.count("b-cn_x") + ids.count("cn_x")
+        assert count == 1, f"expected 1 row (forward_log), got {count}: {ids}"
+
+    def test_forward_log_row_takes_precedence(self):
+        """When forward_log already has the row, the organ does not add a second row."""
+        cycle = [_cycle_row("cn_y", "Y Basket", "basket", "Trough", osc_slope=2.5)]
+        bt = self._basket_turn({"b-cn_y": "CONFIRMED"})
+        r = assemble_act_now([], None, cycle, basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        ids = [row["id"] for row in bw]
+        count = ids.count("cn_y") + ids.count("b-cn_y")
+        assert count == 1, f"expected 1 row (forward_log), got {count}: {ids}"
