@@ -3,10 +3,14 @@
 A data-driven sibling of Cycle Intelligence (build_cycle.py): engine/sector_cycles
 derives each US sector ETF's real-price series, auto-detected turns, cycle phase and
 next-turn projection; this script binds the researched leg narratives
-(data/sector_cycles/narratives.json), emits them as site/sector_cycles_data.js
-(window.SECTOR_CYCLES + window.SECTOR_NARR), renders the page shell from
-templates/sector_cycles.html.j2, and copies the page-specific assets. It reuses the
-already-committed site/mm_charts.js + site/cycle.css (the shared cycle design system).
+(data/sector_cycles/narratives.json), emits them as three split data files:
+  - site/sector_cycles_data.js      -> window.SECTOR_CYCLES only (core, ~2MB)
+  - site/sector_cycles_narr_data.js -> window.SECTOR_NARR only (lazy-loaded, ~1.8MB)
+  - site/sector_cycles_dna_data.js  -> window.SECTOR_DNA only (lazy-loaded, ~330KB)
+NARR and DNA are loaded lazily after boot (only used in tap-to-focus panels / dnaHTML).
+Renders the page shell from templates/sector_cycles.html.j2, copies the page-specific
+assets. Reuses the already-committed site/mm_charts.js + site/cycle.css (the shared
+cycle design system).
 
 Additive — any failure is logged and returns 0 so it can never break the rest of the
 site build.
@@ -101,11 +105,19 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("sector_cycles: TTL enrichment skipped: %s", e)
 
-    # data JS (loaded directly by the page — no fetch, works on file:// + preview)
-    payload = ("window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":")) + ";\n"
-               + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n"
-               + "window.SECTOR_DNA=" + json.dumps(dna, separators=(",", ":"), ensure_ascii=False) + ";\n")
-    (site / "sector_cycles_data.js").write_text(payload, encoding="utf-8")
+    # data JS split into three files for lazy loading:
+    #   sector_cycles_data.js      -> SECTOR_CYCLES (core, loaded at boot)
+    #   sector_cycles_narr_data.js -> SECTOR_NARR (lazy, only needed in focus panels)
+    #   sector_cycles_dna_data.js  -> SECTOR_DNA  (lazy, only needed in dnaHTML())
+    (site / "sector_cycles_data.js").write_text(
+        "window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":")) + ";\n",
+        encoding="utf-8")
+    (site / "sector_cycles_narr_data.js").write_text(
+        "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
+    (site / "sector_cycles_dna_data.js").write_text(
+        "window.SECTOR_DNA=" + json.dumps(dna, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
 
     # also publish the raw model for external consumers / debugging
     fdir = site / "sectordata"

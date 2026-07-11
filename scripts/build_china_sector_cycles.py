@@ -6,10 +6,13 @@ Shenwan (申万) L1 sector index AND every curated A-share thematic basket's rea
 next-turn projection, RS vs the Shanghai Composite, the washout↔euphoria signature, and — for
 the four GS-style sectors — the evidence-gated conditional forward odds from
 engine/china_sector_pathway). This script binds any researched narratives
-(data/china_sector_cycles/narratives.json), emits site/sector_cycles_china_data.js
-(window.SECTOR_CYCLES + window.SECTOR_NARR), the raw model under site/chinasectordata/, renders
-templates/sector_cycles_china.html.j2, copies the shared cycle assets, and appends today's
-signal to the point-in-time forward log so the calls can be graded over time.
+(data/china_sector_cycles/narratives.json), emits three split data files:
+  - site/sector_cycles_china_data.js      -> window.SECTOR_CYCLES only (core, ~1.2MB)
+  - site/sector_cycles_china_narr_data.js -> window.SECTOR_NARR only (lazy-loaded, ~1.6MB)
+  - site/sector_cycles_china_dna_data.js  -> window.SECTOR_DNA only (lazy-loaded, ~300KB)
+NARR and DNA are loaded lazily after boot (only used in tap-to-focus panels / dnaHTML()).
+Also writes the raw model under site/chinasectordata/, renders templates/sector_cycles_china.html.j2,
+copies the shared cycle assets, and appends today's signal to the point-in-time forward log.
 
 Also writes site/chinasectordata/sector_cycles_basket_map.json — id -> compact cycle record —
 which scripts/build_baskets_china.py reads to embed a cyclical mini-chart on each per-theme page.
@@ -125,11 +128,19 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_cycles_china: sleeve chip failed (%s)", e)
 
-    # data JS (loaded directly by the page — no fetch, works on file:// + preview)
-    payload = ("window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n"
-               + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n"
-               + "window.SECTOR_DNA=" + json.dumps(dna, separators=(",", ":"), ensure_ascii=False) + ";\n")
-    (site / "sector_cycles_china_data.js").write_text(payload, encoding="utf-8")
+    # data JS split into three files for lazy loading:
+    #   sector_cycles_china_data.js      -> SECTOR_CYCLES (core, loaded at boot)
+    #   sector_cycles_china_narr_data.js -> SECTOR_NARR (lazy, only needed in focus panels)
+    #   sector_cycles_china_dna_data.js  -> SECTOR_DNA  (lazy, only needed in dnaHTML())
+    (site / "sector_cycles_china_data.js").write_text(
+        "window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
+    (site / "sector_cycles_china_narr_data.js").write_text(
+        "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
+    (site / "sector_cycles_china_dna_data.js").write_text(
+        "window.SECTOR_DNA=" + json.dumps(dna, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
 
     # raw model + the per-theme cycle map (read by build_baskets_china for the mini-charts)
     fdir = site / "chinasectordata"
