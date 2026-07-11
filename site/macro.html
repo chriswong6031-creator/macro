@@ -3482,6 +3482,37 @@ body.page-macro .mx2-deep-health{font-size:10.5px;color:var(--muted);padding:10p
 @media(max-width:390px){body.page-macro .mx2-topbar-brand{display:none}}
 /* Fix 12: v2 idiom for transplanted section headers inside trays */
 body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg>summary{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+
+/* ── STAGE-2 TRAY CSS — RISK / POLICY / AIBRIEF / NEWS / DEEP ── */
+/* isle-head badge */
+body.page-macro .isle-head-badge{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);opacity:.7;white-space:nowrap}
+
+/* AI BRIEF — accent card */
+body.page-macro .isle-aibrief-card{display:block;text-decoration:none;font-size:13px;line-height:1.75;color:var(--muted);background:color-mix(in srgb,var(--isle-brief,var(--up)) 6%,var(--panel2));border:1.5px solid color-mix(in srgb,var(--isle-brief,var(--up)) 22%,transparent);border-radius:13px;padding:20px 24px;transition:border-color .18s,box-shadow .18s}
+body.page-macro .isle-aibrief-card:hover{border-color:color-mix(in srgb,var(--isle-brief,var(--up)) 45%,transparent);box-shadow:0 4px 20px color-mix(in srgb,var(--isle-brief,var(--up)) 10%,transparent)}
+body.page-macro .isle-aibrief-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid color-mix(in srgb,var(--isle-brief,var(--up)) 15%,var(--line))}
+body.page-macro .isle-aibrief-icon{width:34px;height:34px;border-radius:9px;background:color-mix(in srgb,var(--isle-brief,var(--up)) 15%,var(--panel2));color:var(--isle-brief,var(--up));font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+body.page-macro .isle-aibrief-badge{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--isle-brief,var(--up));opacity:.75;white-space:nowrap;text-align:right;max-width:160px;line-height:1.4}
+body.page-macro .isle-aibrief-body{font-size:13px;color:var(--text);line-height:1.75;margin-bottom:16px}
+body.page-macro .isle-aibrief-footer{display:flex;justify-content:space-between;align-items:center;gap:8px}
+body.page-macro .isle-aibrief-chips{display:flex;flex-wrap:wrap;gap:6px}
+body.page-macro .isle-aibrief-link{font-size:12px;font-weight:700;color:var(--isle-brief,var(--up));white-space:nowrap;margin-left:auto}
+
+/* DEEP — linkout chips */
+body.page-macro .isle-linkouts{display:flex;flex-wrap:wrap;gap:8px;padding-top:4px}
+body.page-macro .isle-lout{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 14px;text-decoration:none;color:var(--text);font-size:12.5px;font-weight:600;transition:border-color .15s,transform .15s,box-shadow .15s}
+body.page-macro .isle-lout:hover{border-color:var(--link);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.14)}
+body.page-macro .isle-lout-icon{font-size:14px;opacity:.85}
+body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10px 0 0;border-top:1px solid var(--line);margin-top:12px}
+
+/* Light-mode Stage-2 overrides */
+[data-theme="light"] body.page-macro .isle-aibrief-card{background:color-mix(in srgb,var(--isle-brief,var(--up)) 5%,#fff);border-color:color-mix(in srgb,var(--isle-brief,var(--up)) 25%,transparent)}
+[data-theme="light"] body.page-macro .isle-lout{background:#fff;border-color:var(--line)}
+[data-theme="light"] body.page-macro .isle-lout:hover{border-color:var(--link);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+
+/* Mobile Stage-2 */
+@media(max-width:680px){body.page-macro .isle-linkouts{gap:6px}body.page-macro .isle-lout{padding:8px 11px;font-size:12px}}
+@media(max-width:480px){body.page-macro .isle-aibrief-hdr{flex-wrap:wrap}body.page-macro .isle-aibrief-badge{max-width:100%;margin-left:0}}
 </style>
 
     
