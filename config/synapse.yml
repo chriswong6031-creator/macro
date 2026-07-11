@@ -674,7 +674,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_site.py
     external_consumers: []
     notes: >
       CDN-facing copy of data/mag7_regime/latest.json written in the same
