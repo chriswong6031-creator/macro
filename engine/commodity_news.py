@@ -96,15 +96,28 @@ def _cache_path(asset: str, d: date, cfg: dict):
 
 
 def _fetch_gdelt(asset: str, d: date, cfg: dict) -> tuple[list[dict], str | None]:
-    """Return (headlines, degraded_reason). Never raises."""
+    """Return (headlines, degraded_reason). Never raises.
+
+    Delegates HTTP, throttling, and retry handling to engine.gdelt_client so
+    all GDELT callers share a single cross-process pacing lock (GDELT 5s/IP rule;
+    nine callers without shared throttle caused a penalty-box incident 2026-06-20).
+
+    The commodity caller needs two extra fields per article (language, sourcecountry)
+    which are not present in the normalised gdelt_client output; we re-add them as
+    empty strings to preserve the downstream dict shape exactly."""
+    from engine import gdelt_client as _gc
     cache = _cache_path(asset, d, cfg)
-    ttl = cfg.get("cache_ttl_hours", 24) * 3600
+    ttl = int(cfg.get("cache_ttl_hours", 24)) * 3600
+
+    # cache read — commodity_news stores under key 'headlines', not 'articles'
     if cache.exists():
         try:
             age = datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime
             if age < ttl:
                 blob = json.loads(cache.read_text())
-                return blob.get("headlines", []), blob.get("degraded_reason")
+                cached = blob.get("headlines")
+                if cached is not None:
+                    return cached, blob.get("degraded_reason")
         except Exception:  # noqa: BLE001
             pass
 
@@ -119,42 +132,36 @@ def _fetch_gdelt(asset: str, d: date, cfg: dict) -> tuple[list[dict], str | None
     headlines: list[dict] = []
     reason: str | None = None
     try:
-        import time
-
-        import requests
-        r = None
-        for attempt in range(3):
-            r = requests.get(GDELT_URL, params=params, timeout=30,
-                             headers={"User-Agent": "macro-dashboard/1.0 (research)"})
-            if r.status_code == 429 and attempt < 2:  # sleep only if another attempt follows
-                time.sleep(max(6, cfg.get("min_request_interval_s", 6)) * (attempt + 1))
-                continue
-            break
-        if r is None or r.status_code != 200 or "json" not in r.headers.get("Content-Type", ""):
-            reason = "rate_limited" if (r is not None and r.status_code == 429) else "fetch_error"
-        else:
-            arts = r.json().get("articles", []) or []
-            for a in arts[: cfg.get("max_records", 6)]:
-                sd = a.get("seendate", "")
-                try:
-                    iso = datetime.strptime(sd, "%Y%m%dT%H%M%SZ").replace(
-                        tzinfo=timezone.utc).isoformat()
-                except (ValueError, TypeError):  # non-string/None seendate -> keep raw
-                    iso = sd
-                headlines.append({"title": a.get("title", ""), "url": a.get("url", ""),
-                                  "domain": a.get("domain", ""), "seendate": iso,
-                                  "language": a.get("language", ""),
-                                  "sourcecountry": a.get("sourcecountry", "")})
-            if not headlines:
-                reason = "no_headlines"
+        raw_articles, reason = _gc.get_articles(params, timeout=30)
+        if raw_articles is None:
+            raw_articles = []
+        if reason == "no_articles":
+            reason = "no_headlines"
+        # gdelt_client now passes through language/sourcecountry from the raw GDELT article
+        max_r = cfg.get("max_records", 6)
+        for a in raw_articles[:max_r]:
+            headlines.append({
+                "title":         a.get("title", ""),
+                "url":           a.get("url", ""),
+                "domain":        a.get("domain", ""),
+                "seendate":      a.get("seendate", ""),
+                "language":      a.get("language", ""),
+                "sourcecountry": a.get("sourcecountry", ""),
+            })
+        if raw_articles and not headlines:
+            reason = "no_headlines"
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("gdelt fetch failed (%s)", e)
         reason = "fetch_error"
 
-    try:
-        cache.write_text(json.dumps({"headlines": headlines, "degraded_reason": reason}))
-    except Exception:  # noqa: BLE001
-        pass
+    # Cache only when headlines are non-empty (INTENTIONAL: empty-success is transient
+    # and should re-fetch rather than serve stale silence for the full TTL; failures
+    # must never be cached to preserve retry on next nightly cycle).
+    if headlines:
+        try:
+            cache.write_text(json.dumps({"headlines": headlines, "degraded_reason": reason}))
+        except Exception:  # noqa: BLE001
+            pass
     return headlines, reason
 
 

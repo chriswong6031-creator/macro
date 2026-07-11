@@ -291,8 +291,13 @@ def _stock_news_query(ticker: str, name: str | None) -> str:
 def _fetch_stock_headlines(ticker: str, name: str | None, cfg: dict) -> list[str]:
     """Recent public headlines about the company from GDELT (free, keyless). Clones
     the catalyst_tone event-headline fetch with a company-specific query. [] on any
-    error (the news leg is optional)."""
+    error (the news leg is optional).
+
+    Delegates HTTP, throttling, and retry handling to engine.gdelt_client so
+    all GDELT callers share a single cross-process pacing lock (GDELT 5s/IP rule;
+    nine callers without shared throttle caused a penalty-box incident 2026-06-20)."""
     from datetime import timedelta
+    from engine import gdelt_client as _gc
     today = date.today()
     win = int(cfg.get("news_window_days", 5))
     start = datetime(today.year, today.month, today.day) - timedelta(days=win)
@@ -303,13 +308,10 @@ def _fetch_stock_headlines(ticker: str, name: str | None, cfg: dict) -> list[str
               "startdatetime": start.strftime("%Y%m%d%H%M%S"),
               "enddatetime": end.strftime("%Y%m%d%H%M%S")}
     try:
-        import requests
-        r = requests.get("https://api.gdeltproject.org/api/v2/doc/doc", params=params,
-                         timeout=30, headers={"User-Agent": "macro-dashboard/1.0 (research)"})
-        if r.status_code != 200 or "json" not in r.headers.get("Content-Type", "").lower():
+        arts, _ = _gc.get_articles(params, timeout=30)
+        if not arts:
             return []
-        arts = (r.json().get("articles") or [])[:n]
-        return [a.get("title", "").strip() for a in arts if a.get("title")]
+        return [a.get("title", "").strip() for a in arts[:n] if a.get("title")]
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("stock headline fetch failed (%s)", e)
         return []

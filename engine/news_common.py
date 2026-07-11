@@ -617,8 +617,13 @@ def gdelt_fetch(query: str, max_records: int = 60, window_days: int = 2,
                 lang: str = "eng", min_interval_s: int = 6,
                 now: datetime | None = None) -> tuple[list[dict], str | None]:
     """Raw GDELT artlist for a query. Returns (articles, degraded_reason).
-    Each article: {title, url, domain, seendate(ISO)}. Never raises."""
+    Each article: {title, url, domain, seendate(ISO)}. Never raises.
+
+    Delegates HTTP, throttling, and retry handling to engine.gdelt_client so
+    all GDELT callers share a single cross-process pacing lock (GDELT 5s/IP rule;
+    nine callers without shared throttle caused a penalty-box incident 2026-06-20)."""
     from datetime import timedelta
+    from engine import gdelt_client as _gc
     now = now or datetime.now(timezone.utc)
     end = now
     start = end - timedelta(days=window_days)
@@ -626,31 +631,15 @@ def gdelt_fetch(query: str, max_records: int = 60, window_days: int = 2,
               "maxrecords": str(int(max_records)), "sort": "datedesc",
               "startdatetime": start.strftime("%Y%m%d%H%M%S"),
               "enddatetime": end.strftime("%Y%m%d%H%M%S")}
-    out: list[dict] = []
     try:
-        import time
-
-        import requests
-        r = None
-        for attempt in range(3):
-            r = requests.get(GDELT_URL, params=params, timeout=30,
-                             headers={"User-Agent": "macro-dashboard/1.0 (research)"})
-            if r.status_code == 429 and attempt < 2:
-                time.sleep(max(6, min_interval_s) * (attempt + 1))
-                continue
-            break
-        if r is None or r.status_code != 200 or "json" not in r.headers.get("Content-Type", ""):
-            return [], ("rate_limited" if (r is not None and r.status_code == 429) else "fetch_error")
-        for a in (r.json().get("articles", []) or []):
-            sd = a.get("seendate", "")
-            try:
-                iso = datetime.strptime(sd, "%Y%m%dT%H%M%SZ").replace(
-                    tzinfo=timezone.utc).isoformat()
-            except (ValueError, TypeError):
-                iso = sd
-            out.append({"title": a.get("title", ""), "url": a.get("url", ""),
-                        "domain": a.get("domain", ""), "seendate": iso})
-        return out, (None if out else "no_headlines")
+        articles, reason = _gc.get_articles(
+            params, timeout=30,
+            min_interval=float(max(6, min_interval_s)))
+        if articles is None:
+            return [], reason or "fetch_error"
+        if reason == "no_articles":
+            reason = "no_headlines"
+        return articles, reason
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("gdelt fetch failed (%s)", e)
         return [], "fetch_error"

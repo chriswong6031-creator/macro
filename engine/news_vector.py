@@ -271,16 +271,14 @@ def _cache_path(cfg: dict, d: date) -> Path:
 
 def _fetch_gdelt(cfg: dict, today: date) -> tuple[list[dict], str | None]:
     """Recent narrative-scope articles from GDELT (last window_days). Returns
-    (raw_articles, degraded_reason). Cached 12h; never raises."""
+    (raw_articles, degraded_reason). Cached 12h; never raises.
+
+    Delegates HTTP, throttling, and retry handling to engine.gdelt_client so
+    all GDELT callers share a single cross-process pacing lock (GDELT 5s/IP rule;
+    nine callers without shared throttle caused a penalty-box incident 2026-06-20)."""
+    from engine import gdelt_client as _gc
     cache = _cache_path(cfg, today)
     ttl = int(cfg.get("cache_ttl_hours", 12)) * 3600
-    if cache.exists():
-        try:
-            if datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime < ttl:
-                blob = json.loads(cache.read_text())
-                return blob.get("articles", []), blob.get("degraded_reason")
-        except Exception:  # noqa: BLE001
-            pass
     win = int(cfg.get("window_days", 2))
     end = datetime(today.year, today.month, today.day, 23, 59, 59)
     start = end - timedelta(days=win)
@@ -288,46 +286,19 @@ def _fetch_gdelt(cfg: dict, today: date) -> tuple[list[dict], str | None]:
               "maxrecords": str(cfg.get("max_records", 120)), "sort": "datedesc",
               "startdatetime": start.strftime("%Y%m%d%H%M%S"),
               "enddatetime": end.strftime("%Y%m%d%H%M%S")}
-    articles: list[dict] = []
-    reason: str | None = None
     try:
-        import time
-
-        import requests
-        r = None
-        for attempt in range(3):
-            r = requests.get(GDELT_URL, params=params, timeout=30,
-                             headers={"User-Agent": "macro-dashboard/1.0 (research)"})
-            if r.status_code == 429 and attempt < 2:
-                time.sleep(max(6, int(cfg.get("min_request_interval_s", 6))) * (attempt + 1))
-                continue
-            break
-        if r is None or r.status_code != 200 or "json" not in r.headers.get("Content-Type", ""):
-            reason = "rate_limited" if (r is not None and r.status_code == 429) else "fetch_error"
-        else:
-            for a in (r.json().get("articles", []) or []):
-                sd = a.get("seendate", "")
-                try:
-                    iso = datetime.strptime(sd, "%Y%m%dT%H%M%SZ").replace(
-                        tzinfo=timezone.utc).isoformat()
-                except (ValueError, TypeError):
-                    iso = sd
-                articles.append({"title": a.get("title", ""), "url": a.get("url", ""),
-                                 "domain": a.get("domain", ""), "seendate": iso})
-            if not articles:
-                reason = "no_headlines"
+        articles, reason = _gc.get_articles(
+            params, timeout=30, cache_path=cache, cache_ttl_s=ttl)
+        # gdelt_client returns None on final failure; normalise to [] for this caller
+        if articles is None:
+            return [], reason
+        # Normalise reason: gdelt_client uses 'no_articles'; callers expect 'no_headlines'
+        if reason == "no_articles":
+            reason = "no_headlines"
+        return articles, reason
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("news_vector gdelt fetch failed (%s)", e)
-        reason = "fetch_error"
-    # Only cache SUCCESSFUL responses (articles present).  A failed/empty response
-    # (rate_limited, fetch_error, no_headlines) must NOT be cached — caching it would
-    # suppress retries for the full 12-hour TTL and silently stall the accrual store.
-    if articles:
-        try:
-            cache.write_text(json.dumps({"articles": articles, "degraded_reason": reason}))
-        except Exception:  # noqa: BLE001
-            pass
-    return articles, reason
+        return [], "fetch_error"
 
 
 def _allowlist(cfg: dict) -> list[str]:
