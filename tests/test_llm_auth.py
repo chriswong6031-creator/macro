@@ -294,9 +294,15 @@ def test_build_providers_skips_oauth_with_non_ascii_token(caplog, monkeypatch):
 
 
 def test_build_providers_sanitizes_newline_in_token_and_builds_provider(monkeypatch):
-    """build_providers strips a newline from a token and still builds the provider."""
-    import anthropic
-    from unittest.mock import patch, MagicMock
+    """build_providers strips a newline from a token and still builds the provider.
+
+    Uses the fake anthropic module so the test runs in CI where the real SDK
+    is not installed (this test was local-only red-risk before CI wiring).
+    """
+    import sys
+    from unittest.mock import patch
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
 
     cfg = {
         "provider_order": ["oauth"],
@@ -307,24 +313,25 @@ def test_build_providers_sanitizes_newline_in_token_and_builds_provider(monkeypa
     good_token = "claude-oauth-validtoken123"
     token_with_newline = "claude-oauth-valid\ntoken123"
 
-    mock_client = MagicMock(spec=anthropic.Anthropic)
-
     with patch("lib.config.secret", return_value=token_with_newline):
-        with patch("anthropic.Anthropic", return_value=mock_client) as mock_cls:
-            from engine import llm_auth
-            result = llm_auth.build_providers(cfg)
+        from engine import llm_auth
+        result = llm_auth.build_providers(cfg)
 
     assert len(result) == 1, f"Expected 1 provider, got {result}"
     provider = result[0]
     # The credential stored must be the sanitized (newline-free) version
     assert provider["cred"] == good_token
     assert provider["name"] == "oauth"
+    # The client must have been constructed with the SANITIZED token
+    assert provider["client"].kwargs.get("auth_token") == good_token
 
 
 def test_build_providers_clean_token_unchanged(monkeypatch):
     """A clean token passes through build_providers without modification."""
-    import anthropic
-    from unittest.mock import patch, MagicMock
+    import sys
+    from unittest.mock import patch
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
 
     cfg = {
         "provider_order": ["anthropic"],
@@ -333,12 +340,10 @@ def test_build_providers_clean_token_unchanged(monkeypatch):
     }
 
     clean_token = "sk-ant-valid-abcdefghij0123456789"
-    mock_client = MagicMock(spec=anthropic.Anthropic)
 
     with patch("lib.config.secret", return_value=clean_token):
-        with patch("anthropic.Anthropic", return_value=mock_client):
-            from engine import llm_auth
-            result = llm_auth.build_providers(cfg)
+        from engine import llm_auth
+        result = llm_auth.build_providers(cfg)
 
     assert len(result) == 1
     assert result[0]["cred"] == clean_token
