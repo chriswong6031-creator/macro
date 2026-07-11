@@ -42,11 +42,21 @@ _REFERER = (
     "?code=cninfo-tips-announcement"
 )
 _ENDPOINT = "http://www.cninfo.com.cn/new/hisAnnouncement/query"
-_PAGE_SIZE = 30
+_PAGE_SIZE = 30              # server-side clamp: pageSize>30 still returns 30 (verified 2026-07-11)
 _NIGHTLY_LOOKBACK_DAYS = 3   # idempotent re-pull: previous 3 calendar days
 _INITIAL_LOOKBACK_DAYS = 7   # first-run bootstrap: last 7 days
 _PACE_S = 1.5
 _JITTER_S = 0.4              # ± uniform jitter on top of _PACE_S
+# (connect, read) timeout. CNInfo's gateway failure mode is a SLOW 504: on
+# 2026-07-10 (run 29089281652) one szse request trickled for ~4.4 min before the
+# 504 landed, burning ~5 min of the asia lane on a day the endpoint was dead.
+# A 15s read timeout kills a trickling gateway error fast; healthy pages return
+# a ~100KB JSON body in ~1-2s and are unaffected.
+_TIMEOUT = (10, 15)
+# Wall-clock budget per exchange. Healthy volume today is ~90-170 pages ≈ 3-7 min
+# at pace; the budget only truncates pathological days. Partial pages are KEPT
+# (keep-FIRST dedup + the 3-day lookback re-pull make truncation self-healing).
+_EXCHANGE_BUDGET_S = 480
 
 _EXCHANGES = ("sse", "szse")
 
@@ -236,7 +246,7 @@ def _fetch_page(
         _ENDPOINT,
         data=data,
         headers=_headers(),
-        timeout=30,
+        timeout=_TIMEOUT,
     )
     if r.status_code in (429, 500, 502, 503, 504):
         raise IOError(f"HTTP {r.status_code} from CNInfo exchange={exchange}")
@@ -308,6 +318,7 @@ class ChinaFilingsAdapter(Adapter):
         """
         rows: list[dict] = []
         page_num = 1
+        t0 = time.monotonic()
         while True:
             payload = _fetch_page(exchange, date_range, page_num, session)
             anns = payload.get("announcements") or []
@@ -321,6 +332,16 @@ class ChinaFilingsAdapter(Adapter):
             # CNInfo quirk), so `or not has_more` would silently truncate a
             # multi-page day to only the first 30 rows.
             if page_num >= total_pages:
+                break
+            # Wall-clock budget: keep partial rows instead of raising — newest-first
+            # ordering means the truncated tail is the OLDEST slice of the window,
+            # which tomorrow's 3-day re-pull covers (keep-FIRST dedup).
+            if time.monotonic() - t0 > _EXCHANGE_BUDGET_S:
+                log.warning(
+                    "china_filings: exchange=%s hit %ds budget at page %d/%d — "
+                    "keeping %d partial rows (3-day re-pull heals the tail)",
+                    exchange, _EXCHANGE_BUDGET_S, page_num, total_pages, len(rows),
+                )
                 break
             page_num += 1
             _pace()

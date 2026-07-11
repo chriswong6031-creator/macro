@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent))
 
 from collectors.base import run_adapter, update_breaker  # noqa: E402
-from lib import store  # noqa: E402
+from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("collect")
@@ -61,6 +61,14 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "federal_register": "federalregister",  # federalregister.gov — distinct host, runs in parallel
     "cleveland_nowcast": "clevelandfed",    # clevelandfed.org — distinct host, runs in parallel (MRI-PR-A)
     "kalshi_releases": "kalshi",           # api.elections.kalshi.com — keyless, distinct host (MRI PR-K)
+    # Asia-lane pure-REST movers (2026-07-11 runtime diet; #2193 timeout incident).
+    # Verified requests-only (no akshare/yfinance), each writes its own store; the two
+    # CBBC adapters share the HKEX host so they stay serial within one group. Moving
+    # them here takes ~14-19 min off the asia shard's serial phase (china_filings alone
+    # is ~6.5 min healthy / ~5 min burning CNInfo 504s).
+    "china_filings": "cninfo",             # www.cninfo.com.cn hisAnnouncement pagination
+    "hk_gdelt": "gdelt",                   # api.gdeltproject.org (rate-limit waits off the serial path)
+    "hk_cbbc": "hkex", "hk_cbbc_sld": "hkex",  # www1.hkexnews.hk / www.hkex.com.hk SLD
 }
 
 
@@ -441,6 +449,25 @@ def main() -> int:
     log.info("collect scope: %d adapters%s", len(registry),
              f" (group={args.group or '-'} exclude={args.exclude_group or '-'} only={args.only or '-'})")
 
+    # US-scope post-collect tail gate (2026-07-11 asia-lane runtime diet; #2193 timeout
+    # incident). The basket/index-universe refreshes, Finviz classifications, Polygon
+    # accruals, importance-v0 shadow tapes, and US-macro one-shots below belong to the
+    # lanes that own US data: the full run (no shard flags) and the nightly
+    # `--exclude-group asia` shard (daily.yml sets COLLECT_LANE=nightly). Regional /
+    # cadence shards (asia-close `--group asia`, intl_etf `--only intl_etf`, targeted
+    # backfills) skip them wholesale — measured on run 29089281652, they burned ~22 min
+    # of the asia shard's 68-min collect on US work (shadow_importance v0+PIT 13m,
+    # basket extras/Finviz/OHLCV ~7m, redfin 2m). The nightly lane re-scores the full
+    # qbus store (both US and CN lanes) every night, so nothing is lost — CN shadow
+    # claims register a few hours later with unchanged item-asof timestamps.
+    us_scope = (os.environ.get("COLLECT_LANE") == "nightly"
+                or not (args.group or args.only))
+    if not us_scope:
+        log.info("[us_scope] regional/cadence shard (group=%s only=%s lane=%s) — "
+                 "US post-collect tail steps will be skipped",
+                 args.group or "-", args.only or "-",
+                 os.environ.get("COLLECT_LANE") or "-")
+
     results = []
     timings: dict[str, float] = {}
 
@@ -550,94 +577,101 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.debug("FRED per-series PIT lag record skipped: %s", e)
 
-    # SEC company_tickers.json — monthly refresh (30-day mtime gate, same idiom as FRED
-    # vintages). engine/name_resolver reads this at query time; without it, coverage falls
-    # from ~10,528 to ~4,101 names, degrading silently on every entity-resolution call.
-    # Emit a coverage line so degradation is auditable in the collect log. Additive, never fatal.
-    try:
-        from collectors.edgar import fetch_company_tickers as _fetch_ct
-        from lib import config as _cfg_mod
-        import json as _ct_json
-        _ct_path = _cfg_mod.data_dir() / "edgar" / "company_tickers.json"
-        _ct_stale = (not _ct_path.exists() or
-                     (time.time() - _ct_path.stat().st_mtime) / 86400.0 >= 30)
-        if _ct_stale or args.full_history:
-            log.info("=== refreshing SEC company_tickers.json (monthly) ===")
-            ok = _fetch_ct(max_age_days=30, force=args.full_history)
-            if ok and _ct_path.exists():
-                _n_sec = len(_ct_json.loads(_ct_path.read_text()))
-                log.info("name_resolver coverage: %d SEC filers (company_tickers.json)", _n_sec)
-            else:
-                log.warning("name_resolver coverage: company_tickers.json fetch failed; "
-                            "coverage floor ~4,101 names (SEC file absent)")
-        else:
-            if _ct_path.exists():
-                _n_sec = len(_ct_json.loads(_ct_path.read_text()))
-            else:
-                _n_sec = 0
-            log.info("name_resolver coverage: %d SEC filers (company_tickers.json fresh, skip fetch)",
-                     _n_sec)
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("company_tickers step failed: %s", e)
-
-    # Point-in-time index-membership ledger (go-forward survivorship fix): record
-    # who is in the S&P 1500 each run so the universe history compounds. Cheap,
-    # additive, never fatal. See engine/universe_history.py.
-    try:
-        from engine.universe_history import update_membership
-        update_membership(datetime.now(timezone.utc))
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("universe membership step failed: %s", e)
-
-    # Baskets-only DEEP close store: off-index names (recent IPOs + crypto/nuclear) PLUS a deep
-    # (~3y) tape for the large-caps the breadth cache only holds shallowly (~15m rolling window),
-    # all derived from membership.json. A separate store engine.baskets prefers — the breadth/factor
-    # universe stays pure. Batched + merged onto prior, additive, never fatal. See
-    # scripts/fetch_basket_extras.py.
-    try:
-        from scripts.fetch_basket_extras import main as fetch_basket_extras
-        log.info("=== refreshing thematic-basket extras ===")
-        fetch_basket_extras()
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("basket extras step failed: %s", e)
-
-    # Nasdaq-100 / Russell-2000 subsector universes: refresh the Finviz industry classification
-    # (the sub-industry → subsector partition), then re-author the curated memberships. The desk +
-    # cycle families render off data/baskets_<ns>/membership.json. Additive, never fatal.
-    for idx in ("ndx", "rut"):
+    # ---- US-scope mid-tail (us_scope gate — see definition above) --------------------
+    # SEC company_tickers.json, S&P-1500 membership ledger, basket extras/OHLCV, Finviz
+    # subsector classifications and membership re-author. ~7 min of US-only work that
+    # regional shards must not pay for.
+    if us_scope:
+        # SEC company_tickers.json — monthly refresh (30-day mtime gate, same idiom as FRED
+        # vintages). engine/name_resolver reads this at query time; without it, coverage falls
+        # from ~10,528 to ~4,101 names, degrading silently on every entity-resolution call.
+        # Emit a coverage line so degradation is auditable in the collect log. Additive, never fatal.
         try:
-            from scripts.fetch_finviz_screener import fetch as _fv_fetch, INDEX_FILTER, OUT_DIR
-            import json as _json
-            flt = INDEX_FILTER[idx]
-            log.info("=== refreshing Finviz %s classification ===", flt)
-            payload = _fv_fetch(flt)
-            out = config.data_dir() / OUT_DIR / f"{flt}.json"
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_text(_json.dumps(payload, indent=0, separators=(",", ":")))
+            from collectors.edgar import fetch_company_tickers as _fetch_ct
+            import json as _ct_json
+            _ct_path = config.data_dir() / "edgar" / "company_tickers.json"
+            _ct_stale = (not _ct_path.exists() or
+                         (time.time() - _ct_path.stat().st_mtime) / 86400.0 >= 30)
+            if _ct_stale or args.full_history:
+                log.info("=== refreshing SEC company_tickers.json (monthly) ===")
+                ok = _fetch_ct(max_age_days=30, force=args.full_history)
+                if ok and _ct_path.exists():
+                    _n_sec = len(_ct_json.loads(_ct_path.read_text()))
+                    log.info("name_resolver coverage: %d SEC filers (company_tickers.json)", _n_sec)
+                else:
+                    log.warning("name_resolver coverage: company_tickers.json fetch failed; "
+                                "coverage floor ~4,101 names (SEC file absent)")
+            else:
+                if _ct_path.exists():
+                    _n_sec = len(_ct_json.loads(_ct_path.read_text()))
+                else:
+                    _n_sec = 0
+                log.info("name_resolver coverage: %d SEC filers (company_tickers.json fresh, skip fetch)",
+                         _n_sec)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.warning("finviz %s classification step failed: %s", idx, e)
+            log.warning("company_tickers step failed: %s", e)
 
-    # Baskets-only DEEP OHLCV store (data/baskets/ohlcv/<T>.parquet): full open/high/low/
-    # close/VOLUME per member, the candle the consolidated-index engines (basket_index ->
-    # basket_mtf + basket_tape) render whale accumulation / Chaikin money-flow / vol-hole on.
-    # The close-only extras store above can't feed volume. Also pulls the Nasdaq/Russell subsector
-    # universes (idx_rut covers the small-caps the breadth cache only holds shallowly). Separate
-    # per-ticker store, merged onto prior, additive, never fatal. See scripts/fetch_basket_ohlcv.py.
-    try:
-        from scripts.fetch_basket_ohlcv import main as fetch_basket_ohlcv
-        log.info("=== refreshing thematic-basket + index-subsector OHLCV (volume) ===")
-        fetch_basket_ohlcv(["--finviz", "idx_ndx,idx_rut"])
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("basket OHLCV step failed: %s", e)
+        # Point-in-time index-membership ledger (go-forward survivorship fix): record
+        # who is in the S&P 1500 each run so the universe history compounds. Cheap,
+        # additive, never fatal. See engine/universe_history.py.
+        try:
+            from engine.universe_history import update_membership
+            update_membership(datetime.now(timezone.utc))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("universe membership step failed: %s", e)
 
-    # Re-author the Nasdaq/Russell subsector + amalgamation memberships from the fresh Finviz
-    # classification + the refreshed OHLCV (the correlation-validated bulk-outs need prices).
-    try:
-        from scripts.build_subsector_membership import main as build_subsector_membership
-        log.info("=== rebuilding Nasdaq/Russell subsector memberships ===")
-        build_subsector_membership([])
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("subsector membership step failed: %s", e)
+        # Baskets-only DEEP close store: off-index names (recent IPOs + crypto/nuclear) PLUS a deep
+        # (~3y) tape for the large-caps the breadth cache only holds shallowly (~15m rolling window),
+        # all derived from membership.json. A separate store engine.baskets prefers — the breadth/factor
+        # universe stays pure. Batched + merged onto prior, additive, never fatal. See
+        # scripts/fetch_basket_extras.py.
+        try:
+            from scripts.fetch_basket_extras import main as fetch_basket_extras
+            log.info("=== refreshing thematic-basket extras ===")
+            fetch_basket_extras()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("basket extras step failed: %s", e)
+
+        # Nasdaq-100 / Russell-2000 subsector universes: refresh the Finviz industry classification
+        # (the sub-industry → subsector partition), then re-author the curated memberships. The desk +
+        # cycle families render off data/baskets_<ns>/membership.json. Additive, never fatal.
+        for idx in ("ndx", "rut"):
+            try:
+                from scripts.fetch_finviz_screener import fetch as _fv_fetch, INDEX_FILTER, OUT_DIR
+                import json as _json
+                flt = INDEX_FILTER[idx]
+                log.info("=== refreshing Finviz %s classification ===", flt)
+                payload = _fv_fetch(flt)
+                out = config.data_dir() / OUT_DIR / f"{flt}.json"
+                out.parent.mkdir(parents=True, exist_ok=True)
+                out.write_text(_json.dumps(payload, indent=0, separators=(",", ":")))
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.warning("finviz %s classification step failed: %s", idx, e)
+
+        # Baskets-only DEEP OHLCV store (data/baskets/ohlcv/<T>.parquet): full open/high/low/
+        # close/VOLUME per member, the candle the consolidated-index engines (basket_index ->
+        # basket_mtf + basket_tape) render whale accumulation / Chaikin money-flow / vol-hole on.
+        # The close-only extras store above can't feed volume. Also pulls the Nasdaq/Russell subsector
+        # universes (idx_rut covers the small-caps the breadth cache only holds shallowly). Separate
+        # per-ticker store, merged onto prior, additive, never fatal. See scripts/fetch_basket_ohlcv.py.
+        try:
+            from scripts.fetch_basket_ohlcv import main as fetch_basket_ohlcv
+            log.info("=== refreshing thematic-basket + index-subsector OHLCV (volume) ===")
+            fetch_basket_ohlcv(["--finviz", "idx_ndx,idx_rut"])
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("basket OHLCV step failed: %s", e)
+
+        # Re-author the Nasdaq/Russell subsector + amalgamation memberships from the fresh Finviz
+        # classification + the refreshed OHLCV (the correlation-validated bulk-outs need prices).
+        try:
+            from scripts.build_subsector_membership import main as build_subsector_membership
+            log.info("=== rebuilding Nasdaq/Russell subsector memberships ===")
+            build_subsector_membership([])
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("subsector membership step failed: %s", e)
+    else:
+        log.info("[us_scope] skipped SEC tickers / membership ledger / basket extras+OHLCV / "
+                 "Finviz+subsector refresh (US-scope; nightly owns these)")
 
     # Polygon options-OI accrual: snapshot the GEX universe's chains and store the RAW
     # per-strike open interest the Cboe path throws away (the one thing that can't be
@@ -647,34 +681,37 @@ def main() -> int:
     # circuit-breaker-visible (the accrual ran before store.write_status previously,
     # so any failure was invisible in run_status.json).
     _polygon_gex_status: dict = {"status": "not_run"}
-    try:
-        from scripts.build_polygon_gex import accrue as accrue_polygon_gex
-        log.info("=== accruing Polygon options OI (GEX foundation) ===")
-        _polygon_gex_status = accrue_polygon_gex(datetime.now(timezone.utc))
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        _polygon_gex_status = {"status": "failed", "error": str(e)}
-        log.warning("Polygon GEX accrual step failed: %s", e)
+    if us_scope:
+        try:
+            from scripts.build_polygon_gex import accrue as accrue_polygon_gex
+            log.info("=== accruing Polygon options OI (GEX foundation) ===")
+            _polygon_gex_status = accrue_polygon_gex(datetime.now(timezone.utc))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            _polygon_gex_status = {"status": "failed", "error": str(e)}
+            log.warning("Polygon GEX accrual step failed: %s", e)
 
     # Polygon intraday (hourly) US bars -> data/intraday/<T>.parquet, powering the 4H
     # timeframe on US single-stock charts. No-op without the key. Additive, never fatal.
-    try:
-        from scripts.build_polygon_intraday import accrue as accrue_polygon_intraday
-        log.info("=== accruing Polygon intraday (4H chart data) ===")
-        accrue_polygon_intraday(datetime.now(timezone.utc))
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("Polygon intraday accrual step failed: %s", e)
+    if us_scope:
+        try:
+            from scripts.build_polygon_intraday import accrue as accrue_polygon_intraday
+            log.info("=== accruing Polygon intraday (4H chart data) ===")
+            accrue_polygon_intraday(datetime.now(timezone.utc))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("Polygon intraday accrual step failed: %s", e)
 
     # W0.4: options-flow accrual status — build_options_flow runs in the render job
     # (daily.yml render step, not here), but we record whether the S3 creds that power
     # it are present so daily collect can surface the "creds absent" state as a
     # circuit-breaker warning rather than a silent no-op.
     _options_flow_status: dict = {"status": "not_run"}
-    try:
-        from collectors import massive_flatfiles as _mf
-        _options_flow_status = ({"status": "creds_present"}
-                                if _mf.enabled() else {"status": "no_creds"})
-    except Exception as e:  # noqa: BLE001
-        _options_flow_status = {"status": "check_failed", "error": str(e)}
+    if us_scope:
+        try:
+            from collectors import massive_flatfiles as _mf
+            _options_flow_status = ({"status": "creds_present"}
+                                    if _mf.enabled() else {"status": "no_creds"})
+        except Exception as e:  # noqa: BLE001
+            _options_flow_status = {"status": "check_failed", "error": str(e)}
 
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
@@ -685,10 +722,13 @@ def main() -> int:
                              "checked_at": datetime.now(timezone.utc).isoformat()}
     # W0.4: register additive accrual steps so their health is circuit-breaker-visible.
     # These run outside the FetchResult loop above (they are not Adapter subclasses), so
-    # they would otherwise be invisible in run_status.json.
-    _now = datetime.now(timezone.utc).isoformat()
-    sources["polygon_gex_accrual"] = {**_polygon_gex_status, "checked_at": _now}
-    sources["options_flow_creds"] = {**_options_flow_status, "checked_at": _now}
+    # they would otherwise be invisible in run_status.json. On non-us_scope shards the
+    # steps were skipped — leave the nightly's real status untouched instead of
+    # clobbering it with "not_run".
+    if us_scope:
+        _now = datetime.now(timezone.utc).isoformat()
+        sources["polygon_gex_accrual"] = {**_polygon_gex_status, "checked_at": _now}
+        sources["options_flow_creds"] = {**_options_flow_status, "checked_at": _now}
     status["sources"] = sources
     status["circuit_breaker"], status["circuit_breaker_probe"] = update_breaker(
         results, status.get("circuit_breaker_probe"))
@@ -725,20 +765,29 @@ def main() -> int:
     # importance_v0 SHADOW lane (W3) — score the qbus store + register the
     # novelty-first challenger's HIGH/LOW band claims BEFORE the grader so the
     # same-night grade pass picks them up. Shadow-only; never rendered. Non-fatal.
-    try:
-        from scripts.shadow_importance_v0 import run_as_collect_step as _shadow_impv0
-        _shadow_impv0()
-    except Exception as e:  # noqa: BLE001 — a shadow-lane crash must not abort the run
-        log.error("[shadow_importance_v0] step crashed (non-fatal): %s", e)
+    # us_scope-gated (asia-lane diet): both passes score the FULL US+CN store
+    # (~13 min combined measured on run 29089281652) and the nightly lane re-runs
+    # them over the same committed store a few hours later with identical
+    # item-asof timestamps and idempotent claim ids — the asia shard was paying
+    # 13 min for work the nightly redoes anyway.
+    if us_scope:
+        try:
+            from scripts.shadow_importance_v0 import run_as_collect_step as _shadow_impv0
+            _shadow_impv0()
+        except Exception as e:  # noqa: BLE001 — a shadow-lane crash must not abort the run
+            log.error("[shadow_importance_v0] step crashed (non-fatal): %s", e)
 
-    # importance_v0 PIT-correct tape (W4) — the _pit families are the PRIMARY
-    # leak-free tape on the duel scoreboard (report_importance_duel), so they must
-    # accrue nightly alongside the W3 tape, not freeze at the one-shot backfill.
-    try:
-        from scripts.shadow_importance_v0_pit import run_as_collect_step as _shadow_impv0_pit
-        _shadow_impv0_pit()
-    except Exception as e:  # noqa: BLE001 — a shadow-lane crash must not abort the run
-        log.error("[shadow_importance_v0_pit] step crashed (non-fatal): %s", e)
+        # importance_v0 PIT-correct tape (W4) — the _pit families are the PRIMARY
+        # leak-free tape on the duel scoreboard (report_importance_duel), so they must
+        # accrue nightly alongside the W3 tape, not freeze at the one-shot backfill.
+        try:
+            from scripts.shadow_importance_v0_pit import run_as_collect_step as _shadow_impv0_pit
+            _shadow_impv0_pit()
+        except Exception as e:  # noqa: BLE001 — a shadow-lane crash must not abort the run
+            log.error("[shadow_importance_v0_pit] step crashed (non-fatal): %s", e)
+    else:
+        log.info("[us_scope] skipped shadow_importance_v0 + _pit (nightly re-scores the "
+                 "full qbus store with identical asof/claim ids)")
 
     # news_vector daily ingest — GDELT narrative-scope accrual (keep-FIRST, additive).
     # The freshness check always runs so a stale store is never quiet. Retry-next-collect:
@@ -880,58 +929,63 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
         log.error("[operator_exposure] build step crashed (non-fatal): %s", e)
 
-    # SEC Fails-to-Deliver (SLF-001) — incremental daily append.
-    # Fetches semi-monthly FTD files whose availability_date has passed since the
-    # last panel date (uniform 30-day PIT lag enforced in the collector).
-    # Store: data/sec_ftd/panel.parquet. Additive, never fatal.
-    try:
-        from collectors.sec_ftd import incremental as _sec_ftd_incremental
-        _ftd_result = _sec_ftd_incremental()
-        log.info("sec_ftd incremental: fetched=%d skipped=%d errors=%d",
-                 _ftd_result.get("fetched", 0), _ftd_result.get("skipped", 0),
-                 _ftd_result.get("errors", 0))
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("sec_ftd incremental step failed: %s", e)
-
-    # NY Fed Primary Dealer Statistics (SLF-055) — Thursday weekly refresh.
-    # Published Thursdays ~16:15 ET for prior Wednesday; gated to Thursdays to
-    # avoid redundant fetches on other days. Store: data/nyfed_pd/pd_weekly.parquet.
-    # Additive, never fatal.
-    if datetime.now(timezone.utc).isoweekday() == 4:  # Thursday
+    # ---- US-scope one-shot collectors (us_scope gate — see definition above) ---------
+    if us_scope:
+        # SEC Fails-to-Deliver (SLF-001) — incremental daily append.
+        # Fetches semi-monthly FTD files whose availability_date has passed since the
+        # last panel date (uniform 30-day PIT lag enforced in the collector).
+        # Store: data/sec_ftd/panel.parquet. Additive, never fatal.
         try:
-            from collectors.nyfed_primary_dealer import run as _run_pd
-            _run_pd(config.data_dir() / "nyfed_pd")
-            log.info("nyfed_pd: Thursday refresh complete")
+            from collectors.sec_ftd import incremental as _sec_ftd_incremental
+            _ftd_result = _sec_ftd_incremental()
+            log.info("sec_ftd incremental: fetched=%d skipped=%d errors=%d",
+                     _ftd_result.get("fetched", 0), _ftd_result.get("skipped", 0),
+                     _ftd_result.get("errors", 0))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.warning("nyfed_pd step failed: %s", e)
+            log.warning("sec_ftd incremental step failed: %s", e)
 
-    # ---- Day-3 SLF consolidation standalone collectors (2026-07-07) ----
+        # NY Fed Primary Dealer Statistics (SLF-055) — Thursday weekly refresh.
+        # Published Thursdays ~16:15 ET for prior Wednesday; gated to Thursdays to
+        # avoid redundant fetches on other days. Store: data/nyfed_pd/pd_weekly.parquet.
+        # Additive, never fatal.
+        if datetime.now(timezone.utc).isoweekday() == 4:  # Thursday
+            try:
+                from collectors.nyfed_primary_dealer import run as _run_pd
+                _run_pd(config.data_dir() / "nyfed_pd")
+                log.info("nyfed_pd: Thursday refresh complete")
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.warning("nyfed_pd step failed: %s", e)
 
-    # w2104_cmdi_conditioning (SLF-A4): NY Fed CMDI weekly -> data/nyfed_cmdi/
-    # Idempotent; fetches the interactive-data Excel; parses Market/IG/HY sub-indices.
-    # Recommended: weekly (Friday after NY Fed update). Standalone function, not Adapter.
-    try:
-        from scripts.collect_nyfed_cmdi import collect_nyfed_cmdi as _collect_cmdi
-        _collect_cmdi()
-        log.info("nyfed_cmdi: refresh complete")
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("nyfed_cmdi step failed: %s", e)
+        # ---- Day-3 SLF consolidation standalone collectors (2026-07-07) ----
 
-    # w2051_housing_hf (SLF-A7): Redfin high-frequency national + metro housing data
-    # -> data/redfin_hf/; ZORI (Zillow observed rent index) -> data/zori/
-    # Standalone scripts; idempotent; degrade gracefully if upstream unavailable.
-    try:
-        from scripts.collect_redfin_hf import run as _collect_redfin_hf
-        _collect_redfin_hf()
-        log.info("redfin_hf: refresh complete")
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("redfin_hf step failed: %s", e)
-    try:
-        from scripts.collect_zori import run as _collect_zori
-        _collect_zori()
-        log.info("zori: refresh complete")
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("zori step failed: %s", e)
+        # w2104_cmdi_conditioning (SLF-A4): NY Fed CMDI weekly -> data/nyfed_cmdi/
+        # Idempotent; fetches the interactive-data Excel; parses Market/IG/HY sub-indices.
+        # Recommended: weekly (Friday after NY Fed update). Standalone function, not Adapter.
+        try:
+            from scripts.collect_nyfed_cmdi import collect_nyfed_cmdi as _collect_cmdi
+            _collect_cmdi()
+            log.info("nyfed_cmdi: refresh complete")
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("nyfed_cmdi step failed: %s", e)
+
+        # w2051_housing_hf (SLF-A7): Redfin high-frequency national + metro housing data
+        # -> data/redfin_hf/; ZORI (Zillow observed rent index) -> data/zori/
+        # Standalone scripts; idempotent; degrade gracefully if upstream unavailable.
+        try:
+            from scripts.collect_redfin_hf import run as _collect_redfin_hf
+            _collect_redfin_hf()
+            log.info("redfin_hf: refresh complete")
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("redfin_hf step failed: %s", e)
+        try:
+            from scripts.collect_zori import run as _collect_zori
+            _collect_zori()
+            log.info("zori: refresh complete")
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("zori step failed: %s", e)
+    else:
+        log.info("[us_scope] skipped sec_ftd / nyfed_pd / nyfed_cmdi / redfin_hf / zori "
+                 "(US-scope; nightly owns these)")
 
     # d2_cn_holder_sale_calendar (SLF-B3): Eastmoney 减持 plan execution windows
     # -> data/cn_holder_sales/; china-altdata section; ~10-15 min full backfill, ~1 min incremental.
@@ -944,21 +998,23 @@ def main() -> int:
 
     # ---- Narrative Ignition W2 collectors (2026-07-10) ----
     # Off the render path, guarded, never fatal. Collect lane only.
-    # Substack RSS -> data/narrative/substack_posts.parquet
-    try:
-        from collectors.narrative_sources import SubstackRssAdapter as _SubRss
-        _sub_result = _SubRss().fetch()
-        log.info("narrative/substack_rss: %d total rows", len(_sub_result))
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("narrative/substack_rss step failed: %s", e)
+    # us_scope-gated: US/global narrative planes; the nightly lane owns them.
+    if us_scope:
+        # Substack RSS -> data/narrative/substack_posts.parquet
+        try:
+            from collectors.narrative_sources import SubstackRssAdapter as _SubRss
+            _sub_result = _SubRss().fetch()
+            log.info("narrative/substack_rss: %d total rows", len(_sub_result))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("narrative/substack_rss step failed: %s", e)
 
-    # HN Algolia -> data/narrative/hn_mentions.parquet
-    try:
-        from collectors.narrative_sources import HnAlgoliaAdapter as _HnAlg
-        _hn_result = _HnAlg().fetch()
-        log.info("narrative/hn_algolia: %d total rows", len(_hn_result))
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("narrative/hn_algolia step failed: %s", e)
+        # HN Algolia -> data/narrative/hn_mentions.parquet
+        try:
+            from collectors.narrative_sources import HnAlgoliaAdapter as _HnAlg
+            _hn_result = _HnAlg().fetch()
+            log.info("narrative/hn_algolia: %d total rows", len(_hn_result))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("narrative/hn_algolia step failed: %s", e)
 
     # Edgar 8-K velocity -> data/narrative/edgar_8k_counts.parquet (NIGHTLY-ONLY: heavy SEC load)
     if os.environ.get("COLLECT_LANE") == "nightly":
