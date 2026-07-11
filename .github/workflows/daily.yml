@@ -2447,11 +2447,15 @@ jobs:
           exit 0
       - name: run causal LLM brainstorm (CHF W5 weekly, Tuesday gate, auto_loop gate)
         # Weekly LLM brainstorm step (CHF-R8): runs AFTER build_causal_edges.
-        # Tuesday-gated (date +%u == 2): no-op on other days.
+        # Tuesday-gated (date +%u == 2): the full run happens Tuesdays only.
         # The runner checks auto_loop in config/causal_llm.yml; if false,
         # degrades to pack-only mode (operator-paste workflow; no LLM calls).
         # Identity: CLAUDE_CODE_OAUTH_TOKEN ONLY (operator ruling 2026-07-09,
         # overriding the W-AUTO service-key line for CHF — masterplan §9).
+        # Non-Tuesday nights run --status-only: refresh causal_llm_lane.json
+        # from config truth (no pack, no LLM) so the lane artifact never
+        # misreports the auto_loop state between weekly runs (stale-lane fix
+        # 2026-07-11: the #2061 arming was invisible in the artifact for days).
         # Non-fatal (exits 0 even if LLM chain fails — pack-only degradation is expected).
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -2462,7 +2466,10 @@ jobs:
             cat "$RUNNER_TEMP/causal_brainstorm.log"
             if [ "$rc" -ne 0 ]; then echo "::warning title=run_causal_brainstorm::rc=$rc (non-fatal)"; fi
           else
-            echo "causal LLM brainstorm: skipping (not Tuesday, date +%u=$(date +%u))"
+            echo "causal LLM brainstorm: skipping full run (not Tuesday, date +%u=$(date +%u)); refreshing lane status"
+            python -m scripts.run_causal_brainstorm --status-only > "$RUNNER_TEMP/causal_lane_status.log" 2>&1; rc=$?
+            cat "$RUNNER_TEMP/causal_lane_status.log"
+            if [ "$rc" -ne 0 ]; then echo "::warning title=run_causal_brainstorm_status::rc=$rc (non-fatal)"; fi
           fi
           exit 0
       - name: commit causal outputs (CHF-R11 narrow git-add)

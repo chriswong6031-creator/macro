@@ -2279,10 +2279,23 @@ modules:
         module: scripts.run_causal_brainstorm
         note: >
           CHF W5 — weekly LLM brainstorm runner (CHF-R8/R17). Tuesday-gated
-          (date +%u == 2); no-op on other days. Checks auto_loop in
-          config/causal_llm.yml (false at birth → pack-only degradation for
-          scheduled trigger). Requires ANTHROPIC_API_KEY service-key for
-          scheduled LLM calls (W-AUTO identity law — never CLAUDE_CODE_OAUTH_TOKEN).
+          (date +%u == 2); full run happens Tuesdays only. Checks auto_loop in
+          config/causal_llm.yml (armed true 2026-07-09 by operator ruling,
+          #2061; false → pack-only degradation for scheduled trigger).
+          Scheduled identity: CLAUDE_CODE_OAUTH_TOKEN ONLY (operator ruling
+          2026-07-09, masterplan §9 — ANTHROPIC_API_KEY and deepseek are
+          excluded from the scheduled path; supersedes the original W-AUTO
+          service-key line for CHF).
           Full mode: generator→skeptic→compiler→ingest (ISO-week idempotent,
           ≤3 cards/week). Writes causal_mechanisms.jsonl, causal_brainstorm_runs.jsonl,
           causal_llm_lane.json, governance.jsonl. Non-fatal (exit 0 always).
+      - id: run_causal_brainstorm_status
+        module: scripts.run_causal_brainstorm
+        note: >
+          Nightly lane-status refresh (--status-only; the non-Tuesday else
+          branch of the brainstorm step). Rewrites causal_llm_lane.json from
+          config truth (armed | awaiting_phase_a) without building a pack or
+          calling any LLM; preserves the current ISO week's run outcome
+          (ok / degraded_pack_only). Added 2026-07-11: before this, the lane
+          artifact was written only on Tuesdays, so the #2061 arming was
+          invisible in it for days. Non-fatal (exit 0 always).

@@ -19,6 +19,13 @@ The script never transitions card status; cards land status='inbox' via the inge
 
 Usage:
     python -m scripts.run_causal_brainstorm [--root PATH] [--trigger operator|scheduled] [--dry-run]
+    python -m scripts.run_causal_brainstorm --status-only   # nightly lane-status refresh
+
+--status-only refreshes data/neuralweb/causal_llm_lane.json from config truth
+(no pack build, no LLM calls). The nightly non-Tuesday branch of daily.yml runs
+it so the lane artifact never misreports the auto_loop state between weekly
+runs (before 2026-07-11 the file was only written on Tuesdays, so a config
+flip mid-week showed as "auto_loop disabled" for up to six days).
 
 Outputs (non-fatal on any individual failure):
   /tmp/causal_brainstorm_pack_<isoweek>.txt  — brainstorm pack (always rebuilt fresh)
@@ -263,6 +270,59 @@ def _build_fresh_pack(root: Path, n_cards: int = 3) -> str:
     """
     from scripts.causal_brainstorm_pack import build_pack  # noqa: PLC0415
     return build_pack(n_requested=n_cards)
+
+
+# ---------------------------------------------------------------------------
+# Status-only mode (nightly lane refresh — no pack, no LLM)
+# ---------------------------------------------------------------------------
+
+def _run_status_only(cfg: dict, root: Path) -> int:
+    """Refresh causal_llm_lane.json from config truth. Always returns 0.
+
+    Statuses written:
+      armed            — auto_loop=true, waiting for the next scheduled run
+      awaiting_phase_a — auto_loop=false (pack-only until operator arms)
+
+    A run outcome (ok / degraded_pack_only) whose asof falls in the CURRENT
+    ISO week is preserved while auto_loop is true — the outcome of this week's
+    run is more informative than "armed" until the week rolls over.
+    """
+    auto_loop = bool(cfg.get("auto_loop", False))
+    iso_week = _current_iso_week()
+    lane_path = root / "data" / "neuralweb" / "causal_llm_lane.json"
+
+    existing: dict = {}
+    try:
+        existing = json.loads(lane_path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        existing = {}
+
+    if auto_loop and existing.get("status") in ("ok", "degraded_pack_only"):
+        try:
+            asof = datetime.fromisoformat(str(existing.get("asof")))
+            year, week, _ = asof.isocalendar()
+            if f"{year}-W{week:02d}" == iso_week:
+                print(
+                    f"[run_causal_brainstorm] status-only: keeping this week's run outcome "
+                    f"(status={existing['status']!r}, asof={existing.get('asof')})"
+                )
+                return 0
+        except Exception:  # noqa: BLE001
+            pass  # unparseable asof → stale; fall through to rewrite
+
+    if auto_loop:
+        status = "armed"
+        reason = (
+            "auto_loop armed (operator ruling 2026-07-09); "
+            "scheduled OAuth LLM run fires on the Tuesday nightly"
+        )
+    else:
+        status = "awaiting_phase_a"
+        reason = "auto_loop disabled — pack-only mode"
+
+    _write_lane_status(status, reason, root=root)
+    print(f"[run_causal_brainstorm] status-only: lane refreshed → {status} (iso_week={iso_week})")
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -685,6 +745,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="Trigger mode (default: operator)")
     ap.add_argument("--dry-run", action="store_true", default=False,
                     help="Dry-run: build pack + run LLM chain but do not write cards to disk")
+    ap.add_argument("--status-only", action="store_true", default=False,
+                    help="Refresh causal_llm_lane.json from config truth (no pack, no LLM) and exit")
     args = ap.parse_args(argv)
 
     root = Path(args.root) if args.root else ROOT
@@ -692,10 +754,14 @@ def main(argv: list[str] | None = None) -> int:
     dry_run = args.dry_run
     iso_week = _current_iso_week()
 
-    print(f"[run_causal_brainstorm] trigger={trigger}, iso_week={iso_week}, dry_run={dry_run}")
-
     # Load config
     cfg = _load_config()
+
+    # ---- STATUS-ONLY: nightly lane refresh, then exit ----
+    if args.status_only:
+        return _run_status_only(cfg, root)
+
+    print(f"[run_causal_brainstorm] trigger={trigger}, iso_week={iso_week}, dry_run={dry_run}")
 
     # ---- GATE 1: scheduled + auto_loop disabled → pack-only ----
     if trigger == "scheduled":
@@ -716,12 +782,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # ---- GATE 3: auth availability check ----
     if trigger == "scheduled":
-        # Scheduled MUST use service-key (ANTHROPIC_API_KEY)
+        # Scheduled is OAuth-ONLY (operator ruling 2026-07-09, masterplan §9):
+        # CLAUDE_CODE_OAUTH_TOKEN is the scheduled identity; ANTHROPIC_API_KEY
+        # and deepseek are excluded from this path.
         providers = _build_scheduled_providers(cfg)
         if not providers:
             return _run_pack_only_mode(
                 cfg,
-                reason="scheduled trigger requires ANTHROPIC_API_KEY service-key — not available; pack-only mode",
+                reason="scheduled trigger requires CLAUDE_CODE_OAUTH_TOKEN (OAuth identity) — not available; pack-only mode",
                 iso_week=iso_week,
                 root=root,
             )

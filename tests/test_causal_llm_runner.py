@@ -228,6 +228,12 @@ class TestGatingMatrix(unittest.TestCase):
         self.assertFalse(full_called, "full mode must not be reached without scheduled-path oauth")
         self.assertEqual(rc, 0)
         self.assertEqual(lane_status, "degraded_pack_only")
+        # The degraded reason must name the ACTUAL scheduled identity
+        # (CLAUDE_CODE_OAUTH_TOKEN, operator ruling 2026-07-09) — the original
+        # message pointed ops at ANTHROPIC_API_KEY, the excluded provider.
+        reason_arg = self.mock_lane_write.call_args[0][1]
+        self.assertIn("CLAUDE_CODE_OAUTH_TOKEN", reason_arg)
+        self.assertNotIn("ANTHROPIC_API_KEY", reason_arg)
 
     def test_operator_no_auth_pack_only(self):
         """operator + no auth available → pack-only."""
@@ -336,6 +342,127 @@ class TestISOWeekSkip(unittest.TestCase):
         # lane status should reflect the idempotent skip
         status_arg = mock_lane.call_args[0][0]
         self.assertEqual(status_arg, "ok")
+
+
+# ---------------------------------------------------------------------------
+# 2b. Status-only lane refresh (nightly; stale-lane fix 2026-07-11)
+# ---------------------------------------------------------------------------
+
+class TestStatusOnly(unittest.TestCase):
+    """--status-only refreshes causal_llm_lane.json from config truth
+    without building a pack or touching any LLM provider."""
+
+    def _lane_path(self, root: Path) -> Path:
+        return root / "data" / "neuralweb" / "causal_llm_lane.json"
+
+    def _run_status_only(self, cfg: dict, root: Path) -> tuple[int, list[str]]:
+        import io
+        from contextlib import redirect_stdout
+
+        with patch("scripts.run_causal_brainstorm._load_config", return_value=cfg), \
+             patch("scripts.causal_brainstorm_pack.build_pack") as mock_pack, \
+             patch("scripts.run_causal_brainstorm._run_full_mode") as mock_full:
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                import scripts.run_causal_brainstorm as runner
+                rc = runner.main(["--status-only", "--root", str(root)])
+        self.assertFalse(mock_pack.called, "status-only must never build a pack")
+        self.assertFalse(mock_full.called, "status-only must never enter full mode")
+        return rc, buf.getvalue().splitlines()
+
+    def test_armed_when_auto_loop_true(self):
+        """auto_loop=true + no existing lane file → status 'armed'."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rc, _ = self._run_status_only({"auto_loop": True}, root)
+            doc = json.loads(self._lane_path(root).read_text())
+        self.assertEqual(rc, 0)
+        self.assertEqual(doc["status"], "armed")
+        self.assertIn("auto_loop armed", doc["reason"])
+
+    def test_awaiting_phase_a_when_auto_loop_false(self):
+        """auto_loop=false → status 'awaiting_phase_a' (same wording as the gate path)."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rc, _ = self._run_status_only({"auto_loop": False}, root)
+            doc = json.loads(self._lane_path(root).read_text())
+        self.assertEqual(rc, 0)
+        self.assertEqual(doc["status"], "awaiting_phase_a")
+        self.assertIn("auto_loop disabled", doc["reason"])
+
+    def test_overwrites_stale_disabled_status_when_armed(self):
+        """The 2026-07-09 pre-flip artifact (awaiting_phase_a) is replaced by 'armed'."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            lane = self._lane_path(root)
+            lane.parent.mkdir(parents=True)
+            lane.write_text(json.dumps({
+                "status": "awaiting_phase_a",
+                "asof": "2026-07-09T19:44:10+00:00",
+                "reason": "auto_loop disabled — pack-only mode",
+            }))
+            self._run_status_only({"auto_loop": True}, root)
+            doc = json.loads(lane.read_text())
+        self.assertEqual(doc["status"], "armed")
+
+    def test_preserves_this_week_run_outcome(self):
+        """A run outcome (ok) with asof in the CURRENT ISO week is kept while armed."""
+        import tempfile
+        from datetime import datetime, timezone
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            lane = self._lane_path(root)
+            lane.parent.mkdir(parents=True)
+            asof = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            original = {
+                "status": "ok",
+                "asof": asof,
+                "reason": "full run completed; 3 card(s) processed",
+            }
+            lane.write_text(json.dumps(original))
+            rc, lines = self._run_status_only({"auto_loop": True}, root)
+            doc = json.loads(lane.read_text())
+        self.assertEqual(rc, 0)
+        self.assertEqual(doc, original, "this week's run outcome must be preserved")
+        self.assertIn("keeping this week's run outcome", " ".join(lines))
+
+    def test_replaces_last_week_run_outcome(self):
+        """A run outcome from a PREVIOUS ISO week is stale → replaced by 'armed'."""
+        import tempfile
+        from datetime import datetime, timedelta, timezone
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            lane = self._lane_path(root)
+            lane.parent.mkdir(parents=True)
+            old_asof = (datetime.now(timezone.utc) - timedelta(days=8)).isoformat(timespec="seconds")
+            lane.write_text(json.dumps({
+                "status": "ok",
+                "asof": old_asof,
+                "reason": "full run completed; 3 card(s) processed",
+            }))
+            self._run_status_only({"auto_loop": True}, root)
+            doc = json.loads(lane.read_text())
+        self.assertEqual(doc["status"], "armed")
+
+    def test_config_off_overrides_this_week_outcome(self):
+        """auto_loop=false is the operative truth even over a this-week 'ok'."""
+        import tempfile
+        from datetime import datetime, timezone
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            lane = self._lane_path(root)
+            lane.parent.mkdir(parents=True)
+            lane.write_text(json.dumps({
+                "status": "ok",
+                "asof": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "reason": "full run completed; 3 card(s) processed",
+            }))
+            self._run_status_only({"auto_loop": False}, root)
+            doc = json.loads(lane.read_text())
+        self.assertEqual(doc["status"], "awaiting_phase_a")
 
 
 # ---------------------------------------------------------------------------
