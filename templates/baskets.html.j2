@@ -674,10 +674,13 @@
       // (docs/DESIGN_DOCTRINE.md): plain words at a glance; the tape-rank /
       // reco / base-rate receipt lives in the data-tip (Tier 2).
       if(!stale && pb && !pb.stale && pb.live_ew_chg_pct!=null && pb.tape_rank!=null){
-        // Find this basket's slow reco from BASKETS global
-        var theme = (window.BASKETS&&window.BASKETS.baskets||[]).find(function(t){return t.id===bid;});
-        var slowReco = theme ? (theme.reco||'') : '';
-        var slowAsOf = theme ? (theme.as_of||'') : '';
+        // Find this basket's slow reco. BASKETS.baskets records are pure
+        // definitions (no reco); the scored ratings the cards render from live
+        // on BASKETS.theme_intel.themes, with turn_watch slow_reco as fallback.
+        var themeIntel = (window.BASKETS&&window.BASKETS.theme_intel)||null;
+        var theme = ((themeIntel&&themeIntel.themes)||[]).find(function(t){return t.id===bid;});
+        var slowReco = (theme&&theme.reco)||(tw&&tw.slow_reco)||'';
+        var slowAsOf = (theme&&theme.reco) ? ((themeIntel&&themeIntel.as_of)||'') : ((tw&&tw.reco_as_of)||'');
         var tapeRankNum = pb.tape_rank;
         var totalBaskets = (pulse&&pulse.baskets||[]).filter(function(b){return b.tape_rank!=null;}).length;
         // Disagreement = tape rank in top third while slow reco is weak, or bottom third while strong
