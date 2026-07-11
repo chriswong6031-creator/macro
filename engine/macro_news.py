@@ -43,6 +43,29 @@ log = logging.getLogger(__name__)
 
 GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 
+# Subject→qbus vocabulary map — used ONLY for the novelty_z call in the W2
+# read-back block.  macro_news theme tokens (keys of MACRO_THEMES) differ from
+# the qbus store's theme vocabulary; this map translates them.  None means
+# "skip the novelty call — there is no semantically honest counterpart in the
+# qbus store and a mismatched join would produce misleading z-scores."
+_MACRO_THEME_TO_QBUS: dict[str, str | None] = {
+    "monetary":      "monetary",
+    "inflation":     "inflation",
+    "labor":         "labor",
+    "growth":        "growth",
+    "credit":        "credit",
+    "fiscal":        "fiscal",
+    # qbus vocabulary has no corresponding bucket for the stock-specific themes below:
+    "earnings":      None,
+    "guidance":      None,
+    "analyst":       None,
+    "deals":         None,
+    "capital_return": None,
+    "stocks":        None,
+    # The catch-all "macro" tag is too broad to join meaningfully against qbus themes
+    "macro":         None,
+}
+
 # macro themes -> keyword buckets. Used BOTH to build the GDELT query AND to
 # tag/relevance-gate each returned headline (deterministic classification).
 MACRO_THEMES: dict[str, list[str]] = {
@@ -569,7 +592,12 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None,
         news_ok = any(s in dom for s in news)
         qual_ok = (not quality) or any(s in dom for s in quality)
         declared_theme = a.get("theme")
-        theme = declared_theme if declared_theme in MACRO_THEMES else classify_theme(a.get("title", ""))
+        # Content classifier runs FIRST — a title-level keyword always wins over
+        # the feed's declared theme.  Example: "France inflation drops to 1.8%"
+        # from a feed declared theme=stocks must reach the inflation bucket, not
+        # be swallowed as a stock-pick.  The feed's declared theme is used only
+        # as a fallback when the title carries no macro keyword.
+        theme = classify_theme(a.get("title", "")) or (declared_theme if declared_theme in MACRO_THEMES else None)
         # Keep if it's a tier-1 news outlet (body already matched the macro query),
         # OR it clears the title macro-theme gate AND is from a quality source.
         if not (official_ok or stock_ok or news_ok or (theme is not None and qual_ok)):
@@ -787,6 +815,15 @@ def _fetch_official_feeds(cfg: dict, today: date | None = None) -> tuple[list[di
                 if r.status_code != 200:
                     failures += 1
                     continue
+                # When the server omits a charset header, requests defaults to
+                # ISO-8859-1 per RFC 2616, mangling UTF-8 bytes (e.g. "Europeâs"
+                # instead of "Europe's"). Override to apparent_encoding / utf-8
+                # before accessing r.text so the XML prolog governs decoding.
+                _enc = (r.encoding or "").lower()
+                if not _enc or _enc == "iso-8859-1":
+                    _ct_hdr = (r.headers.get("Content-Type") or "").lower()
+                    if "charset" not in _ct_hdr:
+                        r.encoding = r.apparent_encoding or "utf-8"
                 for item in _parse_feed(r.text, feed):
                     dt = _parse_dt(item.get("seendate", ""))
                     if dt and dt.date() < today - timedelta(days=window_days):
@@ -832,6 +869,15 @@ def _fetch_news_feeds(cfg: dict, today: date | None = None) -> tuple[list[dict],
                 if r.status_code != 200:
                     failures += 1
                     continue
+                # When the server omits a charset header, requests defaults to
+                # ISO-8859-1 per RFC 2616, mangling UTF-8 bytes (e.g. "Europeâs"
+                # instead of "Europe's"). Override to apparent_encoding / utf-8
+                # before accessing r.text so the XML prolog governs decoding.
+                _enc = (r.encoding or "").lower()
+                if not _enc or _enc == "iso-8859-1":
+                    _ct_hdr = (r.headers.get("Content-Type") or "").lower()
+                    if "charset" not in _ct_hdr:
+                        r.encoding = r.apparent_encoding or "utf-8"
                 for item in _parse_feed(r.text, feed):
                     dt = _parse_dt(item.get("seendate", ""))
                     if dt and dt.date() < today - timedelta(days=window_days):
@@ -929,7 +975,11 @@ def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[di
 
 def _fetch_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
     """Recent macro articles from GDELT (last `window_days` ending today). Returns
-    (raw_articles, degraded_reason). Cached; never raises."""
+    (raw_articles, degraded_reason). Cached; never raises.
+
+    HTTP layer is handled by engine.gdelt_client so this module shares the same
+    cross-process throttle/retry/rate-limit logic as every other GDELT caller
+    (nine uncoordinated callers caused a 429 penalty-box incident 2026-06-20)."""
     today = today or date.today()
     cache = _cache_path(cfg, today)
     ttl = cfg.get("cache_ttl_hours", 12) * 3600
@@ -951,35 +1001,21 @@ def _fetch_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str 
     articles: list[dict] = []
     reason: str | None = None
     try:
-        import time
-
-        import requests
-        r = None
-        attempts = max(1, int(cfg.get("gdelt_attempts", 2)))
+        from engine import gdelt_client as _gc
         timeout_s = max(5, int(cfg.get("gdelt_timeout_s", 15)))
-        from engine import gdelt_client
-        for attempt in range(attempts):
-            gdelt_client.wait_turn(max(6, cfg.get("min_request_interval_s", 6)))
-            r = requests.get(GDELT_URL, params=params, timeout=timeout_s,
-                             headers={"User-Agent": "macro-dashboard/1.0 (research)"})
-            if r.status_code == 429 and attempt < attempts - 1:
-                time.sleep(max(6, cfg.get("min_request_interval_s", 6)) * (attempt + 1))
-                continue
-            break
-        if r is None or r.status_code != 200 or "json" not in r.headers.get("Content-Type", ""):
-            reason = "rate_limited" if (r is not None and r.status_code == 429) else "fetch_error"
+        raw, gc_reason = _gc.get_articles(params, timeout=timeout_s)
+        if raw is None:
+            raw = []
+        # Normalise reason: gdelt_client uses 'no_articles'; callers here expect 'no_headlines'
+        if gc_reason == "no_articles":
+            reason = "no_headlines"
         else:
-            for a in (r.json().get("articles", []) or []):
-                sd = a.get("seendate", "")
-                try:
-                    iso = datetime.strptime(sd, "%Y%m%dT%H%M%SZ").replace(
-                        tzinfo=timezone.utc).isoformat()
-                except (ValueError, TypeError):
-                    iso = sd
-                articles.append({"title": a.get("title", ""), "url": a.get("url", ""),
-                                 "domain": a.get("domain", ""), "seendate": iso})
-            if not articles:
-                reason = "no_headlines"
+            reason = gc_reason
+        # gdelt_client._parse_articles already returns {title,url,domain,seendate(ISO)} dicts;
+        # project to the subset this module's callers expect.
+        for a in raw:
+            articles.append({"title": a.get("title", ""), "url": a.get("url", ""),
+                             "domain": a.get("domain", ""), "seendate": a.get("seendate", "")})
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("gdelt macro fetch failed (%s)", e)
         reason = "fetch_error"
@@ -1022,7 +1058,18 @@ def macro_headlines(today: date | None = None) -> dict | None:
                 try:
                     _tickers = _h.get("tickers") or []
                     _theme = _h.get("theme") or ""
-                    _subject = _tickers[0] if _tickers else _theme
+                    # Subject selection for novelty_z:
+                    # - Tickers pass through unchanged (they exist in the qbus store).
+                    # - Theme tokens MUST be mapped via _MACRO_THEME_TO_QBUS because
+                    #   macro_news theme vocabulary differs from the qbus store's
+                    #   theme vocabulary (e.g. 'stocks' in macro_news vs 'markets' in
+                    #   qbus).  If the map returns None (no semantically honest
+                    #   counterpart), skip the call and leave novelty_z=None rather
+                    #   than joining against the wrong bucket.
+                    if _tickers:
+                        _subject: str | None = _tickers[0]
+                    else:
+                        _subject = _MACRO_THEME_TO_QBUS.get(_theme)  # None = skip
                     if _subject:
                         _h["novelty_z"] = _qbus.novelty_z(_subject, _asof_date,
                                                            df=_qbus_df)
