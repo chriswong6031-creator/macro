@@ -1,0 +1,343 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% set fl = flow_leaders if flow_leaders else {} %}
+{% set board_a = fl.board_a if fl.board_a is defined and fl.board_a is not none else [] %}
+{% set board_b = fl.board_b if fl.board_b is defined and fl.board_b is not none else [] %}
+{% set etf_strip = fl.etf_strip if fl.etf_strip is defined and fl.etf_strip is not none else [] %}
+{% set cov = fl.coverage if fl.coverage is defined and fl.coverage is not none else {} %}
+{% set cs = fl.cold_start_detail if fl.cold_start_detail is defined and fl.cold_start_detail is not none else {} %}
+{% set board_a_total = fl.board_a_total if fl.board_a_total is defined and fl.board_a_total is not none else (board_a | length) %}
+{% set board_b_total = fl.board_b_total if fl.board_b_total is defined and fl.board_b_total is not none else (board_b | length) %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow Leaders · 资金领袖</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  *{box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;margin:0;padding:18px;}
+  @media(min-width:1100px){body{padding:24px max(40px,calc((100vw - 1360px)/2));}}
+  a{text-decoration:none;color:inherit;}
+  h1{font-size:20px;margin:0;}
+  h2{font-size:14px;margin:0 0 10px;font-weight:600;letter-spacing:.2px;}
+  h3{font-size:12px;margin:0 0 6px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+  .muted{color:var(--muted);}.sm{font-size:12px;}.xs{font-size:11px;}
+  .topline{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;}
+  .badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;border:1px solid;white-space:nowrap;}
+  .badge-green{color:var(--up);border-color:var(--up);}
+  .badge-orange{color:var(--orange,#f97316);border-color:var(--orange,#f97316);}
+  .badge-muted{color:var(--muted);border-color:var(--line);}
+  .badge-warn{color:var(--orange,#f97316);border-color:var(--orange,#f97316);}
+  .banner{padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;border:1px solid;}
+  .banner-stale{background:rgba(239,68,68,.08);border-color:var(--down);color:var(--down);}
+  .banner-cold{background:rgba(251,191,36,.08);border-color:var(--orange,#f97316);color:var(--orange,#f97316);}
+  .banner-source{background:var(--panel2);border-color:var(--line);color:var(--muted);}
+  .tbl-wrap{overflow-x:auto;}
+  table.ltbl{width:100%;border-collapse:collapse;font-size:12px;}
+  table.ltbl th{padding:6px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:2px solid var(--line);white-space:nowrap;}
+  table.ltbl td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  table.ltbl tr:last-child td{border-bottom:none;}
+  table.ltbl tr:hover td{background:var(--panel2);}
+  .tk{font-weight:700;font-size:13px;color:var(--blue,#3b82f6);}
+  .leg-row{display:flex;flex-wrap:wrap;gap:2px 4px;margin-top:3px;}
+  .leg{display:inline-block;font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid var(--line);}
+  .leg-t{border-color:var(--up);color:var(--up);}
+  .leg-f{color:var(--muted);}
+  .leg-n{border-color:var(--line);color:var(--muted);font-style:italic;}
+  .k-chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);}
+  .k-hi{background:rgba(34,197,94,.15);border-color:var(--up);color:var(--up);}
+  .etf-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .etf-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:110px;}
+  .etf-tk{font-weight:700;font-size:13px;}
+  .playbook{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+  .pb-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px;user-select:none;}
+  .pb-hd:hover{background:var(--panel2);}
+  .pb-hd .car{font-size:11px;color:var(--muted);transition:transform .2s;}
+  .pb-hd.open .car{transform:rotate(90deg);}
+  .pb-bd{display:none;padding:12px 14px;font-size:12px;line-height:1.6;border-top:1px solid var(--line);}
+  .pb-hd.open+.pb-bd{display:block;}
+  .osc-row{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:11px;}
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  {% include '_navlinks.html.j2' %}
+</nav>
+<div style="max-width:1360px;margin:0 auto;">
+
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px;">
+  <h1>{{ t('Flow Leaders', '资金领袖') }}</h1>
+  <span class="muted sm">{{ t('Recurring net-impact leadership · washout turns · Pick Lab shadow ledger', '持续净额领先 · 洗盘转机 · Pick Lab影子账本') }}</span>
+</div>
+<div class="topline muted xs" style="margin-bottom:14px;">
+  <span>{{ t('As of', '截至') }} {{ fl.as_of[:10] if fl.as_of is defined and fl.as_of is not none else '—' }}</span>
+  {% if cov is not none and cov.n_universe is defined %}<span>{{ t('Universe', '样本') }}: {{ cov.n_universe }}</span>{% endif %}
+  {% if cov is not none and cov.n_flow_sessions is defined %}<span>{{ t('Flow sessions', '流量场次') }}: {{ cov.n_flow_sessions }}</span>{% endif %}
+  {% if cov is not none and cov.tape_names is defined %}<span>{{ t('Tape-signed', '分笔签署') }}: {{ cov.tape_names | length }}</span>{% endif %}
+</div>
+
+{# ── Banners ──────────────────────────────────────────────────────── #}
+{% if fl.stale is defined and fl.stale %}
+<div class="banner banner-stale">
+  ⚠ {{ t('Flow store is stale — data may not reflect current sessions. Recurrence counting paused.', '资金流存储数据陈旧 — 可能不反映当前场次，出现频率计数已暂停。') }}
+</div>
+{% endif %}
+
+{% if fl.cold_start is defined and fl.cold_start %}
+<div class="banner banner-cold">
+  {% if cs.message is defined and cs.message is not none %}
+    {{ cs.message }}
+  {% else %}
+    {{ t('Recurrence accruing', '出现频率累积中') }} — {{ cs.n_sessions if cs.n_sessions is defined else '?' }}/{{ cs.required_for_recurrence if cs.required_for_recurrence is defined else 5 }} {{ t('sessions', '场次') }}
+  {% endif %}
+  — {{ t('Legs dependent on history show null (not false) until the window matures.', '依赖历史数据的腿位显示为空（非否），直至窗口成熟。') }}
+</div>
+{% endif %}
+
+<div class="banner banner-source">
+  {{ t('Direction is ~-soft (approximate, minute tick-rule signing) for all sources until calibration extension passes. Magnitude leads.', '所有来源的方向均为约近似（分钟打单规则签署），直至校准扩展通过。量级优先。') }}
+</div>
+
+{# ── Board A ──────────────────────────────────────────────────────── #}
+<div class="panel">
+<h2>{{ t('Board A — Flow Leadership', 'A板 — 资金领头') }}</h2>
+<div class="sm muted" style="margin-bottom:10px;">
+  {{ t('Names with recurring top-20 normalized net-impact within trailing 10 sessions and price confirmation. Sorted by recurrence count (ties: normalized net premium).', '在过去10个场次中反复出现在归一化净额排名前20且有价格确认的标的。按出现频率排序（平局：按归一化净额）。') }}
+</div>
+{% if board_a_total > (board_a | length) %}
+<div class="muted xs" style="margin-bottom:8px;">{{ t('Showing top', '显示前') }} {{ board_a | length }} {{ t('of', '共') }} {{ board_a_total }} {{ t('names', '个标的') }}</div>
+{% endif %}
+
+{% if board_a %}
+<div class="tbl-wrap">
+<table class="ltbl">
+<thead>
+<tr>
+  <th>{{ t('Ticker', '代码') }}</th>
+  <th>{{ t('Recur', '频率') }}</th>
+  <th>{{ t('K/N', 'K/N') }}</th>
+  <th>{{ t('Legs', '信号腿') }}</th>
+  <th>{{ t('Flags', '标记') }}</th>
+  <th>{{ t('Context', '背景') }}</th>
+</tr>
+</thead>
+<tbody>
+{% for r in board_a %}
+{% set ka = r.K_a if r.K_a is defined and r.K_a is not none else 0 %}
+{% set na = r.n_avail_a if r.n_avail_a is defined and r.n_avail_a is not none else 0 %}
+<tr>
+  <td>
+    <a href="us_stocks.html#{{ r.ticker }}" class="tk">{{ r.ticker }}</a>
+    {% if r.fire_a is defined and r.fire_a %}<span class="badge badge-green" style="margin-left:4px;">FIRE</span>{% endif %}
+    {% if r.signing_source is defined and r.signing_source == 'tape' %}<span class="badge badge-muted">tape</span>{% endif %}
+  </td>
+  <td>
+    {% if r.recurrence_count is defined and r.recurrence_count is not none %}
+      <span style="font-weight:700;">{{ r.recurrence_count | int }}</span><span class="muted xs">/10</span>
+    {% else %}
+      <span class="badge badge-muted">{{ t('accruing', '累积中') }}</span>
+    {% endif %}
+  </td>
+  <td>
+    <span class="k-chip {% if ka >= 4 %}k-hi{% endif %}">{{ ka }}/{{ na }}</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      {% set leg_labels = [('A1','flow_recur',t('Recur','频率')),('A2','flow_z_hot',t('FlowZ','流量Z')),('A3','oi_confirmed',t('OI✓','OI确认')),('A4','ts_breadth',t('TSBrd','期限广度')),('A5','price_leader',t('PriceOK','价格OK')),('A6','near_high',t('NearHigh','近高点')),('A7','vol_confirm',t('VolOK','量OK')),('A8','not_trap',t('NotTrap','非陷阱'))] %}
+      {% for code, field, label in leg_labels %}
+      {% set val = r['A' + code[1:] + '_' + field] if ('A' + code[1:] + '_' + field) in r else none %}
+      {% if val is defined and val is not none %}
+        {% if val %}<span class="leg leg-t">{{ label }}</span>
+        {% else %}<span class="leg leg-f">{{ label }}</span>{% endif %}
+      {% else %}
+        <span class="leg leg-n">{{ label }}</span>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </td>
+  <td>
+    {% set de = r.de_escalation if r.de_escalation is defined and r.de_escalation is not none else {} %}
+    {% if r.zerodte_dominated is defined and r.zerodte_dominated %}<span class="badge badge-warn">0DTE</span> {% endif %}
+    {% if de.earnings_window is defined and de.earnings_window %}<span class="badge badge-warn">{{ t('EarnWin','财报窗') }}</span> {% endif %}
+    {% if de.vol_trade is defined and de.vol_trade %}<span class="badge badge-muted">{{ t('BothSides','双向') }}</span> {% endif %}
+    {% if de.protective_put is defined and de.protective_put %}<span class="badge badge-muted">{{ t('HedgePut','保护性Put') }}</span> {% endif %}
+    {% if de.gamma_caution is defined and de.gamma_caution %}<span class="badge badge-muted">γ{{ t('Caution','谨慎') }}</span> {% endif %}
+  </td>
+  <td class="muted xs">
+    {% if r.rs_1m is defined and r.rs_1m is not none %}RS1m: {{ '%.1f' | format(r.rs_1m * 100) }}%{% endif %}
+    {% if r.high52w_prox is defined and r.high52w_prox is not none %} · H52: {{ '%.0f' | format(r.high52w_prox * 100) }}%{% endif %}
+    {% if r.gamma_regime is defined and r.gamma_regime is not none %} · γ:{{ r.gamma_regime }}{% endif %}
+    {% if r.days_to_earnings is defined and r.days_to_earnings is not none %} · E+{{ r.days_to_earnings }}d{% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="muted sm">{{ t('No board A data yet — flow sessions accruing.', '暂无A板数据 — 资金流场次累积中。') }}</div>
+{% endif %}
+</div>
+
+{# ── Board B ──────────────────────────────────────────────────────── #}
+<div class="panel">
+<h2>{{ t('Board B — Washout Turns', 'B板 — 洗盘转机') }}</h2>
+<div class="sm muted" style="margin-bottom:10px;">
+  {{ t('Names where flow has inflected positive after a negative run, with washout context and oscillator support. Sorted by days since inflection (ascending).', '资金流在负面运行后转正，同时具备洗盘背景和振荡器支持的标的。按转折后天数升序排列。') }}
+</div>
+{% if board_b_total > (board_b | length) %}
+<div class="muted xs" style="margin-bottom:8px;">{{ t('Showing top', '显示前') }} {{ board_b | length }} {{ t('of', '共') }} {{ board_b_total }} {{ t('names', '个标的') }}</div>
+{% endif %}
+
+{% if board_b %}
+<div class="tbl-wrap">
+<table class="ltbl">
+<thead>
+<tr>
+  <th>{{ t('Ticker', '代码') }}</th>
+  <th>{{ t('Days since flip', '转折天数') }}</th>
+  <th>{{ t('K/N', 'K/N') }}</th>
+  <th>{{ t('Legs', '信号腿') }}</th>
+  <th>{{ t('Oscillators', '振荡器') }}</th>
+  <th>{{ t('Flags', '标记') }}</th>
+</tr>
+</thead>
+<tbody>
+{% for r in board_b %}
+{% set kb = r.K_b if r.K_b is defined and r.K_b is not none else 0 %}
+{% set nb = r.n_avail_b if r.n_avail_b is defined and r.n_avail_b is not none else 0 %}
+<tr>
+  <td>
+    <a href="us_stocks.html#{{ r.ticker }}" class="tk">{{ r.ticker }}</a>
+    {% if r.fire_b is defined and r.fire_b %}<span class="badge badge-green" style="margin-left:4px;">FIRE</span>{% endif %}
+    {% if r.signing_source is defined and r.signing_source == 'tape' %}<span class="badge badge-muted">tape</span>{% endif %}
+  </td>
+  <td>
+    {% if r.days_since_inflection is defined and r.days_since_inflection is not none %}
+      {{ r.days_since_inflection }}d
+    {% else %}
+      <span class="muted xs">—</span>
+    {% endif %}
+  </td>
+  <td>
+    <span class="k-chip {% if kb >= 4 %}k-hi{% endif %}">{{ kb }}/{{ nb }}</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      {% set b_leg_labels = [('B1','washout_recent',t('Washout','洗盘')),('B2','oversold_osc',t('Oversold','超卖')),('B3','turn_organ',t('TurnOrg','转机器官')),('B5','flow_inflect',t('Inflect','转折')),('B6','oi_confirmed',t('OI✓','OI确认')),('B7','vol_confirm',t('VolOK','量OK')),('B8','not_trap',t('NotTrap','非陷阱'))] %}
+      {% for code, field, label in b_leg_labels %}
+      {% set fname = 'B' + code[1:] + '_' + field %}
+      {% if fname in r and r[fname] is not none %}
+        {% if r[fname] %}<span class="leg leg-t">{{ label }}</span>
+        {% else %}<span class="leg leg-f">{{ label }}</span>{% endif %}
+      {% else %}
+        <span class="leg leg-n">{{ label }}</span>
+      {% endif %}
+      {% endfor %}
+      {# B4 display chip — never fire-qualifying (FL-R7) #}
+      {% if r.B4_htf_cross_near is defined and r.B4_htf_cross_near is not none %}
+        {% if r.B4_htf_cross_near %}<span class="leg" style="color:var(--blue,#3b82f6);border-color:var(--blue,#3b82f6);" title="2W MACD cross imminent — display only, not fire-qualifying">{{ t('2W↑','2W↑') }}</span>{% endif %}
+      {% endif %}
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      {% if r.stochrsi_2w_k is defined and r.stochrsi_2w_k is not none %}
+        <span class="badge badge-muted" title="2W StochRSI K">2WK {{ '%.0f' | format(r.stochrsi_2w_k) }}</span>
+      {% endif %}
+      {% if r.macd_2w_state is defined and r.macd_2w_state == 'approaching' and r.macd_2w_bars_to_cross is not none %}
+        <span class="badge badge-orange" title="2W MACD approaching cross">{{ t('≈cross','≈穿越') }} {{ r.macd_2w_bars_to_cross }}{{ t('b','棒') }}</span>
+      {% elif r.macd_2w_state is defined and r.macd_2w_state == 'crossed' %}
+        <span class="badge badge-green" title="2W MACD crossed up">{{ t('2W✓','2W✓') }}</span>
+      {% endif %}
+      {% if r.mtf_upturn_state is defined and r.mtf_upturn_state is not none %}
+        <span class="badge badge-muted">{{ r.mtf_upturn_state | truncate(12, true, '') }}</span>
+      {% endif %}
+    </div>
+  </td>
+  <td>
+    {% set de = r.de_escalation if r.de_escalation is defined and r.de_escalation is not none else {} %}
+    {% if de.earnings_window is defined and de.earnings_window %}<span class="badge badge-warn">{{ t('EarnWin','财报窗') }}</span> {% endif %}
+    {% if r.gamma_regime is defined and r.gamma_regime is not none %}<span class="badge badge-muted">γ:{{ r.gamma_regime }}</span>{% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="muted sm">{{ t('No Board B data yet — flow inflection sessions accruing.', '暂无B板数据 — 资金流转折场次累积中。') }}</div>
+{% endif %}
+</div>
+
+{# ── ETF Strip ────────────────────────────────────────────────────── #}
+{% if etf_strip %}
+<div class="panel">
+<h2>{{ t('ETF Flow Strip', 'ETF资金流条带') }}</h2>
+<div class="sm muted" style="margin-bottom:10px;">{{ t('Index + sector ETFs — flow fields only (no personality / no board membership). Direction ~-soft.', '指数及板块ETF — 仅流量字段（无个股属性/不入板）。方向约近似。') }}</div>
+<div class="etf-row">
+{% for e in etf_strip %}
+<div class="etf-card">
+  <div class="etf-tk">{{ e.ticker }}</div>
+  {% if e.net_premium_mn is defined and e.net_premium_mn is not none %}
+  <div class="sm">{{ t('Net~','净~') }} {{ '%.1f' | format(e.net_premium_mn) }}M</div>
+  {% endif %}
+  {% if e.zerodte_share is defined and e.zerodte_share is not none %}
+  <div class="xs muted">0DTE {{ '%.0f' | format(e.zerodte_share * 100) }}%</div>
+  {% endif %}
+  {% if e.signing_source is defined %}<div class="xs muted">{{ e.signing_source }}</div>{% endif %}
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+{# ── Playbook accordion ───────────────────────────────────────────── #}
+<div class="panel">
+<h2>{{ t('Playbook', '操作手册') }}</h2>
+
+<div class="playbook">
+<div class="pb-hd" onclick="this.classList.toggle('open')">
+  {{ t('Board A — What it describes', 'A板 — 描述内容') }}<span class="car">▸</span>
+</div>
+<div class="pb-bd">
+  <p>{{ t('Board A tracks names that have appeared in the top-20 of the mktcap-normalized ex-0DTE net-impact table repeatedly within the trailing 10 sessions. This describes flow leadership recurrence — names where large-cap-adjusted net options activity has been consistently elevated. It says nothing about whether prices will rise; it describes where net options activity has concentrated. Direction is approximate (~-soft) for all sources.', 'A板追踪在过去10个场次中，反复进入市值归一化排除0DTE净额影响前20名的标的。这描述了资金流领头的出现频率 — 市值调整后的净期权活动持续偏高的标的。这不代表价格将会上涨；它描述净期权活动集中的位置。所有来源方向均为约近似。') }}</p>
+  <p>{{ t('The K/N chip counts True legs out of available (non-null) legs. A null leg means the underlying data is not yet available — it is not False. All legs are context only; K/N is presented for reader reference, not as a score.', 'K/N指标计算可用（非空）腿位中为True的数量。空值腿位表示底层数据尚未可用 — 并非False。所有腿位仅为背景参考；K/N仅供读者参考，非评分。') }}</p>
+</div>
+</div>
+
+<div class="playbook">
+<div class="pb-hd" onclick="this.classList.toggle('open')">
+  {{ t('Board B — What it describes', 'B板 — 描述内容') }}<span class="car">▸</span>
+</div>
+<div class="pb-bd">
+  <p>{{ t('Board B tracks names where net options flow has shifted from negative to positive after at least 3 negative sessions, with washout context present (recent BB-lower reclaim or deep drawdown with recovery begun) and without the failed-breakout-trap label. This describes a specific pattern of flow-turn coinciding with price washout, sorted by recency of the inflection.', 'B板追踪净期权资金流在至少3个负向场次后转为正向，同时具备洗盘背景（近期布林带下轨收复或深度回撤且回升启动）且无突破失败陷阱标签的标的。这描述了资金流转折与价格洗盘重合的特定模式，按转折时间近远排列。') }}</p>
+  <p>{{ t('The 2W oscillator fields (B4 chip, StochRSI K, MACD ETA) are display context only. They describe higher-timeframe momentum conditions; they are not fire-qualifying and do not drive sorting. An upcoming cross ETA is shown when the 2W MACD histogram has been rising for 3 consecutive bars and linear extrapolation estimates the zero crossing within 2 bars.', '2W振荡器字段（B4指标、随机RSI K值、MACD预计时间）仅为展示背景。它们描述更高时间框架的动量状态；不计入触发条件，不驱动排序。当2W MACD直方图连续3根柱上升且线性外推估计2根柱内穿越零点时，显示预计穿越时间。') }}</p>
+</div>
+</div>
+
+<div class="playbook">
+<div class="pb-hd" onclick="this.classList.toggle('open')">
+  {{ t('Coverage and de-escalation labels', '覆盖范围与降级标签') }}<span class="car">▸</span>
+</div>
+<div class="pb-bd">
+  <p>{{ t('Flow sessions are the number of daily flow store updates. Recurrence computation requires at least 5 sessions; flow-z requires at least 20 sessions. During the cold-start period, legs that depend on these minimums are null (not false).', '资金流场次是每日流量存储更新的次数。出现频率计算需要至少5个场次；流量Z需要至少20个场次。在冷启动期间，依赖这些最小值的腿位为空（非否）。') }}</p>
+  <p>{{ t('De-escalation labels lower reader confidence; they never escalate, score, or veto a name. EarnWin = within 14 calendar days of next earnings (Cremers 2023). BothSides = elevated ask-side call and put premium same session (tape only). HedgePut = far-OTM put flow dominant (tape only). Gamma Caution = short-gamma regime.', '降级标签降低读者信心；它们从不升级、评分或否决标的。EarnWin=距下次财报14个日历日内（Cremers 2023）。BothSides=同场次看涨与看跌期权要价均偏高（仅限分笔数据）。HedgePut=远价外Put资金流主导（仅限分笔数据）。Gamma谨慎=负伽马区间。') }}</p>
+  <p>{{ t('Tape-signed names use Lee-Ready NBBO tick-rule signing (direction agreement 0.88, net-sign recovery 0.80). Soft-signed names use minute tick-rule (~, lower reliability). Magnitude is reliable for both; direction is approximate (~-soft) for all sources until the multi-session tape calibration extension passes.', '分笔签署标的使用Lee-Ready NBBO打单规则签署（方向一致性0.88，净符号恢复0.80）。近似签署标的使用分钟打单规则（~，可靠性较低）。两者的量级均可靠；所有来源的方向在多场次分笔校准扩展通过前均为约近似。') }}</p>
+</div>
+</div>
+</div>
+
+<div class="muted xs" style="margin-top:8px;line-height:1.6;">
+  {{ t('Display-only. No signal validates buy/sell. Nothing here feeds any authority surface (CONST-ART2). Recurrence thresholds are pre-registered-arbitrary (FL-R2).', '仅供展示。无信号验证买入/卖出。本页内容不输入任何权威面（CONST-ART2）。出现频率阈值为预注册任意值（FL-R2）。') }}
+</div>
+
+</div>
+<script src="theme.js"></script>
+</body>
+</html>

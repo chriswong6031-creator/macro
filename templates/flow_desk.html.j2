@@ -246,10 +246,18 @@
       </div>
       <div class="details muted">
         {% if m.zerodte_share is not none %}0DTE {{ "%.0f"|format(m.zerodte_share * 100) }}%{% endif %}
+        {# recurrence badge: shown when recurrence_count is present and > 0 #}
+        {% if m.recurrence_count is defined and m.recurrence_count is not none and m.recurrence_count > 0 %}<span class="lag-tag" title="Appeared in top-20 net-impact board {{ m.recurrence_count | int }} times in trailing 10 sessions">×{{ m.recurrence_count | int }}/10d</span>{% endif %}
+        {# 0DTE chip: shown when 0DTE share is dominant (zerodte_dominated flag preferred) #}
+        {% if m.zerodte_dominated is defined and m.zerodte_dominated %}<span class="lag-tag" style="color:var(--orange,#f97316);border-color:var(--orange,#f97316);" title="0DTE-dominated flow — direction less reliable">0DTE</span>{% endif %}
       </div>
     </div>
     {% endfor %}
   </div>
+  {# per-source footnote: signing_source legend #}
+  <p class="muted xs" style="margin-top:8px;">
+    {{ t('Signing source: minute_tick = minute tick-rule (~-soft direction, magnitude reliable). tape = Lee-Ready NBBO tick-rule (higher direction fidelity). Recurrence = Board A membership count (10-session trailing window).', '签署来源：minute_tick=逐分钟打单规则（~方向软性，量级可信）。tape=Lee-Ready NBBO打单规则（方向可信度更高）。出现频率=A板成员计数（10场次滚动窗口）。') }}
+  </p>
   {% else %}
   <p class="muted sm">{{ t('No mover data.', '暂无数据。') }}</p>
   {% endif %}

@@ -364,20 +364,62 @@ def build_sector_heatmap(flow_rows: list[dict], gics_map: dict[str, str],
     return heatmap
 
 
-def build_top_movers(flow_rows: list[dict], n: int = TOP_MOVERS_N) -> list[dict]:
-    """Section 3: Top Net Impact board — largest |net premium| names (soft-labeled)."""
+def _load_leaders_recurrence(site_dir: Path) -> dict[str, dict]:
+    """Load recurrence_count, zerodte_dominated, signing_source from leaders.json.
+
+    Absent-safe: returns {} when the artifact does not yet exist.
+    Used by build_top_movers to add FL-R10b additive badges.
+    """
+    p = site_dir / "flowleaders" / "leaders.json"
+    if not p.exists():
+        return {}
+    try:
+        d = json.loads(p.read_text())
+        rows = d.get("board_a") or []
+        return {
+            r["ticker"]: {
+                "recurrence_count": r.get("recurrence_count"),
+                "zerodte_dominated": r.get("zerodte_dominated", False),
+                "signing_source": r.get("signing_source"),
+            }
+            for r in rows
+            if r.get("ticker")
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("flow_desk: leaders.json load failed: %s", e)
+        return {}
+
+
+def build_top_movers(flow_rows: list[dict], n: int = TOP_MOVERS_N,
+                     site_dir: Path | None = None) -> list[dict]:
+    """Section 3: Top Net Impact board — largest |net premium| names (soft-labeled).
+
+    Additive FL-R10b fields per row:
+      recurrence_count   int | None   — trailing-10 recurrence from leaders.json
+      zerodte_dominated  bool          — 0DTE chip flag
+      signing_source     str           — 'tape' | 'minute_tick'
+    Schema flow_desk.v1 is preserved (additive only; sort unchanged).
+    """
+    recur_map = _load_leaders_recurrence(site_dir) if site_dir is not None else {}
+
     candidates = []
     for row in flow_rows:
         net = row.get("net_premium_mn")
         if net is None:
             continue
+        ticker = row.get("key")
+        recur_info = recur_map.get(ticker) or {}
         candidates.append({
-            "ticker": row.get("key"),
+            "ticker": ticker,
             "asof": row.get("asof"),
             "net_premium_mn": round(float(net), 1),
             "tone": row.get("tone") or _soft_tone(float(net)),
             "zerodte_share": row.get("zerodte_share"),
             "verdict": row.get("verdict"),
+            # FL-R10b additive fields
+            "recurrence_count": recur_info.get("recurrence_count"),
+            "zerodte_dominated": bool(recur_info.get("zerodte_dominated", False)),
+            "signing_source": recur_info.get("signing_source", "minute_tick"),
         })
     candidates.sort(key=lambda x: abs(x["net_premium_mn"]), reverse=True)
     return candidates[:n]
@@ -437,7 +479,7 @@ def build() -> dict:
 
     market_tide = build_market_tide(flow_rows, data_dir)
     sector_heatmap = build_sector_heatmap(flow_rows, gics_map, data_dir)
-    top_movers = build_top_movers(flow_rows)
+    top_movers = build_top_movers(flow_rows, site_dir=site_dir)
     etf_tile = build_etf_tile(data_dir)
 
     payload = {

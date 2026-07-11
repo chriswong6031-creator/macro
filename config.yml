@@ -5976,6 +5976,15 @@ intraday_flow:
   washout_lookback: 10        # days for L1 washout_recent (bb_lower_reclaim)
 
 # --------------------------------------------------------------------------- #
+# flow_leaders — Flow Leaders Desk (FL W2, 2026-07-11).
+# Board A: recurring net-impact leadership; Board B: washout turns.
+# Kill-switch: enabled: false → noindex stub + skip JSON + no nav entry.
+# Thresholds live in engine/flow_leaders.py (not duplicated here).
+# --------------------------------------------------------------------------- #
+flow_leaders:
+  enabled: true                    # kill-switch: false → noindex stub (nav link renders regardless)
+
+# --------------------------------------------------------------------------- #
 # flow_desk — Market Tide / Group Flow dashboard page (P3.1).
 # Re-enabled by operator 2026-07-06 — EOD dashboard view runs alongside the
 # Terminal Options Hub (which owns the intraday surfaces).
