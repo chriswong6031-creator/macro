@@ -30,7 +30,11 @@ from engine.flow_leaders import (
     OI_CONFIRM_VOL_MULT,
     RECUR_LEG_MIN,
     RECUR_LEG_WINDOW,
+    RECUR_MIN_HISTORY,
     ZERODTE_MAX,
+    _and3,
+    _is_null,
+    _or3,
     board_a_fire,
     board_a_legs,
     board_b_fire,
@@ -48,6 +52,266 @@ from engine.flow_leaders import (
     ts_breadth,
     vol_trade_flag,
 )
+
+
+# ── Kleene helpers ────────────────────────────────────────────────────────────
+
+class TestKleeneHelpers:
+    """B1: _and3 / _or3 Kleene three-valued logic; _is_null null detection."""
+
+    # _and3 truth table
+    def test_and3_both_true(self):
+        assert _and3(True, True) is True
+
+    def test_and3_false_shorts(self):
+        assert _and3(False, True) is False
+        assert _and3(True, False) is False
+        assert _and3(False, None) is False  # False dominates
+
+    def test_and3_true_none_is_none(self):
+        assert _and3(True, None) is None
+
+    def test_and3_none_none_is_none(self):
+        assert _and3(None, None) is None
+
+    def test_and3_all_false(self):
+        assert _and3(False, False) is False
+
+    # _or3 truth table
+    def test_or3_any_true(self):
+        assert _or3(True, False) is True
+        assert _or3(True, None) is True  # True dominates
+        assert _or3(None, True) is True
+
+    def test_or3_all_false_is_false(self):
+        assert _or3(False, False) is False
+
+    def test_or3_false_none_is_none(self):
+        assert _or3(False, None) is None
+
+    def test_or3_none_none_is_none(self):
+        assert _or3(None, None) is None
+
+    # _is_null
+    def test_is_null_none(self):
+        assert _is_null(None) is True
+
+    def test_is_null_pd_na(self):
+        assert _is_null(pd.NA) is True
+
+    def test_is_null_float_nan(self):
+        assert _is_null(float("nan")) is True
+
+    def test_is_null_false_for_bool_true(self):
+        assert _is_null(True) is False
+
+    def test_is_null_false_for_bool_false(self):
+        assert _is_null(False) is False
+
+    def test_is_null_false_for_zero(self):
+        assert _is_null(0) is False
+
+    def test_is_null_false_for_float_zero(self):
+        assert _is_null(0.0) is False
+
+
+class TestKleeneCompoundLegs:
+    """Partial-path Kleene matrix for A5 (AND), A7/B2/B7 (OR) compound legs."""
+
+    # A5: ribbon_up AND rs_1m > 0
+    def test_a5_true_none_is_none(self):
+        """ribbon_up=True, rs_1m=None → cannot determine → None."""
+        legs = board_a_legs(ribbon_up=True, rs_1m=None)
+        assert legs.A5_price_leader is None
+
+    def test_a5_false_none_is_false(self):
+        """ribbon_up=False, rs_1m=None → False (False dominates in AND)."""
+        legs = board_a_legs(ribbon_up=False, rs_1m=None)
+        assert legs.A5_price_leader is False
+
+    def test_a5_none_none_is_none(self):
+        """Both unknown → None."""
+        legs = board_a_legs(ribbon_up=None, rs_1m=None)
+        assert legs.A5_price_leader is None
+
+    def test_a5_true_true_is_true(self):
+        legs = board_a_legs(ribbon_up=True, rs_1m=0.05)
+        assert legs.A5_price_leader is True
+
+    def test_a5_true_rs_nonpositive_is_false(self):
+        legs = board_a_legs(ribbon_up=True, rs_1m=0.0)
+        assert legs.A5_price_leader is False
+
+    def test_a5_none_rs_nonpositive_is_false(self):
+        """rs_1m ≤ 0 settles A5=False even when ribbon_up is None."""
+        legs = board_a_legs(ribbon_up=None, rs_1m=-0.01)
+        assert legs.A5_price_leader is False
+
+    # A7: rel_volume≥1.30 OR obv_slope_up
+    def test_a7_true_none_is_true(self):
+        """rel_volume ≥ RVOL → True even when obv_slope_up is None."""
+        legs = board_a_legs(rel_volume=1.50, obv_slope_up=None)
+        assert legs.A7_vol_confirm is True
+
+    def test_a7_false_none_is_none(self):
+        """rel_volume < RVOL, obv_slope_up=None → cannot determine → None."""
+        legs = board_a_legs(rel_volume=0.80, obv_slope_up=None)
+        assert legs.A7_vol_confirm is None
+
+    def test_a7_none_none_is_none(self):
+        legs = board_a_legs(rel_volume=None, obv_slope_up=None)
+        assert legs.A7_vol_confirm is None
+
+    def test_a7_both_false_is_false(self):
+        legs = board_a_legs(rel_volume=0.80, obv_slope_up=False)
+        assert legs.A7_vol_confirm is False
+
+    # B2: stoch_os OR rsi_stack_oversold
+    def test_b2_true_none_is_true(self):
+        """stoch K<20 → True even when rsi_stack_oversold is None."""
+        legs = board_b_legs(weekly_stochrsi_k_min3=10.0, rsi_stack_oversold=None)
+        assert legs.B2_oversold_osc is True
+
+    def test_b2_false_none_is_none(self):
+        """stoch K≥20, rsi_stack_oversold=None → None."""
+        legs = board_b_legs(weekly_stochrsi_k_min3=50.0, rsi_stack_oversold=None)
+        assert legs.B2_oversold_osc is None
+
+    def test_b2_none_none_is_none(self):
+        legs = board_b_legs(weekly_stochrsi_k_min3=None, rsi_stack_oversold=None)
+        assert legs.B2_oversold_osc is None
+
+    def test_b2_both_false_is_false(self):
+        legs = board_b_legs(weekly_stochrsi_k_min3=50.0, rsi_stack_oversold=False)
+        assert legs.B2_oversold_osc is False
+
+    # B7: rel_volume OR obv_slope_up (same Kleene OR as A7)
+    def test_b7_true_none_is_true(self):
+        legs = board_b_legs(rel_volume=1.50, obv_slope_up=None)
+        assert legs.B7_vol_confirm is True
+
+    def test_b7_false_none_is_none(self):
+        legs = board_b_legs(rel_volume=0.80, obv_slope_up=None)
+        assert legs.B7_vol_confirm is None
+
+    def test_b7_none_none_is_none(self):
+        legs = board_b_legs(rel_volume=None, obv_slope_up=None)
+        assert legs.B7_vol_confirm is None
+
+
+class TestNAvailPdNA:
+    """B2: n_avail must NOT count pd.NA as available."""
+
+    def test_pd_na_field_not_counted(self):
+        legs = BoardALegs(A1_flow_recur=pd.NA)
+        assert legs.n_avail == 0
+
+    def test_pd_na_and_true_counted_correctly(self):
+        legs = BoardALegs(A1_flow_recur=pd.NA, A8_not_trap=True)
+        assert legs.n_avail == 1
+        assert legs.K == 1
+
+    def test_pd_na_and_false_counted_correctly(self):
+        legs = BoardALegs(A1_flow_recur=pd.NA, A2_flow_z_hot=False)
+        assert legs.n_avail == 1
+        assert legs.K == 0
+
+    def test_float_nan_field_not_counted(self):
+        """float NaN in a leg field is treated as null (n_avail=0)."""
+        legs = BoardALegs(A1_flow_recur=float("nan"))
+        assert legs.n_avail == 0
+
+
+class TestFlowZInfSafety:
+    """M1: flow_z must sanitize ±inf inputs."""
+
+    def test_inf_in_history_returns_none(self):
+        """An inf value in the history must not propagate; result should be None
+        if ±inf causes fewer than MIN_Z_HISTORY valid observations after sanitization."""
+        vals = [1.0] * 19 + [float("inf")]
+        s = pd.Series(vals)
+        # After replacing inf with NaN and dropping, only 19 valid obs → < MIN_Z_HISTORY=20
+        assert flow_z(s) is None
+
+    def test_inf_among_sufficient_history_gives_valid_z(self):
+        """If there are still ≥ MIN_Z_HISTORY valid observations after removing inf,
+        flow_z should return a valid float."""
+        # 25 values: 24 valid + 1 inf → 24 valid obs ≥ 20 → should return float
+        vals = [2.0] * 10 + [float("inf")] + [2.0] * 14
+        s = pd.Series(vals)
+        result = flow_z(s)
+        # After removing inf: 24 obs, all 2.0 → std=0 → None
+        assert result is None  # constant series → std=0
+
+    def test_neg_inf_in_history_returns_none_below_threshold(self):
+        vals = [1.0] * 18 + [float("-inf"), 5.0]
+        s = pd.Series(vals)
+        # After replacing -inf: 19 valid obs → < 20 → None
+        assert flow_z(s) is None
+
+    def test_nan_flow_z_val_gives_none_a2(self):
+        """board_a_legs(flow_z_val=NaN) must set A2=None, not False."""
+        legs = board_a_legs(flow_z_val=float("nan"))
+        assert legs.A2_flow_z_hot is None
+
+
+class TestFlowInflectFirstFlip:
+    """m1: days_since_inflection = bars since the FIRST positive flip event."""
+
+    def test_canonical_example(self):
+        """[-1,-1,-1,5,2,3] → inflected True, days_since_inflection 2.
+
+        The flip event is index 3 (5.0): 3 negatives precede it.
+        Current bar (index 5) is 2 bars after the flip → days_since = 2.
+        """
+        s = pd.Series([-1.0, -1.0, -1.0, 5.0, 2.0, 3.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is True
+        assert result["days_since_inflection"] == 2
+
+    def test_flip_at_earliest_qualifying_event(self):
+        """Flip at index 3 (5.0), more positives follow; days_since is from index 3."""
+        # [-3,-2,-1,5,4,3,2] → flip at index 3, days_since = 3
+        s = pd.Series([-3.0, -2.0, -1.0, 5.0, 4.0, 3.0, 2.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is True
+        assert result["days_since_inflection"] == 3
+
+    def test_flip_is_latest_bar_days_since_zero(self):
+        """[-1,-1,-1,5] → flip event IS the latest bar → days_since=0."""
+        s = pd.Series([-1.0, -1.0, -1.0, 5.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is True
+        assert result["days_since_inflection"] == 0
+
+    def test_no_qualifying_flip_gives_none_days_since(self):
+        """No qualifying flip (only 2 negatives before positive) → days_since=None."""
+        s = pd.Series([-1.0, -1.0, 2.0, 3.0, 4.0])
+        result = flow_inflect(s)
+        assert result["days_since_inflection"] is None
+
+
+class TestRecurMinHistoryConstant:
+    """m4: RECUR_MIN_HISTORY constant replaces all literal 5s in cold-start logic."""
+
+    def test_constant_value(self):
+        assert RECUR_MIN_HISTORY == 5
+
+    def test_recurrence_count_uses_constant(self):
+        """Exactly RECUR_MIN_HISTORY - 1 sessions → null."""
+        rows = [{"session": i, "ticker": "X", "in_top20": True}
+                for i in range(RECUR_MIN_HISTORY - 1)]
+        mem = pd.DataFrame(rows)
+        result = recurrence_count(mem)
+        assert pd.isna(result["X"])
+
+    def test_flow_recur_leg_uses_constant(self):
+        """Exactly RECUR_MIN_HISTORY - 1 sessions → pd.NA."""
+        rows = [{"session": i, "ticker": "X", "in_top20": True}
+                for i in range(RECUR_MIN_HISTORY - 1)]
+        mem = pd.DataFrame(rows)
+        result = flow_recur_leg(mem)
+        assert pd.isna(result["X"])
 
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
@@ -341,14 +605,14 @@ class TestFlowInflect:
         assert result["inflected"] is False
 
     def test_days_since_inflection(self):
-        # The function finds the MOST RECENT positive bar that follows ≥3 negatives.
+        # The function finds the FIRST positive bar (flip event) that follows ≥3 negatives.
         # s = [-3, -2, -1, 5, 4, 3]:
-        #   i=5 (val=3.0): negatives before it = 3 (indices 0,1,2) → qualifies;
-        #   most recent → days_since = 0 (it's the latest bar)
+        #   Flip event at index 3 (5.0): 3 negatives precede it → qualifies.
+        #   Current bar is index 5; days_since = 5 - 1 - 3 = 2.
         s = pd.Series([-3.0, -2.0, -1.0, 5.0, 4.0, 3.0])
         result = flow_inflect(s)
         assert result["inflected"] is True
-        assert result["days_since_inflection"] == 0
+        assert result["days_since_inflection"] == 2
 
     def test_days_since_inflection_older(self):
         # Inflection at index 3 (5.0), then 2 negatives, then check

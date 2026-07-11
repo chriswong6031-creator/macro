@@ -56,6 +56,57 @@ RVOL_CONFIRM: float = 1.30       # A7 vol_confirm threshold (pre-registered-arbi
 HIGH52W_PROX_MIN: float = 0.90   # A6 near_high threshold (pre-registered-arbitrary)
 UPTURN_WATCH_STATE: str = "UPTURN_WATCH"  # mtf_upturn state for B3
 
+# Cold-start clock: minimum sessions of membership history before recurrence is defined.
+# Sourced from masterplan §2 ("5-session cold-start clock").
+RECUR_MIN_HISTORY: int = 5
+
+
+# ── Kleene three-valued logic helpers (FL-R6) ─────────────────────────────────
+
+def _and3(*vals: bool | None) -> bool | None:
+    """Kleene AND over pre-evaluated bool-or-None operands.
+
+    Returns:
+        False  — any operand is False (short-circuits regardless of None)
+        True   — all operands are True (none are None)
+        None   — at least one operand is None, none are False
+    """
+    has_none = False
+    for v in vals:
+        if v is False:
+            return False
+        if v is None:
+            has_none = True
+    return None if has_none else True
+
+
+def _or3(*vals: bool | None) -> bool | None:
+    """Kleene OR over pre-evaluated bool-or-None operands.
+
+    Returns:
+        True   — any operand is True (short-circuits regardless of None)
+        False  — all operands are False (none are None)
+        None   — at least one operand is None, none are True
+    """
+    has_none = False
+    for v in vals:
+        if v is True:
+            return True
+        if v is None:
+            has_none = True
+    return None if has_none else False
+
+
+def _is_null(v: object) -> bool:
+    """True when v is a null sentinel (None, pd.NA, or float NaN)."""
+    if v is None:
+        return True
+    if v is pd.NA:
+        return True
+    if isinstance(v, float) and pd.isna(v):
+        return True
+    return False
+
 
 # ── Normalized impact table ───────────────────────────────────────────────────
 
@@ -167,11 +218,11 @@ def recurrence_count(membership: pd.DataFrame) -> pd.Series:
         .to_dict()
     )
 
-    # apply cold-start null: ticker with < 5 sessions of ANY history → null
+    # apply cold-start null: ticker with < RECUR_MIN_HISTORY sessions of ANY history → null
     history_counts = membership.groupby("ticker")["session"].nunique()
     result: dict[str, float | None] = {}
     for ticker in membership["ticker"].unique():
-        if history_counts.get(ticker, 0) < 5:
+        if history_counts.get(ticker, 0) < RECUR_MIN_HISTORY:
             result[ticker] = None
         else:
             result[ticker] = float(counts.get(ticker, 0))
@@ -202,7 +253,7 @@ def flow_recur_leg(membership: pd.DataFrame) -> pd.Series:
     history_counts = membership.groupby("ticker")["session"].nunique()
     result: dict[str, Any] = {}
     for ticker in membership["ticker"].unique():
-        if history_counts.get(ticker, 0) < 5:
+        if history_counts.get(ticker, 0) < RECUR_MIN_HISTORY:
             result[ticker] = pd.NA
         else:
             cnt = counts.get(ticker, 0)
@@ -350,8 +401,13 @@ def flow_inflect(net_prem_history: pd.Series) -> dict:
         dict with keys:
           ``inflected``            : bool | None — True when latest bar > 0 and
                                      ≥3 of the preceding bars were negative.
-          ``days_since_inflection``: int | None — bars since the most recent
-                                     positive bar following a run of ≥3 negatives.
+          ``days_since_inflection``: int | None — bars since the FIRST positive
+                                     session that ended the most recent ≥3-negative
+                                     run (the flip event itself), not since the most
+                                     recent positive bar.  For [-1,-1,-1,5,2,3]
+                                     the flip event is index 3 (5.0), so
+                                     days_since_inflection = 2 (the current bar is
+                                     2 steps after the flip).
         Both are None when history < 4 sessions (cold-start).
     """
     null = {"inflected": None, "days_since_inflection": None}
@@ -368,14 +424,17 @@ def flow_inflect(net_prem_history: pd.Series) -> dict:
 
     inflected = bool(latest > 0 and neg_count >= INFLECT_NEG_SESSIONS)
 
-    # days_since_inflection: search backwards for the most recent bar that
-    # was positive after ≥3 negatives before it
+    # days_since_inflection: find the FIRST positive bar that followed the most
+    # recent run of ≥INFLECT_NEG_SESSIONS consecutive/cumulative negatives.
+    # Search forward from the start to find the earliest qualifying flip event.
     days_since: int | None = None
-    for i in range(len(vals) - 1, 0, -1):
+    n = len(vals)
+    for i in range(1, n):
         if float(vals.iloc[i]) > 0:
             neg_before = int((vals.iloc[:i] < 0).sum())
             if neg_before >= INFLECT_NEG_SESSIONS:
-                days_since = len(vals) - 1 - i
+                # i is the flip event; days_since = distance from i to end of series
+                days_since = n - 1 - i
                 break
 
     return {"inflected": inflected, "days_since_inflection": days_since}
@@ -391,21 +450,30 @@ def flow_z(gross_prem_history: pd.Series) -> float | None:
             (most recent last).  Minimum MIN_Z_HISTORY observations required.
 
     Returns:
-        float z-score, or None when fewer than MIN_Z_HISTORY observations.
+        float z-score, or None when fewer than MIN_Z_HISTORY observations,
+        or None when std==0/NaN, or None when the result would be NaN/inf.
+
+    House law (pandas-rolling-inf-nan-prep): pandas rolling maps ±inf→NaN
+    pre-window; this function replicates that by replacing ±inf before stats
+    so direct-kernel fast-paths produce bit-equivalent results.
 
     Precedent: build_flow_desk.py MIN_Z_HISTORY = 20.
     """
     if gross_prem_history is None:
         return None
-    vals = gross_prem_history.dropna()
+    # Sanitize ±inf before computing stats (house law: inf contaminates mean/std)
+    vals = gross_prem_history.replace([np.inf, -np.inf], np.nan).dropna()
     if len(vals) < MIN_Z_HISTORY:
         return None
     mu = float(vals.mean())
     std = float(vals.std(ddof=1))
-    if std == 0:
+    if std == 0 or pd.isna(std):
         return None
     latest = float(vals.iloc[-1])
-    return round((latest - mu) / std, 3)
+    result = (latest - mu) / std
+    if pd.isna(result):
+        return None
+    return round(result, 3)
 
 
 # ── De-escalation flags (FL-R12) ─────────────────────────────────────────────
@@ -477,7 +545,8 @@ class Legs:
     def __post_init__(self) -> None:
         vals = self._bool_fields()
         self.K = sum(1 for v in vals if v is True)
-        self.n_avail = sum(1 for v in vals if v is not None and not (isinstance(v, float) and pd.isna(v)))
+        # n_avail: count non-null legs (None, pd.NA, and float NaN are all null)
+        self.n_avail = sum(1 for v in vals if not _is_null(v))
 
 
 @dataclass
@@ -560,9 +629,9 @@ def board_a_legs(
     # A1: flow recurrence (pre-evaluated)
     a1 = recur_leg
 
-    # A2: gross-premium z ≥ 2
+    # A2: gross-premium z ≥ 2; None when flow_z_val is None or NaN (M1)
     a2: bool | None = None
-    if flow_z_val is not None:
+    if flow_z_val is not None and not (isinstance(flow_z_val, float) and pd.isna(flow_z_val)):
         a2 = bool(flow_z_val >= MIN_Z)
 
     # A3: OI-confirmed (t+1 asof — caller stamps fire_date accordingly)
@@ -574,11 +643,19 @@ def board_a_legs(
         a4 = bool(ts_breadth_val >= 2)
 
     # A5: price_leader = ribbon_up AND rs_1m > 0
-    a5: bool | None = None
-    if ribbon_up is not None and rs_1m is not None:
-        a5 = bool(ribbon_up and rs_1m > 0)
-    elif ribbon_up is not None:
-        a5 = ribbon_up  # partial; caller may get full leg if rs_1m also available later
+    # Kleene AND (B1): False when ribbon_up is False; False when rs_1m known ≤ 0;
+    # True only when both are known True; None when either is None and the other
+    # doesn't already settle the result to False.
+    _ribbon_false = ribbon_up is False
+    _rs_false = rs_1m is not None and rs_1m <= 0
+    _ribbon_true = ribbon_up is True
+    _rs_true = rs_1m is not None and rs_1m > 0
+    if _ribbon_false or _rs_false:
+        a5: bool | None = False
+    elif _ribbon_true and _rs_true:
+        a5 = True
+    else:
+        a5 = None  # one or both unknown and no False settled the result
 
     # A6: near_high
     a6: bool | None = None
@@ -586,13 +663,10 @@ def board_a_legs(
         a6 = bool(high52w_prox >= HIGH52W_PROX_MIN)
 
     # A7: vol_confirm = rel_volume ≥ 1.30 OR obv_slope_up
-    a7: bool | None = None
-    if rel_volume is not None and obv_slope_up is not None:
-        a7 = bool(rel_volume >= RVOL_CONFIRM or obv_slope_up)
-    elif rel_volume is not None:
-        a7 = bool(rel_volume >= RVOL_CONFIRM)
-    elif obv_slope_up is not None:
-        a7 = bool(obv_slope_up)
+    # Kleene OR (B1): True when any known operand is True; False only when all
+    # known operands are False and none are None; else None.
+    _rvol_bool: bool | None = None if rel_volume is None else bool(rel_volume >= RVOL_CONFIRM)
+    a7: bool | None = _or3(_rvol_bool, obv_slope_up)
 
     # A8: not_trap
     a8: bool | None = None
@@ -614,7 +688,7 @@ def board_a_legs(
 def board_b_legs(
     *,
     washout_ctx: dict | None = None,
-    weekly_stochrsi_k: float | None = None,
+    weekly_stochrsi_k_min3: float | None = None,
     rsi_stack_oversold: bool | None = None,
     mtf_upturn_state: str | None = None,
     htf_cross_near: bool | None = None,
@@ -631,7 +705,9 @@ def board_b_legs(
 
     Args:
         washout_ctx: Output dict from engine.intraday_flow.washout_context().
-        weekly_stochrsi_k: Weekly StochRSI K value (0-100).
+        weekly_stochrsi_k_min3: min(StochRSI K over the last 3 completed weekly
+            bars) per masterplan B2 "within 3 weekly bars" (0-100).  Named
+            ``weekly_stochrsi_k_min3`` to make the caller's obligation explicit.
         rsi_stack_oversold: True when rsi_stack oversold within 10 sessions.
         mtf_upturn_state: String state from mtf_upturn engine.
         htf_cross_near: W or 2W MACD crossed or ETA ≤ 2 bars (display only).
@@ -655,17 +731,16 @@ def board_b_legs(
         elif dd is not None and rec is not None:
             b1 = bool(dd <= -0.12 and rec)
 
-    # B2: oversold_osc — weekly StochRSI K<20 OR rsi_stack_oversold within 10
-    b2: bool | None = None
-    stoch_os: bool | None = None if weekly_stochrsi_k is None else bool(weekly_stochrsi_k < 20)
-    if stoch_os is not None and rsi_stack_oversold is not None:
-        b2 = bool(stoch_os or rsi_stack_oversold)
-    elif stoch_os is not None:
-        b2 = stoch_os
-    elif rsi_stack_oversold is not None:
-        b2 = rsi_stack_oversold
+    # B2: oversold_osc — weekly StochRSI K<20 (within 3 bars) OR rsi_stack_oversold
+    # Kleene OR (B1): True when any known operand is True; False when all known
+    # operands are False; None when at least one is None and none are True.
+    _stoch_os: bool | None = (
+        None if weekly_stochrsi_k_min3 is None else bool(weekly_stochrsi_k_min3 < 20)
+    )
+    b2: bool | None = _or3(_stoch_os, rsi_stack_oversold)
 
     # B3: turn_organ = mtf_upturn ≥ UPTURN_WATCH
+    # State strings mirror engine/mtf_upturn.py state machine (raw_state literals).
     b3: bool | None = None
     if mtf_upturn_state is not None:
         b3 = bool(mtf_upturn_state in (UPTURN_WATCH_STATE, "UPTURN_CONFIRMED"))
@@ -683,14 +758,9 @@ def board_b_legs(
     # B6: oi_confirmed
     b6 = oi_confirmed
 
-    # B7: vol_confirm
-    b7: bool | None = None
-    if rel_volume is not None and obv_slope_up is not None:
-        b7 = bool(rel_volume >= RVOL_CONFIRM or obv_slope_up)
-    elif rel_volume is not None:
-        b7 = bool(rel_volume >= RVOL_CONFIRM)
-    elif obv_slope_up is not None:
-        b7 = bool(obv_slope_up)
+    # B7: vol_confirm = rel_volume ≥ 1.30 OR obv_slope_up (Kleene OR, same as A7)
+    _b7_rvol: bool | None = None if rel_volume is None else bool(rel_volume >= RVOL_CONFIRM)
+    b7: bool | None = _or3(_b7_rvol, obv_slope_up)
 
     # B8: not_trap
     b8: bool | None = None

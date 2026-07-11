@@ -273,3 +273,29 @@ class TestMacdBarsToCross2W:
         assert result["htf_coverage"] is True
         # flat → hist stays exactly 0, which is not negative, so no approach/cross
         assert result["state"] in ("none", "crossed")
+
+    def test_bars_since_counting_window_aligned_with_detection(self):
+        """bars_since must be counted from the same h[-4:-1] window used for detection.
+
+        Regression: the old code used h.iloc[-3:] for counting, which could not
+        report bars_since=3 (a cross at h[-4]).  The new code iterates h[-4:-1]
+        and reports distance from the earliest ≤0 bar.
+
+        Use the calibrated series from test_known_cross_transition (cutoff=440)
+        where we know state='crossed'.  Verify bars_since is an int in [1, 3].
+        """
+        n = 1500
+        dates = pd.date_range("2010-01-04", periods=n, freq="B")
+        p1 = np.linspace(1000.0, 100.0, 400)
+        p2 = np.linspace(100.0, 900.0, 1100)
+        vals = np.concatenate([p1, p2])
+        s = pd.Series(vals, index=dates)
+
+        s_crossed = s.iloc[:440]
+        result = macd_bars_to_cross_2w(s_crossed)
+        assert result["state"] == "crossed"
+        bs = result["bars_since"]
+        assert bs is not None
+        assert isinstance(bs, int)
+        # bars_since must be within the detection window [1, 3]
+        assert 1 <= bs <= 3, f"bars_since={bs} outside detection window [1,3]"

@@ -106,13 +106,18 @@ def macd_bars_to_cross_2w(daily_close: pd.Series) -> dict:
     """2W MACD(12,26,9) bars-to-cross ETA on the epoch-anchored biweekly close (FL-R7).
 
     Mirrors ``engine.cycles._tf_state`` projection math:
-      - If hist > 0 and recently crossed (within 2 bars): state='crossed'
+      - If hist > 0 and recently crossed (within 3 bars — h[-4:-1] detection window):
+        state='crossed', bars_since = distance from the earliest ≤0 bar in h[-4:-1]
       - If hist < 0 AND rising 3 consecutive bars AND linear-extrapolation ETA
         ≤ _MACD_APPROACH_MAX_BARS (6): state='approaching', bars_to_cross=eta
       - Otherwise: state='none'
 
     The 3-bar slope (h[-1] - h[-4]) / 3 and ETA = -h[-1] / slope follow
     cycles._tf_state exactly (with h the histogram dropna series).
+
+    Note: the B4 chip applies its own ≤2-bar ETA gate at the caller before
+    displaying htf_cross_near; this function returns the raw ETA for the caller
+    to apply that gate independently.
 
     Args:
         daily_close: Date-indexed daily close Series (ascending).
@@ -147,14 +152,18 @@ def macd_bars_to_cross_2w(daily_close: pd.Series) -> dict:
 
     latest = float(h.iloc[-1])
 
-    # ── crossed: hist > 0 and any of the prior 2 bars was ≤ 0 ───────────────
+    # ── crossed: hist > 0 and any bar in the detection window h[-4:-1] was ≤ 0 ──
+    # bars_since counting uses the SAME h[-4:-1] window so a cross at h[-4]
+    # reports bars_since=3, not a phantom 0.
     if latest > 0 and (h.iloc[-4:-1] <= 0).any():
-        # count bars since cross (first bar in the recent window where hist flipped)
-        recent = h.iloc[-3:]
-        bars_since = 0
-        for i, v in enumerate(reversed(recent.values[:-1])):
+        # Search h[-4:-1] from oldest to newest to find the first ≤0 bar;
+        # bars_since = distance from that bar to h[-1].
+        detection_window = h.iloc[-4:-1]  # h[-4], h[-3], h[-2]
+        bars_since = 3  # default: cross was at h[-4] (3 bars before h[-1])
+        for offset, v in enumerate(detection_window.values):
+            # offset 0 → h[-4], offset 1 → h[-3], offset 2 → h[-2]
             if float(v) <= 0:
-                bars_since = i + 1
+                bars_since = 3 - offset  # h[-4]→3, h[-3]→2, h[-2]→1
                 break
         return {"state": "crossed", "bars_since": bars_since, "bars_to_cross": None, "htf_coverage": True}
 
