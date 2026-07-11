@@ -11,7 +11,10 @@ WHAT IT DOES (deterministic, no AI in P0):
      industrial-policy, plus the core macro terms) — broader than engine.macro_news,
      because the manufactured-volatility backdrop the dashboard must read (tariff
      scares, Iran/Israel headlines, government stakes in chipmakers) is exactly the
-     policy/geo flow macro_news filters OUT.
+     policy/geo flow macro_news filters OUT. The term list goes out as MULTIPLE
+     sub-queries, each under GDELT's server-side query-length limit (_MAX_QUERY_LEN;
+     the limit TIGHTENED ~2026-06-20 and rejected the old single query for 3 weeks),
+     through engine.gdelt_client's shared cross-process per-IP pace gate.
   2. GATE deterministically — reputable-source allowlist + a narrative-theme keyword
      gate (reuses engine.macro_news.filter primitives where they overlap), dedup.
   3. KEY each kept headline by a stable content hash (event_id) and ACCRUE it
@@ -258,9 +261,28 @@ _QUERY_CORE = ['tariffs', '"trade war"', 'sanctions', 'iran', 'israel', 'ukraine
                '"stock market"', '"oil price"', 'antitrust']
 
 
-def _query(cfg: dict) -> str:
+# GDELT rejects long queries with HTTP 200 + text/html "Your query was too short
+# or too long." — a STRUCTURAL failure retries can never heal. The limit is
+# server-side and has TIGHTENED before: ~2026-06-20 it dropped below this
+# module's original single 288-char query and silently stalled the accrual for
+# three weeks (probed 2026-07-10: 246 chars accepted, 288 rejected). 230 leaves
+# headroom; _queries() splits the term list into as many sub-queries as needed.
+_MAX_QUERY_LEN = 230
+
+
+def _queries(cfg: dict) -> list[str]:
+    """Split the narrative term list into OR-group sub-queries whose FULL query
+    strings (terms + source filters) each stay under _MAX_QUERY_LEN. PURE."""
     core = cfg.get("query_terms") or _QUERY_CORE
-    return "(" + " OR ".join(core) + f") sourcecountry:US sourcelang:{cfg.get('lang', 'eng')}"
+    suffix = f" sourcecountry:US sourcelang:{cfg.get('lang', 'eng')}"
+    budget = _MAX_QUERY_LEN - len(suffix) - 2          # 2 for the wrapping parens
+    groups: list[list[str]] = [[]]
+    for term in core:
+        if groups[-1] and len(" OR ".join(groups[-1] + [term])) > budget:
+            groups.append([term])
+        else:
+            groups[-1].append(term)
+    return ["(" + " OR ".join(g) + ")" + suffix for g in groups if g]
 
 
 def _cache_path(cfg: dict, d: date) -> Path:
@@ -269,36 +291,91 @@ def _cache_path(cfg: dict, d: date) -> Path:
     return Path(cdir) / f"nv_{d.isoformat()}.json"
 
 
+# degraded_reason severity: a structural rejection outranks everything (it will
+# never self-heal), then transient failures, then the benign "window was quiet".
+_REASON_PRIORITY = ("query_rejected", "rate_limited", "fetch_error", "no_headlines")
+
+
+def fetch_range(cfg: dict, start: datetime, end: datetime,
+                max_records: int | None = None) -> tuple[list[dict], str | None]:
+    """Raw narrative-scope articles for [start, end] — the ONE fetch path shared
+    by the daily ingest and the date-ranged backfill (scripts/backfill_news_vector).
+    No cache. Never raises.
+
+    The term list goes out as MULTIPLE sub-queries (_queries, each under GDELT's
+    server-side length limit) through engine.gdelt_client (single cross-process
+    pacing lock + honest failure labels); articles are merged and deduped on
+    (title, domain) — the event_id basis. degraded_reason surfaces the WORST
+    sub-query outcome (_REASON_PRIORITY) so a structural query_rejected stays
+    loud even when the other sub-queries succeeded; it is None only when every
+    sub-query returned usable JSON and at least one article arrived (all-quiet
+    -> no_headlines)."""
+    from engine import gdelt_client as _gc
+
+    articles: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    reasons: list[str] = []
+    for q in _queries(cfg):
+        params = {"query": q, "mode": "artlist", "format": "json",
+                  "maxrecords": str(max_records or cfg.get("max_records", 120)),
+                  "sort": "datedesc",
+                  "startdatetime": start.strftime("%Y%m%d%H%M%S"),
+                  "enddatetime": end.strftime("%Y%m%d%H%M%S")}
+        try:
+            got, why = _gc.get_articles(
+                params, timeout=30,
+                min_interval=max(0, int(cfg.get("min_request_interval_s", 6))))
+        except Exception as e:  # noqa: BLE001 — degrade, never raise
+            log.warning("news_vector gdelt fetch failed (%s)", e)
+            got, why = None, "fetch_error"
+        if why == "query_rejected":
+            log.error("news_vector: GDELT REJECTED sub-query (len=%d) — STRUCTURAL, "
+                      "retries cannot heal; shorten query_terms/_QUERY_CORE or "
+                      "_MAX_QUERY_LEN: %r", len(q), q)
+        if got is None:
+            reasons.append(why or "fetch_error")
+            continue
+        for a in got:
+            key = ((a.get("title") or "").strip(), (a.get("domain") or "").lower())
+            if key in seen:
+                continue                     # same story matched two sub-queries
+            seen.add(key)
+            articles.append(a)
+    reason = next((lvl for lvl in _REASON_PRIORITY if lvl in reasons), None)
+    if not articles and reason is None:
+        reason = "no_headlines"
+    return articles, reason
+
+
 def _fetch_gdelt(cfg: dict, today: date) -> tuple[list[dict], str | None]:
     """Recent narrative-scope articles from GDELT (last window_days). Returns
     (raw_articles, degraded_reason). Cached 12h; never raises.
 
-    Delegates HTTP, throttling, and retry handling to engine.gdelt_client so
-    all GDELT callers share a single cross-process pacing lock (GDELT 5s/IP rule;
-    nine callers without shared throttle caused a penalty-box incident 2026-06-20)."""
-    from engine import gdelt_client as _gc
+    The day-cache sits HERE (one blob spanning all sub-queries), not inside
+    gdelt_client — fetch_range fans out to several sub-queries and the daily
+    result is only meaningful as their merged union."""
     cache = _cache_path(cfg, today)
     ttl = int(cfg.get("cache_ttl_hours", 12)) * 3600
+    if cache.exists():
+        try:
+            if datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime < ttl:
+                blob = json.loads(cache.read_text())
+                return blob.get("articles", []), blob.get("degraded_reason")
+        except Exception:  # noqa: BLE001
+            pass
     win = int(cfg.get("window_days", 2))
     end = datetime(today.year, today.month, today.day, 23, 59, 59)
     start = end - timedelta(days=win)
-    params = {"query": _query(cfg), "mode": "artlist", "format": "json",
-              "maxrecords": str(cfg.get("max_records", 120)), "sort": "datedesc",
-              "startdatetime": start.strftime("%Y%m%d%H%M%S"),
-              "enddatetime": end.strftime("%Y%m%d%H%M%S")}
-    try:
-        articles, reason = _gc.get_articles(
-            params, timeout=30, cache_path=cache, cache_ttl_s=ttl)
-        # gdelt_client returns None on final failure; normalise to [] for this caller
-        if articles is None:
-            return [], reason
-        # Normalise reason: gdelt_client uses 'no_articles'; callers expect 'no_headlines'
-        if reason == "no_articles":
-            reason = "no_headlines"
-        return articles, reason
-    except Exception as e:  # noqa: BLE001 — degrade, never raise
-        log.warning("news_vector gdelt fetch failed (%s)", e)
-        return [], "fetch_error"
+    articles, reason = fetch_range(cfg, start, end)
+    # Only cache SUCCESSFUL responses (articles present).  A failed/empty response
+    # (rate_limited, fetch_error, no_headlines) must NOT be cached — caching it would
+    # suppress retries for the full 12-hour TTL and silently stall the accrual store.
+    if articles:
+        try:
+            cache.write_text(json.dumps({"articles": articles, "degraded_reason": reason}))
+        except Exception:  # noqa: BLE001
+            pass
+    return articles, reason
 
 
 def _allowlist(cfg: dict) -> list[str]:
@@ -317,7 +394,10 @@ def _allowlist(cfg: dict) -> list[str]:
 # --------------------------------------------------------------------------- #
 # public: daily ingest (Action-step) — fetch -> gate -> keep-FIRST accrue
 # --------------------------------------------------------------------------- #
-_FRESHNESS_WARN_DAYS = 3  # warn when newest event is older than this
+_FRESHNESS_WARN_DAYS = 3   # warn when newest event is older than this
+_FRESHNESS_ERROR_DAYS = 7  # escalate WARNING -> ERROR: a week-plus stall is
+                           # structural (query_rejected / persistent rate-limit),
+                           # not a bad day — it needs a human/agent, not a retry
 
 
 def _check_freshness(path: "Path", today: date) -> dict:
@@ -342,14 +422,28 @@ def _check_freshness(path: "Path", today: date) -> dict:
                     "reason": "unparseable_date"}
         age = (today - newest).days
         warn = age > _FRESHNESS_WARN_DAYS
-        if warn:
+        escalated = age > _FRESHNESS_ERROR_DAYS
+        if escalated:
+            log.error(
+                "news_vector freshness ERROR: newest event %s is %d days old "
+                "(warn threshold %d, error threshold %d) — the accrual is STALLED, "
+                "not merely late. Check this run's degraded_reason: query_rejected "
+                "means GDELT rejected the query (structural — fix the query, "
+                "retries cannot heal); rate_limited means the shared per-IP GDELT "
+                "budget is exhausted (engine.gdelt_client). After fixing, close the "
+                "gap with scripts/backfill_news_vector.py --start %s",
+                newest_str, age, _FRESHNESS_WARN_DAYS, _FRESHNESS_ERROR_DAYS,
+                newest_str,
+            )
+        elif warn:
             log.warning(
                 "news_vector freshness WARNING: newest event %s is %d days old "
                 "(threshold %d) — accrual may be stalled (check GDELT rate-limit "
                 "or fetch_cache for cached failures)",
                 newest_str, age, _FRESHNESS_WARN_DAYS,
             )
-        return {"age_days": age, "newest_event": newest_str, "warn": warn}
+        return {"age_days": age, "newest_event": newest_str, "warn": warn,
+                "escalated": escalated}
     except Exception as e:  # noqa: BLE001
         log.warning("news_vector freshness check failed (%s)", e)
         return {"age_days": None, "newest_event": None, "warn": True, "reason": str(e)}
@@ -382,9 +476,13 @@ def ingest(today: date | None = None) -> dict | None:
         log.info("news_vector: %d raw -> %d gated -> %d new events (%d total)",
                  len(raw), len(records), n_new, len(merged))
         freshness = _check_freshness(path, today)
+        # degraded_reason is ALWAYS surfaced (not only when zero records landed):
+        # a partial fetch where one sub-query was rejected or rate-limited is
+        # still degraded coverage, and query_rejected in particular must stay
+        # loud — it is structural and never self-heals.
         return {"schema": SCHEMA, "is_context_only": True, "asof": today.isoformat(),
                 "n_raw": len(raw), "n_gated": len(records), "n_new": n_new,
-                "n_total": int(len(merged)), "degraded_reason": reason if not records else None,
+                "n_total": int(len(merged)), "degraded_reason": reason,
                 "freshness": freshness}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("news_vector ingest failed (%s)", e)

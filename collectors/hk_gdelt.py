@@ -56,7 +56,6 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
@@ -65,6 +64,7 @@ import pandas as pd
 import requests
 
 from collectors.base import Adapter
+from engine import gdelt_client
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -98,7 +98,11 @@ ENTITIES: list[_Entity] = [
 
 _GDELT_BASE = "https://api.gdeltproject.org/api/v2/doc/doc"
 _TIMESPAN    = "90d"
-_REQUEST_GAP = 5.5   # seconds between API requests (rate limit: 1/5s)
+_REQUEST_GAP = 5.5   # seconds between API requests (rate limit: 1/5s). Enforced
+                     # via engine.gdelt_client.wait_turn — the budget is per IP, so
+                     # pacing only OURSELVES while news_vector/macro_news/china_news
+                     # etc. hit the same endpoint in the same lane still tripped
+                     # 429s; the shared gate spaces ALL of them together.
 
 # ---------------------------------------------------------------------------
 # Store layout
@@ -186,13 +190,10 @@ def _fetch_entity(entity: _Entity, session: requests.Session) -> pd.DataFrame | 
     vol_rows: dict[pd.Timestamp, list[float]] = {}
     tone_rows: dict[pd.Timestamp, list[float]] = {}
 
-    for q_idx, query in enumerate(entity.queries):
-        if q_idx > 0:
-            time.sleep(_REQUEST_GAP)
-
+    for query in entity.queries:
         # Vol
         try:
-            time.sleep(_REQUEST_GAP)
+            gdelt_client.wait_turn(_REQUEST_GAP)
             vol_data = _gdelt_timeline(query, "timelinevol", session)
             for pt in vol_data:
                 ts = _parse_gdelt_date(pt.get("date", ""))
@@ -203,7 +204,7 @@ def _fetch_entity(entity: _Entity, session: requests.Session) -> pd.DataFrame | 
 
         # Tone
         try:
-            time.sleep(_REQUEST_GAP)
+            gdelt_client.wait_turn(_REQUEST_GAP)
             tone_data = _gdelt_timeline(query, "timelinetone", session)
             for pt in tone_data:
                 ts = _parse_gdelt_date(pt.get("date", ""))

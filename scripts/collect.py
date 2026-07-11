@@ -799,13 +799,25 @@ def main() -> int:
         _nv_result = _nv.ingest()
         if _nv_result is not None:
             _nv_freshness = _nv_result.get("freshness", {})
-            _nv_stale_d = _nv_freshness.get("newest_event_age_days")
-            if _nv_result.get("degraded_reason"):
-                log.warning("news_vector ingest degraded (%s); will retry next collect "
-                            "(stale=%s days)", _nv_result["degraded_reason"],
-                            f"{_nv_stale_d:.1f}" if _nv_stale_d is not None else "?")
+            _nv_stale_d = _nv_freshness.get("age_days")
+            _nv_reason = _nv_result.get("degraded_reason")
+            if _nv_reason == "query_rejected":
+                # STRUCTURAL: GDELT rejected the query itself (server-side length
+                # limit — the 2026-06-20..07-10 stall). Retrying can never heal it,
+                # so this is an ERROR demanding a code/config change, not a
+                # "will retry" warning.
+                log.error("news_vector ingest degraded (query_rejected): GDELT "
+                          "rejected the query — structural, retries cannot heal; "
+                          "fix news_vector query_terms / _MAX_QUERY_LEN "
+                          "(stale=%s days)",
+                          _nv_stale_d if _nv_stale_d is not None else "?")
+            elif _nv_reason:
+                _nv_log = log.error if _nv_freshness.get("escalated") else log.warning
+                _nv_log("news_vector ingest degraded (%s); will retry next collect "
+                        "(stale=%s days)", _nv_reason,
+                        _nv_stale_d if _nv_stale_d is not None else "?")
             else:
-                log.info("news_vector: +%d events (%d total, newest age %.1fd)",
+                log.info("news_vector: +%d events (%d total, newest age %sd)",
                          _nv_result.get("n_new", 0), _nv_result.get("n_total", 0),
                          _nv_stale_d if _nv_stale_d is not None else 0)
     except Exception as e:  # noqa: BLE001 — additive, never fatal

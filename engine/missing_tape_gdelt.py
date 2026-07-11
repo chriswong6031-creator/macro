@@ -42,7 +42,6 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 import urllib.parse
 import urllib.request
 from datetime import date, timedelta
@@ -280,16 +279,14 @@ def update(
     # call per lane (zh / en) to minimise round-trips, then filter to missing dates.
     # Rate: 1req/5s → 2 requests total per daily run.
 
-    last_fetch = 0.0
     new_rows: list[dict] = []
     n_requests = 0
 
     def _pace() -> None:
-        nonlocal last_fetch
-        elapsed = time.monotonic() - last_fetch
-        if elapsed < _PACE_SECONDS:
-            time.sleep(_PACE_SECONDS - elapsed)
-        last_fetch = time.monotonic()
+        # shared per-IP pace gate — coordinates with every other GDELT caller
+        # in the lane (news_vector, macro_news, hk_gdelt, ...), not just this one
+        from engine import gdelt_client
+        gdelt_client.wait_turn(_PACE_SECONDS)
 
     # Onshore (Chinese-language, sourced from China)
     _pace()

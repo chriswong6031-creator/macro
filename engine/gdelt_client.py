@@ -16,10 +16,11 @@ Nine caller modules were identified:
   engine/china_news.py, engine/catalyst_stock.py, engine/catalyst_tone.py,
   engine/commodity_news.py, engine/missing_tape_gdelt.py, collectors/hk_gdelt.py
 
-engine/macro_news.py is handled by a separate lane and must NOT be wired here yet.
 engine/missing_tape_gdelt.py and collectors/hk_gdelt.py use the timeline (not
-artlist) endpoint and their own Session/urllib transport; they are left to their own
-pacing and noted in the PR body.
+artlist) endpoint with their own Session/urllib transport, and engine/macro_news.py
+keeps its own fetch loop (separate lane owns its rework) — those three pace
+through the PUBLIC wait_turn() gate below instead of get_articles, so the whole
+repo still shares ONE per-IP budget.
 
 THROTTLE MECHANISM
 ------------------
@@ -116,6 +117,24 @@ def _throttle(min_interval: float) -> None:
         log.debug("gdelt_client throttle error (non-fatal): %s", e)
 
 
+def wait_turn(min_interval: "float | None" = None) -> None:
+    """PUBLIC pace gate for GDELT callers that keep their own transport
+    (timeline-endpoint modules: collectors/hk_gdelt, engine/missing_tape_gdelt,
+    plus engine/macro_news's fetch loop). Blocks until >= min_interval seconds
+    since the LAST GDELT request made by ANY module/process on this machine,
+    then claims the slot. The budget is per IP — pacing only yourself while
+    eight other modules hit the same endpoint still trips 429s. Never raises."""
+    _throttle(min_interval if min_interval is not None else _min_interval())
+
+
+# Body markers (lower-cased substring match on the first bytes of a non-JSON
+# 200 response). GDELT signals BOTH rate limits and query rejections as HTTP
+# 200 + plain text; the two need OPPOSITE handling — retry vs fix-the-query —
+# so binning them together is how the 2026-06-20..07-10 news_vector stall hid
+# for three weeks behind a generic label.
+_REJECTED_MARKERS = ("too short or too long", "invalid query", "unsupported query")
+
+
 def _parse_articles(raw_json: dict) -> list[dict]:
     """Normalise raw GDELT artlist JSON into {title, url, domain, seendate(ISO),
     language, sourcecountry} dicts.  PURE — no network, no clock.
@@ -172,8 +191,11 @@ def get_articles(
         articles         list of {title, url, domain, seendate} dicts, or None on
                          final failure (two retries exhausted).
         degraded_reason  None on success, 'rate_limited' on persistent 429,
-                         'fetch_error' on any other failure, 'no_articles' when the
-                         response was valid but empty.
+                         'query_rejected' when GDELT rejected the query itself
+                         (STRUCTURAL — never retried here; the caller must
+                         shorten/split the query), 'fetch_error' on any other
+                         failure, 'no_articles' when the response was valid but
+                         empty.
     """
     interval = min_interval if min_interval is not None else _min_interval()
 
@@ -212,7 +234,23 @@ def get_articles(
         if r.status_code == 200:
             ct = r.headers.get("Content-Type", "")
             if "json" not in ct:
-                # GDELT sometimes returns 200 + plain-text on rate-limit
+                # GDELT signals two DIFFERENT failures as 200 + plain text:
+                # a query rejection (structural — retrying can never heal it
+                # and only burns the shared budget) and a rate limit (transient).
+                body = ""
+                try:
+                    body = (r.text or "")[:400].lower()
+                except Exception:  # noqa: BLE001
+                    pass
+                if any(m in body for m in _REJECTED_MARKERS):
+                    log.error(
+                        "gdelt_client: GDELT REJECTED the query (len=%d) — "
+                        "STRUCTURAL, not retried; the query violates a server-side "
+                        "limit (e.g. max length, tightened ~2026-06-20) and must be "
+                        "shortened/split by the caller: %r",
+                        len(str(params.get("query", ""))), r.text[:200],
+                    )
+                    return None, "query_rejected"
                 log.warning(
                     "gdelt_client: 200 but Content-Type=%r (rate-limit text?); attempt %d",
                     ct, attempt,

@@ -317,5 +317,69 @@ def test_cross_process_stamp_honoured(tmp_path):
     )
 
 
+# ── query-rejection tests (the 2026-06-20..07-10 news_vector stall shape) ────
+
+def test_query_rejected_is_structural_not_retried(tmp_path):
+    """GDELT 200 + text/html 'Your query was too short or too long.' must return
+    (None, 'query_rejected') after ONE request — retrying a rejected query can
+    never heal it and only burns the shared per-IP budget. Binning it as
+    rate_limited/fetch_error is how the news_vector stall hid for three weeks."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+    rejected = _make_response(200, content_type="text/html; charset=utf-8")
+    rejected.text = "Your query was too short or too long.\n"
+    calls: list[int] = []
+
+    def _fake_get(*args, **kwargs):
+        calls.append(1)
+        return rejected
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch("requests.get", side_effect=_fake_get), \
+         patch("time.sleep"):
+        articles, reason = _gc.get_articles(_SAMPLE_PARAMS, min_interval=0.0)
+
+    assert articles is None
+    assert reason == "query_rejected"
+    assert len(calls) == 1, "a rejected query must NOT be retried"
+
+
+def test_non_json_unknown_text_still_retried_as_rate_limit(tmp_path):
+    """200 + non-JSON WITHOUT a rejection marker keeps the conservative
+    retry-as-rate-limit behavior (GDELT's throttle text is 200 + plain text)."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+    throttled = _make_response(200, content_type="text/plain")
+    throttled.text = "Please limit requests to one every 5 seconds or contact ..."
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch("requests.get", return_value=throttled), \
+         patch("time.sleep"):
+        articles, reason = _gc.get_articles(_SAMPLE_PARAMS, min_interval=0.0)
+
+    assert articles is None
+    assert reason == "rate_limited"
+
+
+# ── public wait_turn gate (timeline-endpoint callers) ─────────────────────────
+
+def test_wait_turn_public_gate_spaces_calls(tmp_path):
+    """wait_turn() — used by hk_gdelt / missing_tape_gdelt / macro_news which keep
+    their own transport — must honour the same cross-process stamp as get_articles."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+    min_interval = 0.05
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file):
+        _gc.wait_turn(min_interval)          # claims the slot
+        t0 = time.monotonic()
+        _gc.wait_turn(min_interval)          # must wait out the interval
+        gap = time.monotonic() - t0
+
+    assert gap >= min_interval * 0.9, (
+        f"second wait_turn returned after only {gap:.4f}s; expected >= {min_interval}s"
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-x", "-q"])
