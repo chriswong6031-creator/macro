@@ -24,7 +24,7 @@ concurrency:
 jobs:
   asia:
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 120   # was 90 — the build step was getting CANCELLED at ~90m on congested runners (same failure daily.yml hit at 70m). 120m gives headroom to always reach the commit+push. The collect+data commit run first, so a timeout no longer strands fresh data — but a cancelled render still means asia engine outputs don't land, so keep the cap generous.
+    timeout-minutes: 165   # was 90 -> 120 -> 165. EVERY run 07-03..07-10 died at the cap: measured 07-10 (run 29089281652) collect --group asia = 68m + build_china alone = 36m, so the kill lands mid-chain — everything after build_subsector_confluence (build_hk, build_china_news ingest, all CN-SYS lobes, masterminds) had been DEAD for 8 days while the run reads "cancelled" not "failed". Last natural success 07-02 at ~86m; the lane grew ~+35m in a week as W8/CN-SYS modules landed. 165m restores the full chain; the durable fix is a runtime diet (shadow_importance v0+PIT = 13m and redfin ride inside the asia shard; china_filings burns ~5m on CNInfo 504 retries).
     steps:
       # Default ref (the branch that triggered this) — NOT a hard `ref: main`. On the
       # feat/time-shards branch this pulls the collect.py that HAS --group; on main
