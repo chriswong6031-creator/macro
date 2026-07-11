@@ -538,3 +538,60 @@ class TestPrecedenceEdgeCases:
         )
         # Neither veto fires → not FALLING; no READY conditions → BASING
         assert z == ZONE_BASING
+
+
+# ── evidence_display: plain-word bilingual twins (doctrine Law 2) ─────────────
+
+class TestEvidenceDisplay:
+    """Every machine evidence receipt must carry a plain-word bilingual twin
+    (evidence_display), parallel 1:1, with the receipt equal to the machine
+    string — this is what the Ripening Shelf renders at rest."""
+
+    CASES = dict(
+        falling=dict(ret_5d=-0.15, macd_hist_d=-0.10, macd_hist_prev_d=-0.05),
+        ready_all=dict(ret_5d=-0.02, macd_hist_d=0.05, macd_hist_prev_d=0.03,
+                       w1_cross_bars_since=1, w1_from_washout=True,
+                       macd_bars_to_cross_2w=0.5),
+        basing=dict(ret_5d=-0.03, macd_hist_d=-0.20, macd_hist_prev_d=-0.30,
+                    w1_cross_bars_since=10, stoch_2w=13.0),
+    )
+
+    def _result(self, case):
+        defaults = dict(
+            ret_5d=None, macd_hist_d=None, macd_hist_prev_d=None,
+            w1_cross_bars_since=None, w1_from_washout=False,
+            macd_bars_to_cross_2w=None, stoch_2w=None, stoch_2w_prev=None,
+        )
+        defaults.update(self.CASES[case])
+        return assign_ripening_zone(**defaults)
+
+    @pytest.mark.parametrize("case", ["falling", "ready_all", "basing"])
+    def test_display_parallel_to_evidence(self, case):
+        """evidence_display is 1:1 with evidence; receipt == machine string."""
+        r = self._result(case)
+        assert len(r["evidence_display"]) == len(r["evidence"]) > 0
+        for machine, disp in zip(r["evidence"], r["evidence_display"]):
+            assert disp["receipt"] == machine
+            assert disp["en"].strip() and disp["zh"].strip()
+
+    @pytest.mark.parametrize("case", ["falling", "ready_all", "basing"])
+    def test_display_en_has_no_quant_shorthand(self, case):
+        """Glance-tier EN copy must not leak indicator shorthand (doctrine Law 2)."""
+        r = self._result(case)
+        banned = ("MACD", "stoch", "StochRSI", "D-", "1W", "2W", "hist", "z_", "washout)")
+        for disp in r["evidence_display"]:
+            for tok in banned:
+                assert tok not in disp["en"], f"banned token {tok!r} in {disp['en']!r}"
+
+    def test_stale_but_fresh_cross_is_not_called_stale(self):
+        """A cross within the READY freshness window that failed to qualify reads
+        'not confirmed yet', never 'gone stale'."""
+        r = self._result("basing").copy()
+        fresh = assign_ripening_zone(
+            ret_5d=-0.03, macd_hist_d=-0.20, macd_hist_prev_d=-0.30,
+            w1_cross_bars_since=1, w1_from_washout=False,
+            macd_bars_to_cross_2w=None, stoch_2w=13.0, stoch_2w_prev=None,
+        )
+        stale_chips = [d for d in fresh["evidence_display"] if "(stale)" in d["receipt"]]
+        assert stale_chips and "not confirmed" in stale_chips[0]["en"]
+        assert "stale" not in stale_chips[0]["en"]

@@ -1759,6 +1759,7 @@ def main(alpha: dict | None = None) -> dict | None:
         )
         _zone = _zone_result["zone"]
         _zone_evidence = _zone_result["evidence"]
+        _zone_evidence_display = _zone_result.get("evidence_display") or []
 
         # ── Build the row ──────────────────────────────────────────────────────
         # Article-2 ORDERING keys (within zone): macd_bars_to_cross asc (None→999),
@@ -1773,6 +1774,7 @@ def main(alpha: dict | None = None) -> dict | None:
             "sector": _sector_w or "",
             "zone": _zone,
             "evidence": _zone_evidence,
+            "evidence_display": _zone_evidence_display,
             "reasons": _ws.get("setup_reasons") or [],
             "imminence": _btc,
             "w2_stoch": _stoch,
