@@ -250,6 +250,22 @@ on:
       - "scripts/check_blocklist_drift.py"
       - "tests/test_metabolism_v4_w3_mission.py"
       - "research/DO_NOT_REBUILD.md"
+      # Causal Hypothesis Factory (CHF) + Signal Foundry brainstorm: ten test files wired
+      # via the causal-factory job, plus every non-neuralweb module surface they import.
+      # engine/neuralweb/** above already covers the causal_* engine modules and cortex.
+      - "tests/test_causal_*.py"
+      - "tests/test_sf_brainstorm.py"
+      - "scripts/run_causal_brainstorm.py"
+      - "scripts/causal_brainstorm_pack.py"
+      - "scripts/causal_ingest_brainstorm.py"
+      - "scripts/causal_factory_handoff.py"
+      - "scripts/run_signal_foundry_brainstorm.py"
+      - "admin/causal_lab.py"
+      - "admin/paths.py"
+      - "engine/signal_foundry/**"
+      - "engine/trial_ledger.py"
+      - "engine/validation.py"
+      - "engine/llm_auth.py"
   workflow_dispatch:
 
 permissions:
@@ -646,6 +662,35 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context)
         run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py -q
+
+  causal-factory:
+    # Causal Hypothesis Factory (CHF) + Signal Foundry brainstorm: all ten test files
+    # below were run by ZERO GitHub workflows before this job — the same 'merged green
+    # because no CI job covered X' rot class as #1052 / #1193 / #1195 and the neural-web
+    # job above.  All 296 tests (1 env-gated slow-sweep skip) verified green in a clean
+    # venv with exactly the deps installed here.
+    #
+    # Dep notes: scipy is needed only because test_sf_brainstorm imports
+    # scripts.run_signal_foundry_brainstorm → engine.signal_foundry (package __init__)
+    # → harness.py → scipy.stats.spearmanr.  No anthropic install: the LLM client is
+    # fully mocked in test_causal_llm_runner / test_causal_brainstorm, and
+    # engine.llm_auth is stdlib-only at module level.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml scipy
+      - name: causal factory + signal-foundry brainstorm suites
+        run: >
+          python -m pytest
+          tests/test_causal_llm_runner.py tests/test_causal_frontier.py
+          tests/test_causal_brainstorm.py tests/test_causal_lab_admin.py
+          tests/test_causal_audit.py tests/test_causal_inventory.py
+          tests/test_causal_schema.py tests/test_causal_scout.py
+          tests/test_causal_targets.py tests/test_sf_brainstorm.py -q
 
   dag-conformance:
     # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;
