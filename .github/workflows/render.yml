@@ -415,6 +415,21 @@ jobs:
           # EVERY render push before. `-X theirs` keeps the commits being REPLAYED (our
           # fresh render) on conflict.
           for i in 1 2 3 4 5; do
+            # pre-sync collision sweep: a commit landing mid-render can TRACK a path this
+            # run wrote as an UNTRACKED side-effect (run 29146200009: data/ news caches +
+            # event_log.parquet, landed on main during a 60-min scope=all render) — the
+            # rebase's checkout then refuses ("untracked working tree files would be
+            # overwritten") and every retry dies identically, because --autostash parks
+            # TRACKED modifications only. Delete exactly the paths that are untracked here
+            # AND tracked on origin/main: the local copy is a throwaway lane write (this
+            # step commits site/ ONLY; the nightly owns data/), main's copy is
+            # authoritative. Everything else is untouched — tracked-file edits (ledgers)
+            # still ride the autostash, and untracked paths main doesn't know about
+            # (runner-local stores, gitignored caches) never enter the intersection.
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
             if git pull --rebase --autostash -X theirs origin main; then
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
