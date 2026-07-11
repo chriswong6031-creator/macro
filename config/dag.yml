@@ -443,6 +443,9 @@ lanes:
       - id: build_confluence_graph
         module: scripts.build_confluence_graph
         note: "neural-web W4 — confluence graph v1 (typed nodes: engine/sector/regime/thesis/episode; feeds/stable/leads/contradicts/confirms edges; contradiction detector 6 pairs; display-only under hard law)"
+      - id: build_confluence_strength
+        module: scripts.build_confluence_strength
+        note: "neural-web W4 'the eye' — confluence strength (R-V4-6) + sequence (R-V4-7) + discovery z-scan (R-V4-8); display-only; runs after build_confluence_graph; fail-open"
       - id: altdata_brain
         module: engine.altdata_brain
       - id: build_alt_data_post

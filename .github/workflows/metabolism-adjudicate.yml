@@ -14,12 +14,19 @@ name: metabolism-adjudicate
 # Auto-chaining PROPOSE→ADJUDICATE is wired in Phase B (masterplan stage graph);
 # until then this runs on demand and as a paused-by-default scheduled no-op.
 on:
+  schedule:
+    # daily 10:15 UTC — ~30 min after propose (09:45) so the docket is ready.
+    # When AUTONOMY_PAUSED is not 'false' this is a clean no-op (double-gated).
+    # cycle_id is derived from the most-recent open propose branch when running
+    # on schedule (the shell step discovers it via git ls-remote).
+    - cron: "15 10 * * *"
   workflow_dispatch:
     inputs:
       cycle_id:
         description: "Cycle id whose docket to adjudicate"
         type: string
-        required: true
+        required: false
+        default: ""
       branch:
         description: "Branch carrying the docket (default: metabolism/propose-<cycle_id>)"
         type: string
@@ -34,7 +41,8 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: metabolism-adjudicate-${{ github.event.inputs.cycle_id }}
+  # Use event-name to differentiate schedule (single active slot) from dispatch (per-cycle).
+  group: metabolism-adjudicate-${{ github.event_name == 'schedule' && 'scheduled' || github.event.inputs.cycle_id }}
   cancel-in-progress: false
 
 jobs:
@@ -81,6 +89,19 @@ jobs:
           if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
             echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
             exit 0
+          fi
+
+          # When running on schedule (no cycle_id supplied), discover the most-recent
+          # open metabolism/propose-* branch.  If none exists, clean no-op.
+          if [ -z "${CYCLE_ID:-}" ]; then
+            CYCLE_ID="$(git ls-remote --heads origin 'refs/heads/metabolism/propose-*' \
+              | awk '{print $2}' | sed 's|refs/heads/metabolism/propose-||' \
+              | sort | tail -n 1)"
+            if [ -z "$CYCLE_ID" ]; then
+              echo "no open propose branch found — clean no-op (schedule)."
+              exit 0
+            fi
+            echo "schedule: discovered cycle_id=$CYCLE_ID"
           fi
 
           BRANCH="${BRANCH_INPUT:-metabolism/propose-$CYCLE_ID}"
