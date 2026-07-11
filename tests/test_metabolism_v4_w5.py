@@ -898,3 +898,84 @@ class TestProposeTrajectoryStamp:
         assert rows[-1].get("lobe_id") == "til", (
             f"Last trajectory row has no lobe_id='til': {rows[-1]}"
         )
+
+
+# ── Regression: lobe threads propose → verify → strategic memory (real path) ──
+
+class TestLobeThreadsRealPath:
+    """The docket lobe must ride inside each minted contract.
+
+    Regression for the silently-dead feedback wire: _mint_contract omitted the
+    lobe key, so verify wrote lobe="" strategic-memory rows and the per-lobe
+    filter in build_strategic_memory_block dropped every real-path row before
+    it reached the PROPOSE prompt (only the shadow harness's hand-built
+    contract carried a lobe).
+    """
+
+    def _build_docket(self, tmp_path: Path) -> dict:
+        from engine.metabolism.propose import build_docket
+        raw = [{
+            "title": "Lobe-thread regression probe",
+            "tier": "T1",
+            "kind": "sensor_recalibration",
+            "rationale": "regression: lobe must survive propose→verify→memory",
+            "fitness_contract": {
+                "sensor": "front_run_lead",
+                "expected_sign": "+",
+                "band": "accruing",
+                "check_by": "2026-10-20",
+            },
+        }]
+        return build_docket("cycle-lobe-regress", raw, root=tmp_path,
+                            today="2026-07-11", lobe="til")
+
+    def test_minted_contract_carries_lobe(self, tmp_path: Path) -> None:
+        """build_docket stamps the docket lobe on each proposal AND its contract."""
+        docket = self._build_docket(tmp_path)
+        assert docket["proposals"], f"proposal rejected: {docket['rejected']}"
+        prop = docket["proposals"][0]
+        assert prop["lobe"] == "til"
+        assert prop["fitness_contract"]["lobe"] == "til"
+
+    def test_propose_verify_memory_end_to_end(self, tmp_path: Path) -> None:
+        """Non-shadow chain: minted contract → verify_proposal → non-empty per-lobe block."""
+        from engine.metabolism.verify import verify_proposal
+        from engine.metabolism.mission import build_strategic_memory_block
+
+        docket = self._build_docket(tmp_path)
+        assert docket["proposals"], f"proposal rejected: {docket['rejected']}"
+        contract = docket["proposals"][0]["fitness_contract"]
+
+        record = verify_proposal("cycle-lobe-regress", contract,
+                                 root=tmp_path, today="2026-10-21")
+        assert record["realized"]["outcome"] != "PENDING"
+
+        sm = tmp_path / "data" / "metabolism" / "strategic_memory.jsonl"
+        assert sm.exists(), "verify must append a strategic-memory row"
+        rows = [json.loads(ln) for ln in sm.read_text(encoding="utf-8").splitlines() if ln.strip()]
+        assert rows and rows[-1]["lobe"] == "til", f"row lost its lobe: {rows}"
+
+        block = build_strategic_memory_block("til", root=tmp_path)
+        assert "front_run_lead" in block, (
+            f"per-lobe strategic-memory block empty on the real path: {block!r}"
+        )
+        assert "not yet present" not in block
+        assert "no matching rows" not in block
+
+    def test_scan_backfills_lobe_for_prefix_dockets(self, tmp_path: Path) -> None:
+        """Dockets already on disk (minted before the lobe key) inherit the docket-level lobe at scan time."""
+        from scripts.metabolism_verify import _scan_pending_cycles
+        dockets = tmp_path / "data" / "metabolism" / "dockets"
+        dockets.mkdir(parents=True, exist_ok=True)
+        (dockets / "old-cycle.json").write_text(json.dumps({
+            "schema": "metabolism.docket.v1",
+            "cycle_id": "old-cycle",
+            "lobe": "til",
+            "proposals": [{"proposal_id": "p1",
+                           "fitness_contract": {"sensor": "front_run_lead",
+                                                "check_by": "2026-10-16"}}],
+        }), encoding="utf-8")
+        pending = _scan_pending_cycles(tmp_path, "2026-10-21")
+        assert len(pending) == 1
+        _cycle_id, contract = pending[0]
+        assert contract["lobe"] == "til"

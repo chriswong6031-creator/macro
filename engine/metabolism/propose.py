@@ -652,8 +652,18 @@ def _slice_bracketed(s: str) -> str:
 
 # ── Proposal validation + contract minting ────────────────────────────────────
 
-def _mint_contract(prop: dict[str, Any], proposal_id: str, today: str) -> dict[str, Any]:
-    """Build the fitness contract in the exact shape engine.metabolism.verify reads."""
+def _mint_contract(
+    prop: dict[str, Any],
+    proposal_id: str,
+    today: str,
+    lobe: str = "",
+) -> dict[str, Any]:
+    """Build the fitness contract in the exact shape engine.metabolism.verify reads.
+
+    `lobe` must ride inside the contract itself: verify's strategic-memory row
+    reads contract["lobe"], and the per-lobe PROPOSE block filters on it — a
+    missing key silently drops every row from the feedback loop.
+    """
     raw = prop.get("fitness_contract") or {}
     sensor = str(raw.get("sensor") or prop.get("targets_sensor") or "").strip()
     sign = str(raw.get("expected_sign") or "+").strip()
@@ -669,6 +679,7 @@ def _mint_contract(prop: dict[str, Any], proposal_id: str, today: str) -> dict[s
         check_by = max(check_by, _FIRST_REAL_CHECK_BY)
     return {
         "proposal_id": proposal_id,
+        "lobe": str(lobe or "").strip(),
         "sensor": sensor,
         "expected_sign": sign,
         "band": str(raw.get("band") or "unspecified").strip(),
@@ -795,9 +806,10 @@ def build_docket(
                 "title": title,
                 "tier": tier,
                 "kind": kind,
+                "lobe": lobe,
                 "targets_sensor": sensor,
                 "rationale": str(prop.get("rationale") or "").strip(),
-                "fitness_contract": _mint_contract(prop, pid, day),
+                "fitness_contract": _mint_contract(prop, pid, day, lobe=lobe),
             })
         except Exception as exc:  # noqa: BLE001
             log.warning("propose: proposal skipped (%s)", exc)

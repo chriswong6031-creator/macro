@@ -75,8 +75,16 @@ def _scan_pending_cycles(root: Path, today: str | None) -> list[tuple[str, dict]
 
         # Collect all contracts from proposals in this docket
         proposals = docket.get("proposals") or []
+        docket_lobe = str(docket.get("lobe") or "").strip()
         for proposal in proposals:
             contract = proposal.get("fitness_contract") or {}
+            if not isinstance(contract, dict):
+                continue
+            # Contracts minted before the lobe key existed inherit the
+            # docket-level lobe, else verify writes lobe="" strategic-memory
+            # rows that the per-lobe PROPOSE filter drops.
+            if docket_lobe and not contract.get("lobe"):
+                contract["lobe"] = docket_lobe
             check_by = contract.get("check_by")
             if not check_by:
                 continue

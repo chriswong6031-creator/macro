@@ -542,6 +542,7 @@ def _seed_verify_contract(
         # Build a synthetic contract whose check_by is today (so verify exercises the grading path)
         synthetic_contract: dict[str, Any] = {
             "proposal_id": "shadow-seed-verify-001",
+            "lobe": "til",  # real _mint_contract stamps this; shadow must mirror the shape
             "sensor": "front_run_lead",
             "expected_sign": "+",
             "band": "accruing",
