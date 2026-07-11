@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-07-11T08:45:13.652785+00:00",
+  "produced_at": "2026-07-11T09:07:26.265250+00:00",
   "as_of": "2026-07-09",
   "overall_status": "degraded",
   "lobes": [
@@ -2587,8 +2587,8 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-07-10T09:20:08+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-07-11T09:02:03+00:00",
     "run_status": {
       "status": "degraded",
       "degraded": true,
@@ -2601,7 +2601,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cct8Toc81yk2naA91tK9w'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccuztkx9YYsrveKK6xvQy'}"
         },
         {
           "provider": "oauth",
@@ -2609,7 +2609,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cct8V7mnmo6YHF2JgbieV'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccuzv68qcQX4626NtDumh'}"
         },
         {
           "provider": "oauth",
@@ -2617,7 +2617,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cct8Zkgff7pRRCcJjRWv2'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcuzzipKrSH7UmyAmmdf3'}"
         },
         {
           "provider": "oauth",
@@ -2625,7 +2625,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cct8oFLTrWXPWFCT2CdCe'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccv1ECGS8oTTZn345qzL9'}"
         },
         {
           "provider": "oauth",
@@ -2633,7 +2633,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cct8oQ93Gzhx7pQrTmPem'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccv1ENAkAfC5JBYrNQVVa'}"
         },
         {
           "provider": "oauth",
@@ -2641,7 +2641,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cct8phgG7Uj1EfA86w6bC'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccv1FfXJUU1b556tuvVKd'}"
         },
         {
           "provider": "oauth",
@@ -2649,7 +2649,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cct8s6yXg1qC53Tm1YRcA'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccv1J4royspswdTrnmWGN'}"
         },
         {
           "provider": "oauth",
@@ -2657,14 +2657,14 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cct8sJKfAAg6ebdgBgY9J'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccv1JEp6UDsazgNgTkrPN'}"
         }
       ],
       "tool_call_batches": 0,
       "individual_tool_calls": 0,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-07-10T08:59:35Z"
+      "context_as_of": "2026-07-11T08:44:35Z"
     },
     "probation": {
       "granted": false,
