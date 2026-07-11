@@ -276,7 +276,19 @@ class TestToggleRoute:
 # ---------------------------------------------------------------------------
 
 class TestRepoVariableRequests:
-    """get_repo_variable and set_repo_variable HTTP path tests."""
+    """get_repo_variable and set_repo_variable HTTP path tests.
+
+    The requests module is stubbed WHOLESALE (not attribute-patched): in the
+    CI job that runs this suite the requests package is absent and
+    admin/github_api.py falls back to `requests = None`, so patching an
+    attribute on None would fail. Replacing the module object works both ways.
+    """
+
+    @staticmethod
+    def _stub_requests(gha, **methods):
+        import types
+        stub = types.SimpleNamespace(**methods)
+        return mock.patch.object(gha, "requests", stub)
 
     def _make_response(self, status: int, body: dict | None = None):
         resp = mock.MagicMock()
@@ -290,7 +302,7 @@ class TestRepoVariableRequests:
         resp = self._make_response(200, {"value": "false"})
         with mock.patch.object(gha, "token", return_value="tok"), \
              mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
-             mock.patch.object(gha.requests, "get", return_value=resp):
+             self._stub_requests(gha, get=mock.Mock(return_value=resp)):
             result = gha.get_repo_variable("AUTONOMY_PAUSED")
         assert result == "false"
 
@@ -300,7 +312,7 @@ class TestRepoVariableRequests:
         resp = self._make_response(404)
         with mock.patch.object(gha, "token", return_value="tok"), \
              mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
-             mock.patch.object(gha.requests, "get", return_value=resp):
+             self._stub_requests(gha, get=mock.Mock(return_value=resp)):
             result = gha.get_repo_variable("AUTONOMY_PAUSED")
         assert result is None
 
@@ -318,7 +330,7 @@ class TestRepoVariableRequests:
         resp = self._make_response(204)
         with mock.patch.object(gha, "token", return_value="tok"), \
              mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
-             mock.patch.object(gha.requests, "patch", return_value=resp):
+             self._stub_requests(gha, patch=mock.Mock(return_value=resp)):
             result = gha.set_repo_variable("AUTONOMY_PAUSED", "false")
         assert result is True
 
@@ -330,8 +342,8 @@ class TestRepoVariableRequests:
         post_resp = self._make_response(201)
         with mock.patch.object(gha, "token", return_value="tok"), \
              mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
-             mock.patch.object(gha.requests, "patch", return_value=patch_resp), \
-             mock.patch.object(gha.requests, "post", return_value=post_resp):
+             self._stub_requests(gha, patch=mock.Mock(return_value=patch_resp),
+                                 post=mock.Mock(return_value=post_resp)):
             result = gha.set_repo_variable("AUTONOMY_PAUSED", "false")
         assert result is True
 
@@ -350,6 +362,6 @@ class TestRepoVariableRequests:
         resp = self._make_response(204)
         with mock.patch.object(gha, "token", return_value="super_secret_token"), \
              mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
-             mock.patch.object(gha.requests, "patch", return_value=resp):
+             self._stub_requests(gha, patch=mock.Mock(return_value=resp)):
             gha.set_repo_variable("AUTONOMY_PAUSED", "false")
         # If we get here without exception, the token was not accidentally logged/raised
