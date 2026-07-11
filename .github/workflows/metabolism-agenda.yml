@@ -16,7 +16,7 @@ name: metabolism-agenda
 # AND the script itself re-checks AUTONOMY_PAUSED=='false' before proceeding.
 on:
   schedule:
-    - cron: "45 9 * * *"   # daily 09:45 UTC, after organism_state build
+    - cron: "15 9 * * *"   # daily 09:15 UTC — runs BEFORE propose (which reads organism_state)
   workflow_dispatch:
     inputs:
       cycle_id:
@@ -92,23 +92,19 @@ jobs:
 
           # Step 2: Run all insight_bus emitters
           python -c "
-import sys
-sys.path.insert(0, '.')
-from engine.metabolism.insight_bus import run_all_emitters
-from pathlib import Path
-rows = run_all_emitters(cycle_id='${CYCLE_ID}')
-print(f'Emitted {len(rows)} new insight_bus rows')
-" || echo "insight_bus emitters degraded (continuing)"
+            import sys; sys.path.insert(0, '.')
+            from engine.metabolism.insight_bus import run_all_emitters
+            rows = run_all_emitters(cycle_id='${CYCLE_ID}')
+            print(f'Emitted {len(rows)} new insight_bus rows')
+          " || echo "insight_bus emitters degraded (continuing)"
 
           # Step 3: Run anomaly monitor
           python -c "
-import sys
-sys.path.insert(0, '.')
-from engine.metabolism.anomaly_monitor import run_anomaly_monitor
-from pathlib import Path
-rows = run_anomaly_monitor(cycle_id='${CYCLE_ID}')
-print(f'Anomaly monitor: {len(rows)} new rows')
-" || echo "anomaly_monitor degraded (continuing)"
+            import sys; sys.path.insert(0, '.')
+            from engine.metabolism.anomaly_monitor import run_anomaly_monitor
+            rows = run_anomaly_monitor(cycle_id='${CYCLE_ID}')
+            print(f'Anomaly monitor: {len(rows)} new rows')
+          " || echo "anomaly_monitor degraded (continuing)"
 
           # Step 4: Build agenda (INERT — writes artifact only)
           AGENDA="$(python -m scripts.metabolism_agenda --cycle-id "$CYCLE_ID" | tail -n 1 || true)"

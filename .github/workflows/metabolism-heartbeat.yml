@@ -116,9 +116,14 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/metabolism/heartbeat.jsonl
+          # Guard: only add the file when it actually exists (paused no-op never writes it;
+          # bare `git add <missing-file>` exits 128 and fails the step, turning a clean
+          # paused run into a red build — house law §nightly-guard-echo-inversion).
+          if [ -f data/metabolism/heartbeat.jsonl ]; then
+            git add data/metabolism/heartbeat.jsonl
+          fi
           if git diff --cached --quiet; then
-            echo "no heartbeat change (AUTONOMY_PAUSED guard exited early)"
+            echo "no heartbeat change (AUTONOMY_PAUSED guard exited early or file absent)"
             exit 0
           fi
           git commit -m "metabolism: heartbeat $(date -u +%FT%H:%MZ) [P0-inert]"

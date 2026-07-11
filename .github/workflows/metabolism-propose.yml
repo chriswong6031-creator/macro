@@ -18,7 +18,7 @@ name: metabolism-propose
 #     push to main, never a scored-path write.
 on:
   schedule:
-    - cron: "30 9 * * *"   # daily 09:30 UTC, after the nightly render tail
+    - cron: "45 9 * * *"   # daily 09:45 UTC — runs AFTER agenda (09:15) which builds organism_state
   workflow_dispatch:
     inputs:
       cycle_id:
@@ -43,11 +43,18 @@ jobs:
     # KILL SWITCH — absent variable → treated as paused (default-safe).
     if: vars.AUTONOMY_PAUSED != 'true'
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 20
+    # Raised from 20 → 45: the Opus LLM call + fitness-card read can take 20–35 min
+    # under nightly-runner contention; 20 was too tight and caused cancellations at ~1h
+    # (the workflow header shows the job-level limit, not the step limit).  45 min gives
+    # one full LLM call + push without blocking the runner for hours.
+    timeout-minutes: 45
     steps:
+      # fetch-depth: 1 — propose only creates branches + commits docket artifacts;
+      # it never traverses commit history.  Shallow fetch avoids pulling full
+      # history on a busy repo, reducing checkout time at the nightly-contention window.
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: python 3.12 (Homebrew venv - self-hosted runner)
         run: |

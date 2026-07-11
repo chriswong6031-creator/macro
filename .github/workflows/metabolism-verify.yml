@@ -1,0 +1,165 @@
+name: metabolism-verify
+# Metabolism Phase A (A6) — VERIFY stage.  INERT by default.
+#
+# After a proposal's check_by date arrives, re-grades the realized fitness delta
+# vs the registered contract and writes data/metabolism/verify/<cycle_id>.json.
+#
+# Runs daily in scan mode: discovers all dockets whose fitness contracts have a
+# check_by date that has arrived and for which no verify record yet exists.
+# Can also be triggered per-cycle via workflow_dispatch.
+#
+# INERTNESS: writes verify artifacts only — no merges, no scored-path writes,
+# no signals or escalations.  The verify record is display-only / context-only
+# (AUTHORITY_BLOCK.is_context_only=true, forbidden from scoring/ranking/escalation).
+#
+# KILL SWITCH (R-AUT-2):
+#   gh variable set AUTONOMY_PAUSED --body true    # pause (default-safe)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm (operator-only)
+# Absent OR anything other than the exact string 'false' → clean no-op.
+#
+# Double-gated: if: vars.AUTONOMY_PAUSED != 'true' in the job condition
+# AND the script itself re-checks AUTONOMY_PAUSED=='false' via metabolism_guard.
+
+on:
+  schedule:
+    # daily 11:15 UTC — ≥60 min after adjudicate (10:15), well clear of the nightly
+    # pipeline peak (nightly render typically completes by 09:00 UTC).
+    - cron: "15 11 * * *"
+  workflow_dispatch:
+    inputs:
+      cycle_id:
+        description: "Cycle id to verify (leave blank for scan mode — all ready cycles)"
+        type: string
+        default: ""
+      contract_file:
+        description: "Path to the fitness contract JSON (single-cycle only)"
+        type: string
+        default: ""
+      today:
+        description: "Override today's date (YYYY-MM-DD)"
+        type: string
+        default: ""
+      dry_run:
+        description: "Build verify record but do not write to disk"
+        type: boolean
+        default: false
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # commit verify records to main (via rebase-autostash push)
+
+concurrency:
+  group: metabolism-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    # KILL SWITCH — absent variable → treated as paused (default-safe).
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: VERIFY (realized-delta grader — scan or single-cycle)
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          CYCLE_INPUT: ${{ github.event.inputs.cycle_id }}
+          CONTRACT_FILE: ${{ github.event.inputs.contract_file }}
+          TODAY_INPUT: ${{ github.event.inputs.today }}
+          DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          # Runner-side pause re-check (double-gate: defends against race with var flip).
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
+            exit 0
+          fi
+
+          DRY_RUN_FLAG=""
+          if [ "${DRY_RUN_INPUT:-false}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          TODAY_FLAG=""
+          if [ -n "${TODAY_INPUT:-}" ]; then
+            TODAY_FLAG="--today ${TODAY_INPUT}"
+          fi
+
+          if [ -n "${CYCLE_INPUT:-}" ]; then
+            # Single-cycle mode (workflow_dispatch with cycle_id)
+            CONTRACT_FLAG=""
+            if [ -n "${CONTRACT_FILE:-}" ]; then
+              CONTRACT_FLAG="--contract-file ${CONTRACT_FILE}"
+            fi
+            echo "verify single cycle: $CYCLE_INPUT"
+            # shellcheck disable=SC2086
+            python -m scripts.metabolism_verify \
+              --cycle-id "$CYCLE_INPUT" \
+              ${CONTRACT_FLAG} \
+              ${TODAY_FLAG} \
+              ${DRY_RUN_FLAG}
+          else
+            # Scan mode: discover all dockets with ready check_by
+            echo "verify scan mode (cron)"
+            # shellcheck disable=SC2086
+            python -m scripts.metabolism_verify \
+              --scan \
+              ${TODAY_FLAG} \
+              ${DRY_RUN_FLAG}
+          fi
+
+      - name: commit + push verify records (only on change)
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Guard: only add verify dir if artifacts were written (dry-run / no-op never writes).
+          if [ -d data/metabolism/verify ] && [ -n "$(ls -A data/metabolism/verify 2>/dev/null)" ]; then
+            git add data/metabolism/verify
+          fi
+          # Also commit journal updates (finish_stage writes to data/metabolism/journal/).
+          if [ -d data/metabolism/journal ] && [ -n "$(ls -A data/metabolism/journal 2>/dev/null)" ]; then
+            git add data/metabolism/journal
+          fi
+          if git diff --cached --quiet; then
+            echo "no verify artifact changes — nothing to commit."
+            exit 0
+          fi
+          git commit -m "metabolism: VERIFY records $(date -u +%FT%H:%MZ) [Phase A6]" \
+                     -m "Loop-Authored: verify run=${GITHUB_RUN_ID:-local}"
+          # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
+          # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
+          # refuses ("untracked working tree files would be overwritten") and --autostash can't
+          # clear it (it parks tracked modifications only), so every retry dies identically.
+          # Everything this step publishes is already committed above, so a path untracked HERE
+          # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
+          # Gitignored files and untracked paths origin/main doesn't track never enter the
+          # intersection (runner-local stores and caches are untouched).
+          git fetch origin main || true
+          comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                   <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+            | while IFS= read -r f; do rm -f -- "$f" || true; done
+          git pull --rebase --autostash -X theirs origin main && git push
