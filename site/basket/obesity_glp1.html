@@ -486,7 +486,7 @@ fetch('../policy_lever.json',{cache:'no-cache'})
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-11 07:37 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-11 10:15 UTC</span>.
 </footer>
 
 <script>
@@ -964,6 +964,8 @@ function cls(v){return v==null?'muted':v>=0?'up':'dn';}
 
 var BID = (DETAIL.basket||{}).id||'';
 var WEIGHTS = {trend:0.26,breadth:0.18,impulse:0.07,macro:0.18,mtf:0.16,volhole:0.05,crowding:0.10};
+// Raw [en, zh, source] triples — wrapped in L() at render so the why-line can
+// build separate EN/ZH sentences (bilingual contract: no tag-stripped L() output).
 var LEG_LABELS = {
   trend:    ['Trend','趋势',    '5/20/60d rets'],
   breadth:  ['Breadth','广度',  '% above 50d MA'],
@@ -1226,6 +1228,5 @@ fetch('../basketdata/turn_watch.json',{cache:'no-cache'})
 })();
 </script>
 <script src="../theme.js"></script>
-<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>
