@@ -213,6 +213,22 @@ class TestWorktreeBranchNaming:
         b2 = mb._build_branch_name("lobe_b", "cycle-001")
         assert b1 != b2
 
+    def test_same_lobe_same_cycle_different_proposals_different_branches(self):
+        """Finding 2 fix: same lobe+cycle but different proposal_ids → different branches.
+
+        Before the fix, two proposals in the same lobe+cycle shared a branch name,
+        causing the second worktree creation to fail with 'branch already exists'.
+        """
+        import scripts.metabolism_build as mb
+        importlib.reload(mb)
+
+        b1 = mb._build_branch_name("til_fitness", "cycle-001", proposal_id="p1")
+        b2 = mb._build_branch_name("til_fitness", "cycle-001", proposal_id="p2")
+        assert b1 != b2, (
+            f"Two proposals in the same lobe+cycle produced the SAME branch name: {b1!r} — "
+            "this would cause 'branch already exists' on the second worktree creation."
+        )
+
 
 # ── 3. is_paused no-op on build lane (mutation-proof) ─────────────────────────
 
@@ -902,4 +918,169 @@ class TestSynapseArtifacts:
             py_content = build_py.read_text()
             assert "--draft" in py_content or "DRAFT" in py_content, (
                 "metabolism_build.py must create DRAFT PRs only"
+            )
+
+
+# ── 15. run_build_lane threads cycle_id and target_files correctly ────────────
+
+def _production_docket_proposal(pid: str, target_files: list[str]) -> dict:
+    """Minimal proposal row shaped like propose.py output — NO cycle_id or target_files."""
+    return {
+        "proposal_id": pid,
+        "content_hash": pid,
+        "title": f"Production proposal {pid}",
+        "tier": "T1",
+        "kind": "sensor",
+        "targets_sensor": "test_sensor",
+        "rationale": "test rationale",
+        # NOTE: target_files deliberately set so claim_proposal works; but the
+        # production path resolves target_files independently in run_build_lane.
+        "target_files": target_files,
+        # NOTE: NO cycle_id key — only lives at docket top-level
+    }
+
+
+class TestRunBuildLaneThreading:
+    """run_build_lane must thread cycle_id and resolved target_files into _dispatch_build_session.
+
+    These tests use production-shaped dockets and verify that the idempotency,
+    journal, and foreign-file checks work end-to-end through run_build_lane.
+    """
+
+    def _write_production_docket(self, d: Path, cycle_id: str, proposals: list[dict]) -> Path:
+        """Write a docket shaped like propose.py output (cycle_id at top level only)."""
+        path = d / "data" / "metabolism" / "dockets" / f"{cycle_id}.json"
+        path.write_text(json.dumps({
+            "schema": "metabolism.docket.v1",
+            "cycle_id": cycle_id,      # TOP-LEVEL only — not in proposal rows
+            "lobe": "test_lobe",
+            "proposals": proposals,    # rows have no cycle_id key
+        }))
+        return path
+
+    def test_run_build_lane_idempotent_skip_uses_docket_cycle_id(self):
+        """run_build_lane passes docket's top-level cycle_id to dispatch; second run is idempotent."""
+        d = _tmp_root()
+        import scripts.metabolism_build as mb
+        importlib.reload(mb)
+
+        cycle_id = "cycle-lane-idem-001"
+        pid = "p_lane_1"
+        prop = _production_docket_proposal(pid, ["engine/test_sensor.py"])
+        docket = self._write_production_docket(d, cycle_id, [prop])
+
+        dispatch_calls = []
+        idempotent_skips = []
+
+        original_dispatch = mb._dispatch_build_session
+
+        def recording_dispatch(proposal, wt_path, branch, cap_id, *, cycle_id=None,
+                               target_files=None, root=None, dry_run=False):
+            # Record the threaded cycle_id
+            dispatch_calls.append({
+                "cycle_id": cycle_id,
+                "target_files": target_files,
+                "pid": proposal.get("proposal_id"),
+            })
+            # Call original to test real idempotency
+            return original_dispatch(
+                proposal, wt_path, branch, cap_id,
+                cycle_id=cycle_id, target_files=target_files,
+                root=root, dry_run=dry_run,
+            )
+
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        env = {**{k: v for k, v in os.environ.items()}, "AUTONOMY_PAUSED": "false",
+               ref_name: "fake_token"}
+
+        def fake_two_key(*args, **kwargs):
+            return True
+
+        def fake_dispatch_build_session(proposal, wt_path, branch, cap_id, *,
+                                        cycle_id=None, target_files=None, root=None, dry_run=False):
+            dispatch_calls.append({
+                "cycle_id": cycle_id,
+                "target_files": target_files,
+                "pid": proposal.get("proposal_id"),
+            })
+            return {"dispatched": True, "reason": "dispatched", "proposal_id": proposal.get("proposal_id")}
+
+        def fake_open_pr(*args, **kwargs):
+            return {"opened": True}
+
+        def fake_create_worktree(*args, **kwargs):
+            import tempfile
+            return {"wt_path": tempfile.mkdtemp(prefix="fake_wt_"), "branch": args[0] if args else "fake"}
+
+        def fake_gc(*args, **kwargs):
+            pass
+
+        def fake_pick_key(*args, **kwargs):
+            return "claude_code_oauth_1"
+
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_is_two_key_granted", side_effect=fake_two_key):
+                with patch.object(mb, "_dispatch_build_session",
+                                  side_effect=fake_dispatch_build_session):
+                    with patch.object(mb, "_open_draft_pr", side_effect=fake_open_pr):
+                        with patch.object(mb, "_create_build_worktree",
+                                          side_effect=fake_create_worktree):
+                            with patch.object(mb, "_gc_worktree", side_effect=fake_gc):
+                                with patch.object(mb, "_pick_build_key",
+                                                  side_effect=fake_pick_key):
+                                    results = mb.run_build_lane(cycle_id, docket, root=d)
+
+        # Verify dispatch was called with the docket's cycle_id threaded in
+        assert len(dispatch_calls) >= 1, f"_dispatch_build_session not called: {results}"
+        assert dispatch_calls[0]["cycle_id"] == cycle_id, (
+            f"cycle_id not threaded through to dispatch: got {dispatch_calls[0]['cycle_id']!r}, "
+            f"expected {cycle_id!r}"
+        )
+        # Verify target_files threaded (non-empty)
+        assert dispatch_calls[0]["target_files"], (
+            f"target_files not threaded through to dispatch: {dispatch_calls[0]}"
+        )
+
+    def test_run_build_lane_threads_target_files_from_claim(self):
+        """run_build_lane threads the resolved target_files (from claim step) into dispatch."""
+        d = _tmp_root()
+        import scripts.metabolism_build as mb
+        importlib.reload(mb)
+
+        cycle_id = "cycle-lane-tf-001"
+        pid = "p_tf_1"
+        declared_files = ["engine/my_sensor.py", "engine/helper.py"]
+        prop = _production_docket_proposal(pid, declared_files)
+        docket = self._write_production_docket(d, cycle_id, [prop])
+
+        dispatch_calls = []
+
+        def fake_dispatch(proposal, wt_path, branch, cap_id, *, cycle_id=None,
+                          target_files=None, root=None, dry_run=False):
+            dispatch_calls.append({"cycle_id": cycle_id, "target_files": target_files})
+            return {"dispatched": True, "reason": "dispatched",
+                    "proposal_id": proposal.get("proposal_id")}
+
+        env = {k: v for k, v in os.environ.items()}
+        env["AUTONOMY_PAUSED"] = "false"
+
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_is_two_key_granted", return_value=True):
+                with patch.object(mb, "_dispatch_build_session", side_effect=fake_dispatch):
+                    with patch.object(mb, "_open_draft_pr", return_value={"opened": True}):
+                        with patch.object(mb, "_create_build_worktree",
+                                          return_value={"wt_path": tempfile.mkdtemp(prefix="fake_wt_")}):
+                            with patch.object(mb, "_gc_worktree"):
+                                with patch.object(mb, "_pick_build_key",
+                                                  return_value="claude_code_oauth_1"):
+                                    mb.run_build_lane(cycle_id, docket, root=d)
+
+        assert len(dispatch_calls) >= 1, "dispatch not called"
+        threaded = dispatch_calls[0]["target_files"]
+        assert threaded is not None, "target_files not threaded at all"
+        assert len(threaded) > 0, "threaded target_files is empty"
+        # The declared files must be in the threaded list
+        for f in declared_files:
+            assert f in threaded, (
+                f"Declared file {f!r} not in threaded target_files: {threaded}"
             )

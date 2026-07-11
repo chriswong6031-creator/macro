@@ -115,8 +115,11 @@ def _has_loop_trailer(trailers_text: str) -> bool:
 
 def _matches_immutable(file_path: str) -> bool:
     """Return True if the file path matches any immutable pattern."""
-    # Normalise separators
+    # Normalise separators; strip leading '/' and './' so that './config/foo.yml'
+    # and 'config/foo.yml' resolve to the same key.
     norm = file_path.replace("\\", "/").lstrip("/")
+    if norm.startswith("./"):
+        norm = norm[2:]
     for pattern in IMMUTABLE_PATTERNS:
         # fnmatch handles * and ** matching
         if fnmatch.fnmatch(norm, pattern):
