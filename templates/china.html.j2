@@ -652,10 +652,17 @@
   html[data-lang="zh"] .st-th-tip::after { content:attr(data-tip-zh); }
   .st-th-tip:hover::after { display:block; }
 
-  /* mobile: table scrolls, first col sticky */
+  /* long names truncate instead of widening the table */
+  .st-table td.st-name { max-width:230px; overflow:hidden; text-overflow:ellipsis; }
+
+  /* mobile: low-priority columns hide so the core view fits without scrolling */
   @media (max-width:680px) {
-    .st-table { font-size:11px; }
-    .st-table td, .st-table th { padding:5px 7px; }
+    .st-table { font-size:10.5px; }
+    .st-table td, .st-table th { padding:4px 5px; }
+    .st-table .st-chip { font-size:8.5px; padding:1px 5px; }
+    .st-table .st-sarrow-idle { display:none; }
+    .st-table td.st-hide-sm, .st-table th.st-hide-sm, .st-chooser-row.st-hide-sm { display:none; }
+    .st-table td.st-name { max-width:74px; }
     .st-filters { gap:4px; }
     .st-filter-sel { font-size:11px; min-width:70px; padding:3px 6px; }
   }
@@ -691,11 +698,12 @@
   <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
   <div class="panel span12" id="stocks-header">
     <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-      <h1 style="margin:0">🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}</h1>
+      <h1 style="margin:0">🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}
+        {{ help('A stock-picking watchlist for China A-shares: names that sold off hard and just started turning back up. Rank means how ready a setup looks to buy — research context, not advice.', 'A股选股观察表：大幅回调后刚开始回升的个股。排序表示形态离买点有多近——研究参考，非投资建议。') }}</h1>
       <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
       {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span class="chip c-muted">{{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{% endif %}
     </div>
-    <p class="note" style="margin:8px 0 0;text-transform:none">{{ t('A-share entry watchlist: washed-out names with a fresh 3D/2D turn. Rank means buy-readiness, not advice.', 'A股入场观察表：洗盘后出现3日/2日新转向的个股。排序表示买入就绪度，非建议。') }}
+    <p class="note" style="margin:8px 0 0;text-transform:none">
       <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a>
       <a href="china_stocks_lab.html" style="margin-left:14px;padding:4px 11px;border:1.5px solid var(--link);border-radius:8px;font-size:12px;font-weight:700;color:var(--link);white-space:nowrap;display:inline-block;margin-top:4px">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
     {# W5b EDGE-1 — CN drawdown radar sleeve-size chip. Source: engine/risk_radar_intl.py
@@ -727,7 +735,7 @@
     <div class="anv2-hd">
       <h2 style="margin:0">⚡ {{ t('What to Act On Now', '现在行动') }}
         <span class="anv2-v2pill">v2</span>
-        {{ help('Themes and sectors co-exist in four lanes. THEME rows come from the basket scoring engine (composite 0-100 score, clean-entry gate). SECTOR rows come from the cycle-ladder entry-timing call. BOTTOMING WATCH shows baskets/sectors whose cycle is at Trough phase with the oscillator slope turning positive — this is a washout signal, never a buy signal. REDUCE/AVOID shows the paired honesty read: a name in both Bottoming Watch and Reduce carries dual chips so you see the contradiction explicitly. No composite scores are created or fused.', '主题与板块共存于四个分栏。THEME 行来自篮子打分引擎（综合 0-100 分，干净入场门槛）。SECTOR 行来自周期阶梯的入场时机判断。洗盘观察栏显示处于低谷期且震荡指标斜率由负转正的篮子/板块——这是洗盘转向信号，绝非入场信号。减仓/回避栏展示诚实双读：同时出现在洗盘观察和减仓中的名称会展示双重标签，以便清晰看出矛盾。不创建或融合任何综合评分。') }}
+        {{ help('Four lanes, read left to right: Buy Now = a clean entry point today. Wait for Pullback = still in favour, but it has run — wait for a dip. Bottoming Watch = beaten-down groups showing the first signs of turning up (watch only, never a buy signal). Reduce / Avoid = the trend is weakening. Rows mix investment themes (scored 0-100 by the basket engine) and sectors (timed by the cycle ladder). A name can honestly sit in two lanes at once — e.g. weakening trend but an early bottom forming — and is shown in both, never merged.', '四个分栏从左到右：立即买入＝今天有干净入场点。等待回调＝仍看好但已涨高，等回调再买。洗盘观察＝超跌板块初现回升迹象（仅观察，绝非买入信号）。减仓/回避＝趋势转弱。行内混合投资主题（篮子引擎0-100打分）与行业板块（周期阶梯定时机）。同一名称可能同时出现在两个分栏——例如趋势转弱但初现筑底——两种判读并列显示，永不合并。') }}
       </h2>
       <div class="anv2-meta">
         {% if _anv2.as_of %}<span class="muted" style="font-size:11px">{{ t('themes as of','主题截至') }} {{ _anv2.as_of }}</span>{% endif %}
@@ -747,22 +755,20 @@
         {% if row.score is not none %}<span class="anv2-score{% if row.score >= 60 %} anv2-score-hi{% elif row.score >= 40 %} anv2-score-mid{% else %} anv2-score-lo{% endif %}">{{ row.score }}</span>{% endif %}
       </div>
       <div class="anv2-chips">
-        {# type chip #}
-        {% if row.kind == 'THEME' %}<span class="anv2-chip anv2-chip-theme">{{ t('THEME','主题') }}</span>
-        {% elif row.kind == 'BASKET' %}<span class="anv2-chip anv2-chip-basket">{{ t('BASKET','篮子') }}</span>
-        {% else %}<span class="anv2-chip anv2-chip-sector">{{ t('SECTOR','板块') }}</span>{% endif %}
+        {# type chips (THEME/SECTOR/BASKET) removed by operator request 2026-07-10 —
+           row provenance lives in the board help() tooltip instead #}
         {# reco chip (theme rows) #}
         {% if row.reco_en %}<span class="anv2-chip anv2-chip-reco-{{ row.reco or 'hold' }}">{{ t(row.reco_en, row.reco_zh or row.reco_en) }}</span>{% endif %}
         {# sector urgency/tag chip #}
         {% if row.tag and row.kind != 'THEME' %}<span class="anv2-chip anv2-chip-tag">{{ row.tag }}</span>{% endif %}
         {# dual-read chip on reduce lane #}
         {% if lane == 'reduce' and row.dual_read %}
-        <span class="anv2-chip anv2-chip-washout" data-tip-en="This name also appears in Bottoming Watch: the cycle oscillator is turning while the trend recommendation is Reduce/Avoid. Both reads shown — never merged." data-tip-zh="该名称同时出现在洗盘观察栏：周期振荡器正在转向，但趋势建议为减仓/回避。两种判读并列显示，永不合并。">{{ t(row.dual_chip_en, row.dual_chip_zh) }}</span>
+        <span class="anv2-chip anv2-chip-washout" data-tip-en="Mixed picture: the longer trend still says reduce, but the recent price action shows early signs of a bottom. This name also appears in Bottoming Watch — both reads are shown so you see the disagreement." data-tip-zh="信号矛盾：长期趋势仍建议减仓，但近期价格已初现筑底迹象。该名称同时出现在洗盘观察栏——两种判读并列显示，便于看清分歧。">{{ t(row.dual_chip_en, row.dual_chip_zh) }}</span>
         {% endif %}
         {# bottoming lane: trough+slope chip #}
         {% if lane == 'bot' and row.osc_slope is not none %}
-        <span class="anv2-chip anv2-chip-trough">{{ t('TROUGH','低谷') }}</span>
-        <span class="anv2-chip anv2-chip-turn">↗ {{ '%.1f'|format(row.osc_slope) }}</span>
+        <span class="anv2-chip anv2-chip-trough" data-tip-en="At the low point of its cycle — the most beaten-down phase." data-tip-zh="处于周期低谷——最超跌的阶段。">{{ t('TROUGH','低谷') }}</span>
+        <span class="anv2-chip anv2-chip-turn" data-tip-en="Momentum is turning up from the low — higher number = sharper turn. A first hint, not a buy signal." data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">↗ {{ '%.1f'|format(row.osc_slope) }}</span>
         {% endif %}
       </div>
       {# stat line: rel20 for themes, rs_63d+pos for bottoming #}
@@ -789,10 +795,10 @@
         </div>
         {% if subtitle_en %}<div class="anv2-lane-sub"><span class="l-en">{{ subtitle_en }}</span><span class="l-zh">{{ subtitle_zh }}</span></div>{% endif %}
       </div>
-      <div class="anv2-lane-body">
+      <div class="anv2-lane-body lst-wrap">
       {% if lane_key == 'bot' %}
       <div class="anv2-bot-disc">
-        <strong>{{ t('washout turning — NOT an entry signal','洗盘转向 — 非入场信号') }}</strong>
+        <strong>{{ t('early signs of a bottom — NOT a buy signal','洗盘转向 — 非买入信号') }}</strong>
       </div>
       {% endif %}
       <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
@@ -804,16 +810,16 @@
     {%- endmacro -%}
 
     {{ _anlane('buy',  'buy',  'Buy Now',               '立即买入',
-               'Clean entry · themes &amp; sectors', '干净入场 · 主题与板块',
+               'Clean entry point today', '今日有干净入场点',
                _anl.buy_now, 'anv2-buy') }}
     {{ _anlane('pull', 'pull', 'In Favour — Wait for Pullback', '看好 — 等待回调',
-               'Add on pullback · extended or no clean entry', '回调加仓 · 已延伸或无干净入场点',
+               'Still in favour — wait for a dip before adding', '仍看好 — 等回调再加仓',
                _anl.wait_pullback, 'anv2-pull') }}
     {{ _anlane('bot',  'bot',  'Bottoming Watch',        '洗盘观察',
-               'Trough · osc slope turning — watch only', '低谷 · 震荡斜率转正 — 仅观察',
+               'Beaten down, first signs of turning up — watch only', '超跌初现回升迹象 — 仅观察',
                _anl.bottoming_watch, 'anv2-bot') }}
     {{ _anlane('reduce', 'red', 'Reduce / Avoid',        '减仓 / 回避',
-               'Trend deteriorating · dual-read shown where tape disagrees', '趋势恶化 · 纸带有分歧时展示双重判读',
+               'Trend weakening — consider trimming', '趋势转弱 — 考虑减仓',
                _anl.reduce_avoid, 'anv2-red') }}
 
     </div>{# /.anv2-grid #}
@@ -1746,15 +1752,13 @@
   </script>
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
-      <span class="note" style="text-transform:none">· {{ t('washout → base → fresh turn · T1–T4 entry cascade', '洗盘 → 筑底 → 新转向 · T1–T4 入场级联') }}</span>
-      {{ help("How to read this board. Each card is a washed-out A-share name that just turned back up. Score 0–100 = buy-readiness: how ready it looks to buy, not a win-rate or a guarantee. Rank puts the cleanest setups first. Two gauges show setup quality and entry timing (buy now vs wait for a pullback). It is a research shortlist, not a buy list — and its track record is still accruing.", "如何看这个榜单。每张卡片都是一只刚刚止跌回升的洗盘A股。评分0–100＝买入就绪度：该股离买点有多近，并非胜率或保证。排序把形态最干净的排在前面。两个量表显示形态质量与入场时机（现在买还是等回调）。这是研究备选清单，而非买入清单——其成绩仍在累积。") }}
+      {{ help("How to read this board. Each card is an A-share name that sold off hard, settled, and just turned back up (the system grades that washout → base → fresh-turn sequence, T1–T4). Score 0–100 = buy-readiness: how ready it looks to buy, not a win-rate or a guarantee. Rank puts the cleanest setups first. Two gauges show setup quality and entry timing (buy now vs wait for a pullback). It is a research shortlist, not a buy list — and its track record is still accruing.", "如何看这个榜单。每张卡片都是一只大幅回调、企稳后刚刚回升的A股（系统按 洗盘→筑底→新转向 顺序分级，T1–T4）。评分0–100＝买入就绪度：该股离买点有多近，并非胜率或保证。排序把形态最干净的排在前面。两个量表显示形态质量与入场时机（现在买还是等回调）。这是研究备选清单，而非买入清单——其成绩仍在累积。") }}
       {# W8-E: grid/table view toggle #}
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
         <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
         <button id="st-btn-table" aria-selected="false" onclick="StockTable._setView('table')">☰ <span class="l-en">Table</span><span class="l-zh">表格</span></button>
       </span>
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Washed-out A-share names with a fresh turn back up — a research shortlist ranked by buy-readiness, not a buy list.', '刚刚止跌回升的洗盘A股——按买入就绪度排序的研究备选清单，而非买入清单。') }}</p>
     {% if setups.qvix_regime %}{% set q = setups.qvix_regime %}
     <div style="margin:6px 0 9px;padding:7px 11px;border-radius:9px;font-size:11.5px;line-height:1.5;border:1px solid var(--line);border-left:3px solid {{ 'var(--warn)' if q.verdict=='caution' else ('var(--link)' if q.verdict=='confirm' else 'var(--muted)') }};background:color-mix(in srgb,{{ 'var(--warn)' if q.verdict=='caution' else 'var(--link)' }} 7%,var(--panel))">
       <span style="font-size:13px">{% if q.regime=='panic' %}🌀{% elif q.regime=='suppressed' %}🧊{% else %}〰{% endif %}</span>
@@ -2468,14 +2472,10 @@
     {# lane header #}
     <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
       <h2 style="margin:0">🔄 {{ t('Reversion Desk', '回归台') }}
-        <span class="note" style="text-transform:none;font-size:13px;font-weight:400">· {{ t('flagship-2 · A-share native edge — within-sector 3-month reversal depth', '旗舰2 · A股原生优势 — 行业内3月回归深度') }}</span>
+        {{ help("Stocks that fell the most within their own sector over the last 3 months — historically the deepest fallers tend to snap back. Ranked by how deep the fall is, with bonus credit for A-share-specific signs (a 2-week washout, a coiled volatility squeeze). Scored against the CSI 300 over the next 21 sessions, entering at the next day's price (T+1). Track record still accruing — display context, not a signal and not a buy list (CNPL-R1/R3/R4).", "同行业内近3个月跌幅最深的个股——历史上跌得最深的往往反弹也快。按跌幅深度排序，并对A股特有迹象（2周洗盘、波动压缩蓄势）加分。以次日价格入场（T+1）、未来21个交易日对沪深300的超额收益计分。成绩仍在累积——仅供展示参考，非信号、非买入清单（CNPL-R1/R3/R4）。") }}
       </h2>
       <span class="chip c-muted" style="font-size:11px;font-weight:600">{{ t('display-only', '仅展示') }}</span>
     </div>
-    <p class="note" style="margin:0 0 10px;text-transform:none;font-size:12px">
-      <span class="l-en">Deepest-quintile within-sector 3-month return, ranked by reversal depth + CN-native bonuses (washout_2w, COILED/STAR). No confluence-cascade gate — the gate-vs-edge divorce measured live. Not a buy list: display context, not a signal (CNPL-R1).</span>
-      <span class="l-zh">行业内3月回报最深五分位，按回归深度+CN原生奖励（2周洗盘、盘绕/STAR）排序。无汇流级联门控——现场测量门控与优势的离婚。非买入清单：展示背景，非信号（CNPL-R1）。</span>
-    </p>
     {# stale / as_of stamp #}
     {% set _rd_asof = _rd.get('as_of') %}
     {% if _rd_asof %}
@@ -2520,16 +2520,9 @@
       </div>
       {% endfor %}
     </div>
-    {% if _rd_picks|length > 6 %}
-    <button class="lst-more" type="button" aria-expanded="false" style="margin-top:8px"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
-    {% endif %}
     {% else %}
     <p class="note" style="text-transform:none;font-size:12.5px;color:var(--muted)">{{ t('No picks available for the Reversion Desk today.', '今日回归台暂无选择。') }}</p>
     {% endif %}
-    <p class="note" style="margin:10px 0 0;font-size:11px">
-      <span class="l-en">Ruler: 21-session CSI 300 excess (CNPL-R3) · T+1 fill (CNPL-R4) · track record accruing, not a buy list.</span>
-      <span class="l-zh">标尺：21节沪深300超额（CNPL-R3）· T+1入场（CNPL-R4）· 成绩累积中，非买入清单。</span>
-    </p>
   </div>
   {% endif %}{# /_rd #}
   {% endif %}{# /mode == 'stocks' reversion desk #}
@@ -2657,10 +2650,6 @@
       <span class="l-zh">今日覆盖股票中无UPTURN_CONFIRMED或UPTURN_WATCH — 当前行情下预期为空值。</span>
     </p>
     {% endif %}
-    <p class="note" style="margin:8px 0 0;font-size:11px">
-      <span class="l-en">Display-tier only. Expected-null forward meter (CN port of TS-R3/TS-R4). Universe: board buy + ripening + THS act-now theme members (&le;400 names). No buy/sell implication — washout-to-turn sector-level construction printed NULL in backtest (Oracle P8 / DO_NOT_REBUILD §2). Promotion clock: earliest 2027.</span>
-      <span class="l-zh">仅展示层。预期空值前瞻计量（TS-R3/TS-R4的中国版本）。覆盖范围：买入榜单+成熟区+THS立即行动主题成员（≤400只）。不含买卖含义——板块级别洗盘转向构建在回测中为NULL（Oracle P8 / DO_NOT_REBUILD §2）。晋升时钟：最早2027年。</span>
-    </p>
   </div>
   {% endif %}{# /mode == 'stocks' and mtf_upturn_cn #}
 
@@ -3015,6 +3004,9 @@ window.__CHART_SWAP__ = {
     return '<span class="st-chip ' + cls + '">' + b(len, lzh) + '</span>';
   }
 
+  /* Default view = 9 columns that fit a laptop viewport with no horizontal
+     scroll (operator request 2026-07-10). Specialist columns (tier, theme,
+     2W stoch, MACD, imminence, range%…) stay available via the Columns chooser. */
   var cols = [
     { key:'_stage_zone', labelEn:'Stage', labelZh:'阶段', default:true, sortable:false,
       fmt:function(v,r){ return stageBadge(r.stage||r._stage, r.zone); },
@@ -3024,61 +3016,61 @@ window.__CHART_SWAP__ = {
         var fresh = (r.days_since_signal != null && r.days_since_signal <= 2);
         return (fresh ? '<span class="st-new-dot"></span>' : '') + '<b>' + esc(v||'') + '</b>';
       }},
-    { key:'name', labelEn:'Name', labelZh:'名称', default:true, sortable:true,
+    { key:'name', labelEn:'Name', labelZh:'名称', default:true, sortable:true, cls:'st-name',
       fmt:function(v,r){
         var parts = (v||'').split(' / ');
         return '<span class="l-en">' + esc(parts[0]||'') + '</span><span class="l-zh">' + esc(parts[1]||parts[0]||'') + '</span>';
       }},
-    { key:'tier', labelEn:'Tier', labelZh:'级别', default:true, sortable:true,
+    { key:'tier', labelEn:'Tier', labelZh:'级别', default:false, sortable:true,
       fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
         return '<span class="st-chip st-chip-entry" style="font-size:9px;padding:1px 6px">' + b(esc(v), esc(TIER_ZH[v]||v)) + '</span>'; }},
-    { key:'sector', labelEn:'Sector', labelZh:'板块', default:true, sortable:true,
+    { key:'sector', labelEn:'Sector', labelZh:'板块', default:true, sortable:true, cls:'st-hide-sm',
       fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
         return b(esc(v), esc(SECZH[v]||v)); }},
-    { key:'theme', labelEn:'Theme', labelZh:'主题', default:true, sortable:true,
+    { key:'theme', labelEn:'Theme', labelZh:'主题', default:false, sortable:true,
       fmt:function(v,r){
         var en = (r.narrative&&r.narrative.theme)||r.theme||'';
         var zh = (r.narrative&&r.narrative.theme_zh)||r.theme_zh||'';
         if(!en&&!zh) return '<span class="st-muted">—</span>';
         return b(esc(en), esc(zh));
       }},
-    { key:'price', labelEn:'Price', labelZh:'价格', default:true, sortable:true, right:true,
+    { key:'price', labelEn:'Price', labelZh:'价格', default:true, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fn(v,2); }},
     { key:'conviction', labelEn:'Score', labelZh:'评分', default:true, sortable:true, right:true,
       fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
         var n = parseInt(v); var cls = n>=70?'st-pos':n>=40?'':'st-neg';
         return '<span class="' + cls + '">' + n + '</span>'; },
       tip:{en:'Buy-readiness 0–100 (ENTRY rows only)',zh:'买入就绪度0–100（仅入场行）'} },
-    { key:'mcap', labelEn:'Mcap 亿', labelZh:'市值(亿)', default:true, sortable:true, right:true,
+    { key:'mcap', labelEn:'Mkt cap', labelZh:'市值(亿)', default:true, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v,r){ if(v==null) return '<span class="st-muted">—</span>';
         var b2 = r.cap_bucket; var cls = b2==='large'?'st-pos':b2==='small'?'st-neg':'';
         return '<span class="' + cls + '">' + fn(v,0) + '</span>'; },
-      tip:{en:'Market cap (亿 RMB). — = unknown (placeholder); large ≥500 / mid 100-500 / small <100',zh:'市值（亿人民币）。— = 未知（占位符）；大盘≥500 / 中盘100-500 / 小盘<100'} },
+      tip:{en:'Market cap (亿 RMB = 100M). — = unknown (placeholder); large ≥500 / mid 100-500 / small <100',zh:'市值（亿人民币）。— = 未知（占位符）；大盘≥500 / 中盘100-500 / 小盘<100'} },
     { key:'cap_bucket', labelEn:'Cap', labelZh:'市值档', default:false, sortable:true,
       fmt:function(v){ if(!v) return '<span class="st-muted">?</span>';
         var cls = v==='large'?'st-pos':v==='small'?'st-neg':'';
         return '<span class="' + cls + '">' + b(v, {large:'大盘',mid:'中盘',small:'小盘'}[v]||v) + '</span>'; }},
-    { key:'off_high', labelEn:'Off High', labelZh:'距高点', default:true, sortable:true, right:true,
+    { key:'off_high', labelEn:'Off High', labelZh:'距高点', default:true, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fp(v,1); }},
-    { key:'spot_pct_in_range', labelEn:'Range%', labelZh:'区间位置', default:true, sortable:true, right:true,
+    { key:'spot_pct_in_range', labelEn:'Range%', labelZh:'区间位置', default:false, sortable:true, right:true,
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fn(v,0)+'%'; },
       tip:{en:'Price position inside 2-year range (0=bottom, 100=top)',zh:'价格在2年区间内的位置（0=底部，100=顶部）'} },
-    { key:'w2_stoch', labelEn:'2W Stoch', labelZh:'双周随机', default:true, sortable:true, right:true,
+    { key:'w2_stoch', labelEn:'2W Stoch', labelZh:'双周随机', default:false, sortable:true, right:true,
       fmt:function(v,r){
         if(v==null) return '<span class="st-muted">—</span>';
         var arr = r.w2_stoch_arrow; var arrowStr = arr===1?' ↑':arr===-1?' ↓':'';
         var cls = v<=20?'st-neg':v<=35?'':'st-pos';
         return '<span class="' + cls + '">' + fn(v,1) + arrowStr + '</span>';
       }, tip:{en:'2W StochRSI washout level. ≤35 = washout zone; arrow = direction',zh:'双周随机RSI洗盘水平。≤35=洗盘区；箭头=方向'} },
-    { key:'macd_hist_d', labelEn:'MACD D/2D/3D', labelZh:'MACD多周期', default:true, sortable:false,
+    { key:'macd_hist_d', labelEn:'MACD D/2D/3D', labelZh:'MACD多周期', default:false, sortable:false,
       fmt:function(v,r){ return mg(r.macd_hist_d, r.macd_d2, r.macd_d3); },
       tip:{en:'Daily / 2D / 3D MACD histogram direction (▲ pos / ▼ neg / · unknown)',zh:'日线/2日/3日MACD柱方向（▲正 / ▼负 / ·未知）'} },
-    { key:'days_since_signal', labelEn:'Days', labelZh:'信号天数', default:true, sortable:true, right:true,
+    { key:'days_since_signal', labelEn:'Days', labelZh:'信号天数', default:true, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
         var n = parseInt(v);
         return n<=2 ? '<span class="st-pos">' + n + '</span>' : String(n); },
       tip:{en:'Days since first appearance on this board (from ledger; history starts 2026-06-30)',zh:'首次出现在本榜单的天数（账本自2026-06-30起）'} },
-    { key:'imminence', labelEn:'Imminence', labelZh:'临近度', default:true, sortable:true, right:true,
+    { key:'imminence', labelEn:'Imminence', labelZh:'临近度', default:false, sortable:true, right:true,
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>':
         '<span class="st-pos">~' + fn(v,1) + 'W</span>'; },
       tip:{en:'2W MACD bars until projected cross (ripening rows)',zh:'预计2W MACD穿越前的周期数（蓄势行）'} },
@@ -3088,6 +3080,18 @@ window.__CHART_SWAP__ = {
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fp(v*100,2); },
       tip:{en:'Sector-neutral residual alpha (display context only)',zh:'板块中性残差Alpha（仅供参考）'} },
   ];
+
+  /* Filter dropdown labels — single active language per option (operator request:
+     EN/ZH never shown together in the filter row). */
+  var SECTOR_LABELS = {};
+  Object.keys(SECZH).forEach(function(k){ SECTOR_LABELS[k] = [k, SECZH[k]]; });
+  var OPTION_LABELS = {
+    stage: { 'ENTRY':['Entry','入场'], 'RAN_LATE':['Ran / late','信号已过'],
+             'RIPENING':['Ripening','蓄势中'], 'KNIFE':['Falling knife','下跌中'] },
+    zone:  { 'READY':['Ready','就绪'], 'BASING':['Basing','筑底'], 'FALLING':['Falling','下跌'] },
+    capBucket: { 'large':['Large cap','大盘'], 'mid':['Mid cap','中盘'], 'small':['Small cap','小盘'] },
+    sector: SECTOR_LABELS,
+  };
 
   // Set the internal key for the stage+zone column to something that won't collide
   // with a real row field
@@ -3127,6 +3131,8 @@ window.__CHART_SWAP__ = {
     market: 'cn',
     linkPattern: 'china_lookup.html#{ticker}',
     columns: cols,
+    optionLabels: OPTION_LABELS,
+    searchPlaceholder: ['Search name or theme…','搜索名称或主题…'],
   });
 
   /* restore persisted view */

@@ -3179,12 +3179,17 @@
   StockTable._setView = applyView;
 
   /* ── init ── */
+  /* Filter dropdown labels — single active language per option (matches CN board). */
+  var SECTOR_LABELS = {};
+  Object.keys(SECZH).forEach(function(k){ SECTOR_LABELS[k] = [k, SECZH[k]]; });
   StockTable.init({
     dataId:      'stocktable-data',
     containerId: 'stocktable-wrap',
     market:      'hk',
     linkPattern: 'hk_lookup.html#{ticker}',
     columns:     cols,
+    optionLabels: { sector: SECTOR_LABELS },
+    searchPlaceholder: ['Search name or theme…','搜索名称或主题…'],
   });
 
   /* restore persisted view */
