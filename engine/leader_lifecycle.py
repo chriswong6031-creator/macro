@@ -15,6 +15,25 @@ Vocabulary fences (LR-R1):
   - no "money routing" / "capital suction" (TOP3-O2)
   - no "validated" (CI)
   - "extended_leg" / "basing_leg" only (never donor/recipient/routing)
+
+W2a builder contract — apply_hysteresis dual-history columns
+--------------------------------------------------------------
+The nightly builder (scripts/build_leader_radar.py) persists TWO columns per name in
+data/leader_radar/state_history.parquet:
+
+  raw_state       — output of classify() for that session (before hysteresis)
+  confirmed_state — output of apply_hysteresis() for that session
+
+On each nightly run the builder:
+  1. Calls classify(inp) → raw_state_today
+  2. Loads prior rows for the name → raw_state_history, confirmed_state_history
+  3. Calls apply_hysteresis(raw_state_today, raw_state_history, confirmed_state_history)
+     → confirmed_state_today
+  4. Appends (date, raw_state_today, confirmed_state_today) to the parquet
+
+Context lookups inside classify() (state_history arg on LifecycleInputs), days_in_state
+anchoring, and eligible_for_refire all consume CONFIRMED state history. Raw history is
+consumed ONLY by apply_hysteresis for entry/exit counting.
 """
 from __future__ import annotations
 
@@ -1099,7 +1118,8 @@ def classify(inp: LifecycleInputs) -> LifecycleAssessment:
       > QUIET_ACCUMULATION > SUPPRESSED > NONE
 
     BREAKAWAY/LEADERSHIP state derivation:
-      - 'breakaway' or 'emerging' from winner_autopsy → BREAKAWAY context
+      - 'breakaway' (only) from winner_autopsy → BREAKAWAY context
+      - 'emerging' from winner_autopsy → CATALYST_WINDOW ignition trigger (bw_emerging chip)
       - 'continuation' with RS top-decile ≥ 4 weeks + concentration chip → LEADERSHIP
       - 'failed' from winner_autopsy → FAILED
     """
@@ -1148,13 +1168,17 @@ def classify(inp: LifecycleInputs) -> LifecycleAssessment:
         if top_decile_ok is True and conc is True:
             leadership_ok = True
         elif top_decile_ok is True and conc is None:
-            # null concentration → still show LEADERSHIP (concentration chip is bonus context)
+            # Null concentration chip: null-tolerant per house tri-state law (chip displayed
+            # as null on radar row; LEADERSHIP still fires — concentration is bonus context,
+            # not a gate). LR-R2 / CLAUDE.md "null never counts as False".
             leadership_ok = True
     all_evidence.update(leadership_chips)
 
     # ── 4. BREAKAWAY ──────────────────────────────────────────────────────────
+    # Only 'breakaway' maps to BREAKAWAY state; 'emerging' is CATALYST_WINDOW ignition
+    # only (bw_emerging chip in _catalyst_window_check). LR-R2.
     breakaway_ok = False
-    if inp.breakaway_watch_state in ("breakaway", "emerging"):
+    if inp.breakaway_watch_state == "breakaway":
         breakaway_ok = True
         all_evidence["bw_breakaway"] = True
     # Also: continuation without full leadership qualifiers = BREAKAWAY
@@ -1169,7 +1193,6 @@ def classify(inp: LifecycleInputs) -> LifecycleAssessment:
     # ── 6. QUIET_ACCUMULATION ────────────────────────────────────────────────
     qa_ok, qa_chips, qa_n = _quiet_accum_check(inp, rs)
     all_evidence.update(qa_chips)
-    n_avail = qa_n  # report QA n_avail as the primary K-of-N (crowded n_avail also present)
 
     # ── 7. SUPPRESSED ────────────────────────────────────────────────────────
     suppressed_val, supp_chips = _suppressed_check(inp, rs)
@@ -1182,22 +1205,29 @@ def classify(inp: LifecycleInputs) -> LifecycleAssessment:
     if not _is_null(inp.earnings_within_14d):
         de_escalation_chips["earnings_within_14d"] = bool(inp.earnings_within_14d)
 
-    # ── Precedence cascade ────────────────────────────────────────────────────
+    # ── Precedence cascade — n_avail comes from the WINNING state's own chip set ──
+    # This ensures the radar row shows the K-of-N count relevant to the displayed state.
     if crowded_ok:
         final_state = STATE_CROWDED
-        n_avail = crowded_n
+        n_avail = crowded_n   # crowded_n from _crowded_check
     elif leadership_ok:
         final_state = STATE_LEADERSHIP
+        n_avail = 0           # leadership has no K-of-N threshold (threshold-based axes)
     elif breakaway_ok:
         final_state = STATE_BREAKAWAY
+        n_avail = 0           # breakaway is a binary WA state flag
     elif cw_ok:
         final_state = STATE_CATALYST_WINDOW
+        n_avail = 0           # CW has no K-of-N (context + any ignition trigger)
     elif qa_ok:
         final_state = STATE_QUIET_ACCUMULATION
+        n_avail = qa_n        # qa_n from _quiet_accum_check
     elif suppressed_ok:
         final_state = STATE_SUPPRESSED
+        n_avail = 0           # suppressed has no K-of-N
     else:
         final_state = STATE_NONE
+        n_avail = 0
 
     return LifecycleAssessment(
         state=final_state,
@@ -1212,7 +1242,8 @@ def classify(inp: LifecycleInputs) -> LifecycleAssessment:
 
 def apply_hysteresis(
     raw_state_today: str,
-    state_history: list[tuple[date, str]],
+    raw_state_history: list[tuple[date, str]],
+    confirmed_state_history: list[tuple[date, str]],
     enter_n: int = HYSTERESIS_ENTER_N,
     exit_n: int = HYSTERESIS_EXIT_N,
 ) -> str:
@@ -1223,49 +1254,76 @@ def apply_hysteresis(
     applies to the pre-onset states: SUPPRESSED, QUIET_ACCUMULATION,
     CATALYST_WINDOW, CROWDED, NONE.
 
+    The function uses SEPARATE raw and confirmed history lists (W2a builder
+    contract — see module docstring). Entry is counted in RAW history; exit is
+    counted in RAW history against the current CONFIRMED state. Context lookups
+    and days_in_state anchoring in classify() consume CONFIRMED history only.
+
     Args:
         raw_state_today: the raw state from classify() for today
-        state_history: list of (date, state_string) tuples, newest last
-        enter_n: consecutive sessions required to enter a new state (default 2)
-        exit_n: consecutive sessions required to exit a state (default 3)
+        raw_state_history: list of (date, raw_state) tuples, newest last.
+            Entry requires last (enter_n - 1) raw states == raw_state_today.
+        confirmed_state_history: list of (date, confirmed_state) tuples, newest last.
+            Used to determine the currently held confirmed state.
+            Exit requires exit_n consecutive raw sessions not matching confirmed state.
+        enter_n: consecutive raw sessions required to enter a new state (default 2)
+        exit_n: consecutive raw sessions required to exit a confirmed state (default 3)
 
     Returns:
-        Post-hysteresis state string.
+        Post-hysteresis (confirmed) state string.
     """
-    # WA states pass through
+    # WA states pass through: hysteresis is governed by Detector-D for these
     if raw_state_today in (STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_FAILED):
         return raw_state_today
 
-    if not state_history:
+    # No confirmed history yet — accept raw state directly
+    if not confirmed_state_history:
         return raw_state_today
 
-    # Current held state = last entry in history
-    held_state = state_history[-1][1] if state_history else STATE_NONE
+    # Current held (confirmed) state = last entry in confirmed history
+    held_state = confirmed_state_history[-1][1]
 
-    # If WA states are held, pass through immediately on WA state
+    # If WA states are currently confirmed, release immediately on any non-WA raw signal
+    # (WA exit is governed by winner_autopsy, not this function)
     if held_state in (STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_FAILED):
-        # If we're now getting a non-WA raw state, check if we've had exit_n non-WA sessions
-        # (simplified: just return raw_state_today; WA exit is governed by WA)
         return raw_state_today
 
     if raw_state_today == held_state:
-        # Same state: maintain
+        # Same state: maintain confirmed state
         return held_state
 
-    # Check if we've seen raw_state_today for enter_n consecutive sessions
-    recent = [s for _, s in state_history[-(enter_n - 1):]]
-    if len(recent) >= enter_n - 1 and all(s == raw_state_today for s in recent):
-        return raw_state_today
+    # raw_state_today != held_state: we need to decide whether to transition.
+    #
+    # Two regimes:
+    # A) held_state == NONE (or the first-ever entry into a real state):
+    #    Use ENTRY rule — need enter_n consecutive raw sessions of raw_state_today
+    #    (last enter_n-1 raw sessions == raw_state_today, plus today = enter_n total).
+    # B) held_state is a real non-NONE state:
+    #    Use EXIT rule — need exit_n consecutive non-held raw sessions including today
+    #    (last exit_n-1 raw sessions all != held_state, plus today = exit_n total).
+    #
+    # This prevents the entry check from short-circuiting the exit requirement when
+    # you've accumulated only 1-2 prior raw sessions of a new state while still holding
+    # a confirmed real state.
 
-    # Check if we should exit (held_state has been failing for exit_n consecutive sessions)
-    # i.e. the last exit_n sessions in history were NOT held_state
-    if len(state_history) >= exit_n:
-        recent_held = [s for _, s in state_history[-exit_n:]]
-        if all(s != held_state for s in recent_held):
-            return raw_state_today  # exit threshold met, transition now
-
-    # Stay in held state
-    return held_state
+    if held_state == STATE_NONE:
+        # ── Entry check (from NONE / no prior state) ─────────────────────────
+        # Entering raw_state_today requires it appeared in the last (enter_n - 1) raw sessions
+        prior_raw = [s for _, s in raw_state_history[-(enter_n - 1):]]
+        if len(prior_raw) >= enter_n - 1 and all(s == raw_state_today for s in prior_raw):
+            return raw_state_today
+        # Entry threshold not met: stay in NONE
+        return held_state
+    else:
+        # ── Exit check (from a real confirmed state) ──────────────────────────
+        # Exit held_state when exit_n consecutive raw sessions were all NOT held_state.
+        # (today + exit_n-1 prior raw sessions all != held_state)
+        if len(raw_state_history) >= exit_n - 1:
+            prior_raw_for_exit = [s for _, s in raw_state_history[-(exit_n - 1):]]
+            if all(s != held_state for s in prior_raw_for_exit):
+                return raw_state_today  # exit threshold met
+        # Exit threshold not met: stay in held confirmed state
+        return held_state
 
 
 # ── Fire rules (LR-R8) ───────────────────────────────────────────────────────
@@ -1343,10 +1401,11 @@ def eligible_for_refire(
         return False
 
     # Require full de-escalation to NONE or FAILED since last fire
+    # Use enumerate positions (O(n)) instead of .index() which is O(n²) on a list of tuples
     since_fire = [
-        st for dt, st in state_history
+        st for pos, (dt, st) in enumerate(state_history)
         if (fire_idx is None and dt > last_fire_date)
-        or (fire_idx is not None and state_history.index((dt, st)) > fire_idx)
+        or (fire_idx is not None and pos > fire_idx)
     ]
     return any(s in (STATE_NONE, STATE_FAILED) for s in since_fire)
 
@@ -1374,7 +1433,8 @@ def extended_leg(
 
     # Extension: current price vs 200d trend (own history percentile)
     sma200 = basket_ew_close.rolling(200, min_periods=100).mean()
-    if sma200.iloc[-1] is None or not np.isfinite(float(sma200.iloc[-1])):
+    # Use pd.isna() + isfinite; numpy floats are never `is None` (dead guard)
+    if pd.isna(sma200.iloc[-1]) or not np.isfinite(float(sma200.iloc[-1])):
         return None
     ext_pct = (float(basket_ew_close.iloc[-1]) / float(sma200.iloc[-1]) - 1.0) * 100.0
     # Own history percentile of extension

@@ -739,85 +739,302 @@ class TestPrecedenceCascade:
         assert assessment.state == STATE_BREAKAWAY
 
     def test_crowded_wins_over_leadership(self):
-        """CROWDED beats LEADERSHIP when crowding chips fire."""
-        inp = self._make_crowded_inp()
+        """CROWDED beats LEADERSHIP when both CROWDED AND LEADERSHIP conditions are met.
+
+        Construct inputs satisfying BOTH simultaneously:
+        - CROWDED: extension_extreme + monthly_rsi_80 + analyst_saturated + valuation_extreme
+          (≥3 of 7 chips → CROWDED_K_OF_N met)
+        - LEADERSHIP: breakaway_watch='continuation' + rs_top_decile weeks ≥ 4 + peer_divergence
+          (rs_rank_history set to top-decile for 5+ weeks; parabolic price drives divergence)
+        Per precedence (CROWDED > LEADERSHIP), state must be CROWDED.
+        """
+        n = 600
+        idx = _date_index(n)
+        # Aggressively parabolic price to hit CROWDED chips
+        prices = [100.0 * (1.005 ** i) for i in range(n)]
+        stock = pd.Series(prices, index=idx)
+        bench = _flat_close(n, price=100.0, start=str(idx[0].date()))
+
+        # LEADERSHIP conditions: continuation + rs_rank history with 5 weeks top decile
+        # rs_top_decile_weeks expects DataFrame with DatetimeIndex and 'rs_rank' column
+        rs_rank_dates = pd.bdate_range(end=idx[-1], periods=6, freq="5B")
+        rs_rank_history = pd.DataFrame(
+            {"rs_rank": [0.95] * 6}, index=rs_rank_dates
+        )  # 6 weeks of 95th pctile RS rank
+
+        inp = LifecycleInputs(
+            close=stock,
+            bench_close=bench,
+            breakaway_watch_state="continuation",  # LEADERSHIP trigger
+            rs_rank_history=rs_rank_history,        # ≥ 4 weeks top decile
+            peer_median_rs_63d=-0.05,               # peer underperforming → divergence
+            analyst_buy_pct=90.0,                   # CROWDED chip 5
+            basket_corr_now=0.80,
+            basket_corr_then=0.40,                  # CROWDED chip 7
+            valuation_pctile_5y=85.0,               # CROWDED chip 4
+            # parabolic stock also triggers: extension_extreme (chip 1) + monthly_rsi_80 (chip 2)
+        )
+
         assessment = classify(inp)
-        # CROWDED should beat LEADERSHIP
-        assert assessment.state in (STATE_CROWDED, STATE_LEADERSHIP, STATE_BREAKAWAY)
-        # The cascade is deterministic; just verify it returns exactly one state
-        assert assessment.state in (
-            STATE_SUPPRESSED, STATE_QUIET_ACCUMULATION, STATE_CATALYST_WINDOW,
-            STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_CROWDED, STATE_FAILED, STATE_NONE
+        # CROWDED must win over LEADERSHIP (precedence cascade: CROWDED > LEADERSHIP)
+        assert assessment.state == STATE_CROWDED, (
+            f"Expected CROWDED to beat LEADERSHIP; got {assessment.state}. "
+            f"evidence={assessment.evidence}"
         )
 
     def test_exactly_one_state_property(self):
-        """classify() always returns exactly one state from the valid set."""
+        """classify() returns exactly one valid state; precedence winner is deterministic.
+
+        Test with a grid of inputs designed to trigger MULTIPLE states simultaneously:
+        - breakaway='emerging' → CATALYST_WINDOW ignition (bw_emerging chip)
+        - continuation → LEADERSHIP / BREAKAWAY
+        - heavy positive revisions + volume + suppressed history → QA / CW conditions
+        Assert the precedence cascade picks deterministically.
+        """
         valid = {
             STATE_SUPPRESSED, STATE_QUIET_ACCUMULATION, STATE_CATALYST_WINDOW,
             STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_CROWDED, STATE_FAILED, STATE_NONE
         }
-        n = 300
-        stock = _trending_close(n, pct_per_day=0.001)
-        bench = _flat_close(n, price=100.0)
-        for bw_state in [None, "breakaway", "emerging", "continuation", "failed", "none"]:
+        n = 400
+        idx = _date_index(n)
+        # Declining then recovering stock (creates suppressed context + RS turn)
+        prices = [100.0 * (0.998 ** i) for i in range(250)] + [
+            100.0 * (0.998 ** 249) * (1.002 ** i) for i in range(150)
+        ]
+        stock = pd.Series(prices, index=idx)
+        bench = _flat_close(n, price=100.0, start=str(idx[0].date()))
+        vol = pd.Series([2_000_000] * n, index=idx)
+
+        # State history that makes BOTH qa_context and catalyst_window_context potentially true
+        suppressed_hist = [(date(2020, 1, i + 2), STATE_SUPPRESSED) for i in range(30)]
+        qa_hist = [(date(2020, 3, 1), STATE_QUIET_ACCUMULATION)]  # QA ≤21 sessions ago
+
+        bw_states_with_expected_precedence = [
+            # (bw_state, overlapping_conditions_note, must_not_be_states)
+            ("breakaway", "BREAKAWAY > CW/QA/SUP", [STATE_CATALYST_WINDOW, STATE_QUIET_ACCUMULATION]),
+            ("emerging",  "emerging→CW ignition only; BREAKAWAY unreachable", [STATE_BREAKAWAY]),
+            ("continuation", "LEADERSHIP or BREAKAWAY > CW/QA", []),  # depends on rs_rank
+            ("failed",    "FAILED overrides all",
+                [STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_CROWDED, STATE_CATALYST_WINDOW,
+                 STATE_QUIET_ACCUMULATION, STATE_SUPPRESSED, STATE_NONE]),
+            (None, "no WA state; only data-driven", []),
+        ]
+
+        for bw_state, note, must_not_be in bw_states_with_expected_precedence:
             inp = LifecycleInputs(
                 close=stock,
                 bench_close=bench,
+                volume=vol,
                 breakaway_watch_state=bw_state,
+                net_up_30d=5.0,       # positive revisions (QA chip)
+                est_chg_30d=0.02,
+                cheap_pctile=30.0,    # cheap (de-escalation + suppressed chip)
+                state_history=suppressed_hist + qa_hist,
             )
             assessment = classify(inp)
-            assert assessment.state in valid, f"Invalid state: {assessment.state}"
+
+            assert assessment.state in valid, (
+                f"bw={bw_state!r} ({note}): invalid state '{assessment.state}'"
+            )
+            for forbidden in must_not_be:
+                if bw_state == "failed":
+                    # FAILED must override everything else
+                    assert assessment.state == STATE_FAILED, (
+                        f"bw='failed': expected FAILED, got {assessment.state}"
+                    )
+                else:
+                    assert assessment.state != forbidden, (
+                        f"bw={bw_state!r} ({note}): "
+                        f"precedence violation — got {assessment.state}, "
+                        f"which should have lost to higher state"
+                    )
 
 
 # ── Hysteresis tests ──────────────────────────────────────────────────────────
 
 class TestHysteresis:
+    """Tests for apply_hysteresis with split raw/confirmed history contract.
+
+    Entry rule: raw_state_today must appear in the last (enter_n - 1) raw sessions
+                (i.e., enter_n consecutive raw sessions total including today).
+    Exit rule:  the last (exit_n - 1) raw sessions must all differ from held confirmed
+                state (i.e., exit_n consecutive non-held raw sessions including today).
+    """
+
     def _make_history(self, states: list[str]) -> list[tuple[date, str]]:
         base = date(2020, 1, 2)
         return [(base + timedelta(days=i), s) for i, s in enumerate(states)]
 
+    def test_deadlock_regression(self):
+        """Reproduce BLOCKER-2 deadlock: raw QA,QA,QA never confirms with single history.
+
+        With the old single-history contract, apply_hysteresis checked raw states
+        against state_history but classify() context lookups needed post-hysteresis
+        history — deadlock: raw QA never entered confirmed because history stayed NONE.
+
+        With the split contract: raw_state_history tracks QA; confirmed starts NONE.
+        After 2 raw QA sessions, confirmed flips to QA on session 3.
+        """
+        # Day-by-day simulation: 3 raw QA sessions, confirmed history built separately
+        raw_hist: list[tuple[date, str]] = []
+        conf_hist: list[tuple[date, str]] = []
+        base = date(2020, 1, 2)
+
+        raw_seq = [STATE_QUIET_ACCUMULATION] * 3
+        confirmed_seq = []
+        for i, raw in enumerate(raw_seq):
+            conf = apply_hysteresis(raw, raw_hist, conf_hist)
+            confirmed_seq.append(conf)
+            raw_hist.append((base + timedelta(days=i), raw))
+            conf_hist.append((base + timedelta(days=i), conf))
+
+        # Day 1: no history → raw accepted directly → QA
+        assert confirmed_seq[0] == STATE_QUIET_ACCUMULATION
+        # Day 2: 1 prior raw QA == enter_n-1=1 → enter QA
+        assert confirmed_seq[1] == STATE_QUIET_ACCUMULATION
+        # Day 3: already in QA → maintained
+        assert confirmed_seq[2] == STATE_QUIET_ACCUMULATION
+
     def test_2_in_to_enter(self):
         """Must see raw_state for HYSTERESIS_ENTER_N consecutive sessions to enter."""
-        history = self._make_history(["NONE", "NONE"])
-        result = apply_hysteresis("SUPPRESSED", history)
-        # Only 0 prior sessions of SUPPRESSED; not yet entered
-        assert result in ("NONE", "SUPPRESSED")
+        # 0 prior raw sessions of SUPPRESSED: raw history has NONE, NONE
+        raw_hist = self._make_history(["NONE", "NONE"])
+        conf_hist = self._make_history(["NONE", "NONE"])
+        result = apply_hysteresis("SUPPRESSED", raw_hist, conf_hist)
+        # enter_n=2: need 1 prior raw SUPPRESSED; have 0 → stay NONE
+        assert result == "NONE"
 
-        # After 1 prior session of SUPPRESSED
-        history2 = self._make_history(["NONE", "SUPPRESSED"])
-        result2 = apply_hysteresis("SUPPRESSED", history2)
-        # Now we've seen SUPPRESSED in the last enter_n-1 sessions → enter
+        # 1 prior raw session of SUPPRESSED: enters on day 2
+        raw_hist2 = self._make_history(["NONE", "SUPPRESSED"])
+        conf_hist2 = self._make_history(["NONE", "NONE"])
+        result2 = apply_hysteresis("SUPPRESSED", raw_hist2, conf_hist2)
         assert result2 == "SUPPRESSED"
 
     def test_3_out_to_exit(self):
-        """Must fail state for HYSTERESIS_EXIT_N consecutive sessions to exit."""
-        history = self._make_history(["SUPPRESSED", "SUPPRESSED", "NONE", "NONE"])
-        # Two sessions of NONE (not 3 yet): should still stay in SUPPRESSED
-        result = apply_hysteresis("NONE", history)
-        # With 2 non-SUPPRESSED trailing sessions out of needed 3: still SUPPRESSED
-        # (Note: apply_hysteresis checks last exit_n sessions in history, not including today)
-        assert result in ("SUPPRESSED", "NONE")
+        """Must see exit_n consecutive non-held raw sessions (including today) to exit."""
+        # Held confirmed = SUPPRESSED; only 2 prior raw NONEs (+ today = 3 total = exit_n)
+        raw_hist = self._make_history(["SUPPRESSED", "NONE", "NONE"])
+        conf_hist = self._make_history(["SUPPRESSED", "SUPPRESSED", "SUPPRESSED"])
+        result = apply_hysteresis("NONE", raw_hist, conf_hist)
+        # exit_n=3: need 2 prior raw != SUPPRESSED; have exactly 2 → exit
+        assert result == "NONE"
 
-        # Three sessions failing SUPPRESSED → exit
-        history3 = self._make_history(["SUPPRESSED", "NONE", "NONE", "NONE"])
-        result3 = apply_hysteresis("NONE", history3)
-        assert result3 == "NONE"
+        # Only 1 prior raw NONE: insufficient (need 2 for exit_n=3 total)
+        raw_hist2 = self._make_history(["SUPPRESSED", "SUPPRESSED", "NONE"])
+        conf_hist2 = self._make_history(["SUPPRESSED", "SUPPRESSED", "SUPPRESSED"])
+        result2 = apply_hysteresis("NONE", raw_hist2, conf_hist2)
+        # 1 prior != SUPPRESSED + today = 2 total, < exit_n=3 → stay
+        assert result2 == "SUPPRESSED"
 
     def test_wa_states_pass_through(self):
-        """BREAKAWAY/LEADERSHIP/FAILED bypass hysteresis."""
-        history = self._make_history(["NONE", "NONE"])
-        for wa_state in ("BREAKAWAY", "LEADERSHIP", "FAILED"):
-            result = apply_hysteresis(wa_state, history)
+        """BREAKAWAY/LEADERSHIP/FAILED bypass hysteresis regardless of history."""
+        raw_hist = self._make_history(["NONE", "NONE"])
+        conf_hist = self._make_history(["NONE", "NONE"])
+        for wa_state in (STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_FAILED):
+            result = apply_hysteresis(wa_state, raw_hist, conf_hist)
             assert result == wa_state
 
     def test_same_state_maintained(self):
-        history = self._make_history(["SUPPRESSED", "SUPPRESSED"])
-        result = apply_hysteresis("SUPPRESSED", history)
+        """Already in confirmed state: maintaining it requires no entry check."""
+        raw_hist = self._make_history(["SUPPRESSED", "SUPPRESSED"])
+        conf_hist = self._make_history(["SUPPRESSED", "SUPPRESSED"])
+        result = apply_hysteresis("SUPPRESSED", raw_hist, conf_hist)
         assert result == "SUPPRESSED"
 
     def test_empty_history(self):
-        result = apply_hysteresis("SUPPRESSED", [])
+        """No prior history: raw state accepted directly."""
+        result = apply_hysteresis("SUPPRESSED", [], [])
         assert result == "SUPPRESSED"
+
+    def test_2_in_3_out_invariant_end_to_end(self):
+        """Full builder-loop simulation: raw QA,QA,QA,SUP,QA,QA.
+
+        Expected confirmed sequence (2-in / 3-out):
+          raw:       QA   QA   QA   SUP  QA   QA
+          confirmed: QA   QA   QA   QA   QA   QA
+                     (SUP blip absorbed — needs 3 raw non-QA to exit; only 1 here)
+
+        Day 1: no hist → QA immediately (empty history → pass through)
+        Day 2: 1 prior raw QA = enter_n-1 → QA confirmed
+        Day 3: already QA → maintained
+        Day 4: raw SUP, prior raw=(QA,QA,QA); 0 prior non-QA → not exit → stay QA
+        Day 5: raw QA, back to QA; 0 prior non-QA → immediately QA (same as held)
+        Day 6: raw QA → maintained
+        """
+        QA = STATE_QUIET_ACCUMULATION
+        SUP = STATE_SUPPRESSED
+
+        raw_seq = [QA, QA, QA, SUP, QA, QA]
+        expected_confirmed = [QA, QA, QA, QA, QA, QA]
+
+        raw_hist: list[tuple[date, str]] = []
+        conf_hist: list[tuple[date, str]] = []
+        base = date(2020, 1, 2)
+        actual_confirmed = []
+
+        for i, raw in enumerate(raw_seq):
+            conf = apply_hysteresis(raw, raw_hist, conf_hist)
+            actual_confirmed.append(conf)
+            raw_hist.append((base + timedelta(days=i), raw))
+            conf_hist.append((base + timedelta(days=i), conf))
+
+        assert actual_confirmed == expected_confirmed, (
+            f"Confirmed sequence mismatch:\n"
+            f"  raw:      {raw_seq}\n"
+            f"  expected: {expected_confirmed}\n"
+            f"  actual:   {actual_confirmed}"
+        )
+
+    def test_fires_trigger_once_on_confirmed_entry(self):
+        """precipice/onset fires trigger exactly once on confirmed-state ENTRY in a loop.
+
+        Simulate: 3 raw QA → QA confirmed → 3 raw CW (exits QA after 3 non-QA) → CW confirmed.
+        precipice_fire should fire exactly once on the FIRST confirmed CW session.
+
+        With 2-in/3-out and held=QA:
+          - Exit QA requires exit_n=3 consecutive non-QA raw sessions.
+          - raw_seq = [QA, QA, QA, CW, CW, CW]
+          - QA confirms on day 0 (empty hist), stays day 1-2.
+          - CW raw starts day 3. Day 3+4: 2 non-QA raws (not enough). Day 5: 3rd CW raw →
+            prior_raw[-2:] = [CW, CW] all != QA → exit QA → CW confirmed on day 5.
+          - precipice fires once on day 5 (first confirmed CW).
+          - Continuing CW after that: day 6+ raw=CW, held=CW → maintained → no refire.
+        """
+        QA = STATE_QUIET_ACCUMULATION
+        CW = STATE_CATALYST_WINDOW
+
+        raw_seq = [QA, QA, QA, CW, CW, CW, CW]
+        base = date(2020, 1, 2)
+
+        raw_hist: list[tuple[date, str]] = []
+        conf_hist: list[tuple[date, str]] = []
+        assessments: list[LifecycleAssessment] = []
+        fire_count = 0
+        first_cw_confirmed_day = None
+
+        for i, raw in enumerate(raw_seq):
+            conf = apply_hysteresis(raw, raw_hist, conf_hist)
+            ev = {"rs_line_nh": True, "revision_positive": None} if conf == CW else {}
+            assessment = LifecycleAssessment(state=conf, evidence=ev, n_avail=0)
+            assessments.append(assessment)
+            fired = precipice_fire(assessment, assessments[:-1])
+            if fired:
+                fire_count += 1
+                if first_cw_confirmed_day is None:
+                    first_cw_confirmed_day = i
+            raw_hist.append((base + timedelta(days=i), raw))
+            conf_hist.append((base + timedelta(days=i), conf))
+
+        # precipice should fire exactly once (on first confirmed CW entry)
+        assert fire_count == 1, (
+            f"Expected 1 precipice fire, got {fire_count}. "
+            f"Confirmed sequence: {[s for _, s in conf_hist]}"
+        )
+        # The CW confirmation should happen on day 5 (0-indexed) — first day with
+        # exit_n=3 consecutive non-QA raws [day3=CW, day4=CW, day5=CW]
+        assert first_cw_confirmed_day == 5, (
+            f"Expected CW confirmed on day 5, got day {first_cw_confirmed_day}"
+        )
 
 
 # ── Fire rule tests ───────────────────────────────────────────────────────────
@@ -996,32 +1213,99 @@ class TestFieldGuideReplay:
         assert assessment.state not in (STATE_LEADERSHIP, STATE_CROWDED, STATE_BREAKAWAY)
 
     def test_googl_shaped_reaches_quiet_accum(self):
-        """At base phase with revision_positive=True → should reach QA or above."""
+        """At base phase with revision_positive=True and suppressed context → reaches QA.
+
+        Key: SUPPRESSED context in state_history satisfies context_ok; revision_positive=True
+        satisfies chip-1; volume provides accum chip. That's 2-of-5 → QA fires.
+        """
         inp = self._make_googl_shaped()
-        # Evaluate at bar 350 (in the base + positive revisions)
         n_sub = 380
         close_sub = inp.close.iloc[:n_sub]
         bench_sub = inp.bench_close.iloc[:n_sub]
-        # Add volume for accumulation chip
+        # Updown volume ratio: need vol. Make it neutral (no pocket pivot) so
+        # accum_evidence comes from updown ratio or revision alone.
         vol = pd.Series([1_200_000] * n_sub, index=close_sub.index)
         inp_sub = LifecycleInputs(
             close=close_sub,
             bench_close=bench_sub,
-            net_up_30d=3.0,
+            net_up_30d=3.0,        # revision_positive = True (chip 1)
             est_chg_30d=0.015,
             cheap_pctile=35.0,
             volume=vol,
+            insider_cluster=True,  # chip 5 — second QA chip to reach K=2 of 5
             state_history=[
                 (date(2020, 1, i + 2), STATE_SUPPRESSED) for i in range(30)
-            ],
+            ],  # 30-session SUPPRESSED context → context_ok = True
         )
         assessment = classify(inp_sub)
-        # Should be QA or higher (not NONE or only SUPPRESSED)
-        # Given base context + revision_positive + volume accum → should reach QA or CW
-        valid_advanced = {STATE_QUIET_ACCUMULATION, STATE_CATALYST_WINDOW,
-                          STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_CROWDED}
-        # At minimum should escape NONE
-        assert assessment.state in valid_advanced or assessment.state == STATE_SUPPRESSED
+        # suppressed context + revision_positive + insider_cluster → 2-of-5 → QA
+        assert assessment.state == STATE_QUIET_ACCUMULATION, (
+            f"Expected QA at accumulation phase; got {assessment.state}. "
+            f"evidence={assessment.evidence}"
+        )
+
+    def test_googl_shaped_catalyst_window_leg(self):
+        """SUPPRESSED → QA → CATALYST_WINDOW sequence using bw_emerging ignition.
+
+        After QA is established, bw_emerging=True provides the CW ignition trigger
+        while qa_context comes from state_history containing QA in last 21 sessions.
+        Tests that 'emerging' routes to CATALYST_WINDOW, NOT BREAKAWAY (BLOCKER-1 fix).
+        """
+        inp = self._make_googl_shaped()
+        # Phase 1: SUPPRESSED (bar 250)
+        n_sub = 250
+        inp_supp = LifecycleInputs(
+            close=inp.close.iloc[:n_sub],
+            bench_close=inp.bench_close.iloc[:n_sub],
+            net_up_30d=-5.0,
+            est_chg_30d=-0.02,
+            cheap_pctile=35.0,
+        )
+        assess_supp = classify(inp_supp)
+        assert assess_supp.state == STATE_SUPPRESSED
+
+        # Phase 2: QA (bar 380, with suppressed context + 2 chips)
+        n_sub2 = 380
+        close_sub2 = inp.close.iloc[:n_sub2]
+        bench_sub2 = inp.bench_close.iloc[:n_sub2]
+        vol2 = pd.Series([1_200_000] * n_sub2, index=close_sub2.index)
+        inp_qa = LifecycleInputs(
+            close=close_sub2,
+            bench_close=bench_sub2,
+            net_up_30d=3.0,
+            est_chg_30d=0.015,
+            cheap_pctile=35.0,
+            volume=vol2,
+            insider_cluster=True,  # second QA chip to reach K=2
+            state_history=[(date(2020, 1, i + 2), STATE_SUPPRESSED) for i in range(30)],
+        )
+        assess_qa = classify(inp_qa)
+        assert assess_qa.state == STATE_QUIET_ACCUMULATION
+
+        # Phase 3: CATALYST_WINDOW (bar 450, bw_emerging=True + QA in state_history)
+        n_sub3 = 450
+        close_sub3 = inp.close.iloc[:n_sub3]
+        bench_sub3 = inp.bench_close.iloc[:n_sub3]
+        vol3 = pd.Series([1_200_000] * n_sub3, index=close_sub3.index)
+        # QA in recent state_history provides qa_context; bw_emerging provides ignition
+        qa_hist = [(date(2020, 6, i + 1), STATE_QUIET_ACCUMULATION) for i in range(5)]
+        inp_cw = LifecycleInputs(
+            close=close_sub3,
+            bench_close=bench_sub3,
+            net_up_30d=3.0,
+            est_chg_30d=0.015,
+            cheap_pctile=35.0,
+            volume=vol3,
+            breakaway_watch_state="emerging",  # ignition trigger → CW only, NOT BREAKAWAY
+            state_history=qa_hist,
+        )
+        assess_cw = classify(inp_cw)
+        # 'emerging' must route to CATALYST_WINDOW, never to BREAKAWAY (BLOCKER-1)
+        assert assess_cw.state == STATE_CATALYST_WINDOW, (
+            f"Expected CW for bw='emerging'; got {assess_cw.state}. "
+            f"evidence={assess_cw.evidence}"
+        )
+        assert assess_cw.state != STATE_BREAKAWAY
 
     def test_unh_shaped_accumulation_chips(self):
         """UNH-shaped: high volume bottom + positive revisions → not stuck at NONE."""
@@ -1050,8 +1334,11 @@ class TestFieldGuideReplay:
         assert len(non_null) > 0  # at least some chips populated
 
     def test_stage_sequence_suppressed_to_qa(self):
-        """Assert SUPPRESSED → QA sequence is achievable."""
-        # Build: first assess at suppression, then at QA stage
+        """Assert SUPPRESSED → QA sequence: SUPPRESSED first, then exactly QA.
+
+        With suppressed context in state_history + revision_positive chip + volume
+        (accum chip) → context_ok=True, 2-of-5 chips fire → QA must be the output.
+        """
         n = 300
         idx = _date_index(n)
 
@@ -1066,33 +1353,28 @@ class TestFieldGuideReplay:
             cheap_pctile=30.0,
         )
         assess_supp = classify(inp_supp)
-        # Should be SUPPRESSED
         assert assess_supp.state == STATE_SUPPRESSED
 
-        # Now QA: same base but add positive revisions + volume
+        # QA: suppressed context + revision_positive (chip 1) + insider_cluster (chip 5)
+        # Using insider_cluster=True as the second chip since accum_evidence on a flat
+        # declining synthetic series yields False (no pocket pivot / updown divergence).
         vol = pd.Series([1_500_000] * n, index=idx)
         inp_qa = LifecycleInputs(
             close=stock,
             bench_close=bench,
-            net_up_30d=5.0,
+            net_up_30d=5.0,      # revision_positive = True (chip 1)
             est_chg_30d=0.02,
             cheap_pctile=30.0,
             volume=vol,
+            insider_cluster=True,  # chip 5 — second QA chip to reach K=2 of 5
             state_history=[(date(2020, 1, i + 2), STATE_SUPPRESSED) for i in range(20)],
         )
         assess_qa = classify(inp_qa)
-        # With suppressed context + revision_positive + accum → QA reachable
-        # (exact state depends on accum chip computations with this synthetic series)
-        assert assess_qa.state in (
-            STATE_SUPPRESSED, STATE_QUIET_ACCUMULATION, STATE_CATALYST_WINDOW,
-            STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_CROWDED, STATE_NONE
+        # suppressed context (state_history) + revision_positive + insider_cluster = 2-of-5 → QA
+        assert assess_qa.state == STATE_QUIET_ACCUMULATION, (
+            f"Expected QA after suppression + positive revisions + insider_cluster; "
+            f"got {assess_qa.state}. evidence={assess_qa.evidence}"
         )
-        # The key: QA should be reachable under these conditions
-        # We assert at minimum that the state is well-defined
-        assert assess_qa.state in {
-            STATE_SUPPRESSED, STATE_QUIET_ACCUMULATION, STATE_CATALYST_WINDOW,
-            STATE_BREAKAWAY, STATE_LEADERSHIP, STATE_CROWDED, STATE_FAILED, STATE_NONE
-        }
 
 
 # ── Handoff / vocabulary tests ────────────────────────────────────────────────
