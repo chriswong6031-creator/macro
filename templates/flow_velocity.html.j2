@@ -66,7 +66,7 @@
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1280px;margin:0 auto;padding:0 20px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:22px;position:sticky;top:0;background:var(--bg);z-index:20}
 .nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
@@ -74,7 +74,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
 .site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
 .site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
 .site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
-.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
+.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:var(--font-ui);font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
 @media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
 a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
 a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}

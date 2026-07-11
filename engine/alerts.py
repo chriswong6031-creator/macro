@@ -71,13 +71,14 @@ def axis_confidence_floor(hist: pd.DataFrame, f: pd.DataFrame) -> list[Alert]:
         return []
     prev, cur = pair
     out = []
+    _axis_zh = {"growth": "增长", "inflation": "通胀"}
     for axis in ("growth", "inflation"):
         col = f"{axis}_confidence"
         if prev[col] >= floor > cur[col]:
             out.append(Alert(f"{axis}_confidence_floor", "warn",
                              f"{axis.capitalize()} axis confidence dropped below {floor:.0%}: "
                              f"{prev[col]:.0%} -> {cur[col]:.0%}",
-                             message_zh=f"{axis.capitalize()} 轴一致度跌破 {floor:.0%}："
+                             message_zh=f"{_axis_zh[axis]} 轴一致度跌破 {floor:.0%}："
                                         f"{prev[col]:.0%} -> {cur[col]:.0%}"))
     return out
 
@@ -196,10 +197,11 @@ def net_liquidity_roc_flip(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
     flipped = np.sign(before) != np.sign(t)   # opposite side, or flipping out of an exact 0
     if held and flipped and abs(t) >= deadband:
         direction = "positive (expanding)" if t > 0 else "negative (contracting)"
+        direction_zh = "正值（扩张）" if t > 0 else "负值（收缩）"
         return Alert("net_liquidity_roc_flip", "warn",
                      f"Net liquidity 4-week RoC flipped {direction} and held "
                      f"{confirm}d: {before:+.0f}bn -> {t:+.0f}bn",
-                     message_zh=f"净流动性 4 周 RoC 转为{direction}并持续 {confirm} 天："
+                     message_zh=f"净流动性 4 周 RoC 转为{direction_zh}并持续 {confirm} 天："
                                 f"{before:+.0f}bn -> {t:+.0f}bn")
     return None
 
@@ -501,13 +503,17 @@ def log_and_dedup(alerts: list[Alert], asof: pd.Timestamp) -> list[Alert]:
     p = config.data_dir() / "alerts" / "alerts_log.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
     old = pd.read_parquet(p) if p.exists() else pd.DataFrame(
-        columns=["date", "rule", "severity", "message"])
+        columns=["date", "rule", "severity", "message", "message_zh"])
+    # backfill message_zh column for parquet files written before the zh column existed
+    if "message_zh" not in old.columns:
+        old["message_zh"] = ""
     seen = set(zip(old["date"].astype(str), old["rule"], old["message"]))
     fresh = [a for a in alerts
              if (str(asof.date()), a.rule, a.message) not in seen]
     if fresh:
         new = pd.DataFrame([{"date": str(asof.date()), "rule": a.rule,
-                             "severity": a.severity, "message": a.message}
+                             "severity": a.severity, "message": a.message,
+                             "message_zh": a.message_zh or ""}
                             for a in fresh])
         pd.concat([old, new], ignore_index=True).to_parquet(p)
     return fresh

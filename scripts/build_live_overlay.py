@@ -264,7 +264,8 @@ def build(offline: bool = False, limit: int | None = None) -> dict:
         if not rec.get("stale"):
             fresh += 1
 
-    sessions = {r: live_overlay.market_session(r, now) for r in ("us", "cn", "hk", "ca")}
+    sessions = {r: live_overlay.market_session(r, now)
+                for r in ("us", "cn", "hk", "ca", "jp", "kr", "tw", "gb", "eu")}
     ts_vals = [q["quote_ts"] for q in quotes.values() if q.get("quote_ts")]
     out = {
         "schema": "live.overlay.v2",

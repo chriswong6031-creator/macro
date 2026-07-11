@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-10"
+updated: "2026-07-11"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -11,6 +11,30 @@ updated: "2026-07-10"
 checks:
 
   # ── UI / rendering guards ──────────────────────────────────────────────────
+
+  - law_id: ui.hub_a11y
+    summary: >
+      The landing hub (and any globe-deck page) must keep its accessibility
+      contract: no focusable elements inside aria-hidden subtrees, the <head>
+      boot sets the document language, the light-theme pill contrast override
+      is present, viewport-fit=cover + safe-area insets ship, and theme.js
+      syncs documentElement.lang. Locks in the 2026-07-10 hub a11y fixes
+      (PR #2096/#2104 review findings).
+    source_ref:
+      - scripts/check_hub_a11y.py
+      - research/hub_ux_program.md
+      - "PR #2195"
+    severity: hard
+    owner_program: hub-ux-program
+    check_script: scripts/check_hub_a11y.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: hub-a11y
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      Pure-stdlib static checker; functional coverage provided by
+      tests/test_check_hub_a11y.py (34 cases incl. violating fixtures).
 
   - law_id: ui.inline_js_parses
     summary: >
