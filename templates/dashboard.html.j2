@@ -1924,6 +1924,161 @@
   body.page-macro .ms-pop-empty{text-align:center;color:var(--ink-3);padding:30px 18px;font-size:12.5px;line-height:1.55}
   body.page-macro .ms-pop-empty .big{font-size:32px;display:block;margin-bottom:8px;color:var(--up);opacity:.7}
   </style>
+{% if mode != 'stocks' %}
+<style id="mx-css">
+/* ══════════════════════════════════════════════════════
+   MX-* Weather-Station design layer — macro mode only
+   All classes namespaced mx- to avoid collision with the
+   1497-line legacy style block (stocks mode uses that).
+   Tokens: reuses theme.css vars (--panel, --bg, etc.).
+   ══════════════════════════════════════════════════════ */
+
+/* Aurora — scoped to body.page-macro so stocks is unaffected */
+body.page-macro::before{
+  content:'';
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 0%,color-mix(in srgb,var(--q1) 6%,transparent) 0%,transparent 65%),
+    radial-gradient(ellipse 55% 45% at 88% 12%,color-mix(in srgb,var(--info) 5%,transparent) 0%,transparent 65%),
+    radial-gradient(ellipse 45% 35% at 50% 100%,color-mix(in srgb,var(--warn) 4%,transparent) 0%,transparent 60%);
+}
+
+/* ── Section eyebrow ───────────────────────────────── */
+.mx-eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin:26px 0 12px;display:flex;align-items:center;gap:8px;
+}
+.mx-eyebrow::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* ── Hero layout ───────────────────────────────────── */
+.mx-hero{padding:20px 0 14px}
+.mx-hero-headline{
+  font-size:clamp(20px,3.5vw,28px);font-weight:800;line-height:1.18;letter-spacing:-.025em;
+  background:linear-gradient(120deg,var(--up) 0%,color-mix(in srgb,var(--up) 60%,var(--info)) 45%,var(--info) 85%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:4px;
+}
+.mx-hero-sub{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.mx-hero-body{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+
+/* ── Score/dial box ────────────────────────────────── */
+.mx-dial{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:18px 22px;min-width:136px;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--ms-c,var(--up)) 18%,transparent) inset,
+             0 2px 18px color-mix(in srgb,var(--ms-c,var(--up)) 9%,transparent);
+}
+.mx-dial .mx-score-num{
+  font-size:52px;font-weight:900;line-height:1;
+  color:var(--ms-c,var(--up));font-variant-numeric:tabular-nums;
+  text-shadow:0 0 36px color-mix(in srgb,var(--ms-c,var(--up)) 32%,transparent);
+}
+.mx-dial .mx-score-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+.mx-dial .mx-score-sub{font-size:10px;color:var(--muted);margin-top:2px;text-align:center}
+
+/* ── KPI area right of dial ───────────────────────── */
+.mx-kpi-area{flex:1;min-width:0}
+.mx-kpi-strip{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+
+/* ── KPI chips ─────────────────────────────────────── */
+.mx-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:100px;
+  font-size:11px;font-weight:600;letter-spacing:.03em;white-space:nowrap;
+}
+.mx-c-q1{background:color-mix(in srgb,var(--q1) 16%,var(--panel));color:var(--q1);border:1px solid color-mix(in srgb,var(--q1) 28%,transparent)}
+.mx-c-q2{background:color-mix(in srgb,var(--q2) 16%,var(--panel));color:var(--q2);border:1px solid color-mix(in srgb,var(--q2) 28%,transparent)}
+.mx-c-q3{background:color-mix(in srgb,var(--q3) 16%,var(--panel));color:var(--q3);border:1px solid color-mix(in srgb,var(--q3) 28%,transparent)}
+.mx-c-q4{background:color-mix(in srgb,var(--q4) 16%,var(--panel));color:var(--q4);border:1px solid color-mix(in srgb,var(--q4) 28%,transparent)}
+.mx-c-up{background:color-mix(in srgb,var(--up) 14%,var(--panel));color:var(--up);border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
+.mx-c-down{background:color-mix(in srgb,var(--down) 14%,var(--panel));color:var(--down);border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
+.mx-c-warn{background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
+.mx-c-info{background:color-mix(in srgb,var(--info) 14%,var(--panel));color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
+.mx-c-muted{background:color-mix(in srgb,var(--muted) 12%,var(--panel));color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
+
+/* ── Legs grid (compact factor summary under KPI chips) */
+.mx-legs-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mx-leg{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.mx-leg-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:3px}
+.mx-leg-val{font-size:12.5px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.mx-leg-detail{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+
+/* ── Reader contract strip (v-thesis restyled) ─────── */
+.mx-contract{
+  margin-top:12px;padding:10px 14px;
+  background:color-mix(in srgb,var(--info) 8%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--info) 22%,transparent);
+  border-radius:8px;font-size:12px;color:var(--muted);line-height:1.5;
+}
+.mx-contract strong{color:var(--text)}
+
+/* ── TODAY / THIS WEEK band ────────────────────────── */
+.mx-band{padding:0 0 4px;overflow-x:hidden}
+
+/* TODAY tier */
+.mx-today-tier{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.mx-breaking-slug{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 15px;
+  background:color-mix(in srgb,var(--down) 10%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--down) 25%,transparent);
+  border-radius:8px;font-size:12px;
+}
+.mx-breaking-label{
+  font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--down);white-space:nowrap;flex-shrink:0;
+}
+.mx-breaking-text{color:var(--text);flex:1}
+.mx-breaking-sub{color:var(--muted);font-size:11px;margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* THIS WEEK tier */
+.mx-week-rail{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:0 -2px}
+.mx-week-rail::-webkit-scrollbar{height:3px}
+.mx-week-rail::-webkit-scrollbar-track{background:transparent}
+.mx-week-rail::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+.mx-week-card{
+  flex:0 0 auto;min-width:118px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;
+  opacity:.85;
+}
+.mx-week-card.mx-week-high{
+  border-color:color-mix(in srgb,var(--warn) 40%,var(--line));
+  opacity:1;
+}
+.mx-week-date{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;font-variant-numeric:tabular-nums}
+.mx-week-title{font-size:11px;font-weight:700;color:var(--text);line-height:1.25;margin-bottom:2px}
+.mx-week-meta{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mx-pm-row{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;
+  padding:9px 12px;margin-top:8px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  font-size:12px;
+}
+.mx-pm-src{font-family:ui-monospace,"SF Mono",monospace;font-size:10px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.mx-pm-row b{font-variant-numeric:tabular-nums}
+
+/* ── Single-col collapse ≤900px ────────────────────── */
+@media(max-width:900px){
+  .mx-legs-grid{grid-template-columns:1fr}
+  .mx-hero-body{gap:12px}
+}
+@media(max-width:680px){
+  .mx-hero-headline{font-size:20px}
+  .mx-dial .mx-score-num{font-size:40px}
+  .mx-hero-body{flex-direction:column}
+  .mx-dial{flex-direction:row;align-items:center;gap:14px;padding:13px 16px;min-width:100%;min-height:auto}
+  .mx-dial .mx-score-sub{text-align:left}
+  .mx-legs-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:390px){
+  .mx-legs-grid{grid-template-columns:1fr}
+  .mx-kpi-strip{gap:4px}
+  .mx-chip{font-size:10px;padding:2px 8px}
+}
+</style>
+{% endif %}
     {% set _ol = {
       'Q1': ('Falling inflation with steady growth — the friendliest backdrop for tech &amp; quality. Trust the radar, not just the label.', '通胀回落、增长平稳 — 对科技与质量最友好的环境。盯住雷达，而非仅看标签。'),
       'Q2': ('Growth and inflation both firming — favour cyclicals, energy and banks.', '增长与通胀同步走强 — 偏好周期股、能源与银行。'),
@@ -1944,6 +2099,139 @@
       <span class="olk">{{ t('Right now','当下') }}</span> <b style="color:var(--ms-c)">{{ t(MS.label_en, MS.label_zh) }} {{ _va }}</b>
     </div>
     {% endif %}
+
+    {# ── MX HERO — Weather-Station upper fold ──────────────────────────────────
+       New design layer: gradient headline · score dial · KPI chips · legs grid.
+       All ids/classes required by JS/CI live in the ORIGINAL ms-verdict below.
+       This block is purely display; it reads the same Jinja VM variables. ──── #}
+    {% if market_state %}
+    {% set _mxq = latest.quad or 'Q1' %}
+    {% set _mxq_n = _mxq[1]|int %}
+    <div class="mx-hero">
+      <div class="mx-hero-headline">{{ t(MS.headline_en, MS.headline_zh) }}</div>
+      <div class="mx-hero-sub num">{{ td(latest.quad_name) }} &nbsp;·&nbsp; {{ t(MS.label_en, MS.label_zh) }} {{ _va }} &nbsp;·&nbsp; {{ MS.asof }}</div>
+      <div class="mx-hero-body">
+        {# THE single dial — visual score box (JS-live elements stay in ms-verdict below) #}
+        <div class="mx-dial ms ms-{{ MS.color }}">
+          <div class="mx-score-num num">{{ MS.score }}</div>
+          <div class="mx-score-label">{{ t(MS.label_en, MS.label_zh) }}</div>
+          <div class="mx-score-sub">{{ t('market state','市场状态') }}</div>
+        </div>
+        {# KPI chips + legs grid #}
+        <div class="mx-kpi-area">
+          <div class="mx-kpi-strip">
+            {# Goldilocks / quad chip #}
+            <span class="mx-chip mx-c-q{{ _mxq_n }}">{{ td(latest.quad_name) }}</span>
+            {# Market state chip #}
+            <span class="mx-chip {{ 'mx-c-up' if MS.score >= 60 else ('mx-c-warn' if MS.score >= 42 else 'mx-c-down') }}">{{ t(MS.label_en, MS.label_zh) }}</span>
+            {# Transition state #}
+            {% if latest.transition_state %}<span class="mx-chip mx-c-muted">{{ td(latest.transition_state) }}</span>{% endif %}
+            {# Liquidity #}
+            {% if latest.liquidity_overlay %}<span class="mx-chip {{ 'mx-c-up' if latest.liquidity_overlay == 'expanding' else ('mx-c-down' if latest.liquidity_overlay == 'contracting' else 'mx-c-muted') }}">{{ t('Liq','流动性') }}: {{ td(latest.liquidity_overlay) }}</span>{% endif %}
+            {# Vol regime + VIX (vol_regime is a dict) #}
+            {% if latest.vol_regime and latest.vol_regime is mapping %}{% set _vr = latest.vol_regime %}<span class="mx-chip mx-c-muted">{{ t('Vol','波动') }}: {{ td(_vr.get('regime','—')) }}{% if _vr.get('vix') is not none %} · VIX <span class="num">{{ '%.1f'|format(_vr.vix) }}</span>{% endif %}</span>{% endif %}
+            {# Breadth — guard: breadth_pa50 may not exist in all builds #}
+            {% if latest.breadth_pa50 is defined and latest.breadth_pa50 is not none %}<span class="mx-chip mx-c-muted">{{ t('Breadth','广度') }} <span class="num">{{ '%.0f'|format(latest.breadth_pa50 * 100 if latest.breadth_pa50 <= 1 else latest.breadth_pa50) }}%</span></span>{% endif %}
+            {# Radar band — radar.state is a string like 'watch','caution','elevated','risk-off' #}
+            {% if MS.radar and MS.radar.state %}<span class="mx-chip {{ 'mx-c-down' if MS.radar.state in ['elevated','risk-off'] else ('mx-c-warn' if MS.radar.state == 'caution' else ('mx-c-info' if MS.radar.state == 'watch' else 'mx-c-muted')) }}">{{ t('Radar','雷达') }}: <span class="l-en">{{ MS.radar.state | upper }}</span><span class="l-zh">{{ MS.radar.state_zh if MS.radar.state_zh is defined and MS.radar.state_zh else MS.radar.state }}</span></span>{% endif %}
+            {# Policy lever state #}
+            {% if policy_lever is defined and policy_lever %}<span class="mx-chip {{ 'mx-c-down' if policy_lever.get('state') == 'ARMED' else ('mx-c-warn' if policy_lever.get('state') == 'ELEVATED' else 'mx-c-muted') }}">{{ t('Policy','政策') }}: <span class="l-en">{{ policy_lever.get('state', 'QUIET') }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(policy_lever.get('state','QUIET'), policy_lever.get('state','QUIET')) }}</span></span>{% endif %}
+          </div>
+          {# Legs grid — compact factor summary below chips #}
+          <div class="mx-legs-grid">
+            <div class="mx-leg">
+              <div class="mx-leg-label">{{ t('US Regime','美国周期') }}</div>
+              <div class="mx-leg-val">{{ td(latest.quad_name) }}</div>
+              <div class="mx-leg-detail">{{ t('Transition','转换') }}: {{ td(latest.transition_state) if latest.transition_state else '—' }} · {{ (latest.confidence * 100) | round | int }}% {{ t('agree','一致') }}</div>
+            </div>
+            {% if MS.radar and MS.radar.state %}
+            <div class="mx-leg">
+              <div class="mx-leg-label">{{ t('Risk Radar','风险雷达') }}</div>
+              <div class="mx-leg-val"><span class="l-en">{{ MS.radar.state | upper }}</span><span class="l-zh">{{ MS.radar.state_zh if MS.radar.state_zh is defined and MS.radar.state_zh else MS.radar.state }}</span>{% if MS.radar.top_score is defined and MS.radar.top_score is not none %} · <span class="num">{{ MS.radar.top_score }}</span>/100{% endif %}</div>
+              <div class="mx-leg-detail">{% if MS.radar.label_en is defined and MS.radar.label_en %}<span class="l-en">{{ MS.radar.label_en }}</span><span class="l-zh">{{ MS.radar.label_zh if MS.radar.label_zh is defined and MS.radar.label_zh else MS.radar.label_en }}</span>{% endif %}</div>
+            </div>
+            {% endif %}
+            {% if latest.breadth_pa50 is defined and latest.breadth_pa50 is not none %}
+            <div class="mx-leg">
+              <div class="mx-leg-label">{{ t('Breadth','市场广度') }}</div>
+              <div class="mx-leg-val num">{{ '%.0f'|format(latest.breadth_pa50 * 100 if latest.breadth_pa50 <= 1 else latest.breadth_pa50) }}% {{ t('above 50d','> 50日线') }}</div>
+              <div class="mx-leg-detail">{{ t('Liquidity','流动性') }}: {{ td(latest.liquidity_overlay) if latest.liquidity_overlay else '—' }}</div>
+            </div>
+            {% endif %}
+            {% if MS.components %}{% set _fcomp = MS.components | list %}{% if _fcomp %}
+            <div class="mx-leg">
+              <div class="mx-leg-label">{{ t('Top factor','首要因子') }}</div>
+              <div class="mx-leg-val">{{ t(_fcomp[0].label_en, _fcomp[0].label_zh) }}</div>
+              <div class="mx-leg-detail num">{{ _fcomp[0].arrow }} {{ _fcomp[0].score }}/100</div>
+            </div>
+            {% endif %}{% endif %}
+          </div>
+        </div>
+      </div>
+      {# Reader contract strip — the thesis / flip content restyled as contract strip.
+         The ORIGINAL p.v-thesis inside ms-verdict below is kept for CI. #}
+      {% if MS.headline_en %}
+      <div class="mx-contract">
+        <strong>{{ t('Reader contract:','阅读约定：') }}</strong>
+        {{ t(MS.headline_en, MS.headline_zh if MS.headline_zh else MS.headline_en) }}{% if MS.flip_en %} · <em>{{ t(MS.flip_en, MS.flip_zh if MS.flip_zh is defined and MS.flip_zh else MS.flip_en) }}</em>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}{# /market_state mx-hero #}
+
+    {# ── MX TODAY / THIS WEEK BAND — upper fold catalyst tier (macro mode only) ───────────────
+       Placed INSIDE #regime-radar panel, between mx-hero and ms-front, so the upper fold
+       (hero + TODAY band) sits within ~800px at 1440w. id="week-ahead" preserved for deep-link.
+       Design: TODAY = breaking-slug (hot), THIS WEEK = muted calendar rail.
+    #}
+    {% if macro_catalysts or (prediction_markets and prediction_markets.events) or (event_risk and event_risk.show) %}
+    {% set _mos = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+    <div class="mx-band" id="week-ahead" style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
+      {# TODAY tier — event_risk headline as breaking-slug if present, else first high-impact catalyst #}
+      <div class="mx-eyebrow">{{ t('Today','今日') }}</div>
+      <div class="mx-today-tier">
+        {% if event_risk and event_risk.show %}
+        {% set ER = event_risk %}
+        <div class="mx-breaking-slug">
+          <span class="mx-breaking-label">{{ t('Event','事件') }}</span>
+          <span class="mx-breaking-text">{{ t(ER.headline_en, ER.headline_zh) }}</span>
+          {% if macro_catalysts and macro_catalysts[0] %}<span class="mx-breaking-sub">{{ _mos[macro_catalysts[0].date[5:7]|int] }} {{ macro_catalysts[0].date[8:10]|int }}{% if macro_catalysts[0].time_et %} · {{ macro_catalysts[0].time_et }} ET{% endif %}</span>{% endif %}
+        </div>
+        {% elif macro_catalysts %}
+        {% set _today_ev = macro_catalysts[0] %}
+        <div class="mx-breaking-slug">
+          <span class="mx-breaking-label" style="color:{{ 'var(--down)' if _today_ev.impact == 'high' else 'var(--warn)' }}"><span class="l-en">{{ _today_ev.impact | upper }}</span><span class="l-zh">{{ {'high':'高影响','med':'中影响','low':'低影响'}.get(_today_ev.impact,'') }}</span></span>
+          <span class="mx-breaking-text"><strong>{{ _today_ev.label }}</strong></span>
+          <span class="mx-breaking-sub">{{ _mos[_today_ev.date[5:7]|int] }} {{ _today_ev.date[8:10]|int }}{% if _today_ev.time_et %} · {{ _today_ev.time_et }} ET{% endif %}</span>
+        </div>
+        {% endif %}
+        {# Policy conditions inline row (if prediction_markets present) #}
+        {% if prediction_markets and prediction_markets.events %}
+        <div class="mx-pm-row">
+          <span class="mx-pm-src">{{ t('Priced · Polymarket','市场定价 · Polymarket') }}</span>
+          {% for e in prediction_markets.events[:2] %}{% set _top = (e.outcomes|sort(attribute='prob',reverse=true))|first %}
+          <span>{{ t(e.label_en, e.label_zh) }}: <b class="num">{{ _top.outcome }} {{ _top.prob }}%</b>{% if _top.chg_pp is not none and _top.chg_pp != 0 %} <span class="{{ 'pos' if _top.chg_pp > 0 else 'neg' }}" style="font-size:11px">{{ '%+.1f'|format(_top.chg_pp) }}pp</span>{% endif %}</span>
+          {% endfor %}
+          {{ help('What traders are pricing on Polymarket for the next Fed decision and 2026 rate cuts — a market-implied probability, not a forecast. Context only.', 'Polymarket 上交易者对下次美联储决议及 2026 年降息次数的定价 — 市场隐含概率，并非预测。仅供参考。') }}
+        </div>
+        {% endif %}
+      </div>
+      {# THIS WEEK tier — remaining catalysts as muted calendar rail #}
+      {% if macro_catalysts and macro_catalysts|length > 1 %}
+      <div class="mx-eyebrow">{{ t('This Week','本周') }}</div>
+      <div class="mx-week-rail">
+        {% for c in macro_catalysts[1:9] %}
+        <div class="mx-week-card {{ 'mx-week-high' if c.impact == 'high' else '' }}">
+          <div class="mx-week-date">{{ _mos[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
+          <div class="mx-week-title">{{ c.label }}</div>
+          <div class="mx-week-meta">{% if c.time_et %}{{ c.time_et }} ET{% endif %}{% if c.impact == 'high' %} <span class="mx-chip mx-c-warn" style="font-size:9px;padding:1px 5px">{{ t('HIGH','高') }}</span>{% elif c.impact == 'med' %} <span class="mx-chip mx-c-info" style="font-size:9px;padding:1px 5px">{{ t('MED','中') }}</span>{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}{# /mx-band week-ahead #}
+
     {% set _hu_show = (event_risk and event_risk.show) or (latest.turning_point and latest.turning_point.present) or (latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown') %}
 
     {# ===== ONE side-by-side command board: Market State (left) + Macro Backdrop (right).
@@ -2376,6 +2664,8 @@
     </script>
   </div>
 
+  {# NOTE: MX TODAY / THIS WEEK BAND is rendered inside #regime-radar panel above
+     (between mx-hero and ms-front) so it sits within the upper fold. #}
 
   {# ===================== POLICY-LEVER ARMED/QUIET CARD (Policy-Shock W2-F) =====================
      Display-only conditions context — not a signal, not a forecast.
@@ -4275,10 +4565,10 @@
   {% endif %}
 
 
-  {# Week ahead — surfaces the full macro_catalysts calendar (only catalysts[0] was shown
-     before, as a one-liner in the news board) plus what Polymarket is pricing for the Fed.
-     Context-only: scheduled dates say WHEN volatility is likely, never which way. #}
-  {% if mode != 'stocks' and (macro_catalysts or (prediction_markets and prediction_markets.events)) %}
+  {# Week ahead — original lower-fold band; SUPPRESSED in macro mode (moved to upper fold above
+     as mx-band id="week-ahead"). Kept here for stocks mode (no catalysts so renders nothing)
+     and for reference. Context-only: scheduled dates say WHEN volatility is likely, never which way. #}
+  {% if mode == 'stocks' and (macro_catalysts or (prediction_markets and prediction_markets.events)) %}
   <style id="cal-css">
   #week-ahead .cal-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
   #week-ahead .cal-ev{flex:1 1 0;min-width:124px;border:1px solid var(--line);border-left:3px solid var(--muted);
