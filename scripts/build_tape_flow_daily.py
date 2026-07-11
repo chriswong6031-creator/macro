@@ -12,11 +12,16 @@ Modes (--mode):
 Storage:
   Daily features : data/tape_flow/daily/<ROOT>.parquet  (1 row/day, tiny, git-committable)
   Raw tape        : data/tape_flow/raw/_manifest.json   (manifest only; bytes on R2-plane)
-  State file      : data/tape_flow/_state.json          (resumability)
+  State file      : data/tape_flow/_state.json          (resumability + round-robin cursor)
 
 Concurrency:
   2 while backfill_thetadata_eod is alive (pgrep guard, house law)
   6 otherwise (leaves 2 of 8 terminal slots as headroom)
+
+Round-robin resume (forward mode):
+  The state file records a cursor (index into the gex_symbols() list) so each nightly run
+  starts where the previous budget-limited run left off.  Every root in the universe accrues
+  data over time even when the nightly budget is shorter than a full-universe sweep.
 
 Usage:
   python -m scripts.build_tape_flow_daily --mode forward
@@ -33,7 +38,7 @@ import os
 import subprocess
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -152,6 +157,35 @@ def _mark_done(state: dict, mode: str, root: str, trade_date: date) -> None:
     if ds not in root_list:
         root_list.append(ds)
         root_list.sort()
+
+
+# ── round-robin cursor (forward mode) ─────────────────────────────────────────
+# The forward-mode universe (~360-400 roots) takes 13 min at 6-concurrent or ~30
+# min at 2-concurrent (when backfill is alive).  With a budget cap, the same
+# leading roots would complete every night while trailing roots never accrue.
+# The cursor remembers the starting offset into gex_symbols() so each nightly
+# run begins where the previous one left off, distributing coverage fairly.
+
+def _load_cursor(state: dict, mode: str) -> int:
+    """Return the last-saved cursor position (default 0)."""
+    return int(state.get("cursors", {}).get(mode, 0))
+
+
+def _save_cursor(state: dict, mode: str, cursor: int) -> None:
+    """Persist the cursor position into the state dict (caller must _save_state)."""
+    state.setdefault("cursors", {})[mode] = cursor
+
+
+def _rotate_work(work: list[tuple], cursor: int) -> list[tuple]:
+    """Rotate work list so index `cursor` is the new head.
+
+    The rotated order ensures every root eventually reaches the front of the
+    queue across successive budget-limited nightly runs.
+    """
+    if not work or cursor <= 0:
+        return work
+    cursor = cursor % len(work)
+    return work[cursor:] + work[:cursor]
 
 
 # ── feature store helpers ─────────────────────────────────────────────────────
@@ -512,18 +546,45 @@ def main(argv: list[str] | None = None) -> None:
         help=(
             "Hard-stop after N minutes (wall-clock from process start). "
             "Saves state after every completed root-day so the next run resumes. "
-            "Budget-exceeded exit is clean (exit 0); intended for CI nightly steps."
+            "Budget-exceeded exit is clean (exit 0); intended for CI nightly steps. "
+            "For forward mode the default is 25 minutes if not specified."
         ),
     )
     args = parser.parse_args(argv)
 
+    # [timing] t0 — process entry
+    t_global = time.perf_counter()
+    _tick_prev = [t_global]
+
+    def _tick(label: str) -> None:
+        """Emit a [timing] log line for profiling nightly lane performance."""
+        _now = time.perf_counter()
+        log.info("[timing] %-36s +%6.1fs (cum %7.1fs)",
+                 label, _now - _tick_prev[0], _now - t_global)
+        _tick_prev[0] = _now
+
     from collectors.thetadata import reachable
     if not reachable():
         log.warning("tape_flow: ThetaData terminal not reachable — exiting gracefully")
+        _tick("reachable-check (MISS)")
         sys.exit(0)
+    _tick("reachable-check (OK)")
 
     state = _load_state()
-    t_global = time.perf_counter()
+
+    # ── forward-mode default budget ───────────────────────────────────────────
+    # Without a budget the forward step can run 9-31 min (6 vs 2 workers), leaving
+    # insufficient room for episodes(30)+etf-history(20) in the 100-min job ceiling.
+    # Default: 25 min for forward mode (fits ~180 roots at 2-concurrent, all at 6).
+    # Callers may explicitly pass --budget-minutes N to override this default.
+    _forward_default_budget: float | None = 25.0
+    if args.mode == "forward" and args.budget_minutes is None:
+        args.budget_minutes = _forward_default_budget
+        log.info(
+            "tape_flow: forward mode — applying default budget %.0f min "
+            "(pass --budget-minutes N to override)",
+            args.budget_minutes,
+        )
 
     # ── build work list ───────────────────────────────────────────────────────
     if args.roots:
@@ -533,6 +594,7 @@ def main(argv: list[str] | None = None) -> None:
 
     work: list[tuple[str, date]] = []  # (root, trade_date)
     retain_raw_set: set[str] = set()
+    _cursor_key: str = args.mode   # state cursor key
 
     if args.mode == "forward":
         if args.date:
@@ -541,7 +603,13 @@ def main(argv: list[str] | None = None) -> None:
             trade_date = _prior_trading_day()
         from engine.options_universe import gex_symbols
         roots = root_override or gex_symbols()
-        work = [(r, trade_date) for r in roots]
+        work_all = [(r, trade_date) for r in roots]
+        # Round-robin: rotate by the saved cursor so each nightly run starts at a
+        # different root, ensuring the full universe accrues data over multiple nights.
+        if not root_override:
+            saved_cursor = _load_cursor(state, _cursor_key)
+            work_all = _rotate_work(work_all, saved_cursor)
+        work = work_all
         # Raw retention: ETF anchors only in forward mode
         retain_raw_set = ETF_ANCHOR_SET
 
@@ -559,13 +627,23 @@ def main(argv: list[str] | None = None) -> None:
         work = [(r, d) for r in roots for d in trading_days]
         retain_raw_set = ETF_ANCHOR_SET  # full raw retention for ETF history
 
+    n_total = len(work)
+
     # Filter already-completed root-days (unless --force)
     if not args.force:
         work = [(r, d) for r, d in work
                 if not _is_done(state, args.mode, r, d)]
 
-    log.info("tape_flow: mode=%s work_items=%d max_workers=%d (backfill_alive=%s)",
-             args.mode, len(work), _max_workers(), _backfill_alive())
+    n_skipped = n_total - len(work)
+    workers = _max_workers()
+    log.info(
+        "tape_flow: mode=%s universe=%d skipped=%d pending=%d "
+        "max_workers=%d (backfill_alive=%s) budget=%.0fmin",
+        args.mode, n_total, n_skipped, len(work),
+        workers, _backfill_alive(),
+        args.budget_minutes if args.budget_minutes is not None else -1,
+    )
+    _tick("work-list build")
 
     if args.dry_run:
         for root, d in work[:20]:
@@ -594,65 +672,115 @@ def main(argv: list[str] | None = None) -> None:
     n_err = 0
     budget_exceeded = False
     last_date = str(date.today())
-    workers = _max_workers()
+    # Track how many work items were actually submitted before budget-stop
+    n_attempted = 0
 
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        future_to_key = {
-            executor.submit(
-                _process_root_day,
-                root,
-                trade_date,
-                args.mode,
-                root in retain_raw_set,
-            ): (root, trade_date)
-            for root, trade_date in work
-        }
+    # BUDGET-ENFORCEMENT NOTE (fix for submit-all flaw):
+    # Submitting all work upfront then breaking as_completed loop does NOT hard-stop
+    # the executor — ThreadPoolExecutor.__exit__ calls shutdown(wait=True) which
+    # drains ALL submitted futures regardless of the break.  Fix: submit work in
+    # batches of size=workers and check the budget before submitting the next batch.
+    # This bounds the overshoot to at most (workers) in-flight tasks past the deadline.
+    BATCH_SIZE = workers  # one batch = one "wave" of concurrent requests
 
-        for future in as_completed(future_to_key):
-            root, trade_date = future_to_key[future]
-            try:
-                result = future.result()
-            except Exception as e:  # noqa: BLE001
-                log.warning("tape_flow: %s %s raised unexpected error — %s", root, trade_date, e)
-                result = {"root": root, "date": str(trade_date),
-                          "status": "error", "reason": str(e)}
+    executor = ThreadPoolExecutor(max_workers=workers)
+    try:
+        work_iter = iter(work)
+        pending: dict = {}   # future → (root, trade_date)
 
-            if result.get("status") == "ok":
-                n_ok += 1
-                last_date = result.get("date", last_date)
-                _mark_done(state, args.mode, root, trade_date)
-                _save_state(state)
+        def _fill_pending() -> None:
+            """Submit up to BATCH_SIZE new tasks to keep the executor busy."""
+            while len(pending) < BATCH_SIZE:
+                try:
+                    root, td = next(work_iter)
+                except StopIteration:
+                    break
+                nonlocal n_attempted
+                n_attempted += 1
+                fut = executor.submit(_process_root_day, root, td, args.mode,
+                                      root in retain_raw_set)
+                pending[fut] = (root, td)
 
-                # Audit tripwire (P0.7)
-                if not args.no_audit:
-                    audit = _audit_store(root, trade_date)
-                    if not audit["ok"]:
-                        log.warning("tape_flow: audit FAILED %s %s — %s",
-                                    root, trade_date, audit["reason"])
-            else:
-                n_err += 1
-                log.warning("tape_flow: %s %s %s — %s",
-                            result.get("status", "error"), root, trade_date,
-                            result.get("reason", "unknown"))
+        _fill_pending()  # seed the first batch
 
-            # Hard-stop: check budget after every completed future.
-            # In-flight futures are allowed to complete naturally (executor
-            # __exit__ does NOT cancel them); we just stop draining new ones.
+        while pending:
+            # Wait for any one future in the current batch to complete
+            done_futures, _ = wait(
+                pending.keys(),
+                return_when=FIRST_COMPLETED,
+            )
+            for future in done_futures:
+                root, td = pending.pop(future)
+                try:
+                    result = future.result()
+                except Exception as e:  # noqa: BLE001
+                    log.warning("tape_flow: %s %s raised unexpected error — %s", root, td, e)
+                    result = {"root": root, "date": str(td),
+                              "status": "error", "reason": str(e)}
+
+                if result.get("status") == "ok":
+                    n_ok += 1
+                    last_date = result.get("date", last_date)
+                    _mark_done(state, args.mode, root, td)
+                    _save_state(state)
+
+                    # Audit tripwire (P0.7)
+                    if not args.no_audit:
+                        audit = _audit_store(root, td)
+                        if not audit["ok"]:
+                            log.warning("tape_flow: audit FAILED %s %s — %s",
+                                        root, td, audit["reason"])
+                else:
+                    n_err += 1
+                    log.warning("tape_flow: %s %s %s — %s",
+                                result.get("status", "error"), root, td,
+                                result.get("reason", "unknown"))
+
+            # Hard-stop: check budget BEFORE submitting the next batch.
+            # This ensures we never start new work past the deadline.
             if budget_deadline is not None and time.perf_counter() >= budget_deadline:
                 log.info(
-                    "tape_flow: budget %.1f min exceeded after n_ok=%d — stopping cleanly; "
-                    "state saved, next run resumes from remaining work",
+                    "tape_flow: budget %.1f min exceeded after n_ok=%d — "
+                    "cancelling pending futures, saving state; "
+                    "next run resumes from remaining work",
                     args.budget_minutes, n_ok,
                 )
                 budget_exceeded = True
+                # Cancel queued-but-not-started futures (Python 3.9+)
+                for f in list(pending.keys()):
+                    f.cancel()
                 break
 
+            # Refill: submit more work to keep workers busy
+            _fill_pending()
+
+    finally:
+        # Shut down the executor; wait=True so in-flight (non-cancelled) tasks finish
+        # cleanly before we write final state.  cancel_futures=True tells the executor
+        # to drop anything still in its queue that was not explicitly cancelled above.
+        executor.shutdown(wait=True, cancel_futures=True)
+
+    # ── round-robin cursor advance (forward mode) ────────────────────────────
+    # Advance the cursor by the number of items attempted this run, modulo universe
+    # size, so the next run begins where this one stopped.
+    if args.mode == "forward" and not args.roots and n_attempted > 0:
+        old_cursor = _load_cursor(state, _cursor_key)
+        new_cursor = (old_cursor + n_attempted) % max(n_total, 1)
+        _save_cursor(state, _cursor_key, new_cursor)
+        _save_state(state)
+        log.info("tape_flow: forward cursor advanced %d → %d (universe=%d)",
+                 old_cursor, new_cursor, n_total)
+
     elapsed = time.perf_counter() - t_global
-    if budget_exceeded:
-        log.info("tape_flow: budget-stop — mode=%s n_ok=%d n_err=%d elapsed=%.1fs",
-                 args.mode, n_ok, n_err, elapsed)
-    log.info("tape_flow: mode=%s done — n_ok=%d n_err=%d elapsed=%.1fs",
-             args.mode, n_ok, n_err, elapsed)
+    _tick("execution complete")
+
+    # ── outcome summary (one parseable line for log grep / monitoring) ────────
+    outcome = "BUDGET-STOP" if budget_exceeded else "COMPLETE"
+    log.info(
+        "tape_flow OUTCOME mode=%s status=%s "
+        "attempted=%d succeeded=%d skipped=%d failed=%d elapsed=%.1fs",
+        args.mode, outcome, n_attempted, n_ok, n_skipped, n_err, elapsed,
+    )
 
     _register_run_status(args.mode, n_ok, n_err, elapsed, last_date)
 

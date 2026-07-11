@@ -139,13 +139,48 @@ jobs:
           # --exclude-group asia: China/HK collectors run in their own asia-close shard
           # (after the Asia cash close), not here — keeps this US-evening run lean.
           python -m scripts.collect --exclude-group asia
+      - name: ThetaData Terminal — health-check / start (non-fatal)
+        # The ThetaData Terminal v3 is a local Java daemon that must be running before
+        # any tape_flow steps can pull trade+NBBO data.  This step:
+        #   1. Probes localhost:25503 — if already up, logs OK and exits immediately.
+        #   2. If not up AND THETA_API_KEY is set: launches scripts/run_theta_terminal.sh
+        #      (nohup'd, starts in ~5-10s) then polls until healthy or 30s timeout.
+        #   3. If not up AND key is absent: logs a warning and skips (tape_flow steps
+        #      then self-exit via reachable() gate — non-fatal).
+        # Non-fatal: failure is a warning; downstream tape_flow steps handle absence.
+        env:
+          THETA_API_KEY: ${{ secrets.THETA_API_KEY }}
+        run: |
+          HEALTH_URL="http://127.0.0.1:25503/v3/option/list/symbols"
+          if curl -sf --connect-timeout 3 "$HEALTH_URL" >/dev/null 2>&1; then
+            echo "ThetaData Terminal already running — OK"
+          elif [ -z "${THETA_API_KEY:-}" ]; then
+            echo "::warning::THETA_API_KEY not set — ThetaData Terminal not started; tape_flow steps will self-skip"
+          else
+            echo "ThetaData Terminal not running — launching…"
+            bash scripts/run_theta_terminal.sh || true
+            # Poll until healthy (max 30s)
+            for i in $(seq 1 10); do
+              sleep 3
+              if curl -sf --connect-timeout 3 "$HEALTH_URL" >/dev/null 2>&1; then
+                echo "ThetaData Terminal healthy after ${i}×3s"
+                break
+              fi
+              echo "  waiting for terminal… attempt $i/10"
+            done
+            if ! curl -sf --connect-timeout 3 "$HEALTH_URL" >/dev/null 2>&1; then
+              echo "::warning::ThetaData Terminal did not become healthy in 30s — tape_flow steps will self-skip"
+            fi
+          fi
       - name: T2a tape-flow features — forward accrual (collect lane, non-fatal)
         # Pulls prior-trading-day trade+NBBO tape for the full gex_symbols() universe
         # (~360 roots) via wildcard-bulk ThetaData endpoint (2 requests/root-day).
         # Aggregates inline to signed-flow features; discards raw tape for single names.
         # Requires ThetaData Terminal running on the self-hosted runner (port 25503).
-        # Budget: ~13 min/night at 6-concurrent (T2A_THROUGHPUT_PROBE.md §6a).
-        # Concurrency auto-capped to 2 when backfill_thetadata_eod is alive (pgrep).
+        # Budget: 25 min default (hard-coded in script; overridable via --budget-minutes).
+        #   At 6-concurrent: ~13 min (T2A_THROUGHPUT_PROBE.md §6a) — all 375 roots.
+        #   At 2-concurrent (backfill alive): ~30 min → 25 min budget covers ~180 roots/night;
+        #   round-robin cursor in state ensures remaining roots accrue on subsequent nights.
         # Non-fatal: terminal absent or any error logs a warning and does not fail the build.
         # run_status.json registration: sources["tape_flow_forward"] (P0.7 pattern).
         run: |
