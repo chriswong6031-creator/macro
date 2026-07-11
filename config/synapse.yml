@@ -2753,6 +2753,56 @@ artifacts:
       ORACLE_REVERSION_PROMOTION_PREREG.md gates are FROZEN.
       Source: W4_SPEC.md §W4.a.
 
+  # --- Oracle Ratio Lens (RL-R13, W1) ---
+  # (a) display artifact
+  oracle-ratio-lens-feed:
+    path: site/oracledata/ratio_lens.json
+    format: json
+    producer: scripts/build_oracle_ratio_lens.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: ratio_lens.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      RL-R13: Oracle Ratio Lens pairwise ratio feed — display-tier, authority
+      all-false, expected-null forward ledger (RL-R9). 7 Tier-L ETF pairs +
+      8 Tier-M basket pairs. Written by oracle_offrender job after
+      build_oracle_timemachine. Arrow one-shot; hard_exit(0) at end (#2196).
+
+  # (b) ledger (COLLECT_LANE=nightly-gated, keep-first per (date, pair_id, event))
+  oracle-ratio-lens-ledger:
+    path: data/oracle/ratio_lens_ledger.jsonl
+    format: jsonl
+    producer: scripts/build_oracle_ratio_lens.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 48
+    schema: ratio_lens_ledger.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      RL-R9: pre-registered expected-null qledger for pair-state transitions
+      (EXTENDED on/off, BASING on/off, one_sided-shape flag). Keep-first per
+      (date, pair_id, event). Written only when COLLECT_LANE=nightly. Atomic
+      rewrite via tempfile+os.replace. Come-back 2026-08-15 for first
+      accrual-health read (no verdicts at that read).
+
   # P2: reversion authority (infrastructure tier, written only by promotion scan)
   oracle-reversion-authority:
     path: data/oracle/reversion_authority.json

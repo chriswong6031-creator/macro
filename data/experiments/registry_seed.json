@@ -3424,6 +3424,26 @@
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: {'none': 'research verdict; no live surface; no flip'}",
       "phase_hint": "horizon=positional deployment=unshipped",
       "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+    },
+    {
+      "id": "oracle-ratio-lens",
+      "name": "Oracle Ratio Lens — pairwise ratio state accrual (display-tier)",
+      "kind": "track_record",
+      "priority": "low",
+      "cadence": "daily",
+      "what": "Accrues pair-state transition events (EXTENDED on/off, BASING on/off, one_sided-shape days) for 15 curated tech/AI-complex ratio pairs (7 Tier-L ETF + 8 Tier-M basket). Pre-registered expected-null forward ledger (RL-R9): 21d + 63d log-ratio move + each leg absolute move. Display context only — no rank/gate/size/escalate authority. Basket pairs survivorship-watermarked, seed_date 2023-05-09 (RL-R5). Ledger: data/oracle/ratio_lens_ledger.jsonl.",
+      "source": "engine/oracle/ratio_lens.py",
+      "storage": "data/oracle/ratio_lens_ledger.jsonl",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-11",
+      "come_back_on": "2026-08-15",
+      "come_back_note": "first ledger-health read — accrual only, no verdicts",
+      "maturation": "display-only until gauntleted; accrual starts 2026-07-11; promotion requires new prereg + full gauntlet (RL-R9); come-back 2026-10-15 for field-guide review.",
+      "status": "accruing",
+      "state": "0 transitions logged (build date 2026-07-11); all states null pending first nightly run.",
+      "next_step": "2026-08-15: read first ledger-health snapshot (n transitions, n one_sided days); no verdicts at that read.",
+      "phase_hint": "W1 shipped; W2=surfaces; W3=NW composer"
     }
   ]
 }

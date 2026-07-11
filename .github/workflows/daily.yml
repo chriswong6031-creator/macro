@@ -1886,6 +1886,10 @@ jobs:
           if [ "$rc2" -ne 0 ]; then echo "::warning title=oracle_episodes::rc=$rc2 (episode overlay may be stale)"; fi
           if [ "$rc3" -ne 0 ]; then echo "::error title=oracle_timemachine::export rc=$rc3 — Time Machine feed NOT refreshed"; fi
           exit 0
+      - name: rebuild oracle ratio lens feed (RL-R13 — off-render, non-fatal)
+        env:
+          COLLECT_LANE: nightly
+        run: python -m scripts.build_oracle_ratio_lens || echo "::warning::ratio_lens build failed (non-fatal — surface keeps last artifact)"
       - name: publish oracle panels to R2 (refreshes render-path sponsorship inputs)
         if: always()
         env:
@@ -1913,13 +1917,13 @@ jobs:
               line = f"tier {tier}: date_to={dt} ({age}d old)"
               print(f"::error::TM STALE — {line}" if age > 4 else f"TM fresh — {line}")
           PY
-      - name: commit oracle Time Machine feed
+      - name: commit oracle Time Machine feed + ratio lens
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add site/oracledata/
-          if git diff --cached --quiet; then echo "no oracle Time Machine changes"; exit 0; fi
-          git commit -m "oracle-tm: nightly Time Machine feed refresh $(date -u +%F)"
+          git add site/oracledata/ data/oracle/ratio_lens_ledger.jsonl
+          if git diff --cached --quiet; then echo "no oracle Time Machine or ratio lens changes"; exit 0; fi
+          git commit -m "oracle-tm: nightly Time Machine feed + ratio lens refresh $(date -u +%F)"
           # best-effort push (own files -> rebases clean; no other job writes site/oracledata/)
           for i in 1 2 3 4 5; do
             if git pull --rebase --autostash -X theirs origin main && git push; then
