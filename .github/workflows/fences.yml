@@ -1,0 +1,96 @@
+name: fences
+# ALWAYS-ON metabolism cage fences — the three checks the arming runbook
+# (docs/METABOLISM_ARMING_CHECKLIST.md, Act 2) makes REQUIRED on main.
+#
+# WHY A SEPARATE WORKFLOW: the same three guards also live in ci.yml, but ci.yml
+# is `on: pull_request` with a large `paths:` filter — it does NOT run on a PR
+# that touches only, say, site/ or engine/. A branch-protection rule that
+# REQUIRES a path-gated check blocks every PR that does not trigger it (the
+# required context never reports → "Expected — Waiting for status"). This
+# workflow has NO paths filter, so the three required contexts report on EVERY
+# PR and every push to main: a normal PR passes them in ~1 min (the fences only
+# FAIL a loop-authored PR that touches the IMMUTABLE set, a grader-file hash
+# drift, or a secret-value capture). This is what makes "3 required checks"
+# safe to enforce repo-wide.
+#
+# The job NAMES here (self-mod-fence / capability-broker / grader-manifest) are
+# the exact status-check contexts to list in the main ruleset.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  self-mod-fence:
+    # F2 (R-AUT-5): loop-authored PRs touching the IMMUTABLE set are blocked;
+    # human/operator PRs pass freely. Fail-closed: unclassifiable → blocked.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: self-mod-fence selftest (all four cases proven)
+        run: python3 scripts/check_self_mod_fence.py --selftest
+      - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
+        # On push events there is no PR head/base; the selftest above already
+        # proves the discriminating behaviour, so the live diff check only runs
+        # for pull_request events.
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }}
+          BRANCH="${{ github.head_ref }}"
+          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
+          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
+          if [ -z "$FILES" ]; then
+            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
+            exit 1
+          fi
+          python3 scripts/check_self_mod_fence.py \
+            --branch "$BRANCH" \
+            --files $FILES \
+            --trailers "$TRAILERS"
+      - name: self-mod-fence test suite
+        run: python -m pytest tests/test_self_mod_fence.py -q
+
+  capability-broker:
+    # F3: the capability broker resolves capability IDs to ref NAMES only; the
+    # redline scanner hard-fails on any secret value or value-capture pattern in
+    # the manifest, broker, key pool, or metabolism authorship modules.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml
+      - name: capability-redline selftest (planted secret caught; clean real files pass)
+        run: python3 scripts/check_capability_redline.py --selftest
+      - name: capability-redline live scan (hard fail on secret values or value-capture)
+        run: python3 scripts/check_capability_redline.py
+
+  grader-manifest:
+    # F1 (R-AUT-7): the fitness-producing grader files are registered in
+    # config/grader_manifest.yml with SHA-256 hashes. Any drift — from a loop PR
+    # or a human PR — fails RED here.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: grader-manifest selftest (drift detection + fail-closed proof)
+        run: python3 scripts/check_grader_manifest.py --selftest
+      - name: grader-manifest live check (hash drift is a hard failure)
+        run: python3 scripts/check_grader_manifest.py
