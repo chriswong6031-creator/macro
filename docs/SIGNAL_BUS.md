@@ -36,6 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold | 28 |
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
+| mag7-regime | 3 |
 | mastermind-feedback-contract | 2 |
 | metabolism-phase-a | 5 |
 | metabolism-phase-v2a | 4 |
@@ -78,7 +79,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 230 |
+| display | 233 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -87,7 +88,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 372 |
+| git | 375 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -372,6 +373,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
 | release-forecast-scoreboard | `data/release_forecast/scoreboard.json` | json | daily-engine | display | 0 | 0 |
+
+### mag7-regime
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| mag7-regime-latest | `data/mag7_regime/latest.json` | json | daily-engine | display | 2 | 0 |
+| mag7-regime-ledger | `data/mag7_regime/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| mag7-regime-site | `site/stockdata/mag7_regime.json` | json | daily-engine | display | 0 | 0 |
 
 ### mastermind-feedback-contract
 
