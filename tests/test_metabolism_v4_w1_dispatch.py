@@ -50,6 +50,17 @@ def _tmp_root(extra_subdirs: list[str] | None = None) -> Path:
     return d
 
 
+def _tmp_wt() -> str:
+    """Return a real temp directory to use as a fake worktree path.
+
+    Required since the wt_path validation (NIT fix) now rejects non-existent
+    directories before reaching the subprocess.  Tests that exercise the
+    post-wt-validation code paths (subprocess mock, diff check, etc.) must
+    pass a real directory.
+    """
+    return tempfile.mkdtemp(prefix="metab_wt_test_")
+
+
 def _minimal_proposal(
     pid: str = "p1",
     target_files: list[str] | None = None,
@@ -166,13 +177,14 @@ class TestForeignFileAbort:
             return ["engine/test_sensor.py", "config/grader_manifest.yml"]
 
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
+        wt = _tmp_wt()  # real dir required: wt_path validation fires before subprocess
 
         with patch.dict(os.environ, env, clear=False):
             with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         result = mb._dispatch_build_session(
-                            proposal, "/tmp/wt", "metabolism/build-test-cycle",
+                            proposal, wt, "metabolism/build-test-cycle",
                             cap_id, root=d,
                         )
 
@@ -195,13 +207,14 @@ class TestForeignFileAbort:
             return ["engine/test_sensor.py", "data/metabolism/journal/cycle-test-001.json"]
 
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
+        wt = _tmp_wt()
 
         with patch.dict(os.environ, env, clear=False):
             with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         result = mb._dispatch_build_session(
-                            proposal, "/tmp/wt", "metabolism/build-test-cycle",
+                            proposal, wt, "metabolism/build-test-cycle",
                             "claude_code_oauth_1", root=d,
                         )
 
@@ -223,13 +236,14 @@ class TestForeignFileAbort:
             return None  # simulates git diff failure
 
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
+        wt = _tmp_wt()
 
         with patch.dict(os.environ, env, clear=False):
             with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff_none):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         result = mb._dispatch_build_session(
-                            proposal, "/tmp/wt", "metabolism/build-test-cycle",
+                            proposal, wt, "metabolism/build-test-cycle",
                             "claude_code_oauth_1", root=d,
                         )
 
@@ -292,6 +306,7 @@ class TestPausedNoDispatch:
         proposal = _minimal_proposal()
         ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
+        wt = _tmp_wt()  # real dir required for wt_path validation
 
         def fake_launch(cmd, env, cwd, timeout_s=1800):
             return {"returncode": 0, "stdout": "ok", "stderr": ""}
@@ -304,7 +319,7 @@ class TestPausedNoDispatch:
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         result = mb._dispatch_build_session(
-                            proposal, "/tmp/wt", "metabolism/build-test-cycle",
+                            proposal, wt, "metabolism/build-test-cycle",
                             "claude_code_oauth_1", root=_tmp_root(),
                         )
 
@@ -410,18 +425,20 @@ class TestIdempotentRerun:
 
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
 
+        wt1 = _tmp_wt()  # real dir required for wt_path validation
+
         with patch.dict(os.environ, env, clear=False):
             with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         # First call: should dispatch
                         r1 = mb._dispatch_build_session(
-                            proposal, "/tmp/wt1", "metabolism/build-test-cycle-idem",
+                            proposal, wt1, "metabolism/build-test-cycle-idem",
                             "claude_code_oauth_1", root=d,
                         )
                         # Second call: same cycle_id+proposal_id → idempotent skip
                         r2 = mb._dispatch_build_session(
-                            proposal, "/tmp/wt1", "metabolism/build-test-cycle-idem",
+                            proposal, wt1, "metabolism/build-test-cycle-idem",
                             "claude_code_oauth_1", root=d,
                         )
 
@@ -447,17 +464,19 @@ class TestIdempotentRerun:
 
         p1 = _minimal_proposal(pid="p1", cycle_id="cycle-multi-001")
         p2 = _minimal_proposal(pid="p2", cycle_id="cycle-multi-001")
+        wt1 = _tmp_wt()
+        wt2 = _tmp_wt()
 
         with patch.dict(os.environ, env, clear=False):
             with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         r1 = mb._dispatch_build_session(
-                            p1, "/tmp/wt1", "metabolism/build-test-cycle-multi",
+                            p1, wt1, "metabolism/build-test-cycle-multi",
                             "claude_code_oauth_1", root=d,
                         )
                         r2 = mb._dispatch_build_session(
-                            p2, "/tmp/wt2", "metabolism/build-test-cycle-multi",
+                            p2, wt2, "metabolism/build-test-cycle-multi",
                             "claude_code_oauth_1", root=d,
                         )
 
@@ -477,6 +496,7 @@ class TestKeyRefNeverLogged:
         ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
         secret_value = "secret_oauth_token_should_never_appear_in_output_xyz123"
         env = {**_armed_env(), ref_name: secret_value}
+        wt = _tmp_wt()
 
         def fake_launch(cmd, env, cwd, timeout_s=1800):
             return {"returncode": 0, "stdout": "ok", "stderr": ""}
@@ -489,7 +509,7 @@ class TestKeyRefNeverLogged:
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         result = mb._dispatch_build_session(
-                            proposal, "/tmp/wt", "metabolism/build-test-cycle",
+                            proposal, wt, "metabolism/build-test-cycle",
                             "claude_code_oauth_1", root=_tmp_root(),
                         )
 
@@ -628,13 +648,14 @@ class TestSonnetModelPinned:
             return ["engine/test_sensor.py"]
 
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
+        wt = _tmp_wt()
 
         with patch.dict(os.environ, env, clear=False):
             with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         mb._dispatch_build_session(
-                            proposal, "/tmp/wt", "metabolism/build-test-cycle",
+                            proposal, wt, "metabolism/build-test-cycle",
                             "claude_code_oauth_1", root=_tmp_root(),
                         )
 
@@ -723,6 +744,7 @@ class TestSuccessfulDispatchPath:
         d = _tmp_root()
         ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
+        wt = _tmp_wt()
 
         def fake_launch(cmd, env, cwd, timeout_s=1800):
             return {"returncode": 0, "stdout": "BUILD COMPLETE", "stderr": ""}
@@ -735,7 +757,7 @@ class TestSuccessfulDispatchPath:
                 with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         result = mb._dispatch_build_session(
-                            proposal, "/tmp/wt", "metabolism/build-test-cycle",
+                            proposal, wt, "metabolism/build-test-cycle",
                             "claude_code_oauth_1", root=d,
                         )
 
@@ -749,6 +771,7 @@ class TestSuccessfulDispatchPath:
         proposal = _minimal_proposal()
         ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
+        wt = _tmp_wt()
 
         def fake_launch(cmd, env, cwd, timeout_s=1800):
             return {"returncode": 1, "stdout": "", "stderr": "some error"}
@@ -757,7 +780,7 @@ class TestSuccessfulDispatchPath:
             with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
                 with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                     result = mb._dispatch_build_session(
-                        proposal, "/tmp/wt", "metabolism/build-test-cycle",
+                        proposal, wt, "metabolism/build-test-cycle",
                         "claude_code_oauth_1", root=_tmp_root(),
                     )
 
@@ -785,6 +808,7 @@ class TestCleanupOnForeignAbort:
             cleanup_called.append(wt_path)
 
         env = {**_armed_env(), ref_name: "fake_token_value_not_logged"}
+        wt_foreign = _tmp_wt()  # real dir required for wt_path validation
 
         with patch.dict(os.environ, env, clear=False):
             with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
@@ -792,13 +816,13 @@ class TestCleanupOnForeignAbort:
                     with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
                         with patch.object(mb, "_cleanup_worktree_on_abort", side_effect=fake_cleanup):
                             result = mb._dispatch_build_session(
-                                proposal, "/tmp/wt_foreign", "metabolism/build-test-cycle",
+                                proposal, wt_foreign, "metabolism/build-test-cycle",
                                 "claude_code_oauth_1", root=d,
                             )
 
         assert result["dispatched"] is False
         assert "FOREIGN_FILE_ABORT" in result.get("reason", "")
-        assert "/tmp/wt_foreign" in cleanup_called, (
+        assert wt_foreign in cleanup_called, (
             "_cleanup_worktree_on_abort must be called with the worktree path"
         )
 
@@ -809,6 +833,326 @@ class TestCleanupOnForeignAbort:
         mb._cleanup_worktree_on_abort("/nonexistent/path/that/does/not/exist/xyz")
         mb._cleanup_worktree_on_abort("")
         mb._cleanup_worktree_on_abort(None)  # type: ignore[arg-type]
+
+
+# ── 13. _diff_worktree_files covers untracked and staged files ────────────────
+
+class TestDiffWorktreeFilesCoversAllSurfaces:
+    """Finding 1: _diff_worktree_files must cover committed, staged, and untracked files."""
+
+    def test_diff_includes_untracked_file(self):
+        """A file present only in git status (untracked) must appear in the result.
+
+        This exercises the fix for the review finding: previously only committed
+        files (git diff HEAD) were checked, leaving untracked files invisible.
+        """
+        mb = _import_mb()
+
+        # Simulate: committed diff returns one file; status shows an additional untracked file
+        def fake_committed(_cmd, **_kw):
+            # git diff --name-only origin/main HEAD
+            class R:
+                returncode = 0
+                stdout = "engine/committed.py\n"
+                stderr = ""
+            return R()
+
+        def fake_status(_cmd, **_kw):
+            # git status --porcelain — one untracked file
+            class R:
+                returncode = 0
+                stdout = "?? engine/sneaky_untracked.py\n"
+                stderr = ""
+            return R()
+
+        call_count = [0]
+
+        def fake_run(cmd, **kwargs):
+            call_count[0] += 1
+            if "diff" in cmd:
+                return fake_committed(cmd, **kwargs)
+            if "status" in cmd:
+                return fake_status(cmd, **kwargs)
+            raise ValueError(f"unexpected cmd: {cmd}")
+
+        import subprocess as _sp
+        with patch.object(_sp, "run", side_effect=fake_run):
+            result = mb._diff_worktree_files("/fake/wt")
+
+        assert result is not None, "Should return a list, not None"
+        assert "engine/committed.py" in result, f"Committed file missing: {result}"
+        assert "engine/sneaky_untracked.py" in result, (
+            f"Untracked file NOT detected — foreign-file gap open: {result}"
+        )
+
+    def test_diff_includes_working_tree_modified_file(self):
+        """A file modified in the working tree but not committed must appear in the result."""
+        mb = _import_mb()
+
+        def fake_run(cmd, **kwargs):
+            class R:
+                returncode = 0
+                stderr = ""
+                stdout = ""
+            r = R()
+            if "diff" in cmd:
+                r.stdout = ""  # nothing committed
+            elif "status" in cmd:
+                r.stdout = " M engine/modified_unstaged.py\n"  # working-tree modified
+            return r
+
+        import subprocess as _sp
+        with patch.object(_sp, "run", side_effect=fake_run):
+            result = mb._diff_worktree_files("/fake/wt")
+
+        assert result is not None
+        assert "engine/modified_unstaged.py" in result, (
+            f"Working-tree-modified file NOT detected: {result}"
+        )
+
+    def test_diff_returns_none_on_status_error(self):
+        """If git status fails, _diff_worktree_files returns None (fail-closed)."""
+        mb = _import_mb()
+
+        def fake_run(cmd, **kwargs):
+            class R:
+                stderr = ""
+                stdout = ""
+            r = R()
+            if "diff" in cmd:
+                r.returncode = 0
+                r.stdout = "engine/ok.py\n"
+            elif "status" in cmd:
+                r.returncode = 128  # git error
+                r.stderr = "not a git repository"
+            return r
+
+        import subprocess as _sp
+        with patch.object(_sp, "run", side_effect=fake_run):
+            result = mb._diff_worktree_files("/fake/wt")
+
+        assert result is None, (
+            "Should return None when git status fails (fail-closed)"
+        )
+
+    def test_diff_handles_rename_arrow_notation(self):
+        """git status --porcelain rename lines ('old -> new') → new path captured."""
+        mb = _import_mb()
+
+        def fake_run(cmd, **kwargs):
+            class R:
+                returncode = 0
+                stderr = ""
+                stdout = ""
+            r = R()
+            if "diff" in cmd:
+                r.stdout = ""
+            elif "status" in cmd:
+                r.stdout = "R  engine/old_name.py -> engine/new_name.py\n"
+            return r
+
+        import subprocess as _sp
+        with patch.object(_sp, "run", side_effect=fake_run):
+            result = mb._diff_worktree_files("/fake/wt")
+
+        assert result is not None
+        assert "engine/new_name.py" in result, (
+            f"Renamed-to path not captured: {result}"
+        )
+
+
+# ── 14. _build_branch_name includes proposal_id ───────────────────────────────
+
+class TestBranchNameIncludesProposalId:
+    """Finding 2: branch name must include proposal_id to prevent collision on multi-proposal cycles."""
+
+    def test_branch_with_proposal_id(self):
+        mb = _import_mb()
+        branch = mb._build_branch_name("til_fitness", "cycle-001", proposal_id="p1")
+        assert "p1" in branch, f"proposal_id not in branch: {branch}"
+
+    def test_two_proposals_same_lobe_cycle_different_branches(self):
+        """Two proposals in the same lobe+cycle must produce different branch names."""
+        mb = _import_mb()
+        b1 = mb._build_branch_name("til_fitness", "cycle-001", proposal_id="p1")
+        b2 = mb._build_branch_name("til_fitness", "cycle-001", proposal_id="p2")
+        assert b1 != b2, (
+            f"Two proposals in the same lobe+cycle produced the SAME branch: {b1}"
+        )
+
+    def test_backward_compat_no_proposal_id(self):
+        """Calling _build_branch_name without proposal_id still returns a valid branch."""
+        mb = _import_mb()
+        branch = mb._build_branch_name("til_fitness", "cycle-001")
+        assert branch.startswith("metabolism/build-")
+
+
+# ── 15. Double-dispatch race: in-flight == dispatch claimed ───────────────────
+
+class TestDoubleDispatchRacePrevention:
+    """Finding 3: _is_dispatch_done must return True for 'running' (in-flight) stages."""
+
+    def test_running_stage_is_treated_as_dispatched(self):
+        """A stage with status='running' must block a concurrent dispatch attempt."""
+        mb = _import_mb()
+        d = _tmp_root()
+
+        # Write a journal with a 'running' stage (simulating in-flight dispatch)
+        cycle_id = "cycle-race-001"
+        pid = "p1"
+        from scripts.metabolism_journal import start_stage
+        start_stage(cycle_id, f"build_dispatch_{pid}", root=d)
+        # start_stage writes status='running'
+
+        # _is_dispatch_done must now return True (the race is blocked)
+        assert mb._is_dispatch_done(cycle_id, pid, root=d) is True, (
+            "_is_dispatch_done must return True for 'running' stage (in-flight dispatch)"
+        )
+
+    def test_no_stage_is_not_dispatched(self):
+        """No journal entry → _is_dispatch_done returns False."""
+        mb = _import_mb()
+        d = _tmp_root()
+        assert mb._is_dispatch_done("cycle-race-002", "p1", root=d) is False
+
+    def test_start_stage_called_before_subprocess(self):
+        """The in-flight 'running' record must be written before _launch_build_subprocess."""
+        mb = _import_mb()
+        d = _tmp_root()
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        pid = "p_race"
+        cycle_id = "cycle-race-003"
+
+        start_stage_calls = []
+        launch_calls = []
+
+        call_order = []
+
+        def fake_start_stage(cid, stage, root=None):
+            call_order.append("start_stage")
+            start_stage_calls.append((cid, stage))
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            call_order.append("launch")
+            launch_calls.append(cmd)
+            return {"returncode": 0, "stdout": "ok", "stderr": ""}
+
+        def fake_diff(wt_path, base_ref="origin/main"):
+            return ["engine/test_sensor.py"]
+
+        env = {**_armed_env(), ref_name: "fake_token_value"}
+        proposal = _minimal_proposal(pid=pid, cycle_id=cycle_id)
+
+        # Patch wt_path to a real directory (tmp)
+        import tempfile, os as _os
+        with tempfile.TemporaryDirectory() as wt_dir:
+            with patch.dict(os.environ, env, clear=False):
+                with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                    with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
+                        with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
+                            # Patch start_stage inside the dispatch function's import
+                            import scripts.metabolism_journal as _mj
+                            orig_start = _mj.start_stage
+                            _mj.start_stage = fake_start_stage
+                            try:
+                                mb._dispatch_build_session(
+                                    proposal, wt_dir, "metabolism/build-test-cycle",
+                                    "claude_code_oauth_1", root=d,
+                                )
+                            finally:
+                                _mj.start_stage = orig_start
+
+        # start_stage must have been called BEFORE launch
+        assert "start_stage" in call_order, "start_stage was never called"
+        assert "launch" in call_order, "launch was never called"
+        start_idx = call_order.index("start_stage")
+        launch_idx = call_order.index("launch")
+        assert start_idx < launch_idx, (
+            f"start_stage (idx={start_idx}) must come BEFORE launch (idx={launch_idx})"
+        )
+
+
+# ── 16. _matches_immutable strips './' prefix ─────────────────────────────────
+
+class TestMatchesImmutablePathNormalization:
+    """Finding 4: _matches_immutable must strip './' prefix."""
+
+    def test_dot_slash_prefix_stripped(self):
+        from scripts.check_self_mod_fence import _matches_immutable
+        # With the './' prefix — must still match
+        assert _matches_immutable("./config/grader_manifest.yml") is True, (
+            "_matches_immutable must treat './config/grader_manifest.yml' as immutable"
+        )
+
+    def test_plain_path_still_matches(self):
+        from scripts.check_self_mod_fence import _matches_immutable
+        assert _matches_immutable("config/grader_manifest.yml") is True
+
+    def test_non_immutable_not_matched(self):
+        from scripts.check_self_mod_fence import _matches_immutable
+        assert _matches_immutable("./engine/some_new_sensor.py") is False
+
+    def test_leading_slash_stripped(self):
+        from scripts.check_self_mod_fence import _matches_immutable
+        assert _matches_immutable("/config/grader_manifest.yml") is True
+
+
+# ── 17. _resolve_key_ref is fail-closed on broker exception ──────────────────
+
+class TestResolveKeyRefFailClosed:
+    """Finding 5: _resolve_key_ref must fail-closed on broker exception, not bypass allowlist."""
+
+    def test_broker_exception_returns_none(self):
+        """If the broker raises an exception, _resolve_key_ref returns (None, reason)."""
+        mb = _import_mb()
+
+        def exploding_broker(cap_id, lane=None, root=None):
+            raise RuntimeError("simulated broker crash")
+
+        with patch("engine.neuralweb.capability_broker.resolve", side_effect=exploding_broker):
+            ref, err = mb._resolve_key_ref("claude_code_oauth_1")
+
+        assert ref is None, (
+            f"_resolve_key_ref must return None on broker exception, got: {ref!r}"
+        )
+        assert err is not None, "Error message must be present"
+        assert "exception" in err.lower() or "broker" in err.lower(), (
+            f"Error should mention broker/exception: {err!r}"
+        )
+
+    def test_broker_exception_does_not_call_key_pool_fallback(self):
+        """On broker exception, key_pool.get_secret_ref must NOT be called (allowlist bypass)."""
+        mb = _import_mb()
+        key_pool_called = []
+
+        def exploding_broker(cap_id, lane=None, root=None):
+            raise RuntimeError("simulated broker crash")
+
+        def spy_get_secret_ref(*args, **kwargs):
+            key_pool_called.append(args)
+            return "some_ref"
+
+        with patch("engine.neuralweb.capability_broker.resolve", side_effect=exploding_broker):
+            with patch("engine.neuralweb.key_pool.get_secret_ref", side_effect=spy_get_secret_ref):
+                mb._resolve_key_ref("claude_code_oauth_1")
+
+        assert len(key_pool_called) == 0, (
+            "key_pool.get_secret_ref must NOT be called on broker exception — "
+            "that path bypasses the lane-allowlist check"
+        )
+
+    def test_broker_denial_still_returns_none(self):
+        """A clean broker denial (allowed=False) still returns None."""
+        mb = _import_mb()
+
+        def denying_broker(cap_id, lane=None, root=None):
+            return {"allowed": False, "reason": "not in allowed_lanes"}
+
+        with patch("engine.neuralweb.capability_broker.resolve", side_effect=denying_broker):
+            ref, err = mb._resolve_key_ref("claude_code_oauth_1")
+
+        assert ref is None
+        assert "denied" in (err or "").lower() or "broker" in (err or "").lower()
 
 
 # ── CI-enforced word ban check ───────────────────────────────────────────────

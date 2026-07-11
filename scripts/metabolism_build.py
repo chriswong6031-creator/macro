@@ -211,11 +211,21 @@ def _regen_active_build_map(root: Path | None = None) -> None:
 
 # ── Worktree helpers ──────────────────────────────────────────────────────────
 
-def _build_branch_name(lobe: str, cycle_id: str) -> str:
-    """Return the worktree branch name for a build lane. Format: metabolism/build-<lobe>-<cycle>."""
+def _build_branch_name(lobe: str, cycle_id: str, proposal_id: str = "") -> str:
+    """Return the worktree branch name for a build lane.
+
+    Format: metabolism/build-<lobe>-<cycle>-<proposal_id>
+
+    The proposal_id suffix is REQUIRED when a cycle docket contains more than
+    one proposal for the same lobe: without it, the second worktree/branch
+    creation fails with "fatal: a branch named '...' already exists".
+    """
     # Sanitize lobe and cycle_id for use as a git branch component
     safe_lobe = lobe.replace("/", "_").replace(" ", "_").lower()
     safe_cycle = cycle_id.replace("/", "_")
+    if proposal_id:
+        safe_pid = str(proposal_id).replace("/", "_").replace(" ", "_")
+        return f"{_BUILD_BRANCH_PREFIX}{safe_lobe}-{safe_cycle}-{safe_pid}"
     return f"{_BUILD_BRANCH_PREFIX}{safe_lobe}-{safe_cycle}"
 
 
@@ -305,23 +315,69 @@ def _check_immutable_targets(target_files: list[str]) -> list[str]:
 
 
 def _diff_worktree_files(wt_path: str, base_ref: str = "origin/main") -> list[str] | None:
-    """Return the list of files changed in the worktree vs base_ref.
+    """Return the union of all files touched in the worktree vs base_ref.
+
+    Covers three surfaces:
+      1. Committed changes (git diff --name-only <base> HEAD)
+      2. Staged but not-yet-committed changes (git diff --name-only --cached)
+      3. Untracked files (git status --porcelain — lines starting with '??' or 'M ')
 
     Returns None on error (caller treats as a failure).  NEVER raises.
+
+    A build session that writes foreign files without committing them would
+    escape a committed-only diff; all three surfaces must be unioned to close
+    that gap.
     """
     try:
-        result = subprocess.run(
+        # Surface 1: committed changes HEAD vs base_ref
+        r1 = subprocess.run(
             ["git", "diff", "--name-only", base_ref, "HEAD"],
             cwd=wt_path, capture_output=True, text=True, timeout=60,
         )
-        if result.returncode != 0:
+        if r1.returncode != 0:
             log.warning(
-                "BUILD: _diff_worktree_files: git diff exited %d: %s",
-                result.returncode, result.stderr[:200],
+                "BUILD: _diff_worktree_files(committed): git diff exited %d: %s",
+                r1.returncode, r1.stderr[:200],
             )
             return None
-        lines = [l.strip() for l in result.stdout.splitlines() if l.strip()]
-        return lines
+
+        committed: set[str] = {
+            l.strip() for l in r1.stdout.splitlines() if l.strip()
+        }
+
+        # Surface 2+3: working-tree and untracked via git status --porcelain
+        # Format: XY path  (X=index status, Y=worktree status)
+        # '??' = untracked; others with a non-space Y have working-tree changes.
+        r2 = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=wt_path, capture_output=True, text=True, timeout=60,
+        )
+        if r2.returncode != 0:
+            log.warning(
+                "BUILD: _diff_worktree_files(status): git status exited %d: %s",
+                r2.returncode, r2.stderr[:200],
+            )
+            return None
+
+        status_files: set[str] = set()
+        for raw_line in r2.stdout.splitlines():
+            if len(raw_line) < 4:
+                continue
+            # Columns 0-1 are status codes; column 3+ is the path
+            path_part = raw_line[3:].strip()
+            # Handle renames: "old -> new" — take the new (destination) path
+            if " -> " in path_part:
+                path_part = path_part.split(" -> ", 1)[1]
+            if path_part:
+                status_files.add(path_part.strip('"'))
+
+        all_files = sorted(committed | status_files)
+        log.debug(
+            "BUILD: _diff_worktree_files: committed=%d status=%d union=%d",
+            len(committed), len(status_files), len(all_files),
+        )
+        return all_files
+
     except Exception as exc:  # noqa: BLE001
         log.warning("BUILD: _diff_worktree_files(%s): %s", wt_path, exc)
         return None
@@ -343,16 +399,10 @@ def _resolve_key_ref(cap_id: str, root: Path | None = None) -> tuple[str | None,
             return None, "capability_broker returned no ref_name"
         return ref_name, None
     except Exception as exc:  # noqa: BLE001
-        log.warning("BUILD: _resolve_key_ref(%s): %s", cap_id, exc)
-        # Fallback: try key_pool.get_secret_ref directly
-        try:
-            from engine.neuralweb.key_pool import get_secret_ref
-            ref = get_secret_ref(cap_id, root)
-            if ref:
-                return ref, None
-            return None, f"key_pool.get_secret_ref returned None for {cap_id}"
-        except Exception as exc2:  # noqa: BLE001
-            return None, f"both broker and key_pool failed: {exc} / {exc2}"
+        # Fail-closed on any broker exception: do NOT fall back to key_pool.get_secret_ref()
+        # because that path bypasses the broker's lane-allowlist check.
+        log.warning("BUILD: _resolve_key_ref(%s): broker exception — fail-closed: %s", cap_id, exc)
+        return None, f"capability_broker exception: {exc}"
 
 
 def _record_key_session(
@@ -391,14 +441,25 @@ def _journal_dispatch(
 
 
 def _is_dispatch_done(cycle_id: str, proposal_id: str, root: Path | None = None) -> bool:
-    """Return True if this proposal has already been dispatched this cycle.
+    """Return True if this proposal has already been dispatched (or is in-flight) this cycle.
 
-    Idempotency check — prevents double-dispatch on retry.  NEVER raises.
+    Idempotency check — prevents double-dispatch on retry.
+
+    Treats BOTH 'done' (completed) AND 'running' (in-flight) as "already dispatched":
+    a concurrent invocation that finds 'running' must not launch a second session.
+    The pre-launch call to `start_stage` in `_dispatch_build_session` writes the
+    'running' record atomically before subprocess launch, so this guard catches
+    concurrent runs even before the session finishes.
+
+    NEVER raises.
     """
     try:
-        from scripts.metabolism_journal import is_stage_done
+        from scripts.metabolism_journal import _read_journal  # type: ignore[attr-defined]
         stage = f"{_DISPATCH_STAGE_PREFIX}{proposal_id}"
-        return is_stage_done(cycle_id, stage, root=root)
+        j = _read_journal(cycle_id, root)
+        status = j.get("stages", {}).get(stage, {}).get("status")
+        # Treat running (in-flight) and done (completed) both as "dispatch already claimed"
+        return status in ("running", "done")
     except Exception as exc:  # noqa: BLE001
         log.warning("BUILD: _is_dispatch_done(%s/%s): %s", cycle_id, proposal_id, exc)
         return False
@@ -425,6 +486,14 @@ def _build_session_task_prompt(
 
     target_files_list = "\n".join(f"  - {f}" for f in target_files) or "  (none declared)"
 
+    # Load the canonical IMMUTABLE list from check_self_mod_fence at call time so
+    # the prompt always reflects the source-of-truth (avoids a stale hand-copy).
+    try:
+        from scripts.check_self_mod_fence import IMMUTABLE_PATTERNS as _immutable_patterns
+    except Exception:  # noqa: BLE001
+        _immutable_patterns = []
+    immutable_list = "\n".join(f"    {p}" for p in _immutable_patterns) or "    (see check_self_mod_fence.py)"
+
     return (
         f"You are a BUILD session for the Macro Dashboard Metabolism loop (R-V4-2).\n\n"
         f"CYCLE:    {cycle_id}\n"
@@ -440,12 +509,8 @@ def _build_session_task_prompt(
         f"  - Commit ONLY to data/metabolism/* and the target_files above.\n"
         f"  - Every commit trailer: {_LOOP_AUTHORED_TRAILER} build={pid} cycle={cycle_id}\n"
         f"  - Open a DRAFT PR on branch {branch} — NEVER merge.\n"
-        f"  - Do NOT touch the IMMUTABLE set (hooks, workflows, grader_manifest.yml,\n"
-        f"    capability_manifest.yml, metabolism_budget.yml, capability_broker.py,\n"
-        f"    check_self_mod_fence.py, check_grader_manifest.py, settings.json,\n"
-        f"    AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md, metabolism_anomaly.yml,\n"
-        f"    fable_mode_core.md, metabolism_schedule.yml, ux_simplicity_rules.yml,\n"
-        f"    nw_mission.yml, engine/metabolism/tap.py).\n"
+        f"  - Do NOT touch the IMMUTABLE set (enforced by F2 CI fence):\n"
+        f"{immutable_list}\n"
         f"  - Do NOT push to main. Do NOT merge any PR.\n"
         f"  - No LLM-originated signals/scores/escalations.\n"
         f"  - Working directory: {wt_path}\n"
@@ -638,6 +703,28 @@ def _dispatch_build_session(
             "BUILD: dispatching proposal=%s model=%s wt=%s branch=%s key_ref=%s",
             pid, _BUILD_SESSION_MODEL, wt_path, branch, ref_name,
         )
+
+        # Nit fix (Finding 7): validate wt_path is a real directory before
+        # recording a key session or launching, so ledger accounting doesn't
+        # burn quota for a session that never runs.
+        if not wt_path or not Path(wt_path).is_dir():
+            result["reason"] = f"invalid_wt_path: {wt_path!r} is not a directory"
+            log.warning("BUILD: %s proposal=%s", result["reason"], pid)
+            if cycle_id:
+                _journal_dispatch(cycle_id, pid, {"status": "invalid_wt_path",
+                                                   "wt_path": wt_path}, root=root)
+            return result
+
+        # Double-dispatch race fix (Finding 3): write a 'running' status for this
+        # dispatch stage BEFORE launching the subprocess.  A concurrent invocation
+        # reading the journal now will find 'running' and be blocked by
+        # _is_dispatch_done (which treats 'running' == in-flight == done-for-guard).
+        if cycle_id:
+            try:
+                from scripts.metabolism_journal import start_stage as _start_stage
+                _start_stage(cycle_id, f"{_DISPATCH_STAGE_PREFIX}{pid}", root=root)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("BUILD: start_stage pre-launch failed (%s) — continuing", exc)
 
         # Record session start in the key ledger (quota accounting)
         _record_key_session(cap_id, cycle_id, outcome="ok", root=root)
@@ -886,7 +973,9 @@ def run_build_lane(
                 continue
 
             # Step 3: create worktree off fresh origin/main
-            branch = _build_branch_name(lobe, cycle_id)
+            # Pass proposal_id so each proposal in the same lobe+cycle gets its
+            # own branch (prevents "branch already exists" on multi-proposal cycles).
+            branch = _build_branch_name(lobe, cycle_id, proposal_id=pid)
             wt_result = _create_build_worktree(branch, root=root, dry_run=dry_run)
             per["worktree"] = wt_result
             wt_path = wt_result.get("wt_path") or ""

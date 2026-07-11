@@ -213,6 +213,22 @@ class TestWorktreeBranchNaming:
         b2 = mb._build_branch_name("lobe_b", "cycle-001")
         assert b1 != b2
 
+    def test_same_lobe_same_cycle_different_proposals_different_branches(self):
+        """Finding 2 fix: same lobe+cycle but different proposal_ids → different branches.
+
+        Before the fix, two proposals in the same lobe+cycle shared a branch name,
+        causing the second worktree creation to fail with 'branch already exists'.
+        """
+        import scripts.metabolism_build as mb
+        importlib.reload(mb)
+
+        b1 = mb._build_branch_name("til_fitness", "cycle-001", proposal_id="p1")
+        b2 = mb._build_branch_name("til_fitness", "cycle-001", proposal_id="p2")
+        assert b1 != b2, (
+            f"Two proposals in the same lobe+cycle produced the SAME branch name: {b1!r} — "
+            "this would cause 'branch already exists' on the second worktree creation."
+        )
+
 
 # ── 3. is_paused no-op on build lane (mutation-proof) ─────────────────────────
 
