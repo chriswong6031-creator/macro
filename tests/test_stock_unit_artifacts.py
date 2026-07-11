@@ -4,12 +4,13 @@ Synthetic panels only — no network, no committed-data reads.  Each fixture is 
 minimal reconstruction of a defect class observed in the real panel (tickers in
 comments), plus the confusable REAL patterns the detector must leave alone:
 real negative equity (CHTR-class sign flip, RNG-class leading tiny equity),
-leading-edge junk facts (MDT/FTI/MIR), leading-edge genuine small debt_lt
-(OTIS/OGS/IDCC), near-zero genuine mid-series equity, and idempotency.
+leading-edge junk facts (MDT/FTI/MIR — now NULLED by Lane 3), leading-edge
+genuine small debt_lt (OTIS/OGS/IDCC), near-zero genuine mid-series equity,
+and idempotency.
 
 PIT honesty is pinned structurally: every repair value must equal the row's own
 value × 10^k for k in {3, 6} — repairs never come from statements.parquet or
-any other row.
+any other row.  Junk-null flags carry repair=NaN (NaN, never wrong).
 """
 from __future__ import annotations
 
@@ -325,41 +326,71 @@ def test_rng_class_leading_equity_unflagged():
 
 
 # ---------------------------------------------------------------------------
-# h. MDT/FTI-class: leading-edge junk assets → UNFLAGGED + suspect
+# h. MDT-class: leading-edge junk row nulled by Lane 3
 # ---------------------------------------------------------------------------
-def test_mdt_class_junk_assets_unflagged():
-    """MDT fy2014 assets=46000 before ~$100B balance sheet.  No ×10^k restores
-    a plausible value (46000 × 1e6 = 4.6e10, which is at least plausible size
-    but 46000 × 1e3 = 4.6e7 which is not, and 4.6e10 might not snap tightly).
-    Interior-only rule means this LEADING segment is never flagged (flank_suspects
-    only if break ≥ 500×)."""
-    # Leading artifact, then normal scale
-    assets = [46000.0, 1.0274e11, 1.0356e11, 1.1211e11, 1.2189e11]
-    equity = [-3.7e7,   4.9e10,   5.2e10,   5.9e10,   6.2e10]
-    rev    = [np.nan,   2.82e10,  2.91e10,  3.02e10,  3.0e10]
-    ni_vals= [np.nan,   3.8e9,    4.5e9,    4.6e9,    4.4e9]
+def test_mdt_class_junk_row_nulled():
+    """MDT fy2014 row: assets=46000, equity=-3.6954e7 (junk shell balance-sheet
+    facts), but real flow facts ni=2.675e9, cfo=4.902e9, shares≈999M.
+    Lane 3 nulls assets (anchor ratio 106,565x >> 1000x threshold) and equity
+    (corroborated via same-row assets junk verdict).
+    fy2015 assets_prior=46000 gets null-mirrored to NaN."""
+    # fy2014 (junk), fy2015-2018 (real scale)
+    assets = [46000.0,    1.0271e11,  9.7578e10,  9.58e10,   9.13e10]
+    equity = [-3.6954e7,  5.0816e10,  4.9387e10,  5.0234e10, 5.05e10]
+    ni_vals = [2.675e9,   3.538e9,    4.5e9,      4.6e9,     4.4e9]
+    cfo_vals = [4.902e9,  5.218e9,    5.0e9,      5.1e9,     5.2e9]
+    shares_v = [999e6,    1.42165e9,  1.4e9,      1.35e9,    1.3e9]
+    # assets_prior for fy2015 = 46000 (junk mirror)
+    ap = [np.nan, 46000.0, 1.0271e11, 9.7578e10, 9.58e10]
+    rev = [np.nan] * 5
 
     p = _panel("MDT", assets, fy0=2014,
-               equity=equity, revenue=rev, ni=ni_vals)
+               equity=equity, revenue=rev, ni=ni_vals, cfo=cfo_vals,
+               shares=shares_v, assets_prior=ap)
 
     healed, audit = apply_stock_quality(p, statements=None)
-    mdt_flagged = [r for r in audit["rows"]
-                   if r["ticker"] == "MDT" and r["col"] == "assets"]
-    assert not mdt_flagged, \
-        f"MDT junk leading assets must not be flagged: {mdt_flagged}"
 
-    # The fy2014 junk row must go to flank_suspects (leading break ≥ 500×)
-    mdt_suspects = [s for s in audit["flank_suspects"]
-                    if s["ticker"] == "MDT" and s["col"] == "assets"]
-    assert mdt_suspects, "MDT junk assets should appear in flank_suspects"
+    fy2014 = healed[healed.fy == 2014].iloc[0]
 
-    # fy2015 assets_prior = 46000 (mirror of junk) must be untouched since
-    # the original fy2014 assets was never repaired — no mirror should fire
+    # assets nulled
+    assert np.isnan(fy2014["assets"]), \
+        f"MDT fy2014 assets should be NaN (junk_null): {fy2014['assets']}"
+    assert np.isclose(fy2014["assets_raw"], 46000.0, rtol=1e-6), \
+        f"MDT fy2014 assets_raw must preserve junk value: {fy2014['assets_raw']}"
+    assert "assets:junk_null" in str(fy2014["stock_flag"]), \
+        f"MDT fy2014 stock_flag missing assets:junk_null: {fy2014['stock_flag']}"
+
+    # equity nulled via same-row corroboration (own ratio ~133x < 1000x — inherited)
+    assert np.isnan(fy2014["equity"]), \
+        f"MDT fy2014 equity should be NaN (corroborated junk_null): {fy2014['equity']}"
+    assert np.isclose(fy2014["equity_raw"], -3.6954e7, rtol=1e-4), \
+        f"MDT fy2014 equity_raw must preserve junk value: {fy2014['equity_raw']}"
+
+    # fy2015 assets_prior null-mirrored
     fy2015 = healed[healed.fy == 2015].iloc[0]
-    ap_raw = fy2015.get("assets_prior_raw", np.nan)
-    assert not np.isfinite(ap_raw) or np.isnan(float(ap_raw)), \
-        f"MDT fy2015 assets_prior_raw should be NaN (no repair happened): {ap_raw}"
-    # assets values on non-junk rows must be untouched
+    assert np.isnan(fy2015["assets_prior"]), \
+        f"MDT fy2015 assets_prior should be NaN (null_mirror): {fy2015['assets_prior']}"
+    assert np.isclose(fy2015["assets_prior_raw"], 46000.0, rtol=1e-6), \
+        f"MDT fy2015 assets_prior_raw must preserve junk value: {fy2015['assets_prior_raw']}"
+    assert "assets_prior:null_mirror" in str(fy2015["stock_flag"]), \
+        f"MDT fy2015 stock_flag missing null_mirror: {fy2015['stock_flag']}"
+
+    # Audit: 2 nulled (assets + equity), 0 repaired, 1 mirror
+    assert audit["nulled"] == 2, f"expected 2 nulled, got {audit['nulled']}"
+    assert audit["repaired"] == 0, f"expected 0 repaired, got {audit['repaired']}"
+    assert audit["mirrors"] == 1, f"expected 1 mirror, got {audit['mirrors']}"
+
+    # The fy2014 single-row junk segment (fully nulled) must NOT appear in
+    # flank_suspects.  The fy2015-2018 clean segment may still appear as a
+    # trailing suspect (it sees the junk row as its trailing context), but
+    # the junk row itself is not a suspect entry.
+    mdt_junk_suspects = [s for s in audit["flank_suspects"]
+                         if s["ticker"] == "MDT" and s["col"] == "assets"
+                         and s["fy_lo"] == 2014 and s["fy_hi"] == 2014]
+    assert not mdt_junk_suspects, \
+        f"MDT fy2014 fully-nulled segment must not appear in flank_suspects: {mdt_junk_suspects}"
+
+    # clean fy2015-2018 rows must not be repair-flagged
     for fy in (2015, 2016, 2017, 2018):
         row = healed[healed.fy == fy].iloc[0]
         flag = row.get("stock_flag", None)
@@ -481,16 +512,18 @@ def test_idempotent_and_raws_survive_second_pass():
 # PIT discipline: every repair == raw × 10^3 or raw × 10^6
 # ---------------------------------------------------------------------------
 def test_all_repairs_are_own_value_times_power():
-    """All detections in the xsrc lane must be raw × 10^k for k ∈ {3,6}."""
+    """All non-null detections must be raw × 10^k for k ∈ {3,6}."""
     assets_p = [5e8, 6e8, 1.5e3, 2.0e3, 500e3, 600e3, 7e8, 8e8]
     assets_s = [5e8, 6e8, 1.5e9, 2.0e9, 500e6, 600e6, 7e8, 8e8]
     p = _panel("PIT2", assets_p, fy0=2014)
     st = _statements("PIT2", assets_s, fy0=2014)
     found = detect(p, statements=st)
     for _, row in found.iterrows():
+        if row["flag"] == "junk_null":
+            continue   # null repairs have repair=NaN by design — not a ×10^k
         raw = row["value"]
         rep = row["repair"]
-        assert np.isfinite(rep), "all repairs must be finite"
+        assert np.isfinite(rep), "all non-null repairs must be finite"
         ok = any(np.isclose(rep, raw * 10 ** k, rtol=1e-6) for k in (3, 6))
         assert ok, f"repair {rep} is not raw ({raw}) × 10^3 or 10^6"
 
@@ -544,7 +577,7 @@ def test_audit_shape():
                 "xsrc_disagreements", "flank_suspects"}
     assert required <= set(audit.keys()), \
         f"missing audit keys: {required - set(audit.keys())}"
-    assert audit["nulled"] == 0, "nulled must always be 0 in v1"
+    assert isinstance(audit["nulled"], int), "nulled must be an int"
     assert isinstance(audit["by_flag"], dict)
     assert isinstance(audit["rows"], list)
 
@@ -823,3 +856,282 @@ def test_classb_gate1_corroboration_from_xsrc_assets():
                if r["ticker"] == "XCOR" and r["fy"] == 2019 and r["col"] == "equity"]
     assert eq_rows and "corr:same_row_assets" in eq_rows[0]["note"], \
         f"equity repair should carry Gate-1 corroboration note: {eq_rows}"
+
+
+# ===========================================================================
+# NEW TESTS — Lane 3 junk_null
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# 1. MIR-class: sign flip on equity does not block null
+# ---------------------------------------------------------------------------
+def test_mir_class_sign_flip_flank_nulled():
+    """MIR fy2019: assets=5000, equity=4364, revenue=4.401e8 (incoherence 88,020x).
+    fy2020 equity=-9.7952e7 (negative right flank) — sign flip must NOT block null.
+    fy2020 assets_prior=5000 must be null-mirrored."""
+    assets = [5000.0,    7.51315e8, 3.1e9, 2.7e9]
+    equity = [4364.0,   -9.7952e7,  1.69e9, 1.4e9]
+    rev    = [4.401e8,   4.782e8,   6.0e8,  7.0e8]
+    ni_vals = [-341.0,  -4.52554e7, 1e8,    1.2e8]
+    cfo_vals = [0.0,    -945351.0,  2e8,    2.2e8]
+    ap = [np.nan, 5000.0, 7.51315e8, 3.1e9]
+
+    p = _panel("MIR", assets, fy0=2019,
+               equity=equity, revenue=rev, ni=ni_vals, cfo=cfo_vals,
+               assets_prior=ap)
+
+    healed, audit = apply_stock_quality(p, statements=None)
+
+    fy2019 = healed[healed.fy == 2019].iloc[0]
+    assert np.isnan(fy2019["assets"]), \
+        f"MIR fy2019 assets should be NaN: {fy2019['assets']}"
+    assert np.isnan(fy2019["equity"]), \
+        f"MIR fy2019 equity should be NaN (sign-flip does not block): {fy2019['equity']}"
+
+    fy2020 = healed[healed.fy == 2020].iloc[0]
+    assert np.isnan(fy2020["assets_prior"]), \
+        f"MIR fy2020 assets_prior should be NaN (null_mirror): {fy2020['assets_prior']}"
+    assert np.isclose(fy2020["assets_prior_raw"], 5000.0, rtol=1e-6), \
+        f"MIR fy2020 assets_prior_raw must preserve junk value: {fy2020['assets_prior_raw']}"
+    assert "assets_prior:null_mirror" in str(fy2020["stock_flag"]), \
+        f"MIR fy2020 missing null_mirror token: {fy2020['stock_flag']}"
+
+    assert audit["nulled"] == 2, f"expected 2 nulled, got {audit['nulled']}"
+
+
+# ---------------------------------------------------------------------------
+# 2. FTI-class: assets=equity=same value both nulled + null mirror
+# ---------------------------------------------------------------------------
+def test_fti_class_assets_equity_same_value_nulled():
+    """FTI fy2015: assets=equity=74100, revenue=NaN, ni=1.44e7, cfo=7.003e8.
+    Incoherence for assets: cfo/assets = 9,451x >> 1000x threshold.
+    Both assets and equity nulled; fy2016 assets_prior=74100 null-mirrored."""
+    assets = [74100.0,   1.86793e10, 2.1e10, 2.5e10]
+    equity = [74100.0,   5.0558e9,   6.0e9,  1.3e10]
+    rev    = [np.nan,    9.1996e9,   9.5e9,  10.0e9]
+    ni_vals = [1.44e7,   3.933e8,    4.0e8,  5.0e8]
+    cfo_vals = [7.003e8, 4.938e8,    5.0e8,  6.0e8]
+    ap = [np.nan, 74100.0, 1.86793e10, 2.1e10]
+
+    p = _panel("FTI", assets, fy0=2015,
+               equity=equity, revenue=rev, ni=ni_vals, cfo=cfo_vals,
+               assets_prior=ap)
+
+    healed, audit = apply_stock_quality(p, statements=None)
+
+    fy2015 = healed[healed.fy == 2015].iloc[0]
+    assert np.isnan(fy2015["assets"]), \
+        f"FTI fy2015 assets should be NaN: {fy2015['assets']}"
+    assert np.isnan(fy2015["equity"]), \
+        f"FTI fy2015 equity should be NaN: {fy2015['equity']}"
+
+    fy2016 = healed[healed.fy == 2016].iloc[0]
+    assert np.isnan(fy2016["assets_prior"]), \
+        f"FTI fy2016 assets_prior should be NaN: {fy2016['assets_prior']}"
+    assert np.isclose(fy2016["assets_prior_raw"], 74100.0, rtol=1e-6), \
+        f"FTI fy2016 assets_prior_raw must preserve junk: {fy2016['assets_prior_raw']}"
+
+    assert audit["nulled"] == 2, f"expected 2 nulled, got {audit['nulled']}"
+
+
+# ---------------------------------------------------------------------------
+# 3. AMCR/DEA-class: real tiny equity with large same-row assets → NOT nulled
+# ---------------------------------------------------------------------------
+def test_amcr_dea_class_real_tiny_equity_survives():
+    """AMCR fy2018: equity=130 (real stub equity from spin-off recap) with
+    same-row assets=1.2e10, revenue=9.3e9.  Assets is clean (never junk-nulled)
+    → no same-row corroboration → equity must NOT be nulled.
+    This pins the no-own-incoherence-for-Class-B rule."""
+    # Leading equity=130 with real scale assets and revenue, then normal equity
+    assets = [1.2e10,  1.25e10, 1.3e10, 1.35e10, 1.4e10]
+    equity = [130.0,   4.7e9,   4.9e9,  5.1e9,   5.3e9]
+    rev    = [9.3e9,   9.5e9,   9.7e9,  9.9e9,   10.1e9]
+
+    p = _panel("AMCR", assets, fy0=2018,
+               equity=equity, revenue=rev)
+
+    healed, audit = apply_stock_quality(p, statements=None)
+
+    # equity fy2018 must survive (not nulled)
+    fy2018 = healed[healed.fy == 2018].iloc[0]
+    assert np.isclose(fy2018["equity"], 130.0, rtol=1e-6), \
+        f"AMCR real tiny equity must NOT be nulled: {fy2018['equity']}"
+
+    amcr_null = [r for r in audit["rows"]
+                 if r["ticker"] == "AMCR" and r["col"] == "equity"
+                 and r["flag"] == "junk_null"]
+    assert not amcr_null, \
+        f"AMCR real tiny equity must not produce junk_null: {amcr_null}"
+    assert audit["nulled"] == 0, f"expected 0 nulled, got {audit['nulled']}"
+
+
+# ---------------------------------------------------------------------------
+# 4. CLSK-class: coherent tiny leading assets survives (anchor ratio < 1000x)
+# ---------------------------------------------------------------------------
+def test_clsk_class_coherent_tiny_row_survives():
+    """Leading assets=507 (real), same-row ni=-31772, cfo=-17643.
+    Anchor max / assets ≈ 63 << JUNK_ANCHOR_MULT=1000 → NOT nulled.
+    Still lands in flank_suspects when break ≥ 500×."""
+    assets = [507.0,    6.86e5,  5e9, 6e9, 7e9]
+    ni_vals = [-31772.0, -100e3, 10e6, 20e6, 30e6]
+    cfo_vals = [-17643.0, -80e3, 8e6, 15e6, 25e6]
+    rev = [np.nan] * 5
+
+    p = _panel("CLSK", assets, fy0=2010,
+               revenue=rev, ni=ni_vals, cfo=cfo_vals)
+
+    healed, audit = apply_stock_quality(p, statements=None)
+
+    fy2010 = healed[healed.fy == 2010].iloc[0]
+    assert np.isclose(fy2010["assets"], 507.0, rtol=1e-6), \
+        f"CLSK coherent tiny leading assets must NOT be nulled: {fy2010['assets']}"
+    assert audit["nulled"] == 0, f"expected 0 nulled, got {audit['nulled']}"
+
+    # Should appear in flank_suspects (break >> 500x)
+    clsk_suspects = [s for s in audit["flank_suspects"]
+                     if s["ticker"] == "CLSK" and s["col"] == "assets"]
+    assert clsk_suspects, "CLSK tiny leading assets should be in flank_suspects"
+
+
+# ---------------------------------------------------------------------------
+# 5. Anchor-absent leading junk: not nulled, stays in flank_suspects
+# ---------------------------------------------------------------------------
+def test_anchor_absent_leading_junk_survives():
+    """AHCO-class: leading assets=310616, right flank 3.69e8 (break ~1188x),
+    but all flow anchors revenue/ni/cfo are NaN on the row → no incoherence
+    evidence → NOT nulled, stays in flank_suspects."""
+    assets = [310616.0, 3.69e8, 4.0e8, 4.5e8, 5.0e8]
+    rev    = [np.nan,   5e7,    6e7,   7e7,   8e7]
+    ni_vals = [np.nan,  1e7,    1.2e7, 1.4e7, 1.6e7]
+    cfo_vals = [np.nan, 8e6,    9e6,   1e7,   1.1e7]
+
+    # Make the leading row have NaN anchors by overriding
+    p = _panel("AHCO", assets, fy0=2017,
+               revenue=rev, ni=ni_vals, cfo=cfo_vals)
+
+    healed, audit = apply_stock_quality(p, statements=None)
+
+    fy2017 = healed[healed.fy == 2017].iloc[0]
+    assert np.isclose(fy2017["assets"], 310616.0, rtol=1e-6), \
+        f"AHCO anchor-absent leading junk must NOT be nulled: {fy2017['assets']}"
+    assert audit["nulled"] == 0, f"expected 0 nulled, got {audit['nulled']}"
+
+    ahco_suspects = [s for s in audit["flank_suspects"]
+                     if s["ticker"] == "AHCO" and s["col"] == "assets"]
+    assert ahco_suspects, "AHCO anchor-absent should still be in flank_suspects"
+
+
+# ---------------------------------------------------------------------------
+# 6. Threshold boundary: 900x → NOT nulled; 1100x → nulled
+# ---------------------------------------------------------------------------
+def test_junk_anchor_threshold_boundary():
+    """Pin the JUNK_ANCHOR_MULT=1000 boundary exactly.
+    Case A: ni=9e8 → ratio = 9e8/1e6 = 900 < 1000 → NOT nulled.
+    Case B: ni=1.1e9 → ratio = 1.1e9/1e6 = 1100 ≥ 1000 → nulled."""
+    # Both cases: leading assets=1e6, right flank assets=1e10 (break=1e4 >> 500)
+
+    # Case A: 900x — must NOT be nulled
+    assets_a = [1e6, 1e10, 1.1e10, 1.2e10, 1.3e10]
+    ni_a = [9e8, 1e9, 1.1e9, 1.2e9, 1.3e9]
+    rev_a = [np.nan] * 5
+    cfo_a = [np.nan] * 5
+    pA = _panel("BDYA", assets_a, fy0=2015,
+                revenue=rev_a, ni=ni_a, cfo=cfo_a)
+    _, auditA = apply_stock_quality(pA, statements=None)
+    assert auditA["nulled"] == 0, \
+        f"Case A (900x): should NOT be nulled, got nulled={auditA['nulled']}"
+
+    # Case B: 1100x — must be nulled
+    assets_b = [1e6, 1e10, 1.1e10, 1.2e10, 1.3e10]
+    ni_b = [1.1e9, 1e9, 1.1e9, 1.2e9, 1.3e9]
+    rev_b = [np.nan] * 5
+    cfo_b = [np.nan] * 5
+    pB = _panel("BDYB", assets_b, fy0=2015,
+                revenue=rev_b, ni=ni_b, cfo=cfo_b)
+    healedB, auditB = apply_stock_quality(pB, statements=None)
+    assert auditB["nulled"] >= 1, \
+        f"Case B (1100x): should be nulled, got nulled={auditB['nulled']}"
+    fy2015b = healedB[healedB.fy == 2015].iloc[0]
+    assert np.isnan(fy2015b["assets"]), \
+        f"Case B assets should be NaN: {fy2015b['assets']}"
+
+
+# ---------------------------------------------------------------------------
+# 7. Interior and trailing junk NOT nulled
+# ---------------------------------------------------------------------------
+def test_interior_and_trailing_junk_not_nulled():
+    """(a) Interior junk: assets=46000 BETWEEN two large flanks with huge ni.
+    No ×10^k snap fires (none snap within TIGHT_ADJ), so it goes to flank_suspects
+    — but Lane 3 only applies to LEADING segments, so NOT nulled.
+
+    (b) Trailing junk: last fy assets=46000 after large series with huge ni.
+    Lane 3 applies only to leading (si==0, lg is None, rg is not None) — NOT nulled.
+    """
+    # (a) Interior: flanks on both sides
+    assets_a = [5e9, 5.1e9, 46000.0, 5.2e9, 5.3e9]
+    ni_a = [1e9, 1.1e9, 1.5e9, 1.2e9, 1.3e9]
+    rev_a = [3e9, 3.1e9, np.nan, 3.2e9, 3.3e9]
+    pA = _panel("INTA", assets_a, fy0=2012,
+                ni=ni_a, revenue=rev_a)
+    _, auditA = apply_stock_quality(pA, statements=None)
+    a_null = [r for r in auditA["rows"]
+              if r["ticker"] == "INTA" and r["col"] == "assets"
+              and r["flag"] == "junk_null"]
+    assert not a_null, \
+        f"Interior junk must NOT be nulled by Lane 3: {a_null}"
+
+    # (b) Trailing: junk row is the LAST row (si != 0; lg is not None)
+    assets_b = [5e9, 5.1e9, 5.2e9, 5.3e9, 46000.0]
+    ni_b = [1e9, 1.1e9, 1.2e9, 1.3e9, 1.5e9]
+    rev_b = [3e9, 3.1e9, 3.2e9, 3.3e9, np.nan]
+    pB = _panel("TRLB", assets_b, fy0=2012,
+                ni=ni_b, revenue=rev_b)
+    _, auditB = apply_stock_quality(pB, statements=None)
+    b_null = [r for r in auditB["rows"]
+              if r["ticker"] == "TRLB" and r["col"] == "assets"
+              and r["flag"] == "junk_null"]
+    assert not b_null, \
+        f"Trailing junk must NOT be nulled by Lane 3: {b_null}"
+
+
+# ---------------------------------------------------------------------------
+# 8. Idempotency for junk_null: second pass finds nothing new
+# ---------------------------------------------------------------------------
+def test_null_idempotent_second_pass():
+    """Apply MDT-class fixture twice; second pass must find 0 new flags.
+    NaN cells, *_raw values, and stock_flag tokens from the first pass survive."""
+    assets = [46000.0,    1.0271e11,  9.7578e10,  9.58e10,   9.13e10]
+    equity = [-3.6954e7,  5.0816e10,  4.9387e10,  5.0234e10, 5.05e10]
+    ni_vals = [2.675e9,   3.538e9,    4.5e9,      4.6e9,     4.4e9]
+    cfo_vals = [4.902e9,  5.218e9,    5.0e9,      5.1e9,     5.2e9]
+    shares_v = [999e6,    1.42165e9,  1.4e9,      1.35e9,    1.3e9]
+    ap = [np.nan, 46000.0, 1.0271e11, 9.7578e10, 9.58e10]
+    rev = [np.nan] * 5
+
+    p = _panel("MIDEM", assets, fy0=2014,
+               equity=equity, revenue=rev, ni=ni_vals, cfo=cfo_vals,
+               shares=shares_v, assets_prior=ap)
+
+    once,  audit1 = apply_stock_quality(p, statements=None)
+    twice, audit2 = apply_stock_quality(once, statements=None)
+
+    assert audit2["rows_flagged"] == 0, \
+        f"second pass on junk-nulled panel must find nothing new; got {audit2['rows_flagged']}"
+    assert audit2["nulled"] == 0, \
+        f"second pass must find 0 nulled; got {audit2['nulled']}"
+
+    # NaN cells survive
+    art_twice = twice[twice.fy == 2014].iloc[0]
+    assert np.isnan(art_twice["assets"]), "assets NaN must survive second pass"
+    assert np.isnan(art_twice["equity"]), "equity NaN must survive second pass"
+    assert np.isfinite(art_twice["assets_raw"]), "assets_raw must survive second pass"
+    assert np.isfinite(art_twice["equity_raw"]), "equity_raw must survive second pass"
+    assert "junk_null" in str(art_twice["stock_flag"]), \
+        "stock_flag must survive second pass"
+
+    # Frames equal between first and second pass
+    pd.testing.assert_frame_equal(
+        once.reset_index(drop=True),
+        twice.reset_index(drop=True),
+        check_like=True,
+    )

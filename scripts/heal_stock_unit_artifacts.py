@@ -65,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
     # Print summary
     print(f"flagged {audit['rows_flagged']} rows on {audit['tickers_flagged']} tickers: "
           f"{audit['by_flag']} — {audit['repaired']} repaired, "
-          f"{audit['mirrors']} assets_prior mirrors")
+          f"{audit['nulled']} nulled, {audit['mirrors']} assets_prior mirrors")
     print()
 
     # Per-row flag table
@@ -74,8 +74,10 @@ def main(argv: list[str] | None = None) -> int:
               f"{'raw':>18}  {'repair':>18}  note")
         print("-" * 90)
         for r in audit["rows"]:
+            repair_str = (f"{r['repair']:>18.6g}" if r["repair"] is not None
+                          else f"{'NULL':>18}")
             print(f"  {r['ticker']:>6}  {r['fy']:>4}  {r['col']:<14}  "
-                  f"{r['flag']:<14}  {r['raw']:>18.6g}  {r['repair']:>18.6g}  "
+                  f"{r['flag']:<14}  {r['raw']:>18.6g}  {repair_str}  "
                   f"{r['note']}")
     else:
         print("  (no flags)")
