@@ -630,6 +630,79 @@ artifacts:
       Idempotent by as_of (one row per day). Accruing — display-only until >=30 grades
       + operator ruling.
 
+  # M7C-R2/R3: Mag-7 Regime Context Organ snapshot — daily regime state for the
+  # seven mega-cap tech names (AAPL MSFT NVDA AMZN GOOGL META TSLA).
+  # Written by engine/mag7_regime.py; consumed by the render pipeline.
+  mag7-regime-latest:
+    path: data/mag7_regime/latest.json
+    format: json
+    producer: engine/mag7_regime.py
+    known_extra_writers: []
+    owner_program: mag7-regime
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: mag7_regime.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/run.py
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      DISPLAY-ONLY / NOT VALIDATED. Ruling M7C-R2/R3. Trend state, structure,
+      run meter, k7 breadth count, member table, generals, spread20, tech_legs.
+      Ledger at data/mag7_regime/ledger.jsonl (idempotent by date). Site copy at
+      site/stockdata/mag7_regime.json.
+
+  # M7C-R2/R3: Mag-7 Regime CDN-facing site copy.
+  mag7-regime-site:
+    path: site/stockdata/mag7_regime.json
+    format: json
+    producer: engine/mag7_regime.py
+    known_extra_writers: []
+    owner_program: mag7-regime
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: mag7_regime.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CDN-facing copy of data/mag7_regime/latest.json written in the same
+      engine/mag7_regime.snapshot() call.
+
+  # M7C-R2/R3: Mag-7 Regime daily ledger — idempotent by date.
+  mag7-regime-ledger:
+    path: data/mag7_regime/ledger.jsonl
+    format: jsonl
+    producer: engine/mag7_regime.py
+    known_extra_writers: []
+    owner_program: mag7-regime
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      One row per session: {date, trend_state, structure_chip, k7_trend,
+      cw_r10, generals}. Idempotent — re-running the same date does not
+      duplicate. Nightly is the sole advancer.
+
   # W7a PR2: risk_radar_review audit trail — registered here so the read-gate doesn't
   # flag it as an unregistered write path.
   risk-radar-review-log:

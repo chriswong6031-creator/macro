@@ -663,6 +663,17 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("ignition-radar failed: %s", e)
         latest["ignition_radar"] = None
+    # Mag-7 Regime Context Organ (engine/mag7_regime.py, M7C-R2/R3): daily regime
+    # snapshot for the seven mega-cap tech names — trend_state, structure, run meter,
+    # k7 breadth, member table, generals, tech_legs. DISPLAY-ONLY / NOT VALIDATED.
+    # Writes data/mag7_regime/latest.json + site/stockdata/mag7_regime.json.
+    # Appends ledger.jsonl (idempotent). Additive, never fatal.
+    try:
+        from engine import mag7_regime as _m7r
+        latest["mag7_regime"] = _m7r.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("mag7-regime failed: %s", e)
+        latest["mag7_regime"] = None
     # Vol-Shock Risk Predictor (engine/vol_shock_scorecard.py): ONE forward 0-100
     # caution gauge that FUSES the fast/LEADING precursors which flash before a vol
     # shock (cross-asset concentration, dealer short-gamma, VIX term inversion,
