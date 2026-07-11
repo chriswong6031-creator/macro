@@ -113,8 +113,9 @@ spin words on tape rows (giveback / dead-cat / bounce — banned by adversarial 
   truncate), honest shared-scale bars, flow demoted to data-tips, one merged footnote.
 - **`?` help tip on the panel h2** (MTF table): the sanctioned Tier 2 home for mechanics.
 - **Vetoed idioms — do not clone:** the old ftr-tape band (raw slugs, rank numbers,
-  pill spam, "Live" over settled data, fake magnitude bars, stacked disclaimers) — still
-  present on `baskets` / `allocation` / `basket_detail`; port the `.dtp` idiom instead.
+  pill spam, "Live" over settled data, fake magnitude bars, stacked disclaimers) —
+  ported off `baskets` / `allocation` / `basket_detail` in #2232; the `.dtp` idiom is
+  the only sanctioned tape form.
 
 ## 4. The worked example — Turn Watch, before → after
 
@@ -176,16 +177,16 @@ dedicated copy-tier PRs. Top verified offenders:
 | # | Surface | Offense | Where |
 |---|---|---|---|
 | 1 | us_stocks | Turn Watch strip: jargon title + "Expected-null forward meter…Oracle P8…n=26" always-visible footer, no stance | ~~dashboard.html.j2:5414~~ **FIXED in this PR** |
-| 2 | baskets | ftr-tw-card: raw IGNITION/WATCH states, "cross-sec z / sibling rs_z+ / complex_confirm" leg slugs, same Oracle-P8 footer | baskets.html.j2:681–706 |
+| 2 | baskets | ftr-tw-card: raw IGNITION/WATCH states, "cross-sec z / sibling rs_z+ / complex_confirm" leg slugs, same Oracle-P8 footer | ~~baskets.html.j2:681–706~~ **FIXED #2232** |
 | 3 | china | "Context chips / **背景芯片**" — developer label leaked as a section heading; ZH literally means silicon chip. Raw `who_controls` slugs nearby | ~~china.html.j2:964,968~~ **FIXED #2228** |
-| 4 | baskets/allocation/basket_detail | "T+1 violent-flip base rate: 58% fade (n=26) · flip-confirmation lens" footer replicated on 3+ surfaces | baskets.html.j2:453; allocation.html.j2:239; basket_detail.html.j2:198 |
+| 4 | baskets/allocation/basket_detail | "T+1 violent-flip base rate: 58% fade (n=26) · flip-confirmation lens" footer replicated on 3+ surfaces | ~~baskets.html.j2:453; allocation.html.j2:239; basket_detail.html.j2:198~~ **FIXED #2232** (plain footer + ? receipt; incl. shock-banner fade sentence) |
 | 5 | us_stocks/macro | "α-ranked names that have triggered the MACD-2D × StochRSI-3D confluence buy" subtitle; sector-setups h2 repeats it | dashboard.html.j2:6320,6525,6567 |
 | 6 | china_intel | Ranking formula exposed in always-visible prose ("opportunity = signal × edge-remaining × leading-gap"); bare scores with no scale | china_intel.html.j2:412,549 |
 | 7 | news | Calibration board: raw wilson_low_5d/wilson_high_5d thresholds + "earned-authority gate" architecture talk (inside a `<details>` — borderline) | news.html.j2:686 |
 | 8 | china | Ripening Shelf cards: "2W Stoch · MACD D hist (d=−0.8) · 2W MACD ETA" acronym column at rest | ~~china.html.j2:2035–2068~~ **FIXED #2228** (engine-supplied evidence-chip strings still raw — engine-side follow-up) |
 | 9 | basket_detail | ~90-word always-visible disclaimer ("T1–T4 confluence… T3* provisional… cycle blocks"); tier badges show internal stage names | basket_detail.html.j2:582–590,664 |
 | 10 | allocation | "What is actually **validated**" / "The **validated** edge is…" in user copy — house-law word (CI checker `check_validated_claims.py`); verify allowlist status | allocation.html.j2:503,537 |
-| 11 | baskets | Vetoed rank-# tape idiom still shipping (`#1…#34` mr-rank) — standing-ruling violation, port to `.dtp` | baskets.html.j2:572 |
+| 11 | baskets | Vetoed rank-# tape idiom still shipping (`#1…#34` mr-rank) — standing-ruling violation, port to `.dtp` | ~~baskets.html.j2:572~~ **FIXED #2232** (.dtp strip; allocation movers + basket_detail strip too) |
 | 12 | us_stocks | "⚡ Coiled·FIRE" chip — machine-state enum + vol-squeeze jargon at rest | dashboard.html.j2:5879 |
 
 Census-distilled good patterns beyond §3 (canonize): question-as-subheading framing
