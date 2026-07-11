@@ -6,7 +6,8 @@ Deterministic robust-stats scan over confluence_tape.jsonl for engine-pair co-oc
 rates that spike vs a circular-shift null.
 
 Uses median/MAD robust-z (mirroring engine/metabolism/anomaly_monitor.py) and a
-circular-shift null distribution (~100 draws, matching covariance_spine.py idiom).
+circular-shift null distribution (up to 100 distinct non-identity shifts,
+matching covariance_spine.py idiom).
 
 HONEST-NULL CONTRACT
 --------------------
@@ -306,8 +307,12 @@ def run_discovery_scan(
 
         null_rates: list[float] = []
         n_sessions_v = len(sessions)
-        for d in range(1, _NULL_DRAWS + 1):
-            shift = (d * 7) % n_sessions_v
+        # Distinct NON-IDENTITY shifts only: shift=0 reproduces the observed pairing
+        # and must never be a null draw, and repeated shifts add no information.
+        # Deterministic stride subsample when there are more shifts than the budget.
+        stride = max(1, (n_sessions_v - 1) // _NULL_DRAWS)
+        shifts = list(range(1, n_sessions_v, stride))[:_NULL_DRAWS]
+        for shift in shifts:
             # Shift eb's presence relative to ea (destroys pairing, preserves marginals)
             eb_shifted = eb_presence[shift:] + eb_presence[:shift]
             count = sum(
@@ -324,7 +329,7 @@ def run_discovery_scan(
 
         if z is not None and abs(z) >= _Z_CANDIDATE_THRESH:
             state = "candidate"
-            note = f"z={z:.2f} vs {_NULL_DRAWS}-draw circular-shift null"
+            note = f"z={z:.2f} vs {len(null_rates)}-draw circular-shift null"
         elif z is not None:
             state = "below_thresh"
             note = f"z={z:.2f} (|z|<{_Z_CANDIDATE_THRESH})"
