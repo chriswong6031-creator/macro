@@ -547,7 +547,7 @@ def main(argv: list[str] | None = None) -> None:
             "Hard-stop after N minutes (wall-clock from process start). "
             "Saves state after every completed root-day so the next run resumes. "
             "Budget-exceeded exit is clean (exit 0); intended for CI nightly steps. "
-            "For forward mode the default is 25 minutes if not specified."
+            "For forward mode the default is 15 minutes if not specified."
         ),
     )
     args = parser.parse_args(argv)
@@ -575,9 +575,22 @@ def main(argv: list[str] | None = None) -> None:
     # ── forward-mode default budget ───────────────────────────────────────────
     # Without a budget the forward step can run 9-31 min (6 vs 2 workers), leaving
     # insufficient room for episodes(30)+etf-history(20) in the 100-min job ceiling.
-    # Default: 25 min for forward mode (fits ~180 roots at 2-concurrent, all at 6).
-    # Callers may explicitly pass --budget-minutes N to override this default.
-    _forward_default_budget: float | None = 25.0
+    # Default: 15 min for forward mode.
+    #
+    # Runtime math (at 2-concurrent, backfill alive):
+    #   375-root universe serial ≈ 1,851s → at 2-concurrent ≈ 20 min total.
+    #   15 min covers ~2/3 of the universe on night one (~150 roots).
+    #   The round-robin cursor (now load-bearing) ensures the remaining ~1/3
+    #   reaches the head of the queue on night two — full universe ≈ every 2 nights.
+    #
+    # At 6-concurrent (backfill absent): ~7 min → all 375 roots fit in one night.
+    #
+    # Residual job-ceiling tightness: episodes (30 min) and etf-history (20 min)
+    # are pre-existing budgets this PR does not change. Forward(15) + episodes(30) +
+    # etf-history(20) + collectors/finviz(~35) = ~100 min — exactly at the
+    # timeout-minutes:100 ceiling. Any overrun in episodes or etf-history may still
+    # cause the job to be cancelled by CI.
+    _forward_default_budget: float | None = 15.0
     if args.mode == "forward" and args.budget_minutes is None:
         args.budget_minutes = _forward_default_budget
         log.info(
@@ -741,12 +754,30 @@ def main(argv: list[str] | None = None) -> None:
             if budget_deadline is not None and time.perf_counter() >= budget_deadline:
                 log.info(
                     "tape_flow: budget %.1f min exceeded after n_ok=%d — "
-                    "cancelling pending futures, saving state; "
+                    "draining already-done futures, cancelling queued ones, saving state; "
                     "next run resumes from remaining work",
                     args.budget_minutes, n_ok,
                 )
                 budget_exceeded = True
-                # Cancel queued-but-not-started futures (Python 3.9+)
+                # Drain any futures that already finished (their parquet rows were
+                # already written by the worker thread; record them before cancelling
+                # so their _mark_done calls are not lost).
+                for f in list(pending.keys()):
+                    if f.done():
+                        root_d, td_d = pending.pop(f)
+                        try:
+                            res_d = f.result()
+                        except Exception as e_d:  # noqa: BLE001
+                            res_d = {"root": root_d, "date": str(td_d),
+                                     "status": "error", "reason": str(e_d)}
+                        if res_d.get("status") == "ok":
+                            n_ok += 1
+                            last_date = res_d.get("date", last_date)
+                            _mark_done(state, args.mode, root_d, td_d)
+                            _save_state(state)
+                        else:
+                            n_err += 1
+                # Cancel remaining queued-but-not-started futures (Python 3.9+)
                 for f in list(pending.keys()):
                     f.cancel()
                 break
@@ -761,15 +792,18 @@ def main(argv: list[str] | None = None) -> None:
         executor.shutdown(wait=True, cancel_futures=True)
 
     # ── round-robin cursor advance (forward mode) ────────────────────────────
-    # Advance the cursor by the number of items attempted this run, modulo universe
-    # size, so the next run begins where this one stopped.
-    if args.mode == "forward" and not args.roots and n_attempted > 0:
+    # Advance the cursor by the number of PROCESSED (actually completed-and-recorded)
+    # items this run, not by n_attempted/submitted.  Orphaned or cancelled submissions
+    # that were never recorded must not advance the cursor past unrecorded roots —
+    # otherwise those roots would be silently skipped on the next run.
+    n_processed = n_ok + n_err   # roots whose result was received and _mark_done called
+    if args.mode == "forward" and not args.roots and n_processed > 0:
         old_cursor = _load_cursor(state, _cursor_key)
-        new_cursor = (old_cursor + n_attempted) % max(n_total, 1)
+        new_cursor = (old_cursor + n_processed) % max(n_total, 1)
         _save_cursor(state, _cursor_key, new_cursor)
         _save_state(state)
-        log.info("tape_flow: forward cursor advanced %d → %d (universe=%d)",
-                 old_cursor, new_cursor, n_total)
+        log.info("tape_flow: forward cursor advanced %d → %d (universe=%d, processed=%d)",
+                 old_cursor, new_cursor, n_total, n_processed)
 
     elapsed = time.perf_counter() - t_global
     _tick("execution complete")

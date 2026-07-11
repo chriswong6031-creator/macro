@@ -78,7 +78,7 @@ The `daily.yml` forward step invoked:
 ```sh
 python -m scripts.build_tape_flow_daily --mode forward
 ```
-with no `--budget-minutes`. At 2-concurrent (backfill alive), 375 roots at ~5s/root = ~31 min, leaving insufficient headroom for episodes(30) + etf-history(20) within the 100-min job ceiling. Fix: default budget of 25 min (hard-coded in script, overridable via `--budget-minutes N`).
+with no `--budget-minutes`. At 2-concurrent (backfill alive), 375 roots at ~5s/root = ~31 min, leaving insufficient headroom for episodes(30) + etf-history(20) within the 100-min job ceiling. Fix: default budget of 15 min (hard-coded in script, overridable via `--budget-minutes N`).
 
 ### Bug 4: No round-robin resume → trailing roots never accrue
 
@@ -103,13 +103,12 @@ At **2-concurrent** (backfill alive): ~1,851 / 2 × 1.3 overhead = **~20 min**
 
 At **6-concurrent** (backfill absent): ~1,851 / 6 × 1.3 overhead = **~6.7 min**
 
-With the 25-min default budget:
-- At 6-concurrent: all 375 roots complete in ~7 min — full universe per night.
-- At 2-concurrent: ~180 roots/night × 2 nights ≈ full universe every 2 nights via round-robin.
+With the **15-min default budget** (lowered from 25 in W5a review round):
 
-The budget is conservative enough that the forward step never starves episodes(30) + etf-history(20) within the 100-min job ceiling:
-- Forward: 25 min + Episodes: 30 min + ETF-history: 20 min + Collectors + Finviz: ~35 min = ~110 min
-- Actual total stays under 100 min because at 6-concurrent forward completes in ~7 min (not 25), and episodes/etf-history are also faster when backfill is absent.
+- At **6-concurrent**: all 375 roots complete in ~7 min — full universe fits within 15 min per night.
+- At **2-concurrent**: 15 min covers ~2/3 of the universe (~150–180 roots). The round-robin cursor is now **load-bearing** (not just a safety net): it ensures the remaining ~1/3 reaches the head of the queue on night two, so full universe coverage accrues across ~2 nights.
+
+**Residual job-ceiling tightness (explicitly stated):** Episodes (30 min) and ETF-history (20 min) are pre-existing budgets this PR does not change. Forward(15) + Episodes(30) + ETF-history(20) + Collectors/Finviz(~35) = ~100 min, exactly at the `timeout-minutes: 100` ceiling. Any overrun in the episodes or etf-history steps (e.g., large backfill queues) may still cause the CI job to be cancelled. This ceiling tightness is a known residual risk; reducing episodes or etf-history budgets is out of scope for this PR.
 
 ---
 
@@ -118,8 +117,8 @@ The budget is conservative enough that the forward step never starves episodes(3
 | File | Change |
 |---|---|
 | `.github/workflows/daily.yml` | Add "ThetaData Terminal — health-check / start (non-fatal)" step before tape_flow steps; uses `THETA_API_KEY` secret; polls until healthy or 30s timeout; non-fatal if key absent |
-| `scripts/build_tape_flow_daily.py` | (1) Default 25-min budget for forward mode; (2) Batch-submit executor with `cancel_futures=True` on budget-stop; (3) Round-robin cursor (`_load_cursor`, `_save_cursor`, `_rotate_work`); (4) `[timing]` ticks at key phases; (5) Outcome summary log line (attempted/succeeded/skipped/failed/elapsed) |
-| `tests/test_tape_flow.py` | 9 new tests in `TestRoundRobinCursor`: rotate_work semantics, cursor save/load, distribute-coverage property, forward-default-budget applied, cursor-advances-after-run |
+| `scripts/build_tape_flow_daily.py` | (1) Default 15-min budget for forward mode (reduced from 25 in W5a review); (2) Batch-submit executor with `cancel_futures=True` on budget-stop; (3) Drain already-done futures before break at deadline (MINOR-3); (4) Round-robin cursor advances by n_processed=n_ok+n_err, not n_attempted (MINOR-4); (5) `[timing]` ticks at key phases; (6) Outcome summary log line |
+| `tests/test_tape_flow.py` | `test_forward_default_budget_applied` rewritten: captures argparse Namespace, asserts budget_minutes==15.0, removes dead code; new `test_budget_stop_drains_done_futures`; new `test_cursor_advances_by_processed_count_not_attempted` |
 
 ---
 
