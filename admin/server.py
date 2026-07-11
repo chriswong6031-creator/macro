@@ -29,6 +29,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, causal_lab,
                config_store,
                content, context_lobe, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
+               metabolism_panel,
                neural_web,
                services, settings, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
@@ -318,6 +319,8 @@ class Handler(BaseHTTPRequestHandler):
                 # Operator capture feed (RUL-8: authed only, no public write endpoint).
                 limit = int((q.get("limit") or ["60"])[0])
                 return self._json(_alerts_mod.panel(limit=limit))
+            if path == "/api/metabolism":
+                return self._json(metabolism_panel.panel())
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001
@@ -409,6 +412,24 @@ class Handler(BaseHTTPRequestHandler):
                     alert_emit_ts=alert_emit_ts,
                 )
                 return self._json({"ok": True, "row": row})
+
+            if path == "/api/metabolism/toggle":
+                if not b.get("confirm"):
+                    return self._json({"ok": False, "error": "confirm required"}, 400)
+                if not github_api.token():
+                    return self._json({"ok": False,
+                                       "error": "No GitHub token configured. Set GH_TOKEN in "
+                                                "/etc/macro-admin.env (needs Actions read + "
+                                                "Variables read/write) to control the loop "
+                                                "from here."}, 503)
+                arm = bool(b.get("armed"))
+                new_value = "false" if arm else "true"
+                ok = github_api.set_repo_variable("AUTONOMY_PAUSED", new_value)
+                if not ok:
+                    return self._json({"ok": False,
+                                       "error": "Failed to update AUTONOMY_PAUSED — check that "
+                                                "GH_TOKEN has Variables write permission."}, 500)
+                return self._json({"ok": True, "armed": arm, "variable_value": new_value})
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001

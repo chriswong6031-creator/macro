@@ -136,12 +136,13 @@ const ICONS = {
   long_hold:     NAV_ICO('<polyline points="3 18 8 10 13 14 18 6"/><line x1="3" y1="21" x2="21" y2="21"/>'),
   context_lobe:  NAV_ICO('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'),
   causal_lab:    NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/><circle cx="17" cy="7" r="3"/><path d="M15.5 5.5l3 3"/>'),
+  metabolism:    NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="3"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
-  { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"]] },
+  { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
 const TAB_LABELS = Object.fromEntries(NAV_GROUPS.flatMap(g => g.items));
@@ -1905,6 +1906,123 @@ RENDER.causal_lab = async () => {
     <div class="card">${acHtml}</div>
     <div class="section">Latest Audit Annotations <span class="cnt">${anns.length}</span></div>
     <div class="card">${annsHtml}</div>`;
+};
+
+/* ---- METABOLISM --------------------------------------------------------- */
+RENDER.metabolism = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted">Loading metabolism status…</div>`;
+  const d = await api("/api/metabolism");
+
+  // State chip
+  const stateChip = () => {
+    if (d.state === "armed")
+      return `<span class="statpill s-ok" style="font-size:15px;padding:4px 12px">ARMED</span>`;
+    if (d.state === "paused")
+      return `<span class="statpill s-warn" style="font-size:15px;padding:4px 12px">PAUSED</span>`;
+    return `<span class="statpill s-mut" style="font-size:15px;padding:4px 12px">UNKNOWN</span>`;
+  };
+
+  const stateCopy = () => {
+    if (d.state === "paused")
+      return "Paused — every autonomous stage exits without acting. The loop cannot author code, open PRs, or advance ledgers.";
+    if (d.state === "armed")
+      return "Armed — the loop senses, proposes, builds and merges on its own schedule.";
+    return "Cannot read the switch — no GitHub token configured on this server.";
+  };
+
+  // Hero card
+  let heroHtml = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+    ${stateChip()}
+    <div class="sub">${esc(stateCopy())}</div>
+  </div>`;
+
+  // Toggle button
+  let toggleHtml = "";
+  if (!d.has_token) {
+    toggleHtml = `<div class="sub" style="color:var(--warn);margin-top:8px">Set <code>GH_TOKEN</code> in <code>/etc/macro-admin.env</code> (needs Actions read + Variables read/write) to control the loop from here.</div>`;
+  } else {
+    const btnLabel = d.armed ? "Pause the loop" : "Arm the loop";
+    const btnCls = d.armed ? "" : "primary";
+    toggleHtml = `<button id="metToggleBtn" class="btn ${btnCls}" style="margin-top:8px">${esc(btnLabel)}</button>`;
+  }
+
+  // Key pool card
+  const keysHtml = (() => {
+    if (typeof d.keys === "string")
+      return `<div class="sub muted">${esc(d.keys)}</div>`;
+    if (!Array.isArray(d.keys) || !d.keys.length)
+      return `<div class="sub muted">No key data available.</div>`;
+    return `<table><thead><tr><th>Key ID</th><th>Last outcome</th><th>Last seen</th><th>Cooling</th><th class="r">5h load</th></tr></thead><tbody>
+      ${d.keys.map(k => `<tr>
+        <td class="mono">${esc(k.id || "—")}</td>
+        <td>${k.last_outcome ? `<span class="statpill ${k.last_outcome === "ok" ? "s-ok" : "s-bad"}">${esc(k.last_outcome)}</span>` : "<span class='muted sub'>—</span>"}</td>
+        <td class="sub mono">${esc((k.last_ts || "—").slice(0, 16).replace("T", " "))}</td>
+        <td>${k.cooling ? `<span class="statpill s-warn">cooling</span>` : `<span class="statpill s-ok">ok</span>`}</td>
+        <td class="r">${k.window_load != null ? Number(k.window_load).toFixed(2) : "—"}</td>
+      </tr>`).join("")}
+    </tbody></table>`;
+  })();
+
+  // Organism summary card
+  const orgHtml = (() => {
+    if (!d.organism) return `<div class="sub muted">organism_state.json not found — loop has not run yet.</div>`;
+    const rows = Object.entries(d.organism)
+      .map(([k, val]) => `<div class="kv"><span>${esc(k)}</span><b>${esc(String(val == null ? "—" : val))}</b></div>`)
+      .join("");
+    return rows || `<div class="sub muted">Empty.</div>`;
+  })();
+
+  // Runs table
+  const runsHtml = (() => {
+    if (!d.runs || !d.runs.length)
+      return `<div class="sub muted">No metabolism workflow runs found.</div>`;
+    return `<table><thead><tr><th>Workflow</th><th>Status</th><th>Started</th><th></th></tr></thead><tbody>
+      ${d.runs.map(r => `<tr>
+        <td><b>${esc(r.name || r.workflow || "—")}</b></td>
+        <td>${STATUS_PILL(r)}</td>
+        <td class="sub mono">${esc((r.created_at || "").slice(0, 16).replace("T", " "))}</td>
+        <td>${r.html_url ? `<a href="${esc(r.html_url)}" target="_blank" rel="noopener">open ↗</a>` : ""}</td>
+      </tr>`).join("")}
+    </tbody></table>`;
+  })();
+
+  v.innerHTML = `
+    <div class="section">Autonomous Loop Switch</div>
+    <div class="card">
+      ${heroHtml}
+      ${toggleHtml}
+      <div class="kv" style="margin-top:12px"><span>AUTONOMY_PAUSED variable</span><b class="mono">${esc(d.variable_value != null ? String(d.variable_value) : "(not set)")}</b></div>
+      <div class="kv"><span>Freezes (last 7d)</span><b>${d.freezes_7d != null ? d.freezes_7d : "—"}</b></div>
+    </div>
+    <div class="section">Organism State</div>
+    <div class="card">${orgHtml}</div>
+    <div class="section">Key Pool</div>
+    <div class="card">${keysHtml}</div>
+    <div class="section">Recent Metabolism Runs <span class="cnt">${(d.runs || []).length}</span></div>
+    <div class="card">${runsHtml}</div>
+    <div class="section" style="margin-top:20px">Break-glass</div>
+    <div class="card sub muted">Emergency stop: this switch, or <code>gh variable set AUTONOMY_PAUSED --body true</code>, or disable the metabolism workflows in GitHub Actions.</div>`;
+
+  const btn = $("#metToggleBtn");
+  if (btn) {
+    btn.onclick = async () => {
+      const toArm = !d.armed;
+      const msg = toArm
+        ? "Arm the autonomous metabolism loop? It will start acting on its own schedule within the hour."
+        : "Pause the loop? In-flight stages finish, nothing new dispatches.";
+      if (!window.confirm(msg)) return;
+      btn.disabled = true;
+      const r = await post("/api/metabolism/toggle", { armed: toArm, confirm: true });
+      if (r.ok) {
+        toast(toArm ? "Metabolism loop armed." : "Metabolism loop paused.");
+        RENDER.metabolism();
+      } else {
+        alert("Toggle failed: " + (r.error || "unknown error"));
+        btn.disabled = false;
+      }
+    };
+  }
 };
 
 /* ---- boot --------------------------------------------------------------- */

@@ -106,6 +106,64 @@ def list_runs(per_page: int = 15, workflow: str | None = None) -> dict:
         return {"ok": False, "error": str(e), "runs": []}
 
 
+def get_repo_variable(name: str) -> str | None:
+    """Return the value of a GitHub Actions repository variable, or None.
+
+    Returns None when no token is configured, when requests is unavailable,
+    when the owner/repo cannot be detected, or when the variable does not
+    exist (HTTP 404).  Never raises.
+    """
+    if requests is None:
+        return None
+    if not token():
+        return None
+    owner, name_repo = repo()
+    if not (owner and name_repo):
+        return None
+    url = f"{API}/repos/{owner}/{name_repo}/actions/variables/{name}"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=12)
+        if resp.status_code == 404:
+            return None
+        if resp.status_code != 200:
+            return None
+        return resp.json().get("value")
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def set_repo_variable(name: str, value: str) -> bool:
+    """Set (or create) a GitHub Actions repository variable.
+
+    PATCHes the variable if it exists; POSTs to create it on a 404 response.
+    Returns True on success, False on any error.  Never logs the token value.
+    Requires a token with Variables: write permission.
+    """
+    if requests is None:
+        return False
+    if not token():
+        return False
+    owner, name_repo = repo()
+    if not (owner and name_repo):
+        return False
+    base = f"{API}/repos/{owner}/{name_repo}/actions/variables"
+    body = {"name": name, "value": value}
+    try:
+        # Try PATCH first (update existing variable)
+        resp = requests.patch(f"{base}/{name}", headers=_headers(),
+                              json=body, timeout=12)
+        if resp.status_code in (204, 200):
+            return True
+        if resp.status_code == 404:
+            # Variable does not exist yet — create via POST
+            resp2 = requests.post(base, headers=_headers(),
+                                  json=body, timeout=12)
+            return resp2.status_code in (201, 204, 200)
+        return False
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def dispatch(workflow: str = "daily.yml", ref: str = "main",
              inputs: dict | None = None) -> dict:
     """Trigger a workflow_dispatch. Requires a token with Actions: write."""
