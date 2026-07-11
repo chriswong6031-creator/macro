@@ -136,7 +136,7 @@ DISCLAIMER_ZH = (
 
 _COLUMNS = ("event_id", "first_seen_utc", "seendate", "title", "summary", "url", "domain",
             "source", "theme", "source_tier", "baskets", "tickers", "score", "sentiment",
-            "scheduled_ref")
+            "scheduled_ref", "wire_important")
 
 
 # --------------------------------------------------------------------------- #
@@ -450,6 +450,9 @@ def build_records(articles: list[dict], scheduled: dict[str, str],
             "score": importance_score(tier, sref, str(seendate), theme, len(baskets), blob, hrs),
             "sentiment": _item_sentiment(blob),
             "scheduled_ref": sref,
+            # vendor red-flag from the JSON wires (金十 important==1 / 华尔街见闻
+            # score>=2); False for sources without the concept. Display/context only.
+            "wire_important": bool(a.get("wire_important")),
         })
     return out
 
@@ -465,6 +468,11 @@ def accrue(existing, new_records: list[dict]):
                            ignore_index=True)
     merged = merged.drop_duplicates(subset=["event_id"], keep="first")
     merged = merged.sort_values(["first_seen_utc", "event_id"]).reset_index(drop=True)
+    # wire_important arrived with the W-flags migration: pre-migration rows carry
+    # NaN after the reindex — normalize to a clean bool column (unknown = False)
+    # so the parquet dtype stays stable instead of object-with-NaN.
+    if "wire_important" in merged.columns:
+        merged["wire_important"] = merged["wire_important"].fillna(False).astype(bool)
     return merged
 
 
@@ -892,6 +900,9 @@ def feed(today: date | None = None, days: int = 7, top_n: int | None = None) -> 
                 "score": round(sc, 2) if sc >= 0 else None,
                 "importance_en": ib[0], "importance_zh": ib[1],
                 "surprise": bool(r.get("scheduled_ref") and is_surprise(str(r.get("scheduled_ref")), str(r.get("seendate") or ""))),
+                "wire_important": (False if r.get("wire_important") is None
+                                   or (isinstance(r.get("wire_important"), float) and pd.isna(r.get("wire_important")))
+                                   else bool(r.get("wire_important"))),
                 "sentiment": (None if r.get("sentiment") is None or (isinstance(r.get("sentiment"), float) and pd.isna(r.get("sentiment"))) else round(float(r.get("sentiment")), 2)),
                 "dup_count": int(r.get("dup_count") or 1),
                 "scheduled_ref": r.get("scheduled_ref") or "",
