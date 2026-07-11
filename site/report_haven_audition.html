@@ -1,0 +1,917 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Haven Audition — <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  /* ---------- article layout ---------- */
+  .crumb { max-width:1060px; margin:16px auto 0; font-size:12.5px; }
+  .crumb a { color:var(--muted); }
+  .crumb a:hover { color:var(--text); }
+  .art-hero { max-width:1060px; margin:14px auto 0; background:var(--panel); border:1px solid var(--line);
+              border-radius:16px; padding:26px 30px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }
+  .art-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
+              background:linear-gradient(90deg,#5b8def,#c77dff 55%,#e0607a); }
+  .art-kicker { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 10px; font-weight:600; }
+  .art-hero h1 { font-size:30px; line-height:1.18; margin:0 0 12px; letter-spacing:-.01em; }
+  .art-dek { font-size:16px; line-height:1.55; color:var(--text); opacity:.86; margin:0 0 16px; max-width:80ch; }
+  .art-meta { display:flex; flex-wrap:wrap; align-items:center; gap:9px 14px; font-size:12.5px; color:var(--muted); }
+  .art-meta .dot { opacity:.4; }
+  .art-meta .tags { display:inline-flex; flex-wrap:wrap; gap:6px; }
+  html[data-lang="zh"] .art-hero h1 { letter-spacing:0; }
+
+  .layout { max-width:1060px; margin:26px auto 0; display:grid; grid-template-columns:212px minmax(0,1fr); gap:40px; align-items:start; }
+  .toc { position:sticky; top:16px; font-size:12.5px; border-left:1px solid var(--line); padding-left:14px; }
+  .toc .toc-h { font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 8px; }
+  .toc a { display:block; color:var(--muted); padding:4px 0; line-height:1.35; border-left:2px solid transparent; margin-left:-16px; padding-left:14px; transition:color .15s,border-color .15s; }
+  .toc a:hover { color:var(--text); }
+  .toc a.active { color:var(--text); border-left-color:var(--link); font-weight:600; }
+
+  article.body { font-size:15px; line-height:1.72; min-width:0; }
+  article.body h2 { font-size:20px; margin:34px 0 10px; scroll-margin-top:16px; padding-top:4px; display:flex; align-items:baseline; gap:10px; }
+  article.body h2 .num { font-size:13px; color:var(--link); font-weight:700; font-variant-numeric:tabular-nums; }
+  article.body h3 { font-size:15.5px; margin:20px 0 4px; color:var(--text); }
+  article.body p { margin:9px 0; opacity:.93; }
+  article.body ul { margin:9px 0; padding-left:20px; }
+  article.body li { margin:6px 0; opacity:.93; }
+  article.body strong { color:var(--text); font-weight:680; }
+  article.body em { color:var(--text); opacity:.8; font-style:italic; }
+
+  .callout { border-radius:12px; padding:15px 18px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); }
+  .callout .co-h { font-weight:700; display:block; margin-bottom:4px; }
+  .callout.lead   { border-left:4px solid var(--link); }
+  .callout.warn   { border-left:4px solid var(--warn); background:color-mix(in srgb, var(--warn) 8%, var(--panel2)); }
+  .callout.key    { border-left:4px solid #46b87a; background:color-mix(in srgb, #46b87a 8%, var(--panel2)); }
+
+  table.data { border-collapse:collapse; width:100%; font-size:13px; margin:14px 0; }
+  table.data th { text-align:left; padding:8px 10px; background:var(--panel2); color:var(--muted); font-weight:600;
+                  border-bottom:2px solid var(--line); position:sticky; }
+  table.data td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:hover td { background:var(--panel2); }
+  table.data .num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .scn td:first-child { font-weight:600; }
+
+  .sources { font-size:12.5px; color:var(--muted); }
+  .sources a { color:var(--link); word-break:break-word; }
+  .disc { font-size:12px; color:var(--muted); border-top:1px solid var(--line); margin-top:22px; padding-top:12px; }
+
+  .prevnext { max-width:1060px; margin:30px auto 0; display:flex; gap:12px; flex-wrap:wrap; }
+  .prevnext a { flex:1 1 280px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 16px; transition:border-color .15s, transform .15s; }
+  .prevnext a:hover { border-color:var(--link); transform:translateY(-2px); }
+  .prevnext .lbl { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .prevnext .ttl { display:block; margin-top:3px; color:var(--text); font-weight:600; font-size:13.5px; }
+  .backbtn { display:inline-flex; align-items:center; gap:7px; margin:26px auto 0; max-width:1060px; }
+  .backbtn a { font-size:13px; color:var(--link); }
+
+  /* ---------- responsive: shared by EVERY report page (existing + future) ---------- */
+  /* Tablet / narrow: drop the sidebar grid and turn the sticky TOC into an inline
+     wrapping chip-bar above the article, so the contents stay reachable on phones. */
+  @media (max-width:900px){
+    .layout{ grid-template-columns:1fr; gap:10px; }
+    .toc{ position:static; top:auto; border-left:none; padding:11px 13px; margin:14px 0 2px;
+          display:flex; flex-wrap:wrap; gap:6px; border:1px solid var(--line); border-radius:12px; background:var(--panel2); }
+    .toc .toc-h{ flex-basis:100%; margin:0 0 3px; }
+    .toc a{ display:inline-block; margin:0; padding:6px 10px; line-height:1.15; font-size:12px;
+            border:1px solid var(--line); border-radius:999px; color:var(--muted); }
+    .toc a.active{ color:var(--text); border-color:var(--link); font-weight:600; }
+  }
+  /* Phone: tighten the hero, headings, tables, callouts and card gutters. Wide data
+     tables are auto-wrapped in a horizontal-scroll container by theme.js. */
+  @media (max-width:600px){
+    body{ padding-left:13px; padding-right:13px; }
+    .crumb{ margin-top:12px; font-size:12px; }
+    .art-hero{ padding:18px 16px; border-radius:14px; margin-top:12px; }
+    .art-hero h1{ font-size:22px; line-height:1.24; }
+    .art-dek{ font-size:14px; line-height:1.5; }
+    .art-meta{ font-size:11.5px; gap:6px 10px; }
+    .layout{ margin-top:16px; }
+    article.body{ font-size:14.5px; line-height:1.68; }
+    article.body h2{ font-size:17.5px; margin:26px 0 8px; gap:8px; }
+    article.body h2 .num{ font-size:12px; }
+    article.body h3{ font-size:14.5px; margin:16px 0 3px; }
+    .callout{ padding:13px 14px; margin:14px 0; }
+    table.data{ font-size:12px; }
+    table.data th, table.data td{ padding:6px 8px; }
+    .prevnext{ margin-top:22px; gap:10px; }
+    .prevnext a{ flex:1 1 100%; }
+  }
+
+</style>
+
+<style>
+
+  /* ===== The Haven Audition — stat band, ev chips, figures, lamp matrix, verdict cards ===== */
+  .ha-acc { --acc:#5b8def; }
+
+  .statband { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:18px 0 4px; }
+  .stat { background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+          padding:13px 14px; position:relative; overflow:hidden; }
+  .stat::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--sc,var(--link)); }
+  .stat .sv { display:block; font-size:22px; font-weight:750; color:var(--text);
+              font-variant-numeric:tabular-nums; letter-spacing:-.01em; line-height:1.05; }
+  .stat .sv.up { color:#2f9e63; } .stat .sv.dn { color:#d23f3f; }
+  html[data-theme="dark"] .stat .sv.up { color:#3fc07e; }
+  html[data-theme="dark"] .stat .sv.dn { color:#ef6a6a; }
+  .stat .sl { font-size:11px; color:var(--muted); line-height:1.35; margin-top:6px; display:block; }
+  @media (max-width:720px){ .statband { grid-template-columns:repeat(2,1fr); } }
+
+  sup.ev { display:inline-block; font-size:9px; font-weight:800; line-height:1; padding:2px 4px;
+           border-radius:5px; letter-spacing:.02em; margin-left:2px; transform:translateY(-1px); }
+  .ev-f { color:#2f9e63; background:color-mix(in srgb,#46b87a 14%,transparent); }
+  .ev-c { color:#4d7fd6; background:color-mix(in srgb,#5b8def 14%,transparent); }
+  .ev-i { color:#a55fe0; background:color-mix(in srgb,#c77dff 15%,transparent); }
+  .ev-s { color:#c07f22; background:color-mix(in srgb,#e0973a 17%,transparent); }
+  html[data-theme="dark"] .ev-f { color:#3fc07e; }
+  html[data-theme="dark"] .ev-c { color:#7aa7e0; }
+  html[data-theme="dark"] .ev-i { color:#c77dff; }
+  html[data-theme="dark"] .ev-s { color:#e0973a; }
+
+  .fig { margin:22px 0; border:1px solid var(--line); border-radius:16px; background:var(--panel);
+         padding:15px 17px 13px; box-shadow:var(--card-shadow); overflow:hidden; }
+  .fig > svg { display:block; width:100%; height:auto; }
+  .fig-h { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--link);
+           font-weight:700; margin:0 0 11px; display:flex; align-items:center; gap:8px; }
+  .fig-h::before { content:""; width:18px; height:2px; border-radius:2px; flex:0 0 auto;
+                   background:linear-gradient(90deg,#5b8def,#46b87a); }
+  .fig figcaption { margin-top:11px; font-size:11.5px; color:var(--muted); line-height:1.5;
+                    border-top:1px dashed var(--line); padding-top:9px; }
+
+  /* status lamps for the scorecard matrix */
+  .lamp { display:inline-block; width:12px; height:12px; border-radius:50%; vertical-align:-1px;
+          box-shadow:0 0 0 2px color-mix(in srgb,var(--lc) 22%,transparent); background:var(--lc); }
+  .lamp.g { --lc:#2f9e63; } .lamp.a { --lc:#e0973a; } .lamp.r { --lc:#d23f3f; } .lamp.d { --lc:#9aa3b2; opacity:.55; }
+  html[data-theme="dark"] .lamp.g { --lc:#3fc07e; } html[data-theme="dark"] .lamp.r { --lc:#ef6a6a; }
+  table.mtx { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.mtx th, table.mtx td { padding:8px 8px; border-bottom:1px solid var(--line); text-align:center; }
+  table.mtx th { font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  table.mtx td:first-child, table.mtx th:first-child { text-align:left; }
+  table.mtx td.vd { text-align:left; font-size:11.5px; color:var(--muted); line-height:1.4; min-width:130px; }
+  table.mtx tr.hl td { background:color-mix(in srgb,var(--link) 6%,transparent); }
+
+  /* per-name verdict cards */
+  .vcard { border:1px solid var(--line); border-left:3px solid var(--vc,var(--link)); border-radius:12px;
+           background:var(--panel2); padding:13px 15px; margin:12px 0; }
+  .vcard .vh { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; margin-bottom:6px; }
+  .vcard .vt { font-weight:750; font-size:14.5px; color:var(--text); }
+  .vcard .vtag { font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+                 padding:3px 8px; border-radius:6px; color:var(--vc,var(--link));
+                 background:color-mix(in srgb,var(--vc,var(--link)) 12%,transparent); }
+  .vcard p { margin:5px 0; font-size:13px; line-height:1.55; }
+  .vcard .kills { font-size:11.5px; color:var(--muted); border-top:1px dashed var(--line); padding-top:7px; margin-top:8px; }
+
+  .pquote { position:relative; margin:22px 0 8px; padding:24px 28px; border-radius:18px;
+            border:1px solid var(--line); overflow:hidden;
+            background:linear-gradient(135deg, color-mix(in srgb,#5b8def 14%,var(--panel)),
+                                                color-mix(in srgb,#46b87a 11%,var(--panel))); }
+  .pquote::before { content:"\201C"; position:absolute; top:-16px; left:16px; font-size:96px; line-height:1;
+                    color:#5b8def; opacity:.20; font-family:Georgia,"Times New Roman",serif; }
+  .pquote p { position:relative; font-size:16.5px; line-height:1.6; font-weight:550; color:var(--text); margin:0; }
+  .pquote .l-zh { display:block; font-size:13.5px; opacity:.82; margin-top:8px; font-weight:500; }
+
+  @media (prefers-reduced-motion: reduce){ [class*="ha-"]{ animation:none !important; } }
+
+</style>
+
+</head>
+<body>
+
+
+<nav class="site-nav">
+
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+        <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
+        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+<div class="crumb">
+  <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></a> <span class="mut">/</span>
+  <span class="mut">The Haven Audition</span>
+</div>
+
+<header class="art-hero">
+  <p class="art-kicker"><span class="l-en">Research Report · US Equities · Companion to <a href="report_second_act.html">The Second Act</a> &amp; <a href="report_relapse_jul8.html">The Relapse</a></span><span class="l-zh">研究报告 · 美股 · <a href="report_second_act.html">《第二幕》</a>与<a href="report_relapse_jul8.html">《复燃》</a>姊妹篇</span></p>
+  <h1><span class="l-en">The Haven Audition</span><span class="l-zh">避险选角</span></h1>
+  <p class="art-dek"><span class="l-en">Meta wants Google&#39;s October. Before the midterm-window correction it already expects, the market is casting the next institutional safe haven — and the comparison everyone reaches for conflates two different jobs. We measure what Google&#39;s Q4-2025 rerating actually required, test Meta against it line by line, and score the full cast: Meta, Nvidia, Apple, Tesla, and the dark horses. The split verdict: money hides in Apple, then redeploys into Meta at the October window — and Washington, genuinely long the AI trade down to literal equity stakes, is a tailwind, not a selector.</span><span class="l-zh">Meta 想要谷歌的十月。在市场早已预期的中期选举窗口调整之前，一场「下一个机构避风港」的选角正在进行——而人人援引的那个类比，混淆了两份不同的工作。我们用本站数据度量谷歌 2025 年四季度重估真正的前提，逐条检验 Meta，并为全体候选人打分：Meta、Nvidia、Apple、Tesla 与几匹黑马。分裂的判决：资金先藏进 Apple，再于十月窗口重新部署进 Meta——而华盛顿虽真金白银做多 AI 交易（直至字面意义的持股），它是顺风，不是选角人。</span></p>
+  <div class="art-meta">
+    <span>🗓 July 11, 2026</span>
+    <span class="dot">·</span>
+    <span>⏱ 24 <span class="l-en">min read</span><span class="l-zh">分钟阅读</span></span>
+    <span class="dot">·</span>
+    <span class="tags">
+      <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-event"><span class="l-en">Midterms</span><span class="l-zh">中期选举</span></span>
+    </span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" id="toc">
+    <p class="toc-h"><span class="l-en">Contents</span><span class="l-zh">目录</span></p>
+    
+  <a href="#answer"><span class="l-en">1 · The ten-second answer</span><span class="l-zh">1 · 十秒答案</span></a>
+  <a href="#twojobs"><span class="l-en">2 · Two different jobs</span><span class="l-zh">2 · 两份不同的工作</span></a>
+  <a href="#template"><span class="l-en">3 · The Google template, measured</span><span class="l-zh">3 · 谷歌模板的度量</span></a>
+  <a href="#meta"><span class="l-en">4 · Meta&rsquo;s audition</span><span class="l-zh">4 · Meta 的试镜</span></a>
+  <a href="#cast"><span class="l-en">5 · The full cast, scored</span><span class="l-zh">5 · 全体候选人打分</span></a>
+  <a href="#washington"><span class="l-en">6 · The Washington question</span><span class="l-zh">6 · 华盛顿之问</span></a>
+  <a href="#pathway"><span class="l-en">7 · The two-phase answer</span><span class="l-zh">7 · 两阶段答案</span></a>
+  <a href="#kill"><span class="l-en">8 · Falsification dashboard</span><span class="l-zh">8 · 证伪仪表盘</span></a>
+  <a href="#sources"><span class="l-en">Sources &amp; method</span><span class="l-zh">资料来源与方法</span></a>
+
+  </nav>
+  <article class="body">
+    
+
+<div class="callout key">
+  <span class="co-h"><span class="l-en">Bottom line</span><span class="l-zh">核心结论</span></span>
+  <span class="l-en">Meta is the market&rsquo;s freshest rerating story, and the comparison to Google&rsquo;s Q4-2025 run is real — but it conflates two different jobs. The stock that <em>absorbs capital during</em> the coming midterm-window correction and the stock that <em>reprices out of its low</em> are not the same stock. The tape has already cast Apple as this cycle&rsquo;s hiding place; Meta is auditioning for the <em>recovery</em> lead, and its Google-moment is scheduled for the October window — after the capex fear and the dilution event flush out, not before. Nvidia is the coiled rebound, not the shelter. Tesla isn&rsquo;t in this contest. And Washington is genuinely long the AI trade — literally, in equity stakes — but it is not picking the haven: the Fed and the cycle outrank the White House, and everything the administration telegraphs gets front-run.</span><span class="l-zh">Meta 是当下市场最新鲜的重估故事，与谷歌 2025 年四季度那轮行情的类比也确有其事——但它混淆了两份不同的工作。在即将到来的中期选举窗口调整中<em>吸纳资金</em>的股票，与从低点<em>完成重估</em>的股票，不是同一只。盘面已经把 Apple 选为本轮周期的藏身之所；Meta 试镜的是<em>复苏</em>阶段的主角，它的「谷歌时刻」排在十月窗口——在资本开支恐惧与稀释事件冲洗干净之后，而不是之前。Nvidia 是蓄势的反弹弹簧，不是避风港。Tesla 根本不在这场选角里。而华盛顿确实做多 AI 交易——甚至直接持有股权——但它并没有在挑选避险股：美联储与周期的权力高于白宫，且政府预告的一切都会被市场抢跑。</span>
+</div>
+
+<div class="statband">
+  <div class="stat" style="--sc:#46b87a;"><span class="sv up">+27.9%</span><span class="sl"><span class="l-en">GOOGL Oct&ndash;Dec 2025, vs QQQ +1.8% — the template, from our own price store</span><span class="l-zh">GOOGL 2025年10&ndash;12月收益，同期 QQQ +1.8% —— 模板本尊，取自本站价格库</span></span></div>
+  <div class="stat" style="--sc:#d23f3f;"><span class="sv dn">&minus;21.6%</span><span class="sl"><span class="l-en">META during that quarter&rsquo;s QQQ drawdown (Oct 29&ndash;Nov 20) — the worst megacap. The haven candidate was the worst performer last time.</span><span class="l-zh">同季 QQQ 回撤期（10月29日&ndash;11月20日）META 的表现 —— 七巨头中最差。上一次压力测试里，这位「避险候选人」垫底。</span></span></div>
+  <div class="stat" style="--sc:#5b8def;"><span class="sv">77%</span><span class="sl"><span class="l-en">AAPL&rsquo;s beat-rate vs QQQ on down days since Jun 1 — the tape&rsquo;s actual haven vote</span><span class="l-zh">6月1日以来 QQQ 下跌日中 AAPL 跑赢的比例 —— 盘面真实的避险投票</span></span></div>
+  <div class="stat" style="--sc:#e0973a;"><span class="sv dn">$0</span><span class="sl"><span class="l-en">Meta buybacks in Q1 2026 (vs $12.75B a year ago), with a ~$64B equity raise under consideration — the anti-haven mechanic</span><span class="l-zh">2026年一季度 Meta 回购金额（去年同期 127.5 亿美元），且约 640 亿美元股权融资在酝酿中 —— 反避险的资本机制</span></span></div>
+  <div class="stat" style="--sc:#c77dff;"><span class="sv">Oct</span><span class="sl"><span class="l-en">Modal month of midterm-year lows (2022, 2014, 2002, 1998, 1990, 1966) — where Meta&rsquo;s real window sits</span><span class="l-zh">中期选举年低点的众数月份（2022、2014、2002、1998、1990、1966）—— Meta 真正的窗口所在</span></span></div>
+</div>
+
+<h2 id="answer"><span class="num">1</span><span class="l-en">The ten-second answer</span><span class="l-zh">十秒答案</span></h2>
+
+<div class="callout lead"><span class="co-h"><span class="l-en">In plain English</span><span class="l-zh">通俗版</span></span>
+<span class="l-en">You asked: will Meta become the safe place big money hides, the way Google was last autumn — and which of Meta, Nvidia, Apple and Tesla has been picked to weather the next selloff? Short version: money <em>hides</em> in Apple and, to a lesser degree, Google. Money <em>redeploys into</em> Meta, Nvidia and Microsoft at the October low. Meta&rsquo;s big rerating is real but it needs proof it hasn&rsquo;t printed yet — and it is more likely to arrive <em>through</em> the scary dip than instead of it. Nobody in Washington picked any of this; they just built tailwinds and are riding the same trade.</span><span class="l-zh">你问的是：Meta 会不会变成大资金的藏身之所，就像去年秋天的谷歌——以及 Meta、Nvidia、Apple、Tesla 里，哪一只被选中来扛过下一轮抛售？简版答案：资金<em>藏</em>在 Apple、其次是谷歌；到十月低点，资金<em>重新部署</em>进 Meta、Nvidia 和微软。Meta 的大重估是真的，但它需要尚未打印出来的证据——而且它更可能<em>穿过</em>那次吓人的下跌到来，而不是替代它。华盛顿没有钦点任何一只股票；他们只是修好了顺风道，然后和市场坐在同一笔交易里。</span>
+</div>
+
+<table class="data scn">
+  <tr><th><span class="l-en">Candidate</span><span class="l-zh">候选人</span></th><th><span class="l-en">During the correction (now &rarr; Oct)</span><span class="l-zh">调整期内（当下 &rarr; 10月）</span></th><th><span class="l-en">Out of the low (Oct &rarr; 2027)</span><span class="l-zh">低点之后（10月 &rarr; 2027）</span></th></tr>
+  <tr><td><strong>META</strong></td><td><span class="l-en">Two-way volatility, not shelter. The July 29 print is a binary. Do not confuse a rerating candidate with a bunker.</span><span class="l-zh">双向剧烈波动，不是掩体。7月29日财报是二元事件。别把重估候选人当防空洞。</span></td><td><strong><span class="l-en">#1 asymmetry.</span><span class="l-zh">不对称性第一。</span></strong> <span class="l-en">The Google-analog trade, properly timed: buy the capex-fear flush, tranche discipline.</span><span class="l-zh">正确择时的谷歌类比交易：买资本开支恐惧的冲洗，分批纪律。</span></td></tr>
+  <tr><td><strong>AAPL</strong></td><td><strong><span class="l-en">The anointed haven.</span><span class="l-zh">受膏的避风港。</span></strong> <span class="l-en">The tape already voted. But you are paying a ~53% premium to its own decade average for shelter.</span><span class="l-zh">盘面已投票。但为这份庇护，你付的是较其十年均值溢价约 53% 的价格。</span></td><td><span class="l-en">The donor. Haven flows unwind into the recovery; least upside of the five.</span><span class="l-zh">献血者。避险资金在复苏中撤出；五者中上行空间最小。</span></td></tr>
+  <tr><td><strong>NVDA</strong></td><td><span class="l-en">Falls with its complex — less than memory, but it falls. A $118B buyback is a floor, not a shield.</span><span class="l-zh">与所属板块同跌——跌幅小于存储，但仍会跌。1,185 亿美元回购是地板，不是盾牌。</span></td><td><span class="l-en">The quality rebound vehicle: cleared-out positioning, ~20&ndash;24x forward, Rubin cycle. Trade it; the house view stands.</span><span class="l-zh">优质反弹载具：仓位已出清、前瞻约 20&ndash;24 倍、Rubin 周期。做波段；本台原判定不变。</span></td></tr>
+  <tr><td><strong>GOOGL</strong></td><td><span class="l-en">Quality ballast. Proof printed, dilution behind it, $340&ndash;370 is the accumulation zone.</span><span class="l-zh">优质压舱石。证据已打印、稀释已落地，340&ndash;370 美元是积累区。</span></td><td><span class="l-en">Steady compounder to new highs by 2027 — but the explosive rerating already happened.</span><span class="l-zh">2027 年前稳步复利创新高——但爆发式重估已经发生过了。</span></td></tr>
+  <tr><td><strong>TSLA</strong></td><td colspan="2"><span class="l-en">Not in this contest. Institutions are net sellers to retail; ~181x forward. Optimus V3 is a separate, option-sized 2027 physical-AI bet — see The Second Act §8.3.</span><span class="l-zh">不在本场选角中。机构在向散户净卖出；前瞻约 181 倍。Optimus V3 属于另一笔期权级的 2027「物理 AI」押注——见《第二幕》§8.3。</span></td></tr>
+</table>
+
+<p><span class="l-en">Dark horses, for completeness: <strong>MSFT</strong> is the contrarian trough accumulation (worst-performing megacap, cleanest AI-revenue proof); <strong>AMZN</strong> rides at half weight; <strong>AVGO</strong> is the custom-silicon winner wearing semis beta. All three are covered in §5.</span><span class="l-zh">补充几匹黑马：<strong>MSFT</strong> 是逆向的低谷建仓标的（表现最差的巨头、AI 收入证据最干净）；<strong>AMZN</strong> 以半权重随行；<strong>AVGO</strong> 是穿着半导体贝塔外衣的自研芯片赢家。三者详见 §5。</span></p>
+
+<h2 id="twojobs"><span class="num">2</span><span class="l-en">Two different jobs</span><span class="l-zh">两份不同的工作</span></h2>
+
+<div class="callout lead"><span class="co-h"><span class="l-en">In plain English</span><span class="l-zh">通俗版</span></span>
+<span class="l-en">&ldquo;Safe haven&rdquo; gets used for two different things: the stock that <em>doesn&rsquo;t go down</em> when everything else does, and the stock that <em>goes up the most</em> once the selling stops. Google in late 2025 did both at once — which is rare, and it&rsquo;s why everyone remembers it. Testing Meta against that memory requires splitting the jobs first.</span><span class="l-zh">「避险」这个词其实被用来指两件不同的事：一是在别人都跌时<em>不怎么跌</em>的股票，二是抛售一停就<em>涨得最多</em>的股票。2025 年底的谷歌罕见地同时做到了两者——所以所有人都记得它。要用这段记忆检验 Meta，得先把两份工作拆开。</span>
+</div>
+
+<p><span class="l-en">Job one is <strong>shelter</strong>: absorbing capital on the way down. Its mechanics are boring — low beta, low correlation, a buyback bid under the stock, no financing needs, no binary events on the calendar. Job two is <strong>rerating leadership</strong>: being the name underweight managers are forced to chase once fear breaks. Its mechanics are the opposite — a fresh classification change, cleared-out positioning, and a proof event that turns a discount into a premium. A stock can hold both roles only when its proof event lands <em>during</em> everyone else&rsquo;s drawdown. That is precisely what happened to Google, and precisely what is not yet scheduled for Meta.</span><span class="l-zh">第一份工作是<strong>庇护</strong>：在下跌途中吸纳资金。它的机制很无聊——低贝塔、低相关性、股价下方有回购买盘、没有融资需求、日历上没有二元事件。第二份工作是<strong>重估领导权</strong>：当恐惧散去，低配的基金经理被迫追买的那只股票。它的机制恰好相反——全新的类别重划、已被出清的仓位、以及一个把折价变成溢价的证据事件。一只股票只有当它的证据事件恰好落在<em>别人的回撤期间</em>，才能同时担任两个角色。这正是谷歌当时的际遇，也正是 Meta 日历上还没有排上的东西。</span></p>
+
+<p><span class="l-en">Our own engines make the split visible right now. The Mag-7 basket is the <em>only</em> basket on the board positive month-to-date (+3.9%) while Memory &amp; HBM bleeds &minus;12.3%<sup class="ev ev-f">F</sup> — rotation into perceived quality is already running, exactly the 2018/2000 sequence <a href="report_ai_master_plan.html">The AI Master Plan</a> flagged on July 1. Within that rotation, the tape is discriminating: on QQQ-down days since June 1, Apple beat the index 77% of the time with +1.7% mean excess; Meta beat it 54% with +1.1%; Nvidia beat it 31% with &minus;0.4%; Tesla 38% with &minus;0.7%<sup class="ev ev-f">F</sup>. The haven vote is not hypothetical — it is being counted daily, and Apple is winning it.</span><span class="l-zh">本站引擎已经把这条分界线照了出来。月初至今，Mag-7 是全板块<em>唯一</em>收正的篮子（+3.9%），而存储与 HBM 篮子失血 &minus;12.3%<sup class="ev ev-f">F</sup>——向「感知中的优质」轮动已在进行，正是<a href="report_ai_master_plan.html">《AI 总体规划》</a>7月1日标记的 2018/2000 序列。而在这轮轮动内部，盘面在做区分：6月1日以来的 QQQ 下跌日中，Apple 以 +1.7% 的平均超额跑赢指数 77% 的时间；Meta 为 54%、+1.1%；Nvidia 为 31%、&minus;0.4%；Tesla 为 38%、&minus;0.7%<sup class="ev ev-f">F</sup>。避险投票不是假设——它每天都在计票，而 Apple 正在赢。</span></p>
+
+<h2 id="template"><span class="num">3</span><span class="l-en">The Google template, measured</span><span class="l-zh">谷歌模板的度量</span></h2>
+
+<div class="callout lead"><span class="co-h"><span class="l-en">In plain English</span><span class="l-zh">通俗版</span></span>
+<span class="l-en">Before asking whether Meta can repeat Google&rsquo;s move, we measured what the move actually was, from our own price store. Google gained 28% in a quarter where the Nasdaq gained 2%, and it <em>rose</em> 5% while the index fell 8% — the only giant that did. But three things made that possible, and all three were in hand <em>before</em> the quarter started: the court risk was gone, the cloud profits were printed, and Warren Buffett showed up as the seal of approval.</span><span class="l-zh">在问 Meta 能否复刻谷歌之前，我们先用本站价格库把那段行情量了一遍。谷歌在纳指只涨 2% 的那个季度里涨了 28%，并在指数下跌 8% 的窗口内<em>逆势上涨</em> 5%——巨头中独一份。但成就这一切的三件事，在季度开始<em>之前</em>就已经到手：法院风险消失、云业务利润已经打印、巴菲特带着认证印章现身。</span>
+</div>
+
+<figure class="fig" id="fig-template">
+  <div class="fig-h"><span class="l-en">Figure 1 · The template — GOOGL vs QQQ, Q4 2025 (indexed to 100 at Oct 1; schematic path calibrated to store-measured totals)</span><span class="l-zh">图 1 · 模板 —— GOOGL vs QQQ，2025年四季度（10月1日=100；示意路径按本站价格库实测总额校准）</span></div>
+  <svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GOOGL rose 27.9 percent in Q4 2025 while QQQ gained 1.8 percent. During QQQ's minus 7.9 percent drawdown from October 29 to November 20, GOOGL rose 5.4 percent while META fell 21.6 percent.">
+    <style>
+      .f1-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+      .f1-ax{fill:var(--muted);font-size:10.5px;}
+      .f1-lbl{fill:var(--text);font-size:11.5px;font-weight:700;}
+      .f1-sub{fill:var(--muted);font-size:10px;}
+    </style>
+    <!-- drawdown window shading: Oct29-Nov20 ~ x 300..440 -->
+    <rect x="300" y="24" width="140" height="240" fill="#d23f3f" opacity="0.07"/>
+    <line x1="300" y1="24" x2="300" y2="264" stroke="#d23f3f" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"/>
+    <line x1="440" y1="24" x2="440" y2="264" stroke="#d23f3f" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"/>
+    <!-- baseline 100 -->
+    <line x1="56" y1="200" x2="720" y2="200" stroke="var(--line)" stroke-width="1"/>
+    <text class="f1-t f1-ax" x="46" y="204" text-anchor="end">100</text>
+    <!-- axis dates -->
+    <text class="f1-t f1-ax" x="56" y="282">Oct 1</text>
+    <text class="f1-t f1-ax" x="300" y="282" text-anchor="middle">Oct 29</text>
+    <text class="f1-t f1-ax" x="440" y="282" text-anchor="middle">Nov 20</text>
+    <text class="f1-t f1-ax" x="700" y="282" text-anchor="end">Dec 31</text>
+    <!-- QQQ path: 100 -> peak ~104.5 at Oct29 -> 96.3 at Nov20 -> 101.8 -->
+    <path d="M56,200 C130,196 220,192 300,187 C340,196 400,214 440,211 C520,206 640,196 720,195" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+    <!-- GOOGL path: 100 -> ~108 Oct29 -> ~113.8 Nov20 (spikes Nov17) -> 127.9 -->
+    <path d="M56,200 C120,192 220,182 300,176 C340,172 396,168 440,159 C480,146 560,132 620,122 C660,116 700,118 720,116" fill="none" stroke="#46b87a" stroke-width="3" stroke-linecap="round"/>
+    <!-- META path: 100 -> ~99 Oct29 -> ~77.6 Nov20 -> ~92 -->
+    <path d="M56,200 C130,199 230,198 300,203 C340,215 400,252 440,268 C520,250 640,228 720,224" fill="none" stroke="#d23f3f" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    <!-- end labels -->
+    <text class="f1-t f1-lbl" x="756" y="102" text-anchor="end" fill="#46b87a">GOOGL +27.9%</text>
+    <text class="f1-t f1-lbl" x="756" y="186" text-anchor="end" fill="var(--muted)">QQQ +1.8%</text>
+    <text class="f1-t f1-lbl" x="756" y="243" text-anchor="end" fill="#d23f3f">META &minus;7.9%</text>
+    <!-- drawdown callout -->
+    <text class="f1-t f1-lbl" x="370" y="42" text-anchor="middle" fill="#d23f3f">QQQ &minus;7.9%</text>
+    <text class="f1-t f1-sub" x="370" y="56" text-anchor="middle"><tspan class="l-en">the quarter&rsquo;s stress window</tspan><tspan class="l-zh">该季度的压力窗口</tspan></text>
+    <text class="f1-t f1-lbl" x="370" y="150" text-anchor="middle" fill="#46b87a">GOOGL +5.4%</text>
+    <text class="f1-t f1-sub" x="370" y="163" text-anchor="middle"><tspan class="l-en">only megacap positive</tspan><tspan class="l-zh">唯一收正的巨头</tspan></text>
+    <text class="f1-t f1-lbl" x="370" y="252" text-anchor="middle" fill="#d23f3f">META &minus;21.6%</text>
+    <!-- beta note -->
+    <text class="f1-t f1-sub" x="56" y="34"><tspan class="l-en">GOOGL 20d beta to QQQ: 2.58 (Sep 30) &rarr; 1.26 (Dec 31) — the rerating&rsquo;s fingerprint</tspan><tspan class="l-zh">GOOGL 对 QQQ 的20日贝塔：2.58（9月30日）&rarr; 1.26（12月31日）—— 重估的指纹</tspan></text>
+  </svg>
+  <figcaption><span class="l-en">Store-measured totals: GOOGL +27.9% vs QQQ +1.8% over Oct 1&ndash;Dec 31 2025; during QQQ&rsquo;s &minus;7.9% peak-to-trough (Oct 29 &rarr; Nov 20), GOOGL +5.4%, AAPL &minus;1.2%, AMZN &minus;5.7%, AVGO &minus;10.1%, MSFT &minus;11.5%, NVDA &minus;12.8%, META &minus;21.6%. Paths between anchors are schematic. Sources: data/stocks + massive_stock_day parquet stores.</span><span class="l-zh">价格库实测总额：2025年10月1日&ndash;12月31日 GOOGL +27.9%、QQQ +1.8%；QQQ 峰谷回撤 &minus;7.9%（10月29日 &rarr; 11月20日）期间，GOOGL +5.4%、AAPL &minus;1.2%、AMZN &minus;5.7%、AVGO &minus;10.1%、MSFT &minus;11.5%、NVDA &minus;12.8%、META &minus;21.6%。锚点之间的路径为示意。来源：data/stocks 与 massive_stock_day 数据库。</span></figcaption>
+</figure>
+
+<p><span class="l-en">Three details from the measurement matter more than the headline. <strong>First, the haven behavior was inflow-driven, not defensiveness.</strong> On QQQ-down days that quarter, Google beat the index only 55% of the time — <em>less</em> than Microsoft (72%) or Apple (62%)<sup class="ev ev-f">F</sup>. What made Google the haven was that it kept <em>rising through</em> the drawdown: fresh money was arriving daily, so the dips didn&rsquo;t stick. A haven is made by flows, not by beta. <strong>Second, its beta halved</strong> — from 2.58 to 1.26 in one quarter<sup class="ev ev-f">F</sup> — which is what a classification change looks like in the covariance data. <strong>Third, the proof predated the price.</strong> The rerating&rsquo;s catalysts were all disclosure events: the September 2 antitrust ruling that took forced breakup off the table (+9% in a session, ~$234B of market cap<sup class="ev ev-f">F</sup>), the November 14 Berkshire 13F revealing a $4.9B stake<sup class="ev ev-f">F</sup>, Gemini 3 on November 18, and a cloud P&amp;L that was already profitable with a $240B printed backlog<sup class="ev ev-f">F</sup>. The multiple went from ~17x trailing at the March-2025 trough to ~29x by year-end<sup class="ev ev-c">C</sup> because each leg of the story was <em>documented</em> before the market paid for it.</span><span class="l-zh">度量结果中有三个细节比标题数字更重要。<strong>第一，避险行为是资金流入驱动的，不是防御性。</strong>那个季度 QQQ 的下跌日里，谷歌跑赢指数的比例只有 55%——<em>低于</em>微软（72%）和 Apple（62%）<sup class="ev ev-f">F</sup>。让谷歌成为避风港的，是它在回撤中持续<em>逆势上行</em>：新钱每天都在进场，下跌根本站不住。避风港由资金流铸成，而非贝塔。<strong>第二，它的贝塔腰斩</strong>——一个季度内从 2.58 降到 1.26<sup class="ev ev-f">F</sup>——这就是「类别重划」在协方差数据里的模样。<strong>第三，证据先于价格。</strong>那轮重估的催化剂全是披露事件：9月2日反垄断裁决排除强制拆分（单日 +9%、约 2,340 亿美元市值<sup class="ev ev-f">F</sup>）、11月14日伯克希尔 13F 披露 49 亿美元持仓<sup class="ev ev-f">F</sup>、11月18日 Gemini 3 发布，以及一个已经盈利、且在手订单 2,400 亿美元已经打印的云业务<sup class="ev ev-f">F</sup>。估值从 2025 年 3 月低谷的约 17 倍升至年末约 29 倍<sup class="ev ev-c">C</sup>，因为故事的每一条腿都是先有<em>文件</em>，市场才付钱。</span></p>
+
+<div class="callout warn"><span class="co-h"><span class="l-en">A correction to the folk memory</span><span class="l-zh">对民间记忆的一处修正</span></span>
+<span class="l-en">The &ldquo;November 2025 Nasdaq correction&rdquo; that Google supposedly sailed through was shallow: S&amp;P 500 &minus;5.7% from its October high, NDX &minus;1.6% for the month, QQQ &minus;7.9% peak-to-trough<sup class="ev ev-f">F</sup> — a valuation dip, not a &minus;10% technical correction. One of the external AI briefs we audited also mis-centers Google&rsquo;s rerating on its Q1-2026 results; in fact the Q4-2025 earnings (Feb 4, 2026) <em>fell</em> 3% after hours on the capex guide<sup class="ev ev-f">F</sup>. The rerate was a Sep&ndash;Dec 2025 disclosure sequence. Getting this right matters: it means the template requires proof <em>before</em> the drawdown, and it was never stress-tested by a real &minus;15% tape. Whoever plays haven this autumn faces a harder exam than Google ever sat.</span><span class="l-zh">所谓谷歌安然穿越的「2025年11月纳指调整」其实很浅：标普自10月高点 &minus;5.7%、纳指100当月 &minus;1.6%、QQQ 峰谷 &minus;7.9%<sup class="ev ev-f">F</sup>——是一次估值回吐，不是 &minus;10% 的技术性调整。我们审计的外部 AI 简报之一还把谷歌的重估错误地锚定在 2026 年一季报上；事实是 2025 年四季报（2026年2月4日）因资本开支指引盘后<em>下跌</em> 3%<sup class="ev ev-f">F</sup>。那轮重估是 2025 年 9&ndash;12 月的一串披露事件。厘清这一点很重要：它意味着模板要求证据在回撤<em>之前</em>到位，而且它从未经受过真正 &minus;15% 级别行情的压力测试。今秋无论谁来扮演避风港，考卷都比谷歌当年的更难。</span>
+</div>
+
+<h2 id="meta"><span class="num">4</span><span class="l-en">Meta&rsquo;s audition</span><span class="l-zh">Meta 的试镜</span></h2>
+
+<div class="callout lead"><span class="co-h"><span class="l-en">In plain English</span><span class="l-zh">通俗版</span></span>
+<span class="l-en">Meta&rsquo;s July was real: a cloud business in the works, a paid AI model, subscriptions rolling out, the stock&rsquo;s best week in years. The rerating story is the strongest of any megacap. But as a <em>shelter</em> for the next three months it fails the checklist on every line: it burned its buyback, it may sell $64B of new stock, its new business has no revenue yet, and last time the index fell hard it was the worst performer of the group. Own it as the recovery trade, sized for violence — not as the bunker.</span><span class="l-zh">Meta 的七月是真的：算力云业务在筹备、付费 AI 模型上线、订阅在铺开、股价创多年最佳单周。它的重估故事是所有巨头中最强的。但作为未来三个月的<em>掩体</em>，它在检查表的每一行都不及格：回购烧没了、可能增发 640 亿美元新股、新业务还没有收入，而且上一次指数重挫时它是全组表现最差的。把它当作复苏交易来持有、按剧烈波动定仓——不要当防空洞。</span>
+</div>
+
+<p><span class="l-en">First, what genuinely rhymes with the template. Meta enters this audition <strong>underowned</strong>: our ownership desk has it at &ldquo;low&rdquo; crowding, held by 17 of 51 tracked funds after 13 cut it in Q1, with Tepper&rsquo;s Appaloosa among the trimmers<sup class="ev ev-f">F</sup> — the same cleared-out starting point Google had. It enters <strong>discounted</strong>: &minus;23.5% below its August-2025 high of $788 after a &minus;33% derate to the March trough<sup class="ev ev-f">F</sup>, on roughly 17&ndash;19x the consensus 2027 earnings line<sup class="ev ev-s">S</sup> (consensus figures are single-source this week; treat as indicative). And it has the <strong>freshest classification change</strong> in the market: Meta Compute — reported July 1, Bloomberg — would make it the first hyperscaler to flip from compute <em>buyer</em> to compute <em>seller</em><sup class="ev ev-c">C</sup>; Muse Spark 1.1 opened the first paid Meta model API on July 9 at $1.25/$4.25 per million tokens, roughly a quarter of rival list prices<sup class="ev ev-c">C</sup>; subscriptions began rolling out May 27<sup class="ev ev-c">C</sup>. The stock answered: +8.8% on July 1 while its own suppliers fell, its best week in years into July 10<sup class="ev ev-f">F</sup>, and a 20-day beta to QQQ that collapsed from 1.80 in March to ~0.5<sup class="ev ev-f">F</sup>. The narrative inversion — from &ldquo;ad company overspending on AI&rdquo; to &ldquo;AI platform funded by ads&rdquo; — is underway. On this much, the external briefs and our data agree.</span><span class="l-zh">先说与模板真正押韵的部分。Meta 带着<strong>低配仓位</strong>走进试镜：本站持仓台给它的拥挤度评级为「低」，51 家跟踪基金中仅 17 家持有、一季度有 13 家减持，Tepper 的 Appaloosa 也在减持之列<sup class="ev ev-f">F</sup>——与谷歌当年同样「已被出清」的起点。它带着<strong>折价</strong>：较 2025 年 8 月 788 美元的高点仍低 23.5%，此前一路 &minus;33% 跌到 3 月低谷<sup class="ev ev-f">F</sup>，对应 2027 年共识盈利约 17&ndash;19 倍<sup class="ev ev-s">S</sup>（本周共识数字为单一来源，仅作参考）。它还握着全市场<strong>最新鲜的类别重划</strong>：Meta Compute——彭博 7月1日报道——将使它成为第一家从算力<em>买家</em>翻转为算力<em>卖家</em>的超大规模厂商<sup class="ev ev-c">C</sup>；Muse Spark 1.1 于 7月9日开放首个付费 Meta 模型 API，每百万 token 定价 $1.25/$4.25，约为对手报价的四分之一<sup class="ev ev-c">C</sup>；订阅已于 5月27日开始铺开<sup class="ev ev-c">C</sup>。股价给出了回应：7月1日 +8.8% 而其供应商齐跌、7月10日收出多年最佳单周<sup class="ev ev-f">F</sup>、对 QQQ 的20日贝塔从 3 月的 1.80 坍缩到约 0.5<sup class="ev ev-f">F</sup>。从「烧钱做 AI 的广告公司」到「用广告养 AI 的平台」的叙事翻转已经启动。到这里为止，外部简报与我们的数据是一致的。</span></p>
+
+<p><span class="l-en">Now the disqualifiers — not for the trade, but for the <em>haven</em> job. They come in four layers.</span><span class="l-zh">接下来是不合格项——不是否定这笔交易，而是否定<em>避险</em>这份工作。共有四层。</span></p>
+
+<table class="data">
+  <tr><th><span class="l-en">Template requirement</span><span class="l-zh">模板要求</span></th><th><span class="l-en">Google, entering Q4 2025</span><span class="l-zh">谷歌，2025年四季度入场时</span></th><th><span class="l-en">Meta, entering the fall of 2026</span><span class="l-zh">Meta，2026年秋入场时</span></th></tr>
+  <tr><td><strong><span class="l-en">De-risking event</span><span class="l-zh">去风险事件</span></strong></td><td class="r-pos"><span class="l-en">Done — Sep 2 ruling removed breakup risk</span><span class="l-zh">已完成——9月2日裁决排除拆分风险</span></td><td class="r-neg"><span class="l-en">Pending — FTC appeal of the dismissed monopoly case is live</span><span class="l-zh">未完成——FTC 对被驳回垄断案的上诉仍在进行</span><sup class="ev ev-f">F</sup></td></tr>
+  <tr><td><strong><span class="l-en">Printed proof</span><span class="l-zh">已打印的证据</span></strong></td><td class="r-pos"><span class="l-en">Profitable cloud, $240B backlog disclosed</span><span class="l-zh">云业务已盈利，在手订单 2,400 亿美元已披露</span></td><td class="r-neg"><span class="l-en">Meta Compute: no launch date, no pricing, no revenue, no backlog; company declined comment</span><span class="l-zh">Meta Compute：无上线日期、无定价、无收入、无在手订单；公司拒绝置评</span><sup class="ev ev-c">C</sup></td></tr>
+  <tr><td><strong><span class="l-en">Capital mechanics</span><span class="l-zh">资本机制</span></strong></td><td class="r-pos"><span class="l-en">Buybacks running through the window</span><span class="l-zh">窗口期内回购持续进行</span></td><td class="r-neg"><span class="l-en">Buybacks $0 in Q1 (vs $12.75B a year ago); ~$64B equity raise under consideration</span><span class="l-zh">一季度回购为 0（去年同期 127.5 亿美元）；约 640 亿美元股权融资在酝酿</span><sup class="ev ev-c">C</sup></td></tr>
+  <tr><td><strong><span class="l-en">Validation buyer</span><span class="l-zh">认证买家</span></strong></td><td class="r-pos"><span class="l-en">Berkshire 13F, Nov 14</span><span class="l-zh">伯克希尔 13F，11月14日</span></td><td class="r-neg"><span class="l-en">None disclosed; next 13F window is August 14</span><span class="l-zh">尚无披露；下一个 13F 窗口为 8月14日</span><sup class="ev ev-f">F</sup></td></tr>
+  <tr><td><strong><span class="l-en">Stress-test record</span><span class="l-zh">压力测试记录</span></strong></td><td class="r-pos"><span class="l-en">+5.4% through the QQQ drawdown</span><span class="l-zh">QQQ 回撤期间 +5.4%</span></td><td class="r-neg"><span class="l-en">&minus;21.6% through the same drawdown — worst of the group</span><span class="l-zh">同一回撤期间 &minus;21.6%——全组最差</span><sup class="ev ev-f">F</sup></td></tr>
+</table>
+
+<p><span class="l-en"><strong>The reflexivity trap is the deepest layer.</strong> Meta&rsquo;s new story is not a hedge against the AI-capex trade — it <em>is</em> the AI-capex trade, restated as a vendor. Management raised the 2026 capex guide to $125&ndash;145B and named memory prices as the driver<sup class="ev ev-f">F</sup>; the compute it would lease is the same compute whose scarcity pricing the correction would deflate; the neoclouds it would undercut are the canaries of the credit tape. If semis and memory correct because AI-capex credibility cracks — the modal Phase-1 path in <a href="report_ai_master_plan.html">The AI Master Plan</a>, memory &minus;30&ndash;45% from highs — Meta&rsquo;s option on compute resale reprices down <em>with</em> the complex, not against it. <a href="report_second_act.html">The Second Act</a> called Meta &ldquo;the highest-beta platform on this question, in both directions,&rdquo; and July proved the both-directions clause: +8.8% on July 1, &minus;4.9% on July 2<sup class="ev ev-f">F</sup>. That is the signature of a rerating candidate, and the opposite of a shelter&rsquo;s.</span><span class="l-zh"><strong>反身性陷阱是最深的一层。</strong>Meta 的新故事不是对 AI 资本开支交易的对冲——它<em>就是</em>那笔交易本身，只是换成了卖方的说法。管理层把 2026 年资本开支指引上调至 1,250&ndash;1,450 亿美元，点名存储器价格是主因<sup class="ev ev-f">F</sup>；它要出租的算力，正是这轮调整将会压缩其稀缺定价的那批算力；它要降价打击的新兴云，正是信用行情的金丝雀。如果半导体与存储因 AI 资本开支可信度破裂而调整——即<a href="report_ai_master_plan.html">《AI 总体规划》</a>阶段一的众数路径，存储自高点 &minus;30&ndash;45%——Meta 的算力转售期权将与板块<em>同向</em>下修，而非反向。<a href="report_second_act.html">《第二幕》</a>称 Meta 为「在这个问题上双向弹性最高的平台」，而七月验证了「双向」二字：7月1日 +8.8%，7月2日 &minus;4.9%<sup class="ev ev-f">F</sup>。这是重估候选人的签名，恰是掩体的反面。</span></p>
+
+<p><span class="l-en"><strong>July 29 is a binary, not a checkpoint.</strong> Q2 earnings land after the close that day<sup class="ev ev-c">C</sup>. The bull needs: revenue near the top of the $58&ndash;61B guide, the 2026 operating-income commitment defended, capex <em>held</em>, and any concrete Meta Compute or subscription disclosure. The bear needs only one sentence: a third capex raise with no revenue attached — or confirmation of the equity raise into a weak tape. Note also what Zuckerberg told an internal town hall on July 2: AI-agent progress &ldquo;hasn&rsquo;t really accelerated in the way that we expected&rdquo;<sup class="ev ev-c">C</sup> — the model-quality leg of this story is not yet load-bearing. Our read: the probability-weighted outcome of the print is negative for the haven framing and constructive for the entry framing. A post-earnings selldown is tranche one of the house buy-list, already on the books in <a href="report_relapse_jul8.html">The Relapse</a>; the dilution event, if it comes, marks the low&rsquo;s neighborhood, not the thesis&rsquo;s death.</span><span class="l-zh"><strong>7月29日是二元事件，不是例行检查点。</strong>二季报当日盘后发布<sup class="ev ev-c">C</sup>。多头需要：收入贴近 580&ndash;610 亿美元指引上限、守住 2026 年营业利润承诺、资本开支<em>按兵不动</em>、外加任何一条具体的 Meta Compute 或订阅披露。空头只需要一句话：第三次上调资本开支而不附带收入——或在弱势盘面中确认股权融资。还要注意扎克伯格 7月2日在内部全员会上的话：AI 智能体的进展「并没有像我们预期的那样加速」<sup class="ev ev-c">C</sup>——这个故事里「模型质量」这条腿尚未承重。我们的判读：这份财报按概率加权的结果，对「避险」叙事是负面的，对「入场」叙事是建设性的。财报后的下杀正是本台买入清单的第一批——<a href="report_relapse_jul8.html">《复燃》</a>已经记账；而稀释事件若发生，标记的是低点的街区，不是论点的死亡。</span></p>
+
+<figure class="fig" id="fig-ladder">
+  <div class="fig-h"><span class="l-en">Figure 2 · The proof ladder — what Meta must print for the Google analogy to complete</span><span class="l-zh">图 2 · 证据阶梯 —— Meta 必须打印出什么，谷歌类比才算成立</span></div>
+  <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four rungs from July 29 earnings to 2027 estimate revisions, each with what must be disclosed and rough odds.">
+    <style>
+      .f2-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+      .f2-h{fill:var(--text);font-size:12px;font-weight:750;}
+      .f2-b{fill:var(--muted);font-size:10.5px;}
+      .f2-o{fill:#e0973a;font-size:10.5px;font-weight:700;}
+      .f2-rail{stroke:var(--line);stroke-width:2;}
+    </style>
+    <line class="f2-rail" x1="60" y1="252" x2="700" y2="36"/>
+    <!-- rung 1 -->
+    <circle cx="60" cy="252" r="7" fill="#5b8def"/>
+    <text class="f2-t f2-h" x="80" y="238"><tspan class="l-en">Jul 29 · Q2 print</tspan><tspan class="l-zh">7月29日 · 二季报</tspan></text>
+    <text class="f2-t f2-b" x="80" y="253"><tspan class="l-en">capex held + opinc commitment defended + first compute/subscription detail</tspan><tspan class="l-zh">资本开支不再上调 + 守住营业利润承诺 + 首次算力/订阅细节</tspan></text>
+    <text class="f2-t f2-o" x="80" y="268"><tspan class="l-en">clean-pass odds ~30&ndash;35% — a spend-driven selldown is the likelier print, and the entry</tspan><tspan class="l-zh">干净过关概率约 30&ndash;35% —— 更可能是开支驱动的下杀，那正是入场点</tspan></text>
+    <!-- rung 2 -->
+    <circle cx="272" cy="180" r="7" fill="#5b8def"/>
+    <text class="f2-t f2-h" x="292" y="166"><tspan class="l-en">Sep · Connect + Iris production</tspan><tspan class="l-zh">9月 · Connect 大会 + Iris 投产</tspan></text>
+    <text class="f2-t f2-b" x="292" y="181"><tspan class="l-en">Meta Compute formal launch / anchor tenant; Broadcom-built Iris chip enters manufacturing</tspan><tspan class="l-zh">Meta Compute 正式发布／锚定租户；博通代工的 Iris 芯片进入量产</tspan></text>
+    <text class="f2-t f2-o" x="292" y="196"><tspan class="l-en">formal product by year-end ~65%; at Connect ~40%</tspan><tspan class="l-zh">年内正式发布约 65%；落在 Connect 约 40%</tspan></text>
+    <!-- rung 3 -->
+    <circle cx="484" cy="108" r="7" fill="#5b8def"/>
+    <text class="f2-t f2-h" x="504" y="94"><tspan class="l-en">Q3/Q4 · the number</tspan><tspan class="l-zh">三／四季报 · 那个数字</tspan></text>
+    <text class="f2-t f2-b" x="504" y="109"><tspan class="l-en">a contracted backlog, a named lease, or a subscriber count — Google rerated on $240B, not on demos</tspan><tspan class="l-zh">在手合同、具名租约或订户数 —— 谷歌靠 2,400 亿美元订单重估，不靠演示</tspan></text>
+    <text class="f2-t f2-o" x="504" y="124"><tspan class="l-en">the load-bearing rung</tspan><tspan class="l-zh">真正承重的一级</tspan></text>
+    <!-- rung 4 -->
+    <circle cx="700" cy="36" r="7" fill="#46b87a"/>
+    <text class="f2-t f2-h" x="524" y="30"><tspan class="l-en">2027 EPS revisions &rarr; the rerate completes</tspan><tspan class="l-zh">2027 年盈利上修 &rarr; 重估完成</tspan></text>
+    <text class="f2-t f2-b" x="524" y="45"><tspan class="l-en">mid-$30s consensus moves toward $40+; multiple follows</tspan><tspan class="l-zh">共识从 35 美元区间移向 40+；估值倍数随行</tspan></text>
+  </svg>
+  <figcaption><span class="l-en">Odds are desk estimates [S], anchored where possible to reported timelines (Iris September production per Reuters-reviewed memo [C]; Meta Compute in development per Bloomberg [C]). The ladder&rsquo;s law: announcements move the stock for days; disclosed numbers move the multiple for quarters.</span><span class="l-zh">概率为本台估计 [S]，尽可能锚定已报道的时间表（Iris 九月投产：路透社审阅的内部备忘录 [C]；Meta Compute 筹备中：彭博 [C]）。阶梯法则：公告只能推动股价数日；披露的数字才能推动估值倍数数个季度。</span></figcaption>
+</figure>
+
+<div class="callout key"><span class="co-h"><span class="l-en">Verdict on the central question</span><span class="l-zh">对核心问题的判定</span></span>
+<span class="l-en">Will Meta rerate the way Google did? <strong>Probably yes — on Google&rsquo;s actual schedule, not on the folk-memory one.</strong> Google&rsquo;s haven quarter came <em>after</em> its de-risking event, with proof printed and dilution absent. Meta&rsquo;s equivalents — the FTC appeal, the compute launch, the first disclosed number, the equity-raise resolution — mature between September and January. We put ~40&ndash;45% on Meta leading the megacap pack out of the October-window low (the highest of any single name), but only ~15&ndash;20% on it absorbing capital <em>through</em> the correction the way Google did in Q4-2025 [S]. If Meta is making new highs in August while memory bleeds, read it as distribution-financed exit liquidity — the tell from the July 1 session, where Meta added ~$98B of market cap while its suppliers fell 12&ndash;17% — not as the haven confirming.</span><span class="l-zh">Meta 会像谷歌那样重估吗？<strong>大概率会——但按谷歌真实的时间表，而不是民间记忆里的那份。</strong>谷歌的避险季度发生在其去风险事件<em>之后</em>：证据已打印、稀释不存在。Meta 的对应物——FTC 上诉、算力业务发布、第一个披露数字、股权融资的了结——要在 9 月至次年 1 月之间陆续成熟。我们给「Meta 领跑十月窗口低点后的巨头行情」约 40&ndash;45% 的概率（单一标的中最高），但只给「Meta 像谷歌 2025 年四季度那样在调整期间持续吸纳资金」约 15&ndash;20% [S]。如果 8 月存储板块失血时 Meta 却在创新高，请把它读作派发资金的出货流动性——7月1日那一课：Meta 单日增加约 980 亿美元市值、其供应商同日下跌 12&ndash;17%——而不是避风港的确认。</span>
+</div>
+
+<h2 id="cast"><span class="num">5</span><span class="l-en">The full cast, scored</span><span class="l-zh">全体候选人打分</span></h2>
+
+<div class="callout lead"><span class="co-h"><span class="l-en">In plain English</span><span class="l-zh">通俗版</span></span>
+<span class="l-en">Six dimensions, six names. Green means the evidence supports the role; amber means partial; red means it argues against. The pattern to notice: no name is green across the row. The haven (Apple) has no rerating fuel; the rerating candidate (Meta) has no shelter mechanics; the proof-rich names (Google, Microsoft) already spent or haven&rsquo;t yet earned their positioning edge. That is why the answer is a schedule, not a single ticker.</span><span class="l-zh">六个维度、六只股票。绿灯表示证据支持该角色；黄灯为部分支持；红灯为反对。请注意这个图案：没有任何一行全绿。避风港（Apple）没有重估燃料；重估候选人（Meta）没有庇护机制；证据充足的（谷歌、微软）要么已经兑现过、要么还没攒出仓位优势。所以答案是一张时间表，而不是一个代码。</span>
+</div>
+
+<figure class="fig" id="fig-scorecard">
+  <div class="fig-h"><span class="l-en">Figure 3 · The audition scorecard — status lamps, evidence-weighted</span><span class="l-zh">图 3 · 试镜记分卡 —— 证据加权的状态灯</span></div>
+  <table class="mtx">
+    <tr>
+      <th><span class="l-en">Name</span><span class="l-zh">标的</span></th>
+      <th><span class="l-en">Correction resilience</span><span class="l-zh">调整期抗跌</span></th>
+      <th><span class="l-en">Rerating fuel</span><span class="l-zh">重估燃料</span></th>
+      <th><span class="l-en">Printed AI proof</span><span class="l-zh">已打印的 AI 证据</span></th>
+      <th><span class="l-en">Capital return</span><span class="l-zh">资本回报机制</span></th>
+      <th><span class="l-en">Positioning edge</span><span class="l-zh">仓位优势</span></th>
+      <th><span class="l-en">Policy fit</span><span class="l-zh">政策契合</span></th>
+      <th><span class="l-en">Verdict</span><span class="l-zh">判定</span></th>
+    </tr>
+    <tr class="hl"><td><strong>META</strong></td><td><span class="lamp r"></span></td><td><span class="lamp g"></span></td><td><span class="lamp a"></span></td><td><span class="lamp r"></span></td><td><span class="lamp g"></span></td><td><span class="lamp g"></span></td><td class="vd"><span class="l-en">Recovery lead, October window</span><span class="l-zh">复苏主角，十月窗口</span></td></tr>
+    <tr><td><strong>AAPL</strong></td><td><span class="lamp g"></span></td><td><span class="lamp r"></span></td><td><span class="lamp a"></span></td><td><span class="lamp g"></span></td><td><span class="lamp r"></span></td><td><span class="lamp a"></span></td><td class="vd"><span class="l-en">The shelter — already crowned, already priced</span><span class="l-zh">庇护所——已加冕，也已定价</span></td></tr>
+    <tr><td><strong>NVDA</strong></td><td><span class="lamp a"></span></td><td><span class="lamp a"></span></td><td><span class="lamp g"></span></td><td><span class="lamp g"></span></td><td><span class="lamp a"></span></td><td><span class="lamp r"></span></td><td class="vd"><span class="l-en">Coiled rebound vehicle, not shelter</span><span class="l-zh">蓄势反弹载具，非庇护所</span></td></tr>
+    <tr><td><strong>GOOGL</strong></td><td><span class="lamp g"></span></td><td><span class="lamp a"></span></td><td><span class="lamp g"></span></td><td><span class="lamp a"></span></td><td><span class="lamp r"></span></td><td><span class="lamp a"></span></td><td class="vd"><span class="l-en">Quality ballast; second run in 2027</span><span class="l-zh">优质压舱石；2027 年第二程</span></td></tr>
+    <tr><td><strong>MSFT</strong></td><td><span class="lamp a"></span></td><td><span class="lamp g"></span></td><td><span class="lamp g"></span></td><td><span class="lamp a"></span></td><td><span class="lamp g"></span></td><td><span class="lamp a"></span></td><td class="vd"><span class="l-en">Contrarian trough accumulation</span><span class="l-zh">逆向低谷建仓</span></td></tr>
+    <tr><td><strong>TSLA</strong></td><td><span class="lamp r"></span></td><td><span class="lamp a"></span></td><td><span class="lamp r"></span></td><td><span class="lamp r"></span></td><td><span class="lamp r"></span></td><td><span class="lamp a"></span></td><td class="vd"><span class="l-en">Different contest — 2027 physical-AI option</span><span class="l-zh">另一场比赛——2027 物理 AI 期权</span></td></tr>
+  </table>
+  <figcaption><span class="l-en">Dimensions: resilience = down-day stats, beta, correlation, drawdown record; fuel = classification-change potential + valuation gap; proof = disclosed AI revenue/backlog; capital return = buyback/dilution state; positioning = our 13F crowding desk (low crowding scores green); policy fit = §6&rsquo;s structural-tailwind screen. Lamps compress the evidence pack — the per-name cards below carry the numbers.</span><span class="l-zh">维度说明：抗跌 = 下跌日统计、贝塔、相关性、回撤记录；燃料 = 类别重划潜力 + 估值差；证据 = 已披露的 AI 收入／订单；资本回报 = 回购／稀释状态；仓位 = 本站 13F 拥挤度台（低拥挤为绿）；政策契合 = §6 的结构性顺风筛查。状态灯是证据包的压缩——具体数字见下方逐名卡片。</span></figcaption>
+</figure>
+
+<div class="vcard" style="--vc:#46b87a;">
+  <div class="vh"><span class="vt">AAPL</span><span class="vtag"><span class="l-en">The anointed shelter</span><span class="l-zh">受膏的庇护所</span></span></div>
+  <p><span class="l-en">The tape crowned it weeks ago: +4.8% on the July 2 semiconductor rout<sup class="ev ev-f">F</sup>, a 20-day beta near zero, correlation &le;0.19 to every other megacap, and just &minus;0.6% from its all-time high while the group averages &minus;19%<sup class="ev ev-f">F</sup>. The mechanics are the full haven kit: ~$143B of expected FY26 free cash flow, a fresh $100B buyback, and a demonstrated ability to pass memory-inflation through prices — Japan iPhone prices +10%, Macs and iPads raised, Cook calling further increases &ldquo;unavoidable&rdquo;<sup class="ev ev-c">C</sup> — plus the Gemini-Siri deal that quietly deleted the AI-laggard discount<sup class="ev ev-f">F</sup>. Institutions added ~1.3B shares in Q2 filings<sup class="ev ev-f">F</sup>. The catch is the price of admission: ~34x forward, a ~53% premium to its own decade average, and our ownership desk rates its crowding &ldquo;elevated&rdquo; — the most concentrated of the group<sup class="ev ev-f">F</sup>. You are not early to this shelter; you are paying the insurance premium at the top of its range. It protects capital into October and then donates flows to the recovery names.</span><span class="l-zh">盘面数周前就已为它加冕：7月2日半导体大跌当天 +4.8%<sup class="ev ev-f">F</sup>、20日贝塔近零、与其他巨头相关性 &le;0.19、距历史高点仅 &minus;0.6%（同组平均 &minus;19%）<sup class="ev ev-f">F</sup>。机制上是全套避险装备：FY26 预期自由现金流约 1,430 亿美元、新批 1,000 亿美元回购、且已示范把存储涨价转嫁进售价——日本 iPhone 提价 10%、Mac 与 iPad 已涨价、库克称进一步涨价「不可避免」<sup class="ev ev-c">C</sup>——外加 Gemini-Siri 协议悄悄删除了「AI 掉队」折价<sup class="ev ev-f">F</sup>。机构在二季度申报中增持约 13 亿股<sup class="ev ev-f">F</sup>。代价是门票：前瞻约 34 倍、较自身十年均值溢价约 53%，且本站持仓台给它的拥挤度评级为「偏高」——全组最集中<sup class="ev ev-f">F</sup>。你不是这座庇护所的早客；你是在保费区间顶部买保险。它护送资金到十月，然后向复苏标的献血。</span></p>
+  <div class="kills"><span class="l-en">Kill: a US iPhone-18 price hike that visibly dents preorders in September, or a China demand shock — the two ways the pricing-power story breaks.</span><span class="l-zh">证伪：9月 iPhone 18 美国提价明显打击预订量，或中国需求冲击——定价权故事仅有的两种破法。</span></div>
+</div>
+
+<div class="vcard" style="--vc:#5b8def;">
+  <div class="vh"><span class="vt">NVDA</span><span class="vtag"><span class="l-en">The coiled spring</span><span class="l-zh">蓄势的弹簧</span></span></div>
+  <p><span class="l-en">The user&rsquo;s framing — &ldquo;safety net, since it didn&rsquo;t ride the memory bubble&rdquo; — is half right. NVDA sat out the melt-up: roughly +10&ndash;13% YTD against SOXX +90%, dead last in its own index<sup class="ev ev-c">C</sup>, because China went to ~zero, custom silicon took ~28% of hyperscaler AI-chip capex, and 3,872 institutions trimmed against 1,286 adding<sup class="ev ev-c">C</sup>. That cleared-out state, ~20&ndash;24x forward with a PEG near 0.45, a $118B buyback stack, and the Rubin ramp make it the highest-quality <em>rebound</em> vehicle once the complex flushes<sup class="ev ev-c">C</sup>. But a safety net is not a shelter: on down days it still loses to the index (31% beat rate, &minus;0.4% mean excess<sup class="ev ev-f">F</sup>), a $450M insider-sell cluster printed July 9<sup class="ev ev-f">F</sup>, and its vendor-financing web — the CoreWeave backstop, the OpenAI loop — is direct exposure to the very credit tape the house watches for the bottom signal<sup class="ev ev-c">C</sup>. In 2018, the analog year, the king of the prior cycle halved <em>after</em> the memory names topped. Trade it around Rubin datapoints; buy it with conviction at the credit-tape low, not before.</span><span class="l-zh">用户的表述——「安全网，因为它没搭存储泡沫的车」——对了一半。NVDA 确实缺席了这轮融涨：年内约 +10&ndash;13%，对比 SOXX +90%，在自家指数里垫底<sup class="ev ev-c">C</sup>——因为中国业务归零、自研芯片吃掉约 28% 的超大规模 AI 芯片开支、且 13F 中 3,872 家机构减持对 1,286 家增持<sup class="ev ev-c">C</sup>。这种出清状态，加上前瞻约 20&ndash;24 倍、PEG 约 0.45、1,185 亿美元回购弹药与 Rubin 放量周期，使它成为板块冲洗后最优质的<em>反弹</em>载具<sup class="ev ev-c">C</sup>。但安全网不等于庇护所：下跌日它仍跑输指数（跑赢率 31%、平均超额 &minus;0.4%<sup class="ev ev-f">F</sup>），7月9日刚打印 4.5 亿美元的内部人卖出集群<sup class="ev ev-f">F</sup>，而它的供应商融资网——CoreWeave 兜底、OpenAI 回环——正是本台盯底信号的那条信用行情的直接敞口<sup class="ev ev-c">C</sup>。在类比年 2018，上一轮周期之王在存储见顶<em>之后</em>腰斩。围绕 Rubin 数据点做波段；带信念的买点在信用行情的低点，不在之前。</span></p>
+  <div class="kills"><span class="l-en">Kill (house, unchanged): two straight quarters of data-center growth below 25% y/y, or a top-3 customer publicly moving majority orders in-house.</span><span class="l-zh">证伪（本台原判，不变）：数据中心收入同比增速连续两季低于 25%，或前三大客户公开把多数订单转向自研。</span></div>
+</div>
+
+<div class="vcard" style="--vc:#c77dff;">
+  <div class="vh"><span class="vt">GOOGL</span><span class="vtag"><span class="l-en">The incumbent haven, post-coronation</span><span class="l-zh">卸任中的避风港</span></span></div>
+  <p><span class="l-en">Round two is a different trade from round one. The proof is now overwhelming — Cloud +63% to $20B at a 32.9% operating margin, a $467.6B backlog, TPUs going external<sup class="ev ev-f">F</sup> — but the market has paid for it once (+108% over 52 weeks<sup class="ev ev-f">F</sup>) and the June $85B equity raise<sup class="ev ev-c">C</sup> plus the DOJ&rsquo;s cross-appeal seeking divestiture<sup class="ev ev-f">F</sup> put the dilution and legal cards back on the table. Berkshire, notably, took the other side of the raise with a $10B private placement<sup class="ev ev-c">C</sup>. Our 13F desk shows funds cut GOOGL hardest in Q1 (&minus;15 funds) even as Buffett added<sup class="ev ev-f">F</sup> — the crowd left, the anchor stayed. The house calls stand: accumulation zone $340&ndash;370, new highs by Q1&ndash;Q2 2027, and its down-drawdown record (+5.4% through the last one) still makes it the best-behaved ballast after Apple.</span><span class="l-zh">第二程与第一程是不同的交易。证据如今已压倒性——云业务 +63% 至 200 亿美元、营业利润率 32.9%、在手订单 4,676 亿美元、TPU 开始外销<sup class="ev ev-f">F</sup>——但市场已经为此付过一次钱（52 周 +108%<sup class="ev ev-f">F</sup>），而 6 月 850 亿美元股权融资<sup class="ev ev-c">C</sup>加上 DOJ 寻求拆分的交叉上诉<sup class="ev ev-f">F</sup>，把稀释与法律两张牌重新放回桌面。值得注意的是，伯克希尔以 100 亿美元私募配售站在了融资的另一侧<sup class="ev ev-c">C</sup>。本站 13F 台显示一季度基金对 GOOGL 减持最狠（&minus;15 家）而巴菲特在加仓<sup class="ev ev-f">F</sup>——人群离场，锚还在。本台原判不变：340&ndash;370 美元为积累区、2027 年一二季度前创新高；且它上一轮回撤中 +5.4% 的记录，仍使它是 Apple 之后行为最端正的压舱石。</span></p>
+  <div class="kills"><span class="l-en">Kill (house, unchanged): cloud backlog growth below 15% QoQ for two quarters, or visible Gemini consumer-share loss.</span><span class="l-zh">证伪（本台原判，不变）：云订单环比增速连续两季低于 15%，或 Gemini 消费端份额明显流失。</span></div>
+</div>
+
+<div class="vcard" style="--vc:#3fb6c0;">
+  <div class="vh"><span class="vt">MSFT</span><span class="vtag"><span class="l-en">The dark horse the question forgot</span><span class="l-zh">被题目遗忘的黑马</span></span></div>
+  <p><span class="l-en">The user&rsquo;s list skips the name our framework scores second-best for the October deployment. Microsoft is the worst-performing megacap of 2026 (&minus;20% YTD, &minus;29% from its high<sup class="ev ev-f">F</sup>) while carrying the cleanest printed proof in the group: a $37B annualized AI revenue line growing 123%<sup class="ev ev-c">C</sup>. It also beat the index on 62&ndash;72% of down days across our two measurement windows<sup class="ev ev-f">F</sup> — quiet shelter behavior nobody credits. The overhangs are known: a $146B capex year, OpenAI concentration inside the RPO, and no fresh classification story. It lacks Meta&rsquo;s narrative spark, which is exactly why the entry is cheap. Tranche it with the house schedule.</span><span class="l-zh">用户的名单漏掉了我们框架中十月部署期得分第二的名字。微软是 2026 年表现最差的巨头（年内 &minus;20%、距高点 &minus;29%<sup class="ev ev-f">F</sup>），却握着全组最干净的已打印证据：370 亿美元年化 AI 收入、增速 123%<sup class="ev ev-c">C</sup>。在我们两个测量窗口里，它还在 62&ndash;72% 的下跌日跑赢指数<sup class="ev ev-f">F</sup>——无人记账的安静庇护行为。悬顶之患众所周知：1,460 亿美元的资本开支年、RPO 里的 OpenAI 集中度、以及缺一个新鲜的类别故事。它没有 Meta 的叙事火花——而这恰恰是入场便宜的原因。按本台时间表分批。</span></p>
+  <div class="kills"><span class="l-en">Kill (house, unchanged): AI-revenue growth below ~60% y/y while capex still accelerates.</span><span class="l-zh">证伪（本台原判，不变）：AI 收入同比增速跌破约 60% 而资本开支仍在加速。</span></div>
+</div>
+
+<div class="vcard" style="--vc:#e0607a;">
+  <div class="vh"><span class="vt">TSLA</span><span class="vtag"><span class="l-en">Wrong audition</span><span class="l-zh">走错片场</span></span></div>
+  <p><span class="l-en">Every institutional-haven test fails: institutions were net sellers in Q1 while retail bought<sup class="ev ev-c">C</sup>; the stock lost to the index on down days (&minus;0.7% mean excess<sup class="ev ev-f">F</sup>); it trades ~181x forward on a 4.2% operating margin<sup class="ev ev-c">C</sup>; and it fell 7.5% on July 2 <em>despite</em> a +25% delivery beat<sup class="ev ev-f">F</sup>. The 2H robotics catalyst is real but option-shaped: Optimus V3 production starts at Fremont &ldquo;late July or August,&rdquo; volume &ldquo;literally impossible to predict&rdquo; per Musk himself<sup class="ev ev-c">C</sup>, and the SpaceX-merger flirtation is a live governance overhang<sup class="ev ev-c">C</sup>. The house treatment stands: a small option on 2027 physical AI — with the cleaner expression in the robot bill-of-materials suppliers — not a place capital hides.</span><span class="l-zh">机构避险的每一项测试都不及格：一季度机构净卖出、散户净买入<sup class="ev ev-c">C</sup>；下跌日跑输指数（平均超额 &minus;0.7%<sup class="ev ev-f">F</sup>）；前瞻约 181 倍、营业利润率 4.2%<sup class="ev ev-c">C</sup>；7月2日交付量超预期 +25%，股价<em>仍</em>跌 7.5%<sup class="ev ev-f">F</sup>。下半年的机器人催化剂是真的，但形状是期权：Optimus V3 于弗里蒙特「7月底或8月」投产、产量用马斯克自己的话说「实在无法预测」<sup class="ev ev-c">C</sup>，而与 SpaceX 合并的暧昧是活的治理悬顶<sup class="ev ev-c">C</sup>。本台处理不变：一笔面向 2027 物理 AI 的小额期权——更干净的表达在机器人物料清单供应商——而不是资金的藏身处。</span></p>
+  <div class="kills"><span class="l-en">Kill for even the option: V3 slips past Q4 with no working-demo progress, or the SpaceX merger consumes the equity story.</span><span class="l-zh">连期权仓也要撤的条件：V3 拖过四季度且无可用演示进展，或 SpaceX 合并吞噬股票叙事。</span></div>
+</div>
+
+<p><span class="l-en">Briefly, the rest of the field. <strong>AMZN</strong>: AWS reaccelerated to +28%, the fastest in 15 quarters, but $200B of capex crushed trailing FCF toward zero<sup class="ev ev-c">C</sup> — rides at half weight, per the house book. <strong>AVGO</strong>: the custom-silicon winner (AI revenue +143%, the OpenAI &ldquo;Jalape&ntilde;o&rdquo; co-design<sup class="ev ev-c">C</sup>) — but it fell 10% during the last QQQ drawdown and trades with its sector; it is Act-I beta wearing an Act-II story. <strong>ORCL</strong> is disqualified from haven duty outright: &minus;57% from its high with negative FCF and a $130B+ debt stack<sup class="ev ev-c">C</sup> — it is the credit canary the house watches, not a shelter. <strong>PLTR</strong>, &minus;36% from its high at ~200x trailing, is a sentiment gauge for the speculative complex, nothing more here.</span><span class="l-zh">其余名单从简。<strong>AMZN</strong>：AWS 重新加速到 +28%、15 个季度最快，但 2,000 亿美元资本开支把滚动自由现金流压到近零<sup class="ev ev-c">C</sup>——按本台账本以半权重随行。<strong>AVGO</strong>：自研芯片赢家（AI 收入 +143%、与 OpenAI 合作设计「Jalape&ntilde;o」<sup class="ev ev-c">C</sup>）——但上一轮 QQQ 回撤中它跌了 10%，且与板块同步交易；它是披着第二幕故事的第一幕贝塔。<strong>ORCL</strong> 直接丧失避险资格：距高点 &minus;57%、自由现金流为负、债务超 1,300 亿美元<sup class="ev ev-c">C</sup>——它是本台盯着的信用金丝雀，不是庇护所。<strong>PLTR</strong>，距高点 &minus;36%、约 200 倍市盈率，在这里只是投机板块的情绪仪表，仅此而已。</span></p>
+
+<h2 id="washington"><span class="num">6</span><span class="l-en">The Washington question</span><span class="l-zh">华盛顿之问</span></h2>
+
+<div class="callout lead"><span class="co-h"><span class="l-en">In plain English</span><span class="l-zh">通俗版</span></span>
+<span class="l-en">Does the government want this rotation? Yes — and it is more invested in the AI trade than most people realize, literally. Did it pick the winners, or manage money into safe stocks for the election? No — and the evidence actively contradicts it: the same government is suing four of the candidates, and the Fed it just appointed is leaning toward <em>raising</em> rates. The useful version of your intuition is about tailwinds, not puppet strings.</span><span class="l-zh">政府希望这轮轮动发生吗？希望——而且它对 AI 交易的投入比多数人以为的更深，是字面意义上的持仓。它有没有钦点赢家、或为选举把资金导入安全股票？没有——证据甚至正面反驳：同一个政府正在起诉四位候选人，而它刚任命的美联储主席倾向的是<em>加息</em>。你这份直觉的可用版本，关乎顺风，而非提线。</span>
+</div>
+
+<p><span class="l-en"><strong>What the evidence supports.</strong> The alignment of interests is documented and unusually literal. The state now holds ~9.9% of Intel via converted CHIPS grants and ~15% of MP Materials<sup class="ev ev-f">F</sup>; on July 2 a proposal surfaced for a 5% federal stake in OpenAI (~$43B) inside a &ldquo;Public Wealth Fund&rdquo; concept under which the major AI companies — Meta and Google included — would cede stakes to a sovereign-style vehicle<sup class="ev ev-f">F</sup>. The Treasury Secretary publicly cheerleads the &ldquo;$750B AI buildout&rdquo; and projects AI doubling productivity<sup class="ev ev-c">C</sup>; the AI Action Plan&rsquo;s permitting, power and export machinery keeps grinding (EO 14318 datacenter fast-tracking, the FERC tariff action of June 18)<sup class="ev ev-f">F</sup>; and Section 232 chip tariffs carve out US datacenters — a structural subsidy to whoever <em>consumes</em> compute domestically<sup class="ev ev-f">F</sup>. An administration this long the trade — institutionally, rhetorically, and in at least one disclosed case personally<sup class="ev ev-f">F</sup> — has every incentive to want confidence held into November 3. That much is real.</span><span class="l-zh"><strong>证据支持的部分。</strong>利益的对齐有据可查，而且罕见地「字面化」。联邦政府现经由 CHIPS 拨款转股持有英特尔约 9.9%、持有 MP Materials 约 15%<sup class="ev ev-f">F</sup>；7月2日浮出一项提案：联邦持有 OpenAI 5% 股份（约 430 亿美元），置于一个「公共财富基金」概念之下——主要 AI 公司（包括 Meta 与谷歌）都将向这一主权式载体让渡股份<sup class="ev ev-f">F</sup>。财政部长公开为「7,500 亿美元 AI 建设」摇旗，并预言 AI 将使生产率翻倍<sup class="ev ev-c">C</sup>；《AI 行动计划》的许可、电力与出口机器持续运转（EO 14318 数据中心快速通道、6月18日 FERC 电价行动）<sup class="ev ev-f">F</sup>；232 条款芯片关税给美国数据中心开了豁免——对在境内<em>消耗</em>算力者的结构性补贴<sup class="ev ev-f">F</sup>。一个在制度上、言辞上、且至少在一例披露中以个人身份<sup class="ev ev-f">F</sup>如此深度做多这笔交易的政府，当然有动机希望信心撑到 11月3日。这部分是真的。</span></p>
+
+<p><span class="l-en"><strong>Where the evidence ends.</strong> There is no documented act of stock selection, no rotation management, and no official statement linking the AI trade to the midterms — our policy sweep looked and logged the nulls explicitly. The contradictions are sharper than the folklore: the DOJ cross-appealed in February <em>seeking Chrome divestiture</em> from the market&rsquo;s favorite haven; the FTC&rsquo;s Meta appeal is live; the Apple case is headed to trial; Nvidia&rsquo;s Groq licensing deal is under inquiry<sup class="ev ev-f">F</sup>. A government cannot coherently &ldquo;pick&rdquo; a haven it is simultaneously trying to break up. Meanwhile the Fed it just installed — Warsh, confirmed 54&ndash;45 in May — is holding at 3.5&ndash;3.75% with CPI at 4.2% and three FOMC members hinting the next move is a <em>hike</em><sup class="ev ev-f">F</sup>. And inside Treasury itself, a career-analyst draft comparing the AI complex to the dotcom bubble was publicly dismissed as &ldquo;unvetted&rdquo; the same week<sup class="ev ev-f">F</sup> — the state is not even united on whether to believe its own trade.</span><span class="l-zh"><strong>证据止步之处。</strong>没有任何有据可查的选股行为、没有轮动管理、也没有把 AI 交易与中期选举挂钩的官方表态——我们的政策扫描找过，并把这些「无发现」明确记录在案。矛盾比传言更锋利：司法部 2 月交叉上诉，<em>要求从市场最爱的避风港手中剥离 Chrome</em>；FTC 对 Meta 的上诉在进行中；苹果案正走向庭审；Nvidia 的 Groq 授权交易正被调查<sup class="ev ev-f">F</sup>。一个政府不可能一边试图拆分某座避风港、一边「钦点」它。与此同时，它刚安插的美联储——沃什，5 月以 54 比 45 险过——在 CPI 4.2% 的背景下把利率钉在 3.5&ndash;3.75%，且三位 FOMC 委员暗示下一步是<em>加息</em><sup class="ev ev-f">F</sup>。而财政部内部，一份把 AI 板块类比互联网泡沫的职业分析师草稿，同一周被公开斥为「未经审核」<sup class="ev ev-f">F</sup>——这个国家机器甚至对要不要相信自己的交易都未达成一致。</span></p>
+
+<p><span class="l-en"><strong>The house law applies, and it cuts against the comfortable version.</strong> <a href="report_ai_master_plan.html">The AI Master Plan</a> already adjudicated this: every administration wants markets up into midterms, yet midterm-year lows cluster in September&ndash;December anyway, because <em>the Fed plus the cycle outrank political will</em> — 2018 being the controlling analog: a new hawkish Fed chair, a memory-supercycle peak, a president publicly demanding higher prices, and a &minus;20% Q4 regardless. Worse for the naive version: a <em>legible</em> support schedule gets front-run. If everyone knows Washington needs the tape green until November 3, the rational move is to distribute <em>before</em> November — which is precisely what the June&ndash;July tape looks like. The administration&rsquo;s calendar marks the exit-liquidity windows, not the floor. The floor arrives where it always does: at the Fed&rsquo;s capitulation (the October 27&ndash;28 FOMC is the earliest plausible venue, six days before the election) or at the credit event that forces it — and if that event comes, the state&rsquo;s documented playbook is not to save shareholders but to <em>buy strategic assets at marked-down prices</em> through the sovereign-fund machinery it is assembling in plain sight.</span><span class="l-zh"><strong>本台之法在此适用，而且切向不舒服的那一边。</strong><a href="report_ai_master_plan.html">《AI 总体规划》</a>早已裁定：每届政府都想让市场撑到中期选举，但中期选举年的低点照样扎堆在 9&ndash;12 月，因为<em>美联储加周期的权力高于政治意志</em>——2018 年是决定性类比：新任鹰派联储主席、存储超级周期顶部、一位公开喊话要股价的总统，四季度照样 &minus;20%。对天真版本更不利的是：一份<em>清晰可读</em>的支撑时间表会被抢跑。如果所有人都知道华盛顿需要盘面绿到 11月3日，理性选择就是在 11 月<em>之前</em>派发——这正是 6&ndash;7 月盘面的模样。政府的日历标记的是出货流动性窗口，不是地板。地板出现在它一贯出现的地方：美联储投降之时（10月27&ndash;28日 FOMC 是最早的可信场合，距选举六天），或逼出投降的信用事件——而若该事件到来，国家机器有据可查的剧本不是拯救股东，而是通过它正在光天化日之下组装的主权基金机制，<em>以折价收购战略资产</em>。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">The tradeable residue</span><span class="l-zh">可交易的残余</span></span>
+<span class="l-en">Strip the folklore and three usable signals remain. (1) <strong>A structural filter:</strong> policy tailwinds accrue to domestic compute <em>consumers</em> with custom silicon (GOOGL, META, the hyperscalers) over merchant exporters caught in export politics (NVDA&rsquo;s China zero)<sup class="ev ev-i">I</sup>. (2) <strong>A calendar inversion:</strong> treat pre-midterm policy headlines — tariff relief, wealth-fund announcements, China deals — as squeeze risk and distribution windows inside a downtrend, per the 2018 trade-truce pattern<sup class="ev ev-i">I</sup>. (3) <strong>A tell on the real put:</strong> the administration&rsquo;s bid shows up in the credit tape (backstops, stakes, emergency procurement), not the equity tape — so watch Oracle CDS, neocloud refinancings and datacenter-ABS spreads for the moment the state actually enters. Your instinct that capital is being kept inside the US AI complex is right as a <em>gravity</em>; it is wrong as a <em>guarantee</em>.</span><span class="l-zh">滤掉传言，剩下三条可用信号。（1）<strong>结构性筛子：</strong>政策顺风流向拥有自研芯片的境内算力<em>消耗方</em>（GOOGL、META、超大规模厂商），而非被出口政治夹住的商用芯片出口方（NVDA 的中国归零）<sup class="ev ev-i">I</sup>。（2）<strong>日历反转：</strong>把中期选举前的政策头条——关税放松、财富基金公告、对华协议——当作下跌趋势内的逼空风险与派发窗口来处理，即 2018 年贸易休战头条的模式<sup class="ev ev-i">I</sup>。（3）<strong>真实 put 的信号：</strong>政府的买盘会出现在信用行情里（兜底、入股、紧急采购），而不是股票行情里——盯住 Oracle CDS、新兴云再融资与数据中心 ABS 利差，那是国家真正进场的时刻。你那句「资本被留在美国 AI 体系内」的直觉，作为<em>引力</em>是对的；作为<em>保证</em>是错的。</span>
+</div>
+
+<h2 id="pathway"><span class="num">7</span><span class="l-en">The two-phase answer</span><span class="l-zh">两阶段答案</span></h2>
+
+<div class="callout lead"><span class="co-h"><span class="l-en">In plain English</span><span class="l-zh">通俗版</span></span>
+<span class="l-en">Put it all on one calendar. From now into October: expect chop and a scary leg down — midterm years average a 17&ndash;20% peak-to-trough dip, and this one has an AI-capex fear attached. Hide in Apple and Google, keep cash, and buy the first slice of Meta/Microsoft/Google only on the earnings selldowns. At the October window — the best average entry of the whole four-year cycle — deploy: Meta first, Nvidia and Microsoft with it. After the midterms, history is lopsided: twelve months later the market has essentially never been lower.</span><span class="l-zh">把一切放到同一张日历上。从现在到十月：预期震荡加一段吓人的下跌——中期选举年峰谷回撤平均 17&ndash;20%，而这一次还叠加 AI 资本开支恐惧。藏在 Apple 与谷歌里、留足现金，只在财报下杀时买入 Meta／微软／谷歌的第一批。到十月窗口——整个四年周期平均而言最好的入场点——开始部署：Meta 打头，Nvidia 与微软随行。中期选举之后，历史一边倒：十二个月后市场几乎从未更低。</span>
+</div>
+
+<figure class="fig" id="fig-relay">
+  <div class="fig-h"><span class="l-en">Figure 4 · The two-phase relay — where money hides, then where it goes (base case, house map)</span><span class="l-zh">图 4 · 两阶段接力 —— 资金先藏在哪，再去哪（基准情形，本台地图）</span></div>
+  <svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Timeline July to December 2026: Phase 1 shelter in AAPL and GOOGL with tranche-one slices at late-July earnings; October window is the deployment point into META, NVDA, MSFT; midterms November 3; post-pivot rally into 2027.">
+    <style>
+      .f4-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+      .f4-h{fill:var(--text);font-size:12px;font-weight:750;}
+      .f4-b{fill:var(--muted);font-size:10.5px;}
+      .f4-mk{fill:var(--link);font-size:10.5px;font-weight:700;}
+      .f4-ph{fill:var(--muted);font-size:10px;letter-spacing:.12em;font-weight:700;}
+    </style>
+    <!-- spine -->
+    <line x1="40" y1="170" x2="720" y2="170" stroke="var(--line)" stroke-width="2"/>
+    <!-- phase bands -->
+    <rect x="40" y="150" width="360" height="40" rx="8" fill="#e0973a" opacity="0.10"/>
+    <rect x="400" y="150" width="180" height="40" rx="8" fill="#46b87a" opacity="0.14"/>
+    <rect x="580" y="150" width="140" height="40" rx="8" fill="#5b8def" opacity="0.12"/>
+    <text class="f4-t f4-ph" x="60" y="143">PHASE 1 · <tspan class="l-en">SHELTER &amp; SLICES</tspan><tspan class="l-zh">庇护与切片</tspan></text>
+    <text class="f4-t f4-ph" x="408" y="143">PHASE 2 · <tspan class="l-en">DEPLOY</tspan><tspan class="l-zh">部署</tspan></text>
+    <text class="f4-t f4-ph" x="588" y="143"><tspan class="l-en">POST-MIDTERM</tspan><tspan class="l-zh">选举之后</tspan></text>
+    <!-- markers on spine -->
+    <g>
+      <circle cx="80" cy="170" r="6" fill="#e0973a"/>
+      <text class="f4-t f4-mk" x="80" y="212" text-anchor="middle">Jul 28&ndash;29</text>
+      <text class="f4-t f4-b" x="80" y="226" text-anchor="middle"><tspan class="l-en">FOMC + META Q2</tspan><tspan class="l-zh">FOMC + META 二季报</tspan></text>
+      <text class="f4-t f4-b" x="80" y="240" text-anchor="middle"><tspan class="l-en">tranche-1 selldowns</tspan><tspan class="l-zh">第一批下杀买点</tspan></text>
+    </g>
+    <g>
+      <circle cx="185" cy="170" r="6" fill="#e0973a"/>
+      <text class="f4-t f4-mk" x="185" y="102" text-anchor="middle">Aug</text>
+      <text class="f4-t f4-b" x="185" y="116" text-anchor="middle"><tspan class="l-en">CPI (energy drag) · Jackson Hole</tspan><tspan class="l-zh">CPI（能源拖累）· 杰克逊霍尔</tspan></text>
+      <text class="f4-t f4-b" x="185" y="130" text-anchor="middle"><tspan class="l-en">NVDA earnings late Aug</tspan><tspan class="l-zh">NVDA 财报（8月下旬）</tspan></text>
+    </g>
+    <g>
+      <circle cx="300" cy="170" r="6" fill="#e0973a"/>
+      <text class="f4-t f4-mk" x="300" y="212" text-anchor="middle">Sep</text>
+      <text class="f4-t f4-b" x="300" y="226" text-anchor="middle"><tspan class="l-en">OpenAI IPO window · Meta Connect + Iris</tspan><tspan class="l-zh">OpenAI IPO 窗口 · Meta Connect + Iris</tspan></text>
+      <text class="f4-t f4-b" x="300" y="240" text-anchor="middle"><tspan class="l-en">seasonal air pocket — keep October cash dry</tspan><tspan class="l-zh">季节性气穴 —— 十月弹药勿动</tspan></text>
+    </g>
+    <g>
+      <circle cx="470" cy="170" r="8" fill="#46b87a"/>
+      <circle cx="470" cy="170" r="14" fill="none" stroke="#46b87a" opacity="0.4"/>
+      <text class="f4-t f4-mk" x="470" y="100" text-anchor="middle" fill="#2f9e63">Oct 27&ndash;28 FOMC</text>
+      <text class="f4-t f4-b" x="470" y="114" text-anchor="middle"><tspan class="l-en">the confluence window — tranche 2:</tspan><tspan class="l-zh">共振窗口 —— 第二批：</tspan></text>
+      <text class="f4-t f4-h" x="470" y="130" text-anchor="middle">META &middot; NVDA &middot; MSFT</text>
+      <text class="f4-t f4-b" x="470" y="212" text-anchor="middle"><tspan class="l-en">midterm-year lows: October modal</tspan><tspan class="l-zh">中期选举年低点：十月为众数</tspan></text>
+      <text class="f4-t f4-b" x="470" y="226" text-anchor="middle"><tspan class="l-en">gate on the credit tape, not the equity tape</tspan><tspan class="l-zh">以信用行情为闸门，而非股票行情</tspan></text>
+    </g>
+    <g>
+      <circle cx="590" cy="170" r="6" fill="#5b8def"/>
+      <text class="f4-t f4-mk" x="590" y="102" text-anchor="middle">Nov 3</text>
+      <text class="f4-t f4-b" x="590" y="116" text-anchor="middle"><tspan class="l-en">midterms</tspan><tspan class="l-zh">中期选举</tspan></text>
+    </g>
+    <g>
+      <circle cx="690" cy="170" r="6" fill="#5b8def"/>
+      <text class="f4-t f4-mk" x="690" y="212" text-anchor="middle">2027</text>
+      <text class="f4-t f4-b" x="690" y="226" text-anchor="middle"><tspan class="l-en">post-pivot rally; zero negative</tspan><tspan class="l-zh">转向后反弹；1962 年以来</tspan></text>
+      <text class="f4-t f4-b" x="690" y="240" text-anchor="middle"><tspan class="l-en">12m post-midterm since 1962</tspan><tspan class="l-zh">选举后 12 个月无一为负</tspan></text>
+    </g>
+    <!-- shelter/deploy annotations -->
+    <text class="f4-t f4-h" x="60" y="286"><tspan class="l-en">Phase-1 shelter: AAPL (the sponge) + GOOGL ($340&ndash;370) + cash &middot; memory bounces are for selling</tspan><tspan class="l-zh">阶段一庇护：AAPL（海绵）+ GOOGL（340&ndash;370）+ 现金 · 存储反弹用来卖</tspan></text>
+    <text class="f4-t f4-b" x="60" y="303"><tspan class="l-en">Phase-2 deploy: META leads (~40&ndash;45% odds of leading the pack out), NVDA the rebound, MSFT the value; AAPL becomes the funding source</tspan><tspan class="l-zh">阶段二部署：META 领跑（领涨概率约 40&ndash;45%）、NVDA 反弹、MSFT 价值；AAPL 转为资金来源</tspan></text>
+    <text class="f4-t f4-b" x="60" y="320"><tspan class="l-en">Abort switch: a credit event (Oracle CDS, neocloud refi, ABS spreads) &rarr; everything executes 15&ndash;20% lower and slower — Scenario B of The Second Act</tspan><tspan class="l-zh">中止开关：信用事件（Oracle CDS、新兴云再融资、ABS 利差）&rarr; 一切在低 15&ndash;20% 处、以更慢节奏执行 ——《第二幕》情景 B</tspan></text>
+  </svg>
+  <figcaption><span class="l-en">Calendar anchors are scheduled facts (FOMC dates, earnings dates, Nov 3); the path between them is the house base case (45%), inherited from The Second Act and re-marked in The Relapse. Midterm drawdown statistics: average intra-year peak-to-trough of ~17.5&ndash;20.6% depending on sample (1926/1934/1950 starts) [C]; October modal for lows; no negative 12-month window after a midterm low since 1962 [C].</span><span class="l-zh">日历锚点为已排定事实（FOMC 日期、财报日、11月3日）；其间路径为本台基准情形（45%），承继《第二幕》并经《复燃》重估。中期选举年回撤统计：年内峰谷平均约 17.5&ndash;20.6%（视样本起点 1926/1934/1950 而异）[C]；低点以十月为众数；1962 年以来选举低点后的 12 个月无一为负 [C]。</span></figcaption>
+</figure>
+
+<p><span class="l-en">Three operational notes bind the calendar to the book. <strong>One:</strong> the correction is not yet confirmed — our risk radar still reads RISK_ON at 79/100 as of July 10, trend and volatility gates green<sup class="ev ev-f">F</sup>, and the index sits within a few percent of its high. The two-phase plan does not require calling the top; it requires refusing to spend October&rsquo;s cash in July. <strong>Two:</strong> the memory complex has already broken first, on schedule — all four names peaked June 18&ndash;25 and sit 12&ndash;28% below those peaks<sup class="ev ev-f">F</sup> with the Samsung/SK Hynix session of July 7 as the KOSPI tell<sup class="ev ev-c">C</sup> — and the house discipline stands: <em>bounces there are for selling, and the trade re-enters on the credit tape at the Phase-2 low, not on DRAM prints.</em> <strong>Three:</strong> the freshest sentiment reads are already half-way to the fear the window needs — AAII bears at ~42%, FMS cash still thin at 4.1%, &ldquo;long semis&rdquo; the most crowded trade at 80% consensus<sup class="ev ev-c">C</sup>. The crowd knows which trade is crowded; it has not yet been made to pay for it. That payment is the October entry.</span><span class="l-zh">三条操作注记把日历和账本钉在一起。<strong>其一：</strong>调整尚未确认——本站风险雷达截至 7月10日 仍为 RISK_ON、79/100，趋势与波动率闸门皆绿<sup class="ev ev-f">F</sup>，指数距高点仅数个百分点。两阶段计划不要求你猜顶；它只要求你拒绝在七月花掉十月的现金。<strong>其二：</strong>存储板块已按剧本率先破位——四只标的全部在 6月18&ndash;25日 之间见顶、现距峰值 12&ndash;28%<sup class="ev ev-f">F</sup>，7月7日三星／SK 海力士的 KOSPI 熔断日即为信号<sup class="ev ev-c">C</sup>——本台纪律不变：<em>那里的反弹用来卖；再入场看第二阶段低点的信用行情，不看 DRAM 报价。</em><strong>其三：</strong>最新情绪读数已经走到窗口所需恐惧的半路——AAII 空头约 42%、FMS 现金仓位仍低至 4.1%、「做多半导体」以 80% 共识度列最拥挤交易<sup class="ev ev-c">C</sup>。人群知道哪笔交易拥挤；只是还没被迫为此付账。那笔账单，就是十月的入场券。</span></p>
+
+<h2 id="kill"><span class="num">8</span><span class="l-en">Falsification dashboard</span><span class="l-zh">证伪仪表盘</span></h2>
+
+<table class="data">
+  <tr><th><span class="l-en">Claim</span><span class="l-zh">判断</span></th><th><span class="l-en">What kills it</span><span class="l-zh">什么能杀死它</span></th><th><span class="l-en">What confirms it</span><span class="l-zh">什么能确认它</span></th></tr>
+  <tr>
+    <td><strong><span class="l-en">Meta = October-window recovery lead</span><span class="l-zh">Meta = 十月窗口复苏主角</span></strong></td>
+    <td><span class="l-en">2027 capex guided vertical with zero compute-revenue disclosure (house kill, unchanged); subscription rollout reversed on user backlash; Watermelon-class next model slips into 2027 with Spark adoption stalling.</span><span class="l-zh">2027 资本开支指引拉垂直且无算力收入披露（本台原判，不变）；订阅因用户反弹而回撤；下一代旗舰模型拖入 2027 且 Spark 采用停滞。</span></td>
+    <td><span class="l-en">A contracted number — anchor lease, backlog, or subscriber count — inside Q3/Q4 disclosures; capex guide held at Q2; equity raise resolved (done at a level, or shelved).</span><span class="l-zh">三／四季度披露中出现合同化数字——锚定租约、在手订单或订户数；二季报维持资本开支指引；股权融资了结（定价完成或搁置）。</span></td>
+  </tr>
+  <tr>
+    <td><strong><span class="l-en">AAPL = the correction&rsquo;s haven</span><span class="l-zh">AAPL = 本轮调整的避风港</span></strong></td>
+    <td><span class="l-en">iPhone 18 US price hikes visibly dent September preorders; a China demand shock; or the haven premium itself cracking &mdash; two consecutive weeks of down-day underperformance vs QQQ.</span><span class="l-zh">iPhone 18 美国提价明显打击九月预订；中国需求冲击；或避险溢价自身破裂——对 QQQ 的下跌日表现连续两周转弱。</span></td>
+    <td><span class="l-en">Continued &ge;70% down-day beat rate; the September event passing price hikes without unit guidance cuts.</span><span class="l-zh">下跌日跑赢率维持 &ge;70%；九月发布会完成提价且不下调销量指引。</span></td>
+  </tr>
+  <tr>
+    <td><strong><span class="l-en">NVDA = rebound vehicle, not shelter</span><span class="l-zh">NVDA = 反弹载具，非庇护所</span></strong></td>
+    <td><span class="l-en">DC growth &lt;25% y/y two straight quarters, or a top-3 customer publicly moving majority orders in-house (house kill, unchanged); a neocloud credit event triggering its backstops turns the floor into a trapdoor.</span><span class="l-zh">数据中心同比增速连续两季 &lt;25%，或前三大客户公开转向自研（本台原判，不变）；新兴云信用事件触发其兜底义务，地板变活门。</span></td>
+    <td><span class="l-en">Rubin Q3 shipments to the eight named clouds on schedule; positioning washout completing (insider-sell clusters ending, 13F re-adds).</span><span class="l-zh">Rubin 三季度按期向八家具名云厂商出货；仓位出清完成（内部人卖出集群结束、13F 重新增持）。</span></td>
+  </tr>
+  <tr>
+    <td><strong><span class="l-en">The October window itself</span><span class="l-zh">十月窗口本身</span></strong></td>
+    <td><span class="l-en">The ~20% grind-higher path: soft Jul/Aug CPI + tariff relief + no credit accident + a clean $1T IPO, all four together. Or Scenario C: earnings re-ignite Act I immediately &mdash; in which case strength is distribution fuel, not refutation.</span><span class="l-zh">约 20% 概率的「缓步走高」路径：7/8 月 CPI 温和 + 关税放松 + 无信用事故 + 1 万亿美元 IPO 顺利，四者齐备。或情景 C：财报立即重燃第一幕——彼时强势是派发燃料，不是反驳。</span></td>
+    <td><span class="l-en">A hike delivered in Sep/Oct, or the credit tape cracking (Oracle CDS, neocloud refi, ABS spreads) &mdash; either drags the low deeper but confirms the window&rsquo;s location.</span><span class="l-zh">9／10 月落地加息，或信用行情破裂（Oracle CDS、新兴云再融资、ABS 利差）——两者都会加深低点，但都确认窗口的位置。</span></td>
+  </tr>
+  <tr>
+    <td><strong><span class="l-en">Washington = tailwind, not selector</span><span class="l-zh">华盛顿 = 顺风，非选股人</span></strong></td>
+    <td><span class="l-en">A documented federal act that singles out and supports a specific listed equity outside a crisis (not a sector program) — that would upgrade the coordination claim from folklore to fact.</span><span class="l-zh">出现有据可查的联邦行为：在非危机状态下点名支持某只特定上市股票（而非行业计划）——那将把「协调」说从传言升格为事实。</span></td>
+    <td><span class="l-en">The pattern holding: pro-buildout programs + live antitrust suits against the same names + a hike-leaning Fed; state equity entries occurring only at distress prices.</span><span class="l-zh">当前图案延续：支持建设的计划 + 对同批公司的反垄断诉讼 + 倾向加息的美联储；国家入股仅发生在危机折价处。</span></td>
+  </tr>
+</table>
+
+<div class="pquote"><p>
+<span class="l-en">The market is not choosing a stock to hide in; it is choosing the order in which it pays for proof. Apple already showed its receipts, so it gets the correction. Meta&rsquo;s receipts are dated October — which is why October, not this rally, is where its Google impression either lands the role or leaves the stage.</span>
+<span class="l-zh">市场不是在挑一只可以躲的股票，而是在排定为证据付款的顺序。Apple 已经出示过收据，所以它领走这轮调整。Meta 的收据落款是十月——所以是十月、而不是眼下这轮反弹，决定它的谷歌模仿秀是拿下角色，还是退场。</span>
+</p></div>
+
+<h2 id="sources"><span class="l-en">Sources &amp; method</span><span class="l-zh">资料来源与方法</span></h2>
+<div class="sources">
+  <p><strong><span class="l-en">Method</span><span class="l-zh">方法</span>:</strong> <span class="l-en">This report was built from an eleven-lane evidence sweep (local price stores, our ownership/risk/basket engines, and web-source dossiers on Meta, Alphabet, Nvidia, Apple, Tesla, the memory cycle, administration policy, and midterm statistics), followed by three independent adversarial reviews — one attacking the Meta-as-haven thesis, one attacking the administration-coordination claim, one auditing cross-source factual consistency. Claims are labeled [F] store- or filing-checked fact, [C] corroborated across independent sources, [I] inference, [S] desk estimate. Numbers that failed the consistency audit (single-source July 9&ndash;10 closes, one vendor&rsquo;s Micron revenue figure, conflicting consensus-EPS prints) are either hedged in text or excluded.</span><span class="l-zh">本报告基于十一条证据通道的扫描（本地价格库、本站持仓／风险／篮子引擎，以及关于 Meta、Alphabet、Nvidia、Apple、Tesla、存储周期、政府政策与中期选举统计的网络来源档案），随后经三路独立对抗性审查——其一攻击「Meta 即避风港」论点，其二攻击「政府协调」说，其三审计跨来源事实一致性。声明标注为 [F] 价格库或申报文件核实、[C] 多来源交叉印证、[I] 推断、[S] 本台估计。未通过一致性审计的数字（单一来源的 7月9&ndash;10日收盘价、某供应商的美光营收数字、互相矛盾的共识每股盈利）已在正文中加以对冲或剔除。</span></p>
+  <p><strong><span class="l-en">Local data</span><span class="l-zh">本地数据</span>:</strong> <span class="l-en">data/stocks and massive_stock_day parquet price stores (last bars 2026-07-08 / 2026-07-02); site risk_state.json (as-of 2026-07-10); smartmoney 13F desk (holdings as-of 2026-03-31 — one quarter stale, next window Aug 14); baskets.json (as-of 2026-07-09).</span><span class="l-zh">data/stocks 与 massive_stock_day parquet 价格库（末根 K 线 2026-07-08／2026-07-02）；站内 risk_state.json（截至 2026-07-10）；smartmoney 13F 台（持仓截至 2026-03-31——滞后一个季度，下一窗口 8月14日）；baskets.json（截至 2026-07-09）。</span></p>
+  <p><strong><span class="l-en">Primary &amp; press</span><span class="l-zh">一手来源与报道</span>:</strong> <span class="l-en">Meta Q1-2026 results and call (capex guide, memory-cost citation); Bloomberg (Meta Compute, Jul 1); Meta AI blog (Muse Spark 1.1 API, Jul 9); FT/Bloomberg (equity-raise consideration, Jun 5); Reuters (Iris/Broadcom September production; Zuckerberg town-hall remarks, Jul 2); Alphabet Q1-2026 8-K (Cloud, backlog) and the Sep 2 2025 remedies ruling; NVDA 8-K/10-Q FQ1-FY27; Apple Q2-FY26 8-K and Gemini-Siri partnership coverage; Tesla Q2 delivery 8-K; White House AI Action Plan and EO 14318; CNBC (OpenAI stake proposal, Jul 2; Trump disclosure analysis); NOTUS (Treasury draft, Jul 6); BofA Global FMS (Jun 2026); Cboe/AAII sentiment series.</span><span class="l-zh">Meta 2026 年一季报及电话会（资本开支指引、存储成本表述）；彭博（Meta Compute，7月1日）；Meta AI 博客（Muse Spark 1.1 API，7月9日）；FT／彭博（股权融资酝酿，6月5日）；路透（Iris／博通九月投产；扎克伯格全员会讲话，7月2日）；Alphabet 2026 年一季度 8-K（云业务、在手订单）及 2025年9月2日 救济裁决；NVDA FQ1-FY27 8-K／10-Q；Apple FY26 二季度 8-K 及 Gemini-Siri 合作报道；Tesla 二季度交付 8-K；白宫《AI 行动计划》与 EO 14318；CNBC（OpenAI 入股提案，7月2日；特朗普持仓披露分析）；NOTUS（财政部草稿，7月6日）；美银全球基金经理调查（2026年6月）；Cboe／AAII 情绪序列。</span></p>
+  <p><strong><span class="l-en">Sibling reports</span><span class="l-zh">姊妹报告</span>:</strong> <a href="report_second_act.html"><span class="l-en">The Second Act</span><span class="l-zh">《第二幕》</span></a> · <a href="report_relapse_jul8.html"><span class="l-en">The Relapse</span><span class="l-zh">《复燃》</span></a> · <a href="report_ai_master_plan.html"><span class="l-en">The AI Master Plan</span><span class="l-zh">《AI 总体规划》</span></a> — <span class="l-en">this report extends their rulings to the safe-haven question and changes none of them.</span><span class="l-zh">本报告将上述裁定延伸至避险问题，且不改动其中任何一条。</span></p>
+  <p class="mut"><span class="l-en">Three externally generated AI briefs on the same question were used as reference opinions only; their factual claims were re-derived independently. Where they disagreed with our stores (Meta&rsquo;s July closes, the shape and dating of Google&rsquo;s rerating), the stores and filings won. This is a scenario research memo, not financial advice; probabilities marked [S] are desk estimates.</span><span class="l-zh">关于同一问题的三份外部 AI 简报仅作参考观点使用；其事实性声明均经独立重验。凡与本站数据库冲突之处（Meta 七月收盘价、谷歌重估的形态与日期），以数据库与申报文件为准。本文为情景研究备忘录，非投资建议；标注 [S] 的概率为本台估计。</span></p>
+</div>
+
+
+    <div class="disc"><span class="l-en">Sources & method: compiled from primary Federal Reserve releases, market wraps, and the dashboard’s own pre-event positioning data. Where intraday prints differ across outlets, best estimates are shown and ranges noted; direction is high-confidence. Informational only — not investment advice.</span><span class="l-zh">来源与方法：综合自美联储一手发布、市场综述，以及本仪表盘的会前仓位数据。当各家盘中数据不一致时，采用最佳估计并标注区间；方向判断为高置信度。仅供参考，不构成投资建议。</span></div>
+  </article>
+</div>
+
+
+<div class="prevnext">
+  
+  <a href="report_relapse_jul8.html"><span class="lbl"><span class="l-en">Older</span><span class="l-zh">更早</span> →</span><span class="ttl"><span class="l-en">The Relapse</span><span class="l-zh">复燃</span></span></a>
+</div>
+
+<div class="backbtn"><a href="reports.html">← <span class="l-en">All research reports</span><span class="l-zh">全部研究报告</span></a></div>
+
+
+<footer class="rfoot">
+  <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may change.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能调整。</span>
+</footer>
+
+<script>
+  (function(){ var ls=[].slice.call(document.querySelectorAll('.toc a')),
+      hs=ls.map(function(a){return document.querySelector(a.getAttribute('href'));});
+    function spy(){ var y=window.scrollY+96, act=0; hs.forEach(function(h,i){ if(h&&h.offsetTop<=y) act=i; });
+      ls.forEach(function(a,i){ a.classList.toggle('active',i===act); }); }
+    window.addEventListener('scroll',spy,{passive:true}); spy(); })();
+</script>
+
+<script src="theme.js"></script>
+</body>
+</html>
