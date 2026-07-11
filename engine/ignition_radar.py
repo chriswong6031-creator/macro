@@ -40,7 +40,7 @@ import numpy as np
 import pandas as pd
 
 from lib import config, store
-from engine.sector_ignition import compute_basket_ignition
+from engine.sector_ignition import compute_basket_ignition, STATE_IGNITING
 
 log = logging.getLogger(__name__)
 
@@ -741,6 +741,162 @@ def _load_radar_xref() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# NARROW STREAK — consecutive daily sessions at or above the igniting threshold
+# ---------------------------------------------------------------------------
+
+_STREAK_FILE = "narrow_streak.json"  # inside data/ignition_radar/
+
+
+def _streak_from_us_log(basket_id: str, log_path: Path) -> int:
+    """Count consecutive trailing days in us_ignition.jsonl where basket_id's
+    ignition_score >= STATE_IGNITING.
+
+    Reads the us_ignition.jsonl (sorted ascending by asof), walks backward from
+    the most-recent entry counting consecutive sessions where the basket meets the
+    threshold.  Returns 0 if no history or basket not found in recent entries.
+    """
+    if not log_path.exists():
+        return 0
+    rows: list[dict] = []
+    try:
+        for line in log_path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception:  # noqa: BLE001
+        return 0
+
+    # sort by asof ascending
+    rows.sort(key=lambda r: r.get("asof", ""))
+
+    streak = 0
+    for row in reversed(rows):
+        top_narrow = row.get("top_narrow") or []
+        found = False
+        for it in top_narrow:
+            if it.get("id") == basket_id:
+                score = it.get("ignition_score") or 0.0
+                if float(score) >= STATE_IGNITING:
+                    streak += 1
+                    found = True
+                break
+        if not found:
+            # basket absent or below threshold — streak broken
+            break
+
+    return streak
+
+
+def _update_streak_cache(
+    basket_id: str,
+    score: float | None,
+    today_str: str,
+    streak_path: Path,
+) -> int:
+    """Advance the narrow_streak.json cache (idempotent for same-date reruns).
+
+    If us_ignition.jsonl history has >= 1 entry with this basket, the log-based
+    count (from _streak_from_us_log) is authoritative and this file is only a
+    warm-start seed.  When the log is empty the file IS the sole persistence.
+
+    Returns the current streak count for basket_id.
+    """
+    data: dict = {}
+    try:
+        if streak_path.exists():
+            data = json.loads(streak_path.read_text())
+    except Exception:  # noqa: BLE001
+        data = {}
+
+    entry = data.get(basket_id, {})
+    last_date = entry.get("last_date")
+    current_streak = int(entry.get("streak", 0))
+
+    above = (score is not None) and (float(score) >= STATE_IGNITING)
+
+    if last_date == today_str:
+        # idempotent: same-date rerun — return stored value without modifying
+        return current_streak
+
+    if above:
+        current_streak += 1
+    else:
+        current_streak = 0
+
+    data[basket_id] = {
+        "streak": current_streak,
+        "last_date": today_str,
+        "score": score,
+    }
+    try:
+        streak_path.parent.mkdir(parents=True, exist_ok=True)
+        streak_path.write_text(json.dumps(data, indent=2))
+    except Exception:  # noqa: BLE001
+        pass
+
+    return current_streak
+
+
+def _compute_narrow_top(
+    narrow_items: list[dict],
+    base_path: Path,
+) -> dict | None:
+    """Build the narrow_top display payload for the top-ranked narrow basket/ETF.
+
+    Returns None if no item is at or above the igniting threshold.
+
+    Streak calculation:
+      1. Try us_ignition.jsonl (most authoritative — includes today if already logged).
+      2. Fall back to narrow_streak.json (advances on each snapshot call, idempotent
+         for same-date reruns).
+
+    The streak from the log already includes today IF log_us_snapshot has been called
+    before snapshot().  In nightly flow, snapshot() and log_us_snapshot() are called in
+    this order (snapshot first, audit second), so the log does NOT yet contain today.
+    The streak file therefore acts as the +1 bridge for the current day.
+    """
+    if not narrow_items:
+        return None
+
+    top = narrow_items[0]  # already sorted desc by ignition_score
+    score = top.get("ignition_score")
+    if score is None or float(score) < STATE_IGNITING:
+        return None
+
+    basket_id = top.get("id", "")
+    today_str = str(date.today())
+
+    log_path = base_path / "ignition_log" / "us_ignition.jsonl"
+    streak_path = base_path / "ignition_radar" / _STREAK_FILE
+
+    # Streak from historical log (does NOT include today's not-yet-logged snapshot)
+    historical_streak = _streak_from_us_log(basket_id, log_path)
+
+    # Advance the simple cache file (+1 for today if above threshold)
+    cache_streak = _update_streak_cache(basket_id, score, today_str, streak_path)
+
+    # Authoritative streak = historical (prior days from log) + 1 for today from cache
+    # When historical_streak > 0 the log has history; cache_streak adds today's +1.
+    # When log is empty, cache_streak IS the streak (seeds from 0 on day 1).
+    if historical_streak > 0:
+        streak = historical_streak + 1   # log covers prior days, cache adds today
+    else:
+        streak = cache_streak            # log empty → cache is the sole source
+
+    return {
+        "basket_id": basket_id,
+        "name": top.get("name", basket_id),
+        "name_zh": top.get("name_zh", top.get("name", basket_id)),
+        "score": score,
+        "streak_sessions": streak,
+    }
+
+
+# ---------------------------------------------------------------------------
 # SNAPSHOT — main entry point
 # ---------------------------------------------------------------------------
 
@@ -821,6 +977,14 @@ def snapshot(root: str | Path | None = None) -> dict:
     # --- radar cross-reference ---
     radar_xref = _load_radar_xref()
 
+    # --- narrow_top streak payload ---
+    _base_path = (Path(root) / "data") if root else config.data_dir()
+    narrow_top: dict | None = None
+    try:
+        narrow_top = _compute_narrow_top(narrow["items"], _base_path)
+    except Exception as e:  # noqa: BLE001
+        log.warning("ignition_radar: narrow_top computation failed: %s", e)
+
     t1 = time.monotonic()
     elapsed = round(t1 - t0, 2)
     log.info("[timing] ignition_radar.snapshot: %.2fs", elapsed)
@@ -835,6 +999,7 @@ def snapshot(root: str | Path | None = None) -> dict:
             "items": narrow["items"][:8],
             "as_of": narrow["as_of"],
         },
+        "narrow_top": narrow_top,
         "radar_xref": radar_xref,
         "accruing": (
             "accruing — display-only until >=30 broad-state grades + operator ruling. "

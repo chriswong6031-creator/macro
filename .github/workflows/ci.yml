@@ -114,6 +114,7 @@ on:
       # M7C-R2/R3: Mag-7 Regime Context Organ (engine/mag7_regime.py).
       - "engine/mag7_regime.py"
       - "tests/test_mag7_regime.py"
+      - "tests/test_ignition_persistence.py"
       # CPI net-liquidity artifact (data infrastructure): builder + contract tests
       # must re-run together so a canon-formula or stale-guard regression fails RED.
       - "scripts/build_netliq_daily.py"
