@@ -42,16 +42,18 @@
     "mirrors": 80
   },
   "stock_quality": {
-    "applied": "2026-07-11T03:36:22.602260+00:00",
-    "rows_flagged": 5,
-    "tickers_flagged": 3,
+    "applied": "2026-07-11T04:45:35.034922+00:00",
+    "rows_flagged": 11,
+    "tickers_flagged": 6,
     "by_flag": {
       "assets:flank_scale": 2,
       "equity:flank_scale": 1,
-      "debt_lt:flank_scale": 2
+      "debt_lt:flank_scale": 2,
+      "assets:junk_null": 3,
+      "equity:junk_null": 3
     },
     "repaired": 5,
-    "nulled": 0,
-    "mirrors": 2
+    "nulled": 6,
+    "mirrors": 5
   }
 }

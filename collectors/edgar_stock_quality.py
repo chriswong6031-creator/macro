@@ -71,10 +71,10 @@ Lane 2 — segment/flank (flank), all 3 columns
       RNG fy2014-15 equity: leading tiny negative equity from pre-IPO
         deficit — the company grew into positive book later.
       MDT fy2014 assets: leading-edge junk fact (assets=46000 before a
-        ~$100B balance sheet) — detectable-but-unrepairable, no ×10^k
-        restores it; stays in flank_suspects.
-      FTI fy2015 assets=equity=74100: same junk class.
-      MIR fy2019 assets=5000: same class.
+        ~$100B balance sheet) — NULLED by Lane 3; no ×10^k restores a
+        plausible value.
+      FTI fy2015 assets=equity=74100: same junk class, NULLED by Lane 3.
+      MIR fy2019 assets=5000: same class, NULLED by Lane 3.
     Every confirmed repaired artifact (ATO fy2010, GNRC fy2016, SNEX fy2018)
     is an INTERIOR segment — both flanking clean segments are present.
     Leading/trailing segments that pass a break ≥ SUSPECTS_MIN_BREAK=500×
@@ -163,30 +163,95 @@ Lane 2 — segment/flank (flank), all 3 columns
   No ABSURD_SHARE / SHARE_SEP requirement (see above).
   No margin-coherence concept for stock columns.
 
+Lane 3 — leading-edge junk-fact NULL (junk_null)
+  Applied inside the per-ticker flank loop, BEFORE the flank_suspects append,
+  for LEADING segments only (lg is None, si == 0, rg is not None).  Trailing
+  and interior segments are never nulled by this lane.
+
+  The junk class (MDT fy2014, FTI fy2015, MIR fy2019) is characterised by
+  balance-sheet facts from a SHELL or PREDECESSOR ENTITY embedded in a filing
+  that also carries REAL FLOW facts for the operating entity.  The junk assets
+  value is minuscule compared to the same-row revenue/ni/cfo, but no ×10^k snap
+  can restore a plausible balance-sheet number — the artifact is not a unit error,
+  it is a wrong fact.  The discipline mirrors collectors/edgar_share_quality.py:
+  "NaN, never wrong."
+
+  Detection (assets — Class A):
+    1. Row break: _ratio(v, vals[rg[0]]) ≥ SUSPECTS_MIN_BREAK (500×).
+    2. Same-row incoherence: anchor_max = max(|revenue|, |ni|, |cfo|) for
+       finite nonzero values on the row; require at least one anchor present
+       AND anchor_max / |assets| ≥ JUNK_ANCHOR_MULT (1000×).
+       Calibration (census over all 51 flank_suspects, 2026-07-11): junk class
+       ratios are 9,451× (FTI), 106,565× (MDT), 88,020× (MIR).  Largest REAL
+       coherent tiny-asset row: CLSK fy2010 at 471× — the honest headroom to
+       the 1000× threshold is only 2.1×, but the population gap between the
+       largest real row (471×) and the smallest junk row (9,451×) is a clean
+       ~20× with nothing in between.
+       Anchors all-absent → NOT nulled (AHCO-class — no evidence; stays suspect).
+    3. If both pass → append flag {flag:"junk_null", repair:nan} and record fy
+       in _junk_null_fy (a per-ticker-per-col-pass set).
+
+  Detection (equity, debt_lt — Class B):
+    Require int(fy) in _junk_null_fy (same-row assets junk-nulled this pass).
+    NO own-incoherence test for Class B — doing so would falsely kill real rows:
+      AMCR fy2018 equity=130 with revenue=9.3B → incoherence 71.5M× (REAL equity;
+        company had negative book before the spin-off, then a massive recapitalisation
+        assigned this stub equity figure).
+      DEA-class: similarly tiny equity vs revenue (REAL).
+      OTIS fy2019 debt_lt=5e6 with revenue=13.1B → 2.62M× incoherence (REAL;
+        IPO-era minimal debt before the capital structure was established).
+      OGS, J, KNF debt_lt: same class.
+    Class B is nulled ONLY when the same-row assets was already junk-nulled —
+    that corroboration signal is the only safe trigger.
+
+  Note on sign flips: _ratio is abs-based.  A sign flip (e.g. MIR fy2019
+  equity=+4364 breaking against fy2020 equity=-9.795e7) does NOT block the null
+  — the ratio is still ≥ 500×, so the per-row break check fires normally.
+
+  Fully-nulled segments: when every nonzero row in a leading segment was junk-
+  nulled, that segment is NOT appended to flank_suspects (a fully-nulled segment
+  is no longer "suspect — no mutation").
+
 Repair discipline (PIT-honest)
 -------------------------------
 Every repair is the row's OWN filed value ×10^k for k ∈ {3, 6}.  Statements is
-EVIDENCE ONLY, never a repair source.  nulled is always 0 by construction.
+EVIDENCE ONLY, never a repair source.  The null class (junk_null, see Lane 3
+above) sets repair = NaN — cells where no confident PIT-legal repair exists are
+nulled so downstream factors go NaN instead of wrong.  This mirrors the
+edgar_share_quality.py discipline: "NaN, never wrong."
 Originals preserved in assets_raw / equity_raw / debt_lt_raw (sparse: NaN except
 on flagged/mirrored rows).  A string column `stock_flag` mirrors flow_flag format.
 
 assets_prior mirroring
 -----------------------
 Many panel rows carry assets_prior = prior fiscal year's assets.  When assets is
-repaired at (ticker, fy), the (ticker, fy+1) row's assets_prior — when present
-and equal to the raw assets within rel tol 1e-6 — is updated to the repaired
-value and recorded as "assets_prior:mirror".  This prevents the phantom artifact
-from persisting in the panel as a prior-year reference.
+repaired OR nulled at (ticker, fy), the (ticker, fy+1) row's assets_prior — when
+present and equal to the raw assets within rel tol 1e-6 — is updated to the
+repaired value (or NaN for junk_null) and recorded as "assets_prior:mirror" (for
+repairs) or "assets_prior:null_mirror" (for junk_null nulls).  This prevents the
+phantom artifact from persisting in the panel as a prior-year reference.
+
+Handled by Lane 3 (formerly residuals)
+---------------------------------------
+- MDT fy2014 assets=46000 / equity=-3.6954e7: NULLED (junk_null).
+  The fy2015 assets_prior=46000 is null-mirrored to NaN.
+- FTI fy2015 assets=equity=74100: NULLED.
+  The fy2016 assets_prior=74100 is null-mirrored to NaN.
+- MIR fy2019 assets=5000 / equity=4364: NULLED.
+  The fy2020 assets_prior=5000 is null-mirrored to NaN.
 
 Known residuals (conservative by design)
 -----------------------------------------
-- MDT fy2014 assets=46000 (before ~$100B balance sheet): detectable (high break,
-  interior context) but unrepairable — no ×10^k restores a plausible value.  Stays
-  in flank_suspects.  The fy2015 assets_prior=46000 is also unrepairable and stays.
-- FTI fy2015 assets=equity=74100: same junk class, stays in flank_suspects.
-- MIR fy2019 assets=5000: same class.
+- Anchor-absent leading junk (AHCO-class, assets=310616 with all-NaN flow
+  anchors): NOT nulled — no incoherence evidence; stays in flank_suspects.
+- Interior junk and trailing junk: NOT nulled — the lane is leading-edge only.
+  Within a leading segment every row is evaluated INDEPENDENTLY (per-row break
+  + per-row incoherence), so a multi-row leading junk segment CAN null more
+  than one fy — but each nulled row must carry its own evidence.
 - OTIS/OGS/IDCC leading-edge debt_lt and RNG leading-edge equity: interior-only
   rule leaves them entirely unflagged (flank_suspects at most if break ≥ 500×).
+  OTIS debt_lt=5e6 has large same-row assets/revenue but assets is clean (never
+  nulled) → no corroboration → equity/debt_lt survive.
 - CHTR equity sign flip (−4.6e7 → +4.014e10, abs ratio ~873): same-sign
   requirement rejects it — a negative equity flipping to a positive value is
   a real corporate event (debt paydown / earnings recovery), not a unit artifact.
@@ -233,6 +298,17 @@ ANCHOR_CONT = 2.5          # ≥1 of {revenue,ni,cfo,shares}∪(STOCK_COLS−col
 ANCHOR_BLOWUP = 100.0      # ...and none of the present anchors breaks by this much
 MIN_BREAK = 100.0          # belt: raw-vs-flank abs ratio floor (BOTH flanks)
 SUSPECTS_MIN_BREAK = 500.0 # flank_suspects trigger: high break but no confident snap
+
+JUNK_ANCHOR_MULT = 1000.0  # same-row flow anchor must exceed |assets| by this to call the
+                           # assets fact junk.  Calibrated: junk class ≥ 9,451x (FTI; MDT
+                           # 106,565x, MIR 88,020x); real tiny-asset shells ≤ 471x (CLSK
+                           # fy2010).  Headroom real→threshold is 2.1x; the real→junk
+                           # population gap is ~20x, empty.  Applies to ASSETS ONLY: equity/debt_lt
+                           # are legitimately tiny against large anchors (AMCR fy2018
+                           # equity=130 vs revenue 9.3B is REAL; OTIS fy2019 debt_lt=5e6 vs
+                           # revenue 13.1B is REAL) — they null only via same-row-assets
+                           # corroboration.
+_JUNK_FLOW_ANCHORS = ("revenue", "ni", "cfo")   # dollar-flow anchors for the junk test
 
 # Cohort lane tolerance band (same as flow module — see edgar_flow_quality.py)
 COHORT_ST_BAND = 1.25
@@ -611,12 +687,27 @@ def detect(panel: pd.DataFrame, statements: pd.DataFrame | None = None
         # of which lane confirmed the mis-scale); flank-lane assets repairs are
         # added as they fire — assets is always first in active_cols
         # (["assets", "equity", "debt_lt"]).
+        # CRASH GUARD: junk_null flags carry repair=NaN; np.log10(nan) raises
+        # ValueError in round().  Guard: only seed from rows with finite repair.
         _flank_assets_k: dict[tuple[str, int], int] = {}
         for f in flags:
-            if f["col"] == "assets" and f["ticker"] == ticker and f["value"] != 0:
+            if (f["col"] == "assets" and f["ticker"] == ticker
+                    and f["value"] != 0 and np.isfinite(f["repair"])):
                 k_f = round(np.log10(abs(f["repair"]) / abs(f["value"])))
                 if k_f in XSRC_KS:
                     _flank_assets_k[(str(ticker), int(f["fy"]))] = k_f
+
+        # Per-col, per-ticker registry of fiscal years whose ASSETS was junk-nulled
+        # in this pass.  Reset for each (ticker, col) iteration below — but because
+        # assets is always processed first (active_cols order preserves STOCK_COLS),
+        # _junk_null_fy is populated by the assets pass and readable by equity/
+        # debt_lt.  SAME-CALL requirement: corroboration only works within one
+        # detect() call — active_cols order guarantees assets runs before the
+        # Class-B cols for each ticker, so all co-row nulls resolve in the same
+        # round.  Once assets is NaN, later rounds can no longer corroborate;
+        # a Class-B junk value whose own segment only becomes eligible in a
+        # LATER round would stay un-nulled (narrow window, none observed).
+        _junk_null_fy: set[int] = set()
 
         for col in active_cols:
             vals = pd.to_numeric(g[col], errors="coerce").to_numpy(dtype=float)
@@ -651,7 +742,7 @@ def detect(panel: pd.DataFrame, statements: pd.DataFrame | None = None
                 rg = _clean_right(si)
 
                 # INTERIOR-ONLY for all stock columns: both flanks required.
-                # Leading/trailing segments go to flank_suspects if break ≥ 500×.
+                # Leading segments also evaluated by Lane 3 (junk_null) below.
                 if lg is None or rg is None:
                     # Check if it qualifies for flank_suspects
                     if lg is None and rg is None:
@@ -660,14 +751,88 @@ def detect(panel: pd.DataFrame, statements: pd.DataFrame | None = None
                     adj_seg = vals[lo] if rg is not None else vals[hi]
                     adj_flk = flk[0] if rg is not None else flk[1]
                     brk = _ratio(adj_seg, vals[adj_flk])
+
+                    # -----------------------------------------------------------
+                    # Lane 3 — leading-edge junk-fact NULL (flag "junk_null")
+                    # Applies ONLY to leading segments: lg is None, si == 0,
+                    # rg is not None.  Trailing segments are never nulled.
+                    # -----------------------------------------------------------
+                    junk_nulled_rows: set[int] = set()   # positions nulled this seg
+                    if lg is None and si == 0 and rg is not None:
+                        for p in range(lo, hi + 1):
+                            v = vals[p]
+                            if not (np.isfinite(v) and v != 0):
+                                continue
+
+                            # Gate 1: per-row break ≥ SUSPECTS_MIN_BREAK
+                            row_brk = _ratio(v, vals[rg[0]])
+                            if not (np.isfinite(row_brk) and row_brk >= SUSPECTS_MIN_BREAK):
+                                continue
+
+                            if col == "assets":
+                                # Gate 2 (assets only): same-row flow incoherence
+                                anchor_max = 0.0
+                                any_anchor = False
+                                for ac in _JUNK_FLOW_ANCHORS:
+                                    av = anchor_arrs.get(ac)
+                                    if av is None:
+                                        continue
+                                    a_val = av[p]
+                                    if np.isfinite(a_val) and a_val != 0:
+                                        anchor_max = max(anchor_max, abs(a_val))
+                                        any_anchor = True
+                                if not any_anchor:
+                                    # No flow anchor evidence — cannot call junk; stays suspect
+                                    continue
+                                if anchor_max / abs(v) < JUNK_ANCHOR_MULT:
+                                    continue
+                                # Junk assets confirmed
+                                flags.append({
+                                    "index": int(idx_arr[p]),
+                                    "ticker": str(ticker),
+                                    "fy": int(fy_arr[p]),
+                                    "col": col,
+                                    "flag": "junk_null",
+                                    "value": float(v),
+                                    "repair": float("nan"),
+                                    "note": (f"null junk-fact leading-edge "
+                                             f"(anchor {anchor_max / abs(v):.0f}x)"),
+                                })
+                                _junk_null_fy.add(int(fy_arr[p]))
+                                junk_nulled_rows.add(p)
+
+                            elif col in CLASS_B:
+                                # Class B: only null if same-row assets was
+                                # junk-nulled this pass (no own-incoherence test —
+                                # see AMCR/DEA/OTIS counterexamples in docstring).
+                                if int(fy_arr[p]) not in _junk_null_fy:
+                                    continue
+                                flags.append({
+                                    "index": int(idx_arr[p]),
+                                    "ticker": str(ticker),
+                                    "fy": int(fy_arr[p]),
+                                    "col": col,
+                                    "flag": "junk_null",
+                                    "value": float(v),
+                                    "repair": float("nan"),
+                                    "note": "null junk-fact leading-edge corr:same_row_assets",
+                                })
+                                junk_nulled_rows.add(p)
+
+                    # Append to flank_suspects only if the segment has at least
+                    # one nonzero row that was NOT junk-nulled (a fully-nulled
+                    # segment is no longer "no mutation").
                     if np.isfinite(brk) and brk >= SUSPECTS_MIN_BREAK:
-                        _flank_suspects.append({
-                            "ticker": str(ticker),
-                            "fy_lo": int(fy_arr[lo]),
-                            "fy_hi": int(fy_arr[hi]),
-                            "col": col,
-                            "med": float(med),
-                        })
+                        nz_in_seg = [p for p in range(lo, hi + 1)
+                                     if np.isfinite(vals[p]) and vals[p] != 0]
+                        if any(p not in junk_nulled_rows for p in nz_in_seg):
+                            _flank_suspects.append({
+                                "ticker": str(ticker),
+                                "fy_lo": int(fy_arr[lo]),
+                                "fy_hi": int(fy_arr[hi]),
+                                "col": col,
+                                "med": float(med),
+                            })
                     continue
 
                 # --- raw break check vs BOTH flanks ---
@@ -884,22 +1049,27 @@ def apply_stock_quality(
     statements: pd.DataFrame | None = None,
     max_rounds: int = 6,
 ) -> tuple[pd.DataFrame, dict]:
-    """Return (panel copy with stock values repaired, audit dict).
+    """Return (panel copy with stock values repaired or nulled, audit dict).
 
     Adds sparse raw columns {col}_raw for each STOCK_COLS column present plus
     assets_prior_raw; values are NaN except on flagged/mirrored rows.
 
     Adds string column `stock_flag` (None when no flag; ";"-joined tokens like
-    "assets:flank_scale:x1e3", "assets_prior:mirror").
+    "assets:flank_scale:x1e3", "assets:junk_null:null", "assets_prior:mirror",
+    "assets_prior:null_mirror").
 
     Fixed-point loop: mirrors edgar_flow_quality.apply_flow_quality exactly.
     Converges in ≤2 rounds for stock columns (smoother series).
 
-    Idempotency: re-applying to a healed panel finds 0 new flags (repaired values
-    are continuous; xsrc ratios become ~1 → protected; flanks no longer broken).
+    Idempotency: re-applying to a healed panel finds 0 new flags.
+
+    Null class (junk_null): Lane 3 sets repair=NaN for junk leading-edge facts
+    (MDT/FTI/MIR class).  These cells become NaN in the panel so downstream
+    factors go NaN instead of wrong.  Originals preserved in *_raw columns.
 
     Audit dict keys: applied, rows_flagged, tickers_flagged, by_flag, repaired,
-    nulled (always 0), mirrors, rows, xsrc_disagreements, flank_suspects.
+    nulled (count of NaN-repair flags), mirrors, rows, xsrc_disagreements,
+    flank_suspects.
     """
     out = panel.copy()
 
@@ -947,6 +1117,8 @@ def apply_stock_quality(
 
     # --- assets_prior mirroring ---
     # Mirror the ni_prior pattern from edgar_flow_quality.py exactly.
+    # Nulled assets rows (repair=NaN) flow through the same matching logic;
+    # when rep_a is NaN, assets_prior is set to NaN and token is "null_mirror".
     mirrors = 0
     if "assets_prior" in out.columns and len(found_all):
         assets_repairs = found_all[found_all["col"] == "assets"][
@@ -965,8 +1137,10 @@ def apply_stock_quality(
                 if abs(ap - raw_a) <= 1e-6 * max(abs(raw_a), 1.0):
                     if pd.isna(out.at[idx2, "assets_prior_raw"]):
                         out.at[idx2, "assets_prior_raw"] = ap
-                    out.at[idx2, "assets_prior"] = rep_a
-                    token = "assets_prior:mirror"
+                    out.at[idx2, "assets_prior"] = rep_a  # NaN for junk_null
+                    token = ("assets_prior:null_mirror"
+                             if not np.isfinite(rep_a)
+                             else "assets_prior:mirror")
                     existing = out.at[idx2, "stock_flag"]
                     out.at[idx2, "stock_flag"] = (
                         token if (existing is None or existing != existing)
@@ -1001,14 +1175,17 @@ def apply_stock_quality(
         "rows_flagged": int(len(found_all)),
         "tickers_flagged": int(found_all["ticker"].nunique()) if len(found_all) else 0,
         "by_flag": by_flag,
-        "repaired": int(len(found_all)),   # all detections have a confident repair
-        "nulled": 0,                        # v1: no null class
+        # repaired: flags with a finite repair (×10^k); nulled: flags with NaN repair
+        # (junk_null lane — cells where no PIT-honest repair exists, NaN is correct).
+        "repaired": int(found_all["repair"].notna().sum()) if len(found_all) else 0,
+        "nulled": int(found_all["repair"].isna().sum()) if len(found_all) else 0,
         "mirrors": mirrors,
         "rows": [
             {"ticker": r["ticker"], "fy": r["fy"], "col": r["col"],
              "flag": r["flag"],
              "raw": float(r["value"]),
-             "repair": float(r["repair"]),
+             # Never emit NaN into JSON — null is the JSON encoding for "no repair value"
+             "repair": (float(r["repair"]) if np.isfinite(r["repair"]) else None),
              "note": r["note"]}
             for _, r in found_all.iterrows()
         ],
@@ -1018,8 +1195,8 @@ def apply_stock_quality(
 
     if len(found_all):
         log.info(
-            "stock_quality: %d rows on %d tickers (%s) — %d repaired, %d mirrors",
+            "stock_quality: %d rows on %d tickers (%s) — %d repaired, %d nulled, %d mirrors",
             audit["rows_flagged"], audit["tickers_flagged"],
-            audit["by_flag"], audit["repaired"], mirrors,
+            audit["by_flag"], audit["repaired"], audit["nulled"], mirrors,
         )
     return out, audit

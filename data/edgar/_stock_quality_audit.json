@@ -1,15 +1,17 @@
 {
-"applied": "2026-07-11T03:36:22.602260+00:00",
-"rows_flagged": 5,
-"tickers_flagged": 3,
+"applied": "2026-07-11T04:45:35.034922+00:00",
+"rows_flagged": 11,
+"tickers_flagged": 6,
 "by_flag": {
 "assets:flank_scale": 2,
 "equity:flank_scale": 1,
-"debt_lt:flank_scale": 2
+"debt_lt:flank_scale": 2,
+"assets:junk_null": 3,
+"equity:junk_null": 3
 },
 "repaired": 5,
-"nulled": 0,
-"mirrors": 2,
+"nulled": 6,
+"mirrors": 5,
 "rows": [
 {
 "ticker": "ATO",
@@ -55,6 +57,60 @@
 "raw": 8710.5,
 "repair": 8710500000.0,
 "note": "x1e6 flank"
+},
+{
+"ticker": "FTI",
+"fy": 2015,
+"col": "assets",
+"flag": "junk_null",
+"raw": 74100.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 9451x)"
+},
+{
+"ticker": "FTI",
+"fy": 2015,
+"col": "equity",
+"flag": "junk_null",
+"raw": 74100.0,
+"repair": null,
+"note": "null junk-fact leading-edge corr:same_row_assets"
+},
+{
+"ticker": "MDT",
+"fy": 2014,
+"col": "assets",
+"flag": "junk_null",
+"raw": 46000.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 106565x)"
+},
+{
+"ticker": "MDT",
+"fy": 2014,
+"col": "equity",
+"flag": "junk_null",
+"raw": -36954000.0,
+"repair": null,
+"note": "null junk-fact leading-edge corr:same_row_assets"
+},
+{
+"ticker": "MIR",
+"fy": 2019,
+"col": "assets",
+"flag": "junk_null",
+"raw": 5000.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 88020x)"
+},
+{
+"ticker": "MIR",
+"fy": 2019,
+"col": "equity",
+"flag": "junk_null",
+"raw": 4364.0,
+"repair": null,
+"note": "null junk-fact leading-edge corr:same_row_assets"
 }
 ],
 "xsrc_disagreements": [
@@ -1034,34 +1090,6 @@
 "med": 130.0
 },
 {
-"ticker": "ATO",
-"fy_lo": 2009,
-"fy_hi": 2009,
-"col": "assets",
-"med": 6367083000.0
-},
-{
-"ticker": "ATO",
-"fy_lo": 2009,
-"fy_hi": 2009,
-"col": "equity",
-"med": 2176761000.0
-},
-{
-"ticker": "ATO",
-"fy_lo": 2009,
-"fy_hi": 2009,
-"col": "debt_lt",
-"med": 2169400000.0
-},
-{
-"ticker": "ATO",
-"fy_lo": 2011,
-"fy_hi": 2019,
-"col": "debt_lt",
-"med": 2455131000.0
-},
-{
 "ticker": "BCPC",
 "fy_lo": 2015,
 "fy_hi": 2018,
@@ -1097,32 +1125,11 @@
 "med": 193000.0
 },
 {
-"ticker": "FTI",
-"fy_lo": 2015,
-"fy_hi": 2015,
-"col": "assets",
-"med": 74100.0
-},
-{
-"ticker": "FTI",
-"fy_lo": 2015,
-"fy_hi": 2015,
-"col": "equity",
-"med": 74100.0
-},
-{
 "ticker": "GNL",
 "fy_lo": 2011,
 "fy_hi": 2012,
 "col": "equity",
 "med": -306000.0
-},
-{
-"ticker": "GNRC",
-"fy_lo": 2010,
-"fy_hi": 2015,
-"col": "debt_lt",
-"med": 933356000.0
 },
 {
 "ticker": "IRT",
@@ -1172,34 +1179,6 @@
 "fy_hi": 2019,
 "col": "assets",
 "med": 9787596.0
-},
-{
-"ticker": "MDT",
-"fy_lo": 2014,
-"fy_hi": 2014,
-"col": "assets",
-"med": 46000.0
-},
-{
-"ticker": "MDT",
-"fy_lo": 2014,
-"fy_hi": 2014,
-"col": "equity",
-"med": -36954000.0
-},
-{
-"ticker": "MIR",
-"fy_lo": 2019,
-"fy_hi": 2019,
-"col": "assets",
-"med": 5000.0
-},
-{
-"ticker": "MIR",
-"fy_lo": 2019,
-"fy_hi": 2019,
-"col": "equity",
-"med": 4364.0
 },
 {
 "ticker": "MP",
@@ -1263,13 +1242,6 @@
 "fy_hi": 2012,
 "col": "equity",
 "med": 71000.0
-},
-{
-"ticker": "SNEX",
-"fy_lo": 2010,
-"fy_hi": 2017,
-"col": "assets",
-"med": 3033400000.0
 },
 {
 "ticker": "UNF",
