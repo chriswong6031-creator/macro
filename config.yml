@@ -3427,7 +3427,7 @@ china_news:
   tone_window: 90                 # engine: z-score window (trading days) for the policy-tone
   tone_smooth: 5                  # engine: rolling-mean smoothing of the sparse daily tone
   max_records: 80                 # Eastmoney flashes pulled before the macro-theme gate
-  max_show: 18                    # macro headlines shown after filtering
+  max_show: 24                    # macro headlines shown after filtering (18 -> 24 with the native wires live)
   min_importance_score: 34        # keeps official/global-wire context but drops weak filler
   use_official_pages: true        # PBoC/NBS/MOF/State Council/CSRC/SAFE/MOFCOM pages
   use_news_feeds: true            # SCMP/Nikkei RSS direct media leg
@@ -3487,7 +3487,7 @@ china_news_intel:
     - https://www.chinadaily.com.cn/rss/bizchina_rss.xml
   use_json_wires: true            # + 华尔街见闻/金十/格隆汇 via engine/cn_newswires.py (shared cache)
   max_per_source: 60              # raw items pulled per wire before the theme gate
-  max_show: 14                    # headlines shown in the feed after filtering
+  max_show: 20                    # headlines shown in the feed after filtering (14 -> 20 with the JSON wires live)
   sentiment_window: 90            # z-score window (days) for the media-sentiment index
   sentiment_smooth: 5             # rolling-mean smoothing of the blended daily tone
   cache_dir: data/china_news/intel_cache

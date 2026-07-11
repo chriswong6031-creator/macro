@@ -313,3 +313,33 @@ def test_json_wire_items_survive_build_records():
     assert r["source"] == "wallstreetcn" and r["source_tier"] == 2
     assert r["theme"] == "monetary"
     assert r["seendate"].startswith("2026-")
+    # vendor red-flag persists into the PIT record (wscn score>=2 on this fixture)
+    assert r["wire_important"] is True
+
+
+def test_accrue_backfills_wire_important_on_old_schema():
+    """Pre-migration parquet rows (no wire_important column) merge cleanly: the
+    column materializes as bool with unknown=False, never object-with-NaN."""
+    import pandas as pd
+    from engine import china_news_intel as ni
+    old = pd.DataFrame([{c: "x" for c in ni._COLUMNS if c != "wire_important"}])
+    old["event_id"] = "old1"
+    recs = ni.build_records(nw.parse_jin10(JIN10_JS), {}, "2026-07-10T13:00:00+00:00")
+    merged = ni.accrue(old, recs)
+    assert merged["wire_important"].dtype == bool
+    assert merged.loc[merged.event_id == "old1", "wire_important"].item() is False
+    assert bool(merged["wire_important"].any())      # the flagged jin10 row survived
+
+
+def test_feed_surfaces_wire_important(tmp_path, monkeypatch):
+    import pandas as pd
+    from datetime import date
+    from engine import china_news_intel as ni
+    recs = ni.build_records(nw.parse_wallstreetcn(WSCN_PAYLOAD), {}, "2026-07-10T13:00:00+00:00")
+    p = tmp_path / "events.parquet"
+    ni.accrue(None, recs).to_parquet(p, index=False)
+    monkeypatch.setattr(ni, "_events_path", lambda: p)
+    fd = ni.feed(today=date(2026, 7, 11))
+    assert fd and fd["items"]
+    flags = {it["title"]: it["wire_important"] for it in fd["items"]}
+    assert any(flags.values()) and all(isinstance(v, bool) for v in flags.values())
