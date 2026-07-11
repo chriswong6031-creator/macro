@@ -173,12 +173,12 @@ jobs:
             exit 0
           fi
           OLD=data/regime/ladder_risk_calibration.json
-          cp -f "$OLD" /tmp/ladder_risk_calibration.prev.json 2>/dev/null || true
+          cp -f "$OLD" "$RUNNER_TEMP/ladder_risk_calibration.prev.json" 2>/dev/null || true
           python -m scripts.fit_ladder_risk_calibration || { echo "refit failed (fail-open)"; exit 0; }
           python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
           import json, os
           new = json.load(open("data/regime/ladder_risk_calibration.json"))
-          prev_p = "/tmp/ladder_risk_calibration.prev.json"
+          prev_p = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "ladder_risk_calibration.prev.json")
           print("## W4.6 risk-calibration refit — diff-and-alert")
           print()
           if not os.path.exists(prev_p):
@@ -219,7 +219,7 @@ jobs:
           print()
           print("_(committed artifact restored; CI never commits a refit — a human does)_")
           PY
-          cp -f /tmp/ladder_risk_calibration.prev.json "$OLD" 2>/dev/null || true
+          cp -f "$RUNNER_TEMP/ladder_risk_calibration.prev.json" "$OLD" 2>/dev/null || true
 
       # ── Slot: D2 PIT backfill integrity check (planned, W2.3) ──────────────
       # When merged: python -m scripts.check_backfill_integrity --warn

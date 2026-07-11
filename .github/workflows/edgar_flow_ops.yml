@@ -64,7 +64,7 @@ jobs:
             --tickers AAPL MSFT NVDA AMZN GOOGL META TSLA JPM V UNH \
                       XOM JNJ WMT PG MA HD CVX ABBV BAC KO \
                       PFE AVGO LLY COST MRK PEP TMO ACN AMD ABT \
-            2>&1 | tee /tmp/edgar_flow_sample.log; rc=${PIPESTATUS[0]}
+            2>&1 | tee "$RUNNER_TEMP/edgar_flow_sample.log"; rc=${PIPESTATUS[0]}
           echo "=== Sample exit code: $rc ===" >&2
           if [ "$rc" -ne 0 ]; then
             echo "::warning::edgar_flow sample exited $rc — check log"
@@ -81,12 +81,12 @@ jobs:
           python -m scripts.backfill_edgar_flow \
             --max 9999 \
             --force \
-            2>&1 | tee /tmp/edgar_flow_backfill.log; rc=${PIPESTATUS[0]}
+            2>&1 | tee "$RUNNER_TEMP/edgar_flow_backfill.log"; rc=${PIPESTATUS[0]}
           echo "end: $(date -u)" >&2
           echo "=== Backfill exit code: $rc ===" >&2
           # Print coverage summary from log
           echo "--- Coverage summary (from log) ---" >&2
-          grep -E "coverage|ticker-coverage|ABSENT|W2 PR-H" /tmp/edgar_flow_backfill.log \
+          grep -E "coverage|ticker-coverage|ABSENT|W2 PR-H" "$RUNNER_TEMP/edgar_flow_backfill.log" \
             | tail -20 >&2 || true
           if [ "$rc" -ne 0 ]; then
             echo "::warning::edgar_flow backfill exited $rc — check log"

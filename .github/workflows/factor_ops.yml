@@ -77,7 +77,7 @@ jobs:
           python -m scripts.build_factor_panel \
             --start 2020-01-01 \
             --backfill \
-            2>&1 | tee /tmp/factor_panel_backfill.log; rc=${PIPESTATUS[0]}
+            2>&1 | tee "$RUNNER_TEMP/factor_panel_backfill.log"; rc=${PIPESTATUS[0]}
           echo "=== Backfill exit code: $rc ===" >&2
           # Print partition size summary (fail-soft: always exit 0 on size check)
           echo "--- Partition sizes ---" >&2
@@ -85,10 +85,10 @@ jobs:
             || echo "No panel partitions found (normal if backfill failed)" >&2
           # Print stream coverage summary from log
           echo "--- Stream coverage (from log) ---" >&2
-          grep -E "coverage|partition|n_tickers|streams|alibi" /tmp/factor_panel_backfill.log \
+          grep -E "coverage|partition|n_tickers|streams|alibi" "$RUNNER_TEMP/factor_panel_backfill.log" \
             | tail -30 >&2 || true
           # Fail-soft: report but do not block on non-zero exit
           if [ "$rc" -ne 0 ]; then
-            echo "::warning::factor panel backfill exited $rc — check /tmp/factor_panel_backfill.log"
+            echo "::warning::factor panel backfill exited $rc — check $RUNNER_TEMP/factor_panel_backfill.log"
           fi
           exit 0  # fail-soft per masterplan §7-P2 (data lives on runner; no commit gate needed)

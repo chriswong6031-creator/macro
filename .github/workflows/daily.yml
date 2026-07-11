@@ -350,13 +350,13 @@ jobs:
         run: |
           set +e
           echo "::group::build + validate MTF signals"
-          python -m scripts.build_signal_quality > /tmp/sigq.log 2>&1; bq=$?
-          cat /tmp/sigq.log
+          python -m scripts.build_signal_quality > "$RUNNER_TEMP/sigq.log" 2>&1; bq=$?
+          cat "$RUNNER_TEMP/sigq.log"
           if [ "$bq" -ne 0 ]; then
             echo "::error title=build_signal_quality failed (rc=$bq)::signal compute failed — leaf left at last-good"
           fi
-          python -m scripts.validate_signals > /tmp/sigv.log 2>&1; vrc=$?
-          cat /tmp/sigv.log
+          python -m scripts.validate_signals > "$RUNNER_TEMP/sigv.log" 2>&1; vrc=$?
+          cat "$RUNNER_TEMP/sigv.log"
           echo "::endgroup::"
           if [ "$vrc" -ne 0 ]; then
             # Discard the drifted/malformed write so neither the commit-to-main nor the Pages
@@ -367,7 +367,7 @@ jobs:
             echo "::error title=signal §7 contract gate FAILED::malformed/drifted signal write discarded (last-good leaf restored); see data/quality/signals_audit.json"
             { echo "### ❌ signal §7 contract gate failed — bad write discarded";
               echo '<details><summary>validator output</summary>'; echo; echo '```';
-              tail -n 40 /tmp/sigv.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+              tail -n 40 "$RUNNER_TEMP/sigv.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
           fi
           exit 0
       - name: build signal track-record ledger (w0-stageB)
@@ -380,7 +380,7 @@ jobs:
         # `git add data/` below.
         run: |
           echo "::group::build_track_record"
-          python -m scripts.build_track_record 2>&1 | tee /tmp/tr.log
+          python -m scripts.build_track_record 2>&1 | tee "$RUNNER_TEMP/tr.log"
           echo "::endgroup::"
           python -m scripts.audit_sizes || echo "::warning::track_record size tripwire fired �� check data/quality/sizes_audit.json"
           exit 0
@@ -437,16 +437,16 @@ jobs:
           # <mkt>stockdata/index.json newer than this marker was (re)built FRESH this run,
           # so the rebuild step skips it; a market whose dashboard failed keeps its older
           # (pulled) index.json and is still rebuilt. Set BEFORE any builder runs.
-          touch /tmp/engine_libs_marker
+          touch "$RUNNER_TEMP/engine_libs_marker"
           run_py() {
             local label="$1"; local mod="$2"
             echo "::group::$label"
-            python -m "$mod" > /tmp/step.log 2>&1; local rc=$?
-            cat /tmp/step.log
+            python -m "$mod" > "$RUNNER_TEMP/step.log" 2>&1; local rc=$?
+            cat "$RUNNER_TEMP/step.log"
             echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 600)"
-              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/step.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/step.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/step.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
             fi
           }
           run_py "regime engine (engine.run)" engine.run
@@ -538,8 +538,8 @@ jobs:
         # artifacts are fresh) and BEFORE build_spine_index (index reads the stamped rows).
         run: |
           set +e
-          python -m scripts.backfill_regime_stamps > /tmp/backfill_regime_stamps.log 2>&1; rc=$?
-          cat /tmp/backfill_regime_stamps.log
+          python -m scripts.backfill_regime_stamps > "$RUNNER_TEMP/backfill_regime_stamps.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/backfill_regime_stamps.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=backfill_regime_stamps::rc=$rc (non-fatal)"; fi
           exit 0  # PR-2 fix: missing exit 0 caused [ "$rc" -ne 0 ] to exit 1 when rc=0, skipping all downstream kernel steps
       - name: Sector-flip confirmation lens (Policy-Shock W1-C)
@@ -553,8 +553,8 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          python -m scripts.build_flip_confirmation > /tmp/flip_confirmation.log 2>&1; rc=$?
-          cat /tmp/flip_confirmation.log
+          python -m scripts.build_flip_confirmation > "$RUNNER_TEMP/flip_confirmation.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/flip_confirmation.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_flip_confirmation::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
@@ -577,8 +577,8 @@ jobs:
         run: |
           set +e
           echo "::group::build_prophet (plan refresh + ledger advancement)"
-          python -m scripts.build_prophet --publish > /tmp/prophet.log 2>&1; rc=$?
-          cat /tmp/prophet.log
+          python -m scripts.build_prophet --publish > "$RUNNER_TEMP/prophet.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/prophet.log"
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_prophet::rc=$rc (non-fatal — prophet artifacts degrade gracefully)"; fi
           exit 0
@@ -621,7 +621,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           set +e
-          ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
+          ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
           # brun <slug> <label> <module> [args…] — run one builder resiliently into its
           # OWN scratch files (never shared across the parallel subshells), recording the
           # exit code + wall-seconds. Output (incl. stderr) is buffered, replayed later.
@@ -737,8 +737,8 @@ jobs:
           COLLECT_LANE: nightly
         run: |
           set +e
-          python -m scripts.build_basket_turn_grading > /tmp/basket_turn_grading.log 2>&1; rc=$?
-          cat /tmp/basket_turn_grading.log
+          python -m scripts.build_basket_turn_grading > "$RUNNER_TEMP/basket_turn_grading.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/basket_turn_grading.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_basket_turn_grading::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Polygon reference-universe cache (GICS sector + market cap for heatmap manifest)
@@ -781,8 +781,8 @@ jobs:
         # brief reflects the freshest track record. Deterministic, no API key, never aborts.
         run: |
           set +e
-          python -m engine.master_brain_scorer > /tmp/mb_score.log 2>&1; rc=$?
-          cat /tmp/mb_score.log
+          python -m engine.master_brain_scorer > "$RUNNER_TEMP/mb_score.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/mb_score.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=master_brain_scorer::rc=$rc (non-fatal)"; fi
           exit 0
       - name: master brain (multi-lens LLM synthesis; default-off, resilient)
@@ -797,8 +797,8 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
-          python -m engine.master_brain > /tmp/mb.log 2>&1; rc=$?
-          cat /tmp/mb.log
+          python -m engine.master_brain > "$RUNNER_TEMP/mb.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/mb.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=master_brain::rc=$rc (non-fatal)"; fi
           exit 0
       - name: AI desk scorer (durability loop; deterministic, resilient)
@@ -808,8 +808,8 @@ jobs:
         # (no API key); runs BEFORE the desk so today's note sees the freshest record.
         run: |
           set +e
-          python -m engine.ai_desk_scorer > /tmp/aidesk_score.log 2>&1; rc=$?
-          cat /tmp/aidesk_score.log
+          python -m engine.ai_desk_scorer > "$RUNNER_TEMP/aidesk_score.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/aidesk_score.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=ai_desk_scorer::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Demand-chain ledger (Demand Desk Phase 2; deterministic, resilient)
@@ -820,8 +820,8 @@ jobs:
         # forward record. Reuses the ai_desk_scorer predicate evaluators. Never aborts.
         run: |
           set +e
-          python -m engine.demand_ledger > /tmp/demand_ledger.log 2>&1; rc=$?
-          cat /tmp/demand_ledger.log
+          python -m engine.demand_ledger > "$RUNNER_TEMP/demand_ledger.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/demand_ledger.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=demand_ledger::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Demand-chain Phase-0 validation (forward placebo test; resilient)
@@ -832,8 +832,8 @@ jobs:
         # PENDING until ≥20 decided. Deterministic; never aborts.
         run: |
           set +e
-          python -m scripts.demand_chain_phase0 > /tmp/demand_phase0.log 2>&1; rc=$?
-          cat /tmp/demand_phase0.log
+          python -m scripts.demand_chain_phase0 > "$RUNNER_TEMP/demand_phase0.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/demand_phase0.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=demand_chain_phase0::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Demand Desk page (build_demand)
@@ -854,8 +854,8 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
-          python -m engine.ai_desk > /tmp/aidesk.log 2>&1; rc=$?
-          cat /tmp/aidesk.log
+          python -m engine.ai_desk > "$RUNNER_TEMP/aidesk.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/aidesk.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=ai_desk::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Narrative Brain (Claude radar-reasoning desk; context-only, resilient)
@@ -869,8 +869,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set +e
-          python -m engine.narrative_brain > /tmp/nbrain.log 2>&1; rc=$?
-          cat /tmp/nbrain.log
+          python -m engine.narrative_brain > "$RUNNER_TEMP/nbrain.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/nbrain.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=narrative_brain::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Risk Brain (Claude/Opus daily drawdown-risk officer; context-only, resilient)
@@ -885,8 +885,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set +e
-          python -m engine.risk_brain > /tmp/rbrain.log 2>&1; rc=$?
-          cat /tmp/rbrain.log
+          python -m engine.risk_brain > "$RUNNER_TEMP/rbrain.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/rbrain.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=risk_brain::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Risk Radar self-correction (Opus reviews graded mistakes -> bounded recalibration)
@@ -900,8 +900,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set +e
-          python -m engine.risk_radar_review > /tmp/rrev.log 2>&1; rc=$?
-          cat /tmp/rrev.log
+          python -m engine.risk_radar_review > "$RUNNER_TEMP/rrev.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/rrev.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=risk_radar_review::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Radar + Brain ledger scorer (grade the falsifiable theses vs SPY; context-only)
@@ -910,8 +910,8 @@ jobs:
         # (never feeds a score); needs no key. Runs after the brain so fresh theses are logged.
         run: |
           set +e
-          python -m engine.radar_scorer > /tmp/radar_score.log 2>&1; rc=$?
-          cat /tmp/radar_score.log
+          python -m engine.radar_scorer > "$RUNNER_TEMP/radar_score.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/radar_score.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=radar_scorer::rc=$rc (non-fatal)"; fi
           exit 0
       - name: US Buy Board ledger (snapshot today + retro-grade matured boards vs SPY/sector)
@@ -949,8 +949,8 @@ jobs:
         # macro_context_id.  Same-asof replace semantics — safe to re-run.
         run: |
           set +e
-          python -m scripts.build_macro_snapshot > /tmp/macro_snapshot.log 2>&1; rc=$?
-          cat /tmp/macro_snapshot.log
+          python -m scripts.build_macro_snapshot > "$RUNNER_TEMP/macro_snapshot.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/macro_snapshot.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_macro_snapshot::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build macro context page (nw-macro-rail R5)
@@ -960,8 +960,8 @@ jobs:
         # hub contract data/macro_context/latest.json.  Non-fatal.
         run: |
           set +e
-          python -m scripts.build_macro_context > /tmp/macro_context.log 2>&1; rc=$?
-          cat /tmp/macro_context.log
+          python -m scripts.build_macro_context > "$RUNNER_TEMP/macro_context.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/macro_context.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_macro_context::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build spine index (neural-web W2)
@@ -976,8 +976,8 @@ jobs:
         if: always()
         run: |
           set +e
-          python -m scripts.build_spine_index > /tmp/spine_index.log 2>&1; rc=$?
-          cat /tmp/spine_index.log
+          python -m scripts.build_spine_index > "$RUNNER_TEMP/spine_index.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/spine_index.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_spine_index::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build reliability kernel estimates (neural-web W3)
@@ -989,8 +989,8 @@ jobs:
         if: always()
         run: |
           set +e
-          python -m scripts.build_kernel_estimates > /tmp/kernel_estimates.log 2>&1; rc=$?
-          cat /tmp/kernel_estimates.log
+          python -m scripts.build_kernel_estimates > "$RUNNER_TEMP/kernel_estimates.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/kernel_estimates.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_kernel_estimates::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build covariance spine (R-ORTH PR-3)
@@ -1002,8 +1002,8 @@ jobs:
         if: always()
         run: |
           set +e
-          python -m scripts.build_covariance_spine > /tmp/covariance_spine.log 2>&1; rc=$?
-          cat /tmp/covariance_spine.log
+          python -m scripts.build_covariance_spine > "$RUNNER_TEMP/covariance_spine.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/covariance_spine.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_covariance_spine::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build kernel diagnostics (neural-web W3)
@@ -1014,8 +1014,8 @@ jobs:
         if: always()
         run: |
           set +e
-          python -m scripts.build_kernel_diagnostics > /tmp/kernel_diagnostics.log 2>&1; rc=$?
-          cat /tmp/kernel_diagnostics.log
+          python -m scripts.build_kernel_diagnostics > "$RUNNER_TEMP/kernel_diagnostics.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/kernel_diagnostics.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_kernel_diagnostics::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build kernel half-lives (Signal Commons W2 — display-only)
@@ -1031,8 +1031,8 @@ jobs:
         if: always()
         run: |
           set +e
-          python -m scripts.build_kernel_half_lives > /tmp/kernel_half_lives.log 2>&1; rc=$?
-          cat /tmp/kernel_half_lives.log
+          python -m scripts.build_kernel_half_lives > "$RUNNER_TEMP/kernel_half_lives.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/kernel_half_lives.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_kernel_half_lives::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Confluence Graph (Neural Web W4 — display-only typed graph)
@@ -1043,8 +1043,8 @@ jobs:
         # Gaps (missing oracle files — gitignored) logged as warnings, never failures.
         run: |
           set +e
-          python -m scripts.build_confluence_graph > /tmp/confluence_graph.log 2>&1; rc=$?
-          cat /tmp/confluence_graph.log
+          python -m scripts.build_confluence_graph > "$RUNNER_TEMP/confluence_graph.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/confluence_graph.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_confluence_graph::rc=$rc (non-fatal)"; fi
           exit 0
       - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
@@ -1062,11 +1062,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set +e
-          python -m engine.altdata_brain > /tmp/altbrain.log 2>&1; rc=$?
-          cat /tmp/altbrain.log
+          python -m engine.altdata_brain > "$RUNNER_TEMP/altbrain.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/altbrain.log"
           # re-emit the Mastermind feed + re-render the page with the fresh Opus read
-          python -m scripts.build_alt_data > /tmp/altbrain_render.log 2>&1
-          tail -3 /tmp/altbrain_render.log
+          python -m scripts.build_alt_data > "$RUNNER_TEMP/altbrain_render.log" 2>&1
+          tail -3 "$RUNNER_TEMP/altbrain_render.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=altdata_brain::rc=$rc (non-fatal)"; fi
           exit 0
       - name: radar upgrade (build_radar_plus + IC)
@@ -1078,9 +1078,9 @@ jobs:
         # BEFORE build_intelligence (which absorbs radar_ticker.json). Resilient.
         run: |
           set +e
-          python -m scripts.build_radar_plus > /tmp/radarplus.log 2>&1; tail -4 /tmp/radarplus.log
-          python -m scripts.build_radar_ic   > /tmp/radaric.log   2>&1; tail -3 /tmp/radaric.log
-          python -m scripts.build_radar_page  > /tmp/radarpage.log 2>&1; tail -1 /tmp/radarpage.log
+          python -m scripts.build_radar_plus > "$RUNNER_TEMP/radarplus.log" 2>&1; tail -4 "$RUNNER_TEMP/radarplus.log"
+          python -m scripts.build_radar_ic   > "$RUNNER_TEMP/radaric.log"   2>&1; tail -3 "$RUNNER_TEMP/radaric.log"
+          python -m scripts.build_radar_page  > "$RUNNER_TEMP/radarpage.log" 2>&1; tail -1 "$RUNNER_TEMP/radarpage.log"
           exit 0
       - name: unified intelligence bundle (build_intelligence)
         # AFTER build_news (news/by_ticker.json) + build_alt_data + the Alt-Data Brain re-emit
@@ -1147,14 +1147,14 @@ jobs:
             # universe already ran, so rebuilding is pure duplicate work. A dashboard that
             # swallowed an error leaves an older (pulled) index.json => marker is newer =>
             # we still rebuild and the library ships.
-            if [ -f /tmp/engine_libs_marker ] && [ "$idx" -nt /tmp/engine_libs_marker ]; then
+            if [ -f "$RUNNER_TEMP/engine_libs_marker" ] && [ "$idx" -nt "$RUNNER_TEMP/engine_libs_marker" ]; then
               echo "::notice::$mod — already built fresh this run ($idx); skipping redundant rebuild"
               continue
             fi
-            echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
+            echo "::group::$mod"; python -m "$mod" > "$RUNNER_TEMP/lib.log" 2>&1; rc=$?; cat "$RUNNER_TEMP/lib.log"; echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
-              { echo "### ❌ $mod failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/lib.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/lib.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $mod failed (rc=$rc)"; echo '```'; tail -n 40 "$RUNNER_TEMP/lib.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             fi
           done
           exit 0
@@ -1372,8 +1372,8 @@ jobs:
         # Output covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: |
           set +e
-          python -m scripts.build_entity_thesis_mechanism_registry > /tmp/etm_registry.log 2>&1; rc=$?
-          cat /tmp/etm_registry.log
+          python -m scripts.build_entity_thesis_mechanism_registry > "$RUNNER_TEMP/etm_registry.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/etm_registry.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_entity_thesis_mechanism_registry::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build mechanism pathways (NW core-cognition W1 — MPC v1)
@@ -1387,8 +1387,8 @@ jobs:
         # Fail-soft: stale trigger or insufficient coverage → no_pathway artifact (never raises).
         run: |
           set +e
-          python -m scripts.build_mechanism_pathways > /tmp/mechanism_pathways.log 2>&1; rc=$?
-          cat /tmp/mechanism_pathways.log
+          python -m scripts.build_mechanism_pathways > "$RUNNER_TEMP/mechanism_pathways.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/mechanism_pathways.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_mechanism_pathways::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build thematic state (TIL W0 — display/context only)
@@ -1741,8 +1741,8 @@ jobs:
       - name: factor contradictions detector (Pair G borrowed_strength — P1-D)
         run: |
           set +e
-          python -m engine.neuralweb.factor_contradictions > /tmp/factor_contradictions.log 2>&1; rc=$?
-          cat /tmp/factor_contradictions.log
+          python -m engine.neuralweb.factor_contradictions > "$RUNNER_TEMP/factor_contradictions.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/factor_contradictions.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=factor_contradictions::rc=$rc (non-fatal — dormant behavior expected until panel backfill)"; fi
           exit 0
       # RUL-NW1: factor_panel job is the sole advancer of factor-namespace artifacts.
@@ -2064,16 +2064,16 @@ jobs:
         # Covered by the narrow git add block in 'commit cortex outputs' below. Always exits 0.
         run: |
           set +e
-          python -m scripts.build_context_risk > /tmp/context_risk.log 2>&1; rc=$?
-          cat /tmp/context_risk.log
+          python -m scripts.build_context_risk > "$RUNNER_TEMP/context_risk.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/context_risk.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_context_risk::rc=$rc (non-fatal)"; fi
           exit 0
       - name: register factor hypotheses (P2 — idempotent, budget-deferred)
         run: |
           set +e
-          python -m scripts.register_factor_hypotheses --only h1,h2,h3 --defer-on-budget > /tmp/factor_hyp_reg.log 2>&1; rc1=$?
-          python -m scripts.register_factor_hypotheses --only h4,h5 --defer-on-budget >> /tmp/factor_hyp_reg.log 2>&1; rc2=$?
-          cat /tmp/factor_hyp_reg.log
+          python -m scripts.register_factor_hypotheses --only h1,h2,h3 --defer-on-budget > "$RUNNER_TEMP/factor_hyp_reg.log" 2>&1; rc1=$?
+          python -m scripts.register_factor_hypotheses --only h4,h5 --defer-on-budget >> "$RUNNER_TEMP/factor_hyp_reg.log" 2>&1; rc2=$?
+          cat "$RUNNER_TEMP/factor_hyp_reg.log"
           if [ "$rc1" -ne 0 ] || [ "$rc2" -ne 0 ]; then
             echo "::warning title=register_factor_hypotheses::rc=($rc1,$rc2) (non-fatal)"
           fi
@@ -2084,22 +2084,22 @@ jobs:
         # registered on first run.  Output is display/context tier only (R-CI6).
         run: |
           set +e
-          python -m scripts.build_context_candidates > /tmp/context_candidates.log 2>&1; rc=$?
-          cat /tmp/context_candidates.log
+          python -m scripts.build_context_candidates > "$RUNNER_TEMP/context_candidates.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/context_candidates.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=context_candidates::rc=$rc (non-fatal — last committed context_candidates.jsonl remains valid)"; fi
           exit 0
       - name: cortex deliberation (Opus-class tool loop — attention queue, memo, hypothesis metabolism)
         run: |
           set +e
-          python -m engine.neuralweb.cortex > /tmp/cortex.log 2>&1; rc=$?
-          cat /tmp/cortex.log
+          python -m engine.neuralweb.cortex > "$RUNNER_TEMP/cortex.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/cortex.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=cortex::rc=$rc (non-fatal — last committed outputs remain valid)"; fi
           exit 0
       - name: grade cortex attention + A2 earn-in (W7b PR2)
         run: |
           set +e
-          python -m scripts.grade_cortex_attention > /tmp/cortex_grade.log 2>&1; rc=$?
-          cat /tmp/cortex_grade.log
+          python -m scripts.grade_cortex_attention > "$RUNNER_TEMP/cortex_grade.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/cortex_grade.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=cortex_grade::rc=$rc (non-fatal)"; fi
           exit 0
       # P1-D: grade factor_attention reflex firings. Parallel grader to grade_cortex_attention;
@@ -2107,23 +2107,23 @@ jobs:
       - name: grade factor attention + A2 earn-in (P1-D)
         run: |
           set +e
-          python -m scripts.grade_factor_attention > /tmp/factor_attention_grade.log 2>&1; rc=$?
-          cat /tmp/factor_attention_grade.log
+          python -m scripts.grade_factor_attention > "$RUNNER_TEMP/factor_attention_grade.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/factor_attention_grade.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=factor_attention_grade::rc=$rc (non-fatal)"; fi
           exit 0
       - name: evaluate due cortex hypotheses (W7b PR2)
         run: |
           set +e
-          python -m scripts.evaluate_cortex_hypotheses > /tmp/cortex_eval.log 2>&1; rc=$?
-          cat /tmp/cortex_eval.log
+          python -m scripts.evaluate_cortex_hypotheses > "$RUNNER_TEMP/cortex_eval.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/cortex_eval.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=cortex_eval::rc=$rc (non-fatal)"; fi
           exit 0
       - name: refresh neuralweb health — cortex section (PR-C)
         if: always()
         run: |
           set +e
-          python -m scripts.build_neuralweb_health --refresh-cortex > /tmp/nw_health_refresh.log 2>&1; rc=$?
-          cat /tmp/nw_health_refresh.log
+          python -m scripts.build_neuralweb_health --refresh-cortex > "$RUNNER_TEMP/nw_health_refresh.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/nw_health_refresh.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=nw_health_refresh::rc=$rc (non-fatal — keeping previous health.json)"; fi
           exit 0
       - name: build neuralweb daily brief — finalize (PR-D, cortex phase)
@@ -2133,8 +2133,8 @@ jobs:
         # Fail-open: any missing input → brief with explicit gap notes, exit 0.
         run: |
           set +e
-          python -m scripts.build_neuralweb_brief --finalize > /tmp/nw_brief_finalize.log 2>&1; rc=$?
-          cat /tmp/nw_brief_finalize.log
+          python -m scripts.build_neuralweb_brief --finalize > "$RUNNER_TEMP/nw_brief_finalize.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/nw_brief_finalize.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=nw_brief_finalize::rc=$rc (non-fatal — keeping previous daily_brief.json)"; fi
           exit 0
       - name: commit cortex outputs
@@ -2207,8 +2207,8 @@ jobs:
         # data/neuralweb/causal_feature_inventory.json. Non-fatal (exits 0).
         run: |
           set +e
-          python -m scripts.build_causal_inventory > /tmp/causal_inventory.log 2>&1; rc=$?
-          cat /tmp/causal_inventory.log
+          python -m scripts.build_causal_inventory > "$RUNNER_TEMP/causal_inventory.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/causal_inventory.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_causal_inventory::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build causal frontier + surprise queue + lab state (CHF W3 nightly, CHF-R8)
@@ -2217,8 +2217,8 @@ jobs:
         #           causal_lab_state.json (data/ + site/ copies). Non-fatal.
         run: |
           set +e
-          python -m scripts.build_causal_frontier > /tmp/causal_frontier.log 2>&1; rc=$?
-          cat /tmp/causal_frontier.log
+          python -m scripts.build_causal_frontier > "$RUNNER_TEMP/causal_frontier.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/causal_frontier.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_causal_frontier::rc=$rc (non-fatal)"; fi
           exit 0
       - name: build causal confluence audit (CHF W6 nightly, CHF-R10)
@@ -2229,8 +2229,8 @@ jobs:
         # Outputs: data/neuralweb/causal_confluence_audit.json. Non-fatal.
         run: |
           set +e
-          python -m scripts.build_causal_confluence_audit > /tmp/causal_audit.log 2>&1; rc=$?
-          cat /tmp/causal_audit.log
+          python -m scripts.build_causal_confluence_audit > "$RUNNER_TEMP/causal_audit.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/causal_audit.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_causal_confluence_audit::rc=$rc (non-fatal)"; fi
           exit 0
       - name: run causal battery (CHF W3 weekly, CHF-R8, Tuesday gate, K<=40)
@@ -2242,8 +2242,8 @@ jobs:
         run: |
           set +e
           if [ "$(date +%u)" = "2" ]; then
-            python -m scripts.build_causal_edges --weekly > /tmp/causal_edges.log 2>&1; rc=$?
-            cat /tmp/causal_edges.log
+            python -m scripts.build_causal_edges --weekly > "$RUNNER_TEMP/causal_edges.log" 2>&1; rc=$?
+            cat "$RUNNER_TEMP/causal_edges.log"
             if [ "$rc" -ne 0 ]; then echo "::warning title=build_causal_edges::rc=$rc (non-fatal)"; fi
           else
             echo "causal battery: skipping (not Tuesday, date +%u=$(date +%u))"
@@ -2262,8 +2262,8 @@ jobs:
         run: |
           set +e
           if [ "$(date +%u)" = "2" ]; then
-            python -m scripts.run_causal_brainstorm --trigger scheduled > /tmp/causal_brainstorm.log 2>&1; rc=$?
-            cat /tmp/causal_brainstorm.log
+            python -m scripts.run_causal_brainstorm --trigger scheduled > "$RUNNER_TEMP/causal_brainstorm.log" 2>&1; rc=$?
+            cat "$RUNNER_TEMP/causal_brainstorm.log"
             if [ "$rc" -ne 0 ]; then echo "::warning title=run_causal_brainstorm::rc=$rc (non-fatal)"; fi
           else
             echo "causal LLM brainstorm: skipping (not Tuesday, date +%u=$(date +%u))"
@@ -2299,8 +2299,8 @@ jobs:
         # where today > registered_at (forward evidence only — SF-R4).
         # Non-fatal: exits 0 regardless of internal errors.
         run: |
-          python -m scripts.signal_foundry_accrue > /tmp/sf_accrue.log 2>&1; rc=$?
-          cat /tmp/sf_accrue.log
+          python -m scripts.signal_foundry_accrue > "$RUNNER_TEMP/sf_accrue.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/sf_accrue.log"
           if [ "$rc" -ne 0 ]; then
             echo "::warning title=signal_foundry_accrue::rc=$rc (non-fatal)"
           fi
