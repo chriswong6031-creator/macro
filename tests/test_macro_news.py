@@ -120,7 +120,7 @@ def test_stock_wire_qualitative_news_outranks_macro_prints():
         "source": "news_rss",
         "source_name": "MarketWatch - Top Stories",
         "source_tier": "stock_wire",
-        "theme": "earnings",
+        "theme": "earnings",         # feed declares earnings
         "seendate": "2026-06-18T09:00:00+00:00",
         "url": "https://example.com/mu",
     }, {
@@ -134,8 +134,28 @@ def test_stock_wire_qualitative_news_outranks_macro_prints():
         "url": "https://example.com/cpi",
     }]
     kept = mn.filter_headlines(arts, {"max_show": 5})
-    assert kept[0]["theme"] == "earnings"
-    assert "MU" in kept[0]["tickers"]
+    # After W1C fix 2, classify_theme runs first on the title. The growth bucket
+    # deliberately carries NO bare "growth" token (only macro compounds like
+    # "gdp growth"), so "profit growth accelerates" does NOT hijack this
+    # earnings headline into the macro 'growth' theme — 'earnings' hits on the
+    # "earnings" keyword and must win.
+    micron = next((h for h in kept if "MU" in h.get("tickers", [])), None)
+    assert micron is not None, "Micron item should be kept regardless of theme"
+    assert micron["theme"] == "earnings", (
+        f"earnings headline mislabeled as {micron['theme']!r} — bare 'growth' "
+        "keyword collision regressed (see MACRO_THEMES growth-bucket note)")
+
+
+def test_classify_theme_growth_vs_earnings_collision():
+    """Bare 'growth' was removed from the growth bucket: corporate growth
+    phrasings must classify 'earnings' (or fall to the declared theme), while
+    genuine macro-growth phrasings still classify 'growth'."""
+    assert mn.classify_theme("Micron profit growth accelerates on AI demand") == "earnings"
+    assert mn.classify_theme("Netflix subscriber revenue growth beats estimates") == "earnings"
+    # macro phrasings retained by the compound tokens
+    assert mn.classify_theme("China's GDP growth slows to 4.2%") == "growth"
+    assert mn.classify_theme("Global growth outlook dims, IMF warns") == "growth"
+    assert mn.classify_theme("US economy shows signs of slowdown") == "growth"
 
 
 def test_official_pages_drop_dateless_treasury_nav_chrome(monkeypatch):
@@ -198,3 +218,184 @@ def test_llm_brief_off_by_default():
     assert mn.macro_brief([], "Goldilocks", "optimistic") is None
     assert mn.macro_brief([{"title": "x", "domain": "reuters.com", "theme": "monetary"}],
                           "Goldilocks", "optimistic (z=+1.0)") is None
+
+
+# --------------------------------------------------------------------------- #
+# W1C fix 2: theme priority inversion
+# --------------------------------------------------------------------------- #
+def test_theme_priority_content_beats_declared_feed_theme():
+    """A title with inflation keywords from a feed declared theme='stocks' must
+    be classified as 'inflation', not 'stocks'.
+    (W1C fix 2: classify_theme runs first; declared_theme is fallback only)"""
+    arts = [{
+        "title": "France inflation drops to 1.8% in June, lowest since 2021",
+        "domain": "seekingalpha.com",
+        "seendate": "2026-06-14T10:00:00+00:00",
+        "theme": "stocks",      # feed declares stocks
+        "source": "news_rss",
+        "source_tier": "stock_wire",
+        "url": "https://seekingalpha.com/x",
+    }]
+    kept = mn.filter_headlines(arts, {"sources": ["seekingalpha.com"], "max_show": 5})
+    assert len(kept) == 1, "inflation headline from stock-wire feed should be kept"
+    assert kept[0]["theme"] == "inflation", (
+        f"expected 'inflation' theme, got {kept[0]['theme']!r}")
+
+
+def test_theme_fallback_to_declared_when_title_has_no_macro_keyword():
+    """When the title has no macro keyword, the feed's declared theme is used as
+    a fallback (if it is a valid macro theme). No regression on existing behavior."""
+    arts = [{
+        "title": "Federal Reserve holds benchmark rate steady",  # has keyword → monetary
+        "domain": "reuters.com",
+        "seendate": "2026-06-14T10:00:00+00:00",
+        "theme": "credit",  # declared, but content wins
+        "source": "news_rss",
+        "source_tier": "tier1",
+        "url": "https://reuters.com/x",
+    }]
+    kept = mn.filter_headlines(arts, {"max_show": 5})
+    assert len(kept) == 1
+    # "federal reserve" hits the monetary bucket → monetary wins over declared credit
+    assert kept[0]["theme"] == "monetary"
+
+
+# --------------------------------------------------------------------------- #
+# W1C fix 3: RSS encoding
+# --------------------------------------------------------------------------- #
+def test_fetch_news_feeds_preserves_utf8_when_charset_header_missing(monkeypatch, tmp_path):
+    """END-TO-END pin of W1C fix 3: drive _fetch_news_feeds through a fake
+    requests.get whose response mirrors real requests semantics — UTF-8 bytes,
+    encoding=None (no charset header), .text decodes with ISO-8859-1 unless the
+    engine patches r.encoding first. Deleting the engine's encoding block makes
+    this test fail with a mangled title ('Europeâ€™s...')."""
+    import requests
+
+    title_with_curly = "Europe’s economy faces headwinds"  # U+2019 right single quote
+    rss_bytes = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel>'
+        f'<item><title>{title_with_curly}</title>'
+        '<link>https://economist.com/x</link>'
+        '<pubDate>Thu, 09 Jul 2026 10:00:00 GMT</pubDate></item>'
+        '</channel></rss>'
+    ).encode("utf-8")
+
+    class _Resp:
+        status_code = 200
+        apparent_encoding = "utf-8"
+        headers = {}  # no Content-Type → no charset declared
+
+        def __init__(self):
+            self.encoding = None  # what requests sets when header lacks charset
+
+        @property
+        def text(self):
+            # exact requests behavior: fall back to ISO-8859-1 when encoding unset
+            return rss_bytes.decode(self.encoding or "iso-8859-1")
+
+    monkeypatch.setattr(requests, "get", lambda url, **kw: _Resp())
+    cfg = {
+        "news_feeds": [{"name": "The Economist", "url": "https://economist.com/rss.xml",
+                        "domain": "economist.com", "theme": "macro",
+                        "source": "news_rss", "tier": "tier1"}],
+        "news_cache_dir": str(tmp_path),  # keep cache writes out of data/
+    }
+    articles, reason = mn._fetch_news_feeds(cfg, today=date(2026, 7, 10))
+    assert reason is None
+    assert len(articles) == 1
+    assert articles[0]["title"] == title_with_curly, (
+        f"UTF-8 curly apostrophe mangled: {articles[0]['title']!r}")
+
+
+# --------------------------------------------------------------------------- #
+# W1C fix 4: subject map
+# --------------------------------------------------------------------------- #
+def test_macro_theme_to_qbus_map_exists_and_covers_all_macro_themes():
+    """_MACRO_THEME_TO_QBUS must cover every key in MACRO_THEMES."""
+    missing = set(mn.MACRO_THEMES.keys()) - set(mn._MACRO_THEME_TO_QBUS.keys())
+    assert not missing, f"_MACRO_THEME_TO_QBUS is missing entries for: {missing}"
+
+
+def test_macro_theme_to_qbus_stocks_maps_to_none():
+    """'stocks' has no semantically honest qbus counterpart → maps to None (skip call).
+    (W1C fix 4: earnings/guidance/analyst/deals/capital_return/stocks/macro → None)"""
+    assert mn._MACRO_THEME_TO_QBUS["stocks"] is None
+    assert mn._MACRO_THEME_TO_QBUS["earnings"] is None
+    assert mn._MACRO_THEME_TO_QBUS["macro"] is None
+
+
+def test_macro_theme_to_qbus_core_macro_themes_have_mappings():
+    """Core macro themes that DO have qbus counterparts must map to a string."""
+    assert mn._MACRO_THEME_TO_QBUS["monetary"] == "monetary"
+    assert mn._MACRO_THEME_TO_QBUS["inflation"] == "inflation"
+    assert mn._MACRO_THEME_TO_QBUS["growth"] == "growth"
+    assert mn._MACRO_THEME_TO_QBUS["labor"] == "labor"
+    assert mn._MACRO_THEME_TO_QBUS["credit"] == "credit"
+    assert mn._MACRO_THEME_TO_QBUS["fiscal"] == "fiscal"
+
+
+# --------------------------------------------------------------------------- #
+# W1C fix 5: gdelt wiring to shared client
+# --------------------------------------------------------------------------- #
+def test_fetch_gdelt_calls_gdelt_client_get_articles(monkeypatch, tmp_path):
+    """_fetch_gdelt must call gdelt_client.get_articles and preserve return shape.
+    (W1C fix 5: HTTP layer replaced with shared throttle client)"""
+    import engine.gdelt_client as gc
+
+    captured = {}
+
+    def _mock_get_articles(params, *, timeout=30, cache_path=None, cache_ttl_s=None,
+                           min_interval=None):
+        captured["params"] = params
+        captured["timeout"] = timeout
+        return (
+            [{"title": "Fed holds rates", "url": "https://reuters.com/x",
+              "domain": "reuters.com", "seendate": "2026-07-10T12:00:00+00:00",
+              "language": "English", "sourcecountry": "US"}],
+            None,
+        )
+
+    monkeypatch.setattr(gc, "get_articles", _mock_get_articles)
+    # Redirect cache to tmp_path so we don't touch tracked paths
+    monkeypatch.setattr(mn, "_cache_path",
+                        lambda cfg, d: tmp_path / f"macro_v2_{d.isoformat()}.json")
+
+    articles, reason = mn._fetch_gdelt({}, date(2026, 7, 10))
+
+    assert captured.get("params") is not None, "gdelt_client.get_articles was not called"
+    assert "query" in captured["params"]
+    assert reason is None
+    assert len(articles) == 1
+    assert articles[0]["title"] == "Fed holds rates"
+    assert articles[0]["domain"] == "reuters.com"
+    assert articles[0]["seendate"] == "2026-07-10T12:00:00+00:00"
+
+
+def test_fetch_gdelt_maps_no_articles_to_no_headlines(monkeypatch, tmp_path):
+    """gdelt_client reason 'no_articles' must be mapped to 'no_headlines'.
+    (W1C fix 5: reason token normalisation matching news_vector.py pattern)"""
+    import engine.gdelt_client as gc
+
+    monkeypatch.setattr(gc, "get_articles",
+                        lambda *a, **k: ([], "no_articles"))
+    monkeypatch.setattr(mn, "_cache_path",
+                        lambda cfg, d: tmp_path / f"macro_v2_{d.isoformat()}.json")
+
+    articles, reason = mn._fetch_gdelt({}, date(2026, 7, 10))
+    assert articles == []
+    assert reason == "no_headlines"
+
+
+def test_fetch_gdelt_maps_rate_limited(monkeypatch, tmp_path):
+    """gdelt_client reason 'rate_limited' is preserved as-is."""
+    import engine.gdelt_client as gc
+
+    monkeypatch.setattr(gc, "get_articles",
+                        lambda *a, **k: (None, "rate_limited"))
+    monkeypatch.setattr(mn, "_cache_path",
+                        lambda cfg, d: tmp_path / f"macro_v2_{d.isoformat()}.json")
+
+    articles, reason = mn._fetch_gdelt({}, date(2026, 7, 10))
+    assert articles == []
+    assert reason == "rate_limited"

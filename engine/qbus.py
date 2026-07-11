@@ -346,7 +346,15 @@ def novelty_z(entity_or_theme: str, asof, window_days: int = 30,
 
     Deterministic: `asof` is REQUIRED (no clock). Returns None when there is no
     store or the trailing window has no variance to standardize against. PURE-ish
-    (reads the parquet unless a df is injected for testing). Never raises."""
+    (reads the parquet unless a df is injected for testing). Never raises.
+
+    Return semantics for the flat-window branch (sd <= 1e-9):
+      today > mean  (spike over flat baseline)  → 3.0  (maximally novel)
+      today == mean > 0  (quiet day matching flat nonzero baseline) → 0.0  (not novel)
+      today == 0 AND mean == 0  (subject entirely absent from store) → None
+        ("no evidence" is not the same as "zero novelty"; the template renders
+        None as "—" via the fmt_nov macro, which is the honest display.)
+    """
     try:
         if df is None:
             df = read_items()
@@ -363,9 +371,15 @@ def novelty_z(entity_or_theme: str, asof, window_days: int = 30,
         var = sum((x - mean) ** 2 for x in series) / n
         sd = var ** 0.5
         if sd <= 1e-9:
-            # no trailing variance: a nonzero today over a flat-zero window is
-            # maximally novel; matching the flat level is not.
-            return 3.0 if today > mean else 0.0
+            # no trailing variance — three distinct cases:
+            if today > mean:
+                return 3.0    # spike over flat baseline: maximally novel
+            if mean > 0:
+                return 0.0    # quiet day matching flat nonzero baseline: not novel
+            # today == 0 AND mean == 0: subject is entirely absent from the store.
+            # This is "no evidence", not "zero novelty" — return None so the
+            # template renders "—" (fmt_nov) rather than a misleading z=+0.0.
+            return None
         return round((today - mean) / sd, 3)
     except Exception as e:  # noqa: BLE001
         log.debug("qbus.novelty_z failed (%s)", e)

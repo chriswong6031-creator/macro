@@ -175,6 +175,92 @@ def test_novelty_z_none_on_empty():
     assert qbus.novelty_z("X", date(2026, 6, 1), df=_mk_df([])) is None
 
 
+def test_novelty_z_unknown_subject_returns_none():
+    """A subject entirely absent from the store is 'no evidence', not z=0.0.
+    (W1C fix 1: no-evidence honesty — today==0 AND mean==0 → None, not 0.0)"""
+    # Build a df that has only "KNOWN" entity so "UNKNOWN" has zero history AND
+    # zero today count.
+    rows = [_row(title=f"note {d}", entities=["KNOWN"],
+                 seendate=f"2026-05-{d:02d}T00:00:00+00:00",
+                 _crawled_at=f"2026-05-{d:02d}T00:00:00+00:00",
+                 url=f"https://x.com/{d}") for d in range(1, 20)]
+    df = _mk_df(rows)
+    z = qbus.novelty_z("UNKNOWN", date(2026, 6, 1), window_days=31, df=df)
+    assert z is None, f"expected None for entirely absent subject, got {z!r}"
+
+
+def test_novelty_z_flat_nonzero_returns_zero():
+    """When ALL window days have the same nonzero count AND today matches it, z=0.0.
+    This is genuinely 'not novel', so 0.0 is correct (not None).
+    The flat branch (sd<=1e-9) fires when every day in the window has identical count.
+    (W1C fix 1: contrast with absent-subject case — mean>0, today==mean → 0.0 not None)"""
+    # Inject EXACTLY 2 items per day for EVERY day in the 7-day trailing window so that
+    # all days have equal count → sd = 0 → the flat branch fires.
+    from datetime import timedelta
+    asof = date(2026, 6, 1)
+    window = 7
+    rows = []
+    for delta in range(1, window + 1):  # days 1..7 before asof
+        d = asof - timedelta(days=delta)
+        for k in range(2):
+            rows.append(_row(title=f"aaa {delta}-{k}", entities=["AAA"],
+                             seendate=f"{d.isoformat()}T00:00:00+00:00",
+                             _crawled_at=f"{d.isoformat()}T00:00:00+00:00",
+                             url=f"https://x.com/{delta}-{k}"))
+    # today: also 2 items — matches the flat baseline exactly
+    for k in range(2):
+        rows.append(_row(title=f"aaa today {k}", entities=["AAA"],
+                         seendate=f"{asof.isoformat()}T00:00:00+00:00",
+                         _crawled_at=f"{asof.isoformat()}T00:00:00+00:00",
+                         url=f"https://x.com/today-{k}"))
+    df = _mk_df(rows)
+    z = qbus.novelty_z("AAA", asof, window_days=window, df=df)
+    # All window days = 2 items → sd=0, mean=2, today=2 → today not > mean → 0.0
+    assert z is not None and z == 0.0, f"expected 0.0 for flat-nonzero match, got {z!r}"
+
+
+def test_novelty_z_drop_to_zero_on_flat_nonzero_baseline_returns_zero():
+    """Flat NONZERO window but today has NO items (attention dropped away):
+    mean>0 branch must return 0.0 — this is evidence of quiet, not absence of
+    evidence, so it must NOT become None (and must not hit the 3.0 spike branch).
+    (W1C fix 1 edge case: today=0, mean>0, sd=0)"""
+    from datetime import timedelta
+    asof = date(2026, 6, 1)
+    window = 7
+    rows = []
+    for delta in range(1, window + 1):
+        d = asof - timedelta(days=delta)
+        rows.append(_row(title=f"bbb {delta}", entities=["BBB"],
+                         seendate=f"{d.isoformat()}T00:00:00+00:00",
+                         _crawled_at=f"{d.isoformat()}T00:00:00+00:00",
+                         url=f"https://x.com/bbb-{delta}"))
+    # no rows for asof itself → today = 0 against a flat baseline of 1/day
+    df = _mk_df(rows)
+    z = qbus.novelty_z("BBB", asof, window_days=window, df=df)
+    assert z == 0.0, f"expected 0.0 for drop-to-zero on nonzero flat baseline, got {z!r}"
+
+
+def test_novelty_z_spike_over_zero_baseline_returns_3():
+    """Subject with zero history but nonzero today → 3.0 (maximally novel).
+    (W1C fix 1: today > mean in the flat branch)"""
+    rows = []
+    # No history for "NEWCO" in the trailing window
+    for d in range(1, 20):
+        rows.append(_row(title=f"other {d}", entities=["OTHER"],
+                         seendate=f"2026-05-{d:02d}T00:00:00+00:00",
+                         _crawled_at=f"2026-05-{d:02d}T00:00:00+00:00",
+                         url=f"https://x.com/{d}"))
+    # today: 4 NEWCO items (spike from zero)
+    for k in range(4):
+        rows.append(_row(title=f"newco breaking {k}", entities=["NEWCO"],
+                         seendate="2026-06-01T00:00:00+00:00",
+                         _crawled_at="2026-06-01T00:00:00+00:00",
+                         url=f"https://x.com/newco{k}"))
+    df = _mk_df(rows)
+    z = qbus.novelty_z("NEWCO", date(2026, 6, 1), window_days=31, df=df)
+    assert z == 3.0, f"expected 3.0 for spike over zero baseline, got {z!r}"
+
+
 def test_novelty_z_survives_tz_mixed_store():
     # live-store shape: EN rows carry tz-aware ISO stamps while CN rows carry
     # tz-NAIVE strings in the SAME seendate column, with tz-aware rows FIRST.
