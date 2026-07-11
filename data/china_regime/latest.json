@@ -215,8 +215,8 @@
       "chg_20d_pct": 5.29
     },
     "usdcny": {
-      "level": 6.7667,
-      "chg_20d_pct": -0.13
+      "level": 6.7921,
+      "chg_20d_pct": 0.25
     }
   },
   "property": {
@@ -285,15 +285,6 @@
         "direction": "upstream disinflation \u2014 PPI, coal, nonferrous & oil lead down"
       },
       {
-        "driver": "cny_shock",
-        "label": "Yuan (CNH) shock",
-        "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
-        "family": "fx",
-        "projection": 0.42,
-        "strength": 0.42,
-        "direction": "yuan weakening \u2014 CNH up, capital-outflow stress, equities pressured"
-      },
-      {
         "driver": "risk_off_washout",
         "label": "Risk-off / washout",
         "label_zh": "\u907f\u9669/\u6050\u614c\u51fa\u6e05",
@@ -321,6 +312,15 @@
         "direction": "AI/semis leadership \u2014 narrow tech-led tape"
       },
       {
+        "driver": "cny_shock",
+        "label": "Yuan (CNH) shock",
+        "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
+        "family": "fx",
+        "projection": 0.18,
+        "strength": 0.18,
+        "direction": "yuan weakening \u2014 CNH up, capital-outflow stress, equities pressured"
+      },
+      {
         "driver": "liquidity_impulse",
         "label": "Liquidity impulse",
         "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
@@ -334,8 +334,8 @@
         "label": "PBoC / rates repricing",
         "label_zh": "\u592e\u884c/\u5229\u7387\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": -0.15,
-        "strength": 0.15,
+        "projection": -0.01,
+        "strength": 0.01,
         "direction": "rates repricing easier \u2014 SHIBOR & CGB yields down, liquidity added"
       }
     ],

@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-07-11T03:01:42+00:00",
+  "checked_at": "2026-07-11T05:09:20+00:00",
   "expected_session": "2026-07-10",
   "stores": {
     "cache": {
@@ -13,31 +13,28 @@
       "state": "fresh"
     },
     "standouts": {
-      "asof": "2026-07-02",
-      "lag_days": 8,
-      "state": "stale"
+      "asof": "2026-07-10",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "regime": {
-      "asof": "2026-07-08",
-      "lag_days": 2,
-      "state": "slow"
+      "asof": "2026-07-10",
+      "lag_days": 0,
+      "state": "fresh"
     }
   },
   "coherence": {
-    "ok": false,
-    "standouts_asof": "2026-07-02",
-    "regime_date": "2026-07-08",
-    "note": "standouts.as_of != regime.date \u2014 snapshot is incoherent"
+    "ok": true,
+    "standouts_asof": "2026-07-10",
+    "regime_date": "2026-07-10",
+    "note": null
   },
   "regression": {
     "ok": true,
-    "prev_cache_max": "2026-07-08",
+    "prev_cache_max": "2026-07-10",
     "curr_cache_max": "2026-07-10",
     "note": null
   },
-  "verdict": "stale",
-  "banner_message": {
-    "en": "HK data stale \u2014 snapshot incoherent \u2014 standouts 2026-07-02 vs regime 2026-07-08",
-    "zh": "\u6e2f\u80a1\u6570\u636e\u5df2\u8fc7\u671f \u2014 \u5feb\u7167\u4e0d\u4e00\u81f4 \u2014 \u7cbe\u9009\u4e2a\u80a1 2026-07-02 vs \u5468\u671f\u5224\u65ad 2026-07-08"
-  }
+  "verdict": "ok",
+  "banner_message": null
 }

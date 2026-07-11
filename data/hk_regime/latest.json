@@ -21,13 +21,13 @@
     "inflation_cpi_direction",
     "inflation_inflation_beta_basket"
   ],
-  "global_score": 0.308,
-  "risk_state": "Risk-on",
+  "global_score": 0.192,
+  "risk_state": "Neutral",
   "peg_state": "weak-side (outflow)",
   "peg_distance": 0.893,
   "global_snapshot": {
-    "score": 0.308,
-    "state": "Risk-on",
+    "score": 0.192,
+    "state": "Neutral",
     "factors": [
       {
         "key": "dxy",
@@ -64,10 +64,10 @@
       {
         "key": "usdcny",
         "label": "USD / CNY",
-        "z": 0.05,
+        "z": 0.73,
         "sign": -1,
-        "risk": "neutral",
-        "level": 6.7667
+        "risk": "off",
+        "level": 6.7921
       },
       {
         "key": "eem",
@@ -350,6 +350,15 @@
         "direction": "HS-TECH leadership \u2014 narrow internet/tech-led tape"
       },
       {
+        "driver": "southbound_appetite",
+        "label": "Southbound / mainland appetite",
+        "label_zh": "\u5357\u5411/\u5185\u8d44\u504f\u597d",
+        "family": "flows",
+        "projection": 0.65,
+        "strength": 0.65,
+        "direction": "mainland risk-on \u2014 southbound buying HK, AH premium narrowing"
+      },
+      {
         "driver": "risk_off_washout",
         "label": "Risk-off / washout",
         "label_zh": "\u907f\u9669/\u6050\u614c\u51fa\u6e05",
@@ -357,15 +366,6 @@
         "projection": -0.61,
         "strength": 0.61,
         "direction": "fear unwind \u2014 VHSI down, breadth recovering, HSI rising"
-      },
-      {
-        "driver": "southbound_appetite",
-        "label": "Southbound / mainland appetite",
-        "label_zh": "\u5357\u5411/\u5185\u8d44\u504f\u597d",
-        "family": "flows",
-        "projection": 0.58,
-        "strength": 0.58,
-        "direction": "mainland risk-on \u2014 southbound buying HK, AH premium narrowing"
       },
       {
         "driver": "global_risk",
@@ -399,20 +399,20 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.246,
-      "roro_raw": -0.251,
+      "roro": -0.297,
+      "roro_raw": -0.307,
       "roro_state": "neutral",
       "hk_roro_copper_gold": 2.028,
       "hk_roro_spy": 0.023,
       "hk_roro_vix": 0.68,
       "hk_roro_dxy": -0.562,
       "hk_roro_eem": -0.785,
-      "hk_roro_usdcny": -0.648,
+      "hk_roro_usdcny": -1.419,
       "hk_roro_southbound": -1.048,
       "hk_roro_vhsi": -0.352,
       "hk_roro_breadth": -1.544,
       "hk_roro_peg": -1.125,
-      "hk_roro_ah_premium": 0.615,
+      "hk_roro_ah_premium": 0.723,
       "hk_roro_hibor": -0.296,
       "legs": [
         {
@@ -454,7 +454,7 @@
           "key": "usdcny",
           "name_en": "Offshore yuan (20d)",
           "name_zh": "\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-          "value": -0.648,
+          "value": -1.419,
           "lean": "risk-off"
         },
         {
@@ -489,7 +489,7 @@
           "key": "ah_premium",
           "name_en": "AH premium",
           "name_zh": "AH \u6ea2\u4ef7",
-          "value": 0.615,
+          "value": 0.723,
           "lean": "risk-on"
         },
         {
@@ -2162,7 +2162,7 @@
           -0.364,
           -0.131,
           -0.207,
-          -0.246
+          -0.297
         ]
       },
       "recession": {
@@ -6902,7 +6902,7 @@
           24.8,
           40.6,
           35.2,
-          32.9
+          29.3
         ]
       }
     },
@@ -6910,10 +6910,10 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated slowdown/drawdown gauges; never feeds hk_axes / hk_regime / hk_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 33,
+    "fe_score": 29,
     "band": "Fear",
     "band_zh": "\u6050\u60e7",
-    "roro": -0.246,
+    "roro": -0.297,
     "roro_state": "neutral",
     "legs": [
       {
@@ -6960,8 +6960,8 @@
         "key": "usdcny",
         "name_en": "Offshore yuan (20d)",
         "name_zh": "\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-        "value": -0.648,
-        "pct": 19,
+        "value": -1.419,
+        "pct": 7,
         "lean": "risk-off"
       },
       {
@@ -7000,8 +7000,8 @@
         "key": "ah_premium",
         "name_en": "AH premium",
         "name_zh": "AH \u6ea2\u4ef7",
-        "value": 0.615,
-        "pct": 41,
+        "value": 0.723,
+        "pct": 45,
         "lean": "risk-on"
       },
       {
