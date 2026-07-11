@@ -326,6 +326,10 @@ def assess(latest: dict) -> dict | None:
                      "央行流动性序列；不同于警报腿，此读数尚未经前瞻检验，风险可能再度加速。降险→回补的"
                      "应对是仓位管理、分批进行。日本央行仅通过全球央行总潮汐体现（无独立日本数据源）。")
 
+        # RRX2 WA-3: mirror the drivers block (which scares faded / warm) from trajectory.
+        # Old artifacts without a drivers key → None → template renders nothing.
+        drivers = traj.get("drivers")
+
         return {
             "present": True,
             "phase": phase, "receding": receding, "peaking": peaking,
@@ -348,6 +352,8 @@ def assess(latest: dict) -> dict | None:
             "spark_w": traj.get("spark_w"), "spark_h": traj.get("spark_h"),
             # catalysts
             "catalysts": cats, "n_catalysts": n_cat, "n_fresh": n_fresh,
+            # RRX2 WA-3: drivers line (which scares faded / still warm); None on old artifacts
+            "drivers": drivers,
             # copy
             "headline_en": head_en, "headline_zh": head_zh,
             "sub_en": sub_en, "sub_zh": sub_zh,

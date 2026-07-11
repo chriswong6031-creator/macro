@@ -88,8 +88,12 @@ def log_snapshot(recovery: dict, radar_snap: dict, root=None) -> bool:
                 chips_snap[k] = {
                     "fired": bool(chip.get("fired")),
                     "fresh": bool(chip.get("fresh")),
+                    # RRX2 WA-6: record channel alongside fired/fresh for the audit log
+                    "channel": chip.get("channel", "internals"),
                 }
         veto = mkt.get("veto") or {}
+        # RRX2 WA-6: record morphology.shape in the audit row
+        morphology_shape = (mkt.get("morphology") or {}).get("shape", "grinding")
 
         entry = {
             "asof": asof,
@@ -103,6 +107,8 @@ def log_snapshot(recovery: dict, radar_snap: dict, root=None) -> bool:
             "liquidity_n": int(recovery.get("n_fresh") or 0),
             "market_confirmed": bool(mkt.get("market_confirmed")),
             "turn_confirmed_full": bool(recovery.get("turn_confirmed_full")),
+            # RRX2 WA-6: morphology shape alongside chip states (same rebound-ruler grading path)
+            "morphology_shape": morphology_shape,
             "logged_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "graded": None,
         }

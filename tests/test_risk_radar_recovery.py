@@ -2,7 +2,8 @@
 
 Covers: the trajectory phase classifier (receding / peaking / rising), the liquidity-catalyst
 detector, the assembled recovery read, and the load-bearing invariant that it is DISPLAY-ONLY
-(it never injects a score ceiling or amplification key into the radar view-model)."""
+(it never injects a score ceiling or amplification key into the radar view-model).
+RRX2 WA additions: drivers computation, old-artifact compat, channel semantics."""
 import numpy as np
 import pandas as pd
 
@@ -184,3 +185,73 @@ def test_recovery_is_display_only_no_ceiling_or_amp():
     rec = risk_radar_recovery.assess(_receding_latest())
     assert "ceiling" not in rec
     assert "amp" not in rec and "amp_keys" not in rec
+
+
+# ---- RRX2 WA: drivers computation ------------------------------------------------------------
+def test_trajectory_emits_drivers_block():
+    """trajectory() must emit a 'drivers' dict with 'faded' and 'warm' lists (RRX2 WA-3)."""
+    vals = list(np.linspace(20, 92, 55)) + list(np.linspace(92, 70, 25))
+    t = risk_radar.trajectory(_subs(vals), risk_radar._calib())
+    assert t is not None
+    assert "drivers" in t, "trajectory must emit drivers block"
+    drv = t["drivers"]
+    assert "faded" in drv and "warm" in drv
+    assert isinstance(drv["faded"], list)
+    assert isinstance(drv["warm"], list)
+    # Each driver entry must have key/label_en/label_zh/peak/now
+    for d in drv["faded"] + drv["warm"]:
+        assert "key" in d and "label_en" in d and "label_zh" in d
+        assert "peak" in d and "now" in d
+
+
+def test_drivers_faded_when_scare_dropped():
+    """Scares with peak>=50 and (peak-now)>=10 appear in faded, sorted by drop desc, cap 3."""
+    # In the test subs: credit=v, rates=0.6*v, bubble=0.5*v, growth=0.4*v, vol=0.3*v
+    # With v rising to 92 then falling to 70: credit peak~92 now~70 (drop 22), rates peak~55 now~42...
+    vals = list(np.linspace(20, 92, 55)) + list(np.linspace(92, 70, 25))
+    t = risk_radar.trajectory(_subs(vals), risk_radar._calib())
+    drv = t["drivers"]
+    # credit scare: peak ~92, now ~70, drop ~22 — must appear in faded
+    faded_keys = [d["key"] for d in drv["faded"]]
+    assert "credit" in faded_keys, f"credit should be in faded, got {faded_keys}"
+    assert len(drv["faded"]) <= 3, "faded capped at 3"
+
+
+def test_drivers_warm_when_scare_above_watch_band():
+    """Scares with now >= watch_band (55) appear in warm, cap 2."""
+    # With v at 92 in the last window: credit=92 (warm), rates=55.2 (just at watch)
+    vals = list(np.linspace(60, 92, 80))  # still rising / peaking, high values
+    t = risk_radar.trajectory(_subs(vals), risk_radar._calib())
+    drv = t["drivers"]
+    # credit sub-score = vals[-1] = 92 >= 55 -> warm
+    warm_keys = [d["key"] for d in drv["warm"]]
+    assert "credit" in warm_keys
+    assert len(drv["warm"]) <= 2, "warm capped at 2"
+
+
+def test_drivers_mirrored_through_assess():
+    """assess() must pass drivers from trajectory through to the recovery dict (RRX2 WA-3)."""
+    rec = risk_radar_recovery.assess(_receding_latest())
+    assert rec and rec["present"] is True
+    assert "drivers" in rec
+    drv = rec["drivers"]
+    assert drv is not None
+    assert "faded" in drv and "warm" in drv
+
+
+def test_drivers_absent_is_none_on_old_artifact():
+    """Old artifacts without 'drivers' key in trajectory must produce drivers=None in assess()."""
+    vals = list(np.linspace(20, 92, 55)) + list(np.linspace(92, 70, 25))
+    traj = risk_radar.trajectory(_subs(vals), risk_radar._calib())
+    # Simulate old artifact: remove drivers key
+    traj_old = {k: v for k, v in traj.items() if k != "drivers"}
+    latest = {
+        "risk_radar": {"trajectory": traj_old},
+        "liquidity_overlay": "expanding",
+        "fed_stance": {"stance": "dovish", "implied_cuts_12m": 3.0, "guidance": "easing"},
+        "fed_path": {"implied_cuts_12m": 3.0},
+    }
+    rec = risk_radar_recovery.assess(latest)
+    assert rec and rec["present"] is True
+    # drivers key should be None (not present in old trajectory)
+    assert rec.get("drivers") is None
