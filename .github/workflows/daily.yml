@@ -1500,7 +1500,8 @@ jobs:
       - name: grade thematic (TIL W6 — grading pack)
         if: always()
         # TIL W6 (PR-H) grading pack — AFTER build_thematic_state.
-        # Stage 1: crowd-arrival lead-lag grader → data/foresight/earliness_grades.json.
+        # Stage 1: append attention rows → data/foresight/earliness_log.jsonl (sole nightly
+        # advancer of the log), then crowd-arrival lead-lag grader → data/foresight/earliness_grades.json.
         # Stage 2: placebo tape → data/foresight/theme_placebo_tape.jsonl (append-only).
         # Stage 3: qledger falsifier auto-evaluation → data/qledger/falsifier_evaluations.jsonl (append-only).
         # Authority: is_context_only=true, all promotion flags false. No LLM calls. Always exits 0.

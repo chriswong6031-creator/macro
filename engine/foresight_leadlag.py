@@ -350,6 +350,15 @@ def _pooled_summary(flag_grades: list[dict]) -> dict:
     ]
     overall_median = float(np.median(all_leads)) if all_leads else None
 
+    # n_graded_flags / share_led are the keys the TIL fitness sensor
+    # (engine/metabolism/til_fitness._read_lead_days) reads — they must exist
+    # at THIS level or the sensor reports n=0 forever even after grades accrue.
+    n_graded_flags = sum(1 for g in thesis_grades if g.get("n_legs_arrived", 0) > 0)
+    share_led_overall = (
+        round(float(sum(1 for v in all_leads if v > 0) / len(all_leads)), 3)
+        if all_leads else None
+    )
+
     if overall_median is None:
         front_run_assessment = "INSUFFICIENT_DATA"
     elif abs(overall_median) <= 2:
@@ -362,6 +371,8 @@ def _pooled_summary(flag_grades: list[dict]) -> dict:
     return {
         "n_thesis_flags": len(thesis_grades),
         "n_control_flags": len(flag_grades) - len(thesis_grades),
+        "n_graded_flags": n_graded_flags,
+        "share_led": share_led_overall,
         "by_leg": summary_by_leg,
         "pooled_pre_arrival_excess_pct": round(float(np.mean(pre_vals)), 2) if pre_vals else None,
         "pooled_post_arrival_excess_pct": round(float(np.mean(post_vals)), 2) if post_vals else None,
@@ -404,8 +415,21 @@ def compute_earliness_grades(root: Path, today: str | None = None) -> dict:
             continue
         by_theme.setdefault(theme, []).append(row)
 
+    # Explicit accrual counters: a young/empty attention log must be
+    # distinguishable from a broken grader and from a real graded null.
+    log_dates = sorted({r.get("asof") for r in earliness_log if r.get("asof")})
+    log_coverage = {
+        "n_rows": len(earliness_log),
+        "n_themes": len(by_theme),
+        "n_dates": len(log_dates),
+        "first_asof": log_dates[0] if log_dates else None,
+        "last_asof": log_dates[-1] if log_dates else None,
+        "min_rows_per_theme_to_grade": _MIN_LOG_ENTRIES,
+    }
+
     if not foresight_flags:
-        return _null_artifact(today, "foresight/log.jsonl absent or empty")
+        return _null_artifact(today, "foresight/log.jsonl absent or empty",
+                              log_coverage=log_coverage)
 
     # Load SPY for excess calculations
     try:
@@ -440,18 +464,35 @@ def compute_earliness_grades(root: Path, today: str | None = None) -> dict:
     if n_no_log > 0:
         stale_legs.append(f"{n_no_log} themes in foresight/log.jsonl have no earliness_log rows yet")
 
+    n_legs_arrived_total = sum(g["n_legs_arrived"] for g in flag_grades)
+    # status: "accruing" = flags exist but no attention crossing graded yet
+    # (young or empty log — NOT a grader failure); "grading" = ≥1 arrival graded.
+    status = "grading" if n_legs_arrived_total > 0 else "accruing"
+    accrual_note = ""
+    if status == "accruing":
+        accrual_note = (
+            f"ACCRUING — no attention arrivals graded yet: earliness_log has "
+            f"{log_coverage['n_rows']} rows over {log_coverage['n_dates']} days "
+            f"across {log_coverage['n_themes']} themes; a theme needs ≥"
+            f"{_MIN_LOG_ENTRIES} rows plus a post-flag threshold crossing before "
+            f"lead-days exist. Young-tape state, not a grader failure. "
+        )
+
     return {
         "as_of": today,
         "produced_at": datetime.now(timezone.utc).isoformat(),
+        "status": status,
         "n_flags": len(flag_grades),
         "n_pending": n_pending,
-        "n_legs_arrived_total": sum(g["n_legs_arrived"] for g in flag_grades),
+        "n_legs_arrived_total": n_legs_arrived_total,
+        "log_coverage": log_coverage,
         "authority": AUTHORITY_BLOCK,
         "stale_legs": stale_legs,
         "pooled_summary": pooled,
         "flag_grades": flag_grades,
         "schema": "foresight.earliness_grades.v1",
         "note": (
+            f"{accrual_note}"
             f"Crowd-arrival lead-lag grader (TIL W6 PR-H, judge #3). "
             f"Signed lead-days = flag_date - attention_arrival_date; "
             f"POSITIVE = desk flagged before crowd. "
@@ -463,13 +504,20 @@ def compute_earliness_grades(root: Path, today: str | None = None) -> dict:
     }
 
 
-def _null_artifact(today: str, reason: str) -> dict:
+def _null_artifact(today: str, reason: str,
+                   log_coverage: dict | None = None) -> dict:
     return {
         "as_of": today,
         "produced_at": datetime.now(timezone.utc).isoformat(),
+        "status": "no_flags",
         "n_flags": 0,
         "n_pending": 0,
         "n_legs_arrived_total": 0,
+        "log_coverage": log_coverage or {
+            "n_rows": 0, "n_themes": 0, "n_dates": 0,
+            "first_asof": None, "last_asof": None,
+            "min_rows_per_theme_to_grade": _MIN_LOG_ENTRIES,
+        },
         "authority": AUTHORITY_BLOCK,
         "stale_legs": [reason],
         "pooled_summary": None,

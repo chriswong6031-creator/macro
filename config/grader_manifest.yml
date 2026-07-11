@@ -26,14 +26,14 @@ owner_program: metabolism-phase0
 
 files:
   - path: scripts/grade_thematic.py
-    sha256: 9de87a8a0ce9253c7ae08c042daa5f207e08bbe82a1dd7f7efb9e71ff0af6fe3
+    sha256: 6950102876bb608cf3f44ffa4f0d436116207beab4f375722544c4a822b91d79
     role: orchestrator
     notes: >
       TIL W6 grading-pack orchestrator — runs Stage 1 (foresight_leadlag),
       Stage 2 (theme_placebo), Stage 3 (qledger_falsifier) in sequence.
 
   - path: engine/foresight_leadlag.py
-    sha256: 7ba97f3fb2941aadfd62a01a9276364616ec35a61c5d224bc7ccb7565787a57e
+    sha256: 04d84438f6d6e5bfb381954afce21f17e64c8fe2825dd62c31b523c0797a62e2
     role: sensor
     notes: >
       Crowd-arrival lead-lag grader: signed lead-days between flag date and
