@@ -146,6 +146,8 @@ def _sector_cards(latest: dict) -> list[dict]:
             "action": lad.get("action"), "dir": lad.get("dir"),
             "entry": lad.get("entry"),     # cycle-entry call -> action board buckets
             "age_short": lad.get("age_short"), "age_short_zh": lad.get("age_short_zh"),
+            "eq_badge": lad.get("eq_badge"), "eq_dir": lad.get("eq_dir"),
+            "eq_tip": lad.get("eq_tip"),
             "why": lad.get("why"), "regime_label": lad.get("regime_label"),
             "dc_day": cyc.get("dc_day"), "dc_band": cyc.get("dc_band"),
             "ic_week": cyc.get("ic_week"), "ic_band": cyc.get("ic_band"),
@@ -705,6 +707,7 @@ def main() -> int:
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "sectors": sectors,
+            "sectors_by_ticker": {s["ticker"]: s for s in sectors},  # PR-4: O(1) lookup for hover payloads
             "freshness": freshness,          # sentinel result for the page-top banner
             "actions": _action_board(sectors),   # "what to act on now" sector board (stocks page)
             "breadth": _breadth(),

@@ -758,6 +758,8 @@ def main() -> int:
             "cn_policy_json": _cn_policy_json,
             "cn_microstructure_json": _cn_microstructure_json,
             "cn_micro_by_ticker": _micro_by_ticker,
+            # PR-4: O(1) lookup dict for SECTOR row payload enrichment in the anv2 board
+            "sectors_by_ticker": {s["ticker"]: s for s in sectors},
         }
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)

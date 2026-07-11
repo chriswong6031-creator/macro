@@ -534,3 +534,328 @@ def test_ran_array_basing_chip_renders():
     assert "basing since" in html, (
         "basing_chip must render on rule-3 RAN row"
     )
+
+
+# ---------------------------------------------------------------------------
+# PR-4: anv2 board hover payload tests
+# Tests the _anrow macro's data-rpop + .rp-src payload (conditions card).
+# Uses the ACT-NOW v2 block extracted between its HTML comment markers.
+# ---------------------------------------------------------------------------
+
+def _blank_anv2_row(kind="THEME", name="Test Theme", name_zh="测试主题"):
+    """Minimal anv2 row dict — mirrors engine/china_act_now._blank_row exactly."""
+    return {
+        "kind": kind,
+        "id": "test_id",
+        "name": name,
+        "name_zh": name_zh,
+        "score": None,
+        "reco": None,
+        "reco_en": None,
+        "reco_zh": None,
+        "rel20": None,
+        "tag": None,
+        "urgency": None,
+        "reasons": [],
+        "phase": None,
+        "osc_slope": None,
+        "pos": None,
+        "rs_63d": None,
+        "rs_rank": None,
+        "dual_read": False,
+        "dual_chip_en": None,
+        "dual_chip_zh": None,
+        "organ_state": None,
+        "organ_chip_en": None,
+        "organ_chip_zh": None,
+    }
+
+
+def _full_anv2_row():
+    """Fully populated anv2 row (all displayable fields non-None)."""
+    row = _blank_anv2_row(kind="THEME", name="Growth Theme", name_zh="成长主题")
+    row.update({
+        "score": 75,
+        "reco": "accumulate",
+        "reco_en": "Accumulate",
+        "reco_zh": "积累",
+        "rel20": 0.042,
+        "rs_63d": 8.3,
+        "rs_rank": 2,
+        "reasons": ["Strong breadth", "Earnings beat"],
+        "organ_state": "TURNING",
+        "organ_chip_en": "TURNING ↗",
+        "organ_chip_zh": "转向 ↗",
+    })
+    return row
+
+
+def _bot_anv2_row():
+    """Bottoming-lane anv2 row with phase/pos/osc_slope."""
+    row = _blank_anv2_row(kind="SECTOR", name="Beaten Sector", name_zh="超跌板块")
+    row.update({
+        "phase": "TROUGH",
+        "pos": 12.5,
+        "osc_slope": 1.8,
+        "rs_63d": -5.2,
+        "rs_rank": 9,
+    })
+    return row
+
+
+def _sector_anv2_row():
+    """SECTOR kind row for testing sectors_by_ticker enrichment."""
+    row = _blank_anv2_row(kind="SECTOR", name="Tech Sector", name_zh="科技板块")
+    row.update({
+        "id": "512480.SS",
+        "tag": "BUY ZONE",
+        "urgency": "now",
+    })
+    return row
+
+
+def _make_sector_card_for_ticker(ticker="512480.SS"):
+    """Synthetic sector card mirroring build_china._sector_cards output.
+
+    Contract (per engine/china_inputs.py):
+      - pctile: float in 0-100 range (rs.rank(pct=True)*100)
+      - above200: bool (single-name bool from above_200d_trend)
+    """
+    return {
+        "ticker": ticker,
+        "name": "Tech Sector",
+        "mom20": 3.5,
+        "mom60": 12.1,
+        "above200": True,
+        "pctile": 82.0,
+        "state": "RISING",
+        "label": "Uptrend",
+        "dir": "up",
+        "entry": {"text": "Buy zone", "text_zh": "买入区", "tag": "BUY ZONE", "urgency": "now"},
+        "age_short": "3w",
+        "age_short_zh": "3周",
+        "dc_day": 18,
+        "dc_band": "mid",
+        "eq_badge": "EQ+",
+        "eq_dir": "up",
+        "eq_tip": "Equity quality improving",
+    }
+
+
+def _make_sector_card_none_enrichment(ticker="600519.SS"):
+    """Sector card where optional enrichment fields are present but None.
+
+    Tests that the template omits those cells gracefully without crash.
+    """
+    return {
+        "ticker": ticker,
+        "name": "Wine Sector",
+        "mom20": None,
+        "mom60": None,
+        "above200": None,
+        "pctile": None,
+        "state": "FLAT",
+        "label": "Flat",
+        "dir": "flat",
+        "entry": None,
+        "age_short": None,
+        "age_short_zh": None,
+        "dc_day": None,
+        "dc_band": None,
+        "eq_badge": None,
+        "eq_dir": None,
+        "eq_tip": None,
+    }
+
+
+def _render_anv2(rows_by_lane: dict, sectors_by_ticker: dict | None = None,
+                 as_of: str = "2026-07-10") -> str:
+    """Extract and render the ACT-NOW v2 board block with synthetic context.
+
+    The anv2 block lives inside {% if mode == 'stocks' %} (line ~699) so the
+    extracted snippet carries one extra {% endif %} at the end that closes that
+    outer if.  We prepend the matching opening {% if mode == 'stocks' %} to keep
+    the snippet self-balanced.
+    """
+    start = SRC.index("<!-- ===================== ACT-NOW v2")
+    end = SRC.index("{% if mode != 'stocks' %}", start)
+    snippet = SRC[start:end]
+
+    macros = (
+        '{%- macro t(en, zh="") -%}'
+        '<span class="l-en">{{ en }}</span>'
+        '<span class="l-zh">{{ zh if zh else en }}</span>'
+        '{%- endmacro -%}\n'
+        '{%- macro help(en, zh="") -%}<span></span>{%- endmacro -%}\n'
+        # Balance the outer {% if mode == 'stocks' %} that opened before the snippet
+        "{% if mode == 'stocks' %}\n"
+    )
+    full = macros + snippet
+
+    # Build lanes dict
+    default_lanes = {"buy_now": [], "wait_pullback": [], "bottoming_watch": [], "reduce_avoid": []}
+    for k, v in rows_by_lane.items():
+        default_lanes[k] = v
+
+    act_now_v2 = {
+        "as_of": as_of,
+        "notes": [],
+        "lanes": {
+            "buy_now": default_lanes["buy_now"],
+            "wait_pullback": default_lanes["wait_pullback"],
+            "bottoming_watch": default_lanes["bottoming_watch"],
+            "reduce_avoid": default_lanes["reduce_avoid"],
+        },
+    }
+
+    env = Environment(loader=DictLoader({"blk": full}), autoescape=False)
+    return env.get_template("blk").render(
+        act_now_v2=act_now_v2,
+        mode="stocks",
+        lang="en",
+        sectors_by_ticker=sectors_by_ticker or {},
+    )
+
+
+def test_anv2_row_has_data_rpop_attribute():
+    """Every anv2-row must carry data-rpop attribute (PR-4)."""
+    html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    assert "data-rpop" in html, "data-rpop attribute missing from anv2 row"
+
+
+def test_anv2_row_has_rp_src_child():
+    """Every anv2-row must contain a .rp-src payload span (PR-4)."""
+    html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    assert 'class="rp-src"' in html, ".rp-src payload span missing from anv2 row"
+
+
+def test_anv2_payload_with_all_fields_none():
+    """A fully null row must render without crash; empty cells omitted."""
+    html = _render_anv2({"buy_now": [_blank_anv2_row()]})
+    assert "data-rpop" in html, "data-rpop missing on null row"
+    assert 'class="rp-src"' in html, ".rp-src missing on null row"
+    # Name must appear in header
+    assert "Test Theme" in html, "Row name missing in payload header"
+
+
+def test_anv2_payload_fully_populated_theme_row():
+    """Fully populated THEME row: name, score, reco, RS, reasons render in payload."""
+    html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    assert "Growth Theme" in html, "Row name missing from payload"
+    assert "Accumulate" in html, "reco_en missing from payload tag"
+    assert "Composite score" in html, "score label missing"
+    assert "63d RS" in html, "RS label missing"
+    assert "Strong breadth" in html, "reason bullet missing"
+
+
+def test_anv2_payload_bottoming_row_has_not_buy_caveat():
+    """Bottoming lane rows must carry the NOT-a-buy-signal caveat in the footer."""
+    html = _render_anv2({"bottoming_watch": [_bot_anv2_row()]})
+    assert "NOT a buy signal" in html or "非买入信号" in html, (
+        "NOT-a-buy-signal caveat missing from bottoming row footer"
+    )
+
+
+def test_anv2_payload_non_bottoming_row_no_buy_caveat_in_rp_src():
+    """Buy-lane rp-src payload footer must NOT carry the bottoming caveat.
+
+    The anv2-bot-disc disclaimer always renders in the bottoming lane header —
+    that is correct and expected.  The per-row .rp-src footer must only include
+    the caveat when lane == 'bot'.  We verify by checking that the rp-src payload
+    for a buy-lane row does NOT contain the caveat text directly after 'row-pop-ft'.
+    """
+    html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    # Isolate the rp-src payload block for the buy-lane row.  It appears before
+    # the anv2-row-top div and ends at </span> of the .rp-src span.
+    rp_start = html.index('class="rp-src"')
+    rp_end = html.index('</span>', html.index('row-pop-ft', rp_start)) + len('</span>')
+    rp_block = html[rp_start:rp_end]
+    # The bottoming caveat must NOT be in the buy-lane rp-src footer
+    assert "early signs of a bottom" not in rp_block, (
+        "Bottoming-lane caveat leaked into buy-lane row rp-src footer"
+    )
+
+
+def test_anv2_sector_row_enriched_via_sectors_by_ticker():
+    """SECTOR rows must pull mom20/pctile/entry from sectors_by_ticker lookup.
+
+    pctile is already 0-100 — rendered value must be '82', NOT '8200'.
+    above200 is a bool — rendered as glyph (▲/—), NOT as percentage.
+    """
+    row = _sector_anv2_row()
+    sc = _make_sector_card_for_ticker("512480.SS")
+    html = _render_anv2(
+        {"buy_now": [row]},
+        sectors_by_ticker={"512480.SS": sc},
+    )
+    assert "20d mom" in html, "20d mom label missing from SECTOR payload"
+    assert "RS percentile" in html, "RS percentile label missing"
+    assert "Buy zone" in html or "买入区" in html, "Entry text missing from SECTOR payload"
+    assert "EQ+" in html, "eq_badge missing from SECTOR payload"
+    # pctile 82.0 must render as '82p', NOT '8200p' (already-0-100 value)
+    assert "82p" in html, "pctile 82.0 must render as '82p'"
+    assert "8200" not in html, "pctile double-scaled to 8200 — ×100 bug present"
+    # above200=True bool must render as '▲' glyph, NOT as a percentage
+    assert "▲" in html, "above200=True bool must render as ▲ glyph"
+    assert "100%" not in html, "above200 bool must not render as '100%'"
+
+
+def test_anv2_sector_row_missing_sector_card_graceful():
+    """SECTOR row with no matching sectors_by_ticker entry renders without crash."""
+    row = _sector_anv2_row()
+    html = _render_anv2({"buy_now": [row]}, sectors_by_ticker={})
+    assert "data-rpop" in html, "data-rpop missing when sector card absent"
+
+
+def test_anv2_payload_bilingual_header():
+    """Payload header must include both l-en and l-zh spans."""
+    html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    assert 'class="l-en"' in html, "l-en span missing in anv2 payload"
+    assert 'class="l-zh"' in html, "l-zh span missing in anv2 payload"
+
+
+def test_anv2_payload_no_leadership_word():
+    """'Leadership' word must not appear in the anv2 payload (brief spec)."""
+    html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    assert "Leadership" not in html, "'Leadership' word found in anv2 payload"
+
+
+def test_anv2_view_all_button_present_when_items_exceed_4():
+    """lst-more button must appear when a lane has more than 4 rows."""
+    rows = [_blank_anv2_row(name=f"Row {i}", name_zh=f"行 {i}") for i in range(5)]
+    html = _render_anv2({"buy_now": rows})
+    assert "lst-more" in html, "lst-more button missing when > 4 items"
+    assert "lst-collapse" in html, "lst-collapse class missing"
+
+
+def test_anv2_view_all_button_absent_when_4_or_fewer():
+    """lst-more button must NOT appear when a lane has 4 or fewer rows."""
+    rows = [_blank_anv2_row(name=f"Row {i}", name_zh=f"行 {i}") for i in range(4)]
+    html = _render_anv2({"buy_now": rows})
+    assert "lst-more" not in html, "lst-more button appeared for <= 4 items"
+
+
+def test_anv2_sector_card_none_enrichment_fields_render_without_crash():
+    """SECTOR row with a card where mom20/mom60/pctile/above200 are all None must
+    render without crash and must omit those cells from the payload.
+
+    Covers the case where a sector card exists in sectors_by_ticker but the
+    enrichment fields have not yet been computed (e.g. new listing, data gap).
+    """
+    row = _sector_anv2_row()
+    # Override the ticker to match the None-enrichment card
+    row = dict(row)
+    row["id"] = "600519.SS"
+    sc = _make_sector_card_none_enrichment("600519.SS")
+    html = _render_anv2(
+        {"buy_now": [row]},
+        sectors_by_ticker={"600519.SS": sc},
+    )
+    # Must render at all (no crash)
+    assert "data-rpop" in html, "data-rpop missing when enrichment fields are None"
+    assert 'class="rp-src"' in html, ".rp-src missing when enrichment fields are None"
+    # None-valued cells must be omitted — labels should NOT appear
+    assert "20d mom" not in html, "20d mom label rendered despite mom20=None"
+    assert "60d mom" not in html, "60d mom label rendered despite mom60=None"
+    assert "RS percentile" not in html, "RS percentile label rendered despite pctile=None"
+    assert "Above 200d" not in html, "Above 200d label rendered despite above200=None"
