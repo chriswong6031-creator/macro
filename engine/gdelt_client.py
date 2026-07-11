@@ -100,15 +100,14 @@ def _throttle(min_interval: float) -> None:
                 last_ts = float(raw)
             except (ValueError, TypeError):
                 last_ts = 0.0
-            now_ts = time.monotonic()
-            # Use wall-clock for the stamp value (monotonic for the sleep calculation)
+            now_ts = time.time()  # wall-clock — must be comparable across processes/reboots
             elapsed = now_ts - last_ts
             if elapsed < min_interval:
                 time.sleep(min_interval - elapsed)
             # write wall-clock unix time so the stamp survives process restart
             fd.seek(0)
             fd.truncate()
-            fd.write(str(time.monotonic()))
+            fd.write(str(time.time()))
             fd.flush()
         finally:
             fcntl.flock(fd, fcntl.LOCK_UN)
@@ -118,8 +117,9 @@ def _throttle(min_interval: float) -> None:
 
 
 def _parse_articles(raw_json: dict) -> list[dict]:
-    """Normalise raw GDELT artlist JSON into {title, url, domain, seendate(ISO)}
-    dicts.  PURE — no network, no clock."""
+    """Normalise raw GDELT artlist JSON into {title, url, domain, seendate(ISO),
+    language, sourcecountry} dicts.  PURE — no network, no clock.
+    language/sourcecountry are passed through as-is (empty string when absent)."""
     out: list[dict] = []
     for a in raw_json.get("articles") or []:
         sd = a.get("seendate", "")
@@ -129,10 +129,12 @@ def _parse_articles(raw_json: dict) -> list[dict]:
         except (ValueError, TypeError):
             iso = sd
         out.append({
-            "title":   a.get("title", ""),
-            "url":     a.get("url", ""),
-            "domain":  a.get("domain", ""),
-            "seendate": iso,
+            "title":         a.get("title", ""),
+            "url":           a.get("url", ""),
+            "domain":        a.get("domain", ""),
+            "seendate":      iso,
+            "language":      a.get("language", ""),
+            "sourcecountry": a.get("sourcecountry", ""),
         })
     return out
 

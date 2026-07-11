@@ -64,6 +64,31 @@ def test_adapter_is_registered_without_akshare() -> None:
     assert reg["china_news"].__name__ == "ChinaNewsAdapter"
 
 
+def test_fetch_wire_gdelt_empty_success_reason(tmp_path) -> None:
+    """When GDELT returns an empty artlist (no_articles from gdelt_client),
+    _fetch_wire_gdelt must map it to 'wire_no_headlines', not leak the raw
+    'no_articles' token into the template output."""
+    from unittest.mock import patch
+    from engine.china_news import _fetch_wire_gdelt
+
+    cfg = {
+        "wire_cache_ttl_hours": 12,
+        "wire_sources": [],  # empty allow-list = accept everything
+        "gdelt_max_records": 5,
+    }
+
+    with patch("engine.china_news._wire_cache_path", return_value=tmp_path / "no_cache"), \
+         patch("engine.gdelt_client.get_articles", return_value=([], "no_articles")), \
+         patch("engine.gdelt_client._throttle"):
+        items, reason = _fetch_wire_gdelt(cfg)
+
+    assert items == []
+    assert reason == "wire_no_headlines", (
+        f"Expected 'wire_no_headlines' but got {reason!r}; "
+        "'no_articles' token must be remapped before reaching the template"
+    )
+
+
 if __name__ == "__main__":
     tests = [
         test_tone_sign_and_counts,
@@ -71,6 +96,7 @@ if __name__ == "__main__":
         test_robust_to_missing_text_columns,
         test_empty_text_is_neutral,
         test_adapter_is_registered_without_akshare,
+        test_fetch_wire_gdelt_empty_success_reason,
     ]
     for fn in tests:
         fn()

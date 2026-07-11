@@ -137,8 +137,7 @@ def _fetch_gdelt(asset: str, d: date, cfg: dict) -> tuple[list[dict], str | None
             raw_articles = []
         if reason == "no_articles":
             reason = "no_headlines"
-        # commodity_news needs language/sourcecountry fields; gdelt_client omits them;
-        # add them as empty strings so the downstream dict shape is preserved.
+        # gdelt_client now passes through language/sourcecountry from the raw GDELT article
         max_r = cfg.get("max_records", 6)
         for a in raw_articles[:max_r]:
             headlines.append({
@@ -146,8 +145,8 @@ def _fetch_gdelt(asset: str, d: date, cfg: dict) -> tuple[list[dict], str | None
                 "url":           a.get("url", ""),
                 "domain":        a.get("domain", ""),
                 "seendate":      a.get("seendate", ""),
-                "language":      "",
-                "sourcecountry": "",
+                "language":      a.get("language", ""),
+                "sourcecountry": a.get("sourcecountry", ""),
             })
         if raw_articles and not headlines:
             reason = "no_headlines"
@@ -155,7 +154,9 @@ def _fetch_gdelt(asset: str, d: date, cfg: dict) -> tuple[list[dict], str | None
         log.warning("gdelt fetch failed (%s)", e)
         reason = "fetch_error"
 
-    # Only cache successful responses (headlines present); failures must not be cached.
+    # Cache only when headlines are non-empty (INTENTIONAL: empty-success is transient
+    # and should re-fetch rather than serve stale silence for the full TTL; failures
+    # must never be cached to preserve retry on next nightly cycle).
     if headlines:
         try:
             cache.write_text(json.dumps({"headlines": headlines, "degraded_reason": reason}))

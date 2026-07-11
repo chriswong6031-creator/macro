@@ -217,6 +217,28 @@ def test_parse_articles_seendate_normalisation():
     assert out[0]["seendate"].startswith("2026-07-10"), out[0]["seendate"]
 
 
+def test_parse_articles_language_sourcecountry_passthrough():
+    """_parse_articles must preserve language and sourcecountry from the raw article.
+    These fields are needed by commodity_news; hardcoding '' would silently drop
+    real per-article metadata."""
+    raw = {
+        "articles": [
+            {"title": "T", "url": "http://x.com", "domain": "x.com",
+             "seendate": "20260710T120000Z",
+             "language": "English", "sourcecountry": "United States"},
+            # Article without these fields — should default to empty string, not KeyError
+            {"title": "T2", "url": "http://y.com", "domain": "y.com",
+             "seendate": "20260710T120000Z"},
+        ]
+    }
+    out = _gc._parse_articles(raw)
+    assert len(out) == 2
+    assert out[0]["language"] == "English"
+    assert out[0]["sourcecountry"] == "United States"
+    assert out[1]["language"] == ""
+    assert out[1]["sourcecountry"] == ""
+
+
 def test_empty_artlist_returns_no_articles_reason(tmp_path):
     """An empty articles list -> ([], 'no_articles')."""
     stamp_file = tmp_path / "gdelt" / "last_request"
@@ -230,6 +252,69 @@ def test_empty_artlist_returns_no_articles_reason(tmp_path):
 
     assert articles == []
     assert reason == "no_articles"
+
+
+# ── cross-process stamp correctness tests ────────────────────────────────────
+
+def test_stamp_is_wall_clock_unix_time(tmp_path):
+    """The on-disk stamp written by _throttle must be a wall-clock unix timestamp
+    (time.time()) so it is meaningful when read by a different process.  Before this
+    fix the code wrote time.monotonic() instead — not comparable across processes or
+    after a reboot."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+
+    before = time.time()
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch("requests.get", return_value=_make_response(200, _gdelt_body(["t"]))), \
+         patch("time.sleep"):
+        _gc.get_articles(_SAMPLE_PARAMS, min_interval=0.0)
+
+    after = time.time()
+    assert stamp_file.exists(), "stamp file must be written after a request"
+
+    raw = stamp_file.read_text().strip()
+    stamp_val = float(raw)
+    # A wall-clock unix timestamp for now is ~1.75e9; time.monotonic() on this
+    # box is in the tens-of-thousands-of-seconds range (boot-relative).
+    # Assert the stamp is within the wall-clock window.
+    assert before <= stamp_val <= after + 1.0, (
+        f"stamp {stamp_val!r} is not a wall-clock unix time (expected {before:.1f}..{after:.1f}); "
+        "was time.monotonic() written instead of time.time()?"
+    )
+
+
+def test_cross_process_stamp_honoured(tmp_path):
+    """Simulate a prior process writing a wall-clock stamp. A second call in THIS
+    process must read it and enforce the spacing — proving cross-process pacing works.
+    If the code were writing time.monotonic() this test would still pass by accident
+    (same-process), but combined with test_stamp_is_wall_clock_unix_time it catches
+    the regression."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+    min_interval = 0.05
+
+    # Simulate a prior process having fetched 0.5 * min_interval ago
+    prior_ts = time.time() - (min_interval * 0.5)
+    stamp_file.write_text(str(prior_ts))
+
+    request_times: list[float] = []
+
+    def _fake_get(*args, **kwargs):
+        request_times.append(time.time())
+        return _make_response(200, _gdelt_body(["x"]))
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch("requests.get", side_effect=_fake_get):
+        _gc.get_articles(_SAMPLE_PARAMS, min_interval=min_interval)
+
+    assert len(request_times) == 1
+    elapsed_since_prior = request_times[0] - prior_ts
+    assert elapsed_since_prior >= min_interval * 0.9, (
+        f"request fired only {elapsed_since_prior:.4f}s after prior-process stamp "
+        f"(expected >= {min_interval}s); cross-process pacing not honoured"
+    )
 
 
 if __name__ == "__main__":

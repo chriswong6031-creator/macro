@@ -1249,6 +1249,8 @@ def _fetch_wire_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict],
             reason = "wire_rate_limited"
         elif gc_reason in ("fetch_error",):
             reason = "wire_fetch_error"
+        elif gc_reason == "no_articles":
+            reason = "wire_no_headlines"
         else:
             reason = gc_reason
 
@@ -1270,7 +1272,9 @@ def _fetch_wire_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict],
         log.warning("china_news gdelt wire fetch failed (%s)", e)
         reason = "wire_fetch_error"
 
-    # Only cache successful responses (items present); failures must not be cached.
+    # Cache only when items are non-empty (INTENTIONAL: empty-success is transient
+    # and should re-fetch rather than serve stale silence for the full TTL; failures
+    # must never be cached to preserve retry on next nightly cycle).
     if items:
         try:
             cache.write_text(json.dumps({"items": items, "degraded_reason": reason},
