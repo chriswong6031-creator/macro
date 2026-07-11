@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macro Ledger v4 — Command Grid</title>
+<style>
+:root {
+  --bg:#0c0f14;
+  --panel:#13171f;
+  --panel2:#181d26;
+  --text:#d7dce3;
+  --ink:#edf0f5;
+  --muted:#7a8494;
+  --line:#242b38;
+  --hair:rgba(255,255,255,.05);
+  --up:#3ec87a;
+  --dn:#e05c5c;
+  --warn:#e0a030;
+  --info:#4d8ef5;
+  --link:#6ba3f0;
+  --num:ui-monospace,"SF Mono","Cascadia Code","Fira Code",monospace;
+  --isle-evidence:#20c0a0;
+  --isle-events:#e0a030;
+  --isle-markets:#4d8ef5;
+  --isle-risk:#e05c5c;
+  --isle-policy:#a070e8;
+  --isle-brief:#38c472;
+  --isle-news:#7a8494;
+  --isle-deep:#4d8ef5;
+  --isle-health:#a070e8;
+}
+[data-theme="light"] {
+  --bg:#f0f2f7;
+  --panel:#ffffff;
+  --panel2:#eaecf3;
+  --text:#1c2430;
+  --ink:#0d1420;
+  --muted:#5d6b7e;
+  --line:#d2d8e6;
+  --hair:rgba(0,0,0,.06);
+  --up:#1a8a4a;
+  --dn:#c03535;
+  --warn:#9a6010;
+  --info:#1a4fd6;
+  --link:#1a4fd6;
+  --isle-evidence:#0e9e82;
+  --isle-events:#9a6010;
+  --isle-markets:#1a4fd6;
+  --isle-risk:#c03535;
+  --isle-policy:#7040c0;
+  --isle-brief:#1a8a4a;
+  --isle-news:#5d6b7e;
+  --isle-deep:#1a4fd6;
+  --isle-health:#7040c0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px;scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:9px 16px;
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:100;
+}
+.topbar-brand{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.topbar-dot{width:6px;height:6px;border-radius:50%;background:var(--up);flex-shrink:0}
+.topbar-asof{font-size:11px;color:var(--muted);font-family:var(--num);white-space:nowrap}
+.topbar-spacer{flex:1}
+.seg-ctrl{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg-btn{
+  padding:4px 12px;font-size:11px;font-weight:700;letter-spacing:.04em;
+  background:none;border:none;cursor:pointer;color:var(--muted);
+  transition:background .12s,color .12s;white-space:nowrap;
+}
+.seg-btn.active{background:var(--info);color:#fff}
+.seg-btn:not(.active):hover{background:var(--panel2);color:var(--text)}
+.expand-all{
+  padding:4px 12px;font-size:11px;font-weight:700;border:1px solid var(--line);
+  border-radius:6px;background:none;cursor:pointer;color:var(--muted);
+  transition:border-color .12s,color .12s;white-space:nowrap;
+}
+.expand-all:hover{border-color:var(--info);color:var(--text)}
+.theme-btn{
+  padding:4px 10px;font-size:11px;font-weight:700;border:1px solid var(--line);
+  border-radius:6px;background:none;cursor:pointer;color:var(--muted);
+  transition:border-color .12s,color .12s;white-space:nowrap;
+}
+.theme-btn:hover{border-color:var(--info);color:var(--text)}
+
+/* ── GRID LAYOUT ── */
+.grid-page{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:10px;
+  padding:10px;
+  max-width:1520px;
+  margin:0 auto;
+}
+
+/* ── CARD BASE ── */
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:13px 14px;
+  position:relative;
+  transition:border-color .18s,box-shadow .18s;
+  min-width:0;
+}
+/* top accent stripe — inset border trick avoids overflow:hidden clipping */
+.card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;
+  height:3px;
+  border-radius:8px 8px 0 0;
+  pointer-events:none;
+  z-index:1;
+}
+
+/* accent top bars */
+.card-evidence::before{background:var(--isle-evidence)}
+.card-events::before{background:var(--isle-events)}
+.card-markets::before{background:var(--isle-markets)}
+.card-risk::before{background:var(--isle-risk)}
+.card-policy::before{background:var(--isle-policy)}
+.card-brief::before{background:var(--isle-brief)}
+.card-news::before{background:var(--isle-news)}
+.card-deep::before{background:var(--isle-deep)}
+.card-health::before{background:var(--isle-health)}
+
+/* expanded state */
+.card.expanded{
+  border-color:var(--accent-color, var(--info));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--accent-color,var(--info)) 25%,transparent),
+             0 8px 28px -6px color-mix(in srgb,var(--accent-color,var(--info)) 22%,transparent);
+  z-index:5;
+}
+.card-evidence.expanded{--accent-color:var(--isle-evidence)}
+.card-risk.expanded{--accent-color:var(--isle-risk)}
+
+/* dim siblings when a card is expanded */
+.grid-page.has-expanded .card:not(.expanded){
+  opacity:.52;
+  filter:saturate(.45) brightness(.85);
+}
+
+/* span helpers */
+.s12{grid-column:span 12}
+.s8{grid-column:span 8}
+.s6{grid-column:span 6}
+.s4{grid-column:span 4}
+.s3{grid-column:span 3}
+
+/* ── CARD HEADER ── */
+.card-lbl{
+  font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:6px;
+}
+.lbl-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.ev-dot{background:var(--isle-evidence)}
+.evt-dot{background:var(--isle-events)}
+.mkt-dot{background:var(--isle-markets)}
+.risk-dot{background:var(--isle-risk)}
+.pol-dot{background:var(--isle-policy)}
+.brief-dot{background:var(--isle-brief)}
+.news-dot{background:var(--isle-news)}
+.deep-dot{background:var(--isle-deep)}
+.health-dot{background:var(--isle-health)}
+
+/* ── HERO COMMAND CARD ── */
+.hero-card{grid-column:span 12;padding:14px 18px}
+.hero-inner{display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap}
+.hero-score-block{
+  display:flex;align-items:baseline;gap:8px;flex-shrink:0;
+  background:color-mix(in srgb,var(--up) 12%,var(--panel2));
+  border:1px solid color-mix(in srgb,var(--up) 40%,var(--line));
+  border-radius:8px;padding:12px 20px;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--up) 15%,transparent);
+}
+.hero-score{font-family:var(--num);font-size:68px;font-weight:900;line-height:.88;color:var(--up);letter-spacing:-.03em}
+.hero-score-meta{display:flex;flex-direction:column;gap:3px;padding-bottom:4px}
+.hero-score-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hero-verdict{font-size:15px;font-weight:800;color:var(--up)}
+.hero-arrow{font-size:12px;color:var(--up);margin-left:3px}
+.hero-outof{font-size:13px;color:var(--muted);align-self:flex-end;padding-bottom:12px}
+.hero-center{flex:1;min-width:240px}
+.hero-thesis{font-size:14px;font-weight:700;color:var(--ink);line-height:1.4;margin-bottom:6px}
+.hero-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+.hero-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.hchip{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10.5px;padding:2px 9px;border-radius:5px;font-weight:600;
+  background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+}
+.hchip.warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--panel2))}
+.hchip.info{border-color:color-mix(in srgb,var(--info) 40%,var(--line));color:var(--info);background:color-mix(in srgb,var(--info) 8%,var(--panel2))}
+.hero-bar-row{display:flex;align-items:center;gap:8px}
+.hero-bar-track{flex:1;height:6px;background:color-mix(in srgb,var(--muted) 22%,transparent);border-radius:3px;overflow:hidden;position:relative}
+.hero-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,color-mix(in srgb,var(--info) 80%,var(--up)) 0%,var(--up) 100%)}
+.hero-bar-tick{position:absolute;top:-3px;width:2px;height:12px;background:var(--warn);border-radius:1px;box-shadow:0 0 4px color-mix(in srgb,var(--warn) 60%,transparent)}
+.hero-bar-lbl{font-size:10px;color:var(--muted);white-space:nowrap}
+.hero-right{display:flex;flex-direction:column;gap:8px;min-width:160px;flex-shrink:0}
+.hero-regime{
+  background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 12px;
+}
+.hero-regime-lbl{font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.hero-regime-val{font-size:12px;font-weight:700;color:var(--text)}
+.hero-stance-row{display:flex;align-items:center;gap:6px;font-size:11.5px}
+.stance-word{font-weight:800;color:var(--up)}
+.stance-act{font-size:11px;color:var(--muted)}
+
+/* ── EVIDENCE CARD (span 6, expanded = span 12) ── */
+.ev-factor{
+  display:grid;grid-template-columns:14px 1fr 90px 28px;
+  align-items:center;gap:7px;padding:5px 0;
+  border-bottom:1px solid var(--hair);
+}
+.ev-factor:last-child{border-bottom:none}
+.ev-dir{font-size:12px;font-weight:900;text-align:center;line-height:1}
+.ev-name{font-size:11.5px;font-weight:700;color:var(--ink)}
+.ev-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.ev-bar-track{height:4px;background:color-mix(in srgb,var(--muted) 18%,transparent);border-radius:2px;overflow:hidden}
+.ev-bar-fill{height:100%;border-radius:2px}
+.ev-score{font-family:var(--num);font-size:14px;font-weight:900;text-align:right;line-height:1}
+.ev-weakest{font-size:10.5px;color:var(--warn);margin-top:8px;padding:5px 8px;background:color-mix(in srgb,var(--warn) 7%,transparent);border-radius:5px;border-left:2px solid var(--warn)}
+
+/* expanded evidence only */
+.ev-expand-tbl{width:100%;margin-top:12px;font-size:11.5px;border-collapse:collapse}
+.ev-expand-tbl th,.ev-expand-tbl td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right}
+.ev-expand-tbl th{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ev-expand-tbl th:first-child,.ev-expand-tbl td:first-child{text-align:left}
+.ms-cell{font-size:11px;font-weight:700}
+.ms-cell.good{color:var(--up)}
+.ms-cell.flat{color:var(--muted)}
+.ms-cell.bad{color:var(--dn)}
+.conf{font-weight:700}
+.conf.good{color:var(--up)}
+
+/* ── EVENTS CARD ── */
+.evt-cal{display:flex;flex-direction:column;gap:6px}
+.evt-row{display:flex;align-items:baseline;gap:8px;font-size:11.5px}
+.evt-date{font-family:var(--num);font-size:10.5px;color:var(--muted);min-width:52px;flex-shrink:0}
+.evt-title{color:var(--ink);font-weight:600;flex:1}
+.evt-impact{padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700}
+.evt-high{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+.evt-med{background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--info);border:1px solid color-mix(in srgb,var(--info) 22%,transparent)}
+.fed-strip{margin-top:9px;padding-top:9px;border-top:1px solid var(--line);display:flex;align-items:baseline;gap:8px;font-size:11.5px;flex-wrap:wrap}
+.fed-lbl{color:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.fed-val{font-family:var(--num);font-size:13px;font-weight:800;color:var(--text)}
+.fed-sub{font-size:10.5px;color:var(--muted)}
+
+/* ── MARKETS CARD ── */
+.mkt-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mkt-tile{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+.mkt-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.mkt-name{font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted)}
+.mkt-chg{font-family:var(--num);font-size:11px;font-weight:700}
+.mkt-chg.up{color:var(--up)}
+.mkt-chg.dn{color:var(--dn)}
+.mkt-px{font-family:var(--num);font-size:15px;font-weight:800;color:var(--ink);line-height:1;margin-bottom:4px}
+.mkt-chips{display:flex;flex-wrap:wrap;gap:3px}
+.mkt-chip{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600;border:1px solid var(--line)}
+.mkt-chip.ok{color:var(--up);border-color:color-mix(in srgb,var(--up) 30%,var(--line));background:color-mix(in srgb,var(--up) 7%,transparent)}
+.mkt-chip.wn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 30%,var(--line));background:color-mix(in srgb,var(--warn) 7%,transparent)}
+.mkt-chip.mt{color:var(--muted);background:transparent}
+.mkt-sector-row{margin-top:9px;padding-top:9px;border-top:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap;align-items:baseline}
+.mkt-sl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.mkt-sector-chip{font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:600}
+.mkt-sector-chip.hot{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,var(--line))}
+.mkt-sector-chip.cold{background:color-mix(in srgb,var(--dn) 10%,transparent);color:var(--dn);border:1px solid color-mix(in srgb,var(--dn) 28%,var(--line))}
+
+/* ── RISK CARD ── */
+.risk-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px}
+.risk-grade{
+  background:color-mix(in srgb,var(--warn) 10%,var(--panel2));
+  border:1px solid color-mix(in srgb,var(--warn) 32%,var(--line));
+  border-radius:7px;padding:6px 12px;text-align:center;flex-shrink:0;
+}
+.risk-grade-val{font-family:var(--num);font-size:22px;font-weight:900;color:var(--warn);line-height:1}
+.risk-grade-lbl{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.risk-body{flex:1;min-width:0}
+.risk-title{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.risk-sub{font-size:11px;color:var(--muted);line-height:1.4}
+.risk-meters{display:flex;flex-direction:column;gap:5px}
+.risk-meter-row{display:flex;align-items:center;gap:7px;font-size:11px}
+.risk-meter-lbl{color:var(--muted);min-width:80px;flex-shrink:0;font-size:10.5px}
+.risk-meter-dots{display:flex;gap:2px}
+.risk-meter-dot{width:9px;height:9px;border-radius:2px}
+.risk-meter-dot.on{background:var(--dot-c,var(--warn))}
+.risk-meter-dot.off{background:color-mix(in srgb,var(--muted) 22%,transparent)}
+.risk-stance{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:11.5px}
+.risk-stance b{color:var(--warn);font-weight:800;margin-right:6px;text-transform:uppercase;font-size:10px;letter-spacing:.07em}
+
+/* ── POLICY CARD ── */
+.pol-state{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:700;
+  background:color-mix(in srgb,var(--isle-policy) 10%,var(--panel2));
+  border:1px solid color-mix(in srgb,var(--isle-policy) 30%,var(--line));
+  border-radius:6px;padding:4px 12px;margin-bottom:8px;
+  color:var(--isle-policy);
+}
+.pol-kv{display:flex;flex-direction:column;gap:4px;font-size:11.5px}
+.pol-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px solid var(--hair)}
+.pol-row:last-child{border-bottom:none}
+.pol-key{color:var(--muted);font-size:10.5px;white-space:nowrap}
+.pol-val{font-weight:700;color:var(--text);text-align:right;font-family:var(--num)}
+.pol-stance{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+.pol-stance b{color:var(--isle-policy);font-weight:800}
+
+/* ── AI BRIEF CARD ── */
+.brief-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.brief-icon{
+  width:28px;height:28px;border-radius:7px;
+  background:color-mix(in srgb,var(--isle-brief) 14%,var(--panel2));
+  border:1px solid color-mix(in srgb,var(--isle-brief) 28%,transparent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:var(--isle-brief);flex-shrink:0;
+}
+.brief-title{font-size:12px;font-weight:700;color:var(--text)}
+.brief-date{font-size:10.5px;color:var(--muted);font-family:var(--num)}
+.brief-badge{
+  margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:2px 7px;
+  white-space:nowrap;
+}
+.brief-body{font-size:11.5px;color:var(--text);line-height:1.6;margin-bottom:8px}
+.brief-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.bchip{
+  font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:600;
+  background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+}
+.bchip.hot{color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--panel2));border-color:color-mix(in srgb,var(--warn) 28%,var(--line))}
+.brief-disclaimer{font-size:10px;color:var(--muted);font-style:italic;opacity:.75}
+.brief-link{font-size:11px;font-weight:700;color:var(--isle-brief);text-decoration:none}
+.brief-link:hover{text-decoration:underline}
+
+/* ── NEWS CARD ── */
+.news-list{display:flex;flex-direction:column;gap:0}
+.news-item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 0;border-bottom:1px solid var(--hair);font-size:11.5px;
+}
+.news-item:last-child{border-bottom:none}
+.news-dot-imp{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.news-dot-imp.high{background:var(--warn)}
+.news-dot-imp.med{background:var(--info)}
+.news-theme{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);flex-shrink:0;width:56px}
+.news-hed{color:var(--text);line-height:1.35;flex:1}
+.news-age{font-size:10px;color:var(--muted);font-family:var(--num);flex-shrink:0;white-space:nowrap}
+
+/* ── DEEP CONTEXT CARD ── */
+.deep-links{display:flex;flex-direction:column;gap:5px}
+.deep-link{
+  display:flex;align-items:center;gap:7px;padding:6px 9px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  text-decoration:none;color:var(--text);font-size:11.5px;font-weight:600;
+  transition:border-color .12s,background .12s;
+}
+.deep-link:hover{border-color:var(--info);background:color-mix(in srgb,var(--info) 7%,var(--panel2))}
+.deep-link-arrow{margin-left:auto;color:var(--muted);font-size:12px}
+
+/* enforce uniform bottom row height */
+.card-policy,.card-brief,.card-news,.card-deep,.card-health{min-height:220px}
+
+/* ── DATA HEALTH CARD ── */
+.health-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.health-big{font-family:var(--num);font-size:24px;font-weight:900;color:var(--up)}
+.health-lbl{font-size:11px;color:var(--muted)}
+.health-warn{
+  display:flex;align-items:center;gap:6px;font-size:11px;
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel2));
+  border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line));
+  border-radius:5px;padding:4px 9px;color:var(--warn);font-weight:700;
+}
+
+/* ── EXPAND TRAY ── */
+.expand-tray{
+  display:none;
+  padding-top:12px;margin-top:10px;border-top:1px solid var(--line);
+}
+.card.expanded .expand-tray{display:block}
+.expand-handle{
+  position:absolute;bottom:8px;right:10px;
+  font-size:10px;font-weight:700;color:var(--muted);
+  cursor:pointer;letter-spacing:.05em;
+  background:none;border:none;padding:0;
+  transition:color .12s;
+}
+.expand-handle:hover{color:var(--text)}
+.card.expanded .expand-handle{color:var(--isle-evidence)}
+
+/* ── STAMP ── */
+.stamp{font-size:9.5px;color:var(--muted);font-family:var(--num);margin-top:8px;opacity:.7}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){
+  .s4{grid-column:span 6}
+  .s3{grid-column:span 4}
+  .mkt-tiles{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px){
+  .s8,.s6,.s4,.s3{grid-column:span 12}
+  .hero-right{min-width:100%;flex-direction:row;flex-wrap:wrap}
+  .mkt-tiles{grid-template-columns:repeat(2,1fr)}
+  .topbar{gap:8px}
+  .topbar-asof,.expand-all{display:none}
+}
+@media(max-width:460px){
+  .s12{grid-column:span 12}
+  .hero-inner{flex-direction:column}
+  .hero-score-block{width:100%}
+  .mkt-tiles{grid-template-columns:repeat(2,1fr)}
+  .ev-factor{grid-template-columns:12px 1fr 70px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <span class="topbar-brand">Macro Ledger</span>
+  <div class="topbar-dot"></div>
+  <span class="topbar-asof">as of 2026-07-10 &nbsp;·&nbsp; nightly</span>
+  <div class="topbar-spacer"></div>
+  <div class="seg-ctrl" role="tablist" aria-label="View mode">
+    <button class="seg-btn active" onclick="setView('grid')" id="btn-grid">Grid</button>
+    <button class="seg-btn" onclick="setView('ledger')" id="btn-ledger">Ledger</button>
+  </div>
+  <button class="expand-all" onclick="expandAll()" id="ea-btn">Expand all</button>
+  <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">Light</button>
+</nav>
+
+<!-- COMMAND GRID -->
+<div class="grid-page" id="main-grid">
+
+  <!-- ═══ HERO COMMAND CARD (span 12) ═══ -->
+  <div class="card hero-card s12">
+    <div class="hero-inner">
+      <div class="hero-score-block">
+        <div class="hero-score">77</div>
+        <div class="hero-outof">/100</div>
+        <div class="hero-score-meta">
+          <span class="hero-score-lbl">Market state</span>
+          <span class="hero-verdict">Risk-on <span class="hero-arrow">▲</span></span>
+        </div>
+      </div>
+
+      <div class="hero-center">
+        <div class="hero-thesis">Risk-on — the tape, breadth, and cross-asset signals line up. Trend-following and adding on strength is supported.</div>
+        <div class="hero-sub">Flip condition: Breadth &amp; participation (now 59/100) is the closest trigger — watch it, but don't trade the warning alone.</div>
+
+        <div class="hero-chips">
+          <span class="hchip warn">Bubble / blow-off unwind — watch position size</span>
+          <span class="hchip info">Goldilocks · Transitioning</span>
+          <span class="hchip warn">CPI Jul 14 · event-risk window</span>
+          <span class="hchip warn">PPI Jul 15</span>
+        </div>
+
+        <div class="hero-bar-row">
+          <span class="hero-bar-lbl" style="min-width:52px;color:var(--dn)">Risk-off 0</span>
+          <div class="hero-bar-track">
+            <div class="hero-bar-fill" style="width:77%"></div>
+            <div class="hero-bar-tick" style="left:59%"></div>
+          </div>
+          <span class="hero-bar-lbl" style="min-width:72px;text-align:right;color:var(--up)">100 Risk-on</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;padding-left:56px">tick = flip trigger at 59</div>
+
+        <div style="margin-top:8px" class="hero-stance-row">
+          <span class="stance-word">Add on strength</span>
+          <span class="stance-act">— trend-follow; size for CPI/PPI noise next week; do NOT chase parabolic blow-off names</span>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-regime">
+          <div class="hero-regime-lbl">Regime</div>
+          <div class="hero-regime-val">Goldilocks · Transitioning</div>
+        </div>
+        <div class="hero-regime">
+          <div class="hero-regime-lbl">Dominant driver</div>
+          <div class="hero-regime-val" style="color:var(--warn)">Bubble / blow-off unwind</div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:2px">Size for volatility; not a sell signal</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ EVIDENCE CARD (span 6, expandable to 12) ═══ -->
+  <div class="card card-evidence s6" id="card-evidence">
+    <div class="card-lbl"><span class="lbl-dot ev-dot"></span>Evidence · five factors</div>
+
+    <div class="ev-factor">
+      <span class="ev-dir" style="color:var(--up)">▲</span>
+      <div>
+        <div class="ev-name">Trend &amp; technicals</div>
+        <div class="ev-sub">All major indices above 50d &amp; 200d — uptrend confirmed</div>
+      </div>
+      <div>
+        <div class="ev-bar-track"><div class="ev-bar-fill" style="width:90%;background:var(--up)"></div></div>
+      </div>
+      <span class="ev-score" style="color:var(--up)">90</span>
+    </div>
+
+    <div class="ev-factor">
+      <span class="ev-dir" style="color:var(--up)">▲</span>
+      <div>
+        <div class="ev-name">Cross-asset confirmation</div>
+        <div class="ev-sub">Risk-on across assets; bonds/FX diverge</div>
+      </div>
+      <div>
+        <div class="ev-bar-track"><div class="ev-bar-fill" style="width:70%;background:var(--up)"></div></div>
+      </div>
+      <span class="ev-score" style="color:var(--up)">70</span>
+    </div>
+
+    <div class="ev-factor" style="background:color-mix(in srgb,var(--warn) 4%,transparent);border-radius:5px;padding-left:5px;border-bottom:none;margin-bottom:2px">
+      <span class="ev-dir" style="color:var(--warn)">▲</span>
+      <div>
+        <div class="ev-name" style="color:var(--warn)">Breadth &amp; participation</div>
+        <div class="ev-sub">59th percentile of 5-year range — weakest leg, flip trigger</div>
+      </div>
+      <div>
+        <div class="ev-bar-track"><div class="ev-bar-fill" style="width:59%;background:var(--warn)"></div></div>
+      </div>
+      <span class="ev-score" style="color:var(--warn)">59</span>
+    </div>
+
+    <div class="ev-factor">
+      <span class="ev-dir" style="color:var(--up)">▲</span>
+      <div>
+        <div class="ev-name">Liquidity &amp; credit</div>
+        <div class="ev-sub">Fed liquidity expanding; HY credit tightening</div>
+      </div>
+      <div>
+        <div class="ev-bar-track"><div class="ev-bar-fill" style="width:77%;background:var(--up)"></div></div>
+      </div>
+      <span class="ev-score" style="color:var(--up)">77</span>
+    </div>
+
+    <div class="ev-factor">
+      <span class="ev-dir" style="color:var(--up)">▲</span>
+      <div>
+        <div class="ev-name">Downturn-risk guard</div>
+        <div class="ev-sub">Downturn risk low; drawdown band low</div>
+      </div>
+      <div>
+        <div class="ev-bar-track"><div class="ev-bar-fill" style="width:87%;background:var(--up)"></div></div>
+      </div>
+      <span class="ev-score" style="color:var(--up)">87</span>
+    </div>
+
+    <div class="ev-weakest">Weakest leg: Breadth 59/100 — confirms what has already turned; does not forecast. Watch but don't trade the dip alone.</div>
+
+    <!-- EXPANDED TRAY: MTF tape table -->
+    <div class="expand-tray" id="ev-tray">
+      <div class="card-lbl" style="margin-bottom:8px">Multi-timeframe tape — broad US market</div>
+      <table class="ev-expand-tbl">
+        <thead><tr>
+          <th>Index</th><th>1D</th><th>3D</th><th>7D</th><th>30D</th><th>Read</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--muted);font-size:11px">S&P 500</td>
+            <td><span class="ms-cell good">▲ 60</span></td>
+            <td><span class="ms-cell flat">▶ 64</span></td>
+            <td><span class="ms-cell good">▲ 66</span></td>
+            <td><span class="ms-cell good">▲ 75</span></td>
+            <td><span class="conf good">Uptrend</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);font-size:11px">Nasdaq 100</td>
+            <td><span class="ms-cell flat">▶ 53</span></td>
+            <td><span class="ms-cell flat">▶ 59</span></td>
+            <td><span class="ms-cell good">▲ 64</span></td>
+            <td><span class="ms-cell good">▲ 75</span></td>
+            <td><span class="conf good">Uptrend</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);font-size:11px">Russell 2000</td>
+            <td><span class="ms-cell flat">▶ 53</span></td>
+            <td><span class="ms-cell good">▲ 67</span></td>
+            <td><span class="ms-cell good">▲ 67</span></td>
+            <td><span class="ms-cell good">▲ 71</span></td>
+            <td><span class="conf good">Uptrend</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="stamp">RSI bars (0–100). ≥65 uptrend · 35–64 neutral · &lt;35 downtrend</div>
+    </div>
+
+    <button class="expand-handle" onclick="toggleCard('card-evidence','ev-tray')" id="ev-handle">+ MTF tape</button>
+  </div>
+
+  <!-- ═══ RISK CARD (span 6) ═══ -->
+  <div class="card card-risk s6" id="card-risk">
+    <div class="card-lbl"><span class="lbl-dot risk-dot"></span>Risk · scare ladder &amp; sentiment</div>
+
+    <div class="risk-top">
+      <div class="risk-grade" style="min-width:56px">
+        <div class="risk-grade-val" style="font-size:15px">MEDIUM</div>
+        <div class="risk-grade-lbl">Scare level</div>
+      </div>
+      <div class="risk-body">
+        <div class="risk-title">Bubble / blow-off unwind — dominant scare</div>
+        <div class="risk-sub">Late-cycle extension with valuation stretch. Not a crash call; position size is the lever.</div>
+      </div>
+    </div>
+
+    <div class="risk-meters">
+      <div class="risk-meter-row">
+        <span class="risk-meter-lbl">Volatility read</span>
+        <div class="risk-meter-dots" style="--dot-c:var(--warn)">
+          <div class="risk-meter-dot on"></div><div class="risk-meter-dot on"></div>
+          <div class="risk-meter-dot on"></div><div class="risk-meter-dot off"></div><div class="risk-meter-dot off"></div>
+        </div>
+        <span style="font-size:10.5px;color:var(--muted);margin-left:4px">Elevated · 3/5</span>
+      </div>
+      <div class="risk-meter-row">
+        <span class="risk-meter-lbl">Sentiment</span>
+        <div class="risk-meter-dots" style="--dot-c:var(--warn)">
+          <div class="risk-meter-dot on"></div><div class="risk-meter-dot on"></div>
+          <div class="risk-meter-dot on"></div><div class="risk-meter-dot on"></div><div class="risk-meter-dot off"></div>
+        </div>
+        <span style="font-size:10.5px;color:var(--muted);margin-left:4px">Greedy · 4/5</span>
+      </div>
+      <div class="risk-meter-row">
+        <span class="risk-meter-lbl">Receding signal</span>
+        <div class="risk-meter-dots" style="--dot-c:var(--info)">
+          <div class="risk-meter-dot on"></div><div class="risk-meter-dot on"></div>
+          <div class="risk-meter-dot off"></div><div class="risk-meter-dot off"></div><div class="risk-meter-dot off"></div>
+        </div>
+        <span style="font-size:10.5px;color:var(--muted);margin-left:4px">Mild · 2/5</span>
+      </div>
+    </div>
+
+    <div class="risk-stance">
+      <b>Get ready</b> — Risk is real but not dominant. Hold core; trim blow-off names; reduce size ahead of CPI/PPI next week.
+    </div>
+
+    <!-- expanded tray (static for demo) -->
+    <div class="expand-tray" id="risk-tray">
+      <table class="ev-expand-tbl">
+        <thead><tr><th>Scare</th><th>Status</th><th>Level</th></tr></thead>
+        <tbody>
+          <tr><td>Bubble / blow-off</td><td style="color:var(--warn)">Active – dominant</td><td class="ms-cell flat">MOD</td></tr>
+          <tr><td>Liquidity crunch</td><td style="color:var(--muted)">Latent</td><td class="ms-cell flat">LOW</td></tr>
+          <tr><td>Credit spread widening</td><td style="color:var(--muted)">Latent</td><td class="ms-cell flat">LOW</td></tr>
+          <tr><td>Policy shock</td><td style="color:var(--muted)">Watch</td><td class="ms-cell flat">LOW</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <button class="expand-handle" onclick="toggleCard('card-risk','risk-tray')" id="risk-handle">+ scare ladder</button>
+  </div>
+
+  <!-- ═══ EVENTS CARD (span 4) ═══ -->
+  <div class="card card-events s4">
+    <div class="card-lbl"><span class="lbl-dot evt-dot"></span>Events · next catalysts</div>
+
+    <div class="evt-cal">
+      <div class="evt-row">
+        <span class="evt-date">Jul 14 Tue</span>
+        <span class="evt-title">CPI (consumer prices)</span>
+        <span class="evt-impact evt-high">HIGH</span>
+      </div>
+      <div class="evt-row">
+        <span class="evt-date">Jul 15 Wed</span>
+        <span class="evt-title">PPI (producer prices)</span>
+        <span class="evt-impact evt-high">HIGH</span>
+      </div>
+      <div class="evt-row">
+        <span class="evt-date">Jul 16 Thu</span>
+        <span class="evt-title">Retail Sales</span>
+        <span class="evt-impact evt-med">MED</span>
+      </div>
+      <div class="evt-row">
+        <span class="evt-date">Jul 17 Fri</span>
+        <span class="evt-title">Initial Claims</span>
+        <span class="evt-impact evt-med">MED</span>
+      </div>
+    </div>
+
+    <div class="fed-strip">
+      <span class="fed-lbl">Fed odds</span>
+      <span class="fed-val">No change 84.5%</span>
+      <span class="fed-sub">market-implied · next meeting</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px;padding:4px 0;border-top:1px solid var(--hair)">
+      Event-risk window: size for two-sided CPI/PPI noise, not a directional call
+    </div>
+  </div>
+
+  <!-- ═══ MARKETS CARD (span 8) ═══ -->
+  <div class="card card-markets s8">
+    <div class="card-lbl"><span class="lbl-dot mkt-dot"></span>Markets · index tape &amp; cross-asset</div>
+
+    <div class="mkt-tiles">
+      <div class="mkt-tile">
+        <div class="mkt-top">
+          <span class="mkt-name">SPY</span>
+          <span class="mkt-chg up">+0.43%</span>
+        </div>
+        <div class="mkt-px">754.95</div>
+        <div class="mkt-chips">
+          <span class="mkt-chip ok">-0.4% off high</span>
+          <span class="mkt-chip mt">RSI 59</span>
+          <span class="mkt-chip ok">200d ✓</span>
+          <span class="mkt-chip ok">50d ✓</span>
+        </div>
+      </div>
+      <div class="mkt-tile">
+        <div class="mkt-top">
+          <span class="mkt-name">QQQ</span>
+          <span class="mkt-chg up">+0.31%</span>
+        </div>
+        <div class="mkt-px">725.51</div>
+        <div class="mkt-chips">
+          <span class="mkt-chip wn">-2.7% off high</span>
+          <span class="mkt-chip mt">RSI 53</span>
+          <span class="mkt-chip ok">200d ✓</span>
+          <span class="mkt-chip ok">50d ✓</span>
+        </div>
+      </div>
+      <div class="mkt-tile">
+        <div class="mkt-top">
+          <span class="mkt-name">DJI</span>
+          <span class="mkt-chg up">+0.29%</span>
+        </div>
+        <div class="mkt-px">52,637</div>
+        <div class="mkt-chips">
+          <span class="mkt-chip ok">-0.8% off high</span>
+          <span class="mkt-chip mt">RSI 62</span>
+          <span class="mkt-chip ok">200d ✓</span>
+          <span class="mkt-chip ok">50d ✓</span>
+        </div>
+      </div>
+      <div class="mkt-tile">
+        <div class="mkt-top">
+          <span class="mkt-name">RUT</span>
+          <span class="mkt-chg dn">-0.49%</span>
+        </div>
+        <div class="mkt-px">2,977</div>
+        <div class="mkt-chips">
+          <span class="mkt-chip wn">-1.5% off high</span>
+          <span class="mkt-chip mt">RSI 54</span>
+          <span class="mkt-chip ok">200d ✓</span>
+          <span class="mkt-chip ok">50d ✓</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mkt-sector-row">
+      <span class="mkt-sl">Hot sectors</span>
+      <span class="mkt-sector-chip hot">Financials (XLF)</span>
+      <span class="mkt-sector-chip hot">Tech (XLK)</span>
+      <span class="mkt-sl" style="margin-left:8px">Lagging</span>
+      <span class="mkt-sector-chip cold">Regional Banks (KRE)</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px">All four indices above 50d &amp; 200d. RUT lagging — small-cap breadth is the watchpoint.</div>
+  </div>
+
+  <!-- ═══ POLICY CARD (span 3) ═══ -->
+  <div class="card card-policy s3">
+    <div class="card-lbl"><span class="lbl-dot pol-dot"></span>Policy · lever &amp; stance</div>
+
+    <div class="pol-state">Quiet — no active jawboning</div>
+
+    <div class="pol-kv">
+      <div class="pol-row">
+        <span class="pol-key">Last event</span>
+        <span class="pol-val">2026-07-02</span>
+      </div>
+      <div class="pol-row">
+        <span class="pol-key">Fed stance</span>
+        <span class="pol-val">Neutral · hold</span>
+      </div>
+      <div class="pol-row">
+        <span class="pol-key">SMH/SOXX dd</span>
+        <span class="pol-val" style="color:var(--warn)">-9.9%</span>
+      </div>
+      <div class="pol-row">
+        <span class="pol-key">US midterms</span>
+        <span class="pol-val">115 days</span>
+      </div>
+    </div>
+
+    <div class="pol-stance">
+      <b>Stand aside</b> — no active jawboning. CPI surprise or Fed speech shift would be the next repricing catalyst. No action required today.
+    </div>
+  </div>
+
+  <!-- ═══ AI BRIEF CARD (span 3) ═══ -->
+  <div class="card card-brief s3">
+    <div class="card-lbl"><span class="lbl-dot brief-dot"></span>AI brief · signal summary</div>
+
+    <div class="brief-hdr">
+      <div class="brief-icon">AI</div>
+      <div>
+        <div class="brief-title">Market Intelligence Brief</div>
+        <div class="brief-date">2026-07-10</div>
+      </div>
+      <div class="brief-badge">Summary of signals<br>not a signal source</div>
+    </div>
+
+    <div class="brief-body">
+      5 high-impact items in focus. Dominant theme: <strong>rates</strong>. Top tickers flagged: XLF, XLK, KRE. Source mix: stock wire ×6, official ×5, tier-1 ×4.
+    </div>
+
+    <div class="brief-chips">
+      <span class="bchip hot">5 high-impact</span>
+      <span class="bchip">rates ×7</span>
+      <span class="bchip">credit ×4</span>
+      <span class="bchip">earnings ×4</span>
+    </div>
+
+    <div class="brief-disclaimer">Synthesis of existing signals only — not a forward prediction or trading recommendation.</div>
+    <div style="margin-top:8px"><a class="brief-link" href="#">Full AI brief →</a></div>
+  </div>
+
+  <!-- ═══ NEWS CARD (span 4) ═══ -->
+  <div class="card card-news s4">
+    <div class="card-lbl"><span class="lbl-dot news-dot"></span>News · 18 items · top 3</div>
+
+    <div class="news-list">
+      <div class="news-item">
+        <div class="news-dot-imp high"></div>
+        <span class="news-theme">Earnings</span>
+        <span class="news-hed">As bank earnings approach, a market anomaly emerges</span>
+        <span class="news-age">1d</span>
+      </div>
+      <div class="news-item">
+        <div class="news-dot-imp high"></div>
+        <span class="news-theme">Earnings</span>
+        <span class="news-hed">PepsiCo earnings miss estimates as US consumers tighten budgets</span>
+        <span class="news-age">2d</span>
+      </div>
+      <div class="news-item">
+        <div class="news-dot-imp high"></div>
+        <span class="news-theme">Fed</span>
+        <span class="news-hed">Fed stress test confirms large banks well-positioned to weather severe recession</span>
+        <span class="news-age">1d</span>
+      </div>
+    </div>
+
+    <div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Next 14d</span>
+      <span style="font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:2px 7px"><b>CPI</b> Tue Jul 14</span>
+      <span style="font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:2px 7px"><b>PPI</b> Wed Jul 15</span>
+    </div>
+    <div style="margin-top:6px"><a href="#" style="font-size:11px;font-weight:700;color:var(--link)">Full news feed →</a></div>
+  </div>
+
+  <!-- ═══ DEEP CONTEXT CARD (span 3) ═══ -->
+  <div class="card card-deep s3">
+    <div class="card-lbl"><span class="lbl-dot deep-dot"></span>Deep context · drill down</div>
+
+    <div class="deep-links">
+      <a href="macro_context.html" class="deep-link">
+        <span>Macro Weather</span>
+        <span class="deep-link-arrow">→</span>
+      </a>
+      <a href="mastermind.html" class="deep-link">
+        <span>AI Brief full</span>
+        <span class="deep-link-arrow">→</span>
+      </a>
+      <a href="us_stocks.html" class="deep-link">
+        <span>Sector Central</span>
+        <span class="deep-link-arrow">→</span>
+      </a>
+      <a href="neural_web.html" class="deep-link">
+        <span>Neural Web</span>
+        <span class="deep-link-arrow">→</span>
+      </a>
+      <a href="signal_lab.html" class="deep-link">
+        <span>Signal Lab</span>
+        <span class="deep-link-arrow">→</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══ DATA HEALTH CARD (span 2 → 3) ═══ -->
+  <div class="card card-health s3">
+    <div class="card-lbl"><span class="lbl-dot health-dot"></span>Data health</div>
+
+    <div class="health-row">
+      <span class="health-big">154</span>
+      <span class="health-lbl">sources tracked</span>
+    </div>
+
+    <div class="health-warn">
+      <span>7 need attention</span>
+    </div>
+
+    <div style="margin-top:8px;font-size:11px;color:var(--muted)">
+      Plumbing status — not a market signal. 147/154 fresh as of nightly.
+    </div>
+
+    <div class="stamp">as of 2026-07-10 nightly</div>
+  </div>
+
+</div><!-- /grid-page -->
+
+<script>
+function toggleTheme(){
+  var el=document.documentElement;
+  var curr=el.getAttribute('data-theme')||'dark';
+  var next=curr==='dark'?'light':'dark';
+  el.setAttribute('data-theme',next);
+  document.getElementById('theme-btn').textContent=next==='dark'?'Light':'Dark';
+}
+
+function toggleCard(cardId, trayId){
+  var card=document.getElementById(cardId);
+  var grid=document.getElementById('main-grid');
+  var wasExpanded=card.classList.contains('expanded');
+
+  /* close all */
+  document.querySelectorAll('.card.expanded').forEach(function(c){
+    c.classList.remove('expanded');
+    /* restore span */
+    c.classList.remove('s12');
+    if(!c.classList.contains('s6')&&!c.classList.contains('s8')&&!c.classList.contains('s4')&&!c.classList.contains('s3')){
+      c.classList.add('s6');
+    }
+    var h=c.querySelector('.expand-handle');
+    if(h){
+      h.textContent=h.getAttribute('data-collapsed')||h.textContent.replace('- ','+ ').replace('▲','▼');
+    }
+  });
+  grid.classList.remove('has-expanded');
+
+  if(!wasExpanded){
+    card.classList.add('expanded');
+    /* expand to full width */
+    var spans=['s3','s4','s6','s8'];
+    spans.forEach(function(s){card.classList.remove(s);});
+    card.classList.add('s12');
+    grid.classList.add('has-expanded');
+    var h=card.querySelector('.expand-handle');
+    if(h){
+      var t=h.textContent;
+      h.setAttribute('data-collapsed',t);
+      h.textContent=t.replace('+ ','- ').replace('▼','▲');
+    }
+  }
+}
+
+function expandAll(){
+  var btn=document.getElementById('ea-btn');
+  var grid=document.getElementById('main-grid');
+  var trays=document.querySelectorAll('.expand-tray');
+  var allOpen=btn.textContent.trim()==='Collapse all';
+  if(allOpen){
+    trays.forEach(function(t){t.style.display='none';});
+    btn.textContent='Expand all';
+    document.querySelectorAll('.card.expanded').forEach(function(c){
+      c.classList.remove('expanded');
+    });
+    grid.classList.remove('has-expanded');
+  } else {
+    trays.forEach(function(t){t.style.display='block';});
+    btn.textContent='Collapse all';
+  }
+}
+
+function setView(v){
+  document.getElementById('btn-grid').classList.toggle('active',v==='grid');
+  document.getElementById('btn-ledger').classList.toggle('active',v==='ledger');
+}
+
+/* card click to expand/collapse on mobile touch */
+document.querySelectorAll('.expand-handle').forEach(function(btn){
+  btn.addEventListener('click',function(e){e.stopPropagation();});
+});
+</script>
+</body>
+</html>

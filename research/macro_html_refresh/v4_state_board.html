@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Ledger — v4 State Board</title>
+<style>
+/* ─────────────────────────────────────────────────────────────────────
+   PALETTE  (dark primary / light secondary — no external requests)
+───────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:      #0c0f14;
+  --panel:   #13171f;
+  --panel2:  #181d26;
+  --panel3:  #1d2330;
+  --text:    #d7dce3;
+  --text-hi: #f0f3f7;
+  --muted:   #7a8494;
+  --line:    #242b38;
+  --up:      #3ec87a;
+  --down:    #e05c5c;
+  --warn:    #e0a030;
+  --info:    #4d8ef5;
+  --link:    #4d8ef5;
+
+  /* isle accent colours */
+  --isle-evidence: #20c0a0;
+  --isle-events:   #e0a030;
+  --isle-markets:  #4d8ef5;
+  --isle-risk:     #e05c5c;
+  --isle-policy:   #a070e8;
+  --isle-brief:    #38c472;
+  --isle-news:     #7a8494;
+  --isle-deep:     #4d8ef5;
+  --isle-health:   #7a8494;
+
+  /* regime colour */
+  --regime: var(--up);
+}
+
+[data-theme="light"] {
+  --bg:      #f4f6fa;
+  --panel:   #ffffff;
+  --panel2:  #eef1f6;
+  --panel3:  #e5e9f0;
+  --text:    #1c2430;
+  --text-hi: #0a1018;
+  --muted:   #5d6b7e;
+  --line:    #d8dde8;
+  --up:      #1f9a55;
+  --down:    #cf4040;
+  --warn:    #9a6010;
+  --info:    #1a4fd6;
+  --link:    #1a4fd6;
+  --regime:  var(--up);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   RESET & BASE
+───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   TOPBAR
+───────────────────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  padding: 0 32px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.topbar-brand {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex: none;
+}
+
+.topbar-asof {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* segmented control */
+.seg {
+  display: flex;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.seg-btn {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 4px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: background .12s, color .12s;
+}
+
+.seg-btn.active {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,.18);
+}
+
+.expand-btn, .theme-btn {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color .12s, color .12s;
+}
+
+.expand-btn:hover, .theme-btn:hover {
+  border-color: var(--info);
+  color: var(--text);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   PAGE LAYOUT
+───────────────────────────────────────────────────────────────────── */
+.page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 32px 60px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SECTION DIVIDER (between band and rack)
+───────────────────────────────────────────────────────────────────── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 28px 0 22px;
+}
+
+.section-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.section-divider-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   TOP BAND — 3 large verdict cards
+───────────────────────────────────────────────────────────────────── */
+.band {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: 14px;
+  align-items: start; /* cards match their own natural height */
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   VERDICT CARD (top band)
+───────────────────────────────────────────────────────────────────── */
+.vcard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px 26px 22px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+
+.vcard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--card-accent, var(--up));
+  border-radius: 14px 14px 0 0;
+}
+
+.vcard:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,.22);
+}
+
+.vcard-eyebrow {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* THE REGIME card */
+.vcard-regime { --card-accent: var(--up); }
+
+.regime-state {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--up);
+  letter-spacing: -.02em;
+  margin-bottom: 4px;
+}
+
+.regime-score-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.regime-score-big {
+  font-size: 60px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--up);
+  letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.regime-score-denom {
+  font-size: 16px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: .02em;
+  align-self: center;
+  padding-bottom: 4px; /* optical offset — the large number's cap-height center sits above mid */
+}
+
+.regime-bar-wrap {
+  margin-bottom: 24px; /* extra room for the tick label below the bar */
+}
+
+.regime-bar-track {
+  height: 6px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  border-radius: 3px;
+  overflow: visible;
+  position: relative;
+}
+
+.regime-bar-fill {
+  height: 100%;
+  width: 77%;
+  background: linear-gradient(90deg, var(--warn) 0%, var(--up) 60%);
+  border-radius: 3px;
+}
+
+.regime-bar-tick {
+  position: absolute;
+  top: -4px;
+  left: 59%;
+  width: 2px;
+  height: 14px;
+  background: var(--warn);
+  border-radius: 1px;
+}
+
+.regime-bar-tick-label {
+  position: absolute;
+  top: 14px;
+  left: 54%;
+  font-size: 9px;
+  color: var(--warn);
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--panel);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.regime-thesis {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.regime-flip {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--warn) 50%, transparent);
+}
+
+.regime-goldilocks {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--up);
+  margin-top: 12px;
+  padding: 4px 10px;
+  background: color-mix(in srgb, var(--up) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--up) 25%, transparent);
+  border-radius: 20px;
+}
+
+/* fired alert chips */
+.regime-alerts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chip-warn {
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent);
+}
+
+.chip-risk {
+  background: color-mix(in srgb, var(--down) 14%, transparent);
+  color: var(--down);
+  border: 1px solid color-mix(in srgb, var(--down) 28%, transparent);
+}
+
+.chip-muted {
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  color: var(--muted);
+  border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent);
+}
+
+.chip-policy {
+  background: color-mix(in srgb, var(--isle-policy) 14%, transparent);
+  color: var(--isle-policy);
+  border: 1px solid color-mix(in srgb, var(--isle-policy) 28%, transparent);
+}
+
+/* THE RISK card */
+.vcard-risk { --card-accent: var(--down); }
+
+.risk-state {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--down);
+  letter-spacing: -.01em;
+  margin-bottom: 6px;
+}
+
+.risk-desc {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.risk-heat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.risk-heat-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.risk-heat-bar {
+  flex: 1;
+  height: 5px;
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.risk-heat-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.risk-heat-val {
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  min-width: 24px;
+  text-align: right;
+}
+
+.risk-scare {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--down) 6%, var(--panel2));
+  border: 1px solid color-mix(in srgb, var(--down) 20%, transparent);
+  border-left: 3px solid var(--down);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.risk-scare-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--down);
+  margin-bottom: 4px;
+}
+
+.risk-flip-line {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+/* WHAT TO DO card */
+.vcard-action { --card-accent: var(--info); }
+
+.action-state {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--up);
+  letter-spacing: -.01em;
+  margin-bottom: 6px;
+}
+
+.action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.action-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.action-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--up);
+  flex: none;
+  margin-top: 5px;
+}
+
+.action-dot.amber { background: var(--warn); }
+.action-dot.red   { background: var(--down); }
+
+.action-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.action-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   INSTRUMENT RACK — 4-column grid of compact cards
+───────────────────────────────────────────────────────────────────── */
+.rack {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   INSTRUMENT CARD
+───────────────────────────────────────────────────────────────────── */
+.icard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--card-color, var(--line));
+  border-radius: 11px;
+  padding: 16px 18px 16px;
+  padding-top: 13px; /* compensate for thicker top border */
+  position: relative;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .12s;
+}
+
+.icard:hover {
+  border-color: var(--card-color, var(--muted));
+  box-shadow: 0 4px 16px rgba(0,0,0,.16);
+  transform: translateY(-1px);
+}
+
+.icard-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.icard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--card-color, var(--muted));
+  flex: none;
+}
+
+.icard-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.icard-expand-icon {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: .5;
+}
+
+.icard-stance {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--card-color, var(--text));
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+/* label-value rows */
+.kv-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  font-size: 12px;
+}
+
+.kv-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.kv-key {
+  color: var(--muted);
+  font-weight: 500;
+  flex: none;
+  min-width: 88px;
+  font-size: 11px;
+}
+
+.kv-val {
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  flex: 1;
+  text-align: right;
+  font-size: 12px;
+}
+
+.kv-val.up   { color: var(--up); }
+.kv-val.down { color: var(--down); }
+.kv-val.warn { color: var(--warn); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   EVIDENCE CARD (expanded state demo)
+───────────────────────────────────────────────────────────────────── */
+.icard.is-expanded {
+  grid-column: span 4;
+  border-color: var(--card-color, var(--muted));
+  border-top-color: var(--card-color, var(--muted));
+  transform: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--card-color, var(--muted)) 20%, transparent),
+    0 8px 32px -8px color-mix(in srgb, var(--card-color, var(--muted)) 24%, transparent);
+  background: color-mix(in srgb, var(--card-color, var(--muted)) 4%, var(--panel));
+}
+
+.icard.is-expanded .icard-expand-icon::after {
+  content: '▲';
+}
+
+.ev-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.ev-factor {
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ev-factor.weakest {
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+  background: color-mix(in srgb, var(--warn) 5%, var(--panel2));
+}
+
+.ev-factor-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.ev-factor-sub {
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.ev-factor-score-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.ev-factor-score {
+  font-size: 24px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.ev-factor-dir {
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ev-factor-bar-track {
+  flex: 1;
+  height: 4px;
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ev-factor-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.ev-weakest-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent);
+}
+
+.ev-expanded-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.ev-expanded-footer strong { color: var(--warn); }
+
+/* siblings dimming when one card is expanded */
+.rack.has-expanded .icard:not(.is-expanded) {
+  opacity: .55;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   MINI QUOTE TILES (Markets card)
+───────────────────────────────────────────────────────────────────── */
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.quote-tile {
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 10px;
+}
+
+.quote-ticker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.quote-px {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1;
+}
+
+.quote-chg {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.quote-chg.up   { color: var(--up); }
+.quote-chg.down { color: var(--down); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   NEWS ITEMS (News card)
+───────────────────────────────────────────────────────────────────── */
+.news-item {
+  padding: 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+.news-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.news-theme {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.news-headline {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.news-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.impact-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--down);
+  flex: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   DEEP CONTEXT chips
+───────────────────────────────────────────────────────────────────── */
+.deep-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.deep-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color .12s;
+}
+
+.deep-chip:hover {
+  border-color: var(--info);
+  text-decoration: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   EXPAND / COLLAPSE ANIMATION
+───────────────────────────────────────────────────────────────────── */
+.icard-expand-icon::after { content: '⌄'; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   RESPONSIVE — 390px: single column
+───────────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .band {
+    grid-template-columns: 1fr;
+  }
+  .rack {
+    grid-template-columns: 1fr 1fr;
+  }
+  .icard.is-expanded {
+    grid-column: span 2;
+  }
+  .ev-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .quote-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .topbar { padding: 0 16px; }
+  .page   { padding: 20px 16px 40px; }
+}
+
+@media (max-width: 480px) {
+  .rack {
+    grid-template-columns: 1fr;
+  }
+  .icard.is-expanded {
+    grid-column: span 1;
+  }
+  .ev-grid {
+    grid-template-columns: 1fr;
+  }
+  .band {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   PRINT / ACCESSIBILITY
+───────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .icard, .vcard { transition: none; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ─── TOPBAR ─────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <span class="topbar-brand">Macro Ledger</span>
+  <span class="topbar-asof">as of 2026-07-10 · nightly</span>
+  <div class="topbar-right">
+    <div class="seg">
+      <button class="seg-btn active">Grid</button>
+      <button class="seg-btn">Ledger</button>
+    </div>
+    <button class="expand-btn" onclick="toggleAll()">Expand all</button>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">Light</button>
+  </div>
+</header>
+
+<!-- ─── PAGE ───────────────────────────────────────────────────────── -->
+<div class="page">
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       TOP BAND — THE REGIME · THE RISK · WHAT TO DO
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="band">
+
+    <!-- 1. THE REGIME -->
+    <div class="vcard vcard-regime">
+      <div class="vcard-eyebrow">The Regime</div>
+
+      <div class="regime-state">Risk-on</div>
+
+      <div class="regime-score-row">
+        <span class="regime-score-big">77</span>
+        <span class="regime-score-denom">/100</span>
+      </div>
+
+      <div class="regime-bar-wrap">
+        <div class="regime-bar-track">
+          <div class="regime-bar-fill"></div>
+          <div class="regime-bar-tick"></div>
+          <div class="regime-bar-tick-label">flip trigger</div>
+        </div>
+      </div>
+
+      <p class="regime-thesis">
+        Tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.
+      </p>
+
+      <p class="regime-flip">
+        Turns mixed if breadth &amp; participation rolls over — now at 59, the weakest leg.
+      </p>
+
+      <div class="regime-goldilocks">
+        <span>▲</span> Goldilocks — transitioning
+      </div>
+
+      <div class="regime-alerts">
+        <span class="chip chip-warn">⚠ CPI Jul 14</span>
+        <span class="chip chip-warn">⚠ PPI Jul 15</span>
+        <span class="chip chip-risk">Blow-off unwind — watch</span>
+      </div>
+    </div>
+
+    <!-- 2. THE RISK -->
+    <div class="vcard vcard-risk">
+      <div class="vcard-eyebrow">The Risk</div>
+
+      <div class="risk-state">Bubble / Blow-off Unwind</div>
+      <p class="risk-desc">
+        Still warm at 62 — down from 90. The dominant residual risk channel is a late-cycle valuation unwind, not a macro shock.
+      </p>
+
+      <div>
+        <div class="risk-heat-row">
+          <span class="risk-heat-label">Blow-off unwind</span>
+          <div class="risk-heat-bar">
+            <div class="risk-heat-fill" style="width:62%;background:var(--warn)"></div>
+          </div>
+          <span class="risk-heat-val" style="color:var(--warn)">62</span>
+        </div>
+        <div class="risk-heat-row">
+          <span class="risk-heat-label">Global breadth</span>
+          <div class="risk-heat-bar">
+            <div class="risk-heat-fill" style="width:56%;background:var(--warn)"></div>
+          </div>
+          <span class="risk-heat-val" style="color:var(--warn)">56</span>
+        </div>
+        <div class="risk-heat-row">
+          <span class="risk-heat-label">Vol event</span>
+          <div class="risk-heat-bar">
+            <div class="risk-heat-fill" style="width:4%;background:var(--muted)"></div>
+          </div>
+          <span class="risk-heat-val" style="color:var(--muted)">4</span>
+        </div>
+        <div class="risk-heat-row">
+          <span class="risk-heat-label">Growth scare</span>
+          <div class="risk-heat-bar">
+            <div class="risk-heat-fill" style="width:38%;background:var(--muted)"></div>
+          </div>
+          <span class="risk-heat-val" style="color:var(--muted)">38</span>
+        </div>
+      </div>
+
+      <div class="risk-scare">
+        <div class="risk-scare-label">What faded</div>
+        Vol event 96→4 · Growth scare 91→38 · Blow-off unwind 90→62
+      </div>
+
+      <p class="risk-flip-line">
+        What would flip it: breadth &amp; participation breaks below 42, or vol event re-ignites above 70.
+      </p>
+    </div>
+
+    <!-- 3. WHAT TO DO -->
+    <div class="vcard vcard-action">
+      <div class="vcard-eyebrow">What To Do</div>
+
+      <div class="action-state">Stay long, size for noise</div>
+
+      <div style="margin-top: 14px;">
+        <div class="action-item">
+          <div class="action-dot"></div>
+          <div>
+            <div class="action-text">Trend-follow. Add on strength.</div>
+            <div class="action-sub">All 3 indices in uptrend across timeframes. Regime confirms.</div>
+          </div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot amber"></div>
+          <div>
+            <div class="action-text">Size for CPI/PPI noise (Jul 14–15).</div>
+            <div class="action-sub">High two-sided volatility expected. Not a sell signal — reduce position size ahead of prints.</div>
+          </div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot amber"></div>
+          <div>
+            <div class="action-text">Watch breadth — the weakest leg.</div>
+            <div class="action-sub">Breadth &amp; participation at 59. If it rolls below 42, the regime flips to mixed.</div>
+          </div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot red"></div>
+          <div>
+            <div class="action-text">Don't chase the blow-off theme.</div>
+            <div class="action-sub">Bubble/blow-off risk still warm at 62. The risk is real even if not the dominant channel today.</div>
+          </div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot"></div>
+          <div>
+            <div class="action-text">Policy is quiet — no action required.</div>
+            <div class="action-sub">Fed holds at 84.5% odds. Last policy flip Jul 2. No active jawboning.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /band -->
+
+  <!-- ─── SECTION DIVIDER ──────────────────────────────────────────── -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-label">Instrument Detail</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       INSTRUMENT RACK — 4 columns × 2 rows (8 cards)
+       First card (Evidence) shown in expanded state as demo
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="rack has-expanded" id="rack">
+
+    <!-- EVIDENCE — expanded demo -->
+    <div class="icard is-expanded"
+         style="--card-color: var(--isle-evidence)"
+         onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Evidence</span>
+        <span class="icard-expand-icon" style="margin-left:auto"></span>
+      </div>
+      <div class="icard-stance">Five signals aligned — breadth lagging</div>
+
+      <div class="ev-grid">
+
+        <div class="ev-factor">
+          <div class="ev-factor-name">Trend &amp; technicals</div>
+          <div class="ev-factor-sub">3/3 US indices uptrend across timeframes</div>
+          <div class="ev-factor-score-row">
+            <span class="ev-factor-dir" style="color:var(--up)">▲</span>
+            <div class="ev-factor-bar-track">
+              <div class="ev-factor-bar-fill" style="width:90%;background:var(--up)"></div>
+            </div>
+            <span class="ev-factor-score" style="color:var(--up)">90</span>
+          </div>
+        </div>
+
+        <div class="ev-factor">
+          <div class="ev-factor-name">Risk appetite</div>
+          <div class="ev-factor-sub">Cross-asset risk-on; bonds/FX diverge</div>
+          <div class="ev-factor-score-row">
+            <span class="ev-factor-dir" style="color:var(--up)">▲</span>
+            <div class="ev-factor-bar-track">
+              <div class="ev-factor-bar-fill" style="width:70%;background:var(--up)"></div>
+            </div>
+            <span class="ev-factor-score" style="color:var(--up)">70</span>
+          </div>
+        </div>
+
+        <div class="ev-factor weakest">
+          <div class="ev-factor-name">
+            Breadth &amp; participation
+            <span class="ev-weakest-tag" style="display:inline-block;margin-top:4px">Weakest leg</span>
+          </div>
+          <div class="ev-factor-sub">Breadth at 5-year 59th pct — confirming price, not leading</div>
+          <div class="ev-factor-score-row">
+            <span class="ev-factor-dir" style="color:var(--warn)">▲</span>
+            <div class="ev-factor-bar-track">
+              <div class="ev-factor-bar-fill" style="width:59%;background:var(--warn)"></div>
+            </div>
+            <span class="ev-factor-score" style="color:var(--warn)">59</span>
+          </div>
+        </div>
+
+        <div class="ev-factor">
+          <div class="ev-factor-name">Liquidity &amp; credit</div>
+          <div class="ev-factor-sub">Fed liquidity expanding; HY credit tightening</div>
+          <div class="ev-factor-score-row">
+            <span class="ev-factor-dir" style="color:var(--up)">▲</span>
+            <div class="ev-factor-bar-track">
+              <div class="ev-factor-bar-fill" style="width:77%;background:var(--up)"></div>
+            </div>
+            <span class="ev-factor-score" style="color:var(--up)">77</span>
+          </div>
+        </div>
+
+        <div class="ev-factor">
+          <div class="ev-factor-name">Downturn-risk guard</div>
+          <div class="ev-factor-sub">Downturn risk low; drawdown band low</div>
+          <div class="ev-factor-score-row">
+            <span class="ev-factor-dir" style="color:var(--up)">▲</span>
+            <div class="ev-factor-bar-track">
+              <div class="ev-factor-bar-fill" style="width:87%;background:var(--up)"></div>
+            </div>
+            <span class="ev-factor-score" style="color:var(--up)">87</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="ev-expanded-footer">
+        <strong>Flip trigger:</strong> Breadth &amp; participation (59) — closest to the 42 threshold that would shift the regime to mixed. Confirms what has turned; does not forecast. Scale: ≥60 risk-on · 42–59 mixed · &lt;42 risk-off.
+      </div>
+    </div>
+
+    <!-- EVENTS -->
+    <div class="icard" style="--card-color: var(--isle-events)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Events</span>
+        <span class="icard-expand-icon"></span>
+      </div>
+      <div class="icard-stance" style="color:var(--warn)">Two high-impact prints this week</div>
+      <div class="kv-row">
+        <span class="kv-key">CPI (prices)</span>
+        <span class="kv-val warn">Jul 14 · HIGH</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">PPI (producers)</span>
+        <span class="kv-val warn">Jul 15 · HIGH</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Initial claims</span>
+        <span class="kv-val">Jul 16 · MED</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Fed no-change</span>
+        <span class="kv-val">84.5% odds</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">CPI market</span>
+        <span class="kv-val">2.8% @ 53.5%</span>
+      </div>
+    </div>
+
+    <!-- MARKETS -->
+    <div class="icard" style="--card-color: var(--isle-markets)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Markets</span>
+        <span class="icard-expand-icon"></span>
+      </div>
+      <div class="icard-stance" style="color:var(--up)">Large cap up, small cap lagging</div>
+      <div class="quote-grid">
+        <div class="quote-tile">
+          <div class="quote-ticker">SPY</div>
+          <div class="quote-px">754.95</div>
+          <div class="quote-chg up">+0.43%</div>
+        </div>
+        <div class="quote-tile">
+          <div class="quote-ticker">QQQ</div>
+          <div class="quote-px">725.51</div>
+          <div class="quote-chg up">+0.31%</div>
+        </div>
+        <div class="quote-tile">
+          <div class="quote-ticker">DJI</div>
+          <div class="quote-px">52,637</div>
+          <div class="quote-chg up">+0.29%</div>
+        </div>
+        <div class="quote-tile">
+          <div class="quote-ticker">RUT</div>
+          <div class="quote-px">2,977.81</div>
+          <div class="quote-chg down">−0.49%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POLICY -->
+    <div class="icard" style="--card-color: var(--isle-policy)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Policy</span>
+        <span class="icard-expand-icon"></span>
+      </div>
+      <div class="icard-stance" style="color:var(--isle-policy)">Quiet — no active jawboning</div>
+      <div class="kv-row">
+        <span class="kv-key">Lever state</span>
+        <span class="kv-val">Quiet</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Last flip</span>
+        <span class="kv-val">2026-07-02</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Fed stance</span>
+        <span class="kv-val">Neutral / hold</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">SMH drawdown</span>
+        <span class="kv-val down">−9.9%</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Flip trigger</span>
+        <span class="kv-val" style="font-size:10.5px;color:var(--muted)">Surprise CPI or Fed pivot talk</span>
+      </div>
+    </div>
+
+    <!-- AI BRIEF -->
+    <div class="icard" style="--card-color: var(--isle-brief)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">AI Brief</span>
+        <span class="icard-expand-icon"></span>
+      </div>
+      <div class="icard-stance" style="color:var(--isle-brief)">Rates &amp; earnings dominate today's tape</div>
+      <div class="kv-row">
+        <span class="kv-key">High-impact</span>
+        <span class="kv-val warn">5 items</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Top themes</span>
+        <span class="kv-val">Rates · Credit · Earnings</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Top tickers</span>
+        <span class="kv-val">XLF · XLK · KRE</span>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted);line-height:1.5">
+        Summary of existing signals, not a new signal source.
+      </div>
+    </div>
+
+    <!-- NEWS -->
+    <div class="icard" style="--card-color: var(--isle-news)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">News</span>
+        <span class="icard-expand-icon"></span>
+      </div>
+      <div class="icard-stance">18 items · earnings season in focus</div>
+      <div class="news-item">
+        <div class="news-theme">Earnings</div>
+        <div class="news-headline">As bank earnings approach, a market anomaly emerges</div>
+        <div class="news-meta">
+          <div class="impact-dot"></div>
+          HIGH · CNBC · 74
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-theme">Earnings</div>
+        <div class="news-headline">PepsiCo earnings miss as U.S. consumers tighten budgets</div>
+        <div class="news-meta">
+          <div class="impact-dot"></div>
+          HIGH · CNBC · 78
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-theme">Fed</div>
+        <div class="news-headline">Fed annual bank stress test confirms large banks well positioned</div>
+        <div class="news-meta">
+          <div class="impact-dot"></div>
+          HIGH · Fed Press · 80
+        </div>
+      </div>
+    </div>
+
+    <!-- DEEP CONTEXT -->
+    <div class="icard" style="--card-color: var(--isle-deep)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Deep Context</span>
+        <span class="icard-expand-icon"></span>
+      </div>
+      <div class="icard-stance">Research &amp; signal links</div>
+      <div class="deep-chips">
+        <a class="deep-chip" href="macro_context.html">🌤 Macro Weather</a>
+        <a class="deep-chip" href="aibrief.html">🤖 AI Brief</a>
+        <a class="deep-chip" href="sector_central.html">🧠 Sector Central</a>
+        <a class="deep-chip" href="mastermind.html">🕸 Neural Web</a>
+        <a class="deep-chip" href="factors.html">📐 Signal Lab</a>
+      </div>
+    </div>
+
+    <!-- DATA HEALTH -->
+    <div class="icard" style="--card-color: var(--isle-health)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Data Health</span>
+        <span class="icard-expand-icon"></span>
+      </div>
+      <div class="icard-stance" style="color:var(--warn)">7 sources need attention</div>
+      <div class="kv-row">
+        <span class="kv-key">Total sources</span>
+        <span class="kv-val">154</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Need attention</span>
+        <span class="kv-val warn">7</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Pipeline</span>
+        <span class="kv-val up">Nightly · live</span>
+      </div>
+    </div>
+
+  </div><!-- /rack -->
+
+</div><!-- /page -->
+
+<script>
+/* ─── theme toggle ─────────────────────────────────────────────── */
+function toggleTheme() {
+  var html  = document.documentElement;
+  var cur   = html.getAttribute('data-theme');
+  var next  = cur === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  document.getElementById('theme-btn').textContent = next === 'dark' ? 'Light' : 'Dark';
+}
+
+/* initialise to dark */
+document.documentElement.setAttribute('data-theme', 'dark');
+
+/* ─── card expand/collapse ─────────────────────────────────────── */
+function toggleExpand(card) {
+  var rack = document.getElementById('rack');
+  var wasExpanded = card.classList.contains('is-expanded');
+
+  /* collapse all */
+  rack.querySelectorAll('.icard.is-expanded').forEach(function(c) {
+    c.classList.remove('is-expanded');
+  });
+  rack.classList.remove('has-expanded');
+
+  if (!wasExpanded) {
+    card.classList.add('is-expanded');
+    rack.classList.add('has-expanded');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+/* ─── expand all toggle (collapses all instead) ────────────────── */
+function toggleAll() {
+  var rack = document.getElementById('rack');
+  var anyExpanded = rack.querySelector('.icard.is-expanded');
+  if (anyExpanded) {
+    rack.querySelectorAll('.icard.is-expanded').forEach(function(c) {
+      c.classList.remove('is-expanded');
+    });
+    rack.classList.remove('has-expanded');
+  }
+}
+
+/* ─── segmented control (visual only) ──────────────────────────── */
+document.querySelectorAll('.seg-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.seg-btn').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    btn.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

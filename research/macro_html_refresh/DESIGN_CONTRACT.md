@@ -56,3 +56,22 @@ Operator: v2 trays shipped with transplanted legacy content ("really bad") and f
 - Expand-all = 80ms cascade of individual islands; body.many-open (≥3 open) halves glow mass so the all-open page stays calm.
 - ALL tray contents rebuilt to mockup grade (no legacy chrome transplants): evidence factor rows w/ direction badges + axis bars + subtexts, events day-cards + release-radar card chrome + fed strip, markets index-health cards + hot/cold sector columns + heatmap + 8 asset tiles, risk scare rows + drawdown boxes + sentiment decomposition, policy lever cards, brief reading card, news impact-dot rows, deep-context icon chips.
 - Operator granted full autonomy to completion (2026-07-11) — no approval gates for this program.
+
+## OPERATOR RULING — 2026-07-11 (v4 SCORECARD GRID — grid default, ledger behind a toggle)
+Operator: the v3 collapsed ledger "feels lackluster … requires additional UX steps to open each
+tab"; wants "minimalist simple block scorecards like a personal dashboard … see all the details
+all at once but in a medium detail way", press a card to expand to higher granularity; keep the
+minimalist ledger as a settings toggle; grid is the version to perfect first, ledger gets a
+feature-sync later.
+BINDING DESIGN = `v4_final.html` (= `v4_state_board.html`, winner of a judged 3-way competition
+47+45/45+43 unanimous, + ratified grafts). Full build contract, card content derivations, graft
+list, and the 52-finding v3 audit fix list live in **`V4_IMPLEMENTATION_SPEC.md`** (binding):
+- Verdict band: THE REGIME (ms-verdict contract intact) · THE RISK (dominant driver + scare
+  ladder + what-faded, press → risk island) · WHAT TO DO (deterministic stance rows — engine
+  fields / fixed vocab keyed to engine enums only; LLMs and free-authored advice banned).
+- Instrument rack: medium-detail card faces (evidence 6-factor rows, events, markets, policy,
+  ai-brief, news, deep-context) sharing the v3 island trays — one DOM, two views; in-flow
+  expansion to full row width; sibling dim; 3px left accent edge on --isle-* tokens.
+- Grid = default view; `[Grid | Ledger]` segmented toggle in the topbar persisted to
+  localStorage `mx4_view`; ledger view stays pixel-faithful to v3 (only audit fixes land there).
+- v2/v3 rulings above remain binding for the ledger view and the island idiom.
