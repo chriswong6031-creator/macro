@@ -456,8 +456,8 @@ fetch('../live/shock_state.json',{cache:'no-cache'})
     var el=document.getElementById('ftr-shock-banner');
     if(!el)return;
     var msg=isZh()?
-      ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。剧烈反转在 T+1 有 58% 的概率消退（n=26）。'):
-      ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Violent flips fade 58% at T+1 (n=26).');
+      ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。冲击期的剧烈反转多难持续：历史26次中约六成在一天内消退。'):
+      ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Sharp reversals during shocks usually don&#39;t hold: in 26 past cases about 6 in 10 faded within a day.');
     el.innerHTML='<div style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn);border-radius:9px;padding:9px 14px;margin:8px 0;font-size:13px">'+msg+'</div>';
   }).catch(function(){/* absent file → no banner */});
 // Policy-lever chip
@@ -1108,7 +1108,12 @@ function liveStripHtml(pb, tw, totalBaskets, pulseMode){
   // Show values in all modes when available (TS-R1 honest-delay law)
   if(chg!=null){
     html+='<span class="ftr-ls-chg '+(chg>=0?'up':'dn')+'">'+fmtPct(chg,2)+'</span>';
-    if(rank!=null) html+='<span class="ftr-ls-rank" style="color:var(--muted)">'+L('tape rank #'+rank+' of '+totalBaskets,'行情排名 #'+rank+' / '+totalBaskets)+'</span>';
+    if(rank!=null&&totalBaskets>0){
+      // tape_rank is higher-is-stronger → translate to position from the top (plain words, docs/DESIGN_DOCTRINE.md)
+      var pos=totalBaskets-rank+1;
+      var ordEn=(function(p){var m=p%100;if(m>=11&&m<=13)return p+'th';switch(p%10){case 1:return p+'st';case 2:return p+'nd';case 3:return p+'rd';default:return p+'th';}})(pos);
+      html+='<span class="ftr-ls-rank" style="color:var(--muted)">'+L(ordEn+' of '+totalBaskets+' on today&#39;s board','今日板块榜第'+pos+'/'+totalBaskets+'位')+'</span>';
+    }
   }
   // Mode pill for non-live reads
   if(mode!=='live'){
@@ -1117,10 +1122,14 @@ function liveStripHtml(pb, tw, totalBaskets, pulseMode){
     html+='<span style="display:inline-block;padding:1px 7px;border-radius:5px;font-size:9.5px;border:1px solid var(--line);color:var(--muted);margin-left:4px">'+mLabel+'</span>';
   }
   if(tw&&(tw.state==='WATCH'||tw.state==='IGNITION')){
+    // User-first copy (#2221 vocabulary): STRONG SIGN / EARLY SIGN; the state-enum
+    // receipt (Oracle P8, base rate) lives in the data-tip (Tier 2). States unchanged.
     var isIgn=tw.state==='IGNITION';
-    html+='<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
-      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(tw.state,tw.state)+'</span>'
-      +'<span style="font-size:11px;color:var(--muted)">'+(tw.k||0)+L('/6 legs','条腿')+'</span>';
+    var twTipEn='Technical receipt: fast turn meter, state '+tw.state+' ('+(tw.k||0)+' of 6 legs). Backtested basket-level washout→turn edge = null (Oracle P8); T+1 fade base rate 58% (n=26). Slow ratings unchanged; display tier only.';
+    var twTipZh='技术说明：快速拐点计量，状态 '+tw.state+'（6条腿中'+(tw.k||0)+'条触发）。篮子级洗盘→拐点回测优势为空值（Oracle P8）；T+1消退基础概率58%（n=26）。慢速评级未变；仅展示层。';
+    html+='<span data-tip-en="'+esc(twTipEn)+'" data-tip-zh="'+esc(twTipZh)+'" style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
+      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>'
+      +'<span style="font-size:11px;color:var(--muted)">'+(tw.k||0)+L(' of 6 signs',' / 6 项迹象')+'</span>';
   }
   html+='<span style="font-size:10.5px;color:var(--muted);margin-left:auto">'+L('15-min delayed','15分钟延迟')+'</span>';
   html+='</div>';

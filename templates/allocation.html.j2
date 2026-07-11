@@ -166,8 +166,8 @@ fetch('live/shock_state.json',{cache:'no-cache'})
     var el=document.getElementById('ftr-shock-banner');
     if(!el)return;
     var msg=isZh()?
-      ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。剧烈反转在 T+1 有 58% 的概率消退（n=26）。'):
-      ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Violent flips fade 58% at T+1 (n=26).');
+      ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。冲击期的剧烈反转多难持续：历史26次中约六成在一天内消退。'):
+      ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Sharp reversals during shocks usually don&#39;t hold: in 26 past cases about 6 in 10 faded within a day.');
     el.innerHTML='<div class="banner" style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn)">'+msg+'</div>';
   }).catch(function(){/* absent file → no banner */});
 // Policy-lever chip
@@ -235,9 +235,8 @@ fetch('policy_lever.json',{cache:'no-cache'})
   </div>
   <div id="ftr-alloc-movers" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px"></div>
   <div id="ftr-alloc-disagree" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
-  <div style="margin-top:6px;font-size:10.5px;color:var(--muted);font-style:italic">{{ t(
-    'T+1 violent-flip base rate: 58% fade (n=26) · not a directional signal · display only',
-    'T+1剧烈反转基础概率：58%消退（n=26）· 非方向信号 · 仅展示') }}</div>
+  <!-- T+1 fade note (FT-R3): plain words at a glance; technical receipt in the ? tip (docs/DESIGN_DOCTRINE.md) -->
+  <div style="margin-top:6px;font-size:10.5px;color:var(--muted);font-style:italic"><span class="l-en">Not a buy signal: sharp one-day flips usually don&#39;t hold &mdash; in 26 past cases about 6 in 10 faded within a day.</span><span class="l-zh">非买入信号：剧烈的单日反转多难持续 — 历史26次中约六成在一天内消退。</span> <span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--line);color:var(--muted);font-size:9.5px;font-weight:700;cursor:help;line-height:1;vertical-align:middle;font-style:normal" data-tip-en="Technical receipt: T+1 violent-flip base rate 58% fade (n=26) · not a directional signal · display tier only." data-tip-zh="技术说明：T+1剧烈反转基础概率58%消退（n=26）· 非方向信号 · 仅展示层。">?</span></div>
 </div>
 <script>
 (function(){
@@ -258,7 +257,20 @@ function modePillLabel(mode,delay){
   if(mode==='eod')return L('EOD CLOSE','收盘价');
   return '';
 }
-fetch('live/basket_pulse.json',{cache:'no-cache'})
+// Display-name map (Law 2: never raw slugs; prettified fallback never blocks render)
+var NAMEMAP={};
+function _slugName(id){return String(id||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});}
+function nameEnOf(id){return (NAMEMAP[id]&&NAMEMAP[id].en)||_slugName(id);}
+function nameZhOf(id){return (NAMEMAP[id]&&NAMEMAP[id].zh)||_slugName(id);}
+fetch('basketdata/baskets.json',{cache:'no-cache'})
+  .then(function(r){if(!r.ok)throw 0;return r.json();})
+  .then(function(d){
+    ((d&&d.baskets)||[]).forEach(function(b){
+      if(b.id){ NAMEMAP[b.id]={en:b.name||_slugName(b.id), zh:b.name_zh||b.name||_slugName(b.id)}; }
+    });
+  })
+  .catch(function(){/* absent names file → prettified-slug fallback */})
+  .then(function(){ return fetch('live/basket_pulse.json',{cache:'no-cache'}); })
   .then(function(r){if(!r.ok)throw 0;return r.json();})
   .then(function(pulse){
     var panel=document.getElementById('ftr-alloc-tape-panel');
@@ -315,19 +327,29 @@ fetch('live/basket_pulse.json',{cache:'no-cache'})
       live.sort(function(a,b){return b.tape_rank-a.tape_rank;});
       var n=live.length;
       var top3=live.slice(0,3),bot3=live.slice(-3).reverse();
-      function mrow(b,rank){return '<div style="display:flex;align-items:center;gap:6px;padding:2px 0">'
-        +'<span style="font-size:10px;color:var(--muted);width:22px">#'+rank+'</span>'
-        +'<span style="flex:1;font-weight:500">'+(b.id||b.id)+'</span>'
-        +'<span style="font-weight:700;font-variant-numeric:tabular-nums;color:'+(b.live_ew_chg_pct>=0?'var(--up)':'var(--down)')+'">'+fmtPct(b.live_ew_chg_pct)+'</span>'
+      // Mover rows — .dtp idiom laws (#2208 / docs/DESIGN_DOCTRINE.md §3):
+      // display names (never slugs), honest shared-scale bars, no rank numbers.
+      var shown=top3.concat(bot3);
+      var maxAbs=0;
+      shown.forEach(function(b){var a=Math.abs(b.live_ew_chg_pct);if(a>maxAbs)maxAbs=a;});
+      if(!maxAbs)maxAbs=1;
+      function mrow(b){
+        var isUp=b.live_ew_chg_pct>=0;
+        var barW=Math.max(6,Math.round(Math.abs(b.live_ew_chg_pct)/maxAbs*44));
+        return '<div style="display:flex;align-items:center;gap:6px;padding:2px 0">'
+        +'<a href="basket/'+esc(b.id)+'.html" style="flex:1;font-weight:500;color:inherit;text-decoration:none;min-width:0">'+L(esc(nameEnOf(b.id)),esc(nameZhOf(b.id)))+'</a>'
+        +'<span style="font-weight:700;font-variant-numeric:tabular-nums;color:'+(isUp?'var(--up)':'var(--down)')+'">'+fmtPct(b.live_ew_chg_pct)+'</span>'
+        +'<span style="width:44px;flex:none"><span style="display:inline-block;height:3px;border-radius:2px;min-width:6px;width:'+barW+'px;background:'+(isUp?'var(--up)':'var(--down)')+';opacity:.65"></span></span>'
         +'</div>';}
       var moversEl=document.getElementById('ftr-alloc-movers');
       if(moversEl){
         moversEl.innerHTML='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--up);margin-bottom:4px">'+L('Top 3 leaders','前3领涨')+'</div>'
-          +top3.map(function(b){return mrow(b,b.tape_rank);}).join('')+'</div>'
+          +top3.map(function(b){return mrow(b);}).join('')+'</div>'
           +'<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--down);margin-bottom:4px">'+L('Bottom 3 laggards','后3领跌')+'</div>'
-          +bot3.map(function(b){return mrow(b,b.tape_rank);}).join('')+'</div>';
+          +bot3.map(function(b){return mrow(b);}).join('')+'</div>';
       }
-      // Disagreement vs strategic leader: only in live mode (FT-R12)
+      // Disagreement vs strategic leader: only in live mode (FT-R12).
+      // Plain words at a glance; the tape-rank receipt lives in the data-tip (Tier 2).
       if(!chipSuppressed&&stratLeaderId){
         var lb=live.find(function(b){return b.id===stratLeaderId;});
         if(lb){
@@ -335,9 +357,9 @@ fetch('live/basket_pulse.json',{cache:'no-cache'})
           var isLeaderLagging=leadRank!=null&&leadRank<n*0.33;
           if(isLeaderLagging){
             var dEl=document.getElementById('ftr-alloc-disagree');
-            if(dEl)dEl.innerHTML='<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;background:rgba(251,146,60,.10);border:1px solid rgba(251,146,60,.38);color:var(--amber,#fb923c)">'
-              +L('tape rank #'+leadRank+' of '+n+' · strategic leader at tape rank #'+leadRank+' — discount; slow construction by design',
-                 '行情排名 #'+leadRank+'（共'+n+'）· 战略领跑者当前行情排名 #'+leadRank+' — 酌情折扣；结构性慢信号')
+            if(dEl)dEl.innerHTML='<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;background:rgba(251,146,60,.10);border:1px solid rgba(251,146,60,.38);color:var(--amber,#fb923c)" data-tip-en="Receipt: strategic leader tape rank '+leadRank+' of '+n+' this session. The allocation view is a deliberately slow 3-12 month construction · display tier, never reorders the allocation." data-tip-zh="技术说明：战略领跑者本时段行情排名 '+leadRank+'/'+n+'。配置视图为有意放慢的3-12个月构建 · 仅展示层，不改变配置。">'
+              +L('Today&#39;s tape disagrees: the strategic pick is near the bottom of today&#39;s board — normal for a slow view; don&#39;t react to one session.',
+                 '今日行情与战略选择相左：战略领跑者今日排名靠后 — 慢视角下属正常，勿因单日行情调整。')
               +'</span>';
           }
         }
