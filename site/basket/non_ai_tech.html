@@ -1023,8 +1023,8 @@ function anatomyPanelHtml(th){
     var valColor = absent?'var(--muted)':isCrowd?'var(--amber,#fb923c)':(v>=0?'var(--up)':'var(--down)');
     var crowdStyle = isCrowd?'background:rgba(251,146,60,.04);border-radius:6px;padding:4px 0;':'';
     html+='<div class="ftr-leg-row" style="'+crowdStyle+'">'
-      +'<div><div class="ftr-leg-lbl'+(isCrowd?' " style="color:var(--amber,#fb923c)':'"')+'>'+ll[0]+'</div>'
-      +'<div class="ftr-leg-wt'+(isCrowd?' " style="color:var(--amber,#fb923c)':'"')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
+      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>'+ll[0]+'</div>'
+      +'<div class="ftr-leg-wt"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
       +'<div class="ftr-leg-bar"><div class="ftr-leg-bar-ctr"></div>'
       +(absent?'':'<div class="ftr-leg-fill '+barClass+'" style="width:'+barFillPct.toFixed(1)+'%"></div>')
       +'</div>'
