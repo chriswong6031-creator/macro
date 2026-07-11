@@ -24,7 +24,7 @@ concurrency:
 jobs:
   asia:
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 165   # was 90 -> 120 -> 165. EVERY run 07-03..07-10 died at the cap: measured 07-10 (run 29089281652) collect --group asia = 68m + build_china alone = 36m, so the kill lands mid-chain — everything after build_subsector_confluence (build_hk, build_china_news ingest, all CN-SYS lobes, masterminds) had been DEAD for 8 days while the run reads "cancelled" not "failed". Last natural success 07-02 at ~86m; the lane grew ~+35m in a week as W8/CN-SYS modules landed. 165m restores the full chain; the durable fix is a runtime diet (shadow_importance v0+PIT = 13m and redfin ride inside the asia shard; china_filings burns ~5m on CNInfo 504 retries).
+    timeout-minutes: 165   # was 90 -> 120 -> 165. EVERY run 07-03..07-10 died at the cap: measured 07-10 (run 29089281652) collect --group asia = 68m + build_china alone = 36m, so the kill lands mid-chain — everything after build_subsector_confluence (build_hk, build_china_news ingest, all CN-SYS lobes, masterminds) had been DEAD for 8 days while the run reads "cancelled" not "failed". Last natural success 07-02 at ~86m; the lane grew ~+35m in a week as W8/CN-SYS modules landed. 165m restores the full chain; the runtime diet landed 2026-07-11 — collect-path (us_scope tail gate + pure-REST pool moves + CNInfo caps, #2199) and build-path (skip the duplicate library rebuild + [timing] section ticks in build_china_library, this PR). Target ~110m steady-state; keep 165m as headroom against CNInfo/GDELT bad days.
     steps:
       # Default ref (the branch that triggered this) — NOT a hard `ref: main`. On the
       # feat/time-shards branch this pulls the collect.py that HAS --group; on main
@@ -105,15 +105,21 @@ jobs:
                           # leave CN_LANE unset/non-asia so china_standout_track.append_board refuses.
         run: |
           set +e
+          # Job-start marker for the library rebuild step's skip-if-fresh check below
+          # (same pattern as daily.yml's canada/intl library rebuild). $RUNNER_TEMP is
+          # per-job: /tmp is SHARED across the box's runners — the 07-10 run's
+          # build_china log group contained another runner's build_congress output
+          # because both jobs wrote /tmp/step.log concurrently.
+          touch "$RUNNER_TEMP/asia_libs_marker"
           run_py() {
             local label="$1" mod="$2"; shift 2
             echo "::group::$label"
-            python -m "$mod" "$@" > /tmp/step.log 2>&1; local rc=$?
-            cat /tmp/step.log
+            python -m "$mod" "$@" > "$RUNNER_TEMP/step.log" 2>&1; local rc=$?
+            cat "$RUNNER_TEMP/step.log"
             echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 500)"
-              { echo "### ❌ $label failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/step.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/step.log" | tr '\n' ' ' | tail -c 500)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '```'; tail -n 40 "$RUNNER_TEMP/step.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             fi
           }
           # Order per daily.yml cl_china: china -> sector_desk -> sector_cycles ->
@@ -185,11 +191,30 @@ jobs:
           run_py "china subsector rotation pages (build_subsector_rotation_china_pages)"  scripts.build_subsector_rotation_china_pages  # W9 lane unification
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
+        # FAILURE-PATH safety net (asia-lane runtime diet, 2026-07-11): build_china
+        # already runs build_china_library.main() IN-PROCESS (~17-30+ min — the single
+        # heaviest block in the lane), so on the success path this step was pure
+        # duplicate work, building the same library TWICE per lane. Mirror of
+        # daily.yml's canada/intl rebuild skip: if the library's index.json is newer
+        # than the job-start marker, the dashboard step built it fresh this run —
+        # skip. A build_china crash BEFORE its library call leaves an old index.json
+        # => marker is newer => we still rebuild and the analyzers ship.
         run: |
           set +e
+          libdir() {
+            case "$1" in
+              scripts.build_china_library) echo site/chinastockdata;;
+              scripts.build_hk_library) echo site/hkstockdata;;
+            esac
+          }
           for mod in scripts.build_china_library scripts.build_hk_library; do
-            echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
-            if [ "$rc" -ne 0 ]; then echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 500)"; fi
+            idx="$(libdir "$mod")/index.json"
+            if [ -f "$RUNNER_TEMP/asia_libs_marker" ] && [ "$idx" -nt "$RUNNER_TEMP/asia_libs_marker" ]; then
+              echo "::notice::$mod — already built fresh this run ($idx); skipping redundant rebuild"
+              continue
+            fi
+            echo "::group::$mod"; python -m "$mod" > "$RUNNER_TEMP/lib.log" 2>&1; rc=$?; cat "$RUNNER_TEMP/lib.log"; echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/lib.log" | tr '\n' ' ' | tail -c 500)"; fi
           done
           exit 0
       - name: CN Pick Lab — fire books + grade + render (CNPL-R8 asia lane, ≤2 min)
@@ -205,11 +230,11 @@ jobs:
           CN_LANE: asia
         run: |
           echo "::group::CN Pick Lab (build_china_pick_lab)"
-          python -m scripts.build_china_pick_lab > /tmp/cnlab.log 2>&1; rc=$?
-          cat /tmp/cnlab.log
+          python -m scripts.build_china_pick_lab > "$RUNNER_TEMP/cnlab.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/cnlab.log"
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then
-            echo "::error title=build_china_pick_lab failed (rc=$rc)::$(tail -n 2 /tmp/cnlab.log | tr '\n' ' ' | tail -c 500)"
+            echo "::error title=build_china_pick_lab failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/cnlab.log" | tr '\n' ' ' | tail -c 500)"
           fi
           exit 0
       - name: HK Pick Lab — fire books + grade + render (HKPL-R8 asia lane, ≤2 min)
@@ -225,11 +250,11 @@ jobs:
           CN_LANE: asia
         run: |
           echo "::group::HK Pick Lab (build_hk_pick_lab)"
-          python -m scripts.build_hk_pick_lab > /tmp/hklab.log 2>&1; rc=$?
-          cat /tmp/hklab.log
+          python -m scripts.build_hk_pick_lab > "$RUNNER_TEMP/hklab.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/hklab.log"
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then
-            echo "::error title=build_hk_pick_lab failed (rc=$rc)::$(tail -n 2 /tmp/hklab.log | tr '\n' ' ' | tail -c 500)"
+            echo "::error title=build_hk_pick_lab failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/hklab.log" | tr '\n' ' ' | tail -c 500)"
           fi
           exit 0
       - name: inject data-base shim into CN/HK pages (site-wide, no-op while DATA_BASE empty)

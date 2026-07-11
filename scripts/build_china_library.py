@@ -11,6 +11,7 @@ search page can embed an A-share chart (e.g. 600519.SS -> SSE:600519).
 """
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -313,11 +314,25 @@ def compute_china_alpha() -> dict | None:
     return alpha
 
 
+_REVERSAL_MEMO: dict | None = None
+
+
 def compute_china_reversal() -> dict | None:
     """The "Mean-reversion watch" — the VALIDATED A-share stock signal (3-month
     within-sector deepest dips, screened for ST/delisting + a market-cap floor).
     engine/china_reversal.py; reports/china-reversal-phase0.md. Best-effort: every
-    failure path degrades to None, never raises."""
+    failure path degrades to None, never raises.
+
+    Memoized per process (asia-lane runtime diet): one build_china run reaches
+    here THREE times — build_china.py's own reversal-watch block, main()'s
+    reversal-z map, and the CN pick-lab snapshot producer — each a full
+    closes.parquet (~1,537 col) read + reversal_watch() recompute over an
+    unchanged panel. Cache hits return a deep copy so no caller can mutate the
+    cached result. A None result is NOT cached (a missing/corrupt panel may be
+    repaired later in the same process)."""
+    global _REVERSAL_MEMO
+    if _REVERSAL_MEMO is not None:
+        return copy.deepcopy(_REVERSAL_MEMO)
     from engine.china_reversal import reversal_watch
     dd = config.data_dir()
     cp = dd / "china_search" / "closes.parquet"
@@ -347,6 +362,7 @@ def compute_china_reversal() -> dict | None:
     if out:
         log.info("china reversal watch: %d names, %d on watch (screened %s)",
                  out.get("n"), len(out.get("watch", [])), out.get("screened"))
+        _REVERSAL_MEMO = copy.deepcopy(out)
     return out
 
 
@@ -650,6 +666,19 @@ def main(alpha: dict | None = None) -> dict | None:
     outdir = site / "chinastockdata"
     outdir.mkdir(parents=True, exist_ok=True)
 
+    # Section wall-clock ticks (asia-lane runtime diet observability): this build
+    # grew ~20 -> ~33+ min during 2026-07-02..10 with no per-section evidence of
+    # where — the collect loop has "collect timing total"; this is the builder's
+    # equivalent. Grep "[timing]" in the lane log to profile a run.
+    _tick_t0 = time.monotonic()
+    _tick_prev = [_tick_t0]
+
+    def _tick(label: str) -> None:
+        _now = time.monotonic()
+        log.info("[timing] %-34s +%6.1fs (cum %7.1fs)",
+                 label, _now - _tick_prev[0], _now - _tick_t0)
+        _tick_prev[0] = _now
+
     # Refresh the additive A-share CONTEXT caches that power the US-parity per-stock panels
     # (analyst consensus / earnings-disclosure calendar / own-history valuation percentile /
     # per-name margin financing). Keyless akshare/Eastmoney drips — best-effort, idempotent
@@ -714,6 +743,7 @@ def main(alpha: dict | None = None) -> dict | None:
                         "preferred at consume time; check TUSHARE_TOKEN", _stale)
     except Exception as e:  # noqa: BLE001 — health registration must never break a build
         log.warning("tushare health registration failed (%s)", e)
+    _tick("context drips + tushare health")
 
     # sector-neutral residual-alpha leg — computed here if not passed in by build_china
     if alpha is None:
@@ -915,6 +945,7 @@ def main(alpha: dict | None = None) -> dict | None:
         log.info("china reversal-z: populated for %d names (was top-16 only)", len(rev_z_by))
     except Exception as e:  # noqa: BLE001 — additive leg, never fatal
         log.warning("china reversal-z map unavailable (%s)", e)
+    _tick("alpha + reversal-z legs")
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
 
     index, cand, built, failed = [], [], 0, 0
@@ -987,7 +1018,9 @@ def main(alpha: dict | None = None) -> dict | None:
             return False
         return True
 
+    _tick("universe assembly + screens")
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
+    _tick("cycles analyze fan-out")
     sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade verdict per name
     # COILED wave-3 CN ranking bonus: per-name inputs collected in the loop; cohort_fractions
     # computed AFTER the loop (cross-sectional). CN gate: clean15 +7.33pp, stop5 −6.21pp, n=10,784.
@@ -1431,6 +1464,7 @@ def main(alpha: dict | None = None) -> dict | None:
             _wsetup_by[_t] = _w_setup_fn(_c_w)
         except Exception:  # noqa: BLE001 — additive; never fatal
             _wsetup_by[_t] = None
+    _tick("per-name detail loop + signal gates")
     log.info("W1-B w_setup: %d names scanned in %.0fs (%d non-None)",
              len(_wsetup_by), time.time() - _t0_wsetup,
              sum(1 for v in _wsetup_by.values() if v is not None))
@@ -2154,6 +2188,7 @@ def main(alpha: dict | None = None) -> dict | None:
                  len(eligible_rows), len(cand))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))
+    _tick("boards + ledgers + manifest")
 
     # ── CN Pick Lab snapshot producer + Flagship-2 Reversion Desk ────────────
     # Spec §5 (snapshot) + §4 (reversion desk). Never-fatal: any failure logs a
@@ -2399,6 +2434,7 @@ def main(alpha: dict | None = None) -> dict | None:
         except Exception as _cnpl_e:  # noqa: BLE001 — never fatal (additive lane)
             log.warning("china pick_lab snapshot producer failed (%s)", _cnpl_e)
     # ── END CN Pick Lab snapshot producer ─────────────────────────────────────
+    _tick("cn pick-lab snapshot producer")
 
     # ── W8-R7: CN per-stock MTF upturn organ ──────────────────────────────────
     # Runs AFTER the board arrays (buy/ripening) exist in wide/setups (required
@@ -2425,6 +2461,9 @@ def main(alpha: dict | None = None) -> dict | None:
     except Exception as _mtf_e:  # noqa: BLE001 — additive, never fatal
         log.warning("W8-R7 mtf_upturn_cn failed (%s) — dashboard degrades without MTF panel", _mtf_e)
     # ── END W8-R7 CN MTF upturn organ ─────────────────────────────────────────
+    _tick("mtf_upturn organ")
+    log.info("[timing] build_china_library main() TOTAL %.1fs",
+             time.monotonic() - _tick_t0)
 
     return setups
 
