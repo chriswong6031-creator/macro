@@ -1,0 +1,1352 @@
+{
+"applied": "2026-07-11T03:36:22.602260+00:00",
+"rows_flagged": 5,
+"tickers_flagged": 3,
+"by_flag": {
+"assets:flank_scale": 2,
+"equity:flank_scale": 1,
+"debt_lt:flank_scale": 2
+},
+"repaired": 5,
+"nulled": 0,
+"mirrors": 2,
+"rows": [
+{
+"ticker": "ATO",
+"fy": 2010,
+"col": "assets",
+"flag": "flank_scale",
+"raw": 7221623.0,
+"repair": 7221623000.0,
+"note": "x1e3 flank"
+},
+{
+"ticker": "ATO",
+"fy": 2010,
+"col": "equity",
+"flag": "flank_scale",
+"raw": 2274853.0,
+"repair": 2274853000.0,
+"note": "x1e3 flank corr:same_row_assets"
+},
+{
+"ticker": "ATO",
+"fy": 2010,
+"col": "debt_lt",
+"flag": "flank_scale",
+"raw": 1807319.0,
+"repair": 1807319000.0,
+"note": "x1e3 flank corr:same_row_assets"
+},
+{
+"ticker": "GNRC",
+"fy": 2016,
+"col": "debt_lt",
+"flag": "flank_scale",
+"raw": 1048400.0,
+"repair": 1048400000.0,
+"note": "x1e3 flank"
+},
+{
+"ticker": "SNEX",
+"fy": 2018,
+"col": "assets",
+"flag": "flank_scale",
+"raw": 8710.5,
+"repair": 8710500000.0,
+"note": "x1e6 flank"
+}
+],
+"xsrc_disagreements": [
+{
+"ticker": "AHR",
+"fy": 2020,
+"col": "assets",
+"panel": 3234937000.0,
+"statements": 1092773000.0
+},
+{
+"ticker": "AVAV",
+"fy": 2025,
+"col": "assets",
+"panel": 5364234000.0,
+"statements": 1120567000.0
+},
+{
+"ticker": "AVGO",
+"fy": 2023,
+"col": "assets",
+"panel": 177870000000.0,
+"statements": 72861000000.0
+},
+{
+"ticker": "BANC",
+"fy": 2022,
+"col": "assets",
+"panel": 41228936000.0,
+"statements": 9197016000.0
+},
+{
+"ticker": "COHR",
+"fy": 2019,
+"col": "assets",
+"panel": 5208209000.0,
+"statements": 1953773000.0
+},
+{
+"ticker": "COIN",
+"fy": 2023,
+"col": "assets",
+"panel": 14753901000.0,
+"statements": 206982953000.0
+},
+{
+"ticker": "CXT",
+"fy": 2022,
+"col": "assets",
+"panel": 2129400000.0,
+"statements": 4390200000.0
+},
+{
+"ticker": "DY",
+"fy": 2025,
+"col": "assets",
+"panel": 5979182000.0,
+"statements": 2945367000.0
+},
+{
+"ticker": "GEN",
+"fy": 2022,
+"col": "assets",
+"panel": 15503000000.0,
+"statements": 6943000000.0
+},
+{
+"ticker": "HE",
+"fy": 2023,
+"col": "assets",
+"panel": 7677372000.0,
+"statements": 17243821000.0
+},
+{
+"ticker": "INVX",
+"fy": 2023,
+"col": "assets",
+"panel": 475300000.0,
+"statements": 1028181000.0
+},
+{
+"ticker": "KNTK",
+"fy": 2021,
+"col": "assets",
+"panel": 3553206000.0,
+"statements": 1724670000.0
+},
+{
+"ticker": "MLKN",
+"fy": 2021,
+"col": "assets",
+"panel": 4465900000.0,
+"statements": 2061900000.0
+},
+{
+"ticker": "NEOG",
+"fy": 2022,
+"col": "assets",
+"panel": 4563242000.0,
+"statements": 992929000.0
+},
+{
+"ticker": "OKTA",
+"fy": 2021,
+"col": "assets",
+"panel": 9206000000.0,
+"statements": 3298797000.0
+},
+{
+"ticker": "RBC",
+"fy": 2021,
+"col": "assets",
+"panel": 4875050000.0,
+"statements": 1434260000.0
+},
+{
+"ticker": "SATS",
+"fy": 2022,
+"col": "assets",
+"panel": 58748281000.0,
+"statements": 6199003000.0
+},
+{
+"ticker": "SIRI",
+"fy": 2023,
+"col": "assets",
+"panel": 30056000000.0,
+"statements": 10374000000.0
+},
+{
+"ticker": "SMTC",
+"fy": 2022,
+"col": "assets",
+"panel": 2569628000.0,
+"statements": 1130911000.0
+},
+{
+"ticker": "STEP",
+"fy": 2021,
+"col": "assets",
+"panel": 4036629000.0,
+"statements": 1320772000.0
+},
+{
+"ticker": "TTWO",
+"fy": 2022,
+"col": "assets",
+"panel": 16881400000.0,
+"statements": 6546219000.0
+},
+{
+"ticker": "VSAT",
+"fy": 2023,
+"col": "assets",
+"panel": 16650655000.0,
+"statements": 7730337000.0
+},
+{
+"ticker": "AGYS",
+"fy": 2023,
+"col": "equity",
+"panel": 230273000.0,
+"statements": 109310000.0
+},
+{
+"ticker": "AOSL",
+"fy": 2021,
+"col": "equity",
+"panel": 793990000.0,
+"statements": 373205000.0
+},
+{
+"ticker": "APO",
+"fy": 2022,
+"col": "equity",
+"panel": 6640000000.0,
+"statements": 397000000.0
+},
+{
+"ticker": "ARWR",
+"fy": 2024,
+"col": "equity",
+"panel": 52589000.0,
+"statements": 185444000.0
+},
+{
+"ticker": "BANC",
+"fy": 2020,
+"col": "equity",
+"panel": 3594951000.0,
+"statements": 897207000.0
+},
+{
+"ticker": "BANC",
+"fy": 2021,
+"col": "equity",
+"panel": 3999630000.0,
+"statements": 1065290000.0
+},
+{
+"ticker": "BANC",
+"fy": 2022,
+"col": "equity",
+"panel": 3950531000.0,
+"statements": 959618000.0
+},
+{
+"ticker": "CAH",
+"fy": 2022,
+"col": "equity",
+"panel": -2213000000.0,
+"statements": -709000000.0
+},
+{
+"ticker": "CARR",
+"fy": 2020,
+"col": "equity",
+"panel": 2697000000.0,
+"statements": 6578000000.0
+},
+{
+"ticker": "CHWY",
+"fy": 2020,
+"col": "equity",
+"panel": -54970000.0,
+"statements": -2004000.0
+},
+{
+"ticker": "CLX",
+"fy": 2023,
+"col": "equity",
+"panel": 53000000.0,
+"statements": 220000000.0
+},
+{
+"ticker": "COR",
+"fy": 2024,
+"col": "equity",
+"panel": 226580000.0,
+"statements": 645938000.0
+},
+{
+"ticker": "CPRI",
+"fy": 2025,
+"col": "equity",
+"panel": 105000000.0,
+"statements": 368000000.0
+},
+{
+"ticker": "CXT",
+"fy": 2021,
+"col": "equity",
+"panel": 763800000.0,
+"statements": 1832300000.0
+},
+{
+"ticker": "CXT",
+"fy": 2022,
+"col": "equity",
+"panel": 783800000.0,
+"statements": 1901400000.0
+},
+{
+"ticker": "DOCU",
+"fy": 2022,
+"col": "equity",
+"panel": 617287000.0,
+"statements": 275503000.0
+},
+{
+"ticker": "EAT",
+"fy": 2024,
+"col": "equity",
+"panel": 131500000.0,
+"statements": 39400000.0
+},
+{
+"ticker": "EXTR",
+"fy": 2020,
+"col": "equity",
+"panel": 17925000.0,
+"statements": 5398000.0
+},
+{
+"ticker": "EXTR",
+"fy": 2024,
+"col": "equity",
+"panel": 51208000.0,
+"statements": 25282000.0
+},
+{
+"ticker": "FICO",
+"fy": 2021,
+"col": "equity",
+"panel": -538299000.0,
+"statements": -110942000.0
+},
+{
+"ticker": "GEN",
+"fy": 2021,
+"col": "equity",
+"panel": -98000000.0,
+"statements": -500000000.0
+},
+{
+"ticker": "GL",
+"fy": 2021,
+"col": "equity",
+"panel": 2003808000.0,
+"statements": 8642806000.0
+},
+{
+"ticker": "GSHD",
+"fy": 2023,
+"col": "equity",
+"panel": 27966000.0,
+"statements": 56552000.0
+},
+{
+"ticker": "HPQ",
+"fy": 2025,
+"col": "equity",
+"panel": -766000000.0,
+"statements": -346000000.0
+},
+{
+"ticker": "HTZ",
+"fy": 2020,
+"col": "equity",
+"panel": 56000000.0,
+"statements": 1769000000.0
+},
+{
+"ticker": "INVX",
+"fy": 2021,
+"col": "equity",
+"panel": 180551000.0,
+"statements": 897108000.0
+},
+{
+"ticker": "INVX",
+"fy": 2022,
+"col": "equity",
+"panel": 251280000.0,
+"statements": 874916000.0
+},
+{
+"ticker": "INVX",
+"fy": 2023,
+"col": "equity",
+"panel": 328921000.0,
+"statements": 881260000.0
+},
+{
+"ticker": "KKR",
+"fy": 2022,
+"col": "equity",
+"panel": 18807767000.0,
+"statements": 53506820000.0
+},
+{
+"ticker": "KMPR",
+"fy": 2022,
+"col": "equity",
+"panel": 241100000.0,
+"statements": 2443200000.0
+},
+{
+"ticker": "LYV",
+"fy": 2023,
+"col": "equity",
+"panel": -52305000.0,
+"statements": -17148000.0
+},
+{
+"ticker": "MCK",
+"fy": 2021,
+"col": "equity",
+"panel": -1274000000.0,
+"statements": -21000000.0
+},
+{
+"ticker": "MSGS",
+"fy": 2022,
+"col": "equity",
+"panel": -387750000.0,
+"statements": -147089000.0
+},
+{
+"ticker": "NEOG",
+"fy": 2022,
+"col": "equity",
+"panel": 3106263000.0,
+"statements": 887374000.0
+},
+{
+"ticker": "NFG",
+"fy": 2023,
+"col": "equity",
+"panel": 67381000.0,
+"statements": 2963376000.0
+},
+{
+"ticker": "NFG",
+"fy": 2024,
+"col": "equity",
+"panel": -76153000.0,
+"statements": -15476000.0
+},
+{
+"ticker": "NTNX",
+"fy": 2020,
+"col": "equity",
+"panel": -758392000.0,
+"statements": -274977000.0
+},
+{
+"ticker": "OKTA",
+"fy": 2021,
+"col": "equity",
+"panel": 5922000000.0,
+"statements": 694043000.0
+},
+{
+"ticker": "ORCL",
+"fy": 2023,
+"col": "equity",
+"panel": 3866000000.0,
+"statements": 1073000000.0
+},
+{
+"ticker": "PANW",
+"fy": 2021,
+"col": "equity",
+"panel": 117800000.0,
+"statements": 634500000.0
+},
+{
+"ticker": "PANW",
+"fy": 2022,
+"col": "equity",
+"panel": 729000000.0,
+"statements": 210000000.0
+},
+{
+"ticker": "PANW",
+"fy": 2023,
+"col": "equity",
+"panel": 4357200000.0,
+"statements": 1748400000.0
+},
+{
+"ticker": "PRI",
+"fy": 2021,
+"col": "equity",
+"panel": 925427000.0,
+"statements": 2082512000.0
+},
+{
+"ticker": "PTON",
+"fy": 2022,
+"col": "equity",
+"panel": 30500000.0,
+"statements": 592900000.0
+},
+{
+"ticker": "SATS",
+"fy": 2022,
+"col": "equity",
+"panel": 21487641000.0,
+"statements": 3502619000.0
+},
+{
+"ticker": "SBH",
+"fy": 2020,
+"col": "equity",
+"panel": 98866000.0,
+"statements": 15443000.0
+},
+{
+"ticker": "STEP",
+"fy": 2021,
+"col": "equity",
+"panel": 775699000.0,
+"statements": 249408000.0
+},
+{
+"ticker": "TPR",
+"fy": 2024,
+"col": "equity",
+"panel": 1336500000.0,
+"statements": 2896900000.0
+},
+{
+"ticker": "TTWO",
+"fy": 2022,
+"col": "equity",
+"panel": 9550400000.0,
+"statements": 3809659000.0
+},
+{
+"ticker": "VVV",
+"fy": 2023,
+"col": "equity",
+"panel": 64800000.0,
+"statements": 203200000.0
+},
+{
+"ticker": "WMG",
+"fy": 2021,
+"col": "equity",
+"panel": 153000000.0,
+"statements": 31000000.0
+},
+{
+"ticker": "AEO",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 3225000.0,
+"statements": 8911000.0
+},
+{
+"ticker": "AIR",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 220300000.0,
+"statements": 600000000.0
+},
+{
+"ticker": "ALGM",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 250464000.0,
+"statements": 25000000.0
+},
+{
+"ticker": "AOSL",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 13707000.0,
+"statements": 77990000.0
+},
+{
+"ticker": "AOSL",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 2113000.0,
+"statements": 14872000.0
+},
+{
+"ticker": "APOG",
+"fy": 2024,
+"col": "debt_lt",
+"panel": 272000000.0,
+"statements": 62000000.0
+},
+{
+"ticker": "AROC",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 1688867000.0,
+"statements": 393000000.0
+},
+{
+"ticker": "AVAV",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 31292000.0,
+"statements": 125904000.0
+},
+{
+"ticker": "AVAV",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 727877000.0,
+"statements": 30000000.0
+},
+{
+"ticker": "AVT",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 2979823000.0,
+"statements": 1437400000.0
+},
+{
+"ticker": "AZZ",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 1010648000.0,
+"statements": 226484000.0
+},
+{
+"ticker": "CACI",
+"fy": 2024,
+"col": "debt_lt",
+"panel": 2989750000.0,
+"statements": 1481387000.0
+},
+{
+"ticker": "CHE",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 16250000.0,
+"statements": 92500000.0
+},
+{
+"ticker": "CHRD",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 260000000.0,
+"statements": 710000000.0
+},
+{
+"ticker": "COHR",
+"fy": 2019,
+"col": "debt_lt",
+"panel": 2228207000.0,
+"statements": 443163000.0
+},
+{
+"ticker": "COHR",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 4422817000.0,
+"statements": 1897214000.0
+},
+{
+"ticker": "CPRI",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 224000000.0,
+"statements": 1476000000.0
+},
+{
+"ticker": "CPRT",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 22368000.0,
+"statements": 11006000.0
+},
+{
+"ticker": "CRM",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 10592000000.0,
+"statements": 2673000000.0
+},
+{
+"ticker": "DGII",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 275340000.0,
+"statements": 45799000.0
+},
+{
+"ticker": "DY",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 2810497000.0,
+"statements": 933212000.0
+},
+{
+"ticker": "FN",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 6078000.0,
+"statements": 15202000.0
+},
+{
+"ticker": "GEN",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 9831000000.0,
+"statements": 2736000000.0
+},
+{
+"ticker": "GHC",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 307026000.0,
+"statements": 705618000.0
+},
+{
+"ticker": "GOOGL",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 2963000000.0,
+"statements": 15319000000.0
+},
+{
+"ticker": "HRB",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 2435379000.0,
+"statements": 1143305000.0
+},
+{
+"ticker": "HZO",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 50124000.0,
+"statements": 7343000.0
+},
+{
+"ticker": "HZO",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 415263000.0,
+"statements": 45301000.0
+},
+{
+"ticker": "JJSF",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 7000000.0,
+"statements": 27000000.0
+},
+{
+"ticker": "LITE",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 47100000.0,
+"statements": 2562600000.0
+},
+{
+"ticker": "MLKN",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 1340700000.0,
+"statements": 274900000.0
+},
+{
+"ticker": "OSIS",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 602000.0,
+"statements": 276421000.0
+},
+{
+"ticker": "OSIS",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 140057000.0,
+"statements": 48668000.0
+},
+{
+"ticker": "OSIS",
+"fy": 2024,
+"col": "debt_lt",
+"panel": 466560000.0,
+"statements": 129383000.0
+},
+{
+"ticker": "OSIS",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 998902000.0,
+"statements": 463504000.0
+},
+{
+"ticker": "PAHC",
+"fy": 2024,
+"col": "debt_lt",
+"panel": 622880000.0,
+"statements": 282289000.0
+},
+{
+"ticker": "RBC",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 1726734000.0,
+"statements": 13495000.0
+},
+{
+"ticker": "RGLD",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 95403000.0,
+"statements": 300439000.0
+},
+{
+"ticker": "RUN",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 2362064000.0,
+"statements": 4796145000.0
+},
+{
+"ticker": "SANM",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 1998601000.0,
+"statements": 282974000.0
+},
+{
+"ticker": "SKY",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 12430000.0,
+"statements": 39330000.0
+},
+{
+"ticker": "SMCI",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 20577000.0,
+"statements": 5697000.0
+},
+{
+"ticker": "SMCI",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 139032000.0,
+"statements": 34700000.0
+},
+{
+"ticker": "SMTC",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 1296966000.0,
+"statements": 171676000.0
+},
+{
+"ticker": "SMTC",
+"fy": 2024,
+"col": "debt_lt",
+"panel": 505933000.0,
+"statements": 1371039000.0
+},
+{
+"ticker": "SNDK",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 583000000.0,
+"statements": 1829000000.0
+},
+{
+"ticker": "SNPS",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 25658000.0,
+"statements": 100823000.0
+},
+{
+"ticker": "SPHR",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 649445000.0,
+"statements": 28126000.0
+},
+{
+"ticker": "SPHR",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 1606759000.0,
+"statements": 655093000.0
+},
+{
+"ticker": "SPHR",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 521413000.0,
+"statements": 1118387000.0
+},
+{
+"ticker": "SXI",
+"fy": 2024,
+"col": "debt_lt",
+"panel": 534297000.0,
+"statements": 148876000.0
+},
+{
+"ticker": "SYNA",
+"fy": 2021,
+"col": "debt_lt",
+"panel": 983500000.0,
+"statements": 394400000.0
+},
+{
+"ticker": "TPR",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 7787600000.0,
+"statements": 1643800000.0
+},
+{
+"ticker": "TPR",
+"fy": 2024,
+"col": "debt_lt",
+"panel": 2396600000.0,
+"statements": 7003400000.0
+},
+{
+"ticker": "UTI",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 161029000.0,
+"statements": 66423000.0
+},
+{
+"ticker": "VITL",
+"fy": 2020,
+"col": "debt_lt",
+"panel": 6480000.0,
+"statements": 2896000.0
+},
+{
+"ticker": "WBD",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 13605000000.0,
+"statements": 48999000000.0
+},
+{
+"ticker": "WDAY",
+"fy": 2022,
+"col": "debt_lt",
+"panel": 2976000000.0,
+"statements": 617354000.0
+},
+{
+"ticker": "WOR",
+"fy": 2023,
+"col": "debt_lt",
+"panel": 298549000.0,
+"statements": 689718000.0
+},
+{
+"ticker": "WS",
+"fy": 2025,
+"col": "debt_lt",
+"panel": 41700000.0,
+"statements": 2300000.0
+}
+],
+"flank_suspects": [
+{
+"ticker": "AHCO",
+"fy_lo": 2017,
+"fy_hi": 2017,
+"col": "assets",
+"med": 310616.0
+},
+{
+"ticker": "AHR",
+"fy_lo": 2015,
+"fy_hi": 2015,
+"col": "assets",
+"med": 202000.0
+},
+{
+"ticker": "ALG",
+"fy_lo": 2010,
+"fy_hi": 2012,
+"col": "debt_lt",
+"med": 23106000.0
+},
+{
+"ticker": "ALG",
+"fy_lo": 2013,
+"fy_hi": 2013,
+"col": "debt_lt",
+"med": 8000.0
+},
+{
+"ticker": "ALG",
+"fy_lo": 2014,
+"fy_hi": 2019,
+"col": "debt_lt",
+"med": 114503000.0
+},
+{
+"ticker": "AMCR",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "equity",
+"med": 130.0
+},
+{
+"ticker": "ATO",
+"fy_lo": 2009,
+"fy_hi": 2009,
+"col": "assets",
+"med": 6367083000.0
+},
+{
+"ticker": "ATO",
+"fy_lo": 2009,
+"fy_hi": 2009,
+"col": "equity",
+"med": 2176761000.0
+},
+{
+"ticker": "ATO",
+"fy_lo": 2009,
+"fy_hi": 2009,
+"col": "debt_lt",
+"med": 2169400000.0
+},
+{
+"ticker": "ATO",
+"fy_lo": 2011,
+"fy_hi": 2019,
+"col": "debt_lt",
+"med": 2455131000.0
+},
+{
+"ticker": "BCPC",
+"fy_lo": 2015,
+"fy_hi": 2018,
+"col": "debt_lt",
+"med": 226490000.0
+},
+{
+"ticker": "CLSK",
+"fy_lo": 2010,
+"fy_hi": 2013,
+"col": "assets",
+"med": 447.0
+},
+{
+"ticker": "CLSK",
+"fy_lo": 2010,
+"fy_hi": 2015,
+"col": "equity",
+"med": -56692.0
+},
+{
+"ticker": "DEA",
+"fy_lo": 2014,
+"fy_hi": 2014,
+"col": "equity",
+"med": 1000.0
+},
+{
+"ticker": "FANG",
+"fy_lo": 2012,
+"fy_hi": 2012,
+"col": "debt_lt",
+"med": 193000.0
+},
+{
+"ticker": "FTI",
+"fy_lo": 2015,
+"fy_hi": 2015,
+"col": "assets",
+"med": 74100.0
+},
+{
+"ticker": "FTI",
+"fy_lo": 2015,
+"fy_hi": 2015,
+"col": "equity",
+"med": 74100.0
+},
+{
+"ticker": "GNL",
+"fy_lo": 2011,
+"fy_hi": 2012,
+"col": "equity",
+"med": -306000.0
+},
+{
+"ticker": "GNRC",
+"fy_lo": 2010,
+"fy_hi": 2015,
+"col": "debt_lt",
+"med": 933356000.0
+},
+{
+"ticker": "IRT",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "assets",
+"med": 209000.0
+},
+{
+"ticker": "J",
+"fy_lo": 2009,
+"fy_hi": 2010,
+"col": "debt_lt",
+"med": 6232500.0
+},
+{
+"ticker": "KNF",
+"fy_lo": 2022,
+"fy_hi": 2022,
+"col": "debt_lt",
+"med": 427000.0
+},
+{
+"ticker": "KNTK",
+"fy_lo": 2016,
+"fy_hi": 2016,
+"col": "assets",
+"med": 45734.0
+},
+{
+"ticker": "KNTK",
+"fy_lo": 2016,
+"fy_hi": 2018,
+"col": "equity",
+"med": 59340000.0
+},
+{
+"ticker": "KNTK",
+"fy_lo": 2019,
+"fy_hi": 2021,
+"col": "equity",
+"med": 10000.0
+},
+{
+"ticker": "MARA",
+"fy_lo": 2010,
+"fy_hi": 2019,
+"col": "assets",
+"med": 9787596.0
+},
+{
+"ticker": "MDT",
+"fy_lo": 2014,
+"fy_hi": 2014,
+"col": "assets",
+"med": 46000.0
+},
+{
+"ticker": "MDT",
+"fy_lo": 2014,
+"fy_hi": 2014,
+"col": "equity",
+"med": -36954000.0
+},
+{
+"ticker": "MIR",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 5000.0
+},
+{
+"ticker": "MIR",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "equity",
+"med": 4364.0
+},
+{
+"ticker": "MP",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "debt_lt",
+"med": 961000.0
+},
+{
+"ticker": "OGS",
+"fy_lo": 2013,
+"fy_hi": 2013,
+"col": "debt_lt",
+"med": 1318000.0
+},
+{
+"ticker": "OTIS",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "debt_lt",
+"med": 5000000.0
+},
+{
+"ticker": "PR",
+"fy_lo": 2015,
+"fy_hi": 2015,
+"col": "assets",
+"med": 476191.0
+},
+{
+"ticker": "PR",
+"fy_lo": 2015,
+"fy_hi": 2015,
+"col": "equity",
+"med": 23000.0
+},
+{
+"ticker": "PWR",
+"fy_lo": 2014,
+"fy_hi": 2019,
+"col": "debt_lt",
+"med": 573042500.0
+},
+{
+"ticker": "RBC",
+"fy_lo": 2010,
+"fy_hi": 2014,
+"col": "debt_lt",
+"med": 7899000.0
+},
+{
+"ticker": "RDNT",
+"fy_lo": 2010,
+"fy_hi": 2012,
+"col": "equity",
+"med": -69807000.0
+},
+{
+"ticker": "RNG",
+"fy_lo": 2012,
+"fy_hi": 2012,
+"col": "equity",
+"med": 71000.0
+},
+{
+"ticker": "SNEX",
+"fy_lo": 2010,
+"fy_hi": 2017,
+"col": "assets",
+"med": 3033400000.0
+},
+{
+"ticker": "UNF",
+"fy_lo": 2010,
+"fy_hi": 2011,
+"col": "debt_lt",
+"med": 100215500.0
+},
+{
+"ticker": "UNF",
+"fy_lo": 2012,
+"fy_hi": 2014,
+"col": "debt_lt",
+"med": 155000.0
+},
+{
+"ticker": "VIRT",
+"fy_lo": 2014,
+"fy_hi": 2014,
+"col": "equity",
+"med": -8711.0
+},
+{
+"ticker": "VRRM",
+"fy_lo": 2016,
+"fy_hi": 2016,
+"col": "assets",
+"med": 418227.0
+},
+{
+"ticker": "VRT",
+"fy_lo": 2017,
+"fy_hi": 2017,
+"col": "assets",
+"med": 25000.0
+},
+{
+"ticker": "WSO",
+"fy_lo": 2009,
+"fy_hi": 2010,
+"col": "debt_lt",
+"med": 11722500.0
+},
+{
+"ticker": "WSO",
+"fy_lo": 2011,
+"fy_hi": 2011,
+"col": "debt_lt",
+"med": 7000.0
+},
+{
+"ticker": "WSO",
+"fy_lo": 2012,
+"fy_hi": 2016,
+"col": "debt_lt",
+"med": 245814000.0
+},
+{
+"ticker": "WWW",
+"fy_lo": 2009,
+"fy_hi": 2010,
+"col": "debt_lt",
+"med": 797000.0
+},
+{
+"ticker": "YELP",
+"fy_lo": 2011,
+"fy_hi": 2011,
+"col": "debt_lt",
+"med": 3000.0
+},
+{
+"ticker": "YELP",
+"fy_lo": 2012,
+"fy_hi": 2016,
+"col": "debt_lt",
+"med": 7527000.0
+}
+]
+}

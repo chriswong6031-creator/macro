@@ -1,17 +1,17 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-07-10",
+  "as_of": "2026-07-09",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -9.95,
-    "drawdown_z": -0.84,
-    "as_of": "2026-07-10",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -9.9% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-9.9%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -10.16,
+    "drawdown_z": -0.86,
+    "as_of": "2026-07-09",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -10.2% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-10.2%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
     "n_7d": 0,
@@ -21,9 +21,9 @@
     "last_alert_summary_zh": "\u7279\u6717\u666eNEPA\u6539\u9769\u653e\u5f00\u8054\u90a6\u571f\u5730\u548c\u8bb8\u53ef\u2014\u2014\u80fd\u6e90\u3001\u5efa\u7b51\u3001\u56fd\u9632\u548c\u6570\u636e\u4e2d\u5fc3\u83b7\u63d0\u632f"
   },
   "calendar": {
-    "days_to_midterm": 116,
-    "context_note": "US midterm elections: 116 days (2026-11-03). Policy cycle context only \u2014 no directional read.",
-    "context_note_zh": "\u7f8e\u56fd\u4e2d\u671f\u9009\u4e3e\uff1a116\u5929\uff082026\u5e7411\u67083\u65e5\uff09\u3002\u4ec5\u4f5c\u653f\u7b56\u5468\u671f\u80cc\u666f\u53c2\u8003\uff0c\u4e0d\u4f5c\u65b9\u5411\u6027\u5224\u65ad\u3002"
+    "days_to_midterm": 115,
+    "context_note": "US midterm elections: 115 days (2026-11-03). Policy cycle context only \u2014 no directional read.",
+    "context_note_zh": "\u7f8e\u56fd\u4e2d\u671f\u9009\u4e3e\uff1a115\u5929\uff082026\u5e7411\u67083\u65e5\uff09\u3002\u4ec5\u4f5c\u653f\u7b56\u5468\u671f\u80cc\u666f\u53c2\u8003\uff0c\u4e0d\u4f5c\u65b9\u5411\u6027\u5224\u65ad\u3002"
   },
   "levers": [
     {
@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 61.92,
-        "stoch_d": 47.69,
+        "stoch_k": 65.61,
+        "stoch_d": 48.92,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 26,
-        "flatness": 0.1892,
+        "flatness": 0.183,
         "armed": false,
         "params": {
           "stoch_k_period": 14,

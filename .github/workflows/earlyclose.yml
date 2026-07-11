@@ -183,12 +183,12 @@ jobs:
           run_py() {
             local label="$1"; local mod="$2"; shift 2
             echo "::group::$label"
-            python -m "$mod" "$@" > /tmp/e.log 2>&1; local rc=$?
-            cat /tmp/e.log
+            python -m "$mod" "$@" > "$RUNNER_TEMP/e.log" 2>&1; local rc=$?
+            cat "$RUNNER_TEMP/e.log"
             echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/e.log | tr '\n' ' ' | tail -c 600)"
-              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/e.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/e.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/e.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
             fi
           }
           run_py "MTF signal-quality leaf (build_signal_quality)" scripts.build_signal_quality
@@ -219,12 +219,12 @@ jobs:
           run_py() {
             local label="$1"; local mod="$2"; shift 2
             echo "::group::$label"
-            python -m "$mod" "$@" > /tmp/step.log 2>&1; local rc=$?
-            cat /tmp/step.log
+            python -m "$mod" "$@" > "$RUNNER_TEMP/step.log" 2>&1; local rc=$?
+            cat "$RUNNER_TEMP/step.log"
             echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 600)"
-              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/step.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/step.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/step.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
             fi
           }
 

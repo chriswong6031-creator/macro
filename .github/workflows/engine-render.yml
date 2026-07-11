@@ -136,12 +136,12 @@ jobs:
           run_py() {
             local label="$1"; local mod="$2"; shift 2
             echo "::group::$label"
-            python -m "$mod" "$@" > /tmp/e.log 2>&1; local rc=$?
-            cat /tmp/e.log
+            python -m "$mod" "$@" > "$RUNNER_TEMP/e.log" 2>&1; local rc=$?
+            cat "$RUNNER_TEMP/e.log"
             echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/e.log | tr '\n' ' ' | tail -c 600)"
-              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/e.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/e.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/e.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
             fi
           }
           run_py "MTF signal-quality leaf (build_signal_quality)" scripts.build_signal_quality
@@ -187,17 +187,17 @@ jobs:
           set +e
           SCOPE="${{ github.event.inputs.scope }}"; SCOPE="${SCOPE:-all}"
           echo "::notice::engine-render scope = $SCOPE"
-          touch /tmp/render_libs_marker
+          touch "$RUNNER_TEMP/render_libs_marker"
 
           run_py() {
             local label="$1"; local mod="$2"; shift 2
             echo "::group::$label"
-            python -m "$mod" "$@" > /tmp/step.log 2>&1; local rc=$?
-            cat /tmp/step.log
+            python -m "$mod" "$@" > "$RUNNER_TEMP/step.log" 2>&1; local rc=$?
+            cat "$RUNNER_TEMP/step.log"
             echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 600)"
-              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/step.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/step.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/step.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
             fi
           }
 
@@ -248,7 +248,7 @@ jobs:
           central() { run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
 
           band() {
-            local ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
+            local ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
             brun() {
               local slug="$1" label="$2" mod="$3"; shift 3
               local t0 t1 rc
@@ -338,14 +338,14 @@ jobs:
             }
             for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library scripts.build_intl_library; do
               local idx="$(libdir "$mod")/index.json"
-              if [ -f /tmp/render_libs_marker ] && [ "$idx" -nt /tmp/render_libs_marker ]; then
+              if [ -f "$RUNNER_TEMP/render_libs_marker" ] && [ "$idx" -nt "$RUNNER_TEMP/render_libs_marker" ]; then
                 echo "::notice::$mod — already built fresh this run ($idx); skipping redundant rebuild"
                 continue
               fi
-              echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; local rc=$?; cat /tmp/lib.log; echo "::endgroup::"
+              echo "::group::$mod"; python -m "$mod" > "$RUNNER_TEMP/lib.log" 2>&1; local rc=$?; cat "$RUNNER_TEMP/lib.log"; echo "::endgroup::"
               if [ "$rc" -ne 0 ]; then
-                echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
-                { echo "### ❌ $mod failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/lib.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+                echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/lib.log" | tr '\n' ' ' | tail -c 600)"
+                { echo "### ❌ $mod failed (rc=$rc)"; echo '```'; tail -n 40 "$RUNNER_TEMP/lib.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
               fi
             done
           }

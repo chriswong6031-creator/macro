@@ -139,8 +139,8 @@ jobs:
           # Fetch the full live-quotes snapshot from the live-data branch (written every
           # 10 min by live-quotes.yml on ubuntu-latest). Pipe into /tmp so we don't stage it.
           git fetch origin live-data:refs/remotes/origin/live-data 2>/dev/null || true
-          git show origin/live-data:quotes.json > /tmp/quotes_live.json 2>/dev/null || echo '{"quotes":{}}' > /tmp/quotes_live.json
-          LIVE_QUOTES_PATH=/tmp/quotes_live.json python -m scripts.build_basket_pulse || \
+          git show origin/live-data:quotes.json > "$RUNNER_TEMP/quotes_live.json" 2>/dev/null || echo '{"quotes":{}}' > "$RUNNER_TEMP/quotes_live.json"
+          LIVE_QUOTES_PATH="$RUNNER_TEMP/quotes_live.json" python -m scripts.build_basket_pulse || \
             echo "::warning::basket_pulse build failed (non-fatal)"
       - name: notify turn events (FTR W10 — Discord alerts on IGNITION / shock / tape disagreement)
         # Evaluates three event sources (turn_watch.json, shock_state.json, basket_pulse.json)

@@ -26,23 +26,14 @@
   .scc-sub { color: var(--muted); max-width: 92ch; font-size: 13.5px; }
   .scc-asof { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
   /* regime banner */
-  .regime { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
-  @media (max-width: 880px) { .regime { grid-template-columns: 1fr 1fr; } }
-  .rg-cell { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel); }
-  .rg-cell.lead { border-width: 1.5px; }
-  .rg-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-  .rg-v { font-size: 19px; font-weight: 760; margin-top: 3px; font-variant-numeric: tabular-nums; }
-  .rg-d { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
-  .rg-on { color: var(--up); } .rg-off { color: var(--down); } .rg-mix { color: var(--warn); }
-  .rg-bar { height: 7px; border-radius: 5px; margin-top: 7px; overflow: hidden; background: var(--line); }
-  .rg-bar i { display: block; height: 100%; }
+  .regime { margin: 14px 0; }
   /* plain "new here?" orientation strip */
   .scc-howto { margin: 12px 0 2px; padding: 11px 14px; font-size: 13px; line-height: 1.55; color: var(--muted);
     background: color-mix(in srgb, var(--link) 6%, var(--panel)); border: 1px solid color-mix(in srgb, var(--link) 22%, var(--line));
     border-left: 3px solid var(--link); border-radius: 11px; max-width: 96ch; }
   .scc-howto b { color: var(--text); }
-  /* plain-language headline row spanning the full regime grid */
-  .regime .rg-headline-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px;
+  /* plain-language headline row */
+  .regime .rg-headline-row { display: flex; align-items: center; gap: 9px;
     font-size: 14.5px; font-weight: 650; line-height: 1.4; padding: 11px 14px; border: 1px solid var(--line);
     border-radius: 12px; background: var(--panel); }
   .rg-headline-row .rg-hl-ic { font-size: 16px; flex: none; }
@@ -325,40 +316,17 @@
   document.getElementById('n-sec').textContent=(D.sectors||[]).length;
   document.getElementById('n-bsk').textContent=(D.baskets||[]).length;
 
-  /* ---- regime banner ---- */
+  /* ---- regime banner — one plain-language line; tone follows the radar-aware Market State
+     verdict (identical to macro.html), falling back to risk_on when no verdict. ---- */
   function regimeBanner(){
     var risk=M.risk_on;
-    // headline tone follows the radar-aware Market State verdict (identical to macro.html); the
-    // macro-risk scalar is kept only as the gate sub-line below. Fall back to risk_on if no verdict.
     var tone = M.ms_color ? ({green:'on',yellow:'mix',red:'off'}[M.ms_color]||'mix')
                           : (risk==null?'mix':(risk>0.2?'on':risk<-0.2?'off':'mix'));
-    var toneCls={on:'rg-on',off:'rg-off',mix:'rg-mix'}[tone];
-    var dr=M.derisk_blended;
-    var postPct=(M.ms_score!=null)?Math.round(M.ms_score):(risk!=null?Math.round((risk+1)/2*100):50);
-    var rsv=M.radar_state;
-    // plain-language headline so a non-expert gets the "is this good or bad?" read instantly
-    var headTxt = tone==='on' ? L('Markets are risk-on right now — a broadly supportive backdrop.','当前市场偏好风险——整体环境较为有利。')
-      : tone==='off' ? L('Markets are leaning defensive right now — a cautious backdrop.','当前市场偏防御——环境趋于谨慎。')
-      : L('Markets are mixed right now — no strong risk signal either way.','当前市场信号中性——风险方向不明确。');
+    var headTxt = tone==='on' ? L('Markets are risk-on right now.','当前市场偏好风险。')
+      : tone==='off' ? L('Markets are leaning defensive right now.','当前市场偏防御。')
+      : L('Markets are mixed right now.','当前市场信号中性。');
     var headIc = tone==='off' ? '⚠' : tone==='on' ? '✓' : '•';
-    var head='<div class="rg-headline-row rg-hl-'+tone+'"><span class="rg-hl-ic">'+headIc+'</span><span>'+headTxt+'</span></div>';
-    var cells=[];
-    cells.push('<div class="rg-cell lead" id="scc-marketstate"><div class="rg-k">'+L('Market state','市场状态')+' · '+L('radar-aware','含风险雷达')+'</div>'+
-      '<div class="rg-v '+toneCls+'" id="scc-ms-verdict">'+esc(M.state_en||'—')+'</div>'+
-      '<div class="rg-bar"><i id="scc-ms-bar" style="width:'+postPct+'%;background:'+(tone==='off'?'var(--down)':tone==='on'?'var(--up)':'var(--muted)')+'"></i></div>'+
-      '<div class="rg-d">'+L('macro risk','宏观风险')+' '+(dr!=null?dr:'—')+' · '+L('gate ×','门控 ×')+(M.gate_factor!=null?M.gate_factor:'—')+(rsv?' · '+L('radar','雷达')+' '+esc(rsv):'')+'</div></div>');
-    cells.push('<div class="rg-cell"><div class="rg-k">'+L('Quad','象限')+'</div>'+
-      '<div class="rg-v">'+esc(M.quad_name||M.quad||'—')+'</div>'+
-      '<div class="rg-d">'+L('growth','增长')+' '+(M.growth_score!=null?M.growth_score:'—')+' · '+L('infl','通胀')+' '+(M.inflation_score!=null?M.inflation_score:'—')+'</div></div>');
-    var tac=M.tactical_label, tsc=M.risk_state_score;
-    cells.push('<div class="rg-cell"><div class="rg-k">'+L('Net liquidity','净流动性')+' · '+L('tactical','战术')+'</div>'+
-      '<div class="rg-v" style="font-size:16px">'+esc(M.liquidity||'—')+'</div>'+
-      '<div class="rg-d">'+L('tactical','战术')+' '+(tac?esc(tac):'—')+(tsc!=null?' '+Math.round(tsc)+'/100':'')+(M.caution?' · '+L('breadth caution','宽度警示'):'')+'</div></div>');
-    var na=M.n_above_trend, ns=M.n_sectors;
-    cells.push('<div class="rg-cell"><div class="rg-k">'+L('Trend breadth','趋势宽度')+' · '+L('validated gate','已验证门控')+'</div>'+
-      '<div class="rg-v">'+(na!=null&&ns?na+'/'+ns:'—')+'</div>'+
-      '<div class="rg-d">'+L('sectors above own 200-day trend','行业位于自身200日趋势之上')+'</div></div>');
-    document.getElementById('regime').innerHTML=head+cells.join('');
+    document.getElementById('regime').innerHTML='<div class="rg-headline-row rg-hl-'+tone+'"><span class="rg-hl-ic">'+headIc+'</span><span>'+headTxt+'</span></div>';
   }
 
   /* ---- mini cycle chart ---- */
@@ -386,7 +354,7 @@
   }
   function miniCycChart(s) {
     var id = s.id;
-    var ser = _cycSeries(id); if (!ser || !ser.pts.length) return '';
+    var ser = _cycSeries(id); if (!ser || !ser.pts.length) return '<div class="mini-cyc-slot" data-id="'+id+'"></div>';
     var pts = ser.pts;
     var accent = ser.accent || 'var(--link)';
     var last = pts[pts.length-1];
@@ -417,6 +385,23 @@
       '<span class="mc-x"></span>'+
       '<span class="mc-hov" style="background:'+accent+'"></span>'+
     '</div>';
+  }
+  /* build id→record map once from board data, used by hydrateMiniCycs */
+  function _buildSById() {
+    var m = {}; var all = (D.sectors||[]).concat(D.baskets||[]);
+    for (var i=0; i<all.length; i++) { m[all[i].id] = all[i]; } return m;
+  }
+  function hydrateMiniCycs() {
+    if (!window.SECTOR_CYCLES) return;
+    var slots = document.querySelectorAll('#board .mini-cyc-slot');
+    if (!slots.length) return;
+    var sById = _buildSById();
+    for (var i=0; i<slots.length; i++) {
+      var slot = slots[i], id = slot.getAttribute('data-id');
+      var rec = sById[id]; if (!rec) continue;
+      var html = miniCycChart(rec); if (!html || html.indexOf('mini-cyc-slot')!==-1) continue;
+      slot.outerHTML = html;
+    }
   }
   function _decYearToYM(x) {
     var yr = Math.floor(x);
@@ -568,16 +553,30 @@
     regimeBanner(); renderBoard(); renderGrader(); linkTabs();
     var board=document.getElementById('board'); if(board){ board.addEventListener('click', focusDelegate); _initMiniCycHover(board); }
     document.addEventListener('langchange', function(){ regimeBanner(); renderBoard(); renderGrader(); if(board) _initMiniCycHover(board); });
+    if(window.SECTOR_CYCLES) hydrateMiniCycs();
   }
+  document.addEventListener('sc:cycles-data', hydrateMiniCycs);
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
-{# the embedded cycle-map overlay — same engine + data as sector_cycles.html. It reads
-   window.SECTOR_CYCLES (distinct from the board's window.SECTOR_CENTRAL) and renders into the
-   cyc-stage above; missing sc-cards is handled gracefully (the board replaces the scorecards). #}
-<script src="sector_cycles_data.js"></script>
-<script src="mm_charts.js"></script>
-<script src="sector_cycles.js"></script>
+{# the embedded cycle-map overlay — sector_cycles_data.js (core) is loaded first async=false,
+   then mm_charts.js and sector_cycles.js, so the board renders instantly on DOMContentLoaded
+   while the heavier narr+dna chunks load lazily via sector_cycles.js SC_EXTRA_DATA path. #}
+<script>
+(function(){
+  window.SC_EXTRA_DATA=['sector_cycles_narr_data.js','sector_cycles_dna_data.js'];
+  var files=['sector_cycles_data.js','mm_charts.js','sector_cycles.js'];
+  var head=document.head;
+  function loadNext(i){
+    if(i>=files.length) return;
+    var s=document.createElement('script'); s.async=false; s.src=files[i];
+    if(i===0) s.addEventListener('load',function(){ document.dispatchEvent(new CustomEvent('sc:cycles-data')); });
+    s.addEventListener('load',function(){ loadNext(i+1); });
+    head.appendChild(s);
+  }
+  loadNext(0);
+})();
+</script>
 {# the embedded heatmap scorecard — heatmap.js boot() auto-mounts on #heatmap-scorecard and
    self-loads site/marketdata/sp500_heatmap.json; Expand opens the full treemap overlay. #}
 <script src="heatmap.js"></script>

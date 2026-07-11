@@ -42,17 +42,17 @@ jobs:
         run: |
           set +e
           echo "::group::intl_etf collector"
-          python -m scripts.collect --only intl_etf > /tmp/intl_etf.log 2>&1
+          python -m scripts.collect --only intl_etf > "$RUNNER_TEMP/intl_etf.log" 2>&1
           rc=$?
-          cat /tmp/intl_etf.log
+          cat "$RUNNER_TEMP/intl_etf.log"
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then
-            echo "::error title=intl_etf failed (rc=$rc)::$(tail -n 2 /tmp/intl_etf.log | tr '\n' ' ' | tail -c 600)"
+            echo "::error title=intl_etf failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/intl_etf.log" | tr '\n' ' ' | tail -c 600)"
             { echo "### intl_etf substrate collector failed (rc=$rc)"
               echo '<details><summary>traceback</summary>'
               echo
               echo '```'
-              tail -n 40 /tmp/intl_etf.log
+              tail -n 40 "$RUNNER_TEMP/intl_etf.log"
               echo '```'
               echo '</details>'
             } >> "$GITHUB_STEP_SUMMARY"

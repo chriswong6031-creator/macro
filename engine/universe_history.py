@@ -14,6 +14,12 @@ as_of_members(date) then reconstructs the universe as it stood on a date — exa
 dates after accrual began, best-effort before (every current name's first_seen is the
 first run, so pre-accrual reconstruction still inherits survivorship; that's the
 documented cold-start limit). ADDITIVE: collect.py calls update_membership() each run.
+
+Known coverage hole: 2026-06-14 → 2026-07-10 nothing accrued (every run crashed
+assigning a tz-aware asof into the ledger's tz-naive columns, fixed alongside this
+note). Surviving names self-heal once a fixed run refreshes last_seen; names that
+dropped inside the hole keep last_seen=2026-06-13, and names added inside it get a
+late first_seen — as_of reconstructions in that window are best-effort.
 """
 from __future__ import annotations
 
@@ -33,6 +39,23 @@ def _ledger_path():
     p = config.data_dir() / "universe" / "membership.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def _naive_day(asof) -> pd.Timestamp:
+    """Coerce to a tz-naive midnight Timestamp on the UTC calendar day. The ledger's
+    parquet columns are tz-naive datetime64; collect.py passes datetime.now(timezone.utc),
+    and pandas>=2 raises on assigning a tz-aware value into a naive column."""
+    ts = pd.Timestamp(asof)
+    if ts.tz is not None:
+        ts = ts.tz_convert("UTC").tz_localize(None)
+    return ts.normalize()
+
+
+def _naive_dates(s: pd.Series) -> pd.Series:
+    """Ledger date column → tz-naive datetime64 (strips the tz if an aware-columned
+    ledger was ever written; naive-vs-aware compares and assignments raise too)."""
+    s = pd.to_datetime(s)
+    return s.dt.tz_convert("UTC").dt.tz_localize(None) if s.dt.tz is not None else s
 
 
 def _current_constituents() -> pd.DataFrame:
@@ -58,7 +81,7 @@ def update_membership(asof) -> pd.DataFrame:
     """Upsert today's constituents into the membership ledger and return it. A
     present member refreshes last_seen; a dropped member keeps last_seen and goes
     inactive. Idempotent within a day."""
-    asof = pd.Timestamp(asof).normalize()
+    asof = _naive_day(asof)
     cur = _current_constituents()
     if cur.empty:
         log.warning("universe membership: no constituents — skip")
@@ -71,6 +94,8 @@ def update_membership(asof) -> pd.DataFrame:
         cur["active"] = True
         out = cur[LEDGER_COLS]
     else:
+        for c in ("first_seen", "last_seen"):
+            led[c] = _naive_dates(led[c])
         led = led.set_index(["ticker", "group"])
         cur_keyed = cur.set_index(["ticker", "group"])
         present = set(cur_keyed.index)
@@ -90,7 +115,7 @@ def update_membership(asof) -> pd.DataFrame:
         out = led.reset_index()[LEDGER_COLS]
 
     for c in ("first_seen", "last_seen"):
-        out[c] = pd.to_datetime(out[c])
+        out[c] = _naive_dates(out[c])
     out.to_parquet(_ledger_path(), index=False)
     n_active = int(out["active"].sum())
     log.info("universe membership: %d active / %d ever, asof %s", n_active, len(out), asof.date())
@@ -103,8 +128,8 @@ def as_of_members(asof, group: str | None = None, ledger: pd.DataFrame | None = 
     led = ledger if ledger is not None else load_ledger()
     if led is None or led.empty:
         return []
-    asof = pd.Timestamp(asof).normalize()
-    m = (pd.to_datetime(led["first_seen"]) <= asof) & (pd.to_datetime(led["last_seen"]) >= asof)
+    asof = _naive_day(asof)
+    m = (_naive_dates(led["first_seen"]) <= asof) & (_naive_dates(led["last_seen"]) >= asof)
     if group:
         m &= led["group"] == group
     return sorted(led.loc[m, "ticker"].unique().tolist())

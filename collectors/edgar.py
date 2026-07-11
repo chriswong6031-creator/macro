@@ -684,6 +684,33 @@ def fetch_panel(force: bool = False, max_age_days: int = 7,
         log.warning("flow quality pass failed (%s) — panel ships unrepaired", e)
         fq_audit = {"error": str(e)}
 
+    # Stock-column unit-artifact pass: repair rows whose balance-sheet values are
+    # scale typos (×1e3 or ×1e6 low) — e.g. ATO assets/equity/debt_lt fy2010,
+    # GNRC debt_lt fy2016, SNEX assets fy2018 (see collectors/edgar_stock_quality.py).
+    # Separate statements read for stock cols (assets/equity/debt_lt); keep flow
+    # block untouched. Additive + never fatal: on any failure the panel ships as
+    # fetched, with stock_quality absent from _panel_meta.json.
+    sq_stk_audit: dict = {}
+    try:
+        from collectors.edgar_stock_quality import apply_stock_quality
+        # Separate statements read for stock cols
+        sq_stk_stmt = None
+        _stmt_p2 = config.data_dir() / "edgar" / "statements.parquet"
+        if _stmt_p2.exists():
+            try:
+                sq_stk_stmt = pd.read_parquet(
+                    _stmt_p2,
+                    columns=["ticker", "fy", "assets", "equity", "debt_lt"])
+            except Exception as _e:  # noqa: BLE001
+                log.warning("stock_quality: statements.parquet load failed (%s) "
+                            "— xsrc lane skipped", _e)
+        panel, sq_stk_audit = apply_stock_quality(panel, statements=sq_stk_stmt)
+        (config.data_dir() / "edgar" / "_stock_quality_audit.json").write_text(
+            json.dumps(sq_stk_audit, indent=0))
+    except Exception as e:  # noqa: BLE001 — quality pass must not block the panel
+        log.warning("stock quality pass failed (%s) — panel ships unrepaired", e)
+        sq_stk_audit = {"error": str(e)}
+
     panel.to_parquet(panel_p)
     all_numeric = PANEL_NUMERIC + [f for f in PANEL_STATEMENTS_JOIN if f in panel.columns]
     _panel_meta_path().write_text(json.dumps({
@@ -701,6 +728,11 @@ def fetch_panel(force: bool = False, max_age_days: int = 7,
         "flow_quality": {k: fq_audit[k] for k in
                          ("rows_flagged", "tickers_flagged", "by_flag",
                           "repaired", "nulled", "mirrors", "error") if k in fq_audit},
+        # Stock-column quality: balance-sheet col scale-artifact counts; mirrors =
+        # assets_prior rows updated to match a repaired assets.
+        "stock_quality": {k: sq_stk_audit[k] for k in
+                          ("rows_flagged", "tickers_flagged", "by_flag",
+                           "repaired", "nulled", "mirrors", "error") if k in sq_stk_audit},
     }))
     log.info("edgar panel: %d rows, %d tickers, FY%d..%d",
              len(panel), panel["ticker"].nunique(), panel["fy"].min(), panel["fy"].max())

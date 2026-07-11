@@ -4,8 +4,9 @@ Four test groups:
   1. Builder synthetic-row: narrative tag attach, ab_tier rules, RAN_LATE exclusion,
      order-invariance assert.
   2. Ledger schema: append_board + append_ripening carry the W2-B columns.
-  3. Template render: chip renders on ENTRY and RIPENING, A badge only on those
-     shelves, dual-span (l-en + l-zh), ASCII-only attribute delimiters.
+  3. Template render: narrative theme renders on RIPENING (W8-R1 rip-chip);
+     ENTRY chips + A/B badges stay decluttered (#1400); dual-span (l-en + l-zh),
+     ASCII-only attribute delimiters.
   4. ab_tier edge cases from engine.china_narrative_tags.
 
 Nearest sibling: tests/test_china_stocks_w1c_render.py (template idiom).
@@ -548,17 +549,27 @@ def _make_ripening_row(ticker="688306.SS",
                        narr_theme="Solid-State Battery",
                        narr_level="HOT",
                        ab_tier_val="A"):
+    # W8-R1 (#2102): ripening rows carry a zone (READY / BASING); the rip-shelf
+    # partitions on it via selectattr, so the fixture must set one for cards to render.
     row = {
         "ticker": ticker,
         "name": "Ripening Name / 待熟名称",
         "sector": "Technology",
+        "zone": "READY",
         "reasons": "2W washout,approaching MACD cross",
         "imminence": 4.9,
         "w2_stoch": 22,
+        "w2_stoch_arrow": 1,
         "w2_macd_approaching": True,
         "w2_macd_cross_up": False,
         "w1_cross_date": None,
+        "w1_cross_bars_since": None,
         "w1_d_at_cross": None,
+        "macd_hist_d": -0.02,
+        "macd_hist_slope": 0.01,
+        "days_in_washout": 12,
+        "ret_5d": 0.021,
+        "price": 18.4,
         "spot_pct_in_range": 35.0,
         "ab_tier": ab_tier_val,
     }
@@ -619,33 +630,50 @@ class TestTemplateRender:
         bad = re.findall(pattern, SRC)
         assert not bad, f"Non-ASCII attribute delimiters: {bad}"
 
-    def test_hot_narrative_chip_renders_on_entry(self):
-        """HOT narrative chip (🔥 + theme name) must appear on ENTRY cards."""
-        html = _render_w1c_w2b(_full_setups())
-        # The chip should contain the HOT glyph + theme name
-        assert "🔥" in html
-        assert "Synthetic Biology" in html
+    def test_narrative_chip_decluttered_from_entry(self):
+        """ENTRY cards must NOT render the narrative-heat chip (🔥/nb-narr).
 
-    def test_warming_chip_uses_approx_glyph(self):
-        """WARMING level should use ≈ glyph, not 🔥."""
+        The chip was added by W2-B (#1118) and deliberately removed by the
+        standout-board declutter (#1400): narrative heat left the cards; the
+        lens survives in the W2-B ledger and the W8-E JSON data layer. This
+        test pins the declutter so the chip does not silently come back.
+        """
+        html = _render_w1c_w2b(_full_setups())
+        # Card renders (not vacuous) …
+        assert "300725.SZ" in html
+        # … but the narrative chip does not, even though narrative data is present.
+        assert "🔥" not in html
+        assert "nb-narr" not in html
+        assert "Synthetic Biology" not in html
+
+    def test_warming_chip_decluttered_from_entry(self):
+        """WARMING-level narrative (≈ glyph) must also stay off ENTRY cards.
+
+        Same declutter adjudication as HOT (#1400) — level does not matter.
+        """
         row = _make_entry_row(narr_level="WARMING", ab_tier_val="B")
         html = _render_w1c_w2b(_full_setups(entry=[row]))
-        # The chip should use ≈ for WARMING (not 🔥)
-        assert "≈" in html
-        assert "Synthetic Biology" in html
+        assert "300725.SZ" in html
+        assert "≈" not in html
+        assert "Synthetic Biology" not in html
 
-    def test_a_badge_renders_on_entry_card(self):
-        """A-tier badge must appear on A-tier ENTRY cards."""
+    def test_a_badge_decluttered_from_entry_card(self):
+        """A-tier badge must NOT render on ENTRY cards.
+
+        nb-atier was added by W2-B (#1118) and removed by the declutter (#1400)
+        ("Removed A/B-tier, narrative heat, …"). ab_tier stays in the row data
+        (ledger + data layer) but must not surface on the card.
+        """
         html = _render_w1c_w2b(_full_setups())
-        assert "nb-atier" in html
-        # The A badge class should be present without the tier-b modifier
-        assert 'class="nb-atier"' in html
+        assert "300725.SZ" in html
+        assert "nb-atier" not in html
 
-    def test_b_badge_renders_on_b_tier_entry(self):
-        """B-tier badge must appear on B-tier ENTRY cards."""
+    def test_b_badge_decluttered_from_entry_card(self):
+        """B-tier badge (tier-b modifier) must NOT render on ENTRY cards (#1400)."""
         row = _make_entry_row(narr_level="WARMING", ab_tier_val="B")
         html = _render_w1c_w2b(_full_setups(entry=[row]))
-        assert "tier-b" in html
+        assert "300725.SZ" in html
+        assert "tier-b" not in html
 
     def test_a_badge_absent_on_ran_late(self):
         """No A-tier badge on RAN_LATE cards — the spec law.
@@ -659,15 +687,28 @@ class TestTemplateRender:
         assert "nb-atier" not in html
 
     def test_narrative_chip_on_ripening_card(self):
-        """HOT narrative chip must appear on RIPENING cards."""
-        html = _render_w1c_w2b(_full_setups(entry=[], ran=[]))
-        assert "🔥" in html
-        assert "Solid-State Battery" in html
+        """Narrative theme must still appear on RIPENING cards, bilingual.
 
-    def test_a_badge_on_ripening_card(self):
-        """A-tier badge must appear on A-tier RIPENING cards."""
+        W8-R1 (#2102) replaced the compact ripening shelf with the three-zone
+        rip-shelf; the theme now renders as a plain context chip (rip-chip)
+        with l-en/l-zh spans — the 🔥 heat glyph was decluttered with the old
+        chip markup (#1400). Pins the current surface.
+        """
         html = _render_w1c_w2b(_full_setups(entry=[], ran=[]))
-        assert "nb-atier" in html
+        assert "rip-chip" in html
+        assert "Solid-State Battery" in html
+        assert "固态电池" in html
+
+    def test_a_badge_decluttered_from_ripening_card(self):
+        """A-tier badge must NOT render on RIPENING cards.
+
+        Removed with the standout declutter (#1400); the W8-R1 rip-shelf
+        (#2102) never reintroduced tier badges. ab_tier stays in the row data.
+        """
+        html = _render_w1c_w2b(_full_setups(entry=[], ran=[]))
+        # Ripening card renders (not vacuous) …
+        assert "688306.SS" in html
+        assert "nb-atier" not in html
 
     def test_no_narrative_chip_when_no_tag(self):
         """Cards with no narrative tag must not render the chip."""
@@ -684,8 +725,15 @@ class TestTemplateRender:
         assert 'class="l-en"' in html
         assert 'class="l-zh"' in html
 
-    def test_radar_honesty_tag_in_chip(self):
-        """When a radar join exists with global_ai, the honesty tag renders verbatim."""
+    def test_radar_tag_decluttered_from_chip(self):
+        """The radar validated-tag no longer renders on the board.
+
+        It rode the narrative chip's tooltip/label (W2-B #1118) and left with
+        the chip in the declutter (#1400). The tag stays in the radar data
+        (ledger + data layer); "validated" is CI-enforced in user-facing text
+        (scripts/check_validated_claims.py), so its absence here is the honest
+        state — pin it so a chip revival cannot re-emit the word unreviewed.
+        """
         row = _make_entry_row(ab_tier_val="A")
         row["narrative"]["radar"] = {
             "basket_id": "humanoid_robots",
@@ -698,7 +746,8 @@ class TestTemplateRender:
             },
         }
         html = _render_w1c_w2b(_full_setups(entry=[row]))
-        assert "validated" in html
+        assert "300725.SZ" in html
+        assert "validated" not in html
 
     def test_w2b_block_is_balanced(self):
         """The W1-C+W2-B block must have balanced if/for tags."""
@@ -714,11 +763,19 @@ class TestTemplateRender:
         assert fors_open == fors_close, (
             f"Unbalanced for/endfor in W2-B block: {fors_open} open vs {fors_close} close")
 
-    def test_help_text_contains_narrative_caveat(self):
-        """The board help text must mention narrative confluence and the descriptive caveat."""
-        # Check the template source directly — help text is in the template (not in rendered output
-        # for our snippet, which starts at the W1-C block, after the help macro call)
-        assert "Narrative confluence" in SRC or "descriptive positioning lens" in SRC
+    def test_board_footer_keeps_honesty_caveat(self):
+        """The board must keep its honesty caveat: buy-readiness, grades accruing.
+
+        The original narrative-confluence caveat left with the chips (#1400)
+        and the reader-first help rewrite (#2203). The surviving honesty line
+        is the shelf footer note — Score = buy-readiness; forward grades still
+        accruing — bilingual. (The (?)-popup caveats are separately enforced
+        by test_china_stocks_copy_w09.py.)
+        """
+        html = _render_w1c_w2b(_full_setups())
+        assert "buy-readiness" in html
+        assert "still accruing" in html
+        assert "仍在累积" in html
 
     def test_entry_chip_title_not_buy_family(self):
         """Narrative chip tooltip must not contain BUY-family words."""

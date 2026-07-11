@@ -19,38 +19,19 @@
   if (!DATA || !DATA.sectors) return;
 
   /* FIX 1b — strip "(Equal-Weight)" / "（等权）" suffixes from all string values at boot */
-  (function deepStrip(obj) {
+  var _ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
+  function deepStrip(obj) {
     if (!obj || typeof obj !== 'object') return;
-    var ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
     var keys = Object.keys(obj);
     for (var _k = 0; _k < keys.length; _k++) {
       var _key = keys[_k], _val = obj[_key];
-      if (typeof _val === 'string') { obj[_key] = _val.replace(ewRe, ''); }
+      if (typeof _val === 'string') { obj[_key] = _val.replace(_ewRe, ''); }
       else if (_val && typeof _val === 'object') { deepStrip(_val); }
     }
-  }(DATA));
-  (function deepStrip(obj) {
-    if (!obj || typeof obj !== 'object') return;
-    var ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
-    var keys = Object.keys(obj);
-    for (var _k = 0; _k < keys.length; _k++) {
-      var _key = keys[_k], _val = obj[_key];
-      if (typeof _val === 'string') { obj[_key] = _val.replace(ewRe, ''); }
-      else if (_val && typeof _val === 'object') { deepStrip(_val); }
-    }
-  }(NARR));
-  if (window.SECTOR_DNA) {
-    (function deepStrip(obj) {
-      if (!obj || typeof obj !== 'object') return;
-      var ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
-      var keys = Object.keys(obj);
-      for (var _k = 0; _k < keys.length; _k++) {
-        var _key = keys[_k], _val = obj[_key];
-        if (typeof _val === 'string') { obj[_key] = _val.replace(ewRe, ''); }
-        else if (_val && typeof _val === 'object') { deepStrip(_val); }
-      }
-    }(window.SECTOR_DNA));
   }
+  deepStrip(DATA);
+  deepStrip(NARR);
+  if (window.SECTOR_DNA) { deepStrip(window.SECTOR_DNA); }
   var META = DATA.meta, PHASES = DATA.phases, SECTORS = DATA.sectors;
   var BASKETS = DATA.baskets || [];
   var NASDAQ = DATA.nasdaq || [];
@@ -1850,6 +1831,52 @@
     var n = document.getElementById("sc-firsthint"); if (n && n.parentNode) n.parentNode.removeChild(n);
   }
 
+  /* ---- lazy extras loader (narr + dna) ----------------------------------- */
+  // hydrateExtras() is called after the narr/dna script tags finish loading.
+  // It re-reads both globals, strips them, then refreshes any open focus panel so
+  // leg narratives, analyst note, and DNA card become visible.
+  // buildDefaultPanel() and mountCards() do NOT consume NARR or SECTOR_DNA, so
+  // they need no refresh here.
+  var _extrasInjected = false;
+  function hydrateExtras() {
+    NARR = window.SECTOR_NARR || {};
+    deepStrip(NARR);
+    if (window.SECTOR_DNA) { deepStrip(window.SECTOR_DNA); }
+    // Re-render the open focus panel so narr legs, analyst note, and DNA card appear.
+    if (state.focus) { renderPanel(state.focus); }
+    document.dispatchEvent(new CustomEvent('sc:extras-ready'));
+  }
+  window.SectorCyclesHydrateExtras = hydrateExtras;
+
+  // After boot(), if SC_EXTRA_DATA is set and either global is still absent,
+  // inject those script URLs in order (async=false) then call hydrateExtras().
+  function _scheduleExtras() {
+    var urls = window.SC_EXTRA_DATA;
+    if (!Array.isArray(urls) || !urls.length) return;
+    if (window.SECTOR_NARR !== undefined && window.SECTOR_DNA !== undefined) return;
+    if (_extrasInjected) return;
+    _extrasInjected = true;
+    function injectAll() {
+      var remaining = urls.slice();
+      function next() {
+        if (!remaining.length) { hydrateExtras(); return; }
+        var url = remaining.shift();
+        var s = document.createElement('script');
+        s.async = false;
+        s.src = url;
+        s.onload = next;
+        s.onerror = next;   // best-effort: hydrate whatever arrived
+        document.head.appendChild(s);
+      }
+      next();
+    }
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(injectAll);
+    } else {
+      setTimeout(injectAll, 250);
+    }
+  }
+
   /* ---- boot -------------------------------------------------------------- */
   function boot() {
     // Basket-like families: chart only the STRONGEST few to start — overlaid lines are an
@@ -1875,6 +1902,7 @@
       setFocus(h);
     }, 350);
     else { guideEntry(); showFirstHint(); }   // novice entry: highlight one line + a tap hint
+    _scheduleExtras();
   }
   // public hook: let a host page (e.g. Sector Central) focus the embedded overlay on a
   // sector/basket by id, switching family + scrolling the chart into view. Returns false

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -41,10 +42,16 @@ def _write_minimal_synapse(root: Path) -> None:
 # Fixture helpers
 # ---------------------------------------------------------------------------
 
+# Top-level as_of must be DYNAMIC: _compose_china_market_state enforces a 30h
+# freshness SLA against the wall clock, so a hardcoded date rots ~30h after it
+# is written (the original "2026-07-08" started null-lobing on 07-10). Nested
+# per-lobe as_of dates below are inert display data and stay static.
+_FRESH_AS_OF = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
 _GOOD_MARKET_STATE = {
     "schema": "china_market_state.v1",
-    "as_of": "2026-07-08",
-    "generated_utc": "2026-07-08T10:00:00Z",
+    "as_of": _FRESH_AS_OF,
+    "generated_utc": f"{_FRESH_AS_OF}T10:00:00Z",
     "authority": {
         "tier": "context_only",
     },
