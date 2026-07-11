@@ -1167,6 +1167,13 @@ def basket_action_items(site) -> dict:
             ce_flag = tid in act_now_buy_ids
             ce_quality = None
 
+        _perf = th.get("perf") or {}
+        _perf_20d = _perf.get("20d") or {}
+        _brd = th.get("breadth") or {}
+        _leader = th.get("leadership") or {}
+        _top3 = [t.get("ticker") for t in (_leader.get("top") or [])[:3] if t.get("ticker")]
+        _rr = (th.get("textures") or {}).get("rollover_risk") or {}
+        _fd = th.get("flip_distance") or {}
         base_item = {
             "kind": "theme",
             "reco": reco,                            # raw reco; needed by action_board() reduce-side override
@@ -1185,6 +1192,16 @@ def basket_action_items(site) -> dict:
             "signal_grade": (th.get("signal_strength") or {}).get("grade"),
             "clean_entry": ce_flag,
             "clean_quality": ce_quality,
+            # popover enrichment fields
+            "perf_20d_rel": _perf_20d.get("rel"),
+            "breadth_pct50": _brd.get("pct50"),
+            "top_members": _top3,
+            "rollover_band": _rr.get("band"),
+            "rollover_band_zh": _rr.get("band_zh"),
+            "reco_why_en": th.get("reco_why_en"),
+            "reco_why_zh": th.get("reco_why_zh"),
+            "rs_pctile": th.get("rs_pctile"),
+            "flip_distance": _fd.get("route_b_pp"),
         }
 
         # --- us_sector_* go to sector_overlay, NOT into narrative rows ---
@@ -1344,7 +1361,8 @@ def _action_board_stat_chip(lane: str, e: dict, item: dict) -> None:
 
 
 def action_board(sector_timing: dict, notable: list[dict],
-                 basket_items: dict | None = None) -> dict:
+                 basket_items: dict | None = None,
+                 sector_setup_lookup: dict | None = None) -> dict:
     """Bucket sector + narrative-basket + standout-stock cycle signals into an at-a-glance
     'what to act on now' board. Sectors and baskets are UNIFIED (each item carries
     kind='sector'|'theme' + an href) so the board acts on narrative resolution, not just the
@@ -1363,12 +1381,18 @@ def action_board(sector_timing: dict, notable: list[dict],
     EW overlay attach: if sector_overlay carries the SPDR ticker, attach item["ew"] + ew_lane.
     Reduce-side override (the one backtested drawdown-control edge): if overlay reco is
     trim/avoid and the cycle lane is buy_now/buy_soon/on_the_run/hold, the row is MOVED to
-    take_profits or avoid respectively (gate_override=True so the template can badge ✓)."""
+    take_profits or avoid respectively (gate_override=True so the template can badge ✓).
+
+    sector_setup_lookup: optional dict keyed by SPDR ticker → sector_setup row dict.
+    When provided, per-ticker setup fields (rs_60d, above200, above50, rsi_3d, stoch_3d,
+    rate_str, rate_pos, season_str, season_tip) are merged onto each sector action_board item
+    for the conditions popover. Additive; missing keys silently skipped."""
     from engine.playbook import SECTOR_NAMES
     buy_now, buy_soon, on_the_run, take_profits, hold, avoid = [], [], [], [], [], []
 
     # sector_overlay comes from basket_action_items(); keyed by SPDR ticker
     sector_overlay = (basket_items or {}).get("sector_overlay") or {}
+    _setup_lk = sector_setup_lookup or {}
 
     _BUY_LANES = {"buy_now", "buy_soon", "on_the_run", "hold"}
     _VALID_LANES = {"buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid"}
@@ -1382,7 +1406,22 @@ def action_board(sector_timing: dict, notable: list[dict],
                 "text": e.get("text", ""), "days": e.get("days_hi"),
                 "age_short": tm.get("age_short"), "age_short_zh": tm.get("age_short_zh"),
                 "eq_badge": tm.get("eq_badge"), "eq_dir": tm.get("eq_dir"),
-                "eq_tip": tm.get("eq_tip"), "eq_tip_zh": tm.get("eq_tip_zh"), "style": tm.get("state_style")}
+                "eq_tip": tm.get("eq_tip"), "eq_tip_zh": tm.get("eq_tip_zh"), "style": tm.get("state_style"),
+                # cycle position + holdings context for conditions popover
+                "dc_day": tm.get("dc_day"),
+                "buy_zone": tm.get("buy_zone"), "n_holdings": tm.get("n_holdings")}
+        # Merge sector_setup confluence fields (rs_60d, oscillators, base rates, seasonality)
+        _su = _setup_lk.get(fund)
+        if _su:
+            item["rs_60d"] = _su.get("rs_60d")
+            item["above200"] = _su.get("above200")
+            item["above50"] = _su.get("above50")
+            item["rsi_3d"] = _su.get("rsi_3d")
+            item["stoch_3d"] = _su.get("stoch_3d")
+            item["rate_str"] = _su.get("rate_str")
+            item["rate_pos"] = _su.get("rate_pos")
+            item["season_str"] = _su.get("season_str")
+            item["season_tip"] = _su.get("season_tip")
         u = e.get("urgency")
         # Determine the cycle-timing lane.
         # caution: lane_hint FIRST; fallback to exact-tag switch; unknown → hold (safe default).
@@ -3482,7 +3521,14 @@ def main() -> int:
             if _sr.get("two_reads_chip") and _sr.get("ticker"):
                 _two_reads_lookup[_sr["ticker"]] = _sr["two_reads_chip"]
 
-    _ab = action_board(sector_timing, notable, basket_action_items(site))
+    # Build sector_setup_lookup keyed by SPDR ticker for popover enrichment.
+    _sector_setup_lookup: dict[str, dict] = {}
+    if _sector_setups:
+        for _sr in (_sector_setups.get("sectors") or []):
+            if _sr.get("ticker"):
+                _sector_setup_lookup[_sr["ticker"]] = _sr
+    _ab = action_board(sector_timing, notable, basket_action_items(site),
+                       sector_setup_lookup=_sector_setup_lookup)
     # Attach two_reads_chip to sector items across all lanes.
     if _two_reads_lookup:
         for _lane in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid", "notable"):
