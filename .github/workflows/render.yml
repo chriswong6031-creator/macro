@@ -274,8 +274,11 @@ jobs:
             cl_baskets() {
               brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
               brun news        "news suite (build_news)"                 scripts.build_news
-              # output: data/news/event_log.parquet + site/news/calibration.json — both covered by the git add data/ site/ commit step
-              brun news_calib  "news event calibration (grade_news_events)" scripts.grade_news_events
+              # news_calib (grade_news_events) is intentionally ABSENT from render.yml.
+              # render is a data-pristine site-only lane; event_log.parquet is never committed here,
+              # so the grader always sees zero matured events and would overwrite the nightly's
+              # accrued calibration.json with an all-insufficient artifact on every push-to-main render.
+              # grade_news_events belongs only in daily.yml where the accrued event_log lives.
               brun methodology "methodology page (build_methodology)"    scripts.build_methodology
             }
             cl_misc() {
