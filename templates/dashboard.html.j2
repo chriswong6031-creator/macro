@@ -291,55 +291,64 @@
           border-radius: 10px; font-size: 12px; border: 1px solid var(--line); }
 
   /* action board */
-  .actiongrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+  .actiongrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; align-items: start; }
   @media (max-width: 1100px) { .actiongrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 900px) { .actiongrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 560px) { .actiongrid { grid-template-columns: minmax(0, 1fr); } }
-  /* V2 action board — lane column card */
-  .actcol { background: var(--panel2); border: 1px solid var(--line); min-width: 0;
-            border-radius: 10px; padding: 0; border-top: 3px solid var(--line); overflow: hidden; }
-  .act-buy  { border-top-color: var(--up); }
-  .act-soon { border-top-color: var(--g-cold); }
-  .act-run  { border-top-color: #8b5cf6; }   /* neutral violet — NOT green/buy */
-  .act-trim { border-top-color: var(--warn); }
-  .act-hold { border-top-color: var(--muted); }
-  /* Lane header */
-  .acth { padding: 10px 12px 8px; border-bottom: 1px solid var(--line); }
-  .acth-title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
-  .acth-emoji { font-size: 14px; line-height: 1; flex: none; }
-  .acth-name { font-size: 12.5px; font-weight: 700; letter-spacing: -0.01em; flex: 1; min-width: 0;
+  /* V2 action board — lane column card, restyled to the china anv2 lane idiom
+     (operator request 2026-07-11): panel card, 14px radius, 3px accent bar inside
+     the header, colored uppercase lane titles, chips-below-name rows.
+     Class names unchanged — fold JS (.actcol/.actbody/.act-fold) and the View-all
+     modal (.acth-name/.acth-sub) query them. */
+  .actcol { background: var(--panel); border: 1px solid var(--line); min-width: 0;
+            border-radius: 14px; padding: 0; overflow: hidden;
+            display: flex; flex-direction: column; --act-accent: var(--muted); }
+  .act-buy  { --act-accent: var(--up); }
+  .act-soon { --act-accent: var(--info); }
+  .act-run  { --act-accent: #8b5cf6; }   /* neutral violet — NOT green/buy */
+  .act-trim { --act-accent: var(--warn); }
+  .act-hold { --act-accent: var(--muted); }
+  /* Lane header — accent top bar via ::before (anv2-lane-hd idiom) */
+  .acth { padding: 10px 13px 8px; border-bottom: 1px solid var(--line); position: relative; }
+  .acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+                  border-radius: 14px 14px 0 0; background: var(--act-accent); }
+  .acth-title-row { display: flex; align-items: center; gap: 5px; }
+  .acth-emoji { font-size: 13px; line-height: 1; flex: none; }
+  .acth-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+               color: var(--act-accent); flex: 0 1 auto; min-width: 0;
                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .act-buy  .acth-name { color: var(--up); }
-  .act-soon .acth-name { color: var(--g-cold); }
-  .act-run  .acth-name { color: #8b5cf6; }
-  .act-trim .acth-name { color: var(--warn); }
-  .act-hold .acth-name { color: var(--muted); }
-  .acth-count { flex: none; font-size: 10.5px; font-weight: 600; color: var(--muted);
-                background: color-mix(in srgb, var(--line) 80%, transparent);
-                padding: 1px 6px; border-radius: 99px; }
-  .acth-sub { font-size: 10.5px; color: var(--muted); line-height: 1.35; }
+  .acth-count { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); }
+  .acth-count::before { content: "("; } .acth-count::after { content: ")"; }
+  .acth-sub { font-size: 10.5px; color: var(--muted); line-height: 1.4; margin-top: 3px; }
   /* Lane body list */
-  .actbody { padding: 4px 0; }
-  /* V2 row — sector/theme */
-  .actitem { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px;
-             border-bottom: 1px solid var(--line); font-size: 13px; min-width: 0;
+  .actbody { padding: 6px 0; flex: 1; }
+  /* V2 row — anv2-row anatomy: name row on top, chips row below, stat line last */
+  .actitem { display: block; padding: 7px 13px;
+             border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+             font-size: 13px; min-width: 0; overflow: hidden;
              text-decoration: none; color: inherit; cursor: pointer;
              transition: background 0.1s; position: relative; }
   .actitem:last-child { border-bottom: none; }
-  .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--line) 55%, transparent); outline: none; }
-  .actitem.hovered { background: color-mix(in srgb, var(--line) 75%, transparent); }
-  .ai-bdg { font-size: 12px; flex: none; opacity: .9; cursor: default; margin-top: 1px; }
-  .act-row-main { flex: 1; min-width: 0; }
-  .act-row-name { display: block; font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1.3;
-                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  /* V2 stat line — muted grey, no color tokens; own line under the name; hidden on mobile */
-  .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 2px;
+  .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--panel2) 55%, transparent); outline: none; }
+  .actitem.hovered { background: color-mix(in srgb, var(--panel2) 80%, transparent); }
+  .act-row-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .ai-bdg { font-size: 11.5px; flex: none; opacity: .85; cursor: default; }
+  .act-row-name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--text);
+                  line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* theme composite score — anv2-score idiom (big number, right of the name) */
+  .act-row-score { flex: none; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
+                   white-space: nowrap; }
+  .act-score-hi  { color: var(--up); }
+  .act-score-mid { color: var(--warn); }
+  .act-score-lo  { color: var(--down); }
+  /* V2 stat line — muted grey, no color tokens; last line of the row; hidden on mobile */
+  .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 3px;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   @media (max-width: 560px) { .act-row-stat { display: none; } }
-  .act-row-chips { display: flex; align-items: center; gap: 4px; flex: none; margin-top: 2px; }
-  /* V2 action chip — 10-11px pill */
-  .ab-chip { font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
-             padding: 2px 7px; border-radius: 99px; line-height: 16px; white-space: nowrap; flex: none; }
+  .act-row-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 4px; }
+  /* V2 action chip — anv2-chip idiom (uppercase 10px, 4px radius) */
+  .ab-chip { font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+             padding: 2px 6px; border-radius: 4px; line-height: 15px; white-space: nowrap; flex: none; }
   .ab-chip--warn { background: color-mix(in srgb, var(--warn) 14%, transparent);
                    color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent); }
   .ab-chip--pos  { background: color-mix(in srgb, var(--up) 14%, transparent);
@@ -353,8 +362,8 @@
   /* gate-override ✓ pill */
   .ab-chip--gate { background: color-mix(in srgb, var(--up) 10%, transparent);
                    color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 22%, transparent);
-                   font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px;
-                   line-height: 16px; flex: none; cursor: help; }
+                   font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+                   line-height: 15px; flex: none; cursor: help; }
   /* theme item star/check/lens glyphs */
   .ai-book { flex: none; margin-left: 4px; font-size: 10px; font-weight: 800; cursor: help;
              color: var(--up); white-space: nowrap; }
@@ -913,18 +922,6 @@
            background: color-mix(in srgb, var(--up) 13%, var(--panel)); }
   .vf-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
   .vf-exp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
-  /* market dealer-gamma vol-regime context banner */
-  .gamma-note { margin-top: 9px; padding: 7px 11px; border-radius: 9px; font-size: 11.5px;
-                line-height: 1.5; border: 1px solid var(--line); border-left-width: 3px; }
-  .gamma-note .gn-ic { font-size: 13px; }
-  .gamma-note b { font-weight: 800; }
-  .gn-short { border-left-color: var(--warn);
-              background: color-mix(in srgb, var(--warn) 8%, var(--panel2)); }
-  .gn-short b { color: var(--warn); }
-  .gn-long { border-left-color: var(--g-cold, var(--link));
-             background: color-mix(in srgb, var(--link) 8%, var(--panel2)); }
-  .gn-long b { color: var(--link); }
-  .gn-cav { color: var(--muted); font-size: 10px; }
   /* SUE earnings-momentum confirmer chip (display context, never scored). Blue
      (--info) so it reads distinct from the green insider cluster + the green/red
      alpha, and is immune to the Asia red/green up/down swap. */
@@ -1634,7 +1631,11 @@
 /* Buy/soon/run/aside lanes: cap 6 visible */
 .actbody.act-fold.is-collapsed > a.actitem:nth-child(n+7),
 .actbody.act-fold.is-collapsed > div:nth-child(n+7) { display: none; }
-.actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(7)):not(:has(.actbody.act-fold > div:nth-child(7)))) .lst-more.act-more { display: none; }
+/* Hide the Show-more button when the lane holds fewer rows than its cap.
+   2026-07-11 fix: the old selector only knew the .act-fold cap-6 lanes, so the
+   take-profits lane (.ab-trim-fold, cap 5) could NEVER show its button — rows
+   6+ were unreachable whenever take_profits held more than 5 entries. */
+.actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(7))):not(:has(.actbody.act-fold > div:nth-child(7))):not(:has(.ab-trim-fold > a.actitem:nth-child(6))):not(:has(.ab-trim-fold > div:nth-child(6))) .lst-more.act-more { display: none; }
 /* Take-profits lane: cap 5 visible */
 .ab-trim-fold.is-collapsed > a.actitem:nth-child(n+6),
 .ab-trim-fold.is-collapsed > div:nth-child(n+6) { display: none; }
@@ -1734,8 +1735,10 @@
       <a href="us_stocks_lab.html" style="color:var(--link);font-weight:600">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
   </div>
   {# Ignition Radar — stocks mode placement (after the stocks header).
-     Renders only when the payload is present; guarded by truthiness. #}
-  {% if mode == 'stocks' and latest.ignition_radar %}{{ igc.ignition_radar_card(latest.ignition_radar) }}{% endif %}
+     Compact span12 STRIP variant (operator revamp 2026-07-11): the tray card
+     rendered un-wrapped into the 12-col .grid and collapsed into one skinny
+     column. Renders only when the payload is present; guarded by truthiness. #}
+  {% if mode == 'stocks' and latest.ignition_radar %}{{ igc.ignition_radar_strip(latest.ignition_radar) }}{% endif %}
   {% endif %}
 
   {% if mode != 'stocks' %}
@@ -7035,13 +7038,8 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
        lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
        and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the
        narrative-rotation model book. #}
-    {% macro themeitem(x) -%}
-    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.book_wt %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">★{{ '%.0f'|format(x.book_wt*100) }}%</span>{% endif %}{% if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span>{% else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span>{% endif %}</a>
-    {%- endmacro %}
-    {# themeitem_run: on_the_run basket row with optional reason tooltip #}
-    {% macro themeitem_run(x) -%}
-    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="Narrative basket — in favour but no clean-entry setup" data-tip-zh="叙事篮子 — 顺势但无干净入场机会">🧩</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.get('run_reason_en') %}<span class="ai-lens" data-tip-en="{{ x.run_reason_en }}" data-tip-zh="{{ x.get('run_reason_zh') or x.run_reason_en }}">⟳</span>{% endif %}</a>
-    {%- endmacro %}
+    {# (legacy themeitem / themeitem_run row macros removed 2026-07-11 — dead since the
+       V2 board switched every lane to ab_theme_row / ab_sector_row.) #}
     {# TS-R6 A2: two-reads chip for action-board sector rows (same ETF, two house reads disagree). #}
     {% macro ab_two_reads(x) -%}{% if x.get('two_reads_chip') %}{% set _abtr = x.two_reads_chip %}<span class="two-reads-chip" data-tip-en="Two house reads on {{ x.ticker }}: cycle timing = {{ _abtr.cycle_label_en }} (slow, cap-weighted); setup engine = {{ _abtr.setup_label_en }} (3-day tactical). Different instruments / different horizons — both shown, neither overrides." data-tip-zh="{{ x.ticker }} 两个本系统读数：周期 = {{ _abtr.cycle_label_en }}（慢速市值加权）；形态 = {{ _abtr.setup_label_en }}（3日战术）。不同工具／维度，同时显示。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _abtr.cycle_label_en }}</b> vs setup <b>{{ _abtr.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _abtr.cycle_label_en }}</b> vs 形态 <b>{{ _abtr.setup_label_en }}</b></span></span>{% endif %}{%- endmacro %}
     {# ew_chip is inlined below each sector row for Jinja2 lexer compatibility. #}
@@ -7190,27 +7188,32 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
       {%- endif %}
     </span>
     {%- endmacro -%}
-    {#- V2 sector row macro -#}
+    {#- V2 sector row macro — anv2-row anatomy (name row / chips row / stat line) -#}
     {%- macro ab_sector_row(x) -%}
     <a class="actitem" data-rpop href="{{ x.href }}">
-      <span class="ai-bdg">🏛</span>
-      <span class="act-row-main">
+      <span class="act-row-top">
+        <span class="ai-bdg">🏛</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
-        {%- if x.get('stat_en') %}<span class="act-row-stat"><span class="l-en">{{ x.stat_en }}</span><span class="l-zh">{{ x.get('stat_zh', x.stat_en) }}</span></span>{%- endif %}
       </span>
+      {%- if x.get('chip_en') or x.get('gate_override') %}
       <span class="act-row-chips">
         {{- ab_chip(x.get('chip_en',''), x.get('chip_zh',''), x.get('chip_tone','muted')) -}}
         {{- ab_gate(x) -}}
       </span>
+      {%- endif %}
+      {%- if x.get('stat_en') %}<span class="act-row-stat"><span class="l-en">{{ x.stat_en }}</span><span class="l-zh">{{ x.get('stat_zh', x.stat_en) }}</span></span>{%- endif %}
       {{ ab_sector_pop(x) }}
     </a>
     {%- endmacro -%}
-    {#- V2 theme (narrative basket) row macro -#}
+    {#- V2 theme (narrative basket) row macro — composite score rides the name row -#}
     {%- macro ab_theme_row(x) -%}
     <a class="actitem ai-theme" data-rpop href="{{ x.href }}">
-      <span class="ai-bdg">🧩</span>
-      <span class="act-row-main">
+      <span class="act-row-top">
+        <span class="ai-bdg">🧩</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
+        {%- if x.get('score') is not none and x.get('score') is defined %}{%- set _sc = x.score -%}
+        <span class="act-row-score{% if _sc >= 60 %} act-score-hi{% elif _sc >= 40 %} act-score-mid{% else %} act-score-lo{% endif %}">{{ '%.0f'|format(_sc) }}</span>
+        {%- endif %}
       </span>
       <span class="act-row-chips">
         {%- if x.get('book_wt') %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">&#9733;{{ '%.0f'|format(x.book_wt*100) }}%</span>{%- endif %}
@@ -7337,17 +7340,8 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t("Top-10 holdings per sector · grouped by cycle entry, ranked by alpha.", "各板块前十大持仓 · 按周期入场分组，以alpha排序。") }}
           {{ help("Every sector ETF’s top-10 holdings are run through the SAME price-cycle engine as the sectors. A name earns a card only when its cycle signal is decisive — a confirmed buy (BUY ZONE), an imminent turn (BOTTOMING), or a sell (TOPPING). The cycle state GROUPS the cards (it places risk — a defined entry + exit); WITHIN each group they’re ordered by the validated sector-neutral residual momentum (α — market + sector beta stripped). We Phase-0 tested blending the cycle timing INTO the rank (reports/setup-score-phase0.md, survivorship-clean S&P 500, 12y) and it did NOT improve forward returns — it diluted α — so the order rides α and the cycle/pullback is shown as risk-placement CONTEXT, not a return signal. A soft per-sector cap keeps one hot sector from crowding the board. The α / #rank / pullback line and the 👤 insider chip are context inputs, NOT standalone buy signals. Click any card for the full breakdown.", "每个板块 ETF 的前十大持仓都用与板块相同的价格周期引擎分析。只有当个股的周期信号具决定性时才会获得卡片 — 已确认买入（买入区）、即将转向（筑底）或卖出（做顶）。周期状态对卡片进行分组（它摆放风险 — 明确的入场与出场）；在每组内部，按已验证的行业中性残差动量（α — 已剥离大盘与行业 beta）排序。我们做了 Phase-0 检验，把周期择时混入排序（reports/setup-score-phase0.md，无幸存者偏差的标普500，12年），结果并未改善前瞻收益 — 反而稀释了 α — 因此排序以 α 为准，周期/回调作为风险摆位的情境展示，而非收益信号。软性的单一板块上限可避免强势板块挤占整版。卡片上的 α / #排名 / 回调一行以及 👤 内部人买入标记均为情境输入，并非独立买入信号。点击任意卡片查看完整拆解。") }}</span>{% endif %}
       </div>
-      {% if market_gamma %}
-      <div class="gamma-note gn-{{ market_gamma.regime }}">
-        {% if market_gamma.regime == 'short' %}<span class="gn-ic">🌀</span>
-          <b>{{ t('Short-gamma market', '空头 Gamma 市场') }}</b> — {{ t('S&P 500 trades', '标普500 现') }} {{ '%.1f'|format(market_gamma.spot_vs_flip_pct | abs) }}% {{ t('below its dealer gamma-flip', '低于做市商 Gamma 翻转位') }} ({{ market_gamma.flip }}): {{ t('dealer hedging AMPLIFIES moves — momentum extends but reversals snap back hard. Wider stops; don’t chase entries.', '做市商对冲会放大波动 — 动量延伸但反转剧烈。放宽止损，不要追高入场。') }}
-        {% else %}<span class="gn-ic">⚖</span>
-          <b>{{ t('Long-gamma market', '多头 Gamma 市场') }}</b> — {{ t('S&P 500 trades', '标普500 现') }} {{ '%.1f'|format(market_gamma.spot_vs_flip_pct) }}% {{ t('above its dealer gamma-flip', '高于做市商 Gamma 翻转位') }} ({{ market_gamma.flip }}): {{ t('dealer hedging DAMPENS moves — ranges hold and breakouts tend to fade. Fade extremes; breakouts need confirmation.', '做市商对冲会抑制波动 — 区间维持，突破易回落。逢极端反向，突破需确认。') }}
-        {% endif %}
-        {{ help("The whole-market dealer-gamma regime, from the VALIDATED index dealer-gamma read (S&P 500, engine.gex_engine — the same that drives the dealer-gamma board). ABOVE the gamma 'flip' strike dealers are net long gamma and hedge AGAINST price (pinning, vol suppressed); BELOW it they are short gamma and hedge WITH price (amplifying). This is market-wide vol CONTEXT for the setups below — how moves behave right now — NOT a per-stock signal. An estimate from delayed CBOE chains, not ground truth.", "全市场做市商 Gamma 状态，来自已验证的指数做市商 Gamma 读数（标普500，engine.gex_engine — 与做市商 Gamma 看板同源）。在 Gamma“翻转”行权价之上，做市商净多头 Gamma，逆价格对冲（钉住、压制波动）；之下则为空头 Gamma，顺价格对冲（放大波动）。这是对下方布局的全市场波动情境 — 当下波动的表现方式 — 并非个股信号。基于延迟的 CBOE 链估算，并非真实值。") }}
-        <span class="gn-cav">{{ t('market-wide context, not a per-stock signal · est., as of', '全市场情境，非个股信号 · 估算，截至') }} {{ market_gamma.asof }}</span>
-      </div>
-      {% endif %}
+      {# market dealer-gamma context banner removed by operator request 2026-07-11 —
+         the market_gamma vm key and engine.market_gamma stay (gex board still uses them). #}
       {# G6a donor-sector context chip — market-wide rotation state, US only (display-only).
          Rendered only when the donor object exists in us_standouts (set by build_stock_library).
          'cracking' = fresh weekly RSI-MACD bearish cross on the top-126d-EW-return GICS sector

@@ -72,3 +72,54 @@
     .igx { padding: 14px 15px; gap: 10px; }
     .igx .igx-narrow, .igx .igx-xref { display: none; }
   }
+
+  /* ==========================================================================
+     IGNITION RADAR STRIP (.igs) — compact span12 variant (us_stocks page).
+     Rides the page's .panel card chrome; adds only a state-tinted left accent.
+     ========================================================================== */
+  .igs { --ic-col: var(--muted); border-left: 4px solid var(--ic-col); }
+  .igs.igs-ignited { --ic-col: var(--ok); }
+  .igs.igs-warming { --ic-col: var(--warn); }
+  /* header row */
+  .igs .igs-top { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .igs .igs-ic { font-size: 16px; line-height: 1; flex: none; }
+  .igs .igs-ttl { font-weight: 800; font-size: 13px; letter-spacing: .01em; white-space: nowrap; }
+  .igs .igs-state { font-weight: 800; font-size: 11px; letter-spacing: .05em;
+         text-transform: uppercase; color: var(--ic-col); padding: 1px 8px; border-radius: 99px;
+         background: color-mix(in srgb, var(--ic-col) 14%, transparent);
+         border: 1px solid color-mix(in srgb, var(--ic-col) 36%, transparent); white-space: nowrap; }
+  .igs .igs-glance { font-size: 12.5px; font-weight: 600; color: var(--text);
+         flex: 1 1 240px; min-width: 0; }
+  .igs .igs-frag { color: var(--warn); }
+  /* evidence row */
+  .igs .igs-ev { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-top: 9px; }
+  .igs .igs-k { font-size: 10px; color: var(--muted); font-weight: 700;
+         text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
+  .igs .igs-dots { display: inline-flex; align-items: center; gap: 5px; }
+  .igs .igs-dot { width: 10px; height: 10px; border-radius: 50%; cursor: help;
+         background: var(--panel2); border: 1px solid var(--line); }
+  .igs .igs-dot.lit { background: var(--ok);
+         border-color: color-mix(in srgb, var(--ok) 70%, var(--line)); }
+  .igs .igs-dot.fresh { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 30%, transparent); }
+  .igs .igs-kcount { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
+         white-space: nowrap; }
+  .igs .igs-div { width: 1px; height: 16px; background: var(--line); flex: none; }
+  .igs .igs-theme { display: inline-flex; align-items: center; gap: 4px; cursor: help;
+         padding: 2px 9px; border-radius: 6px; font-size: 11px; white-space: nowrap;
+         background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
+  .igs .igs-theme b { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .igs .igs-theme.igniting { color: var(--ok);
+         border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+         background: color-mix(in srgb, var(--ok) 10%, var(--panel)); }
+  .igs .igs-theme.running { color: var(--info);
+         border-color: color-mix(in srgb, var(--info) 35%, var(--line)); }
+  .igs .igs-theme.fading { color: var(--muted); }
+  .igs .igs-xref { font-size: 10.5px; color: var(--muted); cursor: help; white-space: nowrap;
+         padding: 2px 8px; border-radius: 99px; border: 1px dashed var(--line); margin-left: auto; }
+  /* one merged footer */
+  .igs .igs-ft { margin-top: 9px; padding-top: 8px; font-size: 11px; color: var(--muted);
+         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line)); }
+  @media (max-width: 560px) {
+    .igs .igs-glance { flex-basis: 100%; }
+    .igs .igs-xref { margin-left: 0; }
+  }
