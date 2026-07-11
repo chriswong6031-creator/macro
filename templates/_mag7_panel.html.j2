@@ -197,11 +197,11 @@
       <div class="m7p-state">
         <span class="l-en">
           {{- state_label_en(state) }} · day {{ run_days }}
-          {%- if run_cw is not none %} · +{{ run_cw }}% since {{ run_start_label }}{% if run_spy is not none %} vs S&P +{{ run_spy }}%{% endif %}{% endif %}
+          {%- if run_cw is not none %} · {{ '+' if run_cw > 0 }}{{ run_cw }}% since {{ run_start_label }}{% if run_spy is not none %} vs S&P {{ '+' if run_spy > 0 }}{{ run_spy }}%{% endif %}{% endif %}
         </span>
         <span class="l-zh">
           {{- state_label_zh(state) }} · 第{{ run_days }}日
-          {%- if run_cw is not none %} · {{ run_start_label }} 起 +{{ run_cw }}%{% if run_spy is not none %} vs 标普 +{{ run_spy }}%{% endif %}{% endif %}
+          {%- if run_cw is not none %} · {{ run_start_label }} 起 {{ '+' if run_cw > 0 }}{{ run_cw }}%{% if run_spy is not none %} vs 标普 {{ '+' if run_spy > 0 }}{{ run_spy }}%{% endif %}{% endif %}
         </span>
       </div>
       {%- endif %}

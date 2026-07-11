@@ -240,6 +240,40 @@ def test_tech_legs_word_map():
 
 
 @pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_state_line_sign_correct_for_negative_run():
+    """State line must render '-6%' not '+-6%' for negative run.cw_ret / spy_ret.
+    Covers the must_fix finding: down and rolling_over states carry negative runs."""
+    env = _env()
+    for state in ("down", "rolling_over"):
+        d = dict(FIXTURE,
+                 trend_state=state,
+                 run={"start": "2026-05-14", "sessions": 6,
+                      "cw_ret": -0.063, "spy_ret": -0.024})
+        html = env.from_string(RENDER_TMPL).render(d=d)
+        # Must NOT contain '+-' (the old broken pattern)
+        assert "+-" not in html, (
+            f"State '{state}' rendered malformed '+-' sign in state line"
+        )
+        # Must contain the correct negative signs
+        assert "-6%" in html, f"State '{state}': expected '-6%' in state line"
+        assert "-2%" in html, f"State '{state}': expected '-2%' in state line"
+        # Must NOT hardcode '+' before a negative number
+        assert "+−" not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_state_line_sign_correct_for_zero_run():
+    """run.cw_ret=0 should render '0%' not '+0%' (zero is not positive)."""
+    env = _env()
+    d = dict(FIXTURE,
+             trend_state="cooling",
+             run={"start": "2026-06-01", "sessions": 3,
+                  "cw_ret": 0.0, "spy_ret": 0.0})
+    html = env.from_string(RENDER_TMPL).render(d=d)
+    assert "+-" not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
 def test_structure_chip_only_for_recovering_drawdown():
     """Structure chip ('below the year high') only renders for recovering/drawdown chips."""
     env = _env()
