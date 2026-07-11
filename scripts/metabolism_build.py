@@ -317,10 +317,10 @@ def _check_immutable_targets(target_files: list[str]) -> list[str]:
 def _diff_worktree_files(wt_path: str, base_ref: str = "origin/main") -> list[str] | None:
     """Return the union of all files touched in the worktree vs base_ref.
 
-    Covers three surfaces:
+    Covers two command surfaces whose union is complete:
       1. Committed changes (git diff --name-only <base> HEAD)
-      2. Staged but not-yet-committed changes (git diff --name-only --cached)
-      3. Untracked files (git status --porcelain — lines starting with '??' or 'M ')
+      2. Everything not yet committed — staged, unstaged modifications,
+         untracked, and renames — via git status --porcelain
 
     Returns None on error (caller treats as a failure).  NEVER raises.
 
@@ -470,16 +470,21 @@ def _build_session_task_prompt(
     wt_path: str,
     branch: str,
     cycle_id: str,
+    target_files: list[str] | None = None,
 ) -> str:
     """Build the task prompt injected into the headless build session.
 
     The prompt is the sole task specification the session receives.
+    target_files, when given, is the RESOLVED allow-list that the foreign-file
+    containment check enforces — the prompt must describe the same list the
+    diff check will apply, so they cannot silently diverge.
     NEVER raises.
     """
     pid = proposal.get("proposal_id", "unknown")
     title = proposal.get("title", "")
     rationale = proposal.get("rationale", "")
-    target_files = proposal.get("target_files") or []
+    if target_files is None:
+        target_files = proposal.get("target_files") or []
     fitness_contract = proposal.get("fitness_contract") or {}
     tier = proposal.get("tier", "T1")
     targets_sensor = proposal.get("targets_sensor", "")
@@ -722,7 +727,10 @@ def _dispatch_build_session(
             return result
 
         # ── Step 5: build task prompt + command ───────────────────────────────
-        task_prompt = _build_session_task_prompt(proposal, wt_path, branch, cycle_id)
+        task_prompt = _build_session_task_prompt(
+            proposal, wt_path, branch, cycle_id,
+            target_files=target_files_resolved,
+        )
         cmd = [
             "claude",
             "--model", _BUILD_SESSION_MODEL,
