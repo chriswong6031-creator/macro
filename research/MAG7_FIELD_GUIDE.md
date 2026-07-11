@@ -375,7 +375,7 @@ The best historical cases where SMH return was negative during a Mag-7 run:
 
 The **2026 live exhibit** is the most striking recent instance:
 - Jun 26 → Jul 08 window: MAG7_CW +6.1% (in-store); operator-confirmed +~9% by Jul-10
-- MEM-EW (MU/WDC/STX): **−11.6%** in the same window
+- MEM-EW (MU/WDC/STX): **−11.4%** in the same window (Jun 26 → Jul 08)
 - Context: memory basket had run +199.6% YTD 2026 before this reversal; the generals
   (AAPL +10.4%, META +9.6%, GOOGL +7.3%) rotated into relative leadership while the
   prior leaders (DRAM names) corrected sharply.
@@ -448,7 +448,7 @@ lead name, WDC and STX followed. NVDA was flat to modest YTD while memory ran.
 - TSLA: +3.8%
 - MSFT: +2.8%
 - MAG7_CW (in-store): +6.1%
-- MEM_EW (MU/WDC/STX): **−11.6%**
+- MEM_EW (MU/WDC/STX): **−11.4%**
 
 **Operator-confirmed extension (Jul 08 → Jul 10, per MAG7_COMMAND §0):**
 - MAGS (Roundhill traded ETF): $61.60 → ~$67 (+~9%)

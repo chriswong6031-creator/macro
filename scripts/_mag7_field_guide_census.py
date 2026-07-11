@@ -573,7 +573,7 @@ def print_decoupling_episodes(
     print()
 
     # 06-26 → store-end run (the live exhibit from MAG7_COMMAND_MASTERPLAN)
-    print("--- LIVE EXHIBIT: 06-26-2026 → 07-02-2026 (store end) ---")
+    print("--- LIVE EXHIBIT: 06-26-2026 → 07-08-2026 (store end) ---")
     print("  Per MAG7_COMMAND_MASTERPLAN §0 incident of record:")
     print("  MAGS (Roundhill ETF, traded reference):  $61.60 → ~$67 (+~9% by 07-10)")
     print("  Operator-verified: SMH −3.2% over same window (generals decoupled from semis)")
@@ -589,7 +589,7 @@ def print_decoupling_episodes(
         ret = (sub_cw_live.iloc[-1] - sub_cw_live.iloc[0]) / sub_cw_live.iloc[0] * 100
         print(f"  MAG7_CW: {pct(ret)}")
     if len(memory_ew) > 0:
-        sub_m = memory_ew.loc["2026-06-26":"2026-07-02"]
+        sub_m = memory_ew.loc["2026-06-26":"2026-07-08"]
         if len(sub_m) >= 2:
             ret = (sub_m.iloc[-1] - sub_m.iloc[0]) / sub_m.iloc[0] * 100
             print(f"  MEM_EW (MU/WDC/STX): {pct(ret)}")
