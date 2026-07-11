@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-10T12:29:05.082881+00:00",
+  "generated_at": "2026-07-11T02:05:13.834480+00:00",
   "grade_horizons": [
     5,
     21,
@@ -203,7 +203,7 @@
     }
   },
   "counts": {
-    "n_claims": 12657,
+    "n_claims": 12661,
     "n_grades": 6716,
     "n_placebo": 342,
     "n_rejected": 0,
@@ -476,7 +476,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-10T12:29:08.028859+00:00",
+  "ladder_states_at": "2026-07-11T02:05:16.808237+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -828,6 +828,76 @@
         "reason": "No claims found for claim_family='missing_tape'"
       }
     },
+    "narrative_flare_state": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='narrative_flare_state'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='narrative_flare_state'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='narrative_flare_state'"
+      }
+    },
+    "narrative_source_call": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='narrative_source_call'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='narrative_source_call'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='narrative_source_call'"
+      }
+    },
     "news_llm": {
       "5": {
         "n_dates": 0,
@@ -1169,6 +1239,18 @@
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
+      "narrative_flare_state": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.066272,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "narrative_source_call": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.066272,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
       "news_llm": {
         "challenger_excess_mean_5d": null,
         "placebo_covered_abs_excess_5d": 0.066272,
@@ -1219,5 +1301,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-10T12:29:14.468997+00:00"
+  "promotion_readiness_at": "2026-07-11T02:05:23.650101+00:00"
 }
