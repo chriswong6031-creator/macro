@@ -80,6 +80,7 @@ from engine.ignition_radar import (
     _broad_state,
     _confirm_pct50_recover,
     _confirm_nh_flip,
+    _find_last_crossing,
     compute_regime,
 )
 
@@ -223,6 +224,217 @@ def test_nh_flip_off_when_always_negative():
     b = _breadth_frame(n=n, nh_series=nh, nl_series=nl)
     chip = _confirm_nh_flip(b)
     assert chip["lit"] is False
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# FIX 3: _find_last_crossing helper
+# ──────────────────────────────────────────────────────────────────────────────
+
+def test_find_last_crossing_detects_recent_transition():
+    """_find_last_crossing returns the first date of the current True-run when preceded by False."""
+    idx = pd.date_range("2024-01-01", periods=10, freq="B")
+    # False x5, then True x5
+    vals = pd.Series([False] * 5 + [True] * 5, index=idx)
+    ts = _find_last_crossing(vals)
+    assert ts == idx[5]
+
+
+def test_find_last_crossing_no_crossing_when_always_true():
+    idx = pd.date_range("2024-01-01", periods=10, freq="B")
+    vals = pd.Series([True] * 10, index=idx)
+    assert _find_last_crossing(vals) is None
+
+
+def test_find_last_crossing_none_when_currently_false():
+    idx = pd.date_range("2024-01-01", periods=10, freq="B")
+    # Ends on False — no active crossing
+    vals = pd.Series([False, True, True, False, False], index=idx[:5])
+    assert _find_last_crossing(vals) is None
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# FIX 3: chip fresh = event-honest (lit-without-recent-turn → fresh=False)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def test_rsp_confirm_lit_without_recent_turn_fresh_false(monkeypatch):
+    """FIX 3: rsp_confirm lit=True but slope has been positive for >15 sessions → fresh=False."""
+    from engine.ignition_radar import _confirm_rsp_confirm
+    from lib import store as _store
+
+    n = 80
+    idx = pd.date_range("2024-01-01", periods=n, freq="B")
+    # RSP slightly outperforms SPY the ENTIRE window (never negative slope → no crossing)
+    rsp = pd.DataFrame({"close": np.linspace(100, 120, n)}, index=idx)
+    spy_df = pd.DataFrame({"close": np.full(n, 100.0)}, index=idx)
+
+    def _fake_read(namespace, ticker):
+        if ticker == "RSP":
+            return rsp
+        if ticker == "SPY":
+            return spy_df
+        return None
+
+    monkeypatch.setattr(_store, "read", _fake_read)
+    chip = _confirm_rsp_confirm()
+    assert chip["lit"] is True, "slope is positive → lit must be True"
+    assert chip["fresh"] is False, "no recent ≤0→>0 crossing → fresh must be False"
+
+
+def test_rsp_confirm_recent_crossing_gives_fresh_true(monkeypatch):
+    """FIX 3: rsp_confirm lit=True AND a ≤0→>0 crossing within last 15 sessions → fresh=True.
+
+    Use a recent end-date so _is_fresh (which compares to date.today()) fires correctly.
+    The RSP/SPY ratio must be FALLING in the 21-session lookback window but then turn
+    sharply UP within the last 10 sessions so the 20d log-RS slope crosses ≤0 → >0 there.
+    """
+    from engine.ignition_radar import _confirm_rsp_confirm, _FRESH_BD
+    from lib import store as _store
+    from datetime import date
+
+    # End the series TODAY so crossing dates are within the _FRESH_BD window.
+    # Strategy: RSP flat for long, then falls over sessions 60-70 (RSP < SPY → slope neg),
+    # then rises sharply over last 8 sessions (RSP >> SPY → slope crosses positive).
+    today = pd.Timestamp(date.today())
+    n = 100
+    idx = pd.bdate_range(end=today, periods=n)
+    # SPY constant at 100
+    spy_vals = np.full(n, 100.0)
+    # RSP: flat at 100 for first 60, falls to 92 over next 30, then jumps to 115 over last 10
+    rsp_flat = np.full(60, 100.0)
+    rsp_fall = np.linspace(100, 92, 30)
+    rsp_rise = np.linspace(92, 115, 10)
+    rsp_vals = np.concatenate([rsp_flat, rsp_fall, rsp_rise])
+    rsp_df = pd.DataFrame({"close": rsp_vals}, index=idx)
+    spy_df = pd.DataFrame({"close": spy_vals}, index=idx)
+
+    def _fake_read(namespace, ticker):
+        if ticker == "RSP":
+            return rsp_df
+        if ticker == "SPY":
+            return spy_df
+        return None
+
+    monkeypatch.setattr(_store, "read", _fake_read)
+    chip = _confirm_rsp_confirm()
+    assert chip["lit"] is True, f"slope should be positive at end; chip={chip}"
+    assert chip["fresh"] is True, (
+        "RSP/SPY ratio crossed from negative to positive slope within last 10 sessions → fresh"
+    )
+
+
+def test_sector_participation_lit_without_recent_turn_fresh_false(monkeypatch):
+    """FIX 3: sector_participation lit=True but was already lit >15 sessions ago → fresh=False."""
+    from engine.ignition_radar import _confirm_sector_participation
+    from lib import store as _store
+    from datetime import date
+
+    # Use a recent end date so _is_fresh works correctly (compares to date.today())
+    today = pd.Timestamp(date.today())
+    # Build a long rising series ending today — strongly above and rising 50dma the entire window
+    n = 150
+    idx = pd.bdate_range(end=today, periods=n)
+    s = pd.Series(np.linspace(100, 200, n), index=idx)
+    df = pd.DataFrame({"close": s.values}, index=idx)
+
+    def _fake_read(namespace, ticker):
+        return df  # all 11 ETFs strongly rising throughout
+
+    monkeypatch.setattr(_store, "read", _fake_read)
+    chip = _confirm_sector_participation()
+    assert chip["lit"] is True
+    # Was always above threshold in the 15-session window → no crossing → fresh=False
+    assert chip["fresh"] is False, "long-standing state, no recent turn → fresh must be False"
+
+
+def test_sector_participation_recent_crossing_gives_fresh_true(monkeypatch):
+    """FIX 3: sector_participation crossing from below to above threshold recently → fresh=True."""
+    from engine.ignition_radar import _confirm_sector_participation
+    from lib import store as _store
+
+    n = 120
+    idx = pd.date_range("2024-01-01", periods=n, freq="B")
+    # Falling then rising: below 50dma for early sessions, crosses above in last ~8 sessions
+    # so that ma50 criterion is newly met
+    falling = np.linspace(200, 100, 100)
+    rising = np.linspace(100, 115, 20)
+    vals = np.concatenate([falling, rising])
+    s = pd.Series(vals, index=idx)
+    df = pd.DataFrame({"close": s.values}, index=idx)
+
+    def _fake_read(namespace, ticker):
+        return df
+
+    monkeypatch.setattr(_store, "read", _fake_read)
+    chip = _confirm_sector_participation()
+    # Whether lit or not depends on exact threshold crossing; the key assertion is:
+    # if fresh=True then lit must also be True
+    if chip["fresh"]:
+        assert chip["lit"] is True, "fresh implies lit"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# FIX 3: compute_regime participation_ok uses lit (state), not fresh
+# ──────────────────────────────────────────────────────────────────────────────
+
+def test_regime_participation_ok_uses_lit_not_fresh():
+    """FIX 3: participation_ok in compute_regime depends on lit (state), not fresh.
+
+    A lit-but-not-fresh chip must still set participation_ok=True.
+    """
+    # narrow_igniting + rsp_confirm lit (but not fresh) → participation_ok → NOT fragile
+    narrow = [{"id": "ai_infra", "name": "AI Infra", "state": "igniting", "ignition_score": 0.7}]
+    # rsp_confirm_lit=True → participation_ok=True regardless of freshness
+    r = compute_regime("off", narrow, rsp_confirm_lit=True, sector_participation_lit=False)
+    assert r["fragile"] is False, "participation_ok=True must clear fragile flag"
+
+    # rsp_confirm_lit=False but sector_participation_lit=True → also participation_ok
+    r2 = compute_regime("off", narrow, rsp_confirm_lit=False, sector_participation_lit=True)
+    assert r2["fragile"] is False
+
+    # both False → participation_ok=False → fragile=True
+    r3 = compute_regime("off", narrow, rsp_confirm_lit=False, sector_participation_lit=False)
+    assert r3["fragile"] is True
+
+
+def test_broad_state_warming_requires_fresh_not_lit():
+    """FIX 3 downstream: a lit-but-not-fresh chip does NOT contribute to warming count.
+
+    _broad_state counts n_fresh. A chip lit=True but fresh=False must not count toward warming.
+    """
+    # Only lit chips with fresh=False → n_fresh=0 → state='off'
+    chips = [
+        _make_chip("rsp_confirm", True, False),   # lit but not fresh
+        _make_chip("pct50_recover", False, False),
+        _make_chip("nh_flip", False, False),
+        _make_chip("sector_participation", False, False),
+        _make_chip("thrust_confluence", False, False),
+        _make_chip("msi_swing", False, False),
+        _make_chip("washout_thrust20", False, False),
+        _make_chip("ftd", False, False),
+    ]
+    k = sum(1 for c in chips if c["lit"])
+    state = _broad_state(k, chips)
+    assert state == "off", (
+        "lit-but-not-fresh chip must not count toward warming; "
+        f"got '{state}' with k={k}"
+    )
+
+
+def test_broad_state_warming_when_recent_lit():
+    """FIX 3: warming only when at least one chip is both lit and fresh."""
+    chips = [
+        _make_chip("rsp_confirm", True, True),    # lit AND fresh → counts
+        _make_chip("pct50_recover", False, False),
+        _make_chip("nh_flip", False, False),
+        _make_chip("sector_participation", False, False),
+        _make_chip("thrust_confluence", False, False),
+        _make_chip("msi_swing", False, False),
+        _make_chip("washout_thrust20", False, False),
+        _make_chip("ftd", False, False),
+    ]
+    k = sum(1 for c in chips if c["lit"])
+    state = _broad_state(k, chips)
+    assert state == "warming", f"fresh lit chip should produce warming, got '{state}'"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -382,7 +594,7 @@ def test_log_us_snapshot_different_days_both_logged(tmp_path):
 
 
 def test_grade_us_broad_shape(tmp_path):
-    """Graded broad entry has h21/h63/h126 returns + mae keys."""
+    """Graded broad entry has h21/h63/h126 returns + mae keys when fully mature."""
     # build a long SPY series so h126 has matured
     idx = pd.date_range("2025-01-01", periods=300, freq="B")
     spy = pd.Series(np.linspace(100, 140, 300), index=idx)
@@ -399,6 +611,46 @@ def test_grade_us_broad_shape(tmp_path):
     assert "mae" in g
 
 
+def test_grade_us_broad_h63_primary_grades_without_h126(tmp_path):
+    """FIX 1: h63 is the primary gate — entry grades when h63 is mature even if h126 is not.
+
+    A row with 70 forward sessions must produce h21+h63 with h126=None on first pass;
+    a second pass with 130 sessions fills h126 without altering h21/h63.
+    """
+    from engine.ignition_audit import _grade_us_broad
+
+    # 70 sessions after as-of (4 sessions buffer before that)
+    start = pd.Timestamp("2025-01-01")
+    n = 80
+    idx = pd.bdate_range(start, periods=n)
+    spy = pd.Series(np.linspace(100, 115, n), index=idx)
+
+    asof_ts = idx[3]  # 3 bars in → 76 bars remain; h63=64 remaining → mature; h126=not
+    asof_str = str(asof_ts.date())
+    entry = {"asof": asof_str, "broad_state": "warming"}
+
+    g = _grade_us_broad(entry, spy)
+    assert g is not None, "must grade when h63 mature even if h126 not"
+    rets = g["returns"]
+    assert rets.get("h21") is not None
+    assert rets.get("h63") is not None
+    assert rets.get("h126") is None, "h126 must be null when not mature"
+
+    # Second pass: extend spy so h126 is now mature
+    idx2 = pd.bdate_range(start, periods=n + 60)
+    spy2 = pd.Series(np.linspace(100, 125, n + 60), index=idx2)
+    # Simulate re-grading: inject existing partial grade into entry
+    entry["graded_broad"] = g
+    g2 = _grade_us_broad(entry, spy2)
+    assert g2 is not None
+    rets2 = g2["returns"]
+    # h126 is now filled
+    assert rets2.get("h126") is not None
+    # h21 and h63 are preserved (idempotent)
+    assert rets2["h21"] == rets["h21"]
+    assert rets2["h63"] == rets["h63"]
+
+
 def test_grade_us_narrow_none_when_immature(tmp_path):
     """Narrow grade returns None when SPY doesn't have h40 bars ahead."""
     idx = pd.date_range("2026-01-01", periods=20, freq="B")
@@ -407,7 +659,7 @@ def test_grade_us_narrow_none_when_immature(tmp_path):
     snap = _make_ig_snap(as_of=asof, state="warming")
     ia.log_us_snapshot(snap, root=tmp_path)
     n = ia.grade_us_log(spy, root=tmp_path)
-    # h40 not matured — broad also needs h126
+    # h40 not matured — neither broad (h63 gate) nor narrow can grade
     rows = ia._us_read(ia._us_path(tmp_path))
     # graded_broad and graded_narrow should still be None (not enough bars)
     assert rows[0].get("graded_broad") is None

@@ -215,8 +215,37 @@ def _confirm_nh_flip(breadth: pd.DataFrame | None) -> dict:
         return _absent_chip(key, label_en, label_zh, f"error: {e}")
 
 
+def _find_last_crossing(bool_series: pd.Series) -> pd.Timestamp | None:
+    """Find the most recent False→True crossing in bool_series.
+
+    Returns the index timestamp of the first True in the most recent True-run
+    that was preceded by a False, or None if no such crossing exists.
+    """
+    if len(bool_series) < 2:
+        return None
+    # Walk backwards to find the start of the current True-run
+    vals = bool_series.values
+    idx = bool_series.index
+    n = len(vals)
+    if not vals[-1]:
+        return None  # currently False — no active crossing
+    # Find where the current True-run begins
+    i = n - 1
+    while i > 0 and vals[i - 1]:
+        i -= 1
+    # i is now the start of the current True-run; it must have been preceded by a False
+    if i == 0:
+        return None  # True the whole time — no crossing detected
+    return idx[i]
+
+
 def _confirm_rsp_confirm() -> dict:
-    """20d log RS slope of RSP vs SPY > 0."""
+    """20d log RS slope of RSP vs SPY > 0.
+
+    lit   = slope > 0 now (STATE).
+    fresh = a <=0 → >0 crossing occurred within the last 15 sessions AND <=10bd ago.
+    since = the crossing date (not today).
+    """
     key, label_en, label_zh = "rsp_confirm", "Equal-weight RS (RSP/SPY)", "等权RS（RSP/SPY）"
     try:
         rsp_df = store.read("yahoo", "RSP")
@@ -236,19 +265,52 @@ def _confirm_rsp_confirm() -> dict:
         rs = rs.replace([np.inf, -np.inf], np.nan).dropna()
         if len(rs) < 22:
             return _absent_chip(key, label_en, label_zh, "RS series too short")
-        # 20d log RS slope
-        try:
-            slope_raw = math.log(float(rs.iloc[-1]) / float(rs.iloc[-21]))
-        except (ValueError, ZeroDivisionError):
-            return _absent_chip(key, label_en, label_zh, "log RS undefined")
+
+        # Compute rolling 20d log-RS slope over the trailing 15+21 sessions
+        # so we can detect the last ≤0→>0 crossing within 15 sessions.
+        n_lookback = 15 + 21  # need 21-bar window for each slope point
+        window = rs.iloc[-(n_lookback + 21):] if len(rs) > n_lookback + 21 else rs
+        slopes = pd.Series(
+            [
+                (
+                    math.log(float(window.iloc[j]) / float(window.iloc[j - 20]))
+                    if window.iloc[j - 20] > 0 and window.iloc[j] > 0
+                    else float("nan")
+                )
+                for j in range(20, len(window))
+            ],
+            index=window.index[20:],
+        )
+        if slopes.empty or slopes.isna().all():
+            return _absent_chip(key, label_en, label_zh, "log RS slope undefined")
+
+        slope_raw = float(slopes.iloc[-1]) if not np.isnan(slopes.iloc[-1]) else None
+        if slope_raw is None:
+            return _absent_chip(key, label_en, label_zh, "log RS slope undefined")
+
         lit = slope_raw > 0
-        since = _iso(rs.index[-21]) if lit else None
+
+        # Detect the most recent ≤0→>0 crossing within the last 15 slope sessions
+        recent_slopes = slopes.iloc[-15:] if len(slopes) >= 15 else slopes
+        positive_now = recent_slopes > 0
+        crossing_ts = _find_last_crossing(positive_now)
+        fresh = crossing_ts is not None and _is_fresh(crossing_ts)
+        since = _iso(crossing_ts) if crossing_ts is not None else None
+
         return {
             "key": key, "label_en": label_en, "label_zh": label_zh,
-            "lit": lit, "fresh": lit,      # slope is always "recent"
+            "lit": lit, "fresh": fresh,
             "since": since,
-            "detail_en": f"20d log-RS slope={slope_raw:.4f} ({'positive' if lit else 'negative'})",
-            "detail_zh": f"20日对数RS斜率={slope_raw:.4f}（{'正向' if lit else '负向'}）",
+            "detail_en": (
+                f"20d log-RS slope={slope_raw:.4f} ({'positive' if lit else 'negative'})"
+                + (f"; turned positive {_bd_since(since)}bd ago" if fresh else
+                   ("; state positive but no recent turn (~>2–3 wks)" if lit else ""))
+            ),
+            "detail_zh": (
+                f"20日对数RS斜率={slope_raw:.4f}（{'正向' if lit else '负向'}）"
+                + (f"；{_bd_since(since)}日前转正" if fresh else
+                   ("；状态正向但近期无转折（约>2–3周）" if lit else ""))
+            ),
             "source": "yahoo/RSP,SPY",
         }
     except Exception as e:  # noqa: BLE001
@@ -259,10 +321,17 @@ def _confirm_sector_participation() -> dict:
     """>=8 of 11 GICS sector ETFs close > 50dma AND 50dma rising over 10 sessions.
 
     Denominator = present ETFs; threshold = ceil(8/11 * n_present).
+
+    lit   = count >= threshold now (STATE).
+    fresh = count crossed from < threshold to >= threshold within the last 15 sessions AND <=10bd ago.
+    since = the crossing date (not today).
     """
     key, label_en, label_zh = "sector_participation", "Sector breadth (8-of-11)", "板块广度（11中8）"
     try:
-        results = {}
+        # Load each sector ETF and build a time-series of per-day "above_and_rising" flags.
+        # We need at least 15 trailing sessions to detect a crossing.
+        n_lookback = 15 + 1  # 15 crossing-detection sessions + 1 guard
+        etf_series: dict[str, pd.Series] = {}
         for ticker in _SECTOR_ETFS:
             try:
                 df = store.read("yahoo", ticker)
@@ -272,25 +341,74 @@ def _confirm_sector_participation() -> dict:
                 s.index = pd.to_datetime(s.index)
                 if len(s) < 55:
                     continue
-                ma50 = s.rolling(50, min_periods=25).mean()
-                above = bool(s.iloc[-1] > ma50.iloc[-1])
-                rising = bool(ma50.iloc[-1] > ma50.iloc[-11]) if len(ma50) >= 11 else False
-                results[ticker] = above and rising
+                etf_series[ticker] = s
             except Exception:  # noqa: BLE001
                 continue
-        n_present = len(results)
+
+        n_present = len(etf_series)
         if n_present == 0:
             return _absent_chip(key, label_en, label_zh, "no sector ETF data")
+
         import math as _math
         threshold = _math.ceil(8 / 11 * n_present)
-        n_lit = sum(1 for v in results.values() if v)
-        lit = n_lit >= threshold
-        since = _iso(date.today()) if lit else None
-        detail_en = f"{n_lit}/{n_present} ETFs above rising 50dma (need {threshold})"
-        detail_zh = f"{n_lit}/{n_present}个ETF高于上升中50日线（需{threshold}个）"
+
+        # Build a common date index spanning the last n_lookback+ sessions
+        all_idx = sorted(set().union(*[set(s.index) for s in etf_series.values()]))
+        if not all_idx:
+            return _absent_chip(key, label_en, label_zh, "no common dates")
+        window_dates = all_idx[-(n_lookback + 60):]  # extra buffer for rolling MA
+
+        # For each date in window, count ETFs satisfying above + rising.
+        # "rising" = MA50 at loc > MA50 at loc-10 (same pure-backward calculation).
+        count_series_data = []
+        for d in window_dates:
+            n_lit = 0
+            for s in etf_series.values():
+                if d not in s.index:
+                    continue
+                loc = s.index.get_loc(d)
+                if loc < 59:  # need at least 60 bars for ma50_prev at loc-10
+                    continue
+                seg_now = s.iloc[loc - 49: loc + 1]   # 50 bars ending at loc
+                ma50_now = seg_now.mean()
+                seg_prev = s.iloc[loc - 59: loc - 9]   # 50 bars ending at loc-10
+                ma50_prev = seg_prev.mean()
+                above = bool(float(s.iloc[loc]) > ma50_now)
+                rising = bool(ma50_now > ma50_prev)
+                if above and rising:
+                    n_lit += 1
+            count_series_data.append((d, n_lit))
+
+        if not count_series_data:
+            return _absent_chip(key, label_en, label_zh, "no count series built")
+
+        count_idx = pd.DatetimeIndex([r[0] for r in count_series_data])
+        count_vals = [r[1] for r in count_series_data]
+        count_s = pd.Series(count_vals, index=count_idx)
+
+        n_lit_now = int(count_s.iloc[-1])
+        lit = n_lit_now >= threshold
+
+        # Detect crossing: count < threshold → >= threshold in the last 15 sessions
+        recent_count = count_s.iloc[-15:] if len(count_s) >= 15 else count_s
+        above_threshold = recent_count >= threshold
+        crossing_ts = _find_last_crossing(above_threshold)
+        fresh = crossing_ts is not None and _is_fresh(crossing_ts)
+        since = _iso(crossing_ts) if crossing_ts is not None else None
+
+        detail_en = (
+            f"{n_lit_now}/{n_present} ETFs above rising 50dma (need {threshold})"
+            + (f"; turned on {_bd_since(since)}bd ago" if fresh else
+               ("; state met but no recent turn (~>2–3 wks)" if lit else ""))
+        )
+        detail_zh = (
+            f"{n_lit_now}/{n_present}个ETF高于上升中50日线（需{threshold}个）"
+            + (f"；{_bd_since(since)}日前达标" if fresh else
+               ("；状态达标但近期无转折（约>2–3周）" if lit else ""))
+        )
         return {
             "key": key, "label_en": label_en, "label_zh": label_zh,
-            "lit": lit, "fresh": lit,
+            "lit": lit, "fresh": fresh,
             "since": since,
             "detail_en": detail_en,
             "detail_zh": detail_zh,
@@ -355,12 +473,46 @@ def compute_broad(
 # NARROW CHANNEL — US thematic baskets + coarse sector ETFs
 # ---------------------------------------------------------------------------
 
-def _load_member_closes(basket_id: str, members: list[dict], as_of_date: pd.Timestamp | None = None) -> pd.DataFrame | None:
+def _load_ticker_series(ticker: str, ticker_cache: dict[str, pd.Series | None]) -> pd.Series | None:
+    """Load a single ticker's close Series, using ticker_cache to avoid redundant reads.
+
+    ticker_cache is a dict[ticker -> Series|None] that is created once per snapshot() call
+    and threaded through _load_member_closes so that tickers shared across baskets are only
+    read from disk once.
+    """
+    if ticker in ticker_cache:
+        return ticker_cache[ticker]
+    result: pd.Series | None = None
+    try:
+        from lib import config as _cfg
+        p = _cfg.data_dir() / "baskets" / "ohlcv" / f"{ticker}.parquet"
+        if p.exists():
+            df = pd.read_parquet(p)
+            if "close" in df.columns:
+                s = df["close"].dropna().sort_index().astype(float)
+                if not s.empty:
+                    result = s
+    except Exception:  # noqa: BLE001
+        pass
+    ticker_cache[ticker] = result
+    return result
+
+
+def _load_member_closes(
+    basket_id: str,
+    members: list[dict],
+    as_of_date: pd.Timestamp | None = None,
+    ticker_cache: dict[str, pd.Series | None] | None = None,
+) -> pd.DataFrame | None:
     """Load current-member closes from data/baskets/ohlcv/<ticker>.parquet.
 
     Only members with removed=None or removed > as_of_date are included.
+    ticker_cache (dict[ticker->Series|None]) is created once in snapshot() and passed through
+    to avoid redundant parquet reads when the same ticker appears in multiple baskets.
     Falls back to data/breadth/_closes_cache.parquet for S&P members if ohlcv absent.
     """
+    if ticker_cache is None:
+        ticker_cache = {}
     ref_date = as_of_date or pd.Timestamp(date.today())
     closes: dict[str, pd.Series] = {}
     for m in members:
@@ -375,17 +527,9 @@ def _load_member_closes(basket_id: str, members: list[dict], as_of_date: pd.Time
                     continue
             except Exception:  # noqa: BLE001
                 pass
-        try:
-            from lib import config as _cfg
-            p = _cfg.data_dir() / "baskets" / "ohlcv" / f"{ticker}.parquet"
-            if p.exists():
-                df = pd.read_parquet(p)
-                if "close" in df.columns:
-                    s = df["close"].dropna().sort_index().astype(float)
-                    if not s.empty:
-                        closes[ticker] = s
-        except Exception:  # noqa: BLE001
-            continue
+        s = _load_ticker_series(ticker, ticker_cache)
+        if s is not None:
+            closes[ticker] = s
     if not closes:
         return None
     result = pd.DataFrame(closes)
@@ -437,13 +581,19 @@ def _quality_flags(level: pd.Series | None, spy: pd.Series | None) -> dict:
 def compute_narrow(
     membership: dict,
     spy_series: pd.Series | None,
+    ticker_cache: dict[str, pd.Series | None] | None = None,
 ) -> dict:
     """Compute the narrow channel: per-basket ignition scores + coarse sector ETFs.
 
     membership: the 'baskets' dict from membership.json (keyed by basket id).
     spy_series: SPY close series.
+    ticker_cache: optional dict[ticker->Series|None] shared across all baskets to avoid
+        redundant parquet reads when the same ticker appears in multiple baskets.
+        Created per snapshot() call and passed through.
     Returns {as_of, items:[...sorted by ignition_score desc]}.
     """
+    if ticker_cache is None:
+        ticker_cache = {}
     as_of = str(date.today())
     items = []
     spy_bench = spy_series  # SPY as benchmark for all US baskets
@@ -455,7 +605,7 @@ def compute_narrow(
         category = b.get("category", "")
         members = b.get("members", [])
         try:
-            member_closes = _load_member_closes(bid, members)
+            member_closes = _load_member_closes(bid, members, ticker_cache=ticker_cache)
             # build EW level from member closes (rebase 100)
             if member_closes is not None and not member_closes.empty:
                 normed = member_closes / member_closes.iloc[0] * 100
@@ -648,7 +798,12 @@ def snapshot(root: str | Path | None = None) -> dict:
         log.warning("ignition_radar: membership.json load failed: %s", e)
         membership_data = {}
 
-    narrow = compute_narrow(membership_data, spy_series)
+    # ticker_cache is created once per snapshot and threaded through compute_narrow /
+    # _load_member_closes so that tickers shared across multiple baskets are only read
+    # from disk once (eliminates ~329 redundant parquet reads on the 683-ticker universe).
+    _ticker_cache: dict[str, "pd.Series | None"] = {}
+    narrow = compute_narrow(membership_data, spy_series, ticker_cache=_ticker_cache)
+    log.info("[timing] ignition_radar: ticker_cache populated %d unique tickers", len(_ticker_cache))
 
     # --- regime label ---
     rsp_chip = next((c for c in broad["chips"] if c["key"] == "rsp_confirm"), None)

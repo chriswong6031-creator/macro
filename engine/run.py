@@ -646,7 +646,7 @@ def run() -> dict:
         try:
             if _ig_snap:
                 _spy_s = None
-                if latest.get("risk_radar") and yahoo_closes is not None:
+                if latest.get("risk_radar"):
                     try:
                         import pandas as _pd
                         _spy_df = store.read("yahoo", "SPY")

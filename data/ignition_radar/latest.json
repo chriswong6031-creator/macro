@@ -1,0 +1,297 @@
+{
+  "as_of": "2026-07-11",
+  "state": "off",
+  "k_count": 1,
+  "chips": [
+    {
+      "key": "thrust_confluence",
+      "label_en": "Breadth thrust confluence",
+      "label_zh": "\u5e7f\u5ea6\u63a8\u8fdb\u5171\u632f",
+      "lit": false,
+      "fresh": false,
+      "since": null,
+      "detail_en": "Lit stats (not our record): ZBT ~14-18 NYSE events 1945+, 6m +17%/12m +23%; S&P proxy fires more often. ONE chip regardless of components lit (RRX-R3).",
+      "detail_zh": "Lit stats (not our record): ZBT ~14-18 NYSE events 1945+, 6m +17%/12m +23%; S&P proxy fires more often. ONE chip regardless of components lit (RRX-R3).",
+      "source": "risk_radar_market_catalysts"
+    },
+    {
+      "key": "msi_swing",
+      "label_en": "Summation low\u2192high swing",
+      "label_zh": "\u9ea6\u514b\u4f26\u6c42\u548c\u6307\u6570\u4f4e\u4f4d\u8dc3\u5347",
+      "lit": false,
+      "fresh": false,
+      "since": null,
+      "detail_en": "Lit (SentimenTrader): ~29 events since 1962 on NYSE. S&P proxy fires more often. Distinct from killed MCO-bounce constructs (RRX-R4).",
+      "detail_zh": "Lit (SentimenTrader): ~29 events since 1962 on NYSE. S&P proxy fires more often. Distinct from killed MCO-bounce constructs (RRX-R4).",
+      "source": "risk_radar_market_catalysts"
+    },
+    {
+      "key": "washout_thrust20",
+      "label_en": "%>20dma washout\u2192thrust",
+      "label_zh": "20\u65e5\u7ebf\u4e0a\u6bd4\u4f8b\u6d17\u51fa\u2192\u63a8\u8fdb",
+      "lit": false,
+      "fresh": false,
+      "since": null,
+      "detail_en": "ONE canonical %>20dma lookback (RRX-R5). ~2 events/yr. Single-condition >90% fires ~8x/yr \u2014 context descriptor only.",
+      "detail_zh": "ONE canonical %>20dma lookback (RRX-R5). ~2 events/yr. Single-condition >90% fires ~8x/yr \u2014 context descriptor only.",
+      "source": "risk_radar_market_catalysts"
+    },
+    {
+      "key": "ftd",
+      "label_en": "Follow-through day",
+      "label_zh": "\u653e\u91cf\u786e\u8ba4\u65e5",
+      "lit": false,
+      "fresh": false,
+      "since": null,
+      "detail_en": "O'Neil FTD: day 4..13 of rally attempt after >=6% drawdown, +>=1.2% on higher volume. Lit (QE): ~55% success rate. Orthogonal to breadth chips \u2014 pure price+volume. fired=within-21bd (display wider context); fresh=within-10bd (standard gate used by market_confirmed/n_fresh \u2014 spec \u00a7C4).",
+      "detail_zh": "O'Neil FTD: day 4..13 of rally attempt after >=6% drawdown, +>=1.2% on higher volume. Lit (QE): ~55% success rate. Orthogonal to breadth chips \u2014 pure price+volume. fired=within-21bd (display wider context); fresh=within-10bd (standard gate used by market_confirmed/n_fresh \u2014 spec \u00a7C4).",
+      "source": "risk_radar_market_catalysts"
+    },
+    {
+      "key": "pct50_recover",
+      "label_en": "Breadth >50dma recovery",
+      "label_zh": "50\u65e5\u7ebf\u5e7f\u5ea6\u56de\u5347",
+      "lit": false,
+      "fresh": false,
+      "since": null,
+      "detail_en": "pct_above_50=64.5% (was 63.6% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=64.5%\uff0810\u65e5\u524d63.6%\uff09",
+      "source": "breadth"
+    },
+    {
+      "key": "nh_flip",
+      "label_en": "New highs flipping positive",
+      "label_zh": "\u65b0\u9ad8\u7ffb\u6b63",
+      "lit": false,
+      "fresh": false,
+      "since": null,
+      "detail_en": "10d mean(nh-nl)=31.0 (was 12.6 10d ago)",
+      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=31.0\uff0810\u65e5\u524d12.6\uff09",
+      "source": "breadth"
+    },
+    {
+      "key": "rsp_confirm",
+      "label_en": "Equal-weight RS (RSP/SPY)",
+      "label_zh": "\u7b49\u6743RS\uff08RSP/SPY\uff09",
+      "lit": true,
+      "fresh": false,
+      "since": null,
+      "detail_en": "20d log-RS slope=0.0020 (positive); state positive but no recent turn (~>2\u20133 wks)",
+      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0020\uff08\u6b63\u5411\uff09\uff1b\u72b6\u6001\u6b63\u5411\u4f46\u8fd1\u671f\u65e0\u8f6c\u6298\uff08\u7ea6>2\u20133\u5468\uff09",
+      "source": "yahoo/RSP,SPY"
+    },
+    {
+      "key": "sector_participation",
+      "label_en": "Sector breadth (8-of-11)",
+      "label_zh": "\u677f\u5757\u5e7f\u5ea6\uff0811\u4e2d8\uff09",
+      "lit": false,
+      "fresh": false,
+      "since": null,
+      "detail_en": "5/11 ETFs above rising 50dma (need 8)",
+      "detail_zh": "5/11\u4e2aETF\u9ad8\u4e8e\u4e0a\u5347\u4e2d50\u65e5\u7ebf\uff08\u97008\u4e2a\uff09",
+      "source": "yahoo/sector_etfs"
+    }
+  ],
+  "regime": {
+    "label_en": "Theme ignition \u2014 Magnificent Seven, participation OK",
+    "label_zh": "\u4e3b\u9898\u70b9\u706b \u2014 Magnificent Seven\uff0c\u53c2\u4e0e\u5ea6\u5c1a\u53ef",
+    "fragile": false,
+    "do_en": "Theme ignition with adequate participation. Evidence read, not a buy call \u2014 confluence with your own entry process.",
+    "do_zh": "\u4e3b\u9898\u70b9\u706b\u4e14\u53c2\u4e0e\u5ea6\u5c1a\u53ef\u3002\u8bc1\u636e\u8bfb\u53d6\uff0c\u975e\u4e70\u5165\u4fe1\u53f7 \u2014 \u8bf7\u7ed3\u5408\u60a8\u7684\u5165\u573a\u6d41\u7a0b\u7efc\u5408\u5224\u65ad\u3002"
+  },
+  "narrow": {
+    "items": [
+      {
+        "id": "mag7",
+        "ignition_score": 0.7023,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.2857,
+          "breadth_n": [
+            2,
+            7
+          ],
+          "rs_slope_change": 0.9701,
+          "rs_slope_raw": 0.08697,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Magnificent Seven",
+        "name_zh": "\u4e03\u5de8\u5934",
+        "category": "AI & Technology",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "XLC",
+        "ignition_score": 0.6978,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.5467,
+          "rs_slope_raw": 0.00469,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLC",
+        "name_zh": "XLC",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": false
+      },
+      {
+        "id": "ai_semiconductors",
+        "ignition_score": 0.6888,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.2222,
+          "breadth_n": [
+            2,
+            9
+          ],
+          "rs_slope_change": 0.9998,
+          "rs_slope_raw": 0.21603,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "AI Semiconductors",
+        "name_zh": "AI\u534a\u5bfc\u4f53",
+        "category": "Semiconductors",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "us_sector_tech",
+        "ignition_score": 0.6556,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.1389,
+          "breadth_n": [
+            5,
+            36
+          ],
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.57315,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Technology (Equal-Weight)",
+        "name_zh": "\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09",
+        "category": "US Sectors (EW)",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "ai_infra",
+        "ignition_score": 0.6533,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.1333,
+          "breadth_n": [
+            2,
+            15
+          ],
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.35262,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "AI Infrastructure",
+        "name_zh": "AI \u57fa\u7840\u8bbe\u65bd",
+        "category": "AI & Technology",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "quantum_computing",
+        "ignition_score": 0.65,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.125,
+          "breadth_n": [
+            1,
+            8
+          ],
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.26029,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Quantum Computing",
+        "name_zh": "\u91cf\u5b50\u8ba1\u7b97",
+        "category": "AI & Technology",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "us_sector_discretionary",
+        "ignition_score": 0.6444,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.1111,
+          "breadth_n": [
+            1,
+            9
+          ],
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.77414,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Consumer Discretionary (Equal-Weight)",
+        "name_zh": "\u975e\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09",
+        "category": "US Sectors (EW)",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "us_sector_comm",
+        "ignition_score": 0.64,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.1,
+          "breadth_n": [
+            1,
+            10
+          ],
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.33056,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Communication Services (Equal-Weight)",
+        "name_zh": "\u901a\u4fe1\u670d\u52a1\uff08\u7b49\u6743\uff09",
+        "category": "US Sectors (EW)",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      }
+    ],
+    "as_of": "2026-07-11"
+  },
+  "radar_xref": {
+    "state": "watch",
+    "phase": null
+  },
+  "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
+  "_timing_s": 3.4
+}

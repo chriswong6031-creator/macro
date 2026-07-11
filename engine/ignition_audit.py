@@ -297,44 +297,66 @@ def log_us_snapshot(ig: dict, root=None) -> int:
 
 
 def _grade_us_broad(entry: dict, spy_series) -> dict | None:
-    """Grade broad state against SPY forward absolute return + MAE at h21/h63 (h126 printed).
+    """Grade broad state against SPY forward absolute return + MAE.
+
+    Primary horizons: h21 and h63 (gating horizon — both required to produce a grade).
+    h126 is filled independently on a later pass once it matures; existing h21/h63 grades
+    are NEVER overwritten (idempotent per-horizon storage).
 
     Pre-declared per IGN-R5: broad-state grades on SPY absolute return.
-    Returns None until the longest horizon (h126) has matured.
+    Returns None when the primary gate horizon h63 has not matured.
     """
     asof = pd.Timestamp(entry["asof"])
     spy = pd.Series(spy_series).dropna()
     spy.index = pd.to_datetime(spy.index)
     loc = spy.index.searchsorted(asof, side="right")
-    max_h = max(_US_HORIZONS_BROAD.values())
-    if loc + max_h > len(spy):
+    # Primary gate: h63 must be mature
+    primary_h = _US_HORIZONS_BROAD["h63"]
+    if loc + primary_h > len(spy):
         return None
     base = float(spy.iloc[max(0, loc - 1)])
     if base <= 0:
         return None
-    returns, mae = {}, {}
+
+    # Retrieve any already-stored horizon results so we never overwrite them
+    existing = entry.get("graded_broad") or {}
+    existing_returns = dict(existing.get("returns") or {})
+    existing_mae = dict(existing.get("mae") or {})
+
+    returns = dict(existing_returns)
+    mae = dict(existing_mae)
+
     for hk, hd in _US_HORIZONS_BROAD.items():
+        if returns.get(hk) is not None:
+            continue  # already graded with a real value — skip (idempotency)
+        if loc + hd > len(spy):
+            # h126 not matured yet — store as null
+            returns[hk] = None
+            mae[hk] = None
+            continue
         fwd_slice = spy.iloc[loc: loc + hd]
         fwd_val = float(spy.iloc[min(loc + hd - 1, len(spy) - 1)])
         ret = fwd_val / base - 1.0
         returns[hk] = round(ret, 4)
-        # MAE: max adverse excursion (most negative drawdown vs entry)
         if not fwd_slice.empty:
             mae[hk] = round(float((fwd_slice.min() / base) - 1.0), 4)
         else:
             mae[hk] = None
-    broad_state = entry.get("broad_state", "off")
+
     # A "true positive" broad call = subsequent SPY > 0 at h21
-    tp = bool(returns.get("h21", 0) > 0)
+    tp = bool((returns.get("h21") or 0) > 0)
+
+    # Preserve the original graded_at timestamp when re-filling h126
+    graded_at = existing.get("graded_at") or datetime.now(timezone.utc).isoformat(timespec="seconds")
     return {
         "returns": returns,
         "mae": mae,
         "broad_tp": tp,
         "note": (
             "accruing — display-only until >=30 grades + operator ruling. "
-            "Graded on SPY absolute return (IGN-R5). h126 printed but not primary."
+            "Graded on SPY absolute return (IGN-R5). h126 filled when mature."
         ),
-        "graded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "graded_at": graded_at,
     }
 
 
@@ -409,22 +431,31 @@ def grade_us_log(spy_series, root=None) -> int:
             return 0
         spy = pd.Series(spy_series).dropna()
         spy.index = pd.to_datetime(spy.index)
-        n = 0
+        n = 0  # counts rows where at least one arm was newly graded
         for r in rows:
-            needs_broad = not r.get("graded_broad")
+            # needs_broad: either no grade yet, OR h126 is null and we can now fill it
+            existing_broad = r.get("graded_broad")
+            h126_null = (
+                existing_broad is not None
+                and (existing_broad.get("returns") or {}).get("h126") is None
+            )
+            needs_broad = not existing_broad or h126_null
             needs_narrow = not r.get("graded_narrow")
             if not (needs_broad or needs_narrow):
                 continue
+            row_changed = False
             if needs_broad:
                 g = _grade_us_broad(r, spy)
                 if g is not None:
                     r["graded_broad"] = g
-                    n += 1
+                    row_changed = True
             if needs_narrow:
                 g = _grade_us_narrow(r, spy)
                 if g is not None:
                     r["graded_narrow"] = g
-                    n += 1
+                    row_changed = True
+            if row_changed:
+                n += 1
         if n:
             _us_write(p, rows)
         return n
