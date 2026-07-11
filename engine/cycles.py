@@ -666,6 +666,7 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
     if state == "COUNTERTREND BOUNCE":
         inval = cyc.get("cand_price") or cyc.get("dcl_price")
         return {"tag": "UNCONFIRMED — HIGH RISK", "tag_zh": "未确认 — 高风险", "urgency": "caution",
+                "lane_hint": "avoid",
                 "text": f"Daily low forming, but the bigger trend is still bearish. Small size only; stop below {inval}.",
                 "text_zh": f"日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 {inval} 下方。"}
     if state == "FRESH BUY":
@@ -759,6 +760,7 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
                             if late else "趋势完好——持有；可在回调至 10 日均线附近时加仓。")}
     if state == "TOP WATCH":
         return {"tag": "TAKE PROFITS", "tag_zh": "止盈", "urgency": "caution",
+                "lane_hint": "take_profits",
                 "text": "Stretched/late — protect gains and don't start new positions; "
                         "let the next low set up first.",
                 "text_zh": "已拉伸／晚期——保护利润，不要新开仓；先等下一个低点构筑成形。"}
@@ -1318,6 +1320,7 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
         # routed off a buy setup by the extension gate — the headline tag should
         # read "don't chase", not the generic TOP WATCH "take profits"
         entry = {"tag": "DON'T CHASE", "tag_zh": "勿追高", "urgency": "caution",
+                 "lane_hint": "on_the_run",
                  "text": ("You missed the bottoming entry — the low already formed and price is now "
                           f"extended ({caveat}). Don't chase; wait for a pullback to the "
                           "10-day average or the next cycle low. Hold if already long."),
@@ -1344,6 +1347,7 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             entry = {"tag": "BOTTOMING · EXTENDED — WAIT",
                      "tag_zh": "筑底 · 已过热 — 等待",
                      "urgency": "caution",
+                     "lane_hint": "buy_soon",
                      "text": ("The bottoming setup is not yet confirmed (price still below the 10-day "
                               "average) and oscillators are already extended/overbought — not a safe "
                               "entry. Wait for price to reclaim the 10-day average with momentum "
@@ -1360,6 +1364,7 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             entry = {"tag": "BOTTOMING · UNCONFIRMED — WAIT",
                      "tag_zh": "筑底 · 未确认 — 等待",
                      "urgency": "caution",
+                     "lane_hint": "buy_soon",
                      "text": ("The bottoming setup is not yet confirmed (price still below the 10-day "
                               f"average) and {tf_word} — momentum is fading before the setup has "
                               "completed. Wait for price to reclaim the 10-day average with momentum "

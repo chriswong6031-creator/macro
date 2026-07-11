@@ -1257,6 +1257,92 @@ US_SECTOR_PAGE = {
 }
 
 
+def _action_board_stat_chip(lane: str, e: dict, item: dict) -> None:
+    """Attach stat_en / stat_zh / chip_en / chip_zh / chip_tone to *item* in-place.
+
+    Ruling: BOTTOMING·WAIT belongs in Almost ready — 2026-07-10 us_stocks scorecard
+    adjudication. Conservative de-escalation-safe defaults throughout.
+    All strings are QUALIFIER-FIRST so truncation never eats the honest half (<= 30 EN).
+    """
+    tag = e.get("tag", "")
+    age_short = item.get("age_short") or ""
+    age_short_zh = item.get("age_short_zh") or ""
+    days = e.get("days_hi")
+    gate_override = item.get("gate_override", False)
+    urgency = e.get("urgency", "")
+
+    # stat_en / stat_zh
+    if lane == "buy_now":
+        stat_en = f"clean entry · {age_short}" if age_short else "clean entry"
+        stat_zh = f"入场干净 · {age_short_zh}" if age_short_zh else "入场干净"
+    elif lane == "buy_soon":
+        # lane_hint=buy_soon items are WAIT demotions (BOTTOMING·EXTENDED or UNCONFIRMED)
+        if tag in ("BOTTOMING · EXTENDED — WAIT",):
+            stat_en = "extended — wait"
+            stat_zh = "已过热 — 等待"
+        elif tag == "BOTTOMING · UNCONFIRMED — WAIT":
+            stat_en = "unconfirmed — wait"
+            stat_zh = "未确认 — 等待"
+        elif days is not None:
+            stat_en = f"trigger ~{days}d"
+            stat_zh = f"触发约{days}日"
+        else:
+            stat_en = "unconfirmed — wait"
+            stat_zh = "未确认 — 等待"
+    elif lane == "on_the_run":
+        stat_en = "extended · wait for pullback"
+        stat_zh = "已延伸 · 等回调"
+    elif lane == "take_profits":
+        if gate_override:
+            stat_en = "backtested gate: trim"
+            stat_zh = "回测门槛：减仓"
+        elif urgency == "exit":
+            stat_en = "momentum rolled over"
+            stat_zh = "动量掉头"
+        else:
+            stat_en = f"late cycle · {age_short}" if age_short else "late cycle"
+            stat_zh = f"周期晚期 · {age_short_zh}" if age_short_zh else "周期晚期"
+    elif lane == "hold":
+        stat_en = "uptrend intact"
+        stat_zh = "趋势完好"
+    else:  # avoid
+        if tag == "WAIT":
+            stat_en = "wait for a new setup"
+            stat_zh = "等待新形态"
+        else:
+            stat_en = "downtrend"
+            stat_zh = "下跌趋势"
+
+    item["stat_en"] = stat_en
+    item["stat_zh"] = stat_zh
+
+    # chip_en / chip_zh / chip_tone (at most one chip; gate ✓ added by template from gate_override)
+    # Priority: WAIT demotions first, then HALF SIZE, then lane-specific, then days, then empty.
+    if lane == "buy_soon" and tag in ("BOTTOMING · EXTENDED — WAIT",
+                                      "BOTTOMING · UNCONFIRMED — WAIT"):
+        chip_en, chip_zh, chip_tone = "WAIT", "等待", "warn"
+    elif tag == "HALF SIZE":
+        chip_en, chip_zh, chip_tone = "HALF SIZE", "半仓", "pos"
+    elif lane == "hold":
+        chip_en, chip_zh, chip_tone = "HOLD", "持有", "muted"
+    elif lane == "avoid":
+        if tag == "WAIT":
+            chip_en, chip_zh, chip_tone = "WAIT", "等待", "warn"
+        else:
+            chip_en, chip_zh, chip_tone = "AVOID", "回避", "neg"
+    elif lane == "buy_soon" and days is not None:
+        chip_en, chip_zh, chip_tone = f"~{days}d", f"约{days}日", "info"
+    else:
+        chip_en, chip_zh, chip_tone = "", "", ""
+
+    item["chip_en"] = chip_en
+    item["chip_zh"] = chip_zh
+    item["chip_tone"] = chip_tone
+
+    # text_zh (additive alongside existing text)
+    item["text_zh"] = e.get("text_zh", "")
+
+
 def action_board(sector_timing: dict, notable: list[dict],
                  basket_items: dict | None = None) -> dict:
     """Bucket sector + narrative-basket + standout-stock cycle signals into an at-a-glance
@@ -1264,12 +1350,14 @@ def action_board(sector_timing: dict, notable: list[dict],
     kind='sector'|'theme' + an href) so the board acts on narrative resolution, not just the
     11 GICS sectors.
 
-    Urgency routing (ratified):
+    Urgency routing (ratified — 2026-07-10 us_stocks scorecard adjudication):
       now → buy_now; imminent/soon → buy_soon; hold → hold; exit → take_profits;
-      caution splits by entry tag:
-        "DON'T CHASE"            → on_the_run   (uptrend intact, extended)
-        "UNCONFIRMED — HIGH RISK" → avoid        (bear-trend bounce)
-        anything else (incl. "TAKE PROFITS") → take_profits
+      caution: lane_hint key consulted FIRST (engine/cycles.py sets it on every caution entry);
+        lane_hint wins when it names a valid lane; fallback (no hint) by exact tag:
+          "DON'T CHASE"            → on_the_run   (uptrend intact, extended)
+          "UNCONFIRMED — HIGH RISK" → avoid        (bear-trend bounce)
+          "TAKE PROFITS"            → take_profits
+          unknown/missing           → hold         (conservative de-escalation-safe default)
       all other urgency values → avoid.
 
     EW overlay attach: if sector_overlay carries the SPDR ticker, attach item["ew"] + ew_lane.
@@ -1283,6 +1371,7 @@ def action_board(sector_timing: dict, notable: list[dict],
     sector_overlay = (basket_items or {}).get("sector_overlay") or {}
 
     _BUY_LANES = {"buy_now", "buy_soon", "on_the_run", "hold"}
+    _VALID_LANES = {"buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid"}
 
     for fund, tm in sector_timing.items():
         e = tm.get("entry") or {}
@@ -1295,7 +1384,8 @@ def action_board(sector_timing: dict, notable: list[dict],
                 "eq_badge": tm.get("eq_badge"), "eq_dir": tm.get("eq_dir"),
                 "eq_tip": tm.get("eq_tip"), "eq_tip_zh": tm.get("eq_tip_zh"), "style": tm.get("state_style")}
         u = e.get("urgency")
-        # Determine the cycle-timing lane
+        # Determine the cycle-timing lane.
+        # caution: lane_hint FIRST; fallback to exact-tag switch; unknown → hold (safe default).
         if u == "now":
             cycle_lane = "buy_now"
         elif u in ("imminent", "soon"):
@@ -1305,12 +1395,17 @@ def action_board(sector_timing: dict, notable: list[dict],
         elif u == "exit":
             cycle_lane = "take_profits"
         elif u == "caution":
-            if tag == "DON'T CHASE":
+            hint = e.get("lane_hint", "")
+            if hint in _VALID_LANES:
+                cycle_lane = hint
+            elif tag == "DON'T CHASE":
                 cycle_lane = "on_the_run"
             elif tag == "UNCONFIRMED — HIGH RISK":
                 cycle_lane = "avoid"
-            else:
+            elif tag == "TAKE PROFITS":
                 cycle_lane = "take_profits"
+            else:
+                cycle_lane = "hold"   # conservative de-escalation-safe default
         else:
             cycle_lane = "avoid"
 
@@ -1331,6 +1426,9 @@ def action_board(sector_timing: dict, notable: list[dict],
             elif ov_reco == "avoid" and cycle_lane in _BUY_LANES:
                 final_lane = "avoid"
                 item["gate_override"] = True
+
+        # Attach stat/chip display fields and text_zh per contract
+        _action_board_stat_chip(final_lane, e, item)
 
         if final_lane == "buy_now":
             buy_now.append(item)
@@ -1510,11 +1608,28 @@ def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
                     u == "caution" and tag not in _CAUTION_NON_REDUCE
                 )
                 if cycle_is_reduce:
+                    from engine.cycles import STATE_DISPLAY as _SD
+                    # ZH map mirrors ENTRY_STATUS_ZH in templates/dashboard.html.j2 ~6891-6896
+                    # plus 'setup' and 'partial' keys used by the setup-side vocab.
+                    _SETUP_ZH = {
+                        "buy_now": "立即买入", "partial": "半仓",
+                        "buy_soon": "即将买入", "setup": "构筑中",
+                        "extended": "过热", "watch": "观察",
+                        "avoid": "回避", "topping": "做顶",
+                        "blocked": "封锁", "exit": "退出",
+                    }
                     setup_label = r.get("label") or r.get("label_zh") or r["state"]
+                    state_key = r.get("state", "")
+                    cycle_label_zh = _SD.get(
+                        tm.get("state", ""), {}
+                    ).get("label_zh", cycle_label)
+                    setup_label_zh = _SETUP_ZH.get(r.get("state", ""), setup_label)
                     r["two_reads_chip"] = {
                         "cycle_label_en": cycle_label,
                         "setup_label_en": setup_label,
-                        "setup_state": r["state"],
+                        "setup_state": state_key,
+                        "cycle_label_zh": cycle_label_zh,
+                        "setup_label_zh": setup_label_zh,
                     }
         return bd
     except Exception as e:  # noqa: BLE001 — additive, never fatal

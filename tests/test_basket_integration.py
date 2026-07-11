@@ -199,8 +199,16 @@ def _make_sector_timing(fund: str, urgency: str, tag: str = "", label: str = "TE
 
 
 def test_action_board_caution_tag_routing(tmp_path):
-    """caution+DON'T CHASE→on_the_run; caution+TAKE PROFITS→take_profits;
-    caution+UNCONFIRMED→avoid; exit→take_profits."""
+    """Urgency routing — 2026-07-10 us_stocks scorecard adjudication.
+
+    lane_hint wins over tag fallback; caution+'TAKE PROFITS' (no hint)→take_profits;
+    near-miss/unknown caution→hold (conservative de-escalation-safe default);
+    WAIT demotion items (lane_hint='buy_soon')→buy_soon with chip_en='WAIT'.
+
+    Fallback path (no lane_hint):
+      caution+DON'T CHASE→on_the_run; caution+TAKE PROFITS→take_profits;
+      caution+UNCONFIRMED→avoid; exit→take_profits; unknown caution→hold.
+    """
     import scripts.build_site as bs
     st = {}
     st.update(_make_sector_timing("XLK", "caution", "DON'T CHASE"))
@@ -221,6 +229,100 @@ def test_action_board_caution_tag_routing(tmp_path):
     assert len(all_tickers) == len(set(all_tickers)), "duplicate sector in two lanes"
 
 
+def test_action_board_unknown_caution_routes_to_hold(tmp_path):
+    """Unknown/near-miss caution tags (no lane_hint) route to hold — conservative
+    de-escalation-safe default per 2026-07-10 adjudication.  Pre-adjudication default
+    was take_profits; that was over-aggressive for an ambiguous tag."""
+    import scripts.build_site as bs
+    st = {}
+    st.update(_make_sector_timing("AAA", "caution", "SOME UNKNOWN TAG"))
+    st.update(_make_sector_timing("BBB", "caution", ""))   # empty tag
+    # near-miss: curly apostrophe — NOT the engine tag
+    st.update(_make_sector_timing("CCC", "caution", "DON’T CHASE"))
+    board = bs.action_board(st, [])
+    assert board["take_profits"] == [], "unknown caution must not land in take_profits"
+    assert board["on_the_run"] == [], "near-miss curly-apos must not land in on_the_run"
+    hold_tickers = {x["ticker"] for x in board["hold"]}
+    assert hold_tickers == {"AAA", "BBB", "CCC"}, "unknown caution→hold"
+
+
+def _make_sector_timing_with_hint(fund: str, urgency: str, tag: str,
+                                  lane_hint: str, days_hi: int | None = None) -> dict:
+    """Build a sector_timing entry with lane_hint on the entry dict."""
+    return {fund: {
+        "label": "TEST",
+        "entry": {"urgency": urgency, "tag": tag, "lane_hint": lane_hint,
+                  "text": "", "text_zh": "", "days_hi": days_hi},
+        "age_short": "3d", "age_short_zh": "3日",
+        "eq_badge": None, "eq_dir": "flat", "eq_tip": None, "state_style": None,
+    }}
+
+
+def test_action_board_lane_hint_wins(tmp_path):
+    """lane_hint on the engine entry dict routes the item regardless of the tag fallback.
+    BOTTOMING·WAIT demotions carry lane_hint='buy_soon' so they appear in Almost ready."""
+    import scripts.build_site as bs
+    st = {}
+    # lane_hint='buy_soon' wins over caution default
+    st.update(_make_sector_timing_with_hint(
+        "XLB", "caution", "BOTTOMING · EXTENDED — WAIT", "buy_soon"))
+    st.update(_make_sector_timing_with_hint(
+        "XLE", "caution", "BOTTOMING · UNCONFIRMED — WAIT", "buy_soon"))
+    # lane_hint='on_the_run' wins over caution default
+    st.update(_make_sector_timing_with_hint(
+        "XLK", "caution", "DON'T CHASE", "on_the_run"))
+    # lane_hint='take_profits' wins
+    st.update(_make_sector_timing_with_hint(
+        "XLU", "caution", "TAKE PROFITS", "take_profits"))
+    # lane_hint='avoid'
+    st.update(_make_sector_timing_with_hint(
+        "XLY", "caution", "UNCONFIRMED — HIGH RISK", "avoid"))
+    board = bs.action_board(st, [])
+
+    buy_soon_tickers = {x["ticker"] for x in board["buy_soon"]}
+    assert buy_soon_tickers == {"XLB", "XLE"}, "lane_hint=buy_soon→Almost ready"
+    # WAIT demotion items get chip_en='WAIT', chip_tone='warn'
+    for item in board["buy_soon"]:
+        assert item["chip_en"] == "WAIT", f"{item['ticker']} chip_en should be WAIT"
+        assert item["chip_zh"] == "等待", f"{item['ticker']} chip_zh should be 等待"
+        assert item["chip_tone"] == "warn", f"{item['ticker']} chip_tone should be warn"
+
+    assert any(x["ticker"] == "XLK" for x in board["on_the_run"]), "lane_hint=on_the_run"
+    assert any(x["ticker"] == "XLU" for x in board["take_profits"]), "lane_hint=take_profits"
+    assert any(x["ticker"] == "XLY" for x in board["avoid"]), "lane_hint=avoid"
+    # no double-listing
+    all_tickers = [x["ticker"] for lane in board.values() for x in lane]
+    assert len(all_tickers) == len(set(all_tickers))
+
+
+def test_action_board_stat_chip_fields_per_lane(tmp_path):
+    """stat_en / stat_zh / chip_en / chip_zh / chip_tone / text_zh present on every item."""
+    import scripts.build_site as bs
+    st = {}
+    st.update(_make_sector_timing("XLI", "now"))
+    st.update(_make_sector_timing("XLK", "caution", "DON'T CHASE"))
+    st.update(_make_sector_timing("XLF", "exit"))
+    st.update(_make_sector_timing("XLC", "hold"))
+    st.update(_make_sector_timing_with_hint(
+        "XLB", "caution", "BOTTOMING · EXTENDED — WAIT", "buy_soon"))
+    board = bs.action_board(st, [])
+
+    def _check(lane_name: str, ticker: str, expected_stat_en: str):
+        items = [x for x in board[lane_name] if x["ticker"] == ticker]
+        assert items, f"{ticker} not in {lane_name}"
+        item = items[0]
+        for field in ("stat_en", "stat_zh", "chip_en", "chip_zh", "chip_tone", "text_zh"):
+            assert field in item, f"{ticker}: missing field {field!r}"
+        assert item["stat_en"] == expected_stat_en, \
+            f"{ticker} stat_en: got {item['stat_en']!r}, want {expected_stat_en!r}"
+
+    _check("buy_now",     "XLI", "clean entry")           # age_short=None so no suffix
+    _check("on_the_run",  "XLK", "extended · wait for pullback")
+    _check("take_profits","XLF", "momentum rolled over")  # exit urgency
+    _check("hold",        "XLC", "uptrend intact")
+    _check("buy_soon",    "XLB", "extended — wait")       # EXTENDED variant
+
+
 def _make_basket_items_with_sector_overlay(tmp_path, sector_themes: list) -> dict:
     """Build basket_items via the REAL basket_action_items() so sector_overlay carries
     whatever fields the builder actually produces (including 'reco').  Mirrors the real
@@ -234,6 +336,44 @@ def _make_basket_items_with_sector_overlay(tmp_path, sector_themes: list) -> dic
     (tmp_path / "allocationdata" / "allocation.json").write_text(
         json.dumps({"ranks": [], "allocation": {"weights": []}}))
     return bs.basket_action_items(tmp_path)
+
+
+def test_two_reads_chip_zh_fields():
+    """two_reads_chip carries cycle_label_zh and setup_label_zh per contract
+    (2026-07-10 us_stocks scorecard adjudication).
+
+    Tests the ZH field construction by exercising the same STATE_DISPLAY lookup
+    and SETUP_ZH map that sector_setup_view uses at runtime.
+    """
+    from engine.cycles import STATE_DISPLAY
+
+    # ZH map as defined in sector_setup_view (mirrors ENTRY_STATUS_ZH in template)
+    SETUP_ZH = {
+        "buy_now": "立即买入", "partial": "半仓",
+        "buy_soon": "即将买入", "setup": "构筑中",
+        "extended": "过热", "watch": "观察",
+        "avoid": "回避", "topping": "做顶",
+        "blocked": "封锁", "exit": "退出",
+    }
+
+    # Verify STATE_DISPLAY keys carry label_zh
+    for state_key, disp in STATE_DISPLAY.items():
+        assert "label_zh" in disp, f"STATE_DISPLAY[{state_key!r}] missing label_zh"
+
+    # Verify cycle_label_zh lookup: TOP WATCH → 接近高点
+    top_watch_zh = STATE_DISPLAY.get("TOP WATCH", {}).get("label_zh")
+    assert top_watch_zh == "接近高点", f"TOP WATCH label_zh: {top_watch_zh!r}"
+
+    # Verify setup_label_zh: known states resolve
+    assert SETUP_ZH["buy_now"] == "立即买入"
+    assert SETUP_ZH["buy_soon"] == "即将买入"
+    assert SETUP_ZH["exit"] == "退出"
+
+    # Verify fallback (unknown state key returns the EN label unchanged)
+    unknown_state = "SOME_UNKNOWN"
+    fallback_label = "BUY SETUP"
+    result = SETUP_ZH.get(unknown_state, fallback_label)
+    assert result == fallback_label, "unknown state should fall back to EN label"
 
 
 def test_action_board_reduce_override(tmp_path):
@@ -267,7 +407,12 @@ def test_action_board_reduce_override(tmp_path):
 
 def test_action_board_ew_divergence_attach(tmp_path):
     """Overlay accumulate (from real basket_action_items output) + cycle take_profits row
-    keeps its lane but carries item['ew'] — no override because reco is not trim/avoid."""
+    keeps its lane but carries item['ew'] — no override because reco is not trim/avoid.
+
+    Uses exit urgency (unambiguous take_profits routing) rather than an unknown caution
+    tag — the 2026-07-10 adjudication changed unknown caution default to hold, so the
+    old test fixture ('ROLLING OVER' caution) would now land in hold instead.
+    """
     import scripts.build_site as bs
     # Build basket_items via the real function: us_sector_materials reco=accumulate
     sector_themes = [
@@ -280,8 +425,8 @@ def test_action_board_ew_divergence_attach(tmp_path):
     assert basket_items["sector_overlay"]["XLB"]["reco"] == "accumulate", \
         "sector_overlay entry must carry reco"
 
-    # XLB: cycle says caution (→ take_profits, no special tag)
-    st = _make_sector_timing("XLB", "caution", "ROLLING OVER")
+    # XLB: cycle says exit (→ take_profits unambiguously)
+    st = _make_sector_timing("XLB", "exit", "TAKE PROFITS")
     board = bs.action_board(st, [], basket_items)
     # XLB stays in take_profits (overlay is accumulate, not trim/avoid → no override)
     tp_item = next((x for x in board["take_profits"] if x["ticker"] == "XLB"), None)

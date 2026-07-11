@@ -10,6 +10,11 @@ Pins (mirrors tests/test_basket_integration.py::test_action_board_caution_tag_ro
     UNCONFIRMED, ASCII apostrophe in DON'T — a curly-quote drift silently unroutes a lane)
   * both standalone templates render the new lane and stay missing-key-safe on the
     pre-split actions shape (no on_the_run key).
+
+NOTE: The US action_board (scripts/build_site.py) uses lane_hint-first routing with a
+conservative unknown→hold default (not take_profits) per the 2026-07-10 us_stocks
+scorecard adjudication. CN/CA/HK boards retain the pre-adjudication take_profits
+default — their tests below reflect that.
 """
 import re
 import sys
