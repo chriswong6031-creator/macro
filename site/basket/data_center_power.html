@@ -965,13 +965,13 @@ function cls(v){return v==null?'muted':v>=0?'up':'dn';}
 var BID = (DETAIL.basket||{}).id||'';
 var WEIGHTS = {trend:0.26,breadth:0.18,impulse:0.07,macro:0.18,mtf:0.16,volhole:0.05,crowding:0.10};
 var LEG_LABELS = {
-  trend:    [L('Trend','趋势'),    '5/20/60d rets'],
-  breadth:  [L('Breadth','广度'),  '% above 50d MA'],
-  impulse:  [L('Impulse','脉冲'),  '1d accel z'],
-  macro:    [L('Macro','宏观'),    'macro prior'],
-  mtf:      [L('MTF','多周期'),    'multi-timeframe'],
-  volhole:  [L('Vol-hole','波动洞'),'gap / cluster'],
-  crowding: [L('Crowding','拥挤度'),'rs_pctile'],
+  trend:    ['Trend','趋势',    '5/20/60d rets'],
+  breadth:  ['Breadth','广度',  '% above 50d MA'],
+  impulse:  ['Impulse','脉冲',  '1d accel z'],
+  macro:    ['Macro','宏观',    'macro prior'],
+  mtf:      ['MTF','多周期',    'multi-timeframe'],
+  volhole:  ['Vol-hole','波动洞','gap / cluster'],
+  crowding: ['Crowding','拥挤度','rs_pctile'],
 };
 var LEG_ORDER = ['trend','breadth','impulse','macro','mtf','volhole','crowding'];
 
@@ -984,24 +984,25 @@ function anatomyPanelHtml(th){
   var crowdPenActive = (rsPct!=null&&rsPct>=0.85)||comp.crowding>0.3;
 
   // Why-this-score summary
-  var posParts=[], negParts=[];
+  var posEn=[], posZh=[], negEn=[], negZh=[];
   LEG_ORDER.filter(k=>k!=='crowding').forEach(function(k){
     var v=comp[k];
     if(v==null||v===0) return;
-    if(v>0) posParts.push(LEG_LABELS[k][0]);
-    else negParts.push(LEG_LABELS[k][0]);
+    var ll=LEG_LABELS[k];
+    if(v>0){ posEn.push(ll[0]); posZh.push(ll[1]); }
+    else{ negEn.push(ll[0]); negZh.push(ll[1]); }
   });
   var macroAbsent = comp.macro==null||comp.macro===0;
-  var whyEn='';
-  if(posParts.length) whyEn+='<strong>'+posParts.map(function(p){return p.replace(/<[^>]*>/g,'');}).join(' + ')+'</strong> fired. ';
-  if(negParts.length) whyEn+='<span style="color:var(--down)">'+negParts.map(function(p){return p.replace(/<[^>]*>/g,'');}).join(' + ')+'</span> dragging. ';
-  if(macroAbsent) whyEn+='Macro leg absent — score renormalises over available legs. ';
-  if(crowdPenActive) whyEn+='<span style="color:var(--amber,#fb923c)">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ';
+  var why='';
+  if(posEn.length) why+=L('<strong>'+posEn.join(' + ')+'</strong> fired. ','<strong>'+posZh.join(' + ')+'</strong>发力。');
+  if(negEn.length) why+=L('<span style="color:var(--down)">'+negEn.join(' + ')+'</span> dragging. ','<span style="color:var(--down)">'+negZh.join(' + ')+'</span>拖累。');
+  if(macroAbsent) why+=L('Macro leg absent — score renormalises over available legs. ','宏观缺失 — 评分在现有腿上重新归一化。');
+  if(crowdPenActive) why+=L('<span style="color:var(--amber,#fb923c)">Crowding penalty active (rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+')</span>. ','<span style="color:var(--amber,#fb923c)">拥挤惩罚生效（rs_pctile '+(rsPct!=null?rsPct.toFixed(3):'—')+'）</span>。');
 
   var html='<div class="ftr-anatomy-card">'
     +'<div class="ftr-anatomy-hd">'
     +'<div><div style="font-size:13px;font-weight:700">'+L('Score Anatomy','评分解剖')+'</div>'
-    +'<div class="ftr-ah-why">'+whyEn+'</div></div>'
+    +'<div class="ftr-ah-why">'+why+'</div></div>'
     +'<div style="text-align:center"><div class="ftr-ah-score" style="color:'+(score>=66?'var(--up)':score>=40?'var(--link)':'var(--down)')+'">'+score+'</div>'
     +'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:3px">'+L('score','评分')+'</div></div>'
     +'</div>'
@@ -1017,20 +1018,20 @@ function anatomyPanelHtml(th){
     var isCrowd = k==='crowding';
     var absent = v==null||(k==='macro'&&macroAbsent);
     var contrib = absent?0:((v*(w/availW))||0);
-    var ll = LEG_LABELS[k]||[k,k];
+    var ll = LEG_LABELS[k]||[k,k,k];
     // Bar fill: center=0, pos goes right, neg goes left; crowding amber
     var barFillPct = absent?0:Math.min(50,Math.abs(v)*35);
     var barClass = isCrowd?'crowd':(v>=0?'pos':'neg');
     var valColor = absent?'var(--muted)':isCrowd?'var(--amber,#fb923c)':(v>=0?'var(--up)':'var(--down)');
     var crowdStyle = isCrowd?'background:rgba(251,146,60,.04);border-radius:6px;padding:4px 0;':'';
     html+='<div class="ftr-leg-row" style="'+crowdStyle+'">'
-      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>'+ll[0]+'</div>'
+      +'<div><div class="ftr-leg-lbl"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>'+L(ll[0],ll[1])+'</div>'
       +'<div class="ftr-leg-wt"'+(isCrowd?' style="color:var(--amber,#fb923c)"':'')+'>wt '+(w).toFixed(2)+(absent?' · absent':isCrowd?' · PENALTY':(contrib>=0?(' · +'+(Math.abs(contrib)*100).toFixed(1)+'pts'):(' · '+(contrib>=0?'+':'')+((contrib)*100).toFixed(1)+'pts')))+'</div></div>'
       +'<div class="ftr-leg-bar"><div class="ftr-leg-bar-ctr"></div>'
       +(absent?'':'<div class="ftr-leg-fill '+barClass+'" style="width:'+barFillPct.toFixed(1)+'%"></div>')
       +'</div>'
       +'<div class="ftr-leg-val" style="color:'+valColor+'">'+(absent?L('no prior','无先验'):((v>=0&&!isCrowd?'+':'')+v.toFixed(3)))+'</div>'
-      +'<div class="ftr-leg-src">'+esc(ll[1])+'</div>'
+      +'<div class="ftr-leg-src">'+esc(ll[2])+'</div>'
       +'</div>';
   });
 
