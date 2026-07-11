@@ -40,5 +40,18 @@
     "repaired": 102,
     "nulled": 0,
     "mirrors": 80
+  },
+  "stock_quality": {
+    "applied": "2026-07-11T03:36:22.602260+00:00",
+    "rows_flagged": 5,
+    "tickers_flagged": 3,
+    "by_flag": {
+      "assets:flank_scale": 2,
+      "equity:flank_scale": 1,
+      "debt_lt:flank_scale": 2
+    },
+    "repaired": 5,
+    "nulled": 0,
+    "mirrors": 2
   }
 }
