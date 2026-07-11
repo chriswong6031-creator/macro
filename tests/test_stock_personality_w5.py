@@ -256,7 +256,7 @@ def test_world_state_sp_summary_present(tmp_path):
     """stock_personality_summary is a dict when aggregate is present."""
     agg = {
         "schema": "stock_personality.v1",
-        "as_of": "2026-07-06",
+        "as_of": _FRESH_ASOF,  # today — clock-independent vs the >2-trading-day gate
         "n_tickers": 5,
         "coverage": 0.9,
         "label_distributions": {
@@ -290,7 +290,7 @@ def test_world_state_sp_summary_keys(tmp_path):
     """Correct keys emitted when aggregate is present."""
     agg = {
         "schema": "stock_personality.v1",
-        "as_of": "2026-07-06",
+        "as_of": _FRESH_ASOF,  # today — clock-independent vs the >2-trading-day gate
         "n_tickers": 2,
         "coverage": 1.0,
         "label_distributions": {
@@ -314,7 +314,7 @@ def test_world_state_sp_summary_keys(tmp_path):
     assert expected_keys == set(result.keys())
     assert result["n_tinderbox"] == 1
     assert result["n_event_override"] == 1
-    assert result["as_of"] == "2026-07-06"
+    assert result["as_of"] == _FRESH_ASOF
 
 
 # ---------------------------------------------------------------------------
