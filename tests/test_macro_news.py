@@ -134,15 +134,28 @@ def test_stock_wire_qualitative_news_outranks_macro_prints():
         "url": "https://example.com/cpi",
     }]
     kept = mn.filter_headlines(arts, {"max_show": 5})
-    # After W1C fix 2, classify_theme runs first on the title.
-    # "Micron earnings ... profit growth accelerates" — "growth" keyword is in
-    # the growth bucket (earlier in MACRO_THEMES iteration than earnings), so
-    # classify_theme returns 'growth', which wins over the feed-declared 'earnings'.
-    # The important invariant is that the Micron item IS kept and MU IS detected.
+    # After W1C fix 2, classify_theme runs first on the title. The growth bucket
+    # deliberately carries NO bare "growth" token (only macro compounds like
+    # "gdp growth"), so "profit growth accelerates" does NOT hijack this
+    # earnings headline into the macro 'growth' theme — 'earnings' hits on the
+    # "earnings" keyword and must win.
     micron = next((h for h in kept if "MU" in h.get("tickers", [])), None)
     assert micron is not None, "Micron item should be kept regardless of theme"
-    assert micron["theme"] in ("earnings", "growth"), (
-        f"unexpected theme {micron['theme']!r}")
+    assert micron["theme"] == "earnings", (
+        f"earnings headline mislabeled as {micron['theme']!r} — bare 'growth' "
+        "keyword collision regressed (see MACRO_THEMES growth-bucket note)")
+
+
+def test_classify_theme_growth_vs_earnings_collision():
+    """Bare 'growth' was removed from the growth bucket: corporate growth
+    phrasings must classify 'earnings' (or fall to the declared theme), while
+    genuine macro-growth phrasings still classify 'growth'."""
+    assert mn.classify_theme("Micron profit growth accelerates on AI demand") == "earnings"
+    assert mn.classify_theme("Netflix subscriber revenue growth beats estimates") == "earnings"
+    # macro phrasings retained by the compound tokens
+    assert mn.classify_theme("China's GDP growth slows to 4.2%") == "growth"
+    assert mn.classify_theme("Global growth outlook dims, IMF warns") == "growth"
+    assert mn.classify_theme("US economy shows signs of slowdown") == "growth"
 
 
 def test_official_pages_drop_dateless_treasury_nav_chrome(monkeypatch):
@@ -250,57 +263,49 @@ def test_theme_fallback_to_declared_when_title_has_no_macro_keyword():
 # --------------------------------------------------------------------------- #
 # W1C fix 3: RSS encoding
 # --------------------------------------------------------------------------- #
-def test_parse_feed_preserves_utf8_curly_apostrophe():
-    """UTF-8 bytes with no charset header must round-trip without mangling.
-    (W1C fix 3: r.encoding patched to apparent_encoding before r.text access)"""
+def test_fetch_news_feeds_preserves_utf8_when_charset_header_missing(monkeypatch, tmp_path):
+    """END-TO-END pin of W1C fix 3: drive _fetch_news_feeds through a fake
+    requests.get whose response mirrors real requests semantics — UTF-8 bytes,
+    encoding=None (no charset header), .text decodes with ISO-8859-1 unless the
+    engine patches r.encoding first. Deleting the engine's encoding block makes
+    this test fail with a mangled title ('Europeâ€™s...')."""
     import requests
 
-    title_with_curly = "Europe’s economy faces headwinds"  # U+2019 = right single quotation
+    title_with_curly = "Europe’s economy faces headwinds"  # U+2019 right single quote
     rss_bytes = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<rss version="2.0"><channel>'
         f'<item><title>{title_with_curly}</title>'
         '<link>https://economist.com/x</link>'
-        '<pubDate>Thu, 10 Jul 2026 10:00:00 GMT</pubDate></item>'
+        '<pubDate>Thu, 09 Jul 2026 10:00:00 GMT</pubDate></item>'
         '</channel></rss>'
     ).encode("utf-8")
 
     class _Resp:
         status_code = 200
-        # Simulate a server that returns UTF-8 bytes but no charset in the header
-        encoding = None           # requests sets this from Content-Type header
         apparent_encoding = "utf-8"
+        headers = {}  # no Content-Type → no charset declared
+
+        def __init__(self):
+            self.encoding = None  # what requests sets when header lacks charset
 
         @property
         def text(self):
-            # If encoding is None, requests would use ISO-8859-1 and mangle UTF-8
-            enc = self.encoding or "iso-8859-1"
-            return rss_bytes.decode(enc)
+            # exact requests behavior: fall back to ISO-8859-1 when encoding unset
+            return rss_bytes.decode(self.encoding or "iso-8859-1")
 
-        def get(self, key, default=""):  # headers.get(...)
-            return default
-
-        @property
-        def headers(self):
-            return {}  # no Content-Type charset
-
-    # Simulate the encoding fix: before calling r.text, macro_news should patch
-    # r.encoding when it's None/iso-8859-1 and no charset in Content-Type.
-    resp = _Resp()
-    # Apply the same logic the fixed code uses:
-    _enc = (resp.encoding or "").lower()
-    if not _enc or _enc == "iso-8859-1":
-        _ct_hdr = ""  # no charset in headers
-        if "charset" not in _ct_hdr:
-            resp.encoding = resp.apparent_encoding or "utf-8"
-    xml_text = resp.text
-    items = mn._parse_feed(xml_text, {"url": "https://economist.com/rss.xml",
-                                       "theme": "macro", "source": "news_rss",
-                                       "source_tier": "tier1",
-                                       "name": "The Economist"})
-    assert len(items) == 1
-    assert items[0]["title"] == title_with_curly, (
-        f"UTF-8 curly apostrophe mangled: {items[0]['title']!r}")
+    monkeypatch.setattr(requests, "get", lambda url, **kw: _Resp())
+    cfg = {
+        "news_feeds": [{"name": "The Economist", "url": "https://economist.com/rss.xml",
+                        "domain": "economist.com", "theme": "macro",
+                        "source": "news_rss", "tier": "tier1"}],
+        "news_cache_dir": str(tmp_path),  # keep cache writes out of data/
+    }
+    articles, reason = mn._fetch_news_feeds(cfg, today=date(2026, 7, 10))
+    assert reason is None
+    assert len(articles) == 1
+    assert articles[0]["title"] == title_with_curly, (
+        f"UTF-8 curly apostrophe mangled: {articles[0]['title']!r}")
 
 
 # --------------------------------------------------------------------------- #

@@ -80,7 +80,12 @@ MACRO_THEMES: dict[str, list[str]] = {
     "labor":     ["jobs report", "payroll", "nonfarm", "unemployment", "labor market",
                   "jobless claims", "hiring", "layoff", "job openings", "jolts",
                   "employment cost", "eci", "wage growth", "initial claims"],
-    "growth":    ["gdp", "recession", "economy", "economic", "growth", "slowdown",
+    # NOTE: no bare "growth" token — it collides with earnings coverage
+    # ("revenue growth", "profit growth") now that classify_theme runs BEFORE
+    # the feed's declared theme. Macro growth phrasings are matched as compounds.
+    "growth":    ["gdp", "recession", "economy", "economic", "gdp growth",
+                  "global growth", "growth outlook", "growth forecast",
+                  "growth slows", "growth slowdown", "slowdown",
                   "manufacturing", "ism ", "pmi", "soft landing", "hard landing",
                   "contraction", "consumer spending", "retail sales", "durable goods",
                   "industrial production", "housing starts", "building permits",

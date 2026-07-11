@@ -219,6 +219,27 @@ def test_novelty_z_flat_nonzero_returns_zero():
     assert z is not None and z == 0.0, f"expected 0.0 for flat-nonzero match, got {z!r}"
 
 
+def test_novelty_z_drop_to_zero_on_flat_nonzero_baseline_returns_zero():
+    """Flat NONZERO window but today has NO items (attention dropped away):
+    mean>0 branch must return 0.0 — this is evidence of quiet, not absence of
+    evidence, so it must NOT become None (and must not hit the 3.0 spike branch).
+    (W1C fix 1 edge case: today=0, mean>0, sd=0)"""
+    from datetime import timedelta
+    asof = date(2026, 6, 1)
+    window = 7
+    rows = []
+    for delta in range(1, window + 1):
+        d = asof - timedelta(days=delta)
+        rows.append(_row(title=f"bbb {delta}", entities=["BBB"],
+                         seendate=f"{d.isoformat()}T00:00:00+00:00",
+                         _crawled_at=f"{d.isoformat()}T00:00:00+00:00",
+                         url=f"https://x.com/bbb-{delta}"))
+    # no rows for asof itself → today = 0 against a flat baseline of 1/day
+    df = _mk_df(rows)
+    z = qbus.novelty_z("BBB", asof, window_days=window, df=df)
+    assert z == 0.0, f"expected 0.0 for drop-to-zero on nonzero flat baseline, got {z!r}"
+
+
 def test_novelty_z_spike_over_zero_baseline_returns_3():
     """Subject with zero history but nonzero today → 3.0 (maximally novel).
     (W1C fix 1: today > mean in the flat branch)"""
