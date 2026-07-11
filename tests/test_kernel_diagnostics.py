@@ -122,19 +122,40 @@ def _make_root(
 # ---------------------------------------------------------------------------
 
 def _minimal_estimates(engine: str = "test_engine") -> list[dict]:
-    """Minimal kernel_estimates rows for a single engine."""
+    """Minimal kernel_estimates rows for a single engine (post-fix schema:
+    includes shrunken_ic_sd, armed_reason, regime_coverage)."""
     rows = []
     for h in (5, 10, 21):
         rows.append({
             "engine": engine, "regime": "__all__", "horizon": h,
             "n_raw": 10, "n_eff": 10, "mean_raw": 0.01 * h, "shrunken_ic": 0.005 * h,
+            "shrunken_ic_sd": 0.001 * h,
             "reliability": 0.5, "wilson_ci_low": None, "armed": True,
+            "armed_reason": "armed: pooled beat equal on held-out tail",
+            "regime_coverage": 0.0,
             "fill_basis_mode": "next_bar", "date_first": "2026-01-01", "date_last": "2026-06-30",
         })
         rows.append({
             "engine": engine, "regime": "__unstamped__", "horizon": h,
             "n_raw": 10, "n_eff": 10, "mean_raw": 0.01 * h, "shrunken_ic": 0.005 * h,
+            "shrunken_ic_sd": 0.001 * h,
             "reliability": 0.5, "wilson_ci_low": None, "armed": True,
+            "armed_reason": "armed: pooled beat equal on held-out tail",
+            "regime_coverage": 0.0,
+            "fill_basis_mode": "next_bar", "date_first": "2026-01-01", "date_last": "2026-06-30",
+        })
+    return rows
+
+
+def _legacy_estimates(engine: str = "legacy_engine") -> list[dict]:
+    """Pre-fix kernel_estimates rows (NO shrunken_ic_sd / armed_reason /
+    regime_coverage columns) — decay must fail-open to None on these."""
+    rows = []
+    for h in (5, 10):
+        rows.append({
+            "engine": engine, "regime": "__all__", "horizon": h,
+            "n_raw": 10, "n_eff": 10, "mean_raw": 0.01 * h, "shrunken_ic": 0.005 * h,
+            "reliability": 0.5, "wilson_ci_low": None, "armed": False,
             "fill_basis_mode": "next_bar", "date_first": "2026-01-01", "date_last": "2026-06-30",
         })
     return rows
@@ -374,6 +395,109 @@ class TestDecayEnvelope:
         r2 = build_families(root)
         assert r1["generated_from"] == r2["generated_from"]
         assert r1["families"] == r2["families"]
+
+
+class TestDecayHorizonDetail:
+    """horizon_detail — additive per-horizon {ic, n_eff, sd} sibling of horizon_curve."""
+
+    def test_horizon_detail_shape(self, tmp_path):
+        """horizon_detail carries {ic, n_eff, sd} per horizon; ic matches horizon_curve."""
+        root = _make_root(tmp_path, estimates_rows=_minimal_estimates())
+        result = build_families(root)
+        fam = result["families"]["test_engine"]
+        hc = fam["horizon_curve"]
+        hd = fam["horizon_detail"]
+        assert set(hd.keys()) == set(hc.keys()), "detail horizons must mirror curve horizons"
+        for h_key, point in hd.items():
+            assert set(point.keys()) == {"ic", "n_eff", "sd"}
+            assert point["ic"] == hc[h_key], f"h={h_key}: detail ic != curve ic"
+            assert point["n_eff"] == 10
+            assert abs(point["sd"] - 0.001 * int(h_key)) < 1e-9
+
+    def test_horizon_curve_shape_unchanged(self, tmp_path):
+        """Back-compat: horizon_curve stays flat {h: ic_float} (template reads it)."""
+        root = _make_root(tmp_path, estimates_rows=_minimal_estimates())
+        hc = build_families(root)["families"]["test_engine"]["horizon_curve"]
+        for v in hc.values():
+            assert v is None or isinstance(v, float), (
+                f"horizon_curve value must stay a bare float|None, got {type(v)}"
+            )
+
+    def test_horizon_detail_sd_none_on_legacy_parquet(self, tmp_path):
+        """Pre-fix parquet (no shrunken_ic_sd column) → sd=None, no crash."""
+        root = _make_root(tmp_path, estimates_rows=_legacy_estimates())
+        fam = build_families(root)["families"]["legacy_engine"]
+        for point in fam["horizon_detail"].values():
+            assert point["sd"] is None
+            assert point["n_eff"] == 10
+
+
+class TestDecayFamilyMetadata:
+    """outcome_unit + regime_coverage + armed_reason on the family record."""
+
+    def test_outcome_unit_track_record_magnitude(self, tmp_path):
+        """track_record outcome_excess is a favorable-excursion magnitude."""
+        root = _make_root(tmp_path, estimates_rows=_minimal_estimates("track_record"))
+        fam = build_families(root)["families"]["track_record"]
+        assert fam["outcome_unit"] == "magnitude_nonneg"
+
+    def test_outcome_unit_default_signed_excess(self, tmp_path):
+        root = _make_root(tmp_path, estimates_rows=_minimal_estimates("radar"))
+        fam = build_families(root)["families"]["radar"]
+        assert fam["outcome_unit"] == "signed_excess"
+
+    def test_regime_coverage_propagated(self, tmp_path):
+        rows = _minimal_estimates()
+        for r in rows:
+            r["regime_coverage"] = 0.25
+        root = _make_root(tmp_path, estimates_rows=rows)
+        fam = build_families(root)["families"]["test_engine"]
+        assert abs(fam["regime_coverage"] - 0.25) < 1e-9
+
+    def test_regime_coverage_none_on_legacy_parquet(self, tmp_path):
+        root = _make_root(tmp_path, estimates_rows=_legacy_estimates())
+        fam = build_families(root)["families"]["legacy_engine"]
+        assert fam["regime_coverage"] is None
+
+    def test_armed_reason_propagated(self, tmp_path):
+        """The arming reason must reach kernel_families.json (reason-drop fix)."""
+        root = _make_root(tmp_path, estimates_rows=_minimal_estimates())
+        fam = build_families(root)["families"]["test_engine"]
+        assert fam["armed_reason"] == "armed: pooled beat equal on held-out tail"
+        assert fam["armed_reason"].strip() != "", "armed_reason must never be empty"
+
+    def test_armed_reason_none_on_legacy_parquet(self, tmp_path):
+        root = _make_root(tmp_path, estimates_rows=_legacy_estimates())
+        fam = build_families(root)["families"]["legacy_engine"]
+        assert fam["armed_reason"] is None
+
+
+class TestDecayShortRecencyWindows:
+    """21d/63d trailing windows added to recency_trend."""
+
+    def test_short_windows_present(self, tmp_path):
+        root = _make_root(
+            tmp_path,
+            estimates_rows=_minimal_estimates(),
+            spine_rows=_minimal_spine(as_of="2026-06-30", n=5),
+        )
+        rt = build_families(root)["families"]["test_engine"]["recency_trend"]
+        for key in ("21d", "63d", "252d", "756d", "all"):
+            assert key in rt, f"missing window key: {key}"
+            assert set(rt[key].keys()) == {"n_eff", "mean", "wilson_ci_low"}
+
+    def test_21d_window_filters(self):
+        """21d window keeps only fires within the trailing 21 calendar days."""
+        today = "2026-07-04"
+        rows = pd.DataFrame([
+            {"symbol": "A", "as_of": "2026-06-30", "outcome_excess": 0.10, "direction": 1},
+            # 55 calendar days back: outside 21d, inside 63d
+            {"symbol": "B", "as_of": "2026-05-10", "outcome_excess": 0.05, "direction": 1},
+        ])
+        stats_21 = _window_stats("eng", rows, 21, today)
+        assert stats_21["n_eff"] == 1
+        stats_63 = _window_stats("eng", rows, 63, today)
+        assert stats_63["n_eff"] == 2
 
 
 # ---------------------------------------------------------------------------

@@ -61,7 +61,12 @@ CLASS-A: deep archive, ≥5 horizon points, any outcome_unit.
   Gate: Spearman(horizon, shrunken_ic) over __all__ marginal cells.
   If monotone-DECREASING (rho < 0 AND every step ≤ 0 within CI):
     fit y = A·exp(-h/τ) by WNLS on shrunken_ic; half_life = τ·ln2.
-  If flat or rising: half_life = None, reason = "edge_non_decaying".
+  If flat or rising: half_life = None, reason = "edge_non_decaying" — PLUS the
+    measured curve-shape facts (audit fix): trend='non_decaying',
+    ic_ratio_long_short = IC(longest h)/IC(shortest h), and fit_direction
+    ('rising'/'flat'/'non_monotone' from Spearman rho). A rising curve is a
+    useful fact, not a bare null: e.g. track_record shrunken_ic RISES 5d
+    0.0487 → 126d 0.1578 (ratio ≈ 3.24x).
 
 CLASS-B: < 3 admissible graded horizons → half_life = None always.
 
@@ -90,8 +95,11 @@ OUTPUT ARTIFACT: data/neuralweb/half_life.json
       "ci_basis": "raw_mean_proxy"|null,  # proxy nature explicit; null when CI not computed
       "n_eff": int,
       "n_horizons": int,
-      "reason_null": str|null,
-      "fit_rho": float|null
+      "reason_null": str|null,        # ALWAYS a non-empty string on null entries
+      "fit_rho": float|null,
+      "trend": "non_decaying"|"decaying"|null,   # curve-shape fact (see below)
+      "ic_ratio_long_short": float|null,  # IC(longest h)/IC(shortest h), short IC>0 only
+      "fit_direction": "rising"|"flat"|"non_monotone"|"falling"|null
     },
     ...
     "status": "fit_ran"|"fit_failed",   # sentinel key — present in every write
@@ -261,7 +269,12 @@ def _null_entry(
     n_horizons: int = 0,
     outcome_unit: str | None = None,
 ) -> dict[str, Any]:
-    """Return a null (unmeasured) entry with all required schema keys."""
+    """Return a null (unmeasured) entry with all required schema keys.
+
+    reason is coerced to a NON-EMPTY string: an honest null must always say
+    why (empty reason strings render as 'unknown' on the committee chip and
+    were flagged by the audit critic — never emit them).
+    """
     return {
         "decay_kind": None,
         "outcome_unit": outcome_unit or _outcome_unit_for(engine_key),
@@ -271,8 +284,13 @@ def _null_entry(
         "ci_basis": None,
         "n_eff": int(n_eff),
         "n_horizons": int(n_horizons),
-        "reason_null": str(reason),
+        "reason_null": str(reason).strip() or "unspecified",
         "fit_rho": None,
+        # Curve-shape facts (filled for edge_non_decaying + measured entries;
+        # honest None elsewhere — see _estimate_family).
+        "trend": None,
+        "ic_ratio_long_short": None,
+        "fit_direction": None,
     }
 
 
@@ -540,10 +558,26 @@ def _estimate_family(
     ic_sorted = [x[1] for x in admissible_sorted]
     w_sorted = [x[2] for x in admissible_sorted]
 
+    # Long/short IC ratio (longest admissible horizon / shortest): the useful
+    # curve-shape fact for both rising and decaying families. Only meaningful
+    # when the short-horizon IC is positive (a sign flip or zero denominator
+    # makes the ratio uninterpretable → None).
+    ic_ratio: float | None = None
+    if (
+        math.isfinite(ic_sorted[0]) and math.isfinite(ic_sorted[-1])
+        and ic_sorted[0] > 0
+    ):
+        ic_ratio = round(ic_sorted[-1] / ic_sorted[0], 4)
+
     # Pre-registered monotone-decrease gate
     is_dec, rho = _monotone_decrease_gate(h_sorted, ic_sorted)
 
     if not is_dec:
+        # AUDIT FIX: a rising curve is a measured FACT, not a bare null.
+        # half_life stays None (the fit is ill-posed on a rising curve) but the
+        # trend, the long/short IC ratio, and the fitted direction are emitted
+        # so displays can say "edge grows with horizon (126d/5d = 3.2x)"
+        # instead of only "unmeasured".
         entry = _null_entry(
             engine_key,
             reason="edge_non_decaying",
@@ -552,6 +586,15 @@ def _estimate_family(
             outcome_unit=outcome_unit,
         )
         entry["fit_rho"] = float(rho) if math.isfinite(rho) else None
+        entry["trend"] = "non_decaying"
+        entry["ic_ratio_long_short"] = ic_ratio
+        if math.isfinite(rho):
+            if rho > 0:
+                entry["fit_direction"] = "rising"
+            elif rho < 0:
+                entry["fit_direction"] = "non_monotone"  # rho<0 but a step rose
+            else:
+                entry["fit_direction"] = "flat"
         return entry
 
     # CLASS-A: gate passed → attempt WNLS fit
@@ -609,12 +652,19 @@ def _estimate_family(
         ci_high_final = None
         ci_basis_final = None
         reason = unstable_reason
+        # Honest null: no curve-shape claims on an unstable fit.
+        trend = None
+        fit_direction = None
+        ratio_out = None
     else:
         half_life_val_final = round(half_life_val, 2)
         ci_low_final = round(ci_lo, 2)
         ci_high_final = round(ci_hi, 2)
         ci_basis_final = "raw_mean_proxy"
         reason = None
+        trend = "decaying"
+        fit_direction = "falling"
+        ratio_out = ic_ratio
 
     return {
         "decay_kind": "horizon",
@@ -627,6 +677,9 @@ def _estimate_family(
         "n_horizons": int(n_horizons),
         "reason_null": reason,
         "fit_rho": float(rho) if math.isfinite(rho) else None,
+        "trend": trend,
+        "ic_ratio_long_short": ratio_out,
+        "fit_direction": fit_direction,
     }
 
 

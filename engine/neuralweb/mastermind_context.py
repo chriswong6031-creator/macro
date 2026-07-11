@@ -59,7 +59,7 @@ import json
 import logging
 import math
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -72,6 +72,25 @@ log = logging.getLogger(__name__)
 SCHEMA = "neural_web_mastermind_context.v1"
 ARTIFACT_ID = "neuralweb-mastermind-context"
 SITE_ARTIFACT_ID = "site-neuralweb-mastermind-context"
+
+# NW→dashboards export lane: compact site-wide macro header feed (~2KB).
+# Mirrors Mastermind's brain/neural_web_context.py market_plane() shape,
+# extended with liquidity_plumbing + cortex run-status blocks.
+# COMMIT PATH (RUL-P10): data/neuralweb/market_plane.json (canonical) +
+# site/neuralwebdata/market_plane.json (public twin) — both git-committed,
+# same as siblings. Designed consumer: Terminal top bar + committee hero
+# strip (display-only; nothing here may rank, gate, escalate, or size).
+MARKET_PLANE_SCHEMA = "neuralweb.market_plane.v1"
+MARKET_PLANE_ARTIFACT_ID = "neuralweb-market-plane"
+
+# Lobes whose as_of tracks MARKET DATA dates (nightly market artifacts), as
+# opposed to governance/deliberation cadences (reliability = quarterly kernel
+# batches, cortex = LLM memo, claim_reliability = accruing ledger grades).
+# freshest_market_asof = max over these; the conservative min() as_of
+# semantics are deliberately unchanged (ruling §3.3).
+_MARKET_DATA_LOBES: tuple[str, ...] = (
+    "market", "contradictions", "bottom_sensors", "options_entry", "macro_weather",
+)
 
 # Hard row cap for candidate_context (ruling §3.1)
 CANDIDATE_ROW_CAP = 250
@@ -158,13 +177,33 @@ def _asof_of(obj: dict | None) -> str | None:
     return None
 
 
-def _is_stale(asof_str: str | None, sla_hours: float = LOBE_FRESHNESS_SLA_HOURS) -> bool:
+def _is_stale(
+    asof_str: str | None,
+    sla_hours: float = LOBE_FRESHNESS_SLA_HOURS,
+    now: datetime | None = None,
+) -> bool:
+    """Weekend-aware staleness: age is measured in TRADING time.
+
+    Markets don't print new data over the weekend, so a Friday as_of is the
+    freshest possible market data all of Saturday/Sunday. Simple weekday-aware
+    allowance: when as_of falls on Fri/Sat/Sun, the SLA clock starts on the
+    following Monday ("as_of Friday → allow until Monday + SLA"). Weekday
+    as_of behaviour is unchanged.
+
+    `now` is injectable for test determinism; defaults to UTC now.
+    """
     if not asof_str:
         return True
     try:
         asof_date = datetime.fromisoformat(asof_str[:10])
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        age_hours = (now - asof_date).total_seconds() / 3600
+        # Fri(4)/Sat(5)/Sun(6) → advance the SLA base to the following Monday.
+        wd = asof_date.weekday()
+        if wd >= 4:
+            asof_date = asof_date + timedelta(days=7 - wd)
+        if now is None:
+            now = datetime.now(timezone.utc)
+        now_naive = now.replace(tzinfo=None) if now.tzinfo is not None else now
+        age_hours = (now_naive - asof_date).total_seconds() / 3600
         return age_hours > sla_hours
     except Exception:  # noqa: BLE001
         return True
@@ -264,7 +303,10 @@ def _summarize_market(repo: Path) -> tuple[dict, str | None]:
         return {}, "world_state.json absent or unreadable"
     # Distill the required sub-blocks
     lobe: dict = {}
+    # liquidity_plumbing: RRP/TGA/netliq quality numbers so bot/ask surfaces
+    # can cite them (already display-only labels upstream — no recompute here).
     for key in ("verdict", "radar", "vol", "breadth", "rotation", "liquidity",
+                "liquidity_plumbing",
                 "alerts", "data_health", "contradictions", "live_overlay", "sources"):
         v = ws.get(key)
         if v is not None:
@@ -1477,10 +1519,25 @@ def build_context(
     ]
     _data_asof: str = min(_lobe_asofs) if _lobe_asofs else now.strftime("%Y-%m-%d")
 
+    # Companion freshness stamp: max over MARKET-DATA lobes only (see
+    # _MARKET_DATA_LOBES). The conservative min() as_of above is unchanged
+    # (ruling §3.3) — freshest_market_asof exists so consumers can show
+    # "market data through <date>" without a quarterly kernel batch or an
+    # old cortex memo dragging the visible date backwards.
+    _mkt_asofs = [
+        freshness[name]["as_of"][:10]
+        for name in _MARKET_DATA_LOBES
+        if isinstance(freshness.get(name), dict)
+        and isinstance(freshness[name].get("as_of"), str)
+        and freshness[name]["as_of"]
+    ]
+    _freshest_market_asof: str | None = max(_mkt_asofs) if _mkt_asofs else None
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict = {
         "schema": SCHEMA,
         "as_of": _data_asof,
+        "freshest_market_asof": _freshest_market_asof,
         "generated_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "is_context_only": True,
         "authority": {
@@ -1579,5 +1636,228 @@ def build_and_write(
     import shutil  # noqa: PLC0415
     shutil.copy2(canonical, site_copy)
     log.info("mastermind_context: written site copy → %s", site_copy)
+
+    # NW→dashboards export lane: market_plane.json (site-wide macro header
+    # feed). Fail-open — a plane failure must never block the main context
+    # write. Paths derive from `repo`, so test isolation via root=tmp_path
+    # keeps the plane inside the tmp tree as well.
+    try:
+        build_and_write_market_plane(root=repo, now=now)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("mastermind_context: market_plane build failed (non-fatal) — %s", exc)
+
+    return stamped
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# market_plane.json — NW→dashboards export lane
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _plane_liquidity_block(repo: Path, gaps: list[str]) -> dict:
+    """Distill the liquidity_plumbing block for the market plane.
+
+    Primary source: data/neuralweb/liquidity_plumbing.json (nested schema).
+    Fallback: world_state.json's embedded liquidity_plumbing block (flat keys).
+    Fail-open: all-null block + gaps[] entry when both are absent.
+    """
+    nulls = {
+        "state": None,
+        "netliq_bn": None,
+        "netliq_d20_bn": None,
+        "rrp_buffer_state": None,
+        "tga_bn": None,
+        "entry_effect": None,
+    }
+    lp = _read_json(repo / "data" / "neuralweb" / "liquidity_plumbing.json")
+    if isinstance(lp, dict):
+        return {
+            "state": (lp.get("headline") or {}).get("state"),
+            "netliq_bn": (lp.get("quantity") or {}).get("netliq_bn"),
+            "netliq_d20_bn": (lp.get("quantity") or {}).get("netliq_chg_20d_bn"),
+            "rrp_buffer_state": (lp.get("rrp") or {}).get("buffer_state"),
+            "tga_bn": (lp.get("treasury") or {}).get("tga_bn"),
+            "entry_effect": lp.get("entry_effect"),
+        }
+    ws = _read_json(repo / "data" / "neuralweb" / "world_state.json")
+    ws_lp = (ws or {}).get("liquidity_plumbing")
+    if isinstance(ws_lp, dict) and ws_lp.get("available"):
+        gaps.append(
+            "liquidity_plumbing: liquidity_plumbing.json absent — "
+            "fell back to world_state embedded block"
+        )
+        return {
+            "state": ws_lp.get("state"),
+            "netliq_bn": ws_lp.get("netliq_bn"),
+            "netliq_d20_bn": ws_lp.get("netliq_chg_20d_bn"),
+            "rrp_buffer_state": ws_lp.get("rrp_buffer_state"),
+            "tga_bn": ws_lp.get("tga_bn"),
+            "entry_effect": _sparse({
+                "direction": ws_lp.get("entry_effect_direction"),
+                "quality": ws_lp.get("entry_effect_quality"),
+                "measured_basis": ws_lp.get("entry_effect_basis"),
+                "use": ws_lp.get("entry_effect_use"),
+            }) or None,
+        }
+    gaps.append("liquidity_plumbing: liquidity_plumbing.json absent or unreadable")
+    return nulls
+
+
+def build_market_plane(
+    root: Path | str | None = None,
+    now: datetime | None = None,
+) -> dict:
+    """Assemble the ~2KB market_plane payload (unstamped).
+
+    Site-wide macro header feed for the Terminal top bar + committee hero
+    strip. Mirrors Mastermind's brain/neural_web_context.py market_plane()
+    shape, sourced from artifacts the bridge compiler already loads:
+    world_state.json, liquidity_plumbing.json, confluence_graph.json
+    (contradiction_summary), cortex/memo.json (run_status).
+
+    DISPLAY-ONLY: every field is context; is_context_only=True and no
+    authority boolean is ever emitted true. Fail-open: each missing input
+    produces nulls for its block plus a gaps[] entry — never an exception.
+    """
+    repo = _repo_root(root)
+    now = now or datetime.now(timezone.utc)
+    gaps: list[str] = []
+
+    # ── world_state blocks (verdict / regime / vol / breadth) ────────────────
+    ws = _read_json(repo / "data" / "neuralweb" / "world_state.json")
+    if not isinstance(ws, dict):
+        ws = {}
+        gaps.append("world_state: data/neuralweb/world_state.json absent or unreadable")
+
+    verdict_raw = ws.get("verdict") or {}
+    verdict = {
+        "verdict": verdict_raw.get("verdict"),
+        "score": verdict_raw.get("score"),
+        "label_en": verdict_raw.get("label_en"),
+        "label_zh": verdict_raw.get("label_zh"),
+    }
+
+    regime_raw = ws.get("regime") or {}
+    regime = {
+        "quad": regime_raw.get("quad"),
+        "quad_name": regime_raw.get("quad_name"),
+        "confidence": regime_raw.get("confidence"),
+        "cycle_tag": regime_raw.get("cycle_tag"),
+        "transition_state": regime_raw.get("transition_state"),
+        "flip_margin": regime_raw.get("flip_margin"),
+        "liquidity_overlay": regime_raw.get("liquidity_overlay"),
+    }
+
+    vol_raw = ws.get("vol") or {}
+    vol = {
+        "regime": vol_raw.get("regime"),
+        "risk_score": vol_raw.get("risk_score"),
+    }
+
+    breadth = ws.get("breadth") if isinstance(ws.get("breadth"), dict) else None
+    if ws and breadth is None:
+        gaps.append("breadth: world_state.breadth absent")
+
+    # ── liquidity plumbing ───────────────────────────────────────────────────
+    liquidity_plumbing = _plane_liquidity_block(repo, gaps)
+
+    # ── contradiction count (confluence_graph contradiction_summary) ─────────
+    contradiction_count: int | None = None
+    cg = _read_json(repo / "data" / "neuralweb" / "confluence_graph.json")
+    if isinstance(cg, dict):
+        summary = cg.get("contradiction_summary") or {}
+        n = summary.get("n")
+        if isinstance(n, int):
+            contradiction_count = n
+        else:
+            recs = cg.get("contradiction_records")
+            contradiction_count = len(recs) if isinstance(recs, list) else None
+    else:
+        gaps.append("contradictions: confluence_graph.json absent or unreadable")
+
+    # ── cortex run status ─────────────────────────────────────────────────────
+    cortex = {"status": None, "degradation_reason": None}
+    memo = _read_json(repo / "data" / "neuralweb" / "cortex" / "memo.json")
+    if isinstance(memo, dict):
+        rs = memo.get("run_status")
+        if isinstance(rs, dict):
+            cortex = {
+                "status": rs.get("status"),
+                "degradation_reason": rs.get("degradation_reason"),
+            }
+        else:
+            gaps.append("cortex: memo.json has no run_status block")
+    else:
+        gaps.append("cortex: cortex/memo.json absent or unreadable")
+
+    # ── asof + weekend-aware staleness ────────────────────────────────────────
+    asof = _asof_of(ws) or verdict_raw.get("asof") or None
+    stale = _is_stale(asof, now=now)
+
+    return {
+        "schema": MARKET_PLANE_SCHEMA,
+        "asof": asof,
+        "is_context_only": True,
+        "verdict": verdict,
+        "regime": regime,
+        "vol": vol,
+        "breadth": breadth,
+        "liquidity_plumbing": liquidity_plumbing,
+        "contradiction_count": contradiction_count,
+        "cortex": cortex,
+        "stale": stale,
+        "gaps": gaps,
+    }
+
+
+def build_and_write_market_plane(
+    root: Path | str | None = None,
+    now: datetime | None = None,
+    out_canonical: Path | None = None,
+    out_site: Path | None = None,
+) -> dict:
+    """Build market_plane, stamp envelope, dual-write, return stamped payload.
+
+    Writes (same dual-write pattern as mastermind_context — RUL-P10 commit path):
+    - data/neuralweb/market_plane.json  (canonical, git-committed)
+    - site/neuralwebdata/market_plane.json  (public copy, byte-identical)
+    """
+    repo = _repo_root(root)
+    now = now or datetime.now(timezone.utc)
+
+    payload = build_market_plane(root=repo, now=now)
+
+    # Envelope stamp (in-place sibling keys, never a wrapper). Registration of
+    # MARKET_PLANE_ARTIFACT_ID in config/synapse.yml is owned by a later stage;
+    # until it lands, stamp via an inline one-entry registry so the artifact
+    # still carries all five envelope keys from day one.
+    try:
+        from engine.neuralweb.envelope import stamp  # noqa: PLC0415
+        registry: dict
+        try:
+            from engine.neuralweb.synapse import load_registry  # noqa: PLC0415
+            registry = load_registry(repo)
+        except Exception:  # noqa: BLE001
+            registry = {"artifacts": {}}
+        if MARKET_PLANE_ARTIFACT_ID not in (registry.get("artifacts") or {}):
+            registry = {"artifacts": {MARKET_PLANE_ARTIFACT_ID: {
+                "producer": "engine/neuralweb/mastermind_context.py",
+                "tier": "display",
+            }}}
+        stamped = stamp(payload, artifact_id=MARKET_PLANE_ARTIFACT_ID,
+                        registry=registry, now=now)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("market_plane: envelope stamp failed — %s; writing unstamped", exc)
+        stamped = payload
+
+    canonical = out_canonical or (repo / "data" / "neuralweb" / "market_plane.json")
+    site_copy = out_site or (repo / "site" / "neuralwebdata" / "market_plane.json")
+
+    _write_json_bytes(canonical, stamped)
+    log.info("market_plane: written canonical → %s", canonical)
+
+    site_copy.parent.mkdir(parents=True, exist_ok=True)
+    import shutil  # noqa: PLC0415
+    shutil.copy2(canonical, site_copy)
+    log.info("market_plane: written site copy → %s", site_copy)
 
     return stamped

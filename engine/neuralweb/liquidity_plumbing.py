@@ -6,8 +6,17 @@ score/rank, or fires a hard gate. The ONLY entry-tailwind reference is the
 already-measured cycle-ladder 21d nudge (engine/cycles.py stays untouched).
 
 Phase 0+1: quantity + quality + RRP + TGA + auctions + fed-stance context.
-Phase 3: funding spreads (effr/sofr minus IORB, SRF, DW) — ALL null here.
+Phase 3 (funding): EFFR/SOFR/SOFR-99pctl minus IORB spreads INTEGRATED
+  (level + 20d delta + expanding percentile + descriptive
+  reserve_scarcity_state). SRF take-up and discount-window primary credit
+  stay null — no collector for them yet (gaps[] entry).
+Phase 3 (reserves): fed.reserve_balances_bn from data/fred/WRESBAL.parquet
+  (fail-open: null + gaps[] entry until the collector has run once).
 Phase 5: H.4.1 swap lines + FIMA — ALL null here.
+
+Components readout: per-component {level_bn, d20_bn, d65_bn, pctile} for
+walcl/rrp/tga (+reserves when present) plus a 90-calendar-day netliq
+sparkline — display-only, derived from fed_net_liquidity.parquet.
 
 House-law constraints (non-negotiable, CI-enforced):
 - tier = shadow, weights = none
@@ -16,14 +25,17 @@ House-law constraints (non-negotiable, CI-enforced):
 - Fed/Treasury "condition/steer" liquidity, NOT "control markets"
 - Swap-line usage = stress backstop, NOT clean risk-on
 
-Data sources (Phase 1 — existing only):
+Data sources (existing only — no new collectors):
   quantity  : data/macro/fed_net_liquidity.parquet (daily, cols: netliq_bn etc.)
-  quality   : data/regime/latest.json :: liquidity_quality
+  quality   : data/regime/latest.json :: liquidity_quality (incl. stress_overlay)
   overlay   : data/regime/latest.json :: liquidity_overlay
   fed stance: data/regime/latest.json :: fed_stance
   conditions: data/regime/latest.json :: conditions
   treasury  : data/treasury/net_issuance.parquet, data/treasury/tga.parquet
   auctions  : data/treasury_auctions/auctions.parquet
+  funding   : data/nyfed/effr.parquet, data/fred/IORB.parquet,
+              data/fred/SOFR.parquet, data/ofr/FNYR-SOFR_99Pctl-A.parquet
+  reserves  : data/fred/WRESBAL.parquet (fail-open until first collect)
 
 Public API:
   compute(regime_latest, netliq_frame, treasury_frames, auction_snapshot, config) -> dict
@@ -61,9 +73,129 @@ _AUTHORITY = {
     "hard_gate": False,
 }
 
+# Integration status per phase — additive minor field (schema stays v1).
+_PHASE_STATUS = {
+    "p0_p1_quantity_quality": "integrated",
+    "p3_funding_spreads": "integrated",
+    "p3_srf_discount_window": "pending_collection",
+    "p3_reserve_balances": "fail_open_until_wresbal_collected",
+    "p5_swap_fima": "pending",
+}
+
 # 20-trading-day and 65-trading-day lookback windows (business-daily index)
 _D20_ROWS = 20
 _D65_ROWS = 65
+
+# Sparkline window — calendar days of netliq_bn tail for display
+_SPARKLINE_CAL_DAYS = 90
+
+# Reserve-scarcity descriptive thresholds (basis points vs IORB).
+# Descriptive vocabulary only — comfortable / normalizing / tightening /
+# scarce / unknown. Never a command, never a gate.
+#   EFFR at/above IORB (Sep-2019 signature)            → scarce
+#   SOFR ≥ +10bp over IORB (repo squeeze)               → scarce
+#   both EFFR and SOFR within 5bp below IORB            → tightening
+#   EFFR within 5bp of IORB, or spreads drifting up
+#   ≥ +2bp over 20 business days                        → normalizing
+#   otherwise (spreads comfortably below IORB, flat)    → comfortable
+_SCARCE_EFFR_BP = 0.0
+_SCARCE_SOFR_BP = 10.0
+_NEAR_IORB_BP = -5.0
+_DRIFT_D20_BP = 2.0
+
+
+# ---------------------------------------------------------------------------
+# Series / spread helpers (module-level so tests can target them directly)
+# ---------------------------------------------------------------------------
+
+def _to_series(frame: pd.DataFrame | None) -> pd.Series | None:
+    """First column of a single-column parquet frame as a sorted, datetime-indexed
+    Series (accepts either a datetime index or a 'date' column). None-safe."""
+    if frame is None or getattr(frame, "empty", True):
+        return None
+    try:
+        df = frame.copy()
+        if "date" in df.columns:
+            df = df.set_index("date")
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        s = df[df.columns[0]].dropna()
+        return s if not s.empty else None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("liquidity_plumbing._to_series: unreadable frame — %s", exc)
+        return None
+
+
+def _spread_bp(rate: pd.Series | None, anchor: pd.Series | None) -> pd.Series | None:
+    """(rate − anchor) × 100 in basis points, on intersecting dates only."""
+    if rate is None or anchor is None:
+        return None
+    sp = ((rate - anchor) * 100.0).dropna()
+    return sp if not sp.empty else None
+
+
+def _level_d20_pctile(
+    series: pd.Series | None, ndigits: int = 2
+) -> tuple[float | None, float | None, float | None]:
+    """(latest level, 20-row delta, expanding percentile of the latest level).
+
+    Percentile = share of the full history ≤ the latest value (same expanding
+    convention as netliq_pctile_expanding). Any missing piece → None.
+    """
+    if series is None or series.empty:
+        return None, None, None
+    level = float(round(series.iloc[-1], ndigits))
+    d20: float | None = None
+    if len(series) > _D20_ROWS:
+        d20 = float(round(series.iloc[-1] - series.iloc[-_D20_ROWS - 1], ndigits))
+    pctile = float(round((series <= series.iloc[-1]).mean(), 4))
+    return level, d20, pctile
+
+
+def _component_stats(series: pd.Series | None, ndigits: int = 1) -> dict[str, Any]:
+    """Per-component display stats: {level_bn, d20_bn, d65_bn, pctile}."""
+    out: dict[str, Any] = {"level_bn": None, "d20_bn": None, "d65_bn": None, "pctile": None}
+    if series is None or series.empty:
+        return out
+    level, d20, pctile = _level_d20_pctile(series, ndigits=ndigits)
+    out["level_bn"] = level
+    out["d20_bn"] = d20
+    out["pctile"] = pctile
+    if len(series) > _D65_ROWS:
+        out["d65_bn"] = float(round(series.iloc[-1] - series.iloc[-_D65_ROWS - 1], ndigits))
+    return out
+
+
+def _derive_reserve_scarcity_state(
+    effr_bp: float | None,
+    sofr_bp: float | None,
+    effr_d20_bp: float | None,
+    sofr_d20_bp: float | None,
+) -> str:
+    """Descriptive reserve-scarcity read from IORB spreads (see threshold table).
+
+    Vocabulary is frozen and descriptive-only: comfortable | normalizing |
+    tightening | scarce | unknown. This never gates, sizes, or escalates.
+    """
+    if effr_bp is None and sofr_bp is None:
+        return "unknown"
+    if (effr_bp is not None and effr_bp >= _SCARCE_EFFR_BP) or (
+        sofr_bp is not None and sofr_bp >= _SCARCE_SOFR_BP
+    ):
+        return "scarce"
+    if (
+        effr_bp is not None
+        and effr_bp >= _NEAR_IORB_BP
+        and sofr_bp is not None
+        and sofr_bp >= _NEAR_IORB_BP
+    ):
+        return "tightening"
+    drifting_up = any(
+        d is not None and d >= _DRIFT_D20_BP for d in (effr_d20_bp, sofr_d20_bp)
+    )
+    if (effr_bp is not None and effr_bp >= _NEAR_IORB_BP) or drifting_up:
+        return "normalizing"
+    return "comfortable"
 
 # ---------------------------------------------------------------------------
 # Headline state derivation table (contract §headline.state)
@@ -162,6 +294,8 @@ def compute(
     treasury_frames: dict,
     auction_snapshot: pd.DataFrame | None,
     config: dict | None = None,
+    funding_frames: dict | None = None,
+    reserves_frame: pd.DataFrame | None = None,
 ) -> dict:
     """Pure compute — derives the full lobe payload from pre-loaded inputs.
 
@@ -178,7 +312,17 @@ def compute(
     auction_snapshot:
         DataFrame from data/treasury_auctions/auctions.parquet (may be None).
     config:
-        Optional config overrides (currently unused; placeholder for Phase 3).
+        Optional config overrides (currently unused).
+    funding_frames:
+        Optional dict of single-column rate frames (Phase 3 spreads), keys:
+        "effr" (data/nyfed/effr.parquet), "iorb" (data/fred/IORB.parquet),
+        "sofr" (data/fred/SOFR.parquet),
+        "sofr_p99" (data/ofr/FNYR-SOFR_99Pctl-A.parquet). Any may be None —
+        the affected spread nulls out with a gaps[] entry.
+    reserves_frame:
+        Optional DataFrame from data/fred/WRESBAL.parquet (H.4.1 reserve
+        balances, $bn weekly). None → fed.reserve_balances_bn stays null
+        with a gaps[] entry.
 
     Returns
     -------
@@ -236,11 +380,26 @@ def compute(
     regime_degraded: bool = bool(lq.get("degraded", False)) if lq else True
     lq_asof: str | None = lq.get("asof")
 
+    # Carry the regime stress overlay through instead of dropping it (the
+    # engine/regime.liquidity_quality co-check: HY-OAS level/z + NFCI trend).
+    stress_overlay_out: dict[str, Any] = {
+        "hy_oas_pct": None,
+        "hy_oas_z": None,
+        "nfci": None,
+        "nfci_trend": None,
+        "confirming_stress": quality_stress_confirming,
+    }
+    if isinstance(_so, dict):
+        for k in ("hy_oas_pct", "hy_oas_z", "nfci", "nfci_trend"):
+            stress_overlay_out[k] = _so.get(k)
+
     quality_block: dict[str, Any] = {
         "label": quality_label,
         "fed_share": quality_fed_share,
         "mechanical": quality_mechanical,
         "stress_confirming": quality_stress_confirming,
+        "stress_overlay": stress_overlay_out,
+        "walcl_stale_days": lq.get("walcl_stale_days") if lq else None,
     }
 
     # ------------------------------------------------------------------
@@ -343,10 +502,27 @@ def compute(
     policy_stance: str | None = fed_stance.get("stance")
     administered_rate_posture: str | None = fed_stance.get("guidance")
 
+    # Reserve balances (WRESBAL, $bn weekly). Fail-open: the parquet only
+    # exists once the FRED collector has run with WRESBAL in its series list.
+    reserve_balances_bn: float | None = None
+    reserves_series_bn = _to_series(reserves_frame)
+    if reserves_series_bn is None:
+        gaps.append(
+            "data/fred/WRESBAL.parquet missing or empty — reserve_balances_bn "
+            "unavailable until the next FRED collect"
+        )
+    else:
+        # WRESBAL is published in $bn; guard against a millions-denominated
+        # store (WALCL is stored in millions) — reserves have never exceeded
+        # $50tn, so >50,000 can only be millions.
+        if float(reserves_series_bn.iloc[-1]) > 50_000:
+            reserves_series_bn = reserves_series_bn / 1000.0
+        reserve_balances_bn = float(round(reserves_series_bn.iloc[-1], 3))
+
     fed_block: dict[str, Any] = {
         "assets_bn": assets_bn,
         "assets_chg_20d_bn": assets_chg_20d_bn,
-        "reserve_balances_bn": None,  # H.4.1 reserve balance component — Phase 3
+        "reserve_balances_bn": reserve_balances_bn,
         "walcl_stale_days": walcl_stale_days,
         "policy_stance": policy_stance,
         "administered_rate_posture": administered_rate_posture,
@@ -461,16 +637,110 @@ def compute(
     }
 
     # ------------------------------------------------------------------
-    # 7. Funding block (Phase 3 — ALL null)
+    # 7. Funding block (Phase 3 — IORB spreads integrated; SRF/DW pending)
     # ------------------------------------------------------------------
-    gaps.append("funding scarcity spreads not integrated (Phase 3)")
+    ff = funding_frames if isinstance(funding_frames, dict) else {}
+    rate_effr = _to_series(ff.get("effr"))
+    rate_iorb = _to_series(ff.get("iorb"))
+    rate_sofr = _to_series(ff.get("sofr"))
+    rate_sofr_p99 = _to_series(ff.get("sofr_p99"))
+
+    if rate_iorb is None:
+        gaps.append(
+            "data/fred/IORB.parquet missing or empty — all IORB funding "
+            "spreads unavailable"
+        )
+    else:
+        _missing_rates = {
+            "effr": (rate_effr, "data/nyfed/effr.parquet"),
+            "sofr": (rate_sofr, "data/fred/SOFR.parquet"),
+            "sofr_p99": (rate_sofr_p99, "data/ofr/FNYR-SOFR_99Pctl-A.parquet"),
+        }
+        for name, (series, path_str) in _missing_rates.items():
+            if series is None:
+                gaps.append(
+                    f"{path_str} missing or empty — {name}-minus-IORB spread unavailable"
+                )
+
+    effr_sp = _spread_bp(rate_effr, rate_iorb)
+    sofr_sp = _spread_bp(rate_sofr, rate_iorb)
+    sofr_p99_sp = _spread_bp(rate_sofr_p99, rate_iorb)
+
+    effr_bp, effr_d20_bp, effr_pctile = _level_d20_pctile(effr_sp)
+    sofr_bp, sofr_d20_bp, sofr_pctile = _level_d20_pctile(sofr_sp)
+    sofr_p99_bp, sofr_p99_d20_bp, sofr_p99_pctile = _level_d20_pctile(sofr_p99_sp)
+
+    funding_asof: str | None = None
+    _spread_last_dates = [
+        sp.index[-1] for sp in (effr_sp, sofr_sp, sofr_p99_sp) if sp is not None
+    ]
+    if _spread_last_dates:
+        funding_asof = str(max(_spread_last_dates).date())
+
+    # SRF take-up + discount-window primary credit need a NEW collection —
+    # deliberately not added here; stay null with an honest gap.
+    gaps.append(
+        "SRF take-up and discount-window primary credit not collected yet — "
+        "srf_takeup_bn / discount_window_primary_credit_bn stay null"
+    )
+
     funding_block: dict[str, Any] = {
-        "effr_minus_iorb_bp": None,
-        "sofr_minus_iorb_bp": None,
+        "effr_minus_iorb_bp": effr_bp,
+        "effr_minus_iorb_d20_bp": effr_d20_bp,
+        "effr_minus_iorb_pctile": effr_pctile,
+        "sofr_minus_iorb_bp": sofr_bp,
+        "sofr_minus_iorb_d20_bp": sofr_d20_bp,
+        "sofr_minus_iorb_pctile": sofr_pctile,
+        "sofr_99pctl_minus_iorb_bp": sofr_p99_bp,
+        "sofr_99pctl_minus_iorb_d20_bp": sofr_p99_d20_bp,
+        "sofr_99pctl_minus_iorb_pctile": sofr_p99_pctile,
         "srf_takeup_bn": None,
         "discount_window_primary_credit_bn": None,
-        "reserve_scarcity_state": "unknown",
+        "reserve_scarcity_state": _derive_reserve_scarcity_state(
+            effr_bp, sofr_bp, effr_d20_bp, sofr_d20_bp
+        ),
+        "asof": funding_asof,
     }
+
+    # ------------------------------------------------------------------
+    # 7b. Components block — per-component display stats + netliq sparkline
+    # ------------------------------------------------------------------
+    components_block: dict[str, Any] = {
+        "walcl": _component_stats(None),
+        "rrp": _component_stats(None),
+        "tga": _component_stats(None),
+        "netliq_sparkline_90d": [],
+    }
+    if netliq_frame is not None and not netliq_frame.empty and not frame_degraded:
+        try:
+            df_c = netliq_frame.copy()
+            if "date" in df_c.columns:
+                df_c = df_c.set_index("date")
+            df_c.index = pd.to_datetime(df_c.index)
+            df_c = df_c.sort_index()
+
+            for comp, col in (("walcl", "walcl_bn"), ("rrp", "rrp_bn"), ("tga", "tga_bn")):
+                if col in df_c.columns:
+                    components_block[comp] = _component_stats(df_c[col].dropna())
+                else:
+                    gaps.append(f"{col} column absent from fed_net_liquidity.parquet")
+
+            spark_series = df_c["netliq_bn"].dropna() if "netliq_bn" in df_c.columns else None
+            if spark_series is not None and not spark_series.empty:
+                cutoff = spark_series.index[-1] - pd.Timedelta(days=_SPARKLINE_CAL_DAYS)
+                tail = spark_series[spark_series.index >= cutoff]
+                components_block["netliq_sparkline_90d"] = [
+                    {"d": str(ix.date()), "v": float(round(v, 1))}
+                    for ix, v in tail.items()
+                ]
+        except Exception as exc:  # noqa: BLE001
+            log.warning("liquidity_plumbing: components extraction error — %s", exc)
+            gaps.append(f"components extraction error: {exc}")
+    else:
+        gaps.append("components block unavailable — fed_net_liquidity.parquet missing/degraded")
+
+    if reserves_series_bn is not None:
+        components_block["reserves"] = _component_stats(reserves_series_bn)
 
     # ------------------------------------------------------------------
     # 8. Foreign dollar block (Phase 5 — ALL null)
@@ -554,6 +824,7 @@ def compute(
     payload: dict[str, Any] = {
         "schema": _SCHEMA,
         "asof": asof_str,
+        "phase_status": _PHASE_STATUS,
         "authority": _AUTHORITY,
         "headline": headline_block,
         "fed": fed_block,
@@ -562,6 +833,7 @@ def compute(
         "quantity": quantity_block,
         "quality": quality_block,
         "funding": funding_block,
+        "components": components_block,
         "foreign_dollar": foreign_dollar_block,
         "entry_effect": entry_effect_block,
         "gaps": gaps,
@@ -569,6 +841,81 @@ def compute(
     }
 
     return payload
+
+
+# ---------------------------------------------------------------------------
+# Degraded fallback payload — the ONE all-null shape (snapshot + CLI share it)
+# ---------------------------------------------------------------------------
+
+def degraded_payload(gaps: list[str], summary: str = "Build error — see gaps.") -> dict:
+    """Minimal valid all-null payload for absolute fail-open paths."""
+    return {
+        "schema": _SCHEMA,
+        "asof": str(date.today()),
+        "phase_status": _PHASE_STATUS,
+        "authority": _AUTHORITY,
+        "headline": {"state": "data_degraded", "summary": summary},
+        "fed": {
+            "assets_bn": None, "assets_chg_20d_bn": None,
+            "reserve_balances_bn": None, "walcl_stale_days": None,
+            "policy_stance": None, "administered_rate_posture": None,
+            "asof": None,
+        },
+        "treasury": {
+            "tga_bn": None, "tga_chg_20d_bn": None,
+            "net_issuance_20d_bn": None,
+            "expected_tga_pressure": "unknown_until_financing_estimates_parser",
+            "coupon_supply_pressure": "context_only",
+            "asof": None,
+        },
+        "rrp": {"rrp_bn": None, "rrp_chg_20d_bn": None, "buffer_state": "unknown"},
+        "quantity": {
+            "netliq_bn": None, "netliq_chg_20d_bn": None,
+            "netliq_chg_65d_bn": None, "netliq_pctile_expanding": None,
+            "overlay": "unknown",
+        },
+        "quality": {
+            "label": None, "fed_share": None,
+            "mechanical": None, "stress_confirming": None,
+            "stress_overlay": {
+                "hy_oas_pct": None, "hy_oas_z": None, "nfci": None,
+                "nfci_trend": None, "confirming_stress": None,
+            },
+            "walcl_stale_days": None,
+        },
+        "funding": {
+            "effr_minus_iorb_bp": None,
+            "effr_minus_iorb_d20_bp": None,
+            "effr_minus_iorb_pctile": None,
+            "sofr_minus_iorb_bp": None,
+            "sofr_minus_iorb_d20_bp": None,
+            "sofr_minus_iorb_pctile": None,
+            "sofr_99pctl_minus_iorb_bp": None,
+            "sofr_99pctl_minus_iorb_d20_bp": None,
+            "sofr_99pctl_minus_iorb_pctile": None,
+            "srf_takeup_bn": None,
+            "discount_window_primary_credit_bn": None,
+            "reserve_scarcity_state": "unknown",
+            "asof": None,
+        },
+        "components": {
+            "walcl": _component_stats(None),
+            "rrp": _component_stats(None),
+            "tga": _component_stats(None),
+            "netliq_sparkline_90d": [],
+        },
+        "foreign_dollar": {
+            "swap_lines_bn": None, "fima_repo_bn": None,
+            "state": "not_integrated_yet",
+        },
+        "entry_effect": {
+            "direction": "unknown", "quality": "unknown",
+            "measured_basis": "cycle_ladder_21d_odds",
+            "use": "support existing buy setup, never originate one",
+        },
+        "gaps": list(gaps),
+        "degraded": True,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -661,7 +1008,41 @@ def snapshot(root: str | Path | None = None) -> dict:
             log.warning("liquidity_plumbing.snapshot: failed to read auctions — %s", exc)
             gaps_pre.append(f"data/treasury_auctions/auctions.parquet read error: {exc}")
 
-    # 5. Call compute
+    # 5. Funding rate stores (Phase 3 spreads). Missing files are logged here
+    #    but the gaps[] entries come from compute() — these inputs are context
+    #    extras, so their absence must NOT force the whole artifact degraded
+    #    the way a missing core source (regime/netliq) does.
+    funding_frames: dict[str, pd.DataFrame | None] = {}
+    for key, rel in (
+        ("effr", ("data", "nyfed", "effr.parquet")),
+        ("iorb", ("data", "fred", "IORB.parquet")),
+        ("sofr", ("data", "fred", "SOFR.parquet")),
+        ("sofr_p99", ("data", "ofr", "FNYR-SOFR_99Pctl-A.parquet")),
+    ):
+        p = root.joinpath(*rel)
+        if not p.exists():
+            log.warning("liquidity_plumbing.snapshot: %s not found", p)
+            funding_frames[key] = None
+            continue
+        try:
+            funding_frames[key] = pd.read_parquet(p)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("liquidity_plumbing.snapshot: failed to read %s — %s", p, exc)
+            funding_frames[key] = None
+
+    # 6. Reserve balances (WRESBAL — absent until the FRED collector has run
+    #    with WRESBAL in its series list; compute() adds the gap)
+    reserves_frame: pd.DataFrame | None = None
+    wresbal_path = root / "data" / "fred" / "WRESBAL.parquet"
+    if not wresbal_path.exists():
+        log.warning("liquidity_plumbing.snapshot: WRESBAL.parquet not found (expected until next collect)")
+    else:
+        try:
+            reserves_frame = pd.read_parquet(wresbal_path)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("liquidity_plumbing.snapshot: failed to read WRESBAL — %s", exc)
+
+    # 7. Call compute
     try:
         payload = compute(
             regime_latest=regime_latest,
@@ -669,56 +1050,16 @@ def snapshot(root: str | Path | None = None) -> dict:
             treasury_frames=treasury_frames,
             auction_snapshot=auction_snapshot,
             config=None,
+            funding_frames=funding_frames,
+            reserves_frame=reserves_frame,
         )
     except Exception as exc:  # noqa: BLE001
         log.error("liquidity_plumbing.snapshot: compute() raised — %s", exc)
         # Absolute fail-open: return a minimal valid payload
-        payload = {
-            "schema": _SCHEMA,
-            "asof": str(date.today()),
-            "authority": _AUTHORITY,
-            "headline": {"state": "data_degraded", "summary": "Compute error — see gaps."},
-            "fed": {
-                "assets_bn": None, "assets_chg_20d_bn": None,
-                "reserve_balances_bn": None, "walcl_stale_days": None,
-                "policy_stance": None, "administered_rate_posture": None,
-                "asof": None,
-            },
-            "treasury": {
-                "tga_bn": None, "tga_chg_20d_bn": None,
-                "net_issuance_20d_bn": None,
-                "expected_tga_pressure": "unknown_until_financing_estimates_parser",
-                "coupon_supply_pressure": "context_only",
-                "asof": None,
-            },
-            "rrp": {"rrp_bn": None, "rrp_chg_20d_bn": None, "buffer_state": "unknown"},
-            "quantity": {
-                "netliq_bn": None, "netliq_chg_20d_bn": None,
-                "netliq_chg_65d_bn": None, "netliq_pctile_expanding": None,
-                "overlay": "unknown",
-            },
-            "quality": {
-                "label": None, "fed_share": None,
-                "mechanical": None, "stress_confirming": None,
-            },
-            "funding": {
-                "effr_minus_iorb_bp": None, "sofr_minus_iorb_bp": None,
-                "srf_takeup_bn": None, "discount_window_primary_credit_bn": None,
-                "reserve_scarcity_state": "unknown",
-            },
-            "foreign_dollar": {
-                "swap_lines_bn": None, "fima_repo_bn": None,
-                "state": "not_integrated_yet",
-            },
-            "entry_effect": {
-                "direction": "unknown", "quality": "unknown",
-                "measured_basis": "cycle_ladder_21d_odds",
-                "use": "support existing buy setup, never originate one",
-            },
-            "gaps": gaps_pre + [f"compute() error: {exc}"],
-            "degraded": True,
-        }
-        return payload
+        return degraded_payload(
+            gaps_pre + [f"compute() error: {exc}"],
+            summary="Compute error — see gaps.",
+        )
 
     # Prepend any pre-compute gaps
     if gaps_pre:

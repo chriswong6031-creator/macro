@@ -55,6 +55,20 @@ SCHEMA = "neuralweb.health.v1"
 # ---- as_of key priority list (same as mastermind_context.py) ----------------
 _AS_OF_KEYS = ("as_of", "asof", "produced_at", "generated_at", "generated_utc", "date")
 
+# ---- self-monitoring artifacts (identified by path, not id) -------------------
+# The artifacts this module and daily_brief.py write THEMSELVES.  Their as_of is
+# a conservative min-rollup of OTHER lobes' timestamps, so feeding them back into
+# the as_of rollup creates a fixed point: an old date, once written, is
+# re-ingested as "the oldest fresh timestamp" forever (the 2026-07-02 date-pin
+# incident).  Matched structurally by artifact path so synapse id renames can't
+# silently re-introduce the loop.
+_SELF_MONITOR_PATHS = frozenset({
+    "data/neuralweb/health.json",
+    "site/neuralwebdata/health.json",
+    "data/neuralweb/daily_brief.json",
+    "site/neuralwebdata/daily_brief.json",
+})
+
 
 # ---- helpers -----------------------------------------------------------------
 
@@ -84,6 +98,13 @@ def _iso_hours_ago(ts_str: str | None) -> float | None:
     try:
         ts_str = ts_str.replace("Z", "+00:00")
         dt = datetime.fromisoformat(ts_str)
+        # Naive timestamps (incl. date-only strings like '2026-07-02', which
+        # parse to midnight) are UTC by convention on this bus.  Coerce instead
+        # of letting the aware-minus-naive subtraction raise TypeError — that
+        # silent None used to send every date-only lobe to the mtime fallback,
+        # so a freshly-rewritten file with an ancient as_of counted 'fresh'.
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         now = datetime.now(timezone.utc)
         return round((now - dt).total_seconds() / 3600, 2)
     except Exception:  # noqa: BLE001
@@ -228,8 +249,18 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
         rec["byte_size"] = _byte_size(full_path)
         rec["row_count"] = _row_count(full_path, fmt)
 
-        # Age: prefer content as_of, fallback to mtime
-        age_h = _iso_hours_ago(as_of) if as_of else _mtime_hours_ago(full_path)
+        # Age: prefer content as_of, fallback to mtime.
+        # Self-monitoring artifacts are the exception: their as_of is a
+        # conservative min-rollup of OTHER lobes' timestamps (legitimately up
+        # to ~SLA old at write time), so judging them by it would flag the
+        # monitor 'stale' on most healthy nights.  Their freshness question is
+        # "did the monitor run" — anchor on produced_at instead.
+        if path_rel in _SELF_MONITOR_PATHS and produced_at:
+            age_h = _iso_hours_ago(produced_at)
+            if age_h is None:
+                age_h = _mtime_hours_ago(full_path)
+        else:
+            age_h = _iso_hours_ago(as_of) if as_of else _mtime_hours_ago(full_path)
         rec["age_hours"] = age_h
 
         # Check self-reported degraded/gaps
@@ -791,10 +822,15 @@ def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict
         log.warning("health: context_accrual_heartbeat failed: %s", exc)
         context_accrual = {"error": str(exc)}
 
-    # Conservative as_of: oldest fresh data timestamp across lobes
+    # Conservative as_of: oldest fresh data timestamp across lobes.
+    # Self-monitoring lobes (health.json / daily_brief.json + site copies) are
+    # excluded: their as_of IS this rollup, so including them re-ingests the
+    # previous run's minimum and pins the date forever.
     fresh_times = [
         r["as_of"] for r in lobes
-        if r.get("as_of") and r.get("status") in ("fresh", "fresh_partial")
+        if r.get("as_of")
+        and r.get("status") in ("fresh", "fresh_partial")
+        and r.get("path") not in _SELF_MONITOR_PATHS
     ]
     if cortex.get("memo_as_of"):
         fresh_times.append(cortex["memo_as_of"])

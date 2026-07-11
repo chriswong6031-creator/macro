@@ -241,6 +241,93 @@ def test_stale_lobe_in_what_is_stale(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# 3b. what_is_stale ordering: SLA breaches first, never buried under
+#     never-yet-produced ledgers (kind field: stale > degraded > missing)
+# ---------------------------------------------------------------------------
+
+def test_what_is_stale_orders_sla_breach_first(tmp_path):
+    """REGRESSION: a genuinely overdue lobe (e.g. nasdaq-internals 72h vs 30h SLA)
+    must lead what_is_stale, not sit behind 15 never-yet-existing ledgers with
+    SLA 9999 — the template caps display at 3 items, so ordering IS the fix.
+    Each item carries kind ('stale'|'degraded'|'missing'); list is sorted
+    stale > degraded > missing, most-overdue first within 'stale'."""
+    _make_minimal_root(tmp_path)
+
+    lobes: list[dict] = []
+    # 15 placeholder ledgers that have never been produced (SLA 9999)
+    for i in range(15):
+        lobes.append({
+            "id": f"never-built-ledger-{i:02d}",
+            "path": f"data/neuralweb/never_{i:02d}.jsonl",
+            "status": "missing",
+            "as_of": None,
+            "age_hours": None,
+            "freshness_sla_hours": 9999,
+            "row_count": None,
+            "gaps": [],
+        })
+    # One self-reported degraded lobe
+    lobes.append({
+        "id": "some-degraded-lobe",
+        "path": "data/neuralweb/some_degraded.json",
+        "status": "degraded",
+        "as_of": "2026-07-06T08:00:00+00:00",
+        "age_hours": 5.0,
+        "freshness_sla_hours": 30.0,
+        "row_count": None,
+        "gaps": ["degraded: self-reported"],
+    })
+    # Two genuine SLA breaches — the 72h one must lead the whole list
+    lobes.append({
+        "id": "mildly-late-lobe",
+        "path": "data/neuralweb/mildly_late.json",
+        "status": "stale",
+        "as_of": "2026-07-05T08:00:00+00:00",
+        "age_hours": 40.0,
+        "freshness_sla_hours": 30.0,
+        "row_count": None,
+        "gaps": [],
+    })
+    lobes.append({
+        "id": "nasdaq-internals",
+        "path": "site/marketdata/nasdaq_internals.json",
+        "status": "stale",
+        "as_of": "2026-07-03T08:00:00+00:00",
+        "age_hours": 72.0,
+        "freshness_sla_hours": 30.0,
+        "row_count": None,
+        "gaps": [],
+    })
+
+    _make_health(tmp_path, overall_status="warn", lobes=lobes)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+
+    brief = build(root=tmp_path)
+    stale = brief["what_is_stale"]
+
+    # Most-overdue SLA breach leads; missing never buries it
+    assert stale[0]["id"] == "nasdaq-internals", [s["id"] for s in stale[:4]]
+    assert stale[0]["kind"] == "stale"
+    assert stale[1]["id"] == "mildly-late-lobe"
+    assert stale[2]["kind"] == "degraded"
+
+    # kind ordering is monotone: stale > degraded > missing
+    order = {"stale": 0, "degraded": 1, "missing": 2}
+    kinds = [s["kind"] for s in stale]
+    assert kinds == sorted(kinds, key=lambda k: order[k]), kinds
+    assert kinds.count("stale") == 2
+    assert kinds.count("missing") == 15
+
+    # Backward-compatible shape: original keys intact, 'kind' additive
+    for s in stale:
+        for key in ("id", "as_of", "age_hours", "freshness_sla_hours", "severity", "kind"):
+            assert key in s, f"missing key {key!r} in {s}"
+
+
+# ---------------------------------------------------------------------------
 # 4. Contradiction id disappearing → no_longer_present, never 'resolved'
 # ---------------------------------------------------------------------------
 

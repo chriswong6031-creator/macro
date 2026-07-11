@@ -22,8 +22,13 @@ estimates — which equals the spine-index engine column):
      kernel_estimates.parquet.  Shows the edge-vs-horizon shape: does the
      family's estimated edge grow, peak, or decay as the holding period extends?
 
+     horizon_detail is the ADDITIVE sibling of horizon_curve: same horizons,
+     but each point carries {ic, n_eff, sd} so displays can render IC ± band
+     with the honest per-horizon sample depth.  horizon_curve keeps its
+     original {h: ic_float} shape — consumers of the flat shape are unaffected.
+
   B. recency_trend
-     Per-family, per trailing window {252d, 756d, all}: mean signed excess
+     Per-family, per trailing window {21d, 63d, 252d, 756d, all}: mean signed excess
      over fires in that window, computed by re-running the same cell math used
      in kernel.py but on a time-slice of the spine index (entity scope, all
      graded rows).  Three windows answer: "is the edge fading in calendar time?"
@@ -47,13 +52,22 @@ OUTPUT ARTIFACT: data/neuralweb/kernel_families.json
     "families": {
       "<engine>": {
         "horizon_curve": {5: shrunken_ic, 10: ..., ...},   # __all__ marginal only
+        "horizon_detail": {
+          "5": {"ic": float|null, "n_eff": int|null, "sd": float|null},  # additive sibling
+          ...
+        },
         "recency_trend": {
-          "252d": {"n_eff": int, "mean": float|null, "wilson_ci_low": float|null},
+          "21d":  {"n_eff": int, "mean": float|null, "wilson_ci_low": float|null},
+          "63d":  {...},
+          "252d": {...},
           "756d": {...},
           "all":  {...}
         },
         "staleness": {"date_last": "YYYY-MM-DD"|null, "days_since_last_fire": int|null},
-        "armed": bool
+        "armed": bool,
+        "armed_reason": str|null,     # pooling.arming() reason (was dropped pre-fix)
+        "outcome_unit": "magnitude_nonneg"|"signed_excess",  # what outcome_excess measures
+        "regime_coverage": float|null  # fraction of graded events with quad_hard_label
       }
     },
     "generated_from": "sha256:<hex>",   # byte_sha256 of kernel_estimates.parquet
@@ -100,9 +114,19 @@ __all__ = [
 
 #: Trailing-calendar-day windows for recency_trend.
 RECENCY_WINDOWS: dict[str, int] = {
+    "21d": 21,
+    "63d": 63,
     "252d": 252,
     "756d": 756,
 }
+
+#: outcome_unit vocabulary for kernel_families.json.
+#: Which engines measure a non-negative favorable-excursion magnitude (vs a
+#: signed excess) has ONE source of truth: half_life._OUTCOME_UNIT_MAP
+#: ('magnitude'). This artifact spells it 'magnitude_nonneg' to make the
+#: non-negativity explicit for display consumers.
+_UNIT_MAGNITUDE: str = "magnitude_nonneg"
+_UNIT_SIGNED: str = "signed_excess"
 
 
 # ---------------------------------------------------------------------------
@@ -143,6 +167,21 @@ def _estimates_byte_sha(root: Path | str | None) -> str:
 def _load_index(root: Path | str | None) -> pd.DataFrame:
     from engine.neuralweb.query import load_index  # noqa: PLC0415
     return load_index(root)
+
+
+def _family_outcome_unit(engine: str) -> str:
+    """outcome_unit for a family, in kernel_families vocabulary.
+
+    Reuses half_life._OUTCOME_UNIT_MAP (via _outcome_unit_for) as the single
+    source of truth for WHICH engines are magnitude-valued; only the spelling
+    differs ('magnitude' → 'magnitude_nonneg'). Fail-open to signed_excess.
+    """
+    try:
+        from engine.neuralweb.half_life import _outcome_unit_for  # noqa: PLC0415
+        unit = _outcome_unit_for(engine)
+    except Exception:  # noqa: BLE001
+        return _UNIT_SIGNED
+    return _UNIT_MAGNITUDE if unit == "magnitude" else _UNIT_SIGNED
 
 
 def _window_stats(
@@ -258,16 +297,47 @@ def build_families(root: Path | str | None = None) -> dict:
         eng_cells = estimates[estimates["engine"] == engine]
 
         # --- horizon_curve: shrunken_ic per horizon for __all__ marginal cells ---
+        # horizon_detail is the additive sibling: {h: {ic, n_eff, sd}} so displays
+        # can render IC ± band with per-horizon depth. horizon_curve keeps its
+        # original flat {h: ic} shape (back-compat with existing consumers).
         marginal_cells = eng_cells[eng_cells["regime"] == MARGINAL_BUCKET]
+        has_sd_col = "shrunken_ic_sd" in marginal_cells.columns
         horizon_curve: dict[str, Any] = {}
+        horizon_detail: dict[str, Any] = {}
         for _, row in marginal_cells.iterrows():
             h = int(row["horizon"])
             ic = row["shrunken_ic"]
-            horizon_curve[str(h)] = round(float(ic), 6) if ic is not None else None
+            ic_out = round(float(ic), 6) if ic is not None and pd.notna(ic) else None
+            horizon_curve[str(h)] = ic_out
+
+            n_eff_val = pd.to_numeric(row.get("n_eff"), errors="coerce")
+            sd_val = pd.to_numeric(row.get("shrunken_ic_sd"), errors="coerce") if has_sd_col else None
+            horizon_detail[str(h)] = {
+                "ic": ic_out,
+                "n_eff": int(n_eff_val) if pd.notna(n_eff_val) else None,
+                "sd": round(float(sd_val), 6) if sd_val is not None and pd.notna(sd_val) else None,
+            }
 
         # --- armed: from estimates (all __all__ cells for this engine share armed) ---
         armed_vals = eng_cells["armed"].dropna().tolist()
         armed = bool(armed_vals[0]) if armed_vals else False
+
+        # --- armed_reason: the pooling.arming() reason, persisted per cell by
+        # kernel.py since the reason-drop fix; None on pre-fix parquets.
+        armed_reason: str | None = None
+        if "armed_reason" in eng_cells.columns:
+            reason_vals = eng_cells["armed_reason"].dropna().astype(str)
+            reason_vals = reason_vals[reason_vals.str.strip() != ""]
+            if not reason_vals.empty:
+                armed_reason = str(reason_vals.iloc[0])
+
+        # --- regime_coverage: family-level constant broadcast to cells by kernel.py;
+        # None on pre-fix parquets (fail-open).
+        regime_cov: float | None = None
+        if "regime_coverage" in eng_cells.columns:
+            cov_vals = pd.to_numeric(eng_cells["regime_coverage"], errors="coerce").dropna()
+            if not cov_vals.empty:
+                regime_cov = round(float(cov_vals.iloc[0]), 4)
 
         # --- staleness: date_last across all cells for this engine ---
         date_lasts = eng_cells["date_last"].dropna().astype(str).tolist()
@@ -295,12 +365,16 @@ def build_families(root: Path | str | None = None) -> dict:
 
         families_out[engine] = {
             "horizon_curve": horizon_curve,
+            "horizon_detail": horizon_detail,
             "recency_trend": recency_trend,
             "staleness": {
                 "date_last": date_last,
                 "days_since_last_fire": days_since,
             },
             "armed": armed,
+            "armed_reason": armed_reason,
+            "outcome_unit": _family_outcome_unit(engine),
+            "regime_coverage": regime_cov,
         }
 
     return {

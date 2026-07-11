@@ -43,10 +43,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | momoedge | 8 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
-| neural-web | 48 |
+| neural-web | 51 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
-| nw-mastermind-bridge | 3 |
+| nw-mastermind-bridge | 5 |
 | nw-rails | 7 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
@@ -75,8 +75,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 215 |
-| infrastructure | 87 |
+| display | 219 |
+| infrastructure | 88 |
 | scored | 4 |
 | shadow | 63 |
 
@@ -84,7 +84,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 353 |
+| git | 358 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -446,6 +446,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 2 | 1 |
 | cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 2 | 1 |
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
+| governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 3 | 0 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 2 | 1 |
 | machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 3 | 0 |
 | neuralweb-health | `data/neuralweb/health.json` | json | daily-engine | infrastructure | 3 | 0 |
@@ -453,8 +454,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
 | evidence-clock-reviews | `data/neuralweb/evidence_clock_reviews.jsonl` | jsonl | on-demand | display | 2 | 0 |
-| governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
+| nw-health-run-history | `data/neuralweb/nw_health_run_history.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
 | attention-deterministic | `data/neuralweb/attention_deterministic.json` | json | daily-engine | display | 1 | 0 |
 | causal-mechanisms | `data/neuralweb/causal_mechanisms.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
@@ -462,11 +463,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | evidence-clock | `data/neuralweb/evidence_clock.json` | json | daily-engine | display | 1 | 0 |
+| fred-wresbal | `data/fred/WRESBAL.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | mechanism-pathways-history | `data/neuralweb/mechanism_pathways_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | neuralweb-daily-brief | `data/neuralweb/daily_brief.json` | json | daily-engine | display | 1 | 0 |
 | neuralweb-daily-brief-history | `data/neuralweb/daily_brief_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
-| nw-health-run-history | `data/neuralweb/nw_health_run_history.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
 | ops-push-basket-freeze | `data/alert_triage/push_sent_basket_freeze.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-healthcheck | `data/alert_triage/push_sent_healthcheck.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-nw-health | `data/alert_triage/push_sent_nw_health.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
@@ -477,6 +478,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-attention-deterministic | `site/neuralwebdata/attention_deterministic.json` | json | daily-engine | display | 1 | 0 |
 | site-mechanism-pathways | `site/neuralwebdata/mechanism_pathways.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
+| site-neuralweb-governance-recent | `site/neuralwebdata/governance_recent.json` | json | daily-engine | display | 1 | 0 |
+| site-neuralweb-health-history | `site/neuralwebdata/health_history.json` | json | daily-engine | display | 1 | 0 |
 | causal-feature-inventory | `data/neuralweb/causal_feature_inventory.json` | json | daily-engine | infrastructure | 0 | 0 |
 | entity-thesis-mechanism-registry | `data/neuralweb/entity_thesis_mechanism_registry.json` | json | daily-engine | infrastructure | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
@@ -508,8 +511,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | neuralweb-mastermind-context | `data/neuralweb/mastermind_context.json` | json | daily-engine | display | 1 | 1 |
+| site-neuralweb-market-plane | `site/neuralwebdata/market_plane.json` | json | daily-engine | display | 1 | 1 |
 | analyst-targets | `data/analyst/targets.parquet` | parquet | collect | display | 1 | 0 |
 | site-neuralweb-mastermind-context | `site/neuralwebdata/mastermind_context.json` | json | daily-engine | display | 0 | 1 |
+| neuralweb-market-plane | `data/neuralweb/market_plane.json` | json | daily-engine | display | 0 | 0 |
 
 ### nw-rails
 
@@ -1215,6 +1220,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
   - engine/name_score_grader.py — grade(market) writes per-market: hk_calls.parquet, ca_calls.parquet, intl_calls.parquet
   - data/china_name_score/calls.parquet — CN legacy path; same producer, separate file
 
+### neuralweb-market-plane
+
+- **path:** `data/neuralweb/market_plane.json`
+- **declared producer:** `engine/neuralweb/mastermind_context.py`
+- **extra writers:**
+  - scripts/build_nw_mastermind_context.py — CLI lane; build_and_write() calls build_and_write_market_plane() defined in the producer; no independent write logic
+
 ### neuralweb-mastermind-context
 
 - **path:** `data/neuralweb/mastermind_context.json`
@@ -1327,6 +1339,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/theme_adoption.py`
 - **extra writers:**
   - scripts/build_discovery_confluence.py
+
+### site-neuralweb-market-plane
+
+- **path:** `site/neuralwebdata/market_plane.json`
+- **declared producer:** `engine/neuralweb/mastermind_context.py`
+- **extra writers:**
+  - scripts/build_nw_mastermind_context.py — CLI lane; build_and_write() calls build_and_write_market_plane() defined in the producer; no independent write logic
 
 ### site-neuralweb-mastermind-context
 

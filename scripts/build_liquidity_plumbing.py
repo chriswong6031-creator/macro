@@ -89,56 +89,8 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:  # noqa: BLE001
         log.error("build_liquidity_plumbing: snapshot() raised — %s", exc)
         # Fail-open: write a minimal degraded artifact so consumers see something
-        from datetime import date  # noqa: E402
-        from engine.neuralweb.liquidity_plumbing import _SCHEMA, _AUTHORITY  # noqa: E402
-        payload = {
-            "schema": _SCHEMA,
-            "asof": str(date.today()),
-            "authority": _AUTHORITY,
-            "headline": {
-                "state": "data_degraded",
-                "summary": "Build error — see gaps.",
-            },
-            "fed": {
-                "assets_bn": None, "assets_chg_20d_bn": None,
-                "reserve_balances_bn": None, "walcl_stale_days": None,
-                "policy_stance": None, "administered_rate_posture": None,
-                "asof": None,
-            },
-            "treasury": {
-                "tga_bn": None, "tga_chg_20d_bn": None,
-                "net_issuance_20d_bn": None,
-                "expected_tga_pressure": "unknown_until_financing_estimates_parser",
-                "coupon_supply_pressure": "context_only",
-                "asof": None,
-            },
-            "rrp": {"rrp_bn": None, "rrp_chg_20d_bn": None, "buffer_state": "unknown"},
-            "quantity": {
-                "netliq_bn": None, "netliq_chg_20d_bn": None,
-                "netliq_chg_65d_bn": None, "netliq_pctile_expanding": None,
-                "overlay": "unknown",
-            },
-            "quality": {
-                "label": None, "fed_share": None,
-                "mechanical": None, "stress_confirming": None,
-            },
-            "funding": {
-                "effr_minus_iorb_bp": None, "sofr_minus_iorb_bp": None,
-                "srf_takeup_bn": None, "discount_window_primary_credit_bn": None,
-                "reserve_scarcity_state": "unknown",
-            },
-            "foreign_dollar": {
-                "swap_lines_bn": None, "fima_repo_bn": None,
-                "state": "not_integrated_yet",
-            },
-            "entry_effect": {
-                "direction": "unknown", "quality": "unknown",
-                "measured_basis": "cycle_ladder_21d_odds",
-                "use": "support existing buy setup, never originate one",
-            },
-            "gaps": [f"snapshot() error: {exc}"],
-            "degraded": True,
-        }
+        from engine.neuralweb.liquidity_plumbing import degraded_payload  # noqa: E402
+        payload = degraded_payload([f"snapshot() error: {exc}"])
 
     # Stamp with envelope (artifact_id must be registered in config/synapse.yml)
     try:

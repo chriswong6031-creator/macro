@@ -72,6 +72,11 @@ def _iso_hours_ago(ts_str: str | None) -> float | None:
     try:
         ts_str = ts_str.replace("Z", "+00:00")
         dt = datetime.fromisoformat(ts_str)
+        # Naive timestamps (incl. date-only strings → midnight) are UTC by
+        # convention; coerce instead of letting aware-minus-naive raise
+        # TypeError → None (same date-pin trap as health._iso_hours_ago).
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         now = datetime.now(timezone.utc)
         return round((now - dt).total_seconds() / 3600, 2)
     except Exception:  # noqa: BLE001
@@ -443,8 +448,22 @@ def _contradiction_delta(current_records: list[dict], prior_snap: dict | None) -
 
 # ---- staleness section --------------------------------------------------------
 
+# what_is_stale ordering: genuine SLA breaches first, then self-reported
+# degraded lobes, then never-yet-produced artifacts.  Many 'missing' entries
+# are placeholder ledgers with SLA 9999 that have simply never been written;
+# without this ordering they bury the one actionable overdue lobe (the
+# template caps display at 3 items).
+_STALE_KIND_ORDER = {"stale": 0, "degraded": 1, "missing": 2}
+
+
 def _build_stale(health: dict | None) -> list[dict]:
-    """Collect stale lobes from health artifact."""
+    """Collect stale/degraded/missing lobes from health artifact.
+
+    Each item carries a ``kind`` field ('stale' = SLA breach, 'degraded' =
+    self-reported degradation, 'missing' = never produced) in addition to the
+    original keys — the list shape stays backward-compatible.  Items are
+    sorted stale > degraded > missing, most-overdue first within 'stale'.
+    """
     if health is None:
         return [{
             "id": "system",
@@ -452,22 +471,29 @@ def _build_stale(health: dict | None) -> list[dict]:
             "age_hours": None,
             "freshness_sla_hours": _DEFAULT_FRESHNESS_SLA_H,
             "severity": "warn",
+            "kind": "missing",
         }]
 
     stale_items: list[dict] = []
     for lobe in health.get("lobes", []):
-        if lobe.get("status") in ("stale", "missing", "degraded"):
+        status = lobe.get("status")
+        if status in ("stale", "missing", "degraded"):
             sla_h = lobe.get("freshness_sla_hours", _DEFAULT_FRESHNESS_SLA_H)
             age_h = lobe.get("age_hours")
-            sev = "warn" if lobe.get("status") == "stale" else "watch"
+            sev = "warn" if status == "stale" else "watch"
             stale_items.append({
                 "id": lobe.get("id", "unknown"),
                 "as_of": lobe.get("as_of"),
                 "age_hours": age_h,
                 "freshness_sla_hours": sla_h,
                 "severity": sev,
+                "kind": status,
             })
 
+    stale_items.sort(key=lambda s: (
+        _STALE_KIND_ORDER.get(s.get("kind"), 3),
+        -(s.get("age_hours") or 0.0),
+    ))
     return stale_items
 
 

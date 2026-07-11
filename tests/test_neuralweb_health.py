@@ -573,6 +573,117 @@ def test_cli_refresh_cortex_preserves_lobes(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Date-pin regression tests (2026-07-02 as_of fixed-point incident)
+# ---------------------------------------------------------------------------
+
+def test_iso_hours_ago_parses_naive_and_date_only():
+    """REGRESSION: date-only and naive ISO strings must parse (coerced to UTC),
+    not TypeError→None.  The silent None sent every date-only lobe to the mtime
+    fallback, which pinned health as_of at 2026-07-02 forever."""
+    from engine.neuralweb.health import _iso_hours_ago
+
+    # date-only string → midnight UTC; well in the past → large positive age
+    h = _iso_hours_ago("2020-01-01")
+    assert h is not None, "date-only as_of must not fall back to None"
+    assert h > 24 * 365  # years old
+
+    # naive full timestamp → coerced to UTC
+    h2 = _iso_hours_ago("2020-01-01T05:00:00")
+    assert h2 is not None
+    assert h2 == pytest.approx(h - 5, abs=0.1)
+
+    # aware timestamps still work; junk still returns None
+    assert _iso_hours_ago("2020-01-01T00:00:00+00:00") == pytest.approx(h, abs=0.1)
+    assert _iso_hours_ago("not-a-date") is None
+    assert _iso_hours_ago(None) is None
+
+
+def test_date_only_old_as_of_is_stale_despite_fresh_mtime(tmp_path):
+    """REGRESSION: a freshly-written file whose CONTENT as_of is an old date-only
+    string must count 'stale' — before the fix the naive-datetime TypeError made
+    the age fall back to file mtime, so self-monitoring lobes always counted
+    'fresh' while carrying as_of='2026-07-02'."""
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {
+        "as_of": "2020-01-01",  # date-only, ancient — but the file mtime is NOW
+    })
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+    })
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    ws = lobes["world-state"]
+    assert ws["status"] == "stale", ws
+    assert ws["age_hours"] is not None and ws["age_hours"] > 30.0
+
+
+def test_self_monitor_lobes_excluded_from_as_of_rollup(tmp_path):
+    """REGRESSION: health/daily-brief artifacts (self-monitoring lobes) must NOT
+    feed the as_of min rollup — their as_of IS the previous rollup, so including
+    them re-ingests the old minimum forever (the date-pin fixed point)."""
+    from datetime import datetime, timezone, timedelta
+
+    fmt = "%Y-%m-%dT%H:%M:%S+00:00"
+    ws_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(fmt)
+    # Older but still within the 30h SLA → the self lobes stay 'fresh', so only
+    # the path-based exclusion (not the status filter) keeps them out of the min.
+    pinned_ts = (datetime.now(timezone.utc) - timedelta(hours=10)).strftime(fmt)
+
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": ws_ts})
+    _nw_json_artifact(tmp_path, "data/neuralweb/health.json", {"as_of": pinned_ts})
+    _nw_json_artifact(tmp_path, "site/neuralwebdata/health.json", {"as_of": pinned_ts})
+    _nw_json_artifact(tmp_path, "data/neuralweb/daily_brief.json", {"as_of": pinned_ts})
+    _nw_json_artifact(tmp_path, "site/neuralwebdata/daily_brief.json", {"as_of": pinned_ts})
+
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json"),
+        "neuralweb-health": _art("data/neuralweb/health.json"),
+        "site-neuralweb-health": _art("site/neuralwebdata/health.json"),
+        "neuralweb-daily-brief": _art("data/neuralweb/daily_brief.json"),
+        "site-neuralweb-daily-brief": _art("site/neuralwebdata/daily_brief.json"),
+    })
+    result = build(root=root)
+
+    lobes = {r["id"]: r for r in result["lobes"]}
+    # The self lobes ARE fresh (10h < 30h SLA) — they are excluded by path only
+    assert lobes["neuralweb-health"]["status"] == "fresh"
+    assert lobes["site-neuralweb-daily-brief"]["status"] == "fresh"
+    # ...but the rollup ignores them and resolves to the real data timestamp
+    assert result["as_of"] == ws_ts, (
+        f"as_of must come from world-state ({ws_ts}), not the self-monitoring "
+        f"lobes' pinned {pinned_ts}; got {result['as_of']}"
+    )
+
+
+def test_self_monitor_lobe_age_anchors_on_produced_at(tmp_path):
+    """A self-monitoring lobe's as_of is a conservative rollup (legitimately
+    old); its freshness anchor is produced_at.  Recent produced_at → fresh even
+    with a >SLA-old rollup as_of; old produced_at → honestly stale."""
+    from datetime import datetime, timezone, timedelta
+
+    fmt = "%Y-%m-%dT%H:%M:%S+00:00"
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime(fmt)
+
+    # Monitor ran 2h ago but its conservative rollup as_of is 50h old
+    _nw_json_artifact(tmp_path, "data/neuralweb/health.json", {
+        "as_of": (datetime.now(timezone.utc) - timedelta(hours=50)).strftime(fmt),
+        "produced_at": recent_ts,
+    })
+    # Monitor did NOT run: produced_at is 50h old too
+    _nw_json_artifact(tmp_path, "data/neuralweb/daily_brief.json", {
+        "as_of": (datetime.now(timezone.utc) - timedelta(hours=50)).strftime(fmt),
+        "produced_at": (datetime.now(timezone.utc) - timedelta(hours=50)).strftime(fmt),
+    })
+    root = _make_repo(tmp_path, {
+        "neuralweb-health": _art("data/neuralweb/health.json", freshness_sla_hours=30.0),
+        "neuralweb-daily-brief": _art("data/neuralweb/daily_brief.json", freshness_sla_hours=30.0),
+    })
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    assert lobes["neuralweb-health"]["status"] == "fresh", lobes["neuralweb-health"]
+    assert lobes["neuralweb-daily-brief"]["status"] == "stale", lobes["neuralweb-daily-brief"]
+
+
+# ---------------------------------------------------------------------------
 # W1 test: context_accrual heartbeat (R-CI12)
 # ---------------------------------------------------------------------------
 

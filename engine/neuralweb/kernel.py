@@ -55,21 +55,39 @@ SHRINKAGE: engine/pooling.py is reused DIRECTLY (imported, not reimplemented).
   noise=0.5 discount in MemberStat to reflect that legacy fills are noisier
   than next_bar fills.
 
+  FAMILY MEMBERSHIP (audit fix): while an engine's regime stamps are 0%
+  populated (regime_coverage == 0), its '__unstamped__' cells are byte-identical
+  to the '__all__' marginals; keeping both as pooling members double-counts
+  every horizon in the family denominator, inflating family precision. At 0%
+  coverage, '__unstamped__' cells are EXCLUDED from family pooling membership —
+  the rows are still emitted (display parity) and inherit the posterior of
+  their identical '__all__' twin. Once real stamps accrue (coverage > 0),
+  '__unstamped__' is a genuine sub-population and rejoins the family.
+
 PER-CELL OUTPUTS
 ----------------
   n_raw           raw row count (before dedup)
   n_eff           distinct-(engine,symbol,as_of) count (event-collapsed)
   mean_raw        raw mean signed excess (diagnostic — do NOT consume directly)
   shrunken_ic     pooled_edges() output for this cell (the consumable posterior)
+  shrunken_ic_sd  posterior sd of the shrunken cell mean (normal-normal model:
+                  sqrt((var/n_eff)·(1-reliability)); at zero noise this equals
+                  sqrt(var/(n_eff+K_POOL))). Displays render shrunken_ic ± sd.
   reliability     n_eff / (n_eff + K_POOL) as a single reliability metric
   wilson_ci_low   Wilson CI lower bound on directional accuracy (None when n_eff < 12)
   date_first      earliest as_of date in the cell (recency anchor)
   date_last       latest as_of date in the cell (recency anchor)
   fill_basis_mode most-common fill_basis value (provenance label)
   armed           bool — pooling.arming() result for the engine family
+  armed_reason    str|None — pooling.arming() reason (family-level, broadcast;
+                  previously computed but dropped before any artifact — the
+                  arming reason now survives to kernel_families.json/site)
+  regime_coverage fraction of graded deduped events for the engine carrying a
+                  quad_hard_label stamp (family-level, broadcast to cells)
 
 PER-FAMILY: pooling.arming() status (armed bool + heldout edges + reason) is
-  computed and STORED for display; nothing acts on it in this PR.
+  computed and STORED for display; nothing acts on it in this PR. The family
+  record in meta also carries regime_coverage (see above).
 
 USAGE
 -----
@@ -87,6 +105,7 @@ CONSUMER CONTRACT (display-first law)
 from __future__ import annotations
 
 import logging
+import math
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -262,6 +281,21 @@ def _build_cell(
     date_first = str(asof_vals.min()) if not asof_vals.empty else None
     date_last = str(asof_vals.max()) if not asof_vals.empty else None
 
+    # --- shrunken_ic_sd: posterior sd of the shrunken cell mean ---
+    # Normal-normal shrinkage posterior: with sampling variance var/n and
+    # noise-discounted reliability r = MemberStat.reliability() (the SAME
+    # machinery pooled_edges() consumes), posterior variance = (var/n)·(1-r).
+    # At zero noise this is exactly var/(n_eff + K_POOL). Emitted so displays
+    # can show an IC ± band per cell instead of a bare point estimate.
+    shrunken_ic_sd: float | None = None
+    if n_eff > 0:
+        rel = MemberStat(
+            key="_sd", n=float(n_eff), mean=mean_raw, var=var_raw, noise=noise,
+        ).reliability()
+        shrunken_ic_sd = round(
+            math.sqrt(max(var_raw, 1e-9) / n_eff * max(1.0 - rel, 0.0)), 6,
+        )
+
     return {
         "engine": engine,
         "regime": regime,
@@ -272,10 +306,13 @@ def _build_cell(
         "mean_raw": round(mean_raw, 6),
         # shrunken_ic and reliability filled in after pooled_edges() call
         "shrunken_ic": None,
+        "shrunken_ic_sd": shrunken_ic_sd,
         "reliability": round(n_eff / (n_eff + K_POOL), 4),
         "wilson_ci_low": ci_low,
-        # armed filled in after arming() call
+        # armed / armed_reason / regime_coverage filled in after arming() call
         "armed": None,
+        "armed_reason": None,
+        "regime_coverage": None,
         "fill_basis_mode": fill_basis_mode,
         "date_first": date_first,
         "date_last": date_last,
@@ -344,10 +381,25 @@ def build_estimates(
         .apply(lambda v: UNSTAMPED_BUCKET if v.strip() in ("", "nan", "None") else v.strip())
     )
 
+    # Regime coverage per engine: fraction of graded deduped events carrying a
+    # quad_hard_label stamp. 0.0 → the '__unstamped__' bucket is byte-identical
+    # to '__all__' (drives the pooling-membership exclusion below); reported on
+    # both the family record and every cell so displays can label thin stamps.
+    engines = graded["engine"].unique().tolist()
+    regime_coverage: dict[str, float] = {}
+    for engine in engines:
+        eng_events = graded[graded["engine"] == engine].drop_duplicates(
+            subset=["symbol", "as_of"],
+        )
+        if eng_events.empty:
+            regime_coverage[engine] = 0.0
+        else:
+            n_stamped = int((eng_events["_regime_bucket"] != UNSTAMPED_BUCKET).sum())
+            regime_coverage[engine] = round(n_stamped / len(eng_events), 4)
+
     # Collect cells
     cell_rows: list[dict[str, Any]] = []
 
-    engines = graded["engine"].unique().tolist()
     for engine in engines:
         eng_df = graded[graded["engine"] == engine]
 
@@ -367,11 +419,11 @@ def build_estimates(
 
             # --- Marginal cell ('__all__') — always emitted ---
             # NOTE: while the spine has zero regime stamps, __all__ and __unstamped__
-            # are byte-identical cells for every engine. Each duplicate doubles its
-            # horizon's weight in the pooling family denominator, slightly inflating
-            # family precision vs a de-duplicated family. This is the intended thin-
-            # stamp behavior: both cells carry the same sign/value so family_mean is
-            # unchanged; the inflation will correct itself as real stamps split them.
+            # are byte-identical cells for every engine. The __unstamped__ duplicate
+            # is therefore EXCLUDED from the pooling family membership below
+            # (regime_coverage == 0 guard) so it cannot double-count its horizon in
+            # the family denominator; the row itself is still emitted for display
+            # parity and inherits the posterior of its identical __all__ twin.
             if not h_df.empty:
                 cell = _build_cell(engine, MARGINAL_BUCKET, h, h_df)
                 cell_rows.append(cell)
@@ -396,6 +448,16 @@ def build_estimates(
         by_engine.setdefault(cell["engine"], []).append(cell)
 
     for engine_name, cells in by_engine.items():
+        coverage = regime_coverage.get(engine_name, 0.0)
+        # AUDIT FIX: at 0% regime coverage every __unstamped__ cell is byte-
+        # identical to its __all__ twin — keeping both as members double-counts
+        # each horizon in the family denominator (rel_fam inflates). Exclude
+        # __unstamped__ from MEMBERSHIP while coverage == 0; once any real
+        # stamps accrue it is a genuine sub-population and rejoins the family.
+        member_cells = [
+            c for c in cells
+            if not (coverage == 0.0 and c["regime"] == UNSTAMPED_BUCKET)
+        ]
         members = [
             MemberStat(
                 key=c["_key"],
@@ -404,11 +466,20 @@ def build_estimates(
                 var=c["_var_raw"],
                 noise=c["_noise"],
             )
-            for c in cells
+            for c in member_cells
         ]
         edges = pooling.pooled_edges(members)
+        # Excluded __unstamped__ cells inherit their identical __all__ twin's
+        # posterior (same rows → same posterior; emitted for display parity).
+        marginal_key_by_h = {
+            c["horizon"]: c["_key"] for c in member_cells
+            if c["regime"] == MARGINAL_BUCKET
+        }
         for cell in cells:
-            cell["shrunken_ic"] = round(edges.get(cell["_key"], 0.0), 6)
+            key = cell["_key"]
+            if key not in edges:
+                key = marginal_key_by_h.get(cell["horizon"], key)
+            cell["shrunken_ic"] = round(edges.get(key, 0.0), 6)
 
     # ---------------------------------------------------------------------------
     # Compute arming() per engine family (stored for display; nothing acts on it)
@@ -436,20 +507,30 @@ def build_estimates(
                 "as_of": str(row.get("as_of") or ""),
             })
         arm_status = pooling.arming(events)
-        family_arming[engine_name] = arm_status.to_dict()
+        family_record = arm_status.to_dict()
+        # Family record carries regime_coverage (fraction of graded events
+        # with a quad_hard_label stamp) alongside the arming status.
+        family_record["regime_coverage"] = regime_coverage.get(engine_name, 0.0)
+        family_arming[engine_name] = family_record
 
-    # Propagate armed flag to cells
+    # Propagate armed flag + arming reason + regime coverage to cells.
+    # armed_reason was previously computed here and then dropped before any
+    # artifact (only the bool survived to the parquet) — persisting it lets
+    # decay.py carry the explicit reason into kernel_families.json/site.
     for cell in cell_rows:
         arm = family_arming.get(cell["engine"], {})
         cell["armed"] = bool(arm.get("armed", False))
+        cell["armed_reason"] = str(arm.get("reason")) if arm.get("reason") else None
+        cell["regime_coverage"] = regime_coverage.get(cell["engine"], 0.0)
 
     # ---------------------------------------------------------------------------
     # Build output DataFrame (strip internal helper columns)
     # ---------------------------------------------------------------------------
     output_cols = [
         "engine", "regime", "regime_col", "horizon",
-        "n_raw", "n_eff", "mean_raw", "shrunken_ic",
-        "reliability", "wilson_ci_low", "armed",
+        "n_raw", "n_eff", "mean_raw", "shrunken_ic", "shrunken_ic_sd",
+        "reliability", "wilson_ci_low", "armed", "armed_reason",
+        "regime_coverage",
         "fill_basis_mode", "date_first", "date_last",
     ]
     for cell in cell_rows:
@@ -513,8 +594,9 @@ def write_estimates(root: Path | str | None = None) -> dict:
         # Write an empty but schema-valid parquet
         output_cols = [
             "engine", "regime", "regime_col", "horizon",
-            "n_raw", "n_eff", "mean_raw", "shrunken_ic",
-            "reliability", "wilson_ci_low", "armed",
+            "n_raw", "n_eff", "mean_raw", "shrunken_ic", "shrunken_ic_sd",
+            "reliability", "wilson_ci_low", "armed", "armed_reason",
+            "regime_coverage",
             "fill_basis_mode", "date_first", "date_last",
         ]
         df = pd.DataFrame(columns=output_cols)
