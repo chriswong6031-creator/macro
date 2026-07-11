@@ -825,6 +825,131 @@ def _book_flow_washout(df: pd.DataFrame, book: dict) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------- #
+# Family H — Leader Radar books (LR W2a)
+# These books read from site/leaderradar/radar.json (built by build_leader_radar
+# BEFORE build_pick_lab runs). Fire eligibility pre-computed in radar.json;
+# build_pick_lab consumes the artifact, does NOT recompute legs (LR-R8 law).
+# ---------------------------------------------------------------------------- #
+
+def _load_radar_json() -> list[dict]:
+    """Load site/leaderradar/radar.json; return rows list."""
+    try:
+        from lib import config as _cfg  # noqa: PLC0415
+        root = _cfg.ROOT
+        p = root / _cfg.load()["storage"]["site_dir"] / "leaderradar" / "radar.json"
+        if not p.exists():
+            return []
+        import json  # noqa: PLC0415
+        d = json.loads(p.read_text())
+        return d.get("rows", [])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("pick_lab leader_radar: radar.json load failed: %s", exc)
+        return []
+
+
+def _book_leader_precipice(df: pd.DataFrame, book: dict) -> list[dict]:
+    """plab_leader_precipice — CATALYST_WINDOW (precipice) fire candidates from radar.json.
+
+    Reads fire_precipice=True rows. Ranks by days_in_state asc (most-recent entry first).
+    LR-R8: consumption-not-recomputation — fire flags consumed as-is from radar.json.
+    """
+    rows = _load_radar_json()
+    if not rows:
+        return []
+
+    fired = [r for r in rows if r.get("fire_precipice") is True]
+    if not fired:
+        return []
+
+    # Sort by days_in_state asc (None last)
+    fired.sort(key=lambda r: (
+        r.get("days_in_state") if r.get("days_in_state") is not None else 9999,
+    ))
+    fired = fired[:book["max_picks"]]
+
+    picks = []
+    for rank, r in enumerate(fired, 1):
+        ticker = r.get("ticker")
+        if not ticker:
+            continue
+        close = None
+        if ticker in df.index:
+            try:
+                close = _col(df, "close", ticker)
+                if close is not None and float(close) < _LIQ_CLOSE_MIN:
+                    continue
+            except Exception:  # noqa: BLE001
+                pass
+        picks.append({
+            "ticker": ticker,
+            "rank": rank,
+            "close": close,
+            "sector": _col(df, "sector", ticker) if ticker in df.index else None,
+            "liq_unknown": ticker not in df.index,
+            "why": ["leader_radar", "catalyst_window_entry", "fire_precipice"],
+            "features": {
+                "raw_state": r.get("raw_state"),
+                "state": r.get("state"),
+                "days_in_state": r.get("days_in_state"),
+                "breakaway_watch_state": r.get("breakaway_watch_state"),
+            },
+            "authority": "display_only",
+        })
+    return picks
+
+
+def _book_leader_onset(df: pd.DataFrame, book: dict) -> list[dict]:
+    """plab_leader_onset — BREAKAWAY (onset) fire candidates from radar.json.
+
+    Reads fire_onset=True rows. Ranks by days_in_state asc (most-recent BREAKAWAY entry first).
+    LR-R8: consumption-not-recomputation — fire flags consumed as-is from radar.json.
+    """
+    rows = _load_radar_json()
+    if not rows:
+        return []
+
+    fired = [r for r in rows if r.get("fire_onset") is True]
+    if not fired:
+        return []
+
+    # Sort by days_in_state asc (None last)
+    fired.sort(key=lambda r: (
+        r.get("days_in_state") if r.get("days_in_state") is not None else 9999,
+    ))
+    fired = fired[:book["max_picks"]]
+
+    picks = []
+    for rank, r in enumerate(fired, 1):
+        ticker = r.get("ticker")
+        if not ticker:
+            continue
+        close = None
+        if ticker in df.index:
+            try:
+                close = _col(df, "close", ticker)
+                if close is not None and float(close) < _LIQ_CLOSE_MIN:
+                    continue
+            except Exception:  # noqa: BLE001
+                pass
+        picks.append({
+            "ticker": ticker,
+            "rank": rank,
+            "close": close,
+            "sector": _col(df, "sector", ticker) if ticker in df.index else None,
+            "liq_unknown": ticker not in df.index,
+            "why": ["leader_radar", "breakaway_entry", "fire_onset"],
+            "features": {
+                "raw_state": r.get("raw_state"),
+                "state": r.get("state"),
+                "days_in_state": r.get("days_in_state"),
+                "breakaway_watch_state": r.get("breakaway_watch_state"),
+            },
+            "authority": "display_only",
+        })
+    return picks
+
+
+# ---------------------------------------------------------------------------- #
 # Dispatch table
 # ---------------------------------------------------------------------------- #
 
@@ -855,6 +980,9 @@ _BOOK_FUNCS: dict[str, object] = {
     # Family G — Flow Leaders (FL-R8): artifact-sourced books (bypass snap-based filter)
     "plab_flow_leader":          _book_flow_leader,
     "plab_flow_washout":         _book_flow_washout,
+    # Family H — Leader Radar (LR W2a): artifact-sourced books (fire flags from radar.json)
+    "plab_leader_precipice":     _book_leader_precipice,
+    "plab_leader_onset":         _book_leader_onset,
 }
 
 

@@ -271,9 +271,23 @@ lanes:
           build_pick_lab (Pick Lab plab_flow_leader/plab_flow_washout books
           consume leaders.json). Absent stores → honest nulls; always exits 0.
           outputs: [site/flowleaders/leaders.json, site/flow_leaders.html]
+      - id: build_leader_radar
+        module: scripts.build_leader_radar
+        note: >
+          LR W2a — Leader Radar nightly builder. Resolves universe (mag7 + AI baskets
+          + Dow-30 + NDX) from baskets/membership.json + baskets_nasdaq/membership.json.
+          Builds/appends data/rs_series/<T>.parquet (full-history backfill on first run).
+          Persists data/leader_radar/state_history.parquet (raw + confirmed hysteresis).
+          Appends data/leader_radar/revisions_history.parquet. Runs winner_autopsy
+          compute_watch_states for breakaway detection. Produces site/leaderradar/radar.json
+          (schema leader_radar.v1) with per-name states, fire flags, regime, handoff pairs.
+          Runs AFTER build_flow_leaders, BEFORE build_pick_lab (plab_leader_precipice /
+          plab_leader_onset books consume radar.json). Absent stores → honest nulls;
+          always exits 0 (never breaks the render).
+          outputs: [site/leaderradar/radar.json, data/leader_radar/state_history.parquet]
       - id: build_pick_lab
         module: scripts.build_pick_lab
-        note: Pick Lab nightly runner — enriches snapshot, fires 25 books, grades, writes site/labdata/pick_lab.json + pick_lab_longhold.json + renders us_stocks_lab.html (never-break contract)
+        note: Pick Lab nightly runner — enriches snapshot, fires 27 books, grades, writes site/labdata/pick_lab.json + pick_lab_longhold.json + renders us_stocks_lab.html (never-break contract)
       - id: build_reflexivity_overlay
         module: scripts.build_reflexivity_overlay
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2

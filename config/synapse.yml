@@ -10957,3 +10957,54 @@ artifacts:
       FL W2. Rendered HTML page for the Flow Leaders Desk (Board A + Board B + ETF strip
       + playbook accordion). Bilingual EN/ZH. Kill-switch noindex stub when flow_leaders.enabled=false.
       authority.may_rank/gate/size/escalate=false.
+
+  site-leader-radar:
+    path: site/leaderradar/radar.json
+    format: json
+    producer: scripts/build_leader_radar.py
+    known_extra_writers: []
+    owner_program: leader-radar
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: leader_radar.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/pick_lab/candidates.py
+    external_consumers: []
+    notes: >
+      LR W2a. Leader Radar nightly artifact: per-name lifecycle states (raw + confirmed
+      hysteresis), fire_precipice / fire_onset flags, regime, handoff pairs, rerating watch.
+      Schema leader_radar.v1. Coverage: mag7 + AI baskets + Dow-30 + NDX intersection
+      with ohlcv. Stale flag when prices lag NYSE calendar >2 sessions. Display-only;
+      fire flags consumed by plab_leader_precipice / plab_leader_onset Pick Lab books.
+      Nothing here feeds any authority surface (CONST-ART2).
+      authority.may_rank/gate/size/escalate=false.
+
+  leader-radar-state-history:
+    path: data/leader_radar/state_history.parquet
+    format: parquet
+    producer: scripts/build_leader_radar.py
+    known_extra_writers: []
+    owner_program: leader-radar
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: null
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_leader_radar.py
+    external_consumers: []
+    notes: >
+      LR W2a. Per-session (date, ticker, raw_state, confirmed_state) state history
+      for the leader_lifecycle hysteresis state machine. Single writer (build_leader_radar).
+      Infrastructure store; drives hysteresis entry/exit counting and days_in_state anchoring.
+      Not a signal authority surface. authority.may_rank/gate/size/escalate=false.

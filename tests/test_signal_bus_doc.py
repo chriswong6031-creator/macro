@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 380, (
-        f"Expected 380 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 382, (
+        f"Expected 382 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (leader-radar W2a added site-leader-radar, leader-radar-state-history"
+        " = 380->382;"
         " (RL W1 #2240 added oracle-ratio-lens-feed, oracle-ratio-lens-ledger"
         " = 378->380 — pin catch-up rode in #2242, missed in the RL W1 merge;"
         " (IGN WB added ignition-radar-latest, ignition-log-us = 376->378;"

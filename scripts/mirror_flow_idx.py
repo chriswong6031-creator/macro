@@ -1,4 +1,4 @@
-"""scripts/mirror_flow_idx.py — R2 mirror for site/flow/index.json and flow leaders.
+"""scripts/mirror_flow_idx.py — R2 mirror for site/flow/index.json, flow leaders, leader radar.
 
 Uploads site/flow/index.json to R2 key live_flow/flow_idx.json so the live
 options-flow heatmap layer can read a fresh flow manifest without waiting for a
@@ -6,6 +6,9 @@ full GitHub Pages deploy cycle.
 
 With --leaders flag, uploads site/flowleaders/leaders.json to R2 key
 flowleaders/leaders.json (Flow Leaders Desk W2).
+
+With --radar flag, uploads site/leaderradar/radar.json to R2 key
+leaderradar/radar.json (Leader Radar LR W2a).
 
 Called as a non-fatal step in daily.yml (engine job) AFTER the parallel band
 finishes (cl_gex → build_options_flow has written site/flow/index.json).
@@ -19,6 +22,7 @@ Usage
 -----
     python -m scripts.mirror_flow_idx             # uploads flow_idx.json
     python -m scripts.mirror_flow_idx --leaders   # uploads leaders.json
+    python -m scripts.mirror_flow_idx --radar     # uploads radar.json
 
 No other arguments; all config comes from environment variables:
     R2_ENDPOINT           Cloudflare R2 endpoint URL
@@ -42,6 +46,9 @@ R2_KEY = "live_flow/flow_idx.json"
 
 LEADERS_PATH = _REPO / "site" / "flowleaders" / "leaders.json"
 LEADERS_R2_KEY = "flowleaders/leaders.json"
+
+RADAR_PATH = _REPO / "site" / "leaderradar" / "radar.json"
+RADAR_R2_KEY = "leaderradar/radar.json"
 
 
 def _r2_client():
@@ -114,9 +121,17 @@ def main() -> int:
         action="store_true",
         help="Upload site/flowleaders/leaders.json instead of site/flow/index.json",
     )
+    parser.add_argument(
+        "--radar",
+        action="store_true",
+        help="Upload site/leaderradar/radar.json (Leader Radar LR W2a)",
+    )
     args = parser.parse_args()
 
-    if args.leaders:
+    if args.radar:
+        local_path = RADAR_PATH
+        r2_key = RADAR_R2_KEY
+    elif args.leaders:
         local_path = LEADERS_PATH
         r2_key = LEADERS_R2_KEY
     else:

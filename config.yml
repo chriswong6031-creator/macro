@@ -5976,6 +5976,57 @@ intraday_flow:
   washout_lookback: 10        # days for L1 washout_recent (bb_lower_reclaim)
 
 # --------------------------------------------------------------------------- #
+# leader_radar — Leader Radar (LR W2a, 2026-07-11).
+# Universe: mag7 ∪ AI baskets ∪ Dow-30 ∪ NDX ∩ has-ohlcv; ETFs excluded.
+# Kill-switch: enabled: false → noindex stub + skip JSON.
+# Thresholds live in engine/leader_lifecycle.py (frozen; not duplicated here).
+# dow30: pinned Dow Jones Industrial Average composition (2026-07-11).
+#   If a dedicated store provides this list later, move it there and reference.
+# --------------------------------------------------------------------------- #
+leader_radar:
+  enabled: true                    # kill-switch: false → noindex stub, skip JSON
+  basket_keys:                     # LR-R12 basket keys from data/baskets/membership.json
+    - mag7
+    - ai_infra
+    - ai_semiconductors
+    - semicap_equipment
+    - memory_storage
+    - data_center_power
+    - ai_software
+    - ai_neoclouds
+  dow30:                           # Dow-30 pinned list (2026-07-11; update on constituent change)
+    - AAPL
+    - AMGN
+    - AMZN
+    - AXP
+    - BA
+    - CAT
+    - CRM
+    - CSCO
+    - CVX
+    - DIS
+    - GS
+    - HD
+    - HON
+    - IBM
+    - INTC
+    - JNJ
+    - JPM
+    - KO
+    - MCD
+    - MMM
+    - MRK
+    - MSFT
+    - NKE
+    - NVDA
+    - PG
+    - SHW
+    - TRV
+    - UNH
+    - V
+    - VZ
+
+# --------------------------------------------------------------------------- #
 # flow_leaders — Flow Leaders Desk (FL W2, 2026-07-11).
 # Board A: recurring net-impact leadership; Board B: washout turns.
 # Kill-switch: enabled: false → noindex stub + skip JSON + no nav entry.
