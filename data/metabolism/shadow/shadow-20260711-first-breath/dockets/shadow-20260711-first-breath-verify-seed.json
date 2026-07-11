@@ -1,0 +1,25 @@
+{
+  "schema": "metabolism.docket.v1",
+  "cycle_id": "shadow-20260711-first-breath-verify-seed",
+  "lobe": "til",
+  "as_of": "2026-07-11",
+  "generated_by": "metabolism_shadow_cycle",
+  "proposals": [
+    {
+      "proposal_id": "shadow-seed-verify-001",
+      "fitness_contract": {
+        "proposal_id": "shadow-seed-verify-001",
+        "sensor": "front_run_lead",
+        "expected_sign": "+",
+        "band": "accruing",
+        "check_by": "2026-07-11",
+        "placebo_to_beat": "shadow placebo tape",
+        "falsifier_spec": {},
+        "asof": "2026-07-11",
+        "title": "[shadow-seed] synthetic contract for VERIFY grading path exercise",
+        "_shadow_seeded": true
+      }
+    }
+  ],
+  "_shadow_seeded": true
+}

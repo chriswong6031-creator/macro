@@ -994,6 +994,8 @@ jobs:
         run: python -m pytest tests/test_metabolism_w2_pulse.py -q
       - name: metabolism v4 w5 suite (steering memory + applier)
         run: python -m pytest tests/test_metabolism_v4_w5.py -q
+      - name: metabolism v4 w6 suite (shadow cycle)
+        run: python -m pytest tests/test_metabolism_shadow_cycle.py -q
       - name: metabolism phase-a suite (spine + inertness contracts)
         run: python -m pytest tests/test_metabolism_phase_a.py -q
       - name: self-mod fence selftest

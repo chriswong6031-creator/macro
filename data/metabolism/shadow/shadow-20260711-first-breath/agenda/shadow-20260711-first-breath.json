@@ -1,0 +1,44 @@
+{
+  "schema": "metabolism.agenda.v1",
+  "cycle_id": "shadow-20260711-first-breath",
+  "as_of": "2026-07-11",
+  "generated_by": "metabolism_agenda",
+  "provider": null,
+  "degraded_reason": "no_provider",
+  "items": [],
+  "rejected": [],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "dispatch",
+      "grant",
+      "pr_open",
+      "lobe_roster_change"
+    ]
+  },
+  "grounding": {
+    "ok": true,
+    "checked": 0,
+    "ungrounded": [],
+    "unverified": false,
+    "registry_status": {
+      "lobes_loaded": true,
+      "rulings_loaded": true,
+      "sensors_loaded": true,
+      "sensors_note": "sensors grounded from fitness cards"
+    }
+  }
+}

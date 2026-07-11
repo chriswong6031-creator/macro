@@ -136,9 +136,19 @@ def _load_docket(docket_path: str | Path) -> dict[str, Any]:
 
 def _load_case_law(root: Path | None = None) -> dict[str, str]:
     r = _repo_root(root)
+    # The in-flight screen matches OPEN lanes only (shadow finding 2026-07-11):
+    # the whole ACTIVE_BUILD_MAP embeds ~500 merged-PR titles, which makes the
+    # token quorum trivially satisfiable by common engineering words and would
+    # deny essentially every proposal.  Killed topics are DO_NOT_REBUILD's job
+    # (kept whole-file).  Fail-closed: missing heading → full text.
+    try:
+        from engine.metabolism.propose import _open_lanes_only  # noqa: PLC0415
+        active_raw = _open_lanes_only(_read_text(r / "docs" / "ACTIVE_BUILD_MAP.md"))
+    except Exception:  # noqa: BLE001
+        active_raw = _read_text(r / "docs" / "ACTIVE_BUILD_MAP.md")
     return {
         "killed": _normalize(_read_text(r / "research" / "DO_NOT_REBUILD.md")),
-        "active": _normalize(_read_text(r / "docs" / "ACTIVE_BUILD_MAP.md")),
+        "active": _normalize(active_raw),
     }
 
 

@@ -1,0 +1,50 @@
+{
+  "schema": "metabolism.verify.v1",
+  "cycle_id": "shadow-20260711-first-breath-verify-seed",
+  "proposal_id": "shadow-seed-verify-001",
+  "check_by": "2026-07-11",
+  "contract": {
+    "proposal_id": "shadow-seed-verify-001",
+    "sensor": "front_run_lead",
+    "expected_sign": "+",
+    "band": "accruing",
+    "check_by": "2026-07-11",
+    "placebo_to_beat": "shadow placebo tape",
+    "falsifier_spec": {},
+    "asof": "2026-07-11",
+    "title": "[shadow-seed] synthetic contract for VERIFY grading path exercise",
+    "_shadow_seeded": true
+  },
+  "realized": {
+    "outcome": "UNVERIFIABLE",
+    "detail": "check spec is null or not a dict",
+    "delta_vs_contract": "sensor=front_run_lead expected=+ band='accruing' outcome=UNVERIFIABLE"
+  },
+  "triage": {
+    "classification": "unverifiable",
+    "action": "operator_tap",
+    "revert_plan": null,
+    "operator_tap_reason": "Outcome unverifiable: missing data, soft check, or spec unparseable. Operator should review whether the check_by spec can be revised.",
+    "note": "UNVERIFIABLE outcome routes to operator tap per R-AUT-11."
+  },
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "auto_revert_without_operator"
+    ]
+  },
+  "ts": "2026-07-11T15:22:51+00:00"
+}
