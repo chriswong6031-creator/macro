@@ -223,11 +223,14 @@ def _item_to_proposal(item: dict[str, Any]) -> dict[str, Any] | None:
         rationale = str(item.get("rationale") or item.get("reason") or item.get("description") or "").strip()
 
         # Fitness contract
-        # Charter proposals MUST carry a fitness_contract with at least a sensor
-        # field (the law is "every proposal must carry a falsifiable contract").
-        # Lifecycle items legitimately lack fitness_contracts so we allow defaults
-        # for them; but charter proposals without one are refused here rather than
-        # having a fabricated contract injected.
+        # Scout charter proposals (metabolism.charter_proposal.v1) carry no
+        # fitness_contract BY DESIGN — chartering a display-tier lobe is a
+        # lifecycle act, not a sensor-delta build.  Its honest falsifiable
+        # contract is liveness-at-maturity: the chartered lobe must produce
+        # its artifact and pass health by check_by.  We synthesize that
+        # default openly, stamped with contract_source so the adjudicator
+        # and any later audit can see the contract was applier-defaulted,
+        # never silently fabricated as a fitness claim.
         fc_raw = item.get("fitness_contract") or {}
         if not isinstance(fc_raw, dict):
             fc_raw = {}
@@ -235,13 +238,7 @@ def _item_to_proposal(item: dict[str, Any]) -> dict[str, Any] | None:
         item_schema = str(item.get("schema") or "")
         is_charter_proposal = "charter_proposal" in item_schema and "lifecycle" not in item_schema
         if is_charter_proposal and not fc_raw.get("sensor"):
-            # Charter proposal with no measurable contract — refuse rather than fabricate.
-            log.warning(
-                "applier._item_to_proposal: charter proposal '%s' carries no fitness_contract "
-                "sensor — refusing to prevent silent contract fabrication",
-                title,
-            )
-            return None
+            sensor = "liveness"
 
         fc: dict[str, Any] = {
             "sensor": fc_raw.get("sensor") or sensor,
@@ -249,6 +246,9 @@ def _item_to_proposal(item: dict[str, Any]) -> dict[str, Any] | None:
             "band": fc_raw.get("band") or "unspecified",
             "check_by": fc_raw.get("check_by") or "2026-10-15",
             "placebo_to_beat": fc_raw.get("placebo_to_beat") or "shadow placebo tape",
+            "contract_source": (
+                "item" if fc_raw.get("sensor") else "applier_default_charter_liveness"
+            ),
         }
 
         return {

@@ -112,6 +112,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if is_paused():
         log.info("metabolism_verify: %s — no-op exit 0", pause_reason())
+        # Phase-A inertness contract: a paused single-cycle invocation journals
+        # noop_paused so the cycle's journal shows verify was reached and
+        # deliberately skipped (scan mode has no cycle to journal against).
+        if args.cycle_id:
+            try:
+                from scripts.metabolism_journal import finish_stage  # type: ignore[import]
+                finish_stage(args.cycle_id, "verify", status="noop_paused",
+                             note=pause_reason(), root=root)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("metabolism_verify: paused-journal write failed: %s", exc)
         return 0
 
     # ── Scan mode: iterate all pending cycles ─────────────────────────────

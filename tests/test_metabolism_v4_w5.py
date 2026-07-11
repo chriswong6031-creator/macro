@@ -188,6 +188,11 @@ class TestProposeContextBlocks:
         assert isinstance(prior, str)
         # When file is seeded, it should not be the accruing message
         assert "accruing until first dream cycle" not in prior
+        # The seeded advisory payload must reach the assembled block — a header
+        # or fallback string passing this test would green-light dead wiring.
+        assert "low hit rate" in prior, (
+            f"Seeded advisory_observations not found in prior block: {prior!r}"
+        )
 
     def test_insight_bus_in_context(self, tmp_path: Path) -> None:
         """Insight bus block contains seeded row summary when insight_bus.jsonl is seeded."""
@@ -454,6 +459,61 @@ class TestAccrualHonestyRejection:
         # No charter file → empty
         result = _load_accruing_sensor_maturity(tmp_path, "unknown_lobe")
         assert result == {}
+
+
+# ── Unit 4: Applier charter-default contract provenance ──────────────────────
+
+class TestApplierCharterDefaultContract:
+    """A real scout-shaped charter proposal (no fitness_contract, by design)
+    converts to an injected proposal carrying an openly-stamped default
+    liveness contract — never silently dropped, never silently fabricated."""
+
+    def test_scout_shaped_proposal_gets_stamped_liveness_default(self, tmp_path: Path) -> None:
+        proposals_dir = tmp_path / "data" / "metabolism" / "charter_proposals"
+        proposals_dir.mkdir(parents=True, exist_ok=True)
+        # Mirror scout._build_charter_proposal output: metabolism.charter_proposal.v1
+        # carries NO fitness_contract key.
+        item = {
+            "schema": "metabolism.charter_proposal.v1",
+            "ts": "2026-07-11T00:00:00+00:00",
+            "cycle_id": "cyc-test",
+            "domain_id": "options_dealer_flow",
+            "label": "Options dealer flow",
+            "description": "Recurring coverage gap",
+            "proposed_tier": "display",
+            "proposed_lifecycle_state": "proposed",
+            "title": "Charter lobe for options_dealer_flow",
+            "rationale": "3+ distinct uncovered cycles",
+        }
+        (proposals_dir / "options_dealer_flow.json").write_text(
+            json.dumps(item), encoding="utf-8"
+        )
+
+        from engine.metabolism.applier import consume_charter_proposals
+        injected = consume_charter_proposals(root=tmp_path, armed=True, dry_run=False)
+        assert len(injected) == 1, "Scout charter proposal must convert, not drop"
+        fc = injected[0]["fitness_contract"]
+        assert fc["sensor"] == "liveness"
+        assert fc["contract_source"] == "applier_default_charter_liveness", (
+            "Applier-defaulted contracts must be provenance-stamped"
+        )
+
+    def test_item_supplied_contract_is_stamped_as_item(self, tmp_path: Path) -> None:
+        proposals_dir = tmp_path / "data" / "metabolism" / "charter_proposals"
+        proposals_dir.mkdir(parents=True, exist_ok=True)
+        item = {
+            "schema": "metabolism.charter_proposal.v1",
+            "title": "Charter with explicit contract",
+            "rationale": "carries its own contract",
+            "fitness_contract": {"sensor": "front_run_lead", "check_by": "2026-12-01"},
+        }
+        (proposals_dir / "explicit.json").write_text(json.dumps(item), encoding="utf-8")
+        from engine.metabolism.applier import consume_charter_proposals
+        injected = consume_charter_proposals(root=tmp_path, armed=True, dry_run=False)
+        assert len(injected) == 1
+        fc = injected[0]["fitness_contract"]
+        assert fc["sensor"] == "front_run_lead"
+        assert fc["contract_source"] == "item"
 
 
 # ── Unit 4: Applier tier-raise refusal ────────────────────────────────────────
