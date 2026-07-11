@@ -996,10 +996,38 @@
     var side = pos >= 0 ? "left:50%;width:" + pct + "%" : "right:50%;width:" + pct + "%";
     return '<span class="gd-bar"><i style="' + side + ';background:' + color + '"></i></span>';
   }
+  // Auto-tour popup: a compact one-line pill — flag, name, regime chip, market risk —
+  // anchored bottom-centre of the stage so the cycling tour never covers the globe
+  // (the full 264px card blocked most of the viewport on mobile).
+  function showMiniTip(m) {
+    var risk = (m.drawdown_risk != null)
+      ? bilingual("Risk " + m.drawdown_risk + "/100", "风险 " + m.drawdown_risk + "/100")
+      : bilingual(m.risk_text_en || "", m.risk_text_zh || "");
+    tip.innerHTML =
+      '<span class="gd-tip-flag">' + m.flag + '</span>' +
+      '<span class="gd-mini-name">' + bilingual(m.name_en, m.name_zh) + '</span>' +
+      '<span class="gd-chip ' + m.quad + '">' + bilingual(m.quad_name_en, m.quad_name_zh) + '</span>' +
+      '<span class="gd-mini-risk">' + risk + '</span>';
+    tip.classList.add("mini");
+    tip.classList.remove("pinned");
+    tip.setAttribute("role", "tooltip");
+    tip.tabIndex = -1;
+    tip.style.pointerEvents = "none";
+    tip.style.right = ""; tip.style.bottom = ""; tip.style.width = "";  // clear any prior bottom-sheet
+    tip.hidden = false;
+    var sr = stage.getBoundingClientRect(), pad = 10;
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var x = sr.left + W / 2 - tw / 2;
+    var y = sr.top + H - th - 6;
+    x = Math.max(pad, Math.min(x, window.innerWidth - tw - pad));
+    y = Math.max(pad, Math.min(y, window.innerHeight - th - pad));
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
   // showTip(m, cx, cy, pinned, isTour)
-  // isTour=true: suppress role=dialog, suppress focus(), suppress live announcement,
-  // add pointer-events:none so hover flows keep working during tour flyover.
+  // isTour=true: the tour renders the compact pill instead of the full card —
+  // non-interactive, no focus steal, no role=dialog, no live announcement.
   function showTip(m, cx, cy, pinned, isTour) {
+    if (isTour) { showMiniTip(m); return; }
     var q = m.quad, up = (m.index_chg_pct || 0) >= 0;
     var risk = (m.recession != null || m.drawdown_risk != null)
       ? (m.recession != null ? bilingual("Recession " + m.recession + "/100", "衰退 " + m.recession + "/100") : "")
@@ -1025,6 +1053,7 @@
       '<div class="gd-tip-foot">' + bilingual("Descriptive regime read — not a forecast.", "描述性周期读数，非预测。") +
         (m.macro_asof ? ' · ' + bilingual("as of " + m.macro_asof, "截至 " + m.macro_asof) : '') + '</div>' +
       '<a class="gd-tip-go" href="' + m.href + '">' + bilingual("Open dashboard →", "打开看板 →") + '</a>';
+    tip.classList.remove("mini");   // hover/pinned always use the full card layout
     tip.hidden = false;
     tip.classList.toggle("pinned", !isTour && !!pinned);
     // Tour tooltips: non-interactive (pointer-events:none), role=tooltip, no focus
