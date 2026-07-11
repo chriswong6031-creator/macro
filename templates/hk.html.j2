@@ -1880,11 +1880,11 @@
               {%- endif -%}
               {%- if _hk_sc.get('pctile') is not none -%}
               <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
-                <span class="row-pop-val">{{ '%.0f'|format(_hk_sc.get('pctile') * 100) }}p</span></div>
+                <span class="row-pop-val">{{ '%.0f'|format(_hk_sc.get('pctile')) }}p</span></div>
               {%- endif -%}
               {%- if _hk_sc.get('above200') is not none -%}
               <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
-                <span class="row-pop-val">{{ '%.0f'|format(_hk_sc.get('above200') * 100) }}%</span></div>
+                <span class="row-pop-val">{% if _hk_sc.get('above200') %}<span class="up">▲</span> <span class="l-en">above 200d</span><span class="l-zh">高于均线</span>{% else %}<span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span>{% endif %}</span></div>
               {%- endif -%}
               {%- if _hk_sc.get('dc_day') is not none -%}
               <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>

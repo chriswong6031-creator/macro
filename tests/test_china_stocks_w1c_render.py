@@ -615,14 +615,19 @@ def _sector_anv2_row():
 
 
 def _make_sector_card_for_ticker(ticker="512480.SS"):
-    """Synthetic sector card mirroring build_china._sector_cards output."""
+    """Synthetic sector card mirroring build_china._sector_cards output.
+
+    Contract (per engine/china_inputs.py):
+      - pctile: float in 0-100 range (rs.rank(pct=True)*100)
+      - above200: bool (single-name bool from above_200d_trend)
+    """
     return {
         "ticker": ticker,
         "name": "Tech Sector",
         "mom20": 3.5,
         "mom60": 12.1,
-        "above200": 0.67,
-        "pctile": 0.82,
+        "above200": True,
+        "pctile": 82.0,
         "state": "RISING",
         "label": "Uptrend",
         "dir": "up",
@@ -634,6 +639,32 @@ def _make_sector_card_for_ticker(ticker="512480.SS"):
         "eq_badge": "EQ+",
         "eq_dir": "up",
         "eq_tip": "Equity quality improving",
+    }
+
+
+def _make_sector_card_none_enrichment(ticker="600519.SS"):
+    """Sector card where optional enrichment fields are present but None.
+
+    Tests that the template omits those cells gracefully without crash.
+    """
+    return {
+        "ticker": ticker,
+        "name": "Wine Sector",
+        "mom20": None,
+        "mom60": None,
+        "above200": None,
+        "pctile": None,
+        "state": "FLAT",
+        "label": "Flat",
+        "dir": "flat",
+        "entry": None,
+        "age_short": None,
+        "age_short_zh": None,
+        "dc_day": None,
+        "dc_band": None,
+        "eq_badge": None,
+        "eq_dir": None,
+        "eq_tip": None,
     }
 
 
@@ -746,7 +777,11 @@ def test_anv2_payload_non_bottoming_row_no_buy_caveat_in_rp_src():
 
 
 def test_anv2_sector_row_enriched_via_sectors_by_ticker():
-    """SECTOR rows must pull mom20/pctile/entry from sectors_by_ticker lookup."""
+    """SECTOR rows must pull mom20/pctile/entry from sectors_by_ticker lookup.
+
+    pctile is already 0-100 — rendered value must be '82', NOT '8200'.
+    above200 is a bool — rendered as glyph (▲/—), NOT as percentage.
+    """
     row = _sector_anv2_row()
     sc = _make_sector_card_for_ticker("512480.SS")
     html = _render_anv2(
@@ -757,6 +792,12 @@ def test_anv2_sector_row_enriched_via_sectors_by_ticker():
     assert "RS percentile" in html, "RS percentile label missing"
     assert "Buy zone" in html or "买入区" in html, "Entry text missing from SECTOR payload"
     assert "EQ+" in html, "eq_badge missing from SECTOR payload"
+    # pctile 82.0 must render as '82p', NOT '8200p' (already-0-100 value)
+    assert "82p" in html, "pctile 82.0 must render as '82p'"
+    assert "8200" not in html, "pctile double-scaled to 8200 — ×100 bug present"
+    # above200=True bool must render as '▲' glyph, NOT as a percentage
+    assert "▲" in html, "above200=True bool must render as ▲ glyph"
+    assert "100%" not in html, "above200 bool must not render as '100%'"
 
 
 def test_anv2_sector_row_missing_sector_card_graceful():
@@ -792,3 +833,29 @@ def test_anv2_view_all_button_absent_when_4_or_fewer():
     rows = [_blank_anv2_row(name=f"Row {i}", name_zh=f"行 {i}") for i in range(4)]
     html = _render_anv2({"buy_now": rows})
     assert "lst-more" not in html, "lst-more button appeared for <= 4 items"
+
+
+def test_anv2_sector_card_none_enrichment_fields_render_without_crash():
+    """SECTOR row with a card where mom20/mom60/pctile/above200 are all None must
+    render without crash and must omit those cells from the payload.
+
+    Covers the case where a sector card exists in sectors_by_ticker but the
+    enrichment fields have not yet been computed (e.g. new listing, data gap).
+    """
+    row = _sector_anv2_row()
+    # Override the ticker to match the None-enrichment card
+    row = dict(row)
+    row["id"] = "600519.SS"
+    sc = _make_sector_card_none_enrichment("600519.SS")
+    html = _render_anv2(
+        {"buy_now": [row]},
+        sectors_by_ticker={"600519.SS": sc},
+    )
+    # Must render at all (no crash)
+    assert "data-rpop" in html, "data-rpop missing when enrichment fields are None"
+    assert 'class="rp-src"' in html, ".rp-src missing when enrichment fields are None"
+    # None-valued cells must be omitted — labels should NOT appear
+    assert "20d mom" not in html, "20d mom label rendered despite mom20=None"
+    assert "60d mom" not in html, "60d mom label rendered despite mom60=None"
+    assert "RS percentile" not in html, "RS percentile label rendered despite pctile=None"
+    assert "Above 200d" not in html, "Above 200d label rendered despite above200=None"
