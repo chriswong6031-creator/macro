@@ -2243,8 +2243,6 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
    Tokens reuse theme.css vars throughout.
    ══════════════════════════════════════════════════════ */
 
-/* ── v2 page wrapper — sits inside .grid as a full-width element ── */
-body.page-macro .mx2-wrap{max-width:980px;width:100%;margin:0 auto;padding:0;position:relative;z-index:1}
 
 /* ── Topbar v2 (within the macro panel) ── */
 body.page-macro .mx2-topbar{
@@ -2641,6 +2639,7 @@ body.page-macro .asset-tile-anim:nth-child(8){transition-delay:.27s}
   body.page-macro .isle-stagger,body.page-macro .idx-card,body.page-macro .asset-tile-anim{
     transition:none!important;opacity:1!important;transform:none!important;
   }
+  body.page-macro .sx-tray{transition:none!important}
 }
 
 /* @property for aurora conic-gradient animation (guarded by try/catch in JS) */
@@ -2719,30 +2718,6 @@ body.page-macro .isle-ev-footnote{
   border:1px solid color-mix(in srgb,var(--info) 14%,transparent);
   border-radius:9px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:8px;
 }
-/* Legacy mx2-evidence classes (kept for smoothness; hidden in new island structure) */
-body.page-macro .mx2-evidence-tray{padding:18px 0 0;display:flex;flex-direction:column;gap:6px}
-body.page-macro .mx2-ev-row{
-  display:grid;grid-template-columns:18px 1fr 120px 36px;
-  align-items:center;gap:10px;padding:11px 14px;
-  background:var(--panel2);border:1px solid var(--line);border-radius:10px;
-}
-body.page-macro .mx2-ev-row.weakest{border-color:color-mix(in srgb,var(--warn) 30%,var(--line))}
-body.page-macro .mx2-ev-dir{font-size:14px;font-weight:800;text-align:center}
-body.page-macro .mx2-ev-name{font-size:12px;font-weight:700;color:var(--ink,var(--text));display:block}
-body.page-macro .mx2-ev-sub{font-size:10px;color:var(--muted);line-height:1.4;margin-top:1px;display:block}
-body.page-macro .mx2-ev-bar-track{height:4px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:2px;overflow:hidden}
-body.page-macro .mx2-ev-bar-fill{height:4px;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-body.page-macro .mx2-ev-score{font-size:14px;font-weight:800;text-align:right}
-body.page-macro .mx2-ev-footnote{
-  font-size:10px;color:var(--muted);line-height:1.5;
-  padding:10px 14px;
-  background:color-mix(in srgb,var(--info) 5%,var(--panel));
-  border:1px solid color-mix(in srgb,var(--info) 15%,transparent);
-  border-radius:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:6px;
-}
-/* MTF tape inside evidence tray */
-body.page-macro .mx2-tape-wrap{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
-body.page-macro .mx2-tape-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 
 /* ── EVENTS TRAY (v3 island design) ── */
 body.page-macro .mx2-events-glance{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -2761,32 +2736,6 @@ body.page-macro .isle-ev-cal-card.hot::before{
   background:var(--warn);border-radius:3px 0 0 3px;
 }
 body.page-macro .isle-ev-cal-date{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
-body.page-macro .isle-ev-cal-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
-body.page-macro .isle-ev-cal-name{font-size:14px;font-weight:800;color:var(--ink,var(--text))}
-body.page-macro .isle-ev-cal-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
-body.page-macro .isle-ev-cal-row:last-child{border-bottom:none}
-body.page-macro .isle-ev-cal-key{color:var(--muted)}
-body.page-macro .isle-ev-cal-val{font-weight:700;color:var(--text)}
-/* Fed pricing strip */
-body.page-macro .isle-fed-strip{
-  background:var(--panel2);border:1px solid var(--line);border-radius:11px;
-  padding:14px 16px;margin-top:10px;
-}
-body.page-macro .isle-fed-strip-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
-body.page-macro .isle-fed-strip-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-body.page-macro .isle-fed-metric{display:flex;flex-direction:column;gap:2px}
-body.page-macro .isle-fed-val{font-size:16px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
-body.page-macro .isle-fed-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-body.page-macro .isle-fed-divider{width:1px;height:40px;background:var(--line);flex-shrink:0}
-/* Legacy events detail */
-body.page-macro .mx2-events-tray{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:18px}
-body.page-macro .mx2-ev-detail{
-  background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px;
-}
-body.page-macro .mx2-ev-detail:nth-child(1){transition-delay:.02s}
-body.page-macro .mx2-ev-detail:nth-child(2){transition-delay:.05s}
-body.page-macro .mx2-ev-detail:nth-child(3){transition-delay:.08s}
-body.page-macro .mx2-ev-detail:nth-child(4){transition-delay:.11s}
 
 /* ── MARKETS TRAY ── */
 body.page-macro .mx2-mkt-glance{display:flex;gap:8px;flex-wrap:wrap}
@@ -2802,7 +2751,6 @@ body.page-macro .mx2-mkt-chg.up{color:var(--up)} body.page-macro .mx2-mkt-chg.dn
 body.page-macro .mx2-mkt-px{font-size:18px;font-weight:800;color:var(--ink,var(--text));line-height:1.1;margin-top:2px;font-variant-numeric:tabular-nums}
 
 /* Tray inner — index health grid (v3 idx-card style) */
-body.page-macro .mx2-markets-tray{display:flex;flex-direction:column;gap:16px;padding-top:20px}
 body.page-macro .mx2-mkt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 /* idx-card: stagger animation defined in island stagger block above */
 body.page-macro .idx-card{
@@ -2837,12 +2785,6 @@ body.page-macro .mx2-stat.mt{color:var(--muted);background:color-mix(in srgb,var
 body.page-macro .isle-sector-block{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 body.page-macro .isle-sector-col{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
 body.page-macro .isle-sector-col-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px}
-body.page-macro .isle-sh-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
-body.page-macro .isle-sh-row:last-child{border-bottom:none}
-body.page-macro .isle-sh-arrow{font-size:11px;width:14px;text-align:center;flex-shrink:0}
-body.page-macro .isle-sh-heat{color:var(--up)} body.page-macro .isle-sh-cool{color:var(--down)}
-body.page-macro .isle-sh-name{font-size:12px;font-weight:600;color:var(--text);flex:1}
-body.page-macro .isle-sh-rank{font-size:10px;font-weight:700;color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent);border-radius:4px;padding:1px 5px}
 /* Legacy sector */
 body.page-macro .mx2-sh-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 body.page-macro .mx2-sh-col{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
@@ -2854,24 +2796,9 @@ body.page-macro .mx2-sh-arr.heat{color:var(--up)} body.page-macro .mx2-sh-arr.co
 body.page-macro .mx2-sh-name{font-size:12px;font-weight:600;color:var(--text);flex:1}
 body.page-macro .mx2-sh-rk{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
 
-/* Heatmap wrap (v3 chrome around the #heatmap-scorecard EMPTY mount) */
-body.page-macro .isle-heatmap-wrap{
-  background:var(--panel);border:1px solid var(--line);border-radius:11px;
-  overflow:hidden;margin-top:14px;
-}
-body.page-macro .isle-heatmap-head{
-  padding:10px 14px;border-bottom:1px solid var(--line);
-  display:flex;justify-content:space-between;align-items:center;
-}
-body.page-macro .isle-heatmap-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-body.page-macro .isle-heatmap-stamp{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
-body.page-macro .isle-heatmap-legend{display:flex;align-items:center;gap:6px;padding:6px 14px 8px;font-size:9px;color:var(--muted)}
-body.page-macro .isle-legend-bar{flex:1;height:5px;border-radius:3px;background:linear-gradient(90deg,#c0392b 0%,#8b93a1 50%,#3ec87a 100%)}
 /* Heatmap chrome wrapper (v3) */
 body.page-macro .isle-heatmap-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:120px;margin-top:14px}
 body.page-macro .isle-heatmap-chrome-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:10px 14px 0}
-/* Existing heatmap mount */
-body.page-macro .mx2-heatmap-mount{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:120px}
 body.page-macro .mx2-tray-stamp{font-size:10px;color:var(--muted);padding:8px 0 4px;text-align:right;font-variant-numeric:tabular-nums}
 
 /* Section eyebrow label */
@@ -2919,19 +2846,6 @@ body.page-macro .isle-ev-name-wrap{display:flex;flex-direction:column;gap:2px}
 /* Asset strip — v3 style (8 tiles, 4-col grid) */
 body.page-macro .isle-asset-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
 body.page-macro .isle-asset-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 13px}
-body.page-macro .isle-at-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
-body.page-macro .isle-at-val{font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-body.page-macro .isle-at-chg{font-size:11px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
-body.page-macro .isle-at-chg.up{color:var(--up)} body.page-macro .isle-at-chg.dn{color:var(--down)} body.page-macro .isle-at-chg.mt{color:var(--muted)}
-body.page-macro .isle-at-ctx{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.3}
-/* Legacy asset strip classes */
-body.page-macro .mx2-asset-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
-body.page-macro .mx2-at{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 13px}
-body.page-macro .mx2-at-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
-body.page-macro .mx2-at-val{font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-body.page-macro .mx2-at-chg{font-size:11px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
-body.page-macro .mx2-at-chg.up{color:var(--up)} body.page-macro .mx2-at-chg.dn{color:var(--down)} body.page-macro .mx2-at-chg.mt{color:var(--muted)}
-body.page-macro .mx2-at-ctx{font-size:10px;color:var(--muted);margin-top:3px}
 
 /* ── Hide old macro sections replaced by v2 ── */
 body.page-macro #sector-heat.mx2-hidden,
@@ -2949,14 +2863,10 @@ body.page-macro .v2-retired-macro{display:none!important}
 
 /* ── Responsive ── */
 @media(max-width:900px){
-  body.page-macro .mx2-ev-row{grid-template-columns:18px 1fr 80px 32px}
   body.page-macro .isle-ev-row{grid-template-columns:20px 1fr 100px 32px}
   body.page-macro .mx2-mkt-grid{grid-template-columns:1fr 1fr}
-  body.page-macro .mx2-sh-cols{grid-template-columns:1fr}
   body.page-macro .isle-sector-block{grid-template-columns:1fr}
-  body.page-macro .mx2-asset-strip{grid-template-columns:1fr 1fr}
   body.page-macro .isle-asset-strip{grid-template-columns:1fr 1fr}
-  body.page-macro .mx2-events-tray{grid-template-columns:1fr}
   body.page-macro .isle-event-grid{grid-template-columns:1fr}
   body.page-macro .idx-card-grid{grid-template-columns:1fr 1fr}
   body.page-macro .mx2-hero-ctx{max-width:none}
@@ -2971,11 +2881,9 @@ body.page-macro .v2-retired-macro{display:none!important}
 }
 @media(max-width:390px){
   body.page-macro .mx2-mkt-grid{grid-template-columns:1fr}
-  body.page-macro .mx2-asset-strip{grid-template-columns:1fr 1fr}
   body.page-macro .isle-asset-strip{grid-template-columns:1fr 1fr}
   body.page-macro .mx2-mkt-glance{flex-wrap:wrap}
   body.page-macro .mx2-mkt-tile{min-width:calc(50% - 4px)}
-  body.page-macro .mx2-ev-row{grid-template-columns:16px 1fr 50px 28px;gap:6px}
   body.page-macro .isle-ev-row{grid-template-columns:16px 1fr 60px 28px;gap:6px}
 }
 @media(max-width:390px){body.page-macro .mx2-mkt-tile{width:100%;min-width:unset;flex:1 1 100%}}
@@ -2989,29 +2897,75 @@ body.page-macro .mx2-risk-bar-fill{height:5px;border-radius:3px;transition:width
 body.page-macro .mx2-risk-tray{display:flex;flex-direction:column;gap:14px;padding-top:18px}
 body.page-macro .mx2-risk-section{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 body.page-macro .mx2-risk-section-hd{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-body.page-macro .mx2-scare-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
-body.page-macro .mx2-scare-row:last-child{border-bottom:none}
-body.page-macro .mx2-scare-name{font-size:11.5px;font-weight:600;flex:1;color:var(--text)}
-body.page-macro .mx2-scare-bar-wrap{flex:1;max-width:100px;height:4px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:2px;overflow:hidden}
-body.page-macro .mx2-scare-bar{height:4px;border-radius:2px;background:var(--down)}
-body.page-macro .mx2-scare-score{font-size:12px;font-weight:700;width:32px;text-align:right;font-variant-numeric:tabular-nums}
-body.page-macro .mx2-scare-band{font-size:9px;font-weight:700;letter-spacing:.04em;padding:2px 6px;border-radius:4px;white-space:nowrap;color:var(--muted);background:var(--panel);border:1px solid var(--line)}
-body.page-macro .mx2-scare-band.elevated{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);border-color:color-mix(in srgb,var(--warn) 22%,transparent)}
-body.page-macro .mx2-scare-band.high{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 22%,transparent)}
-body.page-macro .mx2-dd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-body.page-macro .mx2-dd-cell{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:center}
-body.page-macro .mx2-dd-label{font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-body.page-macro .mx2-dd-val{font-size:18px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
-/* Sent band inside risk tray */
-body.page-macro .mx2-sent-inside{padding:0}
-body.page-macro .mx2-sent-inside .mx-sent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-@media(max-width:700px){body.page-macro .mx2-sent-inside .mx-sent-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:420px){body.page-macro .mx2-sent-inside .mx-sent-grid{grid-template-columns:1fr}}
-@media(max-width:900px){body.page-macro .mx2-dd-grid{grid-template-columns:1fr 1fr 1fr}}
+/* ── RISK TRAY v3: scare-ladder, dd-ladder, sentiment-grid ── */
+body.page-macro .scare-ladder{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+body.page-macro .scare-row{display:grid;grid-template-columns:minmax(140px,220px) 1fr 52px 60px;align-items:center;gap:12px;padding:11px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+body.page-macro .sc-name{font-size:12px;font-weight:700;color:var(--text);line-height:1.3}
+body.page-macro .sc-bar-track{height:5px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:3px;overflow:hidden}
+body.page-macro .sc-bar-fill{height:5px;border-radius:3px}
+body.page-macro .sc-score{font-size:15px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums}
+body.page-macro .sc-band{font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;text-align:center;white-space:nowrap}
+body.page-macro .sc-band-watch{color:var(--warn);background:rgba(224,160,48,.13);border:1px solid rgba(224,160,48,.25)}
+body.page-macro .sc-band-calm{color:var(--up);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2)}
+body.page-macro .sc-band-elev{color:var(--info);background:rgba(77,142,245,.1);border:1px solid rgba(77,142,245,.2)}
+body.page-macro .sc-band-high{color:var(--down);background:rgba(224,92,92,.1);border:1px solid rgba(224,92,92,.2)}
+body.page-macro .dd-ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+body.page-macro .dd-box{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 13px;text-align:center}
+body.page-macro .dd-horizon{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
+body.page-macro .dd-val{font-size:22px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+body.page-macro .dd-sub{font-size:9px;color:var(--muted);margin-top:3px}
+body.page-macro .dd-caveat{font-size:10px;color:var(--muted);margin-top:10px;padding:9px 13px;border:1px solid var(--line);border-radius:8px;line-height:1.55}
+body.page-macro .sentiment-section{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+body.page-macro .sent-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:12px}
+body.page-macro .fe-synth{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 12px;padding:10px 14px;background:color-mix(in srgb,var(--panel2) 70%,transparent);border:1px solid var(--line);border-radius:10px}
+.sentiment-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+body.page-macro .sent-card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:16px}
+body.page-macro .sent-card-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+body.page-macro .sent-num{font-size:32px;font-weight:900;line-height:1;margin-bottom:8px}
+body.page-macro .grad-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--down) 0%,var(--warn) 50%,var(--up) 100%);margin-bottom:4px;position:relative}
+body.page-macro .grad-marker{position:absolute;top:-4px;width:5px;height:16px;background:var(--ink,var(--text));border-radius:3px;border:2px solid var(--bg)}
+body.page-macro .grad-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:2px;margin-bottom:8px}
+body.page-macro .froth-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(36,43,56,.5)}
+body.page-macro .froth-row:last-child{border-bottom:none}
+body.page-macro .froth-lbl{font-size:11px;color:var(--muted);flex:1}
+body.page-macro .froth-bar-wrap{width:70px;height:5px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:3px;overflow:hidden}
+body.page-macro .froth-bar{height:5px;border-radius:3px;background:var(--warn)}
+body.page-macro .froth-val{font-size:11px;font-weight:700;min-width:26px;text-align:right;font-variant-numeric:tabular-nums}
+body.page-macro .froth-split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+body.page-macro .froth-split-item{text-align:center;padding:8px;background:rgba(224,160,48,.06);border:1px solid rgba(224,160,48,.17);border-radius:7px}
+body.page-macro .froth-split-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px}
+body.page-macro .froth-split-val{font-size:18px;font-weight:900;color:var(--warn);font-variant-numeric:tabular-nums}
+@media(max-width:700px){body.page-macro .scare-row{grid-template-columns:1fr 1fr 40px 52px}}
+@media(max-width:560px){body.page-macro .dd-ladder{grid-template-columns:1fr 1fr}.body.page-macro .sentiment-grid{grid-template-columns:1fr}}
+@media(max-width:480px){body.page-macro .sentiment-grid{grid-template-columns:1fr}}
 
-/* ── POLICY TRAY (Stage B) ── */
+/* ── POLICY TRAY v3 grid ── */
 body.page-macro .mx2-policy-glance{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 body.page-macro .mx2-policy-tray{display:flex;flex-direction:column;gap:12px;padding-top:18px}
+body.page-macro .policy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+body.page-macro .policy-col{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:15px 16px}
+body.page-macro .pc-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:10px}
+body.page-macro .pc-val{font-size:15px;font-weight:800;margin-bottom:10px}
+body.page-macro .pc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:11px}
+body.page-macro .pc-row:last-of-type{border-bottom:none}
+body.page-macro .pc-key{color:var(--muted)}
+body.page-macro .pc-chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px}
+body.page-macro .pc-warn{background:rgba(224,160,48,.13);color:var(--warn);border:1px solid rgba(224,160,48,.22)}
+body.page-macro .pc-info{background:rgba(77,142,245,.11);color:var(--info);border:1px solid rgba(77,142,245,.2)}
+body.page-macro .pc-up{background:rgba(62,200,122,.11);color:var(--up);border:1px solid rgba(62,200,122,.2)}
+body.page-macro .pc-mt{background:rgba(122,132,148,.11);color:var(--muted);border:1px solid rgba(122,132,148,.18)}
+body.page-macro .pc-note{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5}
+body.page-macro .lever-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:10px}
+body.page-macro .lever-bar-lbl{color:var(--muted);flex:1;min-width:80px}
+body.page-macro .lever-bar-track{flex:2;height:4px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:2px;overflow:hidden}
+body.page-macro .lever-bar-fill{height:4px;border-radius:2px}
+body.page-macro .lever-bar-val{min-width:26px;text-align:right;font-weight:700;font-size:10px;font-variant-numeric:tabular-nums}
+body.page-macro .regime-path-row{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+body.page-macro .regime-path-eyebrow{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+/* isle sub-head for tape heading */
+body.page-macro .isle-sub-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:10px;margin-top:16px}
+@media(max-width:700px){body.page-macro .policy-grid{grid-template-columns:1fr}}
+@media(max-width:900px){body.page-macro .policy-grid{grid-template-columns:1fr 1fr}}
 
 /* ── AI BRIEF TRAY (Stage B) ── */
 body.page-macro .mx2-aibrief-glance{font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -3291,7 +3245,7 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
       {# Multi-timeframe tape #}
       {% if MS2 and MS2.mtf and MS2.mtf.indices %}
       <div class="isle-stagger isle-s7" style="margin-top:18px">
-        <div class="isle-ev-tape-head">{{ t('Multi-Timeframe Tape','多周期趋势') }}</div>
+        <div class="isle-sub-head">{{ t('Multi-timeframe tape · the broad US market','多周期趋势 · 美股大盘') }}</div>
         <table class="isle-ev-tape-table">
           <thead><tr>
             <th class="l">{{ t('Index','指数') }}</th>
@@ -5367,23 +5321,23 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
           </div>
           {% endif %}
 
-          {# (a) Scares ladder — only if latest.risk_radar.scares exists #}
+          {# (a) Scares ladder v3 — mockup .scare-ladder design #}
           {% if latest.risk_radar and latest.risk_radar.scares %}
-          <div class="mx2-risk-section">
-            <div class="mx2-risk-section-hd"><span class="l-en">Risk scare ladder</span><span class="l-zh">风险压力梯度</span></div>
+          <div class="scare-ladder">
             {% for sc in latest.risk_radar.scares %}
-            {% set _scc = ('high' if sc.score >= 70 else ('elevated' if sc.score >= 40 else '')) %}
-            <div class="mx2-scare-row">
-              <span class="mx2-scare-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else (sc.name_en if sc.name_en is defined else sc.name) }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
-              <div class="mx2-scare-bar-wrap"><div class="mx2-scare-bar" style="width:{{ [sc.score,100]|min }}%;background:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 40 else 'var(--muted)') }}"></div></div>
-              <span class="mx2-scare-score" style="color:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 40 else 'var(--muted)') }}">{{ sc.score }}</span>
-              {% if sc.band is defined %}<span class="mx2-scare-band {{ _scc }}">{{ sc.band }}</span>{% endif %}
+            {% set _scc = ('sc-band-high' if sc.score >= 70 else ('sc-band-watch' if sc.score >= 50 else ('sc-band-elev' if sc.score >= 35 else 'sc-band-calm'))) %}
+            {% set _scband = (sc.band if sc.band is defined and sc.band else ('WATCH' if sc.score >= 50 else ('ELEVATED' if sc.score >= 35 else 'CALM'))) %}
+            <div class="scare-row isle-stagger isle-s{{ loop.index if loop.index <= 7 else '7' }}">
+              <span class="sc-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else (sc.name_en if sc.name_en is defined else sc.name) }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
+              <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ [sc.score,100]|min }}%;background:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}"></div></div>
+              <span class="sc-score" style="color:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}">{{ sc.score }}</span>
+              <span class="sc-band {{ _scc }}">{{ _scband }}</span>
             </div>
             {% endfor %}
           </div>
           {% else %}
           {# No scares in current data: show radar state card #}
-          <div class="mx2-risk-section">
+          <div class="mx2-risk-section isle-stagger isle-s2">
             <div class="mx2-risk-section-hd"><span class="l-en">Radar read</span><span class="l-zh">雷达读数</span></div>
             <div style="font-size:14px;font-weight:700;color:{{ _rdr_col }}">
               <span class="l-en">{{ _rdr.label_en if _rdr.label_en is defined else _rdr_state }}</span>
@@ -5395,130 +5349,139 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
           </div>
           {% endif %}
 
-          {# (b) Drawdown ladder h5/h10/h21 #}
+          {# (b) Drawdown ladder v3 — 4-tile .dd-ladder: H5 / H10 / H21 / Peak #}
           {% if _rdr.dd5 is defined or _rdr.dd10 is defined or _rdr.dd21 is defined %}
-          <div class="mx2-risk-section">
-            <div class="mx2-risk-section-hd"><span class="l-en">Drawdown odds</span><span class="l-zh">回撤概率</span></div>
-            <div class="mx2-dd-grid">
-              {% if _rdr.dd5 is defined and _rdr.dd5 is not none %}
-              <div class="mx2-dd-cell">
-                <div class="mx2-dd-label">h5</div>
-                <div class="mx2-dd-val" style="color:{{ 'var(--down)' if _rdr.dd5 > 0.15 else ('var(--warn)' if _rdr.dd5 > 0.06 else 'var(--up)') }}">{{ (_rdr.dd5 * 100)|round|int }}%</div>
-              </div>
-              {% endif %}
-              {% if _rdr.dd10 is defined and _rdr.dd10 is not none %}
-              <div class="mx2-dd-cell">
-                <div class="mx2-dd-label">h10</div>
-                <div class="mx2-dd-val" style="color:{{ 'var(--down)' if _rdr.dd10 > 0.20 else ('var(--warn)' if _rdr.dd10 > 0.10 else 'var(--up)') }}">{{ (_rdr.dd10 * 100)|round|int }}%</div>
-              </div>
-              {% endif %}
-              {% if _rdr.dd21 is defined and _rdr.dd21 is not none %}
-              <div class="mx2-dd-cell">
-                <div class="mx2-dd-label">h21</div>
-                <div class="mx2-dd-val" style="color:{{ 'var(--down)' if _rdr.dd21 > 0.25 else ('var(--warn)' if _rdr.dd21 > 0.12 else 'var(--up)') }}">{{ (_rdr.dd21 * 100)|round|int }}%</div>
-              </div>
-              {% endif %}
+          <div class="dd-ladder isle-stagger isle-s8">
+            {% if _rdr.dd5 is defined and _rdr.dd5 is not none %}
+            <div class="dd-box">
+              <div class="dd-horizon">H5</div>
+              <div class="dd-val" style="color:{{ 'var(--down)' if _rdr.dd5 > 0.15 else ('var(--warn)' if _rdr.dd5 > 0.06 else 'var(--up)') }}">{{ (_rdr.dd5 * 100)|round|int }}%</div>
+              <div class="dd-sub"><span class="l-en">≥5% SPY odds</span><span class="l-zh">≥5% 概率</span></div>
             </div>
-            <p class="muted" style="font-size:10px;margin:8px 0 0"><span class="l-en">Probability of a ≥10% drawdown over each horizon — a slow macro/credit composite. Leading near-term timing: see the Risk Radar at top.</span><span class="l-zh">各时间窗口发生≥10%回撤的概率 — 慢速宏观/信用综合。近端领先择时见顶部风险雷达。</span></p>
+            {% endif %}
+            {% if _rdr.dd10 is defined and _rdr.dd10 is not none %}
+            <div class="dd-box">
+              <div class="dd-horizon">H10</div>
+              <div class="dd-val" style="color:{{ 'var(--down)' if _rdr.dd10 > 0.20 else ('var(--warn)' if _rdr.dd10 > 0.10 else 'var(--up)') }}">{{ (_rdr.dd10 * 100)|round|int }}%</div>
+              <div class="dd-sub"><span class="l-en">≥5% SPY odds</span><span class="l-zh">≥5% 概率</span></div>
+            </div>
+            {% endif %}
+            {% if _rdr.dd21 is defined and _rdr.dd21 is not none %}
+            {% set _dd21_base = (_rdr.drawdown_prob.base * 100)|round(1) if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob and _rdr.drawdown_prob.base is not none) else none %}
+            {% set _dd21_traj = _rdr.drawdown_prob.trajectory if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob and _rdr.drawdown_prob.trajectory is not none) else none %}
+            <div class="dd-box" style="{{ 'border-color:rgba(224,160,48,.35)' if _rdr.dd21 > 0.12 else '' }}">
+              <div class="dd-horizon">H21</div>
+              <div class="dd-val" style="color:{{ 'var(--down)' if _rdr.dd21 > 0.25 else ('var(--warn)' if _rdr.dd21 > 0.12 else 'var(--up)') }}">{{ (_rdr.dd21 * 100)|round|int }}%</div>
+              <div class="dd-sub">{% if _dd21_base is not none %}<span class="l-en">base {{ _dd21_base }}%{% if _dd21_traj %} · {{ _dd21_traj }}{% endif %}</span><span class="l-zh">基准 {{ _dd21_base }}%</span>{% else %}<span class="l-en">≥10% odds</span><span class="l-zh">≥10% 概率</span>{% endif %}</div>
+            </div>
+            {% endif %}
+            {# Peak drawdown box #}
+            {% set _pk = _rdr.drawdown_prob.peak if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob) else none %}
+            {% set _pk_ago = _rdr.drawdown_prob.peak_days_ago if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob) else none %}
+            {% set _pk_off = _rdr.drawdown_prob.off_peak if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob) else none %}
+            {% if _pk is not none %}
+            <div class="dd-box">
+              <div class="dd-horizon"><span class="l-en">Peak</span><span class="l-zh">峰值</span></div>
+              <div class="dd-val">{{ (_pk * 100)|round|int }}%</div>
+              <div class="dd-sub">{% if _pk_ago is not none %}<span class="l-en">{{ _pk_ago }}d ago{% if _pk_off is not none %} · −{{ (_pk_off * 100)|round|int }}% off peak{% endif %}</span><span class="l-zh">{{ _pk_ago }}天前</span>{% endif %}</div>
+            </div>
+            {% endif %}
           </div>
+          <div class="dd-caveat isle-stagger isle-s8"><span class="l-en">Drawdown odds are model estimates, not forecasts. SPY proxy. Display-only — calibrated against historical base rates; no directional signal implied.</span><span class="l-zh">回撤概率为模型估计，非预测。以SPY为代理。仅供展示，依历史基准率校准，不含方向信号。</span></div>
           {% endif %}
 
           {# MX2-SENTIMENT-START #}
-          {# (c) SENTIMENT panel — CRITICAL: CI-pinned strings; ids and markup preserved verbatim from #sentiment-regime #}
+          {# (c) SENTIMENT panel v3 — 2-card .sentiment-grid; CI-pinned strings and ids preserved #}
           {% if froth_fragility or fear_euphoria or fear_greed %}
           {% set ff = froth_fragility %}
           {% set FE = fear_euphoria %}
           {% set FG = fear_greed %}
           {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
           {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
-          <div class="mx2-risk-section mx2-sent-inside" id="sentiment-regime">
-            <div class="mx2-risk-section-hd">{{ t('Fear ↔ Euphoria: regime synthesis','恐惧 ↔ 欣喜：周期综合') }}
-              {{ help("Sentiment context lenses — Fear/Greed composite, froth/fragility gauge, and fear↔euphoria synthesis. None of these call direction or size trades.","情绪背景视角 — 恐惧/贪婪合成、狂热/脆弱指标及恐惧↔欣喜综合。均不判断方向或决定仓位。") }}
-            </div>
-            <div class="mx-sent-grid">
 
-              <!-- Fear / Greed composite (P1.2) -->
-              {% if fear_greed %}
-              {% set FG = fear_greed %}
-              {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
-              {% set _fgc = 'var(--down)' if FG.dial < 30 else ('var(--warn)' if FG.dial < 45 else ('var(--up)' if FG.dial > 55 else 'var(--muted)')) %}
-              <section id="fear-greed" class="mx-sent-col">
-                <div class="mx-sent-label">{{ t('Fear / Greed sentiment context','恐惧/贪婪情绪参考') }} {{ help('Equal-weight z-mean of qualifying market indicators (legs), each oriented so a positive z-score points toward greed. Display-only context — not a signal, not a timed call, never scored.','合格市场指标（分量）的等权 z 均值，每项方向均以正 z 为贪婪。仅供展示参考 — 非信号，非择时判断，不计分。') }}</div>
-                <div class="mx-sent-val" style="color:{{ _fgc }}">{{ FG.dial }}</div>
-                <div class="mx-sent-band-label">{{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }} <span class="muted">/100</span></div>
-                <div class="mx-grad-track" style="position:relative">
-                  <span class="mx-grad-marker" style="left:calc({{ FG.dial }}% - 3px)"></span>
+          {# heads-up chips: fed_stance / turning_point — keep rendering near sentiment #}
+
+          <div class="sentiment-section" id="sentiment-regime">
+            <div class="sent-head">{{ t('Fear ↔ Euphoria: regime synthesis','恐惧 ↔ 欣喜：周期综合') }}</div>
+            {# FE synthesis strip — the section's own read (score + 5-band scale), gated on its data #}
+            {% if fear_euphoria %}
+            {% set FE = fear_euphoria %}
+            {% set _fec = 'var(--down)' if FE.fe_score < 30 else ('var(--warn)' if FE.fe_score < 50 else ('var(--up)' if FE.fe_score > 70 else 'var(--muted)')) %}
+            <div class="fe-synth isle-stagger isle-s6">
+              <span class="sent-num num" style="font-size:22px;color:{{ _fec }}">{{ FE.fe_score }}</span>
+              <span class="chip {{ 'c-down' if FE.band in ['Panic','Fear'] else ('c-up' if FE.band in ['Greed','Euphoria'] else 'c-muted') }}" style="font-size:10px;padding:2px 8px">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}</span>
+              <div style="flex:1;min-width:160px">
+                <div class="grad-track"><div class="grad-marker" style="left:calc({{ FE.fe_score }}% - 2.5px)"></div></div>
+                <div class="grad-labels">
+                  <span>{{ t('Panic','恐慌') }}</span><span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Greed','贪婪') }}</span><span>{{ t('Euphoria','欣喜') }}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
-                  <span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Greed','贪婪') }}</span>
+              </div>
+              {% if FE.roro is not none %}<span class="muted sm">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} · {{ td(FE.roro_state) }}{% endif %}</span>{% endif %}
+            </div>
+            {% endif %}
+            <div class="sentiment-grid">
+
+              {# Card 1: Fear / Greed #}
+              <div class="sent-card isle-stagger isle-s7" id="fear-greed">
+                <div class="sent-card-label">{{ t('Fear / Greed sentiment context','恐惧/贪婪情绪参考') }}</div>
+                {% if fear_greed %}
+                {% set FG = fear_greed %}
+                {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
+                {% set _fgc = 'var(--down)' if FG.dial < 30 else ('var(--warn)' if FG.dial < 45 else ('var(--up)' if FG.dial > 55 else 'var(--muted)')) %}
+                <div class="sent-num num" style="color:{{ _fgc }}">{{ FG.dial }} <span style="font-size:14px;font-weight:400;color:var(--muted)">/100</span></div>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:10px">{{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }} · {{ FG.n_legs_qualifying }} {{ t('legs','分量') }}</div>
+                <div class="grad-track"><div class="grad-marker" style="left:calc({{ FG.dial }}% - 2.5px)"></div></div>
+                <div class="grad-labels">
+                  <span>{{ t('Extreme Fear','极度恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Extreme Greed','极度贪婪') }}</span>
                 </div>
-                <div class="muted sm" style="margin-top:8px">{{ FG.n_legs_qualifying }} {{ t('legs','分量') }} · <a href="macro_signals.html#fear-greed-detail" class="muted">{{ t('full →','完整 →') }}</a></div>
                 {% if FG.young_tiles is defined and FG.young_tiles %}
-                <div class="mx-sent-young" style="margin-top:6px">
-                  <div class="mx-sent-label" style="margin-bottom:3px">{{ t('Context tiles','背景指标') }}</div>
+                <div style="margin-top:6px">
+                  <div class="sent-card-label" style="margin-bottom:3px">{{ t('Context tiles','背景指标') }}</div>
                   {% for tile in FG.young_tiles %}
-                  <div class="mx-sent-tile" style="font-size:10.5px;color:var(--muted)"><span class="l-en">{{ tile.name_en }}</span><span class="l-zh">{{ tile.name_zh or tile.name_en }}</span>{% if tile.value is not none %}: {{ tile.value }}{% endif %}</div>
+                  <div style="font-size:10.5px;color:var(--muted)"><span class="l-en">{{ tile.name_en }}</span><span class="l-zh">{{ tile.name_zh or tile.name_en }}</span>{% if tile.value is not none %}: {{ tile.value }}{% endif %}</div>
                   {% endfor %}
                 </div>
                 {% endif %}
-              </section>
-              {% endif %}
-
-              <!-- Froth & Fragility -->
-              {% if froth_fragility %}
-              {% set ff = froth_fragility %}
-              {% set ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if ff.band in ['watch','elevated'] else 'var(--down)') %}
-              {% set ax = ff.face_a.score if ff.face_a.score is not none else 0 %}
-              {% set bx = ff.face_b.score if ff.face_b.score is not none else 0 %}
-              <section id="froth-fragility" class="mx-sent-col">
-                <div class="mx-sent-label">{{ t('Froth & Fragility','狂热与脆弱') }} {{ help('A top-risk gauge for froth: retail euphoria plus hidden distribution. Only euphoric AND fragile together is a real top risk. Context only.','顶部风险计：零售狂热叠加隐性派发。唯有同时出现才是真正的顶部风险。仅供参考。') }}</div>
-                {% if ff.headline is not none %}
-                <div class="mx-sent-val" style="color:{{ ffc }}">{{ ff.headline|round|int }}</div>
-                <div class="mx-sent-band-label">{{ t(ff.band|capitalize, ff.band_zh) }} <span class="muted">/100</span></div>
+                <a href="macro_signals.html#fear-greed-detail" class="muted sm" style="display:inline-block;margin-top:8px">{{ t('full →','完整 →') }}</a>
                 {% else %}
-                <div class="mx-sent-band-label muted">{{ t('—','—') }}</div>
+                <div class="muted sm">{{ t('—','—') }}</div>
+                {% endif %}
+              </div>
+
+              {# Card 2: Froth & Fragility — whole card gated (absence contract:
+                 test_froth_fragility::test_render_absent_when_none requires NO id/label leak) #}
+              {% if froth_fragility %}
+              <div class="sent-card isle-stagger isle-s8" id="froth-fragility">
+                <div class="sent-card-label">{{ t('Froth & Fragility','狂热与脆弱') }}</div>
+                {% set ff = froth_fragility %}
+                {% set ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if ff.band in ['watch','elevated'] else 'var(--down)') %}
+                {% set ax = ff.face_a.score if ff.face_a.score is not none else 0 %}
+                {% set bx = ff.face_b.score if ff.face_b.score is not none else 0 %}
+                {% if ff.headline is not none %}
+                <div class="sent-num num" style="color:{{ ffc }}">{{ ff.headline|round|int }} <span style="font-size:14px;font-weight:400;color:var(--muted)">/100</span></div>
+                <div style="margin-bottom:10px">
+                  <span class="chip {{ 'c-warn' if ff.band in ['watch','elevated'] else ('c-down' if ff.band == 'extreme' else 'c-up') }}" style="font-size:10px;padding:2px 8px">{{ t(ff.band|capitalize, ff.band_zh) }}</span>
+                  {% if ff.provisional %}<span class="chip c-muted" style="font-size:10px;padding:2px 8px">{{ t('provisional','暂定') }}</span>{% endif %}
+                </div>
+                {% else %}
+                <div class="sent-num num" style="color:var(--muted)">— <span style="font-size:14px;font-weight:400;color:var(--muted)">/100</span></div>
+                <div style="margin-bottom:10px"><span class="chip c-muted" style="font-size:10px;padding:2px 8px">{{ t('provisional','暂定') }}</span></div>
                 {% endif %}
                 {% if ff.quadrant_en %}
-                <div style="margin-top:4px;font-weight:700;font-size:12.5px;color:{{ ffc }}">{{ t(ff.quadrant_en, ff.quadrant_zh) }}
-                  {% if ff.provisional %}<span class="badge sm" style="margin-left:6px">{{ t('provisional','暂定') }}</span>{% endif %}
-                  {% if ff.unwind_risk %}<span class="badge sm" style="margin-left:6px;color:var(--down)">⚠ {{ t('unwind risk','解构风险') }}</span>{% endif %}
-                </div>
-                {% elif ff.provisional %}<div class="muted sm" style="margin-top:4px">{{ t('provisional','暂定') }}</div>
+                <div style="font-size:12px;font-weight:700;color:{{ ffc }};margin-bottom:8px">{{ t(ff.quadrant_en, ff.quadrant_zh) }}{% if ff.unwind_risk %} <span style="color:var(--down)">⚠</span>{% endif %}</div>
                 {% endif %}
-                <div class="mx-froth-items" style="margin-top:10px">
-                  <div class="mx-froth-item">
-                    <span class="mx-froth-label">{{ t('Euphoria','欣喜') }}</span>
-                    <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:{{ [ax,100]|min }}%;background:var(--warn)"></div></div>
-                    <span class="mx-froth-val">{{ ax|round|int }}</span>
-                  </div>
-                  <div class="mx-froth-item">
-                    <span class="mx-froth-label">{{ t('Fragility / distribution','脆弱／派发') }}</span>
-                    <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:{{ [bx,100]|min }}%;background:var(--down)"></div></div>
-                    <span class="mx-froth-val">{{ bx|round|int }}</span>
-                  </div>
+                <div class="froth-row">
+                  <span class="froth-lbl">{{ t('Fragility / distribution','脆弱／派发') }}</span>
+                  <div class="froth-bar-wrap"><div class="froth-bar" style="width:{{ [bx,100]|min }}%;background:var(--down)"></div></div>
+                  <span class="froth-val">{{ bx|round|int }}</span>
                 </div>
-                <div class="muted sm" style="margin-top:6px">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</div>
-              </section>
-              {% endif %}
-
-              <!-- Fear ↔ Euphoria -->
-              {% if fear_euphoria %}
-              {% set FE = fear_euphoria %}
-              {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
-              {% set _fec = 'var(--down)' if FE.fe_score < 30 else ('var(--warn)' if FE.fe_score < 50 else ('var(--up)' if FE.fe_score > 70 else 'var(--muted)')) %}
-              <section class="mx-sent-col">
-                <div class="mx-sent-label">{{ t('Fear ↔ Euphoria: regime synthesis','恐惧 ↔ 欣喜：周期综合') }} {{ help('Where the market sits between fear and euphoria, built from cross-asset risk appetite, stress read and capitulation. Context only.','市场处于恐惧与欣喜之间的位置，由跨资产风险偏好、压力读数与投降指标合成。仅供参考。') }}</div>
-                <div class="mx-sent-val" style="color:{{ _fec }}">{{ FE.fe_score }}</div>
-                <div class="mx-sent-band-label">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }} <span class="muted">/100</span></div>
-                <div class="mx-grad-track" style="position:relative">
-                  <span class="mx-grad-marker" style="left:calc({{ FE.fe_score }}% - 3px)"></span>
+                <div class="froth-split">
+                  <div class="froth-split-item"><div class="froth-split-lbl">{{ t('Euphoria','欣喜') }}</div><div class="froth-split-val">{{ ax|round|int }}</div></div>
+                  <div class="froth-split-item"><div class="froth-split-lbl">{{ t('Fragility','脆弱') }}</div><div class="froth-split-val">{{ bx|round|int }}</div></div>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
-                  <span>{{ t('Panic','恐慌') }}</span><span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Greed','贪婪') }}</span><span>{{ t('Euphoria','欣喜') }}</span>
-                </div>
-                {% if FE.roro is not none %}<div class="muted sm" style="margin-top:8px">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} · {{ td(FE.roro_state) }}{% endif %}</div>{% endif %}
-              </section>
-              {% endif %}
+                <div class="muted sm" style="margin-top:8px">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</div>
+              </div>
+              {% endif %}{# /froth_fragility card gate #}
 
             </div>
             <a href="macro_signals.html" class="muted sm" style="display:inline-block;margin-top:12px">{{ t('Full breakdown →','完整拆解 →') }}</a>
@@ -5570,135 +5533,196 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
         </div>
         <div class="mx2-policy-tray isle-stagger isle-s2">
 
-          {# id="policy-lever-card" on this subsection — CI test (tests/test_policy_lever.py) checks string presence in macro, absence in stocks #}
-          <div class="mx2-risk-section" id="policy-lever-card">
-            <div class="mx-eyebrow">{{ t('Policy-Lever Conditions &amp; Repricing','政策杠杆条件与重新定价') }}
-              {{ help("Conditions that make violent overnight reversals more likely — not a forecast, not a signal. ARMED = semis drawdown deep (≤−15%) AND an oil technical curl; ELEVATED = one of the two; QUIET = neither. Display-only context (Policy-Shock W2-F). Drawdown and arming are descriptive; no probabilities.", "使剧烈隔夜反转更可能发生的条件 — 不是预测，不是信号。触发=半导体回撤深（≤−15%）且石油技术卷曲；警戒=两者之一；平静=均无。仅供展示（政策冲击 W2-F）。回撤和触发均为描述性指标，不含概率。") }}
-            </div>
-            <div class="mx-policy-band">
-              {# COL 1 — Policy-Lever state chip + key rows #}
-              <div class="mx-pcol">
-                <div class="mx-pcol-label">{{ t('Policy Lever','政策杠杆') }}</div>
-                <div class="mx-pcol-state">
-                  <span class="mx-chip {{ 'mx-c-down' if _pl_state == 'ARMED' else ('mx-c-warn' if _pl_state == 'ELEVATED' else 'mx-c-muted') }}" style="font-size:13px;padding:4px 12px">
+          {# id="policy-lever-card" — CI test (tests/test_policy_lever.py) checks string presence in macro, absence in stocks #}
+          <div id="policy-lever-card">
+            {# 3-col policy grid per v3 mockup #}
+            <div class="policy-grid">
+
+              {# COL 1 — Policy Lever: state chip hero + key rows + lever-arming rows #}
+              <div class="policy-col isle-stagger isle-s1">
+                <div class="pc-head">{{ t('Policy Lever','政策杠杆') }}</div>
+                <div class="pc-val">
+                  <span class="chip {{ 'c-down' if _pl_state == 'ARMED' else ('c-warn' if _pl_state == 'ELEVATED' else 'c-muted') }}" style="font-size:13px;padding:4px 12px">
                     <span class="l-en">{{ _pl_state }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_state, _pl_state) }}</span>
                   </span>
                 </div>
-                {% if PL.get('favored_complex') is defined %}
+                {# Shock coherence score #}
+                {% set _plcoh = PL.get('repricing_coherence') or {} %}
+                {% if _plcoh.get('score') is not none %}
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Shock coherence','冲击一致性') }}</span>
+                  <span class="pc-chip {{ 'pc-warn' if _plcoh.score >= 50 else 'pc-mt' }}">{{ _plcoh.score }}/100</span>
+                </div>
+                {% endif %}
+                {# Last event #}
+                {% if flip_confirmation and flip_confirmation.last_event %}
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Last event','最近事件') }}</span>
+                  <span class="pc-chip pc-mt num">{{ flip_confirmation.last_event.event_date }}</span>
+                </div>
+                {% endif %}
+                {# Fed stance #}
+                {% set _fed_st2 = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
+                {% if _fed_st2 %}
+                {% set _fsl2 = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral / hold'} %}
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Fed stance','美联储立场') }}</span>
+                  <span class="pc-chip pc-mt">{{ _fsl2.get(_fed_st2, _fed_st2) }}</span>
+                </div>
+                {% endif %}
+                {# Re-escalation / de-escalation notes from framing #}
+                {% if PL.get('favored_complex') %}
                 {% set _FC = PL.get('favored_complex') or {} %}
                 {% if _FC.get('drawdown_pct') is not none %}
-                <div class="mx-pcol-row">
-                  <span class="mx-pcol-key">{{ t('Favored complex','偏好板块') }}</span>
-                  <span class="mx-delta-chip {{ 'mx-delta-dn' if _FC.drawdown_pct <= -15 else 'mx-delta-mu' }}">{{ _FC.get('basket', [])|join('/') }} {{ '%+.1f'|format(_FC.drawdown_pct) }}%</span>
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Complex dd','板块回撤') }}</span>
+                  <span class="pc-chip {{ 'pc-warn' if _FC.drawdown_pct <= -10 else 'pc-mt' }}">{{ _FC.get('basket', [])|join('/') }} {{ '%+.1f'|format(_FC.drawdown_pct) }}%</span>
                 </div>
                 {% endif %}
                 {% if _FC.get('basket_caveat') %}
-                <div class="mx-pcol-sub" style="color:var(--warn)"><span class="l-en">{{ _FC.basket_caveat }}</span><span class="l-zh">{{ _FC.get('basket_caveat_zh') or _FC.basket_caveat }}</span></div>
+                <div class="pc-note" style="color:var(--warn)"><span class="l-en">{{ _FC.basket_caveat }}</span><span class="l-zh">{{ _FC.get('basket_caveat_zh') or _FC.basket_caveat }}</span></div>
                 {% endif %}
                 {% endif %}
-                {% if PL.get('jawboning') is defined %}
-                {% set _JW = PL.get('jawboning') or {} %}
-                {% if _JW.get('n_7d') is not none %}
-                <div class="mx-pcol-row">
-                  <span class="mx-pcol-key">{{ t('Jawboning 7d/30d','政策发声 7日/30日') }}</span>
-                  <span class="mx-delta-chip mx-delta-mu">{{ _JW.n_7d }} / {{ _JW.n_30d }}</span>
-                </div>
-                {% endif %}
-                {% if _JW.get('last_alert_summary') %}
-                <div class="mx-pcol-sub"><span class="l-en">{{ _JW.get('last_alert_summary') or '' }}</span><span class="l-zh">{{ _JW.get('last_alert_summary_zh') or _JW.get('last_alert_summary') or '' }}</span></div>
-                {% endif %}
-                {% endif %}
-                {% if PL.get('calendar') is defined %}
-                {% set _CAL = PL.get('calendar') or {} %}
-                {% if _CAL.get('context_note') %}
-                <div class="mx-pcol-row">
-                  <span class="mx-pcol-key" style="font-size:10.5px"><span class="l-en">{{ _CAL.get('context_note') or '' }}</span><span class="l-zh">{{ _CAL.get('context_note_zh') or _CAL.get('context_note') or '' }}</span></span>
-                </div>
-                {% endif %}
-                {% endif %}
-                {% if PL.get('framing') %}
-                <div class="mx-pcol-sub"><span class="l-en">{{ PL.framing }}</span><span class="l-zh">{{ PL.get('framing_zh') or '' }}</span></div>
-                {% endif %}
-                <div class="mx-pcol-sub">{{ t('Display-only · W2-F · as of','仅供展示 · W2-F · 截至') }} {{ PL.get('as_of') or '' }}</div>
-              </div>
-              {# COL 2 — Levers arming #}
-              <div class="mx-pcol">
-                <div class="mx-pcol-label">{{ t('Lever Arming Status','杠杆触发状态') }}</div>
+                {# Lever arming rows (days_in_base + flatness progress bars) #}
                 {% if PL.get('levers') %}
                 {% for lv in PL.levers %}
                 {% set _arm = lv.get('arming') %}
                 {% set _is_armed = _arm.get('armed') if _arm is not none else false %}
-                <div class="mx-prog-row">
-                  <div class="mx-prog-label-row">
-                    <span class="muted"><span class="l-en">{{ lv.get('name') or '' }}</span><span class="l-zh">{{ lv.get('name_zh') or lv.get('name') or '' }}</span>{% if lv.get('asset') %} <span style="font-size:9.5px">({{ lv.asset }})</span>{% endif %}</span>
+                <div class="pc-row" style="flex-direction:column;align-items:flex-start;gap:3px">
+                  <div style="display:flex;justify-content:space-between;width:100%">
+                    <span class="pc-key"><span class="l-en">{{ lv.get('name') or '' }}</span><span class="l-zh">{{ lv.get('name_zh') or lv.get('name') or '' }}</span>{% if lv.get('asset') %} <span style="font-size:9px">({{ lv.asset }})</span>{% endif %}</span>
                     {% if _arm is not none %}
-                    <span class="mx-delta-chip {{ 'mx-delta-dn' if _is_armed else 'mx-delta-mu' }}">
-                      <span class="l-en">{{ 'ARMED' if _is_armed else 'quiet' }}</span><span class="l-zh">{{ '已触发' if _is_armed else '平静' }}</span>
-                    </span>
+                    <span class="pc-chip {{ 'pc-warn' if _is_armed else 'pc-mt' }}"><span class="l-en">{{ 'ARMED' if _is_armed else 'quiet' }}</span><span class="l-zh">{{ '已触发' if _is_armed else '平静' }}</span></span>
                     {% else %}
-                    <span class="mx-delta-chip mx-delta-mu"><span class="l-en">n/a</span><span class="l-zh">不适用</span></span>
+                    <span class="pc-chip pc-mt">n/a</span>
                     {% endif %}
                   </div>
                   {% if _arm is not none %}
-                  <div class="mx-prog-track"><div class="mx-prog-fill" style="width:{{ '100' if _is_armed else '15' }}%;background:{{ 'var(--down)' if _is_armed else 'var(--muted)' }}"></div></div>
                   {% if _arm.get('days_in_base') is not none or _arm.get('flatness') is not none %}
-                  <div style="font-size:10px;color:var(--muted);margin-top:2px">{% if _arm.get('days_in_base') is not none %}{{ _arm.days_in_base }}d base{% endif %}{% if _arm.get('flatness') is not none %} · flat={{ '%.2f'|format(_arm.flatness) }}{% endif %}</div>
+                  <div style="font-size:10px;color:var(--muted)">{% if _arm.get('days_in_base') is not none %}{{ _arm.days_in_base }}d base{% endif %}{% if _arm.get('flatness') is not none %} · flat={{ '%.2f'|format(_arm.flatness) }}{% endif %}</div>
                   {% endif %}
                   {% if _arm.get('basing') or _arm.get('stoch_curl') or _arm.get('macd_curl') %}
-                  <div style="font-size:10px;color:var(--up);margin-top:2px">{% if _arm.get('basing') %}basing {% endif %}{% if _arm.get('stoch_curl') %}stoch↑ {% endif %}{% if _arm.get('macd_curl') %}macd↑{% endif %}</div>
+                  <div style="font-size:10px;color:var(--up)">{% if _arm.get('basing') %}basing {% endif %}{% if _arm.get('stoch_curl') %}stoch↑ {% endif %}{% if _arm.get('macd_curl') %}macd↑{% endif %}</div>
                   {% endif %}
                   {% endif %}
                   {% if lv.get('watch') %}
-                  <div style="font-size:10px;color:var(--muted);margin-top:1px"><span class="l-en">{{ lv.get('watch') or '' }}</span><span class="l-zh">{{ lv.get('watch_zh') or lv.get('watch') or '' }}</span></div>
+                  <div style="font-size:10px;color:var(--muted)"><span class="l-en">{{ lv.get('watch') or '' }}</span><span class="l-zh">{{ lv.get('watch_zh') or lv.get('watch') or '' }}</span></div>
                   {% endif %}
                 </div>
                 {% endfor %}
+                {% endif %}
+                {# Jawboning counts #}
+                {% if PL.get('jawboning') %}
+                {% set _JW = PL.get('jawboning') or {} %}
+                {% if _JW.get('n_7d') is not none %}
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Jawboning 7d/30d','政策发声 7日/30日') }}</span>
+                  <span class="pc-chip pc-mt">{{ _JW.n_7d }} / {{ _JW.n_30d }}</span>
+                </div>
+                {% endif %}
+                {% if _JW.get('last_alert_summary') %}
+                <div class="pc-note"><span class="l-zh">{{ _JW.get('last_alert_summary_zh') or '' }}</span><span class="l-en">{{ _JW.get('last_alert_summary') or '' }}</span></div>
+                {% endif %}
+                {% endif %}
+                {# Calendar context #}
+                {% if PL.get('calendar') %}
+                {% set _CAL = PL.get('calendar') or {} %}
+                {% if _CAL.get('context_note') %}
+                <div class="pc-note"><span class="l-en">{{ _CAL.get('context_note') or '' }}</span><span class="l-zh">{{ _CAL.get('context_note_zh') or _CAL.get('context_note') or '' }}</span></div>
+                {% endif %}
+                {% endif %}
+                {% if PL.get('framing') %}
+                <div class="pc-note"><span class="l-en">{{ PL.framing }}</span><span class="l-zh">{{ PL.get('framing_zh') or '' }}</span></div>
+                {% endif %}
+                <div class="pc-note">{{ t('Display-only · W2-F · as of','仅供展示 · W2-F · 截至') }} {{ PL.get('as_of') or '' }}</div>
+              </div>
+
+              {# COL 2 — REPRICING COHERENCE meter #}
+              <div class="policy-col isle-stagger isle-s2">
+                <div class="pc-head">{{ t('Repricing Coherence','重定价一致性') }}</div>
+                {% set _plcoh2 = PL.get('repricing_coherence') or {} %}
+                {% if _plcoh2.get('score') is not none %}
+                <div class="pc-val num {{ 'wn-c' if _plcoh2.score >= 50 else 'mt-c' }}">{{ _plcoh2.score }}<span style="font-size:13px;font-weight:500;color:var(--muted)">/100</span></div>
+                {% set _coh_comps = _plcoh2.get('components') or {} %}
+                {% if _coh_comps %}
+                <div style="margin-top:4px">
+                  {% for ckey, cval in _coh_comps.items() %}
+                  {% set _clbl = {'driver_flip':'Driver flip','strength_extreme':'Strength extreme','absorption_spike':'Absorption spike','repricing_breadth':'Repricing breadth'}.get(ckey, ckey) %}
+                  {% set _cv = cval if cval is not none else 0 %}
+                  <div class="lever-bar-row">
+                    <span class="lever-bar-lbl">{{ _clbl }}</span>
+                    <div class="lever-bar-track"><div class="lever-bar-fill" style="width:{{ [(_cv / 30 * 100)|round|int, 100]|min if _cv > 0 else 0 }}%;background:{{ 'var(--warn)' if _cv > 0 else 'var(--muted)' }}"></div></div>
+                    <span class="lever-bar-val {{ 'wn-c' if _cv > 0 else 'mt-c' }}">{{ _cv }}</span>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %}
+                {% if _plcoh2.get('note') %}
+                <div class="pc-note"><span class="l-en">{{ _plcoh2.note }}</span><span class="l-zh">{{ _plcoh2.get('note_zh') or _plcoh2.note }}</span></div>
+                {% endif %}
                 {% else %}
-                <div class="mx-pcol-sub">{{ t('No lever data','无杠杆数据') }}</div>
+                {# Fall back to repricing_components count from top-level PL #}
+                {% if _plrepr_count > 0 %}
+                <div class="pc-val num">{{ _plrepr_count }}<span style="font-size:13px;font-weight:500;color:var(--muted)">/4</span></div>
+                <div class="pc-note">{{ t('repricing components active','重定价组件激活') }}</div>
+                {% else %}
+                <div class="pc-val mt-c">0<span style="font-size:13px;font-weight:500;color:var(--muted)">/4</span></div>
+                <div class="pc-note">{{ t('No repricing components confirmed.','无重定价组件确认。') }}</div>
+                {% endif %}
                 {% endif %}
               </div>
-              {# COL 3 — Flip Confirmation id="flip-confirmation" for deep-link anchor #}
-              <div class="mx-pcol" id="flip-confirmation">
-                <div class="mx-pcol-label">{{ t('Flip Confirmation','翻转确认') }}</div>
+
+              {# COL 3 — Flip Confirmation #}
+              <div class="policy-col isle-stagger isle-s3" id="flip-confirmation">
+                <div class="pc-head">{{ t('Flip Confirmation','翻转确认') }}</div>
                 {% if flip_confirmation and flip_confirmation.last_event %}
                 {% set _FC3 = flip_confirmation %}
                 {% set _FEV3 = _FC3.last_event %}
                 {% set _fv3_en = _FEV3.verdict if _FEV3.verdict else 'Pending' %}
                 {% set _fv3_zh = {'CONFIRMED':'已确认','FADED':'已消退','MIXED':'混合','Pending':'待定'}.get(_fv3_en, _fv3_en) %}
-                {% set _fvc3 = 'mx-delta-up' if _FEV3.verdict == 'CONFIRMED' else ('mx-delta-dn' if _FEV3.verdict == 'FADED' else 'mx-delta-mu') %}
-                <div class="mx-pcol-row">
-                  <span class="mx-pcol-key">{{ t('Last flip','最近翻转') }}</span>
-                  <span class="mx-delta-chip mx-delta-mu num">{{ _FEV3.event_date }}</span>
+                {% set _fvc3 = 'pc-up' if _FEV3.verdict == 'CONFIRMED' else ('pc-warn' if _FEV3.verdict == 'FADED' else 'pc-mt') %}
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Last flip','最近翻转') }}</span>
+                  <span class="pc-chip pc-info num">{{ _FEV3.event_date }}</span>
                 </div>
-                <div class="mx-pcol-row">
-                  <span class="mx-pcol-key">{{ t('Direction','方向') }}</span>
-                  <span class="mx-delta-chip mx-delta-mu">{{ t('defensive','防御') if _FEV3.direction == 'defensive' else t('offense','进攻') }}</span>
-                </div>
-                <div class="mx-pcol-row">
-                  <span class="mx-pcol-key">{{ t('z-score','z 分数') }}</span>
-                  <span class="mx-delta-chip mx-delta-wn">{{ _FEV3.z }}</span>
-                </div>
-                <div class="mx-pcol-row">
-                  <span class="mx-pcol-key">{{ t('Verdict','结论') }}</span>
-                  <span class="mx-delta-chip {{ _fvc3 }}">{{ t(_fv3_en, _fv3_zh) }}</span>
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('z-score','z 分数') }}</span>
+                  <span class="pc-chip pc-mt">{{ _FEV3.z }}</span>
                 </div>
                 {% if _FC3.base_rates %}
                 {% set _BR3 = _FC3.base_rates %}
-                <div class="mx-pcol-row">
-                  <span class="mx-pcol-key">{{ t('Fade rate','消退率') }} (n={{ _BR3.n_events }})</span>
-                  <span class="mx-delta-chip mx-delta-dn">{{ _BR3.faded }}/{{ _BR3.n_events }} {{ t('faded','消退') }}</span>
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Flips catalogued','翻转记录') }}</span>
+                  <span class="pc-chip pc-mt">{{ _BR3.n_events }} {{ t('total','次') }}</span>
+                </div>
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Fade rate','消退率') }}</span>
+                  <span class="pc-chip pc-warn">{{ ((_BR3.faded / _BR3.n_events * 100)|round|int if _BR3.n_events else 0) }}%</span>
                 </div>
                 {% endif %}
-                <div class="mx-pcol-sub">{{ t('as of','截至') }} {{ _FC3.asof }} · {{ t('Display-only (W2-F)','仅供展示 (W2-F)') }}</div>
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Confirm window','确认窗口') }}</span>
+                  <span class="pc-chip pc-mt"><span class="l-en">1–3d post-event</span><span class="l-zh">事后1–3天</span></span>
+                </div>
+                <div class="pc-row">
+                  <span class="pc-key">{{ t('Status','状态') }}</span>
+                  <span class="pc-chip {{ _fvc3 }}">{{ t(_fv3_en, _fv3_zh) }}</span>
+                </div>
+                <div class="pc-note">{{ t('as of','截至') }} {{ _FC3.asof }} · {{ t('Display-only (W2-F)','仅供展示 (W2-F)') }} · {{ t('Admin-timing predictors forbidden.','禁止行政时点预测。') }}</div>
                 {% else %}
-                <div class="mx-pcol-sub">{{ t('No flip data yet','暂无翻转数据') }}</div>
+                <div class="muted sm">{{ t('No flip data yet','暂无翻转数据') }}</div>
                 {% endif %}
               </div>
-            </div>
-          </div>{# /policy-lever-card #}
 
-          {# Regime-read panel (base-effect forward path) #}
-          {% include "_regime_read_panel.html.j2" %}
+            </div>{# /policy-grid #}
+
+            {# Base-effect 'Where the regime is headed' — full-width row below 3-col grid #}
+            <div class="regime-path-row">
+              <div class="regime-path-eyebrow">{{ t('Regime path','周期路径') }}</div>
+              {% include "_regime_read_panel.html.j2" %}
+            </div>
+
+          </div>{# /policy-lever-card #}
 
         </div>{# /mx2-policy-tray #}
         <div class="isle-stamp">
@@ -6005,11 +6029,12 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
       el.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } });
     });
 
-    /* Escape closes all */
+    /* Escape closes all — persists to localStorage mx2_state */
     document.addEventListener('keydown',function(e){
       if(e.key==='Escape'){
         _mx2Ids.forEach(function(id){ var el=document.getElementById(id); if(el){ el.removeAttribute('data-open'); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','false'); } });
         _allOpen=false; _updateBodyClass(); _updateExpandBtn();
+        try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');_mx2Ids.forEach(function(id){st[id]=false;});localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
       }
     });
 
