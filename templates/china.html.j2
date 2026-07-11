@@ -1652,11 +1652,17 @@
       {% if items %}
       <div class="act-col {{ cls }}">
         <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
+        {# .lst-wrap → theme.js "View all" overlay; .lst-cap4 caps each lane at 4 rows (same idiom as the HK sector board) #}
+        <div class="lst-wrap">
+        <div class="lst-collapse lst-cap4 is-collapsed">
         {% for it in items %}
         <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
           <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
         </div>
         {% endfor %}
+        </div>
+        {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
+        </div>
       </div>
       {% endif %}
       {% endmacro %}
