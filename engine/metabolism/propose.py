@@ -784,7 +784,7 @@ def build_docket(
     return {
         "schema": SCHEMA,
         "cycle_id": cycle_id,
-        "lobe": LOBE,
+        "lobe": lobe,
         "as_of": day,
         "run_id": run_id,
         "generated_by": "metabolism_propose",
