@@ -18,7 +18,7 @@
 {% set regime = lr.regime if lr.regime is defined and lr.regime is not none else {} %}
 {% set handoff_pairs = lr.handoff_pairs if lr.handoff_pairs is defined and lr.handoff_pairs is not none else [] %}
 {% set rerating_watch = lr.rerating_watch if lr.rerating_watch is defined and lr.rerating_watch is not none else [] %}
-{# State precedence display order: CROWDED → BREAKAWAY → QUIET_ACCUMULATION → SUPPRESSED → FAILED → NONE #}
+{# Display order (most actionable first; assignment precedence lives in the engine): CROWDED → LEADERSHIP → BREAKAWAY → CATALYST_WINDOW → QUIET_ACCUMULATION → SUPPRESSED → FAILED → NONE #}
 {% set _state_order = ['CROWDED','LEADERSHIP','BREAKAWAY','CATALYST_WINDOW','QUIET_ACCUMULATION','SUPPRESSED','FAILED','NONE'] %}
 <!DOCTYPE html>
 <html lang="en">
@@ -463,7 +463,7 @@
         {{ t('Multiple compressed', '估值压缩') }}
       </span>
       {% endif %}
-      {% if rc.earnings_within_14d is defined %}
+      {% if rc.earnings_within_14d is defined and rc.earnings_within_14d %}
       {# Cremers law: earnings date is context-only, rendered as CAUTION #}
       <span class="badge badge-caution" style="font-size:10px;">{{ t('Earnings within 14d — direction unreliable', '14日内财报 — 方向不可靠') }}</span>
       {% endif %}
