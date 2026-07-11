@@ -43,5 +43,17 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add data/vector data/coinbase/btc_hourly.parquet site/vector.html site/index.html
           git diff --cached --quiet || git commit -m "vector: flash-crash alert $(date -u +%FT%H:%MZ)"
+          # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
+          # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
+          # refuses ("untracked working tree files would be overwritten") and --autostash can't
+          # clear it (it parks tracked modifications only), so every retry dies identically.
+          # Everything this step publishes is already committed above, so a path untracked HERE
+          # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
+          # Gitignored files and untracked paths origin/main doesn't track never enter the
+          # intersection (runner-local stores and caches are untouched).
+          git fetch origin main || true
+          comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                   <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+            | while IFS= read -r f; do rm -f -- "$f" || true; done
           git pull --rebase --autostash -X theirs origin main
           git push
