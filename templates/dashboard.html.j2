@@ -5438,11 +5438,13 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
         <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
         <span class="row-pop-kind">{{ x.ticker }}</span>
         {#- State tag tone: FRESH BUY/BOTTOM WATCH/NEARING A LOW = warn (not-yet-confirmed or worst state per #1513);
-            TOP WATCH/ROLLING OVER/DECLINE/COUNTERTREND BOUNCE = dn; RALLY ON/TURN SIGNALED/UPTREND = up -#}
+            TOP WATCH/ROLLING OVER/DECLINE/COUNTERTREND BOUNCE = dn; up ONLY for the explicit confirmed-uptrend
+            labels — an unknown future label must fall to the neutral tag, never to green -#}
         {%- set _reduce_labels = ['TOP WATCH','ROLLING OVER','DECLINE','COUNTERTREND BOUNCE'] -%}
         {%- set _warn_labels = ['FRESH BUY','BOTTOM WATCH','NEARING A LOW'] -%}
+        {%- set _up_labels = ['RALLY ON','TURN SIGNALED','UPTREND','BUY ZONE'] -%}
         {%- set _lbl = x.get('label', '') -%}
-        {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else 'up') -%}
+        {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else ('up' if _lbl in _up_labels else '')) -%}
         <span class="row-pop-tag {{ _stag_tone }}">{{ td(x.label) }}</span>
       </div>
       <div class="row-pop-div"></div>
