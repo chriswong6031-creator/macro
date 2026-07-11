@@ -12,6 +12,9 @@ Covers:
   (9) MTF upturn confirmed cohort event (TS-R7)
   (10) MTF upturn Mag7 transition detection (TS-R7)
   (11) MTF upturn artifact isolation — absent/malformed artifact no-ops
+  (12) Glance-tier plain words (doctrine Law 2) — no internal state names as
+       headlines, no raw basket slugs (display name + prettified fallback),
+       no leg jargon, no set notation
 """
 from __future__ import annotations
 
@@ -33,6 +36,13 @@ import scripts.notify_turn_events as NTE
 # ---------------------------------------------------------------------------
 
 _TODAY = "2026-07-09"
+
+
+@pytest.fixture(autouse=True)
+def _deterministic_basket_names(monkeypatch):
+    """Preset the display-name cache to {} — prettified-slug fallback only,
+    no disk read of site/basketdata/baskets.json (environment-dependent)."""
+    monkeypatch.setattr(NTE, "_BASKET_NAMES", {})
 
 _TURN_WATCH_IGNITION = {
     "schema": "basket_turn_watch.v1",
@@ -290,6 +300,37 @@ class TestTapeDisagreementDetection:
             )
         assert results == []
 
+    @staticmethod
+    def _turn_watch_with_row_reco(slow_reco):
+        """IGNITION turn_watch whose row carries the slow_reco enrichment
+        (the live artifact shape — engine/basket_turn_watch.py joins it in)."""
+        tw = json.loads(json.dumps(_TURN_WATCH_IGNITION))
+        tw["baskets"][0]["slow_reco"] = slow_reco
+        return tw
+
+    def test_row_slow_reco_enter_suppresses_without_lookup(self):
+        """Row-level slow_reco is preferred; baskets.json lookup not needed."""
+        state = {}
+        tw = self._turn_watch_with_row_reco("enter")
+        with patch.object(NTE, "_lookup_slow_reco") as mock_lookup:
+            results = NTE._detect_tape_disagreement(
+                _BASKET_PULSE_WITH_IGNITION, tw, state, _TODAY
+            )
+        assert results == []
+        mock_lookup.assert_not_called()
+
+    def test_row_slow_reco_hold_fires_and_names_rating(self):
+        """Row slow_reco outside {enter, accumulate} fires; the plain-word
+        message names the rating (doctrine worked example: 'still rated Hold')."""
+        state = {}
+        tw = self._turn_watch_with_row_reco("hold")
+        with patch.object(NTE, "_lookup_slow_reco", return_value=None):
+            results = NTE._detect_tape_disagreement(
+                _BASKET_PULSE_WITH_IGNITION, tw, state, _TODAY
+            )
+        assert len(results) == 1
+        assert "we still rate it Hold" in results[0][1]
+
     def test_no_refire_same_day(self):
         state = {}
         NTE._mark_fired(state, "tape_disagreement", "semicap_equipment", _TODAY)
@@ -424,7 +465,8 @@ class TestCopyContract:
         assert "not an entry signal" in msg.lower()
         assert "expected-null" not in msg.lower()
 
-    def test_ignition_message_contains_k_count(self):
+    def test_ignition_message_contains_sign_count(self):
+        """Leg count in plain words (doctrine Law 2), not 'K=4' jargon."""
         legs = {
             "impulse_day": True,
             "rs_z": True,
@@ -432,17 +474,27 @@ class TestCopyContract:
             "complex_confirm": True,
         }
         msg = NTE._ignition_message("test_basket", legs, _TODAY)
-        assert "K=4" in msg
+        assert "4 turn signs firing" in msg
+        assert "K=4" not in msg
 
-    def test_ignition_message_lists_active_legs(self):
+    def test_ignition_message_lists_active_legs_in_plain_words(self):
+        """Leg slugs translated via _TURN_LEG_LABELS (doctrine Law 2)."""
         legs = {
             "impulse_day": True,
             "rs_z": True,
             "volume_confirm": False,
         }
         msg = NTE._ignition_message("test_basket", legs, _TODAY)
-        assert "impulse_day" in msg
-        assert "rs_z" in msg
+        assert "big one-day pops" in msg
+        assert "outpacing the market" in msg
+        assert "impulse_day" not in msg
+        assert "rs_z" not in msg
+
+    def test_ignition_message_unknown_leg_prettified_fallback(self):
+        """A leg name outside the frozen six still renders, prettified."""
+        msg = NTE._ignition_message("test_basket", {"new_leg_name": True}, _TODAY)
+        assert "new leg name" in msg
+        assert "new_leg_name" not in msg
 
     def test_forbidden_word_guard_catches_exact_word(self):
         """_assert_no_forbidden_words raises on an exact forbidden word."""
@@ -466,13 +518,21 @@ class TestCopyContract:
 class TestGlanceTierDoctrineCompliance:
     """docs/DESIGN_DOCTRINE.md Laws 2/3 — notifications are pure glance tier.
 
-    Bare base-rate percentages, n= receipts, and internal vocabulary
-    ("display-tier", "expected-null", "forward meter") must not appear in any
-    emitted message body.  The precise receipt (58% fade at T+1, n=26) lives
-    on Tier-2 site tips (see tests/test_ftr_w3_ui.py), not in notifications.
+    Bare base-rate percentages, n= receipts, internal vocabulary
+    ("display-tier", "expected-null", "forward meter"), internal state names
+    (IGNITION / UPTURN_CONFIRMED / MTF), leg jargon (K= / D-MACD / rs_z), set
+    notation, and raw basket slugs must not appear in any emitted message
+    body.  The precise receipt (58% fade at T+1, n=26) lives on Tier-2 site
+    tips (see tests/test_ftr_w3_ui.py), not in notifications.
     """
 
-    BANNED = ("display-tier", "expected-null", "forward meter", "n=26", "58%", "T+1")
+    BANNED = (
+        "display-tier", "expected-null", "forward meter", "n=26", "58%", "T+1",
+        "IGNITION", "UPTURN_CONFIRMED", "MTF", "K-of-N", "K=", "D-MACD",
+        "W-MACD", "impulse_day", "rs_z", "slow state", "{enter", "coherence",
+        # raw slugs of the subjects the messages below are built with
+        "test_basket",
+    )
 
     def _all_messages(self):
         legs = {"impulse_day": True, "rs_z": True}
@@ -480,11 +540,12 @@ class TestGlanceTierDoctrineCompliance:
         return [
             NTE._ignition_message("test_basket", legs, _TODAY),
             NTE._shock_activation_message(75, _TODAY, "test"),
+            NTE._tape_disagreement_message("test_basket", 0.40, _TODAY, "hold"),
             NTE._tape_disagreement_message("test_basket", 0.40, _TODAY),
             NTE._mtf_upturn_cohort_message(
                 ["NVDA"], {"NVDA": {"k": 3, "legs": mtf_legs}}, _TODAY
             ),
-            NTE._mtf_upturn_mag7_message("NVDA", 3, mtf_legs, _TODAY),
+            NTE._mtf_upturn_mag7_message("NVDA", mtf_legs, _TODAY),
         ]
 
     def test_no_banned_glance_tier_tokens(self):
@@ -498,6 +559,100 @@ class TestGlanceTierDoctrineCompliance:
         for msg in self._all_messages():
             assert "not an entry signal" in msg.lower()
             assert "faded within a day" in msg.lower()
+
+    def test_all_messages_pass_forbidden_word_guard(self):
+        """Every builder already calls the guard; belt-and-braces re-check."""
+        for msg in self._all_messages():
+            NTE._assert_no_forbidden_words(msg)
+
+
+class TestPlainWordHeadlines:
+    """Doctrine Law 2 — internal state names may not headline an alert."""
+
+    def test_ignition_headline(self):
+        msg = NTE._ignition_message("test_basket", {"impulse_day": True}, _TODAY)
+        assert msg.startswith("STRONG TURN SIGN")
+        assert "TURN-WATCH" not in msg
+
+    def test_shock_headline_and_prettified_reason(self):
+        msg = NTE._shock_activation_message(75, _TODAY, "driver_flip + breadth")
+        assert msg.startswith("MARKET SHOCK")
+        assert "SHOCK ACTIVATION" not in msg
+        assert "(driver flip + breadth)" in msg
+        assert "75" in msg
+
+    def test_tape_disagreement_no_set_notation(self):
+        msg = NTE._tape_disagreement_message("test_basket", 0.40, _TODAY)
+        assert "{enter" not in msg
+        assert "accumulate" not in msg
+        assert "has not turned positive yet" in msg
+
+    def test_tape_disagreement_names_rating_when_known(self):
+        msg = NTE._tape_disagreement_message("test_basket", 0.40, _TODAY, "hold")
+        assert "we still rate it Hold" in msg
+
+    def test_cohort_headline(self):
+        mtf_legs = {"d_macd": True, "d3_confluence": True, "w_macd": "cross", "w2_macd": False}
+        msg = NTE._mtf_upturn_cohort_message(
+            ["NVDA", "MSFT"], {"NVDA": {"k": 3, "legs": mtf_legs}}, _TODAY
+        )
+        assert msg.startswith("2 STOCKS TURNING UP")
+
+    def test_cohort_symbol_without_detail_gets_plain_fallback(self):
+        msg = NTE._mtf_upturn_cohort_message(["NVDA"], {}, _TODAY)
+        assert "NVDA: detail unavailable" in msg
+
+    def test_mag7_headline(self):
+        mtf_legs = {"d_macd": True, "d3_confluence": True, "w_macd": "cross", "w2_macd": False}
+        msg = NTE._mtf_upturn_mag7_message("NVDA", mtf_legs, _TODAY)
+        assert msg.startswith("NVDA TURNING UP")
+        assert "entered state" not in msg
+        assert "3 of 4 timeframes (daily, 3-day, weekly)" in msg
+
+
+class TestBasketDisplayNames:
+    """Doctrine Law 2 — display names, prettified fallback, never raw slugs."""
+
+    def test_known_id_uses_display_name(self, monkeypatch):
+        monkeypatch.setattr(
+            NTE, "_BASKET_NAMES", {"semicap_equipment": "Semicap Equipment Makers"}
+        )
+        msg = NTE._ignition_message("semicap_equipment", {"impulse_day": True}, _TODAY)
+        assert "Semicap Equipment Makers" in msg
+        assert "semicap_equipment" not in msg
+
+    def test_unknown_id_prettified_fallback(self):
+        msg = NTE._ignition_message("memory_storage", {"impulse_day": True}, _TODAY)
+        assert "Memory Storage" in msg
+        assert "memory_storage" not in msg
+
+    def test_tape_disagreement_uses_display_name(self, monkeypatch):
+        monkeypatch.setattr(NTE, "_BASKET_NAMES", {"semicap_equipment": "Semicap"})
+        msg = NTE._tape_disagreement_message("semicap_equipment", 0.40, _TODAY, "hold")
+        assert "Semicap" in msg
+        assert "semicap_equipment" not in msg
+
+    def test_load_basket_names_flat_list_shape(self, tmp_path):
+        p = tmp_path / "baskets.json"
+        p.write_text(json.dumps({"baskets": [{"id": "x_y", "name": "X Y Name"}]}))
+        with patch.object(NTE, "_BASKETS_JSON_PATH", p):
+            names = NTE._load_basket_names()
+        assert names == {"x_y": "X Y Name"}
+
+    def test_load_basket_names_region_dict_shape(self, tmp_path):
+        p = tmp_path / "baskets.json"
+        p.write_text(
+            json.dumps(
+                {"baskets": {"us": [{"id": "a", "name": "A"}], "cn": [{"id": "b", "name": "B"}]}}
+            )
+        )
+        with patch.object(NTE, "_BASKETS_JSON_PATH", p):
+            names = NTE._load_basket_names()
+        assert names == {"a": "A", "b": "B"}
+
+    def test_load_basket_names_missing_file_empty(self, tmp_path):
+        with patch.object(NTE, "_BASKETS_JSON_PATH", tmp_path / "absent.json"):
+            assert NTE._load_basket_names() == {}
 
 
 # ---------------------------------------------------------------------------
@@ -778,35 +933,39 @@ class TestMtfUpturnCohortEvent:
             )
 
     def test_message_contains_symbol_count(self):
-        """Message header shows the number of confirmed names."""
+        """Message header shows the number of confirmed names in plain words."""
         state = {}
         results = NTE._detect_mtf_upturn_confirmed(
             _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
         )
         _, msg = results[0]
-        # cohort has 4 confirmed names
-        assert "4 names" in msg
+        # cohort has 4 confirmed names; doctrine table: "N stocks turning up"
+        assert "4 STOCKS TURNING UP" in msg
 
     def test_message_contains_leg_labels(self):
-        """Message references the 4 leg family names."""
+        """Legs render as plain timeframe words, not D-MACD/K-of-N jargon."""
         state = {}
         results = NTE._detect_mtf_upturn_confirmed(
             _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
         )
         _, msg = results[0]
-        assert "D-MACD" in msg
-        assert "W-MACD" in msg
-        assert "2W-MACD" in msg
+        assert "daily" in msg
+        assert "3-day" in msg
+        assert "weekly" in msg
+        assert "2-week" in msg
+        assert "D-MACD" not in msg
+        assert "K-of-N" not in msg
 
     def test_message_contains_per_symbol_lines(self):
-        """Per-symbol K= detail lines appear for confirmed names."""
+        """Per-symbol timeframe detail lines appear for confirmed names."""
         state = {}
         results = NTE._detect_mtf_upturn_confirmed(
             _MTF_UPTURN_WITH_CONFIRMED, state, _TODAY
         )
         _, msg = results[0]
         assert "DGX" in msg
-        assert "K=3" in msg
+        assert "3 of 4 timeframes" in msg
+        assert "K=3" not in msg
 
     def test_run_dispatches_cohort_event_with_webhook(self, tmp_path):
         """End-to-end: run() dispatches when mtf_upturn.json is present with confirmed names."""
