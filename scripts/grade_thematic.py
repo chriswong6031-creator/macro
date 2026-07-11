@@ -3,8 +3,13 @@
 Three stages run sequentially, all tolerant (failure = honest null + continue):
 
   Stage 1 — Crowd-arrival lead-lag grader (engine/foresight_leadlag.py)
-    Reads data/foresight/earliness_log.jsonl (previously READ BY NOTHING).
-    Computes signed lead-days between flag date and attention leg crossings.
+    FIRST appends today's per-theme attention rows to
+    data/foresight/earliness_log.jsonl via foresight_earliness (the display
+    callers all pass write_log=False, so this call is the log's sole nightly
+    advancer — without it the log never accrues and the grader below grades
+    an empty tape forever).
+    THEN reads the log, computes signed lead-days between flag date and
+    attention leg crossings.
     Writes data/foresight/earliness_grades.json (non-append; stamped).
 
   Stage 2 — Placebo tape (engine/theme_placebo.py)
@@ -70,9 +75,40 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
 # Stage 1 — Crowd-arrival lead-lag grader
 # ---------------------------------------------------------------------------
 
+def _append_attention_log(root: Path) -> None:  # noqa: ARG001 — root kept for stage-signature parity
+    """Append today's per-theme attention rows to data/foresight/earliness_log.jsonl.
+
+    Producer half of stage 1. compute_foresight_earliness is the log's only
+    writer, but every display caller (foresight_score/sizing/convergence)
+    passes write_log=False — until this call was wired (2026-07-11) the log
+    was NEVER written and the grader graded an empty tape every night
+    (n_pending == n_flags forever). This script runs only in the nightly
+    engine lane, so the forward ledger advances here (nightly-sole-advancer
+    law). Idempotent: the append dedupes by (theme, asof).
+
+    The log path resolves through lib.config.data_dir() (same as every leg
+    the engine reads), not through --root; in production both are the repo
+    checkout. Tolerant: failure logs a warning and grading proceeds against
+    whatever log exists.
+    """
+    from engine.foresight_earliness import compute_foresight_earliness
+
+    log.info("[W6 stage1] appending attention rows to earliness_log...")
+    try:
+        payload = compute_foresight_earliness(write_log=True)
+        n_themes = len((payload or {}).get("themes") or {})
+        log.info("[W6 stage1] attention append done (themes=%s)", n_themes)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[W6 stage1] attention log append failed (non-fatal, "
+                    "grading proceeds on existing log): %s", exc)
+
+
 def _stage1_lead_lag(root: Path) -> None:
-    """Compute earliness grades and write data/foresight/earliness_grades.json."""
+    """Append today's attention rows, then compute earliness grades and
+    write data/foresight/earliness_grades.json."""
     from engine.foresight_leadlag import compute_earliness_grades, ARTIFACT_ID, OUTPUT_PATH
+
+    _append_attention_log(root)
 
     log.info("[W6 stage1] computing earliness grades...")
     try:
@@ -81,6 +117,7 @@ def _stage1_lead_lag(root: Path) -> None:
         log.error("[W6 stage1] compute_earliness_grades failed: %s", exc)
         artifact = {
             "as_of": None,
+            "status": "error",
             "n_flags": 0,
             "n_pending": 0,
             "n_legs_arrived_total": 0,

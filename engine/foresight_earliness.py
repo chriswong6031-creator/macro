@@ -20,8 +20,11 @@ earliness = 1 − rank_pct(mean of available attention legs), cross-sectionally.
 So the MOST-attended theme (highest mean) gets earliness=0; least-attended gets earliness=1.
 
 Output: {themes: {k: {earliness, legs: {...}, n_legs_live}}, note}
-Side-effect: appends one row per theme per day to data/foresight/earliness_log.jsonl
-(append-only, deduped by theme+date) for future forward-grading.
+Side-effect (write_log=True only): appends one row per theme per day to
+data/foresight/earliness_log.jsonl (append-only, deduped by theme+date) for
+forward-grading by engine/foresight_leadlag.py. The display callers
+(foresight_score/sizing/convergence) all pass write_log=False; the nightly
+append is driven by scripts/grade_thematic.py stage 1 — the log's sole advancer.
 """
 from __future__ import annotations
 

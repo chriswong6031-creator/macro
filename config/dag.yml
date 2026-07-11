@@ -615,7 +615,9 @@ lanes:
         note: >
           non-fatal; TIL W6 (PR-H) grading pack — display/shadow only, authority
           is_context_only=true, all promotion flags false. Runs AFTER build_thematic_state.
-          Stage 1: crowd-arrival lead-lag grader over data/foresight/earliness_log.jsonl →
+          Stage 1: appends today's attention rows to data/foresight/earliness_log.jsonl
+          (compute_foresight_earliness(write_log=True) — sole nightly advancer of the log),
+          then crowd-arrival lead-lag grader over that log →
           data/foresight/earliness_grades.json (envelope-stamped, atomic write).
           Stage 2: theme placebo tape — appends K=3 random peer + 1 time-shift variant for
           each new non-WATCH foresight flag → data/foresight/theme_placebo_tape.jsonl

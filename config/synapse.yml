@@ -1627,12 +1627,15 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/foresight_earliness.py
+      - engine/foresight_leadlag.py
     external_consumers: []
     notes: >
-      exempt: ungraded — log accruing but no grader wired (engine/foresight_earliness.py
-      writes the log; no grade() function exists yet for this store; docstring says
-      'for future forward-grading'). File not yet present at origin/main (first write
-      pending). Registered now so the bus is aware and future grader wiring has a home.
+      Graded by engine/foresight_leadlag.py (TIL W6 crowd-arrival lead-lag grader →
+      data/foresight/earliness_grades.json). Nightly append driven by
+      scripts/grade_thematic.py stage 1 calling compute_foresight_earliness(write_log=True)
+      — the display callers (foresight_score/sizing/convergence) all pass write_log=False,
+      which is why the file was absent at origin/main until 2026-07-11 (producer never
+      wired; the grades artifact showed n_pending==n_flags every night).
       Per-theme per-day attention scores: theme, asof, earliness (0–1, 1=least attended),
       legs, n_legs_live. Append-only, deduped by (theme, date).
 

@@ -452,6 +452,134 @@ class TestLeadLag:
             f"expected INSUFFICIENT_DATA or DESK_LAGS for lagging desk, got: {assessment!r}"
         )
 
+    # ── accrual honesty + producer wiring (earliness_log never-written fix) ──
+
+    def test_status_accruing_with_log_coverage_counts(self, tmp_path):
+        """Flags exist but the attention log is empty → status='accruing' with
+        explicit zero counts, so a young/empty tape is distinguishable from a
+        grader failure and from a real graded null."""
+        from engine.foresight_leadlag import compute_earliness_grades
+
+        foresight_path = tmp_path / "data" / "foresight" / "log.jsonl"
+        _write_jsonl(foresight_path, [
+            {"theme": "ai_cap", "asof": "2026-05-01", "stage": "PRECIPICE (text)",
+             "members": ["NVDA"], "ts": "2026-05-01T10:00:00+00:00"},
+        ])
+
+        result = compute_earliness_grades(tmp_path)
+        assert result["status"] == "accruing"
+        cov = result["log_coverage"]
+        assert cov["n_rows"] == 0
+        assert cov["n_themes"] == 0
+        assert cov["n_dates"] == 0
+        assert cov["first_asof"] is None
+        assert cov["last_asof"] is None
+        assert cov["min_rows_per_theme_to_grade"] >= 1
+        assert "ACCRUING" in result["note"]
+
+    def test_status_grading_with_pooled_til_fitness_keys(self, tmp_path):
+        """An arrival flips status to 'grading', log_coverage carries real counts,
+        and pooled_summary carries the keys the TIL fitness sensor reads
+        (n_graded_flags, share_led — engine/metabolism/til_fitness._read_lead_days)."""
+        from engine.foresight_leadlag import compute_earliness_grades
+
+        theme = "ai_cap"
+        foresight_path = tmp_path / "data" / "foresight" / "log.jsonl"
+        _write_jsonl(foresight_path, [{
+            "theme": theme, "asof": "2026-04-01", "stage": "PRECIPICE",
+            "members": [], "ts": "2026-04-01T10:00:00+00:00",
+        }])
+
+        earliness_path = tmp_path / "data" / "foresight" / "earliness_log.jsonl"
+        rows = []
+        for i, d in enumerate(["2026-01-10", "2026-01-20", "2026-02-10",
+                               "2026-02-20", "2026-03-10"]):
+            rows.append({
+                "theme": theme, "asof": d, "ts": f"{d}T10:00:00+00:00",
+                "earliness": 0.9, "n_legs_live": 1,
+                "legs": {"news_flow": 0.05 * (i + 1), "coverage_arrival": None,
+                         "ownership_breadth": None, "tape_extension": None},
+            })
+        rows.append({
+            "theme": theme, "asof": "2026-04-30", "ts": "2026-04-30T10:00:00+00:00",
+            "earliness": 0.05, "n_legs_live": 1,
+            "legs": {"news_flow": 50.0, "coverage_arrival": None,
+                     "ownership_breadth": None, "tape_extension": None},
+        })
+        _write_jsonl(earliness_path, rows)
+
+        result = compute_earliness_grades(tmp_path)
+        assert result["status"] == "grading"
+        cov = result["log_coverage"]
+        assert cov["n_rows"] == 6
+        assert cov["n_themes"] == 1
+        assert cov["n_dates"] == 6
+        assert cov["first_asof"] == "2026-01-10"
+        assert cov["last_asof"] == "2026-04-30"
+        assert "ACCRUING" not in result["note"]
+
+        pooled = result["pooled_summary"]
+        assert pooled["n_graded_flags"] == 1
+        assert pooled["share_led"] == 1.0
+
+    def test_null_artifact_status_no_flags(self, tmp_path):
+        """No foresight log at all → status='no_flags' with a zeroed log_coverage."""
+        from engine.foresight_leadlag import compute_earliness_grades
+
+        result = compute_earliness_grades(tmp_path)
+        assert result["status"] == "no_flags"
+        assert result["log_coverage"]["n_rows"] == 0
+
+    def test_stage1_appends_attention_log_before_grading(self, tmp_path, monkeypatch):
+        """Producer wiring: _stage1_lead_lag appends today's attention rows to
+        earliness_log.jsonl BEFORE grading, and the grades artifact sees them.
+
+        Regression test for the never-written log: every display caller passes
+        write_log=False, so without the stage-1 append the log stayed absent and
+        the grader graded an empty tape every night (n_pending == n_flags forever).
+        Also asserts idempotency (same-day re-run does not duplicate rows).
+        """
+        import engine.foresight_earliness as fe_mod
+        from lib import config as cfg_mod
+        from scripts.grade_thematic import _stage1_lead_lag
+
+        data_dir = tmp_path / "data"
+        monkeypatch.setattr(cfg_mod, "data_dir", lambda: data_dir)
+        themes_cfg = {"alpha": {"tickers": ["A"]}, "beta": {"tickers": ["B"]}}
+        monkeypatch.setattr(cfg_mod, "load", lambda: {"themes": themes_cfg})
+
+        def _all_none(arg):
+            return {k: None for k in (arg if isinstance(arg, dict) else arg)}
+
+        monkeypatch.setattr(fe_mod, "_leg_coverage_arrival", _all_none)
+        monkeypatch.setattr(fe_mod, "_leg_news_flow", lambda keys: {k: None for k in keys})
+        monkeypatch.setattr(fe_mod, "_leg_ownership_breadth", _all_none)
+        monkeypatch.setattr(fe_mod, "_leg_tape_extension", _all_none)
+
+        foresight_path = data_dir / "foresight" / "log.jsonl"
+        _write_jsonl(foresight_path, [
+            {"theme": "alpha", "asof": "2026-05-01", "stage": "PRECIPICE (text)",
+             "members": ["A"], "ts": "2026-05-01T10:00:00+00:00"},
+        ])
+
+        _stage1_lead_lag(tmp_path)
+
+        log_path = data_dir / "foresight" / "earliness_log.jsonl"
+        assert log_path.exists(), "stage 1 must append the attention log"
+        rows = _read_jsonl(log_path)
+        assert sorted(r["theme"] for r in rows) == ["alpha", "beta"]
+
+        grades = json.loads(
+            (data_dir / "foresight" / "earliness_grades.json").read_text()
+        )
+        assert grades["log_coverage"]["n_rows"] == 2
+        assert grades["log_coverage"]["n_themes"] == 2
+        assert grades["status"] == "accruing"
+
+        # Idempotent: same-day re-run does not duplicate rows
+        _stage1_lead_lag(tmp_path)
+        assert len(_read_jsonl(log_path)) == 2
+
 
 # ============================================================================
 # Stage 2 — Placebo tape
